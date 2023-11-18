@@ -4,7 +4,7 @@
     'description': '''
         This module gives you options to customize the theme colors.
     ''',
-    'version': '17.0.1.0.0', 
+    'version': '17.0.1.0.1', 
     'category': 'Extra Tools',
     'license': 'LGPL-3', 
     'author': 'MuK IT',
@@ -38,4 +38,5 @@
     'installable': True,
     'application': False,
     'auto_install': False,
+    'uninstall_hook': '_uninstall_cleanup',
 }
