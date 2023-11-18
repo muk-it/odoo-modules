@@ -22,13 +22,13 @@
     ],
     'assets': {
         'web._assets_primary_variables': [
-            ('prepend', 'muk_colors/static/src/scss/colors_light.scss'),
+            ('prepend', 'muk_web_colors/static/src/scss/colors_light.scss'),
         ],
         'web.dark_mode_variables': [
             (
                 'after', 
-                'muk_colors/static/src/scss/colors_light.scss', 
-                'muk_colors/static/src/scss/colors_dark.scss'
+                'muk_web_colors/static/src/scss/colors_light.scss', 
+                'muk_web_colors/static/src/scss/colors_dark.scss'
             ),
         ],
     },

@@ -22,7 +22,7 @@ class ResConfigSettings(models.TransientModel):
         
     @property
     def COLOR_ASSET_LIGHT_URL(self):
-        return '/muk_colors/static/src/scss/colors_light.scss'
+        return '/muk_web_colors/static/src/scss/colors_light.scss'
         
     @property
     def COLOR_BUNDLE_LIGHT_NAME(self):
@@ -30,7 +30,7 @@ class ResConfigSettings(models.TransientModel):
         
     @property
     def COLOR_ASSET_DARK_URL(self):
-        return '/muk_colors/static/src/scss/colors_dark.scss'
+        return '/muk_web_colors/static/src/scss/colors_dark.scss'
         
     @property
     def COLOR_BUNDLE_DARK_NAME(self):
