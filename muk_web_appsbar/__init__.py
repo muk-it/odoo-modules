@@ -4,9 +4,6 @@ import base64
 
 from odoo.tools import file_open, file_path
 
-# ----------------------------------------------------------
-# Setup
-# ----------------------------------------------------------
 
 def _setup_module(env):
     if env.ref('base.main_company', False): 

@@ -9,7 +9,12 @@ class ResCompany(models.Model):
     # Fields
     #----------------------------------------------------------
     
-    appbar_image = fields.Binary(
-        string='Apps Menu Footer Image',
+    favicon = fields.Binary(
+        string="Company Favicon", 
+        attachment=True
+    )
+    
+    background_image = fields.Binary(
+        string='Apps Menu Background Image',
         attachment=True
     )
