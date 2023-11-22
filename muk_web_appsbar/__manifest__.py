@@ -5,7 +5,7 @@
         This module adds a sidebar to the main screen. The sidebar has a list
         of all installed apps similar to the home menu to ease navigation.
     ''',
-    'version': '17.0.1.0.0', 
+    'version': '17.0.1.0.1', 
     'category': 'Extra Tools',
     'license': 'LGPL-3', 
     'author': 'MuK IT',
@@ -30,7 +30,7 @@
         'web._assets_backend_helpers': [
             'muk_web_appsbar/static/src/scss/mixins.scss',
         ],
-        'web.dark_mode_variables': [
+        'web.assets_web_dark': [
             (
                 'after',
                 'muk_web_appsbar/static/src/scss/variables.scss',

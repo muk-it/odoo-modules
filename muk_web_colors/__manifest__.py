@@ -4,7 +4,7 @@
     'description': '''
         This module gives you options to customize the theme colors.
     ''',
-    'version': '17.0.1.0.1', 
+    'version': '17.0.1.0.2', 
     'category': 'Extra Tools',
     'license': 'LGPL-3', 
     'author': 'MuK IT',
@@ -22,12 +22,17 @@
     ],
     'assets': {
         'web._assets_primary_variables': [
-            ('prepend', 'muk_web_colors/static/src/scss/colors_light.scss'),
+            ('prepend', 'muk_web_colors/static/src/scss/colors.scss'),
+            (
+                'before', 
+                'muk_web_colors/static/src/scss/colors.scss', 
+                'muk_web_colors/static/src/scss/colors_light.scss'
+            ),
         ],
-        'web.dark_mode_variables': [
+        'web.assets_web_dark': [
             (
                 'after', 
-                'muk_web_colors/static/src/scss/colors_light.scss', 
+                'muk_web_colors/static/src/scss/colors.scss', 
                 'muk_web_colors/static/src/scss/colors_dark.scss'
             ),
         ],

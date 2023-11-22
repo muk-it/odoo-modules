@@ -133,9 +133,9 @@
 
 .o_fullscreen, .o_home_menu_background {
 	.mk_apps_sidebar_panel {
-		display: none;
+		display: none !important;
 	}
 	.o_action_manager {
-		padding-left: 0;
+		padding-left: 0 !important;
 	}
 }

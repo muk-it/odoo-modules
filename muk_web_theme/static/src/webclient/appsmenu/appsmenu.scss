@@ -9,8 +9,12 @@
 	flex-wrap: wrap !important;
 	justify-content: flex-start;
     align-content: flex-start;
-	background-size: cover;
 	overflow: inital;
+	background: {
+        size: cover;
+        repeat: no-repeat;
+        position: center;
+    }
 	@include media-breakpoint-up(lg) {
 	    padding: {
 	        left: 20vw;

@@ -4,11 +4,8 @@
     'description': '''
         This module offers a mobile compatible design for Odoo Community. 
         Furthermore it allows the user to define some design preferences.
-        So he can choose the size of the sidebar and the position of the 
-        chatter. In addition, the background image of the app menu can be
-        set for each company.
     ''',
-    'version': '17.0.1.0.0',
+    'version': '17.0.1.0.1',
     'category': 'Themes/Backend', 
     'license': 'LGPL-3', 
     'author': 'MuK IT',
@@ -32,7 +29,7 @@
         'web._assets_primary_variables': [
             (
                 'after', 
-                'muk_web_colors/static/src/scss/colors_light.scss', 
+                'web/static/src/scss/primary_variables.scss', 
                 'muk_web_theme/static/src/scss/colors.scss'
             ),
             (
