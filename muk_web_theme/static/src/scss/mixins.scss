@@ -7,7 +7,7 @@
     position: fixed !important;
     height: calc(100vh - #{$o-navbar-height});
     max-height: calc(100vh - #{$o-navbar-height});
-    top: $o-navbar-height !important;
+    top: $o-navbar-height;
     right: 0 !important;
     left: 0 !important;
     overflow-x: hidden;

@@ -63,3 +63,10 @@
 	    }
 	}
 }
+
+.mk_neutralize_banner_active .o_navbar_apps_menu.show .dropdown-menu {
+	height: calc(100vh - #{$o-navbar-height + $mk-neutralize-banner-height});
+    max-height: calc(100vh - #{$o-navbar-height + $mk-neutralize-banner-height});
+    top: $o-navbar-height + $mk-neutralize-banner-height;
+}
+

@@ -6,7 +6,7 @@
         of all installed apps similar to the home menu to ease navigation.
     ''',
     'version': '17.0.1.0.2', 
-    'category': 'Extra Tools',
+    'category': 'Tools/UI',
     'license': 'LGPL-3', 
     'author': 'MuK IT',
     'website': 'http://www.mukit.at',

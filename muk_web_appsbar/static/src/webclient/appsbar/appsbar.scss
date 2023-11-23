@@ -145,7 +145,7 @@
 		height: 24px;
 	}	
 	.mk_apps_sidebar_panel {
-    	top: $o-navbar-height + 24px;
-	    height: calc(100% - (#{$o-navbar-height} + 24px)); 
+    	top: $o-navbar-height + $mk-neutralize-banner-height;
+	    height: calc(100% - #{$o-navbar-height + $mk-neutralize-banner-height}); 
 	}
 }
