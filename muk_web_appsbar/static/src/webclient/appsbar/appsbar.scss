@@ -139,3 +139,13 @@
 		padding-left: 0 !important;
 	}
 }
+
+.mk_neutralize_banner_active {
+	#oe_neutralize_banner {
+		height: 24px;
+	}	
+	.mk_apps_sidebar_panel {
+    	top: $o-navbar-height + 24px;
+	    height: calc(100% - (#{$o-navbar-height} + 24px)); 
+	}
+}
