@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 
-<templates>
+<templates xml:space="preserve">
     <t
         t-name="muk_web_theme.Chatter"
         t-inherit="mail.Chatter"
