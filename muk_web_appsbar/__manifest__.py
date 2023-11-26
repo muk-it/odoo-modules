@@ -5,7 +5,7 @@
         This module adds a sidebar to the main screen. The sidebar has a list
         of all installed apps similar to the home menu to ease navigation.
     ''',
-    'version': '17.0.1.0.2', 
+    'version': '17.0.1.1.0', 
     'category': 'Tools/UI',
     'license': 'LGPL-3', 
     'author': 'MuK IT',
@@ -40,17 +40,26 @@
         'web.assets_backend': [
             (
                 'after',
-                'web/static/src/webclient/navbar/navbar.xml',
-                'muk_web_appsbar/static/src/webclient/navbar/navbar.xml',
+                'web/static/src/webclient/webclient.js',
+                'muk_web_appsbar/static/src/webclient/webclient.js',
             ),
             (
                 'after',
-                'web/static/src/webclient/navbar/navbar.js',
-                'muk_web_appsbar/static/src/webclient/navbar/navbar.js',
+                'web/static/src/webclient/webclient.xml',
+                'muk_web_appsbar/static/src/webclient/webclient.xml',
+            ),
+            (
+                'after',
+                'web/static/src/webclient/webclient.js',
+                'muk_web_appsbar/static/src/webclient/menus/app_menu_service.js',
+            ),
+            (
+                'after',
+                'web/static/src/webclient/webclient.js',
+                'muk_web_appsbar/static/src/webclient/appsbar/appsbar.js',
             ),
             'muk_web_appsbar/static/src/webclient/appsbar/appsbar.xml',
             'muk_web_appsbar/static/src/webclient/appsbar/appsbar.scss',
-            'muk_web_appsbar/static/src/webclient/appsbar/appsbar.js',
         ],
     },
     'images': [

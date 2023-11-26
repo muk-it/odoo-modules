@@ -1,13 +1,14 @@
 /** @odoo-module **/
 
-import { url } from "@web/core/utils/urls";
-import { useService } from "@web/core/utils/hooks";
+import { url } from '@web/core/utils/urls';
+import { useService } from '@web/core/utils/hooks';
 
-import { Component } from "@odoo/owl";
+import { Component, onWillUnmount } from '@odoo/owl';
 
 export class AppsBar extends Component {
 	setup() {
 		this.companyService = useService('company');
+        this.appMenuService = useService('app_menu');
     	if (this.companyService.currentCompany.has_appsbar_image) {
             this.sidebarImageUrl = url('/web/image', {
                 model: 'res.company',
@@ -15,13 +16,20 @@ export class AppsBar extends Component {
                 id: this.companyService.currentCompany.id,
             });
     	}
+    	const renderAfterMenuChange = () => {
+            this.render();
+        };
+        this.env.bus.addEventListener(
+        	'MENUS:APP-CHANGED', renderAfterMenuChange
+        );
+        onWillUnmount(() => {
+            this.env.bus.removeEventListener(
+            	'MENUS:APP-CHANGED', renderAfterMenuChange
+            );
+        });
     }
 }
 
 Object.assign(AppsBar, {
     template: 'muk_web_appsbar.AppsBar',
-    props: {
-    	apps: Array,
-    },
 });
-

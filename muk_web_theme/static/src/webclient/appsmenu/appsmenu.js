@@ -1,7 +1,6 @@
 /** @odoo-module **/
 
 import { useEffect } from "@odoo/owl";
-import { session } from "@web/session";
 import { url } from "@web/core/utils/urls";
 import { useBus, useService } from "@web/core/utils/hooks";
 
@@ -26,7 +25,12 @@ export class AppsMenu extends Dropdown {
             (open) => {
             	if (open) {
             		const openMainPalette = (ev) => {
-            	    	if (!this.commandServiceOpen && ev.key.length === 1) {
+            	    	if (
+            	    		!this.commandServiceOpen && 
+            	    		ev.key.length === 1 &&
+            	    		!ev.ctrlKey &&
+            	    		!ev.altKey
+            	    	) {
 	            	        this.commandService.openMainPalette(
             	        		{ searchValue: `/${ev.key}` }, 
             	        		() => { this.commandPaletteOpen = false; }

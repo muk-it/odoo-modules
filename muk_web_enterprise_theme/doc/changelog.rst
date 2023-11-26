@@ -1,4 +1,10 @@
+`1.1.0`
+-------
+
+- Add Chatter Module
+
+
 `1.0.0`
 -------
 
-- Init version
+- Initial Release

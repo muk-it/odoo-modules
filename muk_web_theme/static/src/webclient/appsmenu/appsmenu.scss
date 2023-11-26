@@ -3,13 +3,19 @@
 }
 	
 .o_navbar_apps_menu.show .dropdown-menu {
-	@include mk-full-screen-menu();
 	display: flex !important;
 	flex-direction: row !important;
 	flex-wrap: wrap !important;
-	justify-content: flex-start;
-    align-content: flex-start;
-	overflow: inital;
+	align-content: flex-start;
+    right: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    max-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    border: none;
+    border-radius: 0;
+	user-select: none;
 	background: {
         size: cover;
         repeat: no-repeat;
@@ -35,16 +41,10 @@
 		    display: flex;
 		    align-items: center;
 		    flex-direction: column;
-		    justify-content: flex-start;
 	   		.mk_app_icon {
-			    height: auto;
-			    object-fit: cover;
-			    max-width: 7rem;
 			    width: 100%;
 			    padding: 10px;
-			    flex-basis: 0;
 			    max-width: 70px;
-			    aspect-ratio: 1;
 			    border-radius: 0.375rem;
 			    background-color: $white;
 			    transform-origin: center bottom;
@@ -63,10 +63,3 @@
 	    }
 	}
 }
-
-.mk_neutralize_banner_active .o_navbar_apps_menu.show .dropdown-menu {
-	height: calc(100vh - #{$o-navbar-height + $mk-neutralize-banner-height});
-    max-height: calc(100vh - #{$o-navbar-height + $mk-neutralize-banner-height});
-    top: $o-navbar-height + $mk-neutralize-banner-height;
-}
-

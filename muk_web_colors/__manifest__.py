@@ -4,8 +4,8 @@
     'description': '''
         This module gives you options to customize the theme colors.
     ''',
-    'version': '17.0.1.0.2', 
-    'category': 'Extra Tools',
+    'version': '17.0.1.0.3', 
+    'category': 'Tools/UI',
     'license': 'LGPL-3', 
     'author': 'MuK IT',
     'website': 'http://www.mukit.at',
@@ -18,6 +18,7 @@
         'web_editor',
     ],
     'data': [
+        'templates/webclient.xml',
         'views/res_config_settings.xml',
     ],
     'assets': {

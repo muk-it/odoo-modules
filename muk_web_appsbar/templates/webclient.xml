@@ -8,11 +8,5 @@
             <t t-set="body_classname" t-value="'%s %s' % (body_classname, body_sidebar_classname)"/>
         </xpath>
     </template>
-	
-    <template id="neutralize_banner"  name="Neutralize Banner" inherit_id="web.neutralize_banner">
-        <xpath expr="//body" position="before">
-        	<t t-set="body_classname" t-value="'%s %s' % (body_classname, 'mk_neutralize_banner_active')"/>
-        </xpath>
-    </template>
     
 </odoo>
