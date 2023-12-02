@@ -6,6 +6,7 @@ import { useService } from '@web/core/utils/hooks';
 import { Component, onWillUnmount } from '@odoo/owl';
 
 export class AppsBar extends Component {
+	static template = 'muk_web_appsbar.AppsBar';
 	setup() {
 		this.companyService = useService('company');
         this.appMenuService = useService('app_menu');
@@ -29,7 +30,3 @@ export class AppsBar extends Component {
         });
     }
 }
-
-Object.assign(AppsBar, {
-    template: 'muk_web_appsbar.AppsBar',
-});

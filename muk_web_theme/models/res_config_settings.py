@@ -10,6 +10,7 @@ class ResConfigSettings(models.TransientModel):
         return [
             'color_appsmenu_text',
             'color_appbar_text',
+            'color_appbar_active',
             'color_appbar_background',
         ]
 
@@ -41,6 +42,10 @@ class ResConfigSettings(models.TransientModel):
     
     theme_color_appbar_text = fields.Char(
         string='AppsBar Text Color'
+    )
+    
+    theme_color_appbar_active = fields.Char(
+        string='AppsBar Active Color'
     )
     
     theme_color_appbar_background = fields.Char(

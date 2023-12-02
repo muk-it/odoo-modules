@@ -1,0 +1,83 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* muk_product
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 17.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-11-30 09:44+0000\n"
+"PO-Revision-Date: 2023-11-30 09:44+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: muk_product
+#: model:ir.ui.menu,name:muk_product.menu_configuration
+msgid "Configuration"
+msgstr "Konfiguration"
+
+#. module: muk_product
+#: model:ir.ui.menu,name:muk_product.menu_configuration_logistics
+msgid "Logistics"
+msgstr "Logistik"
+
+#. module: muk_product
+#: model:ir.ui.menu,name:muk_product.menu_pricelists
+msgid "Pricelists"
+msgstr "Preislisten"
+
+#. module: muk_product
+#: model:ir.ui.menu,name:muk_product.menu_product_attribute
+msgid "Product Attributes"
+msgstr "Produkteigenschaften"
+
+#. module: muk_product
+#: model:ir.ui.menu,name:muk_product.menu_product_category
+msgid "Product Categories"
+msgstr "Produktkategorien"
+
+#. module: muk_product
+#: model:ir.ui.menu,name:muk_product.menu_product_packaging
+msgid "Product Packagings"
+msgstr "Produktverpackungen"
+
+#. module: muk_product
+#: model:ir.ui.menu,name:muk_product.menu_product_tag
+msgid "Product Tags"
+msgstr "Produktetiketten"
+
+#. module: muk_product
+#: model:ir.ui.menu,name:muk_product.menu_configuration_product
+#: model:ir.ui.menu,name:muk_product.menu_main
+#: model:ir.ui.menu,name:muk_product.menu_product_template
+msgid "Products"
+msgstr "Produkte"
+
+#. module: muk_product
+#: model:ir.ui.menu,name:muk_product.menu_product_pricelist
+msgid "Sales Pricelists"
+msgstr "Verkauf Preislisten"
+
+#. module: muk_product
+#: model:ir.ui.menu,name:muk_product.menu_configuration_settings
+msgid "Settings"
+msgstr "Einstellungen"
+
+#. module: muk_product
+#: model:ir.ui.menu,name:muk_product.menu_uom_category
+msgid "Units of Measure"
+msgstr "Maßeinheiten"
+
+#. module: muk_product
+#: model:ir.ui.menu,name:muk_product.menu_product_product
+msgid "Variants"
+msgstr "Varianten"
+
+#. module: muk_product
+#: model:ir.ui.menu,name:muk_product.menu_product_supplierinfo
+msgid "Vendor Pricelists"
+msgstr "Verkäufer Preislisten"

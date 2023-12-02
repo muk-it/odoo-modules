@@ -9,6 +9,7 @@ class ResConfigSettings(models.TransientModel):
     def THEME_COLOR_FIELDS(self):
         return [
             'color_appbar_text',
+            'color_appbar_active',
             'color_appbar_background',
         ]
 
@@ -51,12 +52,20 @@ class ResConfigSettings(models.TransientModel):
         string='AppsBar Text Light Color'
     )
     
+    theme_color_appbar_active_light = fields.Char(
+        string='AppsBar Active Light Color'
+    )
+    
     theme_color_appbar_background_light = fields.Char(
         string='AppsBar Background Light Color'
     )
     
     theme_color_appbar_text_dark = fields.Char(
         string='AppsBar Text Dark Color'
+    )
+    
+    theme_color_appbar_active_dark = fields.Char(
+        string='AppsBar Active Dark Color'
     )
     
     theme_color_appbar_background_dark = fields.Char(

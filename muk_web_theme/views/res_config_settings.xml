@@ -41,6 +41,10 @@
                             <field name="theme_color_appbar_text" class="d-block w-25 p-0 m-0" widget="color"/>
                         </div>
                      	<div class="w-50 row">
+                            <label for="theme_color_appbar_active" string="Apps Active" class="d-block w-75 py-2"/>
+                            <field name="theme_color_appbar_active" class="d-block w-25 p-0 m-0" widget="color"/>
+                        </div>
+                     	<div class="w-50 row">
                             <label for="theme_color_appbar_background" string="Background" class="d-block w-75 py-2"/>
                             <field name="theme_color_appbar_background" class="d-block w-25 p-0 m-0" widget="color"/>
                         </div>
