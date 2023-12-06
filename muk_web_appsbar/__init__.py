@@ -2,7 +2,7 @@ from . import models
 
 import base64
 
-from odoo.tools import file_open, file_path
+from odoo.tools import file_open
 
 
 def _setup_module(env):
