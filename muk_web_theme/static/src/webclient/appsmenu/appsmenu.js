@@ -8,6 +8,9 @@ import { Dropdown } from "@web/core/dropdown/dropdown";
 
 export class AppsMenu extends Dropdown {
 	static template = 'muk_web_theme.AppsMenu';
+    static props = {
+    	...Dropdown.props
+    };
     setup() {
     	super.setup();
     	this.commandPaletteOpen = false;
