@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+    <record id="view_product_search_form" model="ir.ui.view">
+        <field name="name">product.search.form</field>
+        <field name="model">muk_product.product_search</field>
+        <field name="arch" type="xml">
+            <form>
+                <label for="search_value"/>
+                <field name="search_value"/>
+                <group>
+                    <group>
+                        <field name="search_field"/>
+                        <field name="action_id"/>
+                    </group>
+                    <group>
+                        <field name="value_split_operator"/>
+                        <field name="search_operator"/>
+                    </group>
+                </group>
+                <notebook>
+                    <page string="Preview">
+                        <field name="product_preview_ids">
+                            <tree>
+                                <field name="default_code"/>
+                                <field name="name"/>
+                                <field name="barcode"/>
+                            </tree>
+                        </field>
+                    </page>
+                    <page string="Domain">
+                        <field name="search_domain" widget="domain" options="{'model': 'product.template'}"/>
+                    </page>
+                </notebook>
+                <footer>
+                    <button name="action_search_products" string="Search" type="object" class="btn-primary"/>
+                    <button special="cancel" string="Cancel" type="object" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_product_search" model="ir.actions.act_window">
+        <field name="name">Products Search</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">muk_product.product_search</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

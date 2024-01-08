@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+
+    <t 
+    	t-name="muk_product.KanbanView.Buttons" 
+    	t-inherit="web.KanbanView.Buttons" 
+    	t-inherit-mode="primary"
+    >
+        <xpath expr="//div[hasclass('o_cp_buttons')]" position="inside">
+	        <button 
+	        	type="button" 
+	        	class="btn btn-secondary mk_button_product_search" 
+	        	t-on-click="onProductSearchButton"
+	        >
+	            Search
+	        </button>
+        </xpath>
+    </t>
+    
+</templates>
