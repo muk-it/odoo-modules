@@ -5,7 +5,7 @@
         This module adds a sidebar to the main screen. The sidebar has a list
         of all installed apps similar to the home menu to ease navigation.
     ''',
-    'version': '17.0.1.1.1', 
+    'version': '17.0.1.1.2',
     'category': 'Tools/UI',
     'license': 'LGPL-3', 
     'author': 'MuK IT',
@@ -58,6 +58,7 @@
                 'web/static/src/webclient/webclient.js',
                 'muk_web_appsbar/static/src/webclient/appsbar/appsbar.js',
             ),
+            'muk_web_appsbar/static/src/webclient/webclient.scss',
             'muk_web_appsbar/static/src/webclient/appsbar/appsbar.xml',
             'muk_web_appsbar/static/src/webclient/appsbar/appsbar.scss',
         ],
