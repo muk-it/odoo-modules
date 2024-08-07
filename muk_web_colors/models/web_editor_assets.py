@@ -16,13 +16,25 @@ class ScssEditor(models.AbstractModel):
     # ----------------------------------------------------------
 
     @api.model
+    def _get_colors_attachment(self, custom_url):
+        return self.env['ir.attachment'].search([
+            ('url', '=', custom_url)
+        ])
+
+    @api.model
+    def _get_colors_asset(self, custom_url):
+        return self.env['ir.asset'].search([
+            ('path', 'like', custom_url)
+        ])
+
+    @api.model
     def _get_colors_from_url(self, url, bundle):
         custom_url = self._make_custom_asset_url(url, bundle)
         url_info = self._get_data_from_url(custom_url)
         if url_info['customized']:
-            attachment = self.env['ir.attachment'].search([
-                ('url', '=', custom_url)
-            ])
+            attachment = self._get_colors_attachment(
+                custom_url
+            )
             if attachment:
                 return base64.b64decode(attachment.datas)
         with misc.file_open(url.strip('/'), 'rb', filter_ext=EXTENSIONS) as f:
@@ -52,9 +64,9 @@ class ScssEditor(models.AbstractModel):
         custom_url = self._make_custom_asset_url(url, bundle)
         asset_url = url[1:] if url.startswith(('/', '\\')) else url
         datas = base64.b64encode((content or "\n").encode("utf-8"))
-        custom_attachment = self.env['ir.attachment'].search([
-            ('url', '=', custom_url)
-        ])
+        custom_attachment = self._get_colors_attachment(
+            custom_url
+        )
         if custom_attachment:
             custom_attachment.write({"datas": datas})
             self.env.registry.clear_cache('assets')
@@ -71,9 +83,9 @@ class ScssEditor(models.AbstractModel):
                 'target': url,
                 'directive': 'replace',
             }
-            target_asset = self.env['ir.asset'].search([
-                ('path', 'like', asset_url)
-            ])
+            target_asset = self._get_colors_asset(
+                asset_url
+            )
             if target_asset:
                 asset_values['name'] = '%s override' % target_asset.name
                 asset_values['bundle'] = target_asset.bundle
@@ -102,3 +114,8 @@ class ScssEditor(models.AbstractModel):
         original = self._get_colors_from_url(url, bundle).decode('utf-8')
         content = self._replace_color_variables(original, variables)
         self._save_color_asset(url, bundle, content)
+
+    def reset_color_asset(self, url, bundle):
+        custom_url = self._make_custom_asset_url(url, bundle)
+        self._get_colors_attachment(custom_url).unlink()
+        self._get_colors_asset(custom_url).unlink()

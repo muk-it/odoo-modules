@@ -165,7 +165,7 @@ class ResConfigSettings(models.TransientModel):
         )
     
     def _reset_light_color_assets(self):
-        self.env['web_editor.assets'].reset_asset(
+        self.env['web_editor.assets'].reset_color_asset(
             self.COLOR_ASSET_LIGHT_URL, 
             self.COLOR_BUNDLE_LIGHT_NAME,
         )
