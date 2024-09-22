@@ -55,5 +55,25 @@
         <xpath expr="//button[hasclass('o-mail-Chatter-activity')]/span" position="attributes">
             <attribute name="class" add="d-none d-sm-inline" separator=" " />
         </xpath>
+        <xpath expr="//button[@t-on-click='onClickSearch']" position="after">
+        	<button
+                class="btn btn-link text-action px-1"
+                aria-label="Show/Hide Tracking"
+                title="Show/Hide Tracking"
+                t-on-click="onClickTrackingToggle"
+                t-att-disabled="state.isSearchOpen"
+            >
+                <i
+                    class="fa fa-lg"
+                    t-att-class="{
+                        'fa-eye': state.showTracking,
+                        'fa-eye-slash': !state.showTracking,
+                    }"
+                />
+            </button>
+        </xpath>
+        <xpath expr="//Thread" position="attributes">
+            <attribute name="showTrackingMessages">state.showTracking</attribute>
+        </xpath>
     </t>
 </templates>

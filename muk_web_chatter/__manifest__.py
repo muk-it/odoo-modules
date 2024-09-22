@@ -5,7 +5,7 @@
         This module improves the design of the chatter and adds a user
         preference to set the position of the chatter in the form view.
     ''',
-    'version': '17.0.1.0.1', 
+    'version': '17.0.1.2.0',
     'category': 'Tools/UI',
     'license': 'LGPL-3', 
     'author': 'MuK IT',
@@ -29,13 +29,15 @@
             ),
         ],
         'web.assets_backend': [
+            'muk_web_chatter/static/src/core/**/*.js',
+            'muk_web_chatter/static/src/core/**/*.xml',
+            'muk_web_chatter/static/src/core/**/*.scss',
             (
                 'after', 
                 'mail/static/src/views/web/form/form_compiler.js', 
                 'muk_web_chatter/static/src/views/form/form_compiler.js'
             ),
-            'muk_web_chatter/static/src/core/**/*.xml',
-            'muk_web_chatter/static/src/core/**/*.scss',
+            'muk_web_chatter/static/src/views/form/form_renderer.js',
         ],
     },
     'images': [

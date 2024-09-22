@@ -2,17 +2,23 @@
 
 import { session } from '@web/session';
 import { patch } from '@web/core/utils/patch';
-import { append, setAttributes } from '@web/core/utils/xml';
+import { append, createElement, setAttributes } from '@web/core/utils/xml';
 
 import {FormCompiler} from '@web/views/form/form_compiler';
 
 patch(FormCompiler.prototype, {
     compile(node, params) {
         const res = super.compile(node, params);
+        const chatterContainerHookXml = res.querySelector(
+            '.o_form_renderer > .o-mail-Form-chatter'
+        );
+        if (!chatterContainerHookXml) {
+            return res;
+        }
+        setAttributes(chatterContainerHookXml, {
+            't-ref': 'chatterContainer',
+        });
         if (session.chatter_position === 'bottom') {
-            const chatterContainerHookXml = res.querySelector(
-            	'.o_form_renderer > .o-mail-Form-chatter'
-            );
             const formSheetBgXml = res.querySelector('.o_form_sheet_bg');
             if (!chatterContainerHookXml || !formSheetBgXml?.parentNode) {
             	return res;
@@ -45,6 +51,17 @@ patch(FormCompiler.prototype, {
                     't-if': 'false',
                 });
             }
+        } else {
+            setAttributes(chatterContainerHookXml, {
+                't-att-style': '__comp__.chatterState.width ? `width: ${__comp__.chatterState.width}px;` : ""',
+            });
+            const chatterContainerResizeHookXml = createElement('span');
+            chatterContainerResizeHookXml.classList.add('mk_chatter_resize');
+            setAttributes(chatterContainerResizeHookXml, {
+                't-on-mousedown.stop.prevent': '__comp__.onStartChatterResize.bind(__comp__)',
+                't-on-dblclick.stop.prevent': '__comp__.onDoubleClickChatterResize.bind(__comp__)',
+            });
+            append(chatterContainerHookXml, chatterContainerResizeHookXml);
         }
         return res;
     },
