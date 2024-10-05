@@ -23,23 +23,47 @@
 	    />
 	    <menuitem
 	        id="menu_pricelists"
-	        sequence="50"
+	        sequence="25"
 	        name="Pricelists"
 	    >
-            <menuitem 
-            	id="menu_product_pricelist"
-                sequence="10"
-                name="Sales Pricelists"
-                action="product.product_pricelist_action2"
-                groups="product.group_product_pricelist"
-      		/>
-            <menuitem 
-            	id="menu_product_supplierinfo"
-                sequence="10"
-                name="Vendor Pricelists"
-                action="product.product_supplierinfo_type_action"
-      		/>
+			<menuitem
+				id="menu_salespricelists"
+				sequence="10"
+				name="Sales"
+				groups="product.group_product_pricelist"
+			>
+				<menuitem 
+					id="menu_product_pricelist"
+					sequence="10"
+					name="Pricelists"
+					action="product.product_pricelist_action2"
+				/>
+				<menuitem 
+					id="menu_product_pricelist_items"
+					sequence="10"
+					name="Price Rules"
+					action="action_product_pricelist_item"
+				/>
+			</menuitem>
+			<menuitem
+				id="menu_supplier_pricelists"
+				sequence="20"
+				name="Vendor"
+			>
+				<menuitem 
+					id="menu_product_supplierinfo"
+					sequence="10"
+					name="Price Rules"
+					action="product.product_supplierinfo_type_action"
+				/>
+			</menuitem>
     	</menuitem>
+	    <menuitem
+	        id="menu_product_document"
+	        sequence="50"
+	        name="Documents"
+	        action="action_product_document"
+	    />
 	    <menuitem
 	        id="menu_configuration"
 	        sequence="80"
@@ -76,30 +100,46 @@
                     action="product.attribute_action"
                     groups="product.group_product_variant"
                />
+			   <menuitem
+                    id="menu_product_combo"
+                    name="Combo Choices"
+                    action="product.product_combo_action"
+                    sequence="20"
+                />
 	    	</menuitem>
-		    <menuitem
-		        id="menu_configuration_logistics"
+			<menuitem
+		        id="menu_configuration_uom"
 		        sequence="15"
-		        name="Logistics"
-        		groups="uom.group_uom,product.group_stock_packaging"
+		        name="Units of Measure"
+        		groups="uom.group_uom"
 		    >
 			    <menuitem 
 			    	id="menu_uom_category"
-	                sequence="50"
-	                name="Units of Measure"
+	                sequence="25"
+	                name="Categories"
 	                action="uom.product_uom_categ_form_action"
-	                groups="uom.group_uom"
 	       		/>
+			    <menuitem 
+			    	id="menu_uom_unit"
+	                sequence="50"
+	                name="Units"
+	                action="uom.product_uom_form_action"
+	       		/>
+	    	</menuitem>
+		    <menuitem
+		        id="menu_configuration_logistics"
+		        sequence="25"
+		        name="Logistics"
+        		groups="product.group_stock_packaging"
+		    >
 			    <menuitem 
 			    	id="menu_product_packaging" 
 			        sequence="10"
 			    	name="Product Packagings" 
 			    	action="product.action_packaging_view" 
-			    	groups="product.group_stock_packaging"
 			    />
 	    	</menuitem>
 	    </menuitem>
     </menuitem>
 
 </odoo>
-

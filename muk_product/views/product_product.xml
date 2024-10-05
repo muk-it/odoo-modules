@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+	
+    <record id="view_product_search" model="ir.ui.view">
+        <field name="name">product.product.search</field>
+        <field name="model">product.product</field>
+        <field name="inherit_id" ref="product.product_search_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//searchpanel/field[@name='product_tag_ids']" position="before">
+                <field 
+                    name="product_template_attribute_value_ids"
+                    string="Attributes"
+                    icon="fa-th-list"
+                    domain="[('ptav_active', '=', True), ('product_tmpl_id.active', '=', True)]"
+                    select="multi"
+                />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_product_list" model="ir.ui.view">
+        <field name="name">product.product.list</field>
+        <field name="model">product.product</field>
+        <field name="inherit_id" ref="product.product_product_tree_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="attributes">
+                <attribute name="class">product_list</attribute>
+            </xpath>
+            <xpath expr="//field[@name='default_code']" position="before">
+                <field 
+                    name="image_1920" 
+                    widget="image" 
+                    nolabel="1"
+                    class="product_list_image"
+                    options="{'zoom': true, 'preview_image':'image_128'}"
+                />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
+

@@ -7,27 +7,35 @@
         <field name="model">muk_product.product_search</field>
         <field name="arch" type="xml">
             <form>
-                <label for="search_value"/>
-                <field name="search_value"/>
+                <field 
+                    name="search_value" 
+                    nolabel="1"
+                    placeholder="Insert search values..."
+                />
                 <group>
-                    <group>
+                    <group string="Search Settings">
                         <field name="search_field"/>
-                        <field name="action_id"/>
-                    </group>
-                    <group>
-                        <field name="value_split_operator"/>
                         <field name="search_operator"/>
+                    </group>
+                    <group string="Value Settings">
+                        <field name="value_split_operator"/>
+                        <field name="action_id" groups="base.group_no_one"/>
                     </group>
                 </group>
                 <notebook>
                     <page string="Preview">
                         <field name="product_preview_ids">
-                            <tree>
+                            <list>
                                 <field name="default_code"/>
                                 <field name="name"/>
                                 <field name="barcode"/>
-                            </tree>
+                            </list>
                         </field>
+                        <p class="text-muted" invisible="not product_preview_hint">
+                            <i class="fa fa-lightbulb-o"/>
+                            The preview only shows the first 7 results. 
+                            Click on ‘Search’ to see all results.
+                        </p>
                     </page>
                     <page string="Domain">
                         <field name="search_domain" widget="domain" options="{'model': 'product.template'}"/>

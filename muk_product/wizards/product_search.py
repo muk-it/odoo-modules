@@ -59,11 +59,16 @@ class ProductSearch(models.TransientModel):
     )
 
     product_preview_ids = fields.One2many(
-        compute='_compute_product_preview_ids',
+        compute='_compute_product_preview',
         comodel_name='product.template',
-        string="Preview",
+        string="Preview Records",
     )
     
+    product_preview_hint = fields.Boolean(
+        compute='_compute_product_preview',
+        string="Preview Hint",
+    )
+
     action_id = fields.Many2one(
         comodel_name='ir.actions.act_window',
         string="Action",
@@ -95,22 +100,24 @@ class ProductSearch(models.TransientModel):
             elif record.search_operator == '=':
                 search_domain = [(record.search_field, 'in', search_parts)]
             else:
-                for part in search_parts:
-                    search_domain = expression.OR([
-                        search_domain, 
-                        [(record.search_field, record.search_operator, part)]
-                    ])
+                search_domain = expression.OR([
+                    [(record.search_field, record.search_operator, part)]
+                    for part in search_parts
+                ])
             record.search_domain = str(search_domain)
 
     @api.depends('search_domain')
-    def _compute_product_preview_ids(self):
-        for record in self:
-            if record.search_domain and record.search_domain != '[]':
-                record.product_preview_ids = self.env['product.template'].search(
-                    ast.literal_eval(record.search_domain), limit=10
-                )
-            else:
-                record.product_preview_ids = False
+    def _compute_product_preview(self):
+        self.product_preview_ids = False
+        self.product_preview_hint = False
+        for record in self.filtered(
+            lambda r: r.search_domain and r.search_domain != '[]'
+        ):
+            templates = self.env['product.template'].search(
+                ast.literal_eval(record.search_domain), limit=8
+            )
+            record.product_preview_ids = templates[:-1]
+            record.product_preview_hint = len(templates) > 7
 
     # ----------------------------------------------------------
     # Action
