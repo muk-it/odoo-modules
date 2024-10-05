@@ -2,6 +2,7 @@ from functools import reduce
 
 from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError
+from odoo.tools import SQL
 
 
 class ProductProduct(models.Model):

@@ -12,13 +12,13 @@
 	        id="menu_product_template"
 	        sequence="5"
 	        name="Products"
-	        action="product.product_template_action_all"
+	        action="action_product_template"
 	    />
 	    <menuitem
 	        id="menu_product_product"
 	        sequence="10"
 	        name="Variants"
-	        action="product.product_normal_action"
+	        action="action_product"
             groups="product.group_product_variant"
 	    />
 	    <menuitem

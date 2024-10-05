@@ -5,7 +5,7 @@
         This module gives you a quick view of all your products, 
         accessible from your home menu.
     ''',
-    'version': '18.0.1.0.0', 
+    'version': '18.0.1.1.1', 
     'category': 'Sales/Sales',
     'license': 'LGPL-3', 
     'author': 'MuK IT',
