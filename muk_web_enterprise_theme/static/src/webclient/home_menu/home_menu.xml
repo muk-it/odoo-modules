@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<templates xml:space="preserve">
+
+	<t 
+		t-name="muk_web_enterprise_theme.HomeMenu" 
+		t-inherit="web_enterprise.HomeMenu" 
+		t-inherit-mode="extension" 
+	>
+		<xpath expr="//div" position="attributes">
+			<attribute name="t-attf-style">
+        		{{ backgroundImageUrl ? "background-size: cover; background-position: center; background-image: url(" + backgroundImageUrl + ");" : "" }}
+	  		</attribute>
+		</xpath>
+	</t>
+
+</templates>
+
+
+
+    
+    
