@@ -22,8 +22,8 @@ export class AppsMenu extends Dropdown {
     		this.imageUrl = '/muk_web_theme/static/src/img/background.png';
     	}
         useEffect(
-            (open) => {
-            	if (open) {
+            (isOpen) => {
+            	if (isOpen) {
             		const openMainPalette = (ev) => {
             	    	if (
             	    		!this.commandServiceOpen && 
@@ -45,7 +45,7 @@ export class AppsMenu extends Dropdown {
 	                }
             	}
             },
-            () => [this.state.open]
+            () => [this.state.isOpen]
 		);
     	useBus(this.env.bus, "ACTION_MANAGER:UI-UPDATED", this.state.close);
     }
