@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_web_utils.SelectionIconsField" t-inherit="web.SelectionField" t-inherit-mode="primary">
+        <xpath expr="//span[@t-att-raw-value='value']/.." position="replace">
+            <t t-if="props.readonly or props.noLabel">
+                <div class="text-center">
+                    <span 
+                        t-attf-class="fa fa-{{ valueIcon(value) }}" 
+                        t-att-title="string" 
+                        t-att-raw-value="value" 
+                    />
+                </div>
+            </t>
+            <t t-elif="props.readonly">
+                <span t-att-raw-value="value">
+                    <i t-attf-class="fa fa-{{ valueIcon(value) }} me-1" />
+                     <span t-esc="string" />
+                </span>
+            </t>
+        </xpath>
+    </t>
+
+</templates>

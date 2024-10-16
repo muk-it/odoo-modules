@@ -1,5 +1,3 @@
-/* @odoo-module */
-
 import { patch } from "@web/core/utils/patch";
 import { browser } from "@web/core/browser/browser";
 

@@ -5,7 +5,7 @@
         This module gives you a quick view of all your products, 
         accessible from your home menu.
     ''',
-    'version': '18.0.1.1.1', 
+    'version': '18.0.1.1.3', 
     'category': 'Sales/Sales',
     'license': 'LGPL-3', 
     'author': 'MuK IT',
@@ -18,6 +18,7 @@
         'base_setup',
         'product',
         'uom',
+        'muk_web_utils',
     ],
     'data': [
         'data/ir_sequence.xml',

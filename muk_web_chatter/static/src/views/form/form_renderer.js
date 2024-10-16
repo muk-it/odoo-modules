@@ -1,9 +1,6 @@
-/* @odoo-module */
-
 import { useState, useRef } from '@odoo/owl';
 import { patch } from '@web/core/utils/patch';
 import { browser } from "@web/core/browser/browser";
-import { session } from '@web/session';
 
 import { FormRenderer } from '@web/views/form/form_renderer';
 

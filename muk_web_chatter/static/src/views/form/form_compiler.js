@@ -1,5 +1,3 @@
-/** @odoo-module **/
-
 import { session } from '@web/session';
 import { patch } from '@web/core/utils/patch';
 import { append, createElement, setAttributes } from '@web/core/utils/xml';

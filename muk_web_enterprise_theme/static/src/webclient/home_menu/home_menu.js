@@ -1,5 +1,3 @@
-/** @odoo-module **/
-
 import { url } from "@web/core/utils/urls";
 import { patch } from "@web/core/utils/patch";
 import { cookie } from "@web/core/browser/cookie";

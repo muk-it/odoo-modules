@@ -39,18 +39,39 @@
         <field name="name">product.product.list</field>
         <field name="model">product.product</field>
         <field name="inherit_id" ref="product.product_product_tree_view"/>
+        <field name="priority">900</field>
         <field name="arch" type="xml">
             <xpath expr="//list" position="attributes">
                 <attribute name="class">product_list</attribute>
             </xpath>
             <xpath expr="//field[@name='default_code']" position="before">
+                <xpath expr="//field[@name='type']" position="move"/>
                 <field 
                     name="image_1920" 
                     widget="image" 
                     nolabel="1"
-                    class="product_list_image"
-                    options="{'zoom': true, 'preview_image':'image_128'}"
+                    options="{'zoom': true, 'preview_image':'image_128', 'size': [25, 25]}"
                 />
+				<field 
+					name="description" 
+					nolabel="1"
+					widget="text_icon" 
+					optional="show" 
+				/>
+            </xpath>
+            <xpath expr="//field[@name='type']" position="attributes">
+                <attribute name="nolabel">1</attribute>
+                <attribute name="widget">selection_icons</attribute>
+                <attribute name="options">
+                    {
+                        'icons': {
+                            'consu': 'archive', 
+                            'service': 'user', 
+                            'combo': 'sitemap'
+                        }
+                    }
+                </attribute>
+                <attribute name="optional">show</attribute>
             </xpath>
         </field>
     </record>

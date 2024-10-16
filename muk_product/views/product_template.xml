@@ -43,19 +43,40 @@
         <field name="name">product.template.list</field>
         <field name="model">product.template</field>
         <field name="inherit_id" ref="product.product_template_tree_view"/>
+        <field name="priority">900</field>
         <field name="arch" type="xml">
             <xpath expr="//list" position="attributes">
                 <attribute name="class">product_list</attribute>
                 <attribute name="js_class">product_search_list</attribute>
             </xpath>
             <xpath expr="//field[@name='name']" position="before">
+                <xpath expr="//field[@name='type']" position="move"/>
                 <field 
                     name="image_1920" 
                     widget="image" 
                     nolabel="1"
-                    class="product_list_image"
-                    options="{'zoom': true, 'preview_image':'image_128'}"
+                    options="{'zoom': true, 'preview_image':'image_128', 'size': [25, 25]}"
                 />
+				<field 
+					name="description" 
+					nolabel="1"
+					widget="text_icon" 
+					optional="show" 
+				/>
+            </xpath>
+            <xpath expr="//field[@name='type']" position="attributes">
+                <attribute name="nolabel">1</attribute>
+                <attribute name="widget">selection_icons</attribute>
+                <attribute name="options">
+                    {
+                        'icons': {
+                            'consu': 'archive', 
+                            'service': 'user', 
+                            'combo': 'sitemap'
+                        }
+                    }
+                </attribute>
+                <attribute name="optional">show</attribute>
             </xpath>
         </field>
     </record>
@@ -63,7 +84,7 @@
     <record id="action_product_template" model="ir.actions.act_window">
         <field name="name">Products</field>
         <field name="res_model">product.template</field>
-        <field name="view_mode">kanban,list,form,activity</field>
+        <field name="view_mode">list,kanban,form,activity</field>
         <field name="search_view_id" ref="view_product_template_search"/>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
