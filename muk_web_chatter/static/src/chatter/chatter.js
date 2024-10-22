@@ -6,19 +6,20 @@ import { Chatter } from "@mail/chatter/web_portal/chatter";
 patch(Chatter.prototype, {
     setup() {
         super.setup();
-        const showTracking = browser.localStorage.getItem(
-            'muk_web_chatter.tracking'
+        const showNotificationMessages = browser.localStorage.getItem(
+            'muk_web_chatter.notifications'
         );
-        this.state.showTracking = (
-            showTracking != null ? JSON.parse(showTracking) : true
+        this.state.showNotificationMessages = (
+            showNotificationMessages != null ? 
+            JSON.parse(showNotificationMessages) : true
         );
     },
-    onClickTrackingToggle() {
-        const showTracking = !this.state.showTracking;
+    onClickNotificationsToggle() {
+        const showNotificationMessages = !this.state.showNotificationMessages;
         browser.localStorage.setItem(
-            'muk_web_chatter.tracking', showTracking
+            'muk_web_chatter.notifications', showNotificationMessages
         );
-        this.state.showTracking = showTracking;
+        this.state.showNotificationMessages = showNotificationMessages;
     },
 });
 

@@ -9,9 +9,11 @@ patch(Thread.prototype, {
             this.props.thread.nonEmptyMessages :
             [...this.props.thread.nonEmptyMessages].reverse()
         );
-        if (!this.props.showTrackingMessages) {
+        if (!this.props.showNotificationMessages) {
             messages = messages.filter(
-                (msg) => msg.trackingValues.length == 0
+                (msg) => !['user_notification', 'notification'].includes(
+                    msg.message_type
+                )
             );
         }
         return messages;
@@ -20,9 +22,9 @@ patch(Thread.prototype, {
 
 Thread.props = [
     ...Thread.props,
-    'showTrackingMessages?',
+    'showNotificationMessages?',
 ];
 Thread.defaultProps = {
     ...Thread.defaultProps,
-    showTrackingMessages: true,
+    showNotificationMessages: true,
 };

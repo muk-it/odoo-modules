@@ -5,7 +5,7 @@
         This module improves the design of the chatter and adds a user
         preference to set the position of the chatter in the form view.
     ''',
-    'version': '18.0.1.2.1',
+    'version': '18.0.1.2.2',
     'category': 'Tools/UI',
     'license': 'LGPL-3', 
     'author': 'MuK IT',

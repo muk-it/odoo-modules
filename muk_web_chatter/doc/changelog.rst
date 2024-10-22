@@ -1,7 +1,7 @@
 `1.2.0`
 -------
 
-- Hide Tracking
+- Hide Notifications
 
 `1.1.0`
 -------
