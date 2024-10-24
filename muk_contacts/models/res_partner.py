@@ -85,6 +85,18 @@ class Partner(models.Model):
         })
     
     #----------------------------------------------------------
+    # Compute
+    #----------------------------------------------------------
+
+    @api.depends('contact_number')
+    @api.depends_context('show_contact_number')
+    def _compute_display_name(self):
+        super()._compute_display_name()
+        if self.env.context.get('show_contact_number'):
+            for record in self.filtered('contact_number'):
+                record.display_name = f"[{record.contact_number}] {record.display_name}"
+
+    #----------------------------------------------------------
     # ORM
     #----------------------------------------------------------
 

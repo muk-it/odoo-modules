@@ -5,7 +5,7 @@
         This module improves and extends the contact app
         and the related partner model.
     ''',
-    'version': '18.0.1.0.0', 
+    'version': '18.0.1.0.1', 
     'category': 'Sales/CRM',
     'license': 'LGPL-3', 
     'author': 'MuK IT',
@@ -22,6 +22,7 @@
     ],
     'data': [
         'data/ir_sequence.xml',
+        'templates/ir_qweb_widget.xml',
         'views/res_partner.xml',
     ],
     'images': [
