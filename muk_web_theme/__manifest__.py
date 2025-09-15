@@ -22,6 +22,7 @@
     ],
     'excludes': [
         'web_enterprise',
+        'web_responsive',
     ],
     'data': [
         'templates/web_layout.xml',
