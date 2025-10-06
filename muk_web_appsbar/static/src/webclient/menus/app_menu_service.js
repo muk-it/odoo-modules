@@ -25,8 +25,12 @@ export const appMenuService = {
         	    			'data:image/svg+xml;base64,' : 
         					'data:image/png;base64,'
         	            );
+        		        const webIconDataCheck = (
+    		        		item.webIconData.startsWith('/') || 
+    		        		item.webIconData.startsWith('data:image')
+        		        )
         		        appsMenuItem.webIconData = (
-        		        	item.webIconData.startsWith('data:image') ? 
+        		        	webIconDataCheck ? 
         		        	item.webIconData : 
         					prefix + item.webIconData.replace(/\s/g, '')
         	            );

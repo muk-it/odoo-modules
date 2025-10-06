@@ -49,3 +49,9 @@ docs/_build/
 # Backup files
 *~
 *.swp
+
+# Modules
+**/.gitignore
+!/.gitignore
+**/.gitlab-ci.yml
+!/.gitlab-ci.yml

@@ -1,5 +1,4 @@
 from odoo import models
-from odoo.http import request
 
 
 class IrHttp(models.AbstractModel):
