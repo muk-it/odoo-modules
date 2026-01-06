@@ -5,7 +5,7 @@
         Enables you to expand and collapse groups that were created by 
         grouping the data by a certain field for list and kanban views.
     ''',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.0.1',
     'category': 'Tools/UI',
     'license': 'LGPL-3', 
     'author': 'MuK IT',
