@@ -5,7 +5,7 @@
         This module improves and extends the contact app
         and the related partner model.
     ''',
-    'version': '19.0.1.0.2',
+    'version': '19.0.1.0.3',
     'category': 'Sales/CRM',
     'license': 'LGPL-3', 
     'author': 'MuK IT',

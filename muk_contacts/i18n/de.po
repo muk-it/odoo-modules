@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-26 16:29+0000\n"
-"PO-Revision-Date: 2025-11-26 16:29+0000\n"
+"POT-Creation-Date: 2025-12-15 15:37+0000\n"
+"PO-Revision-Date: 2025-12-15 15:37+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -18,7 +18,7 @@ msgstr ""
 #. module: muk_contacts
 #: model_terms:ir.ui.view,arch_db:muk_contacts.contact
 msgid "<span>Ref:</span>"
-msgstr "<span>Ref:</span>"
+msgstr ""
 
 #. module: muk_contacts
 #: model_terms:ir.ui.view,arch_db:muk_contacts.view_res_config_settings_form
@@ -108,7 +108,7 @@ msgstr "Kontaktnummer generieren"
 #: model:ir.model.fields,field_description:muk_contacts.field_res_config_settings__id
 #: model:ir.model.fields,field_description:muk_contacts.field_res_partner__id
 msgid "ID"
-msgstr "ID"
+msgstr ""
 
 #. module: muk_contacts
 #: model:ir.model.fields.selection,name:muk_contacts.selection__res_partner__linked_user_state__internal
@@ -150,7 +150,7 @@ msgstr "Ansicht öffnen"
 #. module: muk_contacts
 #: model:ir.model.fields.selection,name:muk_contacts.selection__res_partner__linked_user_state__portal
 msgid "Portal"
-msgstr "Portal"
+msgstr ""
 
 #. module: muk_contacts
 #: model_terms:ir.ui.view,arch_db:muk_contacts.view_partner_search
@@ -160,14 +160,7 @@ msgstr "Portal-Benutzer"
 #. module: muk_contacts
 #: model_terms:ir.ui.view,arch_db:muk_contacts.view_partner_search
 msgid "Tags"
-msgstr "Tags"
-
-#. module: muk_contacts
-#. odoo-python
-#: code:addons/muk_contacts/models/res_config_settings.py:0
-#: code:addons/muk_contacts/models/res_partner.py:0
-msgid "The contact number sequence couldn't be found."
-msgstr "Die Kontaktnummernfolge konnte nicht gefunden werden."
+msgstr ""
 
 #. module: muk_contacts
 #: model_terms:ir.ui.view,arch_db:muk_contacts.view_partner_form
