@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-26 13:25+0000\n"
-"PO-Revision-Date: 2025-11-26 13:25+0000\n"
+"POT-Creation-Date: 2026-01-05 15:09+0000\n"
+"PO-Revision-Date: 2026-01-05 15:09+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -23,12 +23,17 @@ msgstr "Konfigurationseinstellungen"
 #. module: muk_web_utils
 #: model_terms:ir.ui.view,arch_db:muk_web_utils.view_res_config_settings_form
 msgid "Disable Quick Create"
-msgstr ""
+msgstr "Schnellerstellung deaktivieren"
+
+#. module: muk_web_utils
+#: model:ir.model.fields,field_description:muk_web_utils.field_res_config_settings__disable_many2one_quick_create
+msgid "Disable Quick Create for Many2one Fields"
+msgstr "Deaktivieren Sie die Schnellerstellung-Funktion für Many2one-Felder"
 
 #. module: muk_web_utils
 #: model_terms:ir.ui.view,arch_db:muk_web_utils.view_res_config_settings_form
 msgid "Disable the Quick Create Feature for Many2one fields"
-msgstr ""
+msgstr "Deaktivieren Sie die Schnellerstellung-Funktion für Many2one-Felder"
 
 #. module: muk_web_utils
 #: model:ir.model.fields,field_description:muk_web_utils.field_ir_http__display_name
