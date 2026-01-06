@@ -4,10 +4,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server 18.0\n"
+"Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-11-06 13:53+0000\n"
-"PO-Revision-Date: 2024-11-06 13:53+0000\n"
+"POT-Creation-Date: 2026-01-05 14:58+0000\n"
+"PO-Revision-Date: 2026-01-05 14:58+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -108,14 +108,21 @@ msgid "Danger"
 msgstr "Gefahr"
 
 #. module: muk_web_theme
+#: model:ir.model.fields,field_description:muk_web_theme.field_ir_http__display_name
+#: model:ir.model.fields,field_description:muk_web_theme.field_res_company__display_name
+#: model:ir.model.fields,field_description:muk_web_theme.field_res_config_settings__display_name
+msgid "Display Name"
+msgstr "Anzeigename"
+
+#. module: muk_web_theme
 #: model_terms:ir.ui.view,arch_db:muk_web_theme.view_res_config_settings_colors_form
 msgid "Favicon"
-msgstr "Favicon"
+msgstr ""
 
 #. module: muk_web_theme
 #: model_terms:ir.ui.view,arch_db:muk_web_theme.view_res_config_settings_colors_form
 msgid "Favicon & Logo"
-msgstr "Favicon & Logo"
+msgstr ""
 
 #. module: muk_web_theme
 #: model:ir.model,name:muk_web_theme.model_ir_http
@@ -123,20 +130,21 @@ msgid "HTTP Routing"
 msgstr "HTTP-Routing"
 
 #. module: muk_web_theme
-#. odoo-javascript
-#: code:addons/muk_web_theme/static/src/webclient/navbar/navbar.xml:0
-msgid "Home Menu"
-msgstr "Home-Menü"
+#: model:ir.model.fields,field_description:muk_web_theme.field_ir_http__id
+#: model:ir.model.fields,field_description:muk_web_theme.field_res_company__id
+#: model:ir.model.fields,field_description:muk_web_theme.field_res_config_settings__id
+msgid "ID"
+msgstr ""
 
 #. module: muk_web_theme
 #: model_terms:ir.ui.view,arch_db:muk_web_theme.view_res_config_settings_colors_form
 msgid "Info"
-msgstr "Info"
+msgstr ""
 
 #. module: muk_web_theme
 #: model_terms:ir.ui.view,arch_db:muk_web_theme.view_res_config_settings_colors_form
 msgid "Logo"
-msgstr "Logo"
+msgstr ""
 
 #. module: muk_web_theme
 #: model_terms:ir.ui.view,arch_db:muk_web_theme.view_res_config_settings_colors_form
