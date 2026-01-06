@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-26 16:53+0000\n"
-"PO-Revision-Date: 2025-11-26 16:53+0000\n"
+"POT-Creation-Date: 2025-12-17 15:47+0000\n"
+"PO-Revision-Date: 2025-12-17 15:47+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -24,7 +24,7 @@ msgstr "Apps Menü Fußzeilenbild"
 #. module: muk_web_appsbar
 #: model_terms:ir.ui.view,arch_db:muk_web_appsbar.view_res_config_settings_form
 msgid "AppsBar"
-msgstr "AppsBar"
+msgstr ""
 
 #. module: muk_web_appsbar
 #: model:ir.model,name:muk_web_appsbar.model_res_company
@@ -55,7 +55,7 @@ msgstr "HTTP-Routing"
 #: model:ir.model.fields,field_description:muk_web_appsbar.field_res_config_settings__id
 #: model:ir.model.fields,field_description:muk_web_appsbar.field_res_users__id
 msgid "ID"
-msgstr "ID"
+msgstr ""
 
 #. module: muk_web_appsbar
 #: model:ir.model.fields.selection,name:muk_web_appsbar.selection__res_users__sidebar_type__invisible
@@ -68,20 +68,14 @@ msgid "Large"
 msgstr "Groß"
 
 #. module: muk_web_appsbar
-#. odoo-javascript
-#: code:addons/muk_web_appsbar/static/src/webclient/appsbar/appsbar.xml:0
-msgid "Logo"
-msgstr "Logo"
-
-#. module: muk_web_appsbar
 #: model_terms:ir.ui.view,arch_db:muk_web_appsbar.view_res_config_settings_form
 msgid "Set your own Logo for the appsbar"
-msgstr "Setzen Sie Ihr eigenes Logo für die Appsbar ein"
+msgstr "Legen Sie ihr eigenes Logo für die Appsleiste fest"
 
 #. module: muk_web_appsbar
 #: model:ir.model.fields,field_description:muk_web_appsbar.field_res_users__sidebar_type
 msgid "Sidebar Type"
-msgstr "Seitenleisten-Typ"
+msgstr "Seitenleisten Typ"
 
 #. module: muk_web_appsbar
 #: model:ir.model.fields.selection,name:muk_web_appsbar.selection__res_users__sidebar_type__small
