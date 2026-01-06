@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-26 16:30+0000\n"
-"PO-Revision-Date: 2025-11-26 16:30+0000\n"
+"POT-Creation-Date: 2025-12-16 07:35+0000\n"
+"PO-Revision-Date: 2025-12-16 07:35+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -21,8 +21,6 @@ msgid ""
 "<i class=\"fa fa-fw me-1 fa-user text-primary d-none d-sm-inline-block\" "
 "title=\"Contact Name\"/>"
 msgstr ""
-"<i class=\"fa fa-fw me-1 fa-user text-primary d-none d-sm-inline-block\" "
-"title=\"Contact Name\"/>"
 
 #. module: muk_contacts_vcard
 #: model:ir.model.fields,field_description:muk_contacts_vcard.field_muk_contacts_vcard_honorific__shortcut
@@ -136,7 +134,7 @@ msgstr "Vorname"
 #. module: muk_contacts_vcard
 #: model:ir.model.fields.selection,name:muk_contacts_vcard.selection__muk_contacts_vcard_honorific__position__following
 msgid "Following"
-msgstr "Folgendes"
+msgstr "Nachgestellt"
 
 #. module: muk_contacts_vcard
 #: model:ir.model.fields,field_description:muk_contacts_vcard.field_res_partner__formatted_name
@@ -176,7 +174,7 @@ msgstr "Ehrentitel"
 #: model:ir.model.fields,field_description:muk_contacts_vcard.field_muk_contacts_vcard_honorific__id
 #: model:ir.model.fields,field_description:muk_contacts_vcard.field_res_partner__id
 msgid "ID"
-msgstr "ID"
+msgstr ""
 
 #. module: muk_contacts_vcard
 #: model_terms:ir.ui.view,arch_db:muk_contacts_vcard.view_partner_form
@@ -229,7 +227,7 @@ msgstr "Zweiter Vorname"
 #: model:ir.model.fields,field_description:muk_contacts_vcard.field_res_partner__name
 #: model:ir.model.fields,field_description:muk_contacts_vcard.field_res_users__name
 msgid "Name"
-msgstr "Name"
+msgstr ""
 
 #. module: muk_contacts_vcard
 #: model:ir.model.fields,field_description:muk_contacts_vcard.field_res_partner__nickname
@@ -261,7 +259,7 @@ msgstr "Telefon (Privat)"
 #. module: muk_contacts_vcard
 #: model:ir.model.fields,field_description:muk_contacts_vcard.field_muk_contacts_vcard_honorific__position
 msgid "Position"
-msgstr "Position"
+msgstr ""
 
 #. module: muk_contacts_vcard
 #: model:ir.model.fields.selection,name:muk_contacts_vcard.selection__muk_contacts_vcard_honorific__position__preceding
@@ -281,7 +279,7 @@ msgstr "Sequenz"
 #. module: muk_contacts_vcard
 #: model_terms:ir.ui.view,arch_db:muk_contacts_vcard.view_partner_form
 msgid "Suffix"
-msgstr "Suffix"
+msgstr ""
 
 #. module: muk_contacts_vcard
 #: model:ir.model.fields,field_description:muk_contacts_vcard.field_muk_contacts_vcard_honorific__name
@@ -329,7 +327,13 @@ msgid "e.g. home@example.com"
 msgstr "z.B. home@example.com"
 
 #. module: muk_contacts_vcard
+#: model:ir.model.fields,field_description:muk_contacts_vcard.field_res_partner__vcard_modified
+#: model:ir.model.fields,field_description:muk_contacts_vcard.field_res_users__vcard_modified
+msgid "vCard Modified"
+msgstr "vCard geändert"
+
+#. module: muk_contacts_vcard
 #: model:ir.model.fields,field_description:muk_contacts_vcard.field_res_partner__vcard_uid
 #: model:ir.model.fields,field_description:muk_contacts_vcard.field_res_users__vcard_uid
 msgid "vCard UID"
-msgstr "vCard UID"
+msgstr ""
