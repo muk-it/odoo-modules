@@ -5,7 +5,7 @@
         This module collects mails that could not be routed 
         and allows them to be assigned subsequently.
     ''',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.0.1',
     'category': 'Productivity/Mail',
     'license': 'LGPL-3', 
     'author': 'MuK IT',
