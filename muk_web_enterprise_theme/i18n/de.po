@@ -4,10 +4,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server 19.0\n"
+"Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-04 22:14+0000\n"
-"PO-Revision-Date: 2025-10-04 22:14+0000\n"
+"POT-Creation-Date: 2026-01-05 14:24+0000\n"
+"PO-Revision-Date: 2026-01-05 14:24+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -21,14 +21,56 @@ msgid "Apps Active"
 msgstr "Apps Aktiv"
 
 #. module: muk_web_enterprise_theme
+#: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_res_company__background_image_dark
+#: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_res_config_settings__theme_background_image_dark
+msgid "Apps Menu Background Dark Image"
+msgstr "Dunkles Hintergrundbild Appsmenü"
+
+#. module: muk_web_enterprise_theme
+#: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_res_company__background_image_light
+#: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_res_config_settings__theme_background_image_light
+msgid "Apps Menu Background Light Image"
+msgstr "Helles Hintergrundbild Appsmenü"
+
+#. module: muk_web_enterprise_theme
 #: model_terms:ir.ui.view,arch_db:muk_web_enterprise_theme.view_res_config_settings_colors_form
 msgid "Apps Text"
-msgstr "Apps Text"
+msgstr ""
 
 #. module: muk_web_enterprise_theme
 #: model_terms:ir.ui.view,arch_db:muk_web_enterprise_theme.view_res_config_settings_colors_form
 msgid "AppsBar"
-msgstr "AppsBar"
+msgstr "Appsleiste"
+
+#. module: muk_web_enterprise_theme
+#: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_res_config_settings__theme_color_appbar_active_dark
+msgid "AppsBar Active Dark Color"
+msgstr "Aktive dunkle Farbe Appsleiste"
+
+#. module: muk_web_enterprise_theme
+#: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_res_config_settings__theme_color_appbar_active_light
+msgid "AppsBar Active Light Color"
+msgstr "Aktive helle Farbe Appsleiste"
+
+#. module: muk_web_enterprise_theme
+#: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_res_config_settings__theme_color_appbar_background_dark
+msgid "AppsBar Background Dark Color"
+msgstr "Dunkle Hintergrundfarbe Appsleiste"
+
+#. module: muk_web_enterprise_theme
+#: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_res_config_settings__theme_color_appbar_background_light
+msgid "AppsBar Background Light Color"
+msgstr "Helle Hintergrundfarbe Appsleiste"
+
+#. module: muk_web_enterprise_theme
+#: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_res_config_settings__theme_color_appbar_text_dark
+msgid "AppsBar Text Dark Color"
+msgstr "Dunkle Textfarbe Appsleiste"
+
+#. module: muk_web_enterprise_theme
+#: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_res_config_settings__theme_color_appbar_text_light
+msgid "AppsBar Text Light Color"
+msgstr "Helle Textfarbe Appsleiste"
 
 #. module: muk_web_enterprise_theme
 #: model_terms:ir.ui.view,arch_db:muk_web_enterprise_theme.view_res_config_settings_colors_form
@@ -44,6 +86,12 @@ msgstr "Hintergrund"
 #: model:ir.model,name:muk_web_enterprise_theme.model_res_company
 msgid "Companies"
 msgstr "Unternehmen"
+
+#. module: muk_web_enterprise_theme
+#: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_res_company__favicon
+#: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_res_config_settings__theme_favicon
+msgid "Company Favicon"
+msgstr "Unternehmen Favicon"
 
 #. module: muk_web_enterprise_theme
 #: model:ir.model,name:muk_web_enterprise_theme.model_res_config_settings
@@ -65,7 +113,7 @@ msgstr "Anzeigename"
 #. module: muk_web_enterprise_theme
 #: model_terms:ir.ui.view,arch_db:muk_web_enterprise_theme.view_res_config_settings_colors_form
 msgid "Favicon"
-msgstr "Favicon"
+msgstr ""
 
 #. module: muk_web_enterprise_theme
 #: model:ir.model,name:muk_web_enterprise_theme.model_ir_http
@@ -77,7 +125,7 @@ msgstr "HTTP-Routing"
 #: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_res_company__id
 #: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_res_config_settings__id
 msgid "ID"
-msgstr "ID"
+msgstr ""
 
 #. module: muk_web_enterprise_theme
 #: model_terms:ir.ui.view,arch_db:muk_web_enterprise_theme.view_res_config_settings_colors_form
