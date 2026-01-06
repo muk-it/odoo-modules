@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-26 16:52+0000\n"
-"PO-Revision-Date: 2025-11-26 16:52+0000\n"
+"POT-Creation-Date: 2025-12-17 15:40+0000\n"
+"PO-Revision-Date: 2025-12-17 15:40+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -62,7 +62,7 @@ msgstr "In Batch ausführen"
 #: model:ir.model.fields,field_description:muk_web_actions.field_ir_actions_report__id
 #: model:ir.model.fields,field_description:muk_web_actions.field_ir_actions_server__id
 msgid "ID"
-msgstr "ID"
+msgstr ""
 
 #. module: muk_web_actions
 #: model:ir.model.fields,help:muk_web_actions.field_ir_actions_report__execute_in_batch
