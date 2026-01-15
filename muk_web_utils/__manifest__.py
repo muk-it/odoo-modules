@@ -5,7 +5,7 @@
         Technical module to provide some utility features and libraries that 
         can be used in other applications.
     ''',
-    'version': '19.0.1.1.1',
+    'version': '19.0.1.1.2',
     'category': 'Tools/Utils',
     'license': 'LGPL-3', 
     'author': 'MuK IT',
@@ -48,6 +48,9 @@
             'muk_web_utils/static/src/views/fields/json/*',
             'muk_web_utils/static/src/views/fields/text_icons/*',
             'muk_web_utils/static/src/views/fields/selection_icons/*',
+        ],
+        'web.assets_unit_tests': [
+            'muk_web_utils/static/tests/**/*',
         ],
     },
     'images': [
