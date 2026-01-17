@@ -1,6 +1,6 @@
 <odoo>
 
-    <template id="contact_name" inherit_id="base.contact_name" priority="25">
+    <template id="contact_name" inherit_id="muk_contacts.contact_name">
         <xpath expr="//div" position="replace">
             <div t-if="'name' in fields">
 		        <t t-if="object.parent_id and object.parent_name or object.company_name">
