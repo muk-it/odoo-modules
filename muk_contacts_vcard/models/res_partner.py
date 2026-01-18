@@ -174,7 +174,8 @@ class Partner(models.Model):
         if self.env.context.get('partner_display_name_show_honorific'):
             prefix = ' '.join(self.mapped('honorific_prefix_ids.shortcut'))
             suffix = ' '.join(self.mapped('honorific_suffix_ids.shortcut'))
-            complete_name = f"{prefix} {complete_name} {suffix}"
+            decorated = ' '.join(filter(None, [prefix, self.name, suffix]))
+            complete_name = complete_name.replace(self.name, decorated, 1)
         return complete_name.strip()
         
     def _ensure_vcard_uid(self):
