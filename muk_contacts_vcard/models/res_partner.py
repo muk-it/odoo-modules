@@ -171,7 +171,7 @@ class Partner(models.Model):
 
     def _get_complete_name(self):
         complete_name = super()._get_complete_name()
-        if self.env.context.get('partner_display_name_show_honorific'):
+        if self.name and self.env.context.get('partner_display_name_show_honorific'):
             prefix = ' '.join(self.mapped('honorific_prefix_ids.shortcut'))
             suffix = ' '.join(self.mapped('honorific_suffix_ids.shortcut'))
             decorated = ' '.join(filter(None, [prefix, self.name, suffix]))
