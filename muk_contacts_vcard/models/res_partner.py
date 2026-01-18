@@ -279,6 +279,10 @@ class Partner(models.Model):
                 'lastname': lastname,
             })
 
+    @api.depends('honorific_prefix_ids.name', 'honorific_suffix_ids.name')
+    def _compute_complete_name(self):
+        super()._compute_complete_name()
+
     @api.depends(
         'type',
         'name',
