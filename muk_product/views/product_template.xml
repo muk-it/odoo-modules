@@ -124,7 +124,11 @@
                         <field name="manufacturer_name" string="Product Name"/>
                     </group>
                     <group>
-                        <field name="manufacturer_code" string="Product Code"/>
+                        <field
+                            name="manufacturer_code" 
+                            string="Product Code"
+                            invisible="product_variant_count &gt; 1"
+                        />
                         <field 
                             name="manufacturer_url" 
                             widget="url" 
