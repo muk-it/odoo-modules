@@ -39,11 +39,6 @@
             ),
             (
                 'after',
-                'muk_web_chatter/static/src/chatter/chatter.js',
-                'muk_web_chatter/static/src/chatter/base_recipients_list.js'
-            ),
-            (
-                'after',
                 'mail/static/src/core/common/composer.js',
                 'muk_web_chatter/static/src/chatter/composer.js'
             ),
