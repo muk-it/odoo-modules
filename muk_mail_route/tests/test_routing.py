@@ -9,6 +9,10 @@ from odoo.addons.mail.tests.common import  MailCommon
 @tagged('post_install', '-at_install')
 class TestMailRouting(MailCommon):
 
+    # ----------------------------------------------------------
+    # Tests
+    # ----------------------------------------------------------
+    
     def test_failed_routing(self):
         container = self.env['mail.thread']._get_failed_route_container()
         with file_open('muk_mail_route/tests/data/no_route.eml', 'rb') as mail:
