@@ -5,7 +5,7 @@
         This module gives you a quick view of all your products, 
         accessible from your home menu.
     ''',
-    'version': '19.0.1.3.2',
+    'version': '19.0.1.4.0',
     'category': 'Sales/Product',
     'license': 'LGPL-3', 
     'author': 'MuK IT',
@@ -33,6 +33,9 @@
     'assets': {
         'web.assets_backend': [
             'muk_product/static/src/views/**/*.*',
+        ],
+        'web.assets_unit_tests': [
+            'muk_product/static/tests/**/*.test.js',
         ],
     },
     'images': [
