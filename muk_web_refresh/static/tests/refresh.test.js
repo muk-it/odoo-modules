@@ -1,4 +1,7 @@
 import { expect, test } from '@odoo/hoot';
+
+import '@muk_web_refresh/search/control_panel';
+
 import {
     models,
     fields,
@@ -9,19 +12,18 @@ import {
 } from '@web/../tests/web_test_helpers';
 
 class Product extends models.Model {
-    name = fields.Char();
     _records = [
         { id: 1, name: 'Test 1' },
         { id: 2, name: 'Test 2' },
     ];
+    name = fields.Char();
 }
 defineModels({ Product });
 
 onRpc('has_group', () => true);
 
-test(
-    'refresh toggle switches active state', 
-    async () => {
+test.tags('muk_web_refresh');
+test('refresh toggle switches active state', async () => {
         await mountView({
             type: 'list',
             resModel: 'product',

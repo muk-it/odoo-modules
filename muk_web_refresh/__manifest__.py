@@ -6,7 +6,7 @@
         30 seconds. The refresh will reload and update the data
         of the view.
     ''',
-    'version': '19.0.1.0.1',
+    'version': '19.0.1.0.5',
     'category': 'Tools/UI',
     'license': 'LGPL-3', 
     'author': 'MuK IT',
@@ -22,13 +22,13 @@
         'web.assets_backend': [            
             (
                 'after',
-                '/web/static/src/search/control_panel/control_panel.js',
-                '/muk_web_refresh/static/src/search/control_panel.js',
+                'web/static/src/search/control_panel/control_panel.js',
+                'muk_web_refresh/static/src/search/control_panel.js',
             ),            
             (
                 'after',
-                '/web/static/src/search/control_panel/control_panel.xml',
-                '/muk_web_refresh/static/src/search/control_panel.xml',
+                'web/static/src/search/control_panel/control_panel.xml',
+                'muk_web_refresh/static/src/search/control_panel.xml',
             ),
         ],
         'web.assets_unit_tests': [
