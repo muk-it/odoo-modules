@@ -5,7 +5,7 @@
         Enables you to expand and collapse groups that were created by 
         grouping the data by a certain field for list and kanban views.
     ''',
-    'version': '19.0.1.0.1',
+    'version': '19.0.1.0.2',
     'category': 'Tools/UI',
     'license': 'LGPL-3', 
     'author': 'MuK IT',
@@ -22,6 +22,8 @@
             '/muk_web_group/static/src/**/*',
         ],
         'web.assets_unit_tests': [
+            'muk_web_group/static/src/**/*.js',
+            'muk_web_group/static/src/**/*.xml',
             'muk_web_group/static/tests/**/*',
         ],
     },
