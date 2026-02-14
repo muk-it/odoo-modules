@@ -6,7 +6,7 @@
         local storage. When loading the view, the saved values are used to define
         the column width.
     ''',
-    'version': '19.0.1.0.1',
+    'version': '19.0.1.0.2',
     'category': 'Tools/UI',
     'license': 'LGPL-3', 
     'author': 'MuK IT',
@@ -36,6 +36,9 @@
                 '/web/static/src/views/list/list_renderer.xml',
                 '/muk_web_list_column/static/src/views/list/list_renderer.xml',
             ),
+        ],
+        'web.assets_unit_tests': [
+            'muk_web_list_column/static/tests/**/*.test.js',
         ],
     },
     'images': [
