@@ -5,7 +5,7 @@
         This module offers a mobile compatible design for Odoo Enterprise. 
         Furthermore it allows the user to define some design preferences.
     ''',
-    'version': '19.0.1.4.3',
+    'version': '19.0.1.4.5',
     'category': 'Themes/Backend', 
     'license': 'LGPL-3', 
     'author': 'MuK IT',
@@ -45,6 +45,9 @@
             'muk_web_enterprise_theme/static/src/webclient/**/*.js',
             'muk_web_enterprise_theme/static/src/views/**/*.scss',
             ('remove', 'muk_web_enterprise_theme/static/src/**/*.dark.scss'),
+        ],
+        'web.assets_unit_tests': [
+            'muk_web_enterprise_theme/static/tests/**/*.test.js',
         ],
         "web.assets_web_dark": [
             (

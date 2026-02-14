@@ -6,27 +6,34 @@ import { onMounted, onWillUnmount } from "@odoo/owl";
 
 import { HomeMenu } from "@web_enterprise/webclient/home_menu/home_menu";
 
+export function getCompanyBackgroundImageUrl(company, colorScheme) {
+    if (colorScheme === "dark" && company?.has_background_image_dark) {
+        return url("/web/image", {
+            model: "res.company",
+            field: "background_image_dark",
+            id: company.id,
+        });
+    }
+    if (colorScheme !== "dark" && company?.has_background_image_light) {
+        return url("/web/image", {
+            model: "res.company",
+            field: "background_image_light",
+            id: company.id,
+        });
+    }
+    return null;
+}
+
 patch(HomeMenu.prototype, {
     setup() {
         super.setup();
-        if (
-    		cookie.get("color_scheme") == "dark" &&
-    		user.activeCompany.has_background_image_dark 
-    	) {
-        	this.backgroundImageUrl = url('/web/image', {
-                model: 'res.company',
-                field: 'background_image_dark',
-                id: user.activeCompany.id,
-            });
-        } else if (
-            cookie.get("color_scheme") != "dark" &&
-        	user.activeCompany.has_background_image_light
-        ) {
-        	this.backgroundImageUrl = url('/web/image', {
-                model: 'res.company',
-                field: 'background_image_light',
-                id: user.activeCompany.id,
-            });
+
+        const backgroundImageUrl = getCompanyBackgroundImageUrl(
+            user.activeCompany,
+            cookie.get("color_scheme")
+        );
+        if (backgroundImageUrl) {
+            this.backgroundImageUrl = backgroundImageUrl;
         }
         onMounted(() => {
             document.body.classList.toggle(
