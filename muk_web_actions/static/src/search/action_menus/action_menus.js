@@ -3,6 +3,7 @@ import { reactive } from "@odoo/owl";
 import { patch } from "@web/core/utils/patch";
 import { useService } from "@web/core/utils/hooks";
 import { makeContext } from "@web/core/context";
+import { session } from "@web/session";
 
 import { ActionMenus } from "@web/search/action_menus/action_menus"; 
 
@@ -55,11 +56,14 @@ patch(ActionMenus.prototype, {
                 additionalContext: context,
                 onClose: this.props.onActionExecuted,
             });
-            importProgress.step = Math.ceil(i / batchSize);
+            importProgress.step = Math.floor(i / batchSize) + 1;
             importProgress.value = Math.round(
                 (importProgress.step / totalBatches) * 100
             );
-            await new Promise(resolve => setTimeout(resolve, 5400));
+            if (i + batchSize < activeIds.length) {
+                const delay = session.test_mode ? 0 : 5400;
+                await new Promise((resolve) => setTimeout(resolve, delay));
+            }
         }
         this.uiService.unblock();
         this.blockProgressService.unblock();

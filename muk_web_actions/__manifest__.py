@@ -5,7 +5,7 @@
         Technical module to provide the possibility to execute 
         server actions and reports in batches on a client side.
     ''',
-    'version': '19.0.1.0.1',
+    'version': '19.0.1.1.0',
     'category': 'Tools/Utils',
     'license': 'LGPL-3', 
     'author': 'MuK IT',
@@ -24,6 +24,9 @@
     'assets': {
         'web.assets_backend': [
             'muk_web_actions/static/src/**/*.*',
+        ],
+        'web.assets_unit_tests': [
+            'muk_web_actions/static/tests/**/*.test.js',
         ],
     },
     'images': [
