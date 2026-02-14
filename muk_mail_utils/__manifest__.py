@@ -5,7 +5,7 @@
         Technical module to provide some utility features and libraries that 
         can be used in other applications.
     ''',
-    'version': '19.0.1.0.1',
+    'version': '19.0.1.1.0',
     'category': 'Tools/Utils',
     'license': 'LGPL-3', 
     'author': 'MuK IT',
@@ -20,6 +20,9 @@
     'assets': {
         'web.assets_backend': [
             'muk_mail_utils/static/src/**/*',
+        ],
+        'web.assets_unit_tests': [
+            'muk_mail_utils/static/tests/**/*.test.js',
         ],
     },
     'images': [
