@@ -5,6 +5,17 @@ from odoo.tests.common import TransactionCase, tagged
 class TestResPartner(TransactionCase):
 
     # ----------------------------------------------------------
+    # Setup
+    # ----------------------------------------------------------
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.env.ref('muk_contacts.sequence_contact_number').write({
+            'active': True,
+        })
+
+    # ----------------------------------------------------------
     # Tests
     # ----------------------------------------------------------
 
