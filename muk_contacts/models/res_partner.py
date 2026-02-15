@@ -74,7 +74,7 @@ class Partner(models.Model):
 
     @api.model
     def _get_next_contact_number(self, raise_exception=False):
-        contact_number = self.env['ir.sequence'].next_by_code(
+        contact_number = self.env['ir.sequence'].sudo().next_by_code(
             'contact.number'
         )
         if not contact_number and raise_exception:
