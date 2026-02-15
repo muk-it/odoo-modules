@@ -1,5 +1,10 @@
-from odoo import models, fields, api, _
+import logging
+import traceback
+
+from odoo import api, fields, models, _
 from odoo.exceptions import UserError
+
+_logger = logging.getLogger(__name__)
 
 
 class Partner(models.Model):
@@ -76,6 +81,12 @@ class Partner(models.Model):
     def _get_next_contact_number(self, raise_exception=False):
         contact_number = self.env['ir.sequence'].next_by_code(
             'contact.number'
+        )
+        _logger.info(
+            "muk_contacts: next contact number via next_by_code('contact.number') -> %s (company=%s user=%s)",
+            contact_number,
+            self.env.company.id,
+            self.env.user.id,
         )
         if not contact_number and raise_exception:
             raise UserError(_(
@@ -162,10 +173,55 @@ class Partner(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        _logger.info(
+            "muk_contacts: res.partner.create called (n=%s company=%s user=%s ctx_keys=%s)",
+            len(vals_list),
+            self.env.company.id,
+            self.env.user.id,
+            sorted(list(self.env.context.keys())),
+        )
         for vals in vals_list:
+            _logger.info(
+                "muk_contacts: create incoming vals keys=%s parent_id=%s contact_number_in_vals=%s",
+                sorted(list(vals.keys())),
+                vals.get('parent_id'),
+                'contact_number' in vals,
+            )
             if (
                 not vals.get('contact_number', False) and 
                 not vals.get('parent_id', False)
             ):
-                vals['contact_number'] = self._get_next_contact_number()
-        return super().create(vals_list)
+                generated = self._get_next_contact_number()
+                _logger.info(
+                    "muk_contacts: generated contact_number=%s for create (parent_id=%s)",
+                    generated,
+                    vals.get('parent_id'),
+                )
+                vals['contact_number'] = generated
+        partners = super().create(vals_list)
+        for partner in partners:
+            _logger.info(
+                "muk_contacts: created partner id=%s parent_id=%s contact_number=%s name=%s",
+                partner.id,
+                partner.parent_id.id if partner.parent_id else False,
+                partner.contact_number,
+                partner.name,
+            )
+        missing = partners.filtered(lambda p: not p.contact_number and not p.parent_id)
+        if missing:
+            _logger.warning(
+                "muk_contacts: created partners without contact_number ids=%s; last stack:\n%s",
+                missing.ids,
+                ''.join(traceback.format_stack(limit=25)),
+            )
+        return partners
+
+    def write(self, vals):
+        if 'contact_number' in vals:
+            _logger.warning(
+                "muk_contacts: res.partner.write contact_number change ids=%s -> %s; stack:\n%s",
+                self.ids,
+                vals.get('contact_number'),
+                ''.join(traceback.format_stack(limit=25)),
+            )
+        return super().write(vals)
