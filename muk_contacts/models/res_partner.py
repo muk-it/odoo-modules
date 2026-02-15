@@ -1,13 +1,5 @@
-import inspect
-import logging
-import traceback
-
-from odoo import api, fields, models, _
+from odoo import models, fields, api, _
 from odoo.exceptions import UserError
-
-_logger = logging.getLogger(__name__)
-
-_CHAIN_INFO_LOGGED = False
 
 
 class Partner(models.Model):
@@ -82,34 +74,8 @@ class Partner(models.Model):
 
     @api.model
     def _get_next_contact_number(self, raise_exception=False):
-        global _CHAIN_INFO_LOGGED
-        if not _CHAIN_INFO_LOGGED:
-            _CHAIN_INFO_LOGGED = True
-            create_method = getattr(type(self), 'create', None)
-            write_method = getattr(type(self), 'write', None)
-            create_unwrapped = getattr(create_method, '__wrapped__', create_method)
-            write_unwrapped = getattr(write_method, '__wrapped__', write_method)
-            _logger.info(
-                "muk_contacts: chain info create=%s (%s) file=%s | write=%s (%s) file=%s",
-                getattr(create_unwrapped, '__qualname__', str(create_unwrapped)),
-                getattr(create_unwrapped, '__module__', None),
-                getattr(getattr(create_unwrapped, '__code__', None), 'co_filename', None),
-                getattr(write_unwrapped, '__qualname__', str(write_unwrapped)),
-                getattr(write_unwrapped, '__module__', None),
-                getattr(getattr(write_unwrapped, '__code__', None), 'co_filename', None),
-            )
-            _logger.info(
-                "muk_contacts: chain info mro=%s",
-                [c.__module__ + '.' + c.__name__ for c in inspect.getmro(type(self))[:10]],
-            )
         contact_number = self.env['ir.sequence'].next_by_code(
             'contact.number'
-        )
-        _logger.info(
-            "muk_contacts: next contact number via next_by_code('contact.number') -> %s (company=%s user=%s)",
-            contact_number,
-            self.env.company.id,
-            self.env.user.id,
         )
         if not contact_number and raise_exception:
             raise UserError(_(
@@ -196,55 +162,10 @@ class Partner(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        _logger.info(
-            "muk_contacts: res.partner.create called (n=%s company=%s user=%s ctx_keys=%s)",
-            len(vals_list),
-            self.env.company.id,
-            self.env.user.id,
-            sorted(list(self.env.context.keys())),
-        )
         for vals in vals_list:
-            _logger.info(
-                "muk_contacts: create incoming vals keys=%s parent_id=%s contact_number_in_vals=%s",
-                sorted(list(vals.keys())),
-                vals.get('parent_id'),
-                'contact_number' in vals,
-            )
             if (
                 not vals.get('contact_number', False) and 
                 not vals.get('parent_id', False)
             ):
-                generated = self._get_next_contact_number()
-                _logger.info(
-                    "muk_contacts: generated contact_number=%s for create (parent_id=%s)",
-                    generated,
-                    vals.get('parent_id'),
-                )
-                vals['contact_number'] = generated
-        partners = super().create(vals_list)
-        for partner in partners:
-            _logger.info(
-                "muk_contacts: created partner id=%s parent_id=%s contact_number=%s name=%s",
-                partner.id,
-                partner.parent_id.id if partner.parent_id else False,
-                partner.contact_number,
-                partner.name,
-            )
-        missing = partners.filtered(lambda p: not p.contact_number and not p.parent_id)
-        if missing:
-            _logger.warning(
-                "muk_contacts: created partners without contact_number ids=%s; last stack:\n%s",
-                missing.ids,
-                ''.join(traceback.format_stack(limit=25)),
-            )
-        return partners
-
-    def write(self, vals):
-        if 'contact_number' in vals:
-            _logger.warning(
-                "muk_contacts: res.partner.write contact_number change ids=%s -> %s; stack:\n%s",
-                self.ids,
-                vals.get('contact_number'),
-                ''.join(traceback.format_stack(limit=25)),
-            )
-        return super().write(vals)
+                vals['contact_number'] = self._get_next_contact_number()
+        return super().create(vals_list)
