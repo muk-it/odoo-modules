@@ -14,19 +14,34 @@ class TestResPartner(TransactionCase):
         cls.env.ref('muk_contacts.sequence_contact_number').write({
             'active': True,
             'company_id': False,
+            'code': 'contact.number',
         })
+
+    def _assert_contact_number_sequence_available(self):
+        seq = self.env.ref('muk_contacts.sequence_contact_number')
+        next_number = self.env['ir.sequence'].sudo().next_by_code('contact.number')
+        self.assertTrue(
+            next_number,
+            (
+                "Sequence 'contact.number' is not available. "
+                f"sequence_contact_number: id={seq.id} active={seq.active} "
+                f"company_id={seq.company_id.id if seq.company_id else False} code={seq.code}"
+            ),
+        )
 
     # ----------------------------------------------------------
     # Tests
     # ----------------------------------------------------------
 
     def test_contact_number_is_generated_on_create(self):
+        self._assert_contact_number_sequence_available()
         partner = self.env['res.partner'].create({
             'name': 'Test Partner'
         })
         self.assertTrue(partner.contact_number)
 
     def test_contact_number_is_inherited_for_child_contacts(self):
+        self._assert_contact_number_sequence_available()
         parent = self.env['res.partner'].create({
             'name': 'Parent Partner'
         })
@@ -60,12 +75,13 @@ class TestResPartner(TransactionCase):
         self.assertEqual(addresses.get('delivery'), delivery.id)
 
     def test_display_name_can_include_contact_number(self):
+        self._assert_contact_number_sequence_available()
         partner = self.env['res.partner'].create({
             'name': 'Display Partner'
         })
         self.assertTrue(partner.contact_number)
         self.assertIn(
-            partner.contact_number, 
+            partner.contact_number,
             partner.with_context(show_contact_number=True).display_name
         )
         partner_formatted = partner.with_context(
