@@ -4,13 +4,6 @@ from odoo.tests.common import TransactionCase, tagged
 @tagged('post_install', '-at_install')
 class TestResPartner(TransactionCase):
 
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.env.ref('muk_contacts.sequence_contact_number').write({
-            'active': True,
-        })
-
     # ----------------------------------------------------------
     # Tests
     # ----------------------------------------------------------
