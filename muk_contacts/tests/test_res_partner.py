@@ -13,6 +13,7 @@ class TestResPartner(TransactionCase):
         super().setUpClass()
         cls.env.ref('muk_contacts.sequence_contact_number').write({
             'active': True,
+            'company_id': False,
         })
 
     # ----------------------------------------------------------
