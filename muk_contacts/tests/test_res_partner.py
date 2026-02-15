@@ -27,7 +27,7 @@ class TestResPartner(TransactionCase):
     def test_contact_number_is_inherited_for_child_contacts(self):
         parent = self.env['res.partner'].create({
             'contact_number': False,
-            'name': 'Parent Partner'
+            'name': 'Parent Partner',
             'parent_id': False,
         })
         child = self.env['res.partner'].create({
