@@ -5,21 +5,16 @@ from odoo.tests.common import TransactionCase, tagged
 class TestResPartner(TransactionCase):
 
     # ----------------------------------------------------------
-    # Setup
-    # ----------------------------------------------------------
-
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.env.ref('muk_contacts.sequence_contact_number').write({
-            'active': True,
-            'company_id': False,
-            'code': 'contact.number',
-        })
-
-    # ----------------------------------------------------------
     # Tests
     # ----------------------------------------------------------
+
+    def test_contact_number_is_generated_on_action(self):
+        partner = self.env['res.partner'].create({
+            'contact_number': False,
+            'name': 'Test Partner',
+        })
+        partner.action_generate_contact_number()
+        self.assertTrue(partner.contact_number)
 
     def test_contact_number_is_generated_on_create(self):
         partner = self.env['res.partner'].create({
