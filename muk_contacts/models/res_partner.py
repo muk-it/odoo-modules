@@ -1,9 +1,5 @@
-import logging
-
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
-
-_logger = logging.getLogger(__name__)
 
 
 class Partner(models.Model):
@@ -78,29 +74,8 @@ class Partner(models.Model):
 
     @api.model
     def _get_next_contact_number(self, raise_exception=False):
-        seq_record = self.env['ir.sequence'].search([
-            ('code', '=', 'contact.number'),
-        ])
-        seq_record_active = self.env['ir.sequence'].search([
-            ('code', '=', 'contact.number'),
-            ('active', '=', True),
-        ])
-        _logger.warning(
-            "DEBUG_CONTACT_NUMBER: _get_next_contact_number called. "
-            "Sequence records (no active filter): %s (ids=%s, active=%s), "
-            "Sequence records (active=True): %s (ids=%s), "
-            "raise_exception=%s, company_id=%s",
-            seq_record, seq_record.ids,
-            [r.active for r in seq_record],
-            seq_record_active, seq_record_active.ids,
-            raise_exception, self.env.company.id,
-        )
         contact_number = self.env['ir.sequence'].next_by_code(
             'contact.number'
-        )
-        _logger.warning(
-            "DEBUG_CONTACT_NUMBER: next_by_code returned: %r",
-            contact_number,
         )
         if not contact_number and raise_exception:
             raise UserError(_(
