@@ -26,22 +26,33 @@ class TestResPartner(TransactionCase):
         model_cls = type(Partner)
         create_method = model_cls.create
         create_src = inspect.getfile(create_method)
-        mro_with_create = [
-            f"{cls.__module__}:{inspect.getfile(cls)}:{cls.__qualname__}"
-            for cls in model_cls.__mro__
-            if 'create' in cls.__dict__
-        ]
+        mro_with_create = []
+        for cls in model_cls.__mro__:
+            if 'create' not in cls.__dict__:
+                continue
+            fn = cls.__dict__['create']
+            wrapped = getattr(fn, '__wrapped__', fn)
+            try:
+                src_lines = inspect.getsource(wrapped)
+                first_line = src_lines.strip().split('\n')[0]
+            except (OSError, TypeError):
+                first_line = '???'
+            mro_with_create.append(
+                f"{cls.__module__}:{cls.__qualname__}"
+                f" -> {inspect.getfile(cls)}"
+                f" first_line={first_line!r}"
+            )
         _logger.info(
             "DEBUG test MRO: create resolved to %s:%s, "
-            "MRO classes with create: %r, "
             "model_cls.__bases__ count=%d, "
             "base_classes count=%d",
             create_src,
             getattr(create_method, '__qualname__', '?'),
-            mro_with_create,
             len(model_cls.__bases__),
             len(getattr(model_cls, '_base_classes__', ())),
         )
+        for entry in mro_with_create:
+            _logger.info("DEBUG MRO create entry: %s", entry)
         partner = Partner.create({
             'name': 'Test Partner',
         })
