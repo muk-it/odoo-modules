@@ -5,53 +5,6 @@ from odoo.tests.common import TransactionCase, tagged
 class TestResPartner(TransactionCase):
 
     # ----------------------------------------------------------
-    # Helper
-    # ----------------------------------------------------------
-
-    def _debug_contact_number(self, partner):
-        Sequence = self.env['ir.sequence']
-        Partner = self.env['res.partner']
-        all_seqs = Sequence.with_context(active_test=False).search(
-            [('code', '=', 'contact.number')]
-        )
-        xmlid_ref = self.env.ref(
-            'muk_contacts.sequence_contact_number', raise_if_not_found=False
-        )
-        company = self.env.company
-        next_by_code = Sequence.next_by_code('contact.number')
-        visible_seqs = Sequence.search(
-            [('code', '=', 'contact.number'), ('company_id', 'in', [company.id, False])]
-        )
-        self.env.cr.execute(
-            "SELECT contact_number FROM res_partner WHERE id = %s",
-            (partner.id,),
-        )
-        db_value = self.env.cr.fetchone()
-        mro_create = [
-            f"{cls.__module__}.{cls.__qualname__}"
-            for cls in type(Partner).__mro__
-            if 'create' in cls.__dict__
-        ]
-        installed_modules = self.env['ir.module.module'].search(
-            [('state', '=', 'installed')],
-        ).mapped('name')
-        has_muk_contacts = 'muk_contacts' in installed_modules
-        lines = [
-            f"partner.contact_number = {partner.contact_number!r}",
-            f"partner.parent_id = {partner.parent_id!r}",
-            f"DB contact_number = {db_value!r}",
-            f"env.company = {company.name!r} (id={company.id})",
-            f"env.user = {self.env.user.login!r} (id={self.env.user.id})",
-            f"muk_contacts installed = {has_muk_contacts}",
-            f"MRO classes with create: {mro_create}",
-            f"xmlid ref = {xmlid_ref!r} (active={xmlid_ref.active if xmlid_ref else 'N/A'})",
-            f"next_by_code('contact.number') = {next_by_code!r}",
-            f"visible sequences: {[(s.id, s.name, s.active, s.company_id.id, s.company_id.name) for s in visible_seqs]}",
-            f"all sequences: {[(s.id, s.name, s.active, s.company_id.id, s.company_id.name) for s in all_seqs]}",
-        ]
-        return '\n'.join(lines)
-
-    # ----------------------------------------------------------
     # Tests
     # ----------------------------------------------------------
 
@@ -69,10 +22,7 @@ class TestResPartner(TransactionCase):
             'name': 'Test Partner',
             'parent_id': False,
         })
-        self.assertTrue(
-            partner.contact_number,
-            self._debug_contact_number(partner),
-        )
+        self.assertTrue(partner.contact_number)
 
     def test_contact_number_is_inherited_for_child_contacts(self):
         parent = self.env['res.partner'].create({
@@ -116,10 +66,7 @@ class TestResPartner(TransactionCase):
             'name': 'Test Partner',
             'parent_id': False,
         })
-        self.assertTrue(
-            partner.contact_number,
-            self._debug_contact_number(partner),
-        )
+        self.assertTrue(partner.contact_number)
         self.assertIn(
             partner.contact_number,
             partner.with_context(show_contact_number=True).display_name
