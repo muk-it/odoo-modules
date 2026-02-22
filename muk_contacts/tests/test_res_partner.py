@@ -18,20 +18,15 @@ class TestResPartner(TransactionCase):
 
     def test_contact_number_is_generated_on_create(self):
         partner = self.env['res.partner'].create({
-            'contact_number': False,
             'name': 'Test Partner',
-            'parent_id': False,
         })
         self.assertTrue(partner.contact_number)
 
     def test_contact_number_is_inherited_for_child_contacts(self):
         parent = self.env['res.partner'].create({
-            'contact_number': False,
             'name': 'Parent Partner',
-            'parent_id': False,
         })
         child = self.env['res.partner'].create({
-            'contact_number': False,
             'name': 'Child Partner',
             'parent_id': parent.id,
             'type': 'contact',
@@ -62,9 +57,7 @@ class TestResPartner(TransactionCase):
 
     def test_display_name_can_include_contact_number(self):
         partner = self.env['res.partner'].create({
-            'contact_number': False,
             'name': 'Test Partner',
-            'parent_id': False,
         })
         self.assertTrue(partner.contact_number)
         self.assertIn(
