@@ -1,9 +1,4 @@
-import inspect
-import logging
-
 from odoo.tests.common import TransactionCase, tagged
-
-_logger = logging.getLogger(__name__)
 
 
 @tagged('post_install', '-at_install')
@@ -22,47 +17,21 @@ class TestResPartner(TransactionCase):
         self.assertTrue(partner.contact_number)
 
     def test_contact_number_is_generated_on_create(self):
-        Partner = self.env['res.partner']
-        model_cls = type(Partner)
-        create_method = model_cls.create
-        create_src = inspect.getfile(create_method)
-        mro_with_create = []
-        for cls in model_cls.__mro__:
-            if 'create' not in cls.__dict__:
-                continue
-            fn = cls.__dict__['create']
-            wrapped = getattr(fn, '__wrapped__', fn)
-            try:
-                src_lines = inspect.getsource(wrapped)
-                first_line = src_lines.strip().split('\n')[0]
-            except (OSError, TypeError):
-                first_line = '???'
-            mro_with_create.append(
-                f"{cls.__module__}:{cls.__qualname__}"
-                f" -> {inspect.getfile(cls)}"
-                f" first_line={first_line!r}"
-            )
-        _logger.info(
-            "DEBUG test MRO: create resolved to %s:%s, "
-            "model_cls.__bases__ count=%d, "
-            "base_classes count=%d",
-            create_src,
-            getattr(create_method, '__qualname__', '?'),
-            len(model_cls.__bases__),
-            len(getattr(model_cls, '_base_classes__', ())),
-        )
-        for entry in mro_with_create:
-            _logger.info("DEBUG MRO create entry: %s", entry)
-        partner = Partner.create({
+        partner = self.env['res.partner'].create({
+            'contact_number': False,
             'name': 'Test Partner',
+            'parent_id': False,
         })
         self.assertTrue(partner.contact_number)
 
     def test_contact_number_is_inherited_for_child_contacts(self):
         parent = self.env['res.partner'].create({
+            'contact_number': False,
             'name': 'Parent Partner',
+            'parent_id': False,
         })
         child = self.env['res.partner'].create({
+            'contact_number': False,
             'name': 'Child Partner',
             'parent_id': parent.id,
             'type': 'contact',
@@ -93,7 +62,9 @@ class TestResPartner(TransactionCase):
 
     def test_display_name_can_include_contact_number(self):
         partner = self.env['res.partner'].create({
+            'contact_number': False,
             'name': 'Test Partner',
+            'parent_id': False,
         })
         self.assertTrue(partner.contact_number)
         self.assertIn(

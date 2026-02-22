@@ -1,9 +1,5 @@
-import logging
-
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
-
-_logger = logging.getLogger(__name__)
 
 
 class Partner(models.Model):
@@ -168,42 +164,8 @@ class Partner(models.Model):
     def create(self, vals_list):
         for vals in vals_list:
             if (
-                not vals.get('contact_number') and
-                not vals.get('parent_id')
+                not vals.get('contact_number', False) and 
+                not vals.get('parent_id', False)
             ):
                 vals['contact_number'] = self._get_next_contact_number()
-        _logger.info(
-            "DEBUG muk_contacts create ENTER: vals contact_numbers=%r",
-            [v.get('contact_number') for v in vals_list],
-        )
-        partners = super().create(vals_list)
-        for partner in partners:
-            self.env.cr.execute(
-                "SELECT contact_number FROM res_partner WHERE id = %s",
-                (partner.id,),
-            )
-            db_val = self.env.cr.fetchone()
-            _logger.info(
-                "DEBUG muk_contacts create AFTER SUPER: "
-                "partner.id=%s name=%r contact_number=%r "
-                "parent_id=%r DB=%r",
-                partner.id,
-                partner.name,
-                partner.contact_number,
-                partner.parent_id.id if partner.parent_id else False,
-                db_val,
-            )
-        return partners
-
-    def write(self, vals):
-        if 'contact_number' in vals:
-            import traceback
-            _logger.info(
-                "DEBUG muk_contacts write: contact_number=%r on ids=%r\n%s",
-                vals['contact_number'],
-                self.ids,
-                ''.join(traceback.format_stack()[-6:-1]),
-            )
-        return super().write(vals)
-
-
+        return super().create(vals_list)
