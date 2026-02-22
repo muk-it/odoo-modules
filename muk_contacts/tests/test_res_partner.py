@@ -5,6 +5,35 @@ from odoo.tests.common import TransactionCase, tagged
 class TestResPartner(TransactionCase):
 
     # ----------------------------------------------------------
+    # Helper
+    # ----------------------------------------------------------
+
+    def _debug_contact_number(self, partner):
+        Sequence = self.env['ir.sequence']
+        all_seqs = Sequence.with_context(active_test=False).search(
+            [('code', '=', 'contact.number')]
+        )
+        xmlid_ref = self.env.ref(
+            'muk_contacts.sequence_contact_number', raise_if_not_found=False
+        )
+        company = self.env.company
+        next_by_code = Sequence.next_by_code('contact.number')
+        visible_seqs = Sequence.search(
+            [('code', '=', 'contact.number'), ('company_id', 'in', [company.id, False])]
+        )
+        lines = [
+            f"partner.contact_number = {partner.contact_number!r}",
+            f"partner.parent_id = {partner.parent_id!r}",
+            f"env.company = {company.name!r} (id={company.id})",
+            f"env.user = {self.env.user.login!r} (id={self.env.user.id})",
+            f"xmlid ref = {xmlid_ref!r} (active={xmlid_ref.active if xmlid_ref else 'N/A'})",
+            f"next_by_code('contact.number') = {next_by_code!r}",
+            f"visible sequences (active_test=True, company filter): {[(s.id, s.name, s.active, s.company_id.id, s.company_id.name) for s in visible_seqs]}",
+            f"all sequences (active_test=False): {[(s.id, s.name, s.active, s.company_id.id, s.company_id.name) for s in all_seqs]}",
+        ]
+        return '\n'.join(lines)
+
+    # ----------------------------------------------------------
     # Tests
     # ----------------------------------------------------------
 
@@ -22,7 +51,10 @@ class TestResPartner(TransactionCase):
             'name': 'Test Partner',
             'parent_id': False,
         })
-        self.assertTrue(partner.contact_number)
+        self.assertTrue(
+            partner.contact_number,
+            self._debug_contact_number(partner),
+        )
 
     def test_contact_number_is_inherited_for_child_contacts(self):
         parent = self.env['res.partner'].create({
@@ -66,7 +98,10 @@ class TestResPartner(TransactionCase):
             'name': 'Test Partner',
             'parent_id': False,
         })
-        self.assertTrue(partner.contact_number)
+        self.assertTrue(
+            partner.contact_number,
+            self._debug_contact_number(partner),
+        )
         self.assertIn(
             partner.contact_number,
             partner.with_context(show_contact_number=True).display_name
