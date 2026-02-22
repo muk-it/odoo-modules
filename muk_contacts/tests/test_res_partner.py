@@ -1,4 +1,9 @@
+import inspect
+import logging
+
 from odoo.tests.common import TransactionCase, tagged
+
+_logger = logging.getLogger(__name__)
 
 
 @tagged('post_install', '-at_install')
@@ -17,7 +22,27 @@ class TestResPartner(TransactionCase):
         self.assertTrue(partner.contact_number)
 
     def test_contact_number_is_generated_on_create(self):
-        partner = self.env['res.partner'].create({
+        Partner = self.env['res.partner']
+        model_cls = type(Partner)
+        create_method = model_cls.create
+        create_src = inspect.getfile(create_method)
+        mro_with_create = [
+            f"{cls.__module__}:{inspect.getfile(cls)}:{cls.__qualname__}"
+            for cls in model_cls.__mro__
+            if 'create' in cls.__dict__
+        ]
+        _logger.info(
+            "DEBUG test MRO: create resolved to %s:%s, "
+            "MRO classes with create: %r, "
+            "model_cls.__bases__ count=%d, "
+            "base_classes count=%d",
+            create_src,
+            getattr(create_method, '__qualname__', '?'),
+            mro_with_create,
+            len(model_cls.__bases__),
+            len(getattr(model_cls, '_base_classes__', ())),
+        )
+        partner = Partner.create({
             'name': 'Test Partner',
         })
         self.assertTrue(partner.contact_number)
