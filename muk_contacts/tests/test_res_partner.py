@@ -10,6 +10,7 @@ class TestResPartner(TransactionCase):
 
     def _debug_contact_number(self, partner):
         Sequence = self.env['ir.sequence']
+        Partner = self.env['res.partner']
         all_seqs = Sequence.with_context(active_test=False).search(
             [('code', '=', 'contact.number')]
         )
@@ -21,15 +22,32 @@ class TestResPartner(TransactionCase):
         visible_seqs = Sequence.search(
             [('code', '=', 'contact.number'), ('company_id', 'in', [company.id, False])]
         )
+        self.env.cr.execute(
+            "SELECT contact_number FROM res_partner WHERE id = %s",
+            (partner.id,),
+        )
+        db_value = self.env.cr.fetchone()
+        mro_create = [
+            f"{cls.__module__}.{cls.__qualname__}"
+            for cls in type(Partner).__mro__
+            if 'create' in cls.__dict__
+        ]
+        installed_modules = self.env['ir.module.module'].search(
+            [('state', '=', 'installed')],
+        ).mapped('name')
+        has_muk_contacts = 'muk_contacts' in installed_modules
         lines = [
             f"partner.contact_number = {partner.contact_number!r}",
             f"partner.parent_id = {partner.parent_id!r}",
+            f"DB contact_number = {db_value!r}",
             f"env.company = {company.name!r} (id={company.id})",
             f"env.user = {self.env.user.login!r} (id={self.env.user.id})",
+            f"muk_contacts installed = {has_muk_contacts}",
+            f"MRO classes with create: {mro_create}",
             f"xmlid ref = {xmlid_ref!r} (active={xmlid_ref.active if xmlid_ref else 'N/A'})",
             f"next_by_code('contact.number') = {next_by_code!r}",
-            f"visible sequences (active_test=True, company filter): {[(s.id, s.name, s.active, s.company_id.id, s.company_id.name) for s in visible_seqs]}",
-            f"all sequences (active_test=False): {[(s.id, s.name, s.active, s.company_id.id, s.company_id.name) for s in all_seqs]}",
+            f"visible sequences: {[(s.id, s.name, s.active, s.company_id.id, s.company_id.name) for s in visible_seqs]}",
+            f"all sequences: {[(s.id, s.name, s.active, s.company_id.id, s.company_id.name) for s in all_seqs]}",
         ]
         return '\n'.join(lines)
 

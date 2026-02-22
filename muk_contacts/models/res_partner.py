@@ -1,5 +1,9 @@
+import logging
+
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
+
+_logger = logging.getLogger(__name__)
 
 
 class Partner(models.Model):
@@ -167,5 +171,27 @@ class Partner(models.Model):
                 not vals.get('contact_number', False) and 
                 not vals.get('parent_id', False)
             ):
-                vals['contact_number'] = self._get_next_contact_number()
-        return super().create(vals_list)
+                contact_number = self._get_next_contact_number()
+                vals['contact_number'] = contact_number
+                _logger.info(
+                    "DEBUG muk_contacts create: assigned contact_number=%r "
+                    "to vals (name=%r, parent_id=%r, vals id=%s)",
+                    contact_number,
+                    vals.get('name'),
+                    vals.get('parent_id'),
+                    id(vals),
+                )
+        _logger.info(
+            "DEBUG muk_contacts create: calling super with vals_list "
+            "contact_numbers=%r, vals ids=%s",
+            [v.get('contact_number') for v in vals_list],
+            [id(v) for v in vals_list],
+        )
+        partners = super().create(vals_list)
+        _logger.info(
+            "DEBUG muk_contacts create: super returned partners=%r "
+            "with contact_numbers=%r",
+            partners,
+            [p.contact_number for p in partners],
+        )
+        return partners
