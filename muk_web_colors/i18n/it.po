@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-05 12:48+0000\n"
-"PO-Revision-Date: 2026-01-05 12:48+0000\n"
+"POT-Creation-Date: 2026-02-23 16:45+0000\n"
+"PO-Revision-Date: 2026-02-23 16:45+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -18,17 +18,17 @@ msgstr ""
 #. module: muk_web_colors
 #: model_terms:ir.ui.view,arch_db:muk_web_colors.view_res_config_settings_form
 msgid "Brand"
-msgstr "Marke"
+msgstr "Marchio"
 
 #. module: muk_web_colors
 #: model:ir.model.fields,field_description:muk_web_colors.field_res_config_settings__color_brand_dark
 msgid "Brand Dark Color"
-msgstr "Marke dunkle Farbe"
+msgstr "Colore scuro marchio"
 
 #. module: muk_web_colors
 #: model:ir.model.fields,field_description:muk_web_colors.field_res_config_settings__color_brand_light
 msgid "Brand Light Color"
-msgstr "Marke helle Farbe"
+msgstr "Colore chiaro marchio"
 
 #. module: muk_web_colors
 #: model_terms:ir.ui.view,arch_db:muk_web_colors.view_res_config_settings_form
@@ -38,48 +38,48 @@ msgstr "Branding"
 #. module: muk_web_colors
 #: model:ir.model,name:muk_web_colors.model_muk_web_colors_color_assets_editor
 msgid "Color Assets Utils"
-msgstr "Farbvermögen-Utils"
+msgstr "Utilità risorse colore"
 
 #. module: muk_web_colors
 #: model:ir.model,name:muk_web_colors.model_res_config_settings
 msgid "Config Settings"
-msgstr "Konfigurationseinstellungen"
+msgstr "Impostazioni di configurazione"
 
 #. module: muk_web_colors
 #: model_terms:ir.ui.view,arch_db:muk_web_colors.view_res_config_settings_form
 msgid "Customize the look and feel of the dark mode"
-msgstr "Passen Sie Aussehen und Handhabung des dunklen Modus an"
+msgstr "Personalizzare l'aspetto della modalità scura"
 
 #. module: muk_web_colors
 #: model_terms:ir.ui.view,arch_db:muk_web_colors.view_res_config_settings_form
 msgid "Customize the look and feel of the light mode"
-msgstr "Passen Sie Aussehen und Handhabung des hellen Modus an"
+msgstr "Personalizzare l'aspetto della modalità chiara"
 
 #. module: muk_web_colors
 #: model_terms:ir.ui.view,arch_db:muk_web_colors.view_res_config_settings_form
 msgid "Danger"
-msgstr "Gefahr"
+msgstr "Pericolo"
 
 #. module: muk_web_colors
 #: model:ir.model.fields,field_description:muk_web_colors.field_res_config_settings__color_danger_dark
 msgid "Danger Dark Color"
-msgstr "Gefahr dunkle Farbe"
+msgstr "Colore scuro di pericolo"
 
 #. module: muk_web_colors
 #: model:ir.model.fields,field_description:muk_web_colors.field_res_config_settings__color_danger_light
 msgid "Danger Light Color"
-msgstr "Gefahr helle Farbe"
+msgstr "Colore chiaro di pericolo"
 
 #. module: muk_web_colors
 #: model_terms:ir.ui.view,arch_db:muk_web_colors.view_res_config_settings_form
 msgid "Dark Mode Colors"
-msgstr "Dunkelmodus Farben"
+msgstr "Colori della modalità scura"
 
 #. module: muk_web_colors
 #: model:ir.model.fields,field_description:muk_web_colors.field_muk_web_colors_color_assets_editor__display_name
 #: model:ir.model.fields,field_description:muk_web_colors.field_res_config_settings__display_name
 msgid "Display Name"
-msgstr "Anzeigename"
+msgstr "Nome visualizzato"
 
 #. module: muk_web_colors
 #: model:ir.model.fields,field_description:muk_web_colors.field_muk_web_colors_color_assets_editor__id
@@ -95,69 +95,69 @@ msgstr "Info"
 #. module: muk_web_colors
 #: model:ir.model.fields,field_description:muk_web_colors.field_res_config_settings__color_info_dark
 msgid "Info Dark Color"
-msgstr "Info dunkle Farbe"
+msgstr "Colore scuro info"
 
 #. module: muk_web_colors
 #: model:ir.model.fields,field_description:muk_web_colors.field_res_config_settings__color_info_light
 msgid "Info Light Color"
-msgstr "Info helle Farbe"
+msgstr "Colore chiaro info"
 
 #. module: muk_web_colors
 #: model_terms:ir.ui.view,arch_db:muk_web_colors.view_res_config_settings_form
 msgid "Light Mode Colors"
-msgstr "Farben heller Modus"
+msgstr "Colori della modalità chiara"
 
 #. module: muk_web_colors
 #: model_terms:ir.ui.view,arch_db:muk_web_colors.view_res_config_settings_form
 msgid "Primary"
-msgstr "Primär"
+msgstr "Primario"
 
 #. module: muk_web_colors
 #: model:ir.model.fields,field_description:muk_web_colors.field_res_config_settings__color_primary_dark
 msgid "Primary Dark Color"
-msgstr "Primäre dunkle Farbe"
+msgstr "Colore scuro primario"
 
 #. module: muk_web_colors
 #: model:ir.model.fields,field_description:muk_web_colors.field_res_config_settings__color_primary_light
 msgid "Primary Light Color"
-msgstr "Primäre helle Farbe"
+msgstr "Colore chiaro primario"
 
 #. module: muk_web_colors
 #: model_terms:ir.ui.view,arch_db:muk_web_colors.view_res_config_settings_form
 msgid "Reset Dark Colors"
-msgstr "Dunkle Farben zurücksetzen"
+msgstr "Reimposta colori scuri"
 
 #. module: muk_web_colors
 #: model_terms:ir.ui.view,arch_db:muk_web_colors.view_res_config_settings_form
 msgid "Reset Light Colors"
-msgstr "Helle Farben zurücksetzen"
+msgstr "Reimposta colori chiari"
 
 #. module: muk_web_colors
 #: model_terms:ir.ui.view,arch_db:muk_web_colors.view_res_config_settings_form
 msgid "Success"
-msgstr "Erfolg"
+msgstr "Successo"
 
 #. module: muk_web_colors
 #: model:ir.model.fields,field_description:muk_web_colors.field_res_config_settings__color_success_dark
 msgid "Success Dark Color"
-msgstr "Erfolg dunkle Farbe"
+msgstr "Colore scuro successo"
 
 #. module: muk_web_colors
 #: model:ir.model.fields,field_description:muk_web_colors.field_res_config_settings__color_success_light
 msgid "Success Light Color"
-msgstr "Erfolg helle Farbe"
+msgstr "Colore chiaro successo"
 
 #. module: muk_web_colors
 #: model_terms:ir.ui.view,arch_db:muk_web_colors.view_res_config_settings_form
 msgid "Warning"
-msgstr "Warnung"
+msgstr "Avviso"
 
 #. module: muk_web_colors
 #: model:ir.model.fields,field_description:muk_web_colors.field_res_config_settings__color_warning_dark
 msgid "Warning Dark Color"
-msgstr "Warnung dunkle Farbe"
+msgstr "Colore scuro avviso"
 
 #. module: muk_web_colors
 #: model:ir.model.fields,field_description:muk_web_colors.field_res_config_settings__color_warning_light
 msgid "Warning Light Color"
-msgstr "Warnung helle Farbe"
+msgstr "Colore chiaro avviso"
