@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-05 14:24+0000\n"
-"PO-Revision-Date: 2026-01-05 14:24+0000\n"
+"POT-Creation-Date: 2026-02-23 16:45+0000\n"
+"PO-Revision-Date: 2026-02-23 16:45+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -18,97 +18,97 @@ msgstr ""
 #. module: muk_web_enterprise_theme
 #: model_terms:ir.ui.view,arch_db:muk_web_enterprise_theme.view_res_config_settings_colors_form
 msgid "Apps Active"
-msgstr "Apps Aktiv"
+msgstr "Apps activas"
 
 #. module: muk_web_enterprise_theme
 #: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_res_company__background_image_dark
 #: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_res_config_settings__theme_background_image_dark
 msgid "Apps Menu Background Dark Image"
-msgstr "Dunkles Hintergrundbild Appsmenü"
+msgstr "Imagen de fondo oscura del menú de apps"
 
 #. module: muk_web_enterprise_theme
 #: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_res_company__background_image_light
 #: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_res_config_settings__theme_background_image_light
 msgid "Apps Menu Background Light Image"
-msgstr "Helles Hintergrundbild Appsmenü"
+msgstr "Imagen de fondo clara del menú de apps"
 
 #. module: muk_web_enterprise_theme
 #: model_terms:ir.ui.view,arch_db:muk_web_enterprise_theme.view_res_config_settings_colors_form
 msgid "Apps Text"
-msgstr "Apps-Text"
+msgstr "Texto de apps"
 
 #. module: muk_web_enterprise_theme
 #: model_terms:ir.ui.view,arch_db:muk_web_enterprise_theme.view_res_config_settings_colors_form
 msgid "AppsBar"
-msgstr "Appsleiste"
+msgstr "AppsBar"
 
 #. module: muk_web_enterprise_theme
 #: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_res_config_settings__theme_color_appbar_active_dark
 msgid "AppsBar Active Dark Color"
-msgstr "Aktive dunkle Farbe Appsleiste"
+msgstr "AppsBar color activo oscuro"
 
 #. module: muk_web_enterprise_theme
 #: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_res_config_settings__theme_color_appbar_active_light
 msgid "AppsBar Active Light Color"
-msgstr "Aktive helle Farbe Appsleiste"
+msgstr "AppsBar color activo claro"
 
 #. module: muk_web_enterprise_theme
 #: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_res_config_settings__theme_color_appbar_background_dark
 msgid "AppsBar Background Dark Color"
-msgstr "Dunkle Hintergrundfarbe Appsleiste"
+msgstr "AppsBar color de fondo oscuro"
 
 #. module: muk_web_enterprise_theme
 #: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_res_config_settings__theme_color_appbar_background_light
 msgid "AppsBar Background Light Color"
-msgstr "Helle Hintergrundfarbe Appsleiste"
+msgstr "AppsBar color de fondo claro"
 
 #. module: muk_web_enterprise_theme
 #: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_res_config_settings__theme_color_appbar_text_dark
 msgid "AppsBar Text Dark Color"
-msgstr "Dunkle Textfarbe Appsleiste"
+msgstr "AppsBar color de texto oscuro"
 
 #. module: muk_web_enterprise_theme
 #: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_res_config_settings__theme_color_appbar_text_light
 msgid "AppsBar Text Light Color"
-msgstr "Helle Textfarbe Appsleiste"
+msgstr "AppsBar color de texto claro"
 
 #. module: muk_web_enterprise_theme
 #: model_terms:ir.ui.view,arch_db:muk_web_enterprise_theme.view_res_config_settings_colors_form
 msgid "Backend Theme"
-msgstr "Backend-Theme"
+msgstr "Tema del backend"
 
 #. module: muk_web_enterprise_theme
 #: model_terms:ir.ui.view,arch_db:muk_web_enterprise_theme.view_res_config_settings_colors_form
 msgid "Background"
-msgstr "Hintergrund"
+msgstr "Fondo"
 
 #. module: muk_web_enterprise_theme
 #: model:ir.model,name:muk_web_enterprise_theme.model_res_company
 msgid "Companies"
-msgstr "Unternehmen"
+msgstr "Compañías"
 
 #. module: muk_web_enterprise_theme
 #: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_res_company__favicon
 #: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_res_config_settings__theme_favicon
 msgid "Company Favicon"
-msgstr "Unternehmen Favicon"
+msgstr "Favicon de la compañía"
 
 #. module: muk_web_enterprise_theme
 #: model:ir.model,name:muk_web_enterprise_theme.model_res_config_settings
 msgid "Config Settings"
-msgstr "Konfigurationseinstellungen"
+msgstr "Ajustes de configuración"
 
 #. module: muk_web_enterprise_theme
 #: model_terms:ir.ui.view,arch_db:muk_web_enterprise_theme.view_res_config_settings_colors_form
 msgid "Dark Mode Background Image"
-msgstr "Hintergrundbild im Dunkelmodus"
+msgstr "Imagen de fondo del modo oscuro"
 
 #. module: muk_web_enterprise_theme
 #: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_ir_http__display_name
 #: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_res_company__display_name
 #: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_res_config_settings__display_name
 msgid "Display Name"
-msgstr "Anzeigename"
+msgstr "Nombre para mostrar"
 
 #. module: muk_web_enterprise_theme
 #: model_terms:ir.ui.view,arch_db:muk_web_enterprise_theme.view_res_config_settings_colors_form
@@ -118,7 +118,7 @@ msgstr "Favicon"
 #. module: muk_web_enterprise_theme
 #: model:ir.model,name:muk_web_enterprise_theme.model_ir_http
 msgid "HTTP Routing"
-msgstr "HTTP-Routing"
+msgstr "Enrutamiento HTTP"
 
 #. module: muk_web_enterprise_theme
 #: model:ir.model.fields,field_description:muk_web_enterprise_theme.field_ir_http__id
@@ -130,19 +130,19 @@ msgstr "ID"
 #. module: muk_web_enterprise_theme
 #: model_terms:ir.ui.view,arch_db:muk_web_enterprise_theme.view_res_config_settings_colors_form
 msgid "Light Mode Background Image"
-msgstr "Hintergrundbild im Lichtmodus"
+msgstr "Imagen de fondo en modo claro"
 
 #. module: muk_web_enterprise_theme
 #: model_terms:ir.ui.view,arch_db:muk_web_enterprise_theme.view_res_config_settings_colors_form
 msgid "Set the background image for the apps menu"
-msgstr "Hintergrundbild für das App-Menü festlegen"
+msgstr "Establecer la imagen de fondo para el menú de aplicaciones"
 
 #. module: muk_web_enterprise_theme
 #: model_terms:ir.ui.view,arch_db:muk_web_enterprise_theme.view_res_config_settings_colors_form
 msgid "Set your own Logo for the appsbar"
-msgstr "Setzen Sie Ihr eigenes Logo für die Appsleiste."
+msgstr "Establezca su propio logotipo para la barra de aplicaciones"
 
 #. module: muk_web_enterprise_theme
 #: model_terms:ir.ui.view,arch_db:muk_web_enterprise_theme.view_res_config_settings_colors_form
 msgid "Set your own favicon"
-msgstr "Setzen Sie Ihr eigenes Favicon"
+msgstr "Establezca su propio favicon"
