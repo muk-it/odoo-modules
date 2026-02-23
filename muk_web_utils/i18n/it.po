@@ -1,15 +1,15 @@
 # Translation of Odoo Server.
 # This file contains the translation of the following modules:
 # 	* muk_web_utils
+#
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server 19.0\n"
+"Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-05 15:09+0000\n"
-"PO-Revision-Date: 2026-01-05 15:09+0000\n"
+"POT-Creation-Date: 2026-02-23 16:47+0000\n"
+"PO-Revision-Date: 2026-02-23 16:47+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
-"Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
@@ -19,44 +19,44 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/muk_web_utils/static/src/core/block_progress/block_progress_ui.xml:0
 msgid "Batch"
-msgstr "Stapel"
+msgstr "Batch"
 
 #. module: muk_web_utils
 #: model:ir.model,name:muk_web_utils.model_res_config_settings
 msgid "Config Settings"
-msgstr "Konfigurationseinstellungen"
+msgstr "Impostazioni di configurazione"
 
 #. module: muk_web_utils
 #: model_terms:ir.ui.view,arch_db:muk_web_utils.view_res_config_settings_form
 msgid "Disable Quick Create"
-msgstr "Schnellerstellung deaktivieren"
+msgstr "Disattivare la creazione rapida"
 
 #. module: muk_web_utils
 #: model:ir.model.fields,field_description:muk_web_utils.field_res_config_settings__disable_many2one_quick_create
 msgid "Disable Quick Create for Many2one Fields"
-msgstr "Deaktivieren Sie die Schnellerstellung-Funktion für Many2one-Felder"
+msgstr "Disattivare la creazione rapida per campi Many2one"
 
 #. module: muk_web_utils
 #: model_terms:ir.ui.view,arch_db:muk_web_utils.view_res_config_settings_form
 msgid "Disable the Quick Create Feature for Many2one fields"
-msgstr "Deaktivieren Sie die Schnellerstellung-Funktion für Many2one-Felder"
+msgstr "Disattivare la funzione di creazione rapida per campi Many2one"
 
 #. module: muk_web_utils
 #: model:ir.model.fields,field_description:muk_web_utils.field_ir_http__display_name
 #: model:ir.model.fields,field_description:muk_web_utils.field_res_config_settings__display_name
 msgid "Display Name"
-msgstr "Anzeigename"
+msgstr "Nome visualizzato"
 
 #. module: muk_web_utils
 #. odoo-javascript
 #: code:addons/muk_web_utils/static/src/core/block_progress/block_progress_ui.xml:0
 msgid "Estimated time left:"
-msgstr "Geschätzte verbleibende Zeit:"
+msgstr "Tempo rimanente stimato:"
 
 #. module: muk_web_utils
 #: model:ir.model,name:muk_web_utils.model_ir_http
 msgid "HTTP Routing"
-msgstr "HTTP-Routing"
+msgstr "Instradamento HTTP"
 
 #. module: muk_web_utils
 #: model:ir.model.fields,field_description:muk_web_utils.field_ir_http__id
@@ -68,16 +68,16 @@ msgstr "ID"
 #. odoo-javascript
 #: code:addons/muk_web_utils/static/src/core/block_progress/block_progress_ui.xml:0
 msgid "minutes"
-msgstr "Minuten"
+msgstr "minuti"
 
 #. module: muk_web_utils
 #. odoo-javascript
 #: code:addons/muk_web_utils/static/src/core/block_progress/block_progress_ui.xml:0
 msgid "out of"
-msgstr "von"
+msgstr "di"
 
 #. module: muk_web_utils
 #. odoo-javascript
 #: code:addons/muk_web_utils/static/src/core/block_progress/block_progress_ui.xml:0
 msgid "seconds"
-msgstr "Sekunden"
+msgstr "secondi"
