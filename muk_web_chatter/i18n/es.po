@@ -1,15 +1,15 @@
 # Translation of Odoo Server.
 # This file contains the translation of the following modules:
 # 	* muk_web_chatter
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-26 16:53+0000\n"
-"PO-Revision-Date: 2025-11-26 16:53+0000\n"
+"POT-Creation-Date: 2026-02-23 16:44+0000\n"
+"PO-Revision-Date: 2026-02-23 16:44+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
-"Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
@@ -19,34 +19,34 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/muk_web_chatter/static/src/core/recipients_list/recipients_list.js:0
 msgid "%(recipientCount)s more"
-msgstr "%(recipientCount)s weitere"
+msgstr "%(recipientCount)s más"
 
 #. module: muk_web_chatter
 #: model:ir.model.fields.selection,name:muk_web_chatter.selection__res_users__chatter_position__bottom
 msgid "Bottom"
-msgstr "Unten"
+msgstr "Inferior"
 
 #. module: muk_web_chatter
 #: model:ir.model.fields,field_description:muk_web_chatter.field_res_users__chatter_position
 msgid "Chatter Position"
-msgstr "Chatter-Position"
+msgstr "Posición del chatter"
 
 #. module: muk_web_chatter
 #: model:ir.model.fields,field_description:muk_web_chatter.field_ir_http__display_name
 #: model:ir.model.fields,field_description:muk_web_chatter.field_res_users__display_name
 msgid "Display Name"
-msgstr "Anzeigename"
+msgstr "Nombre para mostrar"
 
 #. module: muk_web_chatter
 #. odoo-javascript
 #: code:addons/muk_web_chatter/static/src/chatter/chatter.xml:0
 msgid "External"
-msgstr "Extern"
+msgstr "Externo"
 
 #. module: muk_web_chatter
 #: model:ir.model,name:muk_web_chatter.model_ir_http
 msgid "HTTP Routing"
-msgstr "HTTP-Routing"
+msgstr "Enrutamiento HTTP"
 
 #. module: muk_web_chatter
 #: model:ir.model.fields,field_description:muk_web_chatter.field_ir_http__id
@@ -58,50 +58,50 @@ msgstr "ID"
 #. odoo-javascript
 #: code:addons/muk_web_chatter/static/src/chatter/chatter.xml:0
 msgid "Internal"
-msgstr "Intern"
+msgstr "Interno"
 
 #. module: muk_web_chatter
 #. odoo-javascript
 #: code:addons/muk_web_chatter/static/src/chatter/chatter.xml:0
 msgid "Note"
-msgstr "Hinweis"
+msgstr "Nota"
 
 #. module: muk_web_chatter
 #. odoo-javascript
 #: code:addons/muk_web_chatter/static/src/chatter/composer.js:0
 msgid "Send"
-msgstr "Senden"
+msgstr "Enviar"
 
 #. module: muk_web_chatter
 #. odoo-javascript
 #: code:addons/muk_web_chatter/static/src/chatter/composer.js:0
 msgid "Send a message to internal followers..."
-msgstr "Nachricht an interne Abonnenten senden..."
+msgstr "Enviar un mensaje a los seguidores internos..."
 
 #. module: muk_web_chatter
 #. odoo-javascript
 #: code:addons/muk_web_chatter/static/src/core/recipients_list/recipients_list.xml:0
 msgid "Show all recipients"
-msgstr "Alle Empfänger anzeigen"
+msgstr "Mostrar todos los destinatarios"
 
 #. module: muk_web_chatter
 #. odoo-javascript
 #: code:addons/muk_web_chatter/static/src/chatter/chatter.xml:0
 msgid "Show/Hide Notifications"
-msgstr "Benachrichtigungen anzeigen/ausblenden"
+msgstr "Mostrar/Ocultar notificaciones"
 
 #. module: muk_web_chatter
 #: model:ir.model.fields.selection,name:muk_web_chatter.selection__res_users__chatter_position__side
 msgid "Side"
-msgstr "Seite"
+msgstr "Lado"
 
 #. module: muk_web_chatter
 #: model:ir.model,name:muk_web_chatter.model_res_users
 msgid "User"
-msgstr "Benutzer"
+msgstr "Usuario"
 
 #. module: muk_web_chatter
 #. odoo-javascript
 #: code:addons/muk_web_chatter/static/src/core/recipients_list/recipients_list.js:0
 msgid "no email address"
-msgstr "keine E-Mail-Adresse"
+msgstr "sin dirección de correo electrónico"
