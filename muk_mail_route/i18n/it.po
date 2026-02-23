@@ -1,15 +1,15 @@
 # Translation of Odoo Server.
 # This file contains the translation of the following modules:
 # 	* muk_mail_route
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-16 08:00+0000\n"
-"PO-Revision-Date: 2025-12-16 08:00+0000\n"
+"POT-Creation-Date: 2026-02-23 16:39+0000\n"
+"PO-Revision-Date: 2026-02-23 16:39+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
-"Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
@@ -18,66 +18,66 @@ msgstr ""
 #. module: muk_mail_route
 #: model:ir.ui.menu,name:muk_mail_route.menu_mail_activity
 msgid "Acitvitiy Types"
-msgstr "Aktivitätsarten"
+msgstr "Tipi di attività"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__action_id
 msgid "Action"
-msgstr "Aktion"
+msgstr "Azione"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__message_needaction
 msgid "Action Needed"
-msgstr "Aktion erforderlich"
+msgstr "Azione necessaria"
 
 #. module: muk_mail_route
 #: model_terms:ir.ui.view,arch_db:muk_mail_route.view_router_form
 msgid "Attach Message"
-msgstr "Nachricht anhängen"
+msgstr "Allega messaggio"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__message_attachment_count
 msgid "Attachment Count"
-msgstr "Anzahl der Anhänge"
+msgstr "Conteggio allegati"
 
 #. module: muk_mail_route
 #: model_terms:ir.ui.view,arch_db:muk_mail_route.view_router_form
 msgid "Cancel"
-msgstr "Abbrechen"
+msgstr "Annulla"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__code
 msgid "Code"
-msgstr "Code"
+msgstr "Codice"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_router__configuration_id
 msgid "Configuration"
-msgstr "Konfiguration"
+msgstr "Configurazione"
 
 #. module: muk_mail_route
 #: model_terms:ir.ui.view,arch_db:muk_mail_route.view_mail_message_failed_list
 msgid "Content"
-msgstr "Inhalt"
+msgstr "Contenuto"
 
 #. module: muk_mail_route
 #: model_terms:ir.ui.view,arch_db:muk_mail_route.view_router_form
 msgid "Create Record"
-msgstr "Datensatz erstellen"
+msgstr "Crea record"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__create_uid
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__create_uid
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_router__create_uid
 msgid "Created by"
-msgstr "Erstellt von"
+msgstr "Creato da"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__create_date
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__create_date
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_router__create_date
 msgid "Created on"
-msgstr "Erstellt am"
+msgstr "Creato il"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_mail_message__display_name
@@ -86,43 +86,42 @@ msgstr "Erstellt am"
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__display_name
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_router__display_name
 msgid "Display Name"
-msgstr "Anzeigename"
+msgstr "Nome visualizzato"
 
 #. module: muk_mail_route
 #: model_terms:ir.ui.view,arch_db:muk_mail_route.view_router_form
 msgid "Do you want to create a new record and attach the messages?"
-msgstr ""
-"Möchten Sie einen neuen Datensatz erstellen und die Nachrichten anhängen?"
+msgstr "Vuole creare un nuovo record e allegare i messaggi?"
 
 #. module: muk_mail_route
 #: model:ir.model,name:muk_mail_route.model_mail_thread
 msgid "Email Thread"
-msgstr "E-Mail-Thread"
+msgstr "Discussione e-mail"
 
 #. module: muk_mail_route
 #: model_terms:ir.ui.view,arch_db:muk_mail_route.view_configuration_form
 msgid "Evaluation Code"
-msgstr "Bewertungscode"
+msgstr "Codice di valutazione"
 
 #. module: muk_mail_route
 #: model:ir.model.fields.selection,name:muk_mail_route.selection__muk_mail_route_configuration__route_type__search
 msgid "Existing Record"
-msgstr "Vorhandener Datensatz"
+msgstr "Record esistente"
 
 #. module: muk_mail_route
 #: model:ir.ui.menu,name:muk_mail_route.menu_mail_failed
 msgid "Failed Emails"
-msgstr "Fehlgeschlagene E-Mails"
+msgstr "E-mail non riuscite"
 
 #. module: muk_mail_route
 #: model:ir.actions.act_window,name:muk_mail_route.action_mail_failed
 msgid "Failed Mails"
-msgstr "Fehlgeschlagene E-Mails"
+msgstr "Mail non riuscite"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__message_follower_ids
 msgid "Followers"
-msgstr "Empfänger"
+msgstr "Follower"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__message_partner_ids
@@ -132,7 +131,7 @@ msgstr "Follower (Partner)"
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__has_message
 msgid "Has Message"
-msgstr "Hat Nachricht"
+msgstr "Ha messaggio"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_mail_message__id
@@ -146,153 +145,153 @@ msgstr "ID"
 #. module: muk_mail_route
 #: model:ir.model.fields,help:muk_mail_route.field_muk_mail_route_container__message_needaction
 msgid "If checked, new messages require your attention."
-msgstr "Wenn aktiviert, erfordern neue Nachrichten Ihre Aufmerksamkeit."
+msgstr "Se selezionato, i nuovi messaggi richiedono la Sua attenzione."
 
 #. module: muk_mail_route
 #: model:ir.model.fields,help:muk_mail_route.field_muk_mail_route_container__message_has_error
 #: model:ir.model.fields,help:muk_mail_route.field_muk_mail_route_container__message_has_sms_error
 msgid "If checked, some messages have a delivery error."
-msgstr "Wenn aktiviert, haben einige Nachrichten einen Zustellfehler."
+msgstr "Se selezionato, alcuni messaggi presentano un errore di consegna."
 
 #. module: muk_mail_route
 #: model:ir.model.fields,help:muk_mail_route.field_muk_mail_route_configuration__set_is_internal
 #: model:ir.model.fields,help:muk_mail_route.field_muk_mail_route_router__set_is_internal
 msgid "If this option is set, all routed messages are set to internal."
 msgstr ""
-"Wenn diese Option aktiviert ist, werden alle weitergeleiteten Nachrichten "
-"als intern festgelegt."
+"Se questa opzione è attivata, tutti i messaggi instradati vengono impostati "
+"come interni."
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__message_is_follower
 msgid "Is Follower"
-msgstr "Ist Follower"
+msgstr "È follower"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__write_uid
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__write_uid
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_router__write_uid
 msgid "Last Updated by"
-msgstr "Zuletzt aktualisiert von"
+msgstr "Ultimo aggiornamento di"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__write_date
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__write_date
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_router__write_date
 msgid "Last Updated on"
-msgstr "Zuletzt aktualisiert am"
+msgstr "Ultimo aggiornamento il"
 
 #. module: muk_mail_route
 #: model:ir.actions.act_window,name:muk_mail_route.action_failed_route
 #: model:ir.ui.menu,name:muk_mail_route.menu_failed_route
 msgid "Lost Emails"
-msgstr "Verlorene E-Mails"
+msgstr "E-mail perse"
 
 #. module: muk_mail_route
 #: model:ir.ui.menu,name:muk_mail_route.menu_mail_templates
 msgid "Mail Templates"
-msgstr "E-Mail-Vorlagen"
+msgstr "Modelli e-mail"
 
 #. module: muk_mail_route
 #: model:ir.model,name:muk_mail_route.model_mail_message
 msgid "Message"
-msgstr "Nachricht"
+msgstr "Messaggio"
 
 #. module: muk_mail_route
 #. odoo-python
 #: code:addons/muk_mail_route/models/container.py:0
 #: model:ir.model,name:muk_mail_route.model_muk_mail_route_container
 msgid "Message Container"
-msgstr "Nachrichtencontainer"
+msgstr "Contenitore messaggi"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__message_has_error
 msgid "Message Delivery error"
-msgstr "Nachrichtenzustellungsfehler"
+msgstr "Errore di consegna messaggio"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__message_fts_content
 msgid "Message Search Content"
-msgstr "Nachrichtensuchinhalt"
+msgstr "Contenuto di ricerca del messaggio"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__message_ids
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_router__message_ids
 msgid "Messages"
-msgstr "Nachrichten"
+msgstr "Messaggi"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__model_id
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_router__model_id
 msgid "Model"
-msgstr "Modell"
+msgstr "Modello"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__model
 msgid "Model Name"
-msgstr "Modellname"
+msgstr "Nome del modello"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__name
 msgid "Name"
-msgstr "Name"
+msgstr "Nome"
 
 #. module: muk_mail_route
 #: model:ir.model.fields.selection,name:muk_mail_route.selection__muk_mail_route_configuration__route_type__new
 msgid "New Record"
-msgstr "Neuer Datensatz"
+msgstr "Nuovo record"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__notify
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_router__notify
 msgid "Notify Followers"
-msgstr "Benachrichtige Follower"
+msgstr "Notifica ai follower"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__message_needaction_counter
 msgid "Number of Actions"
-msgstr "Anzahl der Aktionen"
+msgstr "Numero di azioni"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__message_has_error_counter
 msgid "Number of errors"
-msgstr "Anzahl der Fehler"
+msgstr "Numero di errori"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,help:muk_mail_route.field_muk_mail_route_container__message_needaction_counter
 msgid "Number of messages requiring action"
-msgstr "Anzahl der Nachrichten, die eine Aktion erfordern"
+msgstr "Numero di messaggi che richiedono un'azione"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,help:muk_mail_route.field_muk_mail_route_container__message_has_error_counter
 msgid "Number of messages with delivery error"
-msgstr "Anzahl der Nachrichten mit Zustellfehler"
+msgstr "Numero di messaggi con errore di consegna"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__rating_ids
 msgid "Ratings"
-msgstr "Bewertungen"
+msgstr "Valutazioni"
 
 #. module: muk_mail_route
 #: model_terms:ir.ui.view,arch_db:muk_mail_route.view_mail_message_failed_list
 msgid "Route"
-msgstr "Route"
+msgstr "Percorso"
 
 #. module: muk_mail_route
 #. odoo-python
 #: code:addons/muk_mail_route/models/mail_message.py:0
 msgid "Route Message"
-msgstr "Nachricht weiterleiten"
+msgstr "Instrada messaggio"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_router__reference
 msgid "Route Object"
-msgstr "Route-Objekt"
+msgstr "Oggetto percorso"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__route_type
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_router__route_type
 msgid "Route Type"
-msgstr "Routentyp"
+msgstr "Tipo di percorso"
 
 #. module: muk_mail_route
 #: model:ir.model,name:muk_mail_route.model_muk_mail_route_router
@@ -302,7 +301,7 @@ msgstr "Router"
 #. module: muk_mail_route
 #: model:ir.model,name:muk_mail_route.model_muk_mail_route_configuration
 msgid "Router Configuration"
-msgstr "Router-Konfiguration"
+msgstr "Configurazione router"
 
 #. module: muk_mail_route
 #: model:ir.actions.act_window,name:muk_mail_route.action_configuration
@@ -313,35 +312,36 @@ msgstr "Router"
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__message_has_sms_error
 msgid "SMS Delivery error"
-msgstr "SMS Zustellfehler"
+msgstr "Errore di consegna SMS"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__sequence
 msgid "Sequence"
-msgstr "Sequenz"
+msgstr "Sequenza"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__set_is_internal
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_router__set_is_internal
 msgid "Set Internal"
-msgstr "Intern festlegen"
+msgstr "Imposta come interno"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,help:muk_mail_route.field_muk_mail_route_container__message_fts_content
 msgid "Technical field to support full text search on messages."
-msgstr "Technisches Feld zur Unterstützung der Volltextsuche in Nachrichten."
+msgstr ""
+"Campo tecnico per supportare la ricerca a testo completo nei messaggi."
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__website_message_ids
 msgid "Website Messages"
-msgstr "Websitenachrichten"
+msgstr "Messaggi del sito web"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,help:muk_mail_route.field_muk_mail_route_container__website_message_ids
 msgid "Website communication history"
-msgstr "Website-Kommunikationsverlauf"
+msgstr "Cronologia delle comunicazioni del sito web"
 
 #. module: muk_mail_route
 #: model_terms:ir.ui.view,arch_db:muk_mail_route.view_configuration_form
 msgid "e.g. Ticket"
-msgstr "z.B. Ticket"
+msgstr "es. Ticket"
