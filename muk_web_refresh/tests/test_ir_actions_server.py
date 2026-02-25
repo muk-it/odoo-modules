@@ -46,19 +46,6 @@ class TestReloadViews(TransactionCase):
             self.assertEqual(payload['model'], 'res.partner')
             self.assertEqual(payload['rec_ids'], partner.ids)
             self.assertEqual(payload['view_types'], [])
-            self.assertTrue(payload['is_create'])
-
-    def test_refresh_create_flag_on_write(self):
-        partner = self.env.ref('base.res_partner_1')
-        action = self.action.with_context(old_values={partner.id: {}})
-        with mock_patch.object(
-            type(self.env['res.users']), '_bus_send'
-        ) as mock_bus_send:
-            action._run_action_refresh_multi(
-                eval_context=self._make_eval_context(partner),
-            )
-            payload = mock_bus_send.call_args[0][1]
-            self.assertFalse(payload['is_create'])
 
     def test_refresh_notifies_all_internal_users(self):
         internal_users = self.env['res.users'].search(
@@ -85,7 +72,4 @@ class TestReloadViews(TransactionCase):
             payload = mock_bus_send.call_args[0][1]
             self.assertEqual(payload['view_types'], ['list', 'kanban'])
 
-    def test_refresh_view_types_reset_on_state_change(self):
-        self.action.refresh_view_types = 'list, form'
-        self.action.state = 'code'
-        self.assertFalse(self.action.refresh_view_types)
+

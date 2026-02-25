@@ -1,6 +1,5 @@
 import { browser } from '@web/core/browser/browser';
 import { patch } from '@web/core/utils/patch';
-import { useService } from '@web/core/utils/hooks';
 
 import { ControlPanel } from '@web/search/control_panel/control_panel';
 
@@ -8,10 +7,7 @@ import { getAutoLoadInterval } from '@muk_web_refresh/core/utils';
 
 import { useState, onWillDestroy, useEffect } from '@odoo/owl';
 
-const DBLCLICK_DELAY = 300;
-
 function useRefreshAnimation(timeout) {
-    const refreshClass = 'o_content__refresh';
     let timeoutId = null;
 
     function contentClassList() {
@@ -30,22 +26,22 @@ function useRefreshAnimation(timeout) {
         clearAnimationTimeout();
         const classList = contentClassList();
         if (classList) {
-            classList.add(refreshClass);
+            classList.add('mk_refresh');
             timeoutId = setTimeout(() => {
-                classList.remove(refreshClass);
+                classList.remove('mk_refresh');
                 clearAnimationTimeout();
             }, timeout);
         }
     }
+
     return animate;
 }
 
 patch(ControlPanel.prototype, {
     setup() {
         super.setup();
-        this.action = useService('action');
-        this.refreshAnimation = useRefreshAnimation(600);
         this._clickTimeout = null;
+        this.refreshAnimation = useRefreshAnimation(600);
         this.autoLoadState = useState({
             active: (
                 this.checkAutoLoadAvailability() &&
@@ -88,11 +84,14 @@ patch(ControlPanel.prototype, {
         );
     },
     checkAutoLoadAvailability() {
-        return ['kanban', 'list'].includes(this.env.config.viewType);
+        return ['kanban', 'list'].includes(
+            this.env.config.viewType
+        );
     },
     checkRefreshAvailability() {
-        const forbiddenSubType = ['base_settings'];
-        return !forbiddenSubType.includes(this.env.config.viewSubType);
+        return !['base_settings'].includes(
+            this.env.config.viewSubType
+        );
     },
     getAutoLoadRefreshInterval() {
         return getAutoLoadInterval() / 1000;
@@ -138,41 +137,26 @@ patch(ControlPanel.prototype, {
             });
             return true;
         }
-        if (
-            this.env.searchModel &&
-            typeof this.env.searchModel.search === 'function'
-        ) {
+        if (typeof this.env.searchModel?.search === 'function') {
             this.env.searchModel.search();
             return true;
         }
         return false;
-    },
-    async refreshReport() {
-        const viewAction = this.action.currentController.action;
-        const options = {};
-        if (this.env.config.breadcrumbs.length > 1) {
-            const breadcrumb = this.env.config.breadcrumbs.slice(-1);
-            await this.action.restore(breadcrumb.jsId);
-        } else {
-            options.clearBreadcrumbs = true;
-        }
-        this.action.doAction(viewAction, options);
     },
     onClickRefresh() {
         if (this._clickTimeout) {
             clearTimeout(this._clickTimeout);
             this._clickTimeout = null;
         }
-        this._clickTimeout = setTimeout(async () => {
-            this._clickTimeout = null;
-            if (!this.env.searchModel && !this.pagerProps) {
-                return this.refreshReport();
-            }
-            const updated = await this.refreshView();
-            if (updated) {
-                this.refreshAnimation();
-            }
-        }, DBLCLICK_DELAY);
+        this._clickTimeout = setTimeout(
+            async () => {
+                this._clickTimeout = null;
+                if (await this.refreshView()) {
+                    this.refreshAnimation();
+                }
+            }, 
+            300
+        );
     },
     onDblClickRefresh() {
         if (this._clickTimeout) {

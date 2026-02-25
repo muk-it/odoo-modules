@@ -8,7 +8,7 @@
         with the Reload Views action type to trigger view refreshes
         from the backend via the bus.
     ''',
-    'version': '19.0.1.1.0',
+    'version': '19.0.1.1.1',
     'category': 'Tools/UI',
     'license': 'LGPL-3', 
     'author': 'MuK IT',

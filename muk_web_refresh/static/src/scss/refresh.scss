@@ -3,13 +3,11 @@
     user-select: none;
 }
 
-.o_content {
-    &__refresh {
-        animation: muk_web_refresh 0.6s ease;
-    }
+.mk_refresh {
+    animation: mk_refresh_frames 0.6s ease;
 }
 
-@keyframes muk_web_refresh {
+@keyframes mk_refresh_frames {
     0% {
         opacity: 1;
     }

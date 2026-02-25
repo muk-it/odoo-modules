@@ -21,6 +21,7 @@ class Product extends models.Model {
     ];
     name = fields.Char();
 }
+
 defineModels([Product]);
 defineMailModels();
 
