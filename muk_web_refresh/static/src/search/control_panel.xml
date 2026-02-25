@@ -2,10 +2,10 @@
 <templates xml:space="preserve">
 
     <t t-inherit="web.ControlPanel" t-inherit-mode="extension">
-        <xpath expr="//Pager/.." position="before">
-            <div 
-                t-if="this.checkAutoLoadAvailability()"
-                class="d-inline-flex align-items-center gap-1 align-self-center"
+        <xpath expr="//div[hasclass('o_cp_pager')]" position="before">
+            <div
+                t-if="this.checkRefreshAvailability() and !env.isSmall"
+                class="o_cp_refresh d-inline-flex align-items-center gap-1 align-self-center"
             >
                 <span
                     t-if="this.autoLoadState.active and this.autoLoadState.counter &gt; 0"
@@ -14,14 +14,15 @@
                     <t t-out="this.autoLoadState.counter"/>s
                 </span>
                 <button
-                    t-if="!env.isSmall"
                     class="btn btn-link p-0 d-inline-flex align-items-center justify-content-center"
                     type="button"
-                    t-on-click.stop="this.toggleAutoLoad"
+                    t-att-title="this.autoLoadState.active ? 'Auto Refresh Active (Double-Click to Disable)' : 'Refresh (Double-Click for Auto Refresh)'"
+                    t-on-click.stop="this.onClickRefresh"
+                    t-on-dblclick.stop="this.onDblClickRefresh"
                 >
-                    <i 
+                    <i
                         class="fa fa-refresh fa-fw"
-                        t-att-class="this.autoLoadState.active ? 'text-info fa-spin' : 'text-muted'"
+                        t-att-class="this.autoLoadState.active ? 'text-info' : 'text-muted'"
                     />
                 </button>
             </div>
