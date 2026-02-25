@@ -4,7 +4,7 @@
     <t t-inherit="web.ControlPanel" t-inherit-mode="extension">
         <xpath expr="//div[hasclass('o_cp_pager')]" position="before">
             <div
-                t-if="this.checkRefreshAvailability() and !env.isSmall"
+                t-if="this.autoLoadState and this.checkRefreshAvailability() and !env.isSmall"
                 class="o_cp_refresh d-inline-flex align-items-center gap-1 align-self-center"
             >
                 <span

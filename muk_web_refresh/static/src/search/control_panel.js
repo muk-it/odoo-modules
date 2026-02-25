@@ -1,9 +1,10 @@
 import { browser } from '@web/core/browser/browser';
 import { patch } from '@web/core/utils/patch';
 import { useService } from '@web/core/utils/hooks';
-import { session } from '@web/session';
 
 import { ControlPanel } from '@web/search/control_panel/control_panel';
+
+import { getAutoLoadInterval } from '@muk_web_refresh/core/utils';
 
 import { useState, onWillDestroy, useEffect } from '@odoo/owl';
 
@@ -94,7 +95,7 @@ patch(ControlPanel.prototype, {
         return !forbiddenSubType.includes(this.env.config.viewSubType);
     },
     getAutoLoadRefreshInterval() {
-        return (session.pager_autoload_interval ?? 30000) / 1000;
+        return getAutoLoadInterval() / 1000;
     },
     getAutoLoadStorageKey() {
         const keys = [

@@ -66,7 +66,7 @@ class IrActionsServer(models.Model):
                 if vt.strip()
             ],
             'rec_ids': records.ids if records else [],
-            'create': is_create,
+            'is_create': is_create,
         }
         for user in self.env['res.users'].search(
             [('share', '=', False)]

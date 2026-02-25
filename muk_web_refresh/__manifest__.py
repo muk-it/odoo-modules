@@ -31,6 +31,7 @@
     ],
     'assets': {
         'web.assets_backend': [
+            'muk_web_refresh/static/src/core/utils.js',
             'muk_web_refresh/static/src/scss/refresh.scss',
             (
                 'after',
