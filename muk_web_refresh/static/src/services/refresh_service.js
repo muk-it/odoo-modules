@@ -15,16 +15,14 @@ export const refreshService = {
                 }
                 const resModel = controller.action.res_model;
                 const viewType = controller.view?.type;
-                const { model, view_types, rec_ids } = payload;
+                const { model, view_types, rec_ids, create } = payload;
                 if (resModel !== model) {
                     return;
                 }
                 if (view_types.length > 0 && !view_types.includes(viewType)) {
-                    if (!(viewType === 'list' && view_types.includes('tree'))) {
-                        return;
-                    }
+                    return;
                 }
-                if (rec_ids.length > 0) {
+                if (rec_ids.length > 0 && !create) {
                     const currentResId = controller.currentState?.resId;
                     if (currentResId && !rec_ids.includes(currentResId)) {
                         return;

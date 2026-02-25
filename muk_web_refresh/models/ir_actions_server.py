@@ -57,6 +57,7 @@ class IrActionsServer(models.Model):
             eval_context.get('records') or 
             eval_context.get('record')
         )
+        is_create = self.env.context.get('old_values') is None
         message = {
             'model': self.model_id.model,
             'view_types': [
@@ -65,6 +66,7 @@ class IrActionsServer(models.Model):
                 if vt.strip()
             ],
             'rec_ids': records.ids if records else [],
+            'create': is_create,
         }
         for user in self.env['res.users'].search(
             [('share', '=', False)]
