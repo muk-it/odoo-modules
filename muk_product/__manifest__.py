@@ -5,7 +5,7 @@
         This module gives you a quick view of all your products, 
         accessible from your home menu.
     ''',
-    'version': '19.0.1.4.1',
+    'version': '19.0.1.4.2',
     'category': 'Sales/Product',
     'license': 'LGPL-3', 
     'author': 'MuK IT',
@@ -29,6 +29,9 @@
         'views/res_config_settings.xml',
         'views/product_search.xml',
         'views/menu.xml',
+    ],
+    'demo': [
+        'demo/product.xml',
     ],
     'assets': {
         'web.assets_backend': [
