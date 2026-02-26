@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo noupdate="1">
+
+	<record id="demo_honorific_dr" model="muk_contacts_vcard.honorific">
+		<field name="name">Doctor</field>
+		<field name="shortcut">Dr.</field>
+		<field name="position">preceding</field>
+		<field name="sequence">10</field>
+	</record>
+
+	<record id="demo_honorific_prof" model="muk_contacts_vcard.honorific">
+		<field name="name">Professor</field>
+		<field name="shortcut">Prof.</field>
+		<field name="position">preceding</field>
+		<field name="sequence">5</field>
+	</record>
+
+	<record id="demo_honorific_ing" model="muk_contacts_vcard.honorific">
+		<field name="name">Ingenieur</field>
+		<field name="shortcut">Ing.</field>
+		<field name="position">preceding</field>
+		<field name="sequence">20</field>
+	</record>
+
+	<record id="demo_honorific_dipl_ing" model="muk_contacts_vcard.honorific">
+		<field name="name">Diplom-Ingenieur</field>
+		<field name="shortcut">Dipl.-Ing.</field>
+		<field name="position">preceding</field>
+		<field name="sequence">15</field>
+	</record>
+
+	<record id="demo_honorific_mag" model="muk_contacts_vcard.honorific">
+		<field name="name">Magister</field>
+		<field name="shortcut">Mag.</field>
+		<field name="position">preceding</field>
+		<field name="sequence">25</field>
+	</record>
+
+	<record id="demo_honorific_bsc" model="muk_contacts_vcard.honorific">
+		<field name="name">Bachelor of Science</field>
+		<field name="shortcut">BSc</field>
+		<field name="position">following</field>
+		<field name="sequence">10</field>
+	</record>
+
+	<record id="demo_honorific_msc" model="muk_contacts_vcard.honorific">
+		<field name="name">Master of Science</field>
+		<field name="shortcut">MSc</field>
+		<field name="position">following</field>
+		<field name="sequence">5</field>
+	</record>
+
+	<record id="demo_honorific_mba" model="muk_contacts_vcard.honorific">
+		<field name="name">Master of Business Administration</field>
+		<field name="shortcut">MBA</field>
+		<field name="position">following</field>
+		<field name="sequence">15</field>
+	</record>
+
+</odoo>
