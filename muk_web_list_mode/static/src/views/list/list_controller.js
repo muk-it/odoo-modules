@@ -1,8 +1,10 @@
-import { browser } from '@web/core/browser/browser';
-import { _t } from '@web/core/l10n/translation';
-import { patch } from '@web/core/utils/patch';
-import { ListController } from '@web/views/list/list_controller';
+
 import { session } from '@web/session';
+import { patch } from '@web/core/utils/patch';
+import { _t } from '@web/core/l10n/translation';
+import { browser } from '@web/core/browser/browser';
+
+import { ListController } from '@web/views/list/list_controller';
 
 patch(ListController.prototype, {
     setup() {
