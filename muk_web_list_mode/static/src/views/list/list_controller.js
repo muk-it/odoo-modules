@@ -1,25 +1,49 @@
-
-import { patch } from '@web/core/utils/patch';
+import { browser } from '@web/core/browser/browser';
 import { _t } from '@web/core/l10n/translation';
-
+import { patch } from '@web/core/utils/patch';
 import { ListController } from '@web/views/list/list_controller';
+import { session } from '@web/session';
 
 patch(ListController.prototype, {
+    setup() {
+        super.setup();
+        if (!this.props.readonly && this.activeActions.edit &&
+            this.env.config.actionId
+        ) {
+            const storedMode = browser.localStorage.getItem(
+                this.getModeStorageKey()
+            );
+            if (storedMode === 'edit' && !this.editable) {
+                this.editable = this.archInfo.editable || 'bottom';
+            } else if (storedMode === 'read' && this.editable) {
+                this.editable = false;
+            }
+        }
+    },
+    getModeStorageKey() {
+        const uid = this.env.services?.user?.userId;
+        const actionId = this.env.config.actionId;
+        const model = this.props.resModel;
+        return `mk_list_mode,${session.db},${uid},${actionId},${model}`;
+    },
     get display() {
         const res = super.display;
         if (!this.props.readonly && this.activeActions.edit && res.controlPanel) {
             const initialEditable = this.editable || 'bottom';
-            const initialMultiEdit =  this.archInfo.multiEdit || false;
+            const initialMultiEdit = this.archInfo.multiEdit || false;
             const modeEntries = [
                 { mode: 'read', name: _t('Open Form View'), icon: 'fa fa-external-link' },
-                { mode: 'edit',  name: _t('Inline Edit Mode'), icon: 'fa fa-pencil' },
-            ]
+                { mode: 'edit', name: _t('Inline Edit Mode'), icon: 'fa fa-pencil' },
+            ];
             const setMode = (mode) => {
                 this.editable = (
                     mode === 'edit' ? initialEditable : false
                 );
                 this.model.multiEdit = (
                     mode === 'edit' ? true : initialMultiEdit
+                );
+                browser.localStorage.setItem(
+                    this.getModeStorageKey(), mode
                 );
                 this.model.notify();
             };
@@ -34,7 +58,5 @@ patch(ListController.prototype, {
             };
         }
         return res;
-    }
+    },
 });
-
-

@@ -7,7 +7,7 @@
                 t-if="!env.isSmall and !env.inDialog and props.display?.modeSwitch?.modeSwitcherEntries.length > 1" 
                 class="btn-group d-print-none mk_mode_switch"
             >   
-                <t t-if="props.display?.modeSwitch?.modeSwitcherEntries.length == 2">
+                <t t-if="props.display?.modeSwitch?.modeSwitcherEntries.length &lt;= 3">
                     <t t-foreach="props.display.modeSwitch.modeSwitcherEntries" t-as="switch" t-key="switch.mode">
                         <button
                             class="btn btn-secondary"
