@@ -34,7 +34,7 @@ class TestReloadViews(TransactionCase):
         }
 
     def test_refresh_sends_bus_notification(self):
-        partner = self.env.ref('base.res_partner_1')
+        partner = self.env['res.partner'].create({'name': 'Test Partner'})
         with mock_patch.object(
             type(self.env['res.users']), '_bus_send'
         ) as mock_bus_send:
