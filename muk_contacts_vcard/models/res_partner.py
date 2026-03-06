@@ -161,13 +161,16 @@ class Partner(models.Model):
 
     @api.model
     def _split_name(self, name, is_company=False):
-        for record in self:
-            if is_company or not name:
-                return name or False, False
-            parts = name.split(' ')
-            if len(parts) > 1:
-                return ' '.join(parts[1:]), parts[0]
-            return name, False
+        if is_company or not name:
+            return name or False, False
+        parts = name.split(' ')
+        if len(parts) > 1:
+            return ' '.join(parts[1:]), parts[0]
+        return name, False
+
+    def _fields_sync(self, values):
+        self.flush_recordset()
+        return super()._fields_sync(values)
 
     def _get_complete_name(self):
         complete_name = super()._get_complete_name()
@@ -273,11 +276,9 @@ class Partner(models.Model):
             lastname, firstname = self._split_name(
                 (record.name or '').strip(), record.is_company
             )
-            record.write({
-                'firstname': firstname,
-                'middlename': False,
-                'lastname': lastname,
-            })
+            record.firstname = firstname
+            record.middlename = False
+            record.lastname = lastname
 
     @api.depends(
         'type',
