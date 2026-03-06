@@ -1,9 +1,11 @@
 import { browser } from '@web/core/browser/browser';
+import { useBus } from '@web/core/utils/hooks';
 import { patch } from '@web/core/utils/patch';
 
 import { ControlPanel } from '@web/search/control_panel/control_panel';
 
 import { getAutoLoadInterval } from '@muk_web_refresh/core/utils';
+import { REFRESH_VIEW_EVENT } from '@muk_web_refresh/services/refresh_service';
 
 import { useState, onWillDestroy, useEffect } from '@odoo/owl';
 
@@ -42,6 +44,9 @@ patch(ControlPanel.prototype, {
         super.setup();
         this._clickTimeout = null;
         this.refreshAnimation = useRefreshAnimation(600);
+        useBus(this.env.bus, REFRESH_VIEW_EVENT, () => {
+            this.refreshView();
+        });
         this.autoLoadState = useState({
             active: (
                 this.checkAutoLoadAvailability() &&
