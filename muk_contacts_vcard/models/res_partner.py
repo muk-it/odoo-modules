@@ -31,6 +31,7 @@ class Partner(models.Model):
         inverse='_inverse_name',
         readonly=False,
         store=True,
+        precompute=True,
     )
 
     firstname = fields.Char(
