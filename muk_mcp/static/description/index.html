@@ -1,0 +1,174 @@
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<h2 class="oe_slogan">MuK MCP Server</h2>
+		<h3 class="oe_slogan mb-0">Model Context Protocol Server for AI Agent Integration</h3>
+		<img src="logo.png" style="width: 150px;" class="mx-auto center-block">
+		<h4 class="oe_slogan mt-0" style="font-size: 23px">MuK IT GmbH - www.mukit.at</h4>
+		<div class="mb-4" style="text-align: center;">
+			<span 
+				class="btn btn-sm mb-2" 
+				style="font-size:14px; font-weight:500; background-color:#243742; color:#fff; cursor:default;"
+			>
+				<i class="fa fa-check"></i> Community
+			</span>
+			<span 
+				class="btn btn-sm mb-2" 
+				style="font-size:14px; font-weight:500; background-color:#5D8DA8; color:#fff; cursor:default;"
+			>
+				<i class="fa fa-check me-1"></i> Enterprise
+			</span>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width: 84%; margin: 16px 8%;">
+			<h3 class="oe_slogan">Overview</h3>
+			<p class="oe_mt32">
+				Implements a native MCP (Model Context Protocol) server inside Odoo, 
+				exposing business data and operations to any MCP-compatible AI client 
+				such as Claude Desktop, Claude Code, Cursor, Windsurf, or Codex CLI. 
+				The server speaks MCP Streamable HTTP at a single /mcp endpoint and 
+				reuses the MuK REST API authentication layer.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Native MCP Endpoint</h3>
+            <p>
+				Odoo IS the MCP server — no extra process, no middleware. The /mcp 
+				endpoint speaks the MCP Streamable HTTP protocol natively, handling 
+				JSON-RPC 2.0 messages for initialize, tools/list, and tools/call.
+            </p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">9 Built-in Tools</h3>
+            <p>
+				Ships with a complete set of ORM tools out of the box: list_models, 
+				get_model_schema, search_read, read_record, search_count, create_record, 
+				update_record, delete_record, and execute_method. Each tool is manageable 
+				via the backend UI.
+            </p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Extensible Tool Registry</h3>
+            <p>
+				Add custom tools through the backend UI or by inheriting the mcp.tool 
+				model and adding handler methods. Tools are categorized as Read, Write, 
+				or Execute with fine-grained access control via security groups.
+            </p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Enterprise Authentication</h3>
+            <p>
+				Leverages the MuK REST API authentication layer. Supports Bearer 
+				tokens (Odoo API keys), Basic Auth, OAuth1, and OAuth2 — all 
+				production-ready and battle-tested.
+            </p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container oe_dark d-flex justify-content-around flex-column flex-lg-row">
+	<div class="d-flex flex-column m-3 ms-lg-4">
+		<h3 class="oe_slogan mb-3 mt-3 text-left">
+			<i class="fa fa-headphones mr8"></i>Help and Support
+		</h3>
+		<p>
+			Feel free to contact us, if you need any help with your Odoo
+			integration or additional features.<br> You will get 30 days of
+			support in case of any issues (except data recovery, migration or
+			training).
+		</p>
+	</div>
+	<div class="oe_slogan d-flex flex-column pt-lg-4 ms-1 me-1 ms-lg-4 me-lg-4 mt-0 mt-lg-auto flex-grow-1">
+		<a class="btn btn-primary btn-lg m-1 mt-2" href="#loempia_app_infos" style="font-size: 1.2rem; position: relative; overflow: hidden;">
+			<i class="fa fa-shopping-cart me-1"></i> PURCHASE NOW </a>
+		<div class="d-flex">
+			<a class="btn btn-info btn-lg flex-grow-1 m-1" href="mailto:sale@mukit.at?subject=Request" style="position: relative; overflow: hidden;">
+				<i class="fa fa-envelope me-1"></i> Contact
+			</a> 
+			<a class="btn btn-info btn-lg flex-grow-1 m-1" href="mailto:support@mukit.at?subject=Support" style="position: relative; overflow: hidden;">
+				<i class="fa fa-support me-1"></i> Support
+			</a>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<h3 class="oe_slogan">Our Services</h3>
+		<div class="d-flex justify-content-between">
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="/service_development.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px">
+						Odoo <br>Development
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="/service_integration.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px">
+						Odoo <br>Integration
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="/service_infrastructure.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px">
+						Odoo <br>Infrastructure
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="/service_training.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px">
+						Odoo <br>Training
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="/service_support.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px">
+						Odoo <br>Support
+					</h3>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>

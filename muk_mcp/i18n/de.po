@@ -1,0 +1,523 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* muk_mcp
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-03-15 23:31+0000\n"
+"PO-Revision-Date: 2026-03-15 23:31+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: muk_mcp
+#: model:res.groups,comment:muk_mcp.group_mcp_admin
+msgid ""
+"\n"
+"\t\t\tMembers of this group can configure the MCP server,\n"
+"\t\t\tmanage tools, and use all tool categories.\n"
+"\t\t"
+msgstr ""
+
+#. module: muk_mcp
+#: model:res.groups,comment:muk_mcp.group_mcp_user
+msgid ""
+"\n"
+"\t\t\tMembers of this group can connect to the MCP server\n"
+"\t\t\tand use tools marked as read-only.\n"
+"\t\t"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key_scope__key_id
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__key_id
+msgid "API Key"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.actions.act_window,name:muk_mcp.action_mcp_key
+#: model:ir.ui.menu,name:muk_mcp.menu_mcp_keys
+msgid "API Keys"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__active
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__active
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__active
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_tool_search
+msgid "Active"
+msgstr ""
+
+#. module: muk_mcp
+#: model:res.groups,name:muk_mcp.group_mcp_admin
+msgid "Administrator"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.actions.act_window,name:muk_mcp.action_mcp_log
+#: model:ir.ui.menu,name:muk_mcp.menu_mcp_log
+msgid "Audit Log"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,help:muk_mcp.field_res_config_settings__mcp_log_retention
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Audit logs older than this many days are automatically deleted."
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__category
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_tool_search
+msgid "Category"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model,name:muk_mcp.model_res_config_settings
+msgid "Config Settings"
+msgstr "Konfigurationseinstellungen"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key_scope__perm_create
+msgid "Create"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__create_uid
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key_scope__create_uid
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__create_uid
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__create_uid
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__create_uid
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__create_date
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key_scope__create_date
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__create_date
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__create_date
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__create_date
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key_scope__perm_unlink
+msgid "Delete"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__delivered
+msgid "Delivered"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields.selection,name:muk_mcp.selection__muk_mcp_log__status__denied
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_search
+msgid "Denied"
+msgstr ""
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_tool_form
+msgid "Describe what this tool does..."
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__description
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_tool_form
+msgid "Description"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_ir_http__display_name
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__display_name
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key_scope__display_name
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__display_name
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__display_name
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__display_name
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__display_name
+#: model:ir.model.fields,field_description:muk_mcp.field_res_config_settings__display_name
+msgid "Display Name"
+msgstr "Anzeigename"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__duration_ms
+msgid "Duration (ms)"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_res_config_settings__mcp_enabled
+msgid "Enable MCP Server"
+msgstr ""
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Enable the Model Context Protocol server at /mcp"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__error_message
+#: model:ir.model.fields.selection,name:muk_mcp.selection__muk_mcp_log__status__error
+msgid "Error"
+msgstr ""
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_search
+msgid "Errors"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__event_id
+msgid "Event ID"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields.selection,name:muk_mcp.selection__muk_mcp_tool__category__execute
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_tool_search
+msgid "Execute"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,help:muk_mcp.field_muk_mcp_key__key_prefix
+msgid "First 8 characters of the key for identification."
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model,name:muk_mcp.model_ir_http
+msgid "HTTP Routing"
+msgstr "HTTP-Routing"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__handler
+msgid "Handler Method"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,help:muk_mcp.field_muk_mcp_tool__read_only
+msgid "Hint to the AI client that this tool does not modify data."
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_ir_http__id
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__id
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key_scope__id
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__id
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__id
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__id
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__id
+#: model:ir.model.fields,field_description:muk_mcp.field_res_config_settings__id
+msgid "ID"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,help:muk_mcp.field_res_config_settings__mcp_session_timeout
+msgid "Inactive MCP sessions are cleaned up after this many hours."
+msgstr ""
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Inactive sessions are cleaned up after this many hours."
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__initialized
+msgid "Initialized"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__input_schema
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_tool_form
+msgid "Input Schema"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,help:muk_mcp.field_muk_mcp_tool__input_schema
+msgid "JSON Schema defining the tool parameters."
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__key_hash
+msgid "Key Hash"
+msgstr ""
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_key_form
+msgid "Key Label"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__key_prefix
+msgid "Key Prefix"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__name
+msgid "Label"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__last_activity
+msgid "Last Activity"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__write_uid
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key_scope__write_uid
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__write_uid
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__write_uid
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__write_uid
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__write_date
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key_scope__write_date
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__write_date
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__write_date
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__write_date
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__last_used
+msgid "Last Used"
+msgstr ""
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_key_form
+msgid ""
+"Leave empty to allow access to all models the user has permission for.\n"
+"\t\t\t\t\t\t\t\tAdd scopes to restrict which models this key can access."
+msgstr ""
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Log Retention"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_res_config_settings__mcp_log_retention
+msgid "Log Retention (days)"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.ui.menu,name:muk_mcp.menu_mcp_root
+msgid "MCP"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model,name:muk_mcp.model_muk_mcp_key
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_key_form
+msgid "MCP API Key"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model,name:muk_mcp.model_muk_mcp_key_scope
+msgid "MCP API Key Model Scope"
+msgstr ""
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_key_list
+msgid "MCP API Keys"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model,name:muk_mcp.model_muk_mcp_log
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_list
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_search
+msgid "MCP Audit Log"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model,name:muk_mcp.model_muk_mcp_notification
+msgid "MCP Notification"
+msgstr ""
+
+#. module: muk_mcp
+#: model:res.groups.privilege,name:muk_mcp.res_groups_privilege_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "MCP Server"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model,name:muk_mcp.model_muk_mcp_session
+msgid "MCP Session"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model,name:muk_mcp.model_muk_mcp_tool
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_tool_form
+msgid "MCP Tool"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.actions.act_window,name:muk_mcp.action_mcp_tool
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_tool_list
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_tool_search
+msgid "MCP Tools"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,help:muk_mcp.field_muk_mcp_key__rate_limit
+msgid "Maximum requests per minute. 0 = unlimited."
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__method
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__method
+msgid "Method"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key_scope__model_name
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__model_name
+msgid "Model"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__scope_ids
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_key_form
+msgid "Model Scopes"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__name
+msgid "Name"
+msgstr ""
+
+#. module: muk_mcp
+#: model_terms:ir.actions.act_window,help:muk_mcp.action_mcp_tool
+msgid "No MCP tools configured."
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields.selection,name:muk_mcp.selection__muk_mcp_log__status__ok
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_search
+msgid "OK"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__params
+msgid "Params"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,help:muk_mcp.field_muk_mcp_tool__handler
+msgid "Python method name on muk_mcp.tool that implements the tool."
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__rate_limit
+msgid "Rate Limit (req/min)"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields.selection,name:muk_mcp.selection__muk_mcp_log__status__rate_limited
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_search
+msgid "Rate Limited"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key_scope__perm_read
+#: model:ir.model.fields.selection,name:muk_mcp.selection__muk_mcp_tool__category__read
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_tool_search
+msgid "Read"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__read_only
+msgid "Read Only"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__sequence
+msgid "Sequence"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__session_id
+msgid "Session"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__session_id
+msgid "Session ID"
+msgstr ""
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Session Timeout"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_res_config_settings__mcp_session_timeout
+msgid "Session Timeout (hours)"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__status
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_search
+msgid "Status"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,help:muk_mcp.field_muk_mcp_key_scope__model_name
+msgid "Technical model name (e.g. 'res.partner', 'sale.order')."
+msgstr ""
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_list
+msgid "Time"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__tool_name
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_search
+msgid "Tool"
+msgstr ""
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_tool_form
+msgid "Tool Name"
+msgstr ""
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/models/mcp_tool.py:0
+msgid "Tool handler \"%(handler)s\" not found."
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.ui.menu,name:muk_mcp.menu_mcp_tools
+msgid "Tools"
+msgstr ""
+
+#. module: muk_mcp
+#: model_terms:ir.actions.act_window,help:muk_mcp.action_mcp_tool
+msgid ""
+"Tools are automatically created when the module is installed.\n"
+"\t\t\t\tYou can add custom tools here."
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__user_id
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__user_id
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__user_id
+#: model:res.groups,name:muk_mcp.group_mcp_user
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_search
+msgid "User"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key_scope__perm_write
+#: model:ir.model.fields.selection,name:muk_mcp.selection__muk_mcp_tool__category__write
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_tool_search
+msgid "Write"
+msgstr ""
