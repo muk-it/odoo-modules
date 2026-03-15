@@ -1,7 +1,7 @@
 from odoo import api, tools, fields, models
 
 
-class McpLog(models.Model):
+class MCPLog(models.Model):
 
     _name = 'muk_mcp.log'
     _description = "MCP Audit Log"

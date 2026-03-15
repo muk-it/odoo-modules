@@ -13,7 +13,7 @@ SSE_KEEPALIVE_INTERVAL = 15
 SSE_MAX_DURATION = 300
 
 
-class McpController(http.Controller):
+class MCPController(http.Controller):
 
     #----------------------------------------------------------
     # Helper

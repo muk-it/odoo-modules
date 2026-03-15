@@ -4,7 +4,7 @@ import uuid
 from odoo import api, fields, models
 
 
-class McpNotification(models.Model):
+class MCPNotification(models.Model):
 
     _name = 'muk_mcp.notification'
     _description = "MCP Notification"

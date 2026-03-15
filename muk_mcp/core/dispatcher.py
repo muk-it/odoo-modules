@@ -4,7 +4,7 @@ from odoo import http
 from odoo.http import Response
 
 
-class McpDispatcher(http.Dispatcher):
+class MCPDispatcher(http.Dispatcher):
 
     routing_type = 'mcp'
 

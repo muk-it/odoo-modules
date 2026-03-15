@@ -4,7 +4,7 @@ from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 
 
-class McpTool(models.Model):
+class MCPTool(models.Model):
 
     _name = 'muk_mcp.tool'
     _description = "MCP Tool"

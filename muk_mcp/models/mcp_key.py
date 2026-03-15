@@ -6,7 +6,7 @@ from odoo import api, fields, models
 _rate_limit_store = {}
 
 
-class McpKey(models.Model):
+class MCPKey(models.Model):
 
     _name = 'muk_mcp.key'
     _description = "MCP API Key"

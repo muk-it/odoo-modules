@@ -1,7 +1,7 @@
 from odoo import fields, models
 
 
-class McpScope(models.Model):
+class MCPScope(models.Model):
 
     _name = 'muk_mcp.scope'
     _description = "MCP Model Scope"

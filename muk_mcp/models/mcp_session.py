@@ -3,7 +3,7 @@ import uuid
 from odoo import api, tools, fields, models
 
 
-class McpSession(models.Model):
+class MCPSession(models.Model):
 
     _name = 'muk_mcp.session'
     _description = "MCP Session"
