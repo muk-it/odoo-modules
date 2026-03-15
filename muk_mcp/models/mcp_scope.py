@@ -1,10 +1,10 @@
 from odoo import fields, models
 
 
-class McpKeyScope(models.Model):
+class McpScope(models.Model):
 
-    _name = 'muk_mcp.key.scope'
-    _description = "MCP API Key Model Scope"
+    _name = 'muk_mcp.scope'
+    _description = "MCP Model Scope"
     _order = 'model_name'
 
     # ----------------------------------------------------------

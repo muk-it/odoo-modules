@@ -43,7 +43,7 @@ class McpKey(models.Model):
     )
 
     scope_ids = fields.One2many(
-        comodel_name='muk_mcp.key.scope',
+        comodel_name='muk_mcp.scope',
         inverse_name='key_id',
         string="Model Scopes",
     )

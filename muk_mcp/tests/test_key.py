@@ -38,7 +38,7 @@ class TestMcpKey(common.TransactionCase):
         self.assertTrue(self.key._check_model_access('sale.order', 'write'))
 
     def test_model_access_with_scopes(self):
-        self.env['muk_mcp.key.scope'].create({
+        self.env['muk_mcp.scope'].create({
             'key_id': self.key.id,
             'model_name': 'res.partner',
             'perm_read': True,
