@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_mcp_log_search" model="ir.ui.view">
+		<field name="name">muk_mcp.log.search</field>
+		<field name="model">muk_mcp.log</field>
+		<field name="arch" type="xml">
+			<search>
+				<field name="method"/>
+				<field name="tool_name"/>
+				<field name="model_name"/>
+				<field name="user_id"/>
+				<filter name="ok" string="OK" domain="[('status', '=', 'ok')]"/>
+				<filter name="errors" string="Errors" domain="[('status', '=', 'error')]"/>
+				<filter name="denied" string="Denied" domain="[('status', '=', 'denied')]"/>
+				<filter name="rate_limited" string="Rate Limited" domain="[('status', '=', 'rate_limited')]"/>
+                <group>
+					<filter name="group_tool" string="Tool" context="{'group_by': 'tool_name'}"/>
+					<filter name="group_status" string="Status" context="{'group_by': 'status'}"/>
+					<filter name="group_user" string="User" context="{'group_by': 'user_id'}"/>
+				</group>
+			</search>
+		</field>
+	</record>
+
+	<record id="view_mcp_log_list" model="ir.ui.view">
+		<field name="name">muk_mcp.log.list</field>
+		<field name="model">muk_mcp.log</field>
+		<field name="arch" type="xml">
+			<list create="false" edit="false">
+				<field name="create_date" string="Time"/>
+				<field name="key_id"/>
+				<field name="user_id"/>
+				<field name="method"/>
+				<field name="tool_name"/>
+				<field name="model_name"/>
+				<field name="duration_ms"/>
+				<field name="error_message" optional="hide"/>
+				<field 
+					name="status"
+					widget="badge"
+					decoration-success="status == 'ok'"
+					decoration-danger="status in ('error', 'denied')"
+					decoration-warning="status == 'rate_limited'"
+				/>
+			</list>
+		</field>
+	</record>
+
+	<record id="action_mcp_log" model="ir.actions.act_window">
+		<field name="name">Audit Log</field>
+		<field name="res_model">muk_mcp.log</field>
+		<field name="view_mode">list</field>
+		<field name="context">{'create': False}</field>
+	</record>
+
+</odoo>

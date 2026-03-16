@@ -1,0 +1,706 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo noupdate="1">
+
+    <record id="tool_list_modules" model="muk_mcp.tool">
+        <field name="name">list_modules</field>
+        <field name="description">List installed Odoo modules with their names, versions, and descriptions. Use 'search' to filter. This helps understand which apps and features are active in the system (e.g. is 'sale' installed? is 'stock' installed?).</field>
+        <field name="category">read</field>
+        <field name="sequence">3</field>
+        <field name="code">
+search_term = arguments.get('search', '')
+state = arguments.get('state', 'installed')
+domain = [('state', '=', state)]
+if search_term:
+    domain.append(('name', 'ilike', search_term))
+modules = env['ir.module.module'].sudo().search_read(
+    domain,
+    fields=['name', 'shortdesc', 'state', 'installed_version'],
+    order='name asc',
+)
+result = [
+    {
+        'name': m['name'],
+        'label': m['shortdesc'],
+        'version': m['installed_version'] or '',
+        'state': m['state'],
+    }
+    for m in modules
+]
+        </field>
+        <field name="input_schema">{
+    "type": "object",
+    "properties": {
+        "search": {
+            "type": "string",
+            "description": "Filter module names by substring."
+        },
+        "state": {
+            "type": "string",
+            "description": "Filter by state. Default: 'installed'.",
+            "enum": ["installed", "uninstalled", "to upgrade", "to install"],
+            "default": "installed"
+        }
+    }
+}</field>
+    </record>
+
+    <record id="tool_list_models" model="muk_mcp.tool">
+        <field name="name">list_models</field>
+        <field name="description">List available Odoo models with their technical names and human-readable descriptions. Use 'search' to filter by substring (e.g. 'sale', 'account', 'stock'). This is the starting point to discover what data exists in the system before querying it. Common models: res.partner (contacts), sale.order (sales), account.move (invoices), stock.picking (deliveries), project.task (tasks), hr.employee (employees).</field>
+        <field name="category">read</field>
+        <field name="sequence">1</field>
+        <field name="code">
+search_term = arguments.get('search', '')
+models_data = []
+for model_name, model_cls in env.items():
+    if search_term and search_term.lower() not in model_name.lower():
+        continue
+    try:
+        description = model_cls._description or model_name
+    except Exception:
+        description = model_name
+    models_data.append({
+        'model': model_name,
+        'description': description,
+    })
+models_data.sort(key=lambda m: m['model'])
+limit = arguments.get('limit', 100)
+result = models_data[:limit]
+        </field>
+        <field name="input_schema">{
+    "type": "object",
+    "properties": {
+        "search": {
+            "type": "string",
+            "description": "Filter model names by substring (case-insensitive). Examples: 'sale', 'partner', 'account', 'stock', 'project'."
+        },
+        "limit": {
+            "type": "integer",
+            "description": "Maximum number of models to return.",
+            "default": 100
+        }
+    }
+}</field>
+    </record>
+
+    <record id="tool_get_model_schema" model="muk_mcp.tool">
+        <field name="name">get_model_schema</field>
+        <field name="description">Get the complete field definitions for an Odoo model. Returns every field with its type, label, help text, required/readonly flags, and relation target (for Many2one/One2many/Many2many fields). Use this before search_read to know which fields exist and what types they are. The 'selection' attribute shows allowed values for Selection fields.</field>
+        <field name="category">read</field>
+        <field name="sequence">2</field>
+        <field name="code">
+model_name = arguments.get('model')
+if not model_name or model_name not in env:
+    result = {'error': 'Model %r not found' % model_name}
+else:
+    result = env[model_name].fields_get(
+        attributes=[
+            'string', 'type', 'help', 'required',
+            'readonly', 'relation', 'selection',
+        ]
+    )
+        </field>
+        <field name="input_schema">{
+    "type": "object",
+    "properties": {
+        "model": {
+            "type": "string",
+            "description": "Technical model name (e.g. 'res.partner', 'sale.order', 'account.move')."
+        }
+    },
+    "required": ["model"]
+}</field>
+    </record>
+
+    <record id="tool_search_read" model="muk_mcp.tool">
+        <field name="name">search_read</field>
+        <field name="description">Search for records matching a domain filter and return their field values. The domain is a list of conditions using Odoo's domain syntax: each condition is [field, operator, value]. Conditions are AND-ed by default. Use '|' for OR. Operators: =, !=, &gt;, &gt;=, &lt;, &lt;=, like, ilike, in, not in, child_of, parent_of. Always specify 'fields' to avoid returning all fields (which can be slow). Use 'limit' to paginate large result sets.</field>
+        <field name="category">read</field>
+        <field name="sequence">10</field>
+        <field name="code">
+model_name = arguments.get('model')
+if not model_name or model_name not in env:
+    result = {'error': 'Model %r not found' % model_name}
+else:
+    result = env[model_name].search_read(
+        arguments.get('domain', []),
+        fields=arguments.get('fields'),
+        limit=arguments.get('limit', 80),
+        offset=arguments.get('offset', 0),
+        order=arguments.get('order'),
+    )
+        </field>
+        <field name="input_schema">{
+    "type": "object",
+    "properties": {
+        "model": {
+            "type": "string",
+            "description": "Technical model name (e.g. 'res.partner')."
+        },
+        "domain": {
+            "type": "array",
+            "description": "Odoo domain filter. Examples: [['is_company','=',true]], ['|',['email','ilike','@gmail'],['email','ilike','@outlook']], [['state','=','sale'],['date_order','>=','2024-01-01']].",
+            "default": []
+        },
+        "fields": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Field names to return. ALWAYS specify this to avoid returning all fields. Example: ['name','email','phone','state']."
+        },
+        "limit": {
+            "type": "integer",
+            "description": "Maximum records to return. Use small values (10-50) for exploration, larger (up to 500) when you need bulk data.",
+            "default": 80
+        },
+        "offset": {
+            "type": "integer",
+            "description": "Number of records to skip for pagination.",
+            "default": 0
+        },
+        "order": {
+            "type": "string",
+            "description": "Sort order. Example: 'create_date desc', 'name asc, id desc'."
+        },
+        "context": {
+            "type": "object",
+            "description": "Optional Odoo context overrides. Example: {'active_test': false} to include archived records, {'lang': 'de_DE'} to change language."
+        }
+    },
+    "required": ["model"]
+}</field>
+    </record>
+
+    <record id="tool_read" model="muk_mcp.tool">
+        <field name="name">read_record</field>
+        <field name="description">Read specific records by their database IDs. Use this when you already know the exact record IDs (e.g. from a previous search_read result or from a Many2one field value). Returns all requested fields for each ID.</field>
+        <field name="category">read</field>
+        <field name="sequence">11</field>
+        <field name="code">
+model_name = arguments.get('model')
+if not model_name or model_name not in env:
+    result = {'error': 'Model %r not found' % model_name}
+else:
+    ids = arguments.get('ids', [])
+    if isinstance(ids, int):
+        ids = [ids]
+    result = env[model_name].browse(ids).read(
+        arguments.get('fields')
+    )
+        </field>
+        <field name="input_schema">{
+    "type": "object",
+    "properties": {
+        "model": {
+            "type": "string",
+            "description": "Technical model name."
+        },
+        "ids": {
+            "type": "array",
+            "items": {"type": "integer"},
+            "description": "Record IDs to read."
+        },
+        "fields": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Field names to return. ALWAYS specify this."
+        },
+        "context": {
+            "type": "object",
+            "description": "Optional Odoo context overrides. Example: {'active_test': false} to include archived records."
+        }
+    },
+    "required": ["model", "ids"]
+}</field>
+    </record>
+
+    <record id="tool_search_count" model="muk_mcp.tool">
+        <field name="name">search_count</field>
+        <field name="description">Count the number of records matching a domain filter without returning the data. Use this to check how many records exist before doing a full search_read, or to get statistics (e.g. how many open invoices, how many active customers).</field>
+        <field name="category">read</field>
+        <field name="sequence">12</field>
+        <field name="code">
+model_name = arguments.get('model')
+if not model_name or model_name not in env:
+    result = {'error': 'Model %r not found' % model_name}
+else:
+    count = env[model_name].search_count(
+        arguments.get('domain', [])
+    )
+    result = {'count': count}
+        </field>
+        <field name="input_schema">{
+    "type": "object",
+    "properties": {
+        "model": {
+            "type": "string",
+            "description": "Technical model name."
+        },
+        "domain": {
+            "type": "array",
+            "description": "Odoo domain filter. Same syntax as search_read.",
+            "default": []
+        },
+        "context": {
+            "type": "object",
+            "description": "Optional Odoo context overrides. Example: {'active_test': false} to count archived records too."
+        }
+    },
+    "required": ["model"]
+}</field>
+    </record>
+
+    <record id="tool_create" model="muk_mcp.tool">
+        <field name="name">create_record</field>
+        <field name="description">Create a new record. Pass field values as a JSON object. For Many2one fields, pass the integer ID. For Many2many fields, use command tuples: [[6,0,[id1,id2]]] to set, [[4,id]] to add. For One2many fields, use [[0,0,{values}]] to create inline records. Check required fields with get_model_schema first.</field>
+        <field name="category">write</field>
+        <field name="sequence">20</field>
+        <field name="code">
+model_name = arguments.get('model')
+if not model_name or model_name not in env:
+    result = {'error': 'Model %r not found' % model_name}
+else:
+    values = arguments.get('values', {})
+    record = env[model_name].create(values)
+    result = {
+        'id': record.id,
+        'display_name': record.display_name,
+    }
+        </field>
+        <field name="input_schema">{
+    "type": "object",
+    "properties": {
+        "model": {
+            "type": "string",
+            "description": "Technical model name."
+        },
+        "values": {
+            "type": "object",
+            "description": "Field values for the new record. Example: {'name': 'John', 'email': 'john@example.com', 'company_id': 1}."
+        },
+        "context": {
+            "type": "object",
+            "description": "Optional Odoo context overrides. Example: {'default_type': 'contact'} to set default field values."
+        }
+    },
+    "required": ["model", "values"]
+}</field>
+    </record>
+
+    <record id="tool_write" model="muk_mcp.tool">
+        <field name="name">update_record</field>
+        <field name="description">Update existing records by their IDs. Only pass the fields you want to change — other fields remain untouched. Same value formats as create_record apply for relational fields.</field>
+        <field name="category">write</field>
+        <field name="sequence">21</field>
+        <field name="code">
+model_name = arguments.get('model')
+if not model_name or model_name not in env:
+    result = {'error': 'Model %r not found' % model_name}
+else:
+    ids = arguments.get('ids', [])
+    if isinstance(ids, int):
+        ids = [ids]
+    if not ids:
+        result = {'error': 'No record IDs provided'}
+    else:
+        values = arguments.get('values', {})
+        env[model_name].browse(ids).write(values)
+        result = {'success': True, 'ids': ids}
+        </field>
+        <field name="input_schema">{
+    "type": "object",
+    "properties": {
+        "model": {
+            "type": "string",
+            "description": "Technical model name."
+        },
+        "ids": {
+            "type": "array",
+            "items": {"type": "integer"},
+            "description": "Record IDs to update."
+        },
+        "values": {
+            "type": "object",
+            "description": "Field values to change. Only include fields you want to modify."
+        },
+        "context": {
+            "type": "object",
+            "description": "Optional Odoo context overrides."
+        }
+    },
+    "required": ["model", "ids", "values"]
+}</field>
+    </record>
+
+    <record id="tool_unlink" model="muk_mcp.tool">
+        <field name="name">delete_record</field>
+        <field name="description">Permanently delete records by their IDs. This cannot be undone. Some records cannot be deleted if other records depend on them (e.g. you cannot delete a partner that has invoices). Consider archiving (setting active=false) instead of deleting.</field>
+        <field name="category">write</field>
+        <field name="sequence">22</field>
+        <field name="code">
+model_name = arguments.get('model')
+if not model_name or model_name not in env:
+    result = {'error': 'Model %r not found' % model_name}
+else:
+    ids = arguments.get('ids', [])
+    if isinstance(ids, int):
+        ids = [ids]
+    if not ids:
+        result = {'error': 'No record IDs provided'}
+    else:
+        env[model_name].browse(ids).unlink()
+        result = {'success': True, 'deleted_ids': ids}
+        </field>
+        <field name="input_schema">{
+    "type": "object",
+    "properties": {
+        "model": {
+            "type": "string",
+            "description": "Technical model name."
+        },
+        "ids": {
+            "type": "array",
+            "items": {"type": "integer"},
+            "description": "Record IDs to permanently delete."
+        },
+        "context": {
+            "type": "object",
+            "description": "Optional Odoo context overrides."
+        }
+    },
+    "required": ["model", "ids"]
+}</field>
+    </record>
+
+    <record id="tool_get_user_context" model="muk_mcp.tool">
+        <field name="name">get_user_context</field>
+        <field name="description">Get information about the current authenticated user: their name, login, language, timezone, company, currency, country, and security groups. Use this at the start of a conversation to understand who you are acting as, what permissions you have, and what company context you are in.</field>
+        <field name="category">read</field>
+        <field name="sequence">4</field>
+        <field name="code">
+user = env.user
+company = env.company
+result = {
+    'uid': user.id,
+    'login': user.login,
+    'name': user.name,
+    'lang': user.lang,
+    'tz': user.tz or '',
+    'company_id': company.id,
+    'company_name': company.name,
+    'currency': company.currency_id.name,
+    'country': company.country_id.name or '',
+    'groups': [
+        g.full_name for g in user.group_ids.sorted('full_name')
+    ],
+}
+        </field>
+        <field name="input_schema">{
+    "type": "object",
+    "properties": {}
+}</field>
+    </record>
+
+    <record id="tool_get_access_rights" model="muk_mcp.tool">
+        <field name="name">get_access_rights</field>
+        <field name="description">Check the current user's access rights on a model (read, write, create, unlink) and list all access control rules defined for it. Use this to understand why an operation might be forbidden or to verify permissions before attempting a write operation.</field>
+        <field name="category">read</field>
+        <field name="sequence">6</field>
+        <field name="code">
+model_name = arguments.get('model')
+if not model_name or model_name not in env:
+    result = {'error': 'Model %r not found' % model_name}
+else:
+    operations = ['read', 'write', 'create', 'unlink']
+    rights = {}
+    for op in operations:
+        try:
+            env[model_name].check_access(op)
+            rights[op] = True
+        except Exception:
+            rights[op] = False
+    rules = env['ir.model.access'].sudo().search_read(
+        [('model_id.model', '=', model_name)],
+        fields=[
+            'name', 'group_id', 'perm_read', 'perm_write',
+            'perm_create', 'perm_unlink',
+        ],
+    )
+    result = {
+        'model': model_name,
+        'current_user_rights': rights,
+        'access_rules': rules,
+    }
+        </field>
+        <field name="input_schema">{
+    "type": "object",
+    "properties": {
+        "model": {
+            "type": "string",
+            "description": "Technical model name (e.g. 'sale.order')."
+        }
+    },
+    "required": ["model"]
+}</field>
+    </record>
+
+    <record id="tool_read_group" model="muk_mcp.tool">
+        <field name="name">read_group</field>
+        <field name="description">Perform grouped aggregation on records — the equivalent of SQL GROUP BY. Groups records matching a domain by one or more fields and returns aggregate values (count, sum, avg). Use this for statistics and dashboards: e.g. count invoices by state, sum sale amounts by month, average order value by salesperson.</field>
+        <field name="category">read</field>
+        <field name="sequence">13</field>
+        <field name="code">
+model_name = arguments.get('model')
+if not model_name or model_name not in env:
+    result = {'error': 'Model %r not found' % model_name}
+else:
+    domain = arguments.get('domain', [])
+    fields_list = arguments.get('fields', [])
+    groupby = arguments.get('groupby', [])
+    if not groupby:
+        result = {'error': 'groupby is required'}
+    else:
+        model = env[model_name]
+        model_fields = model.fields_get()
+        aggregates = []
+        numeric_types = {'integer', 'float', 'monetary'}
+        for field_spec in fields_list:
+            if ':' in field_spec:
+                aggregates.append(field_spec)
+                continue
+            if field_spec in groupby:
+                continue
+            field_info = model_fields.get(field_spec, {})
+            if field_info.get('type') in numeric_types:
+                aggregates.append('%s:sum' % field_spec)
+            else:
+                aggregates.append('%s:count_distinct' % field_spec)
+        if '__count' not in aggregates:
+            aggregates.append('__count')
+        data = model.formatted_read_group(
+            domain,
+            groupby=groupby,
+            aggregates=aggregates,
+            limit=arguments.get('limit'),
+            order=arguments.get('order') or None,
+        )
+        for row in data:
+            if '__count' in row:
+                row['%s_count' % groupby[0]] = row.pop('__count')
+        result = data
+        </field>
+        <field name="input_schema">{
+    "type": "object",
+    "properties": {
+        "model": {
+            "type": "string",
+            "description": "Technical model name."
+        },
+        "domain": {
+            "type": "array",
+            "description": "Filter domain. Same syntax as search_read.",
+            "default": []
+        },
+        "fields": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Fields to aggregate. Include the groupby field and any numeric fields to sum/avg. Example: ['state', 'amount_total']."
+        },
+        "groupby": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Fields to group by. Examples: ['state'], ['partner_id', 'state'], ['date_order:month']."
+        },
+        "limit": {
+            "type": "integer",
+            "description": "Maximum number of groups to return."
+        },
+        "order": {
+            "type": "string",
+            "description": "Sort order for groups. Example: 'amount_total desc'."
+        },
+        "context": {
+            "type": "object",
+            "description": "Optional Odoo context overrides. Example: {'active_test': false} to include archived records in aggregation."
+        }
+    },
+    "required": ["model", "fields", "groupby"]
+}</field>
+    </record>
+
+    <record id="tool_get_record_messages" model="muk_mcp.tool">
+        <field name="name">get_record_messages</field>
+        <field name="description">Get the chatter messages and activity log for a specific record. Returns the message history including comments, notes, status changes, and field tracking (who changed what and when). Requires the 'mail' module to be installed. Use this to understand the history of a record — e.g. who approved a purchase order, when was an invoice sent, what notes were left on a contact.</field>
+        <field name="category">read</field>
+        <field name="sequence">14</field>
+        <field name="code">
+model_name = arguments.get('model')
+if not model_name or model_name not in env:
+    result = {'error': 'Model %r not found' % model_name}
+else:
+    record_id = arguments.get('id')
+    if not record_id:
+        result = {'error': 'Record ID is required'}
+    else:
+        result = env['mail.message'].search_read(
+            [('model', '=', model_name), ('res_id', '=', record_id)],
+            fields=[
+                'date', 'author_id', 'message_type', 'subtype_id',
+                'body', 'tracking_value_ids',
+            ],
+            limit=arguments.get('limit', 20),
+            order='date desc',
+        )
+        </field>
+        <field name="input_schema">{
+    "type": "object",
+    "properties": {
+        "model": {
+            "type": "string",
+            "description": "Technical model name (e.g. 'sale.order')."
+        },
+        "id": {
+            "type": "integer",
+            "description": "The record ID to get messages for."
+        },
+        "limit": {
+            "type": "integer",
+            "description": "Maximum number of messages to return (newest first).",
+            "default": 20
+        },
+        "context": {
+            "type": "object",
+            "description": "Optional Odoo context overrides."
+        }
+    },
+    "required": ["model", "id"]
+}</field>
+    </record>
+
+    <record id="tool_post_message" model="muk_mcp.tool">
+        <field name="name">post_message</field>
+        <field name="description">Post a message on a record's chatter (the discussion thread). This is used to leave comments, notes, or send notifications on any record that has the mail.thread mixin (most business records like sale.order, account.move, project.task, etc.). Use type 'comment' for messages visible to followers, or 'note' for internal notes only visible to internal users.</field>
+        <field name="category">write</field>
+        <field name="sequence">23</field>
+        <field name="code">
+model_name = arguments.get('model')
+if not model_name or model_name not in env:
+    result = {'error': 'Model %r not found' % model_name}
+else:
+    record_id = arguments.get('id')
+    if not record_id:
+        result = {'error': 'Record ID is required'}
+    else:
+        body = arguments.get('body', '')
+        if not body:
+            result = {'error': 'Message body is required'}
+        else:
+            msg_type = arguments.get('type', 'comment')
+            subtype = arguments.get('subtype')
+            if msg_type == 'note':
+                msg_type = 'comment'
+                if not subtype:
+                    subtype = 'mail.mt_note'
+            if not subtype:
+                subtype = 'mail.mt_comment'
+            record = env[model_name].browse(record_id)
+            msg = record.message_post(
+                body=body,
+                message_type=msg_type,
+                subtype_xmlid=subtype,
+            )
+            result = {'id': msg.id, 'date': str(msg.date)}
+        </field>
+        <field name="input_schema">{
+    "type": "object",
+    "properties": {
+        "model": {
+            "type": "string",
+            "description": "Technical model name."
+        },
+        "id": {
+            "type": "integer",
+            "description": "The record ID to post the message on."
+        },
+        "body": {
+            "type": "string",
+            "description": "The message content (can contain HTML)."
+        },
+        "type": {
+            "type": "string",
+            "description": "Message type: 'comment' (visible to followers) or 'note' (internal note).",
+            "enum": ["comment", "note"],
+            "default": "comment"
+        },
+        "context": {
+            "type": "object",
+            "description": "Optional Odoo context overrides."
+        }
+    },
+    "required": ["model", "id", "body"]
+}</field>
+    </record>
+
+    <record id="tool_call" model="muk_mcp.tool">
+        <field name="name">execute_method</field>
+        <field name="description">Call a public method on an Odoo model or recordset. Use this for business logic actions like confirming a sale order (model='sale.order', method='action_confirm', ids=[42]) or posting an invoice (model='account.move', method='action_post', ids=[10]). Common methods: action_confirm (sales/purchases), action_post (invoices), action_done (pickings), action_assign (pickings), action_cancel (most documents). Private methods (starting with '_') are blocked for safety.</field>
+        <field name="category">write</field>
+        <field name="sequence">30</field>
+        <field name="code">
+model_name = arguments.get('model')
+if not model_name or model_name not in env:
+    result = {'error': 'Model %r not found' % model_name}
+else:
+    method_name = arguments.get('method')
+    if not method_name:
+        result = {'error': 'No method name provided'}
+    elif method_name.startswith('_'):
+        result = {'error': 'Private methods cannot be called: %r' % method_name}
+    else:
+        ids = arguments.get('ids', [])
+        if isinstance(ids, int):
+            ids = [ids]
+        args = arguments.get('args', [])
+        kwargs = arguments.get('kwargs', {})
+        model = env[model_name]
+        if ids:
+            model = model.browse(ids)
+        method = getattr(model, method_name, None)
+        if method is None:
+            result = {'error': 'Method %r not found on %r' % (method_name, model_name)}
+        else:
+            result = method(*args, **kwargs)
+        </field>
+        <field name="input_schema">{
+    "type": "object",
+    "properties": {
+        "model": {
+            "type": "string",
+            "description": "Technical model name."
+        },
+        "method": {
+            "type": "string",
+            "description": "Public method name (e.g. 'action_confirm', 'action_post', 'message_post')."
+        },
+        "ids": {
+            "type": "array",
+            "items": {"type": "integer"},
+            "description": "Record IDs to call the method on. Omit for @api.model methods."
+        },
+        "args": {
+            "type": "array",
+            "description": "Positional arguments to pass to the method."
+        },
+        "kwargs": {
+            "type": "object",
+            "description": "Keyword arguments to pass to the method."
+        },
+        "context": {
+            "type": "object",
+            "description": "Optional Odoo context overrides."
+        }
+    },
+    "required": ["model", "method"]
+}</field>
+    </record>
+
+</odoo>
