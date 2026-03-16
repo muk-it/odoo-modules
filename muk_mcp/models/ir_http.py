@@ -22,15 +22,8 @@ class IrHttp(models.AbstractModel):
         if not token:
             raise werkzeug.exceptions.Unauthorized()
         mcp_key = request.env['muk_mcp.key'].authenticate(token)
-        if mcp_key:
-            request._mcp_key = mcp_key
-            request.update_env(user=mcp_key.user_id.id)
-        else:
-            uid = request.env['res.users.apikeys']._check_credentials(
-                scope='rpc', key=token,
-            )
-            if not uid:
-                raise werkzeug.exceptions.Unauthorized()
-            request._mcp_key = None
-            request.update_env(user=uid)
+        if not mcp_key:
+            raise werkzeug.exceptions.Unauthorized()
+        request._mcp_key = mcp_key
+        request.update_env(user=mcp_key.user_id.id)
         request.session.can_save = False

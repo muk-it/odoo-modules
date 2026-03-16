@@ -35,21 +35,11 @@ class MCPController(http.Controller):
             return False
         return True
 
-    def _check_tool_model_access(self, tool_name, arguments):
+    def _check_tool_scope(self, tool):
         mcp_key = self._get_mcp_key()
-        model_name = arguments.get('model')
-        if not mcp_key or not mcp_key.scope_ids or not model_name:
+        if not mcp_key:
             return True
-        op_map = {
-            'delete_record': 'unlink',
-            'create_record': 'create',
-            'update_record': 'write',
-            'execute_method': 'write',
-            'post_message': 'write',
-        }
-        return mcp_key._check_model_access(
-            model_name, op_map.get(tool_name, 'read'),
-        )
+        return mcp_key.scope != 'read' or tool.category == 'read'
 
     def _log_request(
         self,
@@ -73,13 +63,16 @@ class MCPController(http.Controller):
         )
 
     def _get_session(self, session_id):
-        session = session_id and request.env['muk_mcp.session'].sudo().search([
-            ('session_id', '=', session_id),
-            ('user_id', '=', request.env.uid),
-            ('active', '=', True),
-        ], limit=1)
+        session = session_id and request.env['muk_mcp.session'].sudo().search(
+            [
+                ('session_id', '=', session_id),
+                ('user_id', '=', request.env.uid),
+                ('active', '=', True),
+            ], 
+            limit=1
+        )
         if session:
-            session.action_touch()
+            session._touch()
         return session or None
 
     def _create_session(self):
@@ -88,18 +81,6 @@ class MCPController(http.Controller):
             'initialized': True,
         })
 
-    def _make_json_response(self, data, status=200, headers=None):
-        response_headers = {
-            'Content-Type': 'application/json; charset=utf-8',
-        }
-        if headers:
-            response_headers.update(headers)
-        return Response(
-            json.dumps(data, ensure_ascii=False, default=str),
-            status=status,
-            headers=response_headers,
-        )
-
     def _dispatch_method(self, data):
         method = data.get('method')
         params = data.get('params', {})
@@ -107,8 +88,8 @@ class MCPController(http.Controller):
         start = time.time()
         handlers = {
             'initialize': self._handle_initialize,
-            'notifications/initialized': self._handle_initialized,
-            'ping': self._handle_ping,
+            'notifications/initialized': lambda p: None,
+            'ping': lambda p: {},
             'tools/list': self._handle_tools_list,
             'tools/call': self._handle_tools_call,
         }
@@ -161,18 +142,12 @@ class MCPController(http.Controller):
             result = self._dispatch_method(data)
             if result is not None:
                 results.append(result)
-        return self._make_json_response(results)
+        return request.make_json_response(results)
 
     def _handle_initialize(self, params):
         session = self._create_session()
         request._mcp_new_session_id = session.session_id
         return protocol.make_initialize_result()
-
-    def _handle_initialized(self, params):
-        return None
-
-    def _handle_ping(self, params):
-        return {}
 
     def _handle_tools_list(self, params):
         tools = request.env['muk_mcp.tool'].sudo().get_tools()
@@ -186,22 +161,6 @@ class MCPController(http.Controller):
                 [protocol.make_text_content('Tool name is required')],
                 is_error=True,
             )
-        if not self._check_tool_model_access(tool_name, arguments):
-            model_name = arguments.get('model', '')
-            self._log_request(
-                'tools/call',
-                tool_name=tool_name,
-                model_name=model_name,
-                status='denied',
-                error_message='Model access denied by key scope',
-            )
-            return protocol.make_tool_result(
-                [protocol.make_text_content(
-                    f'Access denied: key does not have permission '
-                    f'for {model_name!r} with this operation'
-                )],
-                is_error=True,
-            )
         tool = request.env['muk_mcp.tool'].sudo().search([
             ('name', '=', tool_name),
             ('active', '=', True),
@@ -211,8 +170,21 @@ class MCPController(http.Controller):
                 [protocol.make_text_content(f'Tool not found: {tool_name}')],
                 is_error=True,
             )
+        if not self._check_tool_scope(tool):
+            self._log_request(
+                'tools/call',
+                tool_name=tool_name,
+                status='denied',
+                error_message='Write tool denied by read-only key scope',
+            )
+            return protocol.make_tool_result(
+                [protocol.make_text_content(
+                    'Access denied: key scope is read-only'
+                )],
+                is_error=True,
+            )
         try:
-            result = tool.action_execute(arguments, request.env)
+            result = tool._run(arguments, request.env)
             return protocol.make_tool_result(
                 [protocol.make_text_content(result)]
             )
@@ -236,7 +208,7 @@ class MCPController(http.Controller):
     )
     def mcp_post(self, **kw):
         if not self._check_rate_limit():
-            return self._make_json_response(
+            return request.make_json_response(
                 protocol.make_jsonrpc_error(
                     common.JSONRPC_INTERNAL_ERROR,
                     'Rate limit exceeded',
@@ -248,7 +220,7 @@ class MCPController(http.Controller):
             return self._handle_batch(batch)
         data = request.params.get('jsonrpc_data')
         if data is None:
-            return self._make_json_response(
+            return request.make_json_response(
                 protocol.make_jsonrpc_error(
                     common.JSONRPC_PARSE_ERROR,
                     'Parse error',
@@ -257,13 +229,13 @@ class MCPController(http.Controller):
             )
         data, error = protocol.parse_jsonrpc_request(data)
         if error is not None:
-            return self._make_json_response(error, status=400)
+            return request.make_json_response(error, status=400)
         session_id = request.httprequest.headers.get('Mcp-Session-Id')
         method = data.get('method')
         if method != 'initialize' and session_id:
             session = self._get_session(session_id)
             if not session:
-                return self._make_json_response(
+                return request.make_json_response(
                     protocol.make_jsonrpc_error(
                         common.JSONRPC_INVALID_REQUEST,
                         'Invalid or expired session',
@@ -278,7 +250,7 @@ class MCPController(http.Controller):
         new_session_id = getattr(request, '_mcp_new_session_id', None)
         if new_session_id:
             headers['Mcp-Session-Id'] = new_session_id
-        return self._make_json_response(response_data, headers=headers)
+        return request.make_json_response(response_data, headers=headers)
 
     @http.route(
         '/mcp',
@@ -322,9 +294,9 @@ class MCPController(http.Controller):
                             ('delivered', '=', False),
                         ]
                         if last_event_id:
-                            resume = env['muk_mcp.notification'].search([
-                                ('event_id', '=', last_event_id),
-                            ], limit=1)
+                            resume = env['muk_mcp.notification'].search(
+                                [('event_id', '=', last_event_id)], limit=1
+                            )
                             if resume:
                                 domain.append(('id', '>', resume.id))
                             last_event_id = None

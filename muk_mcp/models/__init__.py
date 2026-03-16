@@ -1,6 +1,5 @@
 from . import ir_http
 from . import key
-from . import scope
 from . import log
 from . import notification
 from . import tool

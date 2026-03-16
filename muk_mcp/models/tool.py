@@ -1,14 +1,10 @@
 import json
 import logging
-import textwrap
 
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError, ValidationError
 from odoo.tools.safe_eval import safe_eval, test_python_expr
 from odoo.tools.safe_eval import json as safe_json
-
-_logger = logging.getLogger(__name__)
-
 
 class MCPTool(models.Model):
 
@@ -39,25 +35,17 @@ class MCPTool(models.Model):
     code = fields.Text(
         string="Python Code",
         required=True,
-        help=textwrap.dedent("""\
-            Python code executed when the tool is called.
-            Set 'result' to a JSON-serializable value to return it.
-
-            If the caller passes a 'context' argument (dict), it is
-            automatically applied via env.with_context() before the
-            code runs. The 'context' key is removed from arguments.
-
-            Available variables:
-              env         - Odoo Environment (with context applied)
-              arguments   - dict of tool arguments from the AI client
-              json        - json module
-              UserError   - odoo.exceptions.UserError
-              logger      - logging.Logger for this tool
-        """),
-        default=textwrap.dedent("""\
-            # Set 'result' to the value you want to return.
-            result = {}
-        """),
+        default=(
+            "# Available variables:\n"
+            "#   env         - Odoo Environment (with caller context applied)\n"
+            "#   arguments   - dict of tool arguments from the AI client\n"
+            "#   json        - json module\n"
+            "#   UserError   - odoo.exceptions.UserError\n"
+            "#   logger      - logging.Logger for this tool\n"
+            "#\n"
+            "# Set 'result' to a JSON-serializable value to return it.\n"
+            "result = {}\n"
+        ),
     )
 
     active = fields.Boolean(
@@ -106,14 +94,6 @@ class MCPTool(models.Model):
             ),
         }
 
-    @staticmethod
-    def _dedent_text_vals(vals):
-        for field_name in ('description', 'code'):
-            if field_name in vals and isinstance(vals[field_name], str):
-                vals[field_name] = textwrap.dedent(
-                    vals[field_name]
-                ).strip()
-
     def _notify_tools_changed(self):
         try:
             self.env['muk_mcp.notification'].push_to_all_sessions(
@@ -122,17 +102,7 @@ class MCPTool(models.Model):
         except Exception:
             pass
 
-    # ----------------------------------------------------------
-    # Actions
-    # ----------------------------------------------------------
-
-    def action_execute(self, arguments, env):
-        self.ensure_one()
-        if not self.code:
-            raise UserError(_(
-                'Tool "%(name)s" has no Python code defined.',
-                name=self.name,
-            ))
+    def _run(self, arguments, env):
         eval_context = self._get_eval_context(arguments, env)
         safe_eval(self.code.strip(), eval_context, mode="exec")
         result = eval_context.get('result')
@@ -174,14 +144,11 @@ class MCPTool(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        for vals in vals_list:
-            self._dedent_text_vals(vals)
         records = super().create(vals_list)
         self._notify_tools_changed()
         return records
 
     def write(self, vals):
-        self._dedent_text_vals(vals)
         result = super().write(vals)
         self._notify_tools_changed()
         return result

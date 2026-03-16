@@ -6,7 +6,7 @@
 		<field name="name">muk_mcp.log.search</field>
 		<field name="model">muk_mcp.log</field>
 		<field name="arch" type="xml">
-			<search string="MCP Audit Log">
+			<search>
 				<field name="method"/>
 				<field name="tool_name"/>
 				<field name="model_name"/>
@@ -15,10 +15,11 @@
 				<filter name="errors" string="Errors" domain="[('status', '=', 'error')]"/>
 				<filter name="denied" string="Denied" domain="[('status', '=', 'denied')]"/>
 				<filter name="rate_limited" string="Rate Limited" domain="[('status', '=', 'rate_limited')]"/>
-				<separator/>
-				<filter name="group_tool" string="Tool" context="{'group_by': 'tool_name'}"/>
-				<filter name="group_status" string="Status" context="{'group_by': 'status'}"/>
-				<filter name="group_user" string="User" context="{'group_by': 'user_id'}"/>
+                <group>
+					<filter name="group_tool" string="Tool" context="{'group_by': 'tool_name'}"/>
+					<filter name="group_status" string="Status" context="{'group_by': 'status'}"/>
+					<filter name="group_user" string="User" context="{'group_by': 'user_id'}"/>
+				</group>
 			</search>
 		</field>
 	</record>
@@ -27,7 +28,7 @@
 		<field name="name">muk_mcp.log.list</field>
 		<field name="model">muk_mcp.log</field>
 		<field name="arch" type="xml">
-			<list string="MCP Audit Log" create="false" edit="false">
+			<list create="false" edit="false">
 				<field name="create_date" string="Time"/>
 				<field name="key_id"/>
 				<field name="user_id"/>
@@ -35,12 +36,14 @@
 				<field name="tool_name"/>
 				<field name="model_name"/>
 				<field name="duration_ms"/>
-				<field name="status" widget="badge"
+				<field name="error_message" optional="hide"/>
+				<field 
+					name="status"
+					widget="badge"
 					decoration-success="status == 'ok'"
 					decoration-danger="status in ('error', 'denied')"
 					decoration-warning="status == 'rate_limited'"
 				/>
-				<field name="error_message" optional="hidden"/>
 			</list>
 		</field>
 	</record>

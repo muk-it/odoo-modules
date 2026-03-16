@@ -6,7 +6,7 @@
 		<field name="name">muk_mcp.notification.list</field>
 		<field name="model">muk_mcp.notification</field>
 		<field name="arch" type="xml">
-			<list string="MCP Notifications" create="false">
+			<list create="false">
 				<field name="event_id"/>
 				<field name="session_id"/>
 				<field name="method"/>

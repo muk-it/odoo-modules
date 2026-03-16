@@ -2,57 +2,15 @@
 
 <odoo>
 
-	<record id="view_mcp_key_kanban" model="ir.ui.view">
-		<field name="name">muk_mcp.key.kanban</field>
-		<field name="model">muk_mcp.key</field>
-		<field name="arch" type="xml">
-			<kanban create="0" can_open="0">
-				<templates>
-					<t t-name="card" class="flex-row">
-						<div>
-							<div>
-								<field name="name" class="fw-bold fs-5"/>
-								<field name="create_date" class="ms-2 text-muted"/>
-							</div>
-							<small>Prefix: <field name="key_prefix"/></small>
-						</div>
-						<button name="unlink" type="object" string="Delete" class="btn btn-secondary ms-auto my-auto"/>
-					</t>
-				</templates>
-			</kanban>
-		</field>
-	</record>
-
-	<record id="view_mcp_session_kanban" model="ir.ui.view">
-		<field name="name">muk_mcp.session.kanban</field>
-		<field name="model">muk_mcp.session</field>
-		<field name="arch" type="xml">
-			<kanban create="0" can_open="0">
-				<templates>
-					<t t-name="card" class="flex-row">
-						<div>
-							<div>
-								<span class="fw-bold fs-5">MCP Session</span>
-								<field name="create_date" class="ms-2 text-muted"/>
-							</div>
-							<small>Last activity: <field name="last_activity"/></small>
-						</div>
-						<button name="action_revoke" type="object" string="Revoke" class="btn btn-secondary ms-auto my-auto"/>
-					</t>
-				</templates>
-			</kanban>
-		</field>
-	</record>
-
-	<record id="view_users_form_mcp" model="ir.ui.view">
-		<field name="name">res.users.form.mcp</field>
+	<record id="view_users_form" model="ir.ui.view">
+		<field name="name">res.users.form</field>
 		<field name="model">res.users</field>
 		<field name="inherit_id" ref="base.view_users_form"/>
 		<field name="arch" type="xml">
 			<xpath expr="//div[@name='api_keys']" position="after">
 				<div name="mcp_keys" invisible="id != uid" class="d-md-flex mt-3">
 					<div class="col-md-6 col-lg-3 d-flex flex-column">
-						<label for="action_mcp_key_wizard" string="MCP Keys" class="o_form_label"/>
+						<label for="action_generate_mcp_key" string="MCP Keys" class="o_form_label"/>
 						<span class="text-muted">
 							Connect AI assistants.
 						</span>
@@ -61,7 +19,7 @@
 						<field name="mcp_key_ids" mode="kanban" invisible="not mcp_key_ids" class="w-sm-75 w-md-100 w-lg-75 w-xl-50"/>
 						<div>
 							<button
-								name="action_mcp_key_wizard"
+								name="action_generate_mcp_key"
 								string="Add MCP Key"
 								type="object"
 								class="btn btn-secondary h-100"
@@ -92,15 +50,15 @@
 		</field>
 	</record>
 
-	<record id="view_users_form_simple_mcp" model="ir.ui.view">
-		<field name="name">res.users.form.simple.mcp</field>
+	<record id="view_users_form_simple" model="ir.ui.view">
+		<field name="name">res.users.form.simple</field>
 		<field name="model">res.users</field>
 		<field name="inherit_id" ref="base.view_users_form_simple_modif"/>
 		<field name="arch" type="xml">
 			<xpath expr="//div[@name='api_keys']" position="after">
 				<div name="mcp_keys" invisible="id != uid" class="d-md-flex mt-3">
 					<div class="col-md-6 col-lg-3 d-flex flex-column">
-						<label for="action_mcp_key_wizard" string="MCP Keys" class="o_form_label"/>
+						<label for="action_generate_mcp_key" string="MCP Keys" class="o_form_label"/>
 						<span class="text-muted">
 							Connect AI assistants.
 						</span>
@@ -109,7 +67,7 @@
 						<field name="mcp_key_ids" mode="kanban" invisible="not mcp_key_ids" class="w-sm-75 w-md-100 w-lg-75 w-xl-50"/>
 						<div>
 							<button
-								name="action_mcp_key_wizard"
+								name="action_generate_mcp_key"
 								string="Add MCP Key"
 								type="object"
 								class="btn btn-secondary h-100"

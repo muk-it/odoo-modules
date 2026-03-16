@@ -43,10 +43,14 @@ class MCPKey(models.Model):
         ondelete='cascade',
     )
 
-    scope_ids = fields.One2many(
-        comodel_name='muk_mcp.scope',
-        inverse_name='key_id',
-        string="Model Scopes",
+    scope = fields.Selection(
+        selection=[
+            ('read', "Read Only"),
+            ('write', "Read & Write"),
+        ],
+        string="Scope",
+        required=True,
+        default='write',
     )
 
     rate_limit = fields.Integer(
@@ -83,6 +87,7 @@ class MCPKey(models.Model):
                 key_hash VARCHAR(64) NOT NULL,
                 key_prefix VARCHAR(8),
                 user_id INTEGER NOT NULL REFERENCES res_users(id) ON DELETE CASCADE,
+                scope VARCHAR DEFAULT 'write',
                 rate_limit INTEGER DEFAULT 60,
                 active BOOLEAN DEFAULT true,
                 last_used TIMESTAMP WITHOUT TIME ZONE,
@@ -123,21 +128,6 @@ class MCPKey(models.Model):
         _rate_limit_store[store_key] = timestamps
         return True
 
-    def _check_model_access(self, model_name, operation='read'):
-        if not self.scope_ids:
-            return True
-        scope = self.scope_ids.filtered(
-            lambda s: s.model_id.model == model_name
-        )
-        perm_map = {
-            'read': 'perm_read',
-            'write': 'perm_write',
-            'create': 'perm_create',
-            'unlink': 'perm_unlink',
-        }
-        field_name = perm_map.get(operation)
-        return bool(scope and field_name and scope[0][field_name])
-
     # ----------------------------------------------------------
     # Functions
     # ----------------------------------------------------------
@@ -157,19 +147,17 @@ class MCPKey(models.Model):
         row = self.env.cr.fetchone()
         if not row:
             return None
-        cr = self.env.cr
         try:
-            cr.execute("SAVEPOINT key_touch")
-            cr.execute(SQL(
-                """
-                UPDATE %s
-                SET last_used = NOW() AT TIME ZONE 'UTC'
-                WHERE id = %s
-                """,
-                table,
-                row[0],
-            ))
-            cr.execute("RELEASE SAVEPOINT key_touch")
+            with self.env.cr.savepoint():
+                self.env.cr.execute(SQL(
+                    """
+                    UPDATE %s
+                    SET last_used = NOW() AT TIME ZONE 'UTC'
+                    WHERE id = %s
+                    """,
+                    table,
+                    row[0],
+                ))
         except Exception:
-            cr.execute("ROLLBACK TO SAVEPOINT key_touch")
+            pass
         return self.sudo().browse(row[0])

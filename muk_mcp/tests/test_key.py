@@ -6,7 +6,7 @@ from odoo.tests import common
 class TestMcpKey(common.TransactionCase):
 
     # ----------------------------------------------------------
-    # Setup
+    # Defaults
     # ----------------------------------------------------------
 
     @classmethod
@@ -40,27 +40,8 @@ class TestMcpKey(common.TransactionCase):
         self.key.invalidate_recordset()
         self.assertTrue(self.key.last_used)
 
-    def test_model_access_no_scopes_allows_all(self):
-        self.assertFalse(self.key.scope_ids)
-        self.assertTrue(self.key._check_model_access('res.partner', 'read'))
-        self.assertTrue(self.key._check_model_access('sale.order', 'write'))
-
-    def test_model_access_with_scopes(self):
-        partner_model = self.env['ir.model']._get('res.partner')
-        self.env['muk_mcp.scope'].create({
-            'key_id': self.key.id,
-            'model_id': partner_model.id,
-            'perm_read': True,
-            'perm_write': False,
-            'perm_create': False,
-            'perm_unlink': False,
-        })
-        self.key.invalidate_recordset()
-        self.assertTrue(self.key._check_model_access('res.partner', 'read'))
-        self.assertFalse(self.key._check_model_access('res.partner', 'write'))
-        self.assertFalse(self.key._check_model_access('res.partner', 'create'))
-        self.assertFalse(self.key._check_model_access('res.partner', 'unlink'))
-        self.assertFalse(self.key._check_model_access('sale.order', 'read'))
+    def test_scope_default_is_write(self):
+        self.assertEqual(self.key.scope, 'write')
 
     def test_rate_limit(self):
         for _i in range(10):

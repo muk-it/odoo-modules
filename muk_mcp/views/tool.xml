@@ -6,7 +6,7 @@
 		<field name="name">muk_mcp.tool.search</field>
 		<field name="model">muk_mcp.tool</field>
 		<field name="arch" type="xml">
-			<search string="MCP Tools">
+			<search>
 				<field name="name"/>
 				<field name="description"/>
 				<field name="category"/>
@@ -22,7 +22,7 @@
 		<field name="name">muk_mcp.tool.list</field>
 		<field name="model">muk_mcp.tool</field>
 		<field name="arch" type="xml">
-			<list string="MCP Tools">
+			<list>
 				<field name="sequence" widget="handle"/>
 				<field name="name"/>
 				<field name="description"/>
@@ -41,7 +41,7 @@
 		<field name="name">muk_mcp.tool.form</field>
 		<field name="model">muk_mcp.tool</field>
 		<field name="arch" type="xml">
-			<form string="MCP Tool">
+			<form>
 				<sheet>
 					<div class="oe_title">
 						<h1>

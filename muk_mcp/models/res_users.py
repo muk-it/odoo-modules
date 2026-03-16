@@ -29,18 +29,19 @@ class ResUsers(models.Model):
     # ----------------------------------------------------------
 
     @check_identity
-    def action_mcp_key_wizard(self):
+    def action_generate_mcp_key(self):
         return {
             'type': 'ir.actions.act_window',
             'name': 'New MCP Key',
-            'res_model': 'muk_mcp.key.wizard',
+            'res_model': 'muk_mcp.generate_key',
             'views': [(False, 'form')],
             'target': 'new',
         }
 
     def action_revoke_mcp_sessions(self):
-        self.env['muk_mcp.session'].sudo().search([
+        sessions = self.env['muk_mcp.session'].sudo().search([
             ('user_id', '=', self.id),
             ('active', '=', True),
-        ]).write({'active': False})
+        ])
+        sessions.write({'active': False})
         return {'type': 'ir.actions.client', 'tag': 'reload'}

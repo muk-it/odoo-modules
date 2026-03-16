@@ -8,9 +8,7 @@ access_muk_mcp_notification_admin,access_muk_mcp_notification_admin,model_muk_mc
 access_muk_mcp_notification_user,access_muk_mcp_notification_user,model_muk_mcp_notification,base.group_user,1,1,1,1
 access_muk_mcp_key_admin,access_muk_mcp_key_admin,model_muk_mcp_key,base.group_system,1,1,1,1
 access_muk_mcp_key_user,access_muk_mcp_key_user,model_muk_mcp_key,base.group_user,1,1,1,1
-access_muk_mcp_scope_admin,access_muk_mcp_scope_admin,model_muk_mcp_scope,base.group_system,1,1,1,1
 access_muk_mcp_log_admin,access_muk_mcp_log_admin,model_muk_mcp_log,base.group_system,1,1,0,1
 access_muk_mcp_log_user,access_muk_mcp_log_user,model_muk_mcp_log,base.group_user,1,0,0,0
-access_muk_mcp_key_wizard,access_muk_mcp_key_wizard,model_muk_mcp_key_wizard,base.group_user,1,0,1,1
-access_muk_mcp_key_wizard_scope,access_muk_mcp_key_wizard_scope,model_muk_mcp_key_wizard_scope,base.group_user,1,1,1,1
+access_muk_mcp_generate_key,access_muk_mcp_generate_key,model_muk_mcp_generate_key,base.group_user,1,0,1,1
 access_muk_mcp_key_show,access_muk_mcp_key_show,model_muk_mcp_key_show,base.group_user,1,0,1,0

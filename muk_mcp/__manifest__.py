@@ -6,9 +6,9 @@
         Odoo, exposing business data and operations to any MCP-compatible
         AI client such as Claude Desktop, Claude Code, Cursor, Windsurf,
         or Codex CLI. The server speaks MCP Streamable HTTP at a single
-        endpoint using Odoo API keys for authentication.
+        endpoint using MCP API keys for authentication.
     ''',
-    'version': '19.0.1.0.1',
+    'version': '19.0.1.0.3',
     'category': 'Tools/API',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -18,13 +18,15 @@
         'Mathias Markl <mathias.markl@mukit.at>',
     ],
     'depends': [
-        'base',
+        'base_setup',
     ],
     'data': [
         'security/security.xml',
         'security/ir.model.access.csv',
         'data/tool.xml',
         'views/key.xml',
+        'views/generate_key.xml',
+        'views/show_key.xml',
         'views/log.xml',
         'views/notification.xml',
         'views/session.xml',

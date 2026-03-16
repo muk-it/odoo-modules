@@ -6,7 +6,7 @@ from odoo.tests import common
 class TestMcpTool(common.TransactionCase):
 
     # ----------------------------------------------------------
-    # Setup
+    # Defaults
     # ----------------------------------------------------------
 
     @classmethod
@@ -32,7 +32,7 @@ class TestMcpTool(common.TransactionCase):
             ('name', '=', 'list_models'),
         ], limit=1)
         self.assertTrue(tool, 'list_models tool should exist')
-        result_str = tool.action_execute(
+        result_str = tool._run(
             {'search': 'res.partner', 'limit': 10}, self.env
         )
         result = json.loads(result_str)
@@ -45,7 +45,7 @@ class TestMcpTool(common.TransactionCase):
             ('name', '=', 'get_model_schema'),
         ], limit=1)
         self.assertTrue(tool, 'get_model_schema tool should exist')
-        result_str = tool.action_execute(
+        result_str = tool._run(
             {'model': 'res.partner'}, self.env
         )
         result = json.loads(result_str)
@@ -58,7 +58,7 @@ class TestMcpTool(common.TransactionCase):
             ('name', '=', 'search_read'),
         ], limit=1)
         self.assertTrue(tool, 'search_read tool should exist')
-        result_str = tool.action_execute({
+        result_str = tool._run({
             'model': 'res.partner',
             'domain': [['is_company', '=', True]],
             'fields': ['name', 'email'],
@@ -72,7 +72,7 @@ class TestMcpTool(common.TransactionCase):
             ('name', '=', 'create_record'),
         ], limit=1)
         self.assertTrue(create_tool, 'create_record tool should exist')
-        result_str = create_tool.action_execute({
+        result_str = create_tool._run({
             'model': 'res.partner.category',
             'values': {'name': 'MCP Test Category'},
         }, self.env)
@@ -82,7 +82,7 @@ class TestMcpTool(common.TransactionCase):
         unlink_tool = self.tool_model.search([
             ('name', '=', 'delete_record'),
         ], limit=1)
-        result_str = unlink_tool.action_execute({
+        result_str = unlink_tool._run({
             'model': 'res.partner.category',
             'ids': [record_id],
         }, self.env)
@@ -94,7 +94,7 @@ class TestMcpTool(common.TransactionCase):
             ('name', '=', 'search_count'),
         ], limit=1)
         self.assertTrue(tool, 'search_count tool should exist')
-        result_str = tool.action_execute({
+        result_str = tool._run({
             'model': 'res.partner',
             'domain': [],
         }, self.env)
@@ -106,7 +106,7 @@ class TestMcpTool(common.TransactionCase):
         tool = self.tool_model.search([
             ('name', '=', 'search_read'),
         ], limit=1)
-        result_str = tool.action_execute({
+        result_str = tool._run({
             'model': 'nonexistent.model',
             'domain': [],
         }, self.env)
@@ -117,7 +117,7 @@ class TestMcpTool(common.TransactionCase):
         tool = self.tool_model.search([
             ('name', '=', 'execute_method'),
         ], limit=1)
-        result_str = tool.action_execute({
+        result_str = tool._run({
             'model': 'res.partner',
             'method': '_check_company',
         }, self.env)
