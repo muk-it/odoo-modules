@@ -5,6 +5,10 @@ from odoo.tests import common
 
 class TestMcpKey(common.TransactionCase):
 
+    # ----------------------------------------------------------
+    # Setup
+    # ----------------------------------------------------------
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -17,6 +21,10 @@ class TestMcpKey(common.TransactionCase):
             'key_prefix': cls.raw_token[:8],
             'rate_limit': 10,
         })
+
+    # ----------------------------------------------------------
+    # Tests
+    # ----------------------------------------------------------
 
     def test_authenticate_valid_key(self):
         found = self.key_model.authenticate(self.raw_token)
@@ -38,9 +46,10 @@ class TestMcpKey(common.TransactionCase):
         self.assertTrue(self.key._check_model_access('sale.order', 'write'))
 
     def test_model_access_with_scopes(self):
+        partner_model = self.env['ir.model']._get('res.partner')
         self.env['muk_mcp.scope'].create({
             'key_id': self.key.id,
-            'model_name': 'res.partner',
+            'model_id': partner_model.id,
             'perm_read': True,
             'perm_write': False,
             'perm_create': False,

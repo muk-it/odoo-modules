@@ -11,11 +11,9 @@
 				<field name="description"/>
 				<field name="category"/>
 				<filter name="active" string="Active" domain="[('active', '=', True)]"/>
-				<filter name="read" string="Read" domain="[('category', '=', 'read')]"/>
-				<filter name="write" string="Write" domain="[('category', '=', 'write')]"/>
-				<filter name="execute" string="Execute" domain="[('category', '=', 'execute')]"/>
-				<separator/>
-				<filter name="group_category" string="Category" context="{'group_by': 'category'}"/>
+                <group>
+					<filter name="group_category" string="Category" context="{'group_by': 'category'}"/>
+                </group>
 			</search>
 		</field>
 	</record>
@@ -28,13 +26,13 @@
 				<field name="sequence" widget="handle"/>
 				<field name="name"/>
 				<field name="description"/>
-				<field name="category" widget="badge"
+				<field 
+					name="category" 
+					widget="badge"
 					decoration-success="category == 'read'"
 					decoration-warning="category == 'write'"
-					decoration-danger="category == 'execute'"
 				/>
-				<field name="read_only"/>
-				<field name="active"/>
+				<field name="active" widget="boolean_toggle"/>
 			</list>
 		</field>
 	</record>
@@ -52,21 +50,33 @@
 					</div>
 					<group>
 						<group>
-							<field name="handler"/>
 							<field name="category"/>
-							<field name="read_only"/>
+							<field name="sequence"/>
 						</group>
 						<group>
-							<field name="sequence"/>
-							<field name="active"/>
+							<field name="active" widget="boolean_toggle"/>
 						</group>
 					</group>
 					<notebook>
 						<page string="Description" name="description">
-							<field name="description" placeholder="Describe what this tool does..."/>
+							<field 
+								name="description"
+								placeholder="Describe what this tool does..."
+							/>
+						</page>
+						<page string="Python Code" name="code">
+							<field 
+								name="code"
+								widget="ace"
+								options="{'mode': 'python'}"
+							/>
 						</page>
 						<page string="Input Schema" name="schema">
-							<field name="input_schema" widget="ace" options="{'mode': 'json'}"/>
+							<field 
+								name="input_schema"
+								widget="ace"
+								options="{'mode': 'javascript'}"
+							/>
 						</page>
 					</notebook>
 				</sheet>

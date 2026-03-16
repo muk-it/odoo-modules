@@ -5,10 +5,18 @@ from odoo.tests import common
 
 class TestMcpTool(common.TransactionCase):
 
+    # ----------------------------------------------------------
+    # Setup
+    # ----------------------------------------------------------
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.tool_model = cls.env['muk_mcp.tool']
+
+    # ----------------------------------------------------------
+    # Tests
+    # ----------------------------------------------------------
 
     def test_get_tools_returns_active(self):
         tools = self.tool_model.get_tools()

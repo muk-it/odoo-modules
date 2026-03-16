@@ -9,12 +9,6 @@ class ResConfigSettings(models.TransientModel):
     # Fields
     # ----------------------------------------------------------
 
-    mcp_enabled = fields.Boolean(
-        string="Enable MCP Server",
-        config_parameter='muk_mcp.enabled',
-        default=True,
-    )
-
     mcp_session_timeout = fields.Integer(
         string="Session Timeout (hours)",
         config_parameter='muk_mcp.session_timeout_hours',

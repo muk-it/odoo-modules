@@ -7,6 +7,10 @@ from odoo.addons.muk_mcp.tools import protocol, common as mcp_common
 
 class TestProtocol(common.TransactionCase):
 
+    # ----------------------------------------------------------
+    # Tests
+    # ----------------------------------------------------------
+
     def test_make_jsonrpc_response(self):
         result = protocol.make_jsonrpc_response({'foo': 'bar'}, request_id=1)
         self.assertEqual(result['jsonrpc'], '2.0')

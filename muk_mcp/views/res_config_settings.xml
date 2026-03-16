@@ -10,19 +10,15 @@
 			<xpath expr="//form" position="inside">
 				<app string="MCP Server" name="muk_mcp">
 					<block title="MCP Server" name="mcp_settings">
-						<setting id="mcp_enabled" string="MCP Server"
-							help="Enable the Model Context Protocol server at /mcp">
-							<field name="mcp_enabled"/>
+						<setting id="mcp_session_timeout" string="Session Timeout"
+							help="Inactive sessions are cleaned up after this many hours.">
+							<field name="mcp_session_timeout"/>
 						</setting>
-					<setting id="mcp_session_timeout" string="Session Timeout"
-						help="Inactive sessions are cleaned up after this many hours.">
-						<field name="mcp_session_timeout"/>
-					</setting>
-					<setting id="mcp_log_retention" string="Log Retention"
-						help="Audit logs older than this many days are automatically deleted.">
-						<field name="mcp_log_retention"/>
-					</setting>
-				</block>
+						<setting id="mcp_log_retention" string="Log Retention"
+							help="Audit logs older than this many days are automatically deleted.">
+							<field name="mcp_log_retention"/>
+						</setting>
+					</block>
 				</app>
 			</xpath>
 		</field>

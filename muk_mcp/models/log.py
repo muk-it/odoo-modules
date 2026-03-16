@@ -77,7 +77,7 @@ class MCPLog(models.Model):
             env['muk_mcp.log'].sudo().create(values)
 
     # ----------------------------------------------------------
-    # Autovacuum
+    # Cron
     # ----------------------------------------------------------
 
     @api.autovacuum

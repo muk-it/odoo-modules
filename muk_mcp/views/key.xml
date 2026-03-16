@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_mcp_key_list" model="ir.ui.view">
+		<field name="name">muk_mcp.key.list</field>
+		<field name="model">muk_mcp.key</field>
+		<field name="arch" type="xml">
+			<list string="MCP API Keys" create="false" edit="false" delete="true">
+				<field name="name"/>
+				<field name="user_id"/>
+				<field name="rate_limit"/>
+				<field name="last_used"/>
+				<field name="active"/>
+			</list>
+		</field>
+	</record>
+
+	<record id="view_mcp_key_form" model="ir.ui.view">
+		<field name="name">muk_mcp.key.form</field>
+		<field name="model">muk_mcp.key</field>
+		<field name="arch" type="xml">
+			<form string="MCP API Key" create="false" edit="false" delete="true">
+				<sheet>
+					<div class="oe_title">
+						<h1>
+							<field name="name"/>
+						</h1>
+					</div>
+					<group>
+						<group>
+							<field name="user_id"/>
+							<field name="rate_limit"/>
+						</group>
+						<group>
+							<field name="last_used"/>
+							<field name="active"/>
+						</group>
+					</group>
+					<notebook>
+						<page string="Model Scopes" name="scopes">
+							<field name="scope_ids">
+								<list>
+									<field name="model_id"/>
+									<field name="perm_read"/>
+									<field name="perm_write"/>
+									<field name="perm_create"/>
+									<field name="perm_unlink"/>
+								</list>
+							</field>
+						</page>
+					</notebook>
+				</sheet>
+			</form>
+		</field>
+	</record>
+
+	<record id="view_mcp_key_wizard_form" model="ir.ui.view">
+		<field name="name">muk_mcp.key.wizard.form</field>
+		<field name="model">muk_mcp.key.wizard</field>
+		<field name="arch" type="xml">
+			<form string="New MCP Key">
+				<group>
+					<field name="name" placeholder="e.g. Claude Desktop, Cursor"/>
+					<field name="rate_limit"/>
+				</group>
+				<separator string="Model Scopes"/>
+				<field name="scope_ids">
+					<list editable="bottom">
+						<field name="model_id"/>
+						<field name="perm_read"/>
+						<field name="perm_write"/>
+						<field name="perm_create"/>
+						<field name="perm_unlink"/>
+					</list>
+				</field>
+				<div class="text-muted">
+					Leave empty to allow access to all models.
+				</div>
+				<footer>
+					<button name="action_make_key" string="Generate Key" type="object" class="btn-primary"/>
+					<button string="Cancel" special="cancel"/>
+				</footer>
+			</form>
+		</field>
+	</record>
+
+	<record id="view_mcp_key_show_form" model="ir.ui.view">
+		<field name="name">muk_mcp.key.show.form</field>
+		<field name="model">muk_mcp.key.show</field>
+		<field name="arch" type="xml">
+			<form string="MCP Key Ready" create="false" edit="false">
+				<div class="alert alert-warning mb-3" role="alert">
+					<strong>Copy this key now.</strong>
+					It will not be shown again.
+				</div>
+				<group>
+					<field name="key" widget="CopyClipboardChar"/>
+				</group>
+				<footer>
+					<button string="Done" class="btn-primary" special="cancel"/>
+				</footer>
+			</form>
+		</field>
+	</record>
+
+	<record id="action_mcp_key" model="ir.actions.act_window">
+		<field name="name">API Keys</field>
+		<field name="res_model">muk_mcp.key</field>
+		<field name="view_mode">list,form</field>
+	</record>
+
+</odoo>

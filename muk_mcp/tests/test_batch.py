@@ -7,6 +7,10 @@ from odoo.addons.muk_mcp.tools import protocol
 
 class TestBatch(common.TransactionCase):
 
+    # ----------------------------------------------------------
+    # Tests
+    # ----------------------------------------------------------
+
     def test_parse_batch_request(self):
         items = [
             {'jsonrpc': '2.0', 'id': 1, 'method': 'ping', 'params': {}},

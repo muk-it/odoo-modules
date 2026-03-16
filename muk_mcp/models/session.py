@@ -49,11 +49,35 @@ class MCPSession(models.Model):
     # Actions
     # ----------------------------------------------------------
 
+    def action_revoke(self):
+        self.write({'active': False})
+
     def action_touch(self):
-        self.write({'last_activity': fields.Datetime.now()})
+        if not self:
+            return
+        cr = self.env.cr
+        try:
+            cr.execute("SAVEPOINT session_touch")
+            cr.execute(
+                """
+                UPDATE muk_mcp_session
+                   SET last_activity = NOW() AT TIME ZONE 'UTC',
+                       write_date = NOW() AT TIME ZONE 'UTC',
+                       write_uid = %s
+                 WHERE id IN %s
+                """,
+                (self.env.uid, tuple(self.ids)),
+            )
+            cr.execute("RELEASE SAVEPOINT session_touch")
+            self.invalidate_recordset([
+                'last_activity', 'write_date', 'write_uid',
+            ])
+        except Exception:
+            cr.execute("ROLLBACK TO SAVEPOINT session_touch")
+            cr.execute("RELEASE SAVEPOINT session_touch")
 
     # ----------------------------------------------------------
-    # Autovacuum
+    # Cron
     # ----------------------------------------------------------
 
     @api.autovacuum

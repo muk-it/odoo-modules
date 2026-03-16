@@ -5,7 +5,7 @@ class MCPScope(models.Model):
 
     _name = 'muk_mcp.scope'
     _description = "MCP Model Scope"
-    _order = 'model_name'
+    _order = 'model_id'
 
     # ----------------------------------------------------------
     # Fields
@@ -19,10 +19,11 @@ class MCPScope(models.Model):
         ondelete='cascade',
     )
 
-    model_name = fields.Char(
+    model_id = fields.Many2one(
+        comodel_name='ir.model',
         string="Model",
         required=True,
-        help="Technical model name (e.g. 'res.partner', 'sale.order').",
+        ondelete='cascade',
     )
 
     perm_read = fields.Boolean(

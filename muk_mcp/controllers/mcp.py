@@ -5,6 +5,7 @@ import odoo
 
 from odoo import http
 from odoo.http import request, Response
+from odoo.tools import config
 
 from odoo.addons.muk_mcp.tools import common, protocol
 
@@ -15,26 +16,16 @@ SSE_MAX_DURATION = 300
 
 class MCPController(http.Controller):
 
-    #----------------------------------------------------------
+    # ----------------------------------------------------------
     # Helper
-    #----------------------------------------------------------
-
-    def _check_enabled(self):
-        enabled = request.env['ir.config_parameter'].sudo().get_param(
-            'muk_mcp.enabled', 'True'
-        )
-        if isinstance(enabled, str):
-            return enabled.strip().lower() not in ('0', 'false', 'no', '')
-        return bool(enabled)
+    # ----------------------------------------------------------
 
     def _get_mcp_key(self):
         return getattr(request, '_mcp_key', None)
 
     def _check_rate_limit(self):
         mcp_key = self._get_mcp_key()
-        if not mcp_key:
-            return True
-        if not mcp_key._check_rate_limit():
+        if mcp_key and not mcp_key._check_rate_limit():
             request.env['muk_mcp.log'].log(
                 key_id=mcp_key.id,
                 user_id=request.env.uid,
@@ -46,28 +37,29 @@ class MCPController(http.Controller):
 
     def _check_tool_model_access(self, tool_name, arguments):
         mcp_key = self._get_mcp_key()
-        if not mcp_key or not mcp_key.scope_ids:
-            return True
         model_name = arguments.get('model')
-        if not model_name:
+        if not mcp_key or not mcp_key.scope_ids or not model_name:
             return True
         op_map = {
             'delete_record': 'unlink',
             'create_record': 'create',
+            'update_record': 'write',
+            'execute_method': 'write',
+            'post_message': 'write',
         }
-        write_tools = {
-            'update_record', 'execute_method', 'post_message',
-        }
-        if tool_name in op_map:
-            op = op_map[tool_name]
-        elif tool_name in write_tools:
-            op = 'write'
-        else:
-            op = 'read'
-        return mcp_key._check_model_access(model_name, op)
+        return mcp_key._check_model_access(
+            model_name, op_map.get(tool_name, 'read'),
+        )
 
-    def _log_request(self, method, tool_name=None, model_name=None,
-                     status='ok', error_message=None, duration_ms=0):
+    def _log_request(
+        self,
+        method,
+        tool_name=None,
+        model_name=None,
+        status='ok',
+        error_message=None,
+        duration_ms=0,
+    ):
         mcp_key = self._get_mcp_key()
         request.env['muk_mcp.log'].log(
             key_id=mcp_key.id if mcp_key else None,
@@ -81,9 +73,7 @@ class MCPController(http.Controller):
         )
 
     def _get_session(self, session_id):
-        if not session_id:
-            return None
-        session = request.env['muk_mcp.session'].sudo().search([
+        session = session_id and request.env['muk_mcp.session'].sudo().search([
             ('session_id', '=', session_id),
             ('user_id', '=', request.env.uid),
             ('active', '=', True),
@@ -124,8 +114,11 @@ class MCPController(http.Controller):
         }
         handler = handlers.get(method)
         if handler is None:
-            self._log_request(method, status='error',
-                              error_message=f'Method not found: {method}')
+            self._log_request(
+                method,
+                status='error',
+                error_message=f'Method not found: {method}',
+            )
             return protocol.make_jsonrpc_error(
                 common.JSONRPC_METHOD_NOT_FOUND,
                 f'Method not found: {method}',
@@ -135,8 +128,12 @@ class MCPController(http.Controller):
             result = handler(params)
         except Exception as exc:
             duration = int((time.time() - start) * 1000)
-            self._log_request(method, status='error',
-                              error_message=str(exc), duration_ms=duration)
+            self._log_request(
+                method,
+                status='error',
+                error_message=str(exc),
+                duration_ms=duration,
+            )
             return protocol.make_jsonrpc_error(
                 common.JSONRPC_INTERNAL_ERROR,
                 str(exc),
@@ -192,8 +189,10 @@ class MCPController(http.Controller):
         if not self._check_tool_model_access(tool_name, arguments):
             model_name = arguments.get('model', '')
             self._log_request(
-                'tools/call', tool_name=tool_name,
-                model_name=model_name, status='denied',
+                'tools/call',
+                tool_name=tool_name,
+                model_name=model_name,
+                status='denied',
                 error_message='Model access denied by key scope',
             )
             return protocol.make_tool_result(
@@ -223,9 +222,9 @@ class MCPController(http.Controller):
                 is_error=True,
             )
 
-    #----------------------------------------------------------
+    # ----------------------------------------------------------
     # Routes
-    #----------------------------------------------------------
+    # ----------------------------------------------------------
 
     @http.route(
         '/mcp',
@@ -236,14 +235,6 @@ class MCPController(http.Controller):
         save_session=False,
     )
     def mcp_post(self, **kw):
-        if not self._check_enabled():
-            return self._make_json_response(
-                protocol.make_jsonrpc_error(
-                    common.JSONRPC_INTERNAL_ERROR,
-                    'MCP server is disabled',
-                ),
-                status=503,
-            )
         if not self._check_rate_limit():
             return self._make_json_response(
                 protocol.make_jsonrpc_error(
@@ -259,7 +250,8 @@ class MCPController(http.Controller):
         if data is None:
             return self._make_json_response(
                 protocol.make_jsonrpc_error(
-                    common.JSONRPC_PARSE_ERROR, 'Parse error',
+                    common.JSONRPC_PARSE_ERROR,
+                    'Parse error',
                 ),
                 status=400,
             )
@@ -297,8 +289,6 @@ class MCPController(http.Controller):
         save_session=False,
     )
     def mcp_get(self, **kw):
-        if not self._check_enabled():
-            return Response(status=503)
         accept = request.httprequest.headers.get('Accept', '')
         if 'text/event-stream' not in accept:
             return Response(status=405)
@@ -316,7 +306,12 @@ class MCPController(http.Controller):
             start_time = time.time()
             last_keepalive = start_time
             nonlocal last_event_id
-            while time.time() - start_time < SSE_MAX_DURATION:
+            limit_time = config['limit_time_real']
+            if limit_time:
+                max_duration = min(SSE_MAX_DURATION, limit_time * 0.8)
+            else:
+                max_duration = SSE_MAX_DURATION
+            while time.time() - start_time < max_duration:
                 notifications = []
                 try:
                     registry = odoo.registry(db_name)
@@ -334,7 +329,9 @@ class MCPController(http.Controller):
                                 domain.append(('id', '>', resume.id))
                             last_event_id = None
                         pending = env['muk_mcp.notification'].search(
-                            domain, order='id asc', limit=50,
+                            domain,
+                            order='id asc',
+                            limit=50,
                         )
                         for notif in pending:
                             msg = {
@@ -382,8 +379,7 @@ class MCPController(http.Controller):
     )
     def mcp_delete(self, **kw):
         session_id = request.httprequest.headers.get('Mcp-Session-Id')
-        if session_id:
-            session = self._get_session(session_id)
-            if session:
-                session.write({'active': False})
+        session = session_id and self._get_session(session_id)
+        if session:
+            session.write({'active': False})
         return Response(status=200)

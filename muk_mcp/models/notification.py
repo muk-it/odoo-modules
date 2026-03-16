@@ -54,22 +54,22 @@ class MCPNotification(models.Model):
         ])
         if not sessions:
             return
-        vals_list = [{
-            'session_id': session.id,
-            'event_id': str(uuid.uuid4()),
-            'method': method,
-            'params': json.dumps(params or {}),
-        } for session in sessions]
+        vals_list = [
+            {
+                'session_id': session.id,
+                'event_id': str(uuid.uuid4()),
+                'method': method,
+                'params': json.dumps(params or {}),
+            }
+            for session in sessions
+        ]
         self.sudo().create(vals_list)
 
     # ----------------------------------------------------------
-    # Autovacuum
+    # Cron
     # ----------------------------------------------------------
 
     @api.autovacuum
     def _autovacuum_notifications(self):
         limit = fields.Datetime.subtract(fields.Datetime.now(), days=1)
-        self.search([
-            ('delivered', '=', True),
-            ('create_date', '<', limit),
-        ]).unlink()
+        self.search([('delivered', '=', True), ('create_date', '<', limit)]).unlink()

@@ -3,10 +3,18 @@ from odoo.tests import common
 
 class TestMcpLog(common.TransactionCase):
 
+    # ----------------------------------------------------------
+    # Setup
+    # ----------------------------------------------------------
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.log_model = cls.env['muk_mcp.log']
+
+    # ----------------------------------------------------------
+    # Tests
+    # ----------------------------------------------------------
 
     def test_create_log_record(self):
         record = self.log_model.sudo().create({

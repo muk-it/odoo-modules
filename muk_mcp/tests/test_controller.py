@@ -6,8 +6,11 @@ from odoo.tests import HttpCase, tagged
 @tagged('post_install', '-at_install')
 class TestMcpController(HttpCase):
 
+    # ----------------------------------------------------------
+    # Helper
+    # ----------------------------------------------------------
+
     def _mcp_request(self, data, headers=None):
-        """Send a POST request to the MCP endpoint."""
         all_headers = {
             'Content-Type': 'application/json',
         }
@@ -18,6 +21,10 @@ class TestMcpController(HttpCase):
             data=json.dumps(data),
             headers=all_headers,
         )
+
+    # ----------------------------------------------------------
+    # Tests
+    # ----------------------------------------------------------
 
     def test_mcp_post_without_auth_is_rejected(self):
         response = self._mcp_request({
