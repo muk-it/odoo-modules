@@ -5,10 +5,6 @@ from lxml import etree
 from odoo.tools.mail import html2plaintext
 
 
-# ----------------------------------------------------------
-# Helper
-# ----------------------------------------------------------
-
 def _extract_main_content(html_content):
     try:
         doc = etree.HTML(html_content)
@@ -24,10 +20,6 @@ def _extract_main_content(html_content):
         main = body
     return etree.tostring(main, encoding='unicode', method='html')
 
-
-# ----------------------------------------------------------
-# Public
-# ----------------------------------------------------------
 
 def html_to_markdown(html_content, base_url=''):
     if not html_content:

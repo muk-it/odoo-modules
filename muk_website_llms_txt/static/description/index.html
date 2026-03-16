@@ -18,6 +18,10 @@
 				<i class="fa fa-check me-1"></i> Enterprise
 			</span>
 		</div>
+		<div class="oe_demo oe_screenshot"
+			style="max-width: 84%; margin: 16px 8%">
+			<img src="screenshot.png">
+		</div>
 	</div>
 </section>
 
@@ -40,13 +44,16 @@
 <section class="oe_container">
 	<div class="oe_row oe_spaced">
 		<div class="text-justify" style="max-width:84%; margin:16px 8%">
-			<h3 class="oe_slogan">Dynamic /llms.txt</h3>
+			<h3 class="oe_slogan">AI-Ready Endpoints</h3>
 			<p>
-				Automatically generates a <code>/llms.txt</code> file following the
-				<a href="https://llmstxt.org" target="_blank">llmstxt.org</a> standard.
-				The file provides a structured, AI-readable index of all your published
-				website content — pages, blog posts, products, and events — so AI agents
-				can efficiently discover what your site offers.
+				Generates a <code>/llms.txt</code> index following the
+				<a href="https://llmstxt.org" target="_blank">llmstxt.org</a> standard
+				and a <code>/llms-full.txt</code> with the complete markdown content of
+				every published page — ideal for RAG pipelines and knowledge bases.
+				Any page also responds with clean markdown when an AI agent sends
+				<code>Accept: text/markdown</code>, just like Cloudflare's "Markdown
+				for Agents". Response headers include token counts and your AI usage
+				policy.
 			</p>
 		</div>
 	</div>
@@ -55,56 +62,13 @@
 <section class="oe_container">
 	<div class="oe_row oe_spaced">
 		<div class="text-justify" style="max-width:84%; margin:16px 8%">
-			<h3 class="oe_slogan">Full Markdown Export</h3>
+			<h3 class="oe_slogan">Full Control, Zero Config</h3>
 			<p>
-				Serves a <code>/llms-full.txt</code> endpoint containing the full
-				markdown content of every published page on your website. This allows
-				AI systems to ingest your entire site content in a single request,
-				perfect for RAG pipelines, knowledge bases, and deep content analysis.
-			</p>
-		</div>
-	</div>
-</section>
-
-<section class="oe_container">
-	<div class="oe_row oe_spaced">
-		<div class="text-justify" style="max-width:84%; margin:16px 8%">
-			<h3 class="oe_slogan">Markdown Content Negotiation</h3>
-			<p>
-				When an AI agent sends <code>Accept: text/markdown</code> in its HTTP
-				request, any page on your website responds with clean markdown instead
-				of HTML. This follows the same approach as Cloudflare's "Markdown for
-				Agents" feature. Response headers include <code>x-markdown-tokens</code>
-				(estimated token count) and <code>Content-Signal</code> (AI usage policy).
-			</p>
-		</div>
-	</div>
-</section>
-
-<section class="oe_container">
-	<div class="oe_row oe_spaced">
-		<div class="text-justify" style="max-width:84%; margin:16px 8%">
-			<h3 class="oe_slogan">Content Signal Policy</h3>
-			<p>
-				Control exactly how AI systems may use your content. Choose between
-				allowing full AI training, search and input only, input only, or
-				no AI usage at all. Your policy is communicated via the standard
-				<code>Content-Signal</code> HTTP header on every response.
-			</p>
-		</div>
-	</div>
-</section>
-
-<section class="oe_container">
-	<div class="oe_row oe_spaced">
-		<div class="text-justify" style="max-width:84%; margin:16px 8%">
-			<h3 class="oe_slogan">Zero-Config Setup</h3>
-			<p>
-				Install the module and it works out of the box. All published website
-				pages are automatically included. Blog posts, products, and events are
-				detected at runtime if the corresponding modules are installed.
-				Fine-tune everything from <strong>Website &rarr; Configuration &rarr;
-				Settings</strong> under the "AI &amp; Agents" section.
+				Works out of the box — pages, blog posts, products, and events are
+				detected automatically. Choose which content types to include and set
+				a <code>Content-Signal</code> policy (train, search, input, or none) to
+				control how AI systems may use your content. Configure everything from
+				<strong>Website &rarr; Settings</strong> under "AI &amp; Agents".
 			</p>
 		</div>
 	</div>

@@ -94,10 +94,6 @@ class Website(models.Model):
             limit=1
         ))
 
-    # ----------------------------------------------------------
-    # llms.txt sections
-    # ----------------------------------------------------------
-
     def _get_llms_txt_pages(self, base_url):
         if not self.llms_include_pages:
             return []
@@ -203,10 +199,6 @@ class Website(models.Model):
         lines += self._get_llms_txt_events(base_url)
         lines.append('')
         return '\n'.join(lines)
-
-    # ----------------------------------------------------------
-    # llms-full.txt sections
-    # ----------------------------------------------------------
 
     def _format_llms_full_entry(self, name, url, content=''):
         entry = ['', '---', '', f'## {name}', '', f'URL: {url}', '']

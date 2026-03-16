@@ -34,7 +34,6 @@ After installation, navigate to Website > Configuration > Settings. Under the
 
 - **LLMs.txt**: Enable or disable the /llms.txt endpoint.
 - **LLMs Full**: Enable or disable the /llms-full.txt endpoint.
-- **Markdown Negotiation**: Enable or disable Accept: text/markdown support.
 - **Content Signal Policy**: Control how AI may use your content.
 - **Content Sources**: Choose which content types to include (pages, blogs, products, events).
 
