@@ -1,6 +1,7 @@
 import uuid
 
 from odoo import api, tools, fields, models
+from odoo.tools.misc import mute_logger
 
 
 class MCPSession(models.Model):
@@ -53,7 +54,7 @@ class MCPSession(models.Model):
         if not self:
             return
         try:
-            with self.env.cr.savepoint():
+            with mute_logger('odoo.sql_db'), self.env.cr.savepoint():
                 self.env.cr.execute(
                     """
                     UPDATE muk_mcp_session

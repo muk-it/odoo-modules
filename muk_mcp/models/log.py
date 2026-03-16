@@ -1,4 +1,7 @@
-from odoo import api, tools, fields, models
+import contextlib
+
+from odoo import api, tools, fields, models, SUPERUSER_ID
+from odoo.modules.registry import Registry
 
 
 class MCPLog(models.Model):
@@ -72,9 +75,11 @@ class MCPLog(models.Model):
 
     @api.model
     def log(self, **values):
-        with self.pool.cursor() as cr:
-            env = self.env(cr=cr)
-            env['muk_mcp.log'].sudo().create(values)
+        with contextlib.suppress(Exception), mute_logger('odoo.sql_db'), Registry(
+                self.env.cr.dbname
+            ).cursor() as cr:
+            env = api.Environment(cr, SUPERUSER_ID, {})
+            env['muk_mcp.log'].create(values)
 
     # ----------------------------------------------------------
     # Cron

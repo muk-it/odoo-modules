@@ -1,10 +1,10 @@
 import hashlib
-import time
 
 from odoo import api, fields, models
 from odoo.tools import SQL
+from odoo.tools.misc import mute_logger
 
-_rate_limit_store = {}
+from odoo.addons.muk_mcp.tools.rate_limit import rate_limiter
 
 
 class MCPKey(models.Model):
@@ -114,19 +114,9 @@ class MCPKey(models.Model):
         return hashlib.sha256(key.encode()).hexdigest()
 
     def _check_rate_limit(self):
-        if not self.rate_limit:
-            return True
-        now = time.time()
-        window = 60
-        store_key = self.id
-        timestamps = _rate_limit_store.get(store_key, [])
-        timestamps = [t for t in timestamps if now - t < window]
-        if len(timestamps) >= self.rate_limit:
-            _rate_limit_store[store_key] = timestamps
-            return False
-        timestamps.append(now)
-        _rate_limit_store[store_key] = timestamps
-        return True
+        return rate_limiter.check(
+            self.id, self.rate_limit, 60,
+        )
 
     # ----------------------------------------------------------
     # Functions
@@ -148,7 +138,7 @@ class MCPKey(models.Model):
         if not row:
             return None
         try:
-            with self.env.cr.savepoint():
+            with mute_logger('odoo.sql_db'), self.env.cr.savepoint():
                 self.env.cr.execute(SQL(
                     """
                     UPDATE %s
