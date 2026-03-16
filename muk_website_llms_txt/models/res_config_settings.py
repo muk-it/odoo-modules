@@ -1,4 +1,4 @@
-from odoo import api, fields, models
+from odoo import fields, models
 
 
 class ResConfigSettings(models.TransientModel):
@@ -14,11 +14,6 @@ class ResConfigSettings(models.TransientModel):
         readonly=False,
     )
 
-    llms_markdown_enabled = fields.Boolean(
-        related='website_id.llms_markdown_enabled',
-        readonly=False,
-    )
-
     llms_full_txt_enabled = fields.Boolean(
         related='website_id.llms_full_txt_enabled',
         readonly=False,
@@ -26,6 +21,11 @@ class ResConfigSettings(models.TransientModel):
 
     llms_content_signal = fields.Selection(
         related='website_id.llms_content_signal',
+        readonly=False,
+    )
+
+    llms_include_pages = fields.Boolean(
+        related='website_id.llms_include_pages',
         readonly=False,
     )
 

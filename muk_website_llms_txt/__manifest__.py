@@ -1,5 +1,5 @@
 {
-    'name': 'MuK LLMs.txt & Markdown',
+    'name': 'MuK LLMs TXT & Markdown',
     'summary': 'Serve llms.txt and markdown content for AI agents',
     'description': '''
         Make your Odoo website AI-ready by implementing the llms.txt
@@ -7,7 +7,7 @@
         AI agents and crawlers can discover your content via /llms.txt
         and request any page as clean markdown via the Accept header.
     ''',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.0.1',
     'category': 'Website/SEO',
     'license': 'LGPL-3',
     'author': 'MuK IT',

@@ -21,11 +21,6 @@
 						invisible="not llms_txt_enabled">
 						<field name="llms_full_txt_enabled"/>
 					</setting>
-					<setting id="llms_markdown_setting"
-						string="Markdown Negotiation"
-						help="Return markdown when agents send Accept: text/markdown.">
-						<field name="llms_markdown_enabled"/>
-					</setting>
 					<setting id="llms_content_signal_setting"
 						string="Content Signal"
 						help="Control how AI systems may use your content.">
@@ -36,6 +31,10 @@
 						help="Choose which content types to include in llms.txt."
 						invisible="not llms_txt_enabled">
 						<div class="mt-2">
+							<div>
+								<field name="llms_include_pages" class="oe_inline"/>
+								<label for="llms_include_pages"/>
+							</div>
 							<div>
 								<field name="llms_include_blogs" class="oe_inline"/>
 								<label for="llms_include_blogs"/>

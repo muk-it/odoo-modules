@@ -22,15 +22,6 @@ class Website(models.Model):
         )
     )
 
-    llms_markdown_enabled = fields.Boolean(
-        string="Enable Markdown Negotiation",
-        default=True,
-        help=(
-            "Respond with markdown when AI agents request it via "
-            "the HTTP Accept: text/markdown header."
-        )
-    )
-
     llms_full_txt_enabled = fields.Boolean(
         string="Enable llms-full.txt",
         default=True,
@@ -53,6 +44,12 @@ class Website(models.Model):
             "Control how AI systems may use your content. "
             "Sent via the Content-Signal HTTP header."
         )
+    )
+
+    llms_include_pages = fields.Boolean(
+        string="Include Pages",
+        default=True,
+        help="Include published website pages in llms.txt."
     )
 
     llms_include_blogs = fields.Boolean(
@@ -102,7 +99,8 @@ class Website(models.Model):
     # ----------------------------------------------------------
 
     def _get_llms_txt_pages(self, base_url):
-        lines = ['', '## Pages', '']
+        if not self.llms_include_pages:
+            return []
         pages = self.env['website.page'].sudo().search(
             [
                 ('website_published', '=', True),
@@ -110,6 +108,9 @@ class Website(models.Model):
             ],
             order='url'
         )
+        if not pages:
+            return []
+        lines = ['', '## Pages', '']
         for page in pages:
             url = page.url or '/'
             if not url.startswith('http'):
@@ -214,6 +215,8 @@ class Website(models.Model):
         return entry
 
     def _get_llms_full_pages(self, base_url, html_to_markdown):
+        if not self.llms_include_pages:
+            return []
         pages = self.env['website.page'].sudo().search(
             [
                 ('website_published', '=', True),

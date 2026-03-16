@@ -1,0 +1,206 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* muk_website_llms_txt
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-03-16 10:57+0000\n"
+"PO-Revision-Date: 2026-03-16 10:57+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: muk_website_llms_txt
+#: model_terms:ir.ui.view,arch_db:muk_website_llms_txt.res_config_settings_view_form
+msgid "AI & Agents"
+msgstr "IA et agents"
+
+#. module: muk_website_llms_txt
+#: model:ir.model.fields.selection,name:muk_website_llms_txt.selection__website__llms_content_signal__input_only
+msgid "Allow AI input only"
+msgstr "Autoriser uniquement l'entrée IA"
+
+#. module: muk_website_llms_txt
+#: model:ir.model.fields.selection,name:muk_website_llms_txt.selection__website__llms_content_signal__all
+msgid "Allow AI training + search + input"
+msgstr "Autoriser l'entraînement IA + recherche + entrée"
+
+#. module: muk_website_llms_txt
+#: model:ir.model.fields.selection,name:muk_website_llms_txt.selection__website__llms_content_signal__search_input
+msgid "Allow search + AI input only"
+msgstr "Autoriser uniquement recherche + entrée IA"
+
+#. module: muk_website_llms_txt
+#: model_terms:ir.ui.view,arch_db:muk_website_llms_txt.res_config_settings_view_form
+msgid "Choose which content types to include in llms.txt."
+msgstr "Choisissez les types de contenu à inclure dans llms.txt."
+
+#. module: muk_website_llms_txt
+#: model:ir.model,name:muk_website_llms_txt.model_res_config_settings
+msgid "Config Settings"
+msgstr "Paramètres de configuration"
+
+#. module: muk_website_llms_txt
+#: model_terms:ir.ui.view,arch_db:muk_website_llms_txt.res_config_settings_view_form
+msgid "Content Signal"
+msgstr "Signal de contenu"
+
+#. module: muk_website_llms_txt
+#: model:ir.model.fields,field_description:muk_website_llms_txt.field_res_config_settings__llms_content_signal
+#: model:ir.model.fields,field_description:muk_website_llms_txt.field_website__llms_content_signal
+msgid "Content Signal Policy"
+msgstr "Politique de signal de contenu"
+
+#. module: muk_website_llms_txt
+#: model_terms:ir.ui.view,arch_db:muk_website_llms_txt.res_config_settings_view_form
+msgid "Content Sources"
+msgstr "Sources de contenu"
+
+#. module: muk_website_llms_txt
+#: model_terms:ir.ui.view,arch_db:muk_website_llms_txt.res_config_settings_view_form
+msgid "Control how AI systems may use your content."
+msgstr "Contrôlez comment les systèmes d'IA peuvent utiliser votre contenu."
+
+#. module: muk_website_llms_txt
+#: model:ir.model.fields,help:muk_website_llms_txt.field_res_config_settings__llms_content_signal
+#: model:ir.model.fields,help:muk_website_llms_txt.field_website__llms_content_signal
+msgid ""
+"Control how AI systems may use your content. Sent via the Content-Signal "
+"HTTP header."
+msgstr ""
+"Contrôlez comment les systèmes d'IA peuvent utiliser votre contenu. Envoyé "
+"via l'en-tête HTTP Content-Signal."
+
+#. module: muk_website_llms_txt
+#: model:ir.model.fields,field_description:muk_website_llms_txt.field_ir_http__display_name
+#: model:ir.model.fields,field_description:muk_website_llms_txt.field_res_config_settings__display_name
+#: model:ir.model.fields,field_description:muk_website_llms_txt.field_website__display_name
+msgid "Display Name"
+msgstr "Nom affiché"
+
+#. module: muk_website_llms_txt
+#: model:ir.model.fields,field_description:muk_website_llms_txt.field_res_config_settings__llms_full_txt_enabled
+#: model:ir.model.fields,field_description:muk_website_llms_txt.field_website__llms_full_txt_enabled
+msgid "Enable llms-full.txt"
+msgstr "Activer llms-full.txt"
+
+#. module: muk_website_llms_txt
+#: model:ir.model.fields,field_description:muk_website_llms_txt.field_res_config_settings__llms_txt_enabled
+#: model:ir.model.fields,field_description:muk_website_llms_txt.field_website__llms_txt_enabled
+msgid "Enable llms.txt"
+msgstr "Activer llms.txt"
+
+#. module: muk_website_llms_txt
+#: model:ir.model,name:muk_website_llms_txt.model_ir_http
+msgid "HTTP Routing"
+msgstr "Routage HTTP"
+
+#. module: muk_website_llms_txt
+#: model:ir.model.fields,field_description:muk_website_llms_txt.field_ir_http__id
+#: model:ir.model.fields,field_description:muk_website_llms_txt.field_res_config_settings__id
+#: model:ir.model.fields,field_description:muk_website_llms_txt.field_website__id
+msgid "ID"
+msgstr "ID"
+
+#. module: muk_website_llms_txt
+#: model:ir.model.fields,field_description:muk_website_llms_txt.field_res_config_settings__llms_include_blogs
+#: model:ir.model.fields,field_description:muk_website_llms_txt.field_website__llms_include_blogs
+msgid "Include Blog Posts"
+msgstr "Inclure les articles de blog"
+
+#. module: muk_website_llms_txt
+#: model:ir.model.fields,field_description:muk_website_llms_txt.field_res_config_settings__llms_include_events
+#: model:ir.model.fields,field_description:muk_website_llms_txt.field_website__llms_include_events
+msgid "Include Events"
+msgstr "Inclure les événements"
+
+#. module: muk_website_llms_txt
+#: model:ir.model.fields,field_description:muk_website_llms_txt.field_res_config_settings__llms_include_pages
+#: model:ir.model.fields,field_description:muk_website_llms_txt.field_website__llms_include_pages
+msgid "Include Pages"
+msgstr "Inclure les pages"
+
+#. module: muk_website_llms_txt
+#: model:ir.model.fields,field_description:muk_website_llms_txt.field_res_config_settings__llms_include_products
+#: model:ir.model.fields,field_description:muk_website_llms_txt.field_website__llms_include_products
+msgid "Include Products"
+msgstr "Inclure les produits"
+
+#. module: muk_website_llms_txt
+#: model:ir.model.fields,help:muk_website_llms_txt.field_res_config_settings__llms_include_blogs
+#: model:ir.model.fields,help:muk_website_llms_txt.field_website__llms_include_blogs
+msgid "Include published blog posts in llms.txt."
+msgstr "Inclure les articles de blog publiés dans llms.txt."
+
+#. module: muk_website_llms_txt
+#: model:ir.model.fields,help:muk_website_llms_txt.field_res_config_settings__llms_include_events
+#: model:ir.model.fields,help:muk_website_llms_txt.field_website__llms_include_events
+msgid "Include published events in llms.txt."
+msgstr "Inclure les événements publiés dans llms.txt."
+
+#. module: muk_website_llms_txt
+#: model:ir.model.fields,help:muk_website_llms_txt.field_res_config_settings__llms_include_pages
+#: model:ir.model.fields,help:muk_website_llms_txt.field_website__llms_include_pages
+msgid "Include published website pages in llms.txt."
+msgstr "Inclure les pages web publiées dans llms.txt."
+
+#. module: muk_website_llms_txt
+#: model:ir.model.fields,help:muk_website_llms_txt.field_res_config_settings__llms_include_products
+#: model:ir.model.fields,help:muk_website_llms_txt.field_website__llms_include_products
+msgid "Include published products in llms.txt."
+msgstr "Inclure les produits publiés dans llms.txt."
+
+#. module: muk_website_llms_txt
+#: model_terms:ir.ui.view,arch_db:muk_website_llms_txt.res_config_settings_view_form
+msgid "LLMs Full"
+msgstr "LLMs Full"
+
+#. module: muk_website_llms_txt
+#: model_terms:ir.ui.view,arch_db:muk_website_llms_txt.res_config_settings_view_form
+msgid "LLMs.txt"
+msgstr "LLMs.txt"
+
+#. module: muk_website_llms_txt
+#: model:ir.model.fields.selection,name:muk_website_llms_txt.selection__website__llms_content_signal__none
+msgid "No AI usage permitted"
+msgstr "Aucune utilisation IA autorisée"
+
+#. module: muk_website_llms_txt
+#: model_terms:ir.ui.view,arch_db:muk_website_llms_txt.res_config_settings_view_form
+msgid "Serve /llms-full.txt with full markdown content."
+msgstr "Servir /llms-full.txt avec le contenu markdown complet."
+
+#. module: muk_website_llms_txt
+#: model_terms:ir.ui.view,arch_db:muk_website_llms_txt.res_config_settings_view_form
+msgid "Serve /llms.txt with an AI-readable index of your content."
+msgstr "Servir /llms.txt avec un index lisible par l'IA de votre contenu."
+
+#. module: muk_website_llms_txt
+#: model:ir.model.fields,help:muk_website_llms_txt.field_res_config_settings__llms_full_txt_enabled
+#: model:ir.model.fields,help:muk_website_llms_txt.field_website__llms_full_txt_enabled
+msgid ""
+"Serve a /llms-full.txt file with the full markdown content of all published "
+"pages."
+msgstr ""
+"Servir un fichier /llms-full.txt avec le contenu markdown complet de toutes "
+"les pages publiées."
+
+#. module: muk_website_llms_txt
+#: model:ir.model.fields,help:muk_website_llms_txt.field_res_config_settings__llms_txt_enabled
+#: model:ir.model.fields,help:muk_website_llms_txt.field_website__llms_txt_enabled
+msgid ""
+"Serve a /llms.txt file with an AI-readable index of your published website "
+"content."
+msgstr ""
+"Servir un fichier /llms.txt avec un index lisible par l'IA du contenu "
+"publié de votre site web."
+
+#. module: muk_website_llms_txt
+#: model:ir.model,name:muk_website_llms_txt.model_website
+msgid "Website"
+msgstr "Site web"
