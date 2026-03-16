@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="res_config_settings_view_form" model="ir.ui.view">
+		<field name="name">res.config.settings.view.form.inherit.llms.txt</field>
+		<field name="model">res.config.settings</field>
+		<field name="inherit_id" ref="website.res_config_settings_view_form"/>
+		<field name="arch" type="xml">
+			<xpath expr="//block[@id='website_settings']" position="after">
+				<block title="AI &amp; Agents" id="website_llms_settings"
+					invisible="not website_id">
+					<setting
+						id="llms_txt_setting"
+						string="LLMs.txt"
+						help="Serve /llms.txt with an AI-readable index of your content."
+					>
+						<field name="llms_txt_enabled"/>
+					</setting>
+					<setting
+						id="llms_full_txt_setting"
+						string="LLMs Full"
+						help="Serve /llms-full.txt with full markdown content."
+						invisible="not llms_txt_enabled"
+					>
+						<field name="llms_full_txt_enabled"/>
+					</setting>
+					<setting 
+						id="llms_content_signal_setting"
+						string="Content Signal"
+						help="Control how AI systems may use your content."
+					>
+						<field name="llms_content_signal"/>
+					</setting>
+					<setting
+						id="llms_include_setting"
+						string="Content Sources"
+						help="Choose which content types to include in llms.txt."
+						invisible="not llms_txt_enabled"
+					>
+						<div class="mt-2">
+							<div>
+								<field name="llms_include_pages" class="oe_inline"/>
+								<label for="llms_include_pages"/>
+							</div>
+							<div>
+								<field name="llms_include_blogs" class="oe_inline"/>
+								<label for="llms_include_blogs"/>
+							</div>
+							<div>
+								<field name="llms_include_products" class="oe_inline"/>
+								<label for="llms_include_products"/>
+							</div>
+							<div>
+								<field name="llms_include_events" class="oe_inline"/>
+								<label for="llms_include_events"/>
+							</div>
+						</div>
+					</setting>
+				</block>
+			</xpath>
+		</field>
+	</record>
+
+</odoo>
