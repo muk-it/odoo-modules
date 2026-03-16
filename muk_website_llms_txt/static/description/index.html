@@ -1,0 +1,195 @@
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<h2 class="oe_slogan">MuK LLMs.txt &amp; Markdown</h2>
+		<h3 class="oe_slogan mb-0">Make your Website AI-Ready</h3>
+		<img src="logo.png" style="width: 150px;" class="mx-auto center-block">
+		<h4 class="oe_slogan mt-0" style="font-size: 23px">MuK IT GmbH - www.mukit.at</h4>
+		<div class="mb-4" style="text-align: center;">
+			<span 
+				class="btn btn-sm mb-2" 
+				style="font-size:14px; font-weight:500; background-color:#243742; color:#fff; cursor:default;"
+			>
+				<i class="fa fa-check"></i> Community
+			</span>
+			<span 
+				class="btn btn-sm mb-2" 
+				style="font-size:14px; font-weight:500; background-color:#5D8DA8; color:#fff; cursor:default;"
+			>
+				<i class="fa fa-check me-1"></i> Enterprise
+			</span>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width: 84%; margin: 16px 8%;">
+			<h3 class="oe_slogan">Overview</h3>
+			<p class="oe_mt32">
+				Make your Odoo website AI-ready by implementing the llms.txt standard
+				and Cloudflare-style markdown content negotiation. AI agents and crawlers
+				can discover your content via <code>/llms.txt</code> and request any page
+				as clean markdown via the HTTP <code>Accept: text/markdown</code> header.
+				The module automatically indexes all published pages, blog posts, products,
+				and events — no manual configuration needed.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Dynamic /llms.txt</h3>
+			<p>
+				Automatically generates a <code>/llms.txt</code> file following the
+				<a href="https://llmstxt.org" target="_blank">llmstxt.org</a> standard.
+				The file provides a structured, AI-readable index of all your published
+				website content — pages, blog posts, products, and events — so AI agents
+				can efficiently discover what your site offers.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Full Markdown Export</h3>
+			<p>
+				Serves a <code>/llms-full.txt</code> endpoint containing the full
+				markdown content of every published page on your website. This allows
+				AI systems to ingest your entire site content in a single request,
+				perfect for RAG pipelines, knowledge bases, and deep content analysis.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Markdown Content Negotiation</h3>
+			<p>
+				When an AI agent sends <code>Accept: text/markdown</code> in its HTTP
+				request, any page on your website responds with clean markdown instead
+				of HTML. This follows the same approach as Cloudflare's "Markdown for
+				Agents" feature. Response headers include <code>x-markdown-tokens</code>
+				(estimated token count) and <code>Content-Signal</code> (AI usage policy).
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Content Signal Policy</h3>
+			<p>
+				Control exactly how AI systems may use your content. Choose between
+				allowing full AI training, search and input only, input only, or
+				no AI usage at all. Your policy is communicated via the standard
+				<code>Content-Signal</code> HTTP header on every response.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Zero-Config Setup</h3>
+			<p>
+				Install the module and it works out of the box. All published website
+				pages are automatically included. Blog posts, products, and events are
+				detected at runtime if the corresponding modules are installed.
+				Fine-tune everything from <strong>Website &rarr; Configuration &rarr;
+				Settings</strong> under the "AI &amp; Agents" section.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container oe_dark d-flex justify-content-around flex-column flex-lg-row">
+	<div class="d-flex flex-column m-3 ms-lg-4">
+		<h3 class="oe_slogan mb-3 mt-3 text-left">
+			<i class="fa fa-headphones mr8"></i>Help and Support
+		</h3>
+		<p>
+			Feel free to contact us, if you need any help with your Odoo
+			integration or additional features.<br> You will get 30 days of
+			support in case of any issues (except data recovery, migration or
+			training).
+		</p>
+	</div>
+	<div class="oe_slogan d-flex flex-column pt-lg-4 ms-1 me-1 ms-lg-4 me-lg-4 mt-0 mt-lg-auto flex-grow-1">
+		<a class="btn btn-primary btn-lg m-1 mt-2" href="#loempia_app_infos" style="font-size: 1.2rem; position: relative; overflow: hidden;">
+			<i class="fa fa-shopping-cart me-1"></i> PURCHASE NOW </a>
+		<div class="d-flex">
+			<a class="btn btn-info btn-lg flex-grow-1 m-1" href="mailto:sale@mukit.at?subject=Request" style="position: relative; overflow: hidden;">
+				<i class="fa fa-envelope me-1"></i> Contact
+			</a> 
+			<a class="btn btn-info btn-lg flex-grow-1 m-1" href="mailto:support@mukit.at?subject=Support" style="position: relative; overflow: hidden;">
+				<i class="fa fa-support me-1"></i> Support
+			</a>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<h3 class="oe_slogan">Our Services</h3>
+		<div class="d-flex justify-content-between">
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="/service_development.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px">
+						Odoo <br>Development
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="/service_integration.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px">
+						Odoo <br>Integration
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="/service_infrastructure.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px">
+						Odoo <br>Infrastructure
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="/service_training.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px">
+						Odoo <br>Training
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="/service_support.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px">
+						Odoo <br>Support
+					</h3>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
