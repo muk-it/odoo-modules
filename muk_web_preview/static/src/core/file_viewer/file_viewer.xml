@@ -15,6 +15,45 @@
                 t-att-class="{ 'w-100': ui.isSmall }"
                 t-att-src="state.file.defaultSource"
             />
+            <t t-if="state.file.isOffice">
+                <div 
+                    t-if="state.officeLoading"
+                    class="o-FileViewer-view w-75 h-100 d-flex align-items-center justify-content-center o-isOffice"
+                    t-att-class="{ 'w-100': ui.isSmall }"
+                >
+                    <div class="text-center text-white">
+                        <i class="fa fa-spinner fa-spin fa-3x mb-3"/>
+                        <div>Loading preview...</div>
+                    </div>
+                </div>
+                <div 
+                    t-elif="state.officeSource"
+                    class="o-FileViewer-view w-75 h-100 position-relative o-isOffice"
+                    t-att-class="{ 'w-100': ui.isSmall }"
+                >
+                    <iframe
+                        class="w-100 h-100 border-0"
+                        t-att-src="state.officeSource"
+                        sandbox="allow-scripts allow-same-origin allow-popups"
+                    />
+                    <div class="o-office-preview-badge">
+                        <i class="fa fa-eye me-1"/>Preview only
+                    </div>
+                </div>
+                <div 
+                    t-else=""
+                    class="o-FileViewer-view w-75 h-100 d-flex align-items-center justify-content-center o-isOffice"
+                    t-att-class="{ 'w-100': ui.isSmall }"
+                >
+                    <div class="text-center text-white">
+                        <i class="fa fa-exclamation-triangle fa-3x mb-3"/>
+                        <div>Office preview is not available.</div>
+                        <div class="small mt-1 opacity-75">
+                            Enable it in Settings or check that your instance is publicly accessible.
+                        </div>
+                    </div>
+                </div>
+            </t>
         </xpath>
     </t>
 

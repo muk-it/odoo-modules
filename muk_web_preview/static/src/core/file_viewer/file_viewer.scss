@@ -5,3 +5,20 @@
 .o-FileViewer-view.o-isCSV {
     background: $white;
 }
+
+.o-FileViewer-view.o-isOffice {
+    background: $white;
+
+    .o-office-preview-badge {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: rgba(0, 0, 0, 0.6);
+        color: $white;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        pointer-events: none;
+        z-index: 1;
+    }
+}

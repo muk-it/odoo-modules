@@ -1,11 +1,11 @@
 import { url } from '@web/core/utils/urls';
 import { patch } from '@web/core/utils/patch';
+import { session } from '@web/session';
 
 import { FileModel } from '@web/core/file_viewer/file_model';
 import { Attachment } from '@mail/core/common/attachment_model';
 
 const TEXT_MIMETYPES = [
-    'text/csv',
     'text/markdown',
     'text/xml',
     'text/x-python',
@@ -22,6 +22,15 @@ const CSV_MIMETYPES = [
     'text/tab-separated-values',
 ];
 
+const OFFICE_MIMETYPES = [
+    'application/msword',
+    'application/vnd.ms-excel',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+];
+
 const patchModel = {
     get isMail() {
         return this.mimetype && this.mimetype.startsWith('message/rfc822');
@@ -31,12 +40,20 @@ const patchModel = {
             this.name && /\.(csv|tsv)$/i.test(this.name)
         );
     },
+    get isOffice() {
+        if (!session.preview_office_enabled) {
+            return false;
+        }
+        return OFFICE_MIMETYPES.includes(this.mimetype) || (
+            this.name && /\.(docx?|xlsx?|pptx?)$/i.test(this.name)
+        );
+    },
     get isText() {
         return super.isText || TEXT_MIMETYPES.includes(this.mimetype);
     },
     get isViewable() {
         return super.isViewable || (!this.uploading && (
-            this.isMail || this.isCSV
+            this.isMail || this.isCSV || this.isOffice
         ));
     },
     get defaultSource() {

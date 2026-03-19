@@ -1,6 +1,7 @@
 import odoo.tests
 
-from odoo.tests.common import new_test_user, tagged
+from odoo.tests.common import new_test_user
+from odoo.tests.common import tagged
 
 
 @tagged('post_install', '-at_install')
@@ -28,11 +29,13 @@ class TestCSVPreview(odoo.tests.HttpCase):
             'name': 'test_data.csv',
             'raw': b'Name,Email,Age\nAlice,alice@example.com,30\nBob,bob@example.com,25\n',
             'mimetype': 'text/csv',
+            'public': True,
         })
         cls.tsv_attachment = cls.env['ir.attachment'].create({
             'name': 'test_data.tsv',
             'raw': b'Name\tEmail\tAge\nAlice\talice@example.com\t30\n',
             'mimetype': 'text/tab-separated-values',
+            'public': True,
         })
 
     # ----------------------------------------------------------
@@ -56,6 +59,7 @@ class TestCSVPreview(odoo.tests.HttpCase):
             'name': 'xss_test.csv',
             'raw': b'Name,Value\n<script>alert(1)</script>,safe\n',
             'mimetype': 'text/csv',
+            'public': True,
         })
         response = self.url_open(
             f'/muk_web_preview/preview/csv/{attachment.id}',
@@ -75,5 +79,6 @@ class TestCSVPreview(odoo.tests.HttpCase):
     def test_csv_preview_unauthenticated(self):
         response = self.url_open(
             f'/muk_web_preview/preview/csv/{self.csv_attachment.id}',
+            allow_redirects=False,
         )
-        self.assertNotEqual(response.status_code, 200)
+        self.assertIn(response.status_code, (303, 403))
