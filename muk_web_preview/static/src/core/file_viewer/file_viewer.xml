@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-inherit="web.FileViewer" t-inherit-mode="extension">
+        <xpath expr="//iframe[@t-if='state.file.isText']" position="after">
+            <iframe
+                t-if="state.file.isMail"
+                class="o-FileViewer-view w-75 h-100 border-0 o-isMail"
+                t-att-class="{ 'w-100': ui.isSmall }"
+                t-att-src="state.file.defaultSource"
+            />
+            <iframe
+                t-if="state.file.isCSV"
+                class="o-FileViewer-view w-75 h-100 border-0 o-isCSV"
+                t-att-class="{ 'w-100': ui.isSmall }"
+                t-att-src="state.file.defaultSource"
+            />
+        </xpath>
+    </t>
+
+</templates>
