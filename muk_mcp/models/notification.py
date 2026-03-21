@@ -43,6 +43,14 @@ class MCPNotification(models.Model):
     )
 
     # ----------------------------------------------------------
+    # Index
+    # ----------------------------------------------------------
+
+    _undelivered_idx = models.Index(
+        "(session_id, id) WHERE delivered IS NOT TRUE"
+    )
+
+    # ----------------------------------------------------------
     # Functions
     # ----------------------------------------------------------
 
@@ -71,5 +79,10 @@ class MCPNotification(models.Model):
 
     @api.autovacuum
     def _autovacuum_notifications(self):
-        limit = fields.Datetime.subtract(fields.Datetime.now(), days=1)
-        self.search([('delivered', '=', True), ('create_date', '<', limit)]).unlink()
+        delivered_limit = fields.Datetime.subtract(fields.Datetime.now(), days=1)
+        stale_limit = fields.Datetime.subtract(fields.Datetime.now(), days=7)
+        self.search([
+            '|',
+            '&', ('delivered', '=', True), ('create_date', '<', delivered_limit),
+            '&', ('delivered', '=', False), ('create_date', '<', stale_limit),
+        ]).unlink()

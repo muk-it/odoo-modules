@@ -22,6 +22,26 @@ class MCPTool(models.Model):
         index=True,
     )
 
+    active = fields.Boolean(
+        string="Active",
+        default=True,
+    )
+
+    sequence = fields.Integer(
+        string="Sequence",
+        default=10,
+    )
+
+    category = fields.Selection(
+        selection=[
+            ('read', "Read"),
+            ('write', "Write"),
+        ],
+        string="Category",
+        required=True,
+        default='read',
+    )
+
     description = fields.Text(
         string="Description",
         required=True,
@@ -46,26 +66,6 @@ class MCPTool(models.Model):
             "# Set 'result' to a JSON-serializable value to return it.\n"
             "result = {}\n"
         ),
-    )
-
-    active = fields.Boolean(
-        string="Active",
-        default=True,
-    )
-
-    sequence = fields.Integer(
-        string="Sequence",
-        default=10,
-    )
-
-    category = fields.Selection(
-        selection=[
-            ('read', "Read"),
-            ('write', "Write"),
-        ],
-        string="Category",
-        required=True,
-        default='read',
     )
 
     # ----------------------------------------------------------

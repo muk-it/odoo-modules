@@ -2,6 +2,7 @@ import contextlib
 
 from odoo import api, tools, fields, models, SUPERUSER_ID
 from odoo.modules.registry import Registry
+from odoo.tools.misc import mute_logger
 
 
 class MCPLog(models.Model):

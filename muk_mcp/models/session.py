@@ -1,3 +1,4 @@
+import contextlib
 import uuid
 
 from odoo import api, tools, fields, models
@@ -47,26 +48,30 @@ class MCPSession(models.Model):
     )
 
     # ----------------------------------------------------------
+    # Index
+    # ----------------------------------------------------------
+
+    _active_session_idx = models.Index(
+        "(session_id, user_id) WHERE active IS TRUE"
+    )
+
+    # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
 
     def _touch(self):
-        if not self:
-            return
-        try:
-            with mute_logger('odoo.sql_db'), self.env.cr.savepoint():
-                self.env.cr.execute(
-                    """
-                    UPDATE muk_mcp_session
-                       SET last_activity = NOW() AT TIME ZONE 'UTC',
-                           write_date = NOW() AT TIME ZONE 'UTC',
-                           write_uid = %s
-                     WHERE id IN %s
-                    """,
-                    (self.env.uid, tuple(self.ids)),
-                )
-        except Exception:
-            pass
+        with contextlib.suppress(Exception), mute_logger('odoo.sql_db'), self.env.cr.savepoint():
+            self.env.cr.execute(
+                """
+                UPDATE muk_mcp_session
+                   SET last_activity = NOW() AT TIME ZONE 'UTC',
+                       write_date = NOW() AT TIME ZONE 'UTC',
+                       write_uid = %s
+                 WHERE id IN %s
+                """,
+                (self.env.uid, tuple(self.ids)),
+            )
+        return self
 
     # ----------------------------------------------------------
     # Actions

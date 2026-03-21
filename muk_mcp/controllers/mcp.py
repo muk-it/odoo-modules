@@ -1,18 +1,11 @@
 import json
 import time
 
-import odoo
-
 from odoo import http
 from odoo.http import request, Response
-from odoo.tools import config
-
+from odoo.tools import SQL
+from odoo.addons.muk_mcp.core.route import mcp_route
 from odoo.addons.muk_mcp.tools import common, protocol
-
-SSE_POLL_INTERVAL = 2
-SSE_KEEPALIVE_INTERVAL = 15
-SSE_MAX_DURATION = 300
-
 
 class MCPController(http.Controller):
 
@@ -20,14 +13,13 @@ class MCPController(http.Controller):
     # Helper
     # ----------------------------------------------------------
 
-    def _get_mcp_key(self):
-        return getattr(request, '_mcp_key', None)
-
     def _check_rate_limit(self):
-        mcp_key = self._get_mcp_key()
-        if mcp_key and not mcp_key._check_rate_limit():
+        if (
+            (key := getattr(request, '_mcp_key', None)) and
+            not key._check_rate_limit()
+        ):
             request.env['muk_mcp.log'].log(
-                key_id=mcp_key.id,
+                key_id=key.id,
                 user_id=request.env.uid,
                 method='rate_limited',
                 status='rate_limited',
@@ -36,65 +28,86 @@ class MCPController(http.Controller):
         return True
 
     def _check_tool_scope(self, tool):
-        mcp_key = self._get_mcp_key()
-        if not mcp_key:
-            return True
-        return mcp_key.scope != 'read' or tool.category == 'read'
+        if key := getattr(request, '_mcp_key', None):
+            return key.scope != 'read' or tool.category == 'read'
+        return True
 
-    def _log_request(
-        self,
-        method,
-        tool_name=None,
-        model_name=None,
-        status='ok',
-        error_message=None,
-        duration_ms=0,
-    ):
-        mcp_key = self._get_mcp_key()
+    def _log_request(self, method, **kwargs):
+        key = getattr(request, '_mcp_key', None)
         request.env['muk_mcp.log'].log(
-            key_id=mcp_key.id if mcp_key else None,
+            key_id=key.id if key else None,
             user_id=request.env.uid,
             method=method,
-            tool_name=tool_name,
-            model_name=model_name,
-            status=status,
-            error_message=error_message,
-            duration_ms=duration_ms,
+            **kwargs,
         )
 
     def _get_session(self, session_id):
-        session = session_id and request.env['muk_mcp.session'].sudo().search(
-            [
-                ('session_id', '=', session_id),
-                ('user_id', '=', request.env.uid),
-                ('active', '=', True),
-            ], 
-            limit=1
-        )
-        if session:
-            session._touch()
-        return session or None
+        if session := request.env['muk_mcp.session'].sudo().search([
+            ('session_id', '=', session_id),
+            ('user_id', '=', request.env.uid),
+            ('active', '=', True),
+        ], limit=1):
+            return session._touch()
+        return None
 
-    def _create_session(self):
-        return request.env['muk_mcp.session'].sudo().create({
-            'user_id': request.env.uid,
-            'initialized': True,
-        })
+    def _require_session(self):
+        session_id = request.httprequest.headers.get('Mcp-Session-Id')
+        if not session_id:
+            return None, Response(status=400)
+        if not (session := self._get_session(session_id)):
+            return None, Response(status=404)
+        return session, None
+
+    def _claim_notifications(self, session_id, after_id=0):
+        table = SQL.identifier('muk_mcp_notification')
+        request.env.cr.execute(SQL(
+            """
+            UPDATE %s SET delivered = true
+             WHERE id IN (
+                SELECT id FROM %s
+                 WHERE session_id = %%s AND delivered = false AND id > %%s
+                 ORDER BY id ASC LIMIT 50
+                   FOR UPDATE SKIP LOCKED
+             ) RETURNING id, event_id, method, params
+            """,
+            table, table,
+        ), (session_id, after_id))
+        return request.env.cr.fetchall()
+
+    def _make_sse_response(self, rows):
+        chunks = [b'retry: 10000\n\n']
+        for _id, event_id, method, params in rows:
+            msg = json.dumps({
+                'jsonrpc': '2.0',
+                'method': method,
+                'params': json.loads(params) if params else {},
+            }, ensure_ascii=False, default=str)
+            chunks.append(f'id: {event_id}\nevent: message\ndata: {msg}\n\n'.encode())
+        if len(chunks) == 1:
+            chunks.append(b':keepalive\n\n')
+        return Response(
+            b''.join(chunks), status=200,
+            headers={
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache',
+                'X-Accel-Buffering': 'no',
+            },
+        )
 
     def _dispatch_method(self, data):
-        method = data.get('method')
-        params = data.get('params', {})
-        request_id = data.get('id')
-        start = time.time()
+        method, params, request_id = (
+            data.get('method'),
+            data.get('params', {}),
+            data.get('id'),
+        )
         handlers = {
+            'ping': lambda p: {},
             'initialize': self._handle_initialize,
             'notifications/initialized': lambda p: None,
-            'ping': lambda p: {},
             'tools/list': self._handle_tools_list,
             'tools/call': self._handle_tools_call,
         }
-        handler = handlers.get(method)
-        if handler is None:
+        if not (handler := handlers.get(method)):
             self._log_request(
                 method,
                 status='error',
@@ -105,15 +118,13 @@ class MCPController(http.Controller):
                 f'Method not found: {method}',
                 request_id=request_id,
             )
+        start = time.time()
         try:
             result = handler(params)
         except Exception as exc:
-            duration = int((time.time() - start) * 1000)
             self._log_request(
-                method,
-                status='error',
-                error_message=str(exc),
-                duration_ms=duration,
+                method, status='error', error_message=str(exc),
+                duration_ms=int((time.time() - start) * 1000),
             )
             return protocol.make_jsonrpc_error(
                 common.JSONRPC_INTERNAL_ERROR,
@@ -138,220 +149,110 @@ class MCPController(http.Controller):
             data, error = protocol.parse_jsonrpc_request(item)
             if error is not None:
                 results.append(error)
-                continue
-            result = self._dispatch_method(data)
-            if result is not None:
+            elif (result := self._dispatch_method(data)) is not None:
                 results.append(result)
         return request.make_json_response(results)
 
     def _handle_initialize(self, params):
-        session = self._create_session()
+        session = request.env['muk_mcp.session'].sudo().create({
+            'user_id': request.env.uid,
+            'initialized': True,
+        })
         request._mcp_new_session_id = session.session_id
         return protocol.make_initialize_result()
 
     def _handle_tools_list(self, params):
-        tools = request.env['muk_mcp.tool'].sudo().get_tools()
-        return {'tools': tools}
+        return {'tools': request.env['muk_mcp.tool'].sudo().get_tools()}
 
     def _handle_tools_call(self, params):
-        tool_name = params.get('name')
-        arguments = params.get('arguments', {})
-        if not tool_name:
+        if not (tool_name := params.get('name')):
             return protocol.make_tool_result(
-                [protocol.make_text_content('Tool name is required')],
-                is_error=True,
+                [protocol.make_text_content('Tool name is required')], is_error=True,
             )
-        tool = request.env['muk_mcp.tool'].sudo().search([
-            ('name', '=', tool_name),
-            ('active', '=', True),
-        ], limit=1)
-        if not tool:
+        if not (tool := request.env['muk_mcp.tool'].sudo().search([
+            ('name', '=', tool_name), ('active', '=', True),
+        ], limit=1)):
             return protocol.make_tool_result(
                 [protocol.make_text_content(f'Tool not found: {tool_name}')],
                 is_error=True,
             )
         if not self._check_tool_scope(tool):
             self._log_request(
-                'tools/call',
-                tool_name=tool_name,
-                status='denied',
+                'tools/call', tool_name=tool_name, status='denied',
                 error_message='Write tool denied by read-only key scope',
             )
             return protocol.make_tool_result(
-                [protocol.make_text_content(
-                    'Access denied: key scope is read-only'
-                )],
+                [protocol.make_text_content('Access denied: key scope is read-only')],
                 is_error=True,
             )
         try:
-            result = tool._run(arguments, request.env)
             return protocol.make_tool_result(
-                [protocol.make_text_content(result)]
+                [protocol.make_text_content(
+                    tool._run(params.get('arguments', {}), request.env)
+                )]
             )
         except Exception as exc:
             return protocol.make_tool_result(
-                [protocol.make_text_content(f'Error: {exc}')],
-                is_error=True,
+                [protocol.make_text_content(f'Error: {exc}')], is_error=True,
             )
 
     # ----------------------------------------------------------
     # Routes
     # ----------------------------------------------------------
 
-    @http.route(
-        '/mcp',
-        type='mcp',
-        auth='mcp',
-        methods=['POST'],
-        csrf=False,
-        save_session=False,
-    )
+    @mcp_route('/mcp', methods=['POST'])
     def mcp_post(self, **kw):
         if not self._check_rate_limit():
             return request.make_json_response(
-                protocol.make_jsonrpc_error(
-                    common.JSONRPC_INTERNAL_ERROR,
-                    'Rate limit exceeded',
-                ),
+                protocol.make_jsonrpc_error(common.JSONRPC_INTERNAL_ERROR, 'Rate limit exceeded'),
                 status=429,
             )
-        batch = request.params.get('jsonrpc_batch')
-        if batch is not None:
+        if (batch := request.params.get('jsonrpc_batch')) is not None:
             return self._handle_batch(batch)
-        data = request.params.get('jsonrpc_data')
-        if data is None:
+        if (data := request.params.get('jsonrpc_data')) is None:
             return request.make_json_response(
-                protocol.make_jsonrpc_error(
-                    common.JSONRPC_PARSE_ERROR,
-                    'Parse error',
-                ),
+                protocol.make_jsonrpc_error(common.JSONRPC_PARSE_ERROR, 'Parse error'),
                 status=400,
             )
         data, error = protocol.parse_jsonrpc_request(data)
         if error is not None:
             return request.make_json_response(error, status=400)
-        session_id = request.httprequest.headers.get('Mcp-Session-Id')
-        method = data.get('method')
-        if method != 'initialize' and session_id:
-            session = self._get_session(session_id)
-            if not session:
-                return request.make_json_response(
-                    protocol.make_jsonrpc_error(
-                        common.JSONRPC_INVALID_REQUEST,
-                        'Invalid or expired session',
-                        request_id=data.get('id'),
-                    ),
-                    status=404,
-                )
-        response_data = self._dispatch_method(data)
-        if response_data is None:
+        sid = request.httprequest.headers.get('Mcp-Session-Id')
+        if data.get('method') != 'initialize' and sid and not self._get_session(sid):
+            return request.make_json_response(
+                protocol.make_jsonrpc_error(
+                    common.JSONRPC_INVALID_REQUEST, 'Invalid or expired session',
+                    request_id=data.get('id'),
+                ), status=404,
+            )
+        if (response_data := self._dispatch_method(data)) is None:
             return Response(status=202)
         headers = {}
-        new_session_id = getattr(request, '_mcp_new_session_id', None)
-        if new_session_id:
-            headers['Mcp-Session-Id'] = new_session_id
+        if new_sid := getattr(request, '_mcp_new_session_id', None):
+            headers['Mcp-Session-Id'] = new_sid
         return request.make_json_response(response_data, headers=headers)
 
-    @http.route(
-        '/mcp',
-        type='mcp',
-        auth='mcp',
-        methods=['GET'],
-        csrf=False,
-        save_session=False,
-    )
+    @mcp_route('/mcp', methods=['GET'])
     def mcp_get(self, **kw):
-        accept = request.httprequest.headers.get('Accept', '')
-        if 'text/event-stream' not in accept:
+        if 'text/event-stream' not in request.httprequest.headers.get('Accept', ''):
             return Response(status=405)
-        session_id = request.httprequest.headers.get('Mcp-Session-Id')
-        if not session_id:
-            return Response(status=400)
-        session = self._get_session(session_id)
-        if not session:
-            return Response(status=404)
-        last_event_id = request.httprequest.headers.get('Last-Event-ID')
-        db_name = request.env.cr.dbname
-        uid = request.env.uid
-
-        def event_stream():
-            start_time = time.time()
-            last_keepalive = start_time
-            nonlocal last_event_id
-            limit_time = config['limit_time_real']
-            if limit_time:
-                max_duration = min(SSE_MAX_DURATION, limit_time * 0.8)
-            else:
-                max_duration = SSE_MAX_DURATION
-            while time.time() - start_time < max_duration:
-                notifications = []
-                try:
-                    registry = odoo.registry(db_name)
-                    with registry.cursor() as cr:
-                        env = odoo.api.Environment(cr, uid, {})
-                        domain = [
-                            ('session_id', '=', session.id),
-                            ('delivered', '=', False),
-                        ]
-                        if last_event_id:
-                            resume = env['muk_mcp.notification'].search(
-                                [('event_id', '=', last_event_id)], limit=1
-                            )
-                            if resume:
-                                domain.append(('id', '>', resume.id))
-                            last_event_id = None
-                        pending = env['muk_mcp.notification'].search(
-                            domain,
-                            order='id asc',
-                            limit=50,
-                        )
-                        for notif in pending:
-                            msg = {
-                                'jsonrpc': '2.0',
-                                'method': notif.method,
-                                'params': (
-                                    json.loads(notif.params)
-                                    if notif.params else {}
-                                ),
-                            }
-                            notifications.append((notif.event_id, msg))
-                        if pending:
-                            pending.write({'delivered': True})
-                except Exception:
-                    pass
-                for event_id, msg in notifications:
-                    data = json.dumps(msg, ensure_ascii=False, default=str)
-                    yield f'id: {event_id}\nevent: message\ndata: {data}\n\n'.encode()
-                now = time.time()
-                if now - last_keepalive >= SSE_KEEPALIVE_INTERVAL:
-                    yield b':keepalive\n\n'
-                    last_keepalive = now
-                if not notifications:
-                    time.sleep(SSE_POLL_INTERVAL)
-
-        return Response(
-            event_stream(),
-            status=200,
-            headers={
-                'Content-Type': 'text/event-stream',
-                'Cache-Control': 'no-cache',
-                'Connection': 'keep-alive',
-                'X-Accel-Buffering': 'no',
-            },
-            direct_passthrough=True,
+        session, error = self._require_session()
+        if error:
+            return error
+        after_id = 0
+        if last_event_id := request.httprequest.headers.get('Last-Event-ID'):
+            if resume := request.env['muk_mcp.notification'].search(
+                [('event_id', '=', last_event_id)], limit=1,
+            ):
+                after_id = resume.id
+        return self._make_sse_response(
+            self._claim_notifications(session.id, after_id)
         )
 
-    @http.route(
-        '/mcp',
-        type='mcp',
-        auth='mcp',
-        methods=['DELETE'],
-        csrf=False,
-        save_session=False,
-    )
+    @mcp_route('/mcp', methods=['DELETE'])
     def mcp_delete(self, **kw):
-        session_id = request.httprequest.headers.get('Mcp-Session-Id')
-        session = session_id and self._get_session(session_id)
-        if session:
+        if session := self._get_session(
+            request.httprequest.headers.get('Mcp-Session-Id')
+        ):
             session.write({'active': False})
         return Response(status=200)

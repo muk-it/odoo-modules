@@ -27,7 +27,11 @@ def make_jsonrpc_error(code, message, data=None, request_id=None):
 
 def parse_jsonrpc_request(raw_body):
     try:
-        data = json.loads(raw_body) if isinstance(raw_body, (str, bytes)) else raw_body
+        data = (
+            json.loads(raw_body) 
+            if isinstance(raw_body, (str, bytes)) 
+            else raw_body
+        )
     except (json.JSONDecodeError, TypeError, ValueError):
         return None, make_jsonrpc_error(
             common.JSONRPC_PARSE_ERROR,
