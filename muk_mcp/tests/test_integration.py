@@ -1,8 +1,5 @@
 import json
 import secrets
-import uuid
-
-from unittest.mock import patch, MagicMock
 
 from odoo.tests import common, tagged
 
@@ -104,7 +101,10 @@ class TestMcpIntegration(common.TransactionCase):
 
     def test_write_scope_allows_all_tools(self):
         for tool in self.tool_model.search([]):
-            allowed = self.mcp_key.scope != 'read' or tool.category == 'read'
+            allowed = (
+                self.mcp_key.scope != 'read' or
+                tool.category == 'read'
+            )
             self.assertTrue(allowed)
 
     # ----------------------------------------------------------
@@ -179,7 +179,10 @@ class TestMcpIntegration(common.TransactionCase):
             ('session_id', '=', session.id),
         ])
         self.assertTrue(notifications)
-        self.assertEqual(notifications[0].method, 'notifications/tools/list_changed')
+        self.assertEqual(
+            notifications[0].method,
+            'notifications/tools/list_changed',
+        )
         self.assertFalse(notifications[0].delivered)
 
     def test_tool_change_triggers_notification(self):

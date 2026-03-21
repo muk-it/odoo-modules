@@ -61,7 +61,11 @@ class MCPSession(models.Model):
     # ----------------------------------------------------------
 
     def _touch(self):
-        with contextlib.suppress(Exception), mute_logger('odoo.sql_db'), self.env.cr.savepoint():
+        with (
+            contextlib.suppress(Exception),
+            mute_logger('odoo.sql_db'),
+            self.env.cr.savepoint(),
+        ):
             self.env.cr.execute(SQL(
                 """
                 UPDATE %s
