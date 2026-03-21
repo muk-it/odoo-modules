@@ -11,7 +11,7 @@ class IrHttp(models.AbstractModel):
     _inherit = 'ir.http'
 
     # ----------------------------------------------------------
-    # Authentication
+    # Helper
     # ----------------------------------------------------------
 
     @classmethod
@@ -29,13 +29,12 @@ class IrHttp(models.AbstractModel):
         request.update_env(user=mcp_key.user_id.id)
         request.session.can_save = False
 
-    # ----------------------------------------------------------
-    # Error handling
-    # ----------------------------------------------------------
-
     @classmethod
     def _handle_error(cls, exception):
-        if getattr(request, 'dispatcher', None) and request.dispatcher.routing_type == 'mcp':
+        if (
+            getattr(request, 'dispatcher', None) and 
+            request.dispatcher.routing_type == 'mcp'
+        ):
             if isinstance(exception, werkzeug.exceptions.HTTPException):
                 return request.make_json_response({
                     'jsonrpc': '2.0',

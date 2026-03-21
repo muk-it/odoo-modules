@@ -10,6 +10,10 @@ class MCPDispatcher(http.Dispatcher):
 
     routing_type = 'mcp'
 
+    # ----------------------------------------------------------
+    # Functions
+    # ----------------------------------------------------------
+
     @classmethod
     def is_compatible_with(cls, request):
         return True

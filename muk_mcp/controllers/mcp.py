@@ -130,7 +130,10 @@ class MCPController(http.Controller):
                     'Session required',
                     request_id=request_id,
                 )
-            if not (session := self._get_session(sid)) or not session.initialized:
+            if (
+                not (session := self._get_session(sid)) or 
+                not session.initialized
+            ):
                 return protocol.make_jsonrpc_error(
                     common.JSONRPC_INVALID_REQUEST,
                     'Session not initialized',
@@ -192,7 +195,8 @@ class MCPController(http.Controller):
     def _handle_tools_call(self, params):
         if not (tool_name := params.get('name')):
             return protocol.make_tool_result(
-                [protocol.make_text_content('Tool name is required')], is_error=True,
+                [protocol.make_text_content('Tool name is required')], 
+                is_error=True,
             )
         if not (tool := request.env['muk_mcp.tool'].sudo().search([
             ('name', '=', tool_name), ('active', '=', True),
@@ -207,7 +211,9 @@ class MCPController(http.Controller):
                 error_message='Write tool denied by read-only key scope',
             )
             return protocol.make_tool_result(
-                [protocol.make_text_content('Access denied: key scope is read-only')],
+                [protocol.make_text_content(
+                    'Access denied: key scope is read-only'
+                )],
                 is_error=True,
             )
         try:
@@ -218,7 +224,8 @@ class MCPController(http.Controller):
             )
         except Exception as exc:
             return protocol.make_tool_result(
-                [protocol.make_text_content(f'Error: {exc}')], is_error=True,
+                [protocol.make_text_content(f'Error: {exc}')], 
+                is_error=True,
             )
 
     # ----------------------------------------------------------
@@ -229,24 +236,34 @@ class MCPController(http.Controller):
     def mcp_post(self, **kw):
         if not self._check_rate_limit():
             return request.make_json_response(
-                protocol.make_jsonrpc_error(common.JSONRPC_INTERNAL_ERROR, 'Rate limit exceeded'),
+                protocol.make_jsonrpc_error(
+                    common.JSONRPC_INTERNAL_ERROR, 
+                    'Rate limit exceeded'
+                ),
                 status=429,
             )
         if (batch := request.params.get('jsonrpc_batch')) is not None:
             return self._handle_batch(batch)
         if (data := request.params.get('jsonrpc_data')) is None:
             return request.make_json_response(
-                protocol.make_jsonrpc_error(common.JSONRPC_PARSE_ERROR, 'Parse error'),
+                protocol.make_jsonrpc_error(
+                    common.JSONRPC_PARSE_ERROR, 
+                    'Parse error'
+                ),
                 status=400,
             )
         data, error = protocol.parse_jsonrpc_request(data)
         if error is not None:
             return request.make_json_response(error, status=400)
         sid = request.httprequest.headers.get('Mcp-Session-Id')
-        if data.get('method') != 'initialize' and sid and not self._get_session(sid):
+        if (
+            data.get('method') != 'initialize' and 
+            sid and not self._get_session(sid)
+        ):
             return request.make_json_response(
                 protocol.make_jsonrpc_error(
-                    common.JSONRPC_INVALID_REQUEST, 'Invalid or expired session',
+                    common.JSONRPC_INVALID_REQUEST, 
+                    'Invalid or expired session',
                     request_id=data.get('id'),
                 ), status=404,
             )
@@ -259,7 +276,10 @@ class MCPController(http.Controller):
 
     @mcp_route('/mcp', methods=['GET'])
     def mcp_get(self, **kw):
-        if 'text/event-stream' not in request.httprequest.headers.get('Accept', ''):
+        if (
+            'text/event-stream' not in 
+            request.httprequest.headers.get('Accept', '')
+        ):
             return Response(status=405)
         session, error = self._require_session()
         if error:
