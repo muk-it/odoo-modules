@@ -82,7 +82,9 @@ class MCPController(http.Controller):
                 'method': method,
                 'params': json.loads(params) if params else {},
             }, ensure_ascii=False, default=str)
-            chunks.append(f'id: {event_id}\nevent: message\ndata: {msg}\n\n'.encode())
+            chunks.append(
+                f'id: {event_id}\nevent: message\ndata: {msg}\n\n'.encode()
+            )
         if len(chunks) == 1:
             chunks.append(b':keepalive\n\n')
         return Response(
