@@ -540,6 +540,8 @@ else:
     record_id = arguments.get('id')
     if not record_id:
         result = {'error': 'Record ID is required'}
+    elif not env[model_name].search_count([('id', '=', record_id)]):
+        result = {'error': 'Record %s/%s not found' % (model_name, record_id)}
     else:
         result = env['mail.message'].search_read(
             [('model', '=', model_name), ('res_id', '=', record_id)],
@@ -667,6 +669,8 @@ else:
         method = getattr(model, method_name, None)
         if method is None:
             result = {'error': 'Method %r not found on %r' % (method_name, model_name)}
+        elif not callable(method):
+            result = {'error': '%r is not a callable method on %r' % (method_name, model_name)}
         else:
             result = method(*args, **kwargs)
         </field>

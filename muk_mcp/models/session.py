@@ -2,6 +2,7 @@ import contextlib
 import uuid
 
 from odoo import api, tools, fields, models
+from odoo.tools import SQL
 from odoo.tools.misc import mute_logger
 
 
@@ -61,16 +62,18 @@ class MCPSession(models.Model):
 
     def _touch(self):
         with contextlib.suppress(Exception), mute_logger('odoo.sql_db'), self.env.cr.savepoint():
-            self.env.cr.execute(
+            self.env.cr.execute(SQL(
                 """
-                UPDATE muk_mcp_session
+                UPDATE %s
                    SET last_activity = NOW() AT TIME ZONE 'UTC',
                        write_date = NOW() AT TIME ZONE 'UTC',
                        write_uid = %s
                  WHERE id IN %s
                 """,
-                (self.env.uid, tuple(self.ids)),
-            )
+                SQL.identifier(self._table),
+                self.env.uid,
+                tuple(self.ids),
+            ))
         return self
 
     # ----------------------------------------------------------

@@ -59,7 +59,7 @@ def parse_jsonrpc_request(raw_body):
 
 
 def make_initialize_result(capabilities=None):
-    caps = {'tools': {}}
+    caps = {'tools': {'listChanged': True}}
     if capabilities:
         caps.update(capabilities)
     return {

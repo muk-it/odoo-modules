@@ -124,3 +124,15 @@ class TestMcpTool(common.TransactionCase):
         result = json.loads(result_str)
         self.assertIn('error', result)
         self.assertIn('Private methods', result['error'])
+
+    def test_method_not_found(self):
+        tool = self.tool_model.search([
+            ('name', '=', 'execute_method'),
+        ], limit=1)
+        result_str = tool._run({
+            'model': 'res.partner',
+            'method': 'totally_nonexistent_method_xyz',
+        }, self.env)
+        result = json.loads(result_str)
+        self.assertIn('error', result)
+        self.assertIn('not found', result['error'])

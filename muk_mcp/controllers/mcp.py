@@ -65,13 +65,13 @@ class MCPController(http.Controller):
             UPDATE %s SET delivered = true
              WHERE id IN (
                 SELECT id FROM %s
-                 WHERE session_id = %%s AND delivered = false AND id > %%s
+                 WHERE session_id = %s AND delivered = false AND id > %s
                  ORDER BY id ASC LIMIT 50
                    FOR UPDATE SKIP LOCKED
              ) RETURNING id, event_id, method, params
             """,
-            table, table,
-        ), (session_id, after_id))
+            table, table, session_id, after_id,
+        ))
         return request.env.cr.fetchall()
 
     def _make_sse_response(self, rows):
@@ -105,7 +105,7 @@ class MCPController(http.Controller):
         handlers = {
             'ping': lambda p: {},
             'initialize': self._handle_initialize,
-            'notifications/initialized': lambda p: None,
+            'notifications/initialized': self._handle_initialized,
             'tools/list': self._handle_tools_list,
             'tools/call': self._handle_tools_call,
         }
@@ -120,6 +120,22 @@ class MCPController(http.Controller):
                 f'Method not found: {method}',
                 request_id=request_id,
             )
+        requires_initialized = method not in (
+            'ping', 'initialize', 'notifications/initialized',
+        )
+        if requires_initialized:
+            if not (sid := request.httprequest.headers.get('Mcp-Session-Id')):
+                return protocol.make_jsonrpc_error(
+                    common.JSONRPC_INVALID_REQUEST,
+                    'Session required',
+                    request_id=request_id,
+                )
+            if not (session := self._get_session(sid)) or not session.initialized:
+                return protocol.make_jsonrpc_error(
+                    common.JSONRPC_INVALID_REQUEST,
+                    'Session not initialized',
+                    request_id=request_id,
+                )
         start = time.time()
         try:
             result = handler(params)
@@ -140,6 +156,7 @@ class MCPController(http.Controller):
                 tool_name=params.get('name'),
                 model_name=params.get('arguments', {}).get('model'),
                 duration_ms=duration,
+                status='ok',
             )
         if method.startswith('notifications/'):
             return None
@@ -158,10 +175,16 @@ class MCPController(http.Controller):
     def _handle_initialize(self, params):
         session = request.env['muk_mcp.session'].sudo().create({
             'user_id': request.env.uid,
-            'initialized': True,
+            'initialized': False,
         })
         request._mcp_new_session_id = session.session_id
         return protocol.make_initialize_result()
+
+    def _handle_initialized(self, params):
+        session_id = request.httprequest.headers.get('Mcp-Session-Id')
+        if session_id and (session := self._get_session(session_id)):
+            session.write({'initialized': True})
+        return None
 
     def _handle_tools_list(self, params):
         return {'tools': request.env['muk_mcp.tool'].sudo().get_tools()}
