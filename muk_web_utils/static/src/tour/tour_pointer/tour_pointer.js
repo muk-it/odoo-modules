@@ -12,6 +12,9 @@ patch(TourPointer.prototype, {
             (anchor) => {
                 if (anchor) {
                     const activeEl = uiService.activeElement;
+                    if (!this.state || !activeEl || typeof activeEl.contains !== "function") {
+                        return;
+                    }
                     this.state.triggerBelow = !activeEl.contains(anchor);
                 }
             },
