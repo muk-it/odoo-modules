@@ -8,12 +8,12 @@
         or Codex CLI. The server speaks MCP Streamable HTTP at a single
         endpoint using MCP API keys for authentication.
     ''',
-    'version': '19.0.1.1.3',
+    'version': '19.0.1.1.4',
     'category': 'Tools/API',
     'license': 'LGPL-3',
     'author': 'MuK IT',
     'website': 'http://www.mukit.at',
-    'live_test_url': 'https://my.mukit.at/r/f6m',
+    'live_test_url': 'https://youtu.be/zpBTT46tJZ0',
     'contributors': [
         'Mathias Markl <mathias.markl@mukit.at>',
     ],

@@ -106,8 +106,25 @@ class MCPController(http.Controller):
             'ping': lambda p: {},
             'initialize': self._handle_initialize,
             'notifications/initialized': self._handle_initialized,
+            'notifications/roots/list_changed': lambda p: None,
+            'notifications/cancelled': lambda p: None,
             'tools/list': self._handle_tools_list,
             'tools/call': self._handle_tools_call,
+            'resources/list': lambda p: {'resources': []},
+            'resources/read': lambda p: {'contents': []},
+            'resources/templates/list': lambda p: {
+                'resourceTemplates': []
+            },
+            'prompts/list': lambda p: {'prompts': []},
+            'prompts/get': lambda p: {'messages': []},
+            'completion/complete': lambda p: {
+                'completion': {
+                    'values': [], 
+                    'total': 0, 
+                    'hasMore': False
+                },
+            },
+            'logging/setLevel': lambda p: {},
         }
         if not (handler := handlers.get(method)):
             self._log_request(
@@ -152,17 +169,14 @@ class MCPController(http.Controller):
                 str(exc),
                 request_id=request_id,
             )
-        duration = int((time.time() - start) * 1000)
-        if method == 'tools/call':
-            self._log_request(
-                method,
-                tool_name=params.get('name'),
-                model_name=params.get('arguments', {}).get('model'),
-                duration_ms=duration,
-                status='ok',
-            )
         if method.startswith('notifications/'):
             return None
+        duration = int((time.time() - start) * 1000)
+        log_kwargs = {'duration_ms': duration, 'status': 'ok'}
+        if method == 'tools/call':
+            log_kwargs['tool_name'] = params.get('name')
+            log_kwargs['model_name'] = params.get('arguments', {}).get('model')
+        self._log_request(method, **log_kwargs)
         return protocol.make_jsonrpc_response(result, request_id=request_id)
 
     def _handle_batch(self, items):
@@ -255,18 +269,6 @@ class MCPController(http.Controller):
         data, error = protocol.parse_jsonrpc_request(data)
         if error is not None:
             return request.make_json_response(error, status=400)
-        sid = request.httprequest.headers.get('Mcp-Session-Id')
-        if (
-            data.get('method') != 'initialize' and 
-            sid and not self._get_session(sid)
-        ):
-            return request.make_json_response(
-                protocol.make_jsonrpc_error(
-                    common.JSONRPC_INVALID_REQUEST, 
-                    'Invalid or expired session',
-                    request_id=data.get('id'),
-                ), status=404,
-            )
         if (response_data := self._dispatch_method(data)) is None:
             return Response(status=202)
         headers = {}

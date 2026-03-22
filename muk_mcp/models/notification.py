@@ -81,8 +81,11 @@ class MCPNotification(models.Model):
     def _autovacuum_notifications(self):
         delivered_limit = fields.Datetime.subtract(fields.Datetime.now(), days=1)
         stale_limit = fields.Datetime.subtract(fields.Datetime.now(), days=7)
-        self.search([
+        domain = [
             '|',
             '&', ('delivered', '=', True), ('create_date', '<', delivered_limit),
             '&', ('delivered', '=', False), ('create_date', '<', stale_limit),
-        ]).unlink()
+        ]
+        while batch := self.search(domain, limit=5000):
+            batch.unlink()
+            self.env.cr.commit()

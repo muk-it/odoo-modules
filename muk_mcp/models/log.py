@@ -92,5 +92,10 @@ class MCPLog(models.Model):
             'muk_mcp.log_autovacuum_days',
             tools.config.get('mcp_log_autovacuum_days', 30)
         ))
-        limit = fields.Datetime.subtract(fields.Datetime.now(), days=days)
-        self.search([('create_date', '<', limit)]).unlink()
+        limit = fields.Datetime.subtract(
+            fields.Datetime.now(), days=days
+        )
+        domain = [('create_date', '<', limit)]
+        while batch := self.search(domain, limit=5000):
+            batch.unlink()
+            self.env.cr.commit()
