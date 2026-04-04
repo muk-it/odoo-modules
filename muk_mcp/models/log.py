@@ -96,6 +96,33 @@ class MCPLog(models.Model):
     )
 
     # ----------------------------------------------------------
+    # Actions
+    # ----------------------------------------------------------
+
+    def action_open_record(self):
+        self.ensure_one()
+        if self.model_name and self.res_id:
+            return {
+                'type': 'ir.actions.act_window',
+                'res_model': self.model_name,
+                'res_id': self.res_id,
+                'views': [(False, 'form')],
+                'target': 'current',
+            }
+
+    def action_open_records(self):
+        self.ensure_one()
+        if self.model_name and self.res_ids:
+            return {
+                'type': 'ir.actions.act_window',
+                'name': self.model_name,
+                'res_model': self.model_name,
+                'domain': [('id', 'in', self.res_ids)],
+                'views': [(False, 'list'), (False, 'form')],
+                'target': 'current',
+            }
+
+    # ----------------------------------------------------------
     # Functions
     # ----------------------------------------------------------
 

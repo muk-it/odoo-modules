@@ -24,28 +24,6 @@
 		</field>
 	</record>
 
-	<record id="view_mcp_log_graph" model="ir.ui.view">
-		<field name="name">muk_mcp.log.graph</field>
-		<field name="model">muk_mcp.log</field>
-		<field name="arch" type="xml">
-			<graph type="line" sample="1">
-				<field name="create_date" type="row" interval="day"/>
-			</graph>
-		</field>
-	</record>
-
-	<record id="view_mcp_log_pivot" model="ir.ui.view">
-		<field name="name">muk_mcp.log.pivot</field>
-		<field name="model">muk_mcp.log</field>
-		<field name="arch" type="xml">
-			<pivot sample="1">
-				<field name="tool_name" type="row"/>
-				<field name="create_date" type="col" interval="day"/>
-				<field name="status" type="col"/>
-			</pivot>
-		</field>
-	</record>
-
 	<record id="view_mcp_log_list" model="ir.ui.view">
 		<field name="name">muk_mcp.log.list</field>
 		<field name="model">muk_mcp.log</field>
@@ -70,12 +48,52 @@
 		</field>
 	</record>
 
+	<record id="view_mcp_log_graph" model="ir.ui.view">
+		<field name="name">muk_mcp.log.graph</field>
+		<field name="model">muk_mcp.log</field>
+		<field name="arch" type="xml">
+			<graph type="line" sample="1">
+				<field name="create_date" type="row" interval="day"/>
+			</graph>
+		</field>
+	</record>
+
+	<record id="view_mcp_log_pivot" model="ir.ui.view">
+		<field name="name">muk_mcp.log.pivot</field>
+		<field name="model">muk_mcp.log</field>
+		<field name="arch" type="xml">
+			<pivot sample="1">
+				<field name="tool_name" type="row"/>
+				<field name="create_date" type="col" interval="day"/>
+				<field name="status" type="col"/>
+			</pivot>
+		</field>
+	</record>
+
 	<record id="view_mcp_log_form" model="ir.ui.view">
 		<field name="name">muk_mcp.log.form</field>
 		<field name="model">muk_mcp.log</field>
 		<field name="arch" type="xml">
 			<form create="false" edit="false">
 				<sheet>
+					<div class="oe_button_box" name="button_box">
+						<button
+							name="action_open_record"
+							type="object"
+							class="oe_stat_button"
+							icon="fa-external-link"
+							string="Open Record"
+							invisible="not model_name or not res_id"
+						/>
+						<button
+							name="action_open_records"
+							type="object"
+							class="oe_stat_button"
+							icon="fa-list"
+							string="Open Records"
+							invisible="not model_name or not res_ids"
+						/>
+					</div>
 					<group>
 						<group>
 							<field name="create_date"/>
@@ -86,6 +104,7 @@
 						<group>
 							<field name="method"/>
 							<field name="tool_name"/>
+							<field name="duration_ms"/>
 							<field
 								name="status"
 								widget="badge"
@@ -93,10 +112,9 @@
 								decoration-danger="status in ('error', 'denied')"
 								decoration-warning="status == 'rate_limited'"
 							/>
-							<field name="duration_ms"/>
 						</group>
 					</group>
-					<group>
+					<group string="Request Data">
 						<group>
 							<field name="model_name"/>
 						</group>
