@@ -39,15 +39,6 @@
 							</div>
 						</div>
 					</setting>
-					<setting id="mcp_annotate_messages">
-						<label string="Annotate Messages" for="mcp_annotate_messages"/>
-						<div class="text-muted">
-							Mark chatter messages originating from MCP with 'via MCP: &lt;key name&gt;'.
-						</div>
-						<div class="content-group mt16">
-							<field name="mcp_annotate_messages"/>
-						</div>
-					</setting>
 					<setting id="mcp_rate_limit">
 						<label string="Rate Limiting" for="mcp_rate_limit_requests"/>
 						<div class="text-muted">
@@ -62,6 +53,13 @@
 								</div>
 							</div>
 						</div>
+					</setting>
+					<setting
+						id="mcp_annotate_messages"
+						string="Annotate Messages"
+						help="Mark chatter messages originating from MCP."
+					>
+						<field name="mcp_annotate_messages"/>
 					</setting>
 				</block>
 			</xpath>

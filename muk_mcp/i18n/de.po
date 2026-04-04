@@ -62,13 +62,13 @@ msgstr ""
 #: model:ir.actions.act_window,name:muk_mcp.action_mcp_log
 #: model:ir.ui.menu,name:muk_mcp.menu_mcp_log
 msgid "Audit Log"
-msgstr ""
+msgstr "Prüfprotokoll"
 
 #. module: muk_mcp
 #: model:ir.model.fields,help:muk_mcp.field_res_config_settings__mcp_log_retention
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
 msgid "Audit logs older than this many days are automatically deleted."
-msgstr ""
+msgstr "Prüfprotokolle, die älter als diese Anzahl an Tagen sind, werden automatisch gelöscht."
 
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__category
@@ -120,7 +120,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:muk_mcp.selection__muk_mcp_log__status__denied
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_search
 msgid "Denied"
-msgstr ""
+msgstr "Verweigert"
 
 #. module: muk_mcp
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_tool_form
@@ -148,7 +148,7 @@ msgstr "Anzeigename"
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__duration_ms
 msgid "Duration (ms)"
-msgstr ""
+msgstr "Dauer (ms)"
 
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_res_config_settings__mcp_enabled
@@ -164,12 +164,12 @@ msgstr ""
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__error_message
 #: model:ir.model.fields.selection,name:muk_mcp.selection__muk_mcp_log__status__error
 msgid "Error"
-msgstr ""
+msgstr "Fehler"
 
 #. module: muk_mcp
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_search
 msgid "Errors"
-msgstr ""
+msgstr "Fehler"
 
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__event_id
@@ -217,7 +217,7 @@ msgstr ""
 #. module: muk_mcp
 #: model:ir.model.fields,help:muk_mcp.field_res_config_settings__mcp_session_timeout
 msgid "Inactive MCP sessions are cleaned up after this many hours."
-msgstr ""
+msgstr "Inaktive MCP-Sitzungen werden nach dieser Anzahl an Stunden bereinigt."
 
 #. module: muk_mcp
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
@@ -300,12 +300,12 @@ msgstr ""
 #. module: muk_mcp
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
 msgid "Log Retention"
-msgstr ""
+msgstr "Protokollaufbewahrung"
 
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_res_config_settings__mcp_log_retention
 msgid "Log Retention (days)"
-msgstr ""
+msgstr "Protokollaufbewahrung (Tage)"
 
 #. module: muk_mcp
 #: model:ir.ui.menu,name:muk_mcp.menu_mcp_root
@@ -367,7 +367,7 @@ msgstr ""
 #. module: muk_mcp
 #: model:ir.model.fields,help:muk_mcp.field_muk_mcp_key__rate_limit
 msgid "Maximum requests per minute. 0 = unlimited."
-msgstr ""
+msgstr "Maximale Anfragen pro Minute. 0 = unbegrenzt."
 
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__method
@@ -416,13 +416,13 @@ msgstr ""
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__rate_limit
 msgid "Rate Limit (req/min)"
-msgstr ""
+msgstr "Ratenlimit (Anf./Min.)"
 
 #. module: muk_mcp
 #: model:ir.model.fields.selection,name:muk_mcp.selection__muk_mcp_log__status__rate_limited
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_search
 msgid "Rate Limited"
-msgstr ""
+msgstr "Ratenlimitiert"
 
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key_scope__perm_read
@@ -454,12 +454,12 @@ msgstr ""
 #. module: muk_mcp
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
 msgid "Session Timeout"
-msgstr ""
+msgstr "Sitzungs-Timeout"
 
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_res_config_settings__mcp_session_timeout
 msgid "Session Timeout (hours)"
-msgstr ""
+msgstr "Sitzungs-Timeout (Stunden)"
 
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__status
@@ -521,3 +521,99 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_tool_search
 msgid "Write"
 msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_res_config_settings__mcp_annotate_messages
+msgid "Annotate Messages"
+msgstr "Nachrichten markieren"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Mark chatter messages originating from MCP."
+msgstr "Chatter-Nachrichten markieren, die über MCP ausgelöst wurden."
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_res_config_settings__mcp_rate_limit_requests
+msgid "Rate Limit (Requests)"
+msgstr "Ratenlimit (Anfragen)"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Rate Limiting"
+msgstr "Ratenlimitierung"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Default rate limit for new API keys. Set to 0 to disable."
+msgstr "Standard-Ratenlimit für neue API-Schlüssel. Auf 0 setzen zum Deaktivieren."
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Max requests"
+msgstr "Max. Anfragen"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "per Minute"
+msgstr "pro Minute"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "in Hours"
+msgstr "in Stunden"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "in Days"
+msgstr "in Tagen"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Timeout"
+msgstr "Timeout"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Retention"
+msgstr "Aufbewahrung"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Inactive sessions are cleaned up after this period."
+msgstr "Inaktive Sitzungen werden nach diesem Zeitraum bereinigt."
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Audit logs older than this period are automatically deleted."
+msgstr "Prüfprotokolle, die älter als dieser Zeitraum sind, werden automatisch gelöscht."
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__ip_address
+msgid "IP Address"
+msgstr "IP-Adresse"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__request_data
+msgid "Request"
+msgstr "Anfrage"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__response_data
+msgid "Response"
+msgstr "Antwort"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__res_id
+msgid "Record ID"
+msgstr "Datensatz-ID"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__res_ids
+msgid "Record IDs"
+msgstr "Datensatz-IDs"
+
+#. module: muk_mcp
+#: model:ir.actions.act_window,name:muk_mcp.action_mcp_traffic
+#: model:ir.ui.menu,name:muk_mcp.menu_mcp_traffic
+msgid "Traffic"
+msgstr "Datenverkehr"
