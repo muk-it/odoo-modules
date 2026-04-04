@@ -99,7 +99,6 @@
 					<group>
 						<group>
 							<field name="model_name"/>
-							<field name="res_model_id"/>
 						</group>
 						<group>
 							<field name="res_id"/>

@@ -48,14 +48,6 @@ class MCPLog(models.Model):
         readonly=True,
     )
 
-    res_model_id = fields.Many2one(
-        comodel_name='ir.model',
-        string="Model Link",
-        readonly=True,
-        index=True,
-        ondelete='set null',
-    )
-
     res_id = fields.Integer(
         string="Record ID",
         readonly=True,

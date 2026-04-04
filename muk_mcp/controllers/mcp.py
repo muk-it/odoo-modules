@@ -46,12 +46,8 @@ class MCPController(http.Controller):
             **kwargs,
         )
 
-    def _extract_record_info(self, result, model_name):
+    def _extract_record_info(self, result):
         info = {}
-        if model_name:
-            model_id = request.env['ir.model'].sudo()._get_id(model_name)
-            if model_id:
-                info['res_model_id'] = model_id
         try:
             content = result.get('content', [])
             if content and content[0].get('text'):
@@ -247,7 +243,7 @@ class MCPController(http.Controller):
                 log_kwargs['response_data'] = encode_response(
                     result, content_limit, attribute_limit,
                 )
-                record_info = self._extract_record_info(result, model_name)
+                record_info = self._extract_record_info(result)
                 log_kwargs.update(record_info)
             self._log_request(method, **log_kwargs)
         return protocol.make_jsonrpc_response(result, request_id=request_id)

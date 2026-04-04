@@ -1,7 +1,6 @@
 def migrate(cr, version):
     cr.execute("""
         ALTER TABLE muk_mcp_log
-        ADD COLUMN IF NOT EXISTS res_model_id INTEGER REFERENCES ir_model(id) ON DELETE SET NULL,
         ADD COLUMN IF NOT EXISTS res_id INTEGER,
         ADD COLUMN IF NOT EXISTS res_ids JSONB,
         ADD COLUMN IF NOT EXISTS request_data TEXT,

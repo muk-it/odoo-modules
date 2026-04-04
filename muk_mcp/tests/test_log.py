@@ -80,21 +80,17 @@ class TestMcpLog(common.TransactionCase):
         self.assertIn('content', record.response_data)
 
     def test_log_with_record_linkage(self):
-        model_id = self.env['ir.model'].sudo().search([
-            ('model', '=', 'res.partner'),
-        ], limit=1).id
         record = self.log_model.sudo().create({
             'user_id': self.env.user.id,
             'method': 'tools/call',
             'tool_name': 'create_record',
             'model_name': 'res.partner',
-            'res_model_id': model_id,
             'res_id': 42,
             'res_ids': [42],
             'status': 'ok',
             'duration_ms': 10,
         })
-        self.assertEqual(record.res_model_id.model, 'res.partner')
+        self.assertEqual(record.model_name, 'res.partner')
         self.assertEqual(record.res_id, 42)
         self.assertEqual(record.res_ids, [42])
 
