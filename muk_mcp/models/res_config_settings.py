@@ -36,13 +36,6 @@ class ResConfigSettings(models.TransientModel):
         string="Rate Limit (Requests)",
         config_parameter='muk_mcp.rate_limit_requests',
         default=60,
-        help="Default maximum number of MCP requests per window per key. "
+        help="Default maximum MCP requests per minute per key. "
              "Set to 0 to disable. Used as default when generating new keys.",
-    )
-
-    mcp_rate_limit_window = fields.Integer(
-        string="Rate Limit Window (in Seconds)",
-        config_parameter='muk_mcp.rate_limit_window',
-        default=60,
-        help="Time window in seconds for the rate limit counter.",
     )
