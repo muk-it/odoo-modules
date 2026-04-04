@@ -286,15 +286,15 @@ class TestMcpIntegration(common.TransactionCase):
     # Tests: MCP chatter attribution
     # ----------------------------------------------------------
 
-    def test_mcp_key_name_set_on_message(self):
+    def test_mcp_name_set_on_message(self):
         partner = self.env['res.partner'].create({'name': 'MCP Badge Test'})
         msg = partner.with_context(
-            mcp_via=True, mcp_key_name='Test Key',
+            mcp_name='Test Key',
         ).message_post(body='Hello from MCP')
-        self.assertEqual(msg.mcp_key_name, 'Test Key')
+        self.assertEqual(msg.mcp_name, 'Test Key')
 
-    def test_mcp_key_name_not_set_without_context(self):
+    def test_mcp_name_not_set_without_context(self):
         partner = self.env['res.partner'].create({'name': 'Normal Test'})
         msg = partner.message_post(body='Regular message')
-        self.assertFalse(msg.mcp_key_name)
+        self.assertFalse(msg.mcp_name)
 

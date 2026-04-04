@@ -20,11 +20,9 @@ class IrHttp(models.AbstractModel):
         env = api.Environment(request.env.cr, SUPERUSER_ID, {})
         header = request.httprequest.headers.get('Authorization', '')
         match = re.match(r'^bearer\s+(.+)$', header, re.IGNORECASE)
-        token = match and match.group(1).strip()
-        if not token:
+        if not (token := match and match.group(1).strip()):
             raise werkzeug.exceptions.Unauthorized()
-        mcp_key = env['muk_mcp.key'].authenticate(token)
-        if not mcp_key:
+        if not (mcp_key := env['muk_mcp.key'].authenticate(token)):
             raise werkzeug.exceptions.Unauthorized()
         request.update_env(user=mcp_key.user_id.id)
         annotate = env['ir.config_parameter'].get_param(
@@ -33,8 +31,7 @@ class IrHttp(models.AbstractModel):
         request._mcp_key = mcp_key
         if str2bool(annotate, default=True):
             request.update_env(context={
-                'mcp_via': True,
-                'mcp_key_name': mcp_key.name,
+                'mcp_name': mcp_key.name,
             })
         request.session.can_save = False
 
