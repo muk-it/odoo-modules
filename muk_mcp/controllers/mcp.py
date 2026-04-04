@@ -49,9 +49,7 @@ class MCPController(http.Controller):
     def _extract_record_info(self, result, model_name):
         info = {}
         if model_name:
-            model_id = request.env['ir.model'].sudo().search([
-                ('model', '=', model_name),
-            ], limit=1).id
+            model_id = request.env['ir.model'].sudo()._get_id(model_name)
             if model_id:
                 info['res_model_id'] = model_id
         try:
@@ -224,20 +222,34 @@ class MCPController(http.Controller):
         duration = int((time.time() - start) * 1000)
         if is_tool_call:
             model_name = arguments.get('model')
-            record_info = self._extract_record_info(result, model_name)
-            self._log_request(method, **{
+            is_error = result.get('isError', False)
+            log_kwargs = {
                 'duration_ms': duration,
-                'status': 'ok',
                 'tool_name': params.get('name'),
                 'model_name': model_name,
                 'request_data': encode_request(
                     arguments, content_limit, attribute_limit,
                 ),
-                'response_data': encode_response(
+            }
+            if is_error:
+                error_text = ''
+                content = result.get('content', [])
+                if content and content[0].get('text'):
+                    error_text = content[0]['text']
+                if 'scope is read-only' in error_text:
+                    log_kwargs['status'] = 'denied'
+                else:
+                    log_kwargs['status'] = 'error'
+                log_kwargs['error_message'] = error_text
+                log_kwargs['response_data'] = error_text
+            else:
+                log_kwargs['status'] = 'ok'
+                log_kwargs['response_data'] = encode_response(
                     result, content_limit, attribute_limit,
-                ),
-                **record_info,
-            })
+                )
+                record_info = self._extract_record_info(result, model_name)
+                log_kwargs.update(record_info)
+            self._log_request(method, **log_kwargs)
         return protocol.make_jsonrpc_response(result, request_id=request_id)
 
     def _handle_batch(self, items):
@@ -281,13 +293,6 @@ class MCPController(http.Controller):
                 is_error=True,
             )
         if not self._check_tool_scope(tool):
-            self._log_request(
-                'tools/call', tool_name=tool_name, status='denied',
-                error_message='Write tool denied by read-only key scope',
-                request_data=encode_request(
-                    params.get('arguments', {}), 25000, 150,
-                ),
-            )
             return protocol.make_tool_result(
                 [protocol.make_text_content(
                     'Access denied: key scope is read-only'
