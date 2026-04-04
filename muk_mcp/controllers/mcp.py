@@ -6,9 +6,7 @@ from odoo.http import request, Response
 from odoo.tools import SQL
 from odoo.addons.muk_mcp.core.route import mcp_route
 from odoo.addons.muk_mcp.tools import common, protocol
-from odoo.addons.muk_mcp.tools.encoder import (
-    encode_request, encode_response, _get_limits,
-)
+from odoo.addons.muk_mcp.tools.encoder import encode_request, encode_response
 
 class MCPController(http.Controller):
 
@@ -186,9 +184,6 @@ class MCPController(http.Controller):
                 )
         is_tool_call = method == 'tools/call'
         arguments = params.get('arguments', {}) if is_tool_call else None
-        content_limit, attribute_limit = (
-            _get_limits(request.env) if is_tool_call else (25000, 150)
-        )
         start = time.time()
         try:
             result = handler(params)
@@ -202,9 +197,7 @@ class MCPController(http.Controller):
                 log_kwargs.update({
                     'tool_name': params.get('name'),
                     'model_name': arguments.get('model'),
-                    'request_data': encode_request(
-                        arguments, content_limit, attribute_limit,
-                    ),
+                    'request_data': encode_request(arguments),
                     'response_data': str(exc),
                 })
             self._log_request(method, **log_kwargs)
@@ -223,9 +216,7 @@ class MCPController(http.Controller):
                 'duration_ms': duration,
                 'tool_name': params.get('name'),
                 'model_name': model_name,
-                'request_data': encode_request(
-                    arguments, content_limit, attribute_limit,
-                ),
+                'request_data': encode_request(arguments),
             }
             if is_error:
                 error_text = ''
@@ -240,9 +231,7 @@ class MCPController(http.Controller):
                 log_kwargs['response_data'] = error_text
             else:
                 log_kwargs['status'] = 'ok'
-                log_kwargs['response_data'] = encode_response(
-                    result, content_limit, attribute_limit,
-                )
+                log_kwargs['response_data'] = encode_response(result)
                 record_info = self._extract_record_info(result)
                 log_kwargs.update(record_info)
             self._log_request(method, **log_kwargs)

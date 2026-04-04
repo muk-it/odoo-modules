@@ -30,20 +30,6 @@
 					>
 						<field name="mcp_annotate_messages"/>
 					</setting>
-					<setting
-						id="mcp_log_content_limit"
-						string="Log Content Limit"
-						help="Maximum total characters for request/response data in audit logs."
-					>
-						<field name="mcp_log_content_limit"/>
-					</setting>
-					<setting
-						id="mcp_log_attribute_limit"
-						string="Log Attribute Limit"
-						help="Maximum characters per JSON attribute in audit logs."
-					>
-						<field name="mcp_log_attribute_limit"/>
-					</setting>
 				</block>
 			</xpath>
 		</field>

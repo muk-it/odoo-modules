@@ -1,19 +1,18 @@
 import json
 
+from odoo.tools import config
+
 
 class LogEncoder(json.JSONEncoder):
-    def __init__(self, *args, attribute_limit=150, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.attribute_limit = attribute_limit
 
     def iterencode(self, o, _one_shot=False):
         markers = {} if self.check_circular else None
-        attribute_limit = self.attribute_limit
+        limit = int(config.get('mcp_logging_attribute_limit', 150))
 
         def limit_str(o):
             text = json.encoder.encode_basestring(o)
-            if attribute_limit and len(text) > attribute_limit:
-                return '{}...'.format(text[:attribute_limit])
+            if limit and len(text) > limit:
+                return '{}...'.format(text[:limit])
             return text
 
         if (
@@ -35,34 +34,24 @@ class LogEncoder(json.JSONEncoder):
         return _iterencode(o, 0)
 
 
-def _get_limits(env):
-    get = env['ir.config_parameter'].sudo().get_param
-    content_limit = int(get('muk_mcp.log_content_limit', 25000))
-    attribute_limit = int(get('muk_mcp.log_attribute_limit', 150))
-    return content_limit, attribute_limit
-
-
-def _limit_text(text, limit):
+def limit_text_size(text):
+    limit = int(config.get('mcp_logging_content_limit', 25000))
     if limit and len(text) > limit:
         return '{}\n\n...'.format(text[:limit])
     return text
 
 
-def encode_request(arguments, content_limit=25000, attribute_limit=150):
+def encode_request(arguments):
     if arguments is None:
         return None
-    text = json.dumps(
-        arguments, indent=4, cls=LogEncoder,
-        attribute_limit=attribute_limit, default=str,
-    )
-    return _limit_text(text, content_limit)
+    return limit_text_size(json.dumps(
+        arguments, indent=4, cls=LogEncoder, default=str,
+    ))
 
 
-def encode_response(result, content_limit=25000, attribute_limit=150):
+def encode_response(result):
     if result is None:
         return None
-    text = json.dumps(
-        result, indent=4, cls=LogEncoder,
-        attribute_limit=attribute_limit, default=str,
-    )
-    return _limit_text(text, content_limit)
+    return limit_text_size(json.dumps(
+        result, indent=4, cls=LogEncoder, default=str,
+    ))

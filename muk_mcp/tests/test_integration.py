@@ -245,17 +245,35 @@ class TestMcpIntegration(common.TransactionCase):
     # ----------------------------------------------------------
 
     def test_encoder_limits_attribute_size(self):
+        from odoo.tools import config
         from odoo.addons.muk_mcp.tools.encoder import encode_request
-        data = {'long_field': 'x' * 500}
-        result = encode_request(data, content_limit=25000, attribute_limit=50)
-        self.assertLess(len(result), 600)
+        old = config.options.get('mcp_logging_attribute_limit')
+        config['mcp_logging_attribute_limit'] = 50
+        try:
+            data = {'long_field': 'x' * 500}
+            result = encode_request(data)
+            self.assertLess(len(result), 600)
+        finally:
+            if old is None:
+                config.options.pop('mcp_logging_attribute_limit', None)
+            else:
+                config['mcp_logging_attribute_limit'] = old
 
     def test_encoder_limits_content_size(self):
+        from odoo.tools import config
         from odoo.addons.muk_mcp.tools.encoder import encode_request
-        data = {'data': list(range(10000))}
-        result = encode_request(data, content_limit=200, attribute_limit=150)
-        self.assertLessEqual(len(result), 210)
-        self.assertTrue(result.endswith('...'))
+        old = config.options.get('mcp_logging_content_limit')
+        config['mcp_logging_content_limit'] = 200
+        try:
+            data = {'data': list(range(10000))}
+            result = encode_request(data)
+            self.assertLessEqual(len(result), 210)
+            self.assertTrue(result.endswith('...'))
+        finally:
+            if old is None:
+                config.options.pop('mcp_logging_content_limit', None)
+            else:
+                config['mcp_logging_content_limit'] = old
 
     def test_encoder_handles_none(self):
         from odoo.addons.muk_mcp.tools.encoder import (
