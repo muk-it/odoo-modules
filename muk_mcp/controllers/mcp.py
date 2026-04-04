@@ -6,6 +6,9 @@ from odoo.http import request, Response
 from odoo.tools import SQL
 from odoo.addons.muk_mcp.core.route import mcp_route
 from odoo.addons.muk_mcp.tools import common, protocol
+from odoo.addons.muk_mcp.tools.encoder import (
+    encode_request, encode_response, _get_limits,
+)
 
 class MCPController(http.Controller):
 
@@ -23,6 +26,7 @@ class MCPController(http.Controller):
                 user_id=request.env.uid,
                 method='rate_limited',
                 status='rate_limited',
+                ip_address=request.httprequest.remote_addr,
             )
             return False
         return True
@@ -38,8 +42,38 @@ class MCPController(http.Controller):
             key_id=key.id if key else None,
             user_id=request.env.uid,
             method=method,
+            ip_address=request.httprequest.remote_addr,
             **kwargs,
         )
+
+    def _extract_record_info(self, result, model_name):
+        info = {}
+        if model_name:
+            model_id = request.env['ir.model'].sudo().search([
+                ('model', '=', model_name),
+            ], limit=1).id
+            if model_id:
+                info['res_model_id'] = model_id
+        try:
+            content = result.get('content', [])
+            if content and content[0].get('text'):
+                data = json.loads(content[0]['text'])
+                if isinstance(data, dict):
+                    if 'id' in data:
+                        info['res_id'] = data['id']
+                        info['res_ids'] = [data['id']]
+                    elif 'ids' in data:
+                        ids = data['ids']
+                        info['res_ids'] = ids
+                        if len(ids) == 1:
+                            info['res_id'] = ids[0]
+                    if 'deleted_ids' in data:
+                        info['res_ids'] = data['deleted_ids']
+                        if len(data['deleted_ids']) == 1:
+                            info['res_id'] = data['deleted_ids'][0]
+        except (json.JSONDecodeError, TypeError, KeyError, IndexError):
+            pass
+        return info
 
     def _get_session(self, session_id):
         if session := request.env['muk_mcp.session'].sudo().search([
@@ -156,14 +190,30 @@ class MCPController(http.Controller):
                     'Session not initialized',
                     request_id=request_id,
                 )
+        is_tool_call = method == 'tools/call'
+        arguments = params.get('arguments', {}) if is_tool_call else None
+        content_limit, attribute_limit = (
+            _get_limits(request.env) if is_tool_call else (25000, 150)
+        )
         start = time.time()
         try:
             result = handler(params)
         except Exception as exc:
-            self._log_request(
-                method, status='error', error_message=str(exc),
-                duration_ms=int((time.time() - start) * 1000),
-            )
+            log_kwargs = {
+                'status': 'error',
+                'error_message': str(exc),
+                'duration_ms': int((time.time() - start) * 1000),
+            }
+            if is_tool_call:
+                log_kwargs.update({
+                    'tool_name': params.get('name'),
+                    'model_name': arguments.get('model'),
+                    'request_data': encode_request(
+                        arguments, content_limit, attribute_limit,
+                    ),
+                    'response_data': str(exc),
+                })
+            self._log_request(method, **log_kwargs)
             return protocol.make_jsonrpc_error(
                 common.JSONRPC_INTERNAL_ERROR,
                 str(exc),
@@ -172,12 +222,21 @@ class MCPController(http.Controller):
         if method.startswith('notifications/'):
             return None
         duration = int((time.time() - start) * 1000)
-        if method == 'tools/call':
+        if is_tool_call:
+            model_name = arguments.get('model')
+            record_info = self._extract_record_info(result, model_name)
             self._log_request(method, **{
                 'duration_ms': duration,
                 'status': 'ok',
                 'tool_name': params.get('name'),
-                'model_name': params.get('arguments', {}).get('model'),
+                'model_name': model_name,
+                'request_data': encode_request(
+                    arguments, content_limit, attribute_limit,
+                ),
+                'response_data': encode_response(
+                    result, content_limit, attribute_limit,
+                ),
+                **record_info,
             })
         return protocol.make_jsonrpc_response(result, request_id=request_id)
 
@@ -225,6 +284,9 @@ class MCPController(http.Controller):
             self._log_request(
                 'tools/call', tool_name=tool_name, status='denied',
                 error_message='Write tool denied by read-only key scope',
+                request_data=encode_request(
+                    params.get('arguments', {}), 25000, 150,
+                ),
             )
             return protocol.make_tool_result(
                 [protocol.make_text_content(

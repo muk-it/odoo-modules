@@ -239,3 +239,58 @@ class TestMcpIntegration(common.TransactionCase):
         for _ in range(3):
             self.assertTrue(limited_key._check_rate_limit())
         self.assertFalse(limited_key._check_rate_limit())
+
+    # ----------------------------------------------------------
+    # Tests: Encoder
+    # ----------------------------------------------------------
+
+    def test_encoder_limits_attribute_size(self):
+        from odoo.addons.muk_mcp.tools.encoder import encode_request
+        data = {'long_field': 'x' * 500}
+        result = encode_request(data, content_limit=25000, attribute_limit=50)
+        self.assertLess(len(result), 600)
+
+    def test_encoder_limits_content_size(self):
+        from odoo.addons.muk_mcp.tools.encoder import encode_request
+        data = {'data': list(range(10000))}
+        result = encode_request(data, content_limit=200, attribute_limit=150)
+        self.assertLessEqual(len(result), 210)
+        self.assertTrue(result.endswith('...'))
+
+    def test_encoder_handles_none(self):
+        from odoo.addons.muk_mcp.tools.encoder import (
+            encode_request, encode_response,
+        )
+        self.assertIsNone(encode_request(None))
+        self.assertIsNone(encode_response(None))
+
+    # ----------------------------------------------------------
+    # Tests: MCP chatter attribution
+    # ----------------------------------------------------------
+
+    def test_chatter_attribution_with_mcp_context(self):
+        self.env['ir.config_parameter'].sudo().set_param(
+            'muk_mcp.annotate_messages', 'True',
+        )
+        partner = self.env['res.partner'].create({'name': 'MCP Test'})
+        partner_ctx = partner.with_context(
+            mcp_via=True, mcp_key_name='Test Key',
+        )
+        msg = partner_ctx.message_post(body='Hello from MCP')
+        self.assertIn('via MCP: Test Key', msg.body)
+
+    def test_chatter_attribution_disabled(self):
+        self.env['ir.config_parameter'].sudo().set_param(
+            'muk_mcp.annotate_messages', 'False',
+        )
+        partner = self.env['res.partner'].create({'name': 'MCP Test 2'})
+        partner_ctx = partner.with_context(
+            mcp_via=False,
+        )
+        msg = partner_ctx.message_post(body='Normal message')
+        self.assertNotIn('via MCP', msg.body)
+
+    def test_chatter_no_attribution_without_context(self):
+        partner = self.env['res.partner'].create({'name': 'MCP Test 3'})
+        msg = partner.message_post(body='Regular message')
+        self.assertNotIn('via MCP', msg.body)

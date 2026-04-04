@@ -27,6 +27,13 @@ class IrHttp(models.AbstractModel):
             raise werkzeug.exceptions.Unauthorized()
         request._mcp_key = mcp_key
         request.update_env(user=mcp_key.user_id.id)
+        if env['ir.config_parameter'].get_param(
+            'muk_mcp.annotate_messages', 'True',
+        ) in ('True', '1', 'true'):
+            request.update_env(context={
+                'mcp_via': True,
+                'mcp_key_name': mcp_key.name,
+            })
         request.session.can_save = False
 
     @classmethod

@@ -24,6 +24,28 @@
 		</field>
 	</record>
 
+	<record id="view_mcp_log_graph" model="ir.ui.view">
+		<field name="name">muk_mcp.log.graph</field>
+		<field name="model">muk_mcp.log</field>
+		<field name="arch" type="xml">
+			<graph type="line" sample="1">
+				<field name="create_date" type="row" interval="day"/>
+			</graph>
+		</field>
+	</record>
+
+	<record id="view_mcp_log_pivot" model="ir.ui.view">
+		<field name="name">muk_mcp.log.pivot</field>
+		<field name="model">muk_mcp.log</field>
+		<field name="arch" type="xml">
+			<pivot sample="1">
+				<field name="tool_name" type="row"/>
+				<field name="create_date" type="col" interval="day"/>
+				<field name="status" type="col"/>
+			</pivot>
+		</field>
+	</record>
+
 	<record id="view_mcp_log_list" model="ir.ui.view">
 		<field name="name">muk_mcp.log.list</field>
 		<field name="model">muk_mcp.log</field>
@@ -36,8 +58,8 @@
 				<field name="tool_name"/>
 				<field name="model_name"/>
 				<field name="duration_ms"/>
-				<field name="error_message" optional="hide"/>
-				<field 
+				<field name="ip_address" optional="hide"/>
+				<field
 					name="status"
 					widget="badge"
 					decoration-success="status == 'ok'"
@@ -48,10 +70,69 @@
 		</field>
 	</record>
 
+	<record id="view_mcp_log_form" model="ir.ui.view">
+		<field name="name">muk_mcp.log.form</field>
+		<field name="model">muk_mcp.log</field>
+		<field name="arch" type="xml">
+			<form create="false" edit="false">
+				<sheet>
+					<group>
+						<group>
+							<field name="create_date"/>
+							<field name="user_id"/>
+							<field name="key_id"/>
+							<field name="ip_address"/>
+						</group>
+						<group>
+							<field name="method"/>
+							<field name="tool_name"/>
+							<field
+								name="status"
+								widget="badge"
+								decoration-success="status == 'ok'"
+								decoration-danger="status in ('error', 'denied')"
+								decoration-warning="status == 'rate_limited'"
+							/>
+							<field name="duration_ms"/>
+						</group>
+					</group>
+					<group>
+						<group>
+							<field name="model_name"/>
+							<field name="res_model_id"/>
+						</group>
+						<group>
+							<field name="res_id"/>
+							<field name="res_ids"/>
+						</group>
+					</group>
+					<notebook>
+						<page string="Request">
+							<field name="request_data" widget="code" options="{'mode': 'javascript'}" readonly="1"/>
+						</page>
+						<page string="Response">
+							<field name="response_data" widget="code" options="{'mode': 'javascript'}" readonly="1"/>
+						</page>
+						<page string="Error" invisible="not error_message">
+							<field name="error_message" readonly="1"/>
+						</page>
+					</notebook>
+				</sheet>
+			</form>
+		</field>
+	</record>
+
 	<record id="action_mcp_log" model="ir.actions.act_window">
 		<field name="name">Audit Log</field>
 		<field name="res_model">muk_mcp.log</field>
-		<field name="view_mode">list</field>
+		<field name="view_mode">list,form</field>
+		<field name="context">{'create': False}</field>
+	</record>
+
+	<record id="action_mcp_traffic" model="ir.actions.act_window">
+		<field name="name">Traffic</field>
+		<field name="res_model">muk_mcp.log</field>
+		<field name="view_mode">graph,pivot,list,form</field>
 		<field name="context">{'create': False}</field>
 	</record>
 

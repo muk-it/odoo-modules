@@ -27,6 +27,14 @@
 	/>
 
 	<menuitem
+		id="menu_mcp_traffic"
+		name="Traffic"
+		parent="menu_mcp_root"
+		action="action_mcp_traffic"
+		sequence="25"
+	/>
+
+	<menuitem
 		id="menu_mcp_log"
 		name="Audit Log"
 		parent="menu_mcp_root"

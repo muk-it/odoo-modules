@@ -136,3 +136,16 @@ class TestMcpTool(common.TransactionCase):
         result = json.loads(result_str)
         self.assertIn('error', result)
         self.assertIn('not found', result['error'])
+
+    def test_tool_result_contains_id_for_create(self):
+        tool = self.tool_model.search([
+            ('name', '=', 'create_record'),
+        ], limit=1)
+        result_str = tool._run({
+            'model': 'res.partner.category',
+            'values': {'name': 'MCP ID Test'},
+        }, self.env)
+        result = json.loads(result_str)
+        self.assertIn('id', result)
+        self.assertIsInstance(result['id'], int)
+        self.env['res.partner.category'].browse(result['id']).unlink()

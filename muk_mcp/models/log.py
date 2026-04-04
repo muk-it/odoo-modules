@@ -48,6 +48,39 @@ class MCPLog(models.Model):
         readonly=True,
     )
 
+    res_model_id = fields.Many2one(
+        comodel_name='ir.model',
+        string="Model Link",
+        readonly=True,
+        index=True,
+        ondelete='set null',
+    )
+
+    res_id = fields.Integer(
+        string="Record ID",
+        readonly=True,
+    )
+
+    res_ids = fields.Json(
+        string="Record IDs",
+        readonly=True,
+    )
+
+    request_data = fields.Text(
+        string="Request",
+        readonly=True,
+    )
+
+    response_data = fields.Text(
+        string="Response",
+        readonly=True,
+    )
+
+    ip_address = fields.Char(
+        string="IP Address",
+        readonly=True,
+    )
+
     duration_ms = fields.Integer(
         string="Duration (ms)",
         readonly=True,

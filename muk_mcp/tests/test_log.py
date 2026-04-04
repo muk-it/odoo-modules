@@ -1,3 +1,5 @@
+import json
+
 from odoo.tests import common
 
 
@@ -57,4 +59,54 @@ class TestMcpLog(common.TransactionCase):
             user_id=self.env.user.id,
             method='test',
             status='ok',
+        )
+
+    def test_log_with_request_response_data(self):
+        arguments = {'model': 'res.partner', 'domain': [], 'limit': 10}
+        result = {'content': [{'type': 'text', 'text': '[]'}]}
+        record = self.log_model.sudo().create({
+            'user_id': self.env.user.id,
+            'method': 'tools/call',
+            'tool_name': 'search_read',
+            'model_name': 'res.partner',
+            'status': 'ok',
+            'duration_ms': 15,
+            'request_data': json.dumps(arguments, indent=4),
+            'response_data': json.dumps(result, indent=4),
+            'ip_address': '127.0.0.1',
+        })
+        self.assertEqual(record.ip_address, '127.0.0.1')
+        self.assertIn('res.partner', record.request_data)
+        self.assertIn('content', record.response_data)
+
+    def test_log_with_record_linkage(self):
+        model_id = self.env['ir.model'].sudo().search([
+            ('model', '=', 'res.partner'),
+        ], limit=1).id
+        record = self.log_model.sudo().create({
+            'user_id': self.env.user.id,
+            'method': 'tools/call',
+            'tool_name': 'create_record',
+            'model_name': 'res.partner',
+            'res_model_id': model_id,
+            'res_id': 42,
+            'res_ids': [42],
+            'status': 'ok',
+            'duration_ms': 10,
+        })
+        self.assertEqual(record.res_model_id.model, 'res.partner')
+        self.assertEqual(record.res_id, 42)
+        self.assertEqual(record.res_ids, [42])
+
+    def test_log_method_with_new_fields(self):
+        self.log_model.log(
+            user_id=self.env.user.id,
+            method='tools/call',
+            tool_name='search_read',
+            model_name='res.partner',
+            status='ok',
+            duration_ms=5,
+            request_data='{"model": "res.partner"}',
+            response_data='[{"id": 1}]',
+            ip_address='192.168.1.1',
         )
