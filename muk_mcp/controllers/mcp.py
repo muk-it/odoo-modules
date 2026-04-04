@@ -172,11 +172,13 @@ class MCPController(http.Controller):
         if method.startswith('notifications/'):
             return None
         duration = int((time.time() - start) * 1000)
-        log_kwargs = {'duration_ms': duration, 'status': 'ok'}
         if method == 'tools/call':
-            log_kwargs['tool_name'] = params.get('name')
-            log_kwargs['model_name'] = params.get('arguments', {}).get('model')
-        self._log_request(method, **log_kwargs)
+            self._log_request(method, **{
+                'duration_ms': duration,
+                'status': 'ok',
+                'tool_name': params.get('name'),
+                'model_name': params.get('arguments', {}).get('model'),
+            })
         return protocol.make_jsonrpc_response(result, request_id=request_id)
 
     def _handle_batch(self, items):
