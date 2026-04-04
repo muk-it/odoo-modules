@@ -91,7 +91,7 @@
 							class="oe_stat_button"
 							icon="fa-list"
 							string="Open Records"
-							invisible="not model_name or not res_ids"
+							invisible="not model_name or not res_ids or res_id"
 						/>
 					</div>
 					<group>
@@ -114,12 +114,13 @@
 							/>
 						</group>
 					</group>
-					<group string="Record" invisible="not model_name and not res_id">
+					<group string="Record" invisible="not model_name and not res_id and not res_ids">
 						<group>
 							<field name="model_name"/>
 						</group>
 						<group>
 							<field name="res_id" invisible="not res_id"/>
+							<field name="res_ids" invisible="res_id or not res_ids"/>
 						</group>
 					</group>
 					<notebook>
