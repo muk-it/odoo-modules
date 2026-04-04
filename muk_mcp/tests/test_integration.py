@@ -286,29 +286,15 @@ class TestMcpIntegration(common.TransactionCase):
     # Tests: MCP chatter attribution
     # ----------------------------------------------------------
 
-    def test_chatter_attribution_with_mcp_context(self):
-        self.env['ir.config_parameter'].sudo().set_param(
-            'muk_mcp.annotate_messages', 'True',
-        )
-        partner = self.env['res.partner'].create({'name': 'MCP Test'})
-        partner_ctx = partner.with_context(
+    def test_mcp_key_name_set_on_message(self):
+        partner = self.env['res.partner'].create({'name': 'MCP Badge Test'})
+        msg = partner.with_context(
             mcp_via=True, mcp_key_name='Test Key',
-        )
-        msg = partner_ctx.message_post(body='Hello from MCP')
-        self.assertIn('via MCP: Test Key', msg.body)
+        ).message_post(body='Hello from MCP')
+        self.assertEqual(msg.mcp_key_name, 'Test Key')
 
-    def test_chatter_attribution_disabled(self):
-        self.env['ir.config_parameter'].sudo().set_param(
-            'muk_mcp.annotate_messages', 'False',
-        )
-        partner = self.env['res.partner'].create({'name': 'MCP Test 2'})
-        partner_ctx = partner.with_context(
-            mcp_via=False,
-        )
-        msg = partner_ctx.message_post(body='Normal message')
-        self.assertNotIn('via MCP', msg.body)
-
-    def test_chatter_no_attribution_without_context(self):
-        partner = self.env['res.partner'].create({'name': 'MCP Test 3'})
+    def test_mcp_key_name_not_set_without_context(self):
+        partner = self.env['res.partner'].create({'name': 'Normal Test'})
         msg = partner.message_post(body='Regular message')
-        self.assertNotIn('via MCP', msg.body)
+        self.assertFalse(msg.mcp_key_name)
+

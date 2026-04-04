@@ -3,8 +3,8 @@ import re
 import werkzeug
 
 from odoo import api, models, SUPERUSER_ID
-from odoo.http import request
 from odoo.tools.misc import str2bool
+from odoo.http import request
 
 
 class IrHttp(models.AbstractModel):
@@ -26,11 +26,12 @@ class IrHttp(models.AbstractModel):
         mcp_key = env['muk_mcp.key'].authenticate(token)
         if not mcp_key:
             raise werkzeug.exceptions.Unauthorized()
-        request._mcp_key = mcp_key
         request.update_env(user=mcp_key.user_id.id)
-        if str2bool(env['ir.config_parameter'].get_param(
+        annotate = env['ir.config_parameter'].get_param(
             'muk_mcp.annotate_messages', 'True',
-        ), default=True):
+        )
+        request._mcp_key = mcp_key
+        if str2bool(annotate, default=True):
             request.update_env(context={
                 'mcp_via': True,
                 'mcp_key_name': mcp_key.name,

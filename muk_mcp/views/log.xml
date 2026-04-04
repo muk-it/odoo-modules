@@ -114,7 +114,10 @@
 							/>
 						</group>
 					</group>
-					<group string="Record" invisible="not model_name and not res_id and not res_ids">
+					<group
+                        string="Record Data"
+                        invisible="not model_name and not res_id and not res_ids"
+                    >
 						<group>
 							<field name="model_name"/>
 						</group>
