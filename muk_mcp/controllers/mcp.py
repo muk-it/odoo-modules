@@ -44,25 +44,26 @@ class MCPController(http.Controller):
             **kwargs,
         )
 
-    def _extract_record_info(self, result):
+    def _extract_record_info(self, arguments, result):
         info = {}
+        ids = arguments.get('ids', [])
+        if isinstance(ids, int):
+            ids = [ids]
+        single_id = arguments.get('id')
+        if single_id and isinstance(single_id, int):
+            ids = [single_id]
+        if ids:
+            info['res_ids'] = ids
+            if len(ids) == 1:
+                info['res_id'] = ids[0]
+            return info
         try:
             content = result.get('content', [])
             if content and content[0].get('text'):
                 data = json.loads(content[0]['text'])
-                if isinstance(data, dict):
-                    if 'id' in data:
-                        info['res_id'] = data['id']
-                        info['res_ids'] = [data['id']]
-                    elif 'ids' in data:
-                        ids = data['ids']
-                        info['res_ids'] = ids
-                        if len(ids) == 1:
-                            info['res_id'] = ids[0]
-                    if 'deleted_ids' in data:
-                        info['res_ids'] = data['deleted_ids']
-                        if len(data['deleted_ids']) == 1:
-                            info['res_id'] = data['deleted_ids'][0]
+                if isinstance(data, dict) and 'id' in data:
+                    info['res_id'] = data['id']
+                    info['res_ids'] = [data['id']]
         except (json.JSONDecodeError, TypeError, KeyError, IndexError):
             pass
         return info
@@ -232,7 +233,7 @@ class MCPController(http.Controller):
             else:
                 log_kwargs['status'] = 'ok'
                 log_kwargs['response_data'] = encode_response(result)
-                record_info = self._extract_record_info(result)
+                record_info = self._extract_record_info(arguments, result)
                 log_kwargs.update(record_info)
             self._log_request(method, **log_kwargs)
         return protocol.make_jsonrpc_response(result, request_id=request_id)
