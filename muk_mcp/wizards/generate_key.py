@@ -1,6 +1,6 @@
 import secrets
 
-from odoo import fields, models, _
+from odoo import api, fields, models, _
 
 
 class MCPKeyWizard(models.TransientModel):
@@ -30,7 +30,11 @@ class MCPKeyWizard(models.TransientModel):
 
     rate_limit = fields.Integer(
         string="Rate Limit (req/min)",
-        default=60,
+        default=lambda self: int(
+            self.env['ir.config_parameter'].sudo().get_param(
+                'muk_mcp.rate_limit_requests', 60,
+            )
+        ),
         help="Maximum requests per minute. 0 = unlimited.",
     )
 

@@ -9,26 +9,66 @@
 		<field name="arch" type="xml">
 			<xpath expr="//block[@name='integration']" position="after">
 				<block title="MCP Server" name="mcp_settings">
-					<setting
-						id="mcp_session_timeout"
-						string="Session Timeout"
-						help="Inactive sessions are cleaned up after this many hours."
-					>
-						<field name="mcp_session_timeout"/>
+					<setting id="mcp_session_timeout">
+						<label string="Session Timeout" for="mcp_session_timeout"/>
+						<div class="text-muted">
+							Inactive sessions are cleaned up after this period.
+						</div>
+						<div class="content-group mt16">
+							<div class="row">
+								<div class="o_light_label">
+									<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Timeout" for="mcp_session_timeout"/>
+									<field name="mcp_session_timeout" class="w-25 text-center" nolabel="1"/>
+									<span class="col-auto ms-2">in Hours</span>
+								</div>
+							</div>
+						</div>
 					</setting>
-					<setting
-						id="mcp_log_retention"
-						string="Log Retention"
-						help="Audit logs older than this many days are automatically deleted."
-					>
-						<field name="mcp_log_retention"/>
+					<setting id="mcp_log_retention">
+						<label string="Log Retention" for="mcp_log_retention"/>
+						<div class="text-muted">
+							Audit logs older than this period are automatically deleted.
+						</div>
+						<div class="content-group mt16">
+							<div class="row">
+								<div class="o_light_label">
+									<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Retention" for="mcp_log_retention"/>
+									<field name="mcp_log_retention" class="w-25 text-center" nolabel="1"/>
+									<span class="col-auto ms-2">in Days</span>
+								</div>
+							</div>
+						</div>
 					</setting>
-					<setting
-						id="mcp_annotate_messages"
-						string="Annotate Messages"
-						help="Mark chatter messages originating from MCP with 'via MCP: &lt;key name&gt;'."
-					>
-						<field name="mcp_annotate_messages"/>
+					<setting id="mcp_annotate_messages">
+						<label string="Annotate Messages" for="mcp_annotate_messages"/>
+						<div class="text-muted">
+							Mark chatter messages originating from MCP with 'via MCP: &lt;key name&gt;'.
+						</div>
+						<div class="content-group mt16">
+							<field name="mcp_annotate_messages"/>
+						</div>
+					</setting>
+					<setting id="mcp_rate_limit">
+						<label string="Rate Limiting" for="mcp_rate_limit_requests"/>
+						<div class="text-muted">
+							Default rate limit for new API keys. Set requests to 0 to disable.
+						</div>
+						<div class="content-group mt16">
+							<div class="row">
+								<div class="o_light_label">
+									<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Max requests" for="mcp_rate_limit_requests"/>
+									<field name="mcp_rate_limit_requests" class="w-25 text-center" nolabel="1"/>
+									<span class="col-auto ms-2">per Window</span>
+								</div>
+							</div>
+							<div class="row">
+								<div class="o_light_label">
+									<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Window" for="mcp_rate_limit_window"/>
+									<field name="mcp_rate_limit_window" class="w-25 text-center" nolabel="1"/>
+									<span class="col-auto ms-2">in Seconds</span>
+								</div>
+							</div>
+						</div>
 					</setting>
 				</block>
 			</xpath>

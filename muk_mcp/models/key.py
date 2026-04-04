@@ -114,8 +114,11 @@ class MCPKey(models.Model):
         return hashlib.sha256(key.encode()).hexdigest()
 
     def _check_rate_limit(self):
+        window = int(self.env['ir.config_parameter'].sudo().get_param(
+            'muk_mcp.rate_limit_window', 60,
+        ))
         return rate_limiter.check(
-            self.id, self.rate_limit, 60,
+            self.id, self.rate_limit, window,
         )
 
     # ----------------------------------------------------------
