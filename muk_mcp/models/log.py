@@ -101,14 +101,23 @@ class MCPLog(models.Model):
 
     def action_open_record(self):
         self.ensure_one()
-        if self.model_name and self.res_id:
-            return {
-                'type': 'ir.actions.act_window',
-                'res_model': self.model_name,
-                'res_id': self.res_id,
-                'views': [(False, 'form')],
-                'target': 'current',
-            }
+        if not self.model_name or not self.res_id:
+            return
+        if not self.env[self.model_name].sudo().search_count(
+            [('id', '=', self.res_id)], limit=1,
+        ):
+            return {'type': 'ir.actions.client', 'tag': 'display_notification', 'params': {
+                'title': 'Record not found',
+                'message': f'{self.model_name}({self.res_id}) no longer exists.',
+                'type': 'warning',
+            }}
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': self.model_name,
+            'res_id': self.res_id,
+            'views': [(False, 'form')],
+            'target': 'current',
+        }
 
     def action_open_records(self):
         self.ensure_one()
