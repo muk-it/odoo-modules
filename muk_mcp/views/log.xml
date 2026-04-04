@@ -124,14 +124,7 @@
 	<record id="action_mcp_log" model="ir.actions.act_window">
 		<field name="name">Audit Log</field>
 		<field name="res_model">muk_mcp.log</field>
-		<field name="view_mode">list,form</field>
-		<field name="context">{'create': False}</field>
-	</record>
-
-	<record id="action_mcp_traffic" model="ir.actions.act_window">
-		<field name="name">Traffic</field>
-		<field name="res_model">muk_mcp.log</field>
-		<field name="view_mode">graph,pivot,list,form</field>
+		<field name="view_mode">list,form,graph,pivot</field>
 		<field name="context">{'create': False}</field>
 	</record>
 
