@@ -114,13 +114,13 @@
 							/>
 						</group>
 					</group>
-					<group string="Request Data">
+					<group string="Record" invisible="not model_name and not res_id">
 						<group>
 							<field name="model_name"/>
 						</group>
 						<group>
-							<field name="res_id"/>
-							<field name="res_ids"/>
+							<field name="res_id" invisible="not res_id"/>
+							<field name="res_ids" invisible="not res_ids"/>
 						</group>
 					</group>
 					<notebook>
