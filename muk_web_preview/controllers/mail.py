@@ -9,6 +9,7 @@ from markupsafe import Markup, escape
 
 from odoo import http
 from odoo.http import request
+from odoo.tools.mail import html_sanitize
 
 
 class MailPreviewController(http.Controller):
@@ -59,7 +60,7 @@ class MailPreviewController(http.Controller):
         content = body.get_content()
         if body.get_content_type() != 'text/html':
             content = f'<pre>{escape(content)}</pre>'
-        return content
+        return html_sanitize(content)
 
     def _extract_inline_images(self, msg):
         images = {}

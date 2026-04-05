@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import json
+import secrets
 
 import odoo.tests
 
@@ -92,10 +93,11 @@ class TestOfficePreview(odoo.tests.HttpCase):
 
     def test_office_file_expired_token(self):
         secret = self.env['ir.config_parameter'].sudo().get_param(
-            'database.secret', 'muk_web_preview',
+            'database.secret',
         )
         expires = 0
-        payload = f'{self.docx_attachment.id}:{expires}'
+        nonce = secrets.token_hex(16)
+        payload = f'{self.docx_attachment.id}:{expires}:{nonce}'
         signature = hmac.new(
             secret.encode(), payload.encode(), hashlib.sha256,
         ).hexdigest()

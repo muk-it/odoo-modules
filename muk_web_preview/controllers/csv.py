@@ -52,6 +52,12 @@ class CSVPreviewController(http.Controller):
                 continue
         return raw.decode('utf-8', errors='replace')
 
+    def _sniff_dialect(self, text):
+        try:
+            return csv.Sniffer().sniff(text[:8192])
+        except csv.Error:
+            return csv.excel
+
     def _render_row(self, row, tag):
         cols = row[:self._max_preview_cols]
         cells = ''.join(
@@ -62,7 +68,7 @@ class CSVPreviewController(http.Controller):
         return f'<tr>{cells}</tr>'
 
     def _render_table(self, text):
-        dialect = csv.Sniffer().sniff(text[:8192])
+        dialect = self._sniff_dialect(text)
         reader = csv.reader(io.StringIO(text), dialect)
         rows = []
         truncated = False
