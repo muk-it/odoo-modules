@@ -7,7 +7,6 @@ export class BlockUIProgress extends Component {
         totalSteps: { type: Number },
     };
     setup() {
-        this.timer = undefined;
         this.timeStart = Date.now();
         this.state = useState({
             timeLeft: null,
@@ -15,8 +14,9 @@ export class BlockUIProgress extends Component {
         useEffect(
             () => {
                 this.updateTimer();
+                const timer = setInterval(() => this.updateTimer(), 1000);
                 return () => {
-                    clearInterval(this.timer);
+                    clearInterval(timer);
                 };
             },
             () => []
@@ -29,13 +29,9 @@ export class BlockUIProgress extends Component {
         return Math.round(this.state.timeLeft * 60);
     }
     updateTimer() {
-        if (this.timer) {
-            clearInterval(this.timer);
-        }
         const elapsedTime = Date.now() - this.timeStart;
         const progress = this.props.progressData.value || 1;
         const remainingRatio = (100 - progress) / progress;
         this.state.timeLeft = (elapsedTime * remainingRatio) / 60000;
-        this.timer = setInterval(() => this.updateTimer(), 1000);
     }
 }
