@@ -24,7 +24,7 @@ export class AppsMenu extends Dropdown {
             	if (isOpen) {
             		const openMainPalette = (ev) => {
             	    	if (
-            	    		!this.commandServiceOpen && 
+            	    		!this.commandPaletteOpen &&
             	    		ev.key.length === 1 &&
             	    		!ev.ctrlKey &&
             	    		!ev.altKey
@@ -46,7 +46,7 @@ export class AppsMenu extends Dropdown {
             () => [this.state.isOpen]
 		);
     	useBus(this.env.bus, "ACTION_MANAGER:UI-UPDATED", () => {
-			if (this.state.close) {
+			if (this.state.isOpen) {
 				this.state.close();
 			}
 		});
