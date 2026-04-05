@@ -6,7 +6,7 @@ from odoo.tests import common
 class TestMcpKey(common.TransactionCase):
 
     # ----------------------------------------------------------
-    # Defaults
+    # Setup
     # ----------------------------------------------------------
 
     @classmethod
