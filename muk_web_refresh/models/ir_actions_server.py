@@ -47,7 +47,6 @@ class IrActionsServer(models.Model):
             ],
             'rec_ids': records.ids if records else [],
         }
-        for user in self.env['res.users'].search(
-            [('share', '=', False)]
-        ):
-            user._bus_send('muk_web_refresh.reload', message)
+        self.env['bus.bus']._sendone(
+            'broadcast', 'muk_web_refresh.reload', message
+        )
