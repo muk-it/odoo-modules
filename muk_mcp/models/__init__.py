@@ -2,7 +2,6 @@ from . import ir_http
 from . import key
 from . import log
 from . import mail_message
-from . import mail_thread
 from . import notification
 from . import tool
 from . import session

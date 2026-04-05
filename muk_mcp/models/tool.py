@@ -1,10 +1,11 @@
 import json
-import logging
 
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError, ValidationError
 from odoo.tools.safe_eval import safe_eval, test_python_expr
 from odoo.tools.safe_eval import json as safe_json
+
+from odoo.addons.muk_mcp.tools.logger import LoggerProxy
 
 class MCPTool(models.Model):
 
@@ -86,12 +87,11 @@ class MCPTool(models.Model):
             'env': env,
             'arguments': arguments,
             'json': safe_json,
+            'callable': callable,
             'getattr': getattr,
             'hasattr': hasattr,
             'UserError': UserError,
-            'logger': logging.getLogger(
-                f'{__name__} ({self.name})'
-            ),
+            'logger': LoggerProxy(f'{__name__} ({self.name})'),
         }
 
     def _notify_tools_changed(self):
