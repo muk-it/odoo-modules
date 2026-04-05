@@ -14,15 +14,14 @@ class MCPController(http.Controller):
     # Helper
     # ----------------------------------------------------------
 
-    def _check_rate_limit(self):
-        if (
-            (key := getattr(request, '_mcp_key', None)) and
-            not key._check_rate_limit()
-        ):
-            self._log_request(
-                'rate_limited', status='rate_limited',
-            )
-            return False
+    def _check_rate_limit(self, count=1):
+        if key := getattr(request, '_mcp_key', None):
+            for _ in range(count):
+                if not key._check_rate_limit():
+                    self._log_request(
+                        'rate_limited', status='rate_limited',
+                    )
+                    return False
         return True
 
     def _check_tool_scope(self, tool):
@@ -204,7 +203,7 @@ class MCPController(http.Controller):
             self._log_request(method, **log_kwargs)
             return protocol.make_jsonrpc_error(
                 common.JSONRPC_INTERNAL_ERROR,
-                str(exc),
+                'Internal server error',
                 request_id=request_id,
             )
         if method.startswith('notifications/'):
@@ -239,6 +238,22 @@ class MCPController(http.Controller):
         return protocol.make_jsonrpc_response(result, request_id=request_id)
 
     def _handle_batch(self, items):
+        if len(items) > common.MAX_BATCH_SIZE:
+            return request.make_json_response(
+                protocol.make_jsonrpc_error(
+                    common.JSONRPC_INVALID_REQUEST,
+                    f'Batch too large (max {common.MAX_BATCH_SIZE})',
+                ),
+                status=400,
+            )
+        if not self._check_rate_limit(count=len(items)):
+            return request.make_json_response(
+                protocol.make_jsonrpc_error(
+                    common.JSONRPC_INTERNAL_ERROR,
+                    'Rate limit exceeded',
+                ),
+                status=429,
+            )
         results = []
         for item in items:
             data, error = protocol.parse_jsonrpc_request(item)
@@ -293,7 +308,7 @@ class MCPController(http.Controller):
             )
         except Exception as exc:
             return protocol.make_tool_result(
-                [protocol.make_text_content(f'Error: {exc}')], 
+                [protocol.make_text_content('Internal server error')],
                 is_error=True,
             )
 
