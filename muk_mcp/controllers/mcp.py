@@ -3,7 +3,7 @@ import time
 
 from odoo import http
 from odoo.http import request, Response
-from odoo.tools import SQL
+from odoo.tools import SQL, config
 from odoo.addons.muk_mcp.core.route import mcp_route
 from odoo.addons.muk_mcp.tools import common, protocol
 from odoo.addons.muk_mcp.tools.encoder import encode_request, encode_response
@@ -19,12 +19,8 @@ class MCPController(http.Controller):
             (key := getattr(request, '_mcp_key', None)) and
             not key._check_rate_limit()
         ):
-            request.env['muk_mcp.log'].log(
-                key_id=key.id,
-                user_id=request.env.uid,
-                method='rate_limited',
-                status='rate_limited',
-                ip_address=request.httprequest.remote_addr,
+            self._log_request(
+                'rate_limited', status='rate_limited',
             )
             return False
         return True
@@ -35,14 +31,15 @@ class MCPController(http.Controller):
         return True
 
     def _log_request(self, method, **kwargs):
-        key = getattr(request, '_mcp_key', None)
-        request.env['muk_mcp.log'].log(
-            key_id=key.id if key else None,
-            user_id=request.env.uid,
-            method=method,
-            ip_address=request.httprequest.remote_addr,
-            **kwargs,
-        )
+        if config.get('mcp_logging', True):
+            key = getattr(request, '_mcp_key', None)
+            request.env['muk_mcp.log'].log(
+                key_id=key.id if key else None,
+                user_id=request.env.uid,
+                method=method,
+                ip_address=request.httprequest.remote_addr,
+                **kwargs,
+            )
 
     def _extract_record_info(self, arguments, result):
         info = {}
@@ -61,7 +58,10 @@ class MCPController(http.Controller):
             content = result.get('content', [])
             if content and content[0].get('text'):
                 data = json.loads(content[0]['text'])
-                if isinstance(data, dict) and 'id' in data:
+                if (
+                    isinstance(data, dict) and
+                    isinstance(data.get('id'), int)
+                ):
                     info['res_id'] = data['id']
                     info['res_ids'] = [data['id']]
         except (json.JSONDecodeError, TypeError, KeyError, IndexError):

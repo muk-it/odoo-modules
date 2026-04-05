@@ -1,6 +1,6 @@
 import json
 
-from odoo import api, fields, models, _
+from odoo import api, fields, models
 from odoo.exceptions import UserError, ValidationError
 from odoo.tools.safe_eval import safe_eval, test_python_expr
 from odoo.tools.safe_eval import json as safe_json

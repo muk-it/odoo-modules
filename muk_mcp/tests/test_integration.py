@@ -1,7 +1,12 @@
 import json
 import secrets
 
+from odoo import fields
 from odoo.tests import common, tagged
+from odoo.tools import config
+
+from odoo.addons.muk_mcp.tools import protocol
+from odoo.addons.muk_mcp.tools.encoder import encode_request, encode_response
 
 
 @tagged('post_install', '-at_install')
@@ -69,14 +74,17 @@ class TestMcpIntegration(common.TransactionCase):
         self.assertFalse(session.active)
 
     def test_session_touch_updates_last_activity(self):
+        old_time = fields.Datetime.subtract(
+            fields.Datetime.now(), hours=1
+        )
         session = self.session_model.sudo().create({
             'user_id': self.env.user.id,
             'initialized': True,
+            'last_activity': old_time,
         })
-        old_activity = session.last_activity
         session._touch()
         session.invalidate_recordset()
-        self.assertGreaterEqual(session.last_activity, old_activity)
+        self.assertGreater(session.last_activity, old_time)
 
     # ----------------------------------------------------------
     # Tests: Scope enforcement
@@ -222,7 +230,6 @@ class TestMcpIntegration(common.TransactionCase):
     # ----------------------------------------------------------
 
     def test_initialize_result_has_list_changed(self):
-        from odoo.addons.muk_mcp.tools import protocol
         result = protocol.make_initialize_result()
         self.assertTrue(result['capabilities']['tools']['listChanged'])
 
@@ -245,8 +252,6 @@ class TestMcpIntegration(common.TransactionCase):
     # ----------------------------------------------------------
 
     def test_encoder_limits_attribute_size(self):
-        from odoo.tools import config
-        from odoo.addons.muk_mcp.tools.encoder import encode_request
         old = config.options.get('mcp_logging_attribute_limit')
         config['mcp_logging_attribute_limit'] = 50
         try:
@@ -260,8 +265,6 @@ class TestMcpIntegration(common.TransactionCase):
                 config['mcp_logging_attribute_limit'] = old
 
     def test_encoder_limits_content_size(self):
-        from odoo.tools import config
-        from odoo.addons.muk_mcp.tools.encoder import encode_request
         old = config.options.get('mcp_logging_content_limit')
         config['mcp_logging_content_limit'] = 200
         try:
@@ -276,9 +279,6 @@ class TestMcpIntegration(common.TransactionCase):
                 config['mcp_logging_content_limit'] = old
 
     def test_encoder_handles_none(self):
-        from odoo.addons.muk_mcp.tools.encoder import (
-            encode_request, encode_response,
-        )
         self.assertIsNone(encode_request(None))
         self.assertIsNone(encode_response(None))
 
