@@ -23,7 +23,7 @@ class Configuration(models.Model):
             if name_field in model._fields and message.subject:
                 values[name_field] = message.subject
             if email_field in model._fields and message.email_from:
-                values[primaryemail_field_email] = message.email_from
+                values[email_field] = message.email_from
         """)
 
 

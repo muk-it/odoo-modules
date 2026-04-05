@@ -34,7 +34,7 @@
 
 	<menuitem
 		id="menu_mail_activity"
-		name="Acitvitiy Types"
+		name="Activity Types"
 		parent="mail.menu_configuration"
 		action="mail.mail_activity_type_action"
 		groups="base.group_erp_manager"
