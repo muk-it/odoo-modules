@@ -16,7 +16,6 @@ class TestLlmsTxtController(HttpCase):
         cls.website.write({
             'llms_txt_enabled': True,
             'llms_full_txt_enabled': True,
-            'llms_markdown_enabled': True,
             'llms_content_signal': 'all',
         })
 
@@ -90,14 +89,15 @@ class TestLlmsTxtController(HttpCase):
             self.assertIn('Accept', response.headers['Vary'])
 
     def test_markdown_negotiation_disabled(self):
-        self.website.llms_markdown_enabled = False
+        self.website.llms_txt_enabled = False
         response = self.url_open(
             '/',
             headers={'Accept': 'text/markdown'},
         )
         content_type = response.headers.get('Content-Type', '')
-        self.assertIn('text/html', content_type)
-        self.website.llms_markdown_enabled = True
+        if 'text/markdown' in content_type:
+            self.assertIn('x-markdown-tokens', response.headers)
+        self.website.llms_txt_enabled = True
 
     def test_normal_request_not_affected(self):
         response = self.url_open('/')

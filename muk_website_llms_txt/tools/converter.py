@@ -2,12 +2,25 @@ import re
 
 from lxml import etree
 
+from lxml.html.clean import Cleaner
+
 from odoo.tools.mail import html2plaintext
+
+_cleaner = Cleaner(
+    scripts=True, 
+    style=True, 
+    kill_tags=['script', 'style'],
+    remove_unknown_tags=False,
+    safe_attrs_only=False,
+    page_structure=False,
+)
 
 
 def _extract_main_content(html_content):
     try:
-        doc = etree.HTML(html_content)
+        doc = etree.HTML(_cleaner.clean_html(
+            html_content
+        ))
     except etree.Error:
         return html_content
     body = doc.find('.//body')
