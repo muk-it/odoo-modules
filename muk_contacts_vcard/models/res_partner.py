@@ -79,7 +79,7 @@ class Partner(models.Model):
 
     honorific_prefix_ids = fields.Many2many(
         comodel_name='muk_contacts_vcard.honorific',
-        relation='partner_honorific_rel',
+        relation='partner_honorific_prefix_rel',
         column1='partner_id',
         column2='honorific_id',
         string='Honorific Prefixes',
@@ -88,7 +88,7 @@ class Partner(models.Model):
     
     honorific_suffix_ids = fields.Many2many(
         comodel_name='muk_contacts_vcard.honorific',
-        relation='partner_honorific_rel',
+        relation='partner_honorific_suffix_rel',
         column1='partner_id',
         column2='honorific_id',
         string='Honorific Suffixes',
