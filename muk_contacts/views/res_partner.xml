@@ -32,20 +32,20 @@
 				/>
 			</xpath>
 			<xpath expr="//filter[@name='inactive']" position="after">
-                <filter 
-					string="All Contacts" 
-					name="all" 
+                <filter
+					string="All Contacts"
+					name="all_contacts"
 					domain="['|', ('active', '=', False), ('active', '=', True)]"
 				/>
 				<separator/>
-                <filter 
-					string="Portal Users" 
-					name="all" 
+                <filter
+					string="Portal Users"
+					name="portal_users"
 					domain="[('partner_share', '=', True), ('user_ids', '!=', False)]"
 				/>
-                <filter 
-					string="Internal Users" 
-					name="all" 
+                <filter
+					string="Internal Users"
+					name="internal_users"
 					domain="[('partner_share', '=', False), ('user_ids', '!=', False)]"
 				/>
 			</xpath>
