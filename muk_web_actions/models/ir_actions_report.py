@@ -25,10 +25,9 @@ class IrActionsReport(models.Model):
 
     @api.depends('report_type')
     def _compute_execute_in_batch(self):
-        html_report_records = self.filtered(
-            lambda r: r.report_type == 'qweb-html'
-        )
-        html_report_records.execute_in_batch = False
+        for record in self:
+            if record.report_type == 'qweb-html':
+                record.execute_in_batch = False
 
     #----------------------------------------------------------
     # ORM
