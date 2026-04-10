@@ -254,7 +254,8 @@ class Partner(models.Model):
         uid = vcard.add('uid')
         uid.value = self._ensure_vcard_uid()
         rev = vcard.add('rev')
-        rev.value = self.vcard_modified.strftime('%Y%m%dT%H%M%SZ')
+        modified = self.vcard_modified or fields.Datetime.now()
+        rev.value = modified.strftime('%Y%m%dT%H%M%SZ')
         return vcard
 
     #----------------------------------------------------------
