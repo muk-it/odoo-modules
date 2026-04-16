@@ -252,21 +252,21 @@ class TestMcpIntegration(common.TransactionCase):
     # ----------------------------------------------------------
 
     def test_encoder_limits_attribute_size(self):
-        old = config.options.get('mcp_logging_attribute_limit')
-        config['mcp_logging_attribute_limit'] = 50
+        old = config.options.get('muk_logging_attribute_limit')
+        config['muk_logging_attribute_limit'] = 50
         try:
             data = {'long_field': 'x' * 500}
             result = encode_request(data)
             self.assertLess(len(result), 600)
         finally:
             if old is None:
-                config.options.pop('mcp_logging_attribute_limit', None)
+                config.options.pop('muk_logging_attribute_limit', None)
             else:
-                config['mcp_logging_attribute_limit'] = old
+                config['muk_logging_attribute_limit'] = old
 
     def test_encoder_limits_content_size(self):
-        old = config.options.get('mcp_logging_content_limit')
-        config['mcp_logging_content_limit'] = 200
+        old = config.options.get('muk_logging_content_limit')
+        config['muk_logging_content_limit'] = 200
         try:
             data = {'data': list(range(10000))}
             result = encode_request(data)
@@ -274,9 +274,9 @@ class TestMcpIntegration(common.TransactionCase):
             self.assertTrue(result.endswith('...'))
         finally:
             if old is None:
-                config.options.pop('mcp_logging_content_limit', None)
+                config.options.pop('muk_logging_content_limit', None)
             else:
-                config['mcp_logging_content_limit'] = old
+                config['muk_logging_content_limit'] = old
 
     def test_encoder_handles_none(self):
         self.assertIsNone(encode_request(None))

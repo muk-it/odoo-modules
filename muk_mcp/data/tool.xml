@@ -50,21 +50,18 @@ result = [
         <field name="category">read</field>
         <field name="sequence">1</field>
         <field name="code">
-search_term = arguments.get('search', '')
+search_term = arguments.get('search', '').lower()
+limit = arguments.get('limit', 100)
 models_data = []
 for model_name, model_cls in env.items():
-    if search_term and search_term.lower() not in model_name.lower():
+    if search_term and search_term not in model_name.lower():
         continue
-    try:
-        description = model_cls._description or model_name
-    except Exception:
-        description = model_name
+    description = getattr(model_cls, '_description', None) or model_name
     models_data.append({
         'model': model_name,
         'description': description,
     })
 models_data.sort(key=lambda m: m['model'])
-limit = arguments.get('limit', 100)
 result = models_data[:limit]
         </field>
         <field name="input_schema">{
