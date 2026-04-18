@@ -91,27 +91,41 @@ class TestMcpIntegration(common.TransactionCase):
     # ----------------------------------------------------------
 
     def test_read_scope_allows_read_tools(self):
-        tool = self.tool_model.search([
-            ('name', '=', 'search_count'),
-        ], limit=1)
-        self.assertEqual(tool.category, 'read')
+        from odoo.addons.muk_mcp.core.tool import get_tool_index
+        entry = get_tool_index(self.env).get('search_count')
+        self.assertIsNotNone(entry)
+        self.assertEqual(entry['category'], 'read')
         self.assertEqual(self.read_key.scope, 'read')
-        allowed = self.read_key.scope != 'read' or tool.category == 'read'
-        self.assertTrue(allowed)
+        self.tool_model._call(
+            'search_count',
+            {'model': 'res.partner'},
+            self.env,
+            enforce_scope='read',
+        )
 
     def test_read_scope_blocks_write_tools(self):
-        tool = self.tool_model.search([
-            ('name', '=', 'create_record'),
-        ], limit=1)
-        self.assertEqual(tool.category, 'write')
-        allowed = self.read_key.scope != 'read' or tool.category == 'read'
-        self.assertFalse(allowed)
+        from odoo.addons.muk_mcp.core.tool import get_tool_index
+        from odoo.addons.muk_mcp.tools.exception import MCPScopeDenied
+        entry = get_tool_index(self.env).get('create_record')
+        self.assertIsNotNone(entry)
+        self.assertEqual(entry['category'], 'write')
+        with self.assertRaises(MCPScopeDenied):
+            self.tool_model._call(
+                'create_record',
+                {
+                    'model': 'res.partner.category',
+                    'values': {'name': 'scope-denied'},
+                },
+                self.env,
+                enforce_scope='read',
+            )
 
     def test_write_scope_allows_all_tools(self):
-        for tool in self.tool_model.search([]):
+        from odoo.addons.muk_mcp.core.tool import get_tool_index
+        for entry in get_tool_index(self.env).values():
             allowed = (
                 self.mcp_key.scope != 'read' or
-                tool.category == 'read'
+                entry['category'] == 'read'
             )
             self.assertTrue(allowed)
 
@@ -120,55 +134,60 @@ class TestMcpIntegration(common.TransactionCase):
     # ----------------------------------------------------------
 
     def test_tool_search_count(self):
-        tool = self.tool_model.search([
-            ('name', '=', 'search_count'),
-        ], limit=1)
-        result_str = tool._run({
-            'model': 'res.partner',
-            'domain': [],
-        }, self.env)
-        result = json.loads(result_str)
+        text, _info = self.tool_model._call(
+            'search_count',
+            {'model': 'res.partner', 'domain': []},
+            self.env,
+        )
+        result = json.loads(text)
         self.assertIn('count', result)
         self.assertGreater(result['count'], 0)
 
     def test_tool_create_update_delete(self):
-        create_tool = self.tool_model.search([
-            ('name', '=', 'create_record'),
-        ], limit=1)
-        result = json.loads(create_tool._run({
-            'model': 'res.partner.category',
-            'values': {'name': 'MCP Integration Test'},
-        }, self.env))
+        text, _info = self.tool_model._call(
+            'create_record',
+            {
+                'model': 'res.partner.category',
+                'values': {'name': 'MCP Integration Test'},
+            },
+            self.env,
+        )
+        result = json.loads(text)
         self.assertIn('id', result)
         record_id = result['id']
-        update_tool = self.tool_model.search([
-            ('name', '=', 'update_record'),
-        ], limit=1)
-        result = json.loads(update_tool._run({
-            'model': 'res.partner.category',
-            'ids': [record_id],
-            'values': {'name': 'MCP Updated'},
-        }, self.env))
+        text, _info = self.tool_model._call(
+            'update_record',
+            {
+                'model': 'res.partner.category',
+                'ids': [record_id],
+                'values': {'name': 'MCP Updated'},
+            },
+            self.env,
+        )
+        result = json.loads(text)
         self.assertTrue(result['success'])
-        delete_tool = self.tool_model.search([
-            ('name', '=', 'delete_record'),
-        ], limit=1)
-        result = json.loads(delete_tool._run({
-            'model': 'res.partner.category',
-            'ids': [record_id],
-        }, self.env))
+        text, _info = self.tool_model._call(
+            'delete_record',
+            {
+                'model': 'res.partner.category',
+                'ids': [record_id],
+            },
+            self.env,
+        )
+        result = json.loads(text)
         self.assertTrue(result['success'])
 
     def test_tool_context_override(self):
-        tool = self.tool_model.search([
-            ('name', '=', 'search_count'),
-        ], limit=1)
-        result_str = tool._run({
-            'model': 'res.partner',
-            'domain': [],
-            'context': {'active_test': False},
-        }, self.env)
-        result = json.loads(result_str)
+        text, _info = self.tool_model._call(
+            'search_count',
+            {
+                'model': 'res.partner',
+                'domain': [],
+                'context': {'active_test': False},
+            },
+            self.env,
+        )
+        result = json.loads(text)
         self.assertIn('count', result)
 
     # ----------------------------------------------------------

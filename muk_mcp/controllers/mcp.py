@@ -4,8 +4,11 @@ import time
 from odoo import http
 from odoo.http import request, Response
 from odoo.tools import SQL, config
+from odoo.exceptions import AccessError, UserError
+
 from odoo.addons.muk_mcp.core.route import mcp_route
 from odoo.addons.muk_mcp.tools import common, protocol
+from odoo.addons.muk_mcp.tools.exception import MCPScopeDenied
 from odoo.addons.muk_mcp.tools.encoder import encode_request, encode_response
 
 class MCPController(http.Controller):
@@ -16,17 +19,11 @@ class MCPController(http.Controller):
 
     def _check_rate_limit(self, count=1):
         if key := getattr(request, '_mcp_key', None):
-            for _ in range(count):
-                if not key._check_rate_limit():
-                    self._log_request(
-                        'rate_limited', status='rate_limited',
-                    )
-                    return False
-        return True
-
-    def _check_tool_scope(self, tool):
-        if key := getattr(request, '_mcp_key', None):
-            return key.scope != 'read' or tool.category == 'read'
+            if not key._check_rate_limit(count=count):
+                self._log_request(
+                    'rate_limited', status='rate_limited',
+                )
+                return False
         return True
 
     def _log_request(self, method, **kwargs):
@@ -39,33 +36,6 @@ class MCPController(http.Controller):
                 ip_address=request.httprequest.remote_addr,
                 **kwargs,
             )
-
-    def _extract_record_info(self, arguments, result):
-        info = {}
-        ids = arguments.get('ids', [])
-        if isinstance(ids, int):
-            ids = [ids]
-        single_id = arguments.get('id')
-        if single_id and isinstance(single_id, int):
-            ids = [single_id]
-        if ids:
-            info['res_ids'] = ids
-            if len(ids) == 1:
-                info['res_id'] = ids[0]
-            return info
-        try:
-            content = result.get('content', [])
-            if content and content[0].get('text'):
-                data = json.loads(content[0]['text'])
-                if (
-                    isinstance(data, dict) and
-                    isinstance(data.get('id'), int)
-                ):
-                    info['res_id'] = data['id']
-                    info['res_ids'] = [data['id']]
-        except (json.JSONDecodeError, TypeError, KeyError, IndexError):
-            pass
-        return info
 
     def _get_session(self, session_id):
         if session := request.env['muk_mcp.session'].sudo().search([
@@ -223,7 +193,7 @@ class MCPController(http.Controller):
                 content = result.get('content', [])
                 if content and content[0].get('text'):
                     error_text = content[0]['text']
-                if 'scope is read-only' in error_text:
+                if getattr(request, '_mcp_tool_scope_denied', False):
                     log_kwargs['status'] = 'denied'
                 else:
                     log_kwargs['status'] = 'error'
@@ -232,8 +202,9 @@ class MCPController(http.Controller):
             else:
                 log_kwargs['status'] = 'ok'
                 log_kwargs['response_data'] = encode_response(result)
-                record_info = self._extract_record_info(arguments, result)
-                log_kwargs.update(record_info)
+                log_kwargs.update(
+                    getattr(request, '_mcp_tool_record_info', {}) or {}
+                )
             self._log_request(method, **log_kwargs)
         return protocol.make_jsonrpc_response(result, request_id=request_id)
 
@@ -283,34 +254,40 @@ class MCPController(http.Controller):
     def _handle_tools_call(self, params):
         if not (tool_name := params.get('name')):
             return protocol.make_tool_result(
-                [protocol.make_text_content('Tool name is required')], 
+                [protocol.make_text_content('Tool name is required')],
                 is_error=True,
             )
-        if not (tool := request.env['muk_mcp.tool'].sudo().search([
-            ('name', '=', tool_name), ('active', '=', True),
-        ], limit=1)):
-            return protocol.make_tool_result(
-                [protocol.make_text_content(f'Tool not found: {tool_name}')],
-                is_error=True,
-            )
-        if not self._check_tool_scope(tool):
-            return protocol.make_tool_result(
-                [protocol.make_text_content(
-                    'Access denied: key scope is read-only'
-                )],
-                is_error=True,
-            )
+        key = getattr(request, '_mcp_key', None)
+        enforce_scope = key.scope if key else None
+        request._mcp_tool_record_info = {}
+        request._mcp_tool_scope_denied = False
         try:
-            return protocol.make_tool_result(
-                [protocol.make_text_content(
-                    tool._run(params.get('arguments', {}), request.env)
-                )]
+            text, record_info = request.env['muk_mcp.tool']._call(
+                tool_name,
+                params.get('arguments', {}),
+                request.env,
+                enforce_scope=enforce_scope,
             )
-        except Exception as exc:
+        except MCPScopeDenied as exc:
+            request._mcp_tool_scope_denied = True
+            return protocol.make_tool_result(
+                [protocol.make_text_content(str(exc))],
+                is_error=True,
+            )
+        except (AccessError, UserError) as exc:
+            return protocol.make_tool_result(
+                [protocol.make_text_content(str(exc))],
+                is_error=True,
+            )
+        except Exception:
             return protocol.make_tool_result(
                 [protocol.make_text_content('Internal server error')],
                 is_error=True,
             )
+        request._mcp_tool_record_info = record_info
+        return protocol.make_tool_result(
+            [protocol.make_text_content(text)]
+        )
 
     # ----------------------------------------------------------
     # Routes
@@ -321,8 +298,8 @@ class MCPController(http.Controller):
         if not self._check_rate_limit():
             return request.make_json_response(
                 protocol.make_jsonrpc_error(
-                    common.JSONRPC_INTERNAL_ERROR, 
-                    'Rate limit exceeded'
+                    common.JSONRPC_INTERNAL_ERROR,
+                    'Rate limit exceeded',
                 ),
                 status=429,
             )
@@ -331,8 +308,8 @@ class MCPController(http.Controller):
         if (data := request.params.get('jsonrpc_data')) is None:
             return request.make_json_response(
                 protocol.make_jsonrpc_error(
-                    common.JSONRPC_PARSE_ERROR, 
-                    'Parse error'
+                    common.JSONRPC_PARSE_ERROR,
+                    'Parse error',
                 ),
                 status=400,
             )
@@ -349,7 +326,7 @@ class MCPController(http.Controller):
     @mcp_route('/mcp', methods=['GET'])
     def mcp_get(self, **kw):
         if (
-            'text/event-stream' not in 
+            'text/event-stream' not in
             request.httprequest.headers.get('Accept', '')
         ):
             return Response(status=405)

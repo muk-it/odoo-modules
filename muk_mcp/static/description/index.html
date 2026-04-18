@@ -194,7 +194,7 @@
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Search records by domain with pagination and sorting</td>
 					</tr>
 					<tr>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>read_record</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>read</code></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">Read</span></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Read specific records by their database IDs</td>
 					</tr>
@@ -249,13 +249,24 @@
 		<div class="text-justify" style="max-width:84%; margin:16px 8%">
 			<h3 class="oe_slogan">Extensible Tool Registry</h3>
 			<p>
-				Add custom tools directly through the backend UI at
-				<em>Settings &gt; MCP Server &gt; Tools</em> &mdash; no code
-				deployment required. Each tool consists of a name, description, JSON
+				Ship tools from your own Odoo addons with the
+				<code>@mcp_tool</code> decorator &mdash; version-controlled,
+				testable, and running without the sandbox overhead. Inherit the
+				<code>muk_mcp.mixin</code> abstract model and decorate any public
+				method: the scanner picks it up at startup and exposes it to every
+				MCP client on the next <code>tools/list</code>. Declare
+				<code>category='read'</code> or <code>'write'</code> to gate it
+				against the caller's key scope.
+			</p>
+			<p>
+				For admins and power users, the backend UI at
+				<em>Settings &gt; MCP Server &gt; Tools</em> adds tools without a
+				code deployment. Each DB tool carries a name, description, JSON
 				Schema for input parameters, and Python code executed in a sandboxed
 				<code>safe_eval</code> context. Tools can be enabled, disabled, and
-				reordered individually. The AI client is automatically notified when
-				the tool list changes.
+				reordered individually. Database tools with the same name as a
+				Python tool shadow it &mdash; handy for runtime overrides. The AI
+				client is automatically notified when the tool list changes.
 			</p>
 		</div>
 	</div>

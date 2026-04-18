@@ -192,7 +192,7 @@ built-in tools organized into two categories:
   model and list all access control rules.
 - ``search_read`` — Search records by domain and return field values with
   pagination and sorting.
-- ``read_record`` — Read specific records by their database IDs.
+- ``read`` — Read specific records by their database IDs.
 - ``search_count`` — Count records matching a domain filter.
 - ``read_group`` — Grouped aggregation (SQL GROUP BY equivalent) with
   automatic sum/count for numeric fields.
@@ -210,7 +210,139 @@ built-in tools organized into two categories:
 - ``execute_method`` — Call any public method on a model or recordset
   (private methods starting with ``_`` are blocked for safety).
 
-**Custom Tools**
+Extending the Tool Set
+======================
+
+There are two ways to add tools. Choose based on audience:
+
+- **Python tools** (``@mcp_tool`` decorator) — the recommended path for
+  Odoo developers shipping tools inside their own addons. Code lives in
+  your module, is version-controlled, testable, and runs without the
+  ``safe_eval`` sandbox overhead.
+- **UI tools** (database-backed) — for administrators or power users
+  who want to add ad-hoc tools without deploying code.
+
+Both coexist. If a database tool has the same name as a decorated
+method tool, the database tool shadows the method tool (useful for
+runtime overrides during development).
+
+**Python Tools — From Other Addons**
+
+Any Odoo addon can register MCP tools by inheriting ``muk_mcp.mixin``
+and decorating public methods with ``@mcp_tool``. The muk_mcp scanner
+walks the mixin's MRO at worker startup and exposes every decorated
+method automatically — no explicit registration call needed.
+
+Step 1 — declare the dependency in your ``__manifest__.py``:
+
+.. code-block:: python
+
+    {
+        'name': 'My Sales Tools',
+        'depends': ['muk_mcp', 'sale'],
+        ...
+    }
+
+Step 2 — extend ``muk_mcp.mixin`` and decorate your methods:
+
+.. code-block:: python
+
+    # my_sale_mcp/models/mcp_tools.py
+    from odoo import api, models
+
+    from odoo.addons.muk_mcp.core.tool import mcp_tool
+
+
+    class MCPMixin(models.AbstractModel):
+        _inherit = 'muk_mcp.mixin'
+
+        @api.model
+        @mcp_tool(
+            name='confirm_sale_order',
+            description=(
+                'Confirm a quotation by ID. Transitions the order from '
+                "'draft' to 'sale' and generates the delivery."
+            ),
+            input_schema={
+                'type': 'object',
+                'properties': {
+                    'id': {
+                        'type': 'integer',
+                        'description': 'sale.order record ID.',
+                    },
+                },
+                'required': ['id'],
+            },
+            category='write',
+        )
+        def confirm_sale_order(self, id):
+            order = self.env['sale.order'].browse(id)
+            order.action_confirm()
+            return {'id': order.id, 'state': order.state}
+
+Step 3 — restart or upgrade the module. The tool appears in the next
+``tools/list`` response from any MCP client.
+
+**Decorator reference**
+
+``@mcp_tool(name=None, description=None, input_schema=None, category='read')``
+
+- ``name`` — MCP tool name exposed to the AI client. Defaults to the
+  Python method name. Must be unique across all installed addons.
+- ``description`` — Human-readable explanation shown to the AI. When
+  omitted, the first line of the method's docstring is used.
+- ``input_schema`` — JSON Schema object describing the tool arguments.
+  When omitted, an empty-object schema is used. Keys in
+  ``properties`` become kwargs on the method call.
+- ``category`` — ``'read'`` or ``'write'``. Read-scoped MCP keys can
+  only call ``'read'`` tools; write-scoped keys call both. Scope is
+  enforced at call time via ``MCPScopeDenied``.
+
+**How arguments flow**
+
+1. The MCP client sends ``tools/call`` with a JSON ``arguments`` dict.
+2. ``muk_mcp.tool._call`` pops any ``context`` key, merges it into
+   ``self.env.context``, then invokes the decorated method with the
+   remaining keys as keyword arguments.
+3. The return value is serialized via ``RecordEncoder`` (recordsets
+   become ``[(id, display_name), ...]``; datetimes and bytes are
+   coerced to strings).
+4. Raising ``UserError`` or ``AccessError`` bubbles the message back
+   to the AI client as a tool error.
+
+**Helpers available on ``muk_mcp.mixin``**
+
+Because your class inherits the mixin, you get two small helpers for
+free:
+
+- ``self._resolve_model(name)`` — returns ``self.env[name]`` and
+  raises ``UserError`` if the model does not exist.
+- ``self._normalize_ids(ids)`` — accepts ``None``, a single int, or
+  a list of ints; always returns a list.
+
+**Testing your tools**
+
+Call ``muk_mcp.tool._call`` directly from a ``TransactionCase``:
+
+.. code-block:: python
+
+    from odoo.tests import common
+
+
+    class TestMySaleTools(common.TransactionCase):
+
+        def test_confirm_sale_order(self):
+            order = self.env['sale.order'].create({...})
+            text, info = self.env['muk_mcp.tool']._call(
+                'confirm_sale_order', {'id': order.id}, self.env,
+            )
+            self.assertEqual(info['res_id'], order.id)
+            self.assertEqual(order.state, 'sale')
+
+The second return value is a ``record_info`` dict (``res_id`` /
+``res_ids``) used by the audit log; ignore it if you don't need it.
+
+**UI Tools — From the Admin Backend**
 
 Additional tools can be created through the backend UI at
 *Settings > MCP Server > Tools*. Each tool consists of:
@@ -221,7 +353,9 @@ Additional tools can be created through the backend UI at
   to ``env``, ``arguments``, ``json``, ``UserError``, and ``logger``.
 
 Tools are categorized as Read or Write and can be enabled/disabled
-individually.
+individually. When a UI tool shares a name with a Python tool, the UI
+tool wins — useful for overriding decorator tools at runtime without
+redeploying code.
 
 **Audit Log**
 

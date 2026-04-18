@@ -1,11 +1,14 @@
 import json
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 from odoo.tools.safe_eval import safe_eval, test_python_expr
 from odoo.tools.safe_eval import json as safe_json
 
+from odoo.addons.muk_mcp.core.tool import get_tool_index
+from odoo.addons.muk_mcp.tools.exception import MCPScopeDenied
 from odoo.addons.muk_mcp.tools.logger import LoggerProxy
+from odoo.addons.muk_web_utils.tools.encoder import RecordEncoder
 
 class MCPTool(models.Model):
 
@@ -73,6 +76,63 @@ class MCPTool(models.Model):
     # Helper
     # ----------------------------------------------------------
 
+    @api.model
+    def _serialize_result(self, result):
+        if not isinstance(result, str):
+            return json.dumps(
+                result, indent=2, cls=RecordEncoder
+            )
+        return result
+
+    @api.model
+    def _check_scope(self, category, enforce_scope):
+        if enforce_scope == 'read' and category != 'read':
+            raise MCPScopeDenied(_('Access denied: key scope is read-only'))
+
+    @api.model
+    def _call(self, name, arguments, env, enforce_scope=None):
+        arguments = dict(arguments or {})
+        entry = get_tool_index(env).get(name)
+        if not entry:
+            raise UserError(_("Tool not found: %s") % name)
+        self._check_scope(entry['category'], enforce_scope)
+        context_override = arguments.pop('context', None)
+        if isinstance(context_override, dict):
+            env = env(context={**env.context, **context_override})
+        if entry['kind'] == 'db':
+            text = self.sudo().browse(entry['id'])._run(arguments, env)
+            raw_result = None
+        else:
+            method = getattr(env[entry['model']], entry['method'])
+            try:
+                raw_result = method(**arguments)
+            except TypeError as exc:
+                raise UserError(_(
+                    "Invalid arguments for tool %(name)s: %(error)s",
+                    name=name, error=exc,
+                ))
+            text = self._serialize_result(raw_result)
+        return text, self._extract_record_info(arguments, raw_result)
+
+    @api.model
+    def _extract_record_info(self, arguments, result):
+        info = {}
+        ids = arguments.get('ids')
+        if isinstance(ids, int):
+            ids = [ids]
+        single_id = arguments.get('id')
+        if isinstance(single_id, int):
+            ids = [single_id]
+        if ids:
+            info['res_ids'] = list(ids)
+            if len(info['res_ids']) == 1:
+                info['res_id'] = info['res_ids'][0]
+            return info
+        if isinstance(result, dict) and isinstance(result.get('id'), int):
+            info['res_id'] = result['id']
+            info['res_ids'] = [result['id']]
+        return info
+
     def _get_input_schema(self):
         return json.loads(self.input_schema) if self.input_schema else {
             'type': 'object',
@@ -105,10 +165,7 @@ class MCPTool(models.Model):
     def _run(self, arguments, env):
         eval_context = self._get_eval_context(arguments, env)
         safe_eval(self.code.strip(), eval_context, mode="exec")
-        result = eval_context.get('result')
-        return result if isinstance(result, str) else json.dumps(
-            result, indent=2, default=str,
-        )
+        return self._serialize_result(eval_context.get('result'))
 
     # ----------------------------------------------------------
     # Functions
@@ -118,11 +175,11 @@ class MCPTool(models.Model):
     def get_tools(self):
         return [
             {
-                'name': tool.name,
-                'description': tool.description,
-                'inputSchema': tool._get_input_schema(),
+                'name': name,
+                'description': entry['description'],
+                'inputSchema': entry['input_schema'],
             }
-            for tool in self.search([('active', '=', True)])
+            for name, entry in get_tool_index(self.env).items()
         ]
 
     # ----------------------------------------------------------
@@ -137,6 +194,17 @@ class MCPTool(models.Model):
             )
             if message:
                 raise ValidationError(message)
+
+    @api.constrains('input_schema')
+    def _check_input_schema(self):
+        for record in self.sudo().filtered('input_schema'):
+            try:
+                json.loads(record.input_schema)
+            except (TypeError, ValueError) as exc:
+                raise ValidationError(_(
+                    "Tool %(name)s has invalid Input Schema JSON: %(error)s",
+                    name=record.name, error=exc,
+                ))
 
     # ----------------------------------------------------------
     # ORM

@@ -11,8 +11,10 @@ class RateLimiter:
         self._lock = threading.Lock()
         self._last_cleanup = time.monotonic()
 
-    def check(self, key, max_requests, window_seconds):
+    def check(self, key, max_requests, window_seconds, count=1):
         if max_requests <= 0:
+            return True
+        if count <= 0:
             return True
         now = time.monotonic()
         cutoff = now - window_seconds
@@ -24,14 +26,14 @@ class RateLimiter:
             timestamps = self._windows.get(key)
             if timestamps is None:
                 timestamps = collections.deque(
-                    maxlen=max_requests + 1
+                    maxlen=max_requests + count
                 )
                 self._windows[key] = timestamps
             while timestamps and timestamps[0] <= cutoff:
                 timestamps.popleft()
-            if len(timestamps) >= max_requests:
+            if len(timestamps) + count > max_requests:
                 return False
-            timestamps.append(now)
+            timestamps.extend([now] * count)
             return True
 
     def _cleanup_stale(self, now, max_age=3600):

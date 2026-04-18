@@ -113,9 +113,9 @@ class MCPKey(models.Model):
     def _hash_key(key):
         return hashlib.sha256(key.encode()).hexdigest()
 
-    def _check_rate_limit(self):
+    def _check_rate_limit(self, count=1):
         return rate_limiter.check(
-            self.id, self.rate_limit, 60,
+            self.id, self.rate_limit, 60, count=count,
         )
 
     # ----------------------------------------------------------

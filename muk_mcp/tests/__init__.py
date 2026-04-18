@@ -1,5 +1,6 @@
 from . import test_batch
 from . import test_controller
+from . import test_decorator_tool
 from . import test_integration
 from . import test_key
 from . import test_log

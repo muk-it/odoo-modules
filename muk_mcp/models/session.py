@@ -73,10 +73,15 @@ class MCPSession(models.Model):
                        write_date = NOW() AT TIME ZONE 'UTC',
                        write_uid = %s
                  WHERE id IN %s
+                   AND (
+                       last_activity IS NULL
+                       OR last_activity < (NOW() AT TIME ZONE 'UTC') - make_interval(secs => %s)
+                   )
                 """,
                 SQL.identifier(self._table),
                 self.env.uid,
                 tuple(self.ids),
+                60,
             ))
         return self
 
