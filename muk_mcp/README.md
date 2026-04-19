@@ -16,8 +16,8 @@ Streamable HTTP transport.
 1. Log in to Odoo and navigate to your user preferences
    (**Settings > Users > Preferences**).
 2. In the **Account Security** tab, click **Add MCP Key**.
-3. Enter a description (e.g. "Claude Code") and optionally restrict
-   access to specific models via **Model Scopes**.
+3. Enter a description (e.g. "Claude Code") and pick a **Scope**
+   (*Read Only* or *Read & Write*).
 4. Click **Generate Key** and copy the key immediately -- it will not
    be shown again.
 
@@ -32,9 +32,11 @@ Navigate to **Settings > General Settings > MCP Server** to configure:
 
 **API Key Scopes**
 
-Each MCP key can optionally be restricted to specific models with
-fine-grained permissions (read, write, create, delete). Leave the
-scope list empty to allow unrestricted access.
+Each MCP key has a scope that gates which tool categories it can
+call: *Read Only* keys can call tools declared with `category='read'`,
+*Read & Write* keys can call both. Scope enforcement happens before
+the tool executes; Odoo's record rules and model ACLs still apply
+on top, so a key can never exceed the permissions of its owning user.
 
 **Rate Limiting**
 
@@ -148,6 +150,32 @@ curl -X POST https://your-odoo.com/mcp \
     "params": {}
   }'
 ```
+
+## Playground
+
+The module ships with an in-backend **Playground** for testing tools
+without hooking up an external MCP client. Open
+**Settings > Technical > MCP > Playground** to access it.
+
+The Playground:
+
+- Lists every registered tool (Python- and database-backed) grouped
+  by scope, with the same schemas the MCP `tools/list` method
+  returns.
+- Auto-renders a form for each tool's input schema so you can fill
+  arguments without hand-writing JSON.
+- Executes tools against the real `/mcp` endpoint using a
+  Bearer-authenticated session — either a key you paste in
+  (`Use existing`) or one generated in-place (`Generate new`).
+- Displays the response, HTTP status, and round-trip time, plus a
+  raw JSON-RPC view.
+- Provides **Copy curl** and **Copy JSON-RPC** helpers for
+  reproducing any call from the terminal or another client.
+
+Keys entered or generated in the Playground are stored only in the
+current tab's `sessionStorage`; nothing plaintext is persisted
+server-side after generation. Press `Ctrl`+`Enter` in the detail
+pane to run the current tool.
 
 ## Usage
 

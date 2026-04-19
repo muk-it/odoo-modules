@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_mcp.Playground">
+        <div class="o_muk_mcp_playground d-flex flex-column h-100" t-ref="root">
+            <KeyBar
+                client="client"
+                keyPrefix="state.keyPrefix"
+                onKeyChanged.bind="onKeyChanged"
+            />
+            <div class="o_muk_mcp_body flex-grow-1 d-flex overflow-hidden">
+                <div t-if="state.loading" class="m-auto text-muted">
+                    Loading tools…
+                </div>
+                <t t-else="">
+                    <ToolList
+                        groups="filteredGroups"
+                        selected="state.selected"
+                        search="state.search"
+                        onSearch.bind="onSearch"
+                        onSelect.bind="onSelectTool"
+                    />
+                    <ToolDetail
+                        tool="selectedTool"
+                        response="state.response"
+                        running="state.running"
+                        hasKey="state.hasKey"
+                        onTry.bind="onTryTool"
+                    />
+                </t>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="muk_mcp.KeyBar">
+        <div class="o_muk_mcp_keybar border-bottom p-2 d-flex align-items-center gap-2 flex-wrap">
+            <span class="fw-bold">MCP Key</span>
+            <span t-if="props.keyPrefix" class="badge text-bg-success">
+                <i class="fa fa-key me-1"/>
+                <t t-esc="props.keyPrefix"/>…
+            </span>
+            <span t-else="" class="badge text-bg-secondary">
+                <i class="fa fa-unlock me-1"/>none
+            </span>
+            <div class="ms-2 d-flex align-items-center gap-1">
+                <button
+                    class="btn btn-sm btn-secondary"
+                    t-on-click="onPasteToggle"
+                >
+                    <i class="fa fa-sign-in me-1"/>Use existing
+                </button>
+                <div class="vr mx-1"/>
+                <select
+                    class="form-select form-select-sm w-auto"
+                    t-model="state.scope"
+                >
+                    <option value="read">Read</option>
+                    <option value="write">Read &amp; Write</option>
+                </select>
+                <input
+                    type="text"
+                    class="form-control form-control-sm w-auto"
+                    placeholder="Key label (optional)"
+                    t-on-input="onPasteNameChange"
+                    t-att-value="state.pasteName"
+                />
+                <button
+                    class="btn btn-sm btn-primary"
+                    t-on-click="onGenerate"
+                >
+                    <i class="fa fa-plus-circle me-1"/>Generate new
+                </button>
+                <button
+                    t-if="props.keyPrefix"
+                    class="btn btn-sm btn-outline-danger"
+                    t-on-click="onClearKey"
+                    title="Clear key from this tab"
+                >
+                    <i class="fa fa-times"/>
+                </button>
+            </div>
+            <div class="text-muted small ms-auto">
+                Keys are stored in sessionStorage (this tab only). Plaintext is never persisted server-side after generation.
+            </div>
+            <div t-if="state.pasting" class="w-100 d-flex gap-2 mt-2 align-items-center">
+                <input
+                    type="password"
+                    class="form-control form-control-sm"
+                    placeholder="Paste MCP key (Bearer token)…"
+                    t-att-value="state.pasteValue"
+                    t-on-input="onPasteChange"
+                />
+                <button class="btn btn-sm btn-primary text-nowrap" t-on-click="onPasteConfirm">
+                    Use
+                </button>
+                <button class="btn btn-sm btn-link" t-on-click="onPasteToggle">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="muk_mcp.ToolList">
+        <div class="o_muk_mcp_list border-end d-flex flex-column">
+            <div class="p-2 border-bottom">
+                <input
+                    type="search"
+                    class="form-control form-control-sm"
+                    placeholder="Search tools…"
+                    t-att-value="props.search"
+                    t-on-input="props.onSearch"
+                />
+            </div>
+            <div class="overflow-auto flex-grow-1">
+                <div t-if="props.groups.length === 0" class="p-3 text-muted small">
+                    No matching tools.
+                </div>
+                <t t-foreach="props.groups" t-as="group" t-key="group[0]">
+                    <div class="o_muk_mcp_group_header px-2 py-1 small text-uppercase text-muted d-flex align-items-center gap-2">
+                        <span t-attf-class="badge {{ categoryBadge(group[0]) }}">
+                            <t t-esc="categoryLabel(group[0])"/>
+                        </span>
+                        <span class="ms-auto" t-esc="group[1].length"/>
+                    </div>
+                    <t t-foreach="group[1]" t-as="tool" t-key="tool.name">
+                        <button
+                            type="button"
+                            t-attf-class="o_muk_mcp_tool btn btn-link text-start w-100 px-2 py-1 {{ props.selected === tool.name ? 'active' : '' }}"
+                            t-on-click="() => props.onSelect(tool.name)"
+                        >
+                            <div class="fw-bold text-body" t-esc="tool.name"/>
+                            <div class="small text-muted text-truncate" t-esc="tool.description"/>
+                        </button>
+                    </t>
+                </t>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="muk_mcp.ToolDetail">
+        <div class="o_muk_mcp_detail flex-grow-1 d-flex flex-column overflow-hidden" t-on-keydown="onKeyDown">
+            <div t-if="!props.tool" class="m-auto text-muted">
+                Select a tool from the list on the left.
+            </div>
+            <t t-else="">
+                <div class="p-3 border-bottom">
+                    <div class="d-flex align-items-center gap-2">
+                        <h4 class="mb-0" t-esc="props.tool.name"/>
+                        <span t-attf-class="badge {{ toolCategoryBadge }}" t-esc="props.tool.category"/>
+                        <span t-if="props.tool.kind === 'db'" class="badge text-bg-light">DB</span>
+                        <span t-if="props.tool.kind === 'method'" class="badge text-bg-light">Code</span>
+                        <div class="ms-auto d-flex gap-1">
+                            <button class="btn btn-sm btn-secondary" t-on-click="onCopyCurl">
+                                <i class="fa fa-terminal me-1"/>curl
+                            </button>
+                            <button class="btn btn-sm btn-secondary" t-on-click="onCopyJsonRpc">
+                                <i class="fa fa-code me-1"/>JSON-RPC
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-muted mt-1" t-esc="props.tool.description"/>
+                </div>
+                <ul class="nav nav-tabs px-3 pt-2 bg-light">
+                    <li class="nav-item">
+                        <a t-attf-class="nav-link {{ state.tab === 'form' ? 'active' : '' }}" href="#" t-on-click.prevent="() => this.onTabChange('form')">
+                            Form
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a t-attf-class="nav-link {{ state.tab === 'schema' ? 'active' : '' }}" href="#" t-on-click.prevent="() => this.onTabChange('schema')">
+                            Schema
+                        </a>
+                    </li>
+                </ul>
+                <div class="p-3 flex-grow-1 overflow-auto">
+                    <div t-if="state.tab === 'form'">
+                        <SchemaForm
+                            schema="props.tool.inputSchema"
+                            value="currentArgs"
+                            onChange.bind="onArgsChange"
+                        />
+                    </div>
+                    <pre t-if="state.tab === 'schema'" class="mb-0" t-esc="schemaJson"/>
+                </div>
+                <div class="p-3 border-top bg-light d-flex align-items-center gap-2">
+                    <button
+                        class="btn btn-primary"
+                        t-att-disabled="props.running or !props.hasKey"
+                        t-on-click="onRun"
+                    >
+                        <i t-if="props.running" class="fa fa-spinner fa-spin me-2"/>
+                        <i t-else="" class="fa fa-play me-2"/>
+                        <t t-esc="props.running ? 'Calling…' : 'Try it'"/>
+                    </button>
+                    <button class="btn btn-outline-secondary" t-on-click="onReset">
+                        Reset args
+                    </button>
+                    <span t-if="!props.hasKey" class="text-danger small">
+                        <i class="fa fa-exclamation-triangle me-1"/>Pick or generate an MCP key first.
+                    </span>
+                    <span t-else="" class="text-muted small d-none d-md-inline">
+                        <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to run
+                    </span>
+                    <span t-if="props.response" class="ms-auto small">
+                        <span t-attf-class="fw-bold {{ statusClass }}">HTTP <t t-esc="props.response.status"/></span>
+                        <span class="text-muted"> · <t t-esc="props.response.duration"/> ms</span>
+                    </span>
+                </div>
+                <div t-if="props.response" class="p-3 border-top overflow-auto" style="max-height: 40%;">
+                    <ResponsePanel response="props.response"/>
+                </div>
+            </t>
+        </div>
+    </t>
+
+    <t t-name="muk_mcp.SchemaForm">
+        <div t-if="fields.length === 0" class="text-muted small">
+            This tool takes no parameters.
+        </div>
+        <t t-else="">
+            <t t-foreach="fields" t-as="field" t-key="field.name">
+                <div class="mb-3">
+                    <label class="form-label d-flex align-items-center gap-1">
+                        <span class="fw-bold" t-esc="field.name"/>
+                        <span t-if="field.required" class="text-danger">*</span>
+                        <span class="badge text-bg-light" t-esc="field.schema.type or 'any'"/>
+                    </label>
+                    <div t-if="field.schema.description" class="form-text" t-esc="field.schema.description"/>
+                    <t t-set="value" t-value="getValue(field.name)"/>
+                    <t t-if="field.kind === 'enum'">
+                        <select
+                            class="form-select"
+                            t-on-change="(ev) => this.onSelectChange(field.name, ev)"
+                        >
+                            <option value="">—</option>
+                            <t t-foreach="field.schema.enum" t-as="opt" t-key="opt_index">
+                                <option t-att-value="opt" t-att-selected="value === opt" t-esc="opt"/>
+                            </t>
+                        </select>
+                    </t>
+                    <t t-elif="field.kind === 'bool'">
+                        <div class="form-check form-switch">
+                            <input
+                                type="checkbox"
+                                class="form-check-input"
+                                t-att-checked="value"
+                                t-on-change="(ev) => this.onBoolChange(field.name, ev)"
+                            />
+                        </div>
+                    </t>
+                    <t t-elif="field.kind === 'int'">
+                        <input
+                            type="number"
+                            step="1"
+                            class="form-control"
+                            t-att-value="value ?? ''"
+                            t-on-input="(ev) => this.onIntChange(field.name, ev)"
+                        />
+                    </t>
+                    <t t-elif="field.kind === 'number'">
+                        <input
+                            type="number"
+                            step="any"
+                            class="form-control"
+                            t-att-value="value ?? ''"
+                            t-on-input="(ev) => this.onNumberChange(field.name, ev)"
+                        />
+                    </t>
+                    <t t-elif="field.kind === 'string'">
+                        <input
+                            type="text"
+                            class="form-control"
+                            t-att-value="value ?? ''"
+                            t-on-input="(ev) => this.onStringChange(field.name, ev)"
+                        />
+                    </t>
+                    <t t-else="">
+                        <textarea
+                            class="form-control font-monospace"
+                            rows="4"
+                            placeholder="JSON…"
+                            t-on-input="(ev) => this.onJsonChange(field.name, ev)"
+                            t-esc="jsonText(field.name)"
+                        />
+                        <div class="form-text">Enter JSON for this complex argument.</div>
+                    </t>
+                </div>
+            </t>
+        </t>
+    </t>
+
+    <t t-name="muk_mcp.ResponsePanel">
+        <div t-if="!props.response" class="text-muted small">
+            Click "Try it" to run the tool.
+        </div>
+        <t t-else="">
+            <div t-attf-class="alert {{ statusClass }} d-flex align-items-center gap-2 mb-2">
+                <strong t-esc="statusLabel"/>
+                <span t-if="props.response.exception" t-esc="props.response.exception"/>
+            </div>
+            <div t-if="prettyResult">
+                <div class="small text-muted mb-1 d-flex align-items-center">
+                    Result
+                    <button class="btn btn-sm btn-link ms-auto p-0" t-on-click="onCopyResult" title="Copy result">
+                        <i class="fa fa-clipboard"/>
+                    </button>
+                </div>
+                <pre class="mb-3 p-2 bg-light border rounded" t-esc="prettyResult"/>
+            </div>
+            <details>
+                <summary class="small text-muted d-flex align-items-center">
+                    Raw JSON-RPC response
+                    <button class="btn btn-sm btn-link ms-auto p-0" t-on-click.stop.prevent="onCopyRaw" title="Copy raw">
+                        <i class="fa fa-clipboard"/>
+                    </button>
+                </summary>
+                <pre class="mt-2 p-2 bg-light border rounded small" t-esc="rawBody"/>
+            </details>
+        </t>
+    </t>
+
+</templates>

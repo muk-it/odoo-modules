@@ -182,6 +182,19 @@ class MCPTool(models.Model):
             for name, entry in get_tool_index(self.env).items()
         ]
 
+    @api.model
+    def get_playground_tools(self):
+        return [
+            {
+                'name': name,
+                'description': entry['description'],
+                'inputSchema': entry['input_schema'],
+                'category': entry['category'],
+                'kind': entry['kind'],
+            }
+            for name, entry in get_tool_index(self.env).items()
+        ]
+
     # ----------------------------------------------------------
     # Constraints
     # ----------------------------------------------------------

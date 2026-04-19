@@ -1,4 +1,5 @@
 import hashlib
+import secrets
 
 from odoo import api, fields, models
 from odoo.tools import SQL
@@ -121,6 +122,29 @@ class MCPKey(models.Model):
     # ----------------------------------------------------------
     # Functions
     # ----------------------------------------------------------
+
+    @api.model
+    def generate_playground_key(self, name=None, scope='write'):
+        rate_limit = int(self.env['ir.config_parameter'].sudo().get_param(
+            'muk_mcp.rate_limit_requests', 60,
+        ))
+        raw_key = secrets.token_urlsafe(32)
+        record = self.sudo().create({
+            'name': name or 'Playground',
+            'user_id': self.env.uid,
+            'key_hash': self._hash_key(raw_key),
+            'key_prefix': raw_key[:8],
+            'scope': scope,
+            'rate_limit': rate_limit,
+        })
+        return {
+            'id': record.id,
+            'name': record.name,
+            'key_prefix': record.key_prefix,
+            'scope': record.scope,
+            'rate_limit': record.rate_limit,
+            'plaintext': raw_key,
+        }
 
     @api.model
     def authenticate(self, token):

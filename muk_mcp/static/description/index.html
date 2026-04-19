@@ -58,8 +58,9 @@
 				<code>initialize</code>, <code>tools/list</code>, and
 				<code>tools/call</code>. Supports stateful sessions, Server-Sent
 				Events for real-time notifications, and batch requests. Authentication
-				uses Bearer tokens &mdash; either dedicated MCP keys with optional
-				model-level scopes or standard Odoo API keys.
+				uses Bearer tokens &mdash; either dedicated MCP keys scoped to
+				<em>Read Only</em> or <em>Read &amp; Write</em>, or standard Odoo
+				API keys.
 			</p>
 		</div>
 	</div>
@@ -140,6 +141,34 @@
 			<h4 style="margin-top:20px; font-weight:600;">Codex CLI</h4>
 			<pre style="line-height:1.4; background-color:#fdfdfd; padding:12px; border:1px solid #e0e0e0; border-radius:4px; font-size:13px;">codex --mcp-server "odoo=https://your-odoo.com/mcp" \
       --mcp-header "odoo=Authorization: Bearer YOUR_MCP_KEY"</pre>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Built-in Playground</h3>
+			<p>
+				Test every registered tool directly inside Odoo &mdash; no external
+				MCP client required. Open <em>Settings &gt; Technical &gt; MCP &gt;
+				Playground</em> to see the same tool list your AI client sees,
+				auto-rendered input forms driven by each tool's JSON Schema, and a
+				one-click &ldquo;Try it&rdquo; that hits the real <code>/mcp</code>
+				endpoint with a Bearer token.
+			</p>
+			<p>
+				Pick an existing MCP key or generate a fresh one in place; the
+				plaintext stays in the tab's <code>sessionStorage</code> and is
+				never persisted server-side after generation. The result panel
+				shows HTTP status, round-trip time, the parsed tool output, and
+				the raw JSON-RPC payload, with <strong>Copy curl</strong> and
+				<strong>Copy JSON-RPC</strong> helpers for reproducing any call
+				from the terminal or another client.
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_playground.png">
+            </div>
 		</div>
 	</div>
 </section>
@@ -277,10 +306,11 @@
 		<div class="text-justify" style="max-width:84%; margin:16px 8%">
 			<h3 class="oe_slogan">Security &amp; Access Control</h3>
 			<p>
-				Every MCP key supports fine-grained <strong>Model Scopes</strong>
-				&mdash; restrict access to specific models with independent read,
-				write, create, and delete permissions. Keys without scopes have
-				unrestricted access (subject to the user's own Odoo permissions).
+				Every MCP key carries a <strong>scope</strong> &mdash;
+				<em>Read Only</em> keys can only call tools in the <code>read</code>
+				category, <em>Read &amp; Write</em> keys can call both. All calls
+				run as the key's owner, so Odoo's record rules, field-level ACLs,
+				and model access rights apply on top of the scope check.
 			</p>
 			<p>
 				Built-in <strong>rate limiting</strong> (configurable per key,
@@ -305,6 +335,28 @@
 				preferences. Administrators can manage all sessions from the
 				backend menu.
 			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">MCP Label</h3>
+			<p>
+				Every chatter message authored by an MCP tool is tagged with a
+				small <strong>MCP</strong> badge next to the author name, so
+				it is immediately obvious which comments, status changes, and
+				tracking entries came from an AI client and which came from a
+				human. The badge's tooltip shows the name of the MCP key that
+				created the message &mdash; handy when multiple clients share
+				the same user account. Annotation is on by default and can be
+				toggled via <em>Settings &gt; General Settings &gt; MCP Server
+				&gt; Annotate Messages</em>.
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_indicator.png">
+            </div>
 		</div>
 	</div>
 </section>
