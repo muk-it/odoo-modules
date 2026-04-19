@@ -20,10 +20,9 @@ def _build_method_index(env):
                 if name in index:
                     prev = index[name]
                     raise ValueError(
-                        "Duplicate @mcp_tool name %r: declared on %s.%s "
-                        "and %s.%s"
-                        % (name, anchor, attr_name,
-                           prev['model'], prev['method'])
+                        "Duplicate @mcp_tool name %r: declared on %s.%s and %s.%s" % (
+                            name, anchor, attr_name, prev['model'], prev['method']
+                        )
                     )
                 index[name] = {
                     'kind': 'method',
