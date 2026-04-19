@@ -304,28 +304,6 @@
 <section class="oe_container">
 	<div class="oe_row oe_spaced">
 		<div class="text-justify" style="max-width:84%; margin:16px 8%">
-			<h3 class="oe_slogan">Security &amp; Access Control</h3>
-			<p>
-				Every MCP key carries a <strong>scope</strong> &mdash;
-				<em>Read Only</em> keys can only call tools in the <code>read</code>
-				category, <em>Read &amp; Write</em> keys can call both. All calls
-				run as the key's owner, so Odoo's record rules, field-level ACLs,
-				and model access rights apply on top of the scope check.
-			</p>
-			<p>
-				Built-in <strong>rate limiting</strong> (configurable per key,
-				default 60 req/min) protects against runaway AI loops. A full
-				<strong>audit log</strong> records every MCP request with method,
-				tool, model, duration, and status &mdash; accessible at
-				<em>Settings &gt; MCP Server &gt; Audit Log</em>.
-			</p>
-		</div>
-	</div>
-</section>
-
-<section class="oe_container">
-	<div class="oe_row oe_spaced">
-		<div class="text-justify" style="max-width:84%; margin:16px 8%">
 			<h3 class="oe_slogan">MCP Label</h3>
 			<p>
 				Every chatter message authored by an MCP tool is tagged with a
@@ -341,6 +319,28 @@
 			<div class="oe_demo oe_screenshot mt16">
 				<img src="screenshot_indicator.png">
             </div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Security &amp; Access Control</h3>
+			<p>
+				Every MCP key carries a <strong>scope</strong> &mdash;
+				<em>Read Only</em> keys can only call tools in the <code>read</code>
+				category, <em>Read &amp; Write</em> keys can call both. All calls
+				run as the key's owner, so Odoo's record rules, field-level ACLs,
+				and model access rights apply on top of the scope check.
+			</p>
+			<p>
+				Built-in <strong>rate limiting</strong> (configurable per key,
+				default 60 req/min) protects against runaway AI loops. A full
+				<strong>audit log</strong> records every MCP request with method,
+				tool, model, duration, and status &mdash; accessible at
+				<em>Settings &gt; MCP Server &gt; Audit Log</em>.
+			</p>
 		</div>
 	</div>
 </section>
