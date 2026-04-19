@@ -213,30 +213,30 @@ built-in tools organized into two categories:
 
 - ``list_models`` — Discover available Odoo models by substring search.
 - ``list_modules`` — List installed modules with versions and states.
-- ``get_model_schema`` — Get complete field definitions for any model
+- ``describe_model`` — Get complete field definitions for any model
   (types, labels, relations, selection values).
-- ``get_user_context`` — Retrieve the authenticated user's name, company,
+- ``whoami`` — Retrieve the authenticated user's name, company,
   language, timezone, and security groups.
 - ``get_access_rights`` — Check the current user's CRUD permissions on a
   model and list all access control rules.
 - ``search_read`` — Search records by domain and return field values with
   pagination and sorting.
-- ``read`` — Read specific records by their database IDs.
+- ``read_records`` — Read specific records by their database IDs.
 - ``search_count`` — Count records matching a domain filter.
 - ``read_group`` — Grouped aggregation (SQL GROUP BY equivalent) with
   automatic sum/count for numeric fields.
-- ``get_record_messages`` — Retrieve chatter history, comments, and field
+- ``get_messages`` — Retrieve chatter history, comments, and field
   tracking for a record.
 
 **Write Tools (5)**
 
-- ``create_record`` — Create new records with support for relational
+- ``create_records`` — Create new records with support for relational
   field command tuples.
-- ``update_record`` — Update existing records by ID (partial writes).
-- ``delete_record`` — Permanently delete records by ID.
+- ``update_records`` — Update existing records by ID (partial writes).
+- ``delete_records`` — Permanently delete records by ID.
 - ``post_message`` — Post comments or internal notes on a record's
   chatter thread.
-- ``execute_method`` — Call any public method on a model or recordset
+- ``call_method`` — Call any public method on a model or recordset
   (private methods starting with ``_`` are blocked for safety).
 
 Extending the Tool Set

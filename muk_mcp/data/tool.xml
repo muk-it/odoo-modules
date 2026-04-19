@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo noupdate="1">
 
-    <record id="tool_get_record_messages" model="muk_mcp.tool">
-        <field name="name">get_record_messages</field>
+    <record id="tool_get_messages" model="muk_mcp.tool">
+        <field name="name">get_messages</field>
         <field name="description">Get the chatter messages and activity log for a specific record. Returns the message history including comments, notes, status changes, and field tracking (who changed what and when). Requires the 'mail' module to be installed. Use this to understand the history of a record — e.g. who approved a purchase order, when was an invoice sent, what notes were left on a contact.</field>
         <field name="category">read</field>
         <field name="sequence">14</field>

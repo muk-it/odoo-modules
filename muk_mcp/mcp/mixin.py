@@ -59,7 +59,7 @@ class MCPMixin(models.AbstractModel):
         },
         category='read',
     )
-    def list_modules(self, search='', state='installed'):
+    def _mcp_list_modules(self, search='', state='installed'):
         domain = [('state', '=', state)]
         if search:
             domain.append(('name', 'ilike', search))

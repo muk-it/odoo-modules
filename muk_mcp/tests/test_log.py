@@ -36,7 +36,7 @@ class TestMcpLog(common.TransactionCase):
         record = self.log_model.sudo().create({
             'user_id': self.env.user.id,
             'method': 'tools/call',
-            'tool_name': 'create_record',
+            'tool_name': 'create_records',
             'status': 'error',
             'error_message': 'Something went wrong',
         })
@@ -47,7 +47,7 @@ class TestMcpLog(common.TransactionCase):
         record = self.log_model.sudo().create({
             'user_id': self.env.user.id,
             'method': 'tools/call',
-            'tool_name': 'delete_record',
+            'tool_name': 'delete_records',
             'model_name': 'sale.order',
             'status': 'denied',
         })
@@ -83,7 +83,7 @@ class TestMcpLog(common.TransactionCase):
         record = self.log_model.sudo().create({
             'user_id': self.env.user.id,
             'method': 'tools/call',
-            'tool_name': 'create_record',
+            'tool_name': 'create_records',
             'model_name': 'res.partner',
             'res_id': 42,
             'res_ids': [42],

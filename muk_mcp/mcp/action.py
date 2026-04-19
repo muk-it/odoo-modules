@@ -1,12 +1,8 @@
 from odoo import api, models
 from odoo.exceptions import AccessError, UserError
-from odoo.models import BaseModel
 from odoo.service.model import get_public_method
 
 from ..core.tool import mcp_tool
-
-
-EXECUTE_METHOD_MAX_RECORDS = 200
 
 
 class MCPMixin(models.AbstractModel):
@@ -19,7 +15,7 @@ class MCPMixin(models.AbstractModel):
 
     @api.model
     @mcp_tool(
-        name='execute_method',
+        name='call_method',
         description=(
             "Call a public method on an Odoo model or recordset. Use this "
             "for business logic actions like confirming a sale order "
@@ -74,7 +70,7 @@ class MCPMixin(models.AbstractModel):
         },
         category='write',
     )
-    def execute_method(
+    def _mcp_call_method(
         self, model, method, ids=None, args=None, kwargs=None,
     ):
         target = self._resolve_model(model)
@@ -89,13 +85,4 @@ class MCPMixin(models.AbstractModel):
             recordset = target
         else:
             recordset = target.browse(target_ids) if target_ids else target
-        result = unbound(recordset, *(args or []), **(kwargs or {}))
-        if isinstance(result, BaseModel) and len(result) > EXECUTE_METHOD_MAX_RECORDS:
-            return {
-                'truncated': True,
-                'model': result._name,
-                'count': len(result),
-                'limit': EXECUTE_METHOD_MAX_RECORDS,
-                'ids': result[:EXECUTE_METHOD_MAX_RECORDS].ids,
-            }
-        return result
+        return unbound(recordset, *(args or []), **(kwargs or {}))

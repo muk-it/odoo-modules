@@ -47,7 +47,7 @@ class MCPMixin(models.AbstractModel):
         },
         category='read',
     )
-    def search_count(self, model, domain=None):
+    def _mcp_search_count(self, model, domain=None):
         return {
             'count': self._resolve_model(model).search_count(domain or []),
         }
@@ -129,7 +129,7 @@ class MCPMixin(models.AbstractModel):
         },
         category='read',
     )
-    def search_read(
+    def _mcp_search_read(
         self, model, domain=None, fields=None,
         limit=80, offset=0, order=None,
     ):
@@ -143,7 +143,7 @@ class MCPMixin(models.AbstractModel):
 
     @api.model
     @mcp_tool(
-        name='read',
+        name='read_records',
         description=(
             'Read specific records by their database IDs. Use this when '
             'you already know the exact record IDs (e.g. from a previous '
@@ -181,7 +181,7 @@ class MCPMixin(models.AbstractModel):
         },
         category='read',
     )
-    def read(self, model, ids, fields=None):
+    def _mcp_read_records(self, model, ids, fields=None):
         target_ids = self._normalize_ids(ids)
         if not target_ids:
             raise UserError(_('No record IDs provided'))
@@ -252,7 +252,7 @@ class MCPMixin(models.AbstractModel):
         },
         category='read',
     )
-    def read_group(
+    def _mcp_read_group(
         self, model, fields, groupby,
         domain=None, limit=None, order=None,
     ):

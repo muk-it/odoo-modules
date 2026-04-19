@@ -5,8 +5,10 @@ from odoo import fields
 from odoo.tests import common, tagged
 from odoo.tools import config
 
+from odoo.addons.muk_mcp.core.tool import get_tool_index
 from odoo.addons.muk_mcp.tools import protocol
 from odoo.addons.muk_mcp.tools.encoder import encode_request, encode_response
+from odoo.addons.muk_mcp.tools.exception import MCPScopeDenied
 
 
 @tagged('post_install', '-at_install')
@@ -91,7 +93,6 @@ class TestMcpIntegration(common.TransactionCase):
     # ----------------------------------------------------------
 
     def test_read_scope_allows_read_tools(self):
-        from odoo.addons.muk_mcp.core.tool import get_tool_index
         entry = get_tool_index(self.env).get('search_count')
         self.assertIsNotNone(entry)
         self.assertEqual(entry['category'], 'read')
@@ -104,14 +105,12 @@ class TestMcpIntegration(common.TransactionCase):
         )
 
     def test_read_scope_blocks_write_tools(self):
-        from odoo.addons.muk_mcp.core.tool import get_tool_index
-        from odoo.addons.muk_mcp.tools.exception import MCPScopeDenied
-        entry = get_tool_index(self.env).get('create_record')
+        entry = get_tool_index(self.env).get('create_records')
         self.assertIsNotNone(entry)
         self.assertEqual(entry['category'], 'write')
         with self.assertRaises(MCPScopeDenied):
             self.tool_model._call(
-                'create_record',
+                'create_records',
                 {
                     'model': 'res.partner.category',
                     'values': {'name': 'scope-denied'},
@@ -121,7 +120,6 @@ class TestMcpIntegration(common.TransactionCase):
             )
 
     def test_write_scope_allows_all_tools(self):
-        from odoo.addons.muk_mcp.core.tool import get_tool_index
         for entry in get_tool_index(self.env).values():
             allowed = (
                 self.mcp_key.scope != 'read' or
@@ -145,7 +143,7 @@ class TestMcpIntegration(common.TransactionCase):
 
     def test_tool_create_update_delete(self):
         text, _info = self.tool_model._call(
-            'create_record',
+            'create_records',
             {
                 'model': 'res.partner.category',
                 'values': {'name': 'MCP Integration Test'},
@@ -156,7 +154,7 @@ class TestMcpIntegration(common.TransactionCase):
         self.assertIn('id', result)
         record_id = result['id']
         text, _info = self.tool_model._call(
-            'update_record',
+            'update_records',
             {
                 'model': 'res.partner.category',
                 'ids': [record_id],
@@ -167,7 +165,7 @@ class TestMcpIntegration(common.TransactionCase):
         result = json.loads(text)
         self.assertTrue(result['success'])
         text, _info = self.tool_model._call(
-            'delete_record',
+            'delete_records',
             {
                 'model': 'res.partner.category',
                 'ids': [record_id],

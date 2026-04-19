@@ -43,7 +43,7 @@ class MCPMixin(models.AbstractModel):
         },
         category='read',
     )
-    def list_models(self, search='', limit=100):
+    def _mcp_list_models(self, search='', limit=100):
         needle = (search or '').lower()
         models_data = []
         for model_name, model_cls in self.env.registry.items():
@@ -59,7 +59,7 @@ class MCPMixin(models.AbstractModel):
 
     @api.model
     @mcp_tool(
-        name='get_model_schema',
+        name='describe_model',
         description=(
             "Get the complete field definitions for an Odoo model. Returns "
             "every field with its type, label, help text, required/readonly "
@@ -83,7 +83,7 @@ class MCPMixin(models.AbstractModel):
         },
         category='read',
     )
-    def get_model_schema(self, model):
+    def _mcp_describe_model(self, model):
         return self._resolve_model(model).fields_get(
             attributes=[
                 'string', 'type', 'help', 'required',

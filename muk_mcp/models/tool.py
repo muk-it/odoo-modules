@@ -1,3 +1,4 @@
+import inspect
 import json
 
 from odoo import _, api, fields, models
@@ -96,16 +97,17 @@ class MCPTool(models.Model):
         if not entry:
             raise UserError(_("Tool not found: %s") % name)
         self._check_scope(entry['category'], enforce_scope)
-        context_override = arguments.pop('context', None)
-        if isinstance(context_override, dict):
+        if isinstance(context_override := arguments.pop('context', None), dict):
             env = env(context={**env.context, **context_override})
         if entry['kind'] == 'db':
             text = self.sudo().browse(entry['id'])._run(arguments, env)
             raw_result = None
         else:
-            method = getattr(env[entry['model']], entry['method'])
+            func = inspect.unwrap(
+                getattr(type(env[entry['model']]), entry['method'])
+            )
             try:
-                raw_result = method(**arguments)
+                raw_result = func(env[entry['model']], **arguments)
             except TypeError as exc:
                 raise UserError(_(
                     "Invalid arguments for tool %(name)s: %(error)s",

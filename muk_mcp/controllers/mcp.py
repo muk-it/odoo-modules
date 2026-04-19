@@ -1,9 +1,12 @@
 import json
 import time
 
+from functools import partial
+
 from odoo import http
 from odoo.http import request, Response
 from odoo.tools import SQL, config
+from odoo.service.model import retrying
 from odoo.exceptions import AccessError, UserError
 
 from odoo.addons.muk_mcp.core.route import mcp_route
@@ -262,11 +265,15 @@ class MCPController(http.Controller):
         request._mcp_tool_record_info = {}
         request._mcp_tool_scope_denied = False
         try:
-            text, record_info = request.env['muk_mcp.tool']._call(
-                tool_name,
-                params.get('arguments', {}),
+            text, record_info = retrying(
+                partial(
+                    request.env['muk_mcp.tool']._call,
+                    tool_name,
+                    params.get('arguments', {}),
+                    request.env,
+                    enforce_scope=enforce_scope,
+                ),
                 request.env,
-                enforce_scope=enforce_scope,
             )
         except MCPScopeDenied as exc:
             request._mcp_tool_scope_denied = True

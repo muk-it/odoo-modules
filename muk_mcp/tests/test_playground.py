@@ -24,7 +24,7 @@ class TestPlayground(common.TransactionCase):
             'name': login,
             'login': login,
             'email': f'{login}@example.com',
-            'groups_id': [(4, self.env.ref('base.group_user').id)],
+            'group_ids': [(4, self.env.ref('base.group_user').id)],
         })
 
     # ----------------------------------------------------------

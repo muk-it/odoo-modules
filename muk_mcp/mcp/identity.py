@@ -13,7 +13,7 @@ class MCPMixin(models.AbstractModel):
 
     @api.model
     @mcp_tool(
-        name='get_user_context',
+        name='whoami',
         description=(
             'Get information about the current authenticated user: their '
             'name, login, language, timezone, company, currency, country, '
@@ -27,7 +27,7 @@ class MCPMixin(models.AbstractModel):
         },
         category='read',
     )
-    def get_user_context(self):
+    def _mcp_whoami(self):
         user = self.env.user
         company = self.env.company
         return {
@@ -69,7 +69,7 @@ class MCPMixin(models.AbstractModel):
         },
         category='read',
     )
-    def get_access_rights(self, model):
+    def _mcp_get_access_rights(self, model):
         target = self._resolve_model(model)
         rights = {}
         for op in ('read', 'write', 'create', 'unlink'):

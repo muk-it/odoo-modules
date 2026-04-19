@@ -46,8 +46,8 @@ class TestMcpTool(common.TransactionCase):
         self.assertIsInstance(result, list)
         self.assertTrue(any(m['name'] == 'base' for m in result))
 
-    def test_get_model_schema_handler(self):
-        result = self._call('get_model_schema', {'model': 'res.partner'})
+    def test_describe_model_handler(self):
+        result = self._call('describe_model', {'model': 'res.partner'})
         self.assertIn('name', result)
         self.assertIn('email', result)
         self.assertEqual(result['name']['type'], 'char')
@@ -66,22 +66,22 @@ class TestMcpTool(common.TransactionCase):
         self.assertIn('count', result)
         self.assertGreater(result['count'], 0)
 
-    def test_create_and_unlink_handler(self):
-        created = self._call('create_record', {
+    def test_create_and_delete_handler(self):
+        created = self._call('create_records', {
             'model': 'res.partner.category',
             'values': {'name': 'MCP Test Category'},
         })
         self.assertIn('id', created)
-        unlinked = self._call('delete_record', {
+        deleted = self._call('delete_records', {
             'model': 'res.partner.category',
             'ids': [created['id']],
         })
-        self.assertTrue(unlinked['success'])
+        self.assertTrue(deleted['success'])
 
-    def test_update_record_handler(self):
+    def test_update_handler(self):
         record = self.env['res.partner.category'].create({'name': 'MCP Update'})
         try:
-            result = self._call('update_record', {
+            result = self._call('update_records', {
                 'model': 'res.partner.category',
                 'ids': [record.id],
                 'values': {'name': 'MCP Updated'},
@@ -94,15 +94,15 @@ class TestMcpTool(common.TransactionCase):
     def test_read_handler(self):
         partner = self.env['res.partner'].search([], limit=1)
         self.assertTrue(partner)
-        result = self._call('read', {
+        result = self._call('read_records', {
             'model': 'res.partner',
             'ids': [partner.id],
             'fields': ['name'],
         })
         self.assertEqual(result[0]['id'], partner.id)
 
-    def test_get_user_context_handler(self):
-        result = self._call('get_user_context', {})
+    def test_whoami_handler(self):
+        result = self._call('whoami', {})
         self.assertIn('uid', result)
         self.assertEqual(result['uid'], self.env.uid)
         self.assertIn('company_id', result)
@@ -132,21 +132,21 @@ class TestMcpTool(common.TransactionCase):
 
     def test_private_method_blocked(self):
         with self.assertRaisesRegex(UserError, 'Private methods'):
-            self._call('execute_method', {
+            self._call('call_method', {
                 'model': 'res.partner',
                 'method': '_check_company',
             })
 
     def test_method_not_found(self):
         with self.assertRaisesRegex(UserError, 'does not exist'):
-            self._call('execute_method', {
+            self._call('call_method', {
                 'model': 'res.partner',
                 'method': 'totally_nonexistent_method_xyz',
             })
 
     def test_empty_ids_raises(self):
         with self.assertRaises(UserError):
-            self._call('delete_record', {
+            self._call('delete_records', {
                 'model': 'res.partner.category',
                 'ids': [],
             })
@@ -160,7 +160,7 @@ class TestMcpTool(common.TransactionCase):
             })
 
     def test_tool_result_contains_id_for_create(self):
-        created = self._call('create_record', {
+        created = self._call('create_records', {
             'model': 'res.partner.category',
             'values': {'name': 'MCP ID Test'},
         })
@@ -194,9 +194,9 @@ class TestMcpTool(common.TransactionCase):
     def test_mail_tools_still_resolve_via_db(self):
         tools = self.tool_model.get_tools()
         names = {t['name'] for t in tools}
-        self.assertIn('get_record_messages', names)
+        self.assertIn('get_messages', names)
         self.assertIn('post_message', names)
         db_records = self.tool_model.search([
-            ('name', 'in', ['get_record_messages', 'post_message']),
+            ('name', 'in', ['get_messages', 'post_message']),
         ])
         self.assertEqual(len(db_records), 2)

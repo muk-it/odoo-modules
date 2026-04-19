@@ -203,12 +203,12 @@
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;">List installed modules with versions and states</td>
 					</tr>
 					<tr>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>get_model_schema</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>describe_model</code></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">Read</span></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Get field definitions, types, relations, and selection values</td>
 					</tr>
 					<tr>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>get_user_context</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>whoami</code></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">Read</span></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Authenticated user info, company, language, and security groups</td>
 					</tr>
@@ -223,7 +223,7 @@
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Search records by domain with pagination and sorting</td>
 					</tr>
 					<tr>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>read</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>read_records</code></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">Read</span></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Read specific records by their database IDs</td>
 					</tr>
@@ -238,22 +238,22 @@
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Grouped aggregation (GROUP BY) with sum/count</td>
 					</tr>
 					<tr>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>get_record_messages</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>get_messages</code></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">Read</span></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Retrieve chatter history, comments, and field tracking</td>
 					</tr>
 					<tr>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>create_record</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>create_records</code></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#fff3cd; color:#856404; padding:2px 8px; border-radius:3px; font-size:12px;">Write</span></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Create new records with relational field support</td>
 					</tr>
 					<tr>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>update_record</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>update_records</code></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#fff3cd; color:#856404; padding:2px 8px; border-radius:3px; font-size:12px;">Write</span></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Partial updates on existing records by ID</td>
 					</tr>
 					<tr>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>delete_record</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>delete_records</code></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#fff3cd; color:#856404; padding:2px 8px; border-radius:3px; font-size:12px;">Write</span></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Permanently delete records by ID</td>
 					</tr>
@@ -263,7 +263,7 @@
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Post comments or internal notes on chatter threads</td>
 					</tr>
 					<tr>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>execute_method</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>call_method</code></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#fff3cd; color:#856404; padding:2px 8px; border-radius:3px; font-size:12px;">Write</span></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Call any public method on a model (private methods blocked)</td>
 					</tr>

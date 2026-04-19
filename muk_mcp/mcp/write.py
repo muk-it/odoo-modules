@@ -14,13 +14,13 @@ class MCPMixin(models.AbstractModel):
 
     @api.model
     @mcp_tool(
-        name='create_record',
+        name='create_records',
         description=(
             'Create a new record. Pass field values as a JSON object. For '
             'Many2one fields, pass the integer ID. For Many2many fields, '
             'use command tuples: [[6,0,[id1,id2]]] to set, [[4,id]] to '
             'add. For One2many fields, use [[0,0,{values}]] to create '
-            'inline records. Check required fields with get_model_schema '
+            'inline records. Check required fields with describe_model '
             'first.'
         ),
         input_schema={
@@ -50,7 +50,7 @@ class MCPMixin(models.AbstractModel):
         },
         category='write',
     )
-    def create_record(self, model, values):
+    def _mcp_create_records(self, model, values):
         record = self._resolve_model(model).create(values or {})
         return {
             'id': record.id,
@@ -59,11 +59,11 @@ class MCPMixin(models.AbstractModel):
 
     @api.model
     @mcp_tool(
-        name='update_record',
+        name='update_records',
         description=(
             'Update existing records by their IDs. Only pass the fields '
             'you want to change — other fields remain untouched. Same '
-            'value formats as create_record apply for relational fields.'
+            'value formats as create_records apply for relational fields.'
         ),
         input_schema={
             'type': 'object',
@@ -93,7 +93,7 @@ class MCPMixin(models.AbstractModel):
         },
         category='write',
     )
-    def update_record(self, model, ids, values):
+    def _mcp_update_records(self, model, ids, values):
         target_ids = self._normalize_ids(ids)
         if not target_ids:
             raise UserError(_('No record IDs provided'))
@@ -102,7 +102,7 @@ class MCPMixin(models.AbstractModel):
 
     @api.model
     @mcp_tool(
-        name='delete_record',
+        name='delete_records',
         description=(
             'Permanently delete records by their IDs. This cannot be '
             'undone. Some records cannot be deleted if other records '
@@ -131,7 +131,7 @@ class MCPMixin(models.AbstractModel):
         },
         category='write',
     )
-    def delete_record(self, model, ids):
+    def _mcp_delete_records(self, model, ids):
         target_ids = self._normalize_ids(ids)
         if not target_ids:
             raise UserError(_('No record IDs provided'))
