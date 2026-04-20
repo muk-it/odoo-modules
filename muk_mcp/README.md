@@ -180,10 +180,10 @@ pane to run the current tool.
 ## Usage
 
 Once connected, the AI client automatically discovers all available
-tools via the `tools/list` MCP method. The module ships with 15
+tools via the `tools/list` MCP method. The module ships with 17
 built-in tools organized into two categories:
 
-**Read Tools (10)**
+**Read Tools (12)**
 
 - `list_models` -- Discover available Odoo models by substring search.
 - `list_modules` -- List installed modules with versions and states.
@@ -201,6 +201,13 @@ built-in tools organized into two categories:
   automatic sum/count for numeric fields.
 - `get_messages` -- Retrieve chatter history, comments, and field
   tracking for a record.
+- `print_report` -- Render an `ir.actions.report` (PDF, text, HTML) for
+  one or more records and return the binary as base64. Accepts the
+  report xmlid, `report_name`, or numeric id.
+- `export_records` -- Export records to CSV or XLSX (base64). Field
+  paths use `/` to traverse relations (e.g. `partner_id/name`,
+  `order_line/product_id/default_code`). Honours record rules and
+  field access through Odoo's `export_data`.
 
 **Write Tools (5)**
 
@@ -287,7 +294,7 @@ Step 3 -- restart or upgrade the module. The tool appears in the next
 
 **Decorator reference**
 
-`@mcp_tool(name=None, description=None, input_schema=None, category='read')`
+`@mcp_tool(name=None, description=None, input_schema=None, category='read', registry=None)`
 
 - `name` -- MCP tool name exposed to the AI client. Defaults to the
   Python method name. Must be unique across all installed addons.
@@ -298,6 +305,13 @@ Step 3 -- restart or upgrade the module. The tool appears in the next
   become kwargs on the method call.
 - `category` -- `'read'` or `'write'`. Read-scoped MCP keys can only
   call `'read'` tools; write-scoped keys call both.
+- `registry` -- Optional surface restriction. Leave empty (the usual
+  case) so the tool is visible to every caller. Set to `'mcp'` to
+  hide the tool from other surfaces, or to a downstream value like
+  `'ai'` (added by `muk_ai`) to target a specific agent. Callers pass
+  a `registry=` argument to `get_tools()` / `get_tool_index()` to
+  filter. Comma-separated values are supported for multi-surface
+  tools (e.g. `registry='mcp,cron'`).
 
 **How arguments flow**
 

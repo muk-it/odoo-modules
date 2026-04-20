@@ -47,6 +47,14 @@ class MCPTool(models.Model):
         default='read',
     )
 
+    registry = fields.Selection(
+        selection=[
+            ('mcp', "MCP"),
+        ],
+        string="Registry",
+        help="Restrict the tool to a single surface.",
+    )
+
     description = fields.Text(
         string="Description",
         required=True,
@@ -95,7 +103,7 @@ class MCPTool(models.Model):
         arguments = dict(arguments or {})
         entry = get_tool_index(env).get(name)
         if not entry:
-            raise UserError(_("Tool not found: %s") % name)
+            raise UserError(_("Tool not found: %s", name))
         self._check_scope(entry['category'], enforce_scope)
         if isinstance(context_override := arguments.pop('context', None), dict):
             env = env(context={**env.context, **context_override})
@@ -174,14 +182,14 @@ class MCPTool(models.Model):
     # ----------------------------------------------------------
 
     @api.model
-    def get_tools(self):
+    def get_tools(self, registry=None):
         return [
             {
                 'name': name,
                 'description': entry['description'],
                 'inputSchema': entry['input_schema'],
             }
-            for name, entry in get_tool_index(self.env).items()
+            for name, entry in get_tool_index(self.env, registry=registry).items()
         ]
 
     @api.model
@@ -193,6 +201,7 @@ class MCPTool(models.Model):
                 'inputSchema': entry['input_schema'],
                 'category': entry['category'],
                 'kind': entry['kind'],
+                'registry': entry.get('registry') or None,
             }
             for name, entry in get_tool_index(self.env).items()
         ]

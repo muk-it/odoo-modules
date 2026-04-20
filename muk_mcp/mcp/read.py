@@ -1,7 +1,7 @@
 from odoo import _, api, models
 from odoo.exceptions import UserError
 
-from ..core.tool import mcp_tool
+from odoo.addons.muk_mcp.core.tool import mcp_tool
 
 
 class MCPMixin(models.AbstractModel):

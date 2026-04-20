@@ -31,6 +31,7 @@ def _build_method_index(env):
                     'description': meta['description'],
                     'input_schema': meta['input_schema'],
                     'category': meta['category'],
+                    'registry': meta['registry'],
                 }
     return index
 
@@ -39,7 +40,7 @@ def _fetch_db_index(env):
     index = {}
     records = env['muk_mcp.tool'].sudo().search_read(
         [('active', '=', True)],
-        fields=['id', 'name', 'description', 'input_schema', 'category'],
+        fields=['id', 'name', 'description', 'input_schema', 'category', 'registry'],
     )
     for record in records:
         raw_schema = record.get('input_schema')
@@ -53,11 +54,18 @@ def _fetch_db_index(env):
             'description': record['description'],
             'input_schema': schema,
             'category': record['category'],
+            'registry': record.get('registry') or None,
         }
     return index
 
 
-def mcp_tool(name=None, description=None, input_schema=None, category='read'):
+def mcp_tool(
+    name=None,
+    description=None,
+    input_schema=None,
+    category='read',
+    registry=None,
+):
     def decorator(func):
         func.__mcp_tool__ = {
             'name': name or func.__name__,
@@ -71,20 +79,32 @@ def mcp_tool(name=None, description=None, input_schema=None, category='read'):
                 'properties': {},
             },
             'category': category,
+            'registry': registry,
         }
         return func
     return decorator
 
 
-def get_tool_index(env):
-    method_index = getattr(env.registry, '_muk_mcp_method_cache', None)
+def get_tool_index(env, registry=None):
+    method_index = getattr(
+        env.registry, '_muk_mcp_method_cache', None
+    )
     if method_index is None:
         method_index = _build_method_index(env)
         env.registry._muk_mcp_method_cache = method_index
     db_index = _fetch_db_index(env)
-    if not db_index:
-        return method_index
-    return {**method_index, **db_index}
+    combined = (
+        {**method_index, **db_index}
+        if db_index else dict(method_index)
+    )
+    if registry is None:
+        return combined
+    return {
+        name: entry for name, entry in combined.items()
+        if not entry.get('registry') or registry in (
+            s.strip() for s in entry['registry'].split(',')
+        )
+    }
 
 
 def invalidate_registry_cache(env):

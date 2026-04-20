@@ -1,7 +1,7 @@
 from odoo import _, api, models
 from odoo.exceptions import UserError
 
-from ..core.tool import mcp_tool
+from odoo.addons.muk_mcp.core.tool import mcp_tool
 
 
 class MCPMixin(models.AbstractModel):
@@ -23,7 +23,7 @@ class MCPMixin(models.AbstractModel):
 
     def _resolve_model(self, model):
         if not model or model not in self.env:
-            raise UserError(_("Model %r not found") % model)
+            raise UserError(_("Model %r not found", model))
         return self.env[model]
 
     # ----------------------------------------------------------

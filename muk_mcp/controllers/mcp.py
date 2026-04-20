@@ -252,7 +252,11 @@ class MCPController(http.Controller):
         return None
 
     def _handle_tools_list(self, params):
-        return {'tools': request.env['muk_mcp.tool'].sudo().get_tools()}
+        return {
+            'tools': request.env['muk_mcp.tool'].sudo().get_tools(
+                registry='mcp'
+            )
+        }
 
     def _handle_tools_call(self, params):
         if not (tool_name := params.get('name')):

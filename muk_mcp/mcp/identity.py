@@ -1,6 +1,6 @@
 from odoo import api, models
 
-from ..core.tool import mcp_tool
+from odoo.addons.muk_mcp.core.tool import mcp_tool
 
 
 class MCPMixin(models.AbstractModel):

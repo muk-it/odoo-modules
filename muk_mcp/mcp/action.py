@@ -2,7 +2,7 @@ from odoo import api, models
 from odoo.exceptions import AccessError, UserError
 from odoo.service.model import get_public_method
 
-from ..core.tool import mcp_tool
+from odoo.addons.muk_mcp.core.tool import mcp_tool
 
 
 class MCPMixin(models.AbstractModel):
@@ -77,9 +77,7 @@ class MCPMixin(models.AbstractModel):
         target = self._resolve_model(model)
         try:
             unbound = get_public_method(target, method)
-        except AccessError as exc:
-            raise UserError(str(exc))
-        except AttributeError as exc:
+        except (AccessError, AttributeError) as exc:
             raise UserError(str(exc))
         target_ids = self._normalize_ids(ids)
         if getattr(unbound, '_api_model', False):
