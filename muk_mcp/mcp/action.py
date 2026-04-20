@@ -51,6 +51,7 @@ class MCPMixin(models.AbstractModel):
                 },
                 'args': {
                     'type': 'array',
+                    'items': {},
                     'description': (
                         'Positional arguments to pass to the method.'
                     ),

@@ -30,6 +30,7 @@ class MCPMixin(models.AbstractModel):
                 },
                 'domain': {
                     'type': 'array',
+                    'items': {},
                     'description': (
                             'Odoo domain filter. Same syntax as search_read.'
                     ),
@@ -76,6 +77,7 @@ class MCPMixin(models.AbstractModel):
                 },
                 'domain': {
                     'type': 'array',
+                    'items': {},
                     'description': (
                         "Odoo domain filter. Examples: "
                         "[['is_company','=',true]], "
@@ -207,6 +209,7 @@ class MCPMixin(models.AbstractModel):
                 },
                 'domain': {
                     'type': 'array',
+                    'items': {},
                     'description': (
                         'Filter domain. Same syntax as search_read.'
                     ),
