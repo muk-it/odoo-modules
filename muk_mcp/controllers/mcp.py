@@ -12,7 +12,6 @@ from odoo.exceptions import AccessError, UserError
 from odoo.addons.muk_mcp.core.route import mcp_route
 from odoo.addons.muk_mcp.tools import common, protocol
 from odoo.addons.muk_mcp.tools.exception import MCPScopeDenied
-from odoo.addons.muk_mcp.tools.encoder import encode_request, encode_response
 
 class MCPController(http.Controller):
 
@@ -156,24 +155,17 @@ class MCPController(http.Controller):
                     request_id=request_id,
                 )
         is_tool_call = method == 'tools/call'
-        arguments = params.get('arguments', {}) if is_tool_call else None
         start = time.time()
         try:
             result = handler(params)
         except Exception as exc:
-            log_kwargs = {
-                'status': 'error',
-                'error_message': str(exc),
-                'duration_ms': int((time.time() - start) * 1000),
-            }
-            if is_tool_call:
-                log_kwargs.update({
-                    'tool_name': params.get('name'),
-                    'model_name': arguments.get('model'),
-                    'request_data': encode_request(arguments),
-                    'response_data': str(exc),
-                })
-            self._log_request(method, **log_kwargs)
+            if not is_tool_call:
+                self._log_request(
+                    method,
+                    status='error',
+                    error_message=str(exc),
+                    duration_ms=int((time.time() - start) * 1000),
+                )
             return protocol.make_jsonrpc_error(
                 common.JSONRPC_INTERNAL_ERROR,
                 'Internal server error',
@@ -181,34 +173,6 @@ class MCPController(http.Controller):
             )
         if method.startswith('notifications/'):
             return None
-        duration = int((time.time() - start) * 1000)
-        if is_tool_call:
-            model_name = arguments.get('model')
-            is_error = result.get('isError', False)
-            log_kwargs = {
-                'duration_ms': duration,
-                'tool_name': params.get('name'),
-                'model_name': model_name,
-                'request_data': encode_request(arguments),
-            }
-            if is_error:
-                error_text = ''
-                content = result.get('content', [])
-                if content and content[0].get('text'):
-                    error_text = content[0]['text']
-                if getattr(request, '_mcp_tool_scope_denied', False):
-                    log_kwargs['status'] = 'denied'
-                else:
-                    log_kwargs['status'] = 'error'
-                log_kwargs['error_message'] = error_text
-                log_kwargs['response_data'] = error_text
-            else:
-                log_kwargs['status'] = 'ok'
-                log_kwargs['response_data'] = encode_response(result)
-                log_kwargs.update(
-                    getattr(request, '_mcp_tool_record_info', {}) or {}
-                )
-            self._log_request(method, **log_kwargs)
         return protocol.make_jsonrpc_response(result, request_id=request_id)
 
     def _handle_batch(self, items):
@@ -266,10 +230,8 @@ class MCPController(http.Controller):
             )
         key = getattr(request, '_mcp_key', None)
         enforce_scope = key.scope if key else None
-        request._mcp_tool_record_info = {}
-        request._mcp_tool_scope_denied = False
         try:
-            text, record_info = retrying(
+            text, _record_info = retrying(
                 partial(
                     request.env['muk_mcp.tool']._call,
                     tool_name,
@@ -280,7 +242,6 @@ class MCPController(http.Controller):
                 request.env,
             )
         except MCPScopeDenied as exc:
-            request._mcp_tool_scope_denied = True
             return protocol.make_tool_result(
                 [protocol.make_text_content(str(exc))],
                 is_error=True,
@@ -295,7 +256,6 @@ class MCPController(http.Controller):
                 [protocol.make_text_content('Internal server error')],
                 is_error=True,
             )
-        request._mcp_tool_record_info = record_info
         return protocol.make_tool_result(
             [protocol.make_text_content(text)]
         )

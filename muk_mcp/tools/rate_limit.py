@@ -11,7 +11,13 @@ class RateLimiter:
         self._lock = threading.Lock()
         self._last_cleanup = time.monotonic()
 
-    def check(self, key, max_requests, window_seconds, count=1):
+    def check(
+        self,
+        key,
+        max_requests,
+        window_seconds,
+        count=1,
+    ):
         if max_requests <= 0:
             return True
         if count <= 0:

@@ -16,7 +16,14 @@ class MCPMixin(models.AbstractModel):
     # ----------------------------------------------------------
 
     @api.model
-    def _resolve_records(self, model, ids, domain, limit, order):
+    def _resolve_records(
+        self,
+        model,
+        ids,
+        domain,
+        limit,
+        order,
+    ):
         target = self._resolve_model(model)
         target_ids = self._normalize_ids(ids)
         if target_ids:
@@ -92,8 +99,14 @@ class MCPMixin(models.AbstractModel):
         category='read',
     )
     def _mcp_export_records(
-        self, model, fields, ids=None, domain=None,
-        format='csv', limit=1000, order=None,
+        self,
+        model,
+        fields,
+        ids=None,
+        domain=None,
+        format='csv',
+        limit=1000,
+        order=None,
     ):
         if not fields:
             raise UserError(_('No fields provided'))

@@ -132,8 +132,13 @@ class MCPMixin(models.AbstractModel):
         category='read',
     )
     def _mcp_search_read(
-        self, model, domain=None, fields=None,
-        limit=80, offset=0, order=None,
+        self,
+        model,
+        domain=None,
+        fields=None,
+        limit=80,
+        offset=0,
+        order=None,
     ):
         return self._resolve_model(model).search_read(
             domain or [],
@@ -256,8 +261,13 @@ class MCPMixin(models.AbstractModel):
         category='read',
     )
     def _mcp_read_group(
-        self, model, fields, groupby,
-        domain=None, limit=None, order=None,
+        self,
+        model,
+        fields,
+        groupby,
+        domain=None,
+        limit=None,
+        order=None,
     ):
         if not groupby:
             raise UserError(_('groupby is required'))

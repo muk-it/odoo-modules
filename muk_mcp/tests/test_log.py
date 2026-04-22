@@ -1,6 +1,22 @@
 import json
 
+from unittest.mock import patch
+
+from odoo import api
 from odoo.tests import common
+
+from odoo.addons.muk_mcp.core.tool import invalidate_registry_cache, mcp_tool
+
+
+@api.model
+@mcp_tool(
+    name='mcp_test_log_probe',
+    description='No-op probe for log-path coverage.',
+    input_schema={'type': 'object', 'properties': {}},
+    category='read',
+)
+def _mcp_test_log_probe(self):
+    return {'ok': True}
 
 
 class TestMcpLog(common.TransactionCase):
@@ -13,6 +29,16 @@ class TestMcpLog(common.TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.log_model = cls.env['muk_mcp.log']
+        cls.tool_model = cls.env['muk_mcp.tool']
+        cls.mixin_cls = type(cls.env['muk_mcp.mixin'])
+        cls.mixin_cls._mcp_test_log_probe = _mcp_test_log_probe
+        invalidate_registry_cache(cls.env)
+
+    @classmethod
+    def tearDownClass(cls):
+        delattr(cls.mixin_cls, '_mcp_test_log_probe')
+        invalidate_registry_cache(cls.env)
+        super().tearDownClass()
 
     # ----------------------------------------------------------
     # Tests
@@ -106,3 +132,41 @@ class TestMcpLog(common.TransactionCase):
             response_data='[{"id": 1}]',
             ip_address='192.168.1.1',
         )
+
+    # ----------------------------------------------------------
+    # Tests: in-process tool._call records a log row
+    # ----------------------------------------------------------
+
+    def _captured_log(self):
+        captured = []
+
+        def _capture(_self, **values):
+            captured.append(values)
+
+        return captured, patch.object(
+            type(self.log_model), 'log', autospec=True, side_effect=_capture,
+        )
+
+    def test_tool_call_writes_log_on_success(self):
+        captured, mock = self._captured_log()
+        with mock:
+            text, _info = self.tool_model._call(
+                'mcp_test_log_probe', {}, self.env,
+            )
+        self.assertEqual(json.loads(text), {'ok': True})
+        self.assertEqual(len(captured), 1)
+        entry = captured[0]
+        self.assertEqual(entry['method'], 'tools/call')
+        self.assertEqual(entry['tool_name'], 'mcp_test_log_probe')
+        self.assertEqual(entry['user_id'], self.env.uid)
+        self.assertEqual(entry['status'], 'ok')
+        self.assertNotIn('key_id', entry)
+        self.assertIn('duration_ms', entry)
+
+    def test_tool_call_writes_log_on_error(self):
+        captured, mock = self._captured_log()
+        with mock, self.assertRaises(Exception):
+            self.tool_model._call('mcp_test_unknown_tool', {}, self.env)
+        self.assertEqual(len(captured), 1)
+        self.assertEqual(captured[0]['status'], 'error')
+        self.assertEqual(captured[0]['tool_name'], 'mcp_test_unknown_tool')

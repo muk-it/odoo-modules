@@ -72,7 +72,12 @@ class MCPMixin(models.AbstractModel):
         category='write',
     )
     def _mcp_call_method(
-        self, model, method, ids=None, args=None, kwargs=None,
+        self,
+        model,
+        method,
+        ids=None,
+        args=None,
+        kwargs=None,
     ):
         target = self._resolve_model(model)
         try:

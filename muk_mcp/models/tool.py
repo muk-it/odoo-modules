@@ -1,12 +1,17 @@
+import contextlib
 import inspect
 import json
+import time
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 from odoo.tools.safe_eval import safe_eval, test_python_expr
 from odoo.tools.safe_eval import json as safe_json
+from odoo.http import request
 
 from odoo.addons.muk_mcp.core.tool import get_tool_index
+
+from odoo.addons.muk_mcp.tools.encoder import encode_request, encode_response
 from odoo.addons.muk_mcp.tools.exception import MCPScopeDenied
 from odoo.addons.muk_mcp.tools.logger import LoggerProxy
 from odoo.addons.muk_web_utils.tools.encoder import RecordEncoder
@@ -100,9 +105,39 @@ class MCPTool(models.Model):
 
     @api.model
     def _call(self, name, arguments, env, enforce_scope=None):
+        status, text, info, error = 'ok', None, {}, None
         arguments = dict(arguments or {})
-        entry = get_tool_index(env).get(name)
-        if not entry:
+        model_name = arguments.get('model')
+        start = time.monotonic()
+        try:
+            text, info, model_name = self._execute(
+                name, arguments, env, enforce_scope,
+            )
+            return text, info
+        except Exception as exc:
+            status = (
+                'denied'
+                if isinstance(exc, MCPScopeDenied)
+                else 'error'
+            )
+            error = str(exc)
+            raise
+        finally:
+            self.env['muk_mcp.log'].log(**self._tool_log_values(
+                name=name,
+                env=env,
+                request_data=encode_request(arguments),
+                model_name=model_name,
+                status=status,
+                text=text,
+                info=info,
+                error=error,
+                duration_ms=int((time.monotonic() - start) * 1000),
+            ))
+
+    @api.model
+    def _execute(self, name, arguments, env, enforce_scope):
+        if not (entry := get_tool_index(env).get(name)):
             raise UserError(_("Tool not found: %s", name))
         self._check_scope(entry['category'], enforce_scope)
         if isinstance(context_override := arguments.pop('context', None), dict):
@@ -122,7 +157,50 @@ class MCPTool(models.Model):
                     name=name, error=exc,
                 ))
             text = self._serialize_result(raw_result)
-        return text, self._extract_record_info(arguments, raw_result)
+        return (
+            text,
+            self._extract_record_info(arguments, raw_result),
+            arguments.get('model') or entry.get('model')
+        )
+
+    @api.model
+    def _tool_log_values(
+        self,
+        *,
+        name,
+        env,
+        request_data,
+        model_name,
+        status,
+        text,
+        info,
+        error,
+        duration_ms,
+    ):
+        values = {
+            'method': 'tools/call',
+            'tool_name': name,
+            'user_id': env.uid,
+            'model_name': model_name,
+            'status': status,
+            'duration_ms': duration_ms,
+            'request_data': request_data,
+        }
+        if status == 'ok':
+            values['response_data'] = encode_response(text)
+            values['res_id'] = info.get('res_id')
+            values['res_ids'] = info.get('res_ids')
+        else:
+            values['error_message'] = error
+            values['response_data'] = error
+        with contextlib.suppress(Exception):
+            if key := getattr(request, '_mcp_key', None):
+                values['key_id'] = key.id
+            values['ip_address'] = (
+                request.httprequest.remote_addr
+                if request else None
+            )
+        return values
 
     @api.model
     def _extract_record_info(self, arguments, result):
@@ -165,12 +243,10 @@ class MCPTool(models.Model):
         }
 
     def _notify_tools_changed(self):
-        try:
+        with contextlib.suppress(Exception):
             self.env['muk_mcp.notification'].push_to_all_sessions(
                 'notifications/tools/list_changed',
             )
-        except Exception:
-            pass
 
     def _run(self, arguments, env):
         eval_context = self._get_eval_context(arguments, env)

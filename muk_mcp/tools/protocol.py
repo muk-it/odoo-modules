@@ -11,7 +11,12 @@ def make_jsonrpc_response(result, request_id=None):
     }
 
 
-def make_jsonrpc_error(code, message, data=None, request_id=None):
+def make_jsonrpc_error(
+    code,
+    message,
+    data=None,
+    request_id=None,
+):
     error = {
         'code': code,
         'message': message,
