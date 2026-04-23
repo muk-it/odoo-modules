@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_muk_ai_agentidoo_onboarding_form" model="ir.ui.view">
+		<field name="name">muk_ai_agentidoo.onboarding.form</field>
+		<field name="model">muk_ai_agentidoo.onboarding</field>
+		<field name="arch" type="xml">
+			<form string="Agentidoo Onboarding">
+				<header>
+					<field
+						name="state"
+						widget="statusbar"
+						statusbar_visible="intro,api_key,acting_user,register,done"
+					/>
+				</header>
+				<sheet>
+					<field name="state" invisible="1"/>
+					<group invisible="state != 'intro'">
+						<div colspan="2" class="mb16">
+							<h2>Welcome to Agentidoo</h2>
+							<p>
+								Agentidoo adds an AI assistant (Aimee) to your Odoo.
+								This wizard will verify your API key, select the Odoo
+								user Aimee should act as, and register this Odoo
+								instance with the Agentidoo platform.
+							</p>
+							<p>
+								If you don't have an API key yet, click below to sign up.
+							</p>
+						</div>
+						<div colspan="2">
+							<button
+								name="action_open_signup"
+								type="object"
+								string="Sign Up at agentidoo.com"
+								class="btn-secondary"
+							/>
+						</div>
+					</group>
+					<group invisible="state != 'api_key'">
+						<field name="api_url"/>
+						<field
+							name="api_key"
+							password="True"
+						/>
+					</group>
+					<div
+						invisible="state != 'api_key'"
+						class="alert alert-info"
+						role="alert"
+					>
+						Paste your API key from
+						<strong>agentidoo.com &#8594; Dashboard &#8594; Settings &#8594; API Keys</strong>.
+						We verify it against <code>/api/me</code> before continuing.
+					</div>
+					<group invisible="state != 'acting_user'">
+						<field
+							name="acting_user_mode"
+							widget="radio"
+						/>
+						<field
+							name="acting_user_id"
+							invisible="acting_user_mode != 'existing'"
+							required="acting_user_mode == 'existing'"
+						/>
+						<field
+							name="new_user_login"
+							invisible="acting_user_mode != 'create'"
+							required="acting_user_mode == 'create'"
+						/>
+						<field
+							name="new_user_name"
+							invisible="acting_user_mode != 'create'"
+							required="acting_user_mode == 'create'"
+						/>
+					</group>
+					<div
+						invisible="state != 'acting_user' or acting_user_mode != 'create'"
+						class="alert alert-warning"
+						role="alert"
+					>
+						<strong>Heads up:</strong> creating a new internal user adds
+						one paid seat to your Odoo Enterprise subscription.
+					</div>
+					<div
+						invisible="state != 'acting_user'"
+						class="alert alert-warning"
+						role="alert"
+					>
+						<strong>Skip</strong> the next step if your Odoo is not
+						publicly reachable (e.g. localhost / private network). Chat
+						with Aimee still works; Aimee just can't drive Odoo tools
+						until you register the instance from a reachable URL.
+					</div>
+					<group invisible="state != 'register'">
+						<field
+							name="acting_user_id"
+							readonly="1"
+						/>
+						<field
+							name="acting_user_password"
+							password="True"
+							required="state == 'register'"
+						/>
+						<field name="odoo_url"/>
+					</group>
+					<div
+						invisible="state != 'register'"
+						class="alert alert-info"
+						role="alert"
+					>
+						Your password is sent once to Agentidoo (encrypted in platform
+						secrets) and <strong>never persisted in Odoo</strong>.
+					</div>
+					<group invisible="state != 'done'">
+						<div colspan="2">
+							<h2>Agentidoo is ready</h2>
+							<p>
+								muk_ai is now routing chat through Aimee.
+								Open a chat to try it out.
+							</p>
+						</div>
+					</group>
+				</sheet>
+				<footer>
+					<button
+						name="action_next"
+						type="object"
+						string="Next"
+						class="btn-primary"
+						invisible="state == 'done'"
+					/>
+					<button
+						name="action_skip_register"
+						type="object"
+						string="Skip (use chat only)"
+						class="btn-secondary"
+						invisible="state != 'acting_user'"
+					/>
+					<button
+						name="action_open_chat"
+						type="object"
+						string="Open Chat"
+						class="btn-primary"
+						invisible="state != 'done'"
+					/>
+					<button
+						name="action_close"
+						type="object"
+						string="Close"
+						class="btn-secondary"
+					/>
+				</footer>
+			</form>
+		</field>
+	</record>
+
+	<record id="action_muk_ai_agentidoo_onboarding" model="ir.actions.act_window">
+		<field name="name">Agentidoo Onboarding</field>
+		<field name="res_model">muk_ai_agentidoo.onboarding</field>
+		<field name="view_mode">form</field>
+		<field name="target">new</field>
+	</record>
+
+</odoo>
