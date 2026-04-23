@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_ai_agent_search" model="ir.ui.view">
+		<field name="name">muk_ai.agent.search</field>
+		<field name="model">muk_ai.agent</field>
+		<field name="arch" type="xml">
+			<search>
+				<field
+                    name="name"
+                    string="Agent"
+                    filter_domain="['|', ('name', 'ilike', self), ('description', 'ilike', self)]"
+                />
+				<filter
+                    name="read_only"
+                    string="Read-only"
+                    domain="[('read_only', '=', True)]"
+                />
+				<separator/>
+				<filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active', '=', False)]"
+                />
+			</search>
+		</field>
+	</record>
+
+	<record id="view_ai_agent_kanban" model="ir.ui.view">
+		<field name="name">muk_ai.agent.kanban</field>
+		<field name="model">muk_ai.agent</field>
+		<field name="arch" type="xml">
+			<kanban sample="1" default_order="sequence, name">
+				<field name="id"/>
+				<field name="name"/>
+				<field name="description"/>
+				<field name="model_id"/>
+				<field name="image_128"/>
+				<field name="read_only"/>
+				<field name="enable_web_search"/>
+				<field name="enable_image_generation"/>
+				<field name="enable_code_interpreter"/>
+				<field name="active"/>
+				<templates>
+					<t t-name="menu">
+						<div class="container o_kanban_card_manage_pane">
+							<div class="o_kanban_card_manage_section">
+								<a type="open" class="dropdown-item" role="menuitem">Open</a>
+								<a t-if="record.active.raw_value" type="archive" class="dropdown-item" role="menuitem">Archive</a>
+								<a t-if="!record.active.raw_value" type="unarchive" class="dropdown-item" role="menuitem">Unarchive</a>
+							</div>
+						</div>
+					</t>
+					<t t-name="card">
+						<widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+						<div class="d-flex">
+							<aside>
+								<img
+                                    t-attf-src="/web/image/muk_ai.agent/{{record.id.raw_value}}/image_128"
+                                    alt="Agent"
+                                    class="rounded"
+                                    style="width: 64px; height: 64px; object-fit: cover;"
+                                />
+							</aside>
+							<main class="ms-2 flex-grow-1 overflow-hidden">
+								<h4 class="mb-0 text-truncate">
+									<field name="name"/>
+								</h4>
+								<field
+                                    t-if="record.model_id.raw_value"
+                                    name="model_id"
+                                    class="small px-1 text-bg-primary rounded"
+                                />
+							</main>
+						</div>
+						<div class="mt-2">
+							<field name="description" class="text-muted"/>
+						</div>
+						<div class="mt-2 d-flex flex-wrap gap-1">
+							<span t-if="record.read_only.raw_value" class="badge text-bg-secondary">Read-only</span>
+							<span t-if="record.enable_web_search.raw_value" class="badge text-bg-info">
+								<i class="fa fa-globe me-1" title="Web Search" role="img"/>Web
+							</span>
+							<span t-if="record.enable_image_generation.raw_value" class="badge text-bg-info">
+								<i class="fa fa-image me-1" title="Image Generation" role="img"/>Image
+							</span>
+							<span t-if="record.enable_code_interpreter.raw_value" class="badge text-bg-info">
+								<i class="fa fa-code me-1" title="Code Interpreter" role="img"/>Code
+							</span>
+						</div>
+					</t>
+				</templates>
+			</kanban>
+		</field>
+	</record>
+
+	<record id="view_ai_agent_list" model="ir.ui.view">
+		<field name="name">muk_ai.agent.list</field>
+		<field name="model">muk_ai.agent</field>
+		<field name="arch" type="xml">
+			<list>
+				<field name="sequence" widget="handle"/>
+				<field name="name"/>
+				<field name="model_id" optional="show"/>
+				<field name="read_only" widget="boolean_toggle" optional="show"/>
+			</list>
+		</field>
+	</record>
+
+	<record id="view_ai_agent_form" model="ir.ui.view">
+		<field name="name">muk_ai.agent.form</field>
+		<field name="model">muk_ai.agent</field>
+		<field name="arch" type="xml">
+			<form>
+				<sheet>
+					<div class="oe_button_box" name="button_box">
+						<button
+                                name="action_open_sessions"
+								type="object"
+								class="oe_stat_button"
+								icon="fa-comments-o"
+                        >
+							<field name="session_count" widget="statinfo" string="Sessions"/>
+						</button>
+						<button
+                                name="action_open_prompt_revisions"
+								type="object"
+								class="oe_stat_button"
+								icon="fa-history"
+                        >
+							<field name="revision_count" widget="statinfo" string="Prompt History"/>
+						</button>
+					</div>
+					<widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+					<field name="image_1920" widget="image" class="oe_avatar" options="{'preview_image': 'image_128'}"/>
+					<div class="oe_title">
+						<label for="name"/>
+						<h1>
+							<field name="name" placeholder="e.g. Sales Assistant"/>
+						</h1>
+						<field name="description" placeholder="Short description shown to admins..."/>
+					</div>
+					<group>
+						<group string="Model">
+							<field name="model_id" options="{'no_create': True}"/>
+							<field name="supports_web_search" invisible="1"/>
+							<field name="supports_image_generation" invisible="1"/>
+							<field name="supports_code_interpreter" invisible="1"/>
+							<field
+                                name="enable_web_search"
+                                string="Web Search"
+                                widget="boolean_toggle"
+                                invisible="not supports_web_search"
+                            />
+							<field
+                                name="enable_image_generation"
+                                string="Image Generation"
+                                widget="boolean_toggle"
+                                invisible="not supports_image_generation"
+                            />
+							<field
+                                name="enable_code_interpreter"
+                                string="Code Interpreter"
+                                widget="boolean_toggle"
+                                invisible="not supports_code_interpreter"
+                            />
+						</group>
+						<group string="Behavior">
+							<field
+                                name="read_only"
+                                string="Readonly"
+                                widget="boolean_toggle"
+                            />
+							<field name="approval_mode"/>
+							<field
+                                name="tool_filter"
+                                widget="tag_picker"
+                                options="{'options_field': 'tool_filter_options'}"
+                            />
+						</group>
+					</group>
+					<notebook>
+						<page string="System Prompt" name="system_prompt">
+							<field
+                                name="system_prompt"
+                                nolabel="1"
+                                colspan="2"
+                                placeholder="You are an Odoo assistant. ..."
+                            />
+						</page>
+					</notebook>
+				</sheet>
+				<chatter/>
+			</form>
+		</field>
+	</record>
+
+	<record id="action_ai_agent" model="ir.actions.act_window">
+		<field name="name">AI Agents</field>
+		<field name="res_model">muk_ai.agent</field>
+		<field name="view_mode">kanban,list,form</field>
+	</record>
+
+</odoo>

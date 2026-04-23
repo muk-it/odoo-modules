@@ -1,0 +1,340 @@
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<h2 class="oe_slogan">MuK AI</h2>
+		<h3 class="oe_slogan mb-0">Native AI Chat &amp; Agent Runtime for Odoo</h3>
+		<img src="logo.png" style="width: 150px;" class="mx-auto center-block">
+		<h4 class="oe_slogan mt-0" style="font-size: 23px">MuK IT GmbH - www.mukit.at</h4>
+		<div class="mb-4" style="text-align: center;">
+			<span
+				class="btn btn-sm mb-2"
+				style="font-size:14px; font-weight:500; background-color:#243742; color:#fff; cursor:default;"
+			>
+				<i class="fa fa-check"></i> Community
+			</span>
+			<span
+				class="btn btn-sm mb-2"
+				style="font-size:14px; font-weight:500; background-color:#5D8DA8; color:#fff; cursor:default;"
+			>
+				<i class="fa fa-check me-1"></i> Enterprise
+			</span>
+		</div>
+		<div class="oe_demo oe_screenshot"
+			style="max-width: 84%; margin: 16px 8%">
+			<img src="screenshot.png">
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width: 84%; margin: 16px 8%;">
+			<h3 class="oe_slogan">Overview</h3>
+			<p class="oe_mt32">
+				Bring an agentic AI assistant inside Odoo. <strong>MuK AI</strong> is the
+				base module that wires a configurable LLM provider, a session-based
+				agent runtime, and a native OWL chat client into your existing Odoo
+				instance. The assistant talks to your data through the same
+				<code>muk_mcp</code> tool registry your external AI clients already use
+				&mdash; one source of truth, one permission model, one audit trail.
+			</p>
+			<p>
+				Ships with two first-class providers (<strong>OpenAI</strong> and
+				<strong>Anthropic</strong>), live token streaming, human-in-the-loop
+				<code>ask_user</code> support, per-agent tool filters, read-only scope
+				enforcement, and a daily usage cron. Adding a new provider is a
+				single-file drop-in &mdash; the built-in provider registry drives
+				dispatch, settings Selection, and default model/URL fallbacks.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">In-Odoo Chat Client</h3>
+			<p>
+				A full OWL-based chat action lives under <em>MuK AI &gt; Chat</em>.
+				Sessions auto-save to the database, stream replies live via the
+				Odoo bus, and render tool calls inline as collapsible cards so
+				users always see what the model is doing. Markdown rendering
+				covers headings, lists, tables, inline code, and fenced code
+				blocks with Prism syntax highlighting. A systray icon surfaces
+				running sessions across the UI, and a floating chat window
+				(Discuss-style) lets users keep talking while navigating
+				other views.
+			</p>
+			<p>
+				Keyboard-first by design: <kbd>Enter</kbd> sends,
+				<kbd>Shift</kbd>+<kbd>Enter</kbd> adds a newline, and a single
+				Send/Stop toggle button handles mid-stream cancellation. Auto-scroll
+				pauses when the user scrolls up, so reading past replies is not
+				interrupted by the next delta.
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_chat.png">
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Multi-Provider Architecture</h3>
+			<p>
+				The provider layer is a thin Odoo <code>AbstractModel</code>
+				dispatcher plus a <code>providers/</code> Python package that
+				registers one class per provider. Each class declares
+				<code>name / label / default_model / default_url</code>,
+				implements <code>headers()</code> and <code>request()</code>, and
+				inherits shared HTTP + SSE streaming plumbing from
+				<code>ProviderBase</code>. The settings <em>Selection</em>, default
+				model fallbacks, and dispatch are all derived from the same
+				<code>REGISTRY</code> &mdash; adding a new provider is one new
+				file and one line.
+			</p>
+			<table style="width:100%; border-collapse:collapse; margin-top:16px; font-size:14px;">
+				<thead>
+					<tr style="background-color:#f5f5f5; text-align:left;">
+						<th style="padding:10px 12px; border-bottom:2px solid #ddd;">Provider</th>
+						<th style="padding:10px 12px; border-bottom:2px solid #ddd;">Default model</th>
+						<th style="padding:10px 12px; border-bottom:2px solid #ddd;">Streaming</th>
+						<th style="padding:10px 12px; border-bottom:2px solid #ddd;">Notes</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>openai</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>gpt-4o-mini</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">SSE</span></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">OpenAI Responses API; temperature skipped for reasoning models</td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>anthropic</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>claude-sonnet-4-5</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">SSE</span></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Messages API; in-dispatcher adapter for tool_use / tool_result blocks</td>
+					</tr>
+				</tbody>
+			</table>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_settings.png">
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Agents &amp; Tool Filters</h3>
+			<p>
+				An <strong>Agent</strong> is a named preset: system prompt, model
+				override, temperature, history limit, read-only flag, and a tool
+				filter that restricts which MCP tools the LLM can call. Every chat
+				session inherits from an agent, so you can ship a &ldquo;Sales
+				Assistant&rdquo; with write access to leads and a
+				&ldquo;Read-only Analyst&rdquo; that cannot mutate anything &mdash;
+				the latter is enforced server-side through the MCP scope check, not
+				just a prompt instruction.
+			</p>
+			<p>
+				Record rules keep each user's sessions private (own-only for
+				<em>AI User</em>, full access for <em>AI Manager</em>), a per-user
+				rate limit throttles session creation, and a daily usage cron
+				aggregates token consumption per user for cost attribution.
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_agent.png">
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Tool Dispatch via muk_mcp</h3>
+			<p>
+				Agents call exactly the same tool surface as your external MCP
+				clients &mdash; no duplicate catalog, no divergence. The MuK AI
+				agent registry pulls tools from <code>muk_mcp</code> filtered by
+				registry (<code>ai</code>), and a handful of UI-specific tools
+				(<code>open_record</code>, <code>open_view</code>,
+				<code>open_action</code>, <code>show_notification</code>) are
+				registered under the <code>odoo</code> registry for the in-Odoo
+				agent only. The chat UI auto-dispatches any returned
+				<code>ir.actions.*</code> descriptor, so the model can navigate
+				the user through the UI as part of a reply.
+			</p>
+			<p>
+				Built-in <code>ask_user</code> intercept pauses the session in
+				<em>waiting_user</em> state when the LLM needs clarification. The
+				user's answer is fed back as a <code>function_call_output</code>
+				so the model resumes the turn exactly where it left off.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Streaming &amp; Bus Events</h3>
+			<p>
+				Replies stream over the Odoo bus as they arrive from the provider.
+				Each session inherits <code>bus.listener.mixin</code> and routes
+				events through the owner's <em>partner</em> channel &mdash; not a
+				guessable string &mdash; so sessions cannot be eavesdropped by
+				other authenticated users. Text is delivered as
+				<code>text_delta</code> events; tool calls stream as
+				<code>tool_call_start</code> + <code>tool_call_args_delta</code>
+				so the chat UI shows the tool card with live-filling arguments
+				before the tool even fires.
+			</p>
+			<p>
+				A per-stream idle watchdog (configurable via
+				<code>muk_ai.stream_idle_timeout</code>, default 45s) aborts dead
+				connections and marks the session as errored. Runaway loops are
+				capped by <code>MAX_ITERATIONS</code> per turn, and an
+				<code>ask_user</code>-at-cap edge is handled gracefully so resumed
+				sessions do not get stuck.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Security &amp; Access</h3>
+			<p>
+				<strong>AI User</strong> and <strong>AI Manager</strong> groups
+				are added out-of-the-box, and the <em>AI User</em> group is
+				implied by the base internal-user group &mdash; so every internal
+				user can chat by default, while menus remain gated. Record rules
+				scope sessions to their owner; managers see everything.
+				<code>open_action</code> honours per-action
+				<code>groups_id</code> so the model cannot hand the user a
+				descriptor they would not be allowed to reach through the menu.
+			</p>
+			<p>
+				Every session carries an <em>audit-ready</em> tool log: user
+				messages, tool calls, tool results, assistant text, ask_user
+				prompts, and answers, all JSON-serialised. Combined with
+				<code>muk_mcp</code>'s own log, any AI-driven write on your data
+				is traceable end to end.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Settings</h3>
+			<p>
+				Configure everything from <em>Settings &gt; General Settings &gt;
+				MuK AI</em>: provider, API key, optional API URL override, model,
+				max output tokens, request timeout, per-user session rate limit,
+				and stream idle timeout. A one-click <strong>Test Connection</strong>
+				button hits the selected provider's API with a tiny prompt and
+				reports success/failure without leaving the settings page.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container oe_dark d-flex justify-content-around align-items-lg-center flex-column flex-lg-row">
+	<div class="d-flex flex-column m-3 ms-lg-4">
+		<h3 class="oe_slogan mb-3 mt-3 text-left">
+			<i class="fa fa-comments mr8"></i>Want more?
+		</h3>
+		<p>
+			Are you having troubles with your Odoo integration? Or do you feel
+			your system lacks of essential features? <br>If your answer is <b>YES</b>
+			to one of the above questions, feel free to contact us at anytime
+			with your inquiry. <br>We are looking forward to discuss your
+			needs and plan the next steps with you. <br>
+		</p>
+	</div>
+	<div class="oe_slogan d-flex flex-column ms-1 me-1 ms-lg-4 me-lg-4 flex-grow-1">
+		<a class="btn btn-primary btn-lg m-3" href="mailto:sale@mukit.at?subject=Request%20Quote" style="font-size:1.2rem">
+			<i class="fa fa-envelope me-1"></i>REQUEST QUOTE
+		</a>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<h3 class="oe_slogan">Our Services</h3>
+		<div class="d-flex justify-content-between">
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="service_development.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3
+						class="oe_slogan"
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Development
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="service_integration.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3
+						class="oe_slogan"
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Integration
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="service_infrastructure.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3
+						class="oe_slogan"
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Infrastructure
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="service_training.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3
+						class="oe_slogan"
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Training
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="service_support.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3
+						class="oe_slogan"
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Support
+					</h3>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>

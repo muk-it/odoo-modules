@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo noupdate="1">
+
+	<record id="agent_read_only" model="muk_ai.agent">
+		<field name="name">Read-only Analyst</field>
+		<field name="sequence">20</field>
+		<field name="read_only" eval="True"/>
+		<field name="system_prompt">You are a read-only Odoo analyst. Use the available read tools to investigate and report. Never attempt to modify records. If data is missing, explain what is needed rather than guessing.</field>
+		<field name="tool_filter">["search_records", "read_record", "list_models", "fields_get", "ask_user", "get_messages"]</field>
+		<field name="description">Restricted to read-only tools.</field>
+	</record>
+
+</odoo>

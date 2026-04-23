@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_ai_agent_revision_list" model="ir.ui.view">
+		<field name="name">muk_ai.agent.revision.list</field>
+		<field name="model">muk_ai.agent.revision</field>
+		<field name="arch" type="xml">
+			<list create="false" edit="false">
+				<field name="create_date" string="Edited on"/>
+				<field name="create_uid" string="Edited by"/>
+				<field name="agent_id" optional="hide"/>
+				<field name="preview"/>
+			</list>
+		</field>
+	</record>
+
+	<record id="view_ai_agent_revision_form" model="ir.ui.view">
+		<field name="name">muk_ai.agent.revision.form</field>
+		<field name="model">muk_ai.agent.revision</field>
+		<field name="arch" type="xml">
+			<form create="false" edit="false">
+				<header>
+					<button
+                        name="action_compare"
+                        type="object"
+                        string="Compare to Current"
+                        class="btn-primary"
+                    />
+					<button
+                        name="action_restore"
+                        type="object"
+                        string="Restore This Version"
+                        confirm="Replace the current system prompt with this revision?"
+                    />
+				</header>
+				<sheet>
+					<group>
+						<group>
+							<field name="agent_id"/>
+						</group>
+						<group>
+							<field name="create_uid" string="Edited by"/>
+							<field name="create_date" string="Edited on"/>
+						</group>
+					</group>
+					<group string="System Prompt">
+					    <field name="body" colspan="2" nolabel="1" readonly="1"/>
+					</group>
+				</sheet>
+			</form>
+		</field>
+	</record>
+
+</odoo>

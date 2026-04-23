@@ -1,0 +1,2 @@
+class StreamCancelled(Exception):
+    pass

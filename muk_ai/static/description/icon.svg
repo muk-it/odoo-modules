@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' width='512' height='512'>
+  <title>Navy body, yellow details</title>
+  <g transform='translate(4 13) scale(21)' fill='none'
+     stroke-linecap='round' stroke-linejoin='round'>
+    <rect width='16' height='12' x='4' y='8' rx='2' fill='#2A3B8A' stroke='#2A3B8A' stroke-width='1.8'/>
+    <path d='M12 8V4H8' stroke='#2A3B8A' stroke-width='2.4'/>
+    <circle cx='8' cy='4' r='0.9' fill='#FAB04A' stroke='#FAB04A' stroke-width='1.8'/>
+    <path d='M2 14h2' stroke='#FAB04A' stroke-width='2.4'/>
+    <path d='M20 14h2' stroke='#FAB04A' stroke-width='2.4'/>
+    <path d='M15 13v2' stroke='#FAB04A' stroke-width='2.4'/>
+    <path d='M9 13v2' stroke='#FAB04A' stroke-width='2.4'/>
+  </g>
+</svg>
