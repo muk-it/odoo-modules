@@ -11,7 +11,7 @@
         client action, session-scoped approval gate for risky writes,
         and agents with per-user access rules.
     ''',
-    'version': '19.0.1.1.82',
+    'version': '19.0.1.0.0',
     'category': 'Extra Tools',
     'license': 'LGPL-3',
     'author': 'MuK IT',
