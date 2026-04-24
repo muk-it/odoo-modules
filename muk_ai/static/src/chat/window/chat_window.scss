@@ -182,6 +182,8 @@
     padding: 0.75rem;
 
     .mk_bubble { max-width: 92%; padding: 0.55rem 0.75rem; font-size: 0.88rem; }
+    .mk_bubble_assistant { max-width: 100%; padding: 0.1rem 0 0.25rem; font-size: 0.88rem; }
+    .mk_bubble_assistant.mk_ask_simple { padding: 0.55rem 0.75rem; }
     .mk_tool   { max-width: 92%; }
     .mk_turn   { margin-bottom: 0.75rem; }
 }

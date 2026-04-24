@@ -122,6 +122,22 @@
                                     </div>
                                 </div>
                             </t>
+                            <t t-foreach="session.state.pendingMessages" t-as="queued" t-key="queued_index">
+                                <div class="mk_turn mk_turn_user mk_turn_queued">
+                                    <div class="mk_bubble mk_bubble_user mk_bubble_queued" t-att-title="queued.queued_at || ''">
+                                        <i class="fa fa-clock-o me-2"/>
+                                        <span t-esc="queued.content"/>
+                                        <button
+                                            class="btn btn-sm mk_queue_cancel"
+                                            type="button"
+                                            title="Cancel queued message"
+                                            t-on-click="() => session.cancelQueued(queued_index)"
+                                        >
+                                            <i class="fa fa-times"/>
+                                        </button>
+                                    </div>
+                                </div>
+                            </t>
                             <t t-if="session.state.error">
                                 <div class="alert alert-danger rounded-3 mt-2 small">
                                     <strong><i class="fa fa-exclamation-circle me-1"/>Error:</strong>
@@ -141,6 +157,7 @@
                         canSend="canSend"
                         canStop="canStop"
                         canAttach="canAttach"
+                        isQueueing="isQueueing"
                         attachments="session.state.pendingAttachments"
                         focusToken="session.state.focusToken"
                         onInput.bind="onInputChange"

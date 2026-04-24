@@ -19,6 +19,7 @@ export class ChatComposer extends Component {
         disabled: { type: Boolean, optional: true },
         canSend: { type: Boolean, optional: true },
         canStop: { type: Boolean, optional: true },
+        isQueueing: { type: Boolean, optional: true },
         attachments: { type: Array, optional: true },
         canAttach: { type: Boolean, optional: true },
         onInput: { type: Function },
@@ -34,6 +35,7 @@ export class ChatComposer extends Component {
         disabled: false,
         canSend: false,
         canStop: false,
+        isQueueing: false,
         attachments: [],
         canAttach: false,
     };
@@ -123,12 +125,12 @@ export class ChatComposer extends Component {
         this.props.onInput(event.target.value);
     }
     onSendOrStop() {
-        if (this.props.canStop && this.props.onStop) {
-            this.props.onStop();
-            return;
-        }
         if (this.props.canSend) {
             this.props.onSend();
+            return;
+        }
+        if (this.props.canStop && this.props.onStop) {
+            this.props.onStop();
         }
     }
     onLabelClick(event) {

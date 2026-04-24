@@ -63,12 +63,12 @@
                 />
                 <button
                     class="btn mk_send rounded-circle"
-                    t-att-class="props.canStop ? 'mk_stop' : ''"
+                    t-att-class="(props.canSend and props.isQueueing) ? 'mk_queue' : (props.canStop and !props.canSend) ? 'mk_stop' : ''"
                     t-on-click="() => this.onSendOrStop()"
                     t-att-disabled="(!props.canStop and !props.canSend) ? 'disabled' : null"
-                    t-att-title="props.canStop ? 'Stop' : 'Send'"
+                    t-att-title="(props.canSend and props.isQueueing) ? 'Queue (sends after current turn)' : (props.canStop and !props.canSend) ? 'Stop' : 'Send'"
                 >
-                    <i class="fa" t-att-class="props.canStop ? 'fa-stop' : 'fa-arrow-up'"/>
+                    <i class="fa" t-att-class="(props.canSend and props.isQueueing) ? 'fa-clock-o' : (props.canStop and !props.canSend) ? 'fa-stop' : 'fa-arrow-up'"/>
                 </button>
             </div>
         </div>

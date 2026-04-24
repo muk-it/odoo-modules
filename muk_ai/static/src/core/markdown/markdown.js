@@ -69,6 +69,69 @@ function buildRenderer() {
         }
     });
 
+    const RECORD_RE = /\b([a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+),(\d+)\b/g;
+    md.core.ruler.after('inline', 'muk_ai_record_links', (state) => {
+        const tokens = state.tokens;
+        for (const tok of tokens) {
+            if (tok.type !== 'inline' || !tok.children) {
+                continue;
+            }
+            const newChildren = [];
+            let linkDepth = 0;
+            for (const child of tok.children) {
+                if (child.type === 'link_open') {
+                    linkDepth++;
+                    newChildren.push(child);
+                    continue;
+                }
+                if (child.type === 'link_close') {
+                    linkDepth = Math.max(0, linkDepth - 1);
+                    newChildren.push(child);
+                    continue;
+                }
+                if (linkDepth > 0 || child.type !== 'text') {
+                    newChildren.push(child);
+                    continue;
+                }
+                const text = child.content;
+                RECORD_RE.lastIndex = 0;
+                let lastIndex = 0;
+                let matched = false;
+                let match;
+                while ((match = RECORD_RE.exec(text)) !== null) {
+                    matched = true;
+                    const before = text.slice(lastIndex, match.index);
+                    if (before) {
+                        const t = new state.Token('text', '', 0);
+                        t.content = before;
+                        newChildren.push(t);
+                    }
+                    const [whole, model, id] = match;
+                    const lo = new state.Token('link_open', 'a', 1);
+                    lo.attrSet('href', `/odoo/${model}/${id}`);
+                    lo.attrSet('class', 'mk_record_link');
+                    newChildren.push(lo);
+                    const lt = new state.Token('text', '', 0);
+                    lt.content = whole;
+                    newChildren.push(lt);
+                    newChildren.push(new state.Token('link_close', 'a', -1));
+                    lastIndex = match.index + whole.length;
+                }
+                if (!matched) {
+                    newChildren.push(child);
+                    continue;
+                }
+                const tail = text.slice(lastIndex);
+                if (tail) {
+                    const t = new state.Token('text', '', 0);
+                    t.content = tail;
+                    newChildren.push(t);
+                }
+            }
+            tok.children = newChildren;
+        }
+    });
+
     md.renderer.rules.link_open = (tokens, idx, options, env, self) => {
         const token = tokens[idx];
         const hrefIdx = token.attrIndex('href');

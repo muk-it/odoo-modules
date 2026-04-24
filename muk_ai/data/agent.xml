@@ -66,29 +66,99 @@ To navigate to a menu the user sees, walk the metadata yourself:
 	<record id="agent_general_suggestion_explore" model="muk_ai.agent.suggestion">
 		<field name="agent_id" ref="agent_general"/>
 		<field name="sequence">10</field>
-		<field name="label">Explore</field>
-		<field name="prompt">List all installed modules.</field>
-	</record>
+		<field name="label">Today</field>
+		<field name="prompt"><![CDATA[Today's overview — focused triage for right now.
 
-	<record id="agent_general_suggestion_analyze" model="muk_ai.agent.suggestion">
-		<field name="agent_id" ref="agent_general"/>
-		<field name="sequence">20</field>
-		<field name="label">Analyze</field>
-		<field name="prompt">How many sales orders were confirmed this month?</field>
+1. **Activities overdue or due today** (assigned to me)
+   - Read **all** matching activities. If there are more than 5, show only the first 5 in the table but still analyze the full list to pick the most urgent.
+   - Table columns: activity type, deadline (ISO), record as `Display Name (model,id)`, days overdue (0 = today). Sort by days overdue descending.
+   - If truncated, add `(+N more)` below the table.
+   - After the table, pick **the single most urgent** from the full list and explain in one sentence why, with the record reference.
+
+2. **Inbox highlights** — summarize my unread Discuss messages. **Do not mark anything as read** (no calls to `set_message_done`, `mark_as_read`, `channel_fetched`, or similar).
+   - Surface up to 5 of the most relevant: @mentions of me first, then DMs with a clear question or decision request, then channel threads that look unresolved.
+   - Per item: sender, one-line gist, and a reference to the record the message is on as `Display Name (model,id)` so I can jump to it.
+   - End with a one-liner: total unread across mentions, DMs, and channels.
+
+3. **Calendar today** — short list of today's events I attend: time range, title, attendees count.
+
+Keep it compact: small Markdown tables, no filler. Skip any section with zero results in a single line.]]></field>
 	</record>
 
 	<record id="agent_general_suggestion_summarize" model="muk_ai.agent.suggestion">
 		<field name="agent_id" ref="agent_general"/>
 		<field name="sequence">30</field>
-		<field name="label">Summarize</field>
-		<field name="prompt">Summarize today's calendar events.</field>
+		<field name="label">Pipeline</field>
+		<field name="prompt"><![CDATA[My morning sales briefing — what's my pipeline status and who should I call today?
+
+Scope: open opportunities I own (`crm.lead` where I am the salesperson, not won/lost). Reference each opportunity as `Customer Name (crm.lead,id)` so I can click through.
+
+1. **Status line** — one sentence with: total open opportunities, total expected revenue (sum), weighted pipeline (sum of `expected_revenue * probability / 100`), and how that compares to last month.
+
+2. **Call list today** — the top 5 deals to contact first, ranked. For each: customer, amount, stage, and **why now** in one sentence. Priority order:
+   - **Closing this week** — expected close in the next 7 days, still open.
+   - **Customer waiting** — the last message on the opp (`mail.message` on `crm.lead`, ignore auto/system) is from the customer, not from me.
+   - **Slipping** — expected close date already past, still open.
+   - **Hot but quiet** — amount in the top 20% of my pipeline, no activity in 7+ days.
+
+3. **Risk watch** — opportunities where the close date is in the past AND there has been no activity in 14+ days: customer, amount, days slipped, last activity type. These are at high risk of being lost.
+
+4. **Pipeline by stage** — compact 1-line-per-stage table: stage name, count, sum of expected revenue.
+
+Keep each section tight. If a section is empty, say so in a single line and move on.]]></field>
 	</record>
 
 	<record id="agent_general_suggestion_draft" model="muk_ai.agent.suggestion">
 		<field name="agent_id" ref="agent_general"/>
 		<field name="sequence">40</field>
-		<field name="label">Draft</field>
-		<field name="prompt">Draft a short follow-up email for the last 3 invoices past their due date.</field>
+		<field name="label">Tasks</field>
+		<field name="prompt"><![CDATA[My project task triage — what's overdue, what's due this week, what's blocked.
+
+Scope: `project.task` assigned to me (`user_ids` contains the current user), excluding closed stages (`stage_id.fold = False` where available, else skip stages named Done / Cancelled / similar).
+
+1. **Overdue** — `date_deadline` in the past.
+   - Read all matching tasks. If there are more than 5, show only the first 5 in the table but still analyze the full list to pick the most urgent.
+   - Table columns: task as `Task Name (project.task,id)`, project, deadline (ISO), days overdue, stage, priority.
+   - Sort by days overdue descending, then priority.
+   - If truncated, add `(+N more)` below the table.
+   - After the table, pick **the single most urgent** from the full list and explain in one sentence why.
+
+2. **Due this week** — `date_deadline` in the next 7 days, excluding overdue. Same columns, sort by deadline ascending.
+
+3. **No deadline set** — my open tasks with no `date_deadline`. Top 10 by priority then most recently updated. These need scheduling.
+
+4. **Waiting or blocked** — tasks where either:
+   - the last message (`mail.message`) on the task is from someone else asking for input, or
+   - the task has unfinished dependencies (`depend_on_ids` not all in a closed stage).
+   For each: task, who's waiting or what's blocking, days waiting.
+
+End with a footer line: `X open · Y overdue · Z due this week · W unscheduled`.]]></field>
+	</record>
+
+	<record id="agent_general_suggestion_sales" model="muk_ai.agent.suggestion">
+		<field name="agent_id" ref="agent_general"/>
+		<field name="sequence">50</field>
+		<field name="label">Sales</field>
+		<field name="prompt"><![CDATA[Sales figures report — snapshot across the key periods.
+
+Scope: posted customer invoices (`account.move`, type `out_invoice`, state `posted`); subtract matching credit notes (`out_refund`). Use the company default currency; do not convert.
+
+1. **Headline** (tax-excluded totals). For each period show: total invoiced, number of invoices, average invoice value.
+   - Today
+   - Week-to-date (Monday → today)
+   - Month-to-date
+   - Quarter-to-date
+   - Year-to-date
+
+2. **Month-over-month** — current MTD vs the same day-of-month last month (e.g. if today is the 12th, compare against the 1st–12th of last month). Show % change on revenue.
+
+3. **Top 5 customers this month** — customer as `Display Name (res.partner,id)`, total invoiced, invoice count. Sort by invoiced descending.
+
+4. **Top 5 products this month** — invoice lines grouped by product: product, quantity sold, revenue. Sort by revenue descending.
+
+5. **By salesperson this month** — salesperson, invoice count, revenue. Sort by revenue descending.
+
+End with a one-line observation if something looks off (e.g. "MTD is trending ~X% below last month's pace at this point" or "no invoices posted yet this week").]]></field>
 	</record>
 
 </odoo>

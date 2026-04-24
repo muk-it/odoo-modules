@@ -16,6 +16,7 @@ const SESSION_READ_FIELDS = [
     'iteration_count', 'total_input_tokens', 'total_output_tokens',
     'last_input_tokens', 'context_window', 'agent_id', 'total_cost',
     'override_approval_mode', 'effective_approval_mode',
+    'pending_user_messages',
 ];
 
 export const SLASH_COMMANDS = [
@@ -75,6 +76,7 @@ export function useAiSession(options = {}) {
         viewContext: null,
         approvalMode: false,
         effectiveApprovalMode: 'ask',
+        pendingMessages: [],
     });
 
     let busHandler = null;
@@ -196,6 +198,8 @@ export function useAiSession(options = {}) {
             handleUiAction(event.payload);
         } else if (event.type === 'view_context') {
             state.viewContext = (event.payload || {}).view_context || null;
+        } else if (event.type === 'queue') {
+            state.pendingMessages = (event.payload || {}).pending || [];
         }
     }
 
@@ -267,6 +271,7 @@ export function useAiSession(options = {}) {
         const agent = record.agent_id;
         state.agentId = Array.isArray(agent) ? agent[0] : null;
         state.agentName = Array.isArray(agent) ? agent[1] : '';
+        state.pendingMessages = record.pending_user_messages || [];
         rebuildLogKeys();
     }
 
@@ -294,6 +299,7 @@ export function useAiSession(options = {}) {
         state.streamingText = '';
         state.streamingReasoning = '';
         state.streamingTools = [];
+        state.pendingMessages = snapshot.pending_user_messages || [];
         rebuildLogKeys();
     }
 
@@ -304,11 +310,11 @@ export function useAiSession(options = {}) {
     function canSend() {
         const hasContent = state.input.trim().length > 0
             || state.pendingAttachments.length > 0;
-        return !!state.sessionId && hasContent && state.status !== 'running';
+        return !!state.sessionId && hasContent;
     }
 
     function canAttach() {
-        return !!state.sessionId && state.status !== 'running';
+        return !!state.sessionId;
     }
 
     function canStop() {
@@ -316,7 +322,14 @@ export function useAiSession(options = {}) {
     }
 
     function composerDisabled() {
-        return state.status === 'running';
+        return false;
+    }
+
+    function isQueueing() {
+        return state.status === 'running' || (
+            state.status === 'waiting'
+            && (state.pendingAsk || {}).kind === 'approval'
+        );
     }
 
     function onInputChange(value) {
@@ -334,12 +347,39 @@ export function useAiSession(options = {}) {
             state.focusToken += 1;
             return;
         }
-        await maybeAutoCompact();
         const message = state.input;
         const attachments = [...state.pendingAttachments];
         const attachmentIds = attachments.map((a) => a.id);
         state.input = '';
         state.pendingAttachments = [];
+        if (isQueueing()) {
+            const optimisticEntry = {
+                content: message,
+                attachment_ids: attachmentIds,
+                queued_at: new Date().toISOString(),
+            };
+            state.pendingMessages = [...state.pendingMessages, optimisticEntry];
+            state.focusToken += 1;
+            requestScroll();
+            try {
+                const snapshot = await orm.call(
+                    'muk_ai.session', 'enqueue_message',
+                    [state.sessionId, message],
+                    { attachment_ids: attachmentIds },
+                );
+                applySnapshot(snapshot);
+            } catch (error) {
+                notification.add(
+                    _t('Failed to queue message: %s', formatError(error)),
+                    { type: 'danger' },
+                );
+                state.pendingMessages = state.pendingMessages.filter(
+                    (m) => m !== optimisticEntry,
+                );
+            }
+            return;
+        }
+        await maybeAutoCompact();
         const wasWaitingQuestion = state.status === 'waiting'
             && (state.pendingAsk || {}).kind === 'question';
         const optimistic = wasWaitingQuestion
@@ -379,6 +419,35 @@ export function useAiSession(options = {}) {
         }
         state.focusToken += 1;
         requestScroll();
+    }
+
+    async function cancelQueued(index) {
+        if (!state.sessionId) {
+            return;
+        }
+        const removed = state.pendingMessages[index];
+        state.pendingMessages = state.pendingMessages.filter(
+            (_m, i) => i !== index,
+        );
+        try {
+            const snapshot = await orm.call(
+                'muk_ai.session', 'cancel_queued',
+                [state.sessionId, index],
+            );
+            applySnapshot(snapshot);
+        } catch (error) {
+            if (removed) {
+                state.pendingMessages = [
+                    ...state.pendingMessages.slice(0, index),
+                    removed,
+                    ...state.pendingMessages.slice(index),
+                ];
+            }
+            notification.add(
+                _t('Failed to cancel queued message: %s', formatError(error)),
+                { type: 'danger' },
+            );
+        }
     }
 
     async function onStop() {
@@ -899,6 +968,8 @@ export function useAiSession(options = {}) {
         canAttach,
         canStop,
         composerDisabled,
+        isQueueing,
+        cancelQueued,
         runUnpin,
         setApprovalMode,
         cycleApprovalMode,

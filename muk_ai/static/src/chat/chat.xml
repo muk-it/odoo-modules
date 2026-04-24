@@ -151,7 +151,7 @@
                             <t t-foreach="suggestions" t-as="s" t-key="s_index">
                                 <button class="mk_suggestion" t-on-click="() => this.onStartWithPrompt(s.prompt)">
                                     <span class="mk_suggestion_label" t-esc="s.label"/>
-                                    <span t-esc="s.prompt"/>
+                                    <span class="mk_suggestion_preview" t-esc="s.prompt"/>
                                 </button>
                             </t>
                         </div>
@@ -169,7 +169,7 @@
                         </button>
                         <div class="mk_messages flex-grow-1" t-ref="scrollArea">
                         <div class="mk_messages_inner">
-                            <t t-if="!renderedTurns.length and session.state.status !== 'running'">
+                            <t t-if="!renderedTurns.length and session.state.status !== 'running' and !session.state.pendingMessages.length">
                                 <div class="mk_empty_inline d-flex flex-column align-items-center justify-content-center text-center py-5">
                                     <div class="mk_empty_badge d-inline-flex align-items-center justify-content-center rounded-circle shadow-sm mb-3">
                                         <i class="fa fa-comments-o"/>
@@ -200,7 +200,7 @@
                                         />
                                     </t>
                                     <div
-                                        class="mk_bubble mk_bubble_assistant mk_markdown mk_streaming shadow-sm"
+                                        class="mk_bubble mk_bubble_assistant mk_markdown mk_streaming"
                                         t-if="session.state.streamingText or session.state.streamingReasoning or !session.state.streamingTools.length"
                                     >
                                         <t t-if="session.state.streamingText" t-out="renderMarkdown(session.state.streamingText)"/>
@@ -208,6 +208,22 @@
                                             <span class="mk_dots"><span/><span/><span/></span>
                                             <span class="mk_thinking_status" t-esc="session.state.streamingReasoning ? session.latestReasoningLine() : 'Thinking'"/>
                                         </span>
+                                    </div>
+                                </div>
+                            </t>
+                            <t t-foreach="session.state.pendingMessages" t-as="queued" t-key="queued_index">
+                                <div class="mk_turn mk_turn_user mk_turn_queued">
+                                    <div class="mk_bubble mk_bubble_user mk_bubble_queued shadow-sm" t-att-title="queued.queued_at || ''">
+                                        <i class="fa fa-clock-o me-2"/>
+                                        <span t-esc="queued.content"/>
+                                        <button
+                                            class="btn btn-sm mk_queue_cancel"
+                                            type="button"
+                                            title="Cancel queued message"
+                                            t-on-click="() => session.cancelQueued(queued_index)"
+                                        >
+                                            <i class="fa fa-times"/>
+                                        </button>
                                     </div>
                                 </div>
                             </t>
@@ -229,6 +245,7 @@
                             canSend="canSend"
                             canStop="canStop"
                             canAttach="canAttach"
+                            isQueueing="isQueueing"
                             attachments="session.state.pendingAttachments"
                             focusToken="session.state.focusToken"
                             onInput.bind="onInputChange"
@@ -289,7 +306,7 @@
             <div class="mk_turn mk_turn_assistant">
                 <t t-foreach="turn.blocks" t-as="block" t-key="block.callId || block.at || block_index">
                     <t t-if="block.type === 'text'">
-                        <div class="mk_bubble mk_bubble_assistant mk_markdown shadow-sm" t-att-title="block.at || turn.at || ''">
+                        <div class="mk_bubble mk_bubble_assistant mk_markdown" t-att-title="block.at || turn.at || ''">
                             <button class="mk_msg_copy" type="button"
                                     title="Copy message"
                                     t-on-click="() => session.copyText(block.text)">

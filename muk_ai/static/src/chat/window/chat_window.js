@@ -104,6 +104,9 @@ export class ChatWindow extends Component {
     get composerDisabled() {
         return this.session.composerDisabled();
     }
+    get isQueueing() {
+        return this.session.isQueueing();
+    }
     get inputPlaceholder() {
         return inputPlaceholder(this.session.state, _t('Message…'));
     }

@@ -153,6 +153,16 @@ class AISession(models.Model):
         ),
     )
 
+    pending_user_messages = fields.Json(
+        string="Queued User Messages",
+        readonly=True,
+        help=(
+            "FIFO queue of user messages typed while the session was busy. "
+            "Each entry is `{content, attachment_ids, queued_at}`. Drained "
+            "one-by-one at the end of `_run_to_completion`."
+        ),
+    )
+
     error_message = fields.Text(
         string="Error",
         readonly=True,
@@ -478,6 +488,30 @@ class AISession(models.Model):
             {'state': state} | ({'error': error} if error else {})
         )
 
+    def _recover_if_stuck(self, idle_seconds=90):
+        if self.state != 'running' or not self.write_date:
+            return False
+        idle = (fields.Datetime.now() - self.write_date).total_seconds()
+        if idle < idle_seconds:
+            return False
+        had_queue = bool(self.pending_user_messages)
+        self.write({
+            'state': 'error',
+            'error_message': _(
+                "Previous turn timed out after %(idle)s seconds with no "
+                "activity. Session reset.",
+                idle=int(idle),
+            ),
+            'pending_user_messages': [],
+        })
+        self._publish_event('state', {
+            'state': 'error',
+            'error': self.error_message,
+        })
+        if had_queue:
+            self._publish_event('queue', {'pending': []})
+        return True
+
     def _get_snapshot(self):
         return {
             'id': self.id,
@@ -488,6 +522,7 @@ class AISession(models.Model):
             'attachments': [a._ai_describe() for a in self.attachment_ids],
             'total_input_cost': self.total_input_cost,
             'total_output_cost': self.total_output_cost,
+            'pending_user_messages': self.pending_user_messages or [],
             **self._state_metrics(),
         }
 
@@ -1002,6 +1037,16 @@ class AISession(models.Model):
         return None if paused or wait_for_user else has_terminating
 
     def _run_to_completion(self, has_terminating=False):
+        while True:
+            self._run_iterations(has_terminating=has_terminating)
+            if self.state != 'done':
+                return
+            if not self._drain_pending_message():
+                return
+            self._transition_state('running')
+            has_terminating = False
+
+    def _run_iterations(self, has_terminating=False):
         provider, model = self._effective_provider(), self._effective_model()
         agent, tool_schema = self.agent_id, self._get_tool_schema()
         for _iteration in range(MAX_ITERATIONS):
@@ -1026,6 +1071,44 @@ class AISession(models.Model):
             has_terminating = has_terminating or result
         if self.state == 'running':
             self._transition_state('error', error=_("Maximum iterations reached."))
+
+    # ----------------------------------------------------------
+    # Queue
+    # ----------------------------------------------------------
+
+    def enqueue_message(self, user_message, attachment_ids=None):
+        queue = list(self.pending_user_messages or [])
+        queue.append({
+            'content': user_message or '',
+            'attachment_ids': list(attachment_ids or []),
+            'queued_at': fields.Datetime.now().isoformat(),
+        })
+        self.write({'pending_user_messages': queue})
+        self._publish_event('queue', {'pending': queue})
+        return self._get_snapshot()
+
+    def cancel_queued(self, index):
+        queue = list(self.pending_user_messages or [])
+        if 0 <= index < len(queue):
+            queue.pop(index)
+            self.write({'pending_user_messages': queue})
+            self._publish_event('queue', {'pending': queue})
+        return self._get_snapshot()
+
+    def _drain_pending_message(self):
+        queue = list(self.pending_user_messages or [])
+        if not queue:
+            return False
+        contents = [q.get('content') or '' for q in queue]
+        attachment_ids = [
+            aid for q in queue for aid in (q.get('attachment_ids') or [])
+        ]
+        combined = '\n\n'.join(c for c in contents if c.strip())
+        self.write({'pending_user_messages': []})
+        self._publish_event('queue', {'pending': []})
+        attachments = self._resolve_attachments(attachment_ids)
+        self._enqueue_user_turn(combined, attachments)
+        return True
 
     # ----------------------------------------------------------
     # Helper Approval
@@ -1242,6 +1325,7 @@ class AISession(models.Model):
     # ----------------------------------------------------------
 
     def start(self, user_message=None, attachment_ids=None):
+        self._recover_if_stuck()
         if self.state not in ('new', 'error', 'stopped'):
             raise UserError(_("Session is not in a startable state."))
         attachments = self._resolve_attachments(attachment_ids)
@@ -1254,6 +1338,7 @@ class AISession(models.Model):
         return self._get_snapshot()
 
     def answer(self, answer, attachment_ids=None):
+        self._recover_if_stuck()
         pending = self.pending_ask or {}
         if self.state != 'waiting' or pending.get('kind') != 'question':
             raise UserError(_("Session is not waiting for user input."))
@@ -1288,15 +1373,17 @@ class AISession(models.Model):
         return self._get_snapshot()
 
     def send_message(self, user_message, attachment_ids=None):
+        self._recover_if_stuck()
         if self.state == 'running':
-            raise UserError(_("Session is currently running."))
+            return self.enqueue_message(
+                user_message, attachment_ids=attachment_ids,
+            )
         if self.state == 'waiting':
             kind = (self.pending_ask or {}).get('kind')
             if kind == 'approval':
-                raise UserError(_(
-                    "Session is waiting for approval. "
-                    "Approve or reject the pending tool call first.",
-                ))
+                return self.enqueue_message(
+                    user_message, attachment_ids=attachment_ids,
+                )
             if kind == 'question':
                 return self.answer(user_message, attachment_ids=attachment_ids)
         if not self.conversation:
@@ -1359,9 +1446,11 @@ class AISession(models.Model):
             'iteration_count': 0,
             'last_input_tokens': 0,
             'state': 'new',
+            'pending_user_messages': [],
         })
         self._publish_event('log', log_entry)
         self._publish_event('state', {'state': 'new'})
+        self._publish_event('queue', {'pending': []})
         return self._get_snapshot()
 
     def compact(self):
