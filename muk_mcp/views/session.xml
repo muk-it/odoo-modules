@@ -42,6 +42,7 @@
 		<field name="res_model">muk_mcp.session</field>
 		<field name="view_mode">list</field>
 		<field name="context">{'active_test': false}</field>
+		<field name="path">mcp-sessions</field>
 	</record>
 
 </odoo>

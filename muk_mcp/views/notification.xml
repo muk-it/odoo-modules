@@ -21,6 +21,7 @@
 		<field name="name">Notifications</field>
 		<field name="res_model">muk_mcp.notification</field>
 		<field name="view_mode">list</field>
+		<field name="path">mcp-notifications</field>
 	</record>
 
 </odoo>
