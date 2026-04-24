@@ -1,3 +1,5 @@
+import json
+
 MCP_PROTOCOL_VERSION = '2025-03-26'
 MCP_SERVER_NAME = 'odoo-mcp-server'
 MCP_SERVER_VERSION = '1.0.0'
@@ -10,3 +12,12 @@ JSONRPC_METHOD_NOT_FOUND = -32601
 JSONRPC_INTERNAL_ERROR = -32603
 
 MAX_BATCH_SIZE = 20
+
+
+def coerce_json_value(value):
+    if isinstance(value, str):
+        try:
+            return json.loads(value)
+        except (TypeError, ValueError):
+            return value
+    return value

@@ -3,6 +3,7 @@ from odoo.exceptions import AccessError, UserError
 from odoo.service.model import get_public_method
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
+from odoo.addons.muk_mcp.tools.common import coerce_json_value
 
 
 class MCPMixin(models.AbstractModel):
@@ -50,10 +51,10 @@ class MCPMixin(models.AbstractModel):
                     ),
                 },
                 'args': {
-                    'type': 'array',
-                    'items': {},
+                    'type': 'string',
                     'description': (
-                        'Positional arguments to pass to the method.'
+                        'JSON-encoded array of positional arguments. '
+                        'Example: "[42, true]". Pass "[]" or omit if none.'
                     ),
                 },
                 'kwargs': {
@@ -88,5 +89,10 @@ class MCPMixin(models.AbstractModel):
         if getattr(unbound, '_api_model', False):
             recordset = target
         else:
-            recordset = target.browse(target_ids) if target_ids else target
-        return unbound(recordset, *(args or []), **(kwargs or {}))
+            recordset = (
+                target.browse(target_ids)
+                if target_ids else target
+            )
+        positional = coerce_json_value(args) or []
+        keyword = coerce_json_value(kwargs) or {}
+        return unbound(recordset, *positional, **keyword)

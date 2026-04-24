@@ -1,5 +1,7 @@
 import json
 
+from odoo.addons.muk_mcp.tools.schema import to_strict_schema
+
 
 def _build_method_index(env):
     index = {}
@@ -97,13 +99,19 @@ def get_tool_index(env, registry=None):
         {**method_index, **db_index}
         if db_index else dict(method_index)
     )
-    if registry is None:
-        return combined
+    if registry is not None:
+        combined = {
+            name: entry for name, entry in combined.items()
+            if not entry.get('registry') or registry in (
+                s.strip() for s in entry['registry'].split(',')
+            )
+        }
     return {
-        name: entry for name, entry in combined.items()
-        if not entry.get('registry') or registry in (
-            s.strip() for s in entry['registry'].split(',')
-        )
+        name: {
+            **entry,
+            'input_schema': to_strict_schema(entry.get('input_schema')),
+        }
+        for name, entry in combined.items()
     }
 
 

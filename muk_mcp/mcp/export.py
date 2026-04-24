@@ -4,6 +4,7 @@ from odoo import _, api, models
 from odoo.exceptions import UserError
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
+from odoo.addons.muk_mcp.tools.common import coerce_json_value
 from odoo.addons.web.controllers.export import CSVExport, ExcelExport
 
 
@@ -71,10 +72,12 @@ class MCPMixin(models.AbstractModel):
                     ),
                 },
                 'domain': {
-                    'type': 'array',
-                    'items': {},
-                    'description': "Domain when 'ids' is not supplied.",
-                    'default': [],
+                    'type': 'string',
+                    'description': (
+                        "JSON-encoded Odoo domain array when 'ids' is "
+                        "not supplied. Example: \"[[\\\"state\\\",\\\"=\\\","
+                        "\\\"sale\\\"]]\". Pass \"[]\" or omit for no filter."
+                    ),
                 },
                 'format': {
                     'type': 'string',
@@ -110,7 +113,9 @@ class MCPMixin(models.AbstractModel):
     ):
         if not fields:
             raise UserError(_('No fields provided'))
-        records = self._resolve_records(model, ids, domain, limit, order)
+        records = self._resolve_records(
+            model, ids, coerce_json_value(domain), limit, order,
+        )
         exporter = self._build_exporter(format)
         rows = records.export_data(list(fields)).get('datas') or []
         descriptors = [

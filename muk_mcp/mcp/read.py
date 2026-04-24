@@ -2,6 +2,7 @@ from odoo import _, api, models
 from odoo.exceptions import UserError
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
+from odoo.addons.muk_mcp.tools.common import coerce_json_value
 
 
 class MCPMixin(models.AbstractModel):
@@ -29,12 +30,12 @@ class MCPMixin(models.AbstractModel):
                     'description': 'Technical model name.',
                 },
                 'domain': {
-                    'type': 'array',
-                    'items': {},
+                    'type': 'string',
                     'description': (
-                            'Odoo domain filter. Same syntax as search_read.'
+                        'JSON-encoded Odoo domain array, e.g. '
+                        '"[[\\"is_company\\",\\"=\\",true]]". Pass "[]" or '
+                        'omit for no filter.'
                     ),
-                    'default': [],
                 },
                 'context': {
                     'type': 'object',
@@ -50,7 +51,9 @@ class MCPMixin(models.AbstractModel):
     )
     def _mcp_search_count(self, model, domain=None):
         return {
-            'count': self._resolve_model(model).search_count(domain or []),
+            'count': self._resolve_model(model).search_count(
+                coerce_json_value(domain) or [],
+            ),
         }
 
     @api.model
@@ -76,17 +79,16 @@ class MCPMixin(models.AbstractModel):
                     ),
                 },
                 'domain': {
-                    'type': 'array',
-                    'items': {},
+                    'type': 'string',
                     'description': (
-                        "Odoo domain filter. Examples: "
-                        "[['is_company','=',true]], "
-                        "['|',['email','ilike','@gmail'],"
-                        "['email','ilike','@outlook']], "
-                        "[['state','=','sale'],"
-                        "['date_order','>=','2024-01-01']]."
+                        "JSON-encoded Odoo domain array. Examples: "
+                        "\"[[\\\"is_company\\\",\\\"=\\\",true]]\", "
+                        "\"[\\\"|\\\",[\\\"email\\\",\\\"ilike\\\",\\\"@gmail\\\"],"
+                        "[\\\"email\\\",\\\"ilike\\\",\\\"@outlook\\\"]]\", "
+                        "\"[[\\\"state\\\",\\\"=\\\",\\\"sale\\\"],"
+                        "[\\\"date_order\\\",\\\">=\\\",\\\"2024-01-01\\\"]]\". "
+                        "Pass \"[]\" or omit for no filter."
                     ),
-                    'default': [],
                 },
                 'fields': {
                     'type': 'array',
@@ -141,7 +143,7 @@ class MCPMixin(models.AbstractModel):
         order=None,
     ):
         return self._resolve_model(model).search_read(
-            domain or [],
+            coerce_json_value(domain) or [],
             fields=fields,
             limit=limit,
             offset=offset,
@@ -213,12 +215,11 @@ class MCPMixin(models.AbstractModel):
                     'description': 'Technical model name.',
                 },
                 'domain': {
-                    'type': 'array',
-                    'items': {},
+                    'type': 'string',
                     'description': (
-                        'Filter domain. Same syntax as search_read.'
+                        'JSON-encoded Odoo domain array. Same syntax as '
+                        'search_read. Pass "[]" or omit for no filter.'
                     ),
-                    'default': [],
                 },
                 'fields': {
                     'type': 'array',
@@ -288,7 +289,7 @@ class MCPMixin(models.AbstractModel):
         if '__count' not in aggregates:
             aggregates.append('__count')
         data = target.formatted_read_group(
-            domain or [],
+            coerce_json_value(domain) or [],
             groupby=groupby,
             aggregates=aggregates,
             limit=limit,
