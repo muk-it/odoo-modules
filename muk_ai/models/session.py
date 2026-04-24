@@ -1,14 +1,22 @@
+import base64
 import json
+import re
 import time
 
 from datetime import timedelta
 
+import requests
+
 from odoo import _, api, fields, models, modules
 from odoo.exceptions import UserError
+from odoo.tools.rendering_tools import parse_inline_template, render_inline_template
 
 from odoo.addons.muk_ai.tools import (
     ASK_USER_TOOL,
+    ATTACHMENT_REF_RE,
+    INLINE_IMAGE_RE,
     TERMINATING_TOOLS,
+    URL_REF_RE,
     StreamCancelled,
     build_tool_call_output,
     sanitize_json_schema,
@@ -234,9 +242,39 @@ class AISession(models.Model):
         return self.env['muk_ai.agent']._get_default().system_prompt
 
     def _effective_system_prompt(self):
-        if self.agent_id and self.agent_id.system_prompt:
-            return self.agent_id.system_prompt
-        return self._get_system_prompt() or ''
+        raw = (
+            self.agent_id.system_prompt
+            if self.agent_id and self.agent_id.system_prompt
+            else self._get_system_prompt()
+        )
+        return self._render_system_prompt(raw or '')
+
+    def _render_system_prompt(self, raw):
+        if not raw:
+            return ''
+        raw = raw.strip()
+        if '{{' not in raw:
+            return raw
+        try:
+            return render_inline_template(
+                parse_inline_template(raw),
+                self._render_system_prompt_eval_context(),
+            )
+        except Exception:
+            return raw
+
+    def _render_system_prompt_eval_context(self):
+        return {
+            'user': self.env.user,
+            'company': self.env.company,
+            'ctx': self.env.context,
+            'env': self.env,
+            'today': fields.Date.context_today(self).isoformat(),
+            'approval_mode': (
+                self._effective_approval_mode()
+                if self and self.id else 'ask'
+            ),
+        }
 
     def _effective_model_record(self):
         if self.agent_id and self.agent_id.model_id:
@@ -366,8 +404,12 @@ class AISession(models.Model):
     # ----------------------------------------------------------
 
     def _append_log(self, entry):
-        self.tool_log = [*(self.tool_log or []), entry]
-        self._publish_event('log', entry)
+        stamped = entry if 'at' in entry else {
+            **entry,
+            'at': fields.Datetime.now().isoformat(),
+        }
+        self.tool_log = [*(self.tool_log or []), stamped]
+        self._publish_event('log', stamped)
 
     def _extend_conversation(self, items):
         self.conversation = [*(self.conversation or []), *(items or [])]
@@ -482,6 +524,9 @@ class AISession(models.Model):
             if self.agent_id and self.agent_id.read_only
             else None
         )
+        arguments, resolved_refs = self._resolve_value_refs(
+            arguments
+        )
         try:
             text, _info = self.env['muk_mcp.tool']._call(
                 name,
@@ -496,6 +541,23 @@ class AISession(models.Model):
         self._maybe_publish_ui_action(
             text, name, call_id
         )
+        if resolved_refs:
+            previews = '\n\n'.join(
+                f'![image set]({ref["preview_url"]})'
+                for ref in resolved_refs if ref.get('preview_url')
+            )
+            if previews:
+                if isinstance(text, str):
+                    text = f'{text}\n\n{previews}'
+                elif isinstance(text, dict):
+                    text = {
+                        **text,
+                        'image_previews': [
+                            r['preview_url']
+                            for r in resolved_refs
+                            if r.get('preview_url')
+                        ],
+                    }
         return text, True
 
     def _maybe_publish_ui_action(self, text, name, call_id):
@@ -592,6 +654,15 @@ class AISession(models.Model):
                     delta,
                     'text_delta',
                 )
+        elif kind == 'reasoning':
+            if delta := (payload or {}).get('delta') or '':
+                self._coalesce_and_emit(
+                    buffer_state,
+                    'reasoning',
+                    'last_reasoning_flush',
+                    delta,
+                    'reasoning_delta',
+                )
         elif kind == 'tool_start':
             self._flush_text_buffer(buffer_state)
             self._publish_event('tool_call_start', {
@@ -664,6 +735,9 @@ class AISession(models.Model):
 
     def _flush_stream_buffer(self, buffer_state):
         self._flush_text_buffer(buffer_state)
+        if flushed := buffer_state.get('reasoning'):
+            buffer_state['reasoning'] = ''
+            self._publish_event('reasoning_delta', {'delta': flushed})
         for key in list(buffer_state.keys()):
             if (
                 key.startswith('tool_args_') and
@@ -710,6 +784,89 @@ class AISession(models.Model):
             }
         return {}
 
+    def _persist_inline_images(self, text, cache=None):
+        if not text or 'data:image/' not in text:
+            return text
+        cache = cache if cache is not None else {}
+
+        def _replace(match):
+            alt = match.group(1) or 'generated.png'
+            mimetype = match.group(2)
+            b64 = re.sub(r'\s+', '', match.group(3))
+            cached = cache.get(b64)
+            if cached:
+                attachment_id = cached
+            else:
+                try:
+                    attachment = self.env['ir.attachment'].sudo().create({
+                        'name': alt or 'generated.png',
+                        'datas': b64,
+                        'mimetype': mimetype,
+                        'res_model': self._name,
+                        'res_id': self.id,
+                    })
+                except Exception:
+                    return match.group(0)
+                attachment_id = attachment.id
+                cache[b64] = attachment_id
+            return (
+                f'![{alt}](/web/image/{attachment_id}) '
+                f'_(attachment {attachment_id} — to set on a record use '
+                f'`image_1920="@attachment:{attachment_id}"`)_'
+            )
+
+        return INLINE_IMAGE_RE.sub(_replace, text)
+
+    def _persist_inline_images_in_carry(self, items, cache):
+        out = []
+        for item in items or []:
+            if not isinstance(item, dict):
+                out.append(item)
+                continue
+            content = item.get('content')
+            if not isinstance(content, list):
+                out.append(item)
+                continue
+            new_content = []
+            for chunk in content:
+                if isinstance(chunk, dict) and isinstance(chunk.get('text'), str) and 'data:image/' in chunk['text']:
+                    new_content.append({**chunk, 'text': self._persist_inline_images(chunk['text'], cache=cache)})
+                else:
+                    new_content.append(chunk)
+            out.append({**item, 'content': new_content})
+        return out
+
+    def _resolve_value_refs(self, arguments):
+        refs = []
+        if not isinstance(arguments, dict):
+            return arguments, refs
+
+        def _resolve(value):
+            if isinstance(value, str):
+                if m := ATTACHMENT_REF_RE.match(value):
+                    attachment = self.env['ir.attachment'].sudo().browse(int(m.group(1))).exists()
+                    if attachment and attachment.datas:
+                        refs.append({'kind': 'attachment', 'preview_url': f'/web/image/{attachment.id}'})
+                        return attachment.datas.decode()
+                    return value
+                if m := URL_REF_RE.match(value):
+                    url = m.group(1)
+                    try:
+                        response = requests.get(url, timeout=30)
+                        response.raise_for_status()
+                        refs.append({'kind': 'url', 'preview_url': url})
+                        return base64.b64encode(response.content).decode()
+                    except Exception:
+                        return value
+                return value
+            if isinstance(value, dict):
+                return {k: _resolve(v) for k, v in value.items()}
+            if isinstance(value, list):
+                return [_resolve(v) for v in value]
+            return value
+
+        return _resolve(arguments), refs
+
     def _accrue_round_payload(self, payload):
         usage = payload.get('usage') or {}
         self.write({
@@ -719,10 +876,18 @@ class AISession(models.Model):
             'last_input_tokens': usage.get('input_tokens', 0) or self.last_input_tokens,
             **self._accrue_cost_deltas(usage),
         })
-        if payload.get('text'):
-            self.last_text = payload['text']
-            self._append_log({'kind': 'text', 'content': payload['text']})
-        self._extend_conversation(payload.get('carry_inputs') or [])
+        image_cache = {}
+        text = payload.get('text')
+        if text and 'data:image/' in text:
+            text = self._persist_inline_images(text, cache=image_cache)
+            payload['text'] = text
+        if text:
+            self.last_text = text
+            self._append_log({'kind': 'text', 'content': text})
+        carry = self._persist_inline_images_in_carry(
+            payload.get('carry_inputs') or [], image_cache,
+        )
+        self._extend_conversation(carry)
 
     def _finalize_round(self, payload):
         if payload.get('text'):
@@ -995,6 +1160,84 @@ class AISession(models.Model):
             self._run_to_completion(has_terminating=round_result)
 
     # ----------------------------------------------------------
+    # Context
+    # ----------------------------------------------------------
+
+    def _base_view_context(self, payload, kind):
+        cleaned = {'kind': kind}
+        if model := payload.get('model'):
+            if not isinstance(model, str):
+                raise UserError(_("view_context.model must be a string."))
+            cleaned['model'] = model
+        return cleaned
+
+    def _view_context_domain(self, payload):
+        domain = payload.get('domain')
+        if domain is None:
+            return None
+        if not isinstance(domain, list):
+            raise UserError(_("view_context.domain must be a list."))
+        return domain
+
+    def _clean_record_view_context(self, payload):
+        cleaned = self._base_view_context(payload, 'record')
+        res_id = payload.get('id')
+        if not isinstance(res_id, int) or res_id <= 0:
+            raise UserError(_("view_context.id must be a positive integer."))
+        cleaned['id'] = res_id
+        if display_name := payload.get('display_name'):
+            if not isinstance(display_name, str):
+                raise UserError(_("view_context.display_name must be a string."))
+            cleaned['display_name'] = display_name
+        return cleaned
+
+    def _clean_list_view_context(self, payload):
+        cleaned = self._base_view_context(payload, 'list')
+        cleaned['view_type'] = payload.get('view_type') or 'list'
+        if domain := self._view_context_domain(payload):
+            cleaned['domain'] = domain
+        return cleaned
+
+    def _clean_action_view_context(self, payload):
+        cleaned = self._base_view_context(payload, 'action')
+        if action_id := payload.get('action_id'):
+            if not isinstance(action_id, int):
+                raise UserError(_("view_context.action_id must be an integer."))
+            cleaned['action_id'] = action_id
+        return cleaned
+
+    def _clean_pivot_view_context(self, payload):
+        cleaned = self._base_view_context(payload, 'pivot')
+        cleaned['view_type'] = 'pivot'
+        for key in ('pivot_measures', 'pivot_row_groupby', 'pivot_column_groupby'):
+            value = payload.get(key)
+            if value is not None:
+                if not isinstance(value, list):
+                    raise UserError(_("view_context.%s must be a list.", key))
+                cleaned[key] = value
+        if domain := self._view_context_domain(payload):
+            cleaned['domain'] = domain
+        return cleaned
+
+    def _clean_graph_view_context(self, payload):
+        cleaned = self._base_view_context(payload, 'graph')
+        cleaned['view_type'] = 'graph'
+        for key in ('graph_mode', 'graph_measure', 'graph_order'):
+            value = payload.get(key)
+            if value is not None:
+                if not isinstance(value, str):
+                    raise UserError(_("view_context.%s must be a string.", key))
+                cleaned[key] = value
+        groupbys = payload.get('graph_groupbys')
+        if groupbys is not None:
+            if not isinstance(groupbys, list):
+                raise UserError(_("view_context.graph_groupbys must be a list."))
+            cleaned['graph_groupbys'] = groupbys
+        if domain := self._view_context_domain(payload):
+            cleaned['domain'] = domain
+        return cleaned
+
+    # ----------------------------------------------------------
     # Functions
     # ----------------------------------------------------------
 
@@ -1060,6 +1303,39 @@ class AISession(models.Model):
             return self.start(user_message, attachment_ids=attachment_ids)
         attachments = self._resolve_attachments(attachment_ids)
         self._enqueue_user_turn(user_message, attachments)
+        self._run_to_completion()
+        return self._get_snapshot()
+
+    def regenerate_last_turn(self):
+        if self.state in ('running', 'waiting'):
+            raise UserError(_(
+                "Cannot regenerate while the session is running or waiting.",
+            ))
+        conv = list(self.conversation or [])
+        last_user = None
+        for idx in range(len(conv) - 1, -1, -1):
+            item = conv[idx]
+            if isinstance(item, dict) and item.get('role') == 'user':
+                last_user = idx
+                break
+        if last_user is None:
+            raise UserError(_("No user turn to regenerate from."))
+        self.conversation = conv[:last_user + 1]
+        log = list(self.tool_log or [])
+        last_user_log = None
+        for idx in range(len(log) - 1, -1, -1):
+            if log[idx].get('kind') == 'user_message':
+                last_user_log = idx
+                break
+        self.tool_log = (
+            log[:last_user_log + 1] if last_user_log is not None else []
+        )
+        self.write({
+            'pending_ask': False,
+            'error_message': False,
+            'state': 'running',
+        })
+        self._publish_event('state', {'state': 'running'})
         self._run_to_completion()
         return self._get_snapshot()
 
@@ -1175,45 +1451,23 @@ class AISession(models.Model):
         return True
 
     def set_view_context(self, payload):
-        kind = (
-            payload.get('kind')
-            if isinstance(payload, dict)
-            else None
-        )
+        kind = payload.get('kind') if isinstance(payload, dict) else None
         if payload is None or kind == 'none':
             self._write_view_context(None)
             return self._get_snapshot()
-        if kind not in ('record', 'list', 'action'):
+        cleaner = (
+            getattr(self, f'_clean_{kind}_view_context', None)
+            if isinstance(kind, str)
+            and kind.isidentifier()
+            and not kind.startswith('_')
+            else None
+        )
+        if not cleaner:
             raise UserError(_(
                 "Invalid view context payload (kind=%(kind)r).",
-                kind=kind
+                kind=kind,
             ))
-        cleaned = {'kind': kind}
-        if model := payload.get('model'):
-            if not isinstance(model, str):
-                raise UserError(_("view_context.model must be a string."))
-            cleaned['model'] = model
-        if kind == 'record':
-            res_id = payload.get('id')
-            if not isinstance(res_id, int) or res_id <= 0:
-                raise UserError(_("view_context.id must be a positive integer."))
-            cleaned['id'] = res_id
-            if display_name := payload.get('display_name'):
-                if not isinstance(display_name, str):
-                    raise UserError(_("view_context.display_name must be a string."))
-                cleaned['display_name'] = display_name
-        elif kind == 'list':
-            cleaned['view_type'] = payload.get('view_type') or 'list'
-            if domain := payload.get('domain'):
-                if not isinstance(domain, list):
-                    raise UserError(_("view_context.domain must be a list."))
-                cleaned['domain'] = domain
-        elif kind == 'action':
-            if action_id := payload.get('action_id'):
-                if not isinstance(action_id, int):
-                    raise UserError(_("view_context.action_id must be an integer."))
-                cleaned['action_id'] = action_id
-        self._write_view_context(cleaned)
+        self._write_view_context(cleaner(payload))
         return self._get_snapshot()
 
     def unpin_view_context(self):

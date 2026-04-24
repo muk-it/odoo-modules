@@ -1,11 +1,9 @@
-/** @odoo-module */
-
 import { onMounted, onPatched } from '@odoo/owl';
 
 import { patch } from '@web/core/utils/patch';
 import { FormController } from '@web/views/form/form_controller';
 
-import { captureViewContext } from '../view_context_capture';
+import { captureViewContext } from '@muk_ai/views/context';
 
 patch(FormController.prototype, {
     setup() {

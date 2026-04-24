@@ -1,5 +1,3 @@
-/** @odoo-module */
-
 import { describe, expect, test } from '@odoo/hoot';
 import { click, queryFirst } from '@odoo/hoot-dom';
 import { Component, xml } from '@odoo/owl';
@@ -142,4 +140,81 @@ test('streaming suppresses onToggle clicks', async () => {
     await mountWithCleanup(Parent, { props });
     await click('.mk_tool_head');
     expect(toggled).toBe(null);
+});
+
+
+test('applies mk_tool_write kind class for create/update tool names', async () => {
+    const { Parent, props } = makeParent({
+        block: { name: 'create_record', arguments: null, callId: 'c1' },
+    });
+    await mountWithCleanup(Parent, { props });
+    expect('.mk_tool_write').toHaveCount(1);
+});
+
+
+test('applies mk_tool_read kind class for search tool names', async () => {
+    const { Parent, props } = makeParent({
+        block: { name: 'search_read', arguments: null, callId: 'c2' },
+    });
+    await mountWithCleanup(Parent, { props });
+    expect('.mk_tool_read').toHaveCount(1);
+});
+
+
+test('applies mk_tool_nav kind class for open tool names', async () => {
+    const { Parent, props } = makeParent({
+        block: { name: 'open_record', arguments: null, callId: 'c3' },
+    });
+    await mountWithCleanup(Parent, { props });
+    expect('.mk_tool_nav').toHaveCount(1);
+});
+
+
+test('applies mk_tool_error when result contains an error', async () => {
+    const { Parent, props } = makeParent({
+        block: {
+            name: 'search_read', arguments: null, callId: 'c4',
+            result: { error: 'access denied' },
+        },
+    });
+    await mountWithCleanup(Parent, { props });
+    expect('.mk_tool_error').toHaveCount(1);
+});
+
+
+test('applies mk_tool_error when result JSON string contains an error', async () => {
+    const { Parent, props } = makeParent({
+        block: {
+            name: 'search_read', arguments: null, callId: 'c5',
+            result: '{"error": "nope"}',
+        },
+    });
+    await mountWithCleanup(Parent, { props });
+    expect('.mk_tool_error').toHaveCount(1);
+});
+
+
+test('falls back to default kind for unknown tool name', async () => {
+    const { Parent, props } = makeParent({
+        block: { name: 'mystery', arguments: null, callId: 'c6' },
+    });
+    await mountWithCleanup(Parent, { props });
+    expect('.mk_tool_default').toHaveCount(1);
+});
+
+
+test('detects diff body in result and swaps to language-diff pre', async () => {
+    const diff = [
+        '--- old.txt',
+        '+++ new.txt',
+        '@@ -1,1 +1,1 @@',
+        '-before',
+        '+after',
+    ].join('\n');
+    const { Parent, props } = makeParent({
+        block: { name: 'apply_patch', arguments: null, callId: 'c7', result: diff },
+        expanded: true,
+    });
+    await mountWithCleanup(Parent, { props });
+    expect('.language-diff').toHaveCount(2);
 });

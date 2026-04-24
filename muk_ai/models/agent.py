@@ -58,30 +58,6 @@ class AIAgent(models.Model):
         ),
     )
 
-    enable_web_search = fields.Boolean(
-        string="Enable Web Search",
-        default=False,
-        tracking=True,
-        help="Let the LLM use the provider's native web search tool.",
-    )
-
-    enable_image_generation = fields.Boolean(
-        string="Enable Image Generation",
-        default=False,
-        tracking=True,
-        help="Let the LLM generate images via the provider's native tool.",
-    )
-
-    enable_code_interpreter = fields.Boolean(
-        string="Enable Code Interpreter",
-        default=False,
-        tracking=True,
-        help=(
-            "Let the LLM run sandboxed Python via the provider's native "
-            "code-execution tool. Useful for analytics over tool results."
-        ),
-    )
-
     supports_web_search = fields.Boolean(
         compute='_compute_provider_capabilities',
         string="Supports Web Search",
@@ -95,6 +71,36 @@ class AIAgent(models.Model):
     supports_code_interpreter = fields.Boolean(
         compute='_compute_provider_capabilities',
         string="Supports Code Interpreter",
+    )
+
+    enable_web_search = fields.Boolean(
+        compute='_compute_enable_web_search',
+        string="Enable Web Search",
+        readonly=False,
+        store=True,
+        tracking=True,
+        help="Let the LLM use the provider's native web search tool.",
+    )
+
+    enable_image_generation = fields.Boolean(
+        compute='_compute_enable_image_generation',
+        string="Enable Image Generation",
+        readonly=False,
+        store=True,
+        tracking=True,
+        help="Let the LLM generate images via the provider's native tool.",
+    )
+
+    enable_code_interpreter = fields.Boolean(
+        compute='_compute_enable_code_interpreter',
+        string="Enable Code Interpreter",
+        readonly=False,
+        store=True,
+        tracking=True,
+        help=(
+            "Let the LLM run sandboxed Python via the provider's native "
+            "code-execution tool. Useful for analytics over tool results."
+        ),
     )
 
     read_only = fields.Boolean(
@@ -111,6 +117,19 @@ class AIAgent(models.Model):
             "List of tool names this agent may call. "
             "Empty = all tools allowed."
         ),
+    )
+
+    suggestion_ids = fields.One2many(
+        comodel_name='muk_ai.agent.suggestion',
+        inverse_name='agent_id',
+        string="Suggestions",
+        copy=True,
+        help="Starter prompts shown in the empty chat for this agent.",
+    )
+
+    suggestions = fields.Json(
+        compute='_compute_suggestions',
+        string="Suggestions (JSON)",
     )
 
     tool_filter_options = fields.Json(
@@ -217,6 +236,45 @@ class AIAgent(models.Model):
     # Compute
     # ----------------------------------------------------------
 
+    @api.depends('model_id.provider_id')
+    def _compute_provider_capabilities(self):
+        default_provider = self.env['muk_ai.provider']._get_default()
+        for record in self:
+            provider = record.model_id.provider_id or default_provider
+            record.supports_web_search = provider.supports_web_search
+            record.supports_image_generation = provider.supports_image_generation
+            record.supports_code_interpreter = provider.supports_code_interpreter
+
+    @api.depends('model_id', 'supports_web_search')
+    def _compute_enable_web_search(self):
+        for record in self:
+            if record.model_id and not record.supports_web_search:
+                record.enable_web_search = False
+
+    @api.depends('model_id', 'supports_image_generation')
+    def _compute_enable_image_generation(self):
+        for record in self:
+            if record.model_id and not record.supports_image_generation:
+                record.enable_image_generation = False
+
+    @api.depends('model_id', 'supports_code_interpreter')
+    def _compute_enable_code_interpreter(self):
+        for record in self:
+            if record.model_id and not record.supports_code_interpreter:
+                record.enable_code_interpreter = False
+
+    @api.depends(
+        'suggestion_ids.label',
+        'suggestion_ids.prompt',
+        'suggestion_ids.sequence'
+    )
+    def _compute_suggestions(self):
+        for record in self:
+            record.suggestions = [
+                {'label': s.label, 'prompt': s.prompt}
+                for s in record.suggestion_ids
+            ]
+
     @api.depends_context('lang')
     def _compute_tool_filter_options(self):
         index = get_tool_index(self.env, registry='odoo')
@@ -238,8 +296,7 @@ class AIAgent(models.Model):
             record.tool_filter_options = options
 
     def _compute_session_count(self):
-        Session = self.env['muk_ai.session']
-        grouped = Session._read_group(
+        grouped = self.env['muk_ai.session']._read_group(
             domain=[('agent_id', 'in', self.ids)],
             groupby=['agent_id'],
             aggregates=['__count'],
@@ -249,8 +306,7 @@ class AIAgent(models.Model):
             record.session_count = counts.get(record.id, 0)
 
     def _compute_revision_count(self):
-        Revision = self.env['muk_ai.agent.revision']
-        grouped = Revision._read_group(
+        grouped = self.env['muk_ai.agent.revision']._read_group(
             domain=[('agent_id', 'in', self.ids)],
             groupby=['agent_id'],
             aggregates=['__count'],
@@ -258,15 +314,6 @@ class AIAgent(models.Model):
         counts = {agent.id: count for agent, count in grouped}
         for record in self:
             record.revision_count = counts.get(record.id, 0)
-
-    @api.depends('model_id.provider_id')
-    def _compute_provider_capabilities(self):
-        default_provider = self.env['muk_ai.provider']._get_default()
-        for record in self:
-            provider = record.model_id.provider_id or default_provider
-            record.supports_web_search = provider.supports_web_search
-            record.supports_image_generation = provider.supports_image_generation
-            record.supports_code_interpreter = provider.supports_code_interpreter
 
     # ----------------------------------------------------------
     # ORM

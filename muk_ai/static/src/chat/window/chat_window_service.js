@@ -1,5 +1,3 @@
-/** @odoo-module */
-
 import { reactive } from '@odoo/owl';
 import { loadBundle } from '@web/core/assets';
 import { registry } from '@web/core/registry';

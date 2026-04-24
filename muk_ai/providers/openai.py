@@ -1,5 +1,7 @@
 from .base import ProviderBase
 
+REASONING_MODEL_PREFIXES = ('o1', 'o3', 'o4', 'gpt-5')
+
 
 class OpenAIProvider(ProviderBase):
 
@@ -42,6 +44,9 @@ class OpenAIProvider(ProviderBase):
         }
         if self.max_tokens:
             body['max_output_tokens'] = self.max_tokens
+        if self._supports_reasoning(model):
+            body['reasoning'] = {'summary': 'auto'}
+            body['include'] = ['reasoning.encrypted_content']
         if text_schema:
             body['text'] = {
                 'format': {
@@ -69,6 +74,14 @@ class OpenAIProvider(ProviderBase):
         return self._parse_response(self._post_json('/responses', body))
 
     # ----------------------------------------------------------
+    # Reasoning
+    # ----------------------------------------------------------
+
+    @staticmethod
+    def _supports_reasoning(model):
+        return any(model.startswith(prefix) for prefix in REASONING_MODEL_PREFIXES)
+
+    # ----------------------------------------------------------
     # Attachments
     # ----------------------------------------------------------
 
@@ -82,8 +95,14 @@ class OpenAIProvider(ProviderBase):
                 continue
             new_content = []
             for block in content:
-                if isinstance(block, dict) and block.get('type') == 'muk_ai_attachment':
+                if not isinstance(block, dict):
+                    new_content.append(block)
+                    continue
+                block_type = block.get('type')
+                if block_type == 'muk_ai_attachment':
                     new_content.append(cls._attachment_to_openai(block))
+                elif block_type == 'muk_ai_thinking':
+                    continue
                 else:
                     new_content.append(block)
             rewritten.append({**item, 'content': new_content})
@@ -112,6 +131,40 @@ class OpenAIProvider(ProviderBase):
         return {'type': 'input_text', 'text': prefix + text}
 
     # ----------------------------------------------------------
+    # Built-in tool output rendering
+    # ----------------------------------------------------------
+
+    @staticmethod
+    def _render_image_call(item):
+        if item.get('status') == 'failed':
+            return ''
+        result = (item.get('result') or '').strip()
+        if not result:
+            return ''
+        url = result if result.startswith('data:') or result.startswith('http') else f'data:image/png;base64,{result}'
+        return f'\n\n![generated image]({url})\n\n'
+
+    @staticmethod
+    def _render_code_call(item):
+        code = (item.get('code') or '').strip()
+        parts = []
+        if code:
+            parts.append(f'```python\n{code}\n```')
+        for entry in item.get('results') or []:
+            entry_type = entry.get('type')
+            if entry_type == 'logs':
+                logs = (entry.get('logs') or '').strip()
+                if logs:
+                    parts.append(f'```\n{logs}\n```')
+            elif entry_type == 'files':
+                for f in entry.get('files') or []:
+                    name = (f.get('name') or '').strip() or 'file'
+                    parts.append(f'_(generated file: `{name}`)_')
+        if not parts:
+            return ''
+        return '\n\n' + '\n\n'.join(parts) + '\n\n'
+
+    # ----------------------------------------------------------
     # Parse
     # ----------------------------------------------------------
 
@@ -135,6 +188,14 @@ class OpenAIProvider(ProviderBase):
                 for content in line.get('content') or []:
                     if text := content.get('text'):
                         text_parts.append(text)
+            elif line_type == 'image_generation_call':
+                snippet = self._render_image_call(line)
+                if snippet:
+                    text_parts.append(snippet)
+            elif line_type == 'code_interpreter_call':
+                snippet = self._render_code_call(line)
+                if snippet:
+                    text_parts.append(snippet)
             elif text := line.get('text'):
                 text_parts.append(text)
         usage = payload.get('usage') or {}
@@ -159,14 +220,36 @@ class OpenAIProvider(ProviderBase):
         tool_calls_by_index = {}
         carry_inputs = []
         usage = {}
+        rendered_item_ids = set()
+        image_b64_by_item = {}
         for event in self._post_stream('/responses', body):
             event_type = event.get('type') or ''
+            if event_type == 'response.image_generation_call.partial_image':
+                b64 = event.get('partial_image_b64')
+                item_id = event.get('item_id')
+                if b64 and item_id:
+                    image_b64_by_item[item_id] = b64
+                continue
+            if event_type == 'response.image_generation_call.completed':
+                item_id = event.get('item_id')
+                b64 = image_b64_by_item.get(item_id)
+                if b64 and item_id not in rendered_item_ids:
+                    rendered_item_ids.add(item_id)
+                    snippet = self._render_image_call({'status': 'completed', 'result': b64})
+                    if snippet:
+                        text_parts.append(snippet)
+                        self._call_on_delta(on_delta, 'text', {'delta': snippet})
+                continue
             if event_type == 'response.output_text.delta':
                 delta = event.get('delta') or ''
                 if not delta:
                     continue
                 text_parts.append(delta)
                 self._call_on_delta(on_delta, 'text', {'delta': delta})
+            elif event_type == 'response.reasoning_summary_text.delta':
+                delta = event.get('delta') or ''
+                if delta:
+                    self._call_on_delta(on_delta, 'reasoning', {'delta': delta})
             elif event_type == 'response.output_item.added':
                 item = event.get('item') or {}
                 if item.get('type') == 'function_call':
@@ -195,20 +278,59 @@ class OpenAIProvider(ProviderBase):
                 })
             elif event_type == 'response.output_item.done':
                 item = event.get('item') or {}
-                if item.get('type') == 'function_call':
+                item_type = item.get('type')
+                if item_type == 'function_call':
                     index = event.get('output_index')
                     entry = tool_calls_by_index.get(index)
                     if entry is not None:
                         entry['arguments'] = item.get('arguments') or entry['arguments']
                         carry_inputs.append(item)
+                elif item_type == 'reasoning':
+                    carry_inputs.append(item)
+                elif item_type == 'image_generation_call':
+                    item_id = item.get('id')
+                    if not item.get('result') and item_id in image_b64_by_item:
+                        item = {**item, 'result': image_b64_by_item[item_id]}
+                    snippet = self._render_image_call(item)
+                    if snippet and item_id not in rendered_item_ids:
+                        rendered_item_ids.add(item_id)
+                        text_parts.append(snippet)
+                        self._call_on_delta(on_delta, 'text', {'delta': snippet})
+                elif item_type == 'code_interpreter_call':
+                    snippet = self._render_code_call(item)
+                    if snippet and item.get('id') not in rendered_item_ids:
+                        rendered_item_ids.add(item.get('id'))
+                        text_parts.append(snippet)
+                        self._call_on_delta(on_delta, 'text', {'delta': snippet})
             elif event_type == 'response.completed':
                 resp = event.get('response') or {}
                 usage = resp.get('usage') or {}
                 for item in resp.get('output') or []:
-                    if item.get('type') == 'message' and not any(
+                    item_type = item.get('type')
+                    if item_type == 'message' and not any(
                         c.get('type') == 'message' for c in carry_inputs
                     ):
                         carry_inputs.append(item)
+                    elif item_type == 'reasoning' and not any(
+                        c.get('type') == 'reasoning' and c.get('id') == item.get('id')
+                        for c in carry_inputs
+                    ):
+                        carry_inputs.append(item)
+                    elif item_type == 'image_generation_call':
+                        item_id = item.get('id')
+                        if not item.get('result') and item_id in image_b64_by_item:
+                            item = {**item, 'result': image_b64_by_item[item_id]}
+                        snippet = self._render_image_call(item)
+                        if snippet and item_id not in rendered_item_ids:
+                            rendered_item_ids.add(item_id)
+                            text_parts.append(snippet)
+                            self._call_on_delta(on_delta, 'text', {'delta': snippet})
+                    elif item_type == 'code_interpreter_call':
+                        snippet = self._render_code_call(item)
+                        if snippet and item.get('id') not in rendered_item_ids:
+                            rendered_item_ids.add(item.get('id'))
+                            text_parts.append(snippet)
+                            self._call_on_delta(on_delta, 'text', {'delta': snippet})
             elif event_type == 'response.error':
                 error = event.get('error') or {}
                 self._raise(error.get('message') or 'Unknown streaming error')

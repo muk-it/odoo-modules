@@ -1,10 +1,8 @@
-/** @odoo-module */
-
 import { Component } from '@odoo/owl';
 
 import { humanSize } from '@web/core/utils/binary';
 
-import { toFileModel } from './attachment';
+import { toFileModel } from '@muk_ai/core/attachment/attachment';
 
 export class AttachmentCard extends Component {
     static template = 'muk_ai.AttachmentCard';
@@ -20,22 +18,18 @@ export class AttachmentCard extends Component {
         removable: false,
         compact: false,
     };
-
     get file() {
         return toFileModel(this.props.attachment);
     }
-
     get humanSize() {
         const size = this.props.attachment.size || this.props.attachment.file_size;
         return size ? humanSize(size) : '';
     }
-
     onClick() {
         if (this.props.onOpen) {
             this.props.onOpen(this.props.attachment);
         }
     }
-
     onRemove(event) {
         event.stopPropagation();
         if (this.props.onRemove) {

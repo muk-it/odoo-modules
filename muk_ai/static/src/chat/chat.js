@@ -1,6 +1,4 @@
-/** @odoo-module */
-
-import { Component, onMounted, onPatched, onWillStart, onWillUnmount, useRef, useState } from '@odoo/owl';
+import { Component, onMounted, onWillStart, onWillUnmount, useRef, useState } from '@odoo/owl';
 
 import { _t } from '@web/core/l10n/translation';
 import { registry } from '@web/core/registry';
@@ -12,41 +10,55 @@ import { useFileViewer } from '@web/core/file_viewer/file_viewer_hook';
 import { Dropdown } from '@web/core/dropdown/dropdown';
 import { DropdownItem } from '@web/core/dropdown/dropdown_item';
 
-import { toFileModel } from '@muk_ai/core/attachment/attachment';
+import { toFileModel, toInlineImageFile } from '@muk_ai/core/attachment/attachment';
 import { AttachmentCard } from '@muk_ai/core/attachment/attachment_card';
+import {
+    approvalPill,
+    costTooltip,
+    formatCost,
+    inputPlaceholder,
+    statusLabel,
+} from '@muk_ai/chat/utils';
 
-import { ChatComposer } from './composer/chat_composer';
-import { useAiSession } from './session/use_ai_session';
-import { ChatSidebar } from './sidebar/chat_sidebar';
-import { ToolCard } from './tools/tool_card';
+import { ChatComposer } from '@muk_ai/chat/composer/chat_composer';
+import { useAiSession } from '@muk_ai/chat/session/use_ai_session';
+import { useChatScrollAnchor } from '@muk_ai/chat/session/use_scroll_anchor';
+import { ChatSidebar } from '@muk_ai/chat/sidebar/chat_sidebar';
+import { ToolCard } from '@muk_ai/chat/tools/tool_card';
 import {
     askArgsText,
     askViewMode,
     toggleAskViewMode,
-} from './session/ask_view';
+} from '@muk_ai/chat/session/ask_view';
 import {
     viewContextLabel,
     viewContextTooltip,
-} from './session/view_context_format';
+} from '@muk_ai/chat/session/view_context_format';
 
 const SESSION_LIST_LIMIT = 50;
 
-const SUGGESTIONS = [
-    { label: 'Explore', prompt: 'List all installed modules.' },
-    { label: 'Analyze', prompt: 'How many sales orders were confirmed this month?' },
-    { label: 'Summarize', prompt: 'Summarize today’s calendar events.' },
-    { label: 'Draft', prompt: 'Draft a short follow-up email for the last 3 invoices past their due date.' },
-];
-
-const SCROLL_NEAR_BOTTOM = 160;
+function normalizeSuggestions(raw) {
+    if (!Array.isArray(raw)) {
+        return [];
+    }
+    return raw
+        .filter((s) => s && typeof s.prompt === 'string' && s.prompt.trim())
+        .map((s) => ({
+            label: (typeof s.label === 'string' && s.label) || s.prompt,
+            prompt: s.prompt,
+        }));
+}
 
 export class AIChat extends Component {
     static template = 'muk_ai.Chat';
     static components = { ChatSidebar, ToolCard, ChatComposer, AttachmentCard, Dropdown, DropdownItem };
     static props = ['*'];
-
-    suggestions = SUGGESTIONS;
-
+    get suggestions() {
+        const agents = this.session.state.agents || [];
+        const agent = agents.find((a) => a.id === this.session.state.agentId)
+            || agents[0];
+        return normalizeSuggestions(agent && agent.suggestions);
+    }
     setup() {
         this.orm = useService('orm');
         this.bus = useService('bus_service');
@@ -61,13 +73,14 @@ export class AIChat extends Component {
             loading: true,
             sessions: [],
             sidebarHidden: false,
-            agents: [],
             askViews: {},
         });
         this.rootRef = useRef('root');
-        this.scrollRef = useRef('scrollArea');
-        this.session.setScrollCallback(() => this._scrollToBottom());
-        this._shouldAutoScroll = true;
+        const { scrollRef, scrollToBottom, state: scrollState } = useChatScrollAnchor('scrollArea');
+        this.scrollRef = scrollRef;
+        this.scrollToBottom = scrollToBottom;
+        this.scrollState = scrollState;
+        this.session.setScrollCallback(scrollToBottom);
         this._userBusHandler = null;
         this._loadSeq = 0;
         useDropzone(
@@ -83,7 +96,7 @@ export class AIChat extends Component {
         );
 
         onWillStart(async () => {
-            await Promise.all([this._loadSessions(), this._loadAgents()]);
+            await Promise.all([this._loadSessions(), this.session.loadAgents()]);
             this._connectUserBus();
             const requested = this._getRequestedSessionId();
             const isMobile = typeof window !== 'undefined'
@@ -100,19 +113,22 @@ export class AIChat extends Component {
             this.state.loading = false;
         });
 
-        onMounted(() => this._scrollToBottom(true));
-        onPatched(() => {
-            if (this._shouldAutoScroll) {
-                this._scrollToBottom();
-            }
-        });
+        onMounted(() => this._installImageClickHandler());
         onWillUnmount(() => this._disconnectUserBus());
     }
-
-    // ----------------------------------------------------------
-    // Sessions sidebar
-    // ----------------------------------------------------------
-
+    _installImageClickHandler() {
+        const root = this.rootRef.el;
+        if (!root) return;
+        root.addEventListener('click', (ev) => {
+            const img = ev.target.closest('.mk_md_image');
+            if (!img || !img.src) return;
+            ev.preventDefault();
+            this._openInlineImage(img.src);
+        });
+    }
+    _openInlineImage(src) {
+        this.fileViewer.open(toInlineImageFile(src));
+    }
     async _loadSessions() {
         const seq = ++this._loadSeq;
         const sessions = await this.orm.searchRead(
@@ -125,33 +141,16 @@ export class AIChat extends Component {
             this.state.sessions = sessions;
         }
     }
-
-    async _loadAgents() {
-        this.state.agents = await this.orm.searchRead(
-            'muk_ai.agent',
-            [['active', '=', true]],
-            ['id', 'name', 'description', 'read_only'],
-            { order: 'sequence, name' },
-        );
-    }
-
-    async onSetAgent(agentId) {
-        const agent = this.state.agents.find((a) => a.id === agentId);
-        await this.session.setAgent(agentId || null, agent ? agent.name : '');
-    }
-
     async _selectSession(sessionId) {
         if (this.session.state.sessionId === sessionId) {
             return;
         }
         await this.session.load(sessionId);
-        this._shouldAutoScroll = true;
-        this._scrollToBottom();
+        this.scrollToBottom(true);
         if (typeof window !== 'undefined' && window.innerWidth < 768) {
             this.state.sidebarHidden = true;
         }
     }
-
     async onNewSession() {
         const name = _t('Chat %s', new Date().toLocaleString());
         const sessionId = await this.orm.create('muk_ai.session', [{ name }]);
@@ -159,7 +158,6 @@ export class AIChat extends Component {
         await this._loadSessions();
         await this._selectSession(id);
     }
-
     async onStartWithPrompt(prompt) {
         await this.onNewSession();
         this.session.state.input = prompt;
@@ -167,18 +165,15 @@ export class AIChat extends Component {
         await this.session.onSend();
         this._refreshSidebar();
     }
-
     async onSubmitSuggestion(prompt) {
         this.session.state.input = prompt;
         this.session.state.focusToken += 1;
         await this.session.onSend();
         this._refreshSidebar();
     }
-
     async onSelectSession(sessionId) {
         await this._selectSession(sessionId);
     }
-
     async onRenameSession(sessionId, name) {
         await this.orm.write('muk_ai.session', [sessionId], { name });
         await this._loadSessions();
@@ -186,7 +181,6 @@ export class AIChat extends Component {
             this.session.state.name = name;
         }
     }
-
     async onDeleteSession(sessionId) {
         await this.orm.unlink('muk_ai.session', [sessionId]);
         await this._loadSessions();
@@ -195,66 +189,50 @@ export class AIChat extends Component {
             await this._selectSession(next);
         }
     }
-
     toggleSidebar() {
         this.state.sidebarHidden = !this.state.sidebarHidden;
     }
-
     onPopout() {
         if (!this.session.state.sessionId) {
             return;
         }
         this.chatWindow.open(this.session.state.sessionId);
     }
-
     async onSend() {
         await this.session.onSend();
         this._refreshSidebar();
     }
-
     async onStop() {
         await this.session.onStop();
         this._refreshSidebar();
     }
-
     onInputChange(value) {
         this.session.onInputChange(value);
     }
-
     onAttachFiles(files) {
         return this.session.onAttachFiles(files);
     }
-
     onRemoveAttachment(attachmentId) {
         return this.session.onRemoveAttachment(attachmentId);
     }
-
     toggleToolBlock(callId) {
         this.session.toggleToolBlock(callId);
     }
-
     onOpenAttachment(attachment) {
         const file = toFileModel(attachment);
         this.fileViewer.open(file);
     }
-
-    // ----------------------------------------------------------
-    // User bus (session list updates)
-    // ----------------------------------------------------------
-
     _connectUserBus() {
         this._disconnectUserBus();
         this._userBusHandler = (payload) => this._onUserBusEvent(payload);
         this.bus.subscribe('muk_ai.session_state', this._userBusHandler);
     }
-
     _disconnectUserBus() {
         if (this._userBusHandler) {
             this.bus.unsubscribe('muk_ai.session_state', this._userBusHandler);
             this._userBusHandler = null;
         }
     }
-
     _onUserBusEvent(payload) {
         if (!payload || !payload.session_id) {
             return;
@@ -291,7 +269,6 @@ export class AIChat extends Component {
             }
         }
     }
-
     _refreshSidebar() {
         const id = this.session.state.sessionId;
         if (!id) return;
@@ -310,11 +287,6 @@ export class AIChat extends Component {
             ...this.state.sessions.slice(idx + 1),
         ];
     }
-
-    // ----------------------------------------------------------
-    // Utilities
-    // ----------------------------------------------------------
-
     _getRequestedSessionId() {
         try {
             const actionParam = this.props?.action?.params?.session_id;
@@ -332,81 +304,48 @@ export class AIChat extends Component {
             return null;
         }
     }
-
-    _scrollToBottom(force) {
-        const el = this.scrollRef.el;
-        if (!el) {
-            return;
-        }
-        if (!force) {
-            const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
-            if (distance > SCROLL_NEAR_BOTTOM) {
-                this._shouldAutoScroll = false;
-                return;
-            }
-        }
-        this._shouldAutoScroll = true;
-        requestAnimationFrame(() => {
-            el.scrollTop = el.scrollHeight;
-        });
-    }
-
-    // ----------------------------------------------------------
-    // Template helpers
-    // ----------------------------------------------------------
-
     get renderedTurns() {
         return this.session.renderedTurns();
     }
-
     renderMarkdown(text) {
         return this.session.renderMarkdown(text);
     }
-
     isToolExpanded(callId) {
         return this.session.isToolExpanded(callId);
     }
-
+    isToolHiddenForAsk(block, turn) {
+        if (block.result !== null && block.result !== undefined) {
+            return false;
+        }
+        const pending = this.session.state.pendingAsk;
+        if (pending && pending.call_id === block.callId) {
+            return true;
+        }
+        return turn.blocks.some(
+            (b) => b.type === 'ask' && b.callId === block.callId,
+        );
+    }
     get canSend() {
         return this.session.canSend();
     }
-
     get canAttach() {
         return this.session.canAttach();
     }
-
     get canStop() {
         return this.session.canStop();
     }
-
     get composerDisabled() {
         return this.session.composerDisabled();
     }
-
     get inputPlaceholder() {
-        if (this.session.state.status === 'waiting') {
-            const kind = (this.session.state.pendingAsk || {}).kind;
-            return kind === 'approval'
-                ? _t('Approve or reject to continue…')
-                : _t('Type your answer…');
-        }
-        if (this.session.state.status === 'running') {
-            return _t('Stop to interrupt…');
-        }
-        return _t('Message the assistant… (Enter to send, Shift+Enter for newline)');
+        return inputPlaceholder(
+            this.session.state,
+            _t('Message the assistant… (Enter to send, Shift+Enter for newline)'),
+        );
     }
-
     statusLabel(status) {
-        return {
-            new: _t('New'),
-            running: _t('Running'),
-            waiting: _t('Waiting'),
-            done: _t('Done'),
-            error: _t('Error'),
-            stopped: _t('Stopped'),
-        }[status] || status;
+        return statusLabel(status);
     }
-
     get contextPercent() {
         const window = this.session.state.contextWindow;
         if (!window) {
@@ -419,14 +358,12 @@ export class AIChat extends Component {
             )),
         );
     }
-
     get contextClass() {
         const pct = this.contextPercent;
         if (pct >= 90) return 'mk_context_red';
         if (pct >= 70) return 'mk_context_amber';
         return 'mk_context_green';
     }
-
     get contextIcon() {
         const pct = this.contextPercent;
         if (pct >= 90) return 'fa-battery-empty';
@@ -435,26 +372,10 @@ export class AIChat extends Component {
         if (pct > 0) return 'fa-battery-three-quarters';
         return 'fa-battery-full';
     }
-
-    get costLabel() {
-        const cost = Number(this.session.state.totalCost) || 0;
-        if (!cost) {
-            return '0';
-        }
-        if (cost < 0.01) {
-            return cost.toFixed(4);
-        }
-        if (cost < 1) {
-            return cost.toFixed(3);
-        }
-        return cost.toFixed(2);
+    get costPill() {
+        const cost = this.session.state.totalCost;
+        return { label: formatCost(cost), tooltip: costTooltip(cost) };
     }
-
-    get costTooltip() {
-        const cost = Number(this.session.state.totalCost) || 0;
-        return `Session cost so far: $${cost.toFixed(6)} (USD)`;
-    }
-
     get contextTooltip() {
         const tokens = this.session.state.lastInputTokens || 0;
         const window = this.session.state.contextWindow || 0;
@@ -464,15 +385,12 @@ export class AIChat extends Component {
             { tokens: fmt.format(tokens), window: fmt.format(window) },
         );
     }
-
     askArgsText(block) {
         return askArgsText(block);
     }
-
     askViewMode(block) {
         return askViewMode(block, this.state.askViews);
     }
-
     toggleAskView(callId) {
         if (!callId) {
             return;
@@ -485,48 +403,14 @@ export class AIChat extends Component {
             [callId]: toggleAskViewMode(block, this.state.askViews),
         };
     }
-
     get viewContextLabel() {
         return viewContextLabel(this.session.state.viewContext);
     }
-
     get viewContextTooltip() {
         return viewContextTooltip(this.session.state.viewContext);
     }
-
-    get approvalPillLabel() {
-        const mode = this.session.state.effectiveApprovalMode || 'ask';
-        if (this.session.state.approvalMode === false) {
-            return mode === 'off' ? _t("YOLO") : _t("Ask");
-        }
-        return mode === 'off' ? _t("YOLO") : _t("Ask");
-    }
-
-    get approvalPillClass() {
-        const mode = this.session.state.effectiveApprovalMode || 'ask';
-        const base = mode === 'off' ? 'mk_approval_yolo' : 'mk_approval_ask';
-        const isOverride = this.session.state.approvalMode !== false
-            && this.session.state.approvalMode !== undefined;
-        return `${base}${isOverride ? ' mk_approval_override' : ''}`;
-    }
-
-    get approvalPillIcon() {
-        const mode = this.session.state.effectiveApprovalMode || 'ask';
-        return mode === 'off' ? 'fa-bolt' : 'fa-shield';
-    }
-
-    get approvalPillTooltip() {
-        const mode = this.session.state.effectiveApprovalMode || 'ask';
-        const override = this.session.state.approvalMode !== false
-            && this.session.state.approvalMode !== undefined;
-        if (mode === 'off') {
-            return override
-                ? _t("YOLO (override). Click to cycle.")
-                : _t("YOLO (from agent). Click to cycle.");
-        }
-        return override
-            ? _t("Ask before risky writes (override). Click to cycle.")
-            : _t("Ask before risky writes (from agent). Click to cycle.");
+    get approvalPill() {
+        return approvalPill(this.session.state);
     }
 }
 

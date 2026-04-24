@@ -1,5 +1,3 @@
-/** @odoo-module */
-
 import { Component, useRef, useState, onMounted } from '@odoo/owl';
 
 import { _t } from '@web/core/l10n/translation';
@@ -20,7 +18,6 @@ export class RenameDialog extends Component {
         initial: '',
         placeholder: _t('Chat name'),
     };
-
     setup() {
         this.state = useState({ value: this.props.initial || '' });
         this.inputRef = useRef('input');
@@ -32,23 +29,19 @@ export class RenameDialog extends Component {
             }
         });
     }
-
     get canConfirm() {
         const v = (this.state.value || '').trim();
         return !!v && v !== this.props.initial;
     }
-
     onInput(ev) {
         this.state.value = ev.target.value;
     }
-
     onKeydown(ev) {
         if (ev.key === 'Enter' && !ev.isComposing) {
             ev.preventDefault();
             this.confirm();
         }
     }
-
     confirm() {
         if (!this.canConfirm) {
             return;
@@ -56,7 +49,6 @@ export class RenameDialog extends Component {
         this.props.onConfirm(this.state.value.trim());
         this.props.close();
     }
-
     cancel() {
         this.props.close();
     }

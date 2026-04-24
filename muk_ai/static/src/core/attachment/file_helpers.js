@@ -1,5 +1,3 @@
-/** @odoo-module */
-
 const EXTENSION_MIMETYPES = {
     md: 'text/markdown',
     markdown: 'text/markdown',

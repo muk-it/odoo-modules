@@ -1,5 +1,3 @@
-/** @odoo-module */
-
 import { describe, expect, test } from '@odoo/hoot';
 import { click, queryAll, queryFirst } from '@odoo/hoot-dom';
 import { Component, xml } from '@odoo/owl';

@@ -1,5 +1,3 @@
-/** @odoo-module */
-
 export function askArgsText(block) {
     const raw = block?.preview?.arguments || block?.preview || {};
     try {

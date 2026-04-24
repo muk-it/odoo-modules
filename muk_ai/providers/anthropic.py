@@ -1,10 +1,22 @@
 import json
 
+from odoo.exceptions import UserError
+
 from .base import ProviderBase
 
 ANTHROPIC_VERSION = '2023-06-01'
 WEB_SEARCH_TOOL_TYPE = 'web_search_20250305'
 CODE_EXECUTION_TOOL_TYPE = 'code_execution_20250825'
+
+THINKING_MODEL_TOKENS = (
+    'opus-4', 'sonnet-4', '3-7-sonnet'
+)
+LEGACY_THINKING_MODEL_TOKENS = (
+    'opus-4-0', 'opus-4-1', 'opus-4-5', 'opus-4-6',
+    '3-7-sonnet', 'sonnet-4-0', 'sonnet-4-5', 'sonnet-4-6',
+)
+THINKING_BUDGET_TOKENS = 1024
+ADAPTIVE_THINKING_EFFORT = 'medium'
 
 
 class AnthropicProvider(ProviderBase):
@@ -43,11 +55,23 @@ class AnthropicProvider(ProviderBase):
     ):
         model = self.model_for(model)
         system_text, messages = self._inputs_to_messages(inputs)
+        max_tokens = self.max_tokens or 4096
         body = {
             'model': model,
             'messages': messages,
-            'max_tokens': self.max_tokens or 4096,
+            'max_tokens': max_tokens,
         }
+        if self._supports_thinking(model):
+            if self._uses_adaptive_thinking(model):
+                body['thinking'] = {'type': 'adaptive'}
+                body['output_config'] = {'effort': ADAPTIVE_THINKING_EFFORT}
+            else:
+                if max_tokens <= THINKING_BUDGET_TOKENS:
+                    body['max_tokens'] = THINKING_BUDGET_TOKENS + 1024
+                body['thinking'] = {
+                    'type': 'enabled',
+                    'budget_tokens': THINKING_BUDGET_TOKENS,
+                }
         if system_text:
             body['system'] = system_text
         tools = self._tools_to_anthropic(tools_schema)
@@ -63,9 +87,31 @@ class AnthropicProvider(ProviderBase):
             })
         if tools:
             body['tools'] = tools
+        try:
+            return self._invoke(body, on_delta)
+        except UserError as exc:
+            if 'thinking' not in body or 'thinking' not in str(exc).lower():
+                raise
+            body.pop('thinking', None)
+            body.pop('output_config', None)
+            return self._invoke(body, on_delta)
+
+    # ----------------------------------------------------------
+    # Thinking
+    # ----------------------------------------------------------
+
+    def _invoke(self, body, on_delta):
         if callable(on_delta):
             return self._stream(body, on_delta)
         return self._parse_response(self._post_json('/messages', body))
+
+    @staticmethod
+    def _supports_thinking(model):
+        return any(token in model for token in THINKING_MODEL_TOKENS)
+
+    @staticmethod
+    def _uses_adaptive_thinking(model):
+        return not any(token in model for token in LEGACY_THINKING_MODEL_TOKENS)
 
     # ----------------------------------------------------------
     # Inputs
@@ -140,6 +186,13 @@ class AnthropicProvider(ProviderBase):
             chunk_type = chunk.get('type')
             if chunk_type == 'muk_ai_attachment':
                 blocks.append(cls._attachment_to_anthropic(chunk))
+            elif chunk_type == 'muk_ai_thinking':
+                if chunk.get('thinking'):
+                    blocks.append({
+                        'type': 'thinking',
+                        'thinking': chunk['thinking'],
+                        'signature': chunk.get('signature') or '',
+                    })
             elif chunk.get('text'):
                 blocks.append({'type': 'text', 'text': chunk['text']})
         return blocks
@@ -178,16 +231,21 @@ class AnthropicProvider(ProviderBase):
     def _tools_to_anthropic(tools_schema):
         if not tools_schema:
             return []
-        return [
-            {
-                'name': tool['name'],
+        seen = set()
+        out = []
+        for tool in tools_schema:
+            name = tool['name']
+            if name in seen:
+                continue
+            seen.add(name)
+            out.append({
+                'name': name,
                 'description': tool.get('description') or '',
                 'input_schema': tool.get('parameters') or {
                     'type': 'object', 'properties': {},
                 },
-            }
-            for tool in tools_schema
-        ]
+            })
+        return out
 
     # ----------------------------------------------------------
     # Parse
@@ -197,15 +255,25 @@ class AnthropicProvider(ProviderBase):
         content = payload.get('content') or []
         text_parts = []
         tool_calls = []
-        carry_inputs = []
-        message_text_parts = []
+        function_call_carries = []
+        assistant_content = []
         for block in content:
             block_type = block.get('type')
             if block_type == 'text':
                 text = block.get('text') or ''
                 if text:
                     text_parts.append(text)
-                    message_text_parts.append(text)
+                    assistant_content.append({
+                        'type': 'output_text', 'text': text,
+                    })
+            elif block_type == 'thinking':
+                thinking = block.get('thinking') or ''
+                if thinking:
+                    assistant_content.append({
+                        'type': 'muk_ai_thinking',
+                        'thinking': thinking,
+                        'signature': block.get('signature') or '',
+                    })
             elif block_type == 'tool_use':
                 call_id = block.get('id')
                 name = block.get('name')
@@ -216,14 +284,18 @@ class AnthropicProvider(ProviderBase):
                     'arguments': arguments,
                     '_parse_error': None,
                 })
-                carry_inputs.append({
+                function_call_carries.append({
                     'type': 'function_call',
                     'name': name,
                     'arguments': json.dumps(arguments, default=str),
                     'call_id': call_id,
                 })
-        if message_text_parts:
-            carry_inputs.insert(0, self._assistant_text_carry(''.join(message_text_parts)))
+        carry_inputs = []
+        if assistant_content:
+            carry_inputs.append({
+                'role': 'assistant', 'content': assistant_content,
+            })
+        carry_inputs.extend(function_call_carries)
         usage = payload.get('usage') or {}
         return {
             'text': '\n'.join(text_parts).strip(),
@@ -236,54 +308,60 @@ class AnthropicProvider(ProviderBase):
             ),
         }
 
-    @staticmethod
-    def _assistant_text_carry(text):
-        return {
-            'role': 'assistant',
-            'content': [{'type': 'output_text', 'text': text}],
-        }
-
     # ----------------------------------------------------------
     # Streaming
     # ----------------------------------------------------------
 
     def _stream(self, body, on_delta):
         body = {**body, 'stream': True}
-        text_parts = []
-        message_text_parts = []
         blocks_by_index = {}
         usage = self._usage()
         for event in self._post_stream('/messages', body):
-            self._handle_stream_event(
-                event,
-                on_delta,
-                text_parts,
-                message_text_parts,
-                blocks_by_index,
-                usage,
-            )
+            self._handle_stream_event(event, on_delta, blocks_by_index, usage)
 
+        text_parts = []
         tool_calls = []
-        carry_inputs = []
+        function_call_carries = []
+        assistant_content = []
         for index in sorted(blocks_by_index):
             entry = blocks_by_index[index]
-            if entry.get('type') != 'tool_use':
-                continue
-            args, parse_error = self._parse_tool_arguments(entry.get('partial_json'))
-            tool_calls.append({
-                'call_id': entry['call_id'],
-                'name': entry['name'],
-                'arguments': args,
-                '_parse_error': parse_error,
-            })
+            entry_type = entry.get('type')
+            if entry_type == 'thinking':
+                if entry.get('thinking'):
+                    assistant_content.append({
+                        'type': 'muk_ai_thinking',
+                        'thinking': entry['thinking'],
+                        'signature': entry.get('signature') or '',
+                    })
+            elif entry_type == 'text':
+                text = entry.get('text') or ''
+                if text:
+                    text_parts.append(text)
+                    assistant_content.append({
+                        'type': 'output_text', 'text': text,
+                    })
+            elif entry_type == 'tool_use':
+                args, parse_error = self._parse_tool_arguments(
+                    entry.get('partial_json'),
+                )
+                tool_calls.append({
+                    'call_id': entry['call_id'],
+                    'name': entry['name'],
+                    'arguments': args,
+                    '_parse_error': parse_error,
+                })
+                function_call_carries.append({
+                    'type': 'function_call',
+                    'name': entry['name'],
+                    'arguments': json.dumps(args, default=str),
+                    'call_id': entry['call_id'],
+                })
+        carry_inputs = []
+        if assistant_content:
             carry_inputs.append({
-                'type': 'function_call',
-                'name': entry['name'],
-                'arguments': json.dumps(args, default=str),
-                'call_id': entry['call_id'],
+                'role': 'assistant', 'content': assistant_content,
             })
-        if message_text_parts:
-            carry_inputs.insert(0, self._assistant_text_carry(''.join(message_text_parts)))
+        carry_inputs.extend(function_call_carries)
         return {
             'text': ''.join(text_parts).strip(),
             'tool_calls': tool_calls,
@@ -291,15 +369,7 @@ class AnthropicProvider(ProviderBase):
             'usage': usage,
         }
 
-    def _handle_stream_event(
-        self,
-        event,
-        on_delta,
-        text_parts,
-        message_text_parts,
-        blocks_by_index,
-        usage
-    ):
+    def _handle_stream_event(self, event, on_delta, blocks_by_index, usage):
         event_type = event.get('type') or ''
         if event_type == 'message_start':
             start_usage = (event.get('message') or {}).get('usage') or {}
@@ -311,6 +381,12 @@ class AnthropicProvider(ProviderBase):
             block_type = block.get('type')
             if block_type == 'text':
                 blocks_by_index[index] = {'type': 'text', 'text': ''}
+            elif block_type == 'thinking':
+                blocks_by_index[index] = {
+                    'type': 'thinking',
+                    'thinking': block.get('thinking') or '',
+                    'signature': block.get('signature') or '',
+                }
             elif block_type == 'tool_use':
                 entry = {
                     'type': 'tool_use',
@@ -335,9 +411,17 @@ class AnthropicProvider(ProviderBase):
                 if not text:
                     return
                 entry['text'] += text
-                text_parts.append(text)
-                message_text_parts.append(text)
                 self._call_on_delta(on_delta, 'text', {'delta': text})
+            elif delta_type == 'thinking_delta' and entry.get('type') == 'thinking':
+                text = delta.get('thinking') or ''
+                if not text:
+                    return
+                entry['thinking'] += text
+                self._call_on_delta(on_delta, 'reasoning', {'delta': text})
+            elif delta_type == 'signature_delta' and entry.get('type') == 'thinking':
+                signature = delta.get('signature') or ''
+                if signature:
+                    entry['signature'] = (entry.get('signature') or '') + signature
             elif delta_type == 'input_json_delta' and entry.get('type') == 'tool_use':
                 partial = delta.get('partial_json') or ''
                 if not partial:

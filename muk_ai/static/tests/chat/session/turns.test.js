@@ -1,5 +1,3 @@
-/** @odoo-module */
-
 import { describe, expect, test } from '@odoo/hoot';
 
 import { buildRenderedTurns } from '@muk_ai/chat/session/turns';

@@ -154,6 +154,7 @@
 		<field name="view_mode">list,pivot,graph,form</field>
 		<field name="search_view_id" ref="view_ai_session_search"/>
 		<field name="context">{'search_default_mine': 1}</field>
+		<field name="path">ai-sessions</field>
 	</record>
 
 </odoo>

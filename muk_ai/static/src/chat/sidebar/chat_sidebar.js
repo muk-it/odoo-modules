@@ -1,12 +1,10 @@
-/** @odoo-module */
-
 import { Component, useState } from '@odoo/owl';
 
 import { _t } from '@web/core/l10n/translation';
 import { ConfirmationDialog } from '@web/core/confirmation_dialog/confirmation_dialog';
 import { useService } from '@web/core/utils/hooks';
 
-import { RenameDialog } from './rename_dialog';
+import { RenameDialog } from '@muk_ai/chat/sidebar/rename_dialog';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -20,12 +18,10 @@ export class ChatSidebar extends Component {
         onRename: { type: Function },
         onDelete: { type: Function },
     };
-
     setup() {
         this.dialog = useService('dialog');
         this.state = useState({ query: '' });
     }
-
     statusLabel(state) {
         return {
             new: _t('New'),
@@ -36,7 +32,6 @@ export class ChatSidebar extends Component {
             stopped: _t('Stopped'),
         }[state] || state;
     }
-
     get groups() {
         const query = this.state.query.trim().toLowerCase();
         const filtered = query
@@ -70,23 +65,18 @@ export class ChatSidebar extends Component {
             .filter(([, bucket]) => bucket.sessions.length)
             .map(([key, bucket]) => ({ key, ...bucket }));
     }
-
     get hasQuery() {
         return !!this.state.query.trim();
     }
-
     get hasAnySession() {
         return this.props.sessions.length > 0;
     }
-
     onQueryInput(ev) {
         this.state.query = ev.target.value;
     }
-
     onClearQuery() {
         this.state.query = '';
     }
-
     onRenameClick(session, ev) {
         ev.stopPropagation();
         this.dialog.add(RenameDialog, {
@@ -95,7 +85,6 @@ export class ChatSidebar extends Component {
             onConfirm: (name) => this.props.onRename(session.id, name),
         });
     }
-
     onDeleteClick(session, ev) {
         ev.stopPropagation();
         this.dialog.add(ConfirmationDialog, {
@@ -107,7 +96,6 @@ export class ChatSidebar extends Component {
             cancel: () => {},
         });
     }
-
     _parseDate(value) {
         if (!value) {
             return null;

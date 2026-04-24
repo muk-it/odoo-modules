@@ -112,6 +112,7 @@
 		<field name="name">AI Providers</field>
 		<field name="res_model">muk_ai.provider</field>
 		<field name="view_mode">list,form</field>
+		<field name="path">ai-providers</field>
 	</record>
 
 </odoo>

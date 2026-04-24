@@ -1,5 +1,3 @@
-/** @odoo-module */
-
 import { Component, useEffect, useRef, useState } from '@odoo/owl';
 
 import { AttachmentCard } from '@muk_ai/core/attachment/attachment_card';
@@ -63,7 +61,6 @@ export class ChatComposer extends Component {
             () => [this.slashCommands.length],
         );
     }
-
     get slashCommands() {
         const value = (this.props.value || '').trim();
         if (!value.startsWith('/')) {
@@ -72,15 +69,9 @@ export class ChatComposer extends Component {
         const prefix = value.split(/\s+/)[0].toLowerCase();
         return SLASH_COMMANDS.filter((c) => c.name.startsWith(prefix));
     }
-
     get showSlashMenu() {
         return !this.props.disabled && this.slashCommands.length > 0;
     }
-
-    // ----------------------------------------------------------
-    // Handlers
-    // ----------------------------------------------------------
-
     onKeydown(event) {
         if (this.showSlashMenu) {
             const count = this.slashCommands.length;
@@ -117,7 +108,6 @@ export class ChatComposer extends Component {
         event.preventDefault();
         this.onSendOrStop();
     }
-
     pickSlashCommand(index) {
         const cmd = this.slashCommands[index];
         if (!cmd) {
@@ -126,15 +116,12 @@ export class ChatComposer extends Component {
         this.props.onInput(cmd.name);
         this.localState.slashActive = 0;
     }
-
     hoverSlashCommand(index) {
         this.localState.slashActive = index;
     }
-
     onInputChange(event) {
         this.props.onInput(event.target.value);
     }
-
     onSendOrStop() {
         if (this.props.canStop && this.props.onStop) {
             this.props.onStop();
@@ -144,7 +131,6 @@ export class ChatComposer extends Component {
             this.props.onSend();
         }
     }
-
     onLabelClick(event) {
         if (!this.props.canAttach) {
             event.preventDefault();
@@ -161,7 +147,6 @@ export class ChatComposer extends Component {
         event.preventDefault();
         input.click();
     }
-
     onFileInputChange(event) {
         const files = Array.from(event.target.files || []);
         if (files.length && this.props.onAttachFiles) {
@@ -169,7 +154,6 @@ export class ChatComposer extends Component {
         }
         event.target.value = '';
     }
-
     onPaste(event) {
         if (!this.props.canAttach) {
             return;
@@ -189,13 +173,11 @@ export class ChatComposer extends Component {
             this.props.onAttachFiles(files);
         }
     }
-
     onRemoveAttachment(attachment) {
         if (this.props.onRemoveAttachment) {
             this.props.onRemoveAttachment(attachment.id);
         }
     }
-
     onOpenAttachment(attachment) {
         if (this.props.onOpenAttachment) {
             this.props.onOpenAttachment(attachment);

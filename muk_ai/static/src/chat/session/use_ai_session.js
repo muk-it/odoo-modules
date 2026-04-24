@@ -1,5 +1,3 @@
-/** @odoo-module */
-
 import { markup, onWillUnmount, useState } from '@odoo/owl';
 
 import { ConfirmationDialog } from '@web/core/confirmation_dialog/confirmation_dialog';
@@ -8,9 +6,9 @@ import { useService } from '@web/core/utils/hooks';
 
 import { fileToBase64 } from '@muk_ai/core/attachment/file_helpers';
 import { renderMarkdown as renderMarkdownToHtml } from '@muk_ai/core/markdown/markdown';
-import { formatError } from '@muk_ai/core/utils/error';
+import { formatError } from '@muk_ai/chat/utils';
 
-import { buildRenderedTurns } from './turns';
+import { buildRenderedTurns } from '@muk_ai/chat/session/turns';
 
 const SESSION_READ_FIELDS = [
     'id', 'name', 'state', 'tool_log', 'pending_ask',
@@ -66,9 +64,11 @@ export function useAiSession(options = {}) {
         contextWindow: 0,
         expandedTools: {},
         streamingText: '',
+        streamingReasoning: '',
         streamingTools: [],
         pendingAttachments: [],
         focusToken: 0,
+        agents: [],
         agentId: null,
         agentName: '',
         autoCompactPending: false,
@@ -80,10 +80,6 @@ export function useAiSession(options = {}) {
     let busHandler = null;
     let logKeys = new Set();
     let onScrollCallback = null;
-
-    // ----------------------------------------------------------
-    // Bus
-    // ----------------------------------------------------------
 
     function connectBus() {
         disconnectBus();
@@ -98,12 +94,30 @@ export function useAiSession(options = {}) {
         }
     }
 
+    function logKey(entry) {
+        const {at, ...rest} = entry || {};
+        return canonicalStringify(rest);
+    }
+
+    function canonicalStringify(value) {
+        if (value === null || typeof value !== 'object') {
+            return JSON.stringify(value);
+        }
+        if (Array.isArray(value)) {
+            return '[' + value.map(canonicalStringify).join(',') + ']';
+        }
+        const keys = Object.keys(value).sort();
+        return '{' + keys.map(
+            (k) => JSON.stringify(k) + ':' + canonicalStringify(value[k]),
+        ).join(',') + '}';
+    }
+
     function onBusEvent(event) {
         if (!event || event.session_id !== state.sessionId) {
             return;
         }
         if (event.type === 'log') {
-            const key = JSON.stringify(event.payload);
+            const key = logKey(event.payload);
             if (logKeys.has(key)) {
                 return;
             }
@@ -112,6 +126,7 @@ export function useAiSession(options = {}) {
             const kind = event.payload?.kind;
             if (kind === 'text') {
                 state.streamingText = '';
+                state.streamingReasoning = '';
             } else if (kind === 'tool_call') {
                 state.streamingTools = state.streamingTools.filter(
                     (t) => t.callId !== event.payload.call_id,
@@ -122,6 +137,12 @@ export function useAiSession(options = {}) {
             const delta = (event.payload || {}).delta || '';
             if (delta) {
                 state.streamingText = (state.streamingText || '') + delta;
+                requestScroll();
+            }
+        } else if (event.type === 'reasoning_delta') {
+            const delta = (event.payload || {}).delta || '';
+            if (delta) {
+                state.streamingReasoning = (state.streamingReasoning || '') + delta;
                 requestScroll();
             }
         } else if (event.type === 'tool_call_start') {
@@ -150,6 +171,7 @@ export function useAiSession(options = {}) {
                 state.status = event.payload.state;
                 if (event.payload.state !== 'running') {
                     state.streamingText = '';
+                    state.streamingReasoning = '';
                     state.streamingTools = [];
                 }
             }
@@ -192,10 +214,6 @@ export function useAiSession(options = {}) {
         }
     }
 
-    // ----------------------------------------------------------
-    // Loading & snapshot
-    // ----------------------------------------------------------
-
     async function load(sessionId) {
         disconnectBus();
         state.sessionId = sessionId;
@@ -205,6 +223,7 @@ export function useAiSession(options = {}) {
         state.pendingAsk = null;
         state.log = [];
         state.streamingText = '';
+        state.streamingReasoning = '';
         state.streamingTools = [];
         state.pendingAttachments = [];
         logKeys = new Set();
@@ -273,17 +292,14 @@ export function useAiSession(options = {}) {
             state.contextWindow = snapshot.context_window;
         }
         state.streamingText = '';
+        state.streamingReasoning = '';
         state.streamingTools = [];
         rebuildLogKeys();
     }
 
     function rebuildLogKeys() {
-        logKeys = new Set((state.log || []).map((entry) => JSON.stringify(entry)));
+        logKeys = new Set((state.log || []).map((entry) => logKey(entry)));
     }
-
-    // ----------------------------------------------------------
-    // User actions
-    // ----------------------------------------------------------
 
     function canSend() {
         const hasContent = state.input.trim().length > 0
@@ -335,8 +351,9 @@ export function useAiSession(options = {}) {
               }
             : { kind: 'user_message', content: message, attachments };
         state.log = [...state.log, optimistic];
-        logKeys.add(JSON.stringify(optimistic));
+        logKeys.add(logKey(optimistic));
         state.streamingText = '';
+        state.streamingReasoning = '';
         state.streamingTools = [];
         state.pendingAsk = null;
         state.status = 'running';
@@ -381,6 +398,29 @@ export function useAiSession(options = {}) {
         }
     }
 
+    async function onRegenerate() {
+        if (!state.sessionId || state.status === 'running' || state.status === 'waiting') {
+            return;
+        }
+        try {
+            const snapshot = await orm.call(
+                'muk_ai.session', 'regenerate_last_turn', [state.sessionId],
+            );
+            applySnapshot(snapshot);
+        } catch (error) {
+            notification.add(
+                _t('Failed to regenerate: %s', formatError(error)),
+                { type: 'danger' },
+            );
+        }
+    }
+
+    function canRegenerate() {
+        if (!state.sessionId) return false;
+        if (state.status === 'running' || state.status === 'waiting') return false;
+        return (state.log || []).some((e) => e.kind === 'user_message' || e.kind === 'answer');
+    }
+
     async function onAttachFiles(files) {
         if (!state.sessionId || !files || !files.length) {
             return;
@@ -402,10 +442,6 @@ export function useAiSession(options = {}) {
         }
     }
 
-    // ----------------------------------------------------------
-    // Slash commands
-    // ----------------------------------------------------------
-
     function parseSlashCommand(raw) {
         const trimmed = (raw || '').trim();
         if (!trimmed.startsWith('/')) {
@@ -420,15 +456,6 @@ export function useAiSession(options = {}) {
             return null;
         }
         return { name: `/${name}`, args: parts.join(' ') };
-    }
-
-    function filterSlashCommands(raw) {
-        const trimmed = (raw || '').trim();
-        if (!trimmed.startsWith('/')) {
-            return [];
-        }
-        const prefix = trimmed.split(/\s+/)[0].toLowerCase();
-        return SLASH_COMMANDS.filter((c) => c.name.startsWith(prefix));
     }
 
     async function dispatchCommand(slash) {
@@ -508,6 +535,29 @@ export function useAiSession(options = {}) {
         const index = order.indexOf(current);
         const next = order[(index + 1) % order.length];
         return setApprovalMode(next);
+    }
+
+    async function answerWithOption(option) {
+        if (state.status === 'running' || !option) {
+            return;
+        }
+        state.input = option;
+        await onSend();
+    }
+
+    async function respondYesno(decision) {
+        const pending = state.pendingAsk || {};
+        if (pending.kind === 'approval') {
+            if (decision === 'approve') {
+                return approveTool();
+            }
+            if (decision === 'session') {
+                return approveForSession();
+            }
+            return rejectTool();
+        }
+        const labels = { approve: 'Approve', session: 'Approve', reject: 'Reject' };
+        return answerWithOption(labels[decision] || decision);
     }
 
     async function approveTool() {
@@ -608,7 +658,7 @@ export function useAiSession(options = {}) {
             ...(extra || {}),
         };
         state.log = [...state.log, entry];
-        logKeys.add(JSON.stringify(entry));
+        logKeys.add(logKey(entry));
         requestScroll();
     }
 
@@ -713,6 +763,19 @@ export function useAiSession(options = {}) {
         }
     }
 
+    async function loadAgents() {
+        try {
+            state.agents = await orm.searchRead(
+                'muk_ai.agent',
+                [['active', '=', true]],
+                ['id', 'name', 'description', 'suggestions'],
+                { order: 'sequence, name' },
+            );
+        } catch (_error) {
+            state.agents = [];
+        }
+    }
+
     async function setAgent(agentId, agentName = '') {
         if (!state.sessionId) {
             return;
@@ -729,6 +792,11 @@ export function useAiSession(options = {}) {
                 { type: 'danger' },
             );
         }
+    }
+
+    async function onSetAgent(agentId) {
+        const agent = state.agents.find((a) => a.id === agentId);
+        await setAgent(agentId || null, agent ? agent.name : '');
     }
 
     async function onRemoveAttachment(attachmentId) {
@@ -762,21 +830,38 @@ export function useAiSession(options = {}) {
         return !!(callId && state.expandedTools[callId]);
     }
 
-    // ----------------------------------------------------------
-    // Rendering
-    // ----------------------------------------------------------
-
     function renderedTurns() {
         return buildRenderedTurns(state.log);
+    }
+
+    function latestReasoningLine() {
+        const text = state.streamingReasoning || '';
+        if (!text) {
+            return '';
+        }
+        const lines = text
+            .split(/\n+/)
+            .map((l) => l.trim().replace(/^[#*\->\s]+/, '').replace(/[*]+$/, ''))
+            .filter((l) => l.length > 0);
+        if (!lines.length) {
+            return '';
+        }
+        return lines[lines.length - 1];
     }
 
     function renderMarkdown(text) {
         return markup(renderMarkdownToHtml(text));
     }
 
-    // ----------------------------------------------------------
-    // Scroll plumbing
-    // ----------------------------------------------------------
+    function copyText(text) {
+        if (!text || !navigator.clipboard) {
+            return;
+        }
+        navigator.clipboard.writeText(String(text)).then(
+            () => notification.add(_t('Copied to clipboard'), { type: 'success' }),
+            () => notification.add(_t('Copy failed'), { type: 'danger' }),
+        );
+    }
 
     function setScrollCallback(callback) {
         onScrollCallback = callback;
@@ -787,11 +872,6 @@ export function useAiSession(options = {}) {
             onScrollCallback();
         }
     }
-
-    // ----------------------------------------------------------
-    // Lifecycle
-    // ----------------------------------------------------------
-
     onWillUnmount(() => disconnectBus());
 
     return {
@@ -803,11 +883,17 @@ export function useAiSession(options = {}) {
         onStop,
         onAttachFiles,
         onRemoveAttachment,
+        loadAgents,
         setAgent,
+        onSetAgent,
         toggleToolBlock,
         isToolExpanded,
         renderedTurns,
+        latestReasoningLine,
         renderMarkdown,
+        copyText,
+        onRegenerate,
+        canRegenerate,
         setScrollCallback,
         canSend,
         canAttach,
@@ -820,5 +906,7 @@ export function useAiSession(options = {}) {
         approveTool,
         approveForSession,
         rejectTool,
+        answerWithOption,
+        respondYesno,
     };
 }

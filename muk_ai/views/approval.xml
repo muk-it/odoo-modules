@@ -85,6 +85,7 @@
 		<field name="name">Approval Log</field>
 		<field name="res_model">muk_ai.approval</field>
 		<field name="view_mode">list,form</field>
+		<field name="path">ai-approvals</field>
 	</record>
 
 </odoo>

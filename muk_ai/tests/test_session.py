@@ -626,3 +626,197 @@ class TestAiSession(AITestCommon):
         self.assertIn('sale.order', tag)
         self.assertIn('kanban', tag)
         self.assertIn('domain=', tag)
+
+    # ----------------------------------------------------------
+    # Tests: regenerate
+    # ----------------------------------------------------------
+
+    def test_regenerate_last_turn_rewinds_and_replays(self):
+        session = self.env['muk_ai.session'].create({'name': 'rewind'})
+        with self._patch_provider([self._text_payload('first answer')]):
+            session.start('what is 2+2?')
+        self.assertEqual(session.state, 'done')
+        original_log = list(session.tool_log or [])
+        original_conv = list(session.conversation or [])
+        with self._patch_provider([self._text_payload('four')]):
+            snapshot = session.regenerate_last_turn()
+        self.assertEqual(snapshot['state'], 'done')
+        self.assertIn('four', session.last_text or '')
+        kinds = [entry.get('kind') for entry in session.tool_log or []]
+        self.assertEqual(kinds[-2:], ['user_message', 'text'])
+        self.assertLessEqual(len(session.conversation or []), len(original_conv))
+        self.assertGreater(len(original_log), 0)
+
+    def test_regenerate_refuses_while_running(self):
+        session = self.env['muk_ai.session'].create({'name': 'running'})
+        session.write({'state': 'running'})
+        with self.assertRaises(UserError):
+            session.regenerate_last_turn()
+
+    def test_regenerate_without_user_turn_raises(self):
+        session = self.env['muk_ai.session'].create({'name': 'empty'})
+        with self.assertRaises(UserError):
+            session.regenerate_last_turn()
+
+    # ----------------------------------------------------------
+    # Tests: attachments
+    # ----------------------------------------------------------
+
+    def test_upload_attachments_creates_and_links(self):
+        session = self.env['muk_ai.session'].create({'name': 'upload'})
+        descriptors = session.upload_attachments([{
+            'filename': 'note.txt',
+            'mimetype': 'text/plain',
+            'data_b64': 'aGVsbG8=',
+        }])
+        self.assertEqual(len(descriptors), 1)
+        self.assertEqual(descriptors[0]['filename'], 'note.txt')
+        self.assertTrue(session.attachment_ids)
+        attachment = session.attachment_ids[0]
+        self.assertEqual(attachment.name, 'note.txt')
+
+    def test_discard_attachments_unlinks_orphans(self):
+        session = self.env['muk_ai.session'].create({'name': 'discard'})
+        session.upload_attachments([{
+            'filename': 'a.txt', 'mimetype': 'text/plain',
+            'data_b64': 'YQ==',
+        }])
+        attachment = session.attachment_ids[0]
+        attachment_id = attachment.id
+        session.discard_attachments([attachment_id])
+        self.assertFalse(
+            self.env['ir.attachment'].browse(attachment_id).exists()
+        )
+
+    # ----------------------------------------------------------
+    # Tests: view context cleaners
+    # ----------------------------------------------------------
+
+    def test_set_view_context_list_with_domain(self):
+        session = self.env['muk_ai.session'].create({'name': 'ctx-list'})
+        session.set_view_context({
+            'kind': 'list', 'model': 'sale.order', 'view_type': 'kanban',
+            'domain': [['state', '=', 'sale']],
+        })
+        self.assertEqual(session.view_context['kind'], 'list')
+        self.assertEqual(session.view_context['view_type'], 'kanban')
+        self.assertEqual(session.view_context['domain'], [['state', '=', 'sale']])
+
+    def test_set_view_context_action(self):
+        session = self.env['muk_ai.session'].create({'name': 'ctx-action'})
+        session.set_view_context({
+            'kind': 'action', 'model': 'sale.order', 'action_id': 42,
+        })
+        self.assertEqual(session.view_context['kind'], 'action')
+        self.assertEqual(session.view_context['action_id'], 42)
+
+    def test_set_view_context_pivot_with_measures(self):
+        session = self.env['muk_ai.session'].create({'name': 'ctx-pivot'})
+        session.set_view_context({
+            'kind': 'pivot', 'model': 'sale.order',
+            'pivot_measures': ['amount_total'],
+            'pivot_row_groupby': ['partner_id'],
+            'pivot_column_groupby': ['user_id'],
+            'domain': [['state', '=', 'sale']],
+        })
+        self.assertEqual(session.view_context['view_type'], 'pivot')
+        self.assertEqual(session.view_context['pivot_measures'], ['amount_total'])
+        self.assertEqual(session.view_context['pivot_row_groupby'], ['partner_id'])
+        self.assertEqual(session.view_context['domain'], [['state', '=', 'sale']])
+
+    def test_set_view_context_graph(self):
+        session = self.env['muk_ai.session'].create({'name': 'ctx-graph'})
+        session.set_view_context({
+            'kind': 'graph', 'model': 'sale.order',
+            'graph_mode': 'bar', 'graph_measure': 'amount_total',
+            'graph_groupbys': ['partner_id'],
+        })
+        self.assertEqual(session.view_context['view_type'], 'graph')
+        self.assertEqual(session.view_context['graph_mode'], 'bar')
+        self.assertEqual(session.view_context['graph_measure'], 'amount_total')
+        self.assertEqual(session.view_context['graph_groupbys'], ['partner_id'])
+
+    def test_set_view_context_rejects_non_string_model(self):
+        session = self.env['muk_ai.session'].create({'name': 'ctx-bad-model'})
+        with self.assertRaises(UserError):
+            session.set_view_context({
+                'kind': 'list', 'model': 42,
+            })
+
+    def test_set_view_context_rejects_non_list_domain(self):
+        session = self.env['muk_ai.session'].create({'name': 'ctx-bad-domain'})
+        with self.assertRaises(UserError):
+            session.set_view_context({
+                'kind': 'list', 'model': 'res.partner', 'domain': 'oops',
+            })
+
+    def test_set_view_context_rejects_non_list_pivot_fields(self):
+        session = self.env['muk_ai.session'].create({'name': 'ctx-pivot-bad'})
+        with self.assertRaises(UserError):
+            session.set_view_context({
+                'kind': 'pivot', 'model': 'sale.order',
+                'pivot_measures': 'oops',
+            })
+
+    def test_set_view_context_rejects_non_list_graph_groupbys(self):
+        session = self.env['muk_ai.session'].create({'name': 'ctx-graph-bad'})
+        with self.assertRaises(UserError):
+            session.set_view_context({
+                'kind': 'graph', 'model': 'sale.order',
+                'graph_groupbys': 'oops',
+            })
+
+    def test_set_view_context_rejects_non_string_graph_mode(self):
+        session = self.env['muk_ai.session'].create({'name': 'ctx-graph-mode'})
+        with self.assertRaises(UserError):
+            session.set_view_context({
+                'kind': 'graph', 'model': 'sale.order', 'graph_mode': 123,
+            })
+
+    # ----------------------------------------------------------
+    # Tests: approval mode toggle
+    # ----------------------------------------------------------
+
+    def test_set_approval_mode_accepts_ask(self):
+        session = self.env['muk_ai.session'].create({'name': 'mode'})
+        session.set_approval_mode('ask')
+        self.assertEqual(session.override_approval_mode, 'ask')
+
+    def test_set_approval_mode_clears_on_empty(self):
+        session = self.env['muk_ai.session'].create({'name': 'clear-mode'})
+        session.set_approval_mode('off')
+        session.set_approval_mode(None)
+        self.assertFalse(session.override_approval_mode)
+
+    def test_set_approval_mode_rejects_unknown(self):
+        session = self.env['muk_ai.session'].create({'name': 'mode-bad'})
+        with self.assertRaises(UserError):
+            session.set_approval_mode('banana')
+
+    # ----------------------------------------------------------
+    # Tests: send_message routing
+    # ----------------------------------------------------------
+
+    def test_send_message_routes_first_turn_to_start(self):
+        session = self.env['muk_ai.session'].create({'name': 'new'})
+        with self._patch_provider([self._text_payload('hello')]):
+            snapshot = session.send_message('hi')
+        self.assertEqual(snapshot['state'], 'done')
+        self.assertEqual(session.iteration_count, 1)
+
+    def test_send_message_routes_pending_question_to_answer(self):
+        session = self.env['muk_ai.session'].create({'name': 'pending'})
+        with self._patch_provider([
+            self._tool_payload('ask_user', {'question': 'Which year?'}, 'call_q'),
+        ]):
+            session.start('pick a year')
+        self.assertEqual(session.state, 'waiting')
+        with self._patch_provider([self._text_payload('2026')]):
+            snapshot = session.send_message('2026')
+        self.assertEqual(snapshot['state'], 'done')
+
+    def test_send_message_refuses_running(self):
+        session = self.env['muk_ai.session'].create({'name': 'running'})
+        session.write({'state': 'running'})
+        with self.assertRaises(UserError):
+            session.send_message('nope')

@@ -3,6 +3,7 @@ from . import ir_model
 from . import provider
 from . import model
 from . import agent
+from . import agent_suggestion
 from . import agent_revision
 from . import approval
 from . import session

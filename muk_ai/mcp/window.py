@@ -2,6 +2,7 @@ from odoo import _, api, models
 from odoo.exceptions import UserError
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
+from odoo.addons.muk_mcp.tools.common import coerce_json_value
 
 
 class AIWindow(models.AbstractModel):
@@ -148,12 +149,11 @@ class AIWindow(models.AbstractModel):
                     'default': 'list',
                 },
                 'domain': {
-                    'type': 'array',
-                    'items': {},
+                    'type': 'string',
                     'description': (
-                        "Odoo domain to pre-filter the view."
+                        "JSON-encoded Odoo domain to pre-filter the view. "
+                        "Pass \"[]\" or omit for no filter."
                     ),
-                    'default': [],
                 },
                 'name': {
                     'type': 'string',
@@ -200,7 +200,7 @@ class AIWindow(models.AbstractModel):
             'res_model': model,
             'view_mode': view_type,
             'views': [[False, view_type]],
-            'domain': domain or [],
+            'domain': coerce_json_value(domain) or [],
             'target': target,
         }
         if name:

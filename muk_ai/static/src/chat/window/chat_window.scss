@@ -169,8 +169,13 @@
 
 .mk_window_body {
     flex: 1 1 auto;
-    overflow-y: auto;
+    min-height: 0;
     background: var(--mk-bg);
+
+    .mk_messages {
+        overflow-y: auto;
+        min-height: 0;
+    }
 }
 
 .mk_window_inner {

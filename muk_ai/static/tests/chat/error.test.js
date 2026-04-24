@@ -1,8 +1,6 @@
-/** @odoo-module */
-
 import { describe, expect, test } from '@odoo/hoot';
 
-import { formatError } from '@muk_ai/core/utils/error';
+import { formatError } from '@muk_ai/chat/utils';
 
 describe.current.tags('muk_ai');
 

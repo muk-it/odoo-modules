@@ -153,3 +153,88 @@ class TestAiAgent(AITestCommon):
         ):
             schema = session._get_tool_schema()
         self.assertEqual([t['name'] for t in schema], ['only_this'])
+
+    # ----------------------------------------------------------
+    # Actions
+    # ----------------------------------------------------------
+
+    def test_action_open_sessions_filters_by_agent(self):
+        agent = self.env['muk_ai.agent'].create({'name': 'Opener'})
+        action = agent.action_open_sessions()
+        self.assertEqual(action['type'], 'ir.actions.act_window')
+        self.assertEqual(action['res_model'], 'muk_ai.session')
+        self.assertIn(('agent_id', '=', agent.id), action['domain'])
+        self.assertEqual(action['context']['default_agent_id'], agent.id)
+
+    def test_action_open_prompt_revisions_filters_by_agent(self):
+        agent = self.env['muk_ai.agent'].create({'name': 'Historian'})
+        action = agent.action_open_prompt_revisions()
+        self.assertEqual(action['res_model'], 'muk_ai.agent.revision')
+        self.assertIn(('agent_id', '=', agent.id), action['domain'])
+
+    # ----------------------------------------------------------
+    # Compute + onchange
+    # ----------------------------------------------------------
+
+    def test_compute_tool_filter_options_includes_ask_user(self):
+        agent = self.env['muk_ai.agent'].create({'name': 'Options'})
+        names = {o['name'] for o in agent.tool_filter_options or []}
+        self.assertIn('ask_user', names)
+
+    def test_compute_session_count_matches_created_sessions(self):
+        agent = self.env['muk_ai.agent'].create({'name': 'Counter'})
+        self.env['muk_ai.session'].create({'name': 's1', 'agent_id': agent.id})
+        self.env['muk_ai.session'].create({'name': 's2', 'agent_id': agent.id})
+        agent.invalidate_recordset()
+        self.assertEqual(agent.session_count, 2)
+
+    def test_compute_revision_count_matches_created_revisions(self):
+        agent = self.env['muk_ai.agent'].create({
+            'name': 'Historied', 'system_prompt': 'v1',
+        })
+        self.env['muk_ai.agent.revision'].create({
+            'agent_id': agent.id, 'body': 'v1',
+        })
+        self.env['muk_ai.agent.revision'].create({
+            'agent_id': agent.id, 'body': 'v2',
+        })
+        agent.invalidate_recordset()
+        self.assertEqual(agent.revision_count, 2)
+
+    def test_compute_provider_capabilities_mirrors_provider(self):
+        model = self._make_model('cap-m', provider=self.provider)
+        agent = self.env['muk_ai.agent'].create({
+            'name': 'Mirror', 'model_id': model.id,
+        })
+        self.assertEqual(agent.supports_web_search, self.provider.supports_web_search)
+        self.assertEqual(
+            agent.supports_image_generation,
+            self.provider.supports_image_generation,
+        )
+        self.assertEqual(
+            agent.supports_code_interpreter,
+            self.provider.supports_code_interpreter,
+        )
+
+    def test_compute_suggestions_reflects_suggestion_records(self):
+        agent = self.env['muk_ai.agent'].create({
+            'name': 'Suggester',
+            'suggestion_ids': [
+                (0, 0, {'label': 'A', 'prompt': 'p-a', 'sequence': 10}),
+                (0, 0, {'label': 'B', 'prompt': 'p-b', 'sequence': 20}),
+            ],
+        })
+        labels = [s['label'] for s in agent.suggestions or []]
+        self.assertEqual(labels, ['A', 'B'])
+
+    def test_get_placeholder_filename_returns_icon_for_image_field(self):
+        agent = self.env['muk_ai.agent'].create({'name': 'Img'})
+        self.assertEqual(
+            agent._get_placeholder_filename('image_1920'),
+            'muk_ai/static/description/icon.png',
+        )
+
+    def test_get_placeholder_filename_delegates_for_other_fields(self):
+        agent = self.env['muk_ai.agent'].create({'name': 'Img2'})
+        result = agent._get_placeholder_filename('some_other_field')
+        self.assertNotEqual(result, 'muk_ai/static/description/icon.png')

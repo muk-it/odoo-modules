@@ -20,4 +20,13 @@
 		<field name="rate_limit">10</field>
 	</record>
 
+	<record id="provider_google" model="muk_ai.provider">
+		<field name="name">google</field>
+		<field name="sequence">30</field>
+		<field name="max_tokens">4096</field>
+		<field name="request_timeout">60</field>
+		<field name="idle_timeout">45</field>
+		<field name="rate_limit">10</field>
+	</record>
+
 </odoo>

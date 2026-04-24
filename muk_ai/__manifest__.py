@@ -3,13 +3,15 @@
     'summary': 'AI Base Module',
     'description': '''
         Base module for MuK AI features. Provides the shared foundation
-        used by MuK AI addons on top of Odoo Community: configurable
-        provider layer (OpenAI Responses API), settings page with
-        connection test, agent session model with tool dispatch through
-        muk_mcp, bus-based streaming, OWL chat client action, agents
-        with per-user access rules and a daily usage cron.
+        used by MuK AI addons on top of Odoo Community: pluggable
+        provider layer (OpenAI Responses, Anthropic Messages, Google
+        Gemini), per-provider configuration with connection test,
+        prebuilt model catalog with pricing, agent session runtime with
+        tool dispatch through muk_mcp, bus-based streaming, OWL chat
+        client action, session-scoped approval gate for risky writes,
+        and agents with per-user access rules.
     ''',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.1.82',
     'category': 'Extra Tools',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -22,7 +24,6 @@
         'bus',
         'mail',
         'base_setup',
-        'html_editor',
         'muk_mcp',
     ],
     'data': [
@@ -48,7 +49,20 @@
     ],
     'assets': {
         'web.assets_backend': [
-            'muk_ai/static/src/**/*',
+            'muk_ai/static/lib/markdown-it/markdown-it.js',
+            'muk_ai/static/src/chat/**/*',
+            'muk_ai/static/src/components/**/*',
+            'muk_ai/static/src/core/**/*',
+            'muk_ai/static/src/views/context.js',
+            'muk_ai/static/src/views/fields/**/*',
+            'muk_ai/static/src/views/form/**/*',
+            'muk_ai/static/src/views/kanban/**/*',
+            'muk_ai/static/src/views/list/**/*',
+            'muk_ai/static/src/webclient/**/*',
+        ],
+        'web.assets_backend_lazy': [
+            'muk_ai/static/src/views/graph/**/*',
+            'muk_ai/static/src/views/pivot/**/*',
         ],
         'web.assets_tests': [
             'muk_ai/static/tests/tours/**/*',

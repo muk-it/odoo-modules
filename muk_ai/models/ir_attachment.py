@@ -3,7 +3,7 @@ import base64
 from odoo import _, api, models
 from odoo.exceptions import UserError
 
-from odoo.addons.muk_ai.tools.mimetypes import (
+from odoo.addons.muk_ai.tools.attachment import (
     ALLOWED_MIMETYPES,
     DEFAULT_MAX_UPLOAD_BYTES,
     DEFAULT_TEXT_INLINE_LIMIT_KB,

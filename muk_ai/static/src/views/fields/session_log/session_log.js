@@ -1,5 +1,3 @@
-/** @odoo-module */
-
 import { Component, markup, useState } from '@odoo/owl';
 
 import { _t } from '@web/core/l10n/translation';
@@ -20,7 +18,6 @@ export class SessionLogField extends Component {
     static template = 'muk_ai.SessionLogField';
     static components = { AttachmentCard, ToolCard };
     static props = { ...standardFieldProps };
-
     setup() {
         this.state = useState({
             expandedTools: {},
@@ -28,7 +25,6 @@ export class SessionLogField extends Component {
         });
         this.session = { state: { pendingAsk: null } };
     }
-
     get turns() {
         const value = this.props.record.data[this.props.name];
         if (!Array.isArray(value) || !value.length) {
@@ -36,23 +32,18 @@ export class SessionLogField extends Component {
         }
         return buildRenderedTurns(value);
     }
-
     renderMarkdown(source) {
         return markup(renderMarkdownToHtml(source));
     }
-
     isToolExpanded(callId) {
         return !!this.state.expandedTools[callId];
     }
-
     toggleToolBlock(callId) {
         this.state.expandedTools[callId] = !this.state.expandedTools[callId];
     }
-
     askViewMode(block) {
         return askViewMode(block, this.state.askViews);
     }
-
     toggleAskView(callId) {
         const block = { callId };
         this.state.askViews[callId] = toggleAskViewMode(
@@ -60,11 +51,9 @@ export class SessionLogField extends Component {
             this.state.askViews,
         );
     }
-
     askArgsText(block) {
         return askArgsText(block);
     }
-
     onOpenAttachment() {}
 }
 

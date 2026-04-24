@@ -14,13 +14,16 @@ from .limits import (
     MAX_ITERATIONS,
     MAX_TOOL_CALLS_PER_ROUND,
 )
-from .mimetypes import (
+from .attachment import (
     ALLOWED_MIMETYPES,
+    ATTACHMENT_REF_RE,
     DEFAULT_MAX_UPLOAD_BYTES,
     DEFAULT_TEXT_INLINE_LIMIT_KB,
     IMAGE_MIMETYPES,
+    INLINE_IMAGE_RE,
     PDF_MIMETYPE,
     TEXT_MIMETYPES,
+    URL_REF_RE,
     is_unmaterialized_attachment,
 )
 from .schema import sanitize_json_schema

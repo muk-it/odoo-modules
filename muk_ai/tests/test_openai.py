@@ -1,4 +1,6 @@
-from unittest.mock import patch
+import json
+
+from unittest.mock import MagicMock, patch
 
 import requests
 
@@ -10,6 +12,23 @@ from .common import AITestCommon
 
 
 class TestAiOpenAIProvider(AITestCommon):
+
+    # ----------------------------------------------------------
+    # Helper
+    # ----------------------------------------------------------
+
+    def _sse_lines(self, events):
+        lines = []
+        for event in events:
+            lines.append('data: ' + json.dumps(event))
+            lines.append('')
+        return lines
+
+    def _mock_stream_response(self, events):
+        response = MagicMock()
+        response.iter_lines.return_value = iter(self._sse_lines(events))
+        response.raise_for_status.return_value = None
+        return response
 
     # ----------------------------------------------------------
     # Tests
@@ -207,3 +226,318 @@ class TestAiOpenAIProvider(AITestCommon):
         with patch.object(requests, 'post', side_effect=fake_post):
             self.provider._request_responses(inputs=[])
         self.assertNotIn('tools', captured['body'])
+
+    def test_request_responses_switches_to_stream_when_on_delta(self):
+        response = self._mock_stream_response([
+            {'type': 'response.output_text.delta', 'delta': 'hi'},
+            {'type': 'response.completed', 'response': {
+                'output': [],
+                'usage': {'input_tokens': 1, 'output_tokens': 1},
+            }},
+        ])
+        captured = {}
+
+        def fake_post(url, **kwargs):
+            captured['stream'] = kwargs.get('stream')
+            captured['body'] = kwargs.get('json')
+            return response
+
+        deltas = []
+        with patch.object(requests, 'post', side_effect=fake_post):
+            result = self.provider._request_responses(
+                inputs=[], on_delta=lambda k, p: deltas.append((k, p)),
+            )
+        self.assertTrue(captured['stream'])
+        self.assertTrue(captured['body']['stream'])
+        self.assertEqual(result['text'], 'hi')
+        self.assertEqual(deltas[0], ('text', {'delta': 'hi'}))
+
+    def test_stream_emits_text_and_tool_deltas(self):
+        response = self._mock_stream_response([
+            {'type': 'response.output_text.delta', 'delta': 'He'},
+            {'type': 'response.output_text.delta', 'delta': 'llo'},
+            {'type': 'response.output_item.added', 'output_index': 0, 'item': {
+                'type': 'function_call', 'call_id': 'c1', 'name': 'do_it',
+            }},
+            {'type': 'response.function_call_arguments.delta',
+             'output_index': 0, 'delta': '{"a":'},
+            {'type': 'response.function_call_arguments.delta',
+             'output_index': 0, 'delta': '1}'},
+            {'type': 'response.output_item.done', 'output_index': 0, 'item': {
+                'type': 'function_call', 'call_id': 'c1', 'name': 'do_it',
+                'arguments': '{"a":1}',
+            }},
+            {'type': 'response.completed', 'response': {
+                'output': [],
+                'usage': {
+                    'input_tokens': 11, 'output_tokens': 4,
+                    'input_tokens_details': {'cached_tokens': 3},
+                },
+            }},
+        ])
+        deltas = []
+        with patch.object(requests, 'post', return_value=response):
+            result = self.provider._request_responses(
+                inputs=[], on_delta=lambda k, p: deltas.append((k, p)),
+            )
+        text_deltas = [p['delta'] for (k, p) in deltas if k == 'text']
+        tool_starts = [p for (k, p) in deltas if k == 'tool_start']
+        tool_args = [p for (k, p) in deltas if k == 'tool_args']
+        self.assertEqual(text_deltas, ['He', 'llo'])
+        self.assertEqual(tool_starts, [{'call_id': 'c1', 'name': 'do_it'}])
+        self.assertEqual(''.join(p['delta'] for p in tool_args), '{"a":1}')
+        self.assertEqual(result['text'], 'Hello')
+        self.assertEqual(len(result['tool_calls']), 1)
+        self.assertEqual(result['tool_calls'][0]['arguments'], {'a': 1})
+        self.assertEqual(result['carry_inputs'][0]['type'], 'function_call')
+        self.assertEqual(result['usage']['input_tokens'], 11)
+        self.assertEqual(result['usage']['cached_tokens'], 3)
+
+    def test_stream_renders_image_partial_and_done(self):
+        response = self._mock_stream_response([
+            {'type': 'response.image_generation_call.partial_image',
+             'item_id': 'img1', 'partial_image_b64': 'AAAA'},
+            {'type': 'response.output_item.done', 'item': {
+                'type': 'image_generation_call', 'id': 'img1',
+            }},
+            {'type': 'response.completed', 'response': {
+                'output': [], 'usage': {'input_tokens': 2, 'output_tokens': 1},
+            }},
+        ])
+        deltas = []
+        with patch.object(requests, 'post', return_value=response):
+            result = self.provider._request_responses(
+                inputs=[], enable_image_generation=True,
+                on_delta=lambda k, p: deltas.append((k, p)),
+            )
+        self.assertIn('![generated image](data:image/png;base64,AAAA)', result['text'])
+        text_payloads = [p for (k, p) in deltas if k == 'text']
+        self.assertTrue(any('generated image' in p['delta'] for p in text_payloads))
+
+    def test_stream_renders_code_interpreter_on_item_done(self):
+        response = self._mock_stream_response([
+            {'type': 'response.output_item.done', 'item': {
+                'type': 'code_interpreter_call', 'id': 'ci1',
+                'code': 'print(1)\n',
+                'results': [
+                    {'type': 'logs', 'logs': '1\n'},
+                    {'type': 'files', 'files': [{'name': 'plot.png'}]},
+                ],
+            }},
+            {'type': 'response.completed', 'response': {
+                'output': [], 'usage': {'input_tokens': 1, 'output_tokens': 1},
+            }},
+        ])
+        with patch.object(requests, 'post', return_value=response):
+            result = self.provider._request_responses(inputs=[], on_delta=lambda k, p: None)
+        self.assertIn('```python', result['text'])
+        self.assertIn('print(1)', result['text'])
+        self.assertIn('plot.png', result['text'])
+
+    def test_stream_picks_up_message_from_response_completed(self):
+        response = self._mock_stream_response([
+            {'type': 'response.completed', 'response': {
+                'output': [{
+                    'type': 'message', 'role': 'assistant',
+                    'content': [{'type': 'output_text', 'text': 'final'}],
+                }],
+                'usage': {'input_tokens': 1, 'output_tokens': 1},
+            }},
+        ])
+        with patch.object(requests, 'post', return_value=response):
+            result = self.provider._request_responses(
+                inputs=[], on_delta=lambda k, p: None,
+            )
+        kinds = {item['type'] for item in result['carry_inputs']}
+        self.assertIn('message', kinds)
+
+    def test_stream_image_call_on_response_completed_uses_cached_b64(self):
+        response = self._mock_stream_response([
+            {'type': 'response.image_generation_call.partial_image',
+             'item_id': 'imgZ', 'partial_image_b64': 'ZZZ'},
+            {'type': 'response.completed', 'response': {
+                'output': [{'type': 'image_generation_call', 'id': 'imgZ'}],
+                'usage': {'input_tokens': 1, 'output_tokens': 1},
+            }},
+        ])
+        with patch.object(requests, 'post', return_value=response):
+            result = self.provider._request_responses(
+                inputs=[], on_delta=lambda k, p: None,
+            )
+        self.assertIn('ZZZ', result['text'])
+
+    def test_stream_code_call_on_response_completed(self):
+        response = self._mock_stream_response([
+            {'type': 'response.completed', 'response': {
+                'output': [{
+                    'type': 'code_interpreter_call', 'id': 'ci_comp',
+                    'code': 'x = 1', 'results': [],
+                }],
+                'usage': {'input_tokens': 1, 'output_tokens': 1},
+            }},
+        ])
+        with patch.object(requests, 'post', return_value=response):
+            result = self.provider._request_responses(
+                inputs=[], on_delta=lambda k, p: None,
+            )
+        self.assertIn('x = 1', result['text'])
+
+    def test_stream_error_event_raises_user_error(self):
+        response = self._mock_stream_response([
+            {'type': 'response.error', 'error': {'message': 'bad stream'}},
+        ])
+        with patch.object(requests, 'post', return_value=response):
+            with self.assertRaises(UserError):
+                self.provider._request_responses(
+                    inputs=[], on_delta=lambda k, p: None,
+                )
+
+    # ----------------------------------------------------------
+    # Attachments
+    # ----------------------------------------------------------
+
+    def test_attachment_image_becomes_input_image(self):
+        captured = {}
+
+        def fake_post(url, **kwargs):
+            captured['body'] = kwargs.get('json')
+            return self._mock_http_response({'output': [], 'usage': {}})
+
+        with patch.object(requests, 'post', side_effect=fake_post):
+            self.provider._request_responses(inputs=[{
+                'role': 'user',
+                'content': [{
+                    'type': 'muk_ai_attachment', 'strategy': 'image',
+                    'mimetype': 'image/png', 'data_b64': 'AAA=',
+                    'filename': 'p.png',
+                }],
+            }])
+        block = captured['body']['input'][0]['content'][0]
+        self.assertEqual(block['type'], 'input_image')
+        self.assertEqual(block['image_url'], 'data:image/png;base64,AAA=')
+
+    def test_attachment_file_becomes_input_file(self):
+        captured = {}
+
+        def fake_post(url, **kwargs):
+            captured['body'] = kwargs.get('json')
+            return self._mock_http_response({'output': [], 'usage': {}})
+
+        with patch.object(requests, 'post', side_effect=fake_post):
+            self.provider._request_responses(inputs=[{
+                'role': 'user',
+                'content': [{
+                    'type': 'muk_ai_attachment', 'strategy': 'file',
+                    'mimetype': 'application/pdf', 'data_b64': 'AAA=',
+                    'filename': 'doc.pdf',
+                }],
+            }])
+        block = captured['body']['input'][0]['content'][0]
+        self.assertEqual(block['type'], 'input_file')
+        self.assertEqual(block['filename'], 'doc.pdf')
+        self.assertEqual(block['file_data'], 'data:application/pdf;base64,AAA=')
+
+    def test_attachment_inline_text_prefixes_filename(self):
+        captured = {}
+
+        def fake_post(url, **kwargs):
+            captured['body'] = kwargs.get('json')
+            return self._mock_http_response({'output': [], 'usage': {}})
+
+        with patch.object(requests, 'post', side_effect=fake_post):
+            self.provider._request_responses(inputs=[{
+                'role': 'user',
+                'content': [{
+                    'type': 'muk_ai_attachment', 'strategy': 'text',
+                    'mimetype': 'text/plain', 'inline_text': 'hello body',
+                    'filename': 'note.txt',
+                }],
+            }])
+        text = captured['body']['input'][0]['content'][0]['text']
+        self.assertTrue(text.startswith('--- File: note.txt (text/plain) ---'))
+        self.assertIn('hello body', text)
+        self.assertNotIn('[truncated]', text)
+
+    def test_attachment_inline_text_appends_truncated_marker(self):
+        captured = {}
+
+        def fake_post(url, **kwargs):
+            captured['body'] = kwargs.get('json')
+            return self._mock_http_response({'output': [], 'usage': {}})
+
+        with patch.object(requests, 'post', side_effect=fake_post):
+            self.provider._request_responses(inputs=[{
+                'role': 'user',
+                'content': [{
+                    'type': 'muk_ai_attachment', 'strategy': 'text',
+                    'inline_text': 'partial', 'truncated': True,
+                }],
+            }])
+        text = captured['body']['input'][0]['content'][0]['text']
+        self.assertIn('[truncated]', text)
+
+    def test_attachment_rewrite_passes_through_non_list_content(self):
+        captured = {}
+
+        def fake_post(url, **kwargs):
+            captured['body'] = kwargs.get('json')
+            return self._mock_http_response({'output': [], 'usage': {}})
+
+        with patch.object(requests, 'post', side_effect=fake_post):
+            self.provider._request_responses(inputs=[
+                {'role': 'user', 'content': 'plain string'},
+            ])
+        self.assertEqual(captured['body']['input'][0]['content'], 'plain string')
+
+    # ----------------------------------------------------------
+    # Parse non-streaming
+    # ----------------------------------------------------------
+
+    def test_parse_renders_image_generation_call_output(self):
+        response = self._mock_http_response({
+            'output': [{
+                'type': 'image_generation_call',
+                'status': 'completed',
+                'result': 'BASE64IMG',
+            }],
+            'usage': {},
+        })
+        with patch.object(requests, 'post', return_value=response):
+            result = self.provider._request_responses(inputs=[])
+        self.assertIn('data:image/png;base64,BASE64IMG', result['text'])
+
+    def test_parse_skips_failed_image_generation_call(self):
+        response = self._mock_http_response({
+            'output': [{
+                'type': 'image_generation_call',
+                'status': 'failed', 'result': '',
+            }],
+            'usage': {},
+        })
+        with patch.object(requests, 'post', return_value=response):
+            result = self.provider._request_responses(inputs=[])
+        self.assertEqual(result['text'], '')
+
+    def test_parse_renders_code_interpreter_call_output(self):
+        response = self._mock_http_response({
+            'output': [{
+                'type': 'code_interpreter_call',
+                'code': 'print("hi")',
+                'results': [{'type': 'logs', 'logs': 'hi\n'}],
+            }],
+            'usage': {},
+        })
+        with patch.object(requests, 'post', return_value=response):
+            result = self.provider._request_responses(inputs=[])
+        self.assertIn('```python', result['text'])
+        self.assertIn('print("hi")', result['text'])
+        self.assertIn('hi', result['text'])
+
+    def test_parse_captures_bare_text_on_line(self):
+        response = self._mock_http_response({
+            'output': [{'type': 'unknown', 'text': 'stray piece'}],
+            'usage': {},
+        })
+        with patch.object(requests, 'post', return_value=response):
+            result = self.provider._request_responses(inputs=[])
+        self.assertEqual(result['text'], 'stray piece')

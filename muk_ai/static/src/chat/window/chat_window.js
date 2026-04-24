@@ -1,19 +1,23 @@
-/** @odoo-module */
-
-import { Component, onMounted, onPatched, onWillStart, useRef, useState } from '@odoo/owl';
+import { Component, onWillStart, useRef, useState } from '@odoo/owl';
 
 import { _t } from '@web/core/l10n/translation';
 import { useDropzone } from '@web/core/dropzone/dropzone_hook';
 import { useFileViewer } from '@web/core/file_viewer/file_viewer_hook';
 import { useService } from '@web/core/utils/hooks';
-import { Dropdown } from '@web/core/dropdown/dropdown';
-import { DropdownItem } from '@web/core/dropdown/dropdown_item';
 
 import { toFileModel } from '@muk_ai/core/attachment/attachment';
 import { AttachmentCard } from '@muk_ai/core/attachment/attachment_card';
+import {
+    approvalPill,
+    costTooltip,
+    formatCost,
+    inputPlaceholder,
+    statusBadgeClass,
+} from '@muk_ai/chat/utils';
 
 import { ChatComposer } from '@muk_ai/chat/composer/chat_composer';
 import { useAiSession } from '@muk_ai/chat/session/use_ai_session';
+import { useChatScrollAnchor } from '@muk_ai/chat/session/use_scroll_anchor';
 import { ToolCard } from '@muk_ai/chat/tools/tool_card';
 import {
     askArgsText,
@@ -25,29 +29,27 @@ import {
     viewContextTooltip,
 } from '@muk_ai/chat/session/view_context_format';
 
-const SCROLL_NEAR_BOTTOM = 160;
-
 export class ChatWindow extends Component {
     static template = 'muk_ai.ChatWindow';
-    static components = { ChatComposer, ToolCard, AttachmentCard, Dropdown, DropdownItem };
+    static components = { ChatComposer, ToolCard, AttachmentCard };
     static props = {
         sessionId: { type: Number },
         minimized: { type: Boolean, optional: true },
         onClose: { type: Function },
         onToggleMinimized: { type: Function },
     };
-
     setup() {
-        this.orm = useService('orm');
         this.action = useService('action');
         this.chatWindow = useService('muk_ai.chat_window');
         this.session = useAiSession();
         this.fileViewer = useFileViewer();
         this.rootRef = useRef('root');
-        this.scrollRef = useRef('scroll');
-        this.session.setScrollCallback(() => this._scrollToBottom());
-        this._shouldAutoScroll = true;
-        this.windowState = useState({ agents: [], askViews: {} });
+        const { scrollRef, scrollToBottom, state: scrollState } = useChatScrollAnchor('scroll');
+        this.scrollRef = scrollRef;
+        this.scrollToBottom = scrollToBottom;
+        this.scrollState = scrollState;
+        this.session.setScrollCallback(scrollToBottom);
+        this.windowState = useState({ askViews: {} });
         useDropzone(
             this.rootRef,
             (event) => {
@@ -60,130 +62,69 @@ export class ChatWindow extends Component {
             () => this.session.canAttach() && !this.props.minimized,
         );
 
-        onWillStart(async () => {
-            await Promise.all([this.session.load(this.props.sessionId), this._loadAgents()]);
-        });
-        onMounted(() => this._scrollToBottom(true));
-        onPatched(() => this._shouldAutoScroll && this._scrollToBottom());
+        onWillStart(() => this.session.load(this.props.sessionId));
     }
-
-    async _loadAgents() {
-        this.windowState.agents = await this.orm.searchRead(
-            'muk_ai.agent',
-            [['active', '=', true]],
-            ['id', 'name', 'description'],
-            { order: 'sequence, name' },
-        );
-    }
-
-    async onSetAgent(agentId) {
-        const agent = this.windowState.agents.find((a) => a.id === agentId);
-        await this.session.setAgent(agentId || null, agent ? agent.name : '');
-    }
-
     onOpenAttachment(attachment) {
         const file = toFileModel(attachment);
         this.fileViewer.open(file);
     }
-
-    _scrollToBottom(force) {
-        const el = this.scrollRef.el;
-        if (!el) {
-            return;
-        }
-        if (!force) {
-            const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
-            if (distance > SCROLL_NEAR_BOTTOM) {
-                this._shouldAutoScroll = false;
-                return;
-            }
-        }
-        this._shouldAutoScroll = true;
-        requestAnimationFrame(() => {
-            el.scrollTop = el.scrollHeight;
-        });
-    }
-
-    // ----------------------------------------------------------
-    // Template helpers
-    // ----------------------------------------------------------
-
     get renderedTurns() {
         return this.session.renderedTurns();
     }
-
     renderMarkdown(text) {
         return this.session.renderMarkdown(text);
     }
-
     isToolExpanded(callId) {
         return this.session.isToolExpanded(callId);
     }
-
+    isToolHiddenForAsk(block, turn) {
+        if (block.result !== null && block.result !== undefined) {
+            return false;
+        }
+        const pending = this.session.state.pendingAsk;
+        if (pending && pending.call_id === block.callId) {
+            return true;
+        }
+        return turn.blocks.some(
+            (b) => b.type === 'ask' && b.callId === block.callId,
+        );
+    }
     toggleToolBlock(callId) {
         this.session.toggleToolBlock(callId);
     }
-
     get canSend() {
         return this.session.canSend();
     }
-
     get canAttach() {
         return this.session.canAttach();
     }
-
     get canStop() {
         return this.session.canStop();
     }
-
     get composerDisabled() {
         return this.session.composerDisabled();
     }
-
     get inputPlaceholder() {
-        if (this.session.state.status === 'waiting') {
-            const kind = (this.session.state.pendingAsk || {}).kind;
-            return kind === 'approval'
-                ? _t('Approve or reject to continue…')
-                : _t('Type your answer…');
-        }
-        if (this.session.state.status === 'running') {
-            return _t('Stop to interrupt…');
-        }
-        return _t('Message…');
+        return inputPlaceholder(this.session.state, _t('Message…'));
     }
-
     statusBadgeClass(status) {
-        return {
-            new: 'mk_state_new',
-            running: 'mk_state_running',
-            waiting: 'mk_state_waiting',
-            done: 'mk_state_done',
-            error: 'mk_state_error',
-            stopped: 'mk_state_stopped',
-        }[status] || 'mk_state_new';
+        return statusBadgeClass(status);
     }
-
     onInputChange(value) {
         this.session.onInputChange(value);
     }
-
     onSend() {
         return this.session.onSend();
     }
-
     onStop() {
         return this.session.onStop();
     }
-
     onAttachFiles(files) {
         return this.session.onAttachFiles(files);
     }
-
     onRemoveAttachment(attachmentId) {
         return this.session.onRemoveAttachment(attachmentId);
     }
-
     async onFullscreen() {
         const sessionId = this.props.sessionId;
         this.chatWindow.close(sessionId);
@@ -193,15 +134,12 @@ export class ChatWindow extends Component {
             params: { session_id: sessionId },
         });
     }
-
     askArgsText(block) {
         return askArgsText(block);
     }
-
     askViewMode(block) {
         return askViewMode(block, this.windowState.askViews);
     }
-
     toggleAskView(callId) {
         if (!callId) {
             return;
@@ -214,63 +152,17 @@ export class ChatWindow extends Component {
             [callId]: toggleAskViewMode(block, this.windowState.askViews),
         };
     }
-
     get viewContextLabel() {
         return viewContextLabel(this.session.state.viewContext);
     }
-
-    get costLabel() {
-        const cost = Number(this.session.state.totalCost) || 0;
-        if (!cost) {
-            return '0';
-        }
-        if (cost < 0.01) {
-            return cost.toFixed(4);
-        }
-        if (cost < 1) {
-            return cost.toFixed(3);
-        }
-        return cost.toFixed(2);
-    }
-
-    get costTooltip() {
-        const cost = Number(this.session.state.totalCost) || 0;
-        return `Session cost so far: $${cost.toFixed(6)} (USD)`;
-    }
-
     get viewContextTooltip() {
         return viewContextTooltip(this.session.state.viewContext);
     }
-
-    get approvalPillLabel() {
-        const mode = this.session.state.effectiveApprovalMode || 'ask';
-        return mode === 'off' ? _t("YOLO") : _t("Ask");
+    get costPill() {
+        const cost = this.session.state.totalCost;
+        return { label: formatCost(cost), tooltip: costTooltip(cost) };
     }
-
-    get approvalPillClass() {
-        const mode = this.session.state.effectiveApprovalMode || 'ask';
-        const base = mode === 'off' ? 'mk_approval_yolo' : 'mk_approval_ask';
-        const isOverride = this.session.state.approvalMode !== false
-            && this.session.state.approvalMode !== undefined;
-        return `${base}${isOverride ? ' mk_approval_override' : ''}`;
-    }
-
-    get approvalPillIcon() {
-        const mode = this.session.state.effectiveApprovalMode || 'ask';
-        return mode === 'off' ? 'fa-bolt' : 'fa-shield';
-    }
-
-    get approvalPillTooltip() {
-        const mode = this.session.state.effectiveApprovalMode || 'ask';
-        const override = this.session.state.approvalMode !== false
-            && this.session.state.approvalMode !== undefined;
-        if (mode === 'off') {
-            return override
-                ? _t("YOLO (override). Click to cycle.")
-                : _t("YOLO (from agent). Click to cycle.");
-        }
-        return override
-            ? _t("Ask before risky writes (override). Click to cycle.")
-            : _t("Ask before risky writes (from agent). Click to cycle.");
+    get approvalPill() {
+        return approvalPill(this.session.state);
     }
 }

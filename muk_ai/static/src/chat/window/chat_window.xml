@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
 
     <t t-name="muk_ai.ChatWindow">
@@ -44,12 +44,12 @@
                     <button
                         t-if="session.state.sessionId"
                         class="btn btn-sm mk_approval_pill rounded-pill border-0 d-inline-flex align-items-center gap-1"
-                        t-att-class="approvalPillClass"
-                        t-att-title="approvalPillTooltip"
+                        t-att-class="approvalPill.className"
+                        t-att-title="approvalPill.tooltip"
                         t-on-click="() => this.session.cycleApprovalMode()"
                     >
-                        <i class="fa" t-att-class="approvalPillIcon"/>
-                        <span t-esc="approvalPillLabel"/>
+                        <i class="fa" t-att-class="approvalPill.icon"/>
+                        <span t-esc="approvalPill.label"/>
                     </button>
                     <span
                         class="mk_chip mk_ctx_chip rounded-pill d-inline-flex align-items-center"
@@ -73,15 +73,23 @@
                     <span
                         class="mk_chip mk_cost_chip rounded-pill ms-auto"
                         t-if="session.state.sessionId"
-                        t-att-title="costTooltip"
+                        t-att-title="costPill.tooltip"
                     >
-                        <i class="fa fa-dollar me-1"/><t t-esc="costLabel"/>
+                        <i class="fa fa-dollar me-1"/><t t-esc="costPill.label"/>
                     </span>
                 </div>
             </t>
 
             <t t-if="!props.minimized">
-                <div class="mk_window_body mk_messages" t-ref="scroll">
+                <div class="mk_window_body position-relative d-flex flex-column">
+                    <button t-if="!scrollState.atBottom"
+                            class="mk_scroll_bottom"
+                            type="button"
+                            title="Scroll to latest"
+                            t-on-click="() => this.scrollToBottom(true)">
+                        <i class="fa fa-arrow-down"/>
+                    </button>
+                    <div class="mk_messages flex-grow-1" t-ref="scroll">
                     <div class="mk_window_inner">
                         <t t-if="session.state.loading">
                             <div class="text-center text-muted small py-3">
@@ -89,7 +97,7 @@
                             </div>
                         </t>
                         <t t-else="">
-                            <t t-foreach="renderedTurns" t-as="turn" t-key="turn_index">
+                            <t t-foreach="renderedTurns" t-as="turn" t-key="turn.at || turn_index">
                                 <t t-call="muk_ai.ChatTurn">
                                     <t t-set="turn" t-value="turn"/>
                                 </t>
@@ -104,12 +112,12 @@
                                     </t>
                                     <div
                                         class="mk_bubble mk_bubble_assistant mk_markdown mk_streaming"
-                                        t-if="session.state.streamingText or !session.state.streamingTools.length"
+                                        t-if="session.state.streamingText or session.state.streamingReasoning or !session.state.streamingTools.length"
                                     >
                                         <t t-if="session.state.streamingText" t-out="renderMarkdown(session.state.streamingText)"/>
                                         <span t-else="" class="mk_thinking">
                                             <span class="mk_dots"><span/><span/><span/></span>
-                                            <span>Thinking</span>
+                                            <span class="mk_thinking_status" t-esc="session.state.streamingReasoning ? session.latestReasoningLine() : 'Thinking'"/>
                                         </span>
                                     </div>
                                 </div>
@@ -121,6 +129,7 @@
                                 </div>
                             </t>
                         </t>
+                    </div>
                     </div>
                 </div>
 
