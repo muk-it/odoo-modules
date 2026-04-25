@@ -1,12 +1,28 @@
 import { _t } from '@web/core/l10n/translation';
+import { formatDateTime } from '@web/core/l10n/dates';
+
+const { DateTime } = luxon;
 
 export function formatError(error) {
     return error?.data?.message || error?.message || String(error);
 }
 
+export function formatTimestamp(at) {
+    if (!at) {
+        return '';
+    }
+    try {
+        const dt = DateTime.fromISO(at, { zone: 'utc' }).toLocal();
+        return dt.isValid ? formatDateTime(dt) : '';
+    } catch (_e) {
+        return '';
+    }
+}
+
 const STATUS_BADGE_CLASSES = {
     new: 'mk_state_new',
     running: 'mk_state_running',
+    compacting: 'mk_state_running',
     waiting: 'mk_state_waiting',
     done: 'mk_state_done',
     error: 'mk_state_error',
@@ -17,6 +33,7 @@ export function statusLabel(status) {
     return {
         new: _t('New'),
         running: _t('Running'),
+        compacting: _t('Compacting'),
         waiting: _t('Waiting'),
         done: _t('Done'),
         error: _t('Error'),
@@ -56,13 +73,13 @@ export function approvalPill(state) {
     const isOff = mode === 'off';
     const override = hasOverride(state);
     return {
-        label: isOff ? _t('YOLO') : _t('Ask'),
+        label: isOff ? _t('Bypass') : _t('Ask'),
         icon: isOff ? 'fa-bolt' : 'fa-shield',
-        className: `${isOff ? 'mk_approval_yolo' : 'mk_approval_ask'}${override ? ' mk_approval_override' : ''}`,
+        className: `${isOff ? 'mk_approval_bypass' : 'mk_approval_ask'}${override ? ' mk_approval_override' : ''}`,
         tooltip: isOff
             ? (override
-                ? _t('YOLO (override). Click to cycle.')
-                : _t('YOLO (from agent). Click to cycle.'))
+                ? _t('Bypass (override). Click to cycle.')
+                : _t('Bypass (from agent). Click to cycle.'))
             : (override
                 ? _t('Ask before risky writes (override). Click to cycle.')
                 : _t('Ask before risky writes (from agent). Click to cycle.')),
@@ -78,6 +95,9 @@ export function inputPlaceholder(state, defaultText) {
     }
     if (state.status === 'running') {
         return _t('Stop to interrupt…');
+    }
+    if (state.status === 'compacting') {
+        return _t('Compacting…');
     }
     return defaultText;
 }

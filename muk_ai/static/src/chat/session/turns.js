@@ -56,7 +56,12 @@ export function buildRenderedTurns(log) {
                 current = withAt({ role: 'assistant', blocks: [] }, at);
                 turns.push(current);
             }
-            current.blocks.push(withAt({ type: 'text', text: entry.content }, at));
+            const last = current.blocks[current.blocks.length - 1];
+            if (last && last.type === 'text') {
+                last.text = last.text + '\n\n' + entry.content;
+            } else {
+                current.blocks.push(withAt({ type: 'text', text: entry.content }, at));
+            }
         } else if (entry.kind === 'ask_user') {
             if (!current) {
                 current = withAt({ role: 'assistant', blocks: [] }, at);

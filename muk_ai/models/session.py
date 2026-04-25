@@ -1,13 +1,15 @@
 import base64
 import json
+import logging
 import re
 import time
 
 from datetime import timedelta
 
+import psycopg2
 import requests
 
-from odoo import _, api, fields, models, modules
+from odoo import SUPERUSER_ID, _, api, fields, models, modules
 from odoo.exceptions import UserError
 from odoo.tools.rendering_tools import parse_inline_template, render_inline_template
 
@@ -27,6 +29,13 @@ from odoo.addons.muk_ai.tools.limits import (
     MAX_ITERATIONS,
     MAX_TOOL_CALLS_PER_ROUND,
 )
+
+_logger = logging.getLogger(__name__)
+
+ADVISORY_LOCK_NAMESPACE = 0x4D554B41  # "MUKA"
+WORKER_HEARTBEAT_INTERVAL = 5
+WORKER_STALE_THRESHOLD = 60
+WORKER_CRON_COUNT = 4
 
 
 class AISession(models.Model):
@@ -50,6 +59,7 @@ class AISession(models.Model):
         selection=[
             ('new', "New"),
             ('running', "Running"),
+            ('compacting', "Compacting"),
             ('waiting', "Waiting"),
             ('stopped', "Stopped"),
             ('done', "Done"),
@@ -61,6 +71,30 @@ class AISession(models.Model):
         index=True,
         copy=False,
         default='new',
+    )
+
+    claimed_at = fields.Datetime(
+        string="Worker Claimed At",
+        readonly=True,
+        copy=False,
+        index=True,
+        help=(
+            "Heartbeat written by the cron worker while processing this "
+            "session. Sessions in `running` or `compacting` state with a "
+            "stale heartbeat are reclaimed as orphans by the next cron tick."
+        ),
+    )
+
+    user_context = fields.Json(
+        string="User Context",
+        readonly=True,
+        copy=False,
+        help=(
+            "Snapshot of the calling user's environment context captured at "
+            "trigger time. Restored by the cron worker so tools see the same "
+            "language, timezone, and allowed companies as the originating "
+            "request."
+        ),
     )
 
     user_id = fields.Many2one(
@@ -153,13 +187,23 @@ class AISession(models.Model):
         ),
     )
 
-    pending_user_messages = fields.Json(
-        string="Queued User Messages",
+    pending_ids = fields.One2many(
+        comodel_name='muk_ai.session.pending',
+        inverse_name='session_id',
+        string="Pending Messages",
         readonly=True,
         help=(
             "FIFO queue of user messages typed while the session was busy. "
-            "Each entry is `{content, attachment_ids, queued_at}`. Drained "
-            "one-by-one at the end of `_run_to_completion`."
+            "Drained as one combined turn at the end of `_run_to_completion`."
+        ),
+    )
+
+    pending_user_messages = fields.Json(
+        compute='_compute_pending_user_messages',
+        string="Queued User Messages",
+        help=(
+            "Serialized snapshot of `pending_ids` in the shape consumed by "
+            "the chat client."
         ),
     )
 
@@ -488,13 +532,20 @@ class AISession(models.Model):
             {'state': state} | ({'error': error} if error else {})
         )
 
-    def _recover_if_stuck(self, idle_seconds=90):
-        if self.state != 'running' or not self.write_date:
+    def _recover_if_stuck(self, idle_seconds=WORKER_STALE_THRESHOLD):
+        if self.state not in ('running', 'compacting'):
             return False
-        idle = (fields.Datetime.now() - self.write_date).total_seconds()
+        reference = self.claimed_at or self.write_date
+        if not reference:
+            return False
+        idle = (fields.Datetime.now() - reference).total_seconds()
         if idle < idle_seconds:
             return False
-        had_queue = bool(self.pending_user_messages)
+        pending = self.pending_ids
+        had_queue = bool(pending)
+        if pending:
+            pending.unlink()
+            self.invalidate_recordset(['pending_ids'])
         self.write({
             'state': 'error',
             'error_message': _(
@@ -502,7 +553,6 @@ class AISession(models.Model):
                 "activity. Session reset.",
                 idle=int(idle),
             ),
-            'pending_user_messages': [],
         })
         self._publish_event('state', {
             'state': 'error',
@@ -522,7 +572,7 @@ class AISession(models.Model):
             'attachments': [a._ai_describe() for a in self.attachment_ids],
             'total_input_cost': self.total_input_cost,
             'total_output_cost': self.total_output_cost,
-            'pending_user_messages': self.pending_user_messages or [],
+            'pending_user_messages': self._serialize_pending(),
             **self._state_metrics(),
         }
 
@@ -670,9 +720,17 @@ class AISession(models.Model):
         last = buffer_state.get('last_state_check', 0)
         if (now := time.monotonic()) - last >= 0.3:
             buffer_state['last_state_check'] = now
+            last_beat = buffer_state.get('last_heartbeat', 0)
+            if now - last_beat >= WORKER_HEARTBEAT_INTERVAL:
+                buffer_state['last_heartbeat'] = now
+                self.claimed_at = fields.Datetime.now()
             self._commit_safe()
             self.invalidate_recordset(['state'])
             if self.state == 'stopped':
+                if buffer_state.get('full_text'):
+                    self._persist_partial(buffer_state)
+                    buffer_state['full_text'] = ''
+                    self._commit_safe()
                 raise StreamCancelled()
 
     def _on_stream_delta(self, kind, payload, buffer_state):
@@ -1052,11 +1110,17 @@ class AISession(models.Model):
         for _iteration in range(MAX_ITERATIONS):
             if self.state != 'running':
                 return
+            self.invalidate_recordset(['pending_ids'])
+            if self.pending_ids and self._drain_pending_message():
+                has_terminating = False
             schema, round_agent = (None, None) if has_terminating else (tool_schema, agent)
             try:
                 payload = self._stream_provider_round(provider, schema, model, round_agent)
             except StreamCancelled:
-                self._publish_event('state', {'state': 'stopped'})
+                self.env.cr.rollback()
+                self.invalidate_recordset(['state'])
+                if self.state == 'stopped':
+                    self._publish_event('state', {'state': 'stopped'})
                 return
             except UserError as error:
                 self._transition_state('error', error=str(error))
@@ -1076,35 +1140,40 @@ class AISession(models.Model):
     # Queue
     # ----------------------------------------------------------
 
+    def _serialize_pending(self):
+        return [p._to_payload() for p in self.pending_ids]
+
     def enqueue_message(self, user_message, attachment_ids=None):
-        queue = list(self.pending_user_messages or [])
-        queue.append({
+        self.env['muk_ai.session.pending'].create({
+            'session_id': self.id,
             'content': user_message or '',
             'attachment_ids': list(attachment_ids or []),
-            'queued_at': fields.Datetime.now().isoformat(),
         })
-        self.write({'pending_user_messages': queue})
-        self._publish_event('queue', {'pending': queue})
+        self.invalidate_recordset(['pending_ids'])
+        self._publish_event('queue', {'pending': self._serialize_pending()})
         return self._get_snapshot()
 
     def cancel_queued(self, index):
-        queue = list(self.pending_user_messages or [])
-        if 0 <= index < len(queue):
-            queue.pop(index)
-            self.write({'pending_user_messages': queue})
-            self._publish_event('queue', {'pending': queue})
+        pending = self.pending_ids
+        if 0 <= index < len(pending):
+            pending[index].unlink()
+            self.invalidate_recordset(['pending_ids'])
+            self._publish_event(
+                'queue', {'pending': self._serialize_pending()},
+            )
         return self._get_snapshot()
 
     def _drain_pending_message(self):
-        queue = list(self.pending_user_messages or [])
-        if not queue:
+        pending = self.pending_ids
+        if not pending:
             return False
-        contents = [q.get('content') or '' for q in queue]
+        contents = [p.content or '' for p in pending]
         attachment_ids = [
-            aid for q in queue for aid in (q.get('attachment_ids') or [])
+            aid for p in pending for aid in (p.attachment_ids or [])
         ]
         combined = '\n\n'.join(c for c in contents if c.strip())
-        self.write({'pending_user_messages': []})
+        pending.unlink()
+        self.invalidate_recordset(['pending_ids'])
         self._publish_event('queue', {'pending': []})
         attachments = self._resolve_attachments(attachment_ids)
         self._enqueue_user_turn(combined, attachments)
@@ -1233,14 +1302,12 @@ class AISession(models.Model):
         )
         self.pending_ask = False
         self._transition_state('running')
-        round_result = self._process_tool_round(
+        self._process_tool_round(
             tool_calls,
             outputs,
             resume_index + 1,
             has_terminating=has_terminating,
         )
-        if round_result is not None:
-            self._run_to_completion(has_terminating=round_result)
 
     # ----------------------------------------------------------
     # Context
@@ -1334,7 +1401,7 @@ class AISession(models.Model):
             self._enqueue_user_turn(user_message, attachments, extend=False)
         else:
             self._enqueue_user_turn(user_message, attachments)
-        self._run_to_completion()
+        self._trigger_worker()
         return self._get_snapshot()
 
     def answer(self, answer, attachment_ids=None):
@@ -1369,12 +1436,12 @@ class AISession(models.Model):
             'pending_ask': False,
         })
         self._publish_event('state', {'state': 'running'})
-        self._run_to_completion()
+        self._trigger_worker()
         return self._get_snapshot()
 
     def send_message(self, user_message, attachment_ids=None):
         self._recover_if_stuck()
-        if self.state == 'running':
+        if self.state in ('running', 'compacting'):
             return self.enqueue_message(
                 user_message, attachment_ids=attachment_ids,
             )
@@ -1390,7 +1457,7 @@ class AISession(models.Model):
             return self.start(user_message, attachment_ids=attachment_ids)
         attachments = self._resolve_attachments(attachment_ids)
         self._enqueue_user_turn(user_message, attachments)
-        self._run_to_completion()
+        self._trigger_worker()
         return self._get_snapshot()
 
     def regenerate_last_turn(self):
@@ -1423,11 +1490,11 @@ class AISession(models.Model):
             'state': 'running',
         })
         self._publish_event('state', {'state': 'running'})
-        self._run_to_completion()
+        self._trigger_worker()
         return self._get_snapshot()
 
     def clear(self):
-        if self.state == 'running':
+        if self.state in ('running', 'compacting'):
             raise UserError(_(
                 "Cannot clear the conversation while the session is running.",
             ))
@@ -1436,6 +1503,9 @@ class AISession(models.Model):
             'name': '/clear',
             'message': _("Conversation cleared."),
         }
+        if self.pending_ids:
+            self.pending_ids.unlink()
+            self.invalidate_recordset(['pending_ids'])
         self.write({
             'conversation': [],
             'tool_log': [log_entry],
@@ -1446,7 +1516,6 @@ class AISession(models.Model):
             'iteration_count': 0,
             'last_input_tokens': 0,
             'state': 'new',
-            'pending_user_messages': [],
         })
         self._publish_event('log', log_entry)
         self._publish_event('state', {'state': 'new'})
@@ -1454,12 +1523,18 @@ class AISession(models.Model):
         return self._get_snapshot()
 
     def compact(self):
-        if self.state == 'running':
+        if self.state in ('running', 'compacting'):
             raise UserError(_("Cannot compact while the session is running. Stop first."))
         if self.state == 'waiting':
             raise UserError(_("Cannot compact while the session is waiting for user input."))
         if not self.conversation:
             raise UserError(_("Nothing to compact yet — the conversation is empty."))
+        self.write({'state': 'compacting', 'error_message': False})
+        self._publish_event('state', {'state': 'compacting'})
+        self._trigger_worker()
+        return self._get_snapshot()
+
+    def _do_compact(self):
         try:
             payload = self._effective_provider()._request_responses(
                 inputs=list(self.conversation) + [{
@@ -1475,9 +1550,13 @@ class AISession(models.Model):
                 model=self._effective_model(),
             )
         except Exception as error:
-            raise UserError(_("Failed to compact conversation: %s", error)) from error
+            self._transition_state('error', error=str(error))
+            return
         if not (summary := (payload.get('text') or '').strip()):
-            raise UserError(_("The provider did not return a summary."))
+            self._transition_state(
+                'error', error=_("The provider did not return a summary."),
+            )
+            return
         log_entry = {
             'kind': 'command', 'name': '/compact', 'summary': summary,
             'original_messages': sum(
@@ -1501,10 +1580,13 @@ class AISession(models.Model):
             'pending_ask': False,
             'error_message': False,
             'last_input_tokens': 0,
+            'state': 'done',
         })
         self._append_log(log_entry)
-        self._publish_event('state', {'state': self.state})
-        return self._get_snapshot()
+        self._publish_event('state', {'state': 'done'})
+        if self.pending_ids:
+            self._drain_pending_message()
+            self._run_to_completion()
 
     def upload_attachments(self, files):
         created = self.env['ir.attachment']
@@ -1571,7 +1653,7 @@ class AISession(models.Model):
     def set_approval_mode(self, mode):
         if mode and mode not in ('ask', 'off'):
             raise UserError(_("Unknown approval mode %(mode)r.", mode=mode))
-        self.override_approval_mode = mode or False
+        self.write({'override_approval_mode': mode or False})
         self._publish_event('state', {'state': self.state})
         return self._get_snapshot()
 
@@ -1583,6 +1665,8 @@ class AISession(models.Model):
             risk=pending.get('risk') or {},
         )
         self._resume_tool_round(pending, approved=True)
+        if self.state == 'running':
+            self._trigger_worker()
         return self._get_snapshot()
 
     def approve_for_session(self):
@@ -1599,6 +1683,8 @@ class AISession(models.Model):
             risk=risk,
         )
         self._resume_tool_round(pending, approved=True)
+        if self.state == 'running':
+            self._trigger_worker()
         return self._get_snapshot()
 
     def reject_tool(self, reason=None):
@@ -1611,6 +1697,8 @@ class AISession(models.Model):
             reject_reason=reason,
         )
         self._resume_tool_round(pending, approved=False, reject_reason=reason)
+        if self.state == 'running':
+            self._trigger_worker()
         return self._get_snapshot()
 
     # ----------------------------------------------------------
@@ -1634,6 +1722,206 @@ class AISession(models.Model):
         return self._get_snapshot()
 
     # ----------------------------------------------------------
+    # Cron
+    # ----------------------------------------------------------
+
+    @api.model
+    def _ensure_worker_crons(self):
+        IrCron = self.env['ir.cron'].sudo()
+        IrServer = self.env['ir.actions.server'].sudo()
+        IrModelData = self.env['ir.model.data'].sudo()
+        model = self.env['ir.model']._get(self._name)
+        for index in range(1, WORKER_CRON_COUNT + 1):
+            xmlid = f'cron_run_pending_sessions_{index}'
+            data = IrModelData.search([
+                ('module', '=', 'muk_ai'), ('name', '=', xmlid),
+            ], limit=1)
+            if data:
+                if IrCron.browse(data.res_id).exists():
+                    continue
+                data.unlink()
+            server = IrServer.create({
+                'name': _("MuK AI: Session Worker %s", index),
+                'model_id': model.id,
+                'state': 'code',
+                'code': 'model._cron_run_pending_sessions()',
+                'usage': 'ir_cron',
+            })
+            cron = IrCron.create({
+                'ir_actions_server_id': server.id,
+                'interval_number': 1,
+                'interval_type': 'minutes',
+                'active': True,
+                'user_id': SUPERUSER_ID,
+            })
+            IrModelData.create({
+                'name': xmlid,
+                'module': 'muk_ai',
+                'model': 'ir.cron',
+                'res_id': cron.id,
+                'noupdate': True,
+            })
+
+    def _capture_user_context(self):
+        safe = {}
+        for key, value in (self.env.context or {}).items():
+            try:
+                json.dumps(value)
+            except (TypeError, ValueError):
+                continue
+            safe[key] = value
+        return safe
+
+    def _trigger_worker(self):
+        if self:
+            self.sudo().write({
+                'user_context': self._capture_user_context(),
+            })
+        first = self.env.ref(
+            'muk_ai.cron_run_pending_sessions_1',
+            raise_if_not_found=False,
+        )
+        if not first:
+            try:
+                self._ensure_worker_crons()
+            except Exception:
+                _logger.warning(
+                    "muk_ai: failed to provision worker crons",
+                    exc_info=True,
+                )
+        for index in range(1, WORKER_CRON_COUNT + 1):
+            cron = self.env.ref(
+                f'muk_ai.cron_run_pending_sessions_{index}',
+                raise_if_not_found=False,
+            )
+            if cron:
+                cron.sudo()._trigger()
+
+    @api.model
+    def _cron_run_pending_sessions(self):
+        self._sweep_orphan_sessions()
+        candidates = self._find_pending_session_ids()
+        if not candidates:
+            return
+        # Release any locks the cron's outer txn might have grabbed before
+        # the worker opens its own connection (the worker writes session
+        # state and would otherwise deadlock with this transaction's locks).
+        self._commit_safe()
+        for sid in candidates:
+            if self._process_session_in_worker(sid):
+                break
+        if len(candidates) > 1:
+            self._trigger_worker()
+
+    @api.model
+    def _sweep_orphan_sessions(self):
+        threshold = (
+            fields.Datetime.now() - timedelta(seconds=WORKER_STALE_THRESHOLD)
+        )
+        orphans = self.sudo().search([
+            ('state', 'in', ('running', 'compacting')),
+            ('write_date', '<', threshold),
+            '|',
+                ('claimed_at', '=', False),
+                ('claimed_at', '<', threshold),
+        ])
+        for session in orphans:
+            try:
+                with self.env.cr.savepoint():
+                    session.write({
+                        'state': 'error',
+                        'error_message': _(
+                            "Worker abandoned the session — please retry."
+                        ),
+                    })
+                session._publish_event('state', {
+                    'state': 'error', 'error': session.error_message,
+                })
+            except psycopg2.errors.SerializationFailure:
+                # Another cron worker swept this orphan first; let it.
+                continue
+
+    @api.model
+    def _find_pending_session_ids(self, limit=WORKER_CRON_COUNT):
+        self.env.cr.execute(
+            """
+            SELECT id FROM muk_ai_session
+            WHERE state IN ('running', 'compacting')
+            ORDER BY write_date
+            LIMIT %s
+            """,
+            [limit],
+        )
+        return [row[0] for row in self.env.cr.fetchall()]
+
+    @api.model
+    def _process_session_in_worker(self, session_id):
+        with self.pool.cursor() as cr:
+            cr.execute(
+                "SELECT pg_try_advisory_lock(%s, %s)",
+                [ADVISORY_LOCK_NAMESPACE, session_id],
+            )
+            if not cr.fetchone()[0]:
+                return False
+            try:
+                env_su = api.Environment(cr, SUPERUSER_ID, {})
+                session_su = env_su['muk_ai.session'].browse(session_id)
+                if not session_su.exists():
+                    return False
+                if session_su.state not in ('running', 'compacting'):
+                    return False
+                owner_id = session_su.user_id.id
+                saved_context = session_su.user_context or {}
+                env = api.Environment(cr, owner_id, saved_context)
+                session = env['muk_ai.session'].browse(session_id)
+                session.write({'claimed_at': fields.Datetime.now()})
+                cr.commit()
+                mode = session.state
+                try:
+                    if mode == 'compacting':
+                        session._do_compact()
+                    else:
+                        session._run_to_completion()
+                    cr.commit()
+                except StreamCancelled:
+                    cr.rollback()
+                except Exception as error:  # noqa: BLE001
+                    _logger.exception(
+                        "Worker failed for session %s", session_id,
+                    )
+                    cr.rollback()
+                    self._mark_session_error(session_id, str(error))
+                return True
+            finally:
+                try:
+                    cr.execute(
+                        "SELECT pg_advisory_unlock(%s, %s)",
+                        [ADVISORY_LOCK_NAMESPACE, session_id],
+                    )
+                    cr.fetchone()
+                except Exception:
+                    _logger.exception(
+                        "Failed to release advisory lock for session %s",
+                        session_id,
+                    )
+
+    @api.model
+    def _mark_session_error(self, session_id, message):
+        with self.pool.cursor() as cr:
+            env = api.Environment(cr, SUPERUSER_ID, {})
+            session = env['muk_ai.session'].browse(session_id)
+            if not session.exists():
+                return
+            session.write({
+                'state': 'error',
+                'error_message': message,
+            })
+            session._publish_event('state', {
+                'state': 'error', 'error': message,
+            })
+            cr.commit()
+
+    # ----------------------------------------------------------
     # Compute
     # ----------------------------------------------------------
 
@@ -1646,6 +1934,16 @@ class AISession(models.Model):
     def _compute_effective_approval_mode(self):
         for record in self:
             record.effective_approval_mode = record._effective_approval_mode()
+
+    @api.depends(
+        'pending_ids',
+        'pending_ids.queued_at',
+        'pending_ids.content',
+        'pending_ids.attachment_ids',
+    )
+    def _compute_pending_user_messages(self):
+        for record in self:
+            record.pending_user_messages = record._serialize_pending()
 
     # ----------------------------------------------------------
     # ORM

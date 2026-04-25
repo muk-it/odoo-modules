@@ -1,6 +1,7 @@
 import json
 import logging
 
+import psycopg2
 import requests
 
 from odoo import _
@@ -176,6 +177,14 @@ class ProviderBase:
             on_delta(kind, payload)
         except StreamCancelled:
             raise
+        except (
+            psycopg2.errors.InFailedSqlTransaction,
+            psycopg2.errors.SerializationFailure,
+        ):
+            # Worker transaction is poisoned (or about to be); abort the
+            # stream cleanly so the outer except in the cron handler can
+            # roll back and write a clean error state on a fresh cursor.
+            raise StreamCancelled()
         except Exception:
             _logger.exception('on_delta handler failed')
 

@@ -7,6 +7,7 @@ from . import agent_suggestion
 from . import agent_revision
 from . import approval
 from . import session
+from . import session_pending
 from . import mcp_tool
 from . import res_company
 from . import res_config_settings

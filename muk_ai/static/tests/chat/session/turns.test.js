@@ -48,6 +48,35 @@ test('text and tool_call merge into one assistant turn', () => {
 });
 
 
+test('consecutive text entries merge into a single block separated by blank line', () => {
+    const turns = buildRenderedTurns([
+        { kind: 'text', content: 'first' },
+        { kind: 'text', content: 'second' },
+        { kind: 'text', content: 'third' },
+    ]);
+    expect(turns.length).toBe(1);
+    expect(turns[0].blocks).toEqual([
+        { type: 'text', text: 'first\n\nsecond\n\nthird' },
+    ]);
+});
+
+
+test('text after a tool block starts a new text block (no merge across tools)', () => {
+    const turns = buildRenderedTurns([
+        { kind: 'text', content: 'pre' },
+        { kind: 'tool_call', name: 't1', arguments: {}, call_id: 'c1' },
+        { kind: 'tool_result', call_id: 'c1', result: 'r' },
+        { kind: 'text', content: 'post-a' },
+        { kind: 'text', content: 'post-b' },
+    ]);
+    expect(turns.length).toBe(1);
+    expect(turns[0].blocks.length).toBe(3);
+    expect(turns[0].blocks[0]).toEqual({ type: 'text', text: 'pre' });
+    expect(turns[0].blocks[1].type).toBe('tool');
+    expect(turns[0].blocks[2]).toEqual({ type: 'text', text: 'post-a\n\npost-b' });
+});
+
+
 test('tool_result attaches to the matching tool_call by call_id', () => {
     const turns = buildRenderedTurns([
         { kind: 'tool_call', name: 't1', arguments: { a: 1 }, call_id: 'c1' },

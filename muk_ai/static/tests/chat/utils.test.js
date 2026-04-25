@@ -71,11 +71,11 @@ test('costTooltip formats 6 decimals with USD suffix', () => {
     );
 });
 
-test('approvalPill returns YOLO pill when mode is off', () => {
+test('approvalPill returns Bypass pill when mode is off', () => {
     const pill = approvalPill({ effectiveApprovalMode: 'off' });
-    expect(pill.label.toString()).toMatch(/YOLO/);
+    expect(pill.label.toString()).toMatch(/Bypass/);
     expect(pill.icon).toBe('fa-bolt');
-    expect(pill.className).toMatch(/mk_approval_yolo/);
+    expect(pill.className).toMatch(/mk_approval_bypass/);
 });
 
 test('approvalPill returns Ask pill when mode is ask', () => {

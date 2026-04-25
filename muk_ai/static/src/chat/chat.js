@@ -16,6 +16,7 @@ import {
     approvalPill,
     costTooltip,
     formatCost,
+    formatTimestamp,
     inputPlaceholder,
     statusLabel,
 } from '@muk_ai/chat/utils';
@@ -309,6 +310,9 @@ export class AIChat extends Component {
     }
     renderMarkdown(text) {
         return this.session.renderMarkdown(text);
+    }
+    formatTimestamp(at) {
+        return formatTimestamp(at);
     }
     isToolExpanded(callId) {
         return this.session.isToolExpanded(callId);

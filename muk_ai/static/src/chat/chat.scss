@@ -357,7 +357,7 @@
                 background: rgba(var(--mk-primary-rgb), 0.1);
                 &:hover { background: rgba(var(--mk-primary-rgb), 0.2); }
             }
-            &.mk_approval_yolo {
+            &.mk_approval_bypass {
                 color: #b45309;
                 background: rgba(250, 176, 74, 0.22);
                 &:hover { background: rgba(250, 176, 74, 0.35); }
@@ -766,25 +766,40 @@
 
         .mk_markdown pre { background: var(--mk-bg-soft); }
 
-        .mk_msg_copy {
+        .mk_msg_meta {
             position: absolute;
-            top: -0.1rem;
-            right: -0.1rem;
+            top: 100%;
+            left: -0.1rem;
+            margin-top: 0.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            opacity: 0;
+            z-index: 2;
+            transition: opacity 0.12s ease;
+        }
+
+        .mk_msg_copy {
             border: 0;
             background: transparent;
             color: var(--mk-text-muted, #6e7781);
-            font-size: 0.82rem;
-            padding: 0.15rem 0.4rem;
+            font-size: 0.78rem;
+            padding: 0.1rem 0.4rem;
             border-radius: 4px;
             cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.12s ease, background 0.12s ease, color 0.12s ease;
+            transition: background 0.12s ease, color 0.12s ease;
 
             &:hover { background: rgba(0, 0, 0, 0.05); color: var(--mk-text, #24292f); }
         }
 
-        &:hover .mk_msg_copy,
-        &:focus-within .mk_msg_copy { opacity: 1; }
+        .mk_msg_time {
+            color: var(--mk-text-muted, #6e7781);
+            font-size: 0.72rem;
+            user-select: text;
+        }
+
+        &:hover .mk_msg_meta,
+        &:focus-within .mk_msg_meta { opacity: 1; }
 
         &.mk_ask_simple {
             padding: 0.7rem 0.95rem;

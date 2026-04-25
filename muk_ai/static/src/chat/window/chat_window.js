@@ -11,6 +11,7 @@ import {
     approvalPill,
     costTooltip,
     formatCost,
+    formatTimestamp,
     inputPlaceholder,
     statusBadgeClass,
 } from '@muk_ai/chat/utils';
@@ -73,6 +74,9 @@ export class ChatWindow extends Component {
     }
     renderMarkdown(text) {
         return this.session.renderMarkdown(text);
+    }
+    formatTimestamp(at) {
+        return formatTimestamp(at);
     }
     isToolExpanded(callId) {
         return this.session.isToolExpanded(callId);
