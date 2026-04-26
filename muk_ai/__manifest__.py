@@ -1,21 +1,33 @@
 {
-    'name': 'MuK AI',
-    'summary': 'AI Base Module',
+    'name': 'MuK AI Assistant',
+    'summary': 'Native agentic AI chat and agent runtime for Odoo',
     'description': '''
-        Base module for MuK AI features. Provides the shared foundation
-        used by MuK AI addons on top of Odoo Community: pluggable
-        provider layer (OpenAI Responses, Anthropic Messages, Google
-        Gemini), per-provider configuration with connection test,
-        prebuilt model catalog with pricing, agent session runtime with
-        tool dispatch through muk_mcp, bus-based streaming, OWL chat
-        client action, session-scoped approval gate for risky writes,
-        and agents with per-user access rules.
+        A complete agentic AI assistant inside Odoo. Ships a native OWL
+        chat client (with floating window and systray), a session-based
+        agent runtime, and three first-class LLM providers (OpenAI
+        Responses, Anthropic Messages, Google Gemini) with live token
+        and reasoning streaming. Talks to your data through the same
+        muk_mcp tool registry your external AI clients use — one source
+        of truth, one permission model, one audit trail.
+
+        Includes human-in-the-loop ask_user, a session-scoped approval
+        gate for risky writes, per-agent tool filters and read-only
+        scopes, multimodal attachments (images, PDFs, text files),
+        agent suggestion prompts, prompt revision history, and a
+        prebuilt catalog of current GPT-5.x / Claude 4.x / Gemini 3.x 
+        models with input, output and cache pricing.
+
+        Also acts as the foundation for the rest of the MuK AI suite —
+        adding a new provider is a single-file drop-in via the
+        providers REGISTRY, and downstream add-ons plug in extra tools,
+        agents and UI extensions on top of the same runtime.
     ''',
-    'version': '19.0.1.3.4',
+    'version': '19.0.1.3.9',
     'category': 'Extra Tools',
     'license': 'LGPL-3',
     'author': 'MuK IT',
     'website': 'http://www.mukit.at',
+    'live_test_url': 'https://my.mukit.at/r/f6m',
     'contributors': [
         'Mathias Markl <mathias.markl@mukit.at>',
         'Kerrim Abd E-Hamed <kerrim.adbelhamed@mukit.at>',

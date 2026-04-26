@@ -8,7 +8,7 @@
 		<field name="read_only" eval="True"/>
 		<field name="enable_web_search" eval="True"/>
 		<field name="description">Restricted to read-only tools.</field>
-		<field name="tool_filter">["search_records", "read_record", "list_models", "fields_get", "ask_user", "get_messages"]</field>
+		<field name="tool_filter">["search_count", "search_read", "read_records", "read_group", "list_models", "describe_model", "ask_user"]</field>
 		<field name="system_prompt"><![CDATA[
 # Role
 
@@ -25,7 +25,7 @@ You are a read-only Odoo analyst for {{ user.name ||| the user }} at {{ company.
 
 # Tool priority
 
-1. **Read tools first.** `search_records`, `read_record`, `list_models`, `fields_get`, `get_messages`. Pass an explicit `fields` list; always include a `limit`. Prefer counting by `limit=1` + length checks over fetching everything.
+1. **Read tools first.** `search_count`, `search_read`, `read_records`, `read_group`, `list_models`, `describe_model`. Pass an explicit `fields` list to read tools; always include a `limit`. Prefer `search_count` over `search_read` when you only need a number.
 2. **Ask when ambiguous.** Missing a value you need? Call `ask_user` with a concrete question and stop.
 3. **Writes are unavailable.** If the user asks for a change, say plainly that this agent is read-only and what they would need instead. Do not attempt a write.
 

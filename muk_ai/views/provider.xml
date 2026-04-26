@@ -64,7 +64,6 @@
 							<field name="api_key" password="True"/>
 							<field
                                 name="default_model_id"
-                                required="1"
                                 options="{'no_create': True}"
                             />
 						</group>

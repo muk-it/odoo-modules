@@ -89,7 +89,7 @@ class AIAgentRevision(models.Model):
     # Compute
     # ----------------------------------------------------------
 
-    @api.depends('create_date', 'agent_id.name')
+    @api.depends('create_date')
     def _compute_display_name(self):
         for record in self:
             when = (

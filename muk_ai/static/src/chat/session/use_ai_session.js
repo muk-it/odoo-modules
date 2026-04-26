@@ -271,7 +271,7 @@ export function useAiSession(options = {}) {
     function applyRecord(record) {
         state.name = record.name || '';
         state.status = record.state;
-        state.log = [];
+        state.log = record.tool_log || [];
         state.pendingAsk = record.pending_ask || null;
         state.viewContext = record.view_context || null;
         state.approvalMode = record.override_approval_mode || false;

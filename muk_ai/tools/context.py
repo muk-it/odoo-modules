@@ -62,10 +62,44 @@ def _action_segments(p):
     return segments
 
 
+def _pivot_segments(p):
+    segments = [p.get('model') or '', 'pivot']
+    if measures := p.get('pivot_measures'):
+        segments.append(f'measures={",".join(measures)}')
+    if rows := p.get('pivot_row_groupby'):
+        segments.append(f'rows={",".join(rows)}')
+    if cols := p.get('pivot_column_groupby'):
+        segments.append(f'cols={",".join(cols)}')
+    if domain := p.get('domain'):
+        segments.append(
+            f'domain={json.dumps(domain, separators=(",", ":"))}'
+        )
+    return segments
+
+
+def _graph_segments(p):
+    segments = [p.get('model') or '', 'graph']
+    if mode := p.get('graph_mode'):
+        segments.append(f'mode={mode}')
+    if measure := p.get('graph_measure'):
+        segments.append(f'measure={measure}')
+    if groupbys := p.get('graph_groupbys'):
+        segments.append(f'groupbys={",".join(groupbys)}')
+    if order := p.get('graph_order'):
+        segments.append(f'order={order}')
+    if domain := p.get('domain'):
+        segments.append(
+            f'domain={json.dumps(domain, separators=(",", ":"))}'
+        )
+    return segments
+
+
 _SEGMENT_BUILDERS = {
     'record': _record_segments,
     'list': _list_segments,
     'action': _action_segments,
+    'pivot': _pivot_segments,
+    'graph': _graph_segments,
 }
 
 
@@ -135,14 +169,22 @@ def _clean_action(payload):
     return cleaned
 
 
+def _clean_string_list(payload, key):
+    value = payload.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, list) or any(not isinstance(v, str) for v in value):
+        raise UserError(_lt(
+            "view_context.%s must be a list of strings.", key,
+        ))
+    return value
+
+
 def _clean_pivot(payload):
     cleaned = _base_payload(payload, 'pivot')
     cleaned['view_type'] = 'pivot'
     for key in ('pivot_measures', 'pivot_row_groupby', 'pivot_column_groupby'):
-        value = payload.get(key)
-        if value is not None:
-            if not isinstance(value, list):
-                raise UserError(_lt("view_context.%s must be a list.", key))
+        if (value := _clean_string_list(payload, key)) is not None:
             cleaned[key] = value
     if domain := _payload_domain(payload):
         cleaned['domain'] = domain
@@ -158,10 +200,7 @@ def _clean_graph(payload):
             if not isinstance(value, str):
                 raise UserError(_lt("view_context.%s must be a string.", key))
             cleaned[key] = value
-    groupbys = payload.get('graph_groupbys')
-    if groupbys is not None:
-        if not isinstance(groupbys, list):
-            raise UserError(_lt("view_context.graph_groupbys must be a list."))
+    if (groupbys := _clean_string_list(payload, 'graph_groupbys')) is not None:
         cleaned['graph_groupbys'] = groupbys
     if domain := _payload_domain(payload):
         cleaned['domain'] = domain

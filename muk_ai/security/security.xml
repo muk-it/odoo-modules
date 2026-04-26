@@ -76,7 +76,7 @@
 		<field name="perm_read" eval="True"/>
 		<field name="perm_write" eval="False"/>
 		<field name="perm_create" eval="False"/>
-		<field name="perm_unlink" eval="True"/>
+		<field name="perm_unlink" eval="False"/>
 	</record>
 
 	<record id="rule_ai_approval_admin" model="ir.rule">

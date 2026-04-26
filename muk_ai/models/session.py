@@ -356,7 +356,7 @@ class AISession(models.Model):
             _logger.exception(
                 "muk_ai: failed to render system prompt template "
                 "for agent %(agent)s; falling back to raw",
-                {'agent': self.agent_id and (self.agent_id.id, self.agent_id.name) or '(default)'},
+                {'agent': (self.agent_id.id, self.agent_id.name) if self.agent_id else '(default)'},
             )
             return raw
 
@@ -633,9 +633,14 @@ class AISession(models.Model):
         self.conversation = [*(self.conversation or []), *(items or [])]
 
     def _resolve_attachments(self, attachment_ids):
-        attachments = self.env['ir.attachment'].browse(
+        requested = self.env['ir.attachment'].browse(
             [int(aid) for aid in attachment_ids or []]
         )
+        attachments = requested.exists()
+        if attachments != requested:
+            raise UserError(_(
+                "One or more attachments could not be found.",
+            ))
         attachments._ai_validate()
         if new := attachments - self.attachment_ids:
             self.sudo().write({'attachment_ids': [(4, a.id) for a in new]})

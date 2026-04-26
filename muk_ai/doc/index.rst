@@ -2,23 +2,26 @@
 MuK AI
 ======
 
-Brings an agentic AI assistant inside Odoo. MuK AI wires a pluggable
-LLM provider layer, a session-based agent runtime, and a native OWL
-chat client into your Odoo instance. The assistant talks to your data
+A complete agentic AI assistant inside Odoo. MuK AI ships a native
+OWL chat client, a session-based agent runtime, and three first-class
+LLM providers (**OpenAI**, **Anthropic**, **Google Gemini**) with
+live token and reasoning streaming. The assistant talks to your data
 through the same ``muk_mcp`` tool registry your external AI clients
 already use — one source of truth, one permission model, one audit
 trail.
 
-Ships with three first-class providers (**OpenAI**, **Anthropic**,
-**Google Gemini**), live token streaming, human-in-the-loop
-``ask_user`` support, a session-scoped approval gate for risky writes,
-per-agent tool filters, read-only scope enforcement, multimodal
-attachments (images, PDFs, text files), agent suggestion prompts,
-prompt revision history, and a prebuilt catalog of current GPT-5.x /
-Claude 4.x / Gemini 2.5/3.x models with input/output/cache pricing.
-Adding a new provider is a single-file drop-in — the ``REGISTRY`` in
-``providers/__init__.py`` drives both the in-memory dispatcher and the
-stored ``muk_ai.provider`` records.
+Includes human-in-the-loop ``ask_user`` support, a session-scoped
+approval gate for risky writes, per-agent tool filters, read-only
+scope enforcement, multimodal attachments (images, PDFs, text files),
+agent suggestion prompts, prompt revision history, and a prebuilt
+catalog of current GPT-5.x / Claude 4.x / Gemini 2.5/3.x models with
+input/output/cache pricing.
+
+It is also the foundation for the rest of the MuK AI suite: the
+``REGISTRY`` in ``providers/__init__.py`` drives both the in-memory
+dispatcher and the stored ``muk_ai.provider`` records, so adding a
+new provider is a single-file drop-in, and downstream add-ons plug
+extra tools, agents and UI extensions onto the same runtime.
 
 Installation
 ============
