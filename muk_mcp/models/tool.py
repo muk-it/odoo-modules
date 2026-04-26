@@ -7,6 +7,7 @@ from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 from odoo.tools.safe_eval import safe_eval, test_python_expr
 from odoo.tools.safe_eval import json as safe_json
+from odoo.tools import config
 from odoo.http import request
 
 from odoo.addons.muk_mcp.core.tool import get_tool_index
@@ -123,17 +124,19 @@ class MCPTool(models.Model):
             error = str(exc)
             raise
         finally:
-            self.env['muk_mcp.log'].log(**self._tool_log_values(
-                name=name,
-                env=env,
-                request_data=encode_request(arguments),
-                model_name=model_name,
-                status=status,
-                text=text,
-                info=info,
-                error=error,
-                duration_ms=int((time.monotonic() - start) * 1000),
-            ))
+            # `muk_mcp_force_log` lets a caller (e.g. muk_ai chat) bypass the global mcp_logging disable.
+            if config.get('mcp_logging', True) or self.env.context.get('muk_mcp_force_log'):
+                self.env['muk_mcp.log'].log(**self._tool_log_values(
+                    name=name,
+                    env=env,
+                    request_data=encode_request(arguments),
+                    model_name=model_name,
+                    status=status,
+                    text=text,
+                    info=info,
+                    error=error,
+                    duration_ms=int((time.monotonic() - start) * 1000),
+                ))
 
     @api.model
     def _execute(self, name, arguments, env, enforce_scope):
