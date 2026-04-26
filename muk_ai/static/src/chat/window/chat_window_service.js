@@ -28,9 +28,7 @@ async function probeCurrentView(env) {
             try {
                 const rows = await caller.read(resModel, [props.resId], ['display_name']);
                 displayName = rows?.[0]?.display_name || '';
-            } catch (_e) {
-                // Fetch best-effort; empty display_name falls back to #id on the pill.
-            }
+            } catch (_e) {}
             const payload = { kind: 'record', model: resModel, id: props.resId };
             if (displayName) {
                 payload.display_name = displayName;

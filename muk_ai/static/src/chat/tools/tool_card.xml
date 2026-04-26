@@ -5,7 +5,7 @@
         <div class="mk_tool"
              t-att-class="(props.streaming ? 'mk_tool_streaming ' : '') + 'mk_tool_' + kind"
              t-att-data-expanded="props.expanded ? 1 : 0">
-            <button class="mk_tool_head" t-on-click="() => this.onHeadClick()">
+            <button type="button" class="mk_tool_head" t-on-click="() => this.onHeadClick()">
                 <t t-if="props.streaming">
                     <span class="mk_tool_icon d-inline-flex align-items-center justify-content-center">
                         <i class="fa fa-circle-o-notch fa-spin" />

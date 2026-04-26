@@ -7,13 +7,16 @@ import time
 from datetime import timedelta
 
 import psycopg2
-import requests
+import urllib3
+
+from markupsafe import Markup, escape
 
 from odoo import SUPERUSER_ID, _, api, fields, models, modules
 from odoo.exceptions import UserError
 from odoo.tools.rendering_tools import parse_inline_template, render_inline_template
 
 from odoo.addons.muk_ai.tools import (
+    ALLOWED_MIMETYPES,
     ASK_USER_TOOL,
     ATTACHMENT_REF_RE,
     INLINE_IMAGE_RE,
@@ -21,6 +24,8 @@ from odoo.addons.muk_ai.tools import (
     URL_REF_RE,
     StreamCancelled,
     build_tool_call_output,
+    clean_view_context_payload,
+    fetch_url,
     sanitize_json_schema,
     with_ui_ctx,
 )
@@ -28,14 +33,16 @@ from odoo.addons.muk_ai.tools.limits import (
     DEFAULT_CONTEXT_WINDOW,
     MAX_ITERATIONS,
     MAX_TOOL_CALLS_PER_ROUND,
+    MAX_WALLCLOCK_SECONDS,
 )
 
 _logger = logging.getLogger(__name__)
 
-ADVISORY_LOCK_NAMESPACE = 0x4D554B41  # "MUKA"
+ADVISORY_LOCK_NAMESPACE = 0x4D554B41
 WORKER_HEARTBEAT_INTERVAL = 5
 WORKER_STALE_THRESHOLD = 60
 WORKER_CRON_COUNT = 4
+ATTACHMENT_REF_MAX_BYTES = 4 * 1024 * 1024
 
 
 class AISession(models.Model):
@@ -66,44 +73,44 @@ class AISession(models.Model):
             ('error', "Error"),
         ],
         string="State",
-        required=True,
         readonly=True,
+        required=True,
+        default='new',
         index=True,
         copy=False,
-        default='new',
     )
 
     claimed_at = fields.Datetime(
         string="Worker Claimed At",
-        readonly=True,
-        copy=False,
-        index=True,
         help=(
             "Heartbeat written by the cron worker while processing this "
             "session. Sessions in `running` or `compacting` state with a "
             "stale heartbeat are reclaimed as orphans by the next cron tick."
         ),
+        readonly=True,
+        index=True,
+        copy=False,
     )
 
     user_context = fields.Json(
         string="User Context",
-        readonly=True,
-        copy=False,
         help=(
             "Snapshot of the calling user's environment context captured at "
             "trigger time. Restored by the cron worker so tools see the same "
             "language, timezone, and allowed companies as the originating "
             "request."
         ),
+        readonly=True,
+        copy=False,
     )
 
     user_id = fields.Many2one(
         comodel_name='res.users',
         string="Owner",
-        required=True,
         readonly=True,
-        index=True,
+        required=True,
         default=lambda self: self.env.user,
+        index=True,
     )
 
     # ----------------------------------------------------------
@@ -113,8 +120,8 @@ class AISession(models.Model):
     agent_id = fields.Many2one(
         comodel_name='muk_ai.agent',
         string="Agent",
-        ondelete='set null',
         default=lambda self: self.env['muk_ai.agent']._get_default(),
+        ondelete='set null',
     )
 
     override_approval_mode = fields.Selection(
@@ -144,10 +151,41 @@ class AISession(models.Model):
         default=list,
     )
 
-    tool_log = fields.Json(
-        string="Tool Log",
+    cleared_at = fields.Datetime(
+        string="Cleared At",
+        help=(
+            "Wall-clock marker set by /clear and /compact. Informational "
+            "only; the unified-log filter uses `cleared_log_id`."
+        ),
         readonly=True,
-        default=list,
+        copy=False,
+    )
+
+    cleared_log_id = fields.Integer(
+        string="Cleared Log Cutoff",
+        help=(
+            "Highest muk_mcp.log id observed at the moment /clear or "
+            "/compact ran. Tool-call audit rows with id <= this cutoff "
+            "are filtered out of the unified chat log so wiped "
+            "conversations do not show ghost tool cards on reload."
+        ),
+        readonly=True,
+        default=0,
+        copy=False,
+    )
+
+    event_ids = fields.One2many(
+        comodel_name='muk_ai.session.event',
+        string="Events",
+        readonly=True,
+        inverse_name='session_id',
+    )
+
+    log_ids = fields.One2many(
+        comodel_name='muk_mcp.log',
+        string="Tool Calls",
+        readonly=True,
+        inverse_name='session_id',
     )
 
     last_text = fields.Text(
@@ -157,17 +195,16 @@ class AISession(models.Model):
 
     view_context = fields.Json(
         string="View Context",
-        readonly=True,
         help=(
             "Sticky description of the Odoo view the user is looking at. "
             "Injected as a <ui_ctx> tag on every provider request until it "
             "is replaced by a navigation tool result or cleared via /unpin."
         ),
+        readonly=True,
     )
 
     pending_ask = fields.Json(
         string="Pending Ask",
-        readonly=True,
         help=(
             "What the session is paused on: a free-text question from "
             "ask_user (`kind: 'question'`) or a risky tool call awaiting "
@@ -175,27 +212,28 @@ class AISession(models.Model):
             "to render the pending ask card; the resume path depends on "
             "`kind`."
         ),
+        readonly=True,
     )
 
     approved_signatures = fields.Json(
         string="Approved Signatures",
-        readonly=True,
         help=(
             "Risk signatures the user has approved for this conversation. "
             "A signature in this list bypasses the approval gate on the "
             "next matching tool call. Scope is this session only."
         ),
+        readonly=True,
     )
 
     pending_ids = fields.One2many(
         comodel_name='muk_ai.session.pending',
-        inverse_name='session_id',
         string="Pending Messages",
-        readonly=True,
         help=(
             "FIFO queue of user messages typed while the session was busy. "
             "Drained as one combined turn at the end of `_run_to_completion`."
         ),
+        readonly=True,
+        inverse_name='session_id',
     )
 
     pending_user_messages = fields.Json(
@@ -245,40 +283,40 @@ class AISession(models.Model):
 
     total_input_cost = fields.Float(
         string="Input Cost (USD)",
-        readonly=True,
-        default=0.0,
-        digits=(12, 6),
         help=(
             "Cumulative USD spent on input tokens for this session. "
             "Frozen at accrual time against the model record that was "
             "active; later pricing edits do not rewrite history."
         ),
+        readonly=True,
+        default=0.0,
+        digits=(12, 6),
     )
 
     total_output_cost = fields.Float(
         string="Output Cost (USD)",
+        help="Cumulative USD spent on output tokens for this session.",
         readonly=True,
         default=0.0,
         digits=(12, 6),
-        help="Cumulative USD spent on output tokens for this session.",
     )
 
     total_cost = fields.Float(
         string="Total Cost (USD)",
+        help="Cumulative USD for this session (input + output).",
         readonly=True,
         default=0.0,
         digits=(12, 6),
-        help="Cumulative USD for this session (input + output).",
     )
 
     last_input_tokens = fields.Integer(
         string="Last Input Tokens",
-        readonly=True,
-        default=0,
         help=(
             "Input tokens consumed by the most recent provider round. "
             "Drives the context-window usage meter."
         ),
+        readonly=True,
+        default=0,
     )
 
     context_window = fields.Integer(
@@ -315,6 +353,11 @@ class AISession(models.Model):
                 self._render_system_prompt_eval_context(),
             )
         except Exception:
+            _logger.exception(
+                "muk_ai: failed to render system prompt template "
+                "for agent %(agent)s; falling back to raw",
+                {'agent': self.agent_id and (self.agent_id.id, self.agent_id.name) or '(default)'},
+            )
             return raw
 
     def _render_system_prompt_eval_context(self):
@@ -395,7 +438,7 @@ class AISession(models.Model):
 
     def _get_tool_schema(self):
         tools = list(self.env['muk_mcp.tool'].sudo().get_tools(
-            registry='odoo'
+            registry='odoo',
         ))
         if self._effective_approval_mode() != 'off':
             tools.append(ASK_USER_TOOL)
@@ -452,6 +495,107 @@ class AISession(models.Model):
                 'name': self.name,
                 **self._state_metrics(),
             })
+            self._notify_state_transition(payload)
+
+    def _notify_state_transition(self, payload):
+        new_state = (payload or {}).get('state')
+        if new_state not in ('done', 'waiting', 'error'):
+            return
+        ask = (payload or {}).get('ask') or self.pending_ask or {}
+        ask_kind = ask.get('kind') if isinstance(ask, dict) else None
+        title, message = self._notification_summary(new_state, payload, ask_kind)
+        try:
+            self._bus_send('muk_ai.session_notification', {
+                'session_id': self.id,
+                'session_name': self.name,
+                'state': new_state,
+                'ask_kind': ask_kind,
+                'title': title,
+                'message': message,
+            })
+        except Exception:
+            _logger.warning(
+                "muk_ai: failed to send session notification bus event",
+                exc_info=True,
+            )
+        if new_state == 'waiting':
+            self._post_inbox_notification(title, message)
+
+    def _notification_summary(self, new_state, payload, ask_kind):
+        name = self.name or _("AI Session")
+        if new_state == 'done':
+            return (
+                _("AI session finished"),
+                _("Session “%(name)s” has finished.", name=name),
+            )
+        if new_state == 'error':
+            return (
+                _("AI session error"),
+                _(
+                    "Session “%(name)s” stopped: %(reason)s",
+                    name=name,
+                    reason=self._short_error_reason(
+                        (payload or {}).get('error') or self.error_message or '',
+                    ),
+                ),
+            )
+        if ask_kind == 'approval':
+            return (
+                _("AI session needs approval"),
+                _(
+                    "Session “%(name)s” is waiting for your approval before "
+                    "running a tool.",
+                    name=name,
+                ),
+            )
+        return (
+            _("AI session needs your input"),
+            _("Session “%(name)s” is waiting for your answer.", name=name),
+        )
+
+    def _short_error_reason(self, raw):
+        if not raw:
+            return _("unknown error")
+        text = raw.strip()
+        if len(text) > 8192:
+            text = text[:8192]
+        match = re.search(r'\{.*\}', text, flags=re.DOTALL)
+        if match:
+            try:
+                data = json.loads(match.group(0))
+                err = data.get('error') if isinstance(data, dict) else None
+                if isinstance(err, dict) and err.get('message'):
+                    text = err['message']
+                elif data.get('message'):
+                    text = data['message']
+            except (ValueError, AttributeError):
+                pass
+        text = ' '.join(text.split())
+        if len(text) > 200:
+            text = text[:197] + '…'
+        return text
+
+    def _post_inbox_notification(self, title, message):
+        partner = self.user_id.partner_id
+        if not partner:
+            return
+        link = Markup('<p><a href="/odoo/ai?session_id=%s">%s</a></p>') % (
+            self.id, _("Open chat"),
+        )
+        body = Markup('<p>%s</p>') % escape(message) + link
+        try:
+            new_message = self.env['mail.thread'].sudo().message_notify(
+                partner_ids=partner.ids,
+                subject=title,
+                body=body,
+            )
+            if new_message:
+                new_message.sudo().muk_ai_session_id = self.id
+        except Exception:
+            _logger.warning(
+                "muk_ai: failed to post inbox notification for session %s",
+                self.id, exc_info=True,
+            )
 
     # ----------------------------------------------------------
     # Helper State
@@ -462,7 +606,27 @@ class AISession(models.Model):
             **entry,
             'at': fields.Datetime.now().isoformat(),
         }
-        self.tool_log = [*(self.tool_log or []), stamped]
+        kind = stamped.get('kind') or ''
+        events = self.env['muk_ai.session.event'].sudo()
+        for _attempt in range(5):
+            self.env.cr.execute(
+                "SELECT COALESCE(MAX(sequence), -1) + 1 "
+                "FROM muk_ai_session_event WHERE session_id = %s",
+                [self.id],
+            )
+            sequence = self.env.cr.fetchone()[0]
+            try:
+                with self.env.cr.savepoint():
+                    events.create({
+                        'session_id': self.id,
+                        'sequence': sequence,
+                        'kind': kind,
+                        'payload': stamped,
+                        'at': fields.Datetime.now(),
+                    })
+                break
+            except psycopg2.errors.UniqueViolation:
+                continue
         self._publish_event('log', stamped)
 
     def _extend_conversation(self, items):
@@ -508,7 +672,7 @@ class AISession(models.Model):
         outputs.append(build_tool_call_output(
             call_id, output_result
         ))
-        self._append_log({
+        self._publish_event('log', {
             'kind': 'tool_result',
             'name': name,
             'result': (
@@ -516,6 +680,38 @@ class AISession(models.Model):
                 if log_result is None else log_result
             ),
             'call_id': call_id,
+            'at': fields.Datetime.now().isoformat(),
+        })
+
+    def _persist_synthetic_tool_log(self, call, result, status):
+        arguments = call.get('arguments') or {}
+        try:
+            request_data = json.dumps(arguments)
+        except (TypeError, ValueError):
+            request_data = str(arguments)
+        try:
+            response_data = json.dumps(result)
+        except (TypeError, ValueError):
+            response_data = str(result)
+        error_message = None
+        if isinstance(result, dict):
+            error_message = result.get('error') or result.get('reason')
+        model_name = (
+            arguments.get('model')
+            if isinstance(arguments, dict) else None
+        ) or ''
+        self.env['muk_mcp.log'].sudo().create({
+            'method': 'tools/call',
+            'tool_name': call.get('name') or '',
+            'model_name': model_name,
+            'user_id': self.env.uid,
+            'status': status,
+            'duration_ms': 0,
+            'request_data': request_data,
+            'response_data': response_data,
+            'error_message': error_message,
+            'source': 'chat',
+            'session_id': self.id,
         })
 
     def _commit_safe(self):
@@ -562,10 +758,91 @@ class AISession(models.Model):
             self._publish_event('queue', {'pending': []})
         return True
 
+    def _max_session_log_id(self):
+        if not self.id:
+            return 0
+        last = self.env['muk_mcp.log'].sudo().search(
+            [('session_id', '=', self.id)],
+            order='id desc',
+            limit=1,
+        )
+        return last.id or 0
+
+    def _unified_log(self, limit=500):
+        entries = []
+        if self.id:
+            events = self.env['muk_ai.session.event'].sudo().search(
+                [('session_id', '=', self.id)],
+                order='sequence desc, id desc',
+                limit=limit or None,
+            )
+            for ev in reversed(events):
+                payload = dict(ev.payload or {})
+                payload.setdefault('kind', ev.kind)
+                stamp = payload.get('at')
+                if not stamp:
+                    stamp = ev.at.isoformat() if ev.at else ''
+                    payload['at'] = stamp
+                entries.append((stamp, 0, ev.sequence, ev.id, payload))
+            domain = [('session_id', '=', self.id)]
+            if self.cleared_log_id:
+                domain.append(('id', '>', self.cleared_log_id))
+            rows = self.env['muk_mcp.log'].sudo().search(
+                domain,
+                order='create_date desc, id desc',
+                limit=limit,
+            )
+            for row in rows:
+                stamp = (
+                    row.create_date.isoformat()
+                    if row.create_date else ''
+                )
+                tool_name = row.tool_name or ''
+                call_id = f'mcp-log-{row.id}'
+                arguments = {}
+                if row.request_data:
+                    try:
+                        arguments = json.loads(row.request_data)
+                    except (TypeError, ValueError):
+                        arguments = {'_raw': row.request_data}
+                entries.append((stamp, 1, row.id * 2, row.id, {
+                    'kind': 'tool_call',
+                    'name': tool_name,
+                    'arguments': arguments,
+                    'call_id': call_id,
+                    'at': f'{stamp}#{row.id}a' if stamp else f'#{row.id}a',
+                }))
+                result = row.response_data or ''
+                try:
+                    parsed = json.loads(result) if result else None
+                    if parsed is not None:
+                        result = parsed
+                except (TypeError, ValueError):
+                    pass
+                if row.status != 'ok' and not isinstance(result, dict):
+                    result = {
+                        'error': row.error_message or result or row.status,
+                    }
+                entries.append((stamp, 1, row.id * 2 + 1, row.id, {
+                    'kind': 'tool_result',
+                    'name': tool_name,
+                    'result': result,
+                    'call_id': call_id,
+                    'at': f'{stamp}#{row.id}b' if stamp else f'#{row.id}b',
+                }))
+        entries.sort(key=lambda item: (item[0], item[1], item[2], item[3]))
+        if limit and len(entries) > limit:
+            entries = entries[-limit:]
+        return [item[4] for item in entries]
+
+    def get_snapshot(self):
+        self.ensure_one()
+        return self._get_snapshot()
+
     def _get_snapshot(self):
         return {
             'id': self.id,
-            'tool_log': self.tool_log or [],
+            'tool_log': self._unified_log(),
             'conversation': self.conversation or [],
             'error_message': self.error_message,
             'last_text': self.last_text,
@@ -586,13 +863,13 @@ class AISession(models.Model):
         return max(0, provider.rate_limit or 0) if provider else 0
 
     @api.model
-    def _check_rate_limit(self):
+    def _check_rate_limit(self, batch_size=1):
         if limit := self._get_rate_limit():
             count = self.sudo().search_count([
                 ('user_id', '=', self.env.user.id),
                 ('create_date', '>=', fields.Datetime.now() - timedelta(minutes=1)),
             ])
-            if count >= limit:
+            if count + batch_size > limit:
                 raise UserError(_(
                     "Rate limit reached (%(count)s sessions in the last minute, "
                     "max %(limit)s). Please slow down.",
@@ -613,15 +890,21 @@ class AISession(models.Model):
             arguments
         )
         try:
-            text, _info = self.env['muk_mcp.tool']._call(
+            tool_env = self.env(context={
+                **self.env.context,
+                'muk_mcp_session_id': self.id,
+                'muk_mcp_force_log': True,
+            })
+            text, _info = tool_env['muk_mcp.tool']._call(
                 name,
                 arguments,
-                self.env,
+                tool_env,
                 enforce_scope=enforce_scope,
             )
         except UserError as error:
             return {'error': str(error)}, False
         except Exception as error:
+            _logger.exception("muk_ai: tool %s raised", name)
             return {'error': str(error)}, False
         self._maybe_publish_ui_action(
             text, name, call_id
@@ -724,19 +1007,18 @@ class AISession(models.Model):
             if now - last_beat >= WORKER_HEARTBEAT_INTERVAL:
                 buffer_state['last_heartbeat'] = now
                 self.claimed_at = fields.Datetime.now()
-            self._commit_safe()
-            self.invalidate_recordset(['state'])
-            if self.state == 'stopped':
-                if buffer_state.get('full_text'):
-                    self._persist_partial(buffer_state)
-                    buffer_state['full_text'] = ''
-                    self._commit_safe()
-                raise StreamCancelled()
+                self.invalidate_recordset(['state'])
+                if self.state == 'stopped':
+                    if buffer_state.get('full_text'):
+                        self._persist_partial(buffer_state)
+                        buffer_state['full_text'] = ''
+                        self._commit_safe()
+                    raise StreamCancelled()
 
     def _on_stream_delta(self, kind, payload, buffer_state):
         self._check_cancelled(buffer_state)
         if kind == 'text':
-            if delta :=  (payload or {}).get('delta') or '':
+            if delta := (payload or {}).get('delta') or '':
                 buffer_state['full_text'] = (
                     buffer_state.get('full_text', '') + delta
                 )
@@ -791,8 +1073,8 @@ class AISession(models.Model):
         buffer_state.setdefault(last_key, now)
         buffer_state[content_key] += delta
         if (
-            len(buffer_state[content_key]) >= 20 or
-            (now - buffer_state[last_key]) >= 0.025
+            len(buffer_state[content_key]) >= 80 or
+            (now - buffer_state[last_key]) >= 0.1
         ):
             flushed = buffer_state[content_key]
             buffer_state[content_key] = ''
@@ -860,7 +1142,6 @@ class AISession(models.Model):
             return payload
         except StreamCancelled:
             self._flush_stream_buffer(buffer_state)
-            self._persist_partial(buffer_state)
             raise
 
     # ----------------------------------------------------------
@@ -891,14 +1172,17 @@ class AISession(models.Model):
                 attachment_id = cached
             else:
                 try:
-                    attachment = self.env['ir.attachment'].sudo().create({
-                        'name': alt or 'generated.png',
-                        'datas': b64,
-                        'mimetype': mimetype,
-                        'res_model': self._name,
-                        'res_id': self.id,
-                    })
+                    attachment = self.env['ir.attachment'].sudo()._ai_create_from_upload(
+                        alt or 'generated.png',
+                        mimetype,
+                        b64,
+                        res_id=self.id,
+                    )
+                except UserError as error:
+                    _logger.warning("muk_ai: rejected inline image attachment: %s", error)
+                    return match.group(0)
                 except Exception:
+                    _logger.exception("muk_ai: failed to persist inline image attachment")
                     return match.group(0)
                 attachment_id = attachment.id
                 cache[b64] = attachment_id
@@ -939,18 +1223,30 @@ class AISession(models.Model):
                 if m := ATTACHMENT_REF_RE.match(value):
                     attachment = self.env['ir.attachment'].sudo().browse(int(m.group(1))).exists()
                     if attachment and attachment.datas:
+                        if attachment.file_size > ATTACHMENT_REF_MAX_BYTES:
+                            _logger.warning(
+                                "muk_ai: refused @attachment:%s — size %s exceeds cap %s",
+                                attachment.id, attachment.file_size, ATTACHMENT_REF_MAX_BYTES,
+                            )
+                            return value
+                        if attachment.mimetype and attachment.mimetype not in ALLOWED_MIMETYPES:
+                            _logger.warning(
+                                "muk_ai: refused @attachment:%s — mimetype %s not allowed",
+                                attachment.id, attachment.mimetype,
+                            )
+                            return value
                         refs.append({'kind': 'attachment', 'preview_url': f'/web/image/{attachment.id}'})
                         return attachment.datas.decode()
                     return value
                 if m := URL_REF_RE.match(value):
                     url = m.group(1)
                     try:
-                        response = requests.get(url, timeout=30)
-                        response.raise_for_status()
-                        refs.append({'kind': 'url', 'preview_url': url})
-                        return base64.b64encode(response.content).decode()
-                    except Exception:
+                        content = fetch_url(self.env, url)
+                    except (UserError, urllib3.exceptions.HTTPError) as exc:
+                        _logger.warning("muk_ai: refused @url:%s — %s", url, exc)
                         return value
+                    refs.append({'kind': 'url', 'preview_url': url})
+                    return base64.b64encode(content).decode()
                 return value
             if isinstance(value, dict):
                 return {k: _resolve(v) for k, v in value.items()}
@@ -962,11 +1258,12 @@ class AISession(models.Model):
 
     def _accrue_round_payload(self, payload):
         usage = payload.get('usage') or {}
+        round_input_tokens = usage.get('input_tokens')
         self.write({
             'iteration_count': self.iteration_count + 1,
-            'total_input_tokens': self.total_input_tokens + usage.get('input_tokens', 0),
+            'total_input_tokens': self.total_input_tokens + (round_input_tokens or 0),
             'total_output_tokens': self.total_output_tokens + usage.get('output_tokens', 0),
-            'last_input_tokens': usage.get('input_tokens', 0) or self.last_input_tokens,
+            'last_input_tokens': self.last_input_tokens if round_input_tokens is None else round_input_tokens,
             **self._accrue_cost_deltas(usage),
         })
         image_cache = {}
@@ -996,19 +1293,22 @@ class AISession(models.Model):
         return None
 
     def _log_tool_call(self, call):
-        self._append_log({
+        self._publish_event('log', {
             'kind': 'tool_call',
             'name': call['name'],
             'arguments': call['arguments'],
             'call_id': call['call_id'],
+            'at': fields.Datetime.now().isoformat(),
         })
 
     def _skip_tool_call(self, outputs, call, reason, log_result=None):
+        result = {'error': reason}
+        self._persist_synthetic_tool_log(call, result, 'denied')
         self._record_tool_result(
             outputs,
             call['call_id'],
             call['name'],
-            {'error': reason},
+            result,
             log_result=log_result,
         )
 
@@ -1059,9 +1359,11 @@ class AISession(models.Model):
         for index in range(start_index, len(tool_calls)):
             call = tool_calls[index]
             if index >= MAX_TOOL_CALLS_PER_ROUND:
-                outputs.append(build_tool_call_output(
-                    call['call_id'], {'error': 'tool_call_limit_exceeded'},
-                ))
+                self._log_tool_call(call)
+                self._skip_tool_call(
+                    outputs, call, 'tool_call_limit_exceeded',
+                    log_result={'error': 'tool_call_limit_exceeded'},
+                )
                 continue
             if call.get('_parse_error'):
                 self._log_tool_call(call)
@@ -1095,20 +1397,35 @@ class AISession(models.Model):
         return None if paused or wait_for_user else has_terminating
 
     def _run_to_completion(self, has_terminating=False):
+        deadline = time.monotonic() + MAX_WALLCLOCK_SECONDS
         while True:
-            self._run_iterations(has_terminating=has_terminating)
+            self._run_iterations(has_terminating=has_terminating, deadline=deadline)
             if self.state != 'done':
                 return
             if not self._drain_pending_message():
                 return
+            if time.monotonic() > deadline:
+                self._transition_state('error', error=_(
+                    "Wallclock cap reached (%(s)s s). Send a new message to continue.",
+                    s=MAX_WALLCLOCK_SECONDS,
+                ))
+                return
             self._transition_state('running')
             has_terminating = False
 
-    def _run_iterations(self, has_terminating=False):
+    def _run_iterations(self, has_terminating=False, deadline=None):
+        if deadline is None:
+            deadline = time.monotonic() + MAX_WALLCLOCK_SECONDS
         provider, model = self._effective_provider(), self._effective_model()
         agent, tool_schema = self.agent_id, self._get_tool_schema()
         for _iteration in range(MAX_ITERATIONS):
             if self.state != 'running':
+                return
+            if time.monotonic() > deadline:
+                self._transition_state('error', error=_(
+                    "Wallclock cap reached (%(s)s s). Send a new message to continue.",
+                    s=MAX_WALLCLOCK_SECONDS,
+                ))
                 return
             self.invalidate_recordset(['pending_ids'])
             if self.pending_ids and self._drain_pending_message():
@@ -1294,6 +1611,7 @@ class AISession(models.Model):
                 'error': 'rejected_by_user',
                 'reason': reject_reason or ''
             }
+            self._persist_synthetic_tool_log(call, result, 'denied')
         self._record_tool_result(
             outputs,
             call['call_id'],
@@ -1310,86 +1628,21 @@ class AISession(models.Model):
         )
 
     # ----------------------------------------------------------
-    # Context
-    # ----------------------------------------------------------
-
-    def _base_view_context(self, payload, kind):
-        cleaned = {'kind': kind}
-        if model := payload.get('model'):
-            if not isinstance(model, str):
-                raise UserError(_("view_context.model must be a string."))
-            cleaned['model'] = model
-        return cleaned
-
-    def _view_context_domain(self, payload):
-        domain = payload.get('domain')
-        if domain is None:
-            return None
-        if not isinstance(domain, list):
-            raise UserError(_("view_context.domain must be a list."))
-        return domain
-
-    def _clean_record_view_context(self, payload):
-        cleaned = self._base_view_context(payload, 'record')
-        res_id = payload.get('id')
-        if not isinstance(res_id, int) or res_id <= 0:
-            raise UserError(_("view_context.id must be a positive integer."))
-        cleaned['id'] = res_id
-        if display_name := payload.get('display_name'):
-            if not isinstance(display_name, str):
-                raise UserError(_("view_context.display_name must be a string."))
-            cleaned['display_name'] = display_name
-        return cleaned
-
-    def _clean_list_view_context(self, payload):
-        cleaned = self._base_view_context(payload, 'list')
-        cleaned['view_type'] = payload.get('view_type') or 'list'
-        if domain := self._view_context_domain(payload):
-            cleaned['domain'] = domain
-        return cleaned
-
-    def _clean_action_view_context(self, payload):
-        cleaned = self._base_view_context(payload, 'action')
-        if action_id := payload.get('action_id'):
-            if not isinstance(action_id, int):
-                raise UserError(_("view_context.action_id must be an integer."))
-            cleaned['action_id'] = action_id
-        return cleaned
-
-    def _clean_pivot_view_context(self, payload):
-        cleaned = self._base_view_context(payload, 'pivot')
-        cleaned['view_type'] = 'pivot'
-        for key in ('pivot_measures', 'pivot_row_groupby', 'pivot_column_groupby'):
-            value = payload.get(key)
-            if value is not None:
-                if not isinstance(value, list):
-                    raise UserError(_("view_context.%s must be a list.", key))
-                cleaned[key] = value
-        if domain := self._view_context_domain(payload):
-            cleaned['domain'] = domain
-        return cleaned
-
-    def _clean_graph_view_context(self, payload):
-        cleaned = self._base_view_context(payload, 'graph')
-        cleaned['view_type'] = 'graph'
-        for key in ('graph_mode', 'graph_measure', 'graph_order'):
-            value = payload.get(key)
-            if value is not None:
-                if not isinstance(value, str):
-                    raise UserError(_("view_context.%s must be a string.", key))
-                cleaned[key] = value
-        groupbys = payload.get('graph_groupbys')
-        if groupbys is not None:
-            if not isinstance(groupbys, list):
-                raise UserError(_("view_context.graph_groupbys must be a list."))
-            cleaned['graph_groupbys'] = groupbys
-        if domain := self._view_context_domain(payload):
-            cleaned['domain'] = domain
-        return cleaned
-
-    # ----------------------------------------------------------
     # Functions
     # ----------------------------------------------------------
+
+    def dismiss_notifications(self):
+        partner = self.env.user.partner_id
+        if not partner:
+            return False
+        messages = self.env['mail.message'].sudo().search([
+            ('muk_ai_session_id', 'in', self.ids),
+            ('notification_ids.res_partner_id', '=', partner.id),
+            ('notification_ids.is_read', '=', False),
+        ])
+        if messages:
+            messages.with_user(self.env.user).set_message_done()
+        return True
 
     def start(self, user_message=None, attachment_ids=None):
         self._recover_if_stuck()
@@ -1475,15 +1728,27 @@ class AISession(models.Model):
         if last_user is None:
             raise UserError(_("No user turn to regenerate from."))
         self.conversation = conv[:last_user + 1]
-        log = list(self.tool_log or [])
-        last_user_log = None
-        for idx in range(len(log) - 1, -1, -1):
-            if log[idx].get('kind') == 'user_message':
-                last_user_log = idx
-                break
-        self.tool_log = (
-            log[:last_user_log + 1] if last_user_log is not None else []
+        events = self.env['muk_ai.session.event'].sudo().search(
+            [('session_id', '=', self.id)],
+            order='sequence, id',
         )
+        last_user_event = None
+        for ev in reversed(events):
+            if ev.kind == 'user_message':
+                last_user_event = ev
+                break
+        if last_user_event is not None:
+            stale = events.filtered(
+                lambda e: (
+                    e.sequence > last_user_event.sequence or
+                    (e.sequence == last_user_event.sequence
+                     and e.id > last_user_event.id)
+                ),
+            )
+        else:
+            stale = events
+        if stale:
+            stale.sudo().unlink()
         self.write({
             'pending_ask': False,
             'error_message': False,
@@ -1506,9 +1771,9 @@ class AISession(models.Model):
         if self.pending_ids:
             self.pending_ids.unlink()
             self.invalidate_recordset(['pending_ids'])
+        self.event_ids.sudo().unlink()
         self.write({
             'conversation': [],
-            'tool_log': [log_entry],
             'pending_ask': False,
             'approved_signatures': [],
             'last_text': False,
@@ -1516,8 +1781,10 @@ class AISession(models.Model):
             'iteration_count': 0,
             'last_input_tokens': 0,
             'state': 'new',
+            'cleared_at': fields.Datetime.now(),
+            'cleared_log_id': self._max_session_log_id(),
         })
-        self._publish_event('log', log_entry)
+        self._append_log(log_entry)
         self._publish_event('state', {'state': 'new'})
         self._publish_event('queue', {'pending': []})
         return self._get_snapshot()
@@ -1565,6 +1832,7 @@ class AISession(models.Model):
             ),
             'original_tokens': self.last_input_tokens,
         }
+        self.event_ids.sudo().unlink()
         self.write({
             'conversation': [
                 {
@@ -1581,6 +1849,8 @@ class AISession(models.Model):
             'error_message': False,
             'last_input_tokens': 0,
             'state': 'done',
+            'cleared_at': fields.Datetime.now(),
+            'cleared_log_id': self._max_session_log_id(),
         })
         self._append_log(log_entry)
         self._publish_event('state', {'state': 'done'})
@@ -1589,9 +1859,10 @@ class AISession(models.Model):
             self._run_to_completion()
 
     def upload_attachments(self, files):
+        attachments = self.env['ir.attachment'].sudo()
         created = self.env['ir.attachment']
         for entry in files or []:
-            created |= created._ai_create_from_upload(
+            created |= attachments._ai_create_from_upload(
                 entry.get('filename'),
                 entry.get('mimetype'),
                 entry.get('data_b64'),
@@ -1626,19 +1897,7 @@ class AISession(models.Model):
         if payload is None or kind == 'none':
             self._write_view_context(None)
             return self._get_snapshot()
-        cleaner = (
-            getattr(self, f'_clean_{kind}_view_context', None)
-            if isinstance(kind, str)
-            and kind.isidentifier()
-            and not kind.startswith('_')
-            else None
-        )
-        if not cleaner:
-            raise UserError(_(
-                "Invalid view context payload (kind=%(kind)r).",
-                kind=kind,
-            ))
-        self._write_view_context(cleaner(payload))
+        self._write_view_context(clean_view_context_payload(kind, payload))
         return self._get_snapshot()
 
     def unpin_view_context(self):
@@ -1722,49 +1981,55 @@ class AISession(models.Model):
         return self._get_snapshot()
 
     # ----------------------------------------------------------
+    # Compute
+    # ----------------------------------------------------------
+
+    @api.depends('agent_id', 'agent_id.model_id', 'agent_id.model_id.context_window')
+    def _compute_context_window(self):
+        default_record = self.env['muk_ai.provider']._get_default().default_model_id
+        for record in self:
+            model_record = (
+                record.agent_id.model_id
+                if record.agent_id and record.agent_id.model_id
+                else default_record
+            )
+            record.context_window = (
+                (model_record.context_window if model_record else 0)
+                or DEFAULT_CONTEXT_WINDOW
+            )
+
+    @api.depends('override_approval_mode', 'agent_id', 'agent_id.approval_mode')
+    def _compute_effective_approval_mode(self):
+        for record in self:
+            record.effective_approval_mode = record._effective_approval_mode()
+
+    @api.depends(
+        'pending_ids',
+        'pending_ids.queued_at',
+        'pending_ids.content',
+        'pending_ids.attachment_ids',
+    )
+    def _compute_pending_user_messages(self):
+        for record in self:
+            record.pending_user_messages = record._serialize_pending()
+
+    # ----------------------------------------------------------
+    # ORM
+    # ----------------------------------------------------------
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        self._check_rate_limit(batch_size=len(vals_list) or 1)
+        return super().create(vals_list)
+
+    # ----------------------------------------------------------
     # Cron
     # ----------------------------------------------------------
 
-    @api.model
-    def _ensure_worker_crons(self):
-        IrCron = self.env['ir.cron'].sudo()
-        IrServer = self.env['ir.actions.server'].sudo()
-        IrModelData = self.env['ir.model.data'].sudo()
-        model = self.env['ir.model']._get(self._name)
-        for index in range(1, WORKER_CRON_COUNT + 1):
-            xmlid = f'cron_run_pending_sessions_{index}'
-            data = IrModelData.search([
-                ('module', '=', 'muk_ai'), ('name', '=', xmlid),
-            ], limit=1)
-            if data:
-                if IrCron.browse(data.res_id).exists():
-                    continue
-                data.unlink()
-            server = IrServer.create({
-                'name': _("MuK AI: Session Worker %s", index),
-                'model_id': model.id,
-                'state': 'code',
-                'code': 'model._cron_run_pending_sessions()',
-                'usage': 'ir_cron',
-            })
-            cron = IrCron.create({
-                'ir_actions_server_id': server.id,
-                'interval_number': 1,
-                'interval_type': 'minutes',
-                'active': True,
-                'user_id': SUPERUSER_ID,
-            })
-            IrModelData.create({
-                'name': xmlid,
-                'module': 'muk_ai',
-                'model': 'ir.cron',
-                'res_id': cron.id,
-                'noupdate': True,
-            })
-
     def _capture_user_context(self):
+        ctx = self.env.context or {}
         safe = {}
-        for key, value in (self.env.context or {}).items():
+        for key, value in ctx.items():
             try:
                 json.dumps(value)
             except (TypeError, ValueError):
@@ -1777,25 +2042,19 @@ class AISession(models.Model):
             self.sudo().write({
                 'user_context': self._capture_user_context(),
             })
-        first = self.env.ref(
+        if modules.module.current_test:
+            for session in self:
+                if session.state == 'compacting':
+                    session._do_compact()
+                elif session.state == 'running':
+                    session._run_to_completion()
+            return
+        cron = self.env.ref(
             'muk_ai.cron_run_pending_sessions_1',
             raise_if_not_found=False,
         )
-        if not first:
-            try:
-                self._ensure_worker_crons()
-            except Exception:
-                _logger.warning(
-                    "muk_ai: failed to provision worker crons",
-                    exc_info=True,
-                )
-        for index in range(1, WORKER_CRON_COUNT + 1):
-            cron = self.env.ref(
-                f'muk_ai.cron_run_pending_sessions_{index}',
-                raise_if_not_found=False,
-            )
-            if cron:
-                cron.sudo()._trigger()
+        if cron:
+            cron.sudo()._trigger()
 
     @api.model
     def _cron_run_pending_sessions(self):
@@ -1803,9 +2062,6 @@ class AISession(models.Model):
         candidates = self._find_pending_session_ids()
         if not candidates:
             return
-        # Release any locks the cron's outer txn might have grabbed before
-        # the worker opens its own connection (the worker writes session
-        # state and would otherwise deadlock with this transaction's locks).
         self._commit_safe()
         for sid in candidates:
             if self._process_session_in_worker(sid):
@@ -1838,7 +2094,6 @@ class AISession(models.Model):
                     'state': 'error', 'error': session.error_message,
                 })
             except psycopg2.errors.SerializationFailure:
-                # Another cron worker swept this orphan first; let it.
                 continue
 
     @api.model
@@ -1885,7 +2140,7 @@ class AISession(models.Model):
                     cr.commit()
                 except StreamCancelled:
                     cr.rollback()
-                except Exception as error:  # noqa: BLE001
+                except Exception as error:
                     _logger.exception(
                         "Worker failed for session %s", session_id,
                     )
@@ -1920,36 +2175,3 @@ class AISession(models.Model):
                 'state': 'error', 'error': message,
             })
             cr.commit()
-
-    # ----------------------------------------------------------
-    # Compute
-    # ----------------------------------------------------------
-
-    @api.depends('agent_id', 'agent_id.model_id', 'agent_id.model_id.context_window')
-    def _compute_context_window(self):
-        for record in self:
-            record.context_window = record._resolve_context_window()
-
-    @api.depends('override_approval_mode', 'agent_id', 'agent_id.approval_mode')
-    def _compute_effective_approval_mode(self):
-        for record in self:
-            record.effective_approval_mode = record._effective_approval_mode()
-
-    @api.depends(
-        'pending_ids',
-        'pending_ids.queued_at',
-        'pending_ids.content',
-        'pending_ids.attachment_ids',
-    )
-    def _compute_pending_user_messages(self):
-        for record in self:
-            record.pending_user_messages = record._serialize_pending()
-
-    # ----------------------------------------------------------
-    # ORM
-    # ----------------------------------------------------------
-
-    @api.model_create_multi
-    def create(self, vals_list):
-        self._check_rate_limit()
-        return super().create(vals_list)

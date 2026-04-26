@@ -5,12 +5,18 @@ from . import tools
 
 
 def _post_init_hook(env):
-    vals = {
-        'default_ai_provider_id': env.ref('muk_ai.provider_openai').id,
-        'default_ai_agent_id': env.ref('muk_ai.agent_general').id,
-    }
-    for company in env['res.company'].sudo().search([
-        ('default_ai_provider_id', '=', False),
-        ('default_ai_agent_id', '=', False),
-    ]):
-        company.write(vals)
+    provider_id = env.ref('muk_ai.provider_openai').id
+    agent_id = env.ref('muk_ai.agent_general').id
+    companies = env['res.company'].sudo().search([
+        '|',
+            ('default_ai_provider_id', '=', False),
+            ('default_ai_agent_id', '=', False),
+    ])
+    for company in companies:
+        vals = {}
+        if not company.default_ai_provider_id:
+            vals['default_ai_provider_id'] = provider_id
+        if not company.default_ai_agent_id:
+            vals['default_ai_agent_id'] = agent_id
+        if vals:
+            company.write(vals)

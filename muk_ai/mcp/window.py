@@ -244,6 +244,10 @@ class AIWindow(models.AbstractModel):
     )
     def _mcp_open_action(self, action_ref, additional_context=None):
         action = self._resolve_window_action(action_ref)
+        if not action or not action.exists():
+            raise UserError(_(
+                "Action %r not found.", action_ref,
+            ))
         if (
             action._name == 'ir.actions.actions'
             and action.type
@@ -255,9 +259,9 @@ class AIWindow(models.AbstractModel):
             if concrete.exists():
                 action = concrete
         groups = (
-             action.sudo().groups_id
-             if 'groups_id' in action._fields
-             else self.env['res.groups']
+            action.sudo().groups_id
+            if 'groups_id' in action._fields
+            else self.env['res.groups']
         )
         if groups and not self.env.is_superuser() and not any(
             self.env.user.has_group(g.full_name) for g in groups

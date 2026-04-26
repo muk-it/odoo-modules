@@ -106,7 +106,8 @@ class TestAiGoogleProvider(AITestCommon):
                 }],
             )
         self.assertTrue(captured['url'].endswith(':generateContent'))
-        self.assertIn('/models/gemini-2.5-flash', captured['url'])
+        default_model = self.provider.default_model_id.technical_name
+        self.assertIn(f'/models/{default_model}', captured['url'])
         self.assertEqual(captured['body']['systemInstruction']['parts'][0]['text'], 'be brief')
         self.assertEqual(captured['body']['contents'][0]['role'], 'user')
         self.assertEqual(

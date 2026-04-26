@@ -60,26 +60,26 @@ class TestSessionFlow(AITestCommon):
         )
 
     def _script_tool_results(self, results):
-        def fake(self_arg, name, arguments, env, enforce_scope=None):
+        def fake(self_arg, name, arguments, env, enforce_scope):
             if name not in results:
                 raise AssertionError(f'unscripted tool {name!r}')
             value = results[name]
-            return (value() if callable(value) else value), {}
+            return (value() if callable(value) else value), {}, arguments.get('model')
 
         return patch.object(
             type(self.env['muk_mcp.tool']),
-            '_call',
+            '_execute',
             autospec=True,
             side_effect=fake,
         )
 
     def _script_tool_raises(self, exc):
-        def fake(self_arg, name, arguments, env, enforce_scope=None):
+        def fake(self_arg, name, arguments, env, enforce_scope):
             raise exc
 
         return patch.object(
             type(self.env['muk_mcp.tool']),
-            '_call',
+            '_execute',
             autospec=True,
             side_effect=fake,
         )
@@ -90,13 +90,13 @@ class TestSessionFlow(AITestCommon):
     def _called_tool_names(self, session):
         return [
             entry.get('name')
-            for entry in (session.tool_log or [])
+            for entry in session._unified_log()
             if entry.get('kind') == 'tool_call'
         ]
 
     def _last_tool_result(self, session):
         return next(
-            entry for entry in reversed(session.tool_log or [])
+            entry for entry in reversed(session._unified_log())
             if entry.get('kind') == 'tool_result'
         )
 

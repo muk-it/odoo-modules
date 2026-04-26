@@ -25,27 +25,13 @@ class AIProvider(models.Model):
     name = fields.Selection(
         selection=lambda self: self._selection_name(),
         string="Provider",
-        required=True,
         readonly=True,
+        required=True,
     )
 
     display_name = fields.Char(
         compute='_compute_display_name',
     )
-
-    @api.depends('name')
-    def _compute_display_name(self):
-        labels = dict(self._selection_name())
-        for record in self:
-            record.display_name = labels.get(record.name, record.name or '')
-
-    @api.depends('name')
-    def _compute_capabilities(self):
-        for record in self:
-            impl = REGISTRY.get(record.name)
-            record.supports_web_search = bool(impl and impl.supports_web_search)
-            record.supports_image_generation = bool(impl and impl.supports_image_generation)
-            record.supports_code_interpreter = bool(impl and impl.supports_code_interpreter)
 
     active = fields.Boolean(
         string="Active",
@@ -60,47 +46,48 @@ class AIProvider(models.Model):
     api_key = fields.Char(
         string="API Key",
         help="Authentication token for this provider.",
+        groups="base.group_system",
     )
 
     max_tokens = fields.Integer(
         string="Max Tokens",
+        help="Maximum completion tokens per request.",
         required=True,
         default=4096,
-        help="Maximum completion tokens per request.",
     )
 
     request_timeout = fields.Integer(
         string="Request Timeout",
+        help="Provider request timeout in seconds.",
         required=True,
         default=60,
-        help="Provider request timeout in seconds.",
     )
 
     idle_timeout = fields.Integer(
         string="Idle Timeout",
+        help="Seconds without a streamed chunk before aborting the connection.",
         required=True,
         default=45,
-        help="Seconds without a streamed chunk before aborting the connection.",
     )
 
     rate_limit = fields.Integer(
         string="Rate Limit",
+        help="Max sessions a single user may create per minute. 0 = disabled.",
         required=True,
         default=10,
-        help="Max sessions a single user may create per minute. 0 = disabled.",
     )
 
     default_model_id = fields.Many2one(
         comodel_name='muk_ai.model',
         string="Default Model",
-        domain="[('provider_id', '=', id)]",
         help="Model used when an agent does not specify one.",
+        domain="[('provider_id', '=', id)]",
     )
 
     model_ids = fields.One2many(
         comodel_name='muk_ai.model',
-        inverse_name='provider_id',
         string="Models",
+        inverse_name='provider_id',
     )
 
     supports_web_search = fields.Boolean(
@@ -154,7 +141,6 @@ class AIProvider(models.Model):
         return {
             'metadata': {
                 'odoo_user_id': self.env.uid,
-                'odoo_user_name': self.env.user.name,
             },
         }
 
@@ -232,6 +218,24 @@ class AIProvider(models.Model):
                 'sticky': False,
             },
         }
+
+    # ----------------------------------------------------------
+    # Compute
+    # ----------------------------------------------------------
+
+    @api.depends('name')
+    def _compute_display_name(self):
+        labels = dict(self._selection_name())
+        for record in self:
+            record.display_name = labels.get(record.name, record.name or '')
+
+    @api.depends('name')
+    def _compute_capabilities(self):
+        for record in self:
+            impl = REGISTRY.get(record.name)
+            record.supports_web_search = bool(impl and impl.supports_web_search)
+            record.supports_image_generation = bool(impl and impl.supports_image_generation)
+            record.supports_code_interpreter = bool(impl and impl.supports_code_interpreter)
 
     # ----------------------------------------------------------
     # Constraints

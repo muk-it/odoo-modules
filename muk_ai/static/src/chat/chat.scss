@@ -1066,10 +1066,10 @@
         overflow: hidden;
         transition: border-color 0.15s ease;
 
-        &.mk_tool_read  { border-left-color: #2da44e; }   // green
-        &.mk_tool_write { border-left-color: #bf8700; }   // amber
-        &.mk_tool_nav   { border-left-color: #0969da; }   // blue
-        &.mk_tool_error { border-left-color: #cf222e; }   // red
+        &.mk_tool_read  { border-left-color: #2da44e; }
+        &.mk_tool_write { border-left-color: #bf8700; }
+        &.mk_tool_nav   { border-left-color: #0969da; }
+        &.mk_tool_error { border-left-color: #cf222e; }
 
         &:hover:not(.mk_tool_streaming) {
             border-color: var(--mk-border-strong);
@@ -1220,9 +1220,6 @@
         margin: 0 auto;
         padding: 0.75rem 1.5rem 1rem;
         width: 100%;
-    }
-
-    .mk_composer_host {
     }
 
     .mk_slash_popover {

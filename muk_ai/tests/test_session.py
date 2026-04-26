@@ -56,15 +56,15 @@ class TestAiSession(AITestCommon):
         )
 
     def _patch_tool_call(self, results_by_name):
-        def fake(self_arg, name, arguments, env, enforce_scope=None):
+        def fake(self_arg, name, arguments, env, enforce_scope):
             if name not in results_by_name:
                 raise AssertionError(f'Unexpected tool call: {name}')
-            return results_by_name[name], {}
+            return results_by_name[name], {}, arguments.get('model')
 
         tool_model = self.env['muk_mcp.tool']
         return patch.object(
             type(tool_model),
-            '_call',
+            '_execute',
             autospec=True,
             side_effect=fake,
         )
@@ -128,7 +128,7 @@ class TestAiSession(AITestCommon):
             snapshot = self.session.start('list installed modules')
         self.assertEqual(snapshot['state'], 'done')
         self.assertEqual(self.session.iteration_count, 2)
-        kinds = [entry['kind'] for entry in self.session.tool_log or []]
+        kinds = [entry['kind'] for entry in self.session._unified_log()]
         self.assertIn('tool_call', kinds)
         self.assertIn('tool_result', kinds)
 
@@ -224,13 +224,13 @@ class TestAiSession(AITestCommon):
         }
         dispatched = []
 
-        def fake_dispatch(self_arg, name, arguments, env, enforce_scope=None):
+        def fake_dispatch(self_arg, name, arguments, env, enforce_scope):
             dispatched.append(name)
-            return '{"ok": true}', {}
+            return '{"ok": true}', {}, arguments.get('model')
 
         with self._patch_provider([payload]), patch.object(
             type(self.env['muk_mcp.tool']),
-            '_call',
+            '_execute',
             autospec=True,
             side_effect=fake_dispatch,
         ):
@@ -299,18 +299,19 @@ class TestAiSession(AITestCommon):
         }
         dispatched = []
 
-        def recorder(self_arg, name, arguments, env, enforce_scope=None):
+        def recorder(self_arg, name, arguments, env, enforce_scope):
             dispatched.append(name)
             if name == 'open_view':
                 return (
                     '{"type": "ir.actions.act_window", "res_model": "res.partner"}',
                     {},
+                    arguments.get('model'),
                 )
-            return '{}', {}
+            return '{}', {}, arguments.get('model')
 
         with self._patch_provider([payload, self._text_payload('Done.')]), patch.object(
             type(self.env['muk_mcp.tool']),
-            '_call',
+            '_execute',
             autospec=True,
             side_effect=recorder,
         ):
@@ -406,15 +407,16 @@ class TestAiSession(AITestCommon):
             session.start('hello')
         self.assertEqual(session.state, 'done')
         self.assertTrue(session.conversation)
-        self.assertTrue(session.tool_log)
+        self.assertTrue(session._unified_log())
         snapshot = session.clear()
         self.assertEqual(snapshot['state'], 'new')
         self.assertEqual(snapshot['iteration_count'], 0)
         self.assertEqual(snapshot['last_input_tokens'], 0)
         self.assertFalse(session.conversation)
-        self.assertEqual(len(session.tool_log), 1)
-        self.assertEqual(session.tool_log[0].get('kind'), 'command')
-        self.assertEqual(session.tool_log[0].get('name'), '/clear')
+        unified = session._unified_log()
+        self.assertEqual(len(unified), 1)
+        self.assertEqual(unified[0].get('kind'), 'command')
+        self.assertEqual(unified[0].get('name'), '/clear')
 
     def test_clear_refuses_running(self):
         session = self.env['muk_ai.session'].create({'name': 'running'})
@@ -441,7 +443,8 @@ class TestAiSession(AITestCommon):
         self.assertLess(len(session.conversation), pre_len + 1)
         self.assertEqual(session.last_input_tokens, 0)
         self.assertEqual(snapshot['last_input_tokens'], 0)
-        last_entry = session.tool_log[-1]
+        unified = session._unified_log()
+        last_entry = unified[-1]
         self.assertEqual(last_entry.get('kind'), 'command')
         self.assertEqual(last_entry.get('name'), '/compact')
         self.assertIn('summary', last_entry)
@@ -596,7 +599,8 @@ class TestAiSession(AITestCommon):
         snapshot = session.unpin_view_context()
         self.assertFalse(session.view_context)
         self.assertIsNone(snapshot['view_context'])
-        last_entry = (session.tool_log or [])[-1]
+        unified = session._unified_log()
+        last_entry = unified[-1] if unified else {}
         self.assertEqual(last_entry.get('kind'), 'command')
         self.assertEqual(last_entry.get('name'), '/unpin')
 
@@ -636,13 +640,13 @@ class TestAiSession(AITestCommon):
         with self._patch_provider([self._text_payload('first answer')]):
             session.start('what is 2+2?')
         self.assertEqual(session.state, 'done')
-        original_log = list(session.tool_log or [])
+        original_log = list(session._unified_log())
         original_conv = list(session.conversation or [])
         with self._patch_provider([self._text_payload('four')]):
             snapshot = session.regenerate_last_turn()
         self.assertEqual(snapshot['state'], 'done')
         self.assertIn('four', session.last_text or '')
-        kinds = [entry.get('kind') for entry in session.tool_log or []]
+        kinds = [entry.get('kind') for entry in session._unified_log()]
         self.assertEqual(kinds[-2:], ['user_message', 'text'])
         self.assertLessEqual(len(session.conversation or []), len(original_conv))
         self.assertGreater(len(original_log), 0)
@@ -815,8 +819,16 @@ class TestAiSession(AITestCommon):
             snapshot = session.send_message('2026')
         self.assertEqual(snapshot['state'], 'done')
 
-    def test_send_message_refuses_running(self):
+    def test_send_message_queues_while_running(self):
         session = self.env['muk_ai.session'].create({'name': 'running'})
         session.write({'state': 'running'})
-        with self.assertRaises(UserError):
-            session.send_message('nope')
+        snapshot = session.send_message('queued while running')
+        self.assertEqual(session.state, 'running')
+        self.assertEqual(len(session.pending_ids), 1)
+        self.assertEqual(
+            session.pending_ids[0].content, 'queued while running',
+        )
+        self.assertEqual(
+            snapshot['pending_user_messages'][0]['content'],
+            'queued while running',
+        )

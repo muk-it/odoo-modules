@@ -65,6 +65,7 @@ export class AIChat extends Component {
         this.bus = useService('bus_service');
         this.action = useService('action');
         this.chatWindow = useService('muk_ai.chat_window');
+        this.notification = useService('notification');
 
         this.session = useAiSession({
             onRefresh: () => this._loadSessions(),
@@ -102,10 +103,26 @@ export class AIChat extends Component {
             const requested = this._getRequestedSessionId();
             const isMobile = typeof window !== 'undefined'
                 && window.innerWidth < 768;
-            if (requested && this.state.sessions.some((s) => s.id === requested)) {
-                await this._selectSession(requested);
-                this.state.sidebarHidden = true;
-            } else if (this.state.sessions.length) {
+            let opened = false;
+            if (requested) {
+                if (this.state.sessions.some((s) => s.id === requested)) {
+                    await this._selectSession(requested);
+                    this.state.sidebarHidden = true;
+                    opened = true;
+                } else {
+                    const record = await this.session.load(requested);
+                    if (record) {
+                        this.state.sidebarHidden = true;
+                        opened = true;
+                    } else {
+                        this.notification.add(
+                            _t('That AI session no longer exists.'),
+                            { type: 'warning' },
+                        );
+                    }
+                }
+            }
+            if (!opened && this.state.sessions.length) {
                 await this._selectSession(this.state.sessions[0].id);
                 if (isMobile) {
                     this.state.sidebarHidden = true;

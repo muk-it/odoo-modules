@@ -10,4 +10,5 @@ access_ai_agent_suggestion_admin,muk_ai.agent.suggestion.admin,model_muk_ai_agen
 access_ai_agent_revision_admin,muk_ai.agent.revision.admin,model_muk_ai_agent_revision,base.group_system,1,1,1,1
 access_ai_session_user,muk_ai.session.user,model_muk_ai_session,base.group_user,1,1,1,1
 access_ai_session_pending_user,muk_ai.session.pending.user,model_muk_ai_session_pending,base.group_user,1,1,1,1
+access_ai_session_event_user,muk_ai.session.event.user,model_muk_ai_session_event,base.group_user,1,1,1,1
 access_ai_approval_user,muk_ai.approval.user,model_muk_ai_approval,base.group_user,1,0,0,1

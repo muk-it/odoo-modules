@@ -28,7 +28,7 @@
 		<field name="name">muk_ai.session.list</field>
 		<field name="model">muk_ai.session</field>
 		<field name="arch" type="xml">
-			<list create="ß" edit="0">
+			<list create="0" edit="0">
 				<field name="create_date"/>
 				<field name="name"/>
 				<field name="user_id"/>
@@ -77,7 +77,7 @@
 		<field name="name">muk_ai.session.form</field>
 		<field name="model">muk_ai.session</field>
 		<field name="arch" type="xml">
-			<form create="ß" edit="0">
+			<form create="0" edit="0">
 				<header>
 					<button
                         name="action_open"
@@ -120,11 +120,17 @@
 					<notebook>
 						<page string="Conversation" name="conversation">
 							<field
-                                name="tool_log"
-                                widget="ai_session_log"
+                                name="event_ids"
                                 nolabel="1"
                                 colspan="2"
-                            />
+                                readonly="1">
+                                    <list>
+                                        <field name="sequence"/>
+                                        <field name="at"/>
+                                        <field name="kind"/>
+                                        <field name="payload" widget="json_code"/>
+                                    </list>
+                                </field>
 						</page>
 						<page string="Attachments" name="attachments">
 							<field

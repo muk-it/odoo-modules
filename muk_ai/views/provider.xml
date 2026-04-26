@@ -83,7 +83,7 @@
 							<label for="rate_limit"/>
 							<div class="d-flex align-items-center gap-2">
 								<field name="rate_limit" class="flex-grow-1"/>
-								<span>Minutes</span>
+								<span>/ minute</span>
 							</div>
 						</group>
 					</group>

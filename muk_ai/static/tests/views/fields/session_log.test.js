@@ -1,5 +1,6 @@
 import { describe, expect, test } from '@odoo/hoot';
 import { click, queryAll, queryFirst } from '@odoo/hoot-dom';
+import { animationFrame } from '@odoo/hoot-mock';
 import {
     defineModels,
     fields,
@@ -63,5 +64,6 @@ test('SessionLogField expands a tool card on click', async () => {
     const card = queryFirst('.mk_tool');
     expect(card.getAttribute('data-expanded')).toBe('0');
     await click('.mk_tool_head');
+    await animationFrame();
     expect(queryFirst('.mk_tool').getAttribute('data-expanded')).toBe('1');
 });

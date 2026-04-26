@@ -1,7 +1,7 @@
 import { registry } from '@web/core/registry';
 
 
-registry.category('web_tour.tours').add('muk_ai_chat_sidebar_tour', {
+registry.category('web_tour.tours').add('muk_ai_chat_tour', {
     steps: () => [
         {
             trigger: '.mk_chat',
@@ -43,14 +43,6 @@ registry.category('web_tour.tours').add('muk_ai_chat_sidebar_tour', {
         {
             trigger: '.mk_chat:not(:has(.mk_sidebar_name:contains(Renamed Chat)))',
             timeout: 30000,
-        },
-    ],
-});
-
-registry.category('web_tour.tours').add('muk_ai_chat_roundtrip_tour', {
-    steps: () => [
-        {
-            trigger: '.mk_chat',
         },
         {
             trigger: '.mk_sidebar_header button:contains(New Chat)',

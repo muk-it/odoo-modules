@@ -37,9 +37,7 @@ patch(FormController.prototype, {
                     id: root.resId,
                     display_name: String(displayName || ''),
                 });
-            } catch (_e) {
-                // Never let capture errors break form rendering.
-            }
+            } catch (_e) {}
         };
         onMounted(dispatch);
         onPatched(dispatch);

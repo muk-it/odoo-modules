@@ -2,6 +2,23 @@ import hashlib
 import json
 
 from odoo import api, fields, models
+from odoo.exceptions import AccessError
+
+
+def _coerce_ids(values):
+    ids = []
+    for value in values or []:
+        if isinstance(value, bool):
+            continue
+        if isinstance(value, int):
+            ids.append(value)
+            continue
+        if isinstance(value, str):
+            try:
+                ids.append(int(value))
+            except ValueError:
+                continue
+    return ids
 
 
 class AIApproval(models.Model):
@@ -23,8 +40,8 @@ class AIApproval(models.Model):
     session_id = fields.Many2one(
         comodel_name='muk_ai.session',
         string="Session",
-        required=True,
         readonly=True,
+        required=True,
         index=True,
         ondelete='cascade',
     )
@@ -39,8 +56,8 @@ class AIApproval(models.Model):
     user_id = fields.Many2one(
         comodel_name='res.users',
         string="Decided By",
-        required=True,
         readonly=True,
+        required=True,
         default=lambda self: self.env.user,
     )
 
@@ -53,14 +70,14 @@ class AIApproval(models.Model):
             ('bypassed', "Bypassed"),
         ],
         string="Decision",
-        required=True,
         readonly=True,
+        required=True,
     )
 
     tool_name = fields.Char(
         string="Tool",
-        required=True,
         readonly=True,
+        required=True,
         index=True,
     )
 
@@ -126,7 +143,7 @@ class AIApproval(models.Model):
         model_name = arguments.get('model') or ''
         if not self._is_sensitive_model(model_name):
             return None
-        ids = [int(i) for i in (arguments.get('ids') or []) if isinstance(i, (int, str))]
+        ids = _coerce_ids(arguments.get('ids'))
         method = (arguments.get('method') or '').strip() if tool_name == 'call_method' else ''
         verbs = {
             'delete_records': f"unlink {len(ids)} record(s)",
@@ -193,10 +210,7 @@ class AIApproval(models.Model):
     def _targets_display_names(self, model_name, ids):
         if not model_name or model_name not in self.env or not ids:
             return []
-        try:
-            recs = self.env[model_name].sudo().browse(ids).exists()
-        except Exception:
-            return [{'id': rid, 'display_name': f'#{rid}'} for rid in ids]
+        recs = self.env[model_name].sudo().browse(ids).exists()
         return [
             {'id': r.id, 'display_name': r.display_name or f'#{r.id}'}
             for r in recs
@@ -220,7 +234,7 @@ class AIApproval(models.Model):
                 row['id']: row
                 for row in model.sudo().browse(ids).read(names)
             }
-        except Exception:
+        except AccessError:
             return {}
 
     @api.model
@@ -251,11 +265,7 @@ class AIApproval(models.Model):
         model_name = arguments.get('model') or ''
         model_label = self._model_label(model_name)
         display = model_label or model_name
-        ids = [
-            int(i)
-            for i in (arguments.get('ids') or [])
-            if isinstance(i, (int, str))
-        ]
+        ids = _coerce_ids(arguments.get('ids'))
         base = {'model': model_name, 'model_label': model_label}
         targets = lambda: self._targets_display_names(model_name, ids)
         if tool_name == 'delete_records':

@@ -72,14 +72,14 @@ class TestChatTour(HttpCase):
         )
 
     def _script_tool_results(self, results):
-        def fake(self_arg, name, arguments, env, enforce_scope=None):
+        def fake(self_arg, name, arguments, env, enforce_scope):
             if name not in results:
                 raise AssertionError(f'unscripted tool {name!r}')
-            return results[name], {}
+            return results[name], {}, arguments.get('model')
 
         return patch.object(
             type(self.env['muk_mcp.tool']),
-            '_call',
+            '_execute',
             autospec=True,
             side_effect=fake,
         )
@@ -88,14 +88,7 @@ class TestChatTour(HttpCase):
     # Tests
     # ----------------------------------------------------------
 
-    def test_chat_sidebar_tour(self):
-        self.start_tour(
-            '/odoo/action-muk_ai.action_ai_chat',
-            'muk_ai_chat_sidebar_tour',
-            login='admin',
-        )
-
-    def test_chat_roundtrip_tour(self):
+    def test_chat_tour(self):
         provider_ctx = self._script_provider([
             self._tool_payload('search_read', {
                 'model': 'ir.module.module',
@@ -110,6 +103,6 @@ class TestChatTour(HttpCase):
         with provider_ctx, tool_ctx:
             self.start_tour(
                 '/odoo/action-muk_ai.action_ai_chat',
-                'muk_ai_chat_roundtrip_tour',
+                'muk_ai_chat_tour',
                 login='admin',
             )

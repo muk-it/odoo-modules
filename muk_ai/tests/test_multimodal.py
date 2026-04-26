@@ -202,7 +202,7 @@ class TestMultimodalAttachments(AITestCommon):
         self.assertEqual(attachment_blocks[0]['attachment_id'], attachment.id)
         self.assertIn(attachment, session.attachment_ids)
         tool_log_users = [
-            e for e in session.tool_log or [] if e.get('kind') == 'user_message'
+            e for e in session._unified_log() if e.get('kind') == 'user_message'
         ]
         self.assertEqual(len(tool_log_users), 1)
         self.assertEqual(len(tool_log_users[0]['attachments']), 1)

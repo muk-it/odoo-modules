@@ -70,7 +70,7 @@ class TestSessionCostAccrual(AITestCommon):
     # ----------------------------------------------------------
 
     def test_cost_accrues_on_completion(self):
-        session = self.env['muk_ai.session'].create({'name': 'cost-one'})
+        session = self.env['muk_ai.session'].create({'name': 'cost-one', 'agent_id': False})
         with self._patch_provider([self._payload(
             input_tokens=1_000_000, output_tokens=500_000,
         )]):
@@ -80,7 +80,7 @@ class TestSessionCostAccrual(AITestCommon):
         self.assertAlmostEqual(session.total_cost, 2.0)
 
     def test_cost_accumulates_across_rounds(self):
-        session = self.env['muk_ai.session'].create({'name': 'cost-cum'})
+        session = self.env['muk_ai.session'].create({'name': 'cost-cum', 'agent_id': False})
         with self._patch_provider([self._payload(
             input_tokens=1_000_000, output_tokens=500_000,
         )]):
@@ -96,7 +96,7 @@ class TestSessionCostAccrual(AITestCommon):
     def test_cost_stays_zero_when_no_default_model(self):
         self.provider.default_model_id = False
         self.model.active = False
-        session = self.env['muk_ai.session'].create({'name': 'no-price'})
+        session = self.env['muk_ai.session'].create({'name': 'no-price', 'agent_id': False})
         with self._patch_provider([self._payload()]):
             session.start('hi')
         self.assertEqual(session.total_cost, 0.0)

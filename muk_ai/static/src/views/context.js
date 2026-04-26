@@ -40,9 +40,7 @@ function makeDispatch(controller, build) {
             }
             lastKey = key;
             captureViewContext(controller.env, payload);
-        } catch (_e) {
-            // Never let capture errors break view rendering.
-        }
+        } catch (_e) {}
     };
 }
 

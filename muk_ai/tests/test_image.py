@@ -2,7 +2,7 @@ import base64
 import re
 from unittest.mock import MagicMock, patch
 
-import requests
+import urllib3.exceptions
 
 from .common import AITestCommon
 
@@ -128,16 +128,55 @@ class TestImageRefPersistence(AITestCommon):
         self.assertEqual(resolved['values']['image_1920'], '@attachment:999999999')
         self.assertEqual(refs, [])
 
+    def test_resolve_attachment_ref_oversized_keeps_placeholder(self):
+        from odoo.addons.muk_ai.models import session as session_module
+        attachment = self.env['ir.attachment'].sudo().create({
+            'name': 'big.png',
+            'datas': PNG_1x1_RED,
+            'mimetype': 'image/png',
+            'res_model': 'muk_ai.session',
+            'res_id': self.session.id,
+        })
+        with patch.object(session_module, 'ATTACHMENT_REF_MAX_BYTES', 0):
+            args = {'values': {'image_1920': f'@attachment:{attachment.id}'}}
+            resolved, refs = self.session._resolve_value_refs(args)
+        self.assertEqual(resolved['values']['image_1920'], f'@attachment:{attachment.id}')
+        self.assertEqual(refs, [])
+
+    def test_resolve_attachment_ref_disallowed_mimetype_keeps_placeholder(self):
+        attachment = self.env['ir.attachment'].sudo().create({
+            'name': 'evil.bin',
+            'datas': PNG_1x1_RED,
+            'res_model': 'muk_ai.session',
+            'res_id': self.session.id,
+        })
+        attachment.sudo().mimetype = 'application/octet-stream'
+        args = {'values': {'image_1920': f'@attachment:{attachment.id}'}}
+        resolved, refs = self.session._resolve_value_refs(args)
+        self.assertEqual(resolved['values']['image_1920'], f'@attachment:{attachment.id}')
+        self.assertEqual(refs, [])
+
     def test_resolve_url_ref_fetches_and_b64_encodes(self):
         png_bytes = base64.b64decode(PNG_1x1_RED)
         response = MagicMock()
-        response.content = png_bytes
-        response.raise_for_status.return_value = None
+        response.status = 200
+        response.stream.return_value = iter([png_bytes])
+        response.release_conn.return_value = None
+        pool = MagicMock()
+        pool.urlopen.return_value = response
+        pool.close.return_value = None
         url = 'https://example.com/cat.png'
-        with patch.object(requests, 'get', return_value=response) as mock_get:
+        with patch(
+            'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
+            return_value=[(0, 0, 0, '', ('8.8.8.8', 0))],
+        ), patch(
+            'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
+            return_value=pool,
+        ) as mock_pool_cls:
             args = {'values': {'image_1920': f'@url:{url}'}}
             resolved, refs = self.session._resolve_value_refs(args)
-        mock_get.assert_called_once_with(url, timeout=30)
+        mock_pool_cls.assert_called_once()
+        pool.urlopen.assert_called_once()
         self.assertEqual(resolved['values']['image_1920'], PNG_1x1_RED)
         self.assertEqual(len(refs), 1)
         self.assertEqual(refs[0]['kind'], 'url')
@@ -145,7 +184,16 @@ class TestImageRefPersistence(AITestCommon):
 
     def test_resolve_url_ref_swallows_fetch_error(self):
         url = 'https://example.com/broken.png'
-        with patch.object(requests, 'get', side_effect=requests.HTTPError('500')):
+        pool = MagicMock()
+        pool.urlopen.side_effect = urllib3.exceptions.HTTPError('500')
+        pool.close.return_value = None
+        with patch(
+            'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
+            return_value=[(0, 0, 0, '', ('8.8.8.8', 0))],
+        ), patch(
+            'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
+            return_value=pool,
+        ):
             args = {'values': {'image_1920': f'@url:{url}'}}
             resolved, refs = self.session._resolve_value_refs(args)
         self.assertEqual(resolved['values']['image_1920'], f'@url:{url}')

@@ -14,8 +14,8 @@ class AIModel(models.Model):
 
     name = fields.Char(
         string="Label",
-        required=True,
         readonly=True,
+        required=True,
     )
 
     sequence = fields.Integer(
@@ -26,56 +26,60 @@ class AIModel(models.Model):
     provider_id = fields.Many2one(
         comodel_name='muk_ai.provider',
         string="Provider",
-        required=True,
         readonly=True,
+        required=True,
         ondelete='cascade',
     )
 
     technical_name = fields.Char(
         string="Technical Name",
-        required=True,
-        readonly=True,
-        index=True,
         help="Provider-facing model identifier — e.g. 'gpt-5-mini'.",
+        readonly=True,
+        required=True,
+        index=True,
     )
 
     context_window = fields.Integer(
         string="Context Window",
-        required=True,
-        readonly=True,
         help="Maximum input tokens the provider accepts for this model.",
+        readonly=True,
+        required=True,
     )
 
     input_rate = fields.Float(
         string="Input $/M tokens",
-        digits=(12, 6),
-        required=True,
-        readonly=True,
         help="Cost in USD per 1,000,000 fresh input tokens.",
+        readonly=True,
+        required=True,
+        digits=(12, 6),
     )
 
     output_rate = fields.Float(
         string="Output $/M tokens",
-        digits=(12, 6),
-        required=True,
-        readonly=True,
         help="Cost in USD per 1,000,000 output tokens.",
+        readonly=True,
+        required=True,
+        digits=(12, 6),
     )
 
     cached_rate = fields.Float(
         string="Cached $/M tokens",
-        digits=(12, 6),
-        default=0.0,
+        help=(
+            "Cost in USD per 1,000,000 cached input tokens. "
+            "Leave at 0 when the provider does not bill cached tokens "
+            "separately — the input rate is then used as the fallback."
+        ),
         readonly=True,
-        help="Cost in USD per 1,000,000 cached input tokens.",
+        default=0.0,
+        digits=(12, 6),
     )
 
     currency = fields.Char(
         string="Currency",
-        required=True,
-        readonly=True,
-        default='USD',
         help="ISO code of the price currency.",
+        readonly=True,
+        required=True,
+        default='USD',
     )
 
     active = fields.Boolean(
@@ -95,9 +99,10 @@ class AIModel(models.Model):
         input_tokens = int((usage or {}).get('input_tokens') or 0)
         output_tokens = int((usage or {}).get('output_tokens') or 0)
         cached_tokens = int((usage or {}).get('cached_tokens') or 0)
+        cached_rate = self.cached_rate if self.cached_rate > 0 else self.input_rate
         input_cost = (
             max(0, input_tokens - cached_tokens) * self.input_rate +
-            cached_tokens * (self.cached_rate or self.input_rate)
+            cached_tokens * cached_rate
         )
         output_cost = (output_tokens * self.output_rate)
         return {

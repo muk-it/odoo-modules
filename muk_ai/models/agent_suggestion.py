@@ -15,8 +15,8 @@ class AIAgentSuggestion(models.Model):
         comodel_name='muk_ai.agent',
         string="Agent",
         required=True,
-        ondelete='cascade',
         index=True,
+        ondelete='cascade',
     )
 
     sequence = fields.Integer(
@@ -26,14 +26,14 @@ class AIAgentSuggestion(models.Model):
 
     label = fields.Char(
         string="Label",
+        help="Short title shown on the suggestion button (e.g. 'Explore').",
         required=True,
         translate=True,
-        help="Short title shown on the suggestion button (e.g. 'Explore').",
     )
 
     prompt = fields.Text(
         string="Prompt",
+        help="Text sent to the assistant when the user clicks this suggestion.",
         required=True,
         translate=True,
-        help="Text sent to the assistant when the user clicks this suggestion.",
     )

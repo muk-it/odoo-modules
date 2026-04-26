@@ -8,6 +8,7 @@ import { AttachmentCard } from '@muk_ai/core/attachment/attachment_card';
 import { ToolCard } from '@muk_ai/chat/tools/tool_card';
 import { renderMarkdown as renderMarkdownToHtml } from '@muk_ai/core/markdown/markdown';
 import { buildRenderedTurns } from '@muk_ai/chat/session/turns';
+import { formatTimestamp } from '@muk_ai/chat/utils';
 import {
     askArgsText,
     askViewMode,
@@ -38,8 +39,23 @@ export class SessionLogField extends Component {
     isToolExpanded(callId) {
         return !!this.state.expandedTools[callId];
     }
+    isToolHiddenForAsk(block, turn) {
+        if (block.result !== null && block.result !== undefined) {
+            return false;
+        }
+        const pending = this.session.state.pendingAsk;
+        if (pending && pending.call_id === block.callId) {
+            return true;
+        }
+        return turn.blocks.some(
+            (b) => b.type === 'ask' && b.callId === block.callId,
+        );
+    }
     toggleToolBlock(callId) {
-        this.state.expandedTools[callId] = !this.state.expandedTools[callId];
+        this.state.expandedTools = {
+            ...this.state.expandedTools,
+            [callId]: !this.state.expandedTools[callId],
+        };
     }
     askViewMode(block) {
         return askViewMode(block, this.state.askViews);
@@ -53,6 +69,9 @@ export class SessionLogField extends Component {
     }
     askArgsText(block) {
         return askArgsText(block);
+    }
+    formatTimestamp(at) {
+        return formatTimestamp(at);
     }
     onOpenAttachment() {}
 }

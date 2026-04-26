@@ -23,14 +23,14 @@ class AIAgentRevision(models.Model):
         comodel_name='muk_ai.agent',
         string="Agent",
         required=True,
-        ondelete='cascade',
         index=True,
+        ondelete='cascade',
     )
 
     body = fields.Text(
         string="System Prompt",
-        required=True,
         readonly=True,
+        required=True,
     )
 
     preview = fields.Char(

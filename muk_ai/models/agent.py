@@ -50,12 +50,12 @@ class AIAgent(models.Model):
     model_id = fields.Many2one(
         comodel_name='muk_ai.model',
         string="Model",
-        ondelete='set null',
-        tracking=True,
         help=(
             "Model used by this agent. "
             "Leave empty to use the company default model."
         ),
+        ondelete='set null',
+        tracking=True,
     )
 
     supports_web_search = fields.Boolean(
@@ -76,55 +76,55 @@ class AIAgent(models.Model):
     enable_web_search = fields.Boolean(
         compute='_compute_enable_web_search',
         string="Enable Web Search",
+        help="Let the LLM use the provider's native web search tool.",
         readonly=False,
         store=True,
         tracking=True,
-        help="Let the LLM use the provider's native web search tool.",
     )
 
     enable_image_generation = fields.Boolean(
         compute='_compute_enable_image_generation',
         string="Enable Image Generation",
+        help="Let the LLM generate images via the provider's native tool.",
         readonly=False,
         store=True,
         tracking=True,
-        help="Let the LLM generate images via the provider's native tool.",
     )
 
     enable_code_interpreter = fields.Boolean(
         compute='_compute_enable_code_interpreter',
         string="Enable Code Interpreter",
-        readonly=False,
-        store=True,
-        tracking=True,
         help=(
             "Let the LLM run sandboxed Python via the provider's native "
             "code-execution tool. Useful for analytics over tool results."
         ),
+        readonly=False,
+        store=True,
+        tracking=True,
     )
 
     read_only = fields.Boolean(
         string="Restrict to Read-only Tools",
+        help="Restrict tool calls to read-only tools (enforced via MCP scope).",
         default=False,
         tracking=True,
-        help="Restrict tool calls to read-only tools (enforced via MCP scope).",
     )
 
     tool_filter = fields.Json(
         string="Tool Filter",
-        default=list,
         help=(
             "List of tool names this agent may call. "
             "Empty = all tools allowed."
         ),
+        default=list,
     )
 
     suggestion_ids = fields.One2many(
         comodel_name='muk_ai.agent.suggestion',
-        inverse_name='agent_id',
         string="Suggestions",
-        copy=True,
         help="Starter prompts shown in the empty chat for this agent.",
+        copy=True,
+        inverse_name='agent_id',
     )
 
     suggestions = fields.Json(
@@ -143,14 +143,14 @@ class AIAgent(models.Model):
             ('off', "Never ask"),
         ],
         string="Approval Mode",
-        required=True,
-        default='ask',
-        tracking=True,
         help=(
             "`ask` prompts before risky writes (deletes, workflow methods, "
             "audited-field updates, high-impact creates). `off` disables "
             "approvals entirely."
         ),
+        required=True,
+        default='ask',
+        tracking=True,
     )
 
     session_count = fields.Integer(
@@ -196,17 +196,6 @@ class AIAgent(models.Model):
         return super()._get_placeholder_filename(field)
 
     # ----------------------------------------------------------
-    # Functions
-    # ----------------------------------------------------------
-
-    def apply_tool_filter(self, tools):
-        allowed = self.tool_filter or []
-        if not allowed:
-            return tools
-        allowed_set = set(allowed)
-        return [t for t in tools if t.get('name') in allowed_set]
-
-    # ----------------------------------------------------------
     # Actions
     # ----------------------------------------------------------
 
@@ -233,12 +222,24 @@ class AIAgent(models.Model):
         }
 
     # ----------------------------------------------------------
+    # Functions
+    # ----------------------------------------------------------
+
+    def apply_tool_filter(self, tools):
+        allowed = self.tool_filter or []
+        if not allowed:
+            return tools
+        allowed_set = set(allowed)
+        return [t for t in tools if t.get('name') in allowed_set]
+
+    # ----------------------------------------------------------
     # Compute
     # ----------------------------------------------------------
 
     @api.depends('model_id.provider_id')
     def _compute_provider_capabilities(self):
         default_provider = self.env['muk_ai.provider']._get_default()
+        self.mapped('model_id.provider_id')
         for record in self:
             provider = record.model_id.provider_id or default_provider
             record.supports_web_search = provider.supports_web_search
@@ -248,19 +249,25 @@ class AIAgent(models.Model):
     @api.depends('model_id', 'supports_web_search')
     def _compute_enable_web_search(self):
         for record in self:
-            if record.model_id and not record.supports_web_search:
+            if (record.model_id
+                    and not record.supports_web_search
+                    and record.enable_web_search):
                 record.enable_web_search = False
 
     @api.depends('model_id', 'supports_image_generation')
     def _compute_enable_image_generation(self):
         for record in self:
-            if record.model_id and not record.supports_image_generation:
+            if (record.model_id
+                    and not record.supports_image_generation
+                    and record.enable_image_generation):
                 record.enable_image_generation = False
 
     @api.depends('model_id', 'supports_code_interpreter')
     def _compute_enable_code_interpreter(self):
         for record in self:
-            if record.model_id and not record.supports_code_interpreter:
+            if (record.model_id
+                    and not record.supports_code_interpreter
+                    and record.enable_code_interpreter):
                 record.enable_code_interpreter = False
 
     @api.depends(
@@ -306,7 +313,7 @@ class AIAgent(models.Model):
             record.session_count = counts.get(record.id, 0)
 
     def _compute_revision_count(self):
-        grouped = self.env['muk_ai.agent.revision']._read_group(
+        grouped = self.env['muk_ai.agent.revision'].sudo()._read_group(
             domain=[('agent_id', 'in', self.ids)],
             groupby=['agent_id'],
             aggregates=['__count'],

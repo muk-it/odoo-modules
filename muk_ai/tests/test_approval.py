@@ -214,13 +214,13 @@ class TestApprovalFlow(AITestCommon):
     def _patch_tool(self, result_by_tool):
         calls = []
 
-        def fake(self_arg, name, arguments, env, enforce_scope=None):
+        def fake(self_arg, name, arguments, env, enforce_scope):
             calls.append(name)
-            return result_by_tool.get(name, '{"ok": true}'), {}
+            return result_by_tool.get(name, '{"ok": true}'), {}, arguments.get('model')
 
         return patch.object(
             type(self.env['muk_mcp.tool']),
-            '_call',
+            '_execute',
             autospec=True,
             side_effect=fake,
         ), calls
@@ -414,13 +414,21 @@ class TestApprovalFlow(AITestCommon):
         self.assertEqual(snapshot['state'], 'done')
         self.assertIn('update_records', calls)
 
-    def test_send_message_refused_while_waiting_approval(self):
+    def test_send_message_queues_while_waiting_approval(self):
         session = self.env['muk_ai.session'].create({'name': 'blocked'})
         with self._patch_provider([self._delete_call_payload()]):
             session.start('delete')
         self.assertEqual(session.state, 'waiting')
-        with self.assertRaises(UserError):
-            session.send_message('hi')
+        snapshot = session.send_message('queued while waiting')
+        self.assertEqual(session.state, 'waiting')
+        self.assertEqual(len(session.pending_ids), 1)
+        self.assertEqual(
+            session.pending_ids[0].content, 'queued while waiting',
+        )
+        self.assertEqual(
+            snapshot['pending_user_messages'][0]['content'],
+            'queued while waiting',
+        )
 
     def test_compact_refused_while_waiting_approval(self):
         session = self.env['muk_ai.session'].create({'name': 'no-compact'})

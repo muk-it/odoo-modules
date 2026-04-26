@@ -125,12 +125,12 @@ export class ChatComposer extends Component {
         this.props.onInput(event.target.value);
     }
     onSendOrStop() {
-        if (this.props.canSend) {
-            this.props.onSend();
-            return;
-        }
         if (this.props.canStop && this.props.onStop) {
             this.props.onStop();
+            return;
+        }
+        if (this.props.canSend) {
+            this.props.onSend();
         }
     }
     onLabelClick(event) {

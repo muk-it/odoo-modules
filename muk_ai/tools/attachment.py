@@ -17,7 +17,7 @@ INLINE_IMAGE_RE = re.compile(
     r'!\[([^\]]*)\]\(data:(image/[a-zA-Z0-9.+-]+);base64,([A-Za-z0-9+/=\s]+)\)'
 )
 ATTACHMENT_REF_RE = re.compile(r'^@attachment:(\d+)$')
-URL_REF_RE = re.compile(r'^@url:(https?://\S+)$')
+URL_REF_RE = re.compile(r'^@url:(https://\S+)$')
 
 
 def is_unmaterialized_attachment(block):

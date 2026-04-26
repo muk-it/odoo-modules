@@ -61,7 +61,7 @@ export function formatCost(cost) {
 
 export function costTooltip(cost) {
     const value = Number(cost) || 0;
-    return `Session cost so far: $${value.toFixed(6)} (USD)`;
+    return _t('Session cost so far: $%s (USD)', value.toFixed(6));
 }
 
 function hasOverride(state) {

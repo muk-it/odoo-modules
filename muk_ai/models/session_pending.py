@@ -15,8 +15,8 @@ class AISessionPending(models.Model):
         comodel_name='muk_ai.session',
         string="Session",
         required=True,
-        ondelete='cascade',
         index=True,
+        ondelete='cascade',
     )
 
     content = fields.Text(

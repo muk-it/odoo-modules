@@ -11,7 +11,7 @@ import { formatError } from '@muk_ai/chat/utils';
 import { buildRenderedTurns } from '@muk_ai/chat/session/turns';
 
 const SESSION_READ_FIELDS = [
-    'id', 'name', 'state', 'tool_log', 'pending_ask',
+    'id', 'name', 'state', 'pending_ask',
     'view_context', 'last_text', 'error_message',
     'iteration_count', 'total_input_tokens', 'total_output_tokens',
     'last_input_tokens', 'context_window', 'agent_id', 'total_cost',
@@ -47,6 +47,7 @@ export function useAiSession(options = {}) {
     const notification = useService('notification');
     const actionService = useService('action');
     const dialog = useService('dialog');
+    const sessionNotification = useService('muk_ai.session_notification');
 
     const state = useState({
         sessionId: null,
@@ -220,6 +221,8 @@ export function useAiSession(options = {}) {
 
     async function load(sessionId) {
         disconnectBus();
+        sessionNotification.markInactive(state.sessionId);
+        sessionNotification.markActive(sessionId);
         state.sessionId = sessionId;
         state.loading = true;
         state.input = '';
@@ -236,6 +239,7 @@ export function useAiSession(options = {}) {
             return null;
         }
         let record = null;
+        let snapshot = null;
         try {
             const [result] = await orm.read(
                 'muk_ai.session', [sessionId], SESSION_READ_FIELDS,
@@ -245,7 +249,18 @@ export function useAiSession(options = {}) {
             state.error = formatError(error);
         }
         if (record) {
+            try {
+                snapshot = await orm.call(
+                    'muk_ai.session', 'get_snapshot', [sessionId],
+                );
+            } catch (error) {
+                snapshot = null;
+            }
             applyRecord(record);
+            if (snapshot && snapshot.tool_log !== undefined) {
+                state.log = snapshot.tool_log || [];
+                rebuildLogKeys();
+            }
             connectBus();
         }
         state.loading = false;
@@ -256,7 +271,7 @@ export function useAiSession(options = {}) {
     function applyRecord(record) {
         state.name = record.name || '';
         state.status = record.state;
-        state.log = record.tool_log || [];
+        state.log = [];
         state.pendingAsk = record.pending_ask || null;
         state.viewContext = record.view_context || null;
         state.approvalMode = record.override_approval_mode || false;
@@ -280,7 +295,10 @@ export function useAiSession(options = {}) {
             return;
         }
         state.status = snapshot.state;
-        state.log = snapshot.tool_log || [];
+        const incomingLog = snapshot.tool_log || [];
+        if (incomingLog.length || state.status !== 'running') {
+            state.log = incomingLog;
+        }
         state.pendingAsk = snapshot.pending_ask || null;
         state.viewContext = snapshot.view_context || null;
         state.approvalMode = snapshot.override_approval_mode || false;
@@ -310,11 +328,15 @@ export function useAiSession(options = {}) {
     function canSend() {
         const hasContent = state.input.trim().length > 0
             || state.pendingAttachments.length > 0;
-        return !!state.sessionId && hasContent;
+        const idle = state.status !== 'running'
+            && state.status !== 'compacting';
+        return !!state.sessionId && hasContent && idle;
     }
 
     function canAttach() {
-        return !!state.sessionId;
+        return !!state.sessionId
+            && state.status !== 'running'
+            && state.status !== 'compacting';
     }
 
     function canStop() {
@@ -899,8 +921,14 @@ export function useAiSession(options = {}) {
         return !!(callId && state.expandedTools[callId]);
     }
 
+    let cachedTurnsLog = null;
+    let cachedTurns = [];
     function renderedTurns() {
-        return buildRenderedTurns(state.log);
+        if (state.log !== cachedTurnsLog) {
+            cachedTurnsLog = state.log;
+            cachedTurns = buildRenderedTurns(state.log);
+        }
+        return cachedTurns;
     }
 
     function latestReasoningLine() {
@@ -941,7 +969,10 @@ export function useAiSession(options = {}) {
             onScrollCallback();
         }
     }
-    onWillUnmount(() => disconnectBus());
+    onWillUnmount(() => {
+        sessionNotification.markInactive(state.sessionId);
+        disconnectBus();
+    });
 
     return {
         state,
