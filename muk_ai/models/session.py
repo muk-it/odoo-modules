@@ -580,7 +580,7 @@ class AISession(models.Model):
         if not partner:
             return
         link = Markup('<p><a href="/odoo/ai?session_id=%s">%s</a></p>') % (
-            self.id, _("Open chat"),
+            self.id, _("Open Chat"),
         )
         body = Markup('<p>%s</p>') % escape(message) + link
         try:

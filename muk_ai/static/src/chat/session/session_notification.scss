@@ -1,6 +1,11 @@
 .o_notification.mk_ai_notification {
     max-width: 380px;
 
+    .o_notification_body {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
     .o_notification_title {
         font-weight: 600;
         line-height: 1.3;
@@ -17,6 +22,7 @@
 
     .o_notification_buttons {
         margin-top: 0.5rem;
+        width: 100%;
         display: flex;
         justify-content: flex-end;
     }

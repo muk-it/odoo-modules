@@ -65,7 +65,7 @@ export const sessionNotificationService = {
                     sticky: payload.state !== 'done',
                     className: 'mk_ai_notification',
                     buttons: [{
-                        name: _t('Open chat'),
+                        name: _t('Open Chat'),
                         primary: true,
                         onClick: () => {
                             env.services.action.doAction({

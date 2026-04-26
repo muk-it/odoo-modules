@@ -67,7 +67,8 @@ To navigate to a menu the user sees, walk the metadata yourself:
 		<field name="agent_id" ref="agent_general"/>
 		<field name="sequence">10</field>
 		<field name="label">Today</field>
-		<field name="prompt"><![CDATA[Today's overview — focused triage for right now.
+		<field name="prompt"><![CDATA[
+Today's overview — focused triage for right now.
 
 1. **Activities overdue or due today** (assigned to me)
    - Read **all** matching activities. If there are more than 5, show only the first 5 in the table but still analyze the full list to pick the most urgent.
@@ -82,14 +83,16 @@ To navigate to a menu the user sees, walk the metadata yourself:
 
 3. **Calendar today** — short list of today's events I attend: time range, title, attendees count.
 
-Keep it compact: small Markdown tables, no filler. Skip any section with zero results in a single line.]]></field>
+Keep it compact: small Markdown tables, no filler. Skip any section with zero results in a single line.
+        ]]></field>
 	</record>
 
 	<record id="agent_general_suggestion_summarize" model="muk_ai.agent.suggestion">
 		<field name="agent_id" ref="agent_general"/>
 		<field name="sequence">30</field>
 		<field name="label">Pipeline</field>
-		<field name="prompt"><![CDATA[My morning sales briefing — what's my pipeline status and who should I call today?
+		<field name="prompt"><![CDATA[
+My morning sales briefing — what's my pipeline status and who should I call today?
 
 Scope: open opportunities I own (`crm.lead` where I am the salesperson, not won/lost). Reference each opportunity as `Customer Name (crm.lead,id)` so I can click through.
 
@@ -105,14 +108,16 @@ Scope: open opportunities I own (`crm.lead` where I am the salesperson, not won/
 
 4. **Pipeline by stage** — compact 1-line-per-stage table: stage name, count, sum of expected revenue.
 
-Keep each section tight. If a section is empty, say so in a single line and move on.]]></field>
+Keep each section tight. If a section is empty, say so in a single line and move on.
+        ]]></field>
 	</record>
 
 	<record id="agent_general_suggestion_draft" model="muk_ai.agent.suggestion">
 		<field name="agent_id" ref="agent_general"/>
 		<field name="sequence">40</field>
 		<field name="label">Tasks</field>
-		<field name="prompt"><![CDATA[My project task triage — what's overdue, what's due this week, what's blocked.
+		<field name="prompt"><![CDATA[
+My project task triage — what's overdue, what's due this week, what's blocked.
 
 Scope: `project.task` assigned to me (`user_ids` contains the current user), excluding closed stages (`stage_id.fold = False` where available, else skip stages named Done / Cancelled / similar).
 
@@ -132,14 +137,16 @@ Scope: `project.task` assigned to me (`user_ids` contains the current user), exc
    - the task has unfinished dependencies (`depend_on_ids` not all in a closed stage).
    For each: task, who's waiting or what's blocking, days waiting.
 
-End with a footer line: `X open · Y overdue · Z due this week · W unscheduled`.]]></field>
+End with a footer line: `X open · Y overdue · Z due this week · W unscheduled`.
+        ]]></field>
 	</record>
 
 	<record id="agent_general_suggestion_sales" model="muk_ai.agent.suggestion">
 		<field name="agent_id" ref="agent_general"/>
 		<field name="sequence">50</field>
 		<field name="label">Sales</field>
-		<field name="prompt"><![CDATA[Sales figures report — snapshot across the key periods.
+		<field name="prompt"><![CDATA[
+Sales figures report — snapshot across the key periods.
 
 Scope: posted customer invoices (`account.move`, type `out_invoice`, state `posted`); subtract matching credit notes (`out_refund`). Use the company default currency; do not convert.
 
@@ -158,7 +165,8 @@ Scope: posted customer invoices (`account.move`, type `out_invoice`, state `post
 
 5. **By salesperson this month** — salesperson, invoice count, revenue. Sort by revenue descending.
 
-End with a one-line observation if something looks off (e.g. "MTD is trending ~X% below last month's pace at this point" or "no invoices posted yet this week").]]></field>
+End with a one-line observation if something looks off (e.g. "MTD is trending ~X% below last month's pace at this point" or "no invoices posted yet this week").
+        ]]></field>
 	</record>
 
 </odoo>

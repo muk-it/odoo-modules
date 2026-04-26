@@ -14,7 +14,7 @@ Includes human-in-the-loop ``ask_user`` support, a session-scoped
 approval gate for risky writes, per-agent tool filters, read-only
 scope enforcement, multimodal attachments (images, PDFs, text files),
 agent suggestion prompts, prompt revision history, and a prebuilt
-catalog of current GPT-5.x / Claude 4.x / Gemini 2.5/3.x models with
+catalog of current GPT-5.x / Claude 4.x / Gemini 3.x models with
 input/output/cache pricing.
 
 It is also the foundation for the rest of the MuK AI suite: the

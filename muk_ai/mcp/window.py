@@ -40,11 +40,8 @@ class AIWindow(models.AbstractModel):
         ):
             return self.env.ref(ref, raise_if_not_found=False)
 
-    def _normalize_view_type(self, view_type):
-        if view_type == 'tree':
-            return 'list'
-        valid = self._view_types()
-        if view_type not in valid:
+    def _check_view_type(self, view_type):
+        if view_type not in (valid := self._view_types()):
             raise UserError(_(
                 "Unknown view_type %(value)r. Valid: %(valid)s.",
                 value=view_type, valid=', '.join(valid),
@@ -113,7 +110,7 @@ class AIWindow(models.AbstractModel):
     ):
         target_model = self._resolve_model(model)
         target_model.browse(int(res_id)).check_access('read')
-        view_type = self._normalize_view_type(view_type)
+        view_type = self._check_view_type(view_type)
         self._check_window_target(target)
         return {
             'type': 'ir.actions.act_window',
@@ -193,8 +190,10 @@ class AIWindow(models.AbstractModel):
         additional_context=None,
     ):
         self._resolve_model(model)
-        view_type = self._normalize_view_type(view_type)
         self._check_window_target(target)
+        view_type = self._check_view_type(
+            view_type
+        )
         action = {
             'type': 'ir.actions.act_window',
             'res_model': model,
@@ -244,39 +243,11 @@ class AIWindow(models.AbstractModel):
     )
     def _mcp_open_action(self, action_ref, additional_context=None):
         action = self._resolve_window_action(action_ref)
-        if not action or not action.exists():
-            raise UserError(_(
-                "Action %r not found.", action_ref,
-            ))
-        if (
-            action._name == 'ir.actions.actions'
-            and action.type
-            and action.type != 'ir.actions.actions'
-        ):
-            concrete = self.env[action.type].sudo().browse(
-                action.id,
-            )
-            if concrete.exists():
-                action = concrete
-        groups = (
-            action.sudo().groups_id
-            if 'groups_id' in action._fields
-            else self.env['res.groups']
-        )
-        if groups and not self.env.is_superuser() and not any(
-            self.env.user.has_group(g.full_name) for g in groups
-        ):
-            raise UserError(_(
-                "You do not have the required groups to open action %r.",
-                action_ref,
-            ))
         descriptor = action._get_action_dict()
         if not descriptor.get('type'):
             descriptor['type'] = action._name
         if additional_context:
             merged = descriptor.get('context') or {}
-            if not isinstance(merged, dict):
-                merged = {}
             merged = {**merged, **additional_context}
             descriptor['context'] = merged
         return descriptor
