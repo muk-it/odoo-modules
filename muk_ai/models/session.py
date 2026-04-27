@@ -437,7 +437,11 @@ class AISession(models.Model):
         }
 
     def _get_tool_schema(self):
-        tools = list(self.env['muk_mcp.tool'].sudo().get_tools(
+        tool_env = self.env(context={
+            **self.env.context,
+            **self._tool_dispatch_context(),
+        })
+        tools = list(tool_env['muk_mcp.tool'].sudo().get_tools(
             registry='odoo',
         ))
         if self._effective_approval_mode() != 'off':
@@ -885,6 +889,12 @@ class AISession(models.Model):
     # Helper Tool Dispatch
     # ----------------------------------------------------------
 
+    def _tool_dispatch_context(self):
+        return {
+            'muk_mcp_session_id': self.id,
+            'muk_mcp_force_log': True,
+        }
+
     def _dispatch_tool_call(self, name, arguments, call_id):
         enforce_scope = (
             'read'
@@ -897,8 +907,7 @@ class AISession(models.Model):
         try:
             tool_env = self.env(context={
                 **self.env.context,
-                'muk_mcp_session_id': self.id,
-                'muk_mcp_force_log': True,
+                **self._tool_dispatch_context(),
             })
             text, _info = tool_env['muk_mcp.tool']._call(
                 name,
@@ -994,7 +1003,12 @@ class AISession(models.Model):
             payload.update(kind='action', action_id=action_id)
         return payload
 
+    def _enrich_view_context(self, payload):
+        return payload
+
     def _write_view_context(self, payload):
+        if payload:
+            payload = self._enrich_view_context(payload)
         self.write({'view_context': payload or False})
         self._publish_event('view_context', {
             'view_context': payload or None
@@ -2025,7 +2039,20 @@ class AISession(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         self._check_rate_limit(batch_size=len(vals_list) or 1)
-        return super().create(vals_list)
+        records = super().create(vals_list)
+        for record in records:
+            try:
+                record._bus_send('muk_ai.session_state', {
+                    'session_id': record.id,
+                    'name': record.name,
+                    'state': record.state,
+                })
+            except Exception:
+                _logger.warning(
+                    "muk_ai: failed to broadcast session create on bus",
+                    exc_info=True,
+                )
+        return records
 
     # ----------------------------------------------------------
     # Cron

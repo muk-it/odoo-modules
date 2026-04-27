@@ -66,6 +66,7 @@ export class AIChat extends Component {
         this.action = useService('action');
         this.chatWindow = useService('muk_ai.chat_window');
         this.notification = useService('notification');
+        this.ui = useService('ui');
 
         this.session = useAiSession({
             onRefresh: () => this._loadSessions(),
@@ -212,6 +213,12 @@ export class AIChat extends Component {
     }
     onPopout() {
         if (!this.session.state.sessionId) {
+            return;
+        }
+        if (this.ui.isSmall) {
+            this.action.doAction('muk_ai.action_ai_chat', {
+                additionalContext: { default_session_id: this.session.state.sessionId },
+            });
             return;
         }
         this.chatWindow.open(this.session.state.sessionId);

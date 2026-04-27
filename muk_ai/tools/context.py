@@ -149,6 +149,14 @@ def _clean_record(payload):
         if not isinstance(display_name, str):
             raise UserError(_lt("view_context.display_name must be a string."))
         cleaned['display_name'] = display_name
+    if ee_init_context := payload.get('ee_init_context'):
+        if not isinstance(ee_init_context, list) or any(
+            not isinstance(v, str) for v in ee_init_context
+        ):
+            raise UserError(_lt(
+                "view_context.ee_init_context must be a list of strings.",
+            ))
+        cleaned['ee_init_context'] = ee_init_context
     return cleaned
 
 

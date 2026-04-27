@@ -1,6 +1,6 @@
-======
-MuK AI
-======
+================
+MuK AI Assistant
+================
 
 A complete agentic AI assistant inside Odoo. MuK AI ships a native
 OWL chat client, a session-based agent runtime, and three first-class
