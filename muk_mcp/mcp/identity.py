@@ -16,10 +16,14 @@ class MCPMixin(models.AbstractModel):
         name='whoami',
         description=(
             'Get information about the current authenticated user: their '
-            'name, login, language, timezone, company, currency, country, '
-            'and security groups. Use this at the start of a conversation '
-            'to understand who you are acting as, what permissions you '
-            'have, and what company context you are in.'
+            'name, login, language, timezone, active company, currency, '
+            'country, and security groups. Also returns the full list of '
+            'companies the user can access and the currently allowed '
+            "company ids. Use this at the start of a conversation to "
+            "understand who you are acting as, what permissions you have, "
+            "and what company context you are in. To target a specific "
+            "company on a subsequent tool call, pass "
+            "context={'allowed_company_ids': [id]} in the tool arguments."
         ),
         input_schema={
             'type': 'object',
@@ -40,6 +44,15 @@ class MCPMixin(models.AbstractModel):
             'company_name': company.name,
             'currency': company.currency_id.name,
             'country': company.country_id.name or '',
+            'companies': [
+                {
+                    'id': c.id,
+                    'name': c.name,
+                    'currency': c.currency_id.name,
+                    'country': c.country_id.name or '',
+                }
+                for c in user.company_ids.sorted('sequence')
+            ],
             'groups': [
                 g.full_name for g in user.group_ids.sorted('full_name')
             ],
