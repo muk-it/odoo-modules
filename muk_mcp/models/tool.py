@@ -124,8 +124,7 @@ class MCPTool(models.Model):
             error = str(exc)
             raise
         finally:
-            # `muk_mcp_force_log` lets a caller (e.g. muk_ai chat) bypass the global mcp_logging disable.
-            if config.get('mcp_logging', True) or self.env.context.get('muk_mcp_force_log'):
+            if config.get('mcp_logging', True):
                 self.env['muk_mcp.log'].log(**self._tool_log_values(
                     name=name,
                     env=env,
