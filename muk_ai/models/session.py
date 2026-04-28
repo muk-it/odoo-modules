@@ -153,24 +153,8 @@ class AISession(models.Model):
 
     cleared_at = fields.Datetime(
         string="Cleared At",
-        help=(
-            "Wall-clock marker set by /clear and /compact. Informational "
-            "only; the unified-log filter uses `cleared_log_id`."
-        ),
+        help="Wall-clock marker set by /clear and /compact.",
         readonly=True,
-        copy=False,
-    )
-
-    cleared_log_id = fields.Integer(
-        string="Cleared Log Cutoff",
-        help=(
-            "Highest muk_mcp.log id observed at the moment /clear or "
-            "/compact ran. Tool-call audit rows with id <= this cutoff "
-            "are filtered out of the unified chat log so wiped "
-            "conversations do not show ghost tool cards on reload."
-        ),
-        readonly=True,
-        default=0,
         copy=False,
     )
 
@@ -681,7 +665,7 @@ class AISession(models.Model):
         outputs.append(build_tool_call_output(
             call_id, output_result
         ))
-        self._publish_event('log', {
+        self._append_log({
             'kind': 'tool_result',
             'name': name,
             'result': (
@@ -689,7 +673,6 @@ class AISession(models.Model):
                 if log_result is None else log_result
             ),
             'call_id': call_id,
-            'at': fields.Datetime.now().isoformat(),
         })
 
     def _persist_synthetic_tool_log(self, call, result, status):
@@ -767,82 +750,22 @@ class AISession(models.Model):
             self._publish_event('queue', {'pending': []})
         return True
 
-    def _max_session_log_id(self):
-        if not self.id:
-            return 0
-        last = self.env['muk_mcp.log'].sudo().search(
-            [('session_id', '=', self.id)],
-            order='id desc',
-            limit=1,
-        )
-        return last.id or 0
-
     def _unified_log(self, limit=500):
-        entries = []
-        if self.id:
-            events = self.env['muk_ai.session.event'].sudo().search(
-                [('session_id', '=', self.id)],
-                order='sequence desc, id desc',
-                limit=limit or None,
-            )
-            for ev in reversed(events):
-                payload = dict(ev.payload or {})
-                payload.setdefault('kind', ev.kind)
-                stamp = payload.get('at')
-                if not stamp:
-                    stamp = ev.at.isoformat() if ev.at else ''
-                    payload['at'] = stamp
-                entries.append((stamp, 0, ev.sequence, ev.id, payload))
-            domain = [('session_id', '=', self.id)]
-            if self.cleared_log_id:
-                domain.append(('id', '>', self.cleared_log_id))
-            rows = self.env['muk_mcp.log'].sudo().search(
-                domain,
-                order='create_date desc, id desc',
-                limit=limit,
-            )
-            for row in rows:
-                stamp = (
-                    row.create_date.isoformat()
-                    if row.create_date else ''
-                )
-                tool_name = row.tool_name or ''
-                call_id = f'mcp-log-{row.id}'
-                arguments = {}
-                if row.request_data:
-                    try:
-                        arguments = json.loads(row.request_data)
-                    except (TypeError, ValueError):
-                        arguments = {'_raw': row.request_data}
-                entries.append((stamp, 1, row.id * 2, row.id, {
-                    'kind': 'tool_call',
-                    'name': tool_name,
-                    'arguments': arguments,
-                    'call_id': call_id,
-                    'at': f'{stamp}#{row.id}a' if stamp else f'#{row.id}a',
-                }))
-                result = row.response_data or ''
-                try:
-                    parsed = json.loads(result) if result else None
-                    if parsed is not None:
-                        result = parsed
-                except (TypeError, ValueError):
-                    pass
-                if row.status != 'ok' and not isinstance(result, dict):
-                    result = {
-                        'error': row.error_message or result or row.status,
-                    }
-                entries.append((stamp, 1, row.id * 2 + 1, row.id, {
-                    'kind': 'tool_result',
-                    'name': tool_name,
-                    'result': result,
-                    'call_id': call_id,
-                    'at': f'{stamp}#{row.id}b' if stamp else f'#{row.id}b',
-                }))
-        entries.sort(key=lambda item: (item[0], item[1], item[2], item[3]))
-        if limit and len(entries) > limit:
-            entries = entries[-limit:]
-        return [item[4] for item in entries]
+        if not self.id:
+            return []
+        events = self.env['muk_ai.session.event'].sudo().search(
+            [('session_id', '=', self.id)],
+            order='sequence, id',
+            limit=limit,
+        )
+        out = []
+        for ev in events:
+            payload = dict(ev.payload or {})
+            payload.setdefault('kind', ev.kind)
+            if not payload.get('at') and ev.at:
+                payload['at'] = ev.at.isoformat()
+            out.append(payload)
+        return out
 
     def get_snapshot(self):
         self.ensure_one()
@@ -892,7 +815,6 @@ class AISession(models.Model):
     def _tool_dispatch_context(self):
         return {
             'muk_mcp_session_id': self.id,
-            'muk_mcp_force_log': True,
         }
 
     def _dispatch_tool_call(self, name, arguments, call_id):
@@ -1312,12 +1234,11 @@ class AISession(models.Model):
         return None
 
     def _log_tool_call(self, call):
-        self._publish_event('log', {
+        self._append_log({
             'kind': 'tool_call',
             'name': call['name'],
             'arguments': call['arguments'],
             'call_id': call['call_id'],
-            'at': fields.Datetime.now().isoformat(),
         })
 
     def _skip_tool_call(self, outputs, call, reason, log_result=None):
@@ -1801,7 +1722,6 @@ class AISession(models.Model):
             'last_input_tokens': 0,
             'state': 'new',
             'cleared_at': fields.Datetime.now(),
-            'cleared_log_id': self._max_session_log_id(),
         })
         self._append_log(log_entry)
         self._publish_event('state', {'state': 'new'})
@@ -1869,7 +1789,6 @@ class AISession(models.Model):
             'last_input_tokens': 0,
             'state': 'done',
             'cleared_at': fields.Datetime.now(),
-            'cleared_log_id': self._max_session_log_id(),
         })
         self._append_log(log_entry)
         self._publish_event('state', {'state': 'done'})

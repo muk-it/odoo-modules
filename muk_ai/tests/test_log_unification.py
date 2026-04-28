@@ -59,37 +59,6 @@ class TestLogUnification(AITestCommon):
         self.assertTrue(rows)
         self.assertEqual(rows[0].source, 'mcp')
 
-    def test_force_log_bypasses_disabled_config(self):
-        from odoo.tools import config as odoo_config
-        original_get = odoo_config.get
-
-        def fake_get(key, default=None):
-            if key == 'mcp_logging':
-                return False
-            return original_get(key, default)
-
-        mcp_count_before = self.env['muk_mcp.log'].search_count([
-            ('source', '=', 'mcp'),
-        ])
-        with patch.object(odoo_config, 'get', side_effect=fake_get):
-            with self._patch_execute({'list_modules': '{}'}):
-                self.env['muk_mcp.tool']._call(
-                    'list_modules', {}, self.env, enforce_scope=None,
-                )
-            with self._patch_execute({'list_modules': '{}'}):
-                self.session._dispatch_tool_call(
-                    'list_modules', {}, 'call_force',
-                )
-        chat_rows = self.env['muk_mcp.log'].search([
-            ('session_id', '=', self.session.id),
-            ('tool_name', '=', 'list_modules'),
-        ])
-        self.assertTrue(chat_rows)
-        mcp_count_after = self.env['muk_mcp.log'].search_count([
-            ('source', '=', 'mcp'),
-        ])
-        self.assertEqual(mcp_count_after, mcp_count_before)
-
     def test_cascade_delete(self):
         session = self.env['muk_ai.session'].create({'name': 'cascade'})
         with self._patch_execute({'list_modules': '{}'}):
@@ -105,11 +74,17 @@ class TestLogUnification(AITestCommon):
         ])
         self.assertFalse(survivors)
 
-    def test_unified_log_merges_chat_and_tool_entries(self):
+    def test_unified_log_reads_from_events(self):
         session = self.env['muk_ai.session'].create({'name': 'merge'})
         session._append_log({'kind': 'user_message', 'content': 'hi', 'attachments': []})
-        with self._patch_execute({'list_modules': '{"ok": true}'}):
-            session._dispatch_tool_call('list_modules', {}, 'merge_c1')
+        session._log_tool_call({
+            'name': 'list_modules',
+            'arguments': {},
+            'call_id': 'merge_c1',
+        })
+        session._record_tool_result(
+            [], 'merge_c1', 'list_modules', '{"ok": true}',
+        )
         session._append_log({'kind': 'text', 'content': 'final'})
         unified = session._unified_log()
         kinds = [entry.get('kind') for entry in unified]
@@ -117,36 +92,57 @@ class TestLogUnification(AITestCommon):
         self.assertIn('tool_call', kinds)
         self.assertIn('tool_result', kinds)
         self.assertIn('text', kinds)
+        self.assertEqual(len(unified), len(session.event_ids))
         timestamps = [entry.get('at') or '' for entry in unified]
         self.assertEqual(timestamps, sorted(timestamps))
 
-    def test_event_table_no_longer_carries_tool_calls(self):
+    def test_tool_calls_persisted_to_events(self):
         session = self.env['muk_ai.session'].create({'name': 'jsonb'})
         with self._patch_execute({'list_modules': '{}'}):
             session._dispatch_tool_call('list_modules', {}, 'jsonb_c1')
+        session._log_tool_call({
+            'name': 'list_modules',
+            'arguments': {},
+            'call_id': 'jsonb_c1',
+        })
+        session._record_tool_result(
+            [], 'jsonb_c1', 'list_modules', '{}',
+        )
         kinds = {ev.kind for ev in session.event_ids}
-        self.assertNotIn('tool_call', kinds)
-        self.assertNotIn('tool_result', kinds)
+        self.assertIn('tool_call', kinds)
+        self.assertIn('tool_result', kinds)
 
-    def test_clear_drops_event_rows_and_filters_log(self):
+    def test_clear_drops_events_audit_survives(self):
         session = self.env['muk_ai.session'].create({'name': 'clear-events'})
         session._append_log({'kind': 'user_message', 'content': 'hi', 'attachments': []})
         with self._patch_execute({'list_modules': '{"ok": true}'}):
             session._dispatch_tool_call('list_modules', {}, 'clear_c1')
+        session._log_tool_call({
+            'name': 'list_modules',
+            'arguments': {},
+            'call_id': 'clear_c1',
+        })
+        session._record_tool_result(
+            [], 'clear_c1', 'list_modules', '{"ok": true}',
+        )
         session._append_log({'kind': 'text', 'content': 'response'})
-        before = session._unified_log()
-        before_kinds = {entry.get('kind') for entry in before}
+        before_kinds = {ev.kind for ev in session.event_ids}
         self.assertIn('tool_call', before_kinds)
         self.assertIn('user_message', before_kinds)
-        session.clear()
-        unified = session._unified_log()
-        self.assertEqual(len(unified), 1)
-        self.assertEqual(unified[0].get('kind'), 'command')
-        self.assertEqual(unified[0].get('name'), '/clear')
-        log_rows = self.env['muk_mcp.log'].sudo().search([
+        audit_before = self.env['muk_mcp.log'].sudo().search([
             ('session_id', '=', session.id),
         ])
-        self.assertTrue(log_rows)
+        self.assertTrue(audit_before)
+        audit_ids = audit_before.ids
+        session.clear()
+        remaining = session.event_ids
+        self.assertEqual(len(remaining), 1)
+        self.assertEqual(remaining.kind, 'command')
+        self.assertEqual((remaining.payload or {}).get('name'), '/clear')
+        audit_after = self.env['muk_mcp.log'].sudo().search([
+            ('id', 'in', audit_ids),
+        ])
+        self.assertEqual(len(audit_after), len(audit_ids))
 
     def test_compact_drops_event_rows(self):
         session = self.env['muk_ai.session'].create({'name': 'compact-events'})
@@ -155,7 +151,6 @@ class TestLogUnification(AITestCommon):
             session._dispatch_tool_call('list_modules', {}, 'compact_c1')
         self.assertTrue(session.event_ids)
         session.event_ids.sudo().unlink()
-        session.write({'cleared_log_id': session._max_session_log_id()})
         unified = session._unified_log()
         self.assertEqual(unified, [])
 
@@ -216,9 +211,25 @@ class TestLogUnification(AITestCommon):
         session = self.env['muk_ai.session'].create({'name': 'post-clear'})
         with self._patch_execute({'list_modules': '{"a": 1}'}):
             session._dispatch_tool_call('list_modules', {}, 'pre_c1')
+        session._log_tool_call({
+            'name': 'list_modules',
+            'arguments': {},
+            'call_id': 'pre_c1',
+        })
+        session._record_tool_result(
+            [], 'pre_c1', 'list_modules', '{"a": 1}',
+        )
         session.clear()
         with self._patch_execute({'list_modules': '{"b": 2}'}):
             session._dispatch_tool_call('list_modules', {}, 'post_c1')
+        session._log_tool_call({
+            'name': 'list_modules',
+            'arguments': {},
+            'call_id': 'post_c1',
+        })
+        session._record_tool_result(
+            [], 'post_c1', 'list_modules', '{"b": 2}',
+        )
         unified = session._unified_log()
         kinds = [entry.get('kind') for entry in unified]
         self.assertIn('command', kinds)
@@ -227,3 +238,38 @@ class TestLogUnification(AITestCommon):
             entry for entry in unified if entry.get('kind') == 'tool_call'
         ]
         self.assertEqual(len(tool_calls), 1)
+
+    def test_chat_audit_respects_global_mcp_logging(self):
+        from odoo.tools import config as odoo_config
+        original_get = odoo_config.get
+
+        def fake_get(key, default=None):
+            if key == 'mcp_logging':
+                return False
+            return original_get(key, default)
+
+        session = self.env['muk_ai.session'].create({'name': 'audit-disabled'})
+        before = self.env['muk_mcp.log'].sudo().search_count([
+            ('session_id', '=', session.id),
+        ])
+        with patch.object(odoo_config, 'get', side_effect=fake_get):
+            with self._patch_execute({'list_modules': '{}'}):
+                text, ok = session._dispatch_tool_call(
+                    'list_modules', {}, 'audit_c1',
+                )
+            session._log_tool_call({
+                'name': 'list_modules',
+                'arguments': {},
+                'call_id': 'audit_c1',
+            })
+            session._record_tool_result(
+                [], 'audit_c1', 'list_modules', text,
+            )
+        self.assertTrue(ok)
+        after = self.env['muk_mcp.log'].sudo().search_count([
+            ('session_id', '=', session.id),
+        ])
+        self.assertEqual(after, before)
+        kinds = {ev.kind for ev in session.event_ids}
+        self.assertIn('tool_call', kinds)
+        self.assertIn('tool_result', kinds)
