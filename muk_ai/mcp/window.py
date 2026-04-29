@@ -41,6 +41,8 @@ class AIWindow(models.AbstractModel):
             return self.env.ref(ref, raise_if_not_found=False)
 
     def _check_view_type(self, view_type):
+        if view_type == 'tree':
+            view_type = 'list'
         if view_type not in (valid := self._view_types()):
             raise UserError(_(
                 "Unknown view_type %(value)r. Valid: %(valid)s.",
@@ -243,11 +245,23 @@ class AIWindow(models.AbstractModel):
     )
     def _mcp_open_action(self, action_ref, additional_context=None):
         action = self._resolve_window_action(action_ref)
+        if (
+            action._name == 'ir.actions.actions'
+            and action.type
+            and action.type != 'ir.actions.actions'
+        ):
+            concrete = self.env[action.type].sudo().browse(
+                action.id,
+            )
+            if concrete.exists():
+                action = concrete
         descriptor = action._get_action_dict()
         if not descriptor.get('type'):
             descriptor['type'] = action._name
         if additional_context:
             merged = descriptor.get('context') or {}
+            if not isinstance(merged, dict):
+                merged = {}
             merged = {**merged, **additional_context}
             descriptor['context'] = merged
         return descriptor

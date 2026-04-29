@@ -201,13 +201,14 @@ class TestMultimodalAttachments(AITestCommon):
         self.assertEqual(len(attachment_blocks), 1)
         self.assertEqual(attachment_blocks[0]['attachment_id'], attachment.id)
         self.assertIn(attachment, session.attachment_ids)
-        tool_log_users = [
-            e for e in session._unified_log() if e.get('kind') == 'user_message'
+        event_users = [
+            e for e in session.fetch_events(limit=500)['events']
+            if e.get('kind') == 'user_message'
         ]
-        self.assertEqual(len(tool_log_users), 1)
-        self.assertEqual(len(tool_log_users[0]['attachments']), 1)
+        self.assertEqual(len(event_users), 1)
+        self.assertEqual(len(event_users[0]['attachments']), 1)
         self.assertEqual(
-            tool_log_users[0]['attachments'][0]['id'], attachment.id,
+            event_users[0]['attachments'][0]['id'], attachment.id,
         )
 
     def test_send_message_attachment_only(self):

@@ -4,21 +4,7 @@ import json
 from odoo import api, fields, models
 from odoo.exceptions import AccessError
 
-
-def _coerce_ids(values):
-    ids = []
-    for value in values or []:
-        if isinstance(value, bool):
-            continue
-        if isinstance(value, int):
-            ids.append(value)
-            continue
-        if isinstance(value, str):
-            try:
-                ids.append(int(value))
-            except ValueError:
-                continue
-    return ids
+from odoo.addons.muk_ai.tools import coerce_ids
 
 
 class AIApproval(models.Model):
@@ -143,7 +129,7 @@ class AIApproval(models.Model):
         model_name = arguments.get('model') or ''
         if not self._is_sensitive_model(model_name):
             return None
-        ids = _coerce_ids(arguments.get('ids'))
+        ids = coerce_ids(arguments.get('ids'))
         method = (arguments.get('method') or '').strip() if tool_name == 'call_method' else ''
         verbs = {
             'delete_records': f"unlink {len(ids)} record(s)",
@@ -265,7 +251,7 @@ class AIApproval(models.Model):
         model_name = arguments.get('model') or ''
         model_label = self._model_label(model_name)
         display = model_label or model_name
-        ids = _coerce_ids(arguments.get('ids'))
+        ids = coerce_ids(arguments.get('ids'))
         base = {'model': model_name, 'model_label': model_label}
         targets = lambda: self._targets_display_names(model_name, ids)
         if tool_name == 'delete_records':

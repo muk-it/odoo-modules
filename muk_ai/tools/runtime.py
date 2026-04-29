@@ -1,3 +1,30 @@
+DEFAULT_CONTEXT_WINDOW = 128000
+
+MAX_ITERATIONS = 20
+MAX_TOOL_CALLS_PER_ROUND = 10
+MAX_WALLCLOCK_SECONDS = 600
+
+
+class StreamCancelled(Exception):
+    pass
+
+
+def coerce_ids(values):
+    ids = []
+    for value in values or []:
+        if isinstance(value, bool):
+            continue
+        if isinstance(value, int):
+            ids.append(value)
+            continue
+        if isinstance(value, str):
+            try:
+                ids.append(int(value))
+            except ValueError:
+                continue
+    return ids
+
+
 def sanitize_json_schema(schema):
     if not isinstance(schema, dict):
         return schema

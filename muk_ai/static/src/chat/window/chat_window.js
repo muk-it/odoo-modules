@@ -1,4 +1,4 @@
-import { Component, onWillStart, useRef, useState } from '@odoo/owl';
+import { Component, onWillStart, useEffect, useRef, useState } from '@odoo/owl';
 
 import { _t } from '@web/core/l10n/translation';
 import { useDropzone } from '@web/core/dropzone/dropzone_hook';
@@ -18,7 +18,11 @@ import {
 
 import { ChatComposer } from '@muk_ai/chat/composer/chat_composer';
 import { useAiSession } from '@muk_ai/chat/session/use_ai_session';
-import { useChatScrollAnchor } from '@muk_ai/chat/session/use_scroll_anchor';
+import {
+    onScrollUpNearTop,
+    preserveAnchor,
+    useChatScrollAnchor,
+} from '@muk_ai/chat/session/use_scroll_anchor';
 import { ToolCard } from '@muk_ai/chat/tools/tool_card';
 import {
     askArgsText,
@@ -42,7 +46,7 @@ export class ChatWindow extends Component {
     setup() {
         this.action = useService('action');
         this.chatWindow = useService('muk_ai.chat_window');
-        this.session = useAiSession();
+        this.session = useAiSession({ surface: 'window' });
         this.fileViewer = useFileViewer();
         this.rootRef = useRef('root');
         const { scrollRef, scrollToBottom, state: scrollState } = useChatScrollAnchor('scroll');
@@ -51,6 +55,10 @@ export class ChatWindow extends Component {
         this.scrollState = scrollState;
         this.session.setScrollCallback(scrollToBottom);
         this.windowState = useState({ askViews: {} });
+        onScrollUpNearTop(scrollRef, () => preserveAnchor(
+            scrollRef,
+            () => this.session.loadMoreEvents(),
+        ));
         useDropzone(
             this.rootRef,
             (event) => {
@@ -61,6 +69,15 @@ export class ChatWindow extends Component {
             },
             'mk_chat_dropzone',
             () => this.session.canAttach() && !this.props.minimized,
+        );
+
+        useEffect(
+            (minimized) => {
+                if (!minimized) {
+                    this.scrollToBottom(true);
+                }
+            },
+            () => [this.props.minimized],
         );
 
         onWillStart(() => this.session.load(this.props.sessionId));

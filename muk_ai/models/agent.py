@@ -1,6 +1,6 @@
 from odoo import _, api, fields, models
 
-from odoo.addons.muk_ai.tools.limits import DEFAULT_CONTEXT_WINDOW
+from odoo.addons.muk_ai.tools import DEFAULT_CONTEXT_WINDOW
 from odoo.addons.muk_mcp.core.tool import get_tool_index
 
 

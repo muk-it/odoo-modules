@@ -336,6 +336,19 @@
                 animation: mk-pulse 1.4s ease-in-out infinite;
             }
             i { opacity: 1; }
+
+            .mk_context_ring {
+                display: inline-block;
+                width: 11px;
+                height: 11px;
+                border-radius: 50%;
+                background:
+                    conic-gradient(
+                        currentColor calc(var(--pct, 0) * 1%),
+                        rgba(0, 0, 0, 0.18) 0
+                    );
+                flex-shrink: 0;
+            }
         }
 
         .mk_cost_chip {
@@ -1554,6 +1567,16 @@
         .mk_slash_popover {
             max-width: calc(100vw - 1.5rem);
         }
+    }
+}
+
+.mk_load_older {
+    padding: 0.25rem 0.5rem;
+    margin-bottom: 0.25rem;
+    border-bottom: 1px dashed var(--bs-border-color);
+    .btn {
+        font-size: inherit;
+        padding: 0.125rem 0.5rem;
     }
 }
 

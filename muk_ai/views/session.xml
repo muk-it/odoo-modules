@@ -120,17 +120,11 @@
 					<notebook>
 						<page string="Conversation" name="conversation">
 							<field
-                                name="event_ids"
+                                name="display_events"
+                                widget="ai_session_events"
                                 nolabel="1"
                                 colspan="2"
-                                readonly="1">
-                                    <list>
-                                        <field name="sequence"/>
-                                        <field name="at"/>
-                                        <field name="kind"/>
-                                        <field name="payload" widget="json_code"/>
-                                    </list>
-                                </field>
+                            />
 						</page>
 						<page string="Attachments" name="attachments">
 							<field

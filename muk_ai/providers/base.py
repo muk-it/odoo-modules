@@ -7,7 +7,7 @@ import requests
 from odoo import _
 from odoo.exceptions import UserError
 
-from odoo.addons.muk_ai.tools.exceptions import StreamCancelled
+from odoo.addons.muk_ai.tools import StreamCancelled
 
 _logger = logging.getLogger(__name__)
 

@@ -106,7 +106,7 @@ class TestSessionCostAccrual(AITestCommon):
         session.total_cost = 1.23
         session.total_input_cost = 0.80
         session.total_output_cost = 0.43
-        snapshot = session._get_snapshot()
+        snapshot = session.get_snapshot()
         self.assertAlmostEqual(snapshot['total_cost'], 1.23)
         self.assertAlmostEqual(snapshot['total_input_cost'], 0.80)
         self.assertAlmostEqual(snapshot['total_output_cost'], 0.43)

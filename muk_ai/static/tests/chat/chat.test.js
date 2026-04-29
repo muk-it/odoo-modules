@@ -12,7 +12,7 @@ patchTranslations();
 
 const SESSION_RECORD = {
     id: 7, name: 'Demo session', state: 'done',
-    tool_log: [], pending_ask: null, view_context: null,
+    events: [], oldest_sequence: null, has_more_older: false, pending_ask: null, view_context: null,
     last_text: '', error_message: null,
     iteration_count: 0, total_input_tokens: 0, total_output_tokens: 0,
     last_input_tokens: 0, context_window: 8000, total_cost: 0,
@@ -20,7 +20,7 @@ const SESSION_RECORD = {
 };
 
 const SNAPSHOT_RUNNING = {
-    state: 'running', tool_log: [], pending_ask: null, view_context: null,
+    state: 'running', events: [], oldest_sequence: null, has_more_older: false, pending_ask: null, view_context: null,
     error_message: null, iteration_count: 0,
     total_input_tokens: 0, total_output_tokens: 0, total_cost: 0,
     last_input_tokens: 0, context_window: 8000,
@@ -342,7 +342,7 @@ test('onSend dispatches the session send flow and refreshes sidebar', async () =
     onRpc('muk_ai.session', 'start', () => {
         started = true;
         return {
-            state: 'running', tool_log: [], pending_ask: null, view_context: null,
+            state: 'running', events: [], oldest_sequence: null, has_more_older: false, pending_ask: null, view_context: null,
             error_message: null, iteration_count: 0,
             total_input_tokens: 0, total_output_tokens: 0, total_cost: 0,
             last_input_tokens: 0, context_window: 8000,
@@ -363,7 +363,7 @@ test('onStop dispatches session stop flow', async () => {
     onRpc('muk_ai.session', 'action_stop', () => {
         stopped = true;
         return {
-            state: 'stopped', tool_log: [], pending_ask: null, view_context: null,
+            state: 'stopped', events: [], oldest_sequence: null, has_more_older: false, pending_ask: null, view_context: null,
             error_message: null, iteration_count: 0,
             total_input_tokens: 0, total_output_tokens: 0, total_cost: 0,
             last_input_tokens: 0, context_window: 8000,
@@ -400,7 +400,7 @@ test('onStartWithPrompt creates a session then sends the prompt', async () => {
     onRpc('muk_ai.session', 'start', ({ args }) => {
         startedWith = args;
         return {
-            state: 'running', tool_log: [], pending_ask: null, view_context: null,
+            state: 'running', events: [], oldest_sequence: null, has_more_older: false, pending_ask: null, view_context: null,
             error_message: null, iteration_count: 0,
             total_input_tokens: 0, total_output_tokens: 0, total_cost: 0,
             last_input_tokens: 0, context_window: 8000,

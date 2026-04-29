@@ -23,7 +23,11 @@ import {
 
 import { ChatComposer } from '@muk_ai/chat/composer/chat_composer';
 import { useAiSession } from '@muk_ai/chat/session/use_ai_session';
-import { useChatScrollAnchor } from '@muk_ai/chat/session/use_scroll_anchor';
+import {
+    onScrollUpNearTop,
+    preserveAnchor,
+    useChatScrollAnchor,
+} from '@muk_ai/chat/session/use_scroll_anchor';
 import { ChatSidebar } from '@muk_ai/chat/sidebar/chat_sidebar';
 import { ToolCard } from '@muk_ai/chat/tools/tool_card';
 import {
@@ -69,6 +73,7 @@ export class AIChat extends Component {
         this.ui = useService('ui');
 
         this.session = useAiSession({
+            surface: 'fullscreen',
             onRefresh: () => this._loadSessions(),
         });
         this.fileViewer = useFileViewer();
@@ -84,6 +89,10 @@ export class AIChat extends Component {
         this.scrollToBottom = scrollToBottom;
         this.scrollState = scrollState;
         this.session.setScrollCallback(scrollToBottom);
+        onScrollUpNearTop(scrollRef, () => preserveAnchor(
+            scrollRef,
+            () => this.session.loadMoreEvents(),
+        ));
         this._userBusHandler = null;
         this._loadSeq = 0;
         useDropzone(
@@ -202,11 +211,12 @@ export class AIChat extends Component {
     }
     async onDeleteSession(sessionId) {
         await this.orm.unlink('muk_ai.session', [sessionId]);
-        await this._loadSessions();
+        this.state.sessions = this.state.sessions.filter((s) => s.id !== sessionId);
         if (this.session.state.sessionId === sessionId) {
             const next = this.state.sessions[0]?.id || null;
             await this._selectSession(next);
         }
+        await this._loadSessions();
     }
     toggleSidebar() {
         this.state.sidebarHidden = !this.state.sidebarHidden;
@@ -394,14 +404,6 @@ export class AIChat extends Component {
         if (pct >= 90) return 'mk_context_red';
         if (pct >= 70) return 'mk_context_amber';
         return 'mk_context_green';
-    }
-    get contextIcon() {
-        const pct = this.contextPercent;
-        if (pct >= 90) return 'fa-battery-empty';
-        if (pct >= 70) return 'fa-battery-quarter';
-        if (pct >= 40) return 'fa-battery-half';
-        if (pct > 0) return 'fa-battery-three-quarters';
-        return 'fa-battery-full';
     }
     get costPill() {
         const cost = this.session.state.totalCost;

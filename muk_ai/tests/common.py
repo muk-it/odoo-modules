@@ -19,6 +19,7 @@ class AITestCommon(TransactionCase):
         cls.provider_anthropic.sudo().api_key = 'test-key'
         cls.provider_google = cls.env.ref('muk_ai.provider_google')
         cls.provider_google.sudo().api_key = 'test-key'
+        cls.env.company.default_ai_provider_id = cls.provider
 
     # ----------------------------------------------------------
     # Helper

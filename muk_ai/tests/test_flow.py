@@ -90,13 +90,13 @@ class TestSessionFlow(AITestCommon):
     def _called_tool_names(self, session):
         return [
             entry.get('name')
-            for entry in session._unified_log()
+            for entry in session.fetch_events(limit=500)['events']
             if entry.get('kind') == 'tool_call'
         ]
 
     def _last_tool_result(self, session):
         return next(
-            entry for entry in reversed(session._unified_log())
+            entry for entry in reversed(session.fetch_events(limit=500)['events'])
             if entry.get('kind') == 'tool_result'
         )
 

@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from odoo.addons.muk_ai.tools.limits import DEFAULT_CONTEXT_WINDOW
+from odoo.addons.muk_ai.tools import DEFAULT_CONTEXT_WINDOW
 
 from .common import AITestCommon
 

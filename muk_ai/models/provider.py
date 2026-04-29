@@ -124,7 +124,7 @@ class AIProvider(models.Model):
                 provider=self.name,
             ))
         return impl_cls(
-            api_key=self.api_key or '',
+            api_key=self.sudo().api_key or '',
             request_timeout=self.request_timeout,
             idle_timeout=self.idle_timeout,
             max_tokens=self.max_tokens,

@@ -19,7 +19,11 @@ from odoo.addons.muk_ai.tools import (
     ALLOWED_MIMETYPES,
     ASK_USER_TOOL,
     ATTACHMENT_REF_RE,
+    DEFAULT_CONTEXT_WINDOW,
     INLINE_IMAGE_RE,
+    MAX_ITERATIONS,
+    MAX_TOOL_CALLS_PER_ROUND,
+    MAX_WALLCLOCK_SECONDS,
     TERMINATING_TOOLS,
     URL_REF_RE,
     StreamCancelled,
@@ -28,12 +32,6 @@ from odoo.addons.muk_ai.tools import (
     fetch_url,
     sanitize_json_schema,
     with_ui_ctx,
-)
-from odoo.addons.muk_ai.tools.limits import (
-    DEFAULT_CONTEXT_WINDOW,
-    MAX_ITERATIONS,
-    MAX_TOOL_CALLS_PER_ROUND,
-    MAX_WALLCLOCK_SECONDS,
 )
 
 _logger = logging.getLogger(__name__)
@@ -163,6 +161,15 @@ class AISession(models.Model):
         string="Events",
         readonly=True,
         inverse_name='session_id',
+    )
+
+    display_events = fields.Json(
+        compute='_compute_display_events',
+        string="Conversation Events",
+        help=(
+            "Flat list of session events in the shape consumed by the "
+            "chat-style events widget. Mirrors `fetch_events()['events']`."
+        ),
     )
 
     log_ids = fields.One2many(
@@ -589,7 +596,7 @@ class AISession(models.Model):
     # Helper State
     # ----------------------------------------------------------
 
-    def _append_log(self, entry):
+    def _append_event(self, entry):
         stamped = entry if 'at' in entry else {
             **entry,
             'at': fields.Datetime.now().isoformat(),
@@ -648,7 +655,7 @@ class AISession(models.Model):
             if user_entry:
                 self._extend_conversation([user_entry])
         if user_message or attachments:
-            self._append_log(self._user_message_log(
+            self._append_event(self._user_message_log(
                 user_message, attachments
             ))
         self.write({'state': 'running', 'error_message': False})
@@ -665,7 +672,7 @@ class AISession(models.Model):
         outputs.append(build_tool_call_output(
             call_id, output_result
         ))
-        self._append_log({
+        self._append_event({
             'kind': 'tool_result',
             'name': name,
             'result': (
@@ -675,7 +682,7 @@ class AISession(models.Model):
             'call_id': call_id,
         })
 
-    def _persist_synthetic_tool_log(self, call, result, status):
+    def _persist_synthetic_event(self, call, result, status):
         arguments = call.get('arguments') or {}
         try:
             request_data = json.dumps(arguments)
@@ -749,41 +756,6 @@ class AISession(models.Model):
         if had_queue:
             self._publish_event('queue', {'pending': []})
         return True
-
-    def _unified_log(self, limit=500):
-        if not self.id:
-            return []
-        events = self.env['muk_ai.session.event'].sudo().search(
-            [('session_id', '=', self.id)],
-            order='sequence, id',
-            limit=limit,
-        )
-        out = []
-        for ev in events:
-            payload = dict(ev.payload or {})
-            payload.setdefault('kind', ev.kind)
-            if not payload.get('at') and ev.at:
-                payload['at'] = ev.at.isoformat()
-            out.append(payload)
-        return out
-
-    def get_snapshot(self):
-        self.ensure_one()
-        return self._get_snapshot()
-
-    def _get_snapshot(self):
-        return {
-            'id': self.id,
-            'tool_log': self._unified_log(),
-            'conversation': self.conversation or [],
-            'error_message': self.error_message,
-            'last_text': self.last_text,
-            'attachments': [a._ai_describe() for a in self.attachment_ids],
-            'total_input_cost': self.total_input_cost,
-            'total_output_cost': self.total_output_cost,
-            'pending_user_messages': self._serialize_pending(),
-            **self._state_metrics(),
-        }
 
     # ----------------------------------------------------------
     # Helper Rate Limit
@@ -1036,7 +1008,7 @@ class AISession(models.Model):
     def _persist_partial(self, buffer_state):
         if text := buffer_state.get('full_text'):
             self.last_text = text
-            self._append_log({
+            self._append_event({
                 'kind': 'text',
                 'content': text
             })
@@ -1214,7 +1186,7 @@ class AISession(models.Model):
             payload['text'] = text
         if text:
             self.last_text = text
-            self._append_log({'kind': 'text', 'content': text})
+            self._append_event({'kind': 'text', 'content': text})
         carry = self._persist_inline_images_in_carry(
             payload.get('carry_inputs') or [], image_cache,
         )
@@ -1233,8 +1205,8 @@ class AISession(models.Model):
             return 'skipped: terminating tool already ran; emit a short summary and stop'
         return None
 
-    def _log_tool_call(self, call):
-        self._append_log({
+    def _record_tool_call(self, call):
+        self._append_event({
             'kind': 'tool_call',
             'name': call['name'],
             'arguments': call['arguments'],
@@ -1243,7 +1215,7 @@ class AISession(models.Model):
 
     def _skip_tool_call(self, outputs, call, reason, log_result=None):
         result = {'error': reason}
-        self._persist_synthetic_tool_log(call, result, 'denied')
+        self._persist_synthetic_event(call, result, 'denied')
         self._record_tool_result(
             outputs,
             call['call_id'],
@@ -1266,7 +1238,7 @@ class AISession(models.Model):
             'resolution': resolution,
             'preview': preview,
         }
-        self._append_log({
+        self._append_event({
             'kind': 'ask_user',
             'call_id': call['call_id'],
             'text': question,
@@ -1282,7 +1254,7 @@ class AISession(models.Model):
                 call, tool_calls, outputs, index, has_terminating, gate,
             )
             return None
-        self._log_tool_call(call)
+        self._record_tool_call(call)
         if gate['action'] == 'auto_approved':
             self._record_approval_audit(
                 decision='auto_approved', call=call, risk=gate['risk'],
@@ -1299,14 +1271,14 @@ class AISession(models.Model):
         for index in range(start_index, len(tool_calls)):
             call = tool_calls[index]
             if index >= MAX_TOOL_CALLS_PER_ROUND:
-                self._log_tool_call(call)
+                self._record_tool_call(call)
                 self._skip_tool_call(
                     outputs, call, 'tool_call_limit_exceeded',
                     log_result={'error': 'tool_call_limit_exceeded'},
                 )
                 continue
             if call.get('_parse_error'):
-                self._log_tool_call(call)
+                self._record_tool_call(call)
                 self._skip_tool_call(outputs, call, call['_parse_error'])
                 continue
             if call['name'] == 'ask_user':
@@ -1314,7 +1286,7 @@ class AISession(models.Model):
                 wait_for_user = True
                 continue
             if skip := self._skip_reason(has_ask_user, has_terminating):
-                self._log_tool_call(call)
+                self._record_tool_call(call)
                 self._skip_tool_call(
                     outputs, call, skip, log_result={'error': 'skipped'}
                 )
@@ -1408,7 +1380,7 @@ class AISession(models.Model):
         })
         self.invalidate_recordset(['pending_ids'])
         self._publish_event('queue', {'pending': self._serialize_pending()})
-        return self._get_snapshot()
+        return self.get_snapshot()
 
     def cancel_queued(self, index):
         pending = self.pending_ids
@@ -1418,7 +1390,7 @@ class AISession(models.Model):
             self._publish_event(
                 'queue', {'pending': self._serialize_pending()},
             )
-        return self._get_snapshot()
+        return self.get_snapshot()
 
     def _drain_pending_message(self):
         pending = self.pending_ids
@@ -1485,7 +1457,7 @@ class AISession(models.Model):
             'resume_index': index,
             'has_terminating': has_terminating,
         }
-        self._append_log({
+        self._append_event({
             'kind': 'ask_user',
             'call_id': call['call_id'],
             'text': risk.get('reason') or '',
@@ -1539,7 +1511,7 @@ class AISession(models.Model):
         resume_index = paused.get('resume_index', 0)
         tool_calls = list(paused.get('tool_calls') or [])
         has_terminating = bool(paused.get('has_terminating'))
-        self._log_tool_call(call)
+        self._record_tool_call(call)
         if approved:
             result, ok = self._dispatch_tool_call(
                 call['name'], call['arguments'], call['call_id'],
@@ -1551,7 +1523,7 @@ class AISession(models.Model):
                 'error': 'rejected_by_user',
                 'reason': reject_reason or ''
             }
-            self._persist_synthetic_tool_log(call, result, 'denied')
+            self._persist_synthetic_event(call, result, 'denied')
         self._record_tool_result(
             outputs,
             call['call_id'],
@@ -1570,6 +1542,50 @@ class AISession(models.Model):
     # ----------------------------------------------------------
     # Functions
     # ----------------------------------------------------------
+
+    def fetch_events(self, limit=100, before_sequence=None):
+        if not self.id:
+            return {'events': [], 'has_more_older': False, 'oldest_sequence': None}
+        domain = [('session_id', '=', self.id)]
+        if before_sequence is not None:
+            domain.append(('sequence', '<', before_sequence))
+        rows = self.env['muk_ai.session.event'].sudo().search(
+            domain,
+            order='sequence desc, id desc',
+            limit=limit + 1,
+        )
+        has_more = len(rows) > limit
+        rows = rows[:limit]
+        events = []
+        for ev in reversed(rows):
+            payload = dict(ev.payload or {})
+            payload.setdefault('kind', ev.kind)
+            if not payload.get('at') and ev.at:
+                payload['at'] = ev.at.isoformat()
+            events.append(payload)
+        oldest = rows[-1].sequence if rows else None
+        return {
+            'events': events,
+            'has_more_older': has_more,
+            'oldest_sequence': oldest,
+        }
+
+    def get_snapshot(self):
+        events_window = self.fetch_events(limit=100)
+        return {
+            'id': self.id,
+            'events': events_window['events'],
+            'has_more_older': events_window['has_more_older'],
+            'oldest_sequence': events_window['oldest_sequence'],
+            'conversation': self.conversation or [],
+            'error_message': self.error_message,
+            'last_text': self.last_text,
+            'attachments': [a._ai_describe() for a in self.attachment_ids],
+            'total_input_cost': self.total_input_cost,
+            'total_output_cost': self.total_output_cost,
+            'pending_user_messages': self._serialize_pending(),
+            **self._state_metrics(),
+        }
 
     def dismiss_notifications(self):
         partner = self.env.user.partner_id
@@ -1595,7 +1611,7 @@ class AISession(models.Model):
         else:
             self._enqueue_user_turn(user_message, attachments)
         self._trigger_worker()
-        return self._get_snapshot()
+        return self.get_snapshot()
 
     def answer(self, answer, attachment_ids=None):
         self._recover_if_stuck()
@@ -1618,7 +1634,7 @@ class AISession(models.Model):
             followup_text = f'Answer to "{question}": {answer}' if question else answer
             if user_entry := self._build_user_entry(followup_text, attachments):
                 self._extend_conversation([user_entry])
-        self._append_log({
+        self._append_event({
             'kind': 'answer',
             'question': question,
             'answer': answer,
@@ -1630,7 +1646,7 @@ class AISession(models.Model):
         })
         self._publish_event('state', {'state': 'running'})
         self._trigger_worker()
-        return self._get_snapshot()
+        return self.get_snapshot()
 
     def send_message(self, user_message, attachment_ids=None):
         self._recover_if_stuck()
@@ -1651,7 +1667,7 @@ class AISession(models.Model):
         attachments = self._resolve_attachments(attachment_ids)
         self._enqueue_user_turn(user_message, attachments)
         self._trigger_worker()
-        return self._get_snapshot()
+        return self.get_snapshot()
 
     def regenerate_last_turn(self):
         if self.state in ('running', 'waiting'):
@@ -1696,7 +1712,7 @@ class AISession(models.Model):
         })
         self._publish_event('state', {'state': 'running'})
         self._trigger_worker()
-        return self._get_snapshot()
+        return self.get_snapshot()
 
     def clear(self):
         if self.state in ('running', 'compacting'):
@@ -1723,10 +1739,10 @@ class AISession(models.Model):
             'state': 'new',
             'cleared_at': fields.Datetime.now(),
         })
-        self._append_log(log_entry)
+        self._append_event(log_entry)
         self._publish_event('state', {'state': 'new'})
         self._publish_event('queue', {'pending': []})
-        return self._get_snapshot()
+        return self.get_snapshot()
 
     def compact(self):
         if self.state in ('running', 'compacting'):
@@ -1738,7 +1754,7 @@ class AISession(models.Model):
         self.write({'state': 'compacting', 'error_message': False})
         self._publish_event('state', {'state': 'compacting'})
         self._trigger_worker()
-        return self._get_snapshot()
+        return self.get_snapshot()
 
     def _do_compact(self):
         try:
@@ -1790,7 +1806,7 @@ class AISession(models.Model):
             'state': 'done',
             'cleared_at': fields.Datetime.now(),
         })
-        self._append_log(log_entry)
+        self._append_event(log_entry)
         self._publish_event('state', {'state': 'done'})
         if self.pending_ids:
             self._drain_pending_message()
@@ -1834,25 +1850,25 @@ class AISession(models.Model):
         kind = payload.get('kind') if isinstance(payload, dict) else None
         if payload is None or kind == 'none':
             self._write_view_context(None)
-            return self._get_snapshot()
+            return self.get_snapshot()
         self._write_view_context(clean_view_context_payload(kind, payload))
-        return self._get_snapshot()
+        return self.get_snapshot()
 
     def unpin_view_context(self):
         self._write_view_context(None)
-        self._append_log({
+        self._append_event({
             'kind': 'command',
             'name': '/unpin',
             'message': _("View context cleared."),
         })
-        return self._get_snapshot()
+        return self.get_snapshot()
 
     def set_approval_mode(self, mode):
         if mode and mode not in ('ask', 'off'):
             raise UserError(_("Unknown approval mode %(mode)r.", mode=mode))
         self.write({'override_approval_mode': mode or False})
         self._publish_event('state', {'state': self.state})
-        return self._get_snapshot()
+        return self.get_snapshot()
 
     def approve_tool(self):
         pending = self._require_pending_approval()
@@ -1864,7 +1880,7 @@ class AISession(models.Model):
         self._resume_tool_round(pending, approved=True)
         if self.state == 'running':
             self._trigger_worker()
-        return self._get_snapshot()
+        return self.get_snapshot()
 
     def approve_for_session(self):
         pending = self._require_pending_approval()
@@ -1882,7 +1898,7 @@ class AISession(models.Model):
         self._resume_tool_round(pending, approved=True)
         if self.state == 'running':
             self._trigger_worker()
-        return self._get_snapshot()
+        return self.get_snapshot()
 
     def reject_tool(self, reason=None):
         pending = self._require_pending_approval()
@@ -1896,7 +1912,7 @@ class AISession(models.Model):
         self._resume_tool_round(pending, approved=False, reject_reason=reason)
         if self.state == 'running':
             self._trigger_worker()
-        return self._get_snapshot()
+        return self.get_snapshot()
 
     # ----------------------------------------------------------
     # Actions
@@ -1916,7 +1932,7 @@ class AISession(models.Model):
         if self.state not in ('done', 'error', 'stopped'):
             self.write({'state': 'stopped', 'pending_ask': False})
             self._publish_event('state', {'state': 'stopped'})
-        return self._get_snapshot()
+        return self.get_snapshot()
 
     # ----------------------------------------------------------
     # Compute
@@ -1924,17 +1940,8 @@ class AISession(models.Model):
 
     @api.depends('agent_id', 'agent_id.model_id', 'agent_id.model_id.context_window')
     def _compute_context_window(self):
-        default_record = self.env['muk_ai.provider']._get_default().default_model_id
         for record in self:
-            model_record = (
-                record.agent_id.model_id
-                if record.agent_id and record.agent_id.model_id
-                else default_record
-            )
-            record.context_window = (
-                (model_record.context_window if model_record else 0)
-                or DEFAULT_CONTEXT_WINDOW
-            )
+            record.context_window = record._resolve_context_window()
 
     @api.depends('override_approval_mode', 'agent_id', 'agent_id.approval_mode')
     def _compute_effective_approval_mode(self):
@@ -1950,6 +1957,14 @@ class AISession(models.Model):
     def _compute_pending_user_messages(self):
         for record in self:
             record.pending_user_messages = record._serialize_pending()
+
+    @api.depends('event_ids', 'event_ids.sequence', 'event_ids.payload')
+    def _compute_display_events(self):
+        for record in self:
+            record.display_events = (
+                record.fetch_events(limit=100)['events']
+                if record.id else []
+            )
 
     # ----------------------------------------------------------
     # ORM

@@ -91,6 +91,16 @@
                     </button>
                     <div class="mk_messages flex-grow-1" t-ref="scroll">
                     <div class="mk_window_inner">
+                        <div t-if="session.state.hasMoreOlder" class="mk_load_older text-center small text-muted py-2">
+                            <t t-if="session.state.loadingOlder">
+                                <i class="fa fa-spinner fa-spin me-1"/>Loading…
+                            </t>
+                            <t t-else="">
+                                <button class="btn btn-link btn-sm" t-on-click="() => session.loadMoreEvents()">
+                                    Load older messages
+                                </button>
+                            </t>
+                        </div>
                         <t t-if="session.state.loading">
                             <div class="text-center text-muted small py-3">
                                 <i class="fa fa-spinner fa-spin me-1"/>Loading…

@@ -7,22 +7,18 @@ import { useRecordObserver } from '@web/model/relational_model/utils';
 import { CodeEditor } from '@web/core/code_editor/code_editor';
 import { standardFieldProps } from '@web/views/fields/standard_field_props';
 
-const PLACEHOLDER_LINE_HEIGHT = 13;
-const PLACEHOLDER_MIN_HEIGHT = 156;
-const PLACEHOLDER_VERTICAL_PAD = 8;
+const LINE_HEIGHT = 13;
+const VERTICAL_PAD = 4;
+const MIN_LINES = 1;
 
 export class JsonCodeField extends Component {
     static template = 'muk_ai.JsonCodeField';
     static props = {
         ...standardFieldProps,
         mode: { type: String, optional: true },
-        placeholder: { type: String, optional: true },
-        placeholderField: { type: String, optional: true },
     };
     static defaultProps = {
         mode: 'javascript',
-        placeholder: '',
-        placeholderField: '',
     };
     static components = { CodeEditor };
     setup() {
@@ -30,20 +26,12 @@ export class JsonCodeField extends Component {
         this.notification = useService('notification');
         this.state = useState({
             initialValue: '',
-            isEmpty: true,
-            placeholder: this.props.placeholder,
-            editorMinHeight: PLACEHOLDER_MIN_HEIGHT,
+            lineCount: MIN_LINES,
         });
         useRecordObserver((record) => {
-            const value = record.data[this.props.name];
-            const stringified = this._stringify(value);
+            const stringified = this._stringify(record.data[this.props.name]);
             this.state.initialValue = stringified;
-            this.state.isEmpty = !stringified;
-            if (this.props.placeholderField) {
-                const dynamic = record.data[this.props.placeholderField];
-                this.state.placeholder = dynamic || this.props.placeholder;
-            }
-            this.state.editorMinHeight = this._heightFor(this.state.placeholder);
+            this.state.lineCount = Math.max(MIN_LINES, (stringified.match(/\n/g) || []).length + 1);
         });
         const { model } = this.props.record;
         useBus(model.bus, 'WILL_SAVE_URGENTLY', () => this.commitChanges());
@@ -51,18 +39,14 @@ export class JsonCodeField extends Component {
             detail.proms.push(this.commitChanges()),
         );
     }
-    get editorStyle() {
-        return `--mk-json-code-min-height: ${this.state.editorMinHeight}px;`;
+    get readonlyHeight() {
+        return this.state.lineCount * LINE_HEIGHT + VERTICAL_PAD * 2;
     }
-    _heightFor(text) {
-        if (!text) {
-            return PLACEHOLDER_MIN_HEIGHT;
+    get wrapperStyle() {
+        if (!this.props.readonly) {
+            return '';
         }
-        const lines = (text.match(/\n/g) || []).length + 1;
-        return Math.max(
-            PLACEHOLDER_MIN_HEIGHT,
-            lines * PLACEHOLDER_LINE_HEIGHT + PLACEHOLDER_VERTICAL_PAD * 2,
-        );
+        return `--mk-json-code-height: ${this.readonlyHeight}px;`;
     }
     _stringify(value) {
         if (value === null || value === undefined || value === false) {
@@ -76,7 +60,6 @@ export class JsonCodeField extends Component {
     }
     handleChange(editedValue) {
         this.isDirty = this.state.initialValue !== editedValue;
-        this.state.isEmpty = !editedValue || !editedValue.trim();
         this.props.record.model.bus.trigger('FIELD_IS_DIRTY', this.isDirty);
         this.editedValue = editedValue;
     }
@@ -121,14 +104,9 @@ export const jsonCodeField = {
         },
     ],
     supportedTypes: ['json'],
-    extractProps: ({ attrs, options, placeholder }) => ({
+    extractProps: ({ options }) => ({
         mode: options.mode || 'javascript',
-        placeholder: placeholder || attrs?.placeholder || '',
-        placeholderField: options.placeholder_field || '',
     }),
-    fieldDependencies: ({ options }) => (
-        options.placeholder_field ? [{ name: options.placeholder_field, type: 'char' }] : []
-    ),
 };
 
 registry.category('fields').add('json_code', jsonCodeField);

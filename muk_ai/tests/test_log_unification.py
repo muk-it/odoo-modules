@@ -74,10 +74,10 @@ class TestLogUnification(AITestCommon):
         ])
         self.assertFalse(survivors)
 
-    def test_unified_log_reads_from_events(self):
+    def test_unified_events_reads_from_events(self):
         session = self.env['muk_ai.session'].create({'name': 'merge'})
-        session._append_log({'kind': 'user_message', 'content': 'hi', 'attachments': []})
-        session._log_tool_call({
+        session._append_event({'kind': 'user_message', 'content': 'hi', 'attachments': []})
+        session._record_tool_call({
             'name': 'list_modules',
             'arguments': {},
             'call_id': 'merge_c1',
@@ -85,8 +85,8 @@ class TestLogUnification(AITestCommon):
         session._record_tool_result(
             [], 'merge_c1', 'list_modules', '{"ok": true}',
         )
-        session._append_log({'kind': 'text', 'content': 'final'})
-        unified = session._unified_log()
+        session._append_event({'kind': 'text', 'content': 'final'})
+        unified = session.fetch_events(limit=500)['events']
         kinds = [entry.get('kind') for entry in unified]
         self.assertIn('user_message', kinds)
         self.assertIn('tool_call', kinds)
@@ -100,7 +100,7 @@ class TestLogUnification(AITestCommon):
         session = self.env['muk_ai.session'].create({'name': 'jsonb'})
         with self._patch_execute({'list_modules': '{}'}):
             session._dispatch_tool_call('list_modules', {}, 'jsonb_c1')
-        session._log_tool_call({
+        session._record_tool_call({
             'name': 'list_modules',
             'arguments': {},
             'call_id': 'jsonb_c1',
@@ -114,10 +114,10 @@ class TestLogUnification(AITestCommon):
 
     def test_clear_drops_events_audit_survives(self):
         session = self.env['muk_ai.session'].create({'name': 'clear-events'})
-        session._append_log({'kind': 'user_message', 'content': 'hi', 'attachments': []})
+        session._append_event({'kind': 'user_message', 'content': 'hi', 'attachments': []})
         with self._patch_execute({'list_modules': '{"ok": true}'}):
             session._dispatch_tool_call('list_modules', {}, 'clear_c1')
-        session._log_tool_call({
+        session._record_tool_call({
             'name': 'list_modules',
             'arguments': {},
             'call_id': 'clear_c1',
@@ -125,7 +125,7 @@ class TestLogUnification(AITestCommon):
         session._record_tool_result(
             [], 'clear_c1', 'list_modules', '{"ok": true}',
         )
-        session._append_log({'kind': 'text', 'content': 'response'})
+        session._append_event({'kind': 'text', 'content': 'response'})
         before_kinds = {ev.kind for ev in session.event_ids}
         self.assertIn('tool_call', before_kinds)
         self.assertIn('user_message', before_kinds)
@@ -146,20 +146,20 @@ class TestLogUnification(AITestCommon):
 
     def test_compact_drops_event_rows(self):
         session = self.env['muk_ai.session'].create({'name': 'compact-events'})
-        session._append_log({'kind': 'user_message', 'content': 'hi', 'attachments': []})
+        session._append_event({'kind': 'user_message', 'content': 'hi', 'attachments': []})
         with self._patch_execute({'list_modules': '{}'}):
             session._dispatch_tool_call('list_modules', {}, 'compact_c1')
         self.assertTrue(session.event_ids)
         session.event_ids.sudo().unlink()
-        unified = session._unified_log()
+        unified = session.fetch_events(limit=500)['events']
         self.assertEqual(unified, [])
 
     def test_regenerate_truncates_to_last_user_message(self):
         session = self.env['muk_ai.session'].create({'name': 'regen-events'})
-        session._append_log({'kind': 'user_message', 'content': 'first', 'attachments': []})
-        session._append_log({'kind': 'text', 'content': 'first reply'})
-        session._append_log({'kind': 'user_message', 'content': 'second', 'attachments': []})
-        session._append_log({'kind': 'text', 'content': 'second reply'})
+        session._append_event({'kind': 'user_message', 'content': 'first', 'attachments': []})
+        session._append_event({'kind': 'text', 'content': 'first reply'})
+        session._append_event({'kind': 'user_message', 'content': 'second', 'attachments': []})
+        session._append_event({'kind': 'text', 'content': 'second reply'})
         events = session.event_ids.sorted(lambda e: (e.sequence, e.id))
         last_user = max(
             (i for i, e in enumerate(events) if e.kind == 'user_message'),
@@ -211,7 +211,7 @@ class TestLogUnification(AITestCommon):
         session = self.env['muk_ai.session'].create({'name': 'post-clear'})
         with self._patch_execute({'list_modules': '{"a": 1}'}):
             session._dispatch_tool_call('list_modules', {}, 'pre_c1')
-        session._log_tool_call({
+        session._record_tool_call({
             'name': 'list_modules',
             'arguments': {},
             'call_id': 'pre_c1',
@@ -222,7 +222,7 @@ class TestLogUnification(AITestCommon):
         session.clear()
         with self._patch_execute({'list_modules': '{"b": 2}'}):
             session._dispatch_tool_call('list_modules', {}, 'post_c1')
-        session._log_tool_call({
+        session._record_tool_call({
             'name': 'list_modules',
             'arguments': {},
             'call_id': 'post_c1',
@@ -230,7 +230,7 @@ class TestLogUnification(AITestCommon):
         session._record_tool_result(
             [], 'post_c1', 'list_modules', '{"b": 2}',
         )
-        unified = session._unified_log()
+        unified = session.fetch_events(limit=500)['events']
         kinds = [entry.get('kind') for entry in unified]
         self.assertIn('command', kinds)
         self.assertIn('tool_call', kinds)
@@ -257,7 +257,7 @@ class TestLogUnification(AITestCommon):
                 text, ok = session._dispatch_tool_call(
                     'list_modules', {}, 'audit_c1',
                 )
-            session._log_tool_call({
+            session._record_tool_call({
                 'name': 'list_modules',
                 'arguments': {},
                 'call_id': 'audit_c1',
@@ -273,3 +273,65 @@ class TestLogUnification(AITestCommon):
         kinds = {ev.kind for ev in session.event_ids}
         self.assertIn('tool_call', kinds)
         self.assertIn('tool_result', kinds)
+
+    # ----------------------------------------------------------
+    # Tests Pagination
+    # ----------------------------------------------------------
+
+    def test_unified_events_returns_latest_window(self):
+        session = self.env['muk_ai.session'].create({'name': 'pag-window'})
+        for index in range(250):
+            session._append_event({
+                'kind': 'text', 'content': f'msg-{index}',
+            })
+        result = session.fetch_events(limit=100)
+        self.assertEqual(len(result['events']), 100)
+        self.assertTrue(result['has_more_older'])
+        contents = [event['content'] for event in result['events']]
+        self.assertEqual(contents[0], 'msg-150')
+        self.assertEqual(contents[-1], 'msg-249')
+        events_sorted = session.event_ids.sorted(
+            lambda e: (e.sequence, e.id),
+        )
+        self.assertEqual(
+            result['oldest_sequence'], events_sorted[150].sequence,
+        )
+
+    def test_unified_events_before_sequence_paginates_older(self):
+        session = self.env['muk_ai.session'].create({'name': 'pag-older'})
+        for index in range(250):
+            session._append_event({
+                'kind': 'text', 'content': f'msg-{index}',
+            })
+        first_window = session.fetch_events(limit=100)
+        older = session.fetch_events(
+            limit=100, before_sequence=first_window['oldest_sequence'],
+        )
+        self.assertEqual(len(older['events']), 100)
+        self.assertTrue(older['has_more_older'])
+        contents = [event['content'] for event in older['events']]
+        self.assertEqual(contents[0], 'msg-50')
+        self.assertEqual(contents[-1], 'msg-149')
+
+    def test_unified_events_below_limit_no_more(self):
+        session = self.env['muk_ai.session'].create({'name': 'pag-small'})
+        for index in range(30):
+            session._append_event({
+                'kind': 'text', 'content': f'msg-{index}',
+            })
+        result = session.fetch_events(limit=100)
+        self.assertEqual(len(result['events']), 30)
+        self.assertFalse(result['has_more_older'])
+
+    def test_clear_session_unlinks_old_events(self):
+        session = self.env['muk_ai.session'].create({'name': 'clear-trunc'})
+        for index in range(120):
+            session._append_event({
+                'kind': 'text', 'content': f'msg-{index}',
+            })
+        self.assertEqual(len(session.event_ids), 120)
+        session.clear()
+        self.assertEqual(len(session.event_ids), 1)
+        remaining = session.event_ids
+        self.assertEqual(remaining.kind, 'command')
+        self.assertEqual((remaining.payload or {}).get('name'), '/clear')

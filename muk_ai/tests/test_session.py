@@ -4,8 +4,11 @@ from unittest.mock import patch
 
 from odoo.exceptions import UserError
 
-from odoo.addons.muk_ai.tools import format_ui_ctx_tag, render_ui_ctx
-from odoo.addons.muk_ai.tools.limits import MAX_ITERATIONS
+from odoo.addons.muk_ai.tools import (
+    MAX_ITERATIONS,
+    format_ui_ctx_tag,
+    render_ui_ctx,
+)
 
 from .common import AITestCommon
 
@@ -128,7 +131,7 @@ class TestAiSession(AITestCommon):
             snapshot = self.session.start('list installed modules')
         self.assertEqual(snapshot['state'], 'done')
         self.assertEqual(self.session.iteration_count, 2)
-        kinds = [entry['kind'] for entry in self.session._unified_log()]
+        kinds = [entry['kind'] for entry in self.session.fetch_events(limit=500)['events']]
         self.assertIn('tool_call', kinds)
         self.assertIn('tool_result', kinds)
 
@@ -393,7 +396,7 @@ class TestAiSession(AITestCommon):
             'name': 'with agent',
             'agent_id': agent.id,
         })
-        snapshot = session._get_snapshot()
+        snapshot = session.get_snapshot()
         self.assertEqual(snapshot['context_window'], 50000)
         self.assertEqual(snapshot['last_input_tokens'], 0)
 
@@ -407,13 +410,13 @@ class TestAiSession(AITestCommon):
             session.start('hello')
         self.assertEqual(session.state, 'done')
         self.assertTrue(session.conversation)
-        self.assertTrue(session._unified_log())
+        self.assertTrue(session.fetch_events(limit=500)['events'])
         snapshot = session.clear()
         self.assertEqual(snapshot['state'], 'new')
         self.assertEqual(snapshot['iteration_count'], 0)
         self.assertEqual(snapshot['last_input_tokens'], 0)
         self.assertFalse(session.conversation)
-        unified = session._unified_log()
+        unified = session.fetch_events(limit=500)['events']
         self.assertEqual(len(unified), 1)
         self.assertEqual(unified[0].get('kind'), 'command')
         self.assertEqual(unified[0].get('name'), '/clear')
@@ -443,7 +446,7 @@ class TestAiSession(AITestCommon):
         self.assertLess(len(session.conversation), pre_len + 1)
         self.assertEqual(session.last_input_tokens, 0)
         self.assertEqual(snapshot['last_input_tokens'], 0)
-        unified = session._unified_log()
+        unified = session.fetch_events(limit=500)['events']
         last_entry = unified[-1]
         self.assertEqual(last_entry.get('kind'), 'command')
         self.assertEqual(last_entry.get('name'), '/compact')
@@ -599,7 +602,7 @@ class TestAiSession(AITestCommon):
         snapshot = session.unpin_view_context()
         self.assertFalse(session.view_context)
         self.assertIsNone(snapshot['view_context'])
-        unified = session._unified_log()
+        unified = session.fetch_events(limit=500)['events']
         last_entry = unified[-1] if unified else {}
         self.assertEqual(last_entry.get('kind'), 'command')
         self.assertEqual(last_entry.get('name'), '/unpin')
@@ -610,7 +613,7 @@ class TestAiSession(AITestCommon):
             'kind': 'record', 'model': 'res.partner', 'id': 5,
             'display_name': 'Who',
         }
-        snapshot = session._get_snapshot()
+        snapshot = session.get_snapshot()
         self.assertEqual(snapshot['view_context']['model'], 'res.partner')
         self.assertEqual(snapshot['view_context']['id'], 5)
 
@@ -640,13 +643,13 @@ class TestAiSession(AITestCommon):
         with self._patch_provider([self._text_payload('first answer')]):
             session.start('what is 2+2?')
         self.assertEqual(session.state, 'done')
-        original_log = list(session._unified_log())
+        original_log = list(session.fetch_events(limit=500)['events'])
         original_conv = list(session.conversation or [])
         with self._patch_provider([self._text_payload('four')]):
             snapshot = session.regenerate_last_turn()
         self.assertEqual(snapshot['state'], 'done')
         self.assertIn('four', session.last_text or '')
-        kinds = [entry.get('kind') for entry in session._unified_log()]
+        kinds = [entry.get('kind') for entry in session.fetch_events(limit=500)['events']]
         self.assertEqual(kinds[-2:], ['user_message', 'text'])
         self.assertLessEqual(len(session.conversation or []), len(original_conv))
         self.assertGreater(len(original_log), 0)

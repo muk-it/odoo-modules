@@ -13,19 +13,22 @@
 				<field name="session_id"/>
 				<field name="agent_id"/>
 				<field name="user_id"/>
-				<filter name="filter_approved" string="Approved"
-					domain="[('decision', 'in', ['approved', 'approved_session', 'auto_approved'])]"/>
-				<filter name="filter_rejected" string="Rejected"
-					domain="[('decision', '=', 'rejected')]"/>
-				<separator/>
-				<filter name="group_tool" string="Tool"
-					context="{'group_by': 'tool_name'}"/>
-				<filter name="group_model" string="Model"
-					context="{'group_by': 'res_model'}"/>
-				<filter name="group_decision" string="Decision"
-					context="{'group_by': 'decision'}"/>
-				<filter name="group_user" string="User"
-					context="{'group_by': 'user_id'}"/>
+				<filter
+                    name="filter_approved"
+                    string="Approved"
+					domain="[('decision', 'in', ['approved', 'approved_session', 'auto_approved'])]"
+                />
+				<filter
+                    name="filter_rejected"
+                    string="Rejected"
+					domain="[('decision', '=', 'rejected')]"
+                />
+				<group>
+                    <filter name="group_tool" string="Tool" context="{'group_by': 'tool_name'}"/>
+                    <filter name="group_model" string="Model" context="{'group_by': 'res_model'}"/>
+                    <filter name="group_decision" string="Decision" context="{'group_by': 'decision'}"/>
+                    <filter name="group_user" string="User" context="{'group_by': 'user_id'}"/>
+				</group>
 			</search>
 		</field>
 	</record>
@@ -34,7 +37,7 @@
 		<field name="name">muk_ai.approval.list</field>
 		<field name="model">muk_ai.approval</field>
 		<field name="arch" type="xml">
-			<list string="AI Approvals">
+			<list>
 				<field name="create_date"/>
 				<field name="tool_name"/>
 				<field name="res_model"/>
@@ -51,7 +54,7 @@
 		<field name="name">muk_ai.approval.form</field>
 		<field name="model">muk_ai.approval</field>
 		<field name="arch" type="xml">
-			<form string="AI Approval">
+			<form>
 				<sheet>
 					<group>
 						<group>
@@ -68,12 +71,12 @@
 						</group>
 					</group>
 					<group string="Risk">
-						<field name="reason" nolabel="1"/>
+						<field name="reason"/>
 						<field name="res_ids"/>
 					</group>
 					<group string="Payload">
-						<field name="args_proposed" widget="json"/>
-						<field name="args_executed" widget="json"/>
+						<field name="args_proposed" widget="json_code"/>
+						<field name="args_executed" widget="json_code"/>
 						<field name="reject_reason"/>
 					</group>
 				</sheet>

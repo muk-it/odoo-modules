@@ -11,7 +11,7 @@ patchTranslations();
 
 const SESSION_RECORD = {
     id: 11, name: 'Popout', state: 'done',
-    tool_log: [], pending_ask: null, view_context: null,
+    events: [], oldest_sequence: null, has_more_older: false, pending_ask: null, view_context: null,
     last_text: 'hello', error_message: null,
     iteration_count: 1, total_input_tokens: 3, total_output_tokens: 1,
     last_input_tokens: 1, context_window: 8000, total_cost: 0.0025,
@@ -106,7 +106,7 @@ test('toggleAskView flips mode for a matching tool block', async () => {
     const window_ = await mountWithCleanup(ChatWindow, {
         props: { sessionId: 11, minimized: false, onClose: () => {}, onToggleMinimized: () => {} },
     });
-    window_.session.state.log = [
+    window_.session.state.events = [
         { kind: 'ask_user', call_id: 'c1', text: 'Q?', preview: { kind: 'write' } },
     ];
     window_.toggleAskView('c1');
@@ -154,7 +154,7 @@ test('renderedTurns reads from the session log', async () => {
     const window_ = await mountWithCleanup(ChatWindow, {
         props: { sessionId: 11, minimized: false, onClose: () => {}, onToggleMinimized: () => {} },
     });
-    window_.session.state.log = [
+    window_.session.state.events = [
         { kind: 'user_message', content: 'hi', attachments: [] },
         { kind: 'text', content: 'hello there' },
     ];

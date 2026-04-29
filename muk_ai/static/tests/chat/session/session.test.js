@@ -11,7 +11,7 @@ defineMailModels();
 
 const SESSION_RECORD = {
     id: 7, name: 'Demo session', state: 'done',
-    tool_log: [
+    events: [
         { kind: 'user_message', content: 'hello', attachments: [] },
         { kind: 'text', content: 'hi there' },
     ],
@@ -28,7 +28,7 @@ const AGENTS = [
 ];
 
 const SNAPSHOT_RUNNING = {
-    state: 'running', tool_log: [], pending_ask: null, view_context: null,
+    state: 'running', events: [], pending_ask: null, view_context: null,
     error_message: null, iteration_count: 0,
     total_input_tokens: 0, total_output_tokens: 0, total_cost: 0,
     last_input_tokens: 0, context_window: 8000,
@@ -64,6 +64,29 @@ function makeHarness(options = {}) {
 }
 
 
+function snapshotFor(record, overrides = {}) {
+    return {
+        state: record.state,
+        events: record.events || [],
+        oldest_sequence: record.oldest_sequence ?? null,
+        has_more_older: !!record.has_more_older,
+        pending_ask: record.pending_ask || null,
+        view_context: record.view_context || null,
+        error_message: record.error_message || null,
+        iteration_count: record.iteration_count || 0,
+        total_input_tokens: record.total_input_tokens || 0,
+        total_output_tokens: record.total_output_tokens || 0,
+        total_cost: record.total_cost || 0,
+        last_input_tokens: record.last_input_tokens || 0,
+        context_window: record.context_window || 0,
+        override_approval_mode: record.override_approval_mode || false,
+        effective_approval_mode: record.effective_approval_mode || 'ask',
+        pending_user_messages: record.pending_user_messages || [],
+        ...overrides,
+    };
+}
+
+
 async function mountAndLoad(harness, sessionId = 7) {
     await mountWithCleanup(harness.Harness, { props: {} });
     const session = harness.getSession();
@@ -77,13 +100,14 @@ test('load reads session and applies record to state', async () => {
         expect(args[0]).toEqual([7]);
         return [SESSION_RECORD];
     });
+    onRpc('muk_ai.session', 'get_snapshot', () => snapshotFor(SESSION_RECORD));
     makeBusMock();
     const harness = makeHarness();
     const session = await mountAndLoad(harness);
     expect(session.state.sessionId).toBe(7);
     expect(session.state.name).toBe('Demo session');
     expect(session.state.status).toBe('done');
-    expect(session.state.log.length).toBe(2);
+    expect(session.state.events.length).toBe(2);
     expect(session.state.agentId).toBe(3);
     expect(session.state.agentName).toBe('Helper');
     expect(session.state.totalCost).toBe(0.12);
@@ -110,7 +134,7 @@ test('loadAgents fetches agents via search_read with suggestions field', async (
 
 test('onSend posts to start for the first turn and flips status to running', async () => {
     const calls = [];
-    onRpc('muk_ai.session', 'read', () => [{ ...SESSION_RECORD, tool_log: [], iteration_count: 0 }]);
+    onRpc('muk_ai.session', 'read', () => [{ ...SESSION_RECORD, events: [], iteration_count: 0 }]);
     onRpc('muk_ai.session', 'start', ({ args, kwargs }) => {
         calls.push({ method: 'start', args, kwargs });
         return { ...SNAPSHOT_RUNNING, state: 'running' };
@@ -134,7 +158,7 @@ test('onSend routes subsequent turns through send_message', async () => {
     onRpc('muk_ai.session', 'send_message', ({ args }) => {
         sent = true;
         expect(args).toEqual([7, 'follow up']);
-        return { ...SNAPSHOT_RUNNING, tool_log: SESSION_RECORD.tool_log };
+        return { ...SNAPSHOT_RUNNING, events: SESSION_RECORD.events };
     });
     makeBusMock();
     const harness = makeHarness();
@@ -145,7 +169,7 @@ test('onSend routes subsequent turns through send_message', async () => {
 });
 
 
-test('bus log event with text kind appends to state.log and clears streamingText', async () => {
+test('bus log event with text kind appends to state.events and clears streamingText', async () => {
     onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
     const bus = makeBusMock();
     const harness = makeHarness();
@@ -156,7 +180,7 @@ test('bus log event with text kind appends to state.log and clears streamingText
         type: 'log',
         payload: { kind: 'text', content: 'streamed answer' },
     });
-    expect(session.state.log[session.state.log.length - 1]).toEqual({
+    expect(session.state.events[session.state.events.length - 1]).toEqual({
         kind: 'text',
         content: 'streamed answer',
     });
@@ -166,14 +190,15 @@ test('bus log event with text kind appends to state.log and clears streamingText
 
 test('bus text_delta appends to streamingText without touching the log', async () => {
     onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
+    onRpc('muk_ai.session', 'get_snapshot', () => snapshotFor(SESSION_RECORD));
     const bus = makeBusMock();
     const harness = makeHarness();
     const session = await mountAndLoad(harness);
-    const logSize = session.state.log.length;
+    const logSize = session.state.events.length;
     bus.emit({ session_id: 7, type: 'text_delta', payload: { delta: 'He' } });
     bus.emit({ session_id: 7, type: 'text_delta', payload: { delta: 'llo' } });
     expect(session.state.streamingText).toBe('Hello');
-    expect(session.state.log.length).toBe(logSize);
+    expect(session.state.events.length).toBe(logSize);
 });
 
 
@@ -285,7 +310,7 @@ test('onSetAgent writes agent_id and updates state', async () => {
 
 
 test('onSend surfaces backend errors into state.error and status', async () => {
-    onRpc('muk_ai.session', 'read', () => [{ ...SESSION_RECORD, tool_log: [], iteration_count: 0 }]);
+    onRpc('muk_ai.session', 'read', () => [{ ...SESSION_RECORD, events: [], iteration_count: 0 }]);
     onRpc('muk_ai.session', 'start', () => {
         throw new Error('boom');
     });
@@ -361,7 +386,7 @@ test('onRegenerate is blocked while running or waiting', async () => {
 
 
 test('canRegenerate is false when log has no user_message', async () => {
-    onRpc('muk_ai.session', 'read', () => [{ ...SESSION_RECORD, tool_log: [] }]);
+    onRpc('muk_ai.session', 'read', () => [{ ...SESSION_RECORD, events: [] }]);
     makeBusMock();
     const harness = makeHarness();
     const session = await mountAndLoad(harness);
@@ -371,6 +396,7 @@ test('canRegenerate is false when log has no user_message', async () => {
 
 test('canRegenerate is true when log has a user_message and status is done', async () => {
     onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
+    onRpc('muk_ai.session', 'get_snapshot', () => snapshotFor(SESSION_RECORD));
     makeBusMock();
     const harness = makeHarness();
     const session = await mountAndLoad(harness);
@@ -655,15 +681,17 @@ test('toggleToolBlock is a noop when callId is falsy', async () => {
 
 
 test('renderedTurns groups log entries into user + assistant turns', async () => {
-    onRpc('muk_ai.session', 'read', () => [{
+    const record = {
         ...SESSION_RECORD,
-        tool_log: [
+        events: [
             { kind: 'user_message', content: 'hello', attachments: [] },
             { kind: 'tool_call', name: 'search_read', call_id: 'c0', arguments: {} },
             { kind: 'tool_result', call_id: 'c0', result: '{}' },
             { kind: 'text', content: 'here you go' },
         ],
-    }]);
+    };
+    onRpc('muk_ai.session', 'read', () => [record]);
+    onRpc('muk_ai.session', 'get_snapshot', () => snapshotFor(record));
     makeBusMock();
     const harness = makeHarness();
     const session = await mountAndLoad(harness);
@@ -735,13 +763,15 @@ test('setScrollCallback is invoked on requestScroll triggers', async () => {
 
 
 test('maybeAutoCompact fires /compact silently when ratio above auto threshold', async () => {
-    onRpc('muk_ai.session', 'read', () => [{
+    const record = {
         ...SESSION_RECORD,
         last_input_tokens: 7700,
         context_window: 8000,
-        tool_log: [{ kind: 'user_message', content: 'old', attachments: [] }],
+        events: [{ kind: 'user_message', content: 'old', attachments: [] }],
         iteration_count: 2,
-    }]);
+    };
+    onRpc('muk_ai.session', 'read', () => [record]);
+    onRpc('muk_ai.session', 'get_snapshot', () => snapshotFor(record));
     let compacted = false;
     onRpc('muk_ai.session', 'compact', () => {
         compacted = true;
@@ -772,7 +802,7 @@ test('/help slash command appends a summary entry without calling send', async (
     session.onInputChange('/help');
     await session.onSend();
     expect(sent).toBe(false);
-    const last = session.state.log[session.state.log.length - 1];
+    const last = session.state.events[session.state.events.length - 1];
     expect(last.name).toBe('/help');
 });
 
@@ -845,13 +875,13 @@ test('bus event ignored when session_id differs', async () => {
     const bus = makeBusMock();
     const harness = makeHarness();
     const session = await mountAndLoad(harness);
-    const before = session.state.log.length;
+    const before = session.state.events.length;
     bus.emit({
         session_id: 999,
         type: 'log',
         payload: { kind: 'text', content: 'ignored' },
     });
-    expect(session.state.log.length).toBe(before);
+    expect(session.state.events.length).toBe(before);
 });
 
 
@@ -863,12 +893,12 @@ test('applySnapshot replaces state from a server snapshot', async () => {
     session.applySnapshot({
         ...SNAPSHOT_RUNNING,
         state: 'done',
-        tool_log: [{ kind: 'text', content: 'final' }],
+        events: [{ kind: 'text', content: 'final' }],
         total_cost: 0.5,
     });
     expect(session.state.status).toBe('done');
     expect(session.state.totalCost).toBe(0.5);
-    expect(session.state.log.at(-1).content).toBe('final');
+    expect(session.state.events.at(-1).content).toBe('final');
 });
 
 
@@ -1076,7 +1106,7 @@ test('onSend emits optimistic answer entry when waiting on a question', async ()
     const session = await mountAndLoad(harness);
     session.onInputChange('pick one');
     await session.onSend();
-    const last = session.state.log.find((e) => e.kind === 'answer');
+    const last = session.state.events.find((e) => e.kind === 'answer');
     expect(last).not.toBe(undefined);
     expect(last.answer).toBe('pick one');
 });
@@ -1244,6 +1274,63 @@ test('/clear without confirmation skips the RPC', async () => {
 });
 
 
+test('loadMoreEvents prepends older window and updates oldestSequence', async () => {
+    const record = {
+        ...SESSION_RECORD,
+        events: [
+            { kind: 'user_message', content: 'recent-1', attachments: [] },
+            { kind: 'text', content: 'recent-2' },
+        ],
+        oldest_sequence: 100,
+        has_more_older: true,
+    };
+    onRpc('muk_ai.session', 'read', () => [record]);
+    onRpc('muk_ai.session', 'get_snapshot', () => snapshotFor(record));
+    let fetchArgs = null;
+    onRpc('muk_ai.session', 'fetch_events', ({ args, kwargs }) => {
+        fetchArgs = { args, kwargs };
+        return {
+            events: [
+                { kind: 'user_message', content: 'older-1', attachments: [] },
+                { kind: 'text', content: 'older-2' },
+            ],
+            oldest_sequence: 50,
+            has_more_older: false,
+        };
+    });
+    makeBusMock();
+    const harness = makeHarness();
+    const session = await mountAndLoad(harness);
+    expect(session.state.hasMoreOlder).toBe(true);
+    expect(session.state.oldestSequence).toBe(100);
+    await session.loadMoreEvents();
+    expect(fetchArgs.args).toEqual([7]);
+    expect(fetchArgs.kwargs.before_sequence).toBe(100);
+    expect(fetchArgs.kwargs.limit).toBe(100);
+    expect(session.state.events.length).toBe(4);
+    expect(session.state.events[0].content).toBe('older-1');
+    expect(session.state.events[3].content).toBe('recent-2');
+    expect(session.state.oldestSequence).toBe(50);
+    expect(session.state.hasMoreOlder).toBe(false);
+});
+
+
+test('loadMoreEvents is a noop when hasMoreOlder is false', async () => {
+    onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
+    onRpc('muk_ai.session', 'get_snapshot', () => snapshotFor(SESSION_RECORD));
+    let calls = 0;
+    onRpc('muk_ai.session', 'fetch_events', () => {
+        calls++;
+        return { events: [], oldest_sequence: null, has_more_older: false };
+    });
+    makeBusMock();
+    const harness = makeHarness();
+    const session = await mountAndLoad(harness);
+    await session.loadMoreEvents();
+    expect(calls).toBe(0);
+});
+
+
 test('/clear while running is a noop (onSend bails before slash dispatch)', async () => {
     onRpc('muk_ai.session', 'read', () => [{ ...SESSION_RECORD, state: 'running' }]);
     const dialogs = [];
@@ -1256,4 +1343,85 @@ test('/clear while running is a noop (onSend bails before slash dispatch)', asyn
     session.onInputChange('/clear');
     await session.onSend();
     expect(dialogs).toEqual([]);
+});
+
+
+test('popout fires before doAction when surface is fullscreen', async () => {
+    onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
+    const calls = [];
+    mockService('muk_ai.chat_window', {
+        state: { windows: [] },
+        open: (id) => { calls.push({ kind: 'open', id }); },
+        close: () => {},
+        toggleMinimized: () => {},
+        get activeSessionId() { return null; },
+    });
+    mockService('action', {
+        doAction: (a) => { calls.push({ kind: 'doAction', a }); return Promise.resolve(); },
+    });
+    const bus = makeBusMock();
+    const harness = makeHarness({ surface: 'fullscreen' });
+    const session = await mountAndLoad(harness);
+    bus.emit({
+        session_id: 7,
+        type: 'ui_action',
+        payload: { action: { type: 'ir.actions.act_window', res_model: 'res.partner' } },
+    });
+    await Promise.resolve();
+    expect(calls).toHaveLength(2);
+    expect(calls[0].kind).toBe('open');
+    expect(calls[0].id).toBe(7);
+    expect(calls[1].kind).toBe('doAction');
+    expect(session.state.sessionId).toBe(7);
+});
+
+
+test('popout is skipped when surface is window', async () => {
+    onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
+    const opened = [];
+    mockService('muk_ai.chat_window', {
+        state: { windows: [] },
+        open: (id) => { opened.push(id); },
+        close: () => {},
+        toggleMinimized: () => {},
+        get activeSessionId() { return null; },
+    });
+    const actions = [];
+    mockService('action', { doAction: (a) => { actions.push(a); return Promise.resolve(); } });
+    const bus = makeBusMock();
+    const harness = makeHarness({ surface: 'window' });
+    await mountAndLoad(harness);
+    bus.emit({
+        session_id: 7,
+        type: 'ui_action',
+        payload: { action: { type: 'ir.actions.act_window', res_model: 'res.partner' } },
+    });
+    await Promise.resolve();
+    expect(opened).toEqual([]);
+    expect(actions).toHaveLength(1);
+});
+
+
+test('popout is skipped when no active session is loaded', async () => {
+    onRpc('muk_ai.session', 'read', () => [{
+        ...SESSION_RECORD,
+        view_context: { kind: 'record', model: 'res.partner', id: 99 },
+    }]);
+    const opened = [];
+    mockService('muk_ai.chat_window', {
+        state: { windows: [] },
+        open: (id) => { opened.push(id); },
+        close: () => {},
+        toggleMinimized: () => {},
+        get activeSessionId() { return null; },
+    });
+    mockService('action', { doAction: () => Promise.resolve() });
+    makeBusMock();
+    const harness = makeHarness({ surface: 'fullscreen' });
+    await mountWithCleanup(harness.Harness, { props: {} });
+    const session = harness.getSession();
+    session.state.sessionId = null;
+    session.state.viewContext = { kind: 'record', model: 'res.partner', id: 99 };
+    await session.openPinnedContext();
+    expect(opened).toEqual([]);
 });

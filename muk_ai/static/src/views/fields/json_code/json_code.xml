@@ -2,22 +2,14 @@
 <templates xml:space="preserve">
 
     <t t-name="muk_ai.JsonCodeField">
-        <div
-            class="o_field_widget oe_form_field o_ace_view_editor oe_ace_open mk_json_code_wrapper"
-            t-att-style="editorStyle"
-        >
+        <div class="mk_json_code_wrapper" t-att-style="wrapperStyle">
             <CodeEditor
                 value="state.initialValue"
                 mode="props.mode"
                 readonly="props.readonly"
                 onBlur.bind="commitChanges"
                 onChange.bind="handleChange"
-                class="'ace-view-editor'"
-            />
-            <div
-                t-if="state.isEmpty and state.placeholder and !props.readonly"
-                 class="mk_json_code_placeholder text-muted"
-                 t-out="state.placeholder"
+                class="'mk_json_code_editor'"
             />
         </div>
     </t>
