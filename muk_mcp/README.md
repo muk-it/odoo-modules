@@ -74,24 +74,6 @@ Or add it directly to your `claude_code_config.json`:
 }
 ```
 
-**OpenCode**
-
-Add the server to your `.opencode/config.json` or `opencode.json`:
-
-```json
-{
-  "mcp": {
-    "odoo": {
-      "type": "remote",
-      "url": "https://your-odoo.com/mcp",
-      "headers": {
-        "Authorization": "Bearer YOUR_MCP_KEY"
-      }
-    }
-  }
-}
-```
-
 **Claude Desktop**
 
 Add to your `claude_desktop_config.json`:
@@ -101,6 +83,24 @@ Add to your `claude_desktop_config.json`:
   "mcpServers": {
     "odoo": {
       "type": "url",
+      "url": "https://your-odoo.com/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_MCP_KEY"
+      }
+    }
+  }
+}
+```
+
+**OpenCode**
+
+Add the server to your `.opencode/config.json` or `opencode.json`:
+
+```json
+{
+  "mcp": {
+    "odoo": {
+      "type": "remote",
       "url": "https://your-odoo.com/mcp",
       "headers": {
         "Authorization": "Bearer YOUR_MCP_KEY"

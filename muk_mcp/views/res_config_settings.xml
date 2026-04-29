@@ -60,6 +60,13 @@
 						help="Mark chatter messages originating from MCP."
 					>
 						<field name="mcp_annotate_messages"/>
+                        <button
+                            name="%(muk_mcp.action_connect)d"
+                            type="action"
+                            string="Connect AI"
+                            icon="oi-arrow-right"
+                            class="btn-link mt-3"
+                        />
 					</setting>
 				</block>
 			</xpath>
