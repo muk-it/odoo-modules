@@ -11,7 +11,12 @@ def make_jsonrpc_response(result, request_id=None):
     }
 
 
-def make_jsonrpc_error(code, message, data=None, request_id=None):
+def make_jsonrpc_error(
+    code,
+    message,
+    data=None,
+    request_id=None,
+):
     error = {
         'code': code,
         'message': message,
@@ -27,7 +32,11 @@ def make_jsonrpc_error(code, message, data=None, request_id=None):
 
 def parse_jsonrpc_request(raw_body):
     try:
-        data = json.loads(raw_body) if isinstance(raw_body, (str, bytes)) else raw_body
+        data = (
+            json.loads(raw_body) 
+            if isinstance(raw_body, (str, bytes)) 
+            else raw_body
+        )
     except (json.JSONDecodeError, TypeError, ValueError):
         return None, make_jsonrpc_error(
             common.JSONRPC_PARSE_ERROR,
@@ -55,7 +64,7 @@ def parse_jsonrpc_request(raw_body):
 
 
 def make_initialize_result(capabilities=None):
-    caps = {'tools': {}}
+    caps = {'tools': {'listChanged': True}}
     if capabilities:
         caps.update(capabilities)
     return {

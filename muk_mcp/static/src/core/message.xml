@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<templates xml:space="preserve">
+
+    <t t-inherit="mail.Message" t-inherit-mode="extension">
+        <xpath expr="//span[hasclass('o-mail-Message-author')]/strong" position="after">
+            <span
+                t-if="message.mcp_name"
+                class="badge text-bg-info me-1"
+                style="font-size: 0.5rem;"
+                t-attf-title="MCP: {{ message.mcp_name }}"
+            >
+                MCP
+            </span>
+        </xpath>
+    </t>
+
+</templates>

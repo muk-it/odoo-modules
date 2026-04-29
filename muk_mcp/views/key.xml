@@ -8,33 +8,35 @@
 		<field name="arch" type="xml">
 			<kanban create="0" can_open="0">
 				<templates>
-					<t t-name="card" class="flex-row">
-						<div>
+					<t t-name="kanban-box">
+						<div class="oe_kanban_global_click flex-row">
 							<div>
-								<field name="name" class="fw-bold fs-5"/>
-								<field name="create_date" class="ms-2 text-muted"/>
+								<div>
+									<field name="name" class="fw-bold fs-5"/>
+									<field name="create_date" class="ms-2 text-muted"/>
+								</div>
+								<small>Scope: <field name="scope"/></small>
 							</div>
-							<small>Scope: <field name="scope"/></small>
+							<button name="unlink" type="object" string="Delete" class="btn btn-secondary ms-auto my-auto"/>
 						</div>
-						<button name="unlink" type="object" string="Delete" class="btn btn-secondary ms-auto my-auto"/>
 					</t>
 				</templates>
 			</kanban>
 		</field>
 	</record>
 
-	<record id="view_mcp_key_list" model="ir.ui.view">
-		<field name="name">muk_mcp.key.list</field>
+	<record id="view_mcp_key_tree" model="ir.ui.view">
+		<field name="name">muk_mcp.key.tree</field>
 		<field name="model">muk_mcp.key</field>
 		<field name="arch" type="xml">
-			<list create="false" edit="false" delete="true">
+			<tree create="false" edit="false" delete="true">
 				<field name="name"/>
 				<field name="user_id"/>
 				<field name="scope"/>
 				<field name="rate_limit"/>
 				<field name="last_used"/>
 				<field name="active"/>
-			</list>
+			</tree>
 		</field>
 	</record>
 
@@ -69,7 +71,7 @@
 	<record id="action_mcp_key" model="ir.actions.act_window">
 		<field name="name">API Keys</field>
 		<field name="res_model">muk_mcp.key</field>
-		<field name="view_mode">list,form</field>
+		<field name="view_mode">tree,form</field>
 	</record>
 
 </odoo>

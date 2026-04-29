@@ -2,98 +2,34 @@
 
 <odoo>
 
-	<record id="view_users_form" model="ir.ui.view">
-		<field name="name">res.users.form</field>
-		<field name="model">res.users</field>
-		<field name="inherit_id" ref="base.view_users_form"/>
-		<field name="arch" type="xml">
-			<xpath expr="//div[@name='api_keys']" position="after">
-				<div name="mcp_keys" invisible="id != uid" class="d-md-flex mt-3">
-					<div class="col-md-6 col-lg-3 d-flex flex-column">
-						<label for="action_generate_mcp_key" string="MCP Keys" class="o_form_label"/>
-						<span class="text-muted">
-							Connect AI assistants.
-						</span>
-					</div>
-					<div class="w-md-50 w-lg-75 d-flex flex-column my-auto">
-						<field name="mcp_key_ids" mode="kanban" invisible="not mcp_key_ids" class="w-sm-75 w-md-100 w-lg-75 w-xl-50"/>
-						<div>
-							<button
-								name="action_generate_mcp_key"
-								string="Add MCP Key"
-								type="object"
-								class="btn btn-secondary h-100"
-							/>
-						</div>
-					</div>
-				</div>
-				<div name="mcp_sessions" invisible="id != uid" class="d-md-flex mt-3">
-					<div class="col-md-6 col-lg-3 d-flex flex-column">
-						<label for="action_revoke_mcp_sessions" string="MCP Sessions" class="o_form_label"/>
-						<span class="text-muted">
-							Active AI connections.
-						</span>
-					</div>
-					<div class="w-md-50 w-lg-75 d-flex flex-column my-auto">
-						<field name="mcp_session_ids" mode="kanban" invisible="not mcp_session_ids" class="w-sm-75 w-md-100 w-lg-75 w-xl-50"/>
-						<div>
-							<button
-								name="action_revoke_mcp_sessions"
-								string="Revoke all sessions"
-								type="object"
-								class="btn btn-secondary h-100"
-							/>
-						</div>
-					</div>
-				</div>
-			</xpath>
-		</field>
-	</record>
-
 	<record id="view_users_form_simple" model="ir.ui.view">
 		<field name="name">res.users.form.simple</field>
 		<field name="model">res.users</field>
 		<field name="inherit_id" ref="base.view_users_form_simple_modif"/>
 		<field name="arch" type="xml">
-			<xpath expr="//div[@name='api_keys']" position="after">
-				<div name="mcp_keys" invisible="id != uid" class="d-md-flex mt-3">
-					<div class="col-md-6 col-lg-3 d-flex flex-column">
-						<label for="action_generate_mcp_key" string="MCP Keys" class="o_form_label"/>
-						<span class="text-muted">
-							Connect AI assistants.
-						</span>
+			<xpath expr="//page[@name='page_account_security']" position="inside">
+				<group string="MCP Keys">
+					<div class="text-muted" colspan="2">
+						Connect AI assistants.
 					</div>
-					<div class="w-md-50 w-lg-75 d-flex flex-column my-auto">
-						<field name="mcp_key_ids" mode="kanban" invisible="not mcp_key_ids" class="w-sm-75 w-md-100 w-lg-75 w-xl-50"/>
-						<div>
-							<button
-								name="action_generate_mcp_key"
-								string="Add MCP Key"
-								type="object"
-								class="btn btn-secondary h-100"
-							/>
-						</div>
+					<div colspan="2" invisible="not mcp_key_ids">
+						<field name="mcp_key_ids" nolabel="1" colspan="4" readonly="0" mode="kanban"/>
 					</div>
-				</div>
-				<div name="mcp_sessions" invisible="id != uid" class="d-md-flex mt-3">
-					<div class="col-md-6 col-lg-3 d-flex flex-column">
-						<label for="action_revoke_mcp_sessions" string="MCP Sessions" class="o_form_label"/>
-						<span class="text-muted">
-							Active AI connections.
-						</span>
+					<div colspan="2">
+						<button name="action_generate_mcp_key" string="Add MCP Key" type="object" class="btn btn-secondary"/>
 					</div>
-					<div class="w-md-50 w-lg-75 d-flex flex-column my-auto">
-						<field name="mcp_session_ids" mode="kanban" invisible="not mcp_session_ids" class="w-sm-75 w-md-100 w-lg-75 w-xl-50"/>
-						<div>
-							<button
-								name="action_revoke_mcp_sessions"
-								string="Revoke all sessions"
-								type="object"
-								class="btn btn-secondary h-100"
-							/>
-						</div>
+				</group>
+				<group string="MCP Sessions">
+					<div class="text-muted" colspan="2">
+						Active AI connections.
 					</div>
-				</div>
+					<div colspan="2" invisible="not mcp_session_ids">
+						<field name="mcp_session_ids" nolabel="1" colspan="4" readonly="0" mode="kanban"/>
+					</div>
+					<div colspan="2">
+						<button name="action_revoke_mcp_sessions" string="Revoke all sessions" type="object" class="btn btn-secondary"/>
+					</div>
+				</group>
 			</xpath>
 		</field>
 	</record>

@@ -71,6 +71,7 @@ class TestProtocol(common.TransactionCase):
             result['protocolVersion'], mcp_common.MCP_PROTOCOL_VERSION
         )
         self.assertIn('tools', result['capabilities'])
+        self.assertTrue(result['capabilities']['tools']['listChanged'])
         self.assertEqual(
             result['serverInfo']['name'], mcp_common.MCP_SERVER_NAME
         )

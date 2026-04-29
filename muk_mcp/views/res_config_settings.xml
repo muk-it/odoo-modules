@@ -9,19 +9,64 @@
 		<field name="arch" type="xml">
 			<xpath expr="//block[@name='integration']" position="after">
 				<block title="MCP Server" name="mcp_settings">
-					<setting
-						id="mcp_session_timeout"
-						string="Session Timeout"
-						help="Inactive sessions are cleaned up after this many hours."
-					>
-						<field name="mcp_session_timeout"/>
+					<setting id="mcp_session_timeout">
+						<label string="Session Timeout" for="mcp_session_timeout"/>
+						<div class="text-muted">
+							Inactive sessions are cleaned up after this period.
+						</div>
+						<div class="content-group mt16">
+							<div class="row">
+								<div class="o_light_label">
+									<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Timeout" for="mcp_session_timeout"/>
+									<field name="mcp_session_timeout" class="w-25 text-center" nolabel="1"/>
+									<span class="col-auto ms-2">in Hours</span>
+								</div>
+							</div>
+						</div>
+					</setting>
+					<setting id="mcp_log_retention">
+						<label string="Log Retention" for="mcp_log_retention"/>
+						<div class="text-muted">
+							Audit logs older than this period are automatically deleted.
+						</div>
+						<div class="content-group mt16">
+							<div class="row">
+								<div class="o_light_label">
+									<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Retention" for="mcp_log_retention"/>
+									<field name="mcp_log_retention" class="w-25 text-center" nolabel="1"/>
+									<span class="col-auto ms-2">in Days</span>
+								</div>
+							</div>
+						</div>
+					</setting>
+					<setting id="mcp_rate_limit">
+						<label string="Rate Limiting" for="mcp_rate_limit_requests"/>
+						<div class="text-muted">
+							Default rate limit for new API keys. Set to 0 to disable.
+						</div>
+						<div class="content-group mt16">
+							<div class="row">
+								<div class="o_light_label">
+									<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Max requests" for="mcp_rate_limit_requests"/>
+									<field name="mcp_rate_limit_requests" class="w-25 text-center" nolabel="1"/>
+									<span class="col-auto ms-2">per Minute</span>
+								</div>
+							</div>
+						</div>
 					</setting>
 					<setting
-						id="mcp_log_retention"
-						string="Log Retention"
-						help="Audit logs older than this many days are automatically deleted."
+						id="mcp_annotate_messages"
+						string="Annotate Messages"
+						help="Mark chatter messages originating from MCP."
 					>
-						<field name="mcp_log_retention"/>
+						<field name="mcp_annotate_messages"/>
+                        <button
+                            name="%(muk_mcp.action_connect)d"
+                            type="action"
+                            string="Connect AI"
+                            icon="oi-arrow-right"
+                            class="btn-link mt-3"
+                        />
 					</setting>
 				</block>
 			</xpath>

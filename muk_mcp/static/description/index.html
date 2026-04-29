@@ -58,8 +58,9 @@
 				<code>initialize</code>, <code>tools/list</code>, and
 				<code>tools/call</code>. Supports stateful sessions, Server-Sent
 				Events for real-time notifications, and batch requests. Authentication
-				uses Bearer tokens &mdash; either dedicated MCP keys with optional
-				model-level scopes or standard Odoo API keys.
+				uses Bearer tokens &mdash; either dedicated MCP keys scoped to
+				<em>Read Only</em> or <em>Read &amp; Write</em>, or standard Odoo
+				API keys.
 			</p>
 		</div>
 	</div>
@@ -93,6 +94,21 @@
     }
   }
 }</pre>
+            <h4 style="margin-top:20px; font-weight:600;">Claude Desktop</h4>
+			<p>
+				Add to your <code>claude_desktop_config.json</code>:
+			</p>
+			<pre style="line-height:1.4; background-color:#fdfdfd; padding:12px; border:1px solid #e0e0e0; border-radius:4px; font-size:13px;">{
+  "mcpServers": {
+    "odoo": {
+      "type": "url",
+      "url": "https://your-odoo.com/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_MCP_KEY"
+      }
+    }
+  }
+}</pre>
 			<h4 style="margin-top:20px; font-weight:600;">OpenCode</h4>
 			<p>
 				Add to your <code>.opencode/config.json</code> or <code>opencode.json</code>:
@@ -101,21 +117,6 @@
   "mcp": {
     "odoo": {
       "type": "remote",
-      "url": "https://your-odoo.com/mcp",
-      "headers": {
-        "Authorization": "Bearer YOUR_MCP_KEY"
-      }
-    }
-  }
-}</pre>
-			<h4 style="margin-top:20px; font-weight:600;">Claude Desktop</h4>
-			<p>
-				Add to your <code>claude_desktop_config.json</code>:
-			</p>
-			<pre style="line-height:1.4; background-color:#fdfdfd; padding:12px; border:1px solid #e0e0e0; border-radius:4px; font-size:13px;">{
-  "mcpServers": {
-    "odoo": {
-      "type": "url",
       "url": "https://your-odoo.com/mcp",
       "headers": {
         "Authorization": "Bearer YOUR_MCP_KEY"
@@ -147,7 +148,35 @@
 <section class="oe_container">
 	<div class="oe_row oe_spaced">
 		<div class="text-justify" style="max-width:84%; margin:16px 8%">
-			<h3 class="oe_slogan">15 Built-in Tools</h3>
+			<h3 class="oe_slogan">Built-in Playground</h3>
+			<p>
+				Test every registered tool directly inside Odoo &mdash; no external
+				MCP client required. Open <em>Settings &gt; Technical &gt; MCP &gt;
+				Playground</em> to see the same tool list your AI client sees,
+				auto-rendered input forms driven by each tool's JSON Schema, and a
+				one-click &ldquo;Try it&rdquo; that hits the real <code>/mcp</code>
+				endpoint with a Bearer token.
+			</p>
+			<p>
+				Pick an existing MCP key or generate a fresh one in place; the
+				plaintext stays in the tab's <code>sessionStorage</code> and is
+				never persisted server-side after generation. The result panel
+				shows HTTP status, round-trip time, the parsed tool output, and
+				the raw JSON-RPC payload, with <strong>Copy curl</strong> and
+				<strong>Copy JSON-RPC</strong> helpers for reproducing any call
+				from the terminal or another client.
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_playground.png">
+            </div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">17 Built-in Tools</h3>
 			<p>
 				Ships with a complete set of ORM tools covering the full lifecycle
 				of Odoo data &mdash; from discovery to manipulation. Every tool is
@@ -174,12 +203,12 @@
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;">List installed modules with versions and states</td>
 					</tr>
 					<tr>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>get_model_schema</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>describe_model</code></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">Read</span></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Get field definitions, types, relations, and selection values</td>
 					</tr>
 					<tr>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>get_user_context</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>whoami</code></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">Read</span></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Authenticated user info, company, language, and security groups</td>
 					</tr>
@@ -194,7 +223,7 @@
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Search records by domain with pagination and sorting</td>
 					</tr>
 					<tr>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>read_record</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>read_records</code></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">Read</span></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Read specific records by their database IDs</td>
 					</tr>
@@ -209,22 +238,32 @@
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Grouped aggregation (GROUP BY) with sum/count</td>
 					</tr>
 					<tr>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>get_record_messages</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>get_messages</code></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">Read</span></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Retrieve chatter history, comments, and field tracking</td>
 					</tr>
 					<tr>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>create_record</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>print_report</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">Read</span></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Render PDF/text/HTML reports and return the binary as base64</td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>export_records</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">Read</span></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Export records to CSV or XLSX with relation traversal via <code>/</code> paths</td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>create_records</code></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#fff3cd; color:#856404; padding:2px 8px; border-radius:3px; font-size:12px;">Write</span></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Create new records with relational field support</td>
 					</tr>
 					<tr>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>update_record</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>update_records</code></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#fff3cd; color:#856404; padding:2px 8px; border-radius:3px; font-size:12px;">Write</span></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Partial updates on existing records by ID</td>
 					</tr>
 					<tr>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>delete_record</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>delete_records</code></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#fff3cd; color:#856404; padding:2px 8px; border-radius:3px; font-size:12px;">Write</span></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Permanently delete records by ID</td>
 					</tr>
@@ -234,7 +273,7 @@
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Post comments or internal notes on chatter threads</td>
 					</tr>
 					<tr>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>execute_method</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>call_method</code></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#fff3cd; color:#856404; padding:2px 8px; border-radius:3px; font-size:12px;">Write</span></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Call any public method on a model (private methods blocked)</td>
 					</tr>
@@ -249,14 +288,56 @@
 		<div class="text-justify" style="max-width:84%; margin:16px 8%">
 			<h3 class="oe_slogan">Extensible Tool Registry</h3>
 			<p>
-				Add custom tools directly through the backend UI at
-				<em>Settings &gt; MCP Server &gt; Tools</em> &mdash; no code
-				deployment required. Each tool consists of a name, description, JSON
+				Ship tools from your own Odoo addons with the
+				<code>@mcp_tool</code> decorator &mdash; version-controlled,
+				testable, and running without the sandbox overhead. Inherit the
+				<code>muk_mcp.mixin</code> abstract model and decorate any public
+				method: the scanner picks it up at startup and exposes it to every
+				MCP client on the next <code>tools/list</code>. Declare
+				<code>category='read'</code> or <code>'write'</code> to gate it
+				against the caller's key scope.
+			</p>
+			<p>
+				For admins and power users, the backend UI at
+				<em>Settings &gt; MCP Server &gt; Tools</em> adds tools without a
+				code deployment. Each DB tool carries a name, description, JSON
 				Schema for input parameters, and Python code executed in a sandboxed
 				<code>safe_eval</code> context. Tools can be enabled, disabled, and
-				reordered individually. The AI client is automatically notified when
-				the tool list changes.
+				reordered individually. Database tools with the same name as a
+				Python tool shadow it &mdash; handy for runtime overrides. The AI
+				client is automatically notified when the tool list changes.
 			</p>
+			<p>
+				An optional <strong>registry</strong> field lets downstream
+				modules restrict a tool to a specific surface. External MCP
+				clients, in-Odoo AI agents, and scheduled jobs can share the
+				same tool catalog or be scoped to their own subset &mdash; a
+				tool left unset is visible to every caller, and values can be
+				added via Odoo's <code>selection_add</code> pattern without
+				touching <code>muk_mcp</code> itself.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">MCP Label</h3>
+			<p>
+				Every chatter message authored by an MCP tool is tagged with a
+				small <strong>MCP</strong> badge next to the author name, so
+				it is immediately obvious which comments, status changes, and
+				tracking entries came from an AI client and which came from a
+				human. The badge's tooltip shows the name of the MCP key that
+				created the message &mdash; handy when multiple clients share
+				the same user account. Annotation is on by default and can be
+				toggled via <em>Settings &gt; General Settings &gt; MCP Server
+				&gt; Annotate Messages</em>.
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_indicator.png">
+            </div>
 		</div>
 	</div>
 </section>
@@ -266,10 +347,11 @@
 		<div class="text-justify" style="max-width:84%; margin:16px 8%">
 			<h3 class="oe_slogan">Security &amp; Access Control</h3>
 			<p>
-				Every MCP key supports fine-grained <strong>Model Scopes</strong>
-				&mdash; restrict access to specific models with independent read,
-				write, create, and delete permissions. Keys without scopes have
-				unrestricted access (subject to the user's own Odoo permissions).
+				Every MCP key carries a <strong>scope</strong> &mdash;
+				<em>Read Only</em> keys can only call tools in the <code>read</code>
+				category, <em>Read &amp; Write</em> keys can call both. All calls
+				run as the key's owner, so Odoo's record rules, field-level ACLs,
+				and model access rights apply on top of the scope check.
 			</p>
 			<p>
 				Built-in <strong>rate limiting</strong> (configurable per key,

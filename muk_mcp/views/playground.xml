@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="action_mcp_playground" model="ir.actions.client">
+		<field name="name">MCP Playground</field>
+		<field name="tag">muk_mcp.playground</field>
+	</record>
+
+</odoo>

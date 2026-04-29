@@ -1,7 +1,7 @@
 import json
 import uuid
 
-from odoo import api, fields, models
+from odoo import api, fields, models, tools
 
 
 class MCPNotification(models.Model):
@@ -69,7 +69,29 @@ class MCPNotification(models.Model):
     # Cron
     # ----------------------------------------------------------
 
+    # ----------------------------------------------------------
+    # ORM
+    # ----------------------------------------------------------
+
+    def init(self):
+        super().init()
+        tools.create_index(
+            self.env.cr,
+            'muk_mcp_notification_undelivered_idx',
+            self._table,
+            ['session_id', 'id'],
+            where='delivered IS NOT TRUE',
+        )
+
     @api.autovacuum
     def _autovacuum_notifications(self):
-        limit = fields.Datetime.subtract(fields.Datetime.now(), days=1)
-        self.search([('delivered', '=', True), ('create_date', '<', limit)]).unlink()
+        delivered_limit = fields.Datetime.subtract(fields.Datetime.now(), days=1)
+        stale_limit = fields.Datetime.subtract(fields.Datetime.now(), days=7)
+        domain = [
+            '|',
+            '&', ('delivered', '=', True), ('create_date', '<', delivered_limit),
+            '&', ('delivered', '=', False), ('create_date', '<', stale_limit),
+        ]
+        while batch := self.search(domain, limit=5000):
+            batch.unlink()
+            self.env.cr.commit()

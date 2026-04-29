@@ -1,5 +1,7 @@
 import json
 
+from werkzeug.exceptions import HTTPException
+
 from odoo import http
 from odoo.http import Response
 
@@ -7,6 +9,10 @@ from odoo.http import Response
 class MCPDispatcher(http.Dispatcher):
 
     routing_type = 'mcp'
+
+    # ----------------------------------------------------------
+    # Functions
+    # ----------------------------------------------------------
 
     @classmethod
     def is_compatible_with(cls, request):
@@ -35,6 +41,8 @@ class MCPDispatcher(http.Dispatcher):
         return self.request.make_json_response(result)
 
     def handle_error(self, exc):
+        if isinstance(exc, HTTPException):
+            return exc
         error = {
             'jsonrpc': '2.0',
             'id': None,

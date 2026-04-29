@@ -15,6 +15,14 @@
 		name="Tools"
 		parent="menu_mcp_root"
 		action="action_mcp_tool"
+		sequence="5"
+	/>
+
+	<menuitem
+		id="menu_connect"
+		name="Connect"
+		parent="menu_mcp_root"
+		action="action_connect"
 		sequence="10"
 	/>
 
@@ -32,6 +40,14 @@
 		parent="menu_mcp_root"
 		action="action_mcp_log"
 		sequence="30"
+	/>
+
+	<menuitem
+		id="menu_mcp_playground"
+		name="Playground"
+		parent="menu_mcp_root"
+		action="action_mcp_playground"
+		sequence="35"
 	/>
 
 	<menuitem
