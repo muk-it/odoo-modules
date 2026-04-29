@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_show_key_form" model="ir.ui.view">
+		<field name="name">muk_mcp.key.show.form</field>
+		<field name="model">muk_mcp.key.show</field>
+		<field name="arch" type="xml">
+			<form create="false" edit="false">
+				<div class="alert alert-warning mb-3" role="alert">
+					<strong>Copy this key now.</strong>It will not be shown again.
+				</div>
+				<group>
+					<field name="key" widget="CopyClipboardChar"/>
+				</group>
+				<footer>
+					<button string="Done" class="btn-primary" special="cancel"/>
+				</footer>
+			</form>
+		</field>
+	</record>
+
+</odoo>

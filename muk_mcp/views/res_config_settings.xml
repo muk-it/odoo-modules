@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_res_config_settings_form" model="ir.ui.view">
+		<field name="name">res.config.settings.form</field>
+		<field name="model">res.config.settings</field>
+		<field name="inherit_id" ref="base_setup.res_config_settings_view_form"/>
+		<field name="arch" type="xml">
+			<xpath expr="//div[@name='integration']" position="after">
+				<h2>MCP Server</h2>
+				<div class="row mt16 o_settings_container" name="mcp_settings">
+					<div class="col-12 col-lg-6 o_setting_box" id="mcp_session_timeout">
+						<div class="o_setting_right_pane">
+							<label string="Session Timeout" for="mcp_session_timeout"/>
+							<div class="text-muted">
+								Inactive sessions are cleaned up after this period.
+							</div>
+							<div class="content-group">
+								<div class="o_row mt16">
+									<div class="o_light_label">
+										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Timeout" for="mcp_session_timeout"/>
+										<field name="mcp_session_timeout" class="w-25 text-center" nolabel="1"/>
+										<span class="col-auto ms-2">in Hours</span>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-12 col-lg-6 o_setting_box" id="mcp_log_retention">
+						<div class="o_setting_right_pane">
+							<label string="Log Retention" for="mcp_log_retention"/>
+							<div class="text-muted">
+								Audit logs older than this period are automatically deleted.
+							</div>
+							<div class="content-group">
+								<div class="o_row mt16">
+									<div class="o_light_label">
+										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Retention" for="mcp_log_retention"/>
+										<field name="mcp_log_retention" class="w-25 text-center" nolabel="1"/>
+										<span class="col-auto ms-2">in Days</span>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-12 col-lg-6 o_setting_box" id="mcp_rate_limit">
+						<div class="o_setting_right_pane">
+							<label string="Rate Limiting" for="mcp_rate_limit_requests"/>
+							<div class="text-muted">
+								Default rate limit for new API keys. Set to 0 to disable.
+							</div>
+							<div class="content-group">
+								<div class="o_row mt16">
+									<div class="o_light_label">
+										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Max requests" for="mcp_rate_limit_requests"/>
+										<field name="mcp_rate_limit_requests" class="w-25 text-center" nolabel="1"/>
+										<span class="col-auto ms-2">per Minute</span>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-12 col-lg-6 o_setting_box" id="mcp_annotate_messages">
+						<div class="o_setting_left_pane">
+							<field name="mcp_annotate_messages"/>
+						</div>
+						<div class="o_setting_right_pane">
+							<label string="Annotate Messages" for="mcp_annotate_messages"/>
+							<div class="text-muted">
+								Mark chatter messages originating from MCP.
+							</div>
+							<div class="content-group">
+								<button
+									name="%(muk_mcp.action_connect)d"
+									type="action"
+									string="Connect AI"
+									icon="oi-arrow-right"
+									class="btn-link mt-3"
+								/>
+							</div>
+						</div>
+					</div>
+				</div>
+			</xpath>
+		</field>
+	</record>
+
+</odoo>

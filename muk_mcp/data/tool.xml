@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo noupdate="1">
+
+    <record id="tool_get_messages" model="muk_mcp.tool">
+        <field name="name">get_messages</field>
+        <field name="description">Get the chatter messages and activity log for a specific record. Returns the message history including comments, notes, status changes, and field tracking (who changed what and when). Requires the 'mail' module to be installed. Use this to understand the history of a record — e.g. who approved a purchase order, when was an invoice sent, what notes were left on a contact.</field>
+        <field name="category">read</field>
+        <field name="sequence">14</field>
+        <field name="code">
+model_name = arguments.get('model')
+if not model_name or model_name not in env:
+    result = {'error': 'Model %r not found' % model_name}
+else:
+    record_id = arguments.get('id')
+    if not record_id:
+        result = {'error': 'Record ID is required'}
+    elif not env[model_name].search_count([('id', '=', record_id)]):
+        result = {'error': 'Record %s/%s not found' % (model_name, record_id)}
+    else:
+        result = env['mail.message'].search_read(
+            [('model', '=', model_name), ('res_id', '=', record_id)],
+            fields=[
+                'date', 'author_id', 'message_type', 'subtype_id',
+                'body', 'tracking_value_ids',
+            ],
+            limit=arguments.get('limit', 20),
+            order='date desc',
+        )
+        </field>
+        <field name="input_schema">{
+    "type": "object",
+    "properties": {
+        "model": {
+            "type": "string",
+            "description": "Technical model name (e.g. 'sale.order')."
+        },
+        "id": {
+            "type": "integer",
+            "description": "The record ID to get messages for."
+        },
+        "limit": {
+            "type": "integer",
+            "description": "Maximum number of messages to return (newest first).",
+            "default": 20
+        },
+        "context": {
+            "type": "object",
+            "description": "Optional Odoo context overrides."
+        }
+    },
+    "required": ["model", "id"]
+}</field>
+    </record>
+
+    <record id="tool_post_message" model="muk_mcp.tool">
+        <field name="name">post_message</field>
+        <field name="description">Post a message on a record's chatter (the discussion thread). This is used to leave comments, notes, or send notifications on any record that has the mail.thread mixin (most business records like sale.order, account.move, project.task, etc.). Use type 'comment' for messages visible to followers, or 'note' for internal notes only visible to internal users.</field>
+        <field name="category">write</field>
+        <field name="sequence">23</field>
+        <field name="code">
+model_name = arguments.get('model')
+if not model_name or model_name not in env:
+    result = {'error': 'Model %r not found' % model_name}
+else:
+    record_id = arguments.get('id')
+    if not record_id:
+        result = {'error': 'Record ID is required'}
+    else:
+        body = arguments.get('body', '')
+        if not body:
+            result = {'error': 'Message body is required'}
+        else:
+            msg_type = arguments.get('type', 'comment')
+            subtype = arguments.get('subtype')
+            if msg_type == 'note':
+                msg_type = 'comment'
+                if not subtype:
+                    subtype = 'mail.mt_note'
+            if not subtype:
+                subtype = 'mail.mt_comment'
+            record = env[model_name].browse(record_id)
+            msg = record.message_post(
+                body=body,
+                message_type=msg_type,
+                subtype_xmlid=subtype,
+            )
+            result = {'id': msg.id, 'date': str(msg.date)}
+        </field>
+        <field name="input_schema">{
+    "type": "object",
+    "properties": {
+        "model": {
+            "type": "string",
+            "description": "Technical model name."
+        },
+        "id": {
+            "type": "integer",
+            "description": "The record ID to post the message on."
+        },
+        "body": {
+            "type": "string",
+            "description": "The message content (can contain HTML)."
+        },
+        "type": {
+            "type": "string",
+            "description": "Message type: 'comment' (visible to followers) or 'note' (internal note).",
+            "enum": ["comment", "note"],
+            "default": "comment"
+        },
+        "context": {
+            "type": "object",
+            "description": "Optional Odoo context overrides."
+        }
+    },
+    "required": ["model", "id", "body"]
+}</field>
+    </record>
+
+</odoo>

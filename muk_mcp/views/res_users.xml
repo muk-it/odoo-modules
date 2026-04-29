@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_users_form_simple" model="ir.ui.view">
+		<field name="name">res.users.form.simple</field>
+		<field name="model">res.users</field>
+		<field name="inherit_id" ref="base.view_users_form_simple_modif"/>
+		<field name="arch" type="xml">
+			<group name="auth" position="after">
+				<group string="MCP Keys">
+					<div class="text-muted" colspan="2">
+						Connect AI assistants.
+					</div>
+					<div colspan="2" attrs="{'invisible': [('mcp_key_ids', '=', [])]}">
+						<field name="mcp_key_ids" nolabel="1" colspan="4" readonly="0" mode="kanban"/>
+					</div>
+					<div colspan="2">
+						<button name="action_generate_mcp_key" string="Add MCP Key" type="object" class="btn btn-secondary"/>
+					</div>
+				</group>
+				<group string="MCP Sessions">
+					<div class="text-muted" colspan="2">
+						Active AI connections.
+					</div>
+					<div colspan="2" attrs="{'invisible': [('mcp_session_ids', '=', [])]}">
+						<field name="mcp_session_ids" nolabel="1" colspan="4" readonly="0" mode="kanban"/>
+					</div>
+					<div colspan="2">
+						<button name="action_revoke_mcp_sessions" string="Revoke all sessions" type="object" class="btn btn-secondary"/>
+					</div>
+				</group>
+			</group>
+		</field>
+	</record>
+
+</odoo>

@@ -1,0 +1,475 @@
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<h2 class="oe_slogan">MuK MCP Server</h2>
+		<h3 class="oe_slogan mb-0">Model Context Protocol Server for AI Agent Integration</h3>
+		<img src="logo.png" style="width: 150px;" class="mx-auto center-block">
+		<h4 class="oe_slogan mt-0" style="font-size: 23px">MuK IT GmbH - www.mukit.at</h4>
+		<div class="mb-4" style="text-align: center;">
+			<span 
+				class="btn btn-sm mb-2" 
+				style="font-size:14px; font-weight:500; background-color:#243742; color:#fff; cursor:default;"
+			>
+				<i class="fa fa-check"></i> Community
+			</span>
+			<span 
+				class="btn btn-sm mb-2" 
+				style="font-size:14px; font-weight:500; background-color:#5D8DA8; color:#fff; cursor:default;"
+			>
+				<i class="fa fa-check me-1"></i> Enterprise
+			</span>
+		</div>
+		<div class="oe_demo oe_screenshot"
+			style="max-width: 84%; margin: 16px 8%">
+			<img src="screenshot.png">
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width: 84%; margin: 16px 8%;">
+			<h3 class="oe_slogan">Overview</h3>
+			<p class="oe_mt32">
+				Turn your Odoo instance into a native MCP (Model Context Protocol)
+				server. Any MCP-compatible AI client &mdash; Claude Code, OpenCode,
+				Claude Desktop, Cursor, Windsurf, Codex CLI &mdash; can connect to the
+				<code>/mcp</code> endpoint and interact with your business data through
+				a standardized set of tools. No middleware, no extra processes.
+				Odoo <strong>is</strong> the MCP server.
+			</p>
+			<p>
+				Ships with 15 production-ready tools covering the full Odoo ORM
+				surface: model discovery, schema introspection, search, read, create,
+				update, delete, grouped aggregation, method execution, and chatter
+				integration. Add your own tools through the backend UI &mdash;
+				no code deployment required.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Native MCP Endpoint</h3>
+			<p>
+				The <code>/mcp</code> endpoint speaks the full MCP Streamable HTTP
+				protocol natively, handling JSON-RPC 2.0 messages for
+				<code>initialize</code>, <code>tools/list</code>, and
+				<code>tools/call</code>. Supports stateful sessions, Server-Sent
+				Events for real-time notifications, and batch requests. Authentication
+				uses Bearer tokens &mdash; either dedicated MCP keys scoped to
+				<em>Read Only</em> or <em>Read &amp; Write</em>, or standard Odoo
+				API keys.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Client Setup</h3>
+			<p>
+				Connect your preferred AI coding assistant in seconds. Generate an MCP
+				key from your Odoo user preferences, then add the server to your
+				client configuration.
+			</p>
+			<h4 style="margin-top:20px; font-weight:600;">Claude Code</h4>
+			<pre style="line-height:1.4; background-color:#fdfdfd; padding:12px; border:1px solid #e0e0e0; border-radius:4px; font-size:13px;">claude mcp add odoo \
+  --transport http \
+  --url https://your-odoo.com/mcp \
+  --header "Authorization: Bearer YOUR_MCP_KEY"</pre>
+			<p style="margin-top:8px;">
+				Or add to your <code>claude_code_config.json</code>:
+			</p>
+			<pre style="line-height:1.4; background-color:#fdfdfd; padding:12px; border:1px solid #e0e0e0; border-radius:4px; font-size:13px;">{
+  "mcpServers": {
+    "odoo": {
+      "type": "url",
+      "url": "https://your-odoo.com/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_MCP_KEY"
+      }
+    }
+  }
+}</pre>
+            <h4 style="margin-top:20px; font-weight:600;">Claude Desktop</h4>
+			<p>
+				Add to your <code>claude_desktop_config.json</code>:
+			</p>
+			<pre style="line-height:1.4; background-color:#fdfdfd; padding:12px; border:1px solid #e0e0e0; border-radius:4px; font-size:13px;">{
+  "mcpServers": {
+    "odoo": {
+      "type": "url",
+      "url": "https://your-odoo.com/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_MCP_KEY"
+      }
+    }
+  }
+}</pre>
+			<h4 style="margin-top:20px; font-weight:600;">OpenCode</h4>
+			<p>
+				Add to your <code>.opencode/config.json</code> or <code>opencode.json</code>:
+			</p>
+			<pre style="line-height:1.4; background-color:#fdfdfd; padding:12px; border:1px solid #e0e0e0; border-radius:4px; font-size:13px;">{
+  "mcp": {
+    "odoo": {
+      "type": "remote",
+      "url": "https://your-odoo.com/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_MCP_KEY"
+      }
+    }
+  }
+}</pre>
+			<h4 style="margin-top:20px; font-weight:600;">Cursor</h4>
+			<p>
+				Add to your <code>.cursor/mcp.json</code>:
+			</p>
+			<pre style="line-height:1.4; background-color:#fdfdfd; padding:12px; border:1px solid #e0e0e0; border-radius:4px; font-size:13px;">{
+  "mcpServers": {
+    "odoo": {
+      "url": "https://your-odoo.com/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_MCP_KEY"
+      }
+    }
+  }
+}</pre>
+			<h4 style="margin-top:20px; font-weight:600;">Codex CLI</h4>
+			<pre style="line-height:1.4; background-color:#fdfdfd; padding:12px; border:1px solid #e0e0e0; border-radius:4px; font-size:13px;">codex --mcp-server "odoo=https://your-odoo.com/mcp" \
+      --mcp-header "odoo=Authorization: Bearer YOUR_MCP_KEY"</pre>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Built-in Playground</h3>
+			<p>
+				Test every registered tool directly inside Odoo &mdash; no external
+				MCP client required. Open <em>Settings &gt; Technical &gt; MCP &gt;
+				Playground</em> to see the same tool list your AI client sees,
+				auto-rendered input forms driven by each tool's JSON Schema, and a
+				one-click &ldquo;Try it&rdquo; that hits the real <code>/mcp</code>
+				endpoint with a Bearer token.
+			</p>
+			<p>
+				Pick an existing MCP key or generate a fresh one in place; the
+				plaintext stays in the tab's <code>sessionStorage</code> and is
+				never persisted server-side after generation. The result panel
+				shows HTTP status, round-trip time, the parsed tool output, and
+				the raw JSON-RPC payload, with <strong>Copy curl</strong> and
+				<strong>Copy JSON-RPC</strong> helpers for reproducing any call
+				from the terminal or another client.
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_playground.png">
+            </div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">17 Built-in Tools</h3>
+			<p>
+				Ships with a complete set of ORM tools covering the full lifecycle
+				of Odoo data &mdash; from discovery to manipulation. Every tool is
+				manageable via the backend UI and can be enabled, disabled, or
+				customized individually.
+			</p>
+			<table style="width:100%; border-collapse:collapse; margin-top:16px; font-size:14px;">
+				<thead>
+					<tr style="background-color:#f5f5f5; text-align:left;">
+						<th style="padding:10px 12px; border-bottom:2px solid #ddd;">Tool</th>
+						<th style="padding:10px 12px; border-bottom:2px solid #ddd;">Category</th>
+						<th style="padding:10px 12px; border-bottom:2px solid #ddd;">Description</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>list_models</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">Read</span></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Discover available Odoo models by substring search</td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>list_modules</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">Read</span></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">List installed modules with versions and states</td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>describe_model</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">Read</span></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Get field definitions, types, relations, and selection values</td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>whoami</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">Read</span></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Authenticated user info, company, language, and security groups</td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>get_access_rights</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">Read</span></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Check CRUD permissions and list access control rules</td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>search_read</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">Read</span></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Search records by domain with pagination and sorting</td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>read_records</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">Read</span></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Read specific records by their database IDs</td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>search_count</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">Read</span></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Count records matching a domain filter</td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>read_group</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">Read</span></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Grouped aggregation (GROUP BY) with sum/count</td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>get_messages</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">Read</span></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Retrieve chatter history, comments, and field tracking</td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>print_report</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">Read</span></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Render PDF/text/HTML reports and return the binary as base64</td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>export_records</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">Read</span></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Export records to CSV or XLSX with relation traversal via <code>/</code> paths</td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>create_records</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#fff3cd; color:#856404; padding:2px 8px; border-radius:3px; font-size:12px;">Write</span></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Create new records with relational field support</td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>update_records</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#fff3cd; color:#856404; padding:2px 8px; border-radius:3px; font-size:12px;">Write</span></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Partial updates on existing records by ID</td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>delete_records</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#fff3cd; color:#856404; padding:2px 8px; border-radius:3px; font-size:12px;">Write</span></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Permanently delete records by ID</td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>post_message</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#fff3cd; color:#856404; padding:2px 8px; border-radius:3px; font-size:12px;">Write</span></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Post comments or internal notes on chatter threads</td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>call_method</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#fff3cd; color:#856404; padding:2px 8px; border-radius:3px; font-size:12px;">Write</span></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Call any public method on a model (private methods blocked)</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Extensible Tool Registry</h3>
+			<p>
+				Ship tools from your own Odoo addons with the
+				<code>@mcp_tool</code> decorator &mdash; version-controlled,
+				testable, and running without the sandbox overhead. Inherit the
+				<code>muk_mcp.mixin</code> abstract model and decorate any public
+				method: the scanner picks it up at startup and exposes it to every
+				MCP client on the next <code>tools/list</code>. Declare
+				<code>category='read'</code> or <code>'write'</code> to gate it
+				against the caller's key scope.
+			</p>
+			<p>
+				For admins and power users, the backend UI at
+				<em>Settings &gt; MCP Server &gt; Tools</em> adds tools without a
+				code deployment. Each DB tool carries a name, description, JSON
+				Schema for input parameters, and Python code executed in a sandboxed
+				<code>safe_eval</code> context. Tools can be enabled, disabled, and
+				reordered individually. Database tools with the same name as a
+				Python tool shadow it &mdash; handy for runtime overrides. The AI
+				client is automatically notified when the tool list changes.
+			</p>
+			<p>
+				An optional <strong>registry</strong> field lets downstream
+				modules restrict a tool to a specific surface. External MCP
+				clients, in-Odoo AI agents, and scheduled jobs can share the
+				same tool catalog or be scoped to their own subset &mdash; a
+				tool left unset is visible to every caller, and values can be
+				added via Odoo's <code>selection_add</code> pattern without
+				touching <code>muk_mcp</code> itself.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">MCP Label</h3>
+			<p>
+				Every chatter message authored by an MCP tool is tagged with a
+				small <strong>MCP</strong> badge next to the author name, so
+				it is immediately obvious which comments, status changes, and
+				tracking entries came from an AI client and which came from a
+				human. The badge's tooltip shows the name of the MCP key that
+				created the message &mdash; handy when multiple clients share
+				the same user account. Annotation is on by default and can be
+				toggled via <em>Settings &gt; General Settings &gt; MCP Server
+				&gt; Annotate Messages</em>.
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_indicator.png">
+            </div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Security &amp; Access Control</h3>
+			<p>
+				Every MCP key carries a <strong>scope</strong> &mdash;
+				<em>Read Only</em> keys can only call tools in the <code>read</code>
+				category, <em>Read &amp; Write</em> keys can call both. All calls
+				run as the key's owner, so Odoo's record rules, field-level ACLs,
+				and model access rights apply on top of the scope check.
+			</p>
+			<p>
+				Built-in <strong>rate limiting</strong> (configurable per key,
+				default 60 req/min) protects against runaway AI loops. A full
+				<strong>audit log</strong> records every MCP request with method,
+				tool, model, duration, and status &mdash; accessible at
+				<em>Settings &gt; MCP Server &gt; Audit Log</em>.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Session Management</h3>
+			<p>
+				The server maintains stateful sessions per the MCP specification.
+				Sessions track the last activity timestamp and are automatically
+				cleaned up after the configured timeout (default: 24 hours). Users
+				can view and revoke their active MCP sessions from their user
+				preferences. Administrators can manage all sessions from the
+				backend menu.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container oe_dark d-flex justify-content-around align-items-lg-center flex-column flex-lg-row">
+	<div class="d-flex flex-column m-3 ms-lg-4">
+		<h3 class="oe_slogan mb-3 mt-3 text-left">
+			<i class="fa fa-comments mr8"></i>Want more?
+		</h3>
+		<p>
+			Are you having troubles with your Odoo integration? Or do you feel
+			your system lacks of essential features? <br>If your answer is <b>YES</b>
+			to one of the above questions, feel free to contact us at anytime
+			with your inquiry. <br>We are looking forward to discuss your
+			needs and plan the next steps with you. <br>
+		</p>
+	</div>
+	<div class="oe_slogan d-flex flex-column ms-1 me-1 ms-lg-4 me-lg-4 flex-grow-1">
+		<a class="btn btn-primary btn-lg m-3" href="mailto:sale@mukit.at?subject=Request%20Quote" style="font-size:1.2rem">
+			<i class="fa fa-envelope me-1"></i>REQUEST QUOTE
+		</a>
+
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<h3 class="oe_slogan">Our Services</h3>
+		<div class="d-flex justify-content-between">
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="/service_development.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3 
+						class="oe_slogan" 
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Development
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="/service_integration.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3 
+						class="oe_slogan" 
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Integration
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="/service_infrastructure.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3 
+						class="oe_slogan" 
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Infrastructure
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="/service_training.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3 
+						class="oe_slogan" 
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Training
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="/service_support.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3 
+						class="oe_slogan" 
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Support
+					</h3>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>

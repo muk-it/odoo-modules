@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<menuitem
+		id="menu_mcp_root"
+		name="MCP"
+		sequence="6"
+		groups="base.group_system"
+		parent="base.menu_administration"
+	/>
+
+	<menuitem
+		id="menu_mcp_tools"
+		name="Tools"
+		parent="menu_mcp_root"
+		action="action_mcp_tool"
+		sequence="5"
+	/>
+
+	<menuitem
+		id="menu_connect"
+		name="Connect"
+		parent="menu_mcp_root"
+		action="action_connect"
+		sequence="10"
+	/>
+
+	<menuitem
+		id="menu_mcp_keys"
+		name="API Keys"
+		parent="menu_mcp_root"
+		action="action_mcp_key"
+		sequence="20"
+	/>
+
+	<menuitem
+		id="menu_mcp_log"
+		name="Audit Log"
+		parent="menu_mcp_root"
+		action="action_mcp_log"
+		sequence="30"
+	/>
+
+	<menuitem
+		id="menu_mcp_playground"
+		name="Playground"
+		parent="menu_mcp_root"
+		action="action_mcp_playground"
+		sequence="35"
+	/>
+
+	<menuitem
+		id="menu_mcp_sessions"
+		name="Sessions"
+		parent="menu_mcp_root"
+		action="action_mcp_session"
+		sequence="40"
+		groups="base.group_no_one"
+	/>
+
+	<menuitem
+		id="menu_mcp_notifications"
+		name="Notifications"
+		parent="menu_mcp_root"
+		action="action_mcp_notification"
+		sequence="50"
+		groups="base.group_no_one"
+	/>
+
+</odoo>

@@ -1,0 +1,1194 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* muk_mcp
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-29 20:37+0000\n"
+"PO-Revision-Date: 2026-04-29 20:37+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "<span class=\"col-auto ms-2\">in Days</span>"
+msgstr "<span class=\"col-auto ms-2\">en días</span>"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "<span class=\"col-auto ms-2\">in Hours</span>"
+msgstr "<span class=\"col-auto ms-2\">en horas</span>"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "<span class=\"col-auto ms-2\">per Minute</span>"
+msgstr "<span class=\"col-auto ms-2\">por minuto</span>"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_session_kanban
+msgid "<span class=\"fw-bold fs-5\">MCP Session</span>"
+msgstr "<span class=\"fw-bold fs-5\">Sesión MCP</span>"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_users_form
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_users_form_simple
+msgid ""
+"<span class=\"text-muted\">\n"
+"\t\t\t\t\t\t\tActive AI connections.\n"
+"\t\t\t\t\t\t</span>"
+msgstr ""
+"<span class=\"text-muted\">\n"
+"\t\t\t\t\t\t\tConexiones de IA activas.\n"
+"\t\t\t\t\t\t</span>"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_users_form
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_users_form_simple
+msgid ""
+"<span class=\"text-muted\">\n"
+"\t\t\t\t\t\t\tConnect AI assistants.\n"
+"\t\t\t\t\t\t</span>"
+msgstr ""
+"<span class=\"text-muted\">\n"
+"\t\t\t\t\t\t\tConectar asistentes de IA.\n"
+"\t\t\t\t\t\t</span>"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_show_key_form
+msgid "<strong>Copy this key now.</strong>It will not be shown again."
+msgstr "<strong>Copie esta clave ahora.</strong>No volverá a mostrarse."
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key_show__key
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__key_id
+msgid "API Key"
+msgstr "Clave API"
+
+#. module: muk_mcp
+#: model:ir.actions.act_window,name:muk_mcp.action_mcp_key
+#: model:ir.ui.menu,name:muk_mcp.menu_mcp_keys
+msgid "API Keys"
+msgstr "Claves API"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/models/tool.py:0
+msgid "Access denied: key scope is read-only"
+msgstr "Acceso denegado: el alcance de la clave es de solo lectura"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__active
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__active
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__active
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_tool_search
+msgid "Active"
+msgstr "Activo"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_users_form
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_users_form_simple
+msgid "Add MCP Key"
+msgstr "Añadir clave MCP"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_res_config_settings__mcp_annotate_messages
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Annotate Messages"
+msgstr "Anotar mensajes"
+
+#. module: muk_mcp
+#: model:ir.actions.act_window,name:muk_mcp.action_mcp_log
+#: model:ir.ui.menu,name:muk_mcp.menu_mcp_log
+msgid "Audit Log"
+msgstr "Registro de auditoría"
+
+#. module: muk_mcp
+#: model:ir.model.fields,help:muk_mcp.field_res_config_settings__mcp_log_retention
+msgid "Audit logs older than this many days are automatically deleted."
+msgstr ""
+"Los registros de auditoría con más de estos días se eliminan "
+"automáticamente."
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Audit logs older than this period are automatically deleted."
+msgstr ""
+"Los registros de auditoría más antiguos que este período se eliminan "
+"automáticamente."
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_connect__bearer_key
+msgid "Bearer Key"
+msgstr "Clave Bearer"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_generate_key_form
+msgid "Cancel"
+msgstr "Cancelar"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__category
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_tool_search
+msgid "Category"
+msgstr "Categoría"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_connect_form
+msgid "Claude Code"
+msgstr "Claude Code"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_connect__claude_code_cmd
+msgid "Claude Code Command"
+msgstr "Comando Claude Code"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_connect_form
+msgid "Claude Desktop"
+msgstr "Claude Desktop"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_connect__claude_desktop_json
+msgid "Claude Desktop JSON"
+msgstr "JSON de Claude Desktop"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "Clear key from this tab"
+msgstr "Borrar clave de esta pestaña"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "Click \"Try it\" to run the tool."
+msgstr "Haga clic en \"Probar\" para ejecutar la herramienta."
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/response_panel.js:0
+#: code:addons/muk_mcp/static/src/playground/tool_detail.js:0
+msgid "Clipboard unavailable"
+msgstr "Portapapeles no disponible"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_connect_form
+msgid "Close"
+msgstr "Cerrar"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "Code"
+msgstr "Código"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_connect_form
+msgid "Codex CLI"
+msgstr "Codex CLI"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_connect__codex_toml
+msgid "Codex CLI TOML"
+msgstr "TOML de Codex CLI"
+
+#. module: muk_mcp
+#: model:ir.model,name:muk_mcp.model_res_config_settings
+msgid "Config Settings"
+msgstr "Ajustes de configuración"
+
+#. module: muk_mcp
+#: model:ir.ui.menu,name:muk_mcp.menu_connect
+msgid "Connect"
+msgstr "Conectar"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/wizards/connect.py:0
+#: model:ir.actions.act_window,name:muk_mcp.action_connect
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Connect AI"
+msgstr "Conectar IA"
+
+#. module: muk_mcp
+#: model:ir.model,name:muk_mcp.model_muk_mcp_connect
+msgid "Connect AI Wizard"
+msgstr "Asistente de conexión de IA"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_connect_form
+msgid "Connect Odoo to your AI"
+msgstr "Conectar Odoo con su IA"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_connect_form
+msgid "Connect an AI Client"
+msgstr "Conectar un cliente de IA"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "Copy raw"
+msgstr "Copiar sin formato"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "Copy result"
+msgstr "Copiar resultado"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__create_date
+msgid "Created"
+msgstr "Creado"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_connect__create_uid
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_generate_key__create_uid
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__create_uid
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__create_uid
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__create_uid
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_connect__create_date
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_generate_key__create_date
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__create_date
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__create_date
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__create_date
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__create_date
+msgid "Created on"
+msgstr "Creado el"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "Ctrl"
+msgstr "Ctrl"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_connect_form
+msgid "Cursor"
+msgstr "Cursor"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_connect__cursor_json
+msgid "Cursor JSON"
+msgstr "JSON de Cursor"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "DB"
+msgstr "BD"
+
+#. module: muk_mcp
+#: model:ir.model.fields,help:muk_mcp.field_res_config_settings__mcp_rate_limit_requests
+msgid ""
+"Default maximum MCP requests per minute per key. Set to 0 to disable. Used "
+"as default when generating new keys."
+msgstr ""
+"Máximo de solicitudes MCP por minuto y clave por defecto. Establecer en 0 "
+"para desactivar. Se usa como valor predeterminado al generar nuevas claves."
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Default rate limit for new API keys. Set to 0 to disable."
+msgstr ""
+"Límite de velocidad por defecto para nuevas claves API. Establecer en 0 para"
+" desactivar."
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_key_kanban
+msgid "Delete"
+msgstr "Eliminar"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__delivered
+msgid "Delivered"
+msgstr "Entregado"
+
+#. module: muk_mcp
+#: model:ir.model.fields.selection,name:muk_mcp.selection__muk_mcp_log__status__denied
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_search
+msgid "Denied"
+msgstr "Denegado"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_tool_form
+msgid "Describe what this tool does..."
+msgstr "Describa lo que hace esta herramienta..."
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_generate_key__name
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__description
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_tool_form
+msgid "Description"
+msgstr "Descripción"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_ir_http__display_name
+#: model:ir.model.fields,field_description:muk_mcp.field_mail_message__display_name
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_connect__display_name
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_generate_key__display_name
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__display_name
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key_show__display_name
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__display_name
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_mixin__display_name
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__display_name
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__display_name
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__display_name
+#: model:ir.model.fields,field_description:muk_mcp.field_res_config_settings__display_name
+#: model:ir.model.fields,field_description:muk_mcp.field_res_users__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_show_key_form
+msgid "Done"
+msgstr "Hecho"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__duration_ms
+msgid "Duration (ms)"
+msgstr "Duración (ms)"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "Enter"
+msgstr "Intro"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "Enter JSON for this complex argument."
+msgstr "Introduzca JSON para este argumento complejo."
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__error_message
+#: model:ir.model.fields.selection,name:muk_mcp.selection__muk_mcp_log__status__error
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_form
+msgid "Error"
+msgstr "Error"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_search
+msgid "Errors"
+msgstr "Errores"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__event_id
+msgid "Event ID"
+msgstr "ID de evento"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/key_bar.js:0
+msgid "Failed to generate key: %s"
+msgstr "Error al generar la clave: %s"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.js:0
+msgid "Failed to load tools: %s"
+msgstr "Error al cargar herramientas: %s"
+
+#. module: muk_mcp
+#: model:ir.model.fields,help:muk_mcp.field_muk_mcp_key__key_prefix
+msgid "First 8 characters of the key for identification."
+msgstr "Primeros 8 caracteres de la clave para identificación."
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "Form"
+msgstr "Formulario"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_connect_form
+msgid "Generate Bearer Key"
+msgstr "Generar clave Bearer"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_generate_key_form
+msgid "Generate Key"
+msgstr "Generar clave"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "Generate new"
+msgstr "Generar nuevo"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/key_bar.js:0
+msgid ""
+"Generated key '%s' (prefix %s). Plaintext is now loaded for this tab only."
+msgstr ""
+"Clave '%s' generada (prefijo %s). El texto plano se carga solo en esta "
+"pestaña."
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "HTTP"
+msgstr "HTTP"
+
+#. module: muk_mcp
+#: model:ir.model,name:muk_mcp.model_ir_http
+msgid "HTTP Routing"
+msgstr "Enrutamiento HTTP"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_ir_http__id
+#: model:ir.model.fields,field_description:muk_mcp.field_mail_message__id
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_connect__id
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_generate_key__id
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__id
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key_show__id
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__id
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_mixin__id
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__id
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__id
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__id
+#: model:ir.model.fields,field_description:muk_mcp.field_res_config_settings__id
+#: model:ir.model.fields,field_description:muk_mcp.field_res_users__id
+msgid "ID"
+msgstr "ID"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__ip_address
+msgid "IP Address"
+msgstr "Dirección IP"
+
+#. module: muk_mcp
+#: model:ir.model.fields,help:muk_mcp.field_res_config_settings__mcp_session_timeout
+msgid "Inactive MCP sessions are cleaned up after this many hours."
+msgstr "Las sesiones MCP inactivas se limpian después de estas horas."
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Inactive sessions are cleaned up after this period."
+msgstr "Las sesiones inactivas se eliminan tras este período."
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__initialized
+msgid "Initialized"
+msgstr "Inicializado"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__input_schema
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_tool_form
+msgid "Input Schema"
+msgstr "Esquema de entrada"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/models/tool.py:0
+msgid "Invalid arguments for tool %(name)s: %(error)s"
+msgstr "Argumentos no válidos para la herramienta %(name)s: %(error)s"
+
+#. module: muk_mcp
+#: model:ir.model.fields,help:muk_mcp.field_muk_mcp_tool__input_schema
+msgid "JSON Schema defining the tool parameters."
+msgstr "Esquema JSON que define los parámetros de la herramienta."
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "JSON-RPC"
+msgstr "JSON-RPC"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/tool_detail.js:0
+msgid "JSON-RPC payload copied"
+msgstr "Carga JSON-RPC copiada"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "JSON…"
+msgstr "JSON…"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__key_hash
+msgid "Key Hash"
+msgstr "Hash de clave"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__key_prefix
+msgid "Key Prefix"
+msgstr "Prefijo de clave"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/key_bar.js:0
+msgid "Key cleared"
+msgstr "Clave borrada"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/key_bar.js:0
+msgid "Key is empty"
+msgstr "La clave está vacía"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "Key label (optional)"
+msgstr "Etiqueta de la clave (opcional)"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/key_bar.js:0
+msgid "Key set for this tab"
+msgstr "Clave establecida para esta pestaña"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid ""
+"Keys are stored in sessionStorage (this tab only). Plaintext is never "
+"persisted server-side after generation."
+msgstr ""
+"Las claves se almacenan en sessionStorage (solo esta pestaña). El texto "
+"plano nunca se persiste en el servidor tras la generación."
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__name
+msgid "Label"
+msgstr "Etiqueta"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__last_activity
+msgid "Last Activity"
+msgstr "Última actividad"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_connect__write_uid
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_generate_key__write_uid
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__write_uid
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__write_uid
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__write_uid
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__write_uid
+msgid "Last Updated by"
+msgstr "Última actualización por"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_connect__write_date
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_generate_key__write_date
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__write_date
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__write_date
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__write_date
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__write_date
+msgid "Last Updated on"
+msgstr "Última actualización el"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__last_used
+msgid "Last Used"
+msgstr "Último uso"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_session_kanban
+msgid "Last activity:"
+msgstr "Última actividad:"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "Loading tools…"
+msgstr "Cargando herramientas…"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Log Retention"
+msgstr "Retención de registros"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_res_config_settings__mcp_log_retention
+msgid "Log Retention (days)"
+msgstr "Retención de registros (días)"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/core/message.xml:0
+#: model:ir.model.fields.selection,name:muk_mcp.selection__muk_mcp_tool__registry__mcp
+#: model:ir.ui.menu,name:muk_mcp.menu_mcp_root
+msgid "MCP"
+msgstr "MCP"
+
+#. module: muk_mcp
+#: model:ir.model,name:muk_mcp.model_muk_mcp_key
+msgid "MCP API Key"
+msgstr "Clave API MCP"
+
+#. module: muk_mcp
+#: model:ir.model,name:muk_mcp.model_muk_mcp_log
+msgid "MCP Audit Log"
+msgstr "Registro de auditoría MCP"
+
+#. module: muk_mcp
+#: model:ir.model,name:muk_mcp.model_muk_mcp_generate_key
+msgid "MCP Generate Key"
+msgstr "Generar clave MCP"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+#: model:ir.model.fields,field_description:muk_mcp.field_mail_mail__mcp_name
+#: model:ir.model.fields,field_description:muk_mcp.field_mail_message__mcp_name
+msgid "MCP Key"
+msgstr "Clave MCP"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/wizards/generate_key.py:0
+msgid "MCP Key Ready"
+msgstr "Clave MCP lista"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_res_users__mcp_key_ids
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_users_form
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_users_form_simple
+msgid "MCP Keys"
+msgstr "Claves MCP"
+
+#. module: muk_mcp
+#: model:ir.model,name:muk_mcp.model_muk_mcp_notification
+msgid "MCP Notification"
+msgstr "Notificación MCP"
+
+#. module: muk_mcp
+#: model:ir.actions.client,name:muk_mcp.action_mcp_playground
+msgid "MCP Playground"
+msgstr "Playground MCP"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "MCP Server"
+msgstr "Servidor MCP"
+
+#. module: muk_mcp
+#: model:ir.model,name:muk_mcp.model_muk_mcp_session
+msgid "MCP Session"
+msgstr "Sesión MCP"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_res_users__mcp_session_ids
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_users_form
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_users_form_simple
+msgid "MCP Sessions"
+msgstr "Sesiones MCP"
+
+#. module: muk_mcp
+#: model:ir.model,name:muk_mcp.model_muk_mcp_tool
+msgid "MCP Tool"
+msgstr "Herramienta MCP"
+
+#. module: muk_mcp
+#: model:ir.model,name:muk_mcp.model_muk_mcp_mixin
+msgid "MCP Tool Mixin"
+msgstr "Mixin de herramienta MCP"
+
+#. module: muk_mcp
+#: model:ir.actions.act_window,name:muk_mcp.action_mcp_tool
+msgid "MCP Tools"
+msgstr "Herramientas MCP"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_connect__mcp_url
+msgid "MCP URL"
+msgstr "URL MCP"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Mark chatter messages originating from MCP."
+msgstr "Marcar los mensajes de chatter originados en MCP."
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Max requests"
+msgstr "Solicitudes máx."
+
+#. module: muk_mcp
+#: model:ir.model.fields,help:muk_mcp.field_muk_mcp_generate_key__rate_limit
+#: model:ir.model.fields,help:muk_mcp.field_muk_mcp_key__rate_limit
+msgid "Maximum requests per minute. 0 = unlimited."
+msgstr "Máximo de solicitudes por minuto. 0 = ilimitado."
+
+#. module: muk_mcp
+#: model:ir.model,name:muk_mcp.model_mail_message
+msgid "Message"
+msgstr "Mensaje"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__method
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__method
+msgid "Method"
+msgstr "Método"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__model_name
+msgid "Model"
+msgstr "Modelo"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/mixin.py:0
+msgid "Model %r not found"
+msgstr "Modelo %r no encontrado"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__name
+msgid "Name"
+msgstr "Nombre"
+
+#. module: muk_mcp
+#: model_terms:ir.actions.act_window,help:muk_mcp.action_mcp_tool
+msgid "No MCP tools configured."
+msgstr "No hay herramientas MCP configuradas."
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/export.py:0
+msgid "No fields provided"
+msgstr "No se proporcionaron campos"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "No matching tools."
+msgstr "No hay herramientas coincidentes."
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/read.py:0 code:addons/muk_mcp/mcp/report.py:0
+#: code:addons/muk_mcp/mcp/write.py:0
+msgid "No record IDs provided"
+msgstr "No se proporcionaron IDs de registro"
+
+#. module: muk_mcp
+#: model:ir.actions.act_window,name:muk_mcp.action_mcp_notification
+#: model:ir.ui.menu,name:muk_mcp.menu_mcp_notifications
+msgid "Notifications"
+msgstr "Notificaciones"
+
+#. module: muk_mcp
+#: model:ir.model.fields.selection,name:muk_mcp.selection__muk_mcp_log__status__ok
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_search
+msgid "OK"
+msgstr "OK"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_form
+msgid "Open Record"
+msgstr "Abrir registro"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_form
+msgid "Open Records"
+msgstr "Abrir registros"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_connect_form
+msgid "OpenCode"
+msgstr "OpenCode"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_connect__opencode_json
+msgid "OpenCode JSON"
+msgstr "JSON de OpenCode"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__params
+msgid "Params"
+msgstr "Parámetros"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "Paste MCP key (Bearer token)…"
+msgstr "Pegar clave MCP (token Bearer)…"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "Pick or generate an MCP key first."
+msgstr "Seleccione o genere primero una clave MCP."
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_connect_form
+msgid ""
+"Pick the AI client you want to use. Local clients\n"
+"                            (Claude Code, Claude Desktop, Codex CLI, Cursor, OpenCode)\n"
+"                            connect via a bearer key."
+msgstr ""
+"Elija el cliente de IA que desea utilizar. Los clientes locales\n"
+"                            (Claude Code, Claude Desktop, Codex CLI, Cursor, OpenCode)\n"
+"                            se conectan mediante una clave Bearer."
+
+#. module: muk_mcp
+#: model:ir.ui.menu,name:muk_mcp.menu_mcp_playground
+msgid "Playground"
+msgstr "Playground"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__code
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_tool_form
+msgid "Python Code"
+msgstr "Código Python"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_res_config_settings__mcp_rate_limit_requests
+msgid "Rate Limit (Requests)"
+msgstr "Límite de velocidad (solicitudes)"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_generate_key__rate_limit
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__rate_limit
+msgid "Rate Limit (req/min)"
+msgstr "Límite de tasa (sol./min.)"
+
+#. module: muk_mcp
+#: model:ir.model.fields.selection,name:muk_mcp.selection__muk_mcp_log__status__rate_limited
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_search
+msgid "Rate Limited"
+msgstr "Tasa limitada"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Rate Limiting"
+msgstr "Límite de velocidad"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "Raw JSON-RPC response"
+msgstr "Respuesta JSON-RPC sin formato"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/response_panel.js:0
+msgid "Raw response copied"
+msgstr "Respuesta sin formato copiada"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+#: model:ir.model.fields.selection,name:muk_mcp.selection__muk_mcp_tool__category__read
+msgid "Read"
+msgstr "Lectura"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+#: model:ir.model.fields.selection,name:muk_mcp.selection__muk_mcp_generate_key__scope__write
+#: model:ir.model.fields.selection,name:muk_mcp.selection__muk_mcp_key__scope__write
+msgid "Read & Write"
+msgstr "Lectura y escritura"
+
+#. module: muk_mcp
+#: model:ir.model.fields.selection,name:muk_mcp.selection__muk_mcp_generate_key__scope__read
+#: model:ir.model.fields.selection,name:muk_mcp.selection__muk_mcp_key__scope__read
+msgid "Read Only"
+msgstr "Solo lectura"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_form
+msgid "Record Data"
+msgstr "Datos del registro"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__res_id
+msgid "Record ID"
+msgstr "ID de registro"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__res_ids
+msgid "Record IDs"
+msgstr "IDs de registro"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__registry
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_tool_search
+msgid "Registry"
+msgstr "Registro"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/report.py:0
+msgid "Report %r not found."
+msgstr "Informe %r no encontrado."
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__request_data
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_form
+msgid "Request"
+msgstr "Solicitud"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "Reset args"
+msgstr "Restablecer argumentos"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__response_data
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_form
+msgid "Response"
+msgstr "Respuesta"
+
+#. module: muk_mcp
+#: model:ir.model.fields,help:muk_mcp.field_muk_mcp_tool__registry
+msgid "Restrict the tool to a single surface."
+msgstr "Restringir la herramienta a una sola superficie."
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "Result"
+msgstr "Resultado"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/response_panel.js:0
+msgid "Result copied"
+msgstr "Resultado copiado"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Retention"
+msgstr "Retención"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_session_kanban
+msgid "Revoke"
+msgstr "Revocar"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_users_form
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_users_form_simple
+msgid "Revoke all sessions"
+msgstr "Revocar todas las sesiones"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "Schema"
+msgstr "Esquema"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_generate_key__scope
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__scope
+msgid "Scope"
+msgstr "Alcance"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_key_kanban
+msgid "Scope:"
+msgstr "Alcance:"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "Search tools…"
+msgstr "Buscar herramientas…"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "Select a tool from the list on the left."
+msgstr "Seleccione una herramienta de la lista de la izquierda."
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.js:0
+msgid "Select or generate an MCP key first."
+msgstr "Seleccione o genere primero una clave MCP."
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__sequence
+msgid "Sequence"
+msgstr "Secuencia"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__session_id
+msgid "Session"
+msgstr "Sesión"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__session_id
+msgid "Session ID"
+msgstr "ID de sesión"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Session Timeout"
+msgstr "Tiempo de espera de sesión"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_res_config_settings__mcp_session_timeout
+msgid "Session Timeout (hours)"
+msgstr "Tiempo de espera de sesión (horas)"
+
+#. module: muk_mcp
+#: model:ir.actions.act_window,name:muk_mcp.action_mcp_session
+#: model:ir.ui.menu,name:muk_mcp.menu_mcp_sessions
+msgid "Sessions"
+msgstr "Sesiones"
+
+#. module: muk_mcp
+#: model:ir.model,name:muk_mcp.model_muk_mcp_key_show
+msgid "Show MCP Key"
+msgstr "Mostrar clave MCP"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__status
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_search
+msgid "Status"
+msgstr "Estado"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "This tool takes no parameters."
+msgstr "Esta herramienta no acepta parámetros."
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_list
+msgid "Time"
+msgstr "Hora"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Timeout"
+msgstr "Tiempo de espera"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__tool_name
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_search
+msgid "Tool"
+msgstr "Herramienta"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/models/tool.py:0
+msgid "Tool %(name)s has invalid Input Schema JSON: %(error)s"
+msgstr ""
+"La herramienta %(name)s tiene un JSON de esquema de entrada no válido: "
+"%(error)s"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_tool_form
+msgid "Tool Name"
+msgstr "Nombre de la herramienta"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/models/tool.py:0
+msgid "Tool not found: %s"
+msgstr "Herramienta no encontrada: %s"
+
+#. module: muk_mcp
+#: model:ir.ui.menu,name:muk_mcp.menu_mcp_tools
+msgid "Tools"
+msgstr "Herramientas"
+
+#. module: muk_mcp
+#: model_terms:ir.actions.act_window,help:muk_mcp.action_mcp_tool
+msgid ""
+"Tools are automatically created when the module is installed.\n"
+"\t\t\t\tYou can add custom tools here."
+msgstr ""
+"Las herramientas se crean automáticamente cuando se instala el módulo.\n"
+"\t\t\t\tPuede añadir herramientas personalizadas aquí."
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "Use"
+msgstr "Usar"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "Use existing"
+msgstr "Usar existente"
+
+#. module: muk_mcp
+#: model:ir.model,name:muk_mcp.model_res_users
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__user_id
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__user_id
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__user_id
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_search
+msgid "User"
+msgstr "Usuario"
+
+#. module: muk_mcp
+#: model:ir.model.fields,help:muk_mcp.field_res_config_settings__mcp_annotate_messages
+msgid ""
+"When enabled, chatter messages from MCP operations are marked to distinguish"
+" AI-originated changes from manual ones."
+msgstr ""
+"Cuando está activado, los mensajes de chatter de las operaciones MCP se "
+"marcan para distinguir los cambios originados por IA de los manuales."
+
+#. module: muk_mcp
+#: model:ir.model.fields.selection,name:muk_mcp.selection__muk_mcp_tool__category__write
+msgid "Write"
+msgstr "Escribir"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "curl"
+msgstr "curl"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/tool_detail.js:0
+msgid "curl copied"
+msgstr "curl copiado"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_generate_key_form
+msgid "e.g. Claude Desktop, Cursor"
+msgstr "p. ej. Claude Desktop, Cursor"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/read.py:0
+msgid "groupby is required"
+msgstr "groupby es obligatorio"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "ms"
+msgstr "ms"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "none"
+msgstr "ninguno"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "to run"
+msgstr "para ejecutar"

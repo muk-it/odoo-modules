@@ -1,0 +1,15 @@
+id,name,model_id/id,group_id/id,perm_read,perm_write,perm_create,perm_unlink
+
+access_muk_mcp_tool_admin,access_muk_mcp_tool_admin,model_muk_mcp_tool,base.group_system,1,1,1,1
+access_muk_mcp_tool_user,access_muk_mcp_tool_user,model_muk_mcp_tool,base.group_user,1,0,0,0
+access_muk_mcp_session_admin,access_muk_mcp_session_admin,model_muk_mcp_session,base.group_system,1,1,1,1
+access_muk_mcp_session_user,access_muk_mcp_session_user,model_muk_mcp_session,base.group_user,1,1,1,1
+access_muk_mcp_notification_admin,access_muk_mcp_notification_admin,model_muk_mcp_notification,base.group_system,1,1,1,1
+access_muk_mcp_notification_user,access_muk_mcp_notification_user,model_muk_mcp_notification,base.group_user,1,1,1,1
+access_muk_mcp_key_admin,access_muk_mcp_key_admin,model_muk_mcp_key,base.group_system,1,1,1,1
+access_muk_mcp_key_user,access_muk_mcp_key_user,model_muk_mcp_key,base.group_user,1,1,1,1
+access_muk_mcp_log_admin,access_muk_mcp_log_admin,model_muk_mcp_log,base.group_system,1,1,0,1
+access_muk_mcp_log_user,access_muk_mcp_log_user,model_muk_mcp_log,base.group_user,1,0,0,0
+access_muk_mcp_generate_key,access_muk_mcp_generate_key,model_muk_mcp_generate_key,base.group_user,1,0,1,1
+access_muk_mcp_key_show,access_muk_mcp_key_show,model_muk_mcp_key_show,base.group_user,1,0,1,0
+access_muk_mcp_connect,access_muk_mcp_connect,model_muk_mcp_connect,base.group_user,1,1,1,1

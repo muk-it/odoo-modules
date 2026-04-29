@@ -1,0 +1,40 @@
+.o_muk_mcp_playground {
+    background: var(--o-action-view-bg, #fff);
+    .o_muk_mcp_keybar {
+        background: var(--o-view-background-color, #f8f9fa);
+    }
+    .o_muk_mcp_list {
+        flex: 0 0 320px;
+        width: 320px;
+        background: var(--o-view-background-color, #f8f9fa);
+        .o_muk_mcp_group_header {
+            position: sticky;
+            top: 0;
+            background: var(--o-view-background-color, #f8f9fa);
+            z-index: 1;
+        }
+        .o_muk_mcp_tool {
+            border-radius: 0;
+            border-bottom: 1px solid var(--o-border-color, #dee2e6);
+            &:hover {
+                background: rgba(0, 0, 0, 0.04);
+                text-decoration: none;
+            }
+            &.active {
+                background: var(--primary, #714b67);
+                color: #fff;
+                .text-body,
+                .text-muted {
+                    color: #fff !important;
+                }
+            }
+        }
+    }
+    .o_muk_mcp_detail {
+        min-width: 0;
+        pre {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+    }
+}
