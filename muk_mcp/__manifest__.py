@@ -41,6 +41,7 @@
     ],
     'assets': {
         'web.assets_backend': [
+            'muk_mcp/static/src/core/message.js',
             'muk_mcp/static/src/core/message.xml',
             'muk_mcp/static/src/playground/**/*',
         ],

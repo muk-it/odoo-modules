@@ -5,10 +5,10 @@
     <t t-inherit="mail.Message" t-inherit-mode="extension">
         <xpath expr="//strong[hasclass('o_Message_authorName')][1]" position="after">
             <span
-                t-if="message.mcp_name"
+                t-if="messageView and messageView.message and messageView.message.mcp_name"
                 class="badge text-bg-info me-1"
                 style="font-size: 0.5rem;"
-                t-attf-title="MCP: {{ message.mcp_name }}"
+                t-attf-title="MCP: {{ messageView.message.mcp_name }}"
             >
                 MCP
             </span>
