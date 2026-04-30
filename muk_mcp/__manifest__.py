@@ -39,6 +39,9 @@
         'views/menu.xml',
     ],
     'assets': {
+        'web.assets_backend': [
+            'muk_mcp/static/src/core/message.js',
+        ],
         'web.assets_qweb': [
             'muk_mcp/static/src/core/message.xml',
         ],
