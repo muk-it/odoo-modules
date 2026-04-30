@@ -129,6 +129,10 @@
                                             <span class="mk_dots"><span/><span/><span/></span>
                                             <span class="mk_thinking_status" t-esc="session.state.streamingReasoning ? session.latestReasoningLine() : 'Thinking'"/>
                                         </span>
+                                        <div t-if="session.state.streamIdle and session.state.streamingText" class="mk_thinking mk_thinking_idle mt-1">
+                                            <span class="mk_dots"><span/><span/><span/></span>
+                                            <span class="mk_thinking_status" t-esc="session.state.streamingReasoning ? session.latestReasoningLine() : 'Still working…'"/>
+                                        </div>
                                     </div>
                                 </div>
                             </t>

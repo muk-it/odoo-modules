@@ -141,8 +141,14 @@ export class AIChat extends Component {
             this.state.loading = false;
         });
 
-        onMounted(() => this._installImageClickHandler());
-        onWillUnmount(() => this._disconnectUserBus());
+        onMounted(() => {
+            this._installImageClickHandler();
+            this._installRootPasteHandler();
+        });
+        onWillUnmount(() => {
+            this._disconnectUserBus();
+            this._uninstallRootPasteHandler();
+        });
     }
     _installImageClickHandler() {
         const root = this.rootRef.el;
@@ -153,6 +159,34 @@ export class AIChat extends Component {
             ev.preventDefault();
             this._openInlineImage(img.src);
         });
+    }
+    _installRootPasteHandler() {
+        const root = this.rootRef.el;
+        if (!root) return;
+        this._rootPasteHandler = (ev) => {
+            if (!root.isConnected) return;
+            if (!this.session.canAttach()) return;
+            if (ev.target && ev.target.closest('.mk_composer textarea')) return;
+            const items = (ev.clipboardData && ev.clipboardData.items) || [];
+            const files = [];
+            for (const item of items) {
+                if (item.kind === 'file') {
+                    const file = item.getAsFile();
+                    if (file) files.push(file);
+                }
+            }
+            if (files.length) {
+                ev.preventDefault();
+                this.session.onAttachFiles(files);
+            }
+        };
+        document.addEventListener('paste', this._rootPasteHandler);
+    }
+    _uninstallRootPasteHandler() {
+        if (this._rootPasteHandler) {
+            document.removeEventListener('paste', this._rootPasteHandler);
+        }
+        this._rootPasteHandler = null;
     }
     _openInlineImage(src) {
         this.fileViewer.open(toInlineImageFile(src));
@@ -362,6 +396,13 @@ export class AIChat extends Component {
         return turn.blocks.some(
             (b) => b.type === 'ask' && b.callId === block.callId,
         );
+    }
+    isToolStreaming(block) {
+        if (block.result !== null && block.result !== undefined) {
+            return false;
+        }
+        const status = this.session.state.status;
+        return status === 'running' || status === 'compacting';
     }
     get canSend() {
         return this.session.canSend();

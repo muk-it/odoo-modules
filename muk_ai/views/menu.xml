@@ -57,7 +57,7 @@
 		>
 			<menuitem
 				id="menu_ai_tools"
-				name="Tools"
+				name="Custom Tools"
 				action="muk_mcp.action_mcp_tool"
 				sequence="10"
 			/>

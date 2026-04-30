@@ -1425,3 +1425,94 @@ test('popout is skipped when no active session is loaded', async () => {
     await session.openPinnedContext();
     expect(opened).toEqual([]);
 });
+
+
+test('streamIdle stays false while deltas keep arriving', async () => {
+    onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
+    onRpc('muk_ai.session', 'get_snapshot', () => snapshotFor(SESSION_RECORD));
+    const bus = makeBusMock();
+    const harness = makeHarness();
+    const session = await mountAndLoad(harness);
+    session.state.status = 'running';
+    bus.emit({ session_id: 7, type: 'text_delta', payload: { delta: 'partial' } });
+    expect(session.state.streamIdle).toBe(false);
+    expect(session.state.streamingText).toBe('partial');
+});
+
+
+test('streamIdle flips to true after STREAM_IDLE_MS without deltas', async () => {
+    onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
+    onRpc('muk_ai.session', 'get_snapshot', () => snapshotFor(SESSION_RECORD));
+    const bus = makeBusMock();
+    const harness = makeHarness();
+    const session = await mountAndLoad(harness);
+    session.state.status = 'running';
+    bus.emit({ session_id: 7, type: 'text_delta', payload: { delta: 'pause...' } });
+    expect(session.state.streamIdle).toBe(false);
+    await new Promise((r) => setTimeout(r, 3300));
+    expect(session.state.streamIdle).toBe(true);
+});
+
+
+test('streamIdle resets to false on a new delta', async () => {
+    onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
+    onRpc('muk_ai.session', 'get_snapshot', () => snapshotFor(SESSION_RECORD));
+    const bus = makeBusMock();
+    const harness = makeHarness();
+    const session = await mountAndLoad(harness);
+    session.state.status = 'running';
+    bus.emit({ session_id: 7, type: 'text_delta', payload: { delta: 'a' } });
+    await new Promise((r) => setTimeout(r, 3300));
+    expect(session.state.streamIdle).toBe(true);
+    bus.emit({ session_id: 7, type: 'text_delta', payload: { delta: 'b' } });
+    expect(session.state.streamIdle).toBe(false);
+});
+
+
+test('streamIdle clears when status leaves running', async () => {
+    onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
+    onRpc('muk_ai.session', 'get_snapshot', () => snapshotFor(SESSION_RECORD));
+    const bus = makeBusMock();
+    const harness = makeHarness();
+    const session = await mountAndLoad(harness);
+    session.state.status = 'running';
+    bus.emit({ session_id: 7, type: 'text_delta', payload: { delta: 'done' } });
+    await new Promise((r) => setTimeout(r, 3300));
+    expect(session.state.streamIdle).toBe(true);
+    bus.emit({ session_id: 7, type: 'state', payload: { state: 'done' } });
+    expect(session.state.streamIdle).toBe(false);
+});
+
+
+test('tool_call log bumps streamIdle activity', async () => {
+    onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
+    onRpc('muk_ai.session', 'get_snapshot', () => snapshotFor(SESSION_RECORD));
+    const bus = makeBusMock();
+    const harness = makeHarness();
+    const session = await mountAndLoad(harness);
+    session.state.status = 'running';
+    session.state.streamIdle = true;
+    bus.emit({
+        session_id: 7,
+        type: 'log',
+        payload: { kind: 'tool_call', name: 'search_read', arguments: {}, call_id: 'c9' },
+    });
+    expect(session.state.streamIdle).toBe(false);
+});
+
+
+test('tool_result log bumps streamIdle activity', async () => {
+    onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
+    onRpc('muk_ai.session', 'get_snapshot', () => snapshotFor(SESSION_RECORD));
+    const bus = makeBusMock();
+    const harness = makeHarness();
+    const session = await mountAndLoad(harness);
+    session.state.status = 'running';
+    session.state.streamIdle = true;
+    bus.emit({
+        session_id: 7,
+        type: 'log',
+        payload: { kind: 'tool_result', name: 'search_read', call_id: 'c9', result: '[]' },
+    });
+    expect(session.state.streamIdle).toBe(false);
+});

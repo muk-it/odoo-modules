@@ -442,3 +442,43 @@ test('contextPercent is 0 when lastInputTokens is 0', async () => {
     chat.session.state.lastInputTokens = 0;
     expect(chat.contextPercent).toBe(0);
 });
+
+
+test('isToolStreaming is true for null-result blocks while running', async () => {
+    registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
+    const chat = await mountWithCleanup(AIChat, { props: {} });
+    await chat.onSelectSession(7);
+    chat.session.state.status = 'running';
+    expect(chat.isToolStreaming({ result: null, callId: 'c1' })).toBe(true);
+    expect(chat.isToolStreaming({ result: undefined, callId: 'c2' })).toBe(true);
+});
+
+
+test('isToolStreaming is false once a result lands', async () => {
+    registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
+    const chat = await mountWithCleanup(AIChat, { props: {} });
+    await chat.onSelectSession(7);
+    chat.session.state.status = 'running';
+    expect(chat.isToolStreaming({ result: '[]', callId: 'c3' })).toBe(false);
+    expect(chat.isToolStreaming({ result: { error: 'x' }, callId: 'c4' })).toBe(false);
+});
+
+
+test('isToolStreaming is false when status is not running', async () => {
+    registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
+    const chat = await mountWithCleanup(AIChat, { props: {} });
+    await chat.onSelectSession(7);
+    chat.session.state.status = 'done';
+    expect(chat.isToolStreaming({ result: null, callId: 'c5' })).toBe(false);
+    chat.session.state.status = 'waiting';
+    expect(chat.isToolStreaming({ result: null, callId: 'c6' })).toBe(false);
+});
+
+
+test('isToolStreaming is true while compacting', async () => {
+    registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
+    const chat = await mountWithCleanup(AIChat, { props: {} });
+    await chat.onSelectSession(7);
+    chat.session.state.status = 'compacting';
+    expect(chat.isToolStreaming({ result: null, callId: 'c7' })).toBe(true);
+});

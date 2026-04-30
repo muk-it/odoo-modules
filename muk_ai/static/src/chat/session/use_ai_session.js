@@ -40,6 +40,7 @@ export const SLASH_COMMANDS = [
 
 const COMPACT_WARN_RATIO = 0.85;
 const COMPACT_AUTO_RATIO = 0.95;
+const STREAM_IDLE_MS = 3000;
 
 export function useAiSession(options = {}) {
     const orm = useService('orm');
@@ -83,11 +84,36 @@ export function useAiSession(options = {}) {
         approvalMode: false,
         effectiveApprovalMode: 'ask',
         pendingMessages: [],
+        streamIdle: false,
     });
 
     let busHandler = null;
     let eventKeys = new Set();
     let onScrollCallback = null;
+    let streamIdleTimer = null;
+
+    function clearStreamIdleTimer() {
+        if (streamIdleTimer) {
+            clearTimeout(streamIdleTimer);
+            streamIdleTimer = null;
+        }
+    }
+
+    function bumpStreamActivity() {
+        state.streamIdle = false;
+        clearStreamIdleTimer();
+        const status = state.status;
+        if (status !== 'running' && status !== 'compacting') {
+            return;
+        }
+        streamIdleTimer = setTimeout(() => {
+            streamIdleTimer = null;
+            const current = state.status;
+            if (current === 'running' || current === 'compacting') {
+                state.streamIdle = true;
+            }
+        }, STREAM_IDLE_MS);
+    }
 
     function connectBus() {
         disconnectBus();
@@ -140,17 +166,22 @@ export function useAiSession(options = {}) {
                     (t) => t.callId !== event.payload.call_id,
                 );
             }
+            if (kind === 'text' || kind === 'tool_call' || kind === 'tool_result') {
+                bumpStreamActivity();
+            }
             requestScroll();
         } else if (event.type === 'text_delta') {
             const delta = (event.payload || {}).delta || '';
             if (delta) {
                 state.streamingText = (state.streamingText || '') + delta;
+                bumpStreamActivity();
                 requestScroll();
             }
         } else if (event.type === 'reasoning_delta') {
             const delta = (event.payload || {}).delta || '';
             if (delta) {
                 state.streamingReasoning = (state.streamingReasoning || '') + delta;
+                bumpStreamActivity();
                 requestScroll();
             }
         } else if (event.type === 'tool_call_start') {
@@ -163,6 +194,7 @@ export function useAiSession(options = {}) {
                     ...state.streamingTools,
                     { callId, name: event.payload?.name || '', argsBuffer: '' },
                 ];
+                bumpStreamActivity();
                 requestScroll();
             }
         } else if (event.type === 'tool_call_args_delta') {
@@ -173,6 +205,7 @@ export function useAiSession(options = {}) {
             state.streamingTools = state.streamingTools.map((t) =>
                 t.callId === callId ? { ...t, argsBuffer: (t.argsBuffer || '') + delta } : t,
             );
+            bumpStreamActivity();
             requestScroll();
         } else if (event.type === 'state') {
             if (event.payload.state) {
@@ -181,6 +214,10 @@ export function useAiSession(options = {}) {
                     state.streamingText = '';
                     state.streamingReasoning = '';
                     state.streamingTools = [];
+                    state.streamIdle = false;
+                    clearStreamIdleTimer();
+                } else {
+                    bumpStreamActivity();
                 }
             }
             if (event.payload.ask) {
@@ -253,6 +290,8 @@ export function useAiSession(options = {}) {
         state.streamingReasoning = '';
         state.streamingTools = [];
         state.pendingAttachments = [];
+        state.streamIdle = false;
+        clearStreamIdleTimer();
         eventKeys = new Set();
         if (!sessionId) {
             state.loading = false;
@@ -677,7 +716,15 @@ export function useAiSession(options = {}) {
     }
 
     function cycleApprovalMode() {
-        const next = state.effectiveApprovalMode === 'off' ? 'ask' : 'off';
+        const current = state.approvalMode;
+        let next;
+        if (!current) {
+            next = 'ask';
+        } else if (current === 'ask') {
+            next = 'off';
+        } else {
+            next = false;
+        }
         return setApprovalMode(next);
     }
 
@@ -1008,6 +1055,7 @@ export function useAiSession(options = {}) {
     onWillUnmount(() => {
         sessionNotification.markInactive(state.sessionId);
         disconnectBus();
+        clearStreamIdleTimer();
     });
 
     return {

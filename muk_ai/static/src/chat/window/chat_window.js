@@ -1,4 +1,4 @@
-import { Component, onWillStart, useEffect, useRef, useState } from '@odoo/owl';
+import { Component, onMounted, onWillStart, onWillUnmount, useEffect, useRef, useState } from '@odoo/owl';
 
 import { _t } from '@web/core/l10n/translation';
 import { useDropzone } from '@web/core/dropzone/dropzone_hook';
@@ -81,6 +81,36 @@ export class ChatWindow extends Component {
         );
 
         onWillStart(() => this.session.load(this.props.sessionId));
+        onMounted(() => this._installRootPasteHandler());
+        onWillUnmount(() => this._uninstallRootPasteHandler());
+    }
+    _installRootPasteHandler() {
+        const root = this.rootRef.el;
+        if (!root) return;
+        this._rootPasteHandler = (ev) => {
+            if (!root.isConnected) return;
+            if (!this.session.canAttach() || this.props.minimized) return;
+            if (ev.target && ev.target.closest('.mk_composer textarea')) return;
+            const items = (ev.clipboardData && ev.clipboardData.items) || [];
+            const files = [];
+            for (const item of items) {
+                if (item.kind === 'file') {
+                    const file = item.getAsFile();
+                    if (file) files.push(file);
+                }
+            }
+            if (files.length) {
+                ev.preventDefault();
+                this.session.onAttachFiles(files);
+            }
+        };
+        document.addEventListener('paste', this._rootPasteHandler);
+    }
+    _uninstallRootPasteHandler() {
+        if (this._rootPasteHandler) {
+            document.removeEventListener('paste', this._rootPasteHandler);
+        }
+        this._rootPasteHandler = null;
     }
     onOpenAttachment(attachment) {
         const file = toFileModel(attachment);
@@ -109,6 +139,13 @@ export class ChatWindow extends Component {
         return turn.blocks.some(
             (b) => b.type === 'ask' && b.callId === block.callId,
         );
+    }
+    isToolStreaming(block) {
+        if (block.result !== null && block.result !== undefined) {
+            return false;
+        }
+        const status = this.session.state.status;
+        return status === 'running' || status === 'compacting';
     }
     toggleToolBlock(callId) {
         this.session.toggleToolBlock(callId);

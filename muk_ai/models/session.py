@@ -736,6 +736,8 @@ class AISession(models.Model):
         idle = (fields.Datetime.now() - reference).total_seconds()
         if idle < idle_seconds:
             return False
+        if not self._try_session_xact_lock(self.id):
+            return False
         pending = self.pending_ids
         had_queue = bool(pending)
         if pending:
@@ -756,6 +758,20 @@ class AISession(models.Model):
         if had_queue:
             self._publish_event('queue', {'pending': []})
         return True
+
+    @api.model
+    def _try_session_xact_lock(self, session_id):
+        self.env.cr.execute(
+            "SELECT pg_try_advisory_xact_lock(%s, %s)",
+            [ADVISORY_LOCK_NAMESPACE, session_id],
+        )
+        return self.env.cr.fetchone()[0]
+
+    def _heartbeat_claim(self):
+        if not self:
+            return
+        self.sudo().write({'claimed_at': fields.Datetime.now()})
+        self._commit_safe()
 
     # ----------------------------------------------------------
     # Helper Rate Limit
@@ -1259,9 +1275,11 @@ class AISession(models.Model):
             self._record_approval_audit(
                 decision='auto_approved', call=call, risk=gate['risk'],
             )
+        self._heartbeat_claim()
         result, ok = self._dispatch_tool_call(
             call['name'], call['arguments'], call['call_id'],
         )
+        self._heartbeat_claim()
         self._record_tool_result(outputs, call['call_id'], call['name'], result)
         return ok and call['name'] in TERMINATING_TOOLS
 
@@ -2040,14 +2058,16 @@ class AISession(models.Model):
         threshold = (
             fields.Datetime.now() - timedelta(seconds=WORKER_STALE_THRESHOLD)
         )
-        orphans = self.sudo().search([
+        candidates = self.sudo().search([
             ('state', 'in', ('running', 'compacting')),
             ('write_date', '<', threshold),
             '|',
                 ('claimed_at', '=', False),
                 ('claimed_at', '<', threshold),
         ])
-        for session in orphans:
+        for session in candidates:
+            if not self._try_session_xact_lock(session.id):
+                continue
             try:
                 with self.env.cr.savepoint():
                     session.write({
