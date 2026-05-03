@@ -206,10 +206,10 @@ Usage
 =====
 
 Once connected, the AI client automatically discovers all available
-tools via the ``tools/list`` MCP method. The module ships with 17
+tools via the ``tools/list`` MCP method. The module ships with 18
 built-in tools organized into two categories:
 
-**Read Tools (12)**
+**Read Tools (13)**
 
 - ``list_models`` — Discover available Odoo models by substring search.
 - ``list_modules`` — List installed modules with versions and states.
@@ -234,6 +234,22 @@ built-in tools organized into two categories:
   paths use ``/`` to traverse relations
   (``partner_id/name``, ``order_line/product_id/default_code``).
   Honours record rules and field access through Odoo's ``export_data``.
+- ``read_resource`` — Fetch the bytes of a resource by ``odoo://`` URI
+  and return them as a typed MCP content block (``text`` for textual
+  mimetypes, ``image`` / ``audio`` for media, ``resource`` with a base64
+  blob for everything else). Two URI shapes are supported:
+  ``odoo://attachment/<id>`` for an ``ir.attachment`` row, and
+  ``odoo://record/<model>/<id>/<field>`` for a Binary field on a
+  record. Mimetype is auto-detected when not stored.
+
+.. note::
+
+   **Binary fields are returned as URIs.** Both ``read_records`` and
+   ``search_read`` substitute Binary field values with
+   ``odoo://record/<model>/<id>/<field>`` references rather than
+   shipping base64 inline — the LLM gets a small stable handle and
+   only materializes bytes (via ``read_resource`` or the protocol-level
+   ``resources/read``) when it actually needs to *see* the file.
 
 **Write Tools (5)**
 

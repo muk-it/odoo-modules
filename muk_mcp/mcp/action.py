@@ -3,7 +3,11 @@ from odoo.exceptions import AccessError, UserError
 from odoo.service.model import get_public_method
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
-from odoo.addons.muk_mcp.tools.common import coerce_json_value
+from odoo.addons.muk_mcp.tools.descriptions import (
+    context_field,
+    ids_field,
+    model_field,
+)
 
 
 class MCPMixin(models.AbstractModel):
@@ -31,10 +35,7 @@ class MCPMixin(models.AbstractModel):
         input_schema={
             'type': 'object',
             'properties': {
-                'model': {
-                    'type': 'string',
-                    'description': 'Technical model name.',
-                },
+                'model': model_field(),
                 'method': {
                     'type': 'string',
                     'description': (
@@ -42,14 +43,10 @@ class MCPMixin(models.AbstractModel):
                         "'action_post', 'message_post')."
                     ),
                 },
-                'ids': {
-                    'type': 'array',
-                    'items': {'type': 'integer'},
-                    'description': (
-                        'Record IDs to call the method on. Omit for '
-                        '@api.model methods.'
-                    ),
-                },
+                'ids': ids_field(
+                    'call the method on',
+                    extra_note='Omit for @api.model methods.',
+                ),
                 'args': {
                     'type': 'string',
                     'description': (
@@ -59,14 +56,9 @@ class MCPMixin(models.AbstractModel):
                 },
                 'kwargs': {
                     'type': 'object',
-                    'description': (
-                        'Keyword arguments to pass to the method.'
-                    ),
+                    'description': 'Keyword arguments to pass to the method.',
                 },
-                'context': {
-                    'type': 'object',
-                    'description': 'Optional Odoo context overrides.',
-                },
+                'context': context_field(),
             },
             'required': ['model', 'method'],
         },
@@ -93,6 +85,6 @@ class MCPMixin(models.AbstractModel):
                 target.browse(target_ids)
                 if target_ids else target
             )
-        positional = coerce_json_value(args) or []
-        keyword = coerce_json_value(kwargs) or {}
+        positional = self._coerce_json_value(args) or []
+        keyword = self._coerce_json_value(kwargs) or {}
         return unbound(recordset, *positional, **keyword)

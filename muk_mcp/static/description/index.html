@@ -38,10 +38,11 @@
 				Odoo <strong>is</strong> the MCP server.
 			</p>
 			<p>
-				Ships with 15 production-ready tools covering the full Odoo ORM
+				Ships with 18 production-ready tools covering the full Odoo ORM
 				surface: model discovery, schema introspection, search, read, create,
-				update, delete, grouped aggregation, method execution, and chatter
-				integration. Add your own tools through the backend UI &mdash;
+				update, delete, grouped aggregation, method execution, chatter
+				integration, and typed-resource fetching for attachments and binary
+				fields. Add your own tools through the backend UI &mdash;
 				no code deployment required.
 			</p>
 		</div>
@@ -176,7 +177,7 @@
 <section class="oe_container">
 	<div class="oe_row oe_spaced">
 		<div class="text-justify" style="max-width:84%; margin:16px 8%">
-			<h3 class="oe_slogan">17 Built-in Tools</h3>
+			<h3 class="oe_slogan">18 Built-in Tools</h3>
 			<p>
 				Ships with a complete set of ORM tools covering the full lifecycle
 				of Odoo data &mdash; from discovery to manipulation. Every tool is
@@ -251,6 +252,11 @@
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>export_records</code></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">Read</span></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Export records to CSV or XLSX with relation traversal via <code>/</code> paths</td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>read_resource</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">Read</span></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Fetch a resource by <code>odoo://</code> URI and return it as a typed MCP content block (text/image/audio/resource)</td>
 					</tr>
 					<tr>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>create_records</code></td>

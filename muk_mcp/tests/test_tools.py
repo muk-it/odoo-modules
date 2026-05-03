@@ -118,10 +118,48 @@ class TestMcpTool(common.TransactionCase):
         result = self._call('read_group', {
             'model': 'res.partner',
             'domain': [],
-            'fields': ['is_company'],
             'groupby': ['is_company'],
+            'aggregates': ['id:count_distinct'],
         })
         self.assertIsInstance(result, list)
+
+    def test_read_records_swaps_binary_field_to_uri(self):
+        png_b64 = (
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQ'
+            'VQYV2NgAAIAAAUAAarVyFEAAAAASUVORK5CYII='
+        )
+        partner = self.env['res.partner'].create({
+            'name': 'Bin', 'image_1920': png_b64,
+        })
+        result = self._call('read_records', {
+            'model': 'res.partner', 'ids': [partner.id],
+            'fields': ['name', 'image_1920'],
+        })
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]['name'], 'Bin')
+        self.assertEqual(
+            result[0]['image_1920'],
+            'odoo://record/res.partner/%d/image_1920' % partner.id,
+        )
+
+    def test_search_read_swaps_binary_field_to_uri(self):
+        partner = self.env['res.partner'].create({
+            'name': 'Searchy',
+            'image_1920': (
+                'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQ'
+                'VQYV2NgAAIAAAUAAarVyFEAAAAASUVORK5CYII='
+            ),
+        })
+        result = self._call('search_read', {
+            'model': 'res.partner',
+            'domain': '[["id","=",%d]]' % partner.id,
+            'fields': ['name', 'image_1920'],
+        })
+        self.assertEqual(len(result), 1)
+        self.assertEqual(
+            result[0]['image_1920'],
+            'odoo://record/res.partner/%d/image_1920' % partner.id,
+        )
 
     def test_invalid_model_raises(self):
         with self.assertRaises(UserError):

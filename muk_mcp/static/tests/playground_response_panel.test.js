@@ -106,6 +106,39 @@ test("statusClass maps kinds to Bootstrap alert classes", () => {
     ).toBe("alert-danger");
 });
 
+test("blocks exposes the typed content blocks list", () => {
+    const inst = makePanel({
+        status: 200,
+        body: {
+            result: {
+                content: [
+                    { type: "text", text: "hi" },
+                    { type: "image", data: "AA", mimeType: "image/png" },
+                ],
+            },
+        },
+    });
+    expect(inst.blocks).toHaveLength(2);
+    expect(inst.blocks[0].type).toBe("text");
+    expect(inst.blocks[1].type).toBe("image");
+});
+
+test("dataUri builds a base64 data URI with mime fallback", () => {
+    const inst = makePanel({ status: 200, body: { result: { content: [] } } });
+    expect(inst.dataUri("image/png", "AA")).toBe("data:image/png;base64,AA");
+    expect(inst.dataUri(null, "BB")).toBe("data:application/octet-stream;base64,BB");
+});
+
+test("downloadName sanitises odoo:// uris into a filename", () => {
+    const inst = makePanel({ status: 200, body: { result: { content: [] } } });
+    expect(
+        inst.downloadName({
+            type: "resource",
+            resource: { uri: "odoo://attachment/42" },
+        })
+    ).toBe("odoo_attachment_42");
+});
+
 test("statusLabel maps kinds to user-facing labels", () => {
     expect(
         makePanel({

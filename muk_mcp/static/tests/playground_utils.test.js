@@ -143,6 +143,37 @@ test("parseToolResult classifies a JSON-RPC error envelope", () => {
     expect(parsed.code).toBe(-32603);
 });
 
+test("parseToolResult exposes typed content blocks", () => {
+    const parsed = parseToolResult({
+        result: {
+            content: [
+                { type: "text", text: "hello" },
+                { type: "image", data: "AAAA", mimeType: "image/png" },
+                {
+                    type: "resource",
+                    resource: {
+                        uri: "odoo://attachment/1",
+                        mimeType: "application/pdf",
+                        blob: "BBBB",
+                    },
+                },
+            ],
+        },
+    });
+    expect(parsed.kind).toBe("ok");
+    expect(parsed.blocks).toHaveLength(3);
+    expect(parsed.blocks[0].type).toBe("text");
+    expect(parsed.blocks[1].type).toBe("image");
+    expect(parsed.blocks[2].type).toBe("resource");
+    expect(parsed.text).toBe("hello");
+});
+
+test("parseToolResult returns blocks=[] for empty bodies", () => {
+    expect(parseToolResult(null).blocks).toEqual([]);
+    expect(parseToolResult({}).blocks).toEqual([]);
+    expect(parseToolResult({ error: { code: 1, message: "x" } }).blocks).toEqual([]);
+});
+
 // ----------------------------------------------------------
 // prettyJson
 // ----------------------------------------------------------

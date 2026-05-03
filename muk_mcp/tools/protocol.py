@@ -1,6 +1,6 @@
 import json
 
-from . import common
+from odoo.addons.muk_mcp.tools import common
 
 
 def make_jsonrpc_response(result, request_id=None):
@@ -64,7 +64,10 @@ def parse_jsonrpc_request(raw_body):
 
 
 def make_initialize_result(capabilities=None):
-    caps = {'tools': {'listChanged': True}}
+    caps = {
+        'tools': {'listChanged': True},
+        'resources': {'subscribe': False, 'listChanged': False},
+    }
     if capabilities:
         caps.update(capabilities)
     return {
@@ -89,3 +92,46 @@ def make_text_content(text):
         'type': 'text',
         'text': str(text),
     }
+
+
+def make_image_content(data, mime_type):
+    return {
+        'type': 'image',
+        'data': data,
+        'mimeType': mime_type,
+    }
+
+
+def make_audio_content(data, mime_type):
+    return {
+        'type': 'audio',
+        'data': data,
+        'mimeType': mime_type,
+    }
+
+
+def make_resource_content(
+    uri,
+    mime_type=None,
+    *,
+    text=None,
+    blob=None,
+    name=None
+):
+    resource = {'uri': uri}
+    if mime_type:
+        resource['mimeType'] = mime_type
+    if name:
+        resource['name'] = name
+    if text is not None:
+        resource['text'] = text
+    if blob is not None:
+        resource['blob'] = blob
+    return {
+        'type': 'resource',
+        'resource': resource,
+    }
+
+
+class ToolContent(list):
+    pass

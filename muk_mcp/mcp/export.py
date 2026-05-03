@@ -4,7 +4,12 @@ from odoo import _, api, models
 from odoo.exceptions import UserError
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
-from odoo.addons.muk_mcp.tools.common import coerce_json_value
+from odoo.addons.muk_mcp.tools.descriptions import (
+    domain_field,
+    fields_field,
+    ids_field,
+    model_field,
+)
 from odoo.addons.web.controllers.export import CSVExport, ExcelExport
 
 
@@ -53,44 +58,29 @@ class MCPMixin(models.AbstractModel):
         input_schema={
             'type': 'object',
             'properties': {
-                'model': {
-                    'type': 'string',
-                    'description': 'Technical model name.',
-                },
-                'fields': {
-                    'type': 'array',
-                    'items': {'type': 'string'},
-                    'description': (
-                        "Field paths. Use '/' to traverse relations."
-                    ),
-                },
-                'ids': {
-                    'type': 'array',
-                    'items': {'type': 'integer'},
-                    'description': (
-                        "Record ids. Omit to use the domain + limit."
-                    ),
-                },
-                'domain': {
-                    'type': 'string',
-                    'description': (
-                        "JSON-encoded Odoo domain array when 'ids' is "
-                        "not supplied. Example: \"[[\\\"state\\\",\\\"=\\\","
-                        "\\\"sale\\\"]]\". Pass \"[]\" or omit for no filter."
-                    ),
-                },
+                'model': model_field(),
+                'fields': fields_field(
+                    required_hint=False,
+                    extra_note="Use '/' to traverse relations.",
+                    example=['name', 'partner_id/name', 'order_line/product_id/default_code'],
+                ),
+                'ids': ids_field(
+                    'export',
+                    extra_note='Omit to use the domain + limit.',
+                ),
+                'domain': domain_field(
+                    extra_note="Used when 'ids' is not supplied.",
+                ),
                 'format': {
                     'type': 'string',
                     'enum': ['csv', 'xlsx'],
-                    'description': "Output format. Default: 'csv'.",
                     'default': 'csv',
+                    'description': "Output format.",
                 },
                 'limit': {
                     'type': 'integer',
-                    'description': (
-                        "Max records when using domain. Default 1000."
-                    ),
                     'default': 1000,
+                    'description': 'Maximum records when using domain.',
                 },
                 'order': {
                     'type': 'string',
@@ -114,7 +104,7 @@ class MCPMixin(models.AbstractModel):
         if not fields:
             raise UserError(_('No fields provided'))
         records = self._resolve_records(
-            model, ids, coerce_json_value(domain), limit, order,
+            model, ids, self._coerce_json_value(domain), limit, order,
         )
         exporter = self._build_exporter(format)
         rows = records.export_data(list(fields)).get('datas') or []

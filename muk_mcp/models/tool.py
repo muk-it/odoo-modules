@@ -15,6 +15,7 @@ from odoo.addons.muk_mcp.core.tool import get_tool_index
 from odoo.addons.muk_mcp.tools.encoder import encode_request, encode_response
 from odoo.addons.muk_mcp.tools.exception import MCPScopeDenied
 from odoo.addons.muk_mcp.tools.logger import LoggerProxy
+from odoo.addons.muk_mcp.tools.protocol import ToolContent
 from odoo.addons.muk_web_utils.tools.encoder import RecordEncoder
 
 class MCPTool(models.Model):
@@ -93,6 +94,8 @@ class MCPTool(models.Model):
 
     @api.model
     def _serialize_result(self, result):
+        if isinstance(result, ToolContent):
+            return result
         if not isinstance(result, str):
             return json.dumps(
                 result, indent=2, cls=RecordEncoder

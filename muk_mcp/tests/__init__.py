@@ -1,5 +1,7 @@
+from . import test_resource
 from . import test_batch
 from . import test_connect
+from . import test_content
 from . import test_controller
 from . import test_decorator_tool
 from . import test_dispatch

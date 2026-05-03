@@ -2,12 +2,41 @@ from odoo import _, api, models
 from odoo.exceptions import UserError
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
-from odoo.addons.muk_mcp.tools.common import coerce_json_value
+from odoo.addons.muk_mcp.tools.descriptions import (
+    context_field,
+    domain_field,
+    fields_field,
+    ids_field,
+    model_field,
+)
+from odoo.addons.muk_mcp.tools.uri import record_field_uri
 
 
 class MCPMixin(models.AbstractModel):
 
     _inherit = 'muk_mcp.mixin'
+
+    # ----------------------------------------------------------
+    # Helper
+    # ----------------------------------------------------------
+
+    @api.model
+    def _swap_binary_to_uri(self, model, rows):
+        target = self.env[model]
+        binary_fields = [
+            name for name, field in target._fields.items()
+            if field.type == 'binary'
+        ]
+        if not binary_fields:
+            return rows
+        for row in rows:
+            rid = row.get('id')
+            if not rid:
+                continue
+            for fname in binary_fields:
+                if fname in row and row[fname]:
+                    row[fname] = record_field_uri(model, rid, fname)
+        return rows
 
     # ----------------------------------------------------------
     # Functions
@@ -17,33 +46,17 @@ class MCPMixin(models.AbstractModel):
     @mcp_tool(
         name='search_count',
         description=(
-                'Count the number of records matching a domain filter without '
-                'returning the data. Use this to check how many records exist '
-                'before doing a full search_read, or to get statistics (e.g. '
-                'how many open invoices, how many active customers).'
+            'Count the number of records matching a domain filter without '
+            'returning the data. Use this to check how many records exist '
+            'before doing a full search_read, or to get statistics (e.g. '
+            'how many open invoices, how many active customers).'
         ),
         input_schema={
             'type': 'object',
             'properties': {
-                'model': {
-                    'type': 'string',
-                    'description': 'Technical model name.',
-                },
-                'domain': {
-                    'type': 'string',
-                    'description': (
-                        'JSON-encoded Odoo domain array, e.g. '
-                        '"[[\\"is_company\\",\\"=\\",true]]". Pass "[]" or '
-                        'omit for no filter.'
-                    ),
-                },
-                'context': {
-                    'type': 'object',
-                    'description': (
-                            "Optional Odoo context overrides. Example: "
-                            "{'active_test': false} to count archived records too."
-                    ),
-                },
+                'model': model_field(),
+                'domain': domain_field(),
+                'context': context_field(),
             },
             'required': ['model'],
         },
@@ -52,7 +65,7 @@ class MCPMixin(models.AbstractModel):
     def _mcp_search_count(self, model, domain=None):
         return {
             'count': self._resolve_model(model).search_count(
-                coerce_json_value(domain) or [],
+                self._coerce_json_value(domain) or [],
             ),
         }
 
@@ -61,73 +74,37 @@ class MCPMixin(models.AbstractModel):
         name='search_read',
         description=(
             "Search for records matching a domain filter and return their "
-            "field values. The domain is a list of conditions using Odoo's "
-            "domain syntax: each condition is [field, operator, value]. "
-            "Conditions are AND-ed by default. Use '|' for OR. Operators: "
-            "=, !=, >, >=, <, <=, like, ilike, in, not in, child_of, "
-            "parent_of. Always specify 'fields' to avoid returning all "
+            "field values. Always specify 'fields' to avoid returning all "
             "fields (which can be slow). Use 'limit' to paginate large "
             "result sets."
         ),
         input_schema={
             'type': 'object',
             'properties': {
-                'model': {
-                    'type': 'string',
-                    'description': (
-                        "Technical model name (e.g. 'res.partner')."
-                    ),
-                },
-                'domain': {
-                    'type': 'string',
-                    'description': (
-                        "JSON-encoded Odoo domain array. Examples: "
-                        "\"[[\\\"is_company\\\",\\\"=\\\",true]]\", "
-                        "\"[\\\"|\\\",[\\\"email\\\",\\\"ilike\\\",\\\"@gmail\\\"],"
-                        "[\\\"email\\\",\\\"ilike\\\",\\\"@outlook\\\"]]\", "
-                        "\"[[\\\"state\\\",\\\"=\\\",\\\"sale\\\"],"
-                        "[\\\"date_order\\\",\\\">=\\\",\\\"2024-01-01\\\"]]\". "
-                        "Pass \"[]\" or omit for no filter."
-                    ),
-                },
-                'fields': {
-                    'type': 'array',
-                    'items': {'type': 'string'},
-                    'description': (
-                        "Field names to return. ALWAYS specify this to "
-                        "avoid returning all fields. Example: "
-                        "['name','email','phone','state']."
-                    ),
-                },
+                'model': model_field(),
+                'domain': domain_field(),
+                'fields': fields_field(),
                 'limit': {
                     'type': 'integer',
+                    'default': 80,
                     'description': (
                         'Maximum records to return. Use small values (10-50) '
-                        'for exploration, larger (up to 500) when you need '
-                        'bulk data.'
+                        'for exploration, larger (up to 500) for bulk data.'
                     ),
-                    'default': 80,
                 },
                 'offset': {
                     'type': 'integer',
-                    'description': 'Number of records to skip for pagination.',
                     'default': 0,
+                    'description': 'Records to skip for pagination.',
                 },
                 'order': {
                     'type': 'string',
                     'description': (
-                        "Sort order. Example: 'create_date desc', "
+                        "Sort order, e.g. 'create_date desc', "
                         "'name asc, id desc'."
                     ),
                 },
-                'context': {
-                    'type': 'object',
-                    'description': (
-                        "Optional Odoo context overrides. Example: "
-                        "{'active_test': false} to include archived records, "
-                        "{'lang': 'de_DE'} to change language."
-                    ),
-                },
+                'context': context_field(),
             },
             'required': ['model'],
         },
@@ -142,13 +119,14 @@ class MCPMixin(models.AbstractModel):
         offset=0,
         order=None,
     ):
-        return self._resolve_model(model).search_read(
-            coerce_json_value(domain) or [],
+        rows = self._resolve_model(model).search_read(
+            self._coerce_json_value(domain) or [],
             fields=fields,
             limit=limit,
             offset=offset,
             order=order,
         )
+        return self._swap_binary_to_uri(model, rows)
 
     @api.model
     @mcp_tool(
@@ -162,29 +140,10 @@ class MCPMixin(models.AbstractModel):
         input_schema={
             'type': 'object',
             'properties': {
-                'model': {
-                    'type': 'string',
-                    'description': 'Technical model name.',
-                },
-                'ids': {
-                    'type': 'array',
-                    'items': {'type': 'integer'},
-                    'description': 'Record IDs to read.',
-                },
-                'fields': {
-                    'type': 'array',
-                    'items': {'type': 'string'},
-                    'description': (
-                        'Field names to return. ALWAYS specify this.'
-                    ),
-                },
-                'context': {
-                    'type': 'object',
-                    'description': (
-                        "Optional Odoo context overrides. Example: "
-                        "{'active_test': false} to include archived records."
-                    ),
-                },
+                'model': model_field(),
+                'ids': ids_field('read'),
+                'fields': fields_field(),
+                'context': context_field(),
             },
             'required': ['model', 'ids'],
         },
@@ -194,7 +153,8 @@ class MCPMixin(models.AbstractModel):
         target_ids = self._normalize_ids(ids)
         if not target_ids:
             raise UserError(_('No record IDs provided'))
-        return self._resolve_model(model).browse(target_ids).read(fields)
+        rows = self._resolve_model(model).browse(target_ids).read(fields)
+        return self._swap_binary_to_uri(model, rows)
 
     @api.model
     @mcp_tool(
@@ -202,40 +162,36 @@ class MCPMixin(models.AbstractModel):
         description=(
             'Perform grouped aggregation on records — the equivalent of '
             'SQL GROUP BY. Groups records matching a domain by one or '
-            'more fields and returns aggregate values (count, sum, avg). '
-            'Use this for statistics and dashboards: e.g. count invoices '
-            'by state, sum sale amounts by month, average order value by '
+            'more fields and returns aggregate values. Use this for '
+            'statistics and dashboards: e.g. count invoices by state, '
+            'sum sale amounts by month, average order value by '
             'salesperson.'
         ),
         input_schema={
             'type': 'object',
             'properties': {
-                'model': {
-                    'type': 'string',
-                    'description': 'Technical model name.',
-                },
-                'domain': {
-                    'type': 'string',
-                    'description': (
-                        'JSON-encoded Odoo domain array. Same syntax as '
-                        'search_read. Pass "[]" or omit for no filter.'
-                    ),
-                },
-                'fields': {
-                    'type': 'array',
-                    'items': {'type': 'string'},
-                    'description': (
-                        "Fields to aggregate. Include the groupby field and "
-                        "any numeric fields to sum/avg. Example: "
-                        "['state', 'amount_total']."
-                    ),
-                },
+                'model': model_field(),
+                'domain': domain_field(),
                 'groupby': {
                     'type': 'array',
                     'items': {'type': 'string'},
                     'description': (
-                        "Fields to group by. Examples: ['state'], "
-                        "['partner_id', 'state'], ['date_order:month']."
+                        'Fields to group by. Examples: '
+                        '["state"], ["partner_id", "state"], '
+                        '["date_order:month"] (granularity suffixes: '
+                        ':year, :quarter, :month, :week, :day, :hour).'
+                    ),
+                },
+                'aggregates': {
+                    'type': 'array',
+                    'items': {'type': 'string'},
+                    'description': (
+                        'Aggregate specs as "<field>:<agg>". Aggregations: '
+                        'sum, avg, min, max, count, count_distinct, '
+                        'array_agg, bool_or, bool_and. Examples: '
+                        '["amount_total:sum"], '
+                        '["partner_id:count_distinct", "amount_total:avg"]. '
+                        '"__count" is always included.'
                     ),
                 },
                 'limit': {
@@ -245,57 +201,33 @@ class MCPMixin(models.AbstractModel):
                 'order': {
                     'type': 'string',
                     'description': (
-                        "Sort order for groups. Example: 'amount_total desc'."
+                        "Sort order for groups, e.g. 'amount_total:sum desc'."
                     ),
                 },
-                'context': {
-                    'type': 'object',
-                    'description': (
-                        "Optional Odoo context overrides. Example: "
-                        "{'active_test': false} to include archived records "
-                        "in aggregation."
-                    ),
-                },
+                'context': context_field(),
             },
-            'required': ['model', 'fields', 'groupby'],
+            'required': ['model', 'groupby'],
         },
         category='read',
     )
     def _mcp_read_group(
         self,
         model,
-        fields,
         groupby,
+        aggregates=None,
         domain=None,
         limit=None,
         order=None,
     ):
         if not groupby:
             raise UserError(_('groupby is required'))
-        target = self._resolve_model(model)
-        aggregates = []
-        numeric_types = {'integer', 'float', 'monetary'}
-        for field_spec in (fields or []):
-            if ':' in field_spec:
-                aggregates.append(field_spec)
-                continue
-            if field_spec in groupby:
-                continue
-            field = target._fields.get(field_spec)
-            if field is not None and field.type in numeric_types:
-                aggregates.append('%s:sum' % field_spec)
-            else:
-                aggregates.append('%s:count_distinct' % field_spec)
+        aggregates = list(aggregates or [])
         if '__count' not in aggregates:
             aggregates.append('__count')
-        data = target.formatted_read_group(
-            coerce_json_value(domain) or [],
+        return self._resolve_model(model).formatted_read_group(
+            self._coerce_json_value(domain) or [],
             groupby=groupby,
             aggregates=aggregates,
             limit=limit,
             order=order or None,
         )
-        for row in data:
-            if '__count' in row:
-                row['%s_count' % groupby[0]] = row.pop('__count')
-        return data

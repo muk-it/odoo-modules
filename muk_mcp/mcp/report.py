@@ -4,6 +4,7 @@ from odoo import _, api, models
 from odoo.exceptions import UserError
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
+from odoo.addons.muk_mcp.tools.descriptions import ids_field
 
 
 class MCPMixin(models.AbstractModel):
@@ -62,11 +63,7 @@ class MCPMixin(models.AbstractModel):
                         "ir.actions.report to render."
                     ),
                 },
-                'ids': {
-                    'type': 'array',
-                    'items': {'type': 'integer'},
-                    'description': 'Record IDs to render.',
-                },
+                'ids': ids_field('render'),
             },
             'required': ['report_ref', 'ids'],
         },

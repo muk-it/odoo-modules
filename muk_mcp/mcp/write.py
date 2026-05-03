@@ -2,6 +2,11 @@ from odoo import _, api, models
 from odoo.exceptions import UserError
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
+from odoo.addons.muk_mcp.tools.descriptions import (
+    context_field,
+    ids_field,
+    model_field,
+)
 
 
 class MCPMixin(models.AbstractModel):
@@ -26,25 +31,16 @@ class MCPMixin(models.AbstractModel):
         input_schema={
             'type': 'object',
             'properties': {
-                'model': {
-                    'type': 'string',
-                    'description': 'Technical model name.',
-                },
+                'model': model_field(),
                 'values': {
                     'type': 'object',
                     'description': (
-                        "Field values for the new record. Example: "
-                        "{'name': 'John', 'email': 'john@example.com', "
-                        "'company_id': 1}."
+                        'Field values for the new record. Example: '
+                        '{"name": "John", "email": "john@example.com", '
+                        '"company_id": 1}.'
                     ),
                 },
-                'context': {
-                    'type': 'object',
-                    'description': (
-                        "Optional Odoo context overrides. Example: "
-                        "{'default_type': 'contact'} to set default field values."
-                    ),
-                },
+                'context': context_field(),
             },
             'required': ['model', 'values'],
         },
@@ -68,15 +64,8 @@ class MCPMixin(models.AbstractModel):
         input_schema={
             'type': 'object',
             'properties': {
-                'model': {
-                    'type': 'string',
-                    'description': 'Technical model name.',
-                },
-                'ids': {
-                    'type': 'array',
-                    'items': {'type': 'integer'},
-                    'description': 'Record IDs to update.',
-                },
+                'model': model_field(),
+                'ids': ids_field('update'),
                 'values': {
                     'type': 'object',
                     'description': (
@@ -84,10 +73,7 @@ class MCPMixin(models.AbstractModel):
                         'want to modify.'
                     ),
                 },
-                'context': {
-                    'type': 'object',
-                    'description': 'Optional Odoo context overrides.',
-                },
+                'context': context_field(),
             },
             'required': ['model', 'ids', 'values'],
         },
@@ -113,19 +99,9 @@ class MCPMixin(models.AbstractModel):
         input_schema={
             'type': 'object',
             'properties': {
-                'model': {
-                    'type': 'string',
-                    'description': 'Technical model name.',
-                },
-                'ids': {
-                    'type': 'array',
-                    'items': {'type': 'integer'},
-                    'description': 'Record IDs to permanently delete.',
-                },
-                'context': {
-                    'type': 'object',
-                    'description': 'Optional Odoo context overrides.',
-                },
+                'model': model_field(),
+                'ids': ids_field('permanently delete'),
+                'context': context_field(),
             },
             'required': ['model', 'ids'],
         },

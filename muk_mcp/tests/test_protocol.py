@@ -93,3 +93,46 @@ class TestProtocol(common.TransactionCase):
         content = protocol.make_text_content('hello world')
         self.assertEqual(content['type'], 'text')
         self.assertEqual(content['text'], 'hello world')
+
+    def test_make_image_content(self):
+        content = protocol.make_image_content('AAAA', 'image/png')
+        self.assertEqual(content['type'], 'image')
+        self.assertEqual(content['data'], 'AAAA')
+        self.assertEqual(content['mimeType'], 'image/png')
+
+    def test_make_audio_content(self):
+        content = protocol.make_audio_content('BBBB', 'audio/wav')
+        self.assertEqual(content['type'], 'audio')
+        self.assertEqual(content['data'], 'BBBB')
+        self.assertEqual(content['mimeType'], 'audio/wav')
+
+    def test_make_resource_content_with_blob(self):
+        content = protocol.make_resource_content(
+            'odoo://attachment/1',
+            mime_type='application/pdf',
+            blob='CCCC',
+        )
+        self.assertEqual(content['type'], 'resource')
+        self.assertEqual(content['resource']['uri'], 'odoo://attachment/1')
+        self.assertEqual(
+            content['resource']['mimeType'], 'application/pdf',
+        )
+        self.assertEqual(content['resource']['blob'], 'CCCC')
+        self.assertNotIn('text', content['resource'])
+
+    def test_make_resource_content_with_text(self):
+        content = protocol.make_resource_content(
+            'odoo://thing/1', mime_type='text/plain', text='hi',
+        )
+        self.assertEqual(content['resource']['text'], 'hi')
+        self.assertNotIn('blob', content['resource'])
+
+    def test_tool_content_is_list(self):
+        blocks = protocol.ToolContent([
+            protocol.make_text_content('a'),
+            protocol.make_image_content('xx', 'image/png'),
+        ])
+        self.assertIsInstance(blocks, list)
+        self.assertEqual(len(blocks), 2)
+        self.assertEqual(blocks[0]['type'], 'text')
+        self.assertEqual(blocks[1]['type'], 'image')

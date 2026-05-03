@@ -111,27 +111,29 @@ export function prettyJson(text) {
 
 export function parseToolResult(body) {
     if (!body) {
-        return { kind: "empty", text: "" };
+        return { kind: "empty", text: "", blocks: [] };
     }
     if (body.error) {
         return {
             kind: "error",
             code: body.error.code,
             message: body.error.message,
+            blocks: [],
         };
     }
     const result = body.result;
     if (!result) {
-        return { kind: "empty", text: "" };
+        return { kind: "empty", text: "", blocks: [] };
     }
-    const content = result.content || [];
-    const text = content
+    const blocks = result.content || [];
+    const text = blocks
         .filter((c) => c.type === "text")
         .map((c) => c.text)
         .join("\n");
     return {
         kind: result.isError ? "tool_error" : "ok",
         text,
+        blocks,
     };
 }
 
