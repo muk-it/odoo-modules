@@ -1,6 +1,7 @@
 from odoo import api, models
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
+from odoo.addons.muk_mcp.tools.descriptions import model_field
 
 
 class MCPMixin(models.AbstractModel):
@@ -71,13 +72,7 @@ class MCPMixin(models.AbstractModel):
         input_schema={
             'type': 'object',
             'properties': {
-                'model': {
-                    'type': 'string',
-                    'description': (
-                        "Technical model name (e.g. 'res.partner', "
-                        "'sale.order', 'account.move')."
-                    ),
-                },
+                'model': model_field(),
             },
             'required': ['model'],
         },

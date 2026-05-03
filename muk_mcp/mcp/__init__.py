@@ -1,5 +1,6 @@
 from . import mixin
 from . import action
+from . import resource
 from . import export
 from . import identity
 from . import introspect

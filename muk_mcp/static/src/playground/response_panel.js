@@ -41,6 +41,22 @@ export class ResponsePanel extends Component {
         }
         return parseToolResult(this.props.response.body);
     }
+    get blocks() {
+        return this.parsed?.blocks || [];
+    }
+    formatTextBlock(block) {
+        return prettyJson(block.text);
+    }
+    dataUri(mimeType, base64) {
+        return `data:${mimeType || "application/octet-stream"};base64,${base64}`;
+    }
+    downloadName(block) {
+        if (block.resource?.name) {
+            return block.resource.name;
+        }
+        const uri = block.resource?.uri || "attachment";
+        return uri.replace(/[^A-Za-z0-9._-]+/g, "_");
+    }
     get prettyResult() {
         const parsed = this.parsed;
         if (!parsed) {

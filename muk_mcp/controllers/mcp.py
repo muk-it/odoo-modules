@@ -1,3 +1,4 @@
+import base64
 import json
 import time
 
@@ -11,6 +12,9 @@ from odoo.exceptions import AccessError, UserError
 
 from odoo.addons.muk_mcp.core.route import mcp_route
 from odoo.addons.muk_mcp.tools import common, protocol
+from odoo.addons.muk_mcp.tools.content import (
+    is_textual_mimetype, normalize_mimetype
+)
 from odoo.addons.muk_mcp.tools.exception import MCPScopeDenied
 
 class MCPController(http.Controller):
@@ -109,10 +113,8 @@ class MCPController(http.Controller):
             'tools/list': self._handle_tools_list,
             'tools/call': self._handle_tools_call,
             'resources/list': lambda p: {'resources': []},
-            'resources/read': lambda p: {'contents': []},
-            'resources/templates/list': lambda p: {
-                'resourceTemplates': []
-            },
+            'resources/read': self._handle_resources_read,
+            'resources/templates/list': self._handle_resource_templates_list,
             'prompts/list': lambda p: {'prompts': []},
             'prompts/get': lambda p: {'messages': []},
             'completion/complete': lambda p: {
@@ -231,7 +233,7 @@ class MCPController(http.Controller):
         key = getattr(request, '_mcp_key', None)
         enforce_scope = key.scope if key else None
         try:
-            text, _record_info = retrying(
+            result, _record_info = retrying(
                 partial(
                     request.env['muk_mcp.tool']._call,
                     tool_name,
@@ -256,9 +258,62 @@ class MCPController(http.Controller):
                 [protocol.make_text_content('Internal server error')],
                 is_error=True,
             )
+        if isinstance(result, protocol.ToolContent):
+            return protocol.make_tool_result(result)
         return protocol.make_tool_result(
-            [protocol.make_text_content(text)]
+            [protocol.make_text_content(result)]
         )
+
+    def _handle_resources_read(self, params):
+        if not (uri := (params or {}).get('uri')):
+            return {'contents': []}
+        try:
+            mimetype, raw, name = (
+                request.env['muk_mcp.mixin']._resolve_resource_uri(
+                    uri
+                )
+            )
+        except (UserError, AccessError):
+            return {'contents': []}
+        normalized = normalize_mimetype(
+            mimetype
+        )
+        entry = {'uri': uri}
+        if normalized:
+            entry['mimeType'] = normalized
+        if name:
+            entry['name'] = name
+        if is_textual_mimetype(normalized):
+            try:
+                entry['text'] = raw.decode('utf-8')
+            except UnicodeDecodeError:
+                entry['blob'] = base64.b64encode(raw).decode(
+                    'ascii'
+                )
+        else:
+            entry['blob'] = base64.b64encode(raw).decode(
+                'ascii'
+            )
+        return {'contents': [entry]}
+
+    def _handle_resource_templates_list(self, params):
+        return {
+            'resourceTemplates': [
+                {
+                    'uriTemplate': 'odoo://attachment/{attachment_id}',
+                    'name': 'ir.attachment',
+                    'description': 'A file stored as an ir.attachment record.',
+                },
+                {
+                    'uriTemplate': 'odoo://record/{model}/{id}/{field}',
+                    'name': 'record-binary-field',
+                    'description': (
+                        'A Binary field on an Odoo record (image, signature, '
+                        'document, etc.). Mimetype is auto-detected.'
+                    ),
+                },
+            ],
+        }
 
     # ----------------------------------------------------------
     # Routes

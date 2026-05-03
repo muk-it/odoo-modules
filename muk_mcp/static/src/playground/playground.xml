@@ -298,14 +298,50 @@
                 <strong t-esc="statusLabel"/>
                 <span t-if="props.response.exception" t-esc="props.response.exception"/>
             </div>
-            <div t-if="prettyResult">
+            <div t-if="blocks.length">
                 <div class="small text-muted mb-1 d-flex align-items-center">
                     Result
-                    <button class="btn btn-sm btn-link ms-auto p-0" t-on-click="onCopyResult" title="Copy result">
+                    <button t-if="prettyResult" class="btn btn-sm btn-link ms-auto p-0" t-on-click="onCopyResult" title="Copy text result">
                         <i class="fa fa-clipboard"/>
                     </button>
                 </div>
-                <pre class="mb-3 p-2 bg-light border rounded" t-esc="prettyResult"/>
+                <t t-foreach="blocks" t-as="block" t-key="block_index">
+                    <t t-if="block.type === 'text'">
+                        <pre class="mb-3 p-2 bg-light border rounded" t-esc="formatTextBlock(block)"/>
+                    </t>
+                    <t t-elif="block.type === 'image'">
+                        <div class="mb-3 p-2 bg-light border rounded">
+                            <div class="small text-muted mb-1">image · <t t-esc="block.mimeType"/></div>
+                            <img t-att-src="dataUri(block.mimeType, block.data)" class="img-fluid d-block"/>
+                        </div>
+                    </t>
+                    <t t-elif="block.type === 'audio'">
+                        <div class="mb-3 p-2 bg-light border rounded">
+                            <div class="small text-muted mb-1">audio · <t t-esc="block.mimeType"/></div>
+                            <audio controls="controls" t-att-src="dataUri(block.mimeType, block.data)"/>
+                        </div>
+                    </t>
+                    <t t-elif="block.type === 'resource'">
+                        <div class="mb-3 p-2 bg-light border rounded">
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <span class="badge text-bg-secondary" t-esc="block.resource.mimeType or 'binary'"/>
+                                <code class="small text-truncate flex-grow-1" t-esc="block.resource.uri"/>
+                                <a t-if="block.resource.blob"
+                                   t-att-href="dataUri(block.resource.mimeType, block.resource.blob)"
+                                   t-att-download="downloadName(block)"
+                                   class="btn btn-sm btn-outline-secondary">
+                                    <i class="fa fa-download me-1"/>Download
+                                </a>
+                            </div>
+                            <pre t-if="block.resource.text" class="mb-0 mt-2 small" t-esc="block.resource.text"/>
+                        </div>
+                    </t>
+                    <t t-else="">
+                        <div class="mb-3 p-2 bg-light border rounded text-muted small">
+                            Unknown content block type: <code t-esc="block.type"/>
+                        </div>
+                    </t>
+                </t>
             </div>
             <details>
                 <summary class="small text-muted d-flex align-items-center">
