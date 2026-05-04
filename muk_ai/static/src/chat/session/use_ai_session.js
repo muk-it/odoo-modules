@@ -51,7 +51,6 @@ export function useAiSession(options = {}) {
     const sessionNotification = useService('muk_ai.session_notification');
     const env = useEnv();
     const surface = options.surface || 'window';
-
     const state = useState({
         sessionId: null,
         name: '',
@@ -87,20 +86,17 @@ export function useAiSession(options = {}) {
         streamIdle: false,
         resumeAt: '',
     });
-
     let busHandler = null;
     let eventKeys = new Set();
     let onScrollCallback = null;
     let streamIdleTimer = null;
     let loadSeq = 0;
-
     function clearStreamIdleTimer() {
         if (streamIdleTimer) {
             clearTimeout(streamIdleTimer);
             streamIdleTimer = null;
         }
     }
-
     function bumpStreamActivity() {
         state.streamIdle = false;
         clearStreamIdleTimer();
@@ -116,25 +112,21 @@ export function useAiSession(options = {}) {
             }
         }, STREAM_IDLE_MS);
     }
-
     function connectBus() {
         disconnectBus();
         busHandler = (payload) => onBusEvent(payload);
         bus.subscribe('muk_ai.event', busHandler);
     }
-
     function disconnectBus() {
         if (busHandler) {
             bus.unsubscribe('muk_ai.event', busHandler);
             busHandler = null;
         }
     }
-
     function eventKey(entry) {
         const {at, ...rest} = entry || {};
         return canonicalStringify(rest);
     }
-
     function canonicalStringify(value) {
         if (value === null || typeof value !== 'object') {
             return JSON.stringify(value);
@@ -147,7 +139,6 @@ export function useAiSession(options = {}) {
             (k) => JSON.stringify(k) + ':' + canonicalStringify(value[k]),
         ).join(',') + '}';
     }
-
     function onBusEvent(event) {
         if (!event || event.session_id !== state.sessionId) {
             return;
@@ -252,7 +243,6 @@ export function useAiSession(options = {}) {
             state.pendingMessages = (event.payload || {}).pending || [];
         }
     }
-
     async function handleUiAction(payload) {
         const action = payload && payload.action;
         if (!action || typeof action !== 'object') {
@@ -268,7 +258,6 @@ export function useAiSession(options = {}) {
             );
         }
     }
-
     function maybePopoutBeforeAction() {
         if (surface !== 'fullscreen' || !state.sessionId) {
             return;
@@ -279,7 +268,6 @@ export function useAiSession(options = {}) {
         }
         chatWindow.open(state.sessionId);
     }
-
     async function load(sessionId) {
         const seq = ++loadSeq;
         const previousSessionId = state.sessionId;
@@ -339,7 +327,6 @@ export function useAiSession(options = {}) {
         state.focusToken += 1;
         return record;
     }
-
     function _resetSessionState(sessionId) {
         state.sessionId = sessionId;
         state.input = '';
@@ -357,7 +344,6 @@ export function useAiSession(options = {}) {
         state.resumeAt = '';
         eventKeys = new Set();
     }
-
     function applySessionFields(payload) {
         state.status = payload.state;
         state.pendingAsk = payload.pending_ask || null;
@@ -378,7 +364,6 @@ export function useAiSession(options = {}) {
             state.contextWindow = payload.context_window;
         }
     }
-
     function normalizeResumeAt(value) {
         if (!value) {
             return '';
@@ -396,7 +381,6 @@ export function useAiSession(options = {}) {
         }
         return String(value);
     }
-
     function applyRecord(record) {
         applySessionFields(record);
         state.name = record.name || '';
@@ -407,7 +391,6 @@ export function useAiSession(options = {}) {
         state.agentName = Array.isArray(agent) ? agent[1] : '';
         rebuildEventKeys();
     }
-
     function applySnapshot(snapshot) {
         if (!snapshot) {
             return;
@@ -428,13 +411,11 @@ export function useAiSession(options = {}) {
         state.streamingTools = [];
         rebuildEventKeys();
     }
-
     function rebuildEventKeys() {
         eventKeys = new Set(
             (state.events || []).map((entry) => eventKey(entry)),
         );
     }
-
     async function loadMoreEvents() {
         if (state.loadingOlder || !state.hasMoreOlder || !state.sessionId) {
             return;
@@ -469,7 +450,6 @@ export function useAiSession(options = {}) {
             state.loadingOlder = false;
         }
     }
-
     function canSend() {
         const hasContent = state.input.trim().length > 0
             || state.pendingAttachments.length > 0;
@@ -477,33 +457,27 @@ export function useAiSession(options = {}) {
             && state.status !== 'compacting';
         return !!state.sessionId && !state.loading && hasContent && idle;
     }
-
     function canAttach() {
         return !!state.sessionId
             && !state.loading
             && state.status !== 'running'
             && state.status !== 'compacting';
     }
-
     function canStop() {
         return state.status === 'running';
     }
-
     function composerDisabled() {
         return false;
     }
-
     function isQueueing() {
         return state.status === 'running' || (
             state.status === 'waiting'
             && (state.pendingAsk || {}).kind === 'approval'
         );
     }
-
     function onInputChange(value) {
         state.input = value;
     }
-
     async function onSend() {
         if (!canSend()) {
             return;
@@ -588,7 +562,6 @@ export function useAiSession(options = {}) {
         state.focusToken += 1;
         requestScroll();
     }
-
     async function cancelQueued(index) {
         if (!state.sessionId) {
             return;
@@ -617,7 +590,6 @@ export function useAiSession(options = {}) {
             );
         }
     }
-
     async function onStop() {
         if (!state.sessionId) {
             return;
@@ -634,7 +606,6 @@ export function useAiSession(options = {}) {
             );
         }
     }
-
     async function onRegenerate() {
         if (!state.sessionId || state.status === 'running' || state.status === 'waiting') {
             return;
@@ -651,13 +622,11 @@ export function useAiSession(options = {}) {
             );
         }
     }
-
     function canRegenerate() {
         if (!state.sessionId) return false;
         if (state.status === 'running' || state.status === 'waiting') return false;
         return (state.events || []).some((e) => e.kind === 'user_message' || e.kind === 'answer');
     }
-
     async function onAttachFiles(files) {
         if (!state.sessionId || !files || !files.length) {
             return;
@@ -678,7 +647,6 @@ export function useAiSession(options = {}) {
             );
         }
     }
-
     function parseSlashCommand(raw) {
         const trimmed = (raw || '').trim();
         if (!trimmed.startsWith('/')) {
@@ -694,7 +662,6 @@ export function useAiSession(options = {}) {
         }
         return { name: `/${name}`, args: parts.join(' ') };
     }
-
     async function dispatchCommand(slash) {
         if (slash.name === '/help') {
             appendLocalCommandLog('/help', {
@@ -715,7 +682,6 @@ export function useAiSession(options = {}) {
             return;
         }
     }
-
     async function runUnpin() {
         if (!state.sessionId) {
             return;
@@ -740,7 +706,6 @@ export function useAiSession(options = {}) {
             );
         }
     }
-
     async function setApprovalMode(mode) {
         if (!state.sessionId) {
             return;
@@ -758,12 +723,10 @@ export function useAiSession(options = {}) {
             );
         }
     }
-
     function isAwaitingApproval() {
         return state.status === 'waiting'
             && (state.pendingAsk || {}).kind === 'approval';
     }
-
     function cycleApprovalMode() {
         const current = state.approvalMode;
         let next;
@@ -776,7 +739,6 @@ export function useAiSession(options = {}) {
         }
         return setApprovalMode(next);
     }
-
     async function answerWithOption(option) {
         if (state.status === 'running' || !option) {
             return;
@@ -784,7 +746,6 @@ export function useAiSession(options = {}) {
         state.input = option;
         await onSend();
     }
-
     async function respondYesno(decision) {
         const pending = state.pendingAsk || {};
         if (pending.kind === 'approval') {
@@ -799,7 +760,6 @@ export function useAiSession(options = {}) {
         const labels = { approve: 'Approve', session: 'Approve', reject: 'Reject' };
         return answerWithOption(labels[decision] || decision);
     }
-
     async function _runApproval(method, errMessage, kwargs) {
         if (!state.sessionId || !isAwaitingApproval()) {
             return;
@@ -813,21 +773,18 @@ export function useAiSession(options = {}) {
             notification.add(errMessage(error), { type: 'danger' });
         }
     }
-
     async function approveTool() {
         return _runApproval(
             'approve_tool',
             (e) => _t('Failed to approve tool: %s', formatError(e)),
         );
     }
-
     async function approveForSession() {
         return _runApproval(
             'approve_for_session',
             (e) => _t('Failed to approve tool: %s', formatError(e)),
         );
     }
-
     async function rejectTool(reason) {
         return _runApproval(
             'reject_tool',
@@ -835,7 +792,6 @@ export function useAiSession(options = {}) {
             { reason: reason || '' },
         );
     }
-
     async function openPinnedContext() {
         const ctx = state.viewContext;
         if (!ctx || !ctx.model) {
@@ -867,13 +823,11 @@ export function useAiSession(options = {}) {
             );
         }
     }
-
     function _helpSummary() {
         return SLASH_COMMANDS
             .map((c) => `**${c.name}** — ${c.hint}`)
             .join('\n\n');
     }
-
     function appendLocalCommandLog(name, extra) {
         const entry = {
             kind: 'command',
@@ -884,7 +838,6 @@ export function useAiSession(options = {}) {
         eventKeys.add(eventKey(entry));
         requestScroll();
     }
-
     async function runClear() {
         if (!state.sessionId) {
             return;
@@ -927,7 +880,6 @@ export function useAiSession(options = {}) {
             );
         }
     }
-
     async function runCompact({ silent }) {
         if (!state.sessionId) {
             return;
@@ -960,7 +912,6 @@ export function useAiSession(options = {}) {
             );
         }
     }
-
     async function maybeAutoCompact() {
         if (!state.contextWindow || !state.lastInputTokens) {
             return;
@@ -985,7 +936,6 @@ export function useAiSession(options = {}) {
             );
         }
     }
-
     async function loadAgents() {
         try {
             state.agents = await orm.searchRead(
@@ -998,7 +948,6 @@ export function useAiSession(options = {}) {
             state.agents = [];
         }
     }
-
     async function setAgent(agentId, agentName = '') {
         if (!state.sessionId) {
             return;
@@ -1016,12 +965,10 @@ export function useAiSession(options = {}) {
             );
         }
     }
-
     async function onSetAgent(agentId) {
         const agent = state.agents.find((a) => a.id === agentId);
         await setAgent(agentId || null, agent ? agent.name : '');
     }
-
     async function onRemoveAttachment(attachmentId) {
         state.pendingAttachments = state.pendingAttachments.filter(
             (a) => a.id !== attachmentId,
@@ -1038,7 +985,6 @@ export function useAiSession(options = {}) {
             // Non-fatal: attachment is cleaned when the session is unlinked.
         }
     }
-
     function toggleToolBlock(callId) {
         if (!callId) {
             return;
@@ -1048,11 +994,9 @@ export function useAiSession(options = {}) {
             [callId]: !state.expandedTools[callId],
         };
     }
-
     function isToolExpanded(callId) {
         return !!(callId && state.expandedTools[callId]);
     }
-
     let cachedTurnsEvents = null;
     let cachedTurns = [];
     function renderedTurns() {
@@ -1062,7 +1006,6 @@ export function useAiSession(options = {}) {
         }
         return cachedTurns;
     }
-
     function latestReasoningLine() {
         const text = state.streamingReasoning || '';
         if (!text) {
@@ -1077,11 +1020,9 @@ export function useAiSession(options = {}) {
         }
         return lines[lines.length - 1];
     }
-
     function renderMarkdown(text) {
         return markup(renderMarkdownToHtml(text));
     }
-
     function copyText(text) {
         if (!text || !navigator.clipboard) {
             return;
@@ -1091,11 +1032,9 @@ export function useAiSession(options = {}) {
             () => notification.add(_t('Copy failed'), { type: 'danger' }),
         );
     }
-
     function setScrollCallback(callback) {
         onScrollCallback = callback;
     }
-
     function requestScroll() {
         if (onScrollCallback) {
             onScrollCallback();
@@ -1106,7 +1045,6 @@ export function useAiSession(options = {}) {
         disconnectBus();
         clearStreamIdleTimer();
     });
-
     return {
         state,
         load,

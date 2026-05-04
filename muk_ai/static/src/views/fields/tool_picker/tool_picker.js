@@ -12,8 +12,8 @@ const CATEGORY_COLOR = {
     write: 2,
 };
 
-export class TagPickerField extends Component {
-    static template = 'muk_ai.TagPickerField';
+export class ToolPickerField extends Component {
+    static template = 'muk_ai.ToolPickerField';
     static components = { AutoComplete, TagsList };
     static props = {
         ...standardFieldProps,
@@ -88,9 +88,9 @@ export class TagPickerField extends Component {
     }
 }
 
-export const tagPickerField = {
-    component: TagPickerField,
-    displayName: _t('Tag Picker'),
+export const toolPickerField = {
+    component: ToolPickerField,
+    displayName: _t('Tool Picker'),
     supportedOptions: [
         {
             label: _t('Options field'),
@@ -108,4 +108,4 @@ export const tagPickerField = {
     ),
 };
 
-registry.category('fields').add('tag_picker', tagPickerField);
+registry.category('fields').add('tool_picker', toolPickerField);

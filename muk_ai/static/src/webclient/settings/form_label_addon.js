@@ -4,8 +4,8 @@ import { patch } from '@web/core/utils/patch';
 import { useService } from '@web/core/utils/hooks';
 import { FormLabelHighlightText } from '@web/webclient/settings_form_view/highlight_text/form_label_highlight_text';
 
-import { moduleLinkField } from './module_link';
-import { probeModuleAvailable } from './module_availability';
+import { moduleLinkField } from '@muk_ai/views/fields/module_link/module_link';
+import { probeModuleAvailable } from '@muk_ai/views/module_availability';
 
 patch(FormLabelHighlightText.prototype, {
     setup() {

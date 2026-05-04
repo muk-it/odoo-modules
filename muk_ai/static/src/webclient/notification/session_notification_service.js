@@ -6,7 +6,6 @@ export const sessionNotificationService = {
     start(env) {
         const active = new Map();
         const closers = new Map();
-
         function closeForSession(sessionId) {
             const set = closers.get(sessionId);
             if (!set) {
@@ -17,13 +16,11 @@ export const sessionNotificationService = {
             }
             closers.delete(sessionId);
         }
-
         function dismissInbox(sessionId) {
             env.services.orm.silent.call(
                 'muk_ai.session', 'dismiss_notifications', [[sessionId]],
             ).catch(() => {});
         }
-
         function markActive(sessionId) {
             if (!sessionId) {
                 return;
@@ -32,7 +29,6 @@ export const sessionNotificationService = {
             closeForSession(sessionId);
             dismissInbox(sessionId);
         }
-
         function markInactive(sessionId) {
             if (!sessionId) {
                 return;
@@ -44,7 +40,6 @@ export const sessionNotificationService = {
                 active.set(sessionId, count);
             }
         }
-
         function onNotification(payload) {
             if (!payload || !payload.session_id) {
                 return;
@@ -86,11 +81,9 @@ export const sessionNotificationService = {
                 set.add(close);
             }
         }
-
         env.services.bus_service.subscribe(
             'muk_ai.session_notification', onNotification,
         );
-
         return { markActive, markInactive };
     },
 };

@@ -175,12 +175,12 @@
 							<field name="approval_mode"/>
 							<field
                                 name="tool_filter"
-                                widget="tag_picker"
+                                widget="tool_picker"
                                 options="{'options_field': 'tool_filter_options'}"
                             />
 							<field
                                 name="essential_tool_names"
-                                widget="tag_picker"
+                                widget="tool_picker"
                                 options="{'options_field': 'tool_filter_options'}"
                             />
 						</group>

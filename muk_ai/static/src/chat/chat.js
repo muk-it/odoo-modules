@@ -73,7 +73,6 @@ export class AIChat extends Component {
         this.chatWindow = useService('muk_ai.chat_window');
         this.notification = useService('notification');
         this.ui = useService('ui');
-
         this.session = useAiSession({
             surface: 'fullscreen',
             onRefresh: () => this._loadSessions(),
@@ -110,7 +109,6 @@ export class AIChat extends Component {
             'mk_chat_dropzone',
             () => this.session.canAttach(),
         );
-
         onWillStart(async () => {
             await Promise.all([this._loadSessions(), this.session.loadAgents()]);
             this._connectUserBus();
@@ -144,7 +142,6 @@ export class AIChat extends Component {
             }
             this.state.loading = false;
         });
-
         onMounted(() => {
             this._installImageClickHandler();
             this._installRootPasteHandler();

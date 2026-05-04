@@ -13,14 +13,17 @@ CONNECT_TIMEOUT = 5
 READ_TIMEOUT = 25
 CHUNK_SIZE = 64 * 1024
 URL_FETCH_MAX_BYTES = 16 * 1024 * 1024
+UNSAFE_IP_ATTRS = (
+    'is_private', 'is_loopback', 'is_link_local',
+    'is_reserved', 'is_multicast', 'is_unspecified',
+)
 
 
 def _validate_url(url):
     parsed = urlparse(url)
     if parsed.scheme != 'https':
         raise UserError(_lt("@url: only accepts https:// URLs."))
-    host = parsed.hostname
-    if not host:
+    if not (host := parsed.hostname):
         raise UserError(_lt("@url: missing hostname."))
     try:
         infos = socket.getaddrinfo(host, None)
@@ -29,32 +32,28 @@ def _validate_url(url):
     resolved = []
     for info in infos:
         ip = ipaddress.ip_address(info[4][0])
-        if (
-            ip.is_private or ip.is_loopback or ip.is_link_local
-            or ip.is_reserved or ip.is_multicast or ip.is_unspecified
-        ):
+        if any(getattr(ip, attr) for attr in UNSAFE_IP_ATTRS):
             raise UserError(_lt(
                 "@url: refusing to fetch %s — %s is not publicly routable.",
                 host, ip,
             ))
         resolved.append(str(ip))
     if not resolved:
-        raise UserError(_lt("@url: DNS lookup returned no addresses for %s.", host))
+        raise UserError(_lt(
+            "@url: DNS lookup returned no addresses for %s.", host,
+        ))
     return host, resolved
 
 
-def fetch_url(env, url):
+def fetch_url(url):
     host, resolved = _validate_url(url)
     parsed = urlparse(url)
-    port = parsed.port or 443
-    pinned_ip = resolved[0]
     path = parsed.path or '/'
     if parsed.query:
         path = f'{path}?{parsed.query}'
-
     pool = urllib3.HTTPSConnectionPool(
-        host=pinned_ip,
-        port=port,
+        host=resolved[0],
+        port=parsed.port or 443,
         assert_hostname=host,
         timeout=urllib3.Timeout(connect=CONNECT_TIMEOUT, read=READ_TIMEOUT),
         retries=False,
@@ -73,8 +72,7 @@ def fetch_url(env, url):
                     "@url: HTTP %(status)s for %(url)s.",
                     status=response.status, url=url,
                 ))
-            chunks = []
-            total = 0
+            chunks, total = [], 0
             for chunk in response.stream(CHUNK_SIZE):
                 chunks.append(chunk)
                 total += len(chunk)

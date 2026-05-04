@@ -17,7 +17,6 @@ export class PromptHistoryDialog extends Component {
         fieldName: String,
         fieldLabel: String,
     };
-
     setup() {
         this.orm = useService('orm');
         this.action = useService('action');
@@ -32,11 +31,9 @@ export class PromptHistoryDialog extends Component {
             await this._loadHistory();
         });
     }
-
     get title() {
         return _t('%s — History', this.props.fieldLabel);
     }
-
     async _loadHistory() {
         this.state.loading = true;
         const records = await this.orm.read(
@@ -55,7 +52,6 @@ export class PromptHistoryDialog extends Component {
             this.state.diffLines = [];
         }
     }
-
     async selectRevision(index) {
         this.state.selectedIndex = index;
         const diff = await this.orm.call(
@@ -65,7 +61,6 @@ export class PromptHistoryDialog extends Component {
         );
         this.state.diffLines = this._parseDiff(diff);
     }
-
     _parseDiff(raw) {
         if (!raw || !raw.trim()) {
             return [{ kind: 'empty', text: _t('No differences.') }];
@@ -86,7 +81,6 @@ export class PromptHistoryDialog extends Component {
             return { kind: 'context', text };
         });
     }
-
     formatDate(value) {
         if (!value) {
             return '';
@@ -97,7 +91,6 @@ export class PromptHistoryDialog extends Component {
             return value;
         }
     }
-
     async onRestore() {
         if (this.state.selectedIndex === null) {
             return;

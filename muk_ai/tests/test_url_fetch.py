@@ -73,15 +73,12 @@ class TestUrlFetchHardening(AITestCommon):
             return_value=self._addrinfo('10.0.0.1'),
         ), patch(
             'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
-        ) as mock_pool_cls, self.assertLogs(
-            'odoo.addons.muk_ai.models.session', level='WARNING',
-        ) as logs:
+        ) as mock_pool_cls:
             args = {'values': {'image_1920': f'@url:{url}'}}
             resolved, refs = self.session._resolve_value_refs(args)
         mock_pool_cls.assert_not_called()
         self.assertEqual(resolved['values']['image_1920'], f'@url:{url}')
         self.assertEqual(refs, [])
-        self.assertTrue(any('refused @url' in msg for msg in logs.output))
 
     def test_rejects_loopback(self):
         url = 'https://localhost/admin'
@@ -90,15 +87,12 @@ class TestUrlFetchHardening(AITestCommon):
             return_value=self._addrinfo('127.0.0.1'),
         ), patch(
             'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
-        ) as mock_pool_cls, self.assertLogs(
-            'odoo.addons.muk_ai.models.session', level='WARNING',
-        ) as logs:
+        ) as mock_pool_cls:
             args = {'values': {'image_1920': f'@url:{url}'}}
             resolved, refs = self.session._resolve_value_refs(args)
         mock_pool_cls.assert_not_called()
         self.assertEqual(resolved['values']['image_1920'], f'@url:{url}')
         self.assertEqual(refs, [])
-        self.assertTrue(any('refused @url' in msg for msg in logs.output))
 
     def test_rejects_link_local(self):
         url = 'https://metadata.example/aws'
@@ -126,14 +120,11 @@ class TestUrlFetchHardening(AITestCommon):
         ), patch(
             'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
             return_value=pool,
-        ), self.assertLogs(
-            'odoo.addons.muk_ai.models.session', level='WARNING',
-        ) as logs:
+        ):
             args = {'values': {'image_1920': f'@url:{url}'}}
             resolved, refs = self.session._resolve_value_refs(args)
         self.assertEqual(resolved['values']['image_1920'], f'@url:{url}')
         self.assertEqual(refs, [])
-        self.assertTrue(any('exceeds' in msg for msg in logs.output))
         response.release_conn.assert_called()
         pool.close.assert_called()
 
@@ -187,14 +178,11 @@ class TestUrlFetchHardening(AITestCommon):
         with patch(
             'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
             side_effect=socket.gaierror('name does not resolve'),
-        ), self.assertLogs(
-            'odoo.addons.muk_ai.models.session', level='WARNING',
-        ) as logs:
+        ):
             args = {'values': {'image_1920': f'@url:{url}'}}
             resolved, refs = self.session._resolve_value_refs(args)
         self.assertEqual(resolved['values']['image_1920'], f'@url:{url}')
         self.assertEqual(refs, [])
-        self.assertTrue(any('refused @url' in msg for msg in logs.output))
 
     def test_validate_url_returns_pinned_ips(self):
         with patch(

@@ -7,7 +7,6 @@ export function useChatScrollAnchor(refName = 'scroll') {
     const scrollRef = useRef(refName);
     const state = useState({ atBottom: true });
     const anchor = { auto: true };
-
     function distanceFromBottom() {
         const el = scrollRef.el;
         if (!el) {
@@ -15,7 +14,6 @@ export function useChatScrollAnchor(refName = 'scroll') {
         }
         return el.scrollHeight - el.scrollTop - el.clientHeight;
     }
-
     function scrollToBottom(force) {
         const el = scrollRef.el;
         if (!el) {
@@ -32,7 +30,6 @@ export function useChatScrollAnchor(refName = 'scroll') {
             el.scrollTop = el.scrollHeight;
         });
     }
-
     function onScroll() {
         const near = distanceFromBottom() <= SCROLL_NEAR_BOTTOM;
         state.atBottom = near;
@@ -45,20 +42,17 @@ export function useChatScrollAnchor(refName = 'scroll') {
             el.addEventListener('scroll', onScroll, { passive: true });
         }
     });
-
     onPatched(() => {
         if (anchor.auto) {
             scrollToBottom();
         }
     });
-
     onWillUnmount(() => {
         const el = scrollRef.el;
         if (el) {
             el.removeEventListener('scroll', onScroll);
         }
     });
-
     return { scrollRef, scrollToBottom, state };
 }
 

@@ -9,14 +9,14 @@ import {
 } from '@web/../tests/web_test_helpers';
 import { defineMailModels } from '@mail/../tests/mail_test_helpers';
 
-import '@muk_ai/views/fields/tag_picker/tag_picker';
+import '@muk_ai/views/fields/tool_picker/tool_picker';
 
 describe.current.tags('muk_ai');
 defineMailModels();
 
 
-class MukAiTagModel extends models.Model {
-    _name = 'muk_ai.tag_model';
+class MukAiToolModel extends models.Model {
+    _name = 'muk_ai.tool_model';
     tools_available = fields.Json();
     tool_filter = fields.Json();
     _records = [{
@@ -36,18 +36,18 @@ class MukAiTagModel extends models.Model {
         tool_filter: false,
     }];
 }
-defineModels([MukAiTagModel]);
+defineModels([MukAiToolModel]);
 
 
-test('TagPickerField renders tag chips for each selected name', async () => {
+test('ToolPickerField renders tag chips for each selected name', async () => {
     await mountView({
-        resModel: 'muk_ai.tag_model',
+        resModel: 'muk_ai.tool_model',
         resId: 1,
         type: 'form',
         arch: `
             <form>
                 <field name="tools_available" invisible="1"/>
-                <field name="tool_filter" widget="tag_picker"
+                <field name="tool_filter" widget="tool_picker"
                        options="{'options_field': 'tools_available'}"/>
             </form>`,
     });
@@ -56,15 +56,15 @@ test('TagPickerField renders tag chips for each selected name', async () => {
 });
 
 
-test('TagPickerField renders empty tag list when selection is false', async () => {
+test('ToolPickerField renders empty tag list when selection is false', async () => {
     await mountView({
-        resModel: 'muk_ai.tag_model',
+        resModel: 'muk_ai.tool_model',
         resId: 2,
         type: 'form',
         arch: `
             <form>
                 <field name="tools_available" invisible="1"/>
-                <field name="tool_filter" widget="tag_picker"
+                <field name="tool_filter" widget="tool_picker"
                        options="{'options_field': 'tools_available'}"/>
             </form>`,
     });
@@ -72,15 +72,15 @@ test('TagPickerField renders empty tag list when selection is false', async () =
 });
 
 
-test('TagPickerField autocomplete input is present and opens a dropdown', async () => {
+test('ToolPickerField autocomplete input is present and opens a dropdown', async () => {
     await mountView({
-        resModel: 'muk_ai.tag_model',
+        resModel: 'muk_ai.tool_model',
         resId: 1,
         type: 'form',
         arch: `
             <form>
                 <field name="tools_available" invisible="1"/>
-                <field name="tool_filter" widget="tag_picker"
+                <field name="tool_filter" widget="tool_picker"
                        options="{'options_field': 'tools_available'}"/>
             </form>`,
     });

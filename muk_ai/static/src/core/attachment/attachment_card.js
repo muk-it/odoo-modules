@@ -13,7 +13,6 @@ export class AttachmentCard extends Component {
         onOpen: { type: Function, optional: true },
         onRemove: { type: Function, optional: true },
     };
-
     static defaultProps = {
         removable: false,
         compact: false,

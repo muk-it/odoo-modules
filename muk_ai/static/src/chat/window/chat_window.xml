@@ -46,7 +46,6 @@
                     </span>
                 </span>
             </button>
-
             <t t-if="!props.minimized and (session.state.viewContext or session.state.sessionId)">
                 <div class="mk_window_subheader">
                     <button
@@ -87,7 +86,6 @@
                     </span>
                 </div>
             </t>
-
             <t t-if="!props.minimized">
                 <div class="mk_window_body position-relative d-flex flex-column">
                     <button t-if="!scrollState.atBottom"
@@ -170,7 +168,6 @@
                     </div>
                     </div>
                 </div>
-
                 <div class="mk_window_composer">
                     <ChatComposer
                         value="session.state.input"

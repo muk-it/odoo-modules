@@ -13,11 +13,9 @@
     overflow-y: auto;
     background: var(--mk-bg-muted, var(--bs-body-bg));
     font-size: 14px;
-
     .mk_turn {
         max-width: 100%;
     }
-
     .mk_session_events_empty {
         padding: 1.5rem;
         text-align: center;

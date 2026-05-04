@@ -22,7 +22,7 @@
         providers REGISTRY, and downstream add-ons plug in extra tools,
         agents and UI extensions on top of the same runtime.
     ''',
-    'version': '19.0.1.4.5',
+    'version': '19.0.1.4.7',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -68,6 +68,7 @@
             'muk_ai/static/src/components/**/*',
             'muk_ai/static/src/core/**/*',
             'muk_ai/static/src/views/context.js',
+            'muk_ai/static/src/views/module_availability.js',
             'muk_ai/static/src/views/fields/**/*',
             'muk_ai/static/src/views/form/**/*',
             'muk_ai/static/src/views/kanban/**/*',

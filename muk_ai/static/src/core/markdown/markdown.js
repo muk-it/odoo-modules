@@ -26,7 +26,6 @@ function buildRenderer() {
         breaks: true,
     });
     md.validateLink = () => true;
-
     md.renderer.rules.fence = (tokens, idx) => {
         const token = tokens[idx];
         const rawLang = (token.info || '').trim().split(/\s+/)[0].toLowerCase();
@@ -40,7 +39,6 @@ function buildRenderer() {
             `</pre>`
         );
     };
-
     const TASK_RE = /^\[([ xX])\]\s+/;
     md.core.ruler.after('inline', 'muk_ai_task_lists', (state) => {
         const tokens = state.tokens;
@@ -68,7 +66,6 @@ function buildRenderer() {
             tokens[i - 2].attrJoin('class', 'mk_md_task');
         }
     });
-
     const RECORD_RE = /\b([a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+),(\d+)\b/g;
     md.core.ruler.after('inline', 'muk_ai_record_links', (state) => {
         const tokens = state.tokens;
@@ -131,7 +128,6 @@ function buildRenderer() {
             tok.children = newChildren;
         }
     });
-
     md.renderer.rules.link_open = (tokens, idx, options, env, self) => {
         const token = tokens[idx];
         const hrefIdx = token.attrIndex('href');
@@ -143,7 +139,6 @@ function buildRenderer() {
         token.attrSet('rel', 'noopener noreferrer');
         return self.renderToken(tokens, idx, options, env);
     };
-
     md.renderer.rules.image = (tokens, idx, options, env, self) => {
         const token = tokens[idx];
         const srcIdx = token.attrIndex('src');
@@ -155,7 +150,6 @@ function buildRenderer() {
         }
         return self.renderToken(tokens, idx, options, env);
     };
-
     return md;
 }
 

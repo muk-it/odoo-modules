@@ -30,7 +30,6 @@ export class ToolCard extends Component {
         streaming: { type: Boolean, optional: true },
         onToggle: { type: Function, optional: true },
     };
-
     static defaultProps = {
         expanded: false,
         streaming: false,

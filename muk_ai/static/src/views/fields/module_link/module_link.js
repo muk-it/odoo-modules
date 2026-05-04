@@ -7,7 +7,7 @@ import { useService } from '@web/core/utils/hooks';
 import { useRecordObserver } from '@web/model/relational_model/utils';
 import { standardFieldProps } from '@web/views/fields/standard_field_props';
 
-import { probeModuleAvailable } from './module_availability';
+import { probeModuleAvailable } from '@muk_ai/views/module_availability';
 
 const DEFAULT_APPS_BASE = 'https://apps.odoo.com/apps/modules/19.0';
 

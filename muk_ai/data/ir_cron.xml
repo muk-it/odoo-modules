@@ -5,8 +5,7 @@
     <record id="cron_run_pending_sessions_1" model="ir.cron">
         <field name="name">MuK AI: Session Worker 1</field>
         <field name="model_id" ref="model_muk_ai_session"/>
-        <field name="state">code</field>
-        <field name="code">model._cron_run_pending_sessions()</field>
+        <field name="state">ai_session</field>
         <field name="interval_number">1</field>
         <field name="interval_type">minutes</field>
         <field name="active" eval="True"/>
@@ -16,8 +15,7 @@
     <record id="cron_run_pending_sessions_2" model="ir.cron">
         <field name="name">MuK AI: Session Worker 2</field>
         <field name="model_id" ref="model_muk_ai_session"/>
-        <field name="state">code</field>
-        <field name="code">model._cron_run_pending_sessions()</field>
+        <field name="state">ai_session</field>
         <field name="interval_number">1</field>
         <field name="interval_type">minutes</field>
         <field name="active" eval="True"/>
@@ -27,8 +25,7 @@
     <record id="cron_run_pending_sessions_3" model="ir.cron">
         <field name="name">MuK AI: Session Worker 3</field>
         <field name="model_id" ref="model_muk_ai_session"/>
-        <field name="state">code</field>
-        <field name="code">model._cron_run_pending_sessions()</field>
+        <field name="state">ai_session</field>
         <field name="interval_number">1</field>
         <field name="interval_type">minutes</field>
         <field name="active" eval="True"/>
@@ -38,8 +35,7 @@
     <record id="cron_run_pending_sessions_4" model="ir.cron">
         <field name="name">MuK AI: Session Worker 4</field>
         <field name="model_id" ref="model_muk_ai_session"/>
-        <field name="state">code</field>
-        <field name="code">model._cron_run_pending_sessions()</field>
+        <field name="state">ai_session</field>
         <field name="interval_number">1</field>
         <field name="interval_type">minutes</field>
         <field name="active" eval="True"/>

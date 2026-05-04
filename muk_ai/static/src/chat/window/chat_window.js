@@ -73,7 +73,6 @@ export class ChatWindow extends Component {
             'mk_chat_dropzone',
             () => this.session.canAttach() && !this.props.minimized,
         );
-
         useEffect(
             (minimized) => {
                 if (!minimized) {
@@ -82,7 +81,6 @@ export class ChatWindow extends Component {
             },
             () => [this.props.minimized],
         );
-
         onWillStart(() => this.session.load(this.props.sessionId));
         onMounted(() => {
             this._installRootPasteHandler();

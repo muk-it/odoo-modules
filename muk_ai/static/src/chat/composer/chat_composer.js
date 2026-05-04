@@ -30,7 +30,6 @@ export class ChatComposer extends Component {
         onOpenAttachment: { type: Function, optional: true },
         focusToken: { type: [Number, String], optional: true },
     };
-
     static defaultProps = {
         disabled: false,
         canSend: false,
@@ -39,9 +38,7 @@ export class ChatComposer extends Component {
         attachments: [],
         canAttach: false,
     };
-
     accept = ACCEPT;
-
     setup() {
         this.inputRef = useRef('input');
         this.fileInputRef = useRef('fileInput');

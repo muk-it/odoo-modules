@@ -18,19 +18,15 @@ export class MukAISystray extends Component {
         this.bus = useService('bus_service');
         this.action = useService('action');
         this.chatWindow = useService('muk_ai.chat_window');
-
         this.state = useState({
             sessions: [],
             loaded: false,
         });
-
         this._busHandler = null;
-
         onWillStart(async () => {
             await this._load();
             this._connectBus();
         });
-
         onWillUnmount(() => this._disconnectBus());
     }
     async _load() {

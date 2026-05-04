@@ -17,7 +17,6 @@
                 t-if="!state.sidebarHidden"
                 t-on-click="() => this.toggleSidebar()"
             />
-
             <main class="mk_main d-flex flex-column flex-grow-1">
                 <div class="mk_main_header d-flex align-items-center gap-2">
                     <button
@@ -145,14 +144,12 @@
                         </button>
                     </div>
                 </div>
-
                 <t t-if="state.loading">
                     <div class="flex-grow-1 d-flex align-items-center justify-content-center text-muted">
                         <i class="fa fa-spinner fa-spin me-2"/>
                         <span>Loading…</span>
                     </div>
                 </t>
-
                 <t t-elif="!session.state.sessionId">
                     <div class="mk_empty flex-grow-1 d-flex flex-column align-items-center justify-content-center">
                         <div class="mk_empty_badge d-inline-flex align-items-center justify-content-center rounded-circle shadow-sm">
@@ -171,7 +168,6 @@
                         </div>
                     </div>
                 </t>
-
                 <t t-else="">
                     <div class="mk_messages_wrap flex-grow-1 position-relative d-flex flex-column">
                         <button t-if="!scrollState.atBottom"
@@ -264,7 +260,6 @@
                         </div>
                         </div>
                     </div>
-
                     <div class="mk_composer_wrap">
                         <ChatComposer
                             value="session.state.input"
