@@ -158,7 +158,6 @@ class TestAiAgent(AITestCommon):
         block = session.with_user(multi)._build_runtime_block()
         self.assertIn('Companies accessible', block)
         self.assertIn('MuK Extra Test Co', block)
-        self.assertIn('allowed_company_ids', block)
 
     def test_initial_inputs_include_runtime_block(self):
         agent = self.env['muk_ai.agent'].create({

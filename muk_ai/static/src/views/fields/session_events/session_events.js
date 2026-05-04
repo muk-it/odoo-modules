@@ -52,6 +52,9 @@ export class SessionEventsField extends Component {
             (b) => b.type === 'ask' && b.callId === block.callId,
         );
     }
+    isToolStreaming() {
+        return false;
+    }
     toggleToolBlock(callId) {
         this.state.expandedTools = {
             ...this.state.expandedTools,

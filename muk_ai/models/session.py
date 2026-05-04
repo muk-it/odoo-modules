@@ -378,16 +378,15 @@ class AISession(models.Model):
                     'for any deferred tool — never load and then call in '
                     'two separate rounds when one will do.'
                 ),
-                (
-                    '`invoke_skill` is ONLY for the named workflows listed '
-                    'in the `## Available Skills` addendum, never for tool '
-                    'discovery. Pick from this list instead.'
-                ),
+                *self._available_tools_extra_paragraphs(),
                 ', '.join(deferred),
                 '</available_tools>',
             ]
             return '\n'.join(lines)
         return ''
+
+    def _available_tools_extra_paragraphs(self):
+        return []
 
     def _render_system_prompt_eval_context(self):
         return {
@@ -663,13 +662,26 @@ class AISession(models.Model):
                 )
             )
             with suppress(Exception):
-                new_message = self.env['mail.thread'].sudo().message_notify(
-                    partner_ids=partner.ids,
-                    subject=title,
-                    body=body,
-                )
-                if new_message:
-                    new_message.sudo().muk_ai_session_id = self.id
+                mail_message = self.env['mail.message'].sudo().create({
+                    'message_type': 'user_notification',
+                    'subtype_id': self.env['ir.model.data']._xmlid_to_res_id(
+                        'mail.mt_note'
+                    ),
+                    'model': self._name,
+                    'res_id': self.id,
+                    'author_id': self.env.ref('base.partner_root').id,
+                    'subject': title,
+                    'body': body,
+                    'partner_ids': [(4, partner.id)],
+                    'muk_ai_session_id': self.id,
+                })
+                self.env['mail.notification'].sudo().create({
+                    'mail_message_id': mail_message.id,
+                    'res_partner_id': partner.id,
+                    'notification_type': 'inbox',
+                    'is_read': False,
+                })
+                partner._bus_send_store(mail_message)
 
     # ----------------------------------------------------------
     # Helper State
@@ -687,11 +699,12 @@ class AISession(models.Model):
                 "FROM muk_ai_session_event WHERE session_id = %s",
                 self.id,
             ))
+            sequence = self.env.cr.fetchone()[0]
             try:
                 with self.env.cr.savepoint():
                     self.env['muk_ai.session.event'].sudo().create({
                         'session_id': self.id,
-                        'sequence': self.env.cr.fetchone()[0],
+                        'sequence': sequence,
                         'kind': stamped.get('kind') or '',
                         'payload': stamped,
                         'at': fields.Datetime.now(),
@@ -1000,17 +1013,18 @@ class AISession(models.Model):
         last = buffer_state.get('last_state_check', 0)
         if (now := time.monotonic()) - last >= 0.3:
             buffer_state['last_state_check'] = now
+            self.invalidate_recordset(['state'])
+            if self.state == 'stopped':
+                if buffer_state.get('full_text'):
+                    self._persist_partial(buffer_state)
+                    buffer_state['full_text'] = ''
+                    self._commit_safe()
+                raise StreamCancelled()
             last_beat = buffer_state.get('last_heartbeat', 0)
             if now - last_beat >= WORKER_HEARTBEAT_INTERVAL:
                 buffer_state['last_heartbeat'] = now
                 self.claimed_at = fields.Datetime.now()
-                self.invalidate_recordset(['state'])
-                if self.state == 'stopped':
-                    if buffer_state.get('full_text'):
-                        self._persist_partial(buffer_state)
-                        buffer_state['full_text'] = ''
-                        self._commit_safe()
-                    raise StreamCancelled()
+                self._commit_safe()
 
     def _on_stream_delta(self, kind, payload, buffer_state):
         self._check_cancelled(buffer_state)
@@ -1089,16 +1103,19 @@ class AISession(models.Model):
 
     def _persist_partial(self, buffer_state):
         if text := buffer_state.get('full_text'):
-            self.last_text = text
+            self.write({
+                'last_text': text,
+                'conversation': [*(self.conversation or []), {
+                    'type': 'message',
+                    'role': 'assistant',
+                    'content': [{'type': 'output_text', 'text': text}],
+                }],
+            })
             self._append_event({
                 'kind': 'text',
                 'content': text
             })
-            self._extend_conversation([{
-                'type': 'message',
-                'role': 'assistant',
-                'content': [{'type': 'output_text', 'text': text}],
-            }])
+            self.flush_recordset()
 
     def _flush_stream_buffer(self, buffer_state):
         self._flush_text_buffer(buffer_state)
@@ -1432,7 +1449,6 @@ class AISession(models.Model):
                     provider, schema, model, round_agent
                 )
             except StreamCancelled:
-                self.env.cr.rollback()
                 self.invalidate_recordset(['state'])
                 if self.state == 'stopped':
                     self._publish_event('state', {'state': 'stopped'})

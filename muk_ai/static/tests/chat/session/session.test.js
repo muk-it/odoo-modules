@@ -119,20 +119,22 @@ test('load is atomic: previous events stay visible until new snapshot arrives', 
     const SECOND_RECORD = { ...SESSION_RECORD, id: 9, name: 'Second' };
     let resolveSecondRead;
     let resolveSecondSnapshot;
+    const secondReadGate = new Promise((resolve) => {
+        resolveSecondRead = () => resolve([SECOND_RECORD]);
+    });
+    const secondSnapshotGate = new Promise((resolve) => {
+        resolveSecondSnapshot = () => resolve(snapshotFor({
+            ...SECOND_RECORD,
+            events: [{ kind: 'text', content: 'second answer' }],
+        }));
+    });
     onRpc('muk_ai.session', 'read', ({ args }) => {
         if (args[0][0] === 7) { return [SESSION_RECORD]; }
-        return new Promise((resolve) => {
-            resolveSecondRead = () => resolve([SECOND_RECORD]);
-        });
+        return secondReadGate;
     });
     onRpc('muk_ai.session', 'get_snapshot', ({ args }) => {
         if (args[0] === 7) { return snapshotFor(SESSION_RECORD); }
-        return new Promise((resolve) => {
-            resolveSecondSnapshot = () => resolve(snapshotFor({
-                ...SECOND_RECORD,
-                events: [{ kind: 'text', content: 'second answer' }],
-            }));
-        });
+        return secondSnapshotGate;
     });
     makeBusMock();
     const harness = makeHarness();
@@ -160,11 +162,12 @@ test('load is atomic: previous events stay visible until new snapshot arrives', 
 test('canSend is false while load is in flight', async () => {
     const SECOND_RECORD = { ...SESSION_RECORD, id: 9 };
     let resolveSecondRead;
+    const secondReadGate = new Promise((resolve) => {
+        resolveSecondRead = () => resolve([SECOND_RECORD]);
+    });
     onRpc('muk_ai.session', 'read', ({ args }) => {
         if (args[0][0] === 7) { return [SESSION_RECORD]; }
-        return new Promise((resolve) => {
-            resolveSecondRead = () => resolve([SECOND_RECORD]);
-        });
+        return secondReadGate;
     });
     onRpc('muk_ai.session', 'get_snapshot', () => snapshotFor(SECOND_RECORD));
     makeBusMock();

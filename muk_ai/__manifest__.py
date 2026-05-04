@@ -9,20 +9,8 @@
         and reasoning streaming. Talks to your data through the same
         muk_mcp tool registry your external AI clients use — one source
         of truth, one permission model, one audit trail.
-
-        Includes human-in-the-loop ask_user, a session-scoped approval
-        gate for risky writes, per-agent tool filters and read-only
-        scopes, multimodal attachments (images, PDFs, text files),
-        agent suggestion prompts, prompt revision history, and a
-        prebuilt catalog of current GPT-5.x / Claude 4.x / Gemini 3.x 
-        models with input, output and cache pricing.
-
-        Also acts as the foundation for the rest of the MuK AI suite —
-        adding a new provider is a single-file drop-in via the
-        providers REGISTRY, and downstream add-ons plug in extra tools,
-        agents and UI extensions on top of the same runtime.
     ''',
-    'version': '19.0.1.4.7',
+    'version': '19.0.1.4.8',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',

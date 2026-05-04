@@ -45,7 +45,7 @@ class OpenAIProvider(ProviderBase):
         if self.max_tokens:
             body['max_output_tokens'] = self.max_tokens
         if self._supports_reasoning(model):
-            body['reasoning'] = {'summary': 'auto'}
+            body['reasoning'] = {'effort': 'medium', 'summary': 'detailed'}
             body['include'] = ['reasoning.encrypted_content']
         if text_schema:
             body['text'] = {
