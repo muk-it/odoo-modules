@@ -18,12 +18,11 @@
     ],
     'depends': [
         'muk_ai',
-        'muk_mcp',
     ],
     'data': [
         'security/ir.model.access.csv',
-        'views/skill.xml',
         'views/res_config_settings.xml',
+        'views/skill.xml',
         'views/menu.xml',
     ],
     'demo': [

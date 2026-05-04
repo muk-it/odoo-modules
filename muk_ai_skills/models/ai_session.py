@@ -74,6 +74,16 @@ class AISession(models.Model):
             return addendum
         return f"{rendered}\n\n{addendum}"
 
+    def _available_tools_extra_paragraphs(self):
+        paragraphs = super()._available_tools_extra_paragraphs()
+        if self and self.id and self._visible_skills():
+            paragraphs.append(
+                '`invoke_skill` is ONLY for the named workflows listed '
+                'in the <available_skills> addendum, never for tool '
+                'discovery. Pick from this list instead.'
+            )
+        return paragraphs
+
     # ----------------------------------------------------------
     # Functions
     # ----------------------------------------------------------
