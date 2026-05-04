@@ -1,6 +1,8 @@
+import json
+
 from unittest.mock import patch
 
-from .common import AITestCommon
+from odoo.addons.muk_ai.tests.common import AITestCommon
 
 
 class TestToolLazy(AITestCommon):
@@ -237,8 +239,6 @@ class TestToolLazy(AITestCommon):
     # ----------------------------------------------------------
 
     def test_deferred_loop_executes_target_tool_like_eager(self):
-        import json
-        from unittest.mock import patch as _patch
         agent = self.env['muk_ai.agent'].create({
             'name': 'Parity agent',
             'approval_mode': 'off',
@@ -263,7 +263,7 @@ class TestToolLazy(AITestCommon):
                 if not queue:
                     raise AssertionError('exhausted scripted provider responses')
                 return queue.pop(0)
-            return _patch.object(
+            return patch.object(
                 type(self.provider),
                 '_request_responses',
                 autospec=True,
@@ -310,7 +310,7 @@ class TestToolLazy(AITestCommon):
             text_payload('done'),
         ]
 
-        tool_patch = _patch.object(
+        tool_patch = patch.object(
             type(self.env['muk_mcp.tool']),
             '_execute',
             autospec=True,

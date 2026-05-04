@@ -9,7 +9,7 @@ from odoo.addons.muk_ai.models import ir_attachment as ir_att
 from odoo.addons.muk_ai.providers.anthropic import AnthropicProvider
 from odoo.addons.muk_ai.providers.openai import OpenAIProvider
 
-from .common import AITestCommon
+from odoo.addons.muk_ai.tests.common import AITestCommon
 
 
 def _tiny_png():

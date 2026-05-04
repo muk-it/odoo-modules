@@ -4,7 +4,9 @@ from unittest.mock import MagicMock, patch
 
 import urllib3.exceptions
 
-from .common import AITestCommon
+from odoo.addons.muk_ai.models import session as session_module
+
+from odoo.addons.muk_ai.tests.common import AITestCommon
 
 
 PNG_1x1_RED = base64.b64encode(
@@ -129,7 +131,6 @@ class TestImageRefPersistence(AITestCommon):
         self.assertEqual(refs, [])
 
     def test_resolve_attachment_ref_oversized_keeps_placeholder(self):
-        from odoo.addons.muk_ai.models import session as session_module
         attachment = self.env['ir.attachment'].sudo().create({
             'name': 'big.png',
             'datas': PNG_1x1_RED,

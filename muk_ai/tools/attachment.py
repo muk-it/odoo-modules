@@ -3,6 +3,7 @@ import re
 
 DEFAULT_TEXT_INLINE_LIMIT_KB = 256
 DEFAULT_MAX_UPLOAD_BYTES = 128 * 1024 * 1024
+ATTACHMENT_REF_MAX_BYTES = 4 * 1024 * 1024
 
 IMAGE_MIMETYPES = frozenset({
     'image/png', 'image/jpeg', 'image/webp', 'image/gif',

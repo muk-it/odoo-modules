@@ -1,6 +1,6 @@
 from odoo.exceptions import ValidationError
 
-from .common import AITestCommon
+from odoo.addons.muk_ai.tests.common import AITestCommon
 
 
 class TestAiModel(AITestCommon):

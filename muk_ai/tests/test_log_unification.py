@@ -1,6 +1,8 @@
 from unittest.mock import patch
 
-from .common import AITestCommon
+from odoo.tools import config as odoo_config
+
+from odoo.addons.muk_ai.tests.common import AITestCommon
 
 
 class TestLogUnification(AITestCommon):
@@ -240,7 +242,6 @@ class TestLogUnification(AITestCommon):
         self.assertEqual(len(tool_calls), 1)
 
     def test_chat_audit_respects_global_mcp_logging(self):
-        from odoo.tools import config as odoo_config
         original_get = odoo_config.get
 
         def fake_get(key, default=None):

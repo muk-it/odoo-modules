@@ -22,7 +22,7 @@
         providers REGISTRY, and downstream add-ons plug in extra tools,
         agents and UI extensions on top of the same runtime.
     ''',
-    'version': '19.0.1.4.4',
+    'version': '19.0.1.4.5',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',

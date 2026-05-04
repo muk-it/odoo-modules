@@ -8,7 +8,7 @@ from odoo.exceptions import UserError
 
 from odoo.addons.muk_ai.tools import build_tool_call_output
 
-from .common import AITestCommon
+from odoo.addons.muk_ai.tests.common import AITestCommon
 
 
 class TestAiOpenAIProvider(AITestCommon):

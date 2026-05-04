@@ -1,8 +1,11 @@
 import base64
+import socket
 
 from unittest.mock import MagicMock, patch
 
-from .common import AITestCommon
+from odoo.addons.muk_ai.tools.url_fetch import _validate_url
+
+from odoo.addons.muk_ai.tests.common import AITestCommon
 
 
 PNG_1x1_RED = base64.b64encode(
@@ -181,10 +184,9 @@ class TestUrlFetchHardening(AITestCommon):
 
     def test_dns_failure_swallowed(self):
         url = 'https://nonexistent.invalid/x.png'
-        import socket as _socket
         with patch(
             'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
-            side_effect=_socket.gaierror('name does not resolve'),
+            side_effect=socket.gaierror('name does not resolve'),
         ), self.assertLogs(
             'odoo.addons.muk_ai.models.session', level='WARNING',
         ) as logs:
@@ -195,7 +197,6 @@ class TestUrlFetchHardening(AITestCommon):
         self.assertTrue(any('refused @url' in msg for msg in logs.output))
 
     def test_validate_url_returns_pinned_ips(self):
-        from odoo.addons.muk_ai.tools.url_fetch import _validate_url
         with patch(
             'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
             return_value=self._addrinfo('8.8.8.8'),

@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 from odoo.exceptions import UserError
 
-from .common import AITestCommon
+from odoo.addons.muk_ai.tests.common import AITestCommon
 
 
 class TestSessionFlow(AITestCommon):

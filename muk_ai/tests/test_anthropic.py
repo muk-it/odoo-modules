@@ -4,7 +4,7 @@ import requests
 
 from odoo.addons.muk_ai.providers.anthropic import AnthropicProvider
 
-from .common import AITestCommon
+from odoo.addons.muk_ai.tests.common import AITestCommon
 
 
 class TestAiAnthropicProvider(AITestCommon):

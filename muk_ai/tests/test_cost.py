@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from .common import AITestCommon
+from odoo.addons.muk_ai.tests.common import AITestCommon
 
 
 class TestSessionCostAccrual(AITestCommon):

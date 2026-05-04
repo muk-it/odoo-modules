@@ -7,7 +7,7 @@ from odoo.exceptions import UserError
 
 from odoo.addons.muk_ai.providers.google import GoogleProvider
 
-from .common import AITestCommon
+from odoo.addons.muk_ai.tests.common import AITestCommon
 
 
 class TestAiGoogleProvider(AITestCommon):

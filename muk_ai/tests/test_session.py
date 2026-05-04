@@ -1,16 +1,21 @@
 import json
 
+from datetime import timedelta
 from unittest.mock import patch
 
+from odoo import fields
 from odoo.exceptions import UserError
+from odoo.tools import SQL
 
 from odoo.addons.muk_ai.tools import (
+    ADVISORY_LOCK_NAMESPACE,
     MAX_ITERATIONS,
+    WORKER_STALE_THRESHOLD,
     format_ui_ctx_tag,
     render_ui_ctx,
 )
 
-from .common import AITestCommon
+from odoo.addons.muk_ai.tests.common import AITestCommon
 
 
 class TestAiSession(AITestCommon):
@@ -110,6 +115,43 @@ class TestAiSession(AITestCommon):
                 if isinstance(text, str) and text.startswith('<ui_ctx>'):
                     return text
         return None
+
+    def _force_stale_session(self, name='long-tool', state='running'):
+        session = self.env['muk_ai.session'].create({'name': name})
+        session.write({'state': state})
+        session.flush_recordset()
+        stale = fields.Datetime.now() - timedelta(seconds=WORKER_STALE_THRESHOLD + 30)
+        self.env.cr.execute(SQL(
+            "UPDATE muk_ai_session SET write_date = %s, claimed_at = %s "
+            "WHERE id = %s",
+            stale, stale, session.id,
+        ))
+        session.invalidate_recordset()
+        return session
+
+    def _hold_session_lock(self, session_id):
+        class _Holder:
+            def __init__(self_, registry):
+                self_._cr = registry.cursor()
+            def __enter__(self_):
+                self_._cr.execute(SQL(
+                    "SELECT pg_try_advisory_lock(%s, %s)",
+                    ADVISORY_LOCK_NAMESPACE, session_id,
+                ))
+                acquired = self_._cr.fetchone()[0]
+                assert acquired, 'failed to acquire test lock'
+                return self_._cr
+            def __exit__(self_, *exc):
+                try:
+                    self_._cr.execute(SQL(
+                        "SELECT pg_advisory_unlock(%s, %s)",
+                        ADVISORY_LOCK_NAMESPACE, session_id,
+                    ))
+                    self_._cr.fetchone()
+                finally:
+                    self_._cr.close()
+
+        return _Holder(self.env.registry)
 
     # ----------------------------------------------------------
     # Tests: lifecycle
@@ -838,53 +880,8 @@ class TestAiSession(AITestCommon):
         )
 
     # ----------------------------------------------------------
-    # Long-tool / worker-recovery scenarios (mirror PDF-OCR flow:
-    # session running → multi-second tool dispatch → no false orphan
-    # kill while the advisory lock is held; flip to error only after
-    # the worker truly dies).
+    # Tests: worker recovery
     # ----------------------------------------------------------
-
-    def _force_stale_session(self, name='long-tool', state='running'):
-        from datetime import timedelta
-        from odoo import fields
-        from odoo.addons.muk_ai.models.session import WORKER_STALE_THRESHOLD
-        session = self.env['muk_ai.session'].create({'name': name})
-        session.write({'state': state})
-        session.flush_recordset()
-        stale = fields.Datetime.now() - timedelta(seconds=WORKER_STALE_THRESHOLD + 30)
-        self.env.cr.execute(
-            "UPDATE muk_ai_session SET write_date = %s, claimed_at = %s "
-            "WHERE id = %s",
-            [stale, stale, session.id],
-        )
-        session.invalidate_recordset()
-        return session
-
-    def _hold_session_lock(self, session_id):
-        from odoo.addons.muk_ai.models.session import ADVISORY_LOCK_NAMESPACE
-
-        class _Holder:
-            def __init__(self_, registry):
-                self_._cr = registry.cursor()
-            def __enter__(self_):
-                self_._cr.execute(
-                    "SELECT pg_try_advisory_lock(%s, %s)",
-                    [ADVISORY_LOCK_NAMESPACE, session_id],
-                )
-                acquired = self_._cr.fetchone()[0]
-                assert acquired, 'failed to acquire test lock'
-                return self_._cr
-            def __exit__(self_, *exc):
-                try:
-                    self_._cr.execute(
-                        "SELECT pg_advisory_unlock(%s, %s)",
-                        [ADVISORY_LOCK_NAMESPACE, session_id],
-                    )
-                    self_._cr.fetchone()
-                finally:
-                    self_._cr.close()
-
-        return _Holder(self.env.registry)
 
     def test_recover_if_stuck_skips_when_advisory_lock_is_held(self):
         session = self._force_stale_session('long-tool')
@@ -939,7 +936,6 @@ class TestAiSession(AITestCommon):
         self.assertEqual(session.state, 'running')
 
     def test_sweep_orphan_skips_session_with_recent_heartbeat(self):
-        from odoo import fields
         session = self.env['muk_ai.session'].create({'name': 'live-heartbeat'})
         session.write({
             'state': 'running',
@@ -957,8 +953,6 @@ class TestAiSession(AITestCommon):
             self.assertEqual(session.state, 'compacting')
 
     def test_heartbeat_claim_bumps_claimed_at(self):
-        from datetime import timedelta
-        from odoo import fields
         session = self.env['muk_ai.session'].create({'name': 'beating'})
         old = fields.Datetime.now() - timedelta(seconds=120)
         session.write({'state': 'running', 'claimed_at': old})
@@ -967,26 +961,16 @@ class TestAiSession(AITestCommon):
         self.assertGreater(session.claimed_at, old)
 
     # ----------------------------------------------------------
-    # PDF-OCR scenario: simulate the exact flow from the user
-    # report. Provider issues a multi-second tool call, the test
-    # holds the advisory lock the whole time, and we assert that
-    # neither the cron sweep nor a concurrent user `send_message`
-    # falsely flips the session to error during execution.
+    # Tests: long-tool concurrent recovery
     # ----------------------------------------------------------
 
     def test_pdf_ocr_long_tool_call_survives_orphan_sweep(self):
-        # Worker has been running for longer than the stale threshold
-        # while waiting on a slow PDF-OCR tool call.
         session = self._force_stale_session('pdf-ocr')
         with self._hold_session_lock(session.id):
-            # Cron tick fires while the tool is still running.
             self.env['muk_ai.session']._sweep_orphan_sessions()
             session.invalidate_recordset()
             self.assertEqual(session.state, 'running',
                 'live worker mid-tool must NOT be killed by the orphan sweep')
-
-            # User pings "done?" mid-tool — _recover_if_stuck must
-            # also see the live worker and back off.
             snapshot = session.send_message('done?')
             session.invalidate_recordset()
             self.assertEqual(session.state, 'running',
@@ -999,7 +983,6 @@ class TestAiSession(AITestCommon):
 
     def test_pdf_ocr_session_recovers_after_worker_death(self):
         session = self._force_stale_session('crashed-worker')
-        # No advisory lock held — worker process died.
         self.env['muk_ai.session']._sweep_orphan_sessions()
         session.invalidate_recordset()
         self.assertEqual(session.state, 'error')

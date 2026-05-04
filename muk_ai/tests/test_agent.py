@@ -4,7 +4,7 @@ from odoo import release
 
 from odoo.addons.muk_ai.tools import DEFAULT_CONTEXT_WINDOW
 
-from .common import AITestCommon
+from odoo.addons.muk_ai.tests.common import AITestCommon
 
 
 class TestAiAgent(AITestCommon):
