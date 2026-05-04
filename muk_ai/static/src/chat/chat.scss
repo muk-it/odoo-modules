@@ -294,6 +294,11 @@
         &.mk_state_running::before { animation: mk-pulse 1.2s ease-in-out infinite; }
     }
 
+    .mk_chat_header_resume {
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
     @keyframes mk-pulse {
         0%, 100% { opacity: 1; }
         50%      { opacity: 0.35; }
@@ -1083,6 +1088,28 @@
         &.mk_tool_write { border-left-color: #bf8700; }
         &.mk_tool_nav   { border-left-color: #0969da; }
         &.mk_tool_error { border-left-color: #cf222e; }
+        &.mk_tool_schedule_resume { border-left-color: #0c7cd5; }
+        &.mk_tool_schedule_recur  { border-left-color: #1f8a4a; }
+
+        &.mk_tool_schedule_resume .mk_tool_schedule_icon {
+            background: rgba(12, 124, 213, 0.12);
+            color: #0c7cd5;
+        }
+        &.mk_tool_schedule_recur .mk_tool_schedule_icon {
+            background: rgba(31, 138, 74, 0.12);
+            color: #1f8a4a;
+        }
+
+        .mk_tool_schedule_band {
+            font-family: var(--mk-mono);
+            font-size: 0.74rem;
+            color: var(--mk-text);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1 1 auto;
+            min-width: 0;
+        }
 
         &:hover:not(.mk_tool_streaming) {
             border-color: var(--mk-border-strong);

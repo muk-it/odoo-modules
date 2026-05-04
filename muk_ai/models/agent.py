@@ -12,8 +12,13 @@ class AIAgent(models.Model):
         'image.mixin',
         'mail.thread',
         'mail.activity.mixin',
+        'muk_ai.revision.mixin',
     ]
     _order = 'sequence, name'
+
+    @api.model
+    def _get_prompt_fields(self):
+        return ['system_prompt']
 
     # ----------------------------------------------------------
     # Fields
@@ -119,6 +124,19 @@ class AIAgent(models.Model):
         default=list,
     )
 
+    essential_tool_names = fields.Json(
+        string="Essential Tools",
+        help=(
+            "Tool names that ship with full schemas at session start. "
+            "Every other catalog tool is name-only in the prompt and "
+            "fetched on demand via tool_load. Empty falls back to a "
+            "curated default (read primitives + navigation + ask_user). "
+            "To disable lazy loading entirely, list every catalog tool. "
+            "Names outside the tool filter are silently dropped."
+        ),
+        default=list,
+    )
+
     suggestion_ids = fields.One2many(
         comodel_name='muk_ai.agent.suggestion',
         string="Suggestions",
@@ -158,11 +176,6 @@ class AIAgent(models.Model):
         string="Sessions",
     )
 
-    revision_count = fields.Integer(
-        compute='_compute_revision_count',
-        string="Prompt Revisions",
-    )
-
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
@@ -173,6 +186,32 @@ class AIAgent(models.Model):
         if preferred and preferred.active:
             return preferred
         return self.search([('active', '=', True)], limit=1)
+
+    @api.model
+    def _get_default_essential_tool_names(self):
+        return [
+            'ask_user',
+            'describe_model',
+            'list_models',
+            'open_action',
+            'open_record',
+            'open_view',
+            'read_group',
+            'read_records',
+            'search_count',
+            'search_read',
+        ]
+
+    def _get_essential_tool_names(self):
+        self.ensure_one()
+        configured = [
+            str(name).strip()
+            for name in (self.essential_tool_names or [])
+            if isinstance(name, (str, int)) and str(name).strip()
+        ]
+        if configured:
+            return configured
+        return self._get_default_essential_tool_names()
 
     def _resolve_model(self):
         if self.model_id:
@@ -205,17 +244,6 @@ class AIAgent(models.Model):
             'type': 'ir.actions.act_window',
             'name': _("Sessions"),
             'res_model': 'muk_ai.session',
-            'view_mode': 'list,form',
-            'domain': [('agent_id', '=', self.id)],
-            'context': {'default_agent_id': self.id},
-        }
-
-    def action_open_prompt_revisions(self):
-        self.ensure_one()
-        return {
-            'type': 'ir.actions.act_window',
-            'name': _("Prompt History"),
-            'res_model': 'muk_ai.agent.revision',
             'view_mode': 'list,form',
             'domain': [('agent_id', '=', self.id)],
             'context': {'default_agent_id': self.id},
@@ -311,30 +339,4 @@ class AIAgent(models.Model):
         counts = {agent.id: count for agent, count in grouped}
         for record in self:
             record.session_count = counts.get(record.id, 0)
-
-    def _compute_revision_count(self):
-        grouped = self.env['muk_ai.agent.revision'].sudo()._read_group(
-            domain=[('agent_id', 'in', self.ids)],
-            groupby=['agent_id'],
-            aggregates=['__count'],
-        )
-        counts = {agent.id: count for agent, count in grouped}
-        for record in self:
-            record.revision_count = counts.get(record.id, 0)
-
-    # ----------------------------------------------------------
-    # ORM
-    # ----------------------------------------------------------
-
-    def write(self, vals):
-        if 'system_prompt' in vals:
-            for record in self:
-                old = record.system_prompt or ''
-                if old and old != (vals['system_prompt'] or ''):
-                    self.env['muk_ai.agent.revision'].sudo().create({
-                        'agent_id': record.id,
-                        'body': old,
-                    })
-        return super().write(vals)
-
 

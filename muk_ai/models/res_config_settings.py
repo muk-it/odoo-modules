@@ -18,3 +18,13 @@ class ResConfigSettings(models.TransientModel):
         related='company_id.default_ai_agent_id',
         readonly=False,
     )
+
+    module_muk_ai_schedule = fields.Boolean(
+        string='MuK AI Schedule',
+        help='Run agents on a schedule, let them pause and resume themselves.',
+    )
+
+    module_muk_ai_skills = fields.Boolean(
+        string='MuK AI Skills',
+        help='Pre-built agent skills the user or LLM can switch into.',
+    )

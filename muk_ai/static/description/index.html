@@ -43,8 +43,9 @@
 				Includes human-in-the-loop <code>ask_user</code> support, a
 				session-scoped approval gate for risky writes, per-agent tool
 				filters, read-only scope enforcement, multimodal attachments
-				(images, PDFs, text files), agent suggestion prompts, prompt
-				revision history, and a prebuilt catalog of current GPT-5.x /
+				(images, PDFs, text files), lazy tool loading with a per-agent
+				essentials list, agent suggestion prompts, field history
+				versioning, and a prebuilt catalog of current GPT-5.x /
 				Claude 4.x / Gemini 2.5/3.x models with input/output/cache
 				pricing.
 			</p>
@@ -184,14 +185,16 @@
 				An <strong>Agent</strong> is a named preset: system prompt
 				(rendered with Odoo's inline-template engine for placeholders
 				like <code>{{ user.name }}</code> or <code>{{ today }}</code>),
-				model override, tool filter, native-tool toggles (web search,
-				image generation, code interpreter &mdash; auto-hidden when the
-				provider doesn't support them), read-only flag, approval mode,
-				and starter suggestion prompts. Every chat session inherits
-				from an agent &mdash; ship a "Sales Assistant" with write access
-				to leads alongside a "Read-only Analyst" that cannot mutate
-				anything. Read-only is enforced server-side through the MCP
-				scope check, not just by prompt instruction.
+				model override, tool filter, an <strong>Essential Tools</strong>
+				list that controls which schemas ship eagerly (the rest stay
+				name-only and lazy-load on demand), native-tool toggles (web
+				search, image generation, code interpreter &mdash; auto-hidden
+				when the provider doesn't support them), read-only flag,
+				approval mode, and starter suggestion prompts. Every chat
+				session inherits from an agent &mdash; ship a "Sales Assistant"
+				with write access to leads alongside a "Read-only Analyst"
+				that cannot mutate anything. Read-only is enforced server-side
+				through the MCP scope check, not just by prompt instruction.
 			</p>
 			<p>
 				System prompts are versioned: every edit captures the previous
@@ -282,6 +285,68 @@
 				The user's answer is fed back as a
 				<code>function_call_output</code> so the model resumes the
 				turn exactly where it left off.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Lazy Tool Loading</h3>
+			<p>
+				Shipping every MCP tool's JSON schema in the
+				<code>tools</code> array of every turn is expensive on
+				context. Each agent declares a small
+				<strong>Essential Tools</strong> set that loads eagerly;
+				every other catalog tool is advertised by name only inside an
+				<code>&lt;available_tools&gt;</code> block appended to the
+				system prompt. The model fetches full schemas on demand
+				through a built-in meta-tool:
+			</p>
+			<ul>
+				<li>
+					<code>tool_load(names=[...])</code> &mdash; pulls one or
+					more schemas from the catalog. The names are appended to
+					the session's loaded-tools list and stay available for the
+					rest of the session.
+				</li>
+				<li>
+					<code>tool_load(names=[...], call={name, arguments})</code>
+					&mdash; load <em>and</em> execute one of the just-loaded
+					tools in the same round-trip; the schemas plus the inline
+					tool result come back in a single
+					<code>function_call_output</code>, no follow-up turn needed.
+					Preferred shape for one-shot lookups.
+				</li>
+			</ul>
+			<p>
+				Unknown names come back under an <code>unknown</code> key so
+				the model can recover gracefully. <code>ask_user</code> is
+				auto-injected when approvals are on, regardless of the
+				essentials list. Leaving <strong>Essential Tools</strong>
+				empty enables the default lazy mode (read-side primitives + UI
+				helpers + <code>ask_user</code>); populate it to override.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Runtime Context Block</h3>
+			<p>
+				Alongside the agent's system prompt and
+				<code>&lt;available_tools&gt;</code> list, each session
+				injects a short <code>&lt;runtime&gt;</code> block stating the
+				current Odoo version, today's date, the user (id, timezone),
+				the company (id), the active approval mode, and &mdash; when
+				relevant &mdash; the list of companies the user can access
+				with a hint to pass <code>allowed_company_ids</code> for
+				cross-company searches. The model never has to spend a turn
+				calling <code>whoami</code> or asking for the date to ground
+				its first reply.
 			</p>
 		</div>
 	</div>

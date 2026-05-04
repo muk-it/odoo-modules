@@ -16,8 +16,10 @@ import {
     approvalPill,
     costTooltip,
     formatCost,
+    formatRelativeTime,
     formatTimestamp,
     inputPlaceholder,
+    statusBadgeClass,
     statusLabel,
 } from '@muk_ai/chat/utils';
 
@@ -82,7 +84,9 @@ export class AIChat extends Component {
             sessions: [],
             sidebarHidden: false,
             askViews: {},
+            resumeTick: 0,
         });
+        this._resumeTickInterval = null;
         this.rootRef = useRef('root');
         const { scrollRef, scrollToBottom, state: scrollState } = useChatScrollAnchor('scrollArea');
         this.scrollRef = scrollRef;
@@ -144,10 +148,20 @@ export class AIChat extends Component {
         onMounted(() => {
             this._installImageClickHandler();
             this._installRootPasteHandler();
+            this._resumeTickInterval = window.setInterval(() => {
+                if (this.session.state.status === 'waiting_schedule'
+                        && this.session.state.resumeAt) {
+                    this.state.resumeTick += 1;
+                }
+            }, 5000);
         });
         onWillUnmount(() => {
             this._disconnectUserBus();
             this._uninstallRootPasteHandler();
+            if (this._resumeTickInterval !== null) {
+                window.clearInterval(this._resumeTickInterval);
+                this._resumeTickInterval = null;
+            }
         });
     }
     _installImageClickHandler() {
@@ -427,6 +441,17 @@ export class AIChat extends Component {
     }
     statusLabel(status) {
         return statusLabel(status);
+    }
+    statusBadgeClass(status) {
+        return statusBadgeClass(status);
+    }
+    get resumeRelativeText() {
+        void this.state.resumeTick;
+        const relative = formatRelativeTime(this.session.state.resumeAt);
+        if (!relative) {
+            return '';
+        }
+        return _t('resumes in %s', relative);
     }
     get contextPercent() {
         const window = this.session.state.contextWindow;

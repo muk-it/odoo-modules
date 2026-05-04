@@ -11,9 +11,9 @@ import urllib3
 
 from markupsafe import Markup, escape
 
-from odoo import SUPERUSER_ID, _, api, fields, models, modules
-from odoo.exceptions import UserError
+from odoo import SUPERUSER_ID, _, api, fields, models, modules, release
 from odoo.tools.rendering_tools import parse_inline_template, render_inline_template
+from odoo.exceptions import UserError
 
 from odoo.addons.muk_ai.tools import (
     ALLOWED_MIMETYPES,
@@ -25,6 +25,7 @@ from odoo.addons.muk_ai.tools import (
     MAX_TOOL_CALLS_PER_ROUND,
     MAX_WALLCLOCK_SECONDS,
     TERMINATING_TOOLS,
+    TOOL_LOAD_TOOL,
     URL_REF_RE,
     StreamCancelled,
     build_tool_call_output,
@@ -227,6 +228,18 @@ class AISession(models.Model):
         inverse_name='session_id',
     )
 
+    expanded_tool_names = fields.Json(
+        string="Loaded Tools",
+        help=(
+            "Tool names whose full schemas have been loaded into this "
+            "session via tool_load. Append-only within a session. "
+            "Essentials and meta-tools (tool_load, ask_user) are always "
+            "loaded regardless of this list."
+        ),
+        readonly=True,
+        default=list,
+    )
+
     pending_user_messages = fields.Json(
         compute='_compute_pending_user_messages',
         string="Queued User Messages",
@@ -321,6 +334,10 @@ class AISession(models.Model):
     # ----------------------------------------------------------
 
     @api.model
+    def _get_terminating_tools(self):
+        return TERMINATING_TOOLS
+
+    @api.model
     def _get_system_prompt(self):
         return self.env['muk_ai.agent']._get_default().system_prompt
 
@@ -331,6 +348,40 @@ class AISession(models.Model):
             else self._get_system_prompt()
         )
         return self._render_system_prompt(raw or '')
+
+    def _build_available_tools_block(self):
+        catalog_names = {
+            entry['name']
+            for entry in self._get_filtered_catalog()
+            if entry.get('name')
+        }
+        loaded = set(self._loaded_tool_names()) & catalog_names
+        deferred = sorted(catalog_names - loaded)
+        if not deferred:
+            return ''
+        return (
+            '<available_tools>\n'
+            "This list is COMPLETE: every tool the session can call is "
+            "either in your `tools` array (immediately callable) or "
+            "listed below by name. Do NOT call list_models or any other "
+            "tool to look for tools — every name is here.\n"
+            "\n"
+            "To use a tool listed below, call tool_load with a `call` "
+            "argument that loads the schema AND executes the tool in "
+            "ONE round-trip:\n"
+            "    tool_load(names=[\"<tool>\"], call={name: \"<tool>\", arguments: {...}})\n"
+            "Returns {loaded: {...}, call: {output: <result>}}. No "
+            "follow-up turn. This is the strongly preferred shape for "
+            "any deferred tool — never load and then call in two "
+            "separate rounds when one will do.\n"
+            "\n"
+            "`invoke_skill` is ONLY for the named workflows listed in "
+            "the `## Available Skills` addendum, never for tool "
+            "discovery. Pick from this list instead.\n"
+            "\n"
+            f"{', '.join(deferred)}\n"
+            '</available_tools>'
+        )
 
     def _render_system_prompt(self, raw):
         if not raw:
@@ -358,11 +409,40 @@ class AISession(models.Model):
             'ctx': self.env.context,
             'env': self.env,
             'today': fields.Date.context_today(self).isoformat(),
+            'odoo_version': release.version,
+            'odoo_series': release.series,
             'approval_mode': (
                 self._effective_approval_mode()
                 if self and self.id else 'ask'
             ),
         }
+
+    def _build_runtime_block(self):
+        user = self.env.user
+        company = self.env.company
+        today = fields.Date.context_today(self).isoformat()
+        approval = (
+            self._effective_approval_mode()
+            if self and self.id else 'ask'
+        )
+        lines = [
+            '<runtime>',
+            'Facts about this session. Use them directly; do not look them up.',
+            f'Odoo: {release.version}',
+            f'Date: {today}',
+            f'User: {user.name} (res.users,{user.id}) — tz {user.tz or "UTC"}',
+            f'Company: {company.name} (res.company,{company.id})',
+            f'Approval mode: {approval}',
+        ]
+        accessible = user.company_ids
+        if len(accessible) > 1:
+            names = ', '.join(accessible.sorted('id').mapped('name'))
+            lines.append(
+                f'Companies accessible: {names} — pass `allowed_company_ids` '
+                'in context to search across them.'
+            )
+        lines.append('</runtime>')
+        return '\n'.join(lines)
 
     def _effective_model_record(self):
         if self.agent_id and self.agent_id.model_id:
@@ -407,12 +487,18 @@ class AISession(models.Model):
         return {'role': 'user', 'content': content} if content else None
 
     def _build_initial_inputs(self, user_message=None, attachments=None):
+        prompt_parts = [
+            self._effective_system_prompt(),
+            self._build_runtime_block(),
+        ]
+        if available := self._build_available_tools_block():
+            prompt_parts.append(available)
         inputs = [
             {
                 'role': 'system',
                 'content': [{
                     'type': 'input_text',
-                    'text': self._effective_system_prompt()
+                    'text': '\n\n'.join(part for part in prompt_parts if part),
                 }],
             },
         ]
@@ -427,33 +513,60 @@ class AISession(models.Model):
             'attachments': [a._ai_describe() for a in attachments],
         }
 
-    def _get_tool_schema(self):
+    def _get_filtered_catalog(self):
         tool_env = self.env(context={
             **self.env.context,
             **self._tool_dispatch_context(),
         })
-        tools = list(tool_env['muk_mcp.tool'].sudo().get_tools(
+        catalog = list(tool_env['muk_mcp.tool'].sudo().get_tools(
             registry='odoo',
         ))
-        if self._effective_approval_mode() != 'off':
-            tools.append(ASK_USER_TOOL)
         if self.agent_id:
-            tools = self.agent_id.apply_tool_filter(
-                tools
-            )
+            catalog = self.agent_id.apply_tool_filter(catalog)
+        return catalog
+
+    def _get_essential_tool_names(self):
+        if self.agent_id:
+            return self.agent_id._get_essential_tool_names()
+        return self.env['muk_ai.agent']._get_default_essential_tool_names()
+
+    def _loaded_tool_names(self):
+        essentials = self._get_essential_tool_names()
+        expanded = list(self.expanded_tool_names or [])
+        seen = set()
         result = []
-        for tool in tools:
-            schema = (
-                 tool.get('inputSchema') or
-                 {'type': 'object', 'properties': {}}
-            )
-            result.append({
-                'type': 'function',
-                'name': tool['name'],
-                'description': tool.get('description') or '',
-                'parameters': sanitize_json_schema(schema),
-                'strict': False,
-            })
+        for name in essentials + expanded:
+            if name and name not in seen:
+                seen.add(name)
+                result.append(name)
+        return result
+
+    @staticmethod
+    def _tool_entry_to_schema(entry):
+        schema = entry.get('inputSchema') or {'type': 'object', 'properties': {}}
+        return {
+            'type': 'function',
+            'name': entry['name'],
+            'description': entry.get('description') or '',
+            'parameters': sanitize_json_schema(schema),
+            'strict': False,
+        }
+
+    def _get_tool_schema(self):
+        catalog_by_name = {entry['name']: entry for entry in self._get_filtered_catalog()}
+        loaded = [name for name in self._loaded_tool_names() if name in catalog_by_name]
+        loaded_set = set(loaded)
+        result = [
+            self._tool_entry_to_schema(catalog_by_name[name])
+            for name in sorted(loaded_set)
+        ]
+        if set(catalog_by_name) - loaded_set:
+            result.append(self._tool_entry_to_schema(TOOL_LOAD_TOOL))
+        if (
+            self._effective_approval_mode() != 'off'
+            and 'ask_user' not in loaded_set
+        ):
+            result.append(self._tool_entry_to_schema(ASK_USER_TOOL))
         return result
 
     # ----------------------------------------------------------
@@ -806,6 +919,8 @@ class AISession(models.Model):
         }
 
     def _dispatch_tool_call(self, name, arguments, call_id):
+        if name == 'tool_load':
+            return self._dispatch_tool_load(arguments, parent_call_id=call_id), True
         enforce_scope = (
             'read'
             if self.agent_id and self.agent_id.read_only
@@ -852,6 +967,78 @@ class AISession(models.Model):
                     }
         return text, True
 
+    def _dispatch_tool_load(self, arguments, parent_call_id=None):
+        requested = arguments.get('names') if isinstance(arguments, dict) else None
+        if not isinstance(requested, list):
+            return {'error': "Argument 'names' must be a non-empty list of tool name strings."}
+        names = [
+            str(item).strip()
+            for item in requested
+            if isinstance(item, (str, int)) and str(item).strip()
+        ]
+        if not names:
+            return {'error': "Argument 'names' must be a non-empty list of tool name strings."}
+        catalog_by_name = {
+            entry['name']: entry for entry in self._get_filtered_catalog()
+        }
+        loaded = {}
+        unknown = []
+        for name in names:
+            if entry := catalog_by_name.get(name):
+                loaded[name] = {
+                    'description': entry.get('description') or '',
+                    'inputSchema': entry.get('inputSchema') or {
+                        'type': 'object', 'properties': {},
+                    },
+                }
+            else:
+                unknown.append(name)
+        if loaded:
+            existing = list(self.expanded_tool_names or [])
+            existing_set = set(existing)
+            for name in loaded:
+                if name not in existing_set:
+                    existing.append(name)
+                    existing_set.add(name)
+            self.write({'expanded_tool_names': existing})
+        response = {'loaded': loaded, 'unknown': unknown}
+        if call_spec := (arguments.get('call') if isinstance(arguments, dict) else None):
+            response['call'] = self._dispatch_tool_load_inline_call(
+                call_spec, loaded, parent_call_id,
+            )
+        return response
+
+    def _dispatch_tool_load_inline_call(self, call_spec, loaded, parent_call_id):
+        if not isinstance(call_spec, dict):
+            return {'error': "`call` must be an object with `name` and optional `arguments`."}
+        target = str(call_spec.get('name') or '').strip()
+        if not target:
+            return {'error': "`call.name` is required."}
+        if target not in loaded:
+            return {
+                'error': (
+                    "`call.name` %r must be one of the just-loaded names; "
+                    "include it in `names` and try again." % target
+                ),
+            }
+        target_args = call_spec.get('arguments') or {}
+        if not isinstance(target_args, dict):
+            return {'error': "`call.arguments` must be an object."}
+        inline_call_id = f"{parent_call_id or 'tool_load'}__{target}"
+        self._record_tool_call({
+            'name': target,
+            'arguments': target_args,
+            'call_id': inline_call_id,
+        })
+        result, ok = self._dispatch_tool_call(target, target_args, inline_call_id)
+        self._append_event({
+            'kind': 'tool_result',
+            'name': target,
+            'result': result,
+            'call_id': inline_call_id,
+        })
+        return {'name': target, 'output': result, 'ok': ok}
+
     def _maybe_publish_ui_action(self, text, name, call_id):
         try:
             action = json.loads(text) if isinstance(text, str) else None
@@ -864,7 +1051,7 @@ class AISession(models.Model):
                 'name': name,
                 'action': action
             })
-            if name in TERMINATING_TOOLS:
+            if name in self._get_terminating_tools():
                 self._apply_ui_action(name, action)
 
     # ----------------------------------------------------------
@@ -1281,7 +1468,7 @@ class AISession(models.Model):
         )
         self._heartbeat_claim()
         self._record_tool_result(outputs, call['call_id'], call['name'], result)
-        return ok and call['name'] in TERMINATING_TOOLS
+        return ok and call['name'] in self._get_terminating_tools()
 
     def _process_tool_round(self, tool_calls, outputs, start_index, has_terminating=False):
         has_ask_user = any(c.get('name') == 'ask_user' for c in tool_calls)
@@ -1347,7 +1534,7 @@ class AISession(models.Model):
         if deadline is None:
             deadline = time.monotonic() + MAX_WALLCLOCK_SECONDS
         provider, model = self._effective_provider(), self._effective_model()
-        agent, tool_schema = self.agent_id, self._get_tool_schema()
+        agent = self.agent_id
         for _iteration in range(MAX_ITERATIONS):
             if self.state != 'running':
                 return
@@ -1357,9 +1544,10 @@ class AISession(models.Model):
                     s=MAX_WALLCLOCK_SECONDS,
                 ))
                 return
-            self.invalidate_recordset(['pending_ids'])
+            self.invalidate_recordset(['pending_ids', 'expanded_tool_names'])
             if self.pending_ids and self._drain_pending_message():
                 has_terminating = False
+            tool_schema = self._get_tool_schema()
             schema, round_agent = (None, None) if has_terminating else (tool_schema, agent)
             try:
                 payload = self._stream_provider_round(provider, schema, model, round_agent)
@@ -1534,7 +1722,7 @@ class AISession(models.Model):
             result, ok = self._dispatch_tool_call(
                 call['name'], call['arguments'], call['call_id'],
             )
-            if ok and call['name'] in TERMINATING_TOOLS:
+            if ok and call['name'] in self._get_terminating_tools():
                 has_terminating = True
         else:
             result = {
@@ -1810,7 +1998,12 @@ class AISession(models.Model):
             'conversation': [
                 {
                     'role': 'system',
-                    'content': [{'type': 'input_text', 'text': self._effective_system_prompt()}]
+                    'content': [{'type': 'input_text', 'text': '\n\n'.join(
+                        part for part in (
+                            self._effective_system_prompt(),
+                            self._build_runtime_block(),
+                        ) if part
+                    )}]
                 },
                 {
                     'type': 'message',

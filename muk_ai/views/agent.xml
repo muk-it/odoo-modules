@@ -124,12 +124,12 @@
 							<field name="session_count" widget="statinfo" string="Sessions"/>
 						</button>
 						<button
-                                name="action_open_prompt_revisions"
+                                name="action_open_prompt_history"
 								type="object"
 								class="oe_stat_button"
 								icon="fa-history"
                         >
-							<field name="revision_count" widget="statinfo" string="Prompt History"/>
+							<field name="prompt_history_count" widget="statinfo" string="Prompt History"/>
 						</button>
 					</div>
 					<widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
@@ -175,6 +175,11 @@
 							<field name="approval_mode"/>
 							<field
                                 name="tool_filter"
+                                widget="tag_picker"
+                                options="{'options_field': 'tool_filter_options'}"
+                            />
+							<field
+                                name="essential_tool_names"
                                 widget="tag_picker"
                                 options="{'options_field': 'tool_filter_options'}"
                             />
@@ -241,8 +246,8 @@
 								</p>
 								<h4>Available variables</h4>
 								<ul>
-									<li><code>user</code> — the current <code>res.users</code> record. Common: <code>{{ user.name }}</code>, <code>{{ user.login }}</code>, <code>{{ user.email }}</code>, <code>{{ user.lang }}</code>.</li>
-									<li><code>company</code> — the current <code>res.company</code> record. Common: <code>{{ company.name }}</code>, <code>{{ company.currency_id.name }}</code>.</li>
+									<li><code>user</code> — the current <code>res.users</code> record. Common: <code>{{ user.name }}</code>, <code>{{ user.lang }}</code>.</li>
+									<li><code>company</code> — the current <code>res.company</code> record. Common: <code>{{ company.name }}</code>.</li>
 									<li><code>today</code> — today's date as ISO <code>YYYY-MM-DD</code>, rendered once when the session starts.</li>
 									<li><code>approval_mode</code> — <code>ask</code> or <code>off</code>, resolved per session (agent default + session override).</li>
 									<li><code>env</code> / <code>ctx</code> — advanced: the current environment and context for custom expressions.</li>
@@ -253,12 +258,6 @@
 									<div>Today is {{ today }}. Respond in {{ user.lang ||| en_US }}.</div>
 									<div>Approval mode: {{ approval_mode }}.</div>
 								</div>
-								<h4>Notes</h4>
-								<ul>
-									<li>The prompt is <b>frozen</b> at session start — placeholders do not re-render on each turn. Per-turn state (open record, view) is injected separately via the <code>ui_ctx</code> tag.</li>
-									<li>Evaluation is <code>safe_eval</code>: attribute access and simple expressions only. Method calls with side effects or imports are blocked.</li>
-									<li>If an expression raises, the raw prompt is kept as a fallback and the error is silently swallowed — prefer <code>|||</code> defaults over try/except in the prompt.</li>
-								</ul>
 							</div>
 						</page>
 					</notebook>

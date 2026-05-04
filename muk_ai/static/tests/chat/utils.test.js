@@ -5,7 +5,9 @@ import {
     approvalPill,
     costTooltip,
     formatCost,
+    formatDurationSeconds,
     formatError,
+    formatRelativeTime,
     inputPlaceholder,
     statusBadgeClass,
     statusLabel,
@@ -32,9 +34,14 @@ test('statusBadgeClass maps every known status', () => {
     expect(statusBadgeClass('new')).toBe('mk_state_new');
     expect(statusBadgeClass('running')).toBe('mk_state_running');
     expect(statusBadgeClass('waiting')).toBe('mk_state_waiting');
+    expect(statusBadgeClass('waiting_schedule')).toBe('mk_state_waiting');
     expect(statusBadgeClass('done')).toBe('mk_state_done');
     expect(statusBadgeClass('error')).toBe('mk_state_error');
     expect(statusBadgeClass('stopped')).toBe('mk_state_stopped');
+});
+
+test('statusLabel maps waiting_schedule to Scheduled', () => {
+    expect(statusLabel('waiting_schedule').toString()).toMatch(/Scheduled/i);
 });
 
 test('statusBadgeClass falls back to new for unknown', () => {
@@ -129,6 +136,39 @@ test('inputPlaceholder returns default when idle', () => {
     expect(text).toBe('default text');
 });
 
+test('inputPlaceholder overrides default for waiting_schedule', () => {
+    const text = inputPlaceholder({ status: 'waiting_schedule' }, 'default text');
+    expect(text.toString()).toMatch(/Scheduled/i);
+});
+
 test('formatError re-exported from utils stays functional', () => {
     expect(formatError({ data: { message: 'ok' } })).toBe('ok');
+});
+
+test('formatRelativeTime returns empty string for falsy or past', () => {
+    expect(formatRelativeTime(null)).toBe('');
+    expect(formatRelativeTime('')).toBe('');
+    expect(formatRelativeTime('2000-01-01T00:00:00Z')).toBe('');
+});
+
+test('formatRelativeTime renders future minutes/seconds', () => {
+    const future = new Date(Date.now() + 5 * 60 * 1000 + 12 * 1000).toISOString();
+    const text = formatRelativeTime(future).toString();
+    expect(text).toMatch(/m/);
+});
+
+test('formatRelativeTime renders future hours/minutes', () => {
+    const future = new Date(Date.now() + 3 * 3600 * 1000 + 12 * 60 * 1000).toISOString();
+    const text = formatRelativeTime(future).toString();
+    expect(text).toMatch(/h/);
+});
+
+test('formatDurationSeconds picks the right unit', () => {
+    expect(formatDurationSeconds(60).toString()).toBe('1m');
+    expect(formatDurationSeconds(300).toString()).toBe('5m');
+    expect(formatDurationSeconds(3600).toString()).toBe('1h');
+    expect(formatDurationSeconds(86400).toString()).toBe('1d');
+    expect(formatDurationSeconds(45).toString()).toBe('45s');
+    expect(formatDurationSeconds(0)).toBe('');
+    expect(formatDurationSeconds(null)).toBe('');
 });

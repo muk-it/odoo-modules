@@ -13,9 +13,10 @@ trail.
 Includes human-in-the-loop ``ask_user`` support, a session-scoped
 approval gate for risky writes, per-agent tool filters, read-only
 scope enforcement, multimodal attachments (images, PDFs, text files),
-agent suggestion prompts, prompt revision history, and a prebuilt
-catalog of current GPT-5.x / Claude 4.x / Gemini 3.x models with
-input/output/cache pricing.
+lazy tool loading with a per-agent essentials list, agent suggestion
+prompts, field history versioning, and a prebuilt catalog of current
+GPT-5.x / Claude 4.x / Gemini 2.5/3.x models with input/output/cache
+pricing.
 
 It is also the foundation for the rest of the MuK AI suite: the
 ``REGISTRY`` in ``providers/__init__.py`` drives both the in-memory
@@ -220,14 +221,60 @@ Open *MuK AI > Agents*. An agent is a named preset:
   not just a prompt instruction.
 - **Tool Filter** — whitelist of MCP tool names the agent may call
   (empty = all tools allowed).
+- **Essential Tools** — names that ship with full schemas at session
+  start. Empty falls back to a sensible default (read-side primitives
+  + UI helpers + ``ask_user``) and turns lazy loading on; populate it
+  to opt into a custom essentials set, or set it to every catalog name
+  to ship the full eager-mode tool array. Names outside the tool
+  filter are silently dropped.
 - **Approval Mode** — ``Ask on writes`` (default) or ``Never ask`` for
   unattended agents.
 - **Suggestions** — starter prompts shown in the empty chat, editable
   as a one2many kanban inside the agent form.
 
-Every system-prompt edit creates a ``muk_ai.agent.revision`` record —
-the **Prompt History** stat button on the agent form opens the log
-and lets you restore any prior version.
+Every system-prompt edit snapshots the prior value into the agent's
+``prompt_history`` JSON column (via the reusable
+``muk_ai.revision.mixin``). The **Prompt History** stat button
+on the agent form opens a side-by-side dialog that lists all prior
+revisions with author + timestamp and lets you restore any of them.
+
+Lazy tool loading
+=================
+
+Shipping every MCP tool's JSON schema in the ``tools`` array of every
+turn is expensive on context. MuK AI lets each agent declare a small
+**Essential Tools** set that is loaded eagerly; every other catalog
+tool is advertised by name only inside an ``<available_tools>`` block
+appended to the system prompt. The model fetches full schemas on
+demand through a built-in meta-tool:
+
+- ``tool_load(names=[...])`` — pulls one or more schemas from the
+  catalog. The names are appended to the session's
+  ``expanded_tool_names`` list and stay loaded for the rest of the
+  session.
+- ``tool_load(names=[...], call={name, arguments})`` — load *and*
+  execute one of the just-loaded tools in the same round-trip; the
+  schemas plus the inline tool result come back in a single
+  ``function_call_output``, no follow-up turn needed. This is the
+  preferred shape for one-shot lookups.
+
+Unknown names come back under an ``unknown`` key so the model can
+recover gracefully. ``ask_user`` is auto-injected when approvals are
+enabled, regardless of the essentials list. Leaving **Essential
+Tools** empty enables the default lazy mode (read-side primitives +
+UI helpers + ``ask_user``); populate it to override.
+
+Runtime context block
+=====================
+
+Alongside the agent's system prompt and ``<available_tools>`` list,
+each session injects a short ``<runtime>`` block stating the current
+Odoo version, today's date, the user (id, timezone), the company
+(id), the active approval mode, and — when relevant — the list of
+companies the user can access (with a hint to pass
+``allowed_company_ids`` for cross-company searches). This means the
+model never has to spend a turn calling ``whoami`` or ``today`` to
+ground its first reply.
 
 Providers
 =========

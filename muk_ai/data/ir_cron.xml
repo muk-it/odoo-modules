@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <odoo noupdate="1">
 
     <record id="cron_run_pending_sessions_1" model="ir.cron">

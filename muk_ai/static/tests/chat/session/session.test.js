@@ -115,6 +115,72 @@ test('load reads session and applies record to state', async () => {
 });
 
 
+test('load is atomic: previous events stay visible until new snapshot arrives', async () => {
+    const SECOND_RECORD = { ...SESSION_RECORD, id: 9, name: 'Second' };
+    let resolveSecondRead;
+    let resolveSecondSnapshot;
+    onRpc('muk_ai.session', 'read', ({ args }) => {
+        if (args[0][0] === 7) { return [SESSION_RECORD]; }
+        return new Promise((resolve) => {
+            resolveSecondRead = () => resolve([SECOND_RECORD]);
+        });
+    });
+    onRpc('muk_ai.session', 'get_snapshot', ({ args }) => {
+        if (args[0] === 7) { return snapshotFor(SESSION_RECORD); }
+        return new Promise((resolve) => {
+            resolveSecondSnapshot = () => resolve(snapshotFor({
+                ...SECOND_RECORD,
+                events: [{ kind: 'text', content: 'second answer' }],
+            }));
+        });
+    });
+    makeBusMock();
+    const harness = makeHarness();
+    const session = await mountAndLoad(harness, 7);
+    expect(session.state.sessionId).toBe(7);
+    expect(session.state.events.length).toBe(2);
+
+    const loadPromise = session.load(9);
+    expect(session.state.loading).toBe(true);
+    expect(session.state.sessionId).toBe(7);
+    expect(session.state.events.length).toBe(2);
+
+    resolveSecondRead();
+    await Promise.resolve();
+    resolveSecondSnapshot();
+    await loadPromise;
+
+    expect(session.state.sessionId).toBe(9);
+    expect(session.state.events.length).toBe(1);
+    expect(session.state.events[0].content).toBe('second answer');
+    expect(session.state.loading).toBe(false);
+});
+
+
+test('canSend is false while load is in flight', async () => {
+    const SECOND_RECORD = { ...SESSION_RECORD, id: 9 };
+    let resolveSecondRead;
+    onRpc('muk_ai.session', 'read', ({ args }) => {
+        if (args[0][0] === 7) { return [SESSION_RECORD]; }
+        return new Promise((resolve) => {
+            resolveSecondRead = () => resolve([SECOND_RECORD]);
+        });
+    });
+    onRpc('muk_ai.session', 'get_snapshot', () => snapshotFor(SECOND_RECORD));
+    makeBusMock();
+    const harness = makeHarness();
+    const session = await mountAndLoad(harness, 7);
+    session.state.input = 'hello';
+    expect(session.canSend()).toBe(true);
+
+    const loadPromise = session.load(9);
+    expect(session.canSend()).toBe(false);
+
+    resolveSecondRead();
+    await loadPromise;
+});
+
+
 test('loadAgents fetches agents via search_read with suggestions field', async () => {
     let captured = null;
     onRpc('muk_ai.agent', 'search_read', ({ kwargs }) => {

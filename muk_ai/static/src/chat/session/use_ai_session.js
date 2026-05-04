@@ -16,7 +16,7 @@ const SESSION_READ_FIELDS = [
     'iteration_count', 'total_input_tokens', 'total_output_tokens',
     'last_input_tokens', 'context_window', 'agent_id', 'total_cost',
     'override_approval_mode', 'effective_approval_mode',
-    'pending_user_messages',
+    'pending_user_messages', 'resume_at',
 ];
 
 export const SLASH_COMMANDS = [
@@ -85,12 +85,14 @@ export function useAiSession(options = {}) {
         effectiveApprovalMode: 'ask',
         pendingMessages: [],
         streamIdle: false,
+        resumeAt: '',
     });
 
     let busHandler = null;
     let eventKeys = new Set();
     let onScrollCallback = null;
     let streamIdleTimer = null;
+    let loadSeq = 0;
 
     function clearStreamIdleTimer() {
         if (streamIdleTimer) {
@@ -237,6 +239,11 @@ export function useAiSession(options = {}) {
             if (typeof event.payload.total_cost === 'number') {
                 state.totalCost = event.payload.total_cost;
             }
+            if (event.payload.resume_at !== undefined) {
+                state.resumeAt = normalizeResumeAt(event.payload.resume_at);
+            } else if (event.payload.state && event.payload.state !== 'waiting_schedule') {
+                state.resumeAt = '';
+            }
         } else if (event.type === 'ui_action') {
             handleUiAction(event.payload);
         } else if (event.type === 'view_context') {
@@ -274,47 +281,51 @@ export function useAiSession(options = {}) {
     }
 
     async function load(sessionId) {
-        disconnectBus();
-        sessionNotification.markInactive(state.sessionId);
-        sessionNotification.markActive(sessionId);
-        state.sessionId = sessionId;
+        const seq = ++loadSeq;
+        const previousSessionId = state.sessionId;
         state.loading = true;
-        state.input = '';
-        state.error = null;
-        state.pendingAsk = null;
-        state.events = [];
-        state.oldestSequence = null;
-        state.hasMoreOlder = false;
-        state.loadingOlder = false;
-        state.streamingText = '';
-        state.streamingReasoning = '';
-        state.streamingTools = [];
-        state.pendingAttachments = [];
-        state.streamIdle = false;
-        clearStreamIdleTimer();
-        eventKeys = new Set();
         if (!sessionId) {
+            disconnectBus();
+            sessionNotification.markInactive(previousSessionId);
+            clearStreamIdleTimer();
+            _resetSessionState(null);
             state.loading = false;
             return null;
         }
         let record = null;
         let snapshot = null;
+        let loadError = null;
         try {
             const [result] = await orm.read(
                 'muk_ai.session', [sessionId], SESSION_READ_FIELDS,
             );
             record = result || null;
+            if (record) {
+                try {
+                    snapshot = await orm.call(
+                        'muk_ai.session', 'get_snapshot', [sessionId],
+                    );
+                } catch (error) {
+                    snapshot = null;
+                }
+            }
         } catch (error) {
-            state.error = formatError(error);
+            loadError = error;
+        }
+        if (seq !== loadSeq) {
+            return record;
+        }
+        disconnectBus();
+        sessionNotification.markInactive(previousSessionId);
+        clearStreamIdleTimer();
+        _resetSessionState(sessionId);
+        if (loadError) {
+            state.error = formatError(loadError);
+            state.loading = false;
+            return null;
         }
         if (record) {
-            try {
-                snapshot = await orm.call(
-                    'muk_ai.session', 'get_snapshot', [sessionId],
-                );
-            } catch (error) {
-                snapshot = null;
-            }
+            sessionNotification.markActive(sessionId);
             applyRecord(record);
             if (snapshot && snapshot.events !== undefined) {
                 state.events = snapshot.events || [];
@@ -329,6 +340,24 @@ export function useAiSession(options = {}) {
         return record;
     }
 
+    function _resetSessionState(sessionId) {
+        state.sessionId = sessionId;
+        state.input = '';
+        state.error = null;
+        state.pendingAsk = null;
+        state.events = [];
+        state.oldestSequence = null;
+        state.hasMoreOlder = false;
+        state.loadingOlder = false;
+        state.streamingText = '';
+        state.streamingReasoning = '';
+        state.streamingTools = [];
+        state.pendingAttachments = [];
+        state.streamIdle = false;
+        state.resumeAt = '';
+        eventKeys = new Set();
+    }
+
     function applySessionFields(payload) {
         state.status = payload.state;
         state.pendingAsk = payload.pending_ask || null;
@@ -341,12 +370,31 @@ export function useAiSession(options = {}) {
         state.outputTokens = payload.total_output_tokens || 0;
         state.lastInputTokens = payload.last_input_tokens || 0;
         state.pendingMessages = payload.pending_user_messages || [];
+        state.resumeAt = normalizeResumeAt(payload.resume_at);
         if (typeof payload.total_cost === 'number') {
             state.totalCost = payload.total_cost;
         }
         if (typeof payload.context_window === 'number') {
             state.contextWindow = payload.context_window;
         }
+    }
+
+    function normalizeResumeAt(value) {
+        if (!value) {
+            return '';
+        }
+        if (typeof value === 'string') {
+            return value;
+        }
+        if (value && typeof value === 'object' && value.isLuxonDateTime) {
+            try {
+                const utc = value.toUTC();
+                return utc.isValid ? utc.toISO() : '';
+            } catch (_e) {
+                return '';
+            }
+        }
+        return String(value);
     }
 
     function applyRecord(record) {
@@ -427,11 +475,12 @@ export function useAiSession(options = {}) {
             || state.pendingAttachments.length > 0;
         const idle = state.status !== 'running'
             && state.status !== 'compacting';
-        return !!state.sessionId && hasContent && idle;
+        return !!state.sessionId && !state.loading && hasContent && idle;
     }
 
     function canAttach() {
         return !!state.sessionId
+            && !state.loading
             && state.status !== 'running'
             && state.status !== 'compacting';
     }

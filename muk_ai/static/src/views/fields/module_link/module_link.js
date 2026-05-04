@@ -1,0 +1,70 @@
+import { Component, useState } from '@odoo/owl';
+
+import { _t } from '@web/core/l10n/translation';
+import { CheckBox } from '@web/core/checkbox/checkbox';
+import { registry } from '@web/core/registry';
+import { useService } from '@web/core/utils/hooks';
+import { useRecordObserver } from '@web/model/relational_model/utils';
+import { standardFieldProps } from '@web/views/fields/standard_field_props';
+
+import { probeModuleAvailable } from './module_availability';
+
+const DEFAULT_APPS_BASE = 'https://apps.odoo.com/apps/modules/19.0';
+
+export class ModuleLinkField extends Component {
+    static template = 'muk_ai.ModuleLinkField';
+    static components = { CheckBox };
+    static props = {
+        ...standardFieldProps,
+        moduleName: { type: String, optional: true },
+        appstoreUrl: { type: String, optional: true },
+    };
+    static defaultProps = {
+        moduleName: '',
+        appstoreUrl: '',
+    };
+    setup() {
+        this.orm = useService('orm');
+        this.state = useState({ value: false, available: false });
+        useRecordObserver((record) => {
+            this.state.value = !!record.data[this.props.name];
+        });
+        if (this.moduleName) {
+            probeModuleAvailable(this.orm, this.moduleName).then(
+                (available) => {
+                    this.state.available = available;
+                },
+            );
+        }
+    }
+    get moduleName() {
+        if (this.props.moduleName) {
+            return this.props.moduleName;
+        }
+        return this.props.name.startsWith('module_') ? this.props.name.slice(7) : '';
+    }
+    get appstoreLink() {
+        return this.props.appstoreUrl || `${DEFAULT_APPS_BASE}/${this.moduleName}`;
+    }
+    onChange(newValue) {
+        this.state.value = newValue;
+        this.props.record.update({ [this.props.name]: newValue });
+    }
+}
+
+export const moduleLinkField = {
+    component: ModuleLinkField,
+    displayName: _t('Module Link'),
+    supportedTypes: ['boolean'],
+    supportedOptions: [
+        { label: _t('Module technical name'), name: 'module', type: 'string' },
+        { label: _t('Apps store URL override'), name: 'url', type: 'string' },
+    ],
+    isEmpty: () => false,
+    extractProps: ({ options }) => ({
+        moduleName: options.module || '',
+        appstoreUrl: options.url || '',
+    }),
+};
+
+registry.category('fields').add('module_link', moduleLinkField);

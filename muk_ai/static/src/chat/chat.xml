@@ -58,11 +58,25 @@
                         </t>
                     </Dropdown>
                     <span
-                        t-if="session.state.sessionId"
+                        t-if="session.state.loading and session.state.sessionId"
+                        class="mk_chat_header_loading text-muted small d-inline-flex align-items-center gap-1"
+                        title="Loading session"
+                    >
+                        <i class="fa fa-spinner fa-spin"/>
+                    </span>
+                    <span
+                        t-elif="session.state.sessionId"
                         class="mk_status_pill rounded-pill"
-                        t-att-class="'mk_state_' + session.state.status"
+                        t-att-class="statusBadgeClass(session.state.status)"
                         t-esc="statusLabel(session.state.status)"
                     />
+                    <span
+                        t-if="session.state.status === 'waiting_schedule' and session.state.resumeAt"
+                        class="mk_chat_header_resume text-muted small"
+                        t-att-title="formatTimestamp(session.state.resumeAt)"
+                    >
+                        <t t-esc="resumeRelativeText"/>
+                    </span>
                     <button
                         t-if="session.state.sessionId"
                         class="btn btn-sm mk_approval_pill rounded-pill border-0 d-inline-flex align-items-center gap-1"

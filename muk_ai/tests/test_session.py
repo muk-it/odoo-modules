@@ -190,6 +190,7 @@ class TestAiSession(AITestCommon):
             {'name': 't1', 'description': 'first', 'inputSchema': {'type': 'object'}},
             {'name': 't2', 'description': '', 'inputSchema': None},
         ]
+        self.session.expanded_tool_names = ['t1', 't2']
         with patch.object(
             type(self.env['muk_mcp.tool']),
             'get_tools',

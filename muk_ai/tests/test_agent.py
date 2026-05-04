@@ -1,5 +1,7 @@
 from unittest.mock import patch
 
+from odoo import release
+
 from odoo.addons.muk_ai.tools import DEFAULT_CONTEXT_WINDOW
 
 from .common import AITestCommon
@@ -104,6 +106,87 @@ class TestAiAgent(AITestCommon):
         session = self.env['muk_ai.session'].create({'name': 'No agent'})
         self.assertEqual(session._effective_system_prompt(), '')
 
+    def test_render_eval_context_exposes_odoo_version(self):
+        session = self.env['muk_ai.session'].create({'name': 'Ctx'})
+        ctx = session._render_system_prompt_eval_context()
+        self.assertEqual(ctx['odoo_version'], release.version)
+        self.assertEqual(ctx['odoo_series'], release.series)
+
+    def test_system_prompt_renders_odoo_version_template(self):
+        agent = self.env['muk_ai.agent'].create({
+            'name': 'Versioned',
+            'system_prompt': 'You are an Odoo {{ odoo_version }} assistant.',
+        })
+        session = self.env['muk_ai.session'].create({
+            'name': 'Versioned session',
+            'agent_id': agent.id,
+        })
+        rendered = session._effective_system_prompt()
+        self.assertIn(release.version, rendered)
+        self.assertNotIn('{{', rendered)
+
+    def test_runtime_block_contains_core_facts(self):
+        session = self.env['muk_ai.session'].create({'name': 'Runtime'})
+        block = session._build_runtime_block()
+        self.assertIn('<runtime>', block)
+        self.assertIn('</runtime>', block)
+        self.assertIn(f'Odoo: {release.version}', block)
+        self.assertIn('Date: ', block)
+        self.assertIn(f'(res.users,{self.env.user.id})', block)
+        self.assertIn(f'(res.company,{self.env.company.id})', block)
+        self.assertIn('Approval mode:', block)
+
+    def test_runtime_block_omits_multi_company_line_when_single(self):
+        session = self.env['muk_ai.session'].create({'name': 'SingleCo'})
+        single = self.env.user.copy({
+            'login': 'single-co-user@example.test',
+            'company_ids': [(6, 0, [self.env.company.id])],
+            'company_id': self.env.company.id,
+        })
+        block = session.with_user(single)._build_runtime_block()
+        self.assertNotIn('Companies accessible', block)
+
+    def test_runtime_block_emits_multi_company_line_when_multi(self):
+        Company = self.env['res.company']
+        extra = Company.create({'name': 'MuK Extra Test Co'})
+        multi = self.env.user.copy({
+            'login': 'multi-co-user@example.test',
+            'company_ids': [(6, 0, [self.env.company.id, extra.id])],
+            'company_id': self.env.company.id,
+        })
+        session = self.env['muk_ai.session'].create({'name': 'MultiCo'})
+        block = session.with_user(multi)._build_runtime_block()
+        self.assertIn('Companies accessible', block)
+        self.assertIn('MuK Extra Test Co', block)
+        self.assertIn('allowed_company_ids', block)
+
+    def test_initial_inputs_include_runtime_block(self):
+        agent = self.env['muk_ai.agent'].create({
+            'name': 'Inputs',
+            'system_prompt': 'Be concise.',
+        })
+        session = self.env['muk_ai.session'].create({
+            'name': 'Inputs session',
+            'agent_id': agent.id,
+        })
+        inputs = session._build_initial_inputs(user_message='hi')
+        system_text = inputs[0]['content'][0]['text']
+        self.assertIn('Be concise.', system_text)
+        self.assertIn('<runtime>', system_text)
+        self.assertIn(f'Odoo: {release.version}', system_text)
+
+    def test_effective_system_prompt_excludes_runtime_block(self):
+        agent = self.env['muk_ai.agent'].create({
+            'name': 'NoRuntime',
+            'system_prompt': 'Just the rules.',
+        })
+        session = self.env['muk_ai.session'].create({
+            'name': 'NoRuntime session',
+            'agent_id': agent.id,
+        })
+        prompt = session._effective_system_prompt()
+        self.assertNotIn('<runtime>', prompt)
+
     def test_provider_capability_flags_default_false(self):
         agent = self.env['muk_ai.agent'].create({'name': 'Plain'})
         self.assertFalse(agent.enable_web_search)
@@ -136,6 +219,7 @@ class TestAiAgent(AITestCommon):
         agent = self.env['muk_ai.agent'].create({
             'name': 'Narrow',
             'tool_filter': ['only_this'],
+            'essential_tool_names': ['only_this'],
         })
         session = self.env['muk_ai.session'].create({
             'name': 'Narrow session',
@@ -152,7 +236,18 @@ class TestAiAgent(AITestCommon):
             return_value=fake,
         ):
             schema = session._get_tool_schema()
-        self.assertEqual([t['name'] for t in schema], ['only_this'])
+        names = [t['name'] for t in schema]
+        self.assertIn('only_this', names)
+        self.assertNotIn('banned', names)
+        session.expanded_tool_names = ['banned']
+        with patch.object(
+            type(self.env['muk_mcp.tool']),
+            'get_tools',
+            autospec=True,
+            return_value=fake,
+        ):
+            schema = session._get_tool_schema()
+        self.assertNotIn('banned', [t['name'] for t in schema])
 
     # ----------------------------------------------------------
     # Actions
@@ -166,11 +261,13 @@ class TestAiAgent(AITestCommon):
         self.assertIn(('agent_id', '=', agent.id), action['domain'])
         self.assertEqual(action['context']['default_agent_id'], agent.id)
 
-    def test_action_open_prompt_revisions_filters_by_agent(self):
+    def test_action_open_prompt_history_targets_system_prompt(self):
         agent = self.env['muk_ai.agent'].create({'name': 'Historian'})
-        action = agent.action_open_prompt_revisions()
-        self.assertEqual(action['res_model'], 'muk_ai.agent.revision')
-        self.assertIn(('agent_id', '=', agent.id), action['domain'])
+        action = agent.action_open_prompt_history()
+        self.assertEqual(action['tag'], 'muk_ai.prompt_history_dialog')
+        self.assertEqual(action['params']['res_model'], 'muk_ai.agent')
+        self.assertEqual(action['params']['res_id'], agent.id)
+        self.assertEqual(action['params']['field_name'], 'system_prompt')
 
     # ----------------------------------------------------------
     # Compute + onchange
@@ -188,18 +285,14 @@ class TestAiAgent(AITestCommon):
         agent.invalidate_recordset()
         self.assertEqual(agent.session_count, 2)
 
-    def test_compute_revision_count_matches_created_revisions(self):
+    def test_prompt_history_count_grows_when_system_prompt_changes(self):
         agent = self.env['muk_ai.agent'].create({
             'name': 'Historied', 'system_prompt': 'v1',
         })
-        self.env['muk_ai.agent.revision'].create({
-            'agent_id': agent.id, 'body': 'v1',
-        })
-        self.env['muk_ai.agent.revision'].create({
-            'agent_id': agent.id, 'body': 'v2',
-        })
+        agent.write({'system_prompt': 'v2'})
+        agent.write({'system_prompt': 'v3'})
         agent.invalidate_recordset()
-        self.assertEqual(agent.revision_count, 2)
+        self.assertEqual(agent.prompt_history_count, 2)
 
     def test_compute_provider_capabilities_mirrors_provider(self):
         model = self._make_model('cap-m', provider=self.provider)

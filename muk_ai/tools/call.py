@@ -5,6 +5,62 @@ TERMINATING_TOOLS = frozenset({
     'open_record', 'open_view', 'open_action', 'show_notification',
 })
 
+TOOL_LOAD_TOOL = {
+    'name': 'tool_load',
+    'description': (
+        "Fetch full schemas for tool names listed in the system prompt's "
+        "<available_tools> block. Returns "
+        "{loaded: {name: {description, inputSchema}}, unknown: [name, ...]} "
+        "and, when `call` is provided, the inline result of executing "
+        "one of the loaded tools in the same round-trip — use this "
+        "ALWAYS for the common load-then-use pattern (skips an extra "
+        "agent loop iteration). Once a name is loaded its schema "
+        "stays in the tools array for the rest of the session — never "
+        "reload it."
+    ),
+    'inputSchema': {
+        'type': 'object',
+        'properties': {
+            'names': {
+                'type': 'array',
+                'items': {'type': 'string'},
+                'minItems': 1,
+                'description': (
+                    "One or more tool names from the <available_tools> "
+                    "list. Load multiple at once when you may need any "
+                    "of them — saves round-trips."
+                ),
+            },
+            'call': {
+                'type': 'object',
+                'description': (
+                    "Optional: also execute one of the just-loaded "
+                    "tools in this same response. The model receives "
+                    "the schema AND the tool's result back in one "
+                    "function_call_output, no follow-up turn needed. "
+                    "Strongly preferred for one-shot lookups."
+                ),
+                'properties': {
+                    'name': {
+                        'type': 'string',
+                        'description': (
+                            "Tool name to execute. MUST be one of the "
+                            "names being loaded in this call."
+                        ),
+                    },
+                    'arguments': {
+                        'type': 'object',
+                        'description': "Arguments for that tool's call.",
+                    },
+                },
+                'required': ['name'],
+            },
+        },
+        'required': ['names'],
+    },
+}
+
+
 ASK_USER_TOOL = {
     'name': 'ask_user',
     'description': (

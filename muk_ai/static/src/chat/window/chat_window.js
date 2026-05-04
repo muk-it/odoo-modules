@@ -11,9 +11,11 @@ import {
     approvalPill,
     costTooltip,
     formatCost,
+    formatRelativeTime,
     formatTimestamp,
     inputPlaceholder,
     statusBadgeClass,
+    statusLabel,
 } from '@muk_ai/chat/utils';
 
 import { ChatComposer } from '@muk_ai/chat/composer/chat_composer';
@@ -54,7 +56,8 @@ export class ChatWindow extends Component {
         this.scrollToBottom = scrollToBottom;
         this.scrollState = scrollState;
         this.session.setScrollCallback(scrollToBottom);
-        this.windowState = useState({ askViews: {} });
+        this.windowState = useState({ askViews: {}, resumeTick: 0 });
+        this._resumeTickInterval = null;
         onScrollUpNearTop(scrollRef, () => preserveAnchor(
             scrollRef,
             () => this.session.loadMoreEvents(),
@@ -81,8 +84,22 @@ export class ChatWindow extends Component {
         );
 
         onWillStart(() => this.session.load(this.props.sessionId));
-        onMounted(() => this._installRootPasteHandler());
-        onWillUnmount(() => this._uninstallRootPasteHandler());
+        onMounted(() => {
+            this._installRootPasteHandler();
+            this._resumeTickInterval = window.setInterval(() => {
+                if (this.session.state.status === 'waiting_schedule'
+                        && this.session.state.resumeAt) {
+                    this.windowState.resumeTick += 1;
+                }
+            }, 5000);
+        });
+        onWillUnmount(() => {
+            this._uninstallRootPasteHandler();
+            if (this._resumeTickInterval !== null) {
+                window.clearInterval(this._resumeTickInterval);
+                this._resumeTickInterval = null;
+            }
+        });
     }
     _installRootPasteHandler() {
         const root = this.rootRef.el;
@@ -170,6 +187,17 @@ export class ChatWindow extends Component {
     }
     statusBadgeClass(status) {
         return statusBadgeClass(status);
+    }
+    statusLabel(status) {
+        return statusLabel(status);
+    }
+    get resumeRelativeText() {
+        void this.windowState.resumeTick;
+        const relative = formatRelativeTime(this.session.state.resumeAt);
+        if (!relative) {
+            return '';
+        }
+        return _t('resumes in %s', relative);
     }
     onInputChange(value) {
         this.session.onInputChange(value);

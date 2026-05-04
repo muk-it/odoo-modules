@@ -5,7 +5,7 @@ from . import test_session
 from . import test_image
 from . import test_cost
 from . import test_agent
-from . import test_agent_revision
+from . import test_prompt_history
 from . import test_flow
 from . import test_approval
 from . import test_model
@@ -16,3 +16,4 @@ from . import test_js
 from . import test_tour
 from . import test_url_fetch
 from . import test_log_unification
+from . import test_tool_lazy

@@ -22,7 +22,7 @@
         providers REGISTRY, and downstream add-ons plug in extra tools,
         agents and UI extensions on top of the same runtime.
     ''',
-    'version': '19.0.1.3.34',
+    'version': '19.0.1.4.4',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -50,7 +50,6 @@
         'views/provider.xml',
         'views/model.xml',
         'views/agent.xml',
-        'views/agent_revision.xml',
         'views/approval.xml',
         'views/mcp_tool_log.xml',
         'views/session.xml',
@@ -60,6 +59,7 @@
     ],
     'demo': [
         'demo/agent.xml',
+        'demo/session.xml',
     ],
     'assets': {
         'web.assets_backend': [
