@@ -10,7 +10,7 @@ import { formatError } from '@muk_ai/chat/utils';
 
 import { buildRenderedTurns } from '@muk_ai/chat/session/turns';
 
-const SESSION_READ_FIELDS = [
+export const SESSION_READ_FIELDS = [
     'id',
     'name',
     'state',
