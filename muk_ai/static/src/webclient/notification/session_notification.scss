@@ -18,12 +18,12 @@
     }
     .o_notification_buttons {
         margin-top: 0.5rem;
-        width: 100%;
         display: flex;
-        justify-content: flex-start;
+        width: 100%  !important;
+        justify-content: flex-start !important;
         .btn-link {
-            justify-content: flex-start;
-            width: 100%;
+            justify-content: flex-start !important;
+            width: 100% !important;
             padding-left: 0;
         }
     }
