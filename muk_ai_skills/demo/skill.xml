@@ -2,111 +2,68 @@
 
 <odoo noupdate="1">
 
-	<record id="demo_skill_partner_brief" model="muk_ai.skill">
-		<field name="name">partner_brief</field>
-		<field name="label">Partner Brief</field>
-		<field name="description">Build a 30-second business briefing for a partner from their record and recent chatter.</field>
-		<field name="body"><![CDATA[# Partner Brief
+	<record id="demo_skill_log" model="muk_ai.skill">
+		<field name="name">log</field>
+		<field name="label">Log Note</field>
+		<field name="description">Post a one-line internal log note on the pinned record's chatter — no composer, no review.</field>
+		<field name="body"><![CDATA[
+Post a quick internal log note on the pinned record's chatter. Fast complement to `/reply` —
+no composer, no recipients, no review. Use this when the user just wants to capture a short
+note for the team.
 
-Produce a short business briefing the user can read in 30 seconds for
-a single partner record:
-
-1. Resolve the target partner: model `res.partner` + id (or pinned
-   record from `<ui_ctx>`). If still missing, call `ask_user` once.
-2. Use `read_records` to fetch the partner. Limit `fields` to the
-   user-meaningful set: `name`, `is_company`, `email`, `phone`,
-   `country_id`, `city`, `industry_id`, `customer_rank`,
-   `supplier_rank`, `category_id`, `user_id`, `parent_id`.
-3. Use `search_read` on `mail.message` with domain
-   `[('model','=','res.partner'),('res_id','=',<id>),
-   ('message_type','in',['comment','email'])]`, order
-   `date desc`, limit 5, fields `author_id,date,subject,body`.
-4. Output:
-   - Header: `Display Name (res.partner,<id>) — Company / Contact`
-   - 5-7 key/value bullets (label · value), skipping empties.
-   - "Recent activity" line listing the 3 most recent log dates +
-     short subject.
-   - One-line relationship summary: customer / supplier / both /
-     prospect, plus the salesperson if set.
-5. Stop. Do not propose actions unless asked.
+1. Resolve the target record from the pinned record in `<ui_ctx>` (model + id). If still
+   missing, call `ask_user` once for a record reference.
+2. Take the user's text after `/log ...` as the note body. Do NOT rephrase, expand, or polish it;
+   that is what `/reply` is for. If the user gave no text after the slash command, call
+   `ask_user` once asking what to log.
+3. Wrap the text as minimal HTML — `<p>…</p>` paragraphs only. No styles, no signature.
+4. Call `call_method`:
+   - `model`: target model
+   - `method`: `message_post`
+   - `ids`: `[<id>]`
+   - `kwargs`:
+     - `body`: the HTML
+     - `subtype_xmlid`: `mail.mt_note`
+     - `message_type`: `comment`
+5. Reply with one short confirmation line, e.g. `Logged on <display_name>.` Stop. Do not open
+   the record or call any other tool.
 ]]></field>
 	</record>
 
-	<record id="demo_skill_draft_followup" model="muk_ai.skill">
-		<field name="name">draft_followup</field>
-		<field name="label">Draft Follow-up</field>
-		<field name="description">Draft a short follow-up message to a partner using their last interactions for context.</field>
-		<field name="body"><![CDATA[# Draft Follow-up
+	<record id="demo_skill_escalate" model="muk_ai.skill">
+		<field name="name">escalate</field>
+		<field name="label">Schedule Activity</field>
+		<field name="description">Schedule a follow-up activity (to-do, call, meeting, email) on the pinned record.</field>
+		<field name="body"><![CDATA[
+Schedule a `mail.activity` on the pinned record. Use when the user wants to create a follow-up
+todo, call, meeting, or email reminder tied to a record.
 
-Draft a tactful follow-up message to a partner. Do not send anything;
-return the draft for the user to review:
-
-1. Resolve the target partner (model `res.partner` + id or pinned
-   record). If missing, `ask_user` once.
-2. Use `search_read` on `mail.message` with domain
-   `[('model','=','res.partner'),('res_id','=',<id>),
-   ('message_type','in',['comment','email'])]`, order
-   `date desc`, limit 3, fields `date,subject,body,author_id`.
-   This grounds the follow-up in real prior context.
-3. Compose a draft:
-   - Tone: warm, professional, plain prose.
-   - Length cap: 90 words.
-   - Reference the most recent prior interaction concretely (date
-     + topic). If there is none, open with a soft re-introduction.
-   - End with a single, low-friction next step (a question or a
-     proposed slot), not a hard ask.
-4. Output the draft as a plain message, no preamble. After the draft,
-   one short line listing the prior messages you used. Stop.
-]]></field>
-	</record>
-
-	<record id="demo_skill_explain_record" model="muk_ai.skill">
-		<field name="name">explain_record</field>
-		<field name="label">Explain a Record</field>
-		<field name="description">Walk a single record's important fields in plain language.</field>
-		<field name="body"><![CDATA[# Explain a Record
-
-Given a model + id (or the currently pinned record from the view
-context), produce a short briefing the user can read in 30 seconds:
-
-1. If model + id is missing, use the pinned record from `<ui_ctx>`.
-   If still missing, call `ask_user` for the record reference.
-2. Use `read_records` to fetch the record. Pass an explicit `fields`
-   list scoped to the user-meaningful fields (skip technical or
-   internal fields unless asked).
-3. Output:
-   - Header line: `Display Name (model,id)`
-   - Up to 8 key/value bullets (label · value).
-   - One-line state/lifecycle note ("draft", "in progress",
-     "blocked by X").
-   - Top 3 most recent log notes from `mail.message` (skip
-     auto/system) with author and date.
-4. Stop. Do not propose actions unless asked.
-]]></field>
-	</record>
-
-	<record id="demo_skill_safe_archive" model="muk_ai.skill">
-		<field name="name">safe_archive</field>
-		<field name="label">Safe Archive</field>
-		<field name="description">Archive records after pre-confirming the impact with the user.</field>
-		<field name="body"><![CDATA[# Safe Archive
-
-Archive records (`active = False`) only after explicit user
-confirmation, with a structured preview:
-
-1. Resolve the target set: model + domain (or model + ids). If
-   ambiguous, call `ask_user` once.
-2. Use `search_count` to count the target set. If `> 50`, summarise
-   that count and ask the user to confirm before listing.
-3. Use `search_read` (limit 25) to fetch `id`, `display_name`, and
-   any obviously linked counts (e.g. `sale_order_count`,
-   `invoice_ids`). Show in a small table.
-4. Call `ask_user` with `resolution='yesno'` and a structured
-   `preview` of kind `update`, listing the targets and the
-   `active: True → False` change. Stop.
-5. On the user's "yes" answer (the next turn), call
-   `update_records` to archive in one batch. Reply with one line:
-   N records archived.
+1. Resolve the target record from the pinned record in `<ui_ctx>` (model + id). If still
+   missing, call `ask_user` once for a record reference.
+2. Collect the activity details. If the user already gave them in their request, use those; for
+   anything still missing, call `ask_user` ONCE with a single combined question covering the
+   missing pieces (type, deadline, assignee, summary). Acceptable activity types:
+   - To-Do    → `mail.mail_activity_data_todo`
+   - Call     → `mail.mail_activity_data_call`
+   - Meeting  → `mail.mail_activity_data_meeting`
+   - Email    → `mail.mail_activity_data_email`
+   Defaults if unspecified after asking once: type = To-Do, deadline = today + 3 days, assignee
+   = current user (omit `user_id`), summary = short echo of the user's request.
+3. Resolve the assignee: if a name was given, `search_read` `res.users` with
+   `[('name','ilike',<name>)]` (fall back to `login`), limit 5. Pick the unique match; if more
+   than one, call `ask_user` once with the candidate list.
+4. Call `call_method`:
+   - `model`: target model
+   - `method`: `activity_schedule`
+   - `ids`: `[<id>]`
+   - `kwargs`:
+     - `act_type_xmlid`: chosen xmlid
+     - `date_deadline`: ISO date string `YYYY-MM-DD`
+     - `summary`: short title
+     - `user_id`: assignee id (omit to default to current user)
+     - `note`: optional HTML, only if the user provided extra context
+5. Reply with one short confirmation: `Scheduled <type> on <display_name> for <date>, assigned
+   to <assignee>.` Stop. Do not open the record afterwards.
 ]]></field>
 	</record>
 
