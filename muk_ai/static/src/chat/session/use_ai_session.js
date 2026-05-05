@@ -11,12 +11,23 @@ import { formatError } from '@muk_ai/chat/utils';
 import { buildRenderedTurns } from '@muk_ai/chat/session/turns';
 
 const SESSION_READ_FIELDS = [
-    'id', 'name', 'state', 'pending_ask',
-    'view_context', 'last_text', 'error_message',
-    'iteration_count', 'total_input_tokens', 'total_output_tokens',
-    'last_input_tokens', 'context_window', 'agent_id', 'total_cost',
-    'override_approval_mode', 'effective_approval_mode',
-    'pending_user_messages', 'resume_at',
+    'id',
+    'name',
+    'state',
+    'pending_ask',
+    'view_context',
+    'last_text',
+    'error_message',
+    'iteration_count',
+    'total_input_tokens',
+    'total_output_tokens',
+    'last_input_tokens',
+    'context_window',
+    'agent_id',
+    'total_cost',
+    'override_approval_mode',
+    'effective_approval_mode',
+    'pending_user_messages',
 ];
 
 export const SLASH_COMMANDS = [
