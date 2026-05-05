@@ -29,10 +29,6 @@ class AIProvider(models.Model):
         required=True,
     )
 
-    display_name = fields.Char(
-        compute='_compute_display_name',
-    )
-
     active = fields.Boolean(
         string="Active",
         default=True,
@@ -222,12 +218,6 @@ class AIProvider(models.Model):
     # ----------------------------------------------------------
     # Compute
     # ----------------------------------------------------------
-
-    @api.depends('name')
-    def _compute_display_name(self):
-        labels = dict(self._selection_name())
-        for record in self:
-            record.display_name = labels.get(record.name, record.name or '')
 
     @api.depends('name')
     def _compute_capabilities(self):

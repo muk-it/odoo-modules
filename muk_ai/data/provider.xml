@@ -3,7 +3,7 @@
 <odoo noupdate="1">
 
 	<record id="provider_openai" model="muk_ai.provider">
-		<field name="name">OpenAI</field>
+		<field name="name">openai</field>
 		<field name="sequence">10</field>
 		<field name="max_tokens">4096</field>
 		<field name="request_timeout">60</field>
@@ -12,7 +12,7 @@
 	</record>
 
 	<record id="provider_anthropic" model="muk_ai.provider">
-		<field name="name">Anthropic</field>
+		<field name="name">anthropic</field>
 		<field name="sequence">20</field>
 		<field name="max_tokens">4096</field>
 		<field name="request_timeout">60</field>
@@ -21,7 +21,7 @@
 	</record>
 
 	<record id="provider_google" model="muk_ai.provider">
-		<field name="name">Google</field>
+		<field name="name">google</field>
 		<field name="sequence">30</field>
 		<field name="max_tokens">4096</field>
 		<field name="request_timeout">60</field>
