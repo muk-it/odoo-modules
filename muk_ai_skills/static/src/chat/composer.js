@@ -1,5 +1,3 @@
-/** @odoo-module */
-
 import { patch } from '@web/core/utils/patch';
 
 import { ChatComposer } from '@muk_ai/chat/composer/chat_composer';

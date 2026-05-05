@@ -1,5 +1,3 @@
-/** @odoo-module */
-
 const cache = new Map();
 let activeSessionId = null;
 

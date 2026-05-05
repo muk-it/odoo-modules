@@ -8,7 +8,7 @@
         addendum so the agent can pick one autonomously, and users
         can invoke them directly with a /<name> slash command in chat.
     ''',
-    'version': '19.0.1.0.9',
+    'version': '19.0.1.0.13',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -31,6 +31,9 @@
     'assets': {
         'web.assets_backend': [
             'muk_ai_skills/static/src/**/*',
+        ],
+        'web.assets_unit_tests': [
+            'muk_ai_skills/static/tests/**/*.test.js',
         ],
     },
     'images': [

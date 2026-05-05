@@ -105,7 +105,12 @@ class AISession(models.Model):
             for skill in skills
         ]
 
-    def invoke_skill_from_chat(self, name):
+    def invoke_skill_from_chat(self, name, user_input=None):
+        self._recover_if_stuck()
+        if self.state in ('running', 'compacting', 'waiting'):
+            raise UserError(_(
+                "Cannot invoke a skill while the session is %s.", self.state,
+            ))
         skill = self._visible_skills().filtered(
             lambda s: s.name == name
         )[:1]
@@ -113,7 +118,12 @@ class AISession(models.Model):
             raise UserError(_("Skill %r is not available.", name))
         payload = self._build_skill_tool_payload(skill)
         call_id = self._build_skill_call_id(skill.name)
+        user_text = (user_input or '').strip()
         arguments = {'skill_name': skill.name}
+        if user_text:
+            arguments['user_input'] = user_text
+        if not self.conversation:
+            self.conversation = self._build_initial_inputs()
         self._append_event({
             'kind': 'tool_call',
             'name': 'invoke_skill',
@@ -126,7 +136,7 @@ class AISession(models.Model):
             'result': payload,
             'call_id': call_id,
         })
-        self._extend_conversation([
+        conversation_entries = [
             {
                 'type': 'function_call',
                 'name': 'invoke_skill',
@@ -134,5 +144,19 @@ class AISession(models.Model):
                 'call_id': call_id,
             },
             build_tool_call_output(call_id, payload),
-        ])
+        ]
+        if user_text:
+            conversation_entries.append({
+                'role': 'user',
+                'content': [{'type': 'input_text', 'text': user_text}],
+            })
+            self._append_event({
+                'kind': 'user_message',
+                'content': user_text,
+                'attachments': [],
+            })
+        self._extend_conversation(conversation_entries)
+        self.write({'state': 'running', 'error_message': False})
+        self._publish_event('state', {'state': 'running'})
+        self._trigger_worker()
         return self.get_snapshot()

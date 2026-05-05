@@ -1,5 +1,3 @@
-/** @odoo-module */
-
 import { useEffect } from '@odoo/owl';
 
 import { patch } from '@web/core/utils/patch';
@@ -24,7 +22,9 @@ function installSkillRouting(component) {
     session.onSend = async () => {
         const trimmed = (session.state.input || '').trim();
         if (trimmed.startsWith('/')) {
-            const head = trimmed.slice(1).split(/\s+/)[0].toLowerCase();
+            const match = trimmed.match(/^\/(\S+)\s*(.*)$/);
+            const head = (match?.[1] || '').toLowerCase();
+            const rest = (match?.[2] || '').trim();
             const skill = findSkill(session.state.sessionId, head);
             if (skill) {
                 session.state.input = '';
@@ -33,6 +33,7 @@ function installSkillRouting(component) {
                         'muk_ai.session',
                         'invoke_skill_from_chat',
                         [session.state.sessionId, skill.name],
+                        { user_input: rest || false },
                     );
                     session.applySnapshot(snapshot);
                 } catch (error) {

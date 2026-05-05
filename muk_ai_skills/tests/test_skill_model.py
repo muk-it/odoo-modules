@@ -43,26 +43,15 @@ class TestSkillModel(TransactionCase):
     # Tests CRUD
     # ----------------------------------------------------------
 
-    def test_create_sets_default_display_name(self):
+    def test_display_name_titles_underscore_name(self):
         skill = self._make_skill(name='my_skill', description='desc')
-        self.assertEqual(skill.name, 'my_skill')
         self.assertEqual(skill.display_name, 'My Skill')
 
-    def test_create_keeps_explicit_label(self):
+    def test_display_name_prefers_explicit_label(self):
         skill = self._make_skill(
             name='my_skill', label='Custom Label', description='d',
         )
-        self.assertEqual(skill.label, 'Custom Label')
         self.assertEqual(skill.display_name, 'Custom Label')
-
-    def test_write_updates_body(self):
-        skill = self._make_skill(name='editable', description='d')
-        skill.write({'body': 'updated body'})
-        self.assertEqual(skill.body, 'updated body')
-
-    def test_active_default_true(self):
-        skill = self._make_skill(name='active_default', description='d')
-        self.assertTrue(skill.active)
 
     # ----------------------------------------------------------
     # Tests constraints

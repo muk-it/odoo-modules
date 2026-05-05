@@ -51,14 +51,14 @@ class TestPromptAddendum(TransactionCase):
         self._drop_existing_skills()
         session = self._make_session()
         rendered = session._effective_system_prompt()
-        self.assertNotIn('Available Skills', rendered)
+        self.assertNotIn('<available_skills>', rendered)
 
     def test_global_skill_appears_in_addendum(self):
         self._drop_existing_skills()
         self._make_skill(name='alpha', description='Do alpha things.')
         session = self._make_session()
         rendered = session._effective_system_prompt()
-        self.assertIn('Available Skills', rendered)
+        self.assertIn('<available_skills>', rendered)
         self.assertIn('`alpha`', rendered)
         self.assertIn('Do alpha things.', rendered)
 
@@ -80,7 +80,7 @@ class TestPromptAddendum(TransactionCase):
         rendered = session._effective_system_prompt()
         base = 'You are a helpful assistant.'
         self.assertIn(base, rendered)
-        self.assertLess(rendered.index(base), rendered.index('Available Skills'))
+        self.assertLess(rendered.index(base), rendered.index('<available_skills>'))
 
     def test_inactive_skill_omitted(self):
         self._drop_existing_skills()
