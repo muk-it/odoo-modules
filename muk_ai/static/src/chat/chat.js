@@ -1,4 +1,4 @@
-import { Component, onMounted, onWillStart, onWillUnmount, useRef, useState } from '@odoo/owl';
+import { Component, markup, onMounted, onPatched, onWillStart, onWillUnmount, useRef, useState } from '@odoo/owl';
 
 import { _t } from '@web/core/l10n/translation';
 import { registry } from '@web/core/registry';
@@ -31,6 +31,16 @@ import {
     useChatScrollAnchor,
 } from '@muk_ai/chat/session/use_scroll_anchor';
 import { ChatSidebar } from '@muk_ai/chat/sidebar/chat_sidebar';
+import { ChatArtifactsPanel } from '@muk_ai/chat/artifacts/chat_artifacts_panel';
+import '@muk_ai/chat/artifacts/types/attachments_type';
+import { ChatSearch } from '@muk_ai/chat/search/chat_search';
+import {
+    buildIndex,
+    entryFirstMatchIndex,
+    escapeAndHighlight,
+    findMatches,
+    highlightHtml,
+} from '@muk_ai/chat/search/search_index';
 import { ToolCard } from '@muk_ai/chat/tools/tool_card';
 import {
     askArgsText,
@@ -42,7 +52,9 @@ import {
     viewContextTooltip,
 } from '@muk_ai/chat/session/view_context_format';
 
-const SESSION_LIST_LIMIT = 50;
+const SESSION_PAGE_SIZE = 40;
+const SESSION_SEARCH_LIMIT = 100;
+const SESSION_SEARCH_DEBOUNCE_MS = 250;
 
 function normalizeSuggestions(raw) {
     if (!Array.isArray(raw)) {
@@ -58,7 +70,7 @@ function normalizeSuggestions(raw) {
 
 export class AIChat extends Component {
     static template = 'muk_ai.Chat';
-    static components = { ChatSidebar, ToolCard, ChatComposer, AttachmentCard, Dropdown, DropdownItem };
+    static components = { ChatSidebar, ChatArtifactsPanel, ChatSearch, ToolCard, ChatComposer, AttachmentCard, Dropdown, DropdownItem };
     static props = ['*'];
     get suggestions() {
         const agents = this.session.state.agents || [];
@@ -81,10 +93,23 @@ export class AIChat extends Component {
         this.state = useState({
             loading: true,
             sessions: [],
+            sessionsOffset: 0,
+            sessionsHasMore: false,
+            sessionsLoadingMore: false,
+            sessionsQuery: '',
+            sessionsSearchMode: false,
+            sessionsSearching: false,
             sidebarHidden: false,
+            artifactsHidden: true,
+            searchOpen: false,
+            searchQuery: '',
+            activeMatchIdx: 0,
+            scrollTarget: null,
             askViews: {},
             resumeTick: 0,
         });
+        this._sessionsSearchSeq = 0;
+        this._sessionsSearchTimer = null;
         this._resumeTickInterval = null;
         this.rootRef = useRef('root');
         const { scrollRef, scrollToBottom, state: scrollState } = useChatScrollAnchor('scrollArea');
@@ -152,6 +177,9 @@ export class AIChat extends Component {
                 }
             }, 5000);
         });
+        onPatched(() => {
+            this._handleScrollTarget();
+        });
         onWillUnmount(() => {
             this._disconnectUserBus();
             this._uninstallRootPasteHandler();
@@ -203,16 +231,98 @@ export class AIChat extends Component {
         this.fileViewer.open(toInlineImageFile(src));
     }
     async _loadSessions() {
+        if (this.state.sessionsSearchMode) {
+            await this._searchSessions(this.state.sessionsQuery);
+            return;
+        }
         const seq = ++this._loadSeq;
         const sessions = await this.orm.searchRead(
             'muk_ai.session',
             [['user_id', '=', user.userId]],
             ['id', 'name', 'state', 'create_date'],
-            { limit: SESSION_LIST_LIMIT, order: 'create_date DESC' },
+            { limit: SESSION_PAGE_SIZE, offset: 0, order: 'create_date DESC' },
         );
         if (seq === this._loadSeq) {
             this.state.sessions = sessions;
+            this.state.sessionsOffset = sessions.length;
+            this.state.sessionsHasMore = sessions.length === SESSION_PAGE_SIZE;
         }
+    }
+    async _loadMoreSessions() {
+        if (this.state.sessionsLoadingMore
+                || !this.state.sessionsHasMore
+                || this.state.sessionsSearchMode) {
+            return;
+        }
+        this.state.sessionsLoadingMore = true;
+        try {
+            const seq = this._loadSeq;
+            const next = await this.orm.searchRead(
+                'muk_ai.session',
+                [['user_id', '=', user.userId]],
+                ['id', 'name', 'state', 'create_date'],
+                {
+                    limit: SESSION_PAGE_SIZE,
+                    offset: this.state.sessionsOffset,
+                    order: 'create_date DESC',
+                },
+            );
+            if (seq !== this._loadSeq) {
+                return;
+            }
+            const known = new Set(this.state.sessions.map((s) => s.id));
+            const fresh = next.filter((s) => !known.has(s.id));
+            this.state.sessions = [...this.state.sessions, ...fresh];
+            this.state.sessionsOffset += next.length;
+            this.state.sessionsHasMore = next.length === SESSION_PAGE_SIZE;
+        } finally {
+            this.state.sessionsLoadingMore = false;
+        }
+    }
+    async _searchSessions(query) {
+        const seq = ++this._sessionsSearchSeq;
+        this.state.sessionsSearching = true;
+        try {
+            const sessions = await this.orm.searchRead(
+                'muk_ai.session',
+                [
+                    ['user_id', '=', user.userId],
+                    ['name', 'ilike', query],
+                ],
+                ['id', 'name', 'state', 'create_date'],
+                { limit: SESSION_SEARCH_LIMIT, order: 'create_date DESC' },
+            );
+            if (seq !== this._sessionsSearchSeq) {
+                return;
+            }
+            this.state.sessions = sessions;
+            this.state.sessionsHasMore = false;
+        } finally {
+            if (seq === this._sessionsSearchSeq) {
+                this.state.sessionsSearching = false;
+            }
+        }
+    }
+    onSidebarQuery(query) {
+        const trimmed = (query || '').trim();
+        this.state.sessionsQuery = query || '';
+        if (this._sessionsSearchTimer !== null) {
+            window.clearTimeout(this._sessionsSearchTimer);
+            this._sessionsSearchTimer = null;
+        }
+        if (!trimmed) {
+            this.state.sessionsSearchMode = false;
+            this._loadSessions();
+            return;
+        }
+        this.state.sessionsSearchMode = true;
+        this._sessionsSearchTimer = window.setTimeout(() => {
+            this._sessionsSearchTimer = null;
+            this._searchSessions(trimmed);
+        }, SESSION_SEARCH_DEBOUNCE_MS);
+    }
+    onSidebarLoadMore() {
+        return this._loadMoreSessions();
     }
     async _selectSession(sessionId) {
         if (this.session.state.sessionId === sessionId) {
@@ -265,6 +375,140 @@ export class AIChat extends Component {
     }
     toggleSidebar() {
         this.state.sidebarHidden = !this.state.sidebarHidden;
+    }
+    toggleArtifacts() {
+        const willOpen = this.state.artifactsHidden;
+        this.state.artifactsHidden = !this.state.artifactsHidden;
+        if (willOpen
+                && typeof window !== 'undefined'
+                && window.innerWidth < 1200) {
+            this.state.sidebarHidden = true;
+        }
+    }
+    closeArtifacts() {
+        this.state.artifactsHidden = true;
+    }
+    toggleSearch() {
+        if (this.state.searchOpen) {
+            this.closeSearch();
+        } else {
+            this.state.searchOpen = true;
+        }
+    }
+    closeSearch() {
+        this.state.searchOpen = false;
+        this.state.searchQuery = '';
+        this.state.activeMatchIdx = 0;
+        this.state.scrollTarget = null;
+    }
+    onSearchChange(query) {
+        this.state.searchQuery = query || '';
+        this.state.activeMatchIdx = 0;
+        const matches = this.searchMatches;
+        if (matches.length) {
+            this.state.scrollTarget = matches[0].entry.anchorId;
+        } else {
+            this.state.scrollTarget = null;
+        }
+    }
+    onSearchPrev() {
+        const matches = this.searchMatches;
+        if (!matches.length) return;
+        const next = (this.state.activeMatchIdx - 1 + matches.length) % matches.length;
+        this.state.activeMatchIdx = next;
+        this.state.scrollTarget = matches[next].entry.anchorId;
+    }
+    onSearchNext() {
+        const matches = this.searchMatches;
+        if (!matches.length) return;
+        const next = (this.state.activeMatchIdx + 1) % matches.length;
+        this.state.activeMatchIdx = next;
+        this.state.scrollTarget = matches[next].entry.anchorId;
+    }
+    _searchCache(turns, query) {
+        const cache = this._searchMemo;
+        if (cache && cache.turns === turns && cache.query === query) {
+            return cache;
+        }
+        const index = buildIndex(turns);
+        const matches = findMatches(index, query);
+        const memo = { turns, query, index, matches };
+        this._searchMemo = memo;
+        return memo;
+    }
+    get searchIndex() {
+        if (!this.state.searchOpen || !this.state.searchQuery) {
+            return [];
+        }
+        return this._searchCache(this.renderedTurns, this.state.searchQuery).index;
+    }
+    get searchMatches() {
+        if (!this.state.searchOpen || !this.state.searchQuery) {
+            return [];
+        }
+        return this._searchCache(this.renderedTurns, this.state.searchQuery).matches;
+    }
+    get clampedActiveMatchIdx() {
+        const matches = this.searchMatches;
+        if (!matches.length) return 0;
+        if (this.state.activeMatchIdx >= matches.length) return matches.length - 1;
+        if (this.state.activeMatchIdx < 0) return 0;
+        return this.state.activeMatchIdx;
+    }
+    _handleScrollTarget() {
+        const target = this.state.scrollTarget;
+        if (!target) return;
+        const el = document.getElementById(target);
+        if (el) {
+            try {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } catch (_e) {
+                el.scrollIntoView();
+            }
+            el.classList.add('mk_search_pulse');
+            window.setTimeout(() => {
+                el.classList.remove('mk_search_pulse');
+            }, 600);
+        }
+        this.state.scrollTarget = null;
+    }
+    renderUserText(text) {
+        if (this.state.searchOpen && this.state.searchQuery) {
+            const matches = this.searchMatches;
+            const entry = this.searchIndex.find(
+                (e) => e.role === 'user' && e.text === text,
+            );
+            const firstIdx = entry ? entryFirstMatchIndex(matches, entry) : -1;
+            const html = escapeAndHighlight(
+                text,
+                this.state.searchQuery,
+                this.clampedActiveMatchIdx,
+                firstIdx,
+            );
+            return markup(html);
+        }
+        return text == null ? '' : String(text);
+    }
+    renderAssistantMarkdown(text) {
+        const rendered = this.session.renderMarkdown(text);
+        if (!this.state.searchOpen || !this.state.searchQuery) {
+            return rendered;
+        }
+        const matches = this.searchMatches;
+        const entry = this.searchIndex.find(
+            (e) => e.role === 'assistant' && e.text === text,
+        );
+        const firstIdx = entry ? entryFirstMatchIndex(matches, entry) : -1;
+        const sourceHtml = typeof rendered === 'string'
+            ? rendered
+            : (rendered && rendered.toString) ? rendered.toString() : String(rendered || '');
+        const highlighted = highlightHtml(
+            sourceHtml,
+            this.state.searchQuery,
+            this.clampedActiveMatchIdx,
+            firstIdx,
+        );
+        return markup(highlighted);
     }
     onPopout() {
         if (!this.session.state.sessionId) {
@@ -331,6 +575,7 @@ export class AIChat extends Component {
             ...this.state.sessions.slice(idx + 1),
         ];
         if (payload.session_id === this.session.state.sessionId) {
+            if (payload.name) this.session.state.name = payload.name;
             if (payload.state) this.session.state.status = payload.state;
             if (typeof payload.iteration_count === 'number') {
                 this.session.state.iterationCount = payload.iteration_count;

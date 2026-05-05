@@ -112,7 +112,10 @@ export class ChatComposer extends Component {
         if (!cmd) {
             return;
         }
-        this.props.onInput(cmd.name);
+        const value = this.props.value || '';
+        const tailMatch = value.match(/^\/\S*(\s.*)?$/);
+        const tail = tailMatch?.[1] || '';
+        this.props.onInput(cmd.name + tail);
         this.localState.slashActive = 0;
     }
     hoverSlashCommand(index) {

@@ -1,4 +1,5 @@
 import { describe, expect, test } from '@odoo/hoot';
+import { animationFrame } from '@odoo/hoot-mock';
 import { mockService, mountWithCleanup, onRpc, patchTranslations } from '@web/../tests/web_test_helpers';
 import { defineMailModels } from '@mail/../tests/mail_test_helpers';
 

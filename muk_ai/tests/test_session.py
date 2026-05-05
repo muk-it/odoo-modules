@@ -987,3 +987,62 @@ class TestAiSession(AITestCommon):
         session.invalidate_recordset()
         self.assertEqual(session.state, 'error')
         self.assertIn('abandoned', session.error_message)
+
+    def test_commit_safe_retries_on_serialization_failure(self):
+        from unittest.mock import MagicMock
+
+        from psycopg2.errors import SerializationFailure
+
+        from odoo.addons.muk_ai.models import session as session_module
+
+        attempts = {'commit': 0}
+
+        def fake_commit():
+            attempts['commit'] += 1
+            if attempts['commit'] == 1:
+                raise SerializationFailure('simulated concurrent update')
+
+        fake_cr = MagicMock(commit=fake_commit, rollback=MagicMock())
+        fake_env = MagicMock(cr=fake_cr)
+        fake_session = MagicMock(env=fake_env, id=1)
+
+        with (
+            patch.object(session_module.modules.module, 'current_test', False),
+            patch.object(session_module.time, 'sleep'),
+        ):
+            session_module.AISession._commit_safe(fake_session)
+
+        self.assertEqual(attempts['commit'], 2)
+        self.assertEqual(fake_cr.rollback.call_count, 1)
+
+    def test_commit_safe_gives_up_after_max_retries(self):
+        from unittest.mock import MagicMock
+
+        from psycopg2.errors import SerializationFailure
+
+        from odoo.addons.muk_ai.models import session as session_module
+
+        attempts = {'commit': 0}
+
+        def fake_commit():
+            attempts['commit'] += 1
+            raise SerializationFailure('simulated persistent contention')
+
+        fake_cr = MagicMock(commit=fake_commit, rollback=MagicMock())
+        fake_env = MagicMock(cr=fake_cr)
+        fake_session = MagicMock(env=fake_env, id=1)
+
+        with (
+            patch.object(session_module.modules.module, 'current_test', False),
+            patch.object(session_module.time, 'sleep'),
+        ):
+            session_module.AISession._commit_safe(fake_session)
+
+        self.assertEqual(
+            attempts['commit'], session_module.MAX_TRIES_ON_CONCURRENCY_FAILURE,
+        )
+        self.assertEqual(
+            fake_cr.rollback.call_count,
+            session_module.MAX_TRIES_ON_CONCURRENCY_FAILURE,
+        )
+        fake_session.invalidate_recordset.assert_called_once()

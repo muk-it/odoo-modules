@@ -1,0 +1,48 @@
+import { _t } from '@web/core/l10n/translation';
+import { registry } from '@web/core/registry';
+
+import { AttachmentsTab } from '@muk_ai/chat/artifacts/types/attachments_tab';
+
+function collectAttachments(sessionState) {
+    if (!sessionState) {
+        return [];
+    }
+    const seen = new Set();
+    const out = [];
+    const pending = sessionState.pendingAttachments || [];
+    for (const att of pending) {
+        if (!att) continue;
+        const key = att.id != null ? `id:${att.id}` : `n:${att.filename || ''}:${out.length}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(att);
+    }
+    const events = sessionState.events || [];
+    for (const event of events) {
+        if (!event) continue;
+        const role = event.kind === 'user_message' || event.kind === 'answer'
+            ? 'user'
+            : null;
+        if (role !== 'user') continue;
+        const atts = event.attachments || [];
+        for (const att of atts) {
+            if (!att) continue;
+            const key = att.id != null ? `id:${att.id}` : `n:${att.filename || ''}:${out.length}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            out.push(att);
+        }
+    }
+    return out;
+}
+
+registry.category('muk_ai.artifact_types').add('attachments', {
+    id: 'attachments',
+    label: _t('Attachments'),
+    icon: 'fa-paperclip',
+    sequence: 10,
+    component: AttachmentsTab,
+    collect: collectAttachments,
+}, { force: true });
+
+export { collectAttachments };

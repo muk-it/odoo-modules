@@ -17,6 +17,10 @@ from odoo import SUPERUSER_ID, _, api, fields, models, modules, release
 from odoo.tools.rendering_tools import parse_inline_template, render_inline_template
 from odoo.exceptions import UserError
 from odoo.tools import SQL
+from odoo.service.model import (
+    MAX_TRIES_ON_CONCURRENCY_FAILURE,
+    PG_CONCURRENCY_EXCEPTIONS_TO_RETRY,
+)
 
 from odoo.addons.muk_ai.tools import (
     ADVISORY_LOCK_NAMESPACE,
@@ -584,6 +588,12 @@ class AISession(models.Model):
                 **self._state_metrics(),
             })
             self._notify_state_transition(payload)
+        elif event_type == 'rename':
+            self._bus_send('muk_ai.session_state', {
+                'session_id': self.id,
+                'name': self.name,
+                'state': self.state,
+            })
 
     def _notify_state_transition(self, payload):
         new_state = (payload or {}).get('state')
@@ -776,7 +786,16 @@ class AISession(models.Model):
 
     def _commit_safe(self):
         if not modules.module.current_test:
-            self.env.cr.commit()
+            for attempt in range(1, MAX_TRIES_ON_CONCURRENCY_FAILURE + 1):
+                try:
+                    self.env.cr.commit()
+                    return
+                except PG_CONCURRENCY_EXCEPTIONS_TO_RETRY as exc:
+                    self.env.cr.rollback()
+                    if attempt == MAX_TRIES_ON_CONCURRENCY_FAILURE:
+                        self.invalidate_recordset()
+                        return
+                    time.sleep(random.uniform(0.0, 0.2 * (2 ** (attempt - 1))))
 
     def _transition_state(self, state, error=None):
         self.write({'state': state} | ({'error_message': error} if error else {}))
@@ -1151,6 +1170,22 @@ class AISession(models.Model):
         except StreamCancelled:
             self._flush_stream_buffer(buffer_state)
             raise
+
+    # ----------------------------------------------------------
+    # Auto-name
+    # ----------------------------------------------------------
+
+    @staticmethod
+    def _autoname_from_text(raw):
+        text = re.sub(r'\s+', ' ', (raw or '')).strip()
+        text = re.split(r'[.!?\n;:]', text, maxsplit=1)[0].strip()
+        text = text.strip('"\'`“”‘’,. -').strip()
+        if not text:
+            return ''
+        words = text.split(' ')
+        if len(words) > 6:
+            text = ' '.join(words[:6])
+        return text[:60].rstrip(' ,;:-')
 
     # ----------------------------------------------------------
     # Helper Agent Loop
@@ -1764,6 +1799,10 @@ class AISession(models.Model):
             raise UserError(_("Session is not in a startable state."))
         attachments = self._resolve_attachments(attachment_ids)
         if not self.conversation:
+            if title := self._autoname_from_text(user_message):
+                self.write({'name': title})
+                with suppress(Exception):
+                    self._publish_event('rename', {'name': title})
             self.conversation = self._build_initial_inputs(user_message, attachments)
             self._enqueue_user_turn(user_message, attachments, extend=False)
         else:

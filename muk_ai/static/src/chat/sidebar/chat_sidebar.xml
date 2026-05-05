@@ -34,6 +34,12 @@
                         No chats yet.
                     </div>
                 </t>
+                <t t-elif="props.searching and !groups.length">
+                    <div class="text-center text-muted small py-4 px-3">
+                        <i class="fa fa-spinner fa-spin fa-2x d-block mb-2 opacity-50" />
+                        Searching…
+                    </div>
+                </t>
                 <t t-elif="!groups.length">
                     <div class="text-center text-muted small py-4 px-3">
                         <i class="fa fa-search fa-2x d-block mb-2 opacity-50" />
@@ -84,6 +90,20 @@
                             </div>
                         </t>
                     </t>
+                    <div class="mk_sidebar_load_more text-center py-2" t-if="showLoadMore">
+                        <button
+                            class="btn btn-link btn-sm mk_sidebar_load_more_btn"
+                            t-att-disabled="props.loadingMore"
+                            t-on-click="onLoadMoreClick"
+                        >
+                            <t t-if="props.loadingMore">
+                                <i class="fa fa-spinner fa-spin me-1"/>Loading…
+                            </t>
+                            <t t-else="">
+                                Load more
+                            </t>
+                        </button>
+                    </div>
                 </t>
             </div>
         </aside>

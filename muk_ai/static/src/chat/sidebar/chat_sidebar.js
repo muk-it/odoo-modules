@@ -13,10 +13,16 @@ export class ChatSidebar extends Component {
     static props = {
         sessions: { type: Array },
         activeSessionId: { type: [Number, { value: null }], optional: true },
+        hasMore: { type: Boolean, optional: true },
+        loadingMore: { type: Boolean, optional: true },
+        searching: { type: Boolean, optional: true },
+        searchMode: { type: Boolean, optional: true },
         onNew: { type: Function },
         onSelect: { type: Function },
         onRename: { type: Function },
         onDelete: { type: Function },
+        onQuery: { type: Function, optional: true },
+        onLoadMore: { type: Function, optional: true },
     };
     setup() {
         this.dialog = useService('dialog');
@@ -34,11 +40,13 @@ export class ChatSidebar extends Component {
     }
     get groups() {
         const query = this.state.query.trim().toLowerCase();
-        const filtered = query
+        const useServerSearch = !!this.props.onQuery;
+        const filtered = (query && !useServerSearch)
             ? this.props.sessions.filter((s) => (s.name || '').toLowerCase().includes(query))
             : this.props.sessions;
-        const now = new Date();
-        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const dayAnchor = new Date();
+        dayAnchor.setHours(0, 0, 0, 0);
+        const startOfDay = dayAnchor.getTime();
         const buckets = {
             today: { label: _t('Today'), sessions: [] },
             yesterday: { label: _t('Yesterday'), sessions: [] },
@@ -48,14 +56,15 @@ export class ChatSidebar extends Component {
         };
         for (const session of filtered) {
             const ts = this._parseDate(session.create_date);
-            const age = ts === null ? 0 : startOfDay - ts;
-            if (age < DAY_MS) {
+            if (ts === null) {
+                buckets.older.sessions.push(session);
+            } else if (ts >= startOfDay) {
                 buckets.today.sessions.push(session);
-            } else if (age < 2 * DAY_MS) {
+            } else if (ts >= startOfDay - DAY_MS) {
                 buckets.yesterday.sessions.push(session);
-            } else if (age < 7 * DAY_MS) {
+            } else if (ts >= startOfDay - 7 * DAY_MS) {
                 buckets.week.sessions.push(session);
-            } else if (age < 30 * DAY_MS) {
+            } else if (ts >= startOfDay - 30 * DAY_MS) {
                 buckets.month.sessions.push(session);
             } else {
                 buckets.older.sessions.push(session);
@@ -69,13 +78,30 @@ export class ChatSidebar extends Component {
         return !!this.state.query.trim();
     }
     get hasAnySession() {
-        return this.props.sessions.length > 0;
+        return this.props.sessions.length > 0 || this.hasQuery || !!this.props.searchMode;
+    }
+    get isServerSearch() {
+        return !!this.props.searchMode || (!!this.props.onQuery && this.hasQuery);
+    }
+    get showLoadMore() {
+        return !!this.props.hasMore && !this.isServerSearch;
     }
     onQueryInput(ev) {
         this.state.query = ev.target.value;
+        if (this.props.onQuery) {
+            this.props.onQuery(this.state.query);
+        }
     }
     onClearQuery() {
         this.state.query = '';
+        if (this.props.onQuery) {
+            this.props.onQuery('');
+        }
+    }
+    onLoadMoreClick() {
+        if (this.props.onLoadMore && !this.props.loadingMore) {
+            this.props.onLoadMore();
+        }
     }
     onRenameClick(session, ev) {
         ev.stopPropagation();

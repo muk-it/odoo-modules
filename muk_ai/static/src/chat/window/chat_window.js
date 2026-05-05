@@ -137,6 +137,12 @@ export class ChatWindow extends Component {
     renderMarkdown(text) {
         return this.session.renderMarkdown(text);
     }
+    renderUserText(text) {
+        return text == null ? '' : String(text);
+    }
+    renderAssistantMarkdown(text) {
+        return this.session.renderMarkdown(text);
+    }
     formatTimestamp(at) {
         return formatTimestamp(at);
     }

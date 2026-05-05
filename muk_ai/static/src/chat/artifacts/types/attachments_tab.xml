@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.AttachmentsTab">
+        <t t-if="props.items.length">
+            <div class="mk_artifacts_attachments_list">
+                <t t-foreach="props.items" t-as="item" t-key="item.id || item_index">
+                    <AttachmentCard
+                        attachment="item"
+                        onOpen.bind="onOpen"
+                    />
+                </t>
+            </div>
+        </t>
+        <t t-else="">
+            <div class="mk_artifacts_empty text-muted small">
+                No attachments in this conversation yet.
+            </div>
+        </t>
+    </t>
+
+</templates>

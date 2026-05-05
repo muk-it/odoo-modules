@@ -235,6 +235,10 @@ export function useAiSession(options = {}) {
             } else if (event.payload.state && event.payload.state !== 'waiting_schedule') {
                 state.resumeAt = '';
             }
+        } else if (event.type === 'rename') {
+            if (event.payload && event.payload.name) {
+                state.name = event.payload.name;
+            }
         } else if (event.type === 'ui_action') {
             handleUiAction(event.payload);
         } else if (event.type === 'view_context') {

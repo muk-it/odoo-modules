@@ -285,6 +285,20 @@ test('Tab picks the active slash command via onInput', async () => {
 });
 
 
+test('Tab preserves trailing arguments when picking a slash command', async () => {
+    let picked = null;
+    const { Parent, props } = makeInteractiveParent({
+        value: '/co some thing',
+        onInput: (v) => { picked = v; },
+    });
+    await mountWithCleanup(Parent, { props });
+    queryFirst('.mk_composer textarea').dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }),
+    );
+    expect(picked).toBe('/compact some thing');
+});
+
+
 test('Escape in slash mode clears the composer value', async () => {
     let inputValue = '/';
     const { Parent, props } = makeInteractiveParent({
