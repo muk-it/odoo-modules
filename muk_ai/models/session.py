@@ -1175,8 +1175,7 @@ class AISession(models.Model):
     # Auto-name
     # ----------------------------------------------------------
 
-    @staticmethod
-    def _autoname_from_text(raw):
+    def _autoname_from_text(self, raw):
         text = re.sub(r'\s+', ' ', (raw or '')).strip()
         text = re.split(r'[.!?\n;:]', text, maxsplit=1)[0].strip()
         text = text.strip('"\'`“”‘’,. -').strip()
