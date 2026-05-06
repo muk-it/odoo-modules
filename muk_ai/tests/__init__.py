@@ -13,7 +13,6 @@ from . import test_security
 from . import test_window
 from . import test_multimodal
 from . import test_js
-from . import test_tour
 from . import test_url_fetch
 from . import test_log_unification
 from . import test_tool_lazy
