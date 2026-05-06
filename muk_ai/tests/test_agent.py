@@ -130,7 +130,7 @@ class TestAiAgent(AITestCommon):
         self.assertIn('<runtime>', block)
         self.assertIn('</runtime>', block)
         self.assertIn(f'Odoo: {release.version}', block)
-        self.assertIn('Date: ', block)
+        self.assertNotIn('Date: ', block)
         self.assertIn(f'(res.users,{self.env.user.id})', block)
         self.assertIn(f'(res.company,{self.env.company.id})', block)
         self.assertIn('Approval mode:', block)

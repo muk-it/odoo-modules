@@ -8,6 +8,32 @@ ADVISORY_LOCK_NAMESPACE = 0x4D554B41
 WORKER_HEARTBEAT_INTERVAL = 5
 WORKER_STALE_THRESHOLD = 60
 
+COMPACT_AUTO_RATIO = 0.95
+COMPACT_SUMMARY_SYSTEM = (
+    "You are performing a CONTEXT CHECKPOINT COMPACTION. "
+    "Do NOT continue the conversation. Do NOT respond to any questions in it. "
+    "Output ONLY the structured summary, in the same language as the conversation."
+)
+COMPACT_SUMMARY_TEMPLATE = (
+    "Produce a handoff summary using exactly this Markdown structure. "
+    "Keep section order. Preserve exact file paths, function names, error "
+    "messages, and user-stated constraints.\n\n"
+    "## Goal\n"
+    "## Constraints & Preferences\n"
+    "## Progress\n"
+    "### Done\n"
+    "### In Progress\n"
+    "### Blocked\n"
+    "## Key Decisions\n"
+    "## Next Steps\n"
+    "## Critical Context\n"
+    "## Relevant Files\n"
+)
+COMPACT_SUMMARY_REINJECTION = (
+    "Another language model produced this summary of earlier work. "
+    "Use it to continue the task without duplicating completed work."
+)
+
 
 class StreamCancelled(Exception):
     pass

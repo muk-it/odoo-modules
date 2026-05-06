@@ -85,12 +85,21 @@
                         string="Open"
                         class="btn-primary"
                         icon="fa-comments"
+                        invisible="user_id != uid"
+                    />
+					<button
+                        name="action_stop"
+                        type="object"
+                        string="Stop"
+                        invisible="state not in ['running', 'waiting'] or user_id != uid"
+                        groups="!base.group_system"
                     />
 					<button
                         name="action_stop"
                         type="object"
                         string="Stop"
                         invisible="state not in ['running', 'waiting']"
+                        groups="base.group_system"
                     />
 					<field
                         name="state"

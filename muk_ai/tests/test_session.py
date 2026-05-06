@@ -470,12 +470,28 @@ class TestAiSession(AITestCommon):
         with self.assertRaises(UserError):
             session.clear()
 
+    def _seed_large_conversation(self, session, pairs=10, chunk_chars=10000):
+        if not session.conversation:
+            with self._patch_provider([self._text_payload('seed reply')]):
+                session.start('seed user message')
+        big = 'x' * chunk_chars
+        bulky = list(session.conversation or [])
+        for index in range(pairs):
+            bulky.append({
+                'role': 'user',
+                'content': [{'type': 'input_text', 'text': f'user-{index} {big}'}],
+            })
+            bulky.append({
+                'type': 'message',
+                'role': 'assistant',
+                'content': [{'type': 'output_text', 'text': f'assistant-{index} {big}'}],
+            })
+        session.conversation = bulky
+
     def test_compact_replaces_conversation_with_summary(self):
         session = self.env['muk_ai.session'].create({'name': 'compactable'})
-        with self._patch_provider([self._text_payload('assistant reply')]):
-            session.start('please help')
+        self._seed_large_conversation(session)
         self.assertEqual(session.state, 'done')
-        self.assertEqual(session.last_input_tokens, 3)
         pre_len = len(session.conversation)
         summary_payload = {
             'text': 'User asked for help. Assistant replied.',
@@ -485,7 +501,7 @@ class TestAiSession(AITestCommon):
         }
         with self._patch_provider([summary_payload]):
             snapshot = session.compact()
-        self.assertEqual(len(session.conversation), 2)
+        self.assertGreaterEqual(len(session.conversation), 2)
         self.assertLess(len(session.conversation), pre_len + 1)
         self.assertEqual(session.last_input_tokens, 0)
         self.assertEqual(snapshot['last_input_tokens'], 0)
@@ -499,6 +515,127 @@ class TestAiSession(AITestCommon):
         session = self.env['muk_ai.session'].create({'name': 'empty'})
         with self.assertRaises(UserError):
             session.compact()
+
+    def test_compact_preserves_recent_tail(self):
+        session = self.env['muk_ai.session'].create({'name': 'tail-keep'})
+        self._seed_large_conversation(session, pairs=12, chunk_chars=12000)
+        last_assistant_text = (
+            session.conversation[-1]['content'][0]['text']
+        )
+        last_user_text = (
+            session.conversation[-2]['content'][0]['text']
+        )
+        with self._patch_provider([self._text_payload('compact summary')]):
+            session.compact()
+        tail_texts = []
+        for entry in session.conversation:
+            for block in entry.get('content') or []:
+                text = block.get('text') if isinstance(block, dict) else None
+                if isinstance(text, str):
+                    tail_texts.append(text)
+        joined = '\n'.join(tail_texts)
+        self.assertIn(last_assistant_text, joined)
+        self.assertIn(last_user_text, joined)
+
+    def test_compact_uses_anchored_update_when_prior_summary_exists(self):
+        session = self.env['muk_ai.session'].create({'name': 'anchored'})
+        self._seed_large_conversation(session, pairs=10, chunk_chars=10000)
+        captured = []
+        with self._patch_provider(
+            [self._text_payload('first summary text')], captured=captured,
+        ):
+            session.compact()
+        self.assertTrue(captured)
+        self._seed_large_conversation(session, pairs=10, chunk_chars=10000)
+        captured_second = []
+
+        def fake(
+            self_arg,
+            inputs,
+            tools_schema=None,
+            text_schema=None,
+            on_delta=None,
+            model=None,
+            **kwargs,
+        ):
+            captured_second.append(list(inputs or []))
+            return self._text_payload('second summary text')
+
+        with patch.object(
+            type(self.provider),
+            '_request_responses',
+            autospec=True,
+            side_effect=fake,
+        ):
+            session.compact()
+        self.assertTrue(captured_second)
+        last_user_text = ''
+        for block in (captured_second[0][-1].get('content') or []):
+            if isinstance(block, dict) and isinstance(block.get('text'), str):
+                last_user_text = block['text']
+                break
+        self.assertIn('<previous-summary>', last_user_text)
+
+    def test_compact_keeps_event_log(self):
+        session = self.env['muk_ai.session'].create({'name': 'eventlog'})
+        self._seed_large_conversation(session)
+        events_before = session.fetch_events(limit=500)['events']
+        self.assertTrue(events_before)
+        with self._patch_provider([self._text_payload('summary 123')]):
+            session.compact()
+        events_after = session.fetch_events(limit=500)['events']
+        self.assertGreaterEqual(len(events_after), len(events_before))
+        kinds = [event.get('kind') for event in events_after]
+        names = [event.get('name') for event in events_after]
+        self.assertIn('command', kinds)
+        self.assertIn('/compact', names)
+
+    def test_compact_includes_available_tools_block(self):
+        session = self.env['muk_ai.session'].create({'name': 'tools-block'})
+        self._seed_large_conversation(session)
+        with self._patch_provider([self._text_payload('compact summary')]):
+            session.compact()
+        first = session.conversation[0]
+        text = first.get('content', [{}])[0].get('text', '')
+        self.assertIn('<available_tools>', text)
+
+    def test_compact_accrues_cost(self):
+        session = self.env['muk_ai.session'].create({'name': 'cost-accrue'})
+        self._seed_large_conversation(session)
+        before_input_cost = session.total_input_cost or 0.0
+        before_input_tokens = session.total_input_tokens
+        summary_payload = {
+            'text': 'summary text',
+            'tool_calls': [],
+            'carry_inputs': [],
+            'usage': {'input_tokens': 1234, 'output_tokens': 56},
+        }
+        with self._patch_provider([summary_payload]):
+            session.compact()
+        self.assertGreater(session.total_input_tokens, before_input_tokens)
+        self.assertGreaterEqual(
+            session.total_input_cost or 0.0, before_input_cost,
+        )
+
+    def test_compact_empty_summary_rollback(self):
+        session = self.env['muk_ai.session'].create({'name': 'empty-summary'})
+        self._seed_large_conversation(session)
+        original_conv = list(session.conversation)
+        empty_payload = {
+            'text': '',
+            'tool_calls': [],
+            'carry_inputs': [],
+            'usage': {'input_tokens': 1, 'output_tokens': 0},
+        }
+        with self._patch_provider([empty_payload]):
+            session.compact()
+        self.assertEqual(session.state, 'done')
+        self.assertEqual(list(session.conversation), original_conv)
+
+    def test_runtime_block_has_no_date_line(self):
+        session = self.env['muk_ai.session'].create({'name': 'no-date'})
+        block = session._build_runtime_block()
+        self.assertNotIn('Date:', block)
 
     # ----------------------------------------------------------
     # Tests: view context

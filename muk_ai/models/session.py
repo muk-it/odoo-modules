@@ -26,6 +26,10 @@ from odoo.addons.muk_ai.tools import (
     ASK_USER_TOOL,
     ATTACHMENT_REF_MAX_BYTES,
     ATTACHMENT_REF_RE,
+    COMPACT_AUTO_RATIO,
+    COMPACT_SUMMARY_REINJECTION,
+    COMPACT_SUMMARY_SYSTEM,
+    COMPACT_SUMMARY_TEMPLATE,
     DEFAULT_CONTEXT_WINDOW,
     INLINE_IMAGE_RE,
     MAX_ITERATIONS,
@@ -405,7 +409,6 @@ class AISession(models.Model):
             '<runtime>',
             'Facts about this session. Use them directly; do not look them up.',
             f'Odoo: {release.version}',
-            f'Date: {fields.Date.context_today(self).isoformat()}',
             f'User: {self.env.user.name} (res.users,{self.env.user.id}) — tz {self.env.user.tz or "UTC"}',
             f'Company: {self.env.company.name} (res.company,{self.env.company.id})',
             f'Approval mode: {self._effective_approval_mode() if self and self.id else "ask"}',
@@ -1269,8 +1272,8 @@ class AISession(models.Model):
             return _resolve(arguments), refs
         return arguments, refs
 
-    def _accrue_round_payload(self, payload):
-        usage = payload.get('usage') or {}
+    def _accrue_usage(self, usage):
+        usage = usage or {}
         round_input_tokens = usage.get('input_tokens')
         self.write({
             'iteration_count': self.iteration_count + 1,
@@ -1283,6 +1286,10 @@ class AISession(models.Model):
             ),
             **self._accrue_cost_deltas(usage),
         })
+
+    def _accrue_round_payload(self, payload):
+        usage = payload.get('usage') or {}
+        self._accrue_usage(usage)
         image_cache = {}
         if (text := payload.get('text')) and 'data:image/' in text:
             text = self._persist_inline_images(text, cache=image_cache)
@@ -1420,6 +1427,9 @@ class AISession(models.Model):
     def _run_to_completion(self, has_terminating=False):
         deadline = time.monotonic() + MAX_WALLCLOCK_SECONDS
         while True:
+            self._maybe_auto_compact()
+            if self.state != 'running':
+                return
             self._run_iterations(
                 has_terminating=has_terminating,
                 deadline=deadline
@@ -1646,68 +1656,171 @@ class AISession(models.Model):
     # Helper Compact
     # ----------------------------------------------------------
 
+    def _estimate_entry_tokens(self, entry):
+        if not isinstance(entry, dict):
+            return 0
+        total = 0
+        content = entry.get('content')
+        if isinstance(content, list):
+            for block in content:
+                if isinstance(block, dict):
+                    text = block.get('text') or block.get('arguments') or ''
+                    if isinstance(text, str):
+                        total += len(text) // 4
+        elif isinstance(content, str):
+            total += len(content) // 4
+        for key in ('arguments', 'output', 'text'):
+            value = entry.get(key)
+            if isinstance(value, str):
+                total += len(value) // 4
+        return total
+
+    def _split_conversation_for_compact(self):
+        keep_budget = max(2000, min(20000, self._resolve_context_window() // 5))
+        tail, used = [], 0
+        for entry in reversed(self.conversation or []):
+            est = self._estimate_entry_tokens(entry)
+            if used + est > keep_budget and tail:
+                break
+            tail.insert(0, entry)
+            used += est
+        prefix = (
+            (self.conversation or [])[:-len(tail)]
+            if tail else list(self.conversation or [])
+        )
+        prefix = [
+            entry for entry in prefix
+            if not (isinstance(entry, dict) and entry.get('role') == 'system')
+        ]
+        return prefix, tail
+
+    def _find_prior_compact_summary(self):
+        if not self.id:
+            return None
+        prior_event = self.env['muk_ai.session.event'].sudo().search(
+            [('session_id', '=', self.id), ('kind', '=', 'command')],
+            order='sequence desc', limit=1,
+        )
+        payload = (prior_event.payload or {}) if prior_event else {}
+        if payload.get('name') == '/compact':
+            return payload.get('summary') or None
+        return None
+
+    def _pre_compact_hook(self):
+        return True
+
+    def _build_compact_inputs(self, prefix):
+        budget = max(500, min(4000, self._resolve_context_window() // 200))
+        prompt_parts = [COMPACT_SUMMARY_TEMPLATE, f'\nOutput ≤{budget} tokens.\n']
+        if prior_summary := self._find_prior_compact_summary():
+            prompt_parts.insert(0, (
+                f'<previous-summary>\n{prior_summary}\n</previous-summary>\n\n'
+                'Update the structure above: preserve still-true points, '
+                'drop stale ones, merge new info.\n\n'
+            ))
+        prompt_text = ''.join(prompt_parts)
+        return [
+            {
+                'role': 'system',
+                'content': [{'type': 'input_text', 'text': COMPACT_SUMMARY_SYSTEM}],
+            },
+            *prefix,
+            {
+                'role': 'user',
+                'content': [{'type': 'input_text', 'text': prompt_text}],
+            },
+        ]
+
+    def _maybe_auto_compact(self):
+        if self.state == 'compacting':
+            return False
+        window = self._resolve_context_window()
+        if not window or not self.last_input_tokens:
+            return False
+        if (self.last_input_tokens / window) < COMPACT_AUTO_RATIO:
+            return False
+        if not (self.conversation or []):
+            return False
+        resume_state = self.state if self.state == 'running' else None
+        self.write({'state': 'compacting'})
+        self._publish_event('state', {'state': 'compacting'})
+        self._do_compact()
+        if resume_state and self.state == 'done':
+            self.write({'state': resume_state})
+            self._publish_event('state', {'state': resume_state})
+        return True
+
     def _do_compact(self):
-            try:
-                payload = self._effective_provider()._request_responses(
-                    inputs=list(self.conversation) + [{
-                        'role': 'user',
-                        'content': [{'type': 'input_text', 'text': (
-                            "Summarize this conversation in no more than 500 tokens. "
-                            "Preserve key facts, decisions, the user's stated goals, "
-                            "and any unresolved questions. Omit pleasantries. Start "
-                            "directly with the summary — no preamble."
-                        )}],
-                    }],
-                    tools_schema=None,
-                    model=self._effective_model(),
-                )
-            except Exception as error:
-                self._transition_state('error', error=str(error))
-            else:
-                if summary := (payload.get('text') or '').strip():
-                    log_entry = {
-                        'kind': 'command',
-                        'name': '/compact',
-                        'summary': summary,
-                        'original_messages': sum(
-                            1 for item in self.conversation
-                            if isinstance(item, dict) and item.get('role') in ('user', 'assistant')
-                        ),
-                        'original_tokens': self.last_input_tokens,
-                    }
-                    system_text = '\n\n'.join(part for part in (
-                        self._effective_system_prompt(),
-                        self._build_runtime_block(),
-                    ) if part)
-                    self.event_ids.sudo().unlink()
-                    self.write({
-                        'conversation': [
-                            {
-                                'role': 'system',
-                                'content': [{'type': 'input_text', 'text': system_text}],
-                            },
-                            {
-                                'type': 'message',
-                                'role': 'assistant',
-                                'content': [{'type': 'output_text', 'text': summary}],
-                            },
-                        ],
-                        'pending_ask': False,
-                        'error_message': False,
-                        'last_input_tokens': 0,
-                        'state': 'done',
-                        'cleared_at': fields.Datetime.now(),
-                    })
-                    self._append_event(log_entry)
-                    self._publish_event('state', {'state': 'done'})
-                    if self.pending_ids:
-                        self._drain_pending_message()
-                        self._run_to_completion()
-                else:
-                    self._transition_state(
-                        'error',
-                        error=_("The provider did not return a summary."),
-                    )
+        if not self._pre_compact_hook():
+            self.write({'state': 'done'})
+            self._publish_event('state', {'state': 'done'})
+            return
+        self._publish_event('pre_compact', {
+            'message_count': len(self.conversation or []),
+            'last_input_tokens': self.last_input_tokens,
+        })
+        prefix, tail = self._split_conversation_for_compact()
+        if not prefix:
+            self.write({'state': 'done'})
+            self._publish_event('state', {'state': 'done'})
+            return
+        inputs = self._build_compact_inputs(prefix)
+        try:
+            payload = self._effective_provider()._request_responses(
+                inputs=inputs,
+                tools_schema=None,
+                model=self._effective_model(),
+            )
+        except Exception as error:
+            self._transition_state('error', error=str(error))
+            return
+        self._accrue_usage(payload.get('usage') or {})
+        summary = (payload.get('text') or '').strip()
+        if not summary:
+            self.write({'state': 'done'})
+            self._append_event({
+                'kind': 'command',
+                'name': '/compact',
+                'message': _("Compaction skipped: provider returned no summary."),
+            })
+            self._publish_event('state', {'state': 'done'})
+            return
+        original_messages = sum(
+            1 for item in (self.conversation or [])
+            if isinstance(item, dict) and item.get('role') in ('user', 'assistant')
+        )
+        original_tokens = self.last_input_tokens
+        new_conversation = [
+            *self._build_initial_inputs(),
+            {
+                'type': 'message',
+                'role': 'assistant',
+                'content': [{
+                    'type': 'output_text',
+                    'text': f'{COMPACT_SUMMARY_REINJECTION}\n\n{summary}',
+                }],
+            },
+            *tail,
+        ]
+        self.write({
+            'conversation': new_conversation,
+            'pending_ask': False,
+            'error_message': False,
+            'last_input_tokens': 0,
+            'state': 'done',
+            'cleared_at': fields.Datetime.now(),
+        })
+        self._append_event({
+            'kind': 'command',
+            'name': '/compact',
+            'summary': summary,
+            'original_messages': original_messages,
+            'original_tokens': original_tokens,
+        })
+        self._publish_event('state', {'state': 'done'})
+        if self.pending_ids:
+            self._drain_pending_message()
+            self._run_to_completion()
 
     # ----------------------------------------------------------
     # Functions
