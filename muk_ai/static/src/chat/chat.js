@@ -661,21 +661,28 @@ export class AIChat extends Component {
         return status === 'running' || status === 'compacting';
     }
     get canSend() {
-        return this.session.canSend();
+        return this.isOwner && this.session.canSend();
     }
     get canAttach() {
-        return this.session.canAttach();
+        return this.isOwner && this.session.canAttach();
     }
     get canStop() {
-        return this.session.canStop();
+        return this.isOwner && this.session.canStop();
     }
     get composerDisabled() {
-        return this.session.composerDisabled();
+        return this.session.composerDisabled() || !this.isOwner;
+    }
+    get isOwner() {
+        const ownerId = this.session.state.ownerId;
+        return ownerId == null || ownerId === user.userId;
     }
     get isQueueing() {
         return this.session.isQueueing();
     }
     get inputPlaceholder() {
+        if (!this.isOwner) {
+            return _t('Read only — you are not the owner of this session.');
+        }
         return inputPlaceholder(
             this.session.state,
             _t('Message the assistant… (Enter to send, Shift+Enter for newline)'),

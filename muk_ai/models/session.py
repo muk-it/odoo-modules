@@ -13,7 +13,7 @@ import urllib3
 from markupsafe import Markup, escape
 
 from odoo import SUPERUSER_ID, _, api, fields, models, modules, release
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
 from odoo.tools import SQL
 from odoo.service.model import (
     MAX_TRIES_ON_CONCURRENCY_FAILURE,
@@ -2156,6 +2156,10 @@ class AISession(models.Model):
 
     def action_open(self):
         self.ensure_one()
+        if self.user_id.id != self.env.uid:
+            AccessError(_(
+                "Only the session owner can continue this chat."
+            ))
         return {
             'type': 'ir.actions.client',
             'tag': 'muk_ai.chat',
@@ -2165,6 +2169,10 @@ class AISession(models.Model):
 
     def action_stop(self):
         self.ensure_one()
+        if self.user_id.id != self.env.uid and not self.env.is_admin():
+            AccessError(_(
+                "Only the session owner or an administrator can stop this session."
+            ))
         if self.state not in ('done', 'error', 'stopped'):
             self.write({'state': 'stopped', 'pending_ask': False})
             self._publish_event('state', {'state': 'stopped'})

@@ -23,6 +23,7 @@ export const SESSION_READ_FIELDS = [
     'total_output_tokens',
     'last_input_tokens',
     'context_window',
+    'user_id',
     'agent_id',
     'total_cost',
     'override_approval_mode',
@@ -89,6 +90,7 @@ export function useAiSession(options = {}) {
         agents: [],
         agentId: null,
         agentName: '',
+        ownerId: null,
         autoCompactPending: false,
         viewContext: null,
         approvalMode: false,
@@ -404,6 +406,8 @@ export function useAiSession(options = {}) {
         const agent = record.agent_id;
         state.agentId = Array.isArray(agent) ? agent[0] : null;
         state.agentName = Array.isArray(agent) ? agent[1] : '';
+        const owner = record.user_id;
+        state.ownerId = Array.isArray(owner) ? owner[0] : (typeof owner === 'number' ? owner : null);
         rebuildEventKeys();
     }
     function applySnapshot(snapshot) {
