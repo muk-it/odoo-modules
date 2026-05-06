@@ -112,14 +112,13 @@ class ProviderBase:
         return response.json()
 
     def _post_stream(self, path, body):
-        connect_timeout = min(self.request_timeout, 30)
         read_timeout = self.idle_timeout
         try:
             response = requests.post(
                 f'{self.api_url}{path}',
                 headers=self.headers(),
                 json=body,
-                timeout=(connect_timeout, read_timeout),
+                timeout=read_timeout,
                 stream=True,
             )
             response.raise_for_status()
@@ -135,7 +134,10 @@ class ProviderBase:
                 except StopIteration:
                     break
                 except requests.exceptions.ReadTimeout:
-                    self._raise(_('Stream idle for %ss — aborted') % read_timeout)
+                    self._raise(_(
+                        'Stream idle for %ss — aborted',
+                        read_timeout
+                    ))
                 except requests.RequestException as error:
                     self._raise(error)
                 if not raw_line or not raw_line.startswith('data:'):

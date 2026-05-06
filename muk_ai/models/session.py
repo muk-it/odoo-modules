@@ -1,6 +1,5 @@
 import base64
 import json
-import logging
 import random
 import re
 import time
@@ -14,7 +13,6 @@ import urllib3
 from markupsafe import Markup, escape
 
 from odoo import SUPERUSER_ID, _, api, fields, models, modules, release
-from odoo.tools.rendering_tools import parse_inline_template, render_inline_template
 from odoo.exceptions import UserError
 from odoo.tools import SQL
 from odoo.service.model import (
@@ -45,8 +43,6 @@ from odoo.addons.muk_ai.tools import (
     sanitize_json_schema,
     with_ui_ctx,
 )
-
-_logger = logging.getLogger(__name__)
 
 
 class AISession(models.Model):
@@ -392,15 +388,8 @@ class AISession(models.Model):
     def _available_tools_extra_paragraphs(self):
         return []
 
-    def _render_system_prompt_eval_context(self):
+    def _session_prompt_extras(self):
         return {
-            'env': self.env,
-            'user': self.env.user,
-            'company': self.env.company,
-            'ctx': self.env.context,
-            'odoo_version': release.version,
-            'odoo_series': release.series,
-            'today': fields.Date.context_today(self).isoformat(),
             'approval_mode': (
                 self._effective_approval_mode()
                 if self and self.id else 'ask'
@@ -408,17 +397,8 @@ class AISession(models.Model):
         }
 
     def _render_system_prompt(self, raw):
-        try:
-            return render_inline_template(
-                parse_inline_template(raw),
-                self._render_system_prompt_eval_context(),
-            )
-        except Exception:
-            _logger.exception(
-                "muk_ai: failed to render system prompt template for agent %(agent)s; falling back to raw",
-                {'agent': (self.agent_id.id, self.agent_id.name) if self.agent_id else '(default)'},
-            )
-            return raw
+        agent = self.agent_id or self.env['muk_ai.agent']._get_default()
+        return agent._render_prompt(raw, **self._session_prompt_extras())
 
     def _build_runtime_block(self):
         lines = [
@@ -2231,26 +2211,19 @@ class AISession(models.Model):
                         except StreamCancelled:
                             cr.rollback()
                         except Exception as error:
-                            _logger.exception(
-                                "Worker failed for session %s",
-                                session_id,
-                            )
                             cr.rollback()
-                            self._mark_session_error(session_id, str(error))
+                            self._mark_session_error(
+                                session_id, str(error)
+                            )
                         processed = True
                 finally:
-                    try:
+                    with suppress(Exception):
                         cr.execute(SQL(
                             "SELECT pg_advisory_unlock(%s, %s)",
                             ADVISORY_LOCK_NAMESPACE,
                             session_id,
                         ))
                         cr.fetchone()
-                    except Exception:
-                        _logger.exception(
-                            "Failed to release advisory lock for session %s",
-                            session_id,
-                        )
         return processed
 
     @api.model

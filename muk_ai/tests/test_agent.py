@@ -107,8 +107,7 @@ class TestAiAgent(AITestCommon):
         self.assertEqual(session._effective_system_prompt(), '')
 
     def test_render_eval_context_exposes_odoo_version(self):
-        session = self.env['muk_ai.session'].create({'name': 'Ctx'})
-        ctx = session._render_system_prompt_eval_context()
+        ctx = self.env['muk_ai.agent']._get_default()._prompt_eval_context()
         self.assertEqual(ctx['odoo_version'], release.version)
         self.assertEqual(ctx['odoo_series'], release.series)
 

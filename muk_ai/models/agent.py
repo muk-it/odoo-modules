@@ -1,4 +1,4 @@
-from odoo import _, api, fields, models
+from odoo import _, api, fields, models, release
 
 from odoo.addons.muk_ai.tools import DEFAULT_CONTEXT_WINDOW
 from odoo.addons.muk_mcp.core.tool import get_tool_index
@@ -13,6 +13,7 @@ class AIAgent(models.Model):
         'mail.thread',
         'mail.activity.mixin',
         'muk_ai.revision.mixin',
+        'muk_ai.prompt.mixin',
     ]
     _order = 'sequence, name'
 
@@ -188,6 +189,15 @@ class AIAgent(models.Model):
         return self.search([('active', '=', True)], limit=1)
 
     @api.model
+    def _prompt_eval_context(self):
+        ctx = super()._prompt_eval_context()
+        ctx.update({
+            'odoo_version': release.version,
+            'odoo_series': release.series,
+        })
+        return ctx
+
+    @api.model
     def _get_default_essential_tool_names(self):
         return [
             'ask_user',
@@ -201,6 +211,10 @@ class AIAgent(models.Model):
             'search_count',
             'search_read',
         ]
+
+    def _build_system_prompt(self, session=None):
+        extras = session._session_prompt_extras() if session else {}
+        return self._render_prompt(self.system_prompt or '', **extras)
 
     def _get_essential_tool_names(self):
         self.ensure_one()

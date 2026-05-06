@@ -4,6 +4,7 @@ from . import ir_model
 from . import provider
 from . import model
 from . import revision_mixin
+from . import prompt_mixin
 from . import agent
 from . import agent_suggestion
 from . import approval
