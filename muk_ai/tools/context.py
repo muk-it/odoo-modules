@@ -6,19 +6,17 @@ from odoo.tools.translate import LazyTranslate
 _lt = LazyTranslate('muk_ai')
 
 
-def format_ui_ctx_tag(payload):
+def _format_ctx_tag(payload, tag_name):
     payload = payload or {}
-    builder = _SEGMENT_BUILDERS.get(
-        payload.get('kind')
-    )
+    builder = _SEGMENT_BUILDERS.get(payload.get('kind'))
     if not builder:
         return None
     body = ' · '.join(s for s in builder(payload) if s)
-    return f'<ui_ctx>{body}</ui_ctx>' if body else None
+    return f'<{tag_name}>{body}</{tag_name}>' if body else None
 
 
-def render_ui_ctx(payload):
-    if not (tag := format_ui_ctx_tag(payload)):
+def _render_ctx(payload, tag_name):
+    if not (tag := _format_ctx_tag(payload, tag_name)):
         return None
     return {
         'role': 'user',
@@ -26,10 +24,30 @@ def render_ui_ctx(payload):
     }
 
 
-def with_ui_ctx(inputs, payload):
-    if not (item := render_ui_ctx(payload)):
+def _with_ctx(inputs, payload, tag_name):
+    if not (item := _render_ctx(payload, tag_name)):
         return inputs
     return list(inputs or []) + [item]
+
+
+def format_ui_ctx_tag(payload):
+    return _format_ctx_tag(payload, 'ui_ctx')
+
+
+def render_ui_ctx(payload):
+    return _render_ctx(payload, 'ui_ctx')
+
+
+def with_ui_ctx(inputs, payload):
+    return _with_ctx(inputs, payload, 'ui_ctx')
+
+
+def format_record_ctx_tag(payload):
+    return _format_ctx_tag(payload, 'linked_record')
+
+
+def with_record_ctx(inputs, payload):
+    return _with_ctx(inputs, payload, 'linked_record')
 
 
 def _record_segments(p):

@@ -409,6 +409,7 @@ class AISession(models.Model):
             '<runtime>',
             'Facts about this session. Use them directly; do not look them up.',
             f'Odoo: {release.version}',
+            f'Date: {fields.Date.context_today(self).isoformat()}',
             f'User: {self.env.user.name} (res.users,{self.env.user.id}) — tz {self.env.user.tz or "UTC"}',
             f'Company: {self.env.company.name} (res.company,{self.env.company.id})',
             f'Approval mode: {self._effective_approval_mode() if self and self.id else "ask"}',
@@ -1136,11 +1137,14 @@ class AISession(models.Model):
                     })
         self._commit_safe()
 
+    def _build_request_inputs(self):
+        return with_ui_ctx(self.conversation, self.view_context)
+
     def _stream_provider_round(self, provider, tool_schema, model, agent):
         buffer_state = {'text': '', 'last_text_flush': time.monotonic()}
         try:
             payload = provider._request_responses(
-                inputs=with_ui_ctx(self.conversation, self.view_context),
+                inputs=self._build_request_inputs(),
                 tools_schema=tool_schema,
                 model=model,
                 on_delta=lambda kind, data: self._on_stream_delta(kind, data, buffer_state),

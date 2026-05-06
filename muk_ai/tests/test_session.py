@@ -632,11 +632,6 @@ class TestAiSession(AITestCommon):
         self.assertEqual(session.state, 'done')
         self.assertEqual(list(session.conversation), original_conv)
 
-    def test_runtime_block_has_no_date_line(self):
-        session = self.env['muk_ai.session'].create({'name': 'no-date'})
-        block = session._build_runtime_block()
-        self.assertNotIn('Date:', block)
-
     # ----------------------------------------------------------
     # Tests: view context
     # ----------------------------------------------------------
