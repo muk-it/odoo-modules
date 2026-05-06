@@ -8,7 +8,7 @@ class Skill(models.Model):
 
     _name = 'muk_ai.skill'
     _description = "AI Skill"
-    _inherit = ['muk_ai.revision.mixin']
+    _inherit = ['muk_ai.revision.mixin', 'muk_ai.prompt.mixin']
     _order = 'sequence, name'
 
     # ----------------------------------------------------------
@@ -111,6 +111,10 @@ class Skill(models.Model):
     @api.model
     def _get_prompt_fields(self):
         return ['body']
+
+    def _build_body(self, session=None):
+        extras = session._session_prompt_extras() if session else {}
+        return self._render_prompt(self.body or '', **extras)
 
     def _resource_manifest(self):
         return [

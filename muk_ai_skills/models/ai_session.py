@@ -58,7 +58,7 @@ class AISession(models.Model):
         manifest = skill._resource_manifest()
         return {
             'name': skill.name,
-            'body': skill.body or '',
+            'body': skill._build_body(session=self),
             'resources': manifest,
         }
 
