@@ -20,3 +20,6 @@ class IrActionsServer(models.Model):
 
     def _run_action_ai_session(self, eval_context=None):
         self.env['muk_ai.session']._cron_run_pending_sessions()
+
+    def _run_action_ai_session_multi(self, eval_context=None):
+        self.env['muk_ai.session']._cron_run_pending_sessions()
