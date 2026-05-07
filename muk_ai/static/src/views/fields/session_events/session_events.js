@@ -41,6 +41,12 @@ export class SessionEventsField extends Component {
     renderMarkdown(source) {
         return markup(renderMarkdownToHtml(source));
     }
+    renderUserText(text) {
+        return text == null ? '' : String(text);
+    }
+    renderAssistantMarkdown(text) {
+        return this.renderMarkdown(text);
+    }
     isToolExpanded(callId) {
         return !!this.state.expandedTools[callId];
     }
