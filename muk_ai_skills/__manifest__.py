@@ -1,6 +1,6 @@
 {
     'name': 'MuK AI Skills',
-    'summary': 'Pre-built agent skills the user or LLM can switch into',
+    'summary': 'Pre-built AI agent skills the user or LLM can switch into',
     'description': '''
         Adds DB-backed skill records that bundle a name, a one-line
         description for LLM discovery, a markdown body and supporting
