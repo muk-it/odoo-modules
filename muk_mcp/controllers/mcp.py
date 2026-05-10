@@ -1,4 +1,3 @@
-import base64
 import json
 import time
 
@@ -12,9 +11,6 @@ from odoo.exceptions import AccessError, UserError
 
 from odoo.addons.muk_mcp.core.route import mcp_route
 from odoo.addons.muk_mcp.tools import common, protocol
-from odoo.addons.muk_mcp.tools.content import (
-    is_textual_mimetype, normalize_mimetype
-)
 from odoo.addons.muk_mcp.tools.exception import MCPScopeDenied
 
 class MCPController(http.Controller):
@@ -112,7 +108,7 @@ class MCPController(http.Controller):
             'notifications/cancelled': lambda p: None,
             'tools/list': self._handle_tools_list,
             'tools/call': self._handle_tools_call,
-            'resources/list': lambda p: {'resources': []},
+            'resources/list': self._handle_resources_list,
             'resources/read': self._handle_resources_read,
             'resources/templates/list': self._handle_resource_templates_list,
             'prompts/list': lambda p: {'prompts': []},
@@ -209,7 +205,12 @@ class MCPController(http.Controller):
             'initialized': False,
         })
         request._mcp_new_session_id = session.session_id
-        return protocol.make_initialize_result()
+        return protocol.make_initialize_result(
+            capabilities=self._get_capabilities(params),
+        )
+
+    def _get_capabilities(self, params):
+        return {}
 
     def _handle_initialized(self, params):
         session_id = request.httprequest.headers.get('Mcp-Session-Id')
@@ -258,42 +259,28 @@ class MCPController(http.Controller):
                 [protocol.make_text_content('Internal server error')],
                 is_error=True,
             )
+        if isinstance(result, protocol.ToolResult):
+            return dict(result)
         if isinstance(result, protocol.ToolContent):
             return protocol.make_tool_result(result)
         return protocol.make_tool_result(
             [protocol.make_text_content(result)]
         )
 
+    def _handle_resources_list(self, params):
+        return {'resources': []}
+
     def _handle_resources_read(self, params):
         if not (uri := (params or {}).get('uri')):
             return {'contents': []}
         try:
-            mimetype, raw, name = (
-                request.env['muk_mcp.mixin']._resolve_resource_uri(
-                    uri
-                )
+            entry = request.env['muk_mcp.mixin']._dispatch_resources_read(
+                uri
             )
-        except (UserError, AccessError):
+        except AccessError:
             return {'contents': []}
-        normalized = normalize_mimetype(
-            mimetype
-        )
-        entry = {'uri': uri}
-        if normalized:
-            entry['mimeType'] = normalized
-        if name:
-            entry['name'] = name
-        if is_textual_mimetype(normalized):
-            try:
-                entry['text'] = raw.decode('utf-8')
-            except UnicodeDecodeError:
-                entry['blob'] = base64.b64encode(raw).decode(
-                    'ascii'
-                )
-        else:
-            entry['blob'] = base64.b64encode(raw).decode(
-                'ascii'
-            )
+        if not entry:
+            return {'contents': []}
         return {'contents': [entry]}
 
     def _handle_resource_templates_list(self, params):

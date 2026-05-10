@@ -12,11 +12,11 @@ from odoo.http import request
 
 from odoo.addons.muk_mcp.core.tool import get_tool_index
 
+from odoo.addons.muk_web_utils.tools.encoder import RecordEncoder
 from odoo.addons.muk_mcp.tools.encoder import encode_request, encode_response
 from odoo.addons.muk_mcp.tools.exception import MCPScopeDenied
 from odoo.addons.muk_mcp.tools.logger import LoggerProxy
-from odoo.addons.muk_mcp.tools.protocol import ToolContent
-from odoo.addons.muk_web_utils.tools.encoder import RecordEncoder
+from odoo.addons.muk_mcp.tools.protocol import ToolContent, ToolResult
 
 class MCPTool(models.Model):
 
@@ -94,7 +94,7 @@ class MCPTool(models.Model):
 
     @api.model
     def _serialize_result(self, result):
-        if isinstance(result, ToolContent):
+        if isinstance(result, (ToolContent, ToolResult)):
             return result
         if not isinstance(result, str):
             return json.dumps(
@@ -264,14 +264,17 @@ class MCPTool(models.Model):
 
     @api.model
     def get_tools(self, registry=None):
-        return [
-            {
+        result = []
+        for name, entry in get_tool_index(self.env, registry=registry).items():
+            tool = {
                 'name': name,
                 'description': entry['description'],
                 'inputSchema': entry['input_schema'],
             }
-            for name, entry in get_tool_index(self.env, registry=registry).items()
-        ]
+            if entry.get('meta'):
+                tool['_meta'] = entry['meta']
+            result.append(tool)
+        return result
 
     @api.model
     def get_playground_tools(self):

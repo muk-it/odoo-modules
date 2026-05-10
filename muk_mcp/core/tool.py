@@ -14,11 +14,11 @@ def _build_method_index(env):
             for attr_name, attr in vars(klass).items():
                 if attr_name.startswith('__') or attr_name in seen:
                     continue
-                meta = getattr(attr, '__mcp_tool__', None)
-                if not meta or not isinstance(meta, dict):
+                tool_def = getattr(attr, '__mcp_tool__', None)
+                if not tool_def or not isinstance(tool_def, dict):
                     continue
                 seen.add(attr_name)
-                name = meta['name']
+                name = tool_def['name']
                 if name in index:
                     prev = index[name]
                     raise ValueError(
@@ -30,10 +30,11 @@ def _build_method_index(env):
                     'kind': 'method',
                     'model': anchor,
                     'method': attr_name,
-                    'description': meta['description'],
-                    'input_schema': meta['input_schema'],
-                    'category': meta['category'],
-                    'registry': meta['registry'],
+                    'description': tool_def['description'],
+                    'input_schema': tool_def['input_schema'],
+                    'category': tool_def['category'],
+                    'registry': tool_def['registry'],
+                    'meta': tool_def.get('meta') or {},
                 }
     return index
 
@@ -57,6 +58,7 @@ def _fetch_db_index(env):
             'input_schema': schema,
             'category': record['category'],
             'registry': record.get('registry') or None,
+            'meta': {},
         }
     return index
 
@@ -67,8 +69,15 @@ def mcp_tool(
     input_schema=None,
     category='read',
     registry=None,
+    meta=None,
+    visibility=None,
 ):
     def decorator(func):
+        merged_meta = dict(meta or {})
+        if visibility is not None:
+            ui = dict(merged_meta.get('ui') or {})
+            ui['visibility'] = list(visibility)
+            merged_meta['ui'] = ui
         func.__mcp_tool__ = {
             'name': name or func.__name__,
             'description': (
@@ -82,6 +91,7 @@ def mcp_tool(
             },
             'category': category,
             'registry': registry,
+            'meta': merged_meta,
         }
         return func
     return decorator
@@ -115,6 +125,7 @@ def get_tool_index(env, registry=None):
         name: {
             **entry,
             'input_schema': to_strict_schema(entry.get('input_schema')),
+            'meta': entry.get('meta') or {},
         }
         for name, entry in combined.items()
     }

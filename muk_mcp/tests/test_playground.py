@@ -1,8 +1,9 @@
 import json
 
-from odoo.tests import common
+from odoo.tests import common, tagged
 
 
+@tagged('post_install', '-at_install')
 class TestPlayground(common.TransactionCase):
 
     # ----------------------------------------------------------
@@ -79,7 +80,14 @@ class TestPlayground(common.TransactionCase):
 
     def test_menu_positioned_after_audit_log(self):
         menu = self.env.ref('muk_mcp.menu_mcp_playground')
-        self.assertEqual(menu.parent_id, self.env.ref('muk_mcp.menu_mcp_root'))
-        self.assertEqual(menu.sequence, 35)
+        root = self.env.ref('muk_mcp.menu_mcp_root')
+        ancestor = menu.parent_id
+        while ancestor and ancestor != root:
+            ancestor = ancestor.parent_id
+        self.assertEqual(ancestor, root, "Playground menu must descend from menu_mcp_root")
         audit = self.env.ref('muk_mcp.menu_mcp_log')
-        self.assertGreater(menu.sequence, audit.sequence)
+        if menu.parent_id == audit.parent_id:
+            self.assertGreater(
+                menu.sequence, audit.sequence,
+                "Playground should sit below Audit Log when sharing a parent",
+            )

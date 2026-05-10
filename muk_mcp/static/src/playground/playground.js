@@ -10,6 +10,8 @@ import { ToolDetail } from "./tool_detail";
 import { groupTools } from "./utils";
 
 const LAST_TOOL_STORAGE_KEY = "muk_mcp.playground.last_tool";
+const ACTIVE_PANEL_STORAGE_KEY = "muk_mcp.playground.active_panel";
+const TOOLS_PANEL_ID = "tools";
 
 export class Playground extends Component {
     static template = "muk_mcp.Playground";
@@ -20,6 +22,7 @@ export class Playground extends Component {
         this.notification = useService("notification");
         this.client = new MCPClient();
         this.rootRef = useRef("root");
+        this.toolsPanelId = TOOLS_PANEL_ID;
         this.state = useState({
             loading: true,
             tools: [],
@@ -30,6 +33,7 @@ export class Playground extends Component {
             hasKey: !!this.client.key,
             response: null,
             running: false,
+            activePanel: this._initialActivePanel(),
         });
         onWillStart(async () => {
             await this.loadTools();
@@ -46,6 +50,36 @@ export class Playground extends Component {
     }
     _currentPrefix() {
         return this.client.key.slice(0, 8);
+    }
+    _initialActivePanel() {
+        let stored;
+        try {
+            stored = localStorage.getItem(ACTIVE_PANEL_STORAGE_KEY);
+        } catch {
+            stored = null;
+        }
+        const valid = this.panels.some((p) => p.id === stored);
+        return valid ? stored : TOOLS_PANEL_ID;
+    }
+    get panels() {
+        const tools = {
+            id: TOOLS_PANEL_ID,
+            label: _t("Tools"),
+            icon: "fa-wrench",
+            sequence: 0,
+        };
+        const extras = registry.category("muk_mcp.playground.panels").getEntries()
+            .map(([id, def]) => ({ id, sequence: 50, ...def }))
+            .filter((p) => p.id !== TOOLS_PANEL_ID);
+        return [tools, ...extras].sort((a, b) => a.sequence - b.sequence);
+    }
+    get activePanelDef() {
+        const all = this.panels;
+        return all.find((p) => p.id === this.state.activePanel) || all[0];
+    }
+    onSelectPanel(id) {
+        this.state.activePanel = id;
+        localStorage.setItem(ACTIVE_PANEL_STORAGE_KEY, id);
     }
     async loadTools() {
         this.state.loading = true;

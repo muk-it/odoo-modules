@@ -10,3 +10,10 @@ JSONRPC_METHOD_NOT_FOUND = -32601
 JSONRPC_INTERNAL_ERROR = -32603
 
 MAX_BATCH_SIZE = 20
+
+MCP_CORS_REQUEST_HEADERS = (
+    'authorization, content-type, accept, origin, '
+    'mcp-session-id, mcp-protocol-version, last-event-id'
+)
+
+MCP_CORS_RESPONSE_HEADERS = 'mcp-session-id'

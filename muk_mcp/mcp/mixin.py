@@ -2,10 +2,13 @@ import base64
 import json
 
 from odoo import _, api, models
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
 from odoo.tools.mimetypes import guess_mimetype
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
+from odoo.addons.muk_mcp.tools.content import (
+    is_textual_mimetype, normalize_mimetype,
+)
 from odoo.addons.muk_mcp.tools.uri import parse_uri
 
 
@@ -50,6 +53,34 @@ class MCPMixin(models.AbstractModel):
         if not (parsed := parse_uri(uri)) or parsed[0] not in handlers:
             raise UserError(_("Unsupported resource URI: %r", uri))
         return handlers[parsed[0]](**parsed[1])
+
+    @api.model
+    def _dispatch_resources_read(self, uri):
+        if not uri:
+            return None
+        try:
+            mimetype, raw, name = self._resolve_resource_uri(
+                uri
+            )
+        except (UserError, AccessError):
+            return None
+        raw = raw or b''
+        normalized = normalize_mimetype(mimetype)
+        entry = {'uri': uri}
+        if normalized:
+            entry['mimeType'] = normalized
+        if name:
+            entry['name'] = name
+        if is_textual_mimetype(normalized):
+            try:
+                entry['text'] = raw.decode('utf-8')
+                return entry
+            except UnicodeDecodeError:
+                pass
+        entry['blob'] = base64.b64encode(raw).decode(
+            'ascii'
+        )
+        return entry
 
     @api.model
     def _resolve_resource_attachment(self, attachment_id):

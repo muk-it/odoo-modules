@@ -3,6 +3,14 @@ import json
 from odoo.addons.muk_mcp.tools import common
 
 
+class ToolContent(list):
+    pass
+
+
+class ToolResult(dict):
+    pass
+
+
 def make_jsonrpc_response(result, request_id=None):
     return {
         'jsonrpc': common.JSONRPC_VERSION,
@@ -80,10 +88,12 @@ def make_initialize_result(capabilities=None):
     }
 
 
-def make_tool_result(content, is_error=False):
+def make_tool_result(content, is_error=False, structured_content=None):
     result = {'content': content}
     if is_error:
         result['isError'] = True
+    if structured_content is not None:
+        result['structuredContent'] = structured_content
     return result
 
 
@@ -131,7 +141,3 @@ def make_resource_content(
         'type': 'resource',
         'resource': resource,
     }
-
-
-class ToolContent(list):
-    pass

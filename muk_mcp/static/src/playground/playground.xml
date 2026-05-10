@@ -2,31 +2,50 @@
 <templates xml:space="preserve">
 
     <t t-name="muk_mcp.Playground">
-        <div class="o_muk_mcp_playground d-flex flex-column h-100" t-ref="root">
-            <KeyBar
-                client="client"
-                keyPrefix="state.keyPrefix"
-                onKeyChanged.bind="onKeyChanged"
-            />
-            <div class="o_muk_mcp_body flex-grow-1 d-flex overflow-hidden">
-                <div t-if="state.loading" class="m-auto text-muted">
-                    Loading tools…
-                </div>
-                <t t-else="">
-                    <ToolList
-                        groups="filteredGroups"
-                        selected="state.selected"
-                        search="state.search"
-                        onSearch.bind="onSearch"
-                        onSelect.bind="onSelectTool"
+        <div class="o_muk_mcp_playground d-flex h-100" t-ref="root">
+            <nav t-if="panels.length > 1" class="o_muk_mcp_panel_rail d-flex flex-column align-items-stretch border-end bg-light">
+                <t t-foreach="panels" t-as="panel" t-key="panel.id">
+                    <button type="button"
+                        t-attf-class="o_muk_mcp_panel_tab btn btn-link {{ state.activePanel === panel.id ? 'active' : '' }}"
+                        t-att-title="panel.label"
+                        t-on-click="() => this.onSelectPanel(panel.id)"
+                    >
+                        <i t-if="panel.icon" t-attf-class="fa fa-fw fa-lg {{ panel.icon }}"/>
+                        <span class="o_muk_mcp_panel_tab_label small" t-esc="panel.label"/>
+                    </button>
+                </t>
+            </nav>
+            <div class="o_muk_mcp_panel_body flex-grow-1 d-flex flex-column overflow-hidden">
+                <t t-if="state.activePanel === toolsPanelId">
+                    <KeyBar
+                        client="client"
+                        keyPrefix="state.keyPrefix"
+                        onKeyChanged.bind="onKeyChanged"
                     />
-                    <ToolDetail
-                        tool="selectedTool"
-                        response="state.response"
-                        running="state.running"
-                        hasKey="state.hasKey"
-                        onTry.bind="onTryTool"
-                    />
+                    <div class="o_muk_mcp_body flex-grow-1 d-flex overflow-hidden">
+                        <div t-if="state.loading" class="m-auto text-muted">
+                            Loading tools…
+                        </div>
+                        <t t-else="">
+                            <ToolList
+                                groups="filteredGroups"
+                                selected="state.selected"
+                                search="state.search"
+                                onSearch.bind="onSearch"
+                                onSelect.bind="onSelectTool"
+                            />
+                            <ToolDetail
+                                tool="selectedTool"
+                                response="state.response"
+                                running="state.running"
+                                hasKey="state.hasKey"
+                                onTry.bind="onTryTool"
+                            />
+                        </t>
+                    </div>
+                </t>
+                <t t-elif="activePanelDef and activePanelDef.component" t-att-key="state.activePanel">
+                    <t t-component="activePanelDef.component"/>
                 </t>
             </div>
         </div>
