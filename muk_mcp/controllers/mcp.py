@@ -166,7 +166,7 @@ class MCPController(http.Controller):
                 )
             return protocol.make_jsonrpc_error(
                 common.JSONRPC_INTERNAL_ERROR,
-                'Internal server error',
+                f'Internal server error: {exc}',
                 request_id=request_id,
             )
         if method.startswith('notifications/'):
@@ -254,9 +254,17 @@ class MCPController(http.Controller):
                 [protocol.make_text_content(str(exc))],
                 is_error=True,
             )
-        except Exception:
+        except Exception as exc:
+            self._log_request(
+                'tools/call',
+                status='error',
+                tool_name=tool_name,
+                error_message=str(exc),
+            )
             return protocol.make_tool_result(
-                [protocol.make_text_content('Internal server error')],
+                [protocol.make_text_content(
+                    f'Internal server error: {exc}'
+                )],
                 is_error=True,
             )
         if isinstance(result, protocol.ToolResult):
