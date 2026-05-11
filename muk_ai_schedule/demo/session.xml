@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo noupdate="1">
+
+    <record id="demo_session_partner_health_check" model="muk_ai.session">
+        <field name="name">Customer health check</field>
+        <field name="state">done</field>
+        <field name="user_id" ref="base.user_admin"/>
+        <field name="agent_id" ref="muk_ai.agent_general"/>
+        <field name="res_model">res.partner</field>
+        <field name="res_id" ref="base.res_partner_2"/>
+        <field name="iteration_count" eval="3"/>
+        <field name="total_input_tokens" eval="2140"/>
+        <field name="total_output_tokens" eval="312"/>
+        <field name="last_input_tokens" eval="1180"/>
+        <field name="last_text"><![CDATA[
+**Customer health — Wood Corner**
+
+* **Open opportunities:** 2 (€42k Wood Corner office redesign, €18k workspace refresh).
+* **Last interaction:** 6 days ago — proposal sent, no follow-up logged.
+* **Outstanding invoices:** 1 (INV/2026/0141, €2,800, 7 days late).
+* **Risk:** medium. Customer is healthy on revenue but slipping on payment cadence.
+
+Suggested next step: schedule a follow-up call this week to confirm the proposal status.
+        ]]></field>
+    </record>
+
+    <record id="demo_session_partner_outreach_draft" model="muk_ai.session">
+        <field name="name">Outreach email draft</field>
+        <field name="state">waiting</field>
+        <field name="user_id" ref="base.user_admin"/>
+        <field name="agent_id" ref="muk_ai.agent_general"/>
+        <field name="res_model">res.partner</field>
+        <field name="res_id" ref="base.res_partner_2"/>
+        <field name="iteration_count" eval="2"/>
+        <field name="total_input_tokens" eval="1340"/>
+        <field name="total_output_tokens" eval="220"/>
+        <field name="last_input_tokens" eval="780"/>
+        <field name="last_text">Drafted a follow-up email referencing the open €42k proposal. Awaiting your approval before send.</field>
+    </record>
+
+    <record id="demo_session_partner_invoice_review_stopped" model="muk_ai.session">
+        <field name="name">Invoice review</field>
+        <field name="state">stopped</field>
+        <field name="user_id" ref="base.user_admin"/>
+        <field name="agent_id" ref="muk_ai.agent_read_only"/>
+        <field name="res_model">res.partner</field>
+        <field name="res_id" ref="base.res_partner_2"/>
+        <field name="iteration_count" eval="1"/>
+        <field name="total_input_tokens" eval="640"/>
+        <field name="total_output_tokens" eval="48"/>
+        <field name="last_input_tokens" eval="640"/>
+        <field name="last_text">Stopped before sending — user paused the run to review the draft list first.</field>
+    </record>
+
+    <record id="demo_session_partner_renewal_scheduled" model="muk_ai.session">
+        <field name="name">Renewal reminder</field>
+        <field name="state">schedule</field>
+        <field name="user_id" ref="base.user_admin"/>
+        <field name="agent_id" ref="muk_ai.agent_general"/>
+        <field name="schedule_id" ref="muk_ai_schedule.demo_schedule_overdue_inbox_digest"/>
+        <field name="res_model">res.partner</field>
+        <field name="res_id" ref="base.res_partner_2"/>
+        <field name="resume_at" eval="(DateTime.now() + timedelta(days=14)).strftime('%Y-%m-%d %H:%M:%S')"/>
+        <field name="iteration_count" eval="0"/>
+        <field name="last_text">Will check renewal status in 14 days and ping the account owner if no movement.</field>
+    </record>
+
+    <record id="demo_session_partner_data_sync_error" model="muk_ai.session">
+        <field name="name">CRM data sync</field>
+        <field name="state">error</field>
+        <field name="user_id" ref="base.user_admin"/>
+        <field name="agent_id" ref="muk_ai.agent_general"/>
+        <field name="res_model">res.partner</field>
+        <field name="res_id" ref="base.res_partner_2"/>
+        <field name="iteration_count" eval="2"/>
+        <field name="total_input_tokens" eval="980"/>
+        <field name="total_output_tokens" eval="74"/>
+        <field name="last_input_tokens" eval="540"/>
+        <field name="error_message">Upstream CRM API returned 503 — retrying in next scheduled tick.</field>
+        <field name="last_text">Sync paused after a third consecutive 503 from the CRM endpoint.</field>
+    </record>
+
+</odoo>

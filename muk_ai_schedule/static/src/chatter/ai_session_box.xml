@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai_schedule.AISessionBox">
+        <div class="o-mail-AISessionBox" t-if="state.loaded and state.total">
+            <div
+                class="o-mail-AISessionBox-header d-flex pt-2 px-2 cursor-pointer fw-bolder"
+                t-on-click="toggle"
+            >
+                <hr class="flex-grow-1 fs-3"/>
+                <div class="d-flex align-items-center px-3">
+                    <i
+                        class="fa fa-fw"
+                        t-att-class="state.expanded ? 'fa-caret-down' : 'fa-caret-right'"
+                    />
+                    <i class="fa fa-fw fa-magic me-1"/>
+                    AI Sessions
+                    <span
+                        class="badge rounded-pill ms-2 text-bg-info"
+                    >
+                        <t t-esc="state.total"/>
+                    </span>
+                </div>
+                <hr class="flex-grow-1 fs-3"/>
+            </div>
+            <div
+                t-if="state.expanded"
+                class="o-mail-AISessionBox-list d-flex flex-column gap-1 p-2"
+            >
+                <div
+                    t-foreach="state.sessions"
+                    t-as="session"
+                    t-key="session.id"
+                    class="o-mail-AISessionBox-item d-flex flex-nowrap align-items-center p-2 rounded border bg-view cursor-pointer"
+                    t-on-click="() => this.openSession(session)"
+                >
+                    <span
+                        class="o-mail-AISessionBox-state badge rounded-pill flex-shrink-0"
+                        t-att-class="stateBadge(session.state)"
+                    >
+                        <t t-esc="stateLabel(session.state)"/>
+                    </span>
+                    <span
+                        class="o-mail-AISessionBox-name fw-bolder text-truncate ms-2 me-2"
+                        t-att-title="session.name"
+                    >
+                        <t t-esc="session.name"/>
+                    </span>
+                    <span class="o-mail-AISessionBox-date text-muted small ms-2 flex-shrink-0">
+                        <t t-esc="relativeName(session.create_date)"/>
+                    </span>
+                </div>
+                <button
+                    t-if="hasMore"
+                    type="button"
+                    class="o-mail-AISessionBox-more btn btn-link btn-sm align-self-start"
+                    t-on-click="openAll"
+                >
+                    View all (<t t-esc="state.total"/>)
+                </button>
+            </div>
+        </div>
+    </t>
+
+</templates>

@@ -1,0 +1,280 @@
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<h2 class="oe_slogan">MuK AI Schedule</h2>
+		<h3 class="oe_slogan mb-0">Cron-Driven, Self-Pacing AI Agent Sessions</h3>
+		<img src="logo.png" style="width: 150px;" class="mx-auto center-block">
+		<h4 class="oe_slogan mt-0" style="font-size: 23px">MuK IT GmbH - www.mukit.at</h4>
+		<div class="mb-4" style="text-align: center;">
+			<span class="btn btn-sm mb-2" style="font-size:14px; font-weight:500; background-color:#243742; color:#fff; cursor:default;">
+				<i class="fa fa-check"></i> Community
+			</span>
+			<span class="btn btn-sm mb-2" style="font-size:14px; font-weight:500; background-color:#5D8DA8; color:#fff; cursor:default;">
+				<i class="fa fa-check me-1"></i> Enterprise
+			</span>
+		</div>
+		<div class="oe_demo oe_screenshot" style="max-width: 84%; margin: 16px 8%">
+			<img src="screenshot.png">
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width: 84%; margin: 16px 8%;">
+			<h3 class="oe_slogan">Overview</h3>
+			<p class="oe_mt32">
+				<strong>MuK AI Schedule</strong> extends
+				<code>muk_ai</code> with cron-driven, autonomous agent
+				sessions. Admins define <code>muk_ai.schedule</code>
+				records that fire on a chosen cadence, each one
+				launching a fresh AI session under a chosen agent and
+				prompt with no user in the loop. A per-record dispatch
+				mode fans a single schedule into one session per record
+				matching a domain (or arbitrary Python), and chained
+				sessions expose the previous run's transcript so an
+				agent can recall what it did last time without burning
+				context. Pure runtime extension &mdash; no fork of
+				<code>muk_ai</code>.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Schedule Records</h3>
+			<p>
+				Each schedule carries a name, agent, prompt template,
+				recurrence (minute/hour/day/week/month/cron), dispatch
+				mode and target model with either a domain or
+				safe-evaluated Python record source. A live
+				<code>schedule_countdown</code> widget shows
+				<em>Nd Nh</em> / <em>Nm Ns</em> until the next fire on
+				every list, kanban and form view, and updates without
+				a page reload as the cron worker advances times.
+				Prompt edits are versioned via the reusable
+				<code>muk_ai.revision.mixin</code> from
+				<code>muk_ai</code>; the History stat button rolls
+				back to any prior revision.
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_schedule_form.png">
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Self-Pacing Tools</h3>
+			<p>
+				Two MCP tools registered on the in-Odoo agent let a
+				running session defer itself across cron ticks.
+				<code>schedule_resume</code> pauses until a wall-clock
+				time and stores a synthetic user message to fire on
+				wake-up &mdash; so the agent picks up exactly where
+				it left off, with the instruction it gave itself
+				fresh in context. <code>schedule_recurring</code>
+				re-fires the same session on a fixed cadence with
+				hard caps and supports <code>{run}</code> /
+				<code>{total}</code> placeholders in the prompt.
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_self_pace.png">
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Per-Record Dispatch &amp; Chaining</h3>
+			<p>
+				In <em>Per Record</em> mode the schedule resolves its
+				target recordset on every fire and creates one session
+				per record. Sessions inherit <code>res_model</code> /
+				<code>res_id</code> and post an internal note to that
+				record's chatter, so every AI run a record spawned
+				stays visible from the record itself. Chained sessions
+				expose a <code>previous_session</code> proxy
+				(<code>last_text</code>, <code>tool_log</code>) so a
+				digest agent can avoid repeating itself without
+				pasting full transcripts into the next prompt.
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_session_chain.png">
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Hard Caps</h3>
+			<p>
+				Every spawned session is bounded by four limits
+				&mdash; max resumes, lifetime hours, total tokens, and
+				cost in EUR &mdash; configurable per schedule and
+				falling back to module-wide defaults. Caps are checked
+				before every <code>schedule_resume</code> /
+				<code>schedule_recurring</code> call; any breach
+				aborts the session with a <code>cap_exceeded</code>
+				event so a runaway agent can never bill unbounded.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container" id="muk-other-apps-desc" style="background-color: #f9fafb; padding-top: 1px; margin-bottom: -20px;">
+	<div class="oe_row oe_spaced">
+		<h3 class="oe_slogan">More Apps from MuK IT</h3>
+		<div class="d-flex flex-wrap justify-content-center align-items-stretch gap-4" style="margin: 24px auto;">
+			<div class="d-flex flex-column align-items-center text-center" style="width: 150px;">
+				<a class="d-flex flex-column align-items-center flex-grow-1" href="https://apps.odoo.com/apps/modules/19.0/muk_web_list_custom/" target="_blank" rel="noopener" style="text-decoration: none; color: inherit;">
+					<div class="d-flex align-items-center justify-content-center shadow-sm" style="width: 96px; height: 96px; border-radius: 20px; background-color: #fff;">
+						<img src="//apps.odoocdn.com/apps/assets/19.0/muk_web_list_custom/icon.png" alt="MuK List Custom" style="width: 72px; height: 72px; object-fit: contain; border-radius: 14px;">
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 15px; width: 100%; margin: 8px 0 2px; color: #000 !important; opacity: 1 !important; line-height: 18px;">MuK List Custom</h3>
+					<div style="font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; color: #5D8DA8; margin-bottom: 6px;">List Favorites</div>
+				</a>
+				<a class="d-inline-block mt-auto" href="https://apps.odoo.com/apps/modules/19.0/muk_web_list_custom/" target="_blank" rel="noopener" style="padding: 6px 14px; border-radius: 999px; background-color: #243742; color: #fff; font-size: 12px; font-weight: 500; letter-spacing: 0.3px; text-decoration: none;">View Module &rsaquo;</a>
+			</div>
+			<div class="d-flex flex-column align-items-center text-center" style="width: 150px;">
+				<a class="d-flex flex-column align-items-center flex-grow-1" href="https://apps.odoo.com/apps/modules/19.0/muk_ai_skills/" target="_blank" rel="noopener" style="text-decoration: none; color: inherit;">
+					<div class="d-flex align-items-center justify-content-center shadow-sm" style="width: 96px; height: 96px; border-radius: 20px; background-color: #fff;">
+						<img src="//apps.odoocdn.com/apps/assets/19.0/muk_ai_skills/icon.png" alt="MuK AI Skills" style="width: 72px; height: 72px; object-fit: contain; border-radius: 14px;">
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 15px; width: 100%; margin: 8px 0 2px; color: #000 !important; opacity: 1 !important; line-height: 18px;">MuK AI Skills</h3>
+					<div style="font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; color: #5D8DA8; margin-bottom: 6px;">Agent Skills</div>
+				</a>
+				<a class="d-inline-block mt-auto" href="https://apps.odoo.com/apps/modules/19.0/muk_ai_skills/" target="_blank" rel="noopener" style="padding: 6px 14px; border-radius: 999px; background-color: #243742; color: #fff; font-size: 12px; font-weight: 500; letter-spacing: 0.3px; text-decoration: none;">View Module &rsaquo;</a>
+			</div>
+			<div class="d-flex flex-column align-items-center text-center" style="width: 150px;">
+				<a class="d-flex flex-column align-items-center flex-grow-1" href="https://apps.odoo.com/apps/modules/19.0/muk_sale_version/" target="_blank" rel="noopener" style="text-decoration: none; color: inherit;">
+					<div class="d-flex align-items-center justify-content-center shadow-sm" style="width: 96px; height: 96px; border-radius: 20px; background-color: #fff;">
+						<img src="//apps.odoocdn.com/apps/assets/19.0/muk_sale_version/icon.png" alt="MuK Sale Versions" style="width: 72px; height: 72px; object-fit: contain; border-radius: 14px;">
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 15px; width: 100%; margin: 8px 0 2px; color: #000 !important; opacity: 1 !important; line-height: 18px;">MuK Sale Versions</h3>
+					<div style="font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; color: #5D8DA8; margin-bottom: 6px;">Quotation Versions</div>
+				</a>
+				<a class="d-inline-block mt-auto" href="https://apps.odoo.com/apps/modules/19.0/muk_sale_version/" target="_blank" rel="noopener" style="padding: 6px 14px; border-radius: 999px; background-color: #243742; color: #fff; font-size: 12px; font-weight: 500; letter-spacing: 0.3px; text-decoration: none;">View Module &rsaquo;</a>
+			</div>
+			<div class="d-flex flex-column align-items-center text-center" style="width: 150px;">
+				<a class="d-flex flex-column align-items-center flex-grow-1" href="https://apps.odoo.com/apps/modules/19.0/muk_oidc/" target="_blank" rel="noopener" style="text-decoration: none; color: inherit;">
+					<div class="d-flex align-items-center justify-content-center shadow-sm" style="width: 96px; height: 96px; border-radius: 20px; background-color: #fff;">
+						<img src="//apps.odoocdn.com/apps/assets/19.0/muk_oidc/icon.png" alt="MuK OpenID Connect" style="width: 72px; height: 72px; object-fit: contain; border-radius: 14px;">
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 15px; width: 100%; margin: 8px 0 2px; color: #000 !important; opacity: 1 !important; line-height: 18px;">MuK OpenID Connect</h3>
+					<div style="font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; color: #5D8DA8; margin-bottom: 6px;">OpenID Connect</div>
+				</a>
+				<a class="d-inline-block mt-auto" href="https://apps.odoo.com/apps/modules/19.0/muk_oidc/" target="_blank" rel="noopener" style="padding: 6px 14px; border-radius: 999px; background-color: #243742; color: #fff; font-size: 12px; font-weight: 500; letter-spacing: 0.3px; text-decoration: none;">View Module &rsaquo;</a>
+			</div>
+			<div class="d-flex flex-column align-items-center text-center" style="width: 150px;">
+				<a class="d-flex flex-column align-items-center flex-grow-1" href="https://apps.odoo.com/apps/modules/browse?series=19.0&author=MuK+IT" target="_blank" rel="noopener" style="text-decoration: none; color: inherit;">
+					<div class="d-flex align-items-center justify-content-center shadow-sm" style="width: 96px; height: 96px; border-radius: 20px; background-color: #fff; color: #5D8DA8;">
+						<i class="fa fa-th" style="font-size: 55px;"></i>
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 15px; width: 100%; margin: 8px 0 2px; color: #000 !important; opacity: 1 !important; line-height: 18px;">All MuK Apps</h3>
+					<div style="font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; color: #5D8DA8; margin-bottom: 6px;">Browse</div>
+				</a>
+				<a class="d-inline-block mt-auto" href="https://apps.odoo.com/apps/modules/browse?series=19.0&author=MuK+IT" target="_blank" rel="noopener" style="padding: 6px 14px; border-radius: 999px; background-color: #243742; color: #fff; font-size: 12px; font-weight: 500; letter-spacing: 0.3px; text-decoration: none;">View All &rsaquo;</a>
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container oe_dark d-flex justify-content-around align-items-lg-center flex-column flex-lg-row">
+	<div class="d-flex flex-column m-3 ms-lg-4">
+		<h3 class="oe_slogan mb-3 mt-3 text-left">
+			<i class="fa fa-comments mr8"></i>Want more?
+		</h3>
+		<p>
+			Are you having troubles with your Odoo integration? Or do you feel
+			your system lacks of essential features? <br>If your answer is <b>YES</b>
+			to one of the above questions, feel free to contact us at anytime
+			with your inquiry.
+		</p>
+	</div>
+	<div class="oe_slogan d-flex flex-column ms-1 me-1 ms-lg-4 me-lg-4 flex-grow-1">
+		<a class="btn btn-primary btn-lg m-3" href="mailto:sale@mukit.at?subject=Request%20Quote" style="font-size:1.2rem">
+			<i class="fa fa-envelope me-1"></i>REQUEST QUOTE
+		</a>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<h3 class="oe_slogan">Our Services</h3>
+		<div class="d-flex justify-content-between">
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="service_development.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3
+						class="oe_slogan"
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Development
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="service_integration.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3
+						class="oe_slogan"
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Integration
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="service_infrastructure.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3
+						class="oe_slogan"
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Infrastructure
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="service_training.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3
+						class="oe_slogan"
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Training
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="service_support.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3
+						class="oe_slogan"
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Support
+					</h3>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>

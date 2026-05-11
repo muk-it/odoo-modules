@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo noupdate="1">
+
+	<record id="demo_schedule_overdue_inbox_digest" model="muk_ai.schedule">
+		<field name="name">Weekly Overdue Activities Digest</field>
+		<field name="agent_id" ref="muk_ai.agent_general"/>
+		<field name="dispatch_mode">single</field>
+		<field name="model_id" ref="mail.model_mail_activity"/>
+		<field name="record_source">code</field>
+		<field name="record_code">today_iso = today.isoformat()
+records = env['mail.activity'].search(
+    [('date_deadline', '&lt;', today_iso)],
+    order='date_deadline asc',
+    limit=200,
+)</field>
+		<field name="interval_type">weeks</field>
+		<field name="interval_number">1</field>
+		<field name="weekday">mon</field>
+		<field name="max_records_per_fire">200</field>
+		<field name="prompt"><![CDATA[
+{{ len(records) }} activities are past their deadline. Group by `user_id`. For each assignee
+with overdue items, look up their `partner_id` (`read_records` on `res.users`) then send a short
+HTML digest to their Discuss inbox via `call_method` model=`mail.thread`, method=`message_notify`,
+ids=`[]`, kwargs `partner_ids=[<partner_id>]`, `subject='Overdue activities — N items'`,
+`body=<html top-5 with target res_model/res_id, summary, days overdue>`. No chatter posts.
+Date: {{ today }}.
+        ]]></field>
+	</record>
+
+</odoo>

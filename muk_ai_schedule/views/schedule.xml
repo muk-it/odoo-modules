@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_muk_ai_schedule_search" model="ir.ui.view">
+		<field name="name">muk_ai.schedule.search</field>
+		<field name="model">muk_ai.schedule</field>
+		<field name="arch" type="xml">
+			<search>
+				<field name="name"/>
+				<field name="agent_id"/>
+				<filter
+                    name="active"
+                    string="Active"
+                    domain="[('active', '=', True)]"
+                />
+				<filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active', '=', False)]"
+                />
+				<group>
+					<filter
+                        name="group_agent"
+                        string="Agent"
+                        context="{'group_by': 'agent_id'}"
+                    />
+					<filter
+                        name="group_dispatch_mode"
+                        string="Dispatch Mode"
+                        context="{'group_by': 'dispatch_mode'}"
+                    />
+					<filter
+                        name="group_interval_type"
+                        string="Interval Type"
+                        context="{'group_by': 'interval_type'}"
+                    />
+				</group>
+			</search>
+		</field>
+	</record>
+
+	<record id="view_muk_ai_schedule_list" model="ir.ui.view">
+		<field name="name">muk_ai.schedule.list</field>
+		<field name="model">muk_ai.schedule</field>
+		<field name="arch" type="xml">
+			<list>
+				<field name="name"/>
+				<field name="agent_id"/>
+				<field name="interval_type"/>
+				<field name="interval_number"/>
+				<field name="dispatch_mode"/>
+				<field name="next_call" widget="schedule_countdown"/>
+				<field name="active" widget="boolean_toggle" optional="show"/>
+			</list>
+		</field>
+	</record>
+
+	<record id="view_muk_ai_schedule_kanban" model="ir.ui.view">
+		<field name="name">muk_ai.schedule.kanban</field>
+		<field name="model">muk_ai.schedule</field>
+		<field name="arch" type="xml">
+			<kanban sample="1">
+				<field name="id"/>
+				<field name="name"/>
+				<field name="agent_id"/>
+				<field name="active"/>
+				<field name="dispatch_mode"/>
+				<field name="next_call"/>
+				<field name="last_call"/>
+				<field name="session_count"/>
+				<field name="prompt"/>
+				<templates>
+					<t t-name="menu">
+						<div class="container o_kanban_card_manage_pane">
+							<div class="o_kanban_card_manage_section">
+								<a type="open" class="dropdown-item" role="menuitem">Open</a>
+								<a t-if="record.active.raw_value" type="archive" class="dropdown-item" role="menuitem">Archive</a>
+								<a t-if="!record.active.raw_value" type="unarchive" class="dropdown-item" role="menuitem">Unarchive</a>
+							</div>
+						</div>
+					</t>
+					<t t-name="card">
+						<widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+						<div class="d-flex align-items-center justify-content-between mb-1">
+							<h4 class="mb-0 text-truncate">
+								<field name="name"/>
+							</h4>
+							<span t-if="!record.active.raw_value" class="badge text-bg-secondary">Archived</span>
+							<span t-elif="record.next_call.raw_value" class="badge text-bg-success">Active</span>
+							<span t-else="" class="badge text-bg-warning">Idle</span>
+						</div>
+						<div class="d-flex flex-wrap gap-1 mb-2">
+							<field
+								t-if="record.agent_id.raw_value"
+								name="agent_id"
+								class="small px-1 text-bg-primary rounded"
+							/>
+							<field
+								name="dispatch_mode"
+								class="small px-1 text-bg-info rounded"
+							/>
+						</div>
+						<div class="text-muted small mk_schedule_kanban_prompt mb-2">
+							<field name="prompt"/>
+						</div>
+						<footer class="d-flex align-items-center justify-content-between">
+							<span class="text-muted small">
+								<i class="fa fa-clock-o me-1" role="img" aria-label="Next call"/>
+								<field name="next_call" widget="schedule_countdown"/>
+							</span>
+							<span class="text-muted small" t-if="record.session_count.raw_value">
+								<i class="fa fa-comments-o me-1" role="img" aria-label="Sessions"/>
+								<field name="session_count"/>
+							</span>
+						</footer>
+					</t>
+				</templates>
+			</kanban>
+		</field>
+	</record>
+
+	<record id="view_muk_ai_schedule_form" model="ir.ui.view">
+		<field name="name">muk_ai.schedule.form</field>
+		<field name="model">muk_ai.schedule</field>
+		<field name="arch" type="xml">
+			<form>
+				<header>
+					<button
+                        name="action_fire_now"
+                        type="object"
+                        string="Run Now"
+                        class="btn-primary"
+                        icon="fa-play"
+                    />
+				</header>
+				<sheet>
+					<div class="oe_button_box" name="button_box">
+						<button
+                            name="action_open_sessions"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-comments-o"
+                        >
+							<field name="session_count" widget="statinfo" string="Sessions"/>
+						</button>
+						<button
+                            name="action_open_prompt_history"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-history"
+                        >
+							<field name="prompt_history_count" widget="statinfo" string="Prompt History"/>
+						</button>
+					</div>
+					<widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+					<div class="oe_title">
+						<label for="name"/>
+						<h1>
+							<field name="name" placeholder="e.g. Weekly Pipeline Summary"/>
+						</h1>
+					</div>
+					<group>
+						<group string="Agent">
+							<field name="agent_id" options="{'no_create': True}"/>
+							<field name="user_id" options="{'no_create': True}"/>
+						</group>
+						<group string="Status">
+							<field name="next_call" widget="schedule_countdown"/>
+							<field name="last_call"/>
+							<field name="active" widget="boolean_toggle"/>
+						</group>
+					</group>
+					<group string="Recurrence">
+						<group>
+							<field name="interval_type"/>
+							<field
+                                name="interval_number"
+                                invisible="interval_type == 'cron'"
+                            />
+							<field
+                                name="weekday"
+                                required="interval_type == 'weeks'"
+                                invisible="interval_type != 'weeks'"
+                            />
+							<field
+                                name="monthday"
+                                required="interval_type == 'months'"
+                                invisible="interval_type != 'months'"
+                            />
+							<field
+                                name="cron_expression"
+                                required="interval_type == 'cron'"
+                                invisible="interval_type != 'cron'"
+                                placeholder="0 9 * * 1"
+                            />
+						</group>
+					</group>
+					<group string="Dispatch">
+						<group string="Mode">
+							<field name="dispatch_mode"/>
+							<field
+                                name="max_records_per_fire"
+                                invisible="dispatch_mode != 'per_record'"
+                            />
+						</group>
+						<group string="Records">
+							<field name="model_name" invisible="1"/>
+							<field
+                                name="model_id"
+                                options="{'no_create': True}"
+                            />
+							<field
+                                name="record_source"
+                                widget="radio"
+                                options="{'horizontal': True}"
+                                invisible="not model_id"
+                            />
+							<field
+                                name="domain"
+                                widget="domain"
+                                options="{'model': 'model_name', 'in_dialog': True}"
+                                invisible="not model_id or record_source != 'domain'"
+                            />
+							<field
+                                name="record_code"
+                                widget="ace"
+                                options="{'mode': 'python'}"
+                                placeholder="records = env['res.partner'].search([], limit=10)"
+                                invisible="not model_id or record_source != 'code'"
+                                colspan="2"
+                                nolabel="1"
+                            />
+					    </group>
+					</group>
+					<notebook>
+						<page string="Prompt" name="prompt">
+							<field
+                                name="prompt"
+                                nolabel="1"
+                                widget="code"
+                                options="{'mode': 'qweb'}"
+                                placeholder="Initial prompt sent to the agent on each fire..."
+                            />
+						</page>
+						<page string="Caps" name="caps">
+							<group>
+								<group string="Per-Session Overrides">
+									<field name="max_resumes"/>
+									<field name="max_lifetime_hours"/>
+									<field name="max_total_tokens"/>
+									<field name="max_cost_eur"/>
+								</group>
+							</group>
+							<div class="oe_form_box_info mt-2">
+								Set a value to override the module default for sessions
+								spawned by this schedule. Leave 0 to inherit the module
+								default.
+							</div>
+						</page>
+						<page string="Notes" name="notes">
+							<field name="note" nolabel="1"/>
+						</page>
+					</notebook>
+				</sheet>
+				<chatter/>
+			</form>
+		</field>
+	</record>
+
+	<record id="action_muk_ai_schedule" model="ir.actions.act_window">
+		<field name="name">AI Schedules</field>
+		<field name="res_model">muk_ai.schedule</field>
+		<field name="view_mode">kanban,list,form</field>
+		<field name="search_view_id" ref="view_muk_ai_schedule_search"/>
+		<field name="path">ai-schedules</field>
+	</record>
+
+</odoo>

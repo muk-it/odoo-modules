@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai_schedule.ScheduleCountdownField">
+        <span class="mk_schedule_countdown" t-att-title="tooltip">
+            <t t-if="isEmpty">
+                <span class="text-muted">—</span>
+            </t>
+            <t t-elif="isPast">
+                <span t-esc="absoluteText"/>
+                <span class="mk_schedule_countdown_due text-muted ms-1" t-esc="pastLabel"/>
+            </t>
+            <t t-else="">
+                <span t-esc="countdownText"/>
+            </t>
+        </span>
+    </t>
+
+</templates>
