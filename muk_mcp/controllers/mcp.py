@@ -1,5 +1,6 @@
 import json
 import time
+import traceback
 
 from functools import partial
 
@@ -38,6 +39,15 @@ class MCPController(http.Controller):
                 ip_address=request.httprequest.remote_addr,
                 **kwargs,
             )
+
+    def _format_internal_error(self, exc):
+        message = f'Internal server error: {exc}'
+        if config.get('mcp_debug', False):
+            trace = ''.join(traceback.format_exception(
+                exc.__class__, exc, exc.__traceback__,
+            ))
+            message += f'\n\n{trace}'
+        return message
 
     def _get_session(self, session_id):
         if session := request.env['muk_mcp.session'].sudo().search([
@@ -166,7 +176,7 @@ class MCPController(http.Controller):
                 )
             return protocol.make_jsonrpc_error(
                 common.JSONRPC_INTERNAL_ERROR,
-                'Internal server error',
+                self._format_internal_error(exc),
                 request_id=request_id,
             )
         if method.startswith('notifications/'):
@@ -254,9 +264,11 @@ class MCPController(http.Controller):
                 [protocol.make_text_content(str(exc))],
                 is_error=True,
             )
-        except Exception:
+        except Exception as exc:
             return protocol.make_tool_result(
-                [protocol.make_text_content('Internal server error')],
+                [protocol.make_text_content(
+                    self._format_internal_error(exc)
+                )],
                 is_error=True,
             )
         if isinstance(result, protocol.ToolResult):

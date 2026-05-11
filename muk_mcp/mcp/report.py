@@ -5,6 +5,7 @@ from odoo.exceptions import UserError
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
 from odoo.addons.muk_mcp.tools.descriptions import ids_field
+from odoo.addons.muk_mcp.tools.parser import normalize_ids
 
 
 class MCPMixin(models.AbstractModel):
@@ -70,7 +71,7 @@ class MCPMixin(models.AbstractModel):
         category='read',
     )
     def _mcp_print_report(self, report_ref, ids):
-        if not (target_ids := self._normalize_ids(ids)):
+        if not (target_ids := normalize_ids(ids)):
             raise UserError(_('No record IDs provided'))
         if not (report := self._resolve_report(report_ref)):
             raise UserError(_("Report %r not found.", report_ref))

@@ -372,13 +372,20 @@ Step 3 — restart or upgrade the module. The tool appears in the next
 
 **Helpers available on ``muk_mcp.mixin``**
 
-Because your class inherits the mixin, you get two small helpers for
+Because your class inherits the mixin, you get this small helper for
 free:
 
 - ``self._resolve_model(name)`` — returns ``self.env[name]`` and
   raises ``UserError`` if the model does not exist.
-- ``self._normalize_ids(ids)`` — accepts ``None``, a single int, or
-  a list of ints; always returns a list.
+
+For input normalisation, import the module-level helpers from
+``odoo.addons.muk_mcp.tools.parser``:
+
+- ``normalize_ids(ids)`` — accepts ``None``, a single int, or a list
+  of ints; always returns a list.
+- ``coerce_json_value(value)`` — parses JSON or Python-literal strings
+  iteratively (handles double-encoded payloads from proxies); returns
+  non-string input unchanged.
 
 **Testing your tools**
 

@@ -10,6 +10,7 @@ from odoo.addons.muk_mcp.tools.descriptions import (
     ids_field,
     model_field,
 )
+from odoo.addons.muk_mcp.tools.parser import coerce_json_value, normalize_ids
 from odoo.addons.web.controllers.export import CSVExport, ExcelExport
 
 
@@ -31,7 +32,7 @@ class MCPMixin(models.AbstractModel):
         order,
     ):
         target = self._resolve_model(model)
-        target_ids = self._normalize_ids(ids)
+        target_ids = normalize_ids(ids)
         if target_ids:
             return target.browse(target_ids).exists()
         return target.search(
@@ -104,7 +105,7 @@ class MCPMixin(models.AbstractModel):
         if not fields:
             raise UserError(_('No fields provided'))
         records = self._resolve_records(
-            model, ids, self._coerce_json_value(domain), limit, order,
+            model, ids, coerce_json_value(domain), limit, order,
         )
         exporter = self._build_exporter(format)
         rows = records.export_data(list(fields)).get('datas') or []

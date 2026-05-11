@@ -7,6 +7,7 @@ from odoo.addons.muk_mcp.tools.descriptions import (
     ids_field,
     model_field,
 )
+from odoo.addons.muk_mcp.tools.parser import normalize_ids
 
 
 class MCPMixin(models.AbstractModel):
@@ -80,7 +81,7 @@ class MCPMixin(models.AbstractModel):
         category='write',
     )
     def _mcp_update_records(self, model, ids, values):
-        target_ids = self._normalize_ids(ids)
+        target_ids = normalize_ids(ids)
         if not target_ids:
             raise UserError(_('No record IDs provided'))
         self._resolve_model(model).browse(target_ids).write(values or {})
@@ -108,7 +109,7 @@ class MCPMixin(models.AbstractModel):
         category='write',
     )
     def _mcp_delete_records(self, model, ids):
-        target_ids = self._normalize_ids(ids)
+        target_ids = normalize_ids(ids)
         if not target_ids:
             raise UserError(_('No record IDs provided'))
         self._resolve_model(model).browse(target_ids).unlink()

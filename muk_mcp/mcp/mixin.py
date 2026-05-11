@@ -1,5 +1,4 @@
 import base64
-import json
 
 from odoo import _, api, models
 from odoo.exceptions import AccessError, UserError
@@ -20,23 +19,6 @@ class MCPMixin(models.AbstractModel):
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
-
-    @staticmethod
-    def _normalize_ids(ids):
-        if ids is None:
-            return []
-        if isinstance(ids, int):
-            return [ids]
-        return list(ids)
-
-    @staticmethod
-    def _coerce_json_value(value):
-        if isinstance(value, str):
-            try:
-                return json.loads(value)
-            except (TypeError, ValueError):
-                return value
-        return value
 
     @api.model
     def _resolve_model(self, model):

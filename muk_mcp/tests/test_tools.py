@@ -3,6 +3,8 @@ import json
 from odoo.exceptions import UserError
 from odoo.tests import common
 
+from odoo.addons.muk_mcp.tools.parser import coerce_json_value
+
 
 class TestMcpTool(common.TransactionCase):
 
@@ -228,6 +230,76 @@ class TestMcpTool(common.TransactionCase):
             self.assertEqual(with_override[0]['id'], archived.id)
         finally:
             archived.unlink()
+
+    def test_coerce_passthrough_non_string(self):
+        self.assertEqual(coerce_json_value([['id', '=', 1]]), [['id', '=', 1]])
+        self.assertEqual(coerce_json_value({'k': 'v'}), {'k': 'v'})
+        self.assertEqual(coerce_json_value(42), 42)
+        self.assertIsNone(coerce_json_value(None))
+
+    def test_coerce_single_encoded_json(self):
+        result = coerce_json_value('[["id", "=", 1]]')
+        self.assertEqual(result, [['id', '=', 1]])
+
+    def test_coerce_double_encoded_json(self):
+        once = json.dumps([['id', '=', 1]])
+        twice = json.dumps(once)
+        self.assertEqual(coerce_json_value(twice), [['id', '=', 1]])
+
+    def test_coerce_triple_encoded_json(self):
+        payload = json.dumps(json.dumps(json.dumps([['id', '=', 1]])))
+        self.assertEqual(coerce_json_value(payload), [['id', '=', 1]])
+
+    def test_coerce_python_literal_fallback(self):
+        result = coerce_json_value("[('id', '=', 1)]")
+        self.assertEqual(result, [('id', '=', 1)])
+
+    def test_coerce_python_literal_with_lowercase_booleans(self):
+        result = coerce_json_value("{'active': true, 'name': null}")
+        self.assertEqual(result, {'active': True, 'name': None})
+
+    def test_coerce_invalid_returns_original(self):
+        result = coerce_json_value('not-json-and-not-python')
+        self.assertEqual(result, 'not-json-and-not-python')
+
+    def test_coerce_empty_string_returns_empty_string(self):
+        result = coerce_json_value('')
+        self.assertEqual(result, '')
+
+    def test_coerce_json_null_becomes_none(self):
+        result = coerce_json_value('null')
+        self.assertIsNone(result)
+
+    def test_search_read_with_double_encoded_domain(self):
+        partner = self.env['res.partner'].create({
+            'name': 'MCP Double Encoded Domain',
+        })
+        try:
+            inner = json.dumps([['id', '=', partner.id]])
+            doubled = json.dumps(inner)
+            result = self._call('search_read', {
+                'model': 'res.partner',
+                'domain': doubled,
+                'fields': ['id', 'name'],
+            })
+            self.assertEqual(len(result), 1)
+            self.assertEqual(result[0]['id'], partner.id)
+        finally:
+            partner.unlink()
+
+    def test_search_count_with_double_encoded_domain(self):
+        partner = self.env['res.partner'].create({
+            'name': 'MCP Double Encoded Count',
+        })
+        try:
+            doubled = json.dumps(json.dumps([['id', '=', partner.id]]))
+            result = self._call('search_count', {
+                'model': 'res.partner',
+                'domain': doubled,
+            })
+            self.assertEqual(result['count'], 1)
+        finally:
+            partner.unlink()
 
     def test_mail_tools_still_resolve_via_db(self):
         tools = self.tool_model.get_tools()

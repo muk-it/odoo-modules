@@ -9,6 +9,7 @@ from odoo.addons.muk_mcp.tools.descriptions import (
     ids_field,
     model_field,
 )
+from odoo.addons.muk_mcp.tools.parser import coerce_json_value, normalize_ids
 from odoo.addons.muk_mcp.tools.uri import record_field_uri
 
 
@@ -65,7 +66,7 @@ class MCPMixin(models.AbstractModel):
     def _mcp_search_count(self, model, domain=None):
         return {
             'count': self._resolve_model(model).search_count(
-                self._coerce_json_value(domain) or [],
+                coerce_json_value(domain) or [],
             ),
         }
 
@@ -120,7 +121,7 @@ class MCPMixin(models.AbstractModel):
         order=None,
     ):
         rows = self._resolve_model(model).search_read(
-            self._coerce_json_value(domain) or [],
+            coerce_json_value(domain) or [],
             fields=fields,
             limit=limit,
             offset=offset,
@@ -150,7 +151,7 @@ class MCPMixin(models.AbstractModel):
         category='read',
     )
     def _mcp_read_records(self, model, ids, fields=None):
-        target_ids = self._normalize_ids(ids)
+        target_ids = normalize_ids(ids)
         if not target_ids:
             raise UserError(_('No record IDs provided'))
         rows = self._resolve_model(model).browse(target_ids).read(fields)
@@ -225,7 +226,7 @@ class MCPMixin(models.AbstractModel):
         if '__count' not in aggregates:
             aggregates.append('__count')
         return self._resolve_model(model).formatted_read_group(
-            self._coerce_json_value(domain) or [],
+            coerce_json_value(domain) or [],
             groupby=groupby,
             aggregates=aggregates,
             limit=limit,

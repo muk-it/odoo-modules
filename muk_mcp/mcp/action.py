@@ -8,7 +8,10 @@ from odoo.addons.muk_mcp.tools.descriptions import (
     ids_field,
     model_field,
 )
-
+from odoo.addons.muk_mcp.tools.parser import (
+    coerce_json_value,
+    normalize_ids
+)
 
 class MCPMixin(models.AbstractModel):
 
@@ -77,7 +80,7 @@ class MCPMixin(models.AbstractModel):
             unbound = get_public_method(target, method)
         except (AccessError, AttributeError) as exc:
             raise UserError(str(exc))
-        target_ids = self._normalize_ids(ids)
+        target_ids = normalize_ids(ids)
         if getattr(unbound, '_api_model', False):
             recordset = target
         else:
@@ -85,8 +88,8 @@ class MCPMixin(models.AbstractModel):
                 target.browse(target_ids)
                 if target_ids else target
             )
-        positional = self._coerce_json_value(args) or []
-        keyword = dict(self._coerce_json_value(kwargs) or {})
+        positional = coerce_json_value(args) or []
+        keyword = dict(coerce_json_value(kwargs) or {})
         context_override = keyword.pop('context', None)
         if isinstance(context_override, dict) and context_override:
             recordset = recordset.with_context(**context_override)
