@@ -73,3 +73,25 @@ test('form controller bails when no active session is set', async () => {
     });
     expect(captured).toEqual([]);
 });
+
+
+test('form controller dispatches a list payload while creating a new record', async () => {
+    const captured = [];
+    mockChatWindow(8);
+    onRpc('muk_ai.session', 'set_view_context', ({ args }) => {
+        captured.push(args);
+        return {};
+    });
+    await mountView({
+        resModel: 'muk_ai.form_partner',
+        type: 'form',
+        arch: `<form><field name="name"/></form>`,
+    });
+    expect(captured.length).toBeGreaterThan(0);
+    expect(captured[0][0]).toBe(8);
+    expect(captured[0][1]).toEqual({
+        kind: 'list',
+        model: 'muk_ai.form_partner',
+        view_type: 'form',
+    });
+});

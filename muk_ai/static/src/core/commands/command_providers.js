@@ -2,6 +2,8 @@ import { _t } from '@web/core/l10n/translation';
 import { registry } from '@web/core/registry';
 import { user } from '@web/core/user';
 
+import { seedSessionContext } from '@muk_ai/views/context';
+
 const providerRegistry = registry.category('command_provider');
 
 async function openChat(env, sessionId) {
@@ -33,6 +35,7 @@ providerRegistry.add('muk_ai_sessions', {
                 const [sessionId] = await env.services.orm.create('muk_ai.session', [{
                     name: needle || _t('Chat %s', new Date().toLocaleString()),
                 }]);
+                await seedSessionContext(env, sessionId);
                 await openChat(env, sessionId);
             },
         }];

@@ -425,9 +425,16 @@ export function useAiSession(options = {}) {
                 state.hasMoreOlder = !!snapshot.has_more_older;
             }
         }
-        state.streamingText = '';
-        state.streamingReasoning = '';
-        state.streamingTools = [];
+        const preserveStreaming = state.status === 'running' && (
+            (state.streamingText && state.streamingText.length)
+            || (state.streamingReasoning && state.streamingReasoning.length)
+            || (state.streamingTools && state.streamingTools.length)
+        );
+        if (!preserveStreaming) {
+            state.streamingText = '';
+            state.streamingReasoning = '';
+            state.streamingTools = [];
+        }
         rebuildEventKeys();
     }
     function rebuildEventKeys() {

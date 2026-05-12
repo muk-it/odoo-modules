@@ -1,5 +1,15 @@
+import { registry } from '@web/core/registry';
+
+export const toolBlockDecorators = registry.category('muk_ai.tool_block_decorators');
+
 function withAt(obj, at) {
     return at ? { ...obj, at } : obj;
+}
+
+function decorateToolBlock(block, entry) {
+    for (const [, decorate] of toolBlockDecorators.getEntries()) {
+        decorate(block, entry);
+    }
 }
 
 export function buildRenderedTurns(log) {
@@ -34,6 +44,7 @@ export function buildRenderedTurns(log) {
                 callId: entry.call_id,
                 result: null,
             }, at);
+            decorateToolBlock(block, entry);
             current.blocks.push(block);
             if (entry.call_id) {
                 toolsByCallId[entry.call_id] = block;

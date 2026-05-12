@@ -1323,12 +1323,19 @@ class AISession(models.Model):
         return None
 
     def _record_tool_call(self, call):
-        self._append_event({
+        event = {
             'kind': 'tool_call',
             'name': call['name'],
             'arguments': call['arguments'],
             'call_id': call['call_id'],
-        })
+        }
+        event.update(self._tool_call_event_extra(
+            call
+        ))
+        self._append_event(event)
+
+    def _tool_call_event_extra(self, call):
+        return {}
 
     def _skip_tool_call(self, outputs, call, reason, log_result=None):
         result = {'error': reason}

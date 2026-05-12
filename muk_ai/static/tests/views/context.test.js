@@ -5,6 +5,8 @@ import {
     makeGraphContextDispatch,
     makeListContextDispatch,
     makePivotContextDispatch,
+    probeCurrentView,
+    seedSessionContext,
 } from '@muk_ai/views/context';
 
 describe.current.tags('muk_ai');
@@ -198,4 +200,101 @@ test('dispatchers bail with no active session (no RPC)', () => {
     });
     makeListContextDispatch(ctrl, 'list')();
     expect(ctrl.calls).toEqual([]);
+});
+
+
+test('probeCurrentView returns null without a current controller', async () => {
+    const env = { services: { action: { currentController: null } } };
+    expect(await probeCurrentView(env)).toBe(null);
+});
+
+test('probeCurrentView builds a record payload with display_name', async () => {
+    const env = {
+        services: {
+            action: { currentController: { props: { resModel: 'res.partner', resId: 5 } } },
+            orm: { read: async () => [{ display_name: 'Acme' }] },
+        },
+    };
+    expect(await probeCurrentView(env)).toEqual({
+        kind: 'record', model: 'res.partner', id: 5, display_name: 'Acme',
+    });
+});
+
+test('probeCurrentView falls back to a list payload without resId', async () => {
+    const env = {
+        services: {
+            action: {
+                currentController: {
+                    props: { resModel: 'sale.order', type: 'kanban', domain: [['state', '=', 'sale']] },
+                },
+            },
+            orm: { read: async () => [] },
+        },
+    };
+    expect(await probeCurrentView(env)).toEqual({
+        kind: 'list', model: 'sale.order', view_type: 'kanban',
+        domain: [['state', '=', 'sale']],
+    });
+});
+
+test('seedSessionContext probes and dispatches set_view_context', async () => {
+    const calls = [];
+    const env = {
+        services: {
+            action: { currentController: { props: { resModel: 'res.partner', resId: 9 } } },
+            orm: {
+                call: (...a) => { calls.push(['call', ...a]); return Promise.resolve({}); },
+                read: async () => [{ display_name: 'Globex' }],
+            },
+        },
+    };
+    const ok = await seedSessionContext(env, 42);
+    expect(ok).toBe(true);
+    expect(calls).toHaveLength(1);
+    expect(calls[0][1]).toBe('muk_ai.session');
+    expect(calls[0][2]).toBe('set_view_context');
+    expect(calls[0][3]).toEqual([42, {
+        kind: 'record', model: 'res.partner', id: 9, display_name: 'Globex',
+    }]);
+});
+
+test('seedSessionContext respects an explicit payload over the probe', async () => {
+    const calls = [];
+    const env = {
+        services: {
+            action: { currentController: { props: { resModel: 'res.partner', resId: 9 } } },
+            orm: {
+                call: (...a) => { calls.push(['call', ...a]); return Promise.resolve({}); },
+                read: async () => [{ display_name: 'Globex' }],
+            },
+        },
+    };
+    const carry = { kind: 'list', model: 'sale.order', view_type: 'list' };
+    const ok = await seedSessionContext(env, 13, carry);
+    expect(ok).toBe(true);
+    expect(calls).toHaveLength(1);
+    expect(calls[0][3]).toEqual([13, carry]);
+});
+
+test('seedSessionContext returns false without a sessionId', async () => {
+    const calls = [];
+    const env = {
+        services: {
+            orm: { call: (...a) => { calls.push(a); return Promise.resolve({}); } },
+        },
+    };
+    expect(await seedSessionContext(env, null)).toBe(false);
+    expect(calls).toEqual([]);
+});
+
+test('seedSessionContext returns false when there is nothing to pin', async () => {
+    const calls = [];
+    const env = {
+        services: {
+            action: { currentController: null },
+            orm: { call: (...a) => { calls.push(a); return Promise.resolve({}); } },
+        },
+    };
+    expect(await seedSessionContext(env, 7)).toBe(false);
+    expect(calls).toEqual([]);
 });

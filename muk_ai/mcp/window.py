@@ -2,6 +2,7 @@ from odoo import _, api, models
 from odoo.exceptions import UserError
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
+from odoo.addons.muk_mcp.tools.parser import coerce_json_value
 
 
 class AIWindow(models.AbstractModel):
@@ -200,7 +201,7 @@ class AIWindow(models.AbstractModel):
             'res_model': model,
             'view_mode': view_type,
             'views': [[False, view_type]],
-            'domain': self._coerce_json_value(domain) or [],
+            'domain': coerce_json_value(domain) or [],
             'target': target,
         }
         if name:

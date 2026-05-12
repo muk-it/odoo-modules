@@ -99,6 +99,31 @@ test('onNewSession creates a fresh session and selects it', async () => {
 });
 
 
+test('onNewSession carries over view_context from the previous session', async () => {
+    registerMocks({ sessions: [{ id: 5, name: 'One', state: 'done' }] });
+    onRpc('muk_ai.session', 'read', ({ args }) => [{
+        ...SESSION_RECORD,
+        id: args[0][0],
+        view_context: { kind: 'record', model: 'res.partner', id: 99, display_name: 'Acme' },
+    }]);
+    onRpc('muk_ai.session', 'create', () => [101]);
+    const seedCalls = [];
+    onRpc('muk_ai.session', 'set_view_context', ({ args }) => {
+        seedCalls.push(args);
+        return {};
+    });
+    const chat = await mountWithCleanup(AIChat, { props: {} });
+    await chat.onSelectSession(5);
+    await chat.onNewSession();
+    expect(chat.session.state.sessionId).toBe(101);
+    expect(seedCalls).toHaveLength(1);
+    expect(seedCalls[0]).toEqual([
+        101,
+        { kind: 'record', model: 'res.partner', id: 99, display_name: 'Acme' },
+    ]);
+});
+
+
 test('onSelectSession loads the session from the sidebar', async () => {
     registerMocks({
         sessions: [{ id: 5, name: 'One', state: 'done' }],

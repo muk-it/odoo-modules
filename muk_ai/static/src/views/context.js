@@ -17,6 +17,64 @@ export function captureViewContext(env, payload) {
         .catch(() => {});
 }
 
+export async function probeCurrentView(env) {
+    try {
+        const current = env.services?.action?.currentController;
+        if (!current) {
+            return null;
+        }
+        const props = current.props || {};
+        const resModel = props.resModel || current.action?.res_model;
+        if (!resModel) {
+            return null;
+        }
+        if (props.resId) {
+            const orm = env.services.orm;
+            const caller = orm.silent || orm;
+            let displayName = '';
+            try {
+                const rows = await caller.read(resModel, [props.resId], ['display_name']);
+                displayName = rows?.[0]?.display_name || '';
+            } catch (_e) {}
+            const payload = { kind: 'record', model: resModel, id: props.resId };
+            if (displayName) {
+                payload.display_name = displayName;
+            }
+            return payload;
+        }
+        const viewType = props.type || current.view?.type || 'list';
+        const payload = { kind: 'list', model: resModel, view_type: viewType };
+        const domain = props.domain || current.action?.domain;
+        if (Array.isArray(domain) && domain.length) {
+            payload.domain = domain;
+        }
+        return payload;
+    } catch (_e) {
+        return null;
+    }
+}
+
+export async function seedSessionContext(env, sessionId, payload = null) {
+    if (!sessionId) {
+        return false;
+    }
+    const ctx = payload || (await probeCurrentView(env));
+    if (!ctx || !ctx.model) {
+        return false;
+    }
+    const orm = env.services?.orm;
+    if (!orm) {
+        return false;
+    }
+    const caller = orm.silent || orm;
+    try {
+        await caller.call('muk_ai.session', 'set_view_context', [sessionId, ctx]);
+        return true;
+    } catch (_e) {
+        return false;
+    }
+}
+
 function makeDispatch(controller, build) {
     let lastKey = null;
     return () => {

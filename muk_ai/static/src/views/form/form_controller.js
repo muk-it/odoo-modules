@@ -21,22 +21,32 @@ patch(FormController.prototype, {
                     return;
                 }
                 const root = this.model?.root;
-                if (!root || !root.resModel || !root.resId) {
+                if (!root || !root.resModel) {
                     return;
                 }
-                const key = `${sessionId}:${root.resModel}:${root.resId}`;
+                let payload;
+                if (root.resId) {
+                    const data = root.data || {};
+                    const displayName = data.display_name || data.name || '';
+                    payload = {
+                        kind: 'record',
+                        model: root.resModel,
+                        id: root.resId,
+                        display_name: String(displayName || ''),
+                    };
+                } else {
+                    payload = {
+                        kind: 'list',
+                        model: root.resModel,
+                        view_type: 'form',
+                    };
+                }
+                const key = `${sessionId}:${JSON.stringify(payload)}`;
                 if (key === lastKey) {
                     return;
                 }
                 lastKey = key;
-                const data = root.data || {};
-                const displayName = data.display_name || data.name || '';
-                captureViewContext(this.env, {
-                    kind: 'record',
-                    model: root.resModel,
-                    id: root.resId,
-                    display_name: String(displayName || ''),
-                });
+                captureViewContext(this.env, payload);
             } catch (_e) {}
         };
         onMounted(dispatch);

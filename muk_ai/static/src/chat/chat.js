@@ -51,6 +51,7 @@ import {
     viewContextLabel,
     viewContextTooltip,
 } from '@muk_ai/chat/session/view_context_format';
+import { seedSessionContext } from '@muk_ai/views/context';
 
 const SESSION_PAGE_SIZE = 40;
 const SESSION_SEARCH_LIMIT = 100;
@@ -336,8 +337,12 @@ export class AIChat extends Component {
     }
     async onNewSession() {
         const name = _t('Chat %s', new Date().toLocaleString());
+        const carryOver = this.session.state.viewContext;
         const sessionId = await this.orm.create('muk_ai.session', [{ name }]);
         const id = Array.isArray(sessionId) ? sessionId[0] : sessionId;
+        if (carryOver && carryOver.model) {
+            await seedSessionContext(this.env, id, carryOver);
+        }
         await this._loadSessions();
         await this._selectSession(id);
     }
