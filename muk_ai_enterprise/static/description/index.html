@@ -1,0 +1,357 @@
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<h2 class="oe_slogan">MuK AI Enterprise Bridge</h2>
+		<h3 class="oe_slogan mb-0">Borrow Enterprise AI tools, RAG sources and record context in MuK AI sessions</h3>
+		<img src="logo.png" style="width: 150px;" class="mx-auto center-block">
+		<h4 class="oe_slogan mt-0" style="font-size: 23px">MuK IT GmbH - www.mukit.at</h4>
+		<div class="mb-4" style="text-align: center;">
+			<span
+				class="btn btn-sm mb-2"
+				style="font-size:14px; font-weight:500; background-color:#714B67; color:#fff; cursor:default;"
+			>
+				<i class="fa fa-check"></i> Requires Odoo Enterprise
+			</span>
+			<span
+				class="btn btn-sm mb-2"
+				style="font-size:14px; font-weight:500; background-color:#00A09D; color:#fff; cursor:default;"
+			>
+				<i class="fa fa-plug me-1"></i> Builds on MuK AI
+			</span>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width: 84%; margin: 16px 8%;">
+			<h3 class="oe_slogan">Overview</h3>
+			<p class="oe_mt32">
+				A one-way bridge between <strong>MuK AI</strong> and the
+				<strong>Odoo Enterprise AI</strong> stack. The Enterprise side
+				is never modified &mdash; the Discuss <code>ai_chat</code>
+				channels, the systray, chatter and composer buttons, the
+				<code>ai.agent</code> replies, <code>LLMApiService</code>
+				and the <code>ai_fields</code> cron all keep their existing
+				behaviour. Both chat clients coexist side by side; no
+				monkey-patches, no record-rule rewrites, no shadow data.
+			</p>
+			<p>
+				What you get is the freedom to compose: keep using Enterprise
+				AI for chatter assistance and field auto-fill, and pick up
+				MuK AI for the agentic chat, multimodal attachments, the
+				MCP-driven tool surface, the session approval gate, the
+				audit log and the multi-provider runtime &mdash; while still
+				re-using the AI tools, RAG sources and per-record context
+				you already configured on the EE side.
+			</p>
+			<p>
+				Plays nicely with every optional <code>ai_*</code> satellite
+				shipped by Enterprise &mdash; <code>ai_documents</code>,
+				<code>ai_livechat</code>, <code>ai_fields</code>,
+				<code>ai_server_actions</code>, <code>ai_knowledge</code>,
+				<code>ai_website</code>, <code>ai_crm</code> &mdash; without
+				adding any of them as a hard dependency.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Borrow Enterprise Tools (Server Actions)</h3>
+			<p>
+				Pick one or more <code>ai.topic</code> records on a MuK AI
+				agent's new <em>Enterprise</em> tab. Every server action
+				bundled in those topics &mdash; the same ones the EE
+				<code>ai.agent</code> would call &mdash; is exposed in the
+				MuK AI session as an <code>ee_action_*</code> tool. The model
+				sees a normal MCP-style tool descriptor, calls it with JSON
+				arguments, and the bridge dispatches the underlying
+				<code>ir.actions.server</code> with the appropriate context.
+			</p>
+			<p>
+				Borrowed tools flow through the exact same governance as
+				native MuK AI tools: per-agent tool filter, read-only scope
+				enforcement, the session-scoped approval gate (one-shot,
+				allow-for-session, or reject), and the JSON-serialised
+				tool log under <em>MuK AI &gt; Reports &gt; Approval
+				Log</em> and the muk_mcp tool log. Your EE-side audit
+				trail keeps working untouched on the Enterprise side.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Borrow Enterprise RAG Sources</h3>
+			<p>
+				Pick one or more <code>ai.agent.source</code> records on the
+				agent's <em>Enterprise</em> tab. On every user message the
+				bridge resolves the EE provider, embeds the user query with
+				the same embedding model the EE agent would use (defaulting
+				to <code>text-embedding-3-small</code> at 1536 dims),
+				retrieves the top-N similar <code>ai.embedding</code>
+				chunks across the picked sources, and appends them to the
+				rendered system prompt inside a <code>&lt;rag&gt;...&lt;/rag&gt;</code>
+				block.
+			</p>
+			<p>
+				The retrieval call is <code>sudo</code>-scoped (so the
+				bridge can read the embedding rows) but the chunks are
+				attached to the system prompt of the calling user's session
+				&mdash; record rules on the underlying source data still
+				gate what makes it into <code>ai.embedding</code> in the
+				first place. Failures degrade gracefully: missing provider,
+				no embedding back, no chunks &mdash; the prompt simply
+				renders without the RAG block.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Per-Record Context Bridge</h3>
+			<p>
+				When a MuK AI chat opens with a record in view context
+				(form view, kanban card, list selection &mdash; any of the
+				MuK AI <code>view_context</code> entry points), the bridge
+				calls Enterprise's <code>Model._ai_initialise_context</code>
+				hook on the pinned record and injects the result inside an
+				<code>&lt;ee_ctx&gt;...&lt;/ee_ctx&gt;</code> block on the
+				system prompt.
+			</p>
+			<p>
+				That means an EE-aware model (an <code>ir.model</code> with
+				<code>_ai_initialise_context</code> implemented for Sales
+				Orders, Invoices, Tasks, Tickets, etc.) shares the same
+				per-record briefing with both the EE chatter assistant and
+				the MuK AI floating chat &mdash; users never have to
+				re-explain "this order" or "the current invoice". The
+				normal MuK AI <code>&lt;ui_ctx&gt;</code> tag (model, id,
+				view kind) keeps shipping alongside.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Compatibility Matrix</h3>
+			<table style="width:100%; border-collapse:collapse; margin-top:16px; font-size:14px;">
+				<thead>
+					<tr style="background-color:#f5f5f5; text-align:left;">
+						<th style="padding:10px 12px; border-bottom:2px solid #ddd;">Enterprise add-on</th>
+						<th style="padding:10px 12px; border-bottom:2px solid #ddd;">Borrowed via</th>
+						<th style="padding:10px 12px; border-bottom:2px solid #ddd;">Required</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>ai_app</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Core models (<code>ai.topic</code>, <code>ai.agent.source</code>, <code>ai.embedding</code>)</td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#714B67; color:#fff; padding:2px 8px; border-radius:3px; font-size:12px;">Yes</span></td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>ai_server_actions</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Server actions exposed as <code>ee_action_*</code> tools</td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#5D8DA8; color:#fff; padding:2px 8px; border-radius:3px; font-size:12px;">Optional</span></td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>ai_knowledge</code> / <code>ai_documents</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">RAG sources injected as <code>&lt;rag&gt;</code> snippets</td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#5D8DA8; color:#fff; padding:2px 8px; border-radius:3px; font-size:12px;">Optional</span></td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>ai_crm</code> / <code>ai_fields</code> / others</td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Per-record <code>_ai_initialise_context</code> bridged into <code>&lt;ee_ctx&gt;</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#5D8DA8; color:#fff; padding:2px 8px; border-radius:3px; font-size:12px;">Optional</span></td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>ai_livechat</code> / <code>ai_website</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">No interference &mdash; both stay on their own runtime</td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#999; color:#fff; padding:2px 8px; border-radius:3px; font-size:12px;">Coexists</span></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Configuration</h3>
+			<ol>
+				<li>Install <code>muk_ai_enterprise</code> &mdash; pulls in <code>muk_ai</code> and <code>ai_app</code>.</li>
+				<li>Open <em>MuK AI &gt; Configuration &gt; Agents</em> and edit the agent that should borrow EE assets.</li>
+				<li>On the new <strong>Enterprise</strong> tab, pick the <code>ai.topic</code> records whose server actions you want exposed.</li>
+				<li>Pick the <code>ai.agent.source</code> records whose RAG chunks you want injected.</li>
+				<li>Optionally pin a model with enough context headroom to absorb the appended <code>&lt;rag&gt;</code> and <code>&lt;ee_ctx&gt;</code> blocks.</li>
+			</ol>
+			<p>
+				That's the entire setup &mdash; per-record context is wired
+				automatically once the chat opens with a record in view
+				context. Both EE features (Discuss <code>ai_chat</code>,
+				<code>ai.agent</code>, chatter assistance) and the MuK AI
+				suite continue to operate independently.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container" id="muk-other-apps-desc" style="background-color: #f9fafb; padding-top: 1px; margin-bottom: -20px;">
+	<div class="oe_row oe_spaced">
+		<h3 class="oe_slogan">More Apps from MuK IT</h3>
+		<div class="d-flex flex-wrap justify-content-center align-items-stretch gap-4" style="margin: 24px auto;">
+			<div class="d-flex flex-column align-items-center text-center" style="width: 150px;">
+				<a class="d-flex flex-column align-items-center flex-grow-1" href="https://apps.odoo.com/apps/modules/19.0/muk_ai/" target="_blank" rel="noopener" style="text-decoration: none; color: inherit;">
+					<div class="d-flex align-items-center justify-content-center shadow-sm" style="width: 96px; height: 96px; border-radius: 20px; background-color: #fff;">
+						<img src="//apps.odoocdn.com/apps/assets/19.0/muk_ai/icon.png" alt="MuK AI Assistant" style="width: 72px; height: 72px; object-fit: contain; border-radius: 14px;">
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 15px; width: 100%; margin: 8px 0 2px; color: #000 !important; opacity: 1 !important; line-height: 18px;">MuK AI Assistant</h3>
+					<div style="font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; color: #5D8DA8; margin-bottom: 6px;">Native AI Chat</div>
+				</a>
+				<a class="d-inline-block mt-auto" href="https://apps.odoo.com/apps/modules/19.0/muk_ai/" target="_blank" rel="noopener" style="padding: 6px 14px; border-radius: 999px; background-color: #243742; color: #fff; font-size: 12px; font-weight: 500; letter-spacing: 0.3px; text-decoration: none;">View Module &rsaquo;</a>
+			</div>
+			<div class="d-flex flex-column align-items-center text-center" style="width: 150px;">
+				<a class="d-flex flex-column align-items-center flex-grow-1" href="https://apps.odoo.com/apps/modules/19.0/muk_oidc/" target="_blank" rel="noopener" style="text-decoration: none; color: inherit;">
+					<div class="d-flex align-items-center justify-content-center shadow-sm" style="width: 96px; height: 96px; border-radius: 20px; background-color: #fff;">
+						<img src="//apps.odoocdn.com/apps/assets/19.0/muk_oidc/icon.png" alt="MuK OpenID Connect" style="width: 72px; height: 72px; object-fit: contain; border-radius: 14px;">
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 15px; width: 100%; margin: 8px 0 2px; color: #000 !important; opacity: 1 !important; line-height: 18px;">MuK OpenID Connect</h3>
+					<div style="font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; color: #5D8DA8; margin-bottom: 6px;">OpenID Connect</div>
+				</a>
+				<a class="d-inline-block mt-auto" href="https://apps.odoo.com/apps/modules/19.0/muk_oidc/" target="_blank" rel="noopener" style="padding: 6px 14px; border-radius: 999px; background-color: #243742; color: #fff; font-size: 12px; font-weight: 500; letter-spacing: 0.3px; text-decoration: none;">View Module &rsaquo;</a>
+			</div>
+			<div class="d-flex flex-column align-items-center text-center" style="width: 150px;">
+				<a class="d-flex flex-column align-items-center flex-grow-1" href="https://apps.odoo.com/apps/modules/19.0/muk_rest/" target="_blank" rel="noopener" style="text-decoration: none; color: inherit;">
+					<div class="d-flex align-items-center justify-content-center shadow-sm" style="width: 96px; height: 96px; border-radius: 20px; background-color: #fff;">
+						<img src="//apps.odoocdn.com/apps/assets/19.0/muk_rest/icon.png" alt="MuK REST API" style="width: 72px; height: 72px; object-fit: contain; border-radius: 14px;">
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 15px; width: 100%; margin: 8px 0 2px; color: #000 !important; opacity: 1 !important; line-height: 18px;">MuK REST API</h3>
+					<div style="font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; color: #5D8DA8; margin-bottom: 6px;">REST API</div>
+				</a>
+				<a class="d-inline-block mt-auto" href="https://apps.odoo.com/apps/modules/19.0/muk_rest/" target="_blank" rel="noopener" style="padding: 6px 14px; border-radius: 999px; background-color: #243742; color: #fff; font-size: 12px; font-weight: 500; letter-spacing: 0.3px; text-decoration: none;">View Module &rsaquo;</a>
+			</div>
+			<div class="d-flex flex-column align-items-center text-center" style="width: 150px;">
+				<a class="d-flex flex-column align-items-center flex-grow-1" href="https://apps.odoo.com/apps/modules/19.0/muk_web_appsbar/" target="_blank" rel="noopener" style="text-decoration: none; color: inherit;">
+					<div class="d-flex align-items-center justify-content-center shadow-sm" style="width: 96px; height: 96px; border-radius: 20px; background-color: #fff;">
+						<img src="//apps.odoocdn.com/apps/assets/19.0/muk_web_appsbar/icon.png" alt="MuK AppsBar" style="width: 72px; height: 72px; object-fit: contain; border-radius: 14px;">
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 15px; width: 100%; margin: 8px 0 2px; color: #000 !important; opacity: 1 !important; line-height: 18px;">MuK AppsBar</h3>
+					<div style="font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; color: #5D8DA8; margin-bottom: 6px;">Sidebar Launcher</div>
+				</a>
+				<a class="d-inline-block mt-auto" href="https://apps.odoo.com/apps/modules/19.0/muk_web_appsbar/" target="_blank" rel="noopener" style="padding: 6px 14px; border-radius: 999px; background-color: #243742; color: #fff; font-size: 12px; font-weight: 500; letter-spacing: 0.3px; text-decoration: none;">View Module &rsaquo;</a>
+			</div>
+			<div class="d-flex flex-column align-items-center text-center" style="width: 150px;">
+				<a class="d-flex flex-column align-items-center flex-grow-1" href="https://apps.odoo.com/apps/modules/browse?series=19.0&author=MuK+IT" target="_blank" rel="noopener" style="text-decoration: none; color: inherit;">
+					<div class="d-flex align-items-center justify-content-center shadow-sm" style="width: 96px; height: 96px; border-radius: 20px; background-color: #fff; color: #5D8DA8;">
+						<i class="fa fa-th" style="font-size: 55px;"></i>
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 15px; width: 100%; margin: 8px 0 2px; color: #000 !important; opacity: 1 !important; line-height: 18px;">All MuK Apps</h3>
+					<div style="font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; color: #5D8DA8; margin-bottom: 6px;">Browse</div>
+				</a>
+				<a class="d-inline-block mt-auto" href="https://apps.odoo.com/apps/modules/browse?series=19.0&author=MuK+IT" target="_blank" rel="noopener" style="padding: 6px 14px; border-radius: 999px; background-color: #243742; color: #fff; font-size: 12px; font-weight: 500; letter-spacing: 0.3px; text-decoration: none;">View All &rsaquo;</a>
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container oe_dark d-flex justify-content-around align-items-lg-center flex-column flex-lg-row">
+	<div class="d-flex flex-column m-3 ms-lg-4">
+		<h3 class="oe_slogan mb-3 mt-3 text-left">
+			<i class="fa fa-comments mr8"></i>Want more?
+		</h3>
+		<p>
+			Are you having troubles with your Odoo integration? Or do you feel
+			your system lacks of essential features? <br>If your answer is <b>YES</b>
+			to one of the above questions, feel free to contact us at anytime
+			with your inquiry. <br>We are looking forward to discuss your
+			needs and plan the next steps with you. <br>
+		</p>
+	</div>
+	<div class="oe_slogan d-flex flex-column ms-1 me-1 ms-lg-4 me-lg-4 flex-grow-1">
+		<a class="btn btn-primary btn-lg m-3" href="mailto:sale@mukit.at?subject=Request%20Quote" style="font-size:1.2rem">
+			<i class="fa fa-envelope me-1"></i>REQUEST QUOTE
+		</a>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<h3 class="oe_slogan">Our Services</h3>
+		<div class="d-flex justify-content-between">
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="service_development.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3
+						class="oe_slogan"
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Development
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="service_integration.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3
+						class="oe_slogan"
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Integration
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="service_infrastructure.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3
+						class="oe_slogan"
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Infrastructure
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="service_training.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3
+						class="oe_slogan"
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Training
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="service_support.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3
+						class="oe_slogan"
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Support
+					</h3>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_muk_ai_agent_form_inherit_enterprise" model="ir.ui.view">
+        <field name="name">muk_ai.agent.form.enterprise</field>
+        <field name="model">muk_ai.agent</field>
+        <field name="inherit_id" ref="muk_ai.view_ai_agent_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Enterprise" name="ee_borrowing">
+                    <group>
+                        <field
+                            name="ee_topic_ids"
+                            widget="many2many_tags"
+                            options="{'no_create': True}"
+                        />
+                        <field
+                            name="ee_source_ids"
+                            widget="many2many_tags"
+                            options="{'no_create': True}"
+                        />
+                    </group>
+                    <div class="oe_form_box_info mt-2">
+                        Selecting EE topics exposes their server-action tools
+                        as <code>ee_action_*</code> in this agent's sessions.
+                        Selecting EE RAG sources injects top-N similar chunks
+                        into the system prompt on each user message.
+                    </div>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
