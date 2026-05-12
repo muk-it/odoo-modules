@@ -60,8 +60,8 @@ class TestInstallWithSatellites(BridgeTestCommon):
             'agent_id': agent.id,
         })
         session = session.with_context(muk_ai_session_agent_id=agent.id)
-        schema = session._get_tool_schema()
-        names = {t['name'] for t in schema}
+        catalog = session._get_filtered_catalog()
+        names = {t['name'] for t in catalog}
         ee_names = {n for n in names if n.startswith('ee_action_')}
         if agent.ee_topic_ids.mapped('tool_ids'):
             self.assertTrue(

@@ -19,7 +19,7 @@
         ai_livechat, ai_fields, ai_server_actions, ai_knowledge,
         ai_website, ai_crm, ...) — no hard dependency, no breakage.
     ''',
-    'version': '19.0.1.0.1',
+    'version': '19.0.1.0.2',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',

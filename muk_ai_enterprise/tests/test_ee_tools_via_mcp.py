@@ -54,10 +54,10 @@ class TestEeToolsViaMcp(BridgeTestCommon):
     # Tests
     # ----------------------------------------------------------
 
-    def test_ee_tools_listed_in_session_schema(self):
+    def test_ee_tools_listed_in_session_catalog(self):
         session = self._make_session()
         session = session.with_context(muk_ai_session_agent_id=self.agent.id)
-        names = {t['name'] for t in session._get_tool_schema()}
+        names = {t['name'] for t in session._get_filtered_catalog()}
         self.assertIn(self._ee_tool_name(), names)
 
     def test_ee_tools_absent_without_topics(self):
@@ -67,7 +67,7 @@ class TestEeToolsViaMcp(BridgeTestCommon):
             'agent_id': agent.id,
         })
         session = session.with_context(muk_ai_session_agent_id=agent.id)
-        names = {t['name'] for t in session._get_tool_schema()}
+        names = {t['name'] for t in session._get_filtered_catalog()}
         self.assertNotIn(self._ee_tool_name(), names)
 
     def test_ee_tools_absent_when_no_context_marker(self):
@@ -112,7 +112,7 @@ class TestEeToolsViaMcp(BridgeTestCommon):
             'agent_id': ro_agent.id,
         })
         session = session.with_context(muk_ai_session_agent_id=ro_agent.id)
-        names = {t['name'] for t in session._get_tool_schema()}
+        names = {t['name'] for t in session._get_filtered_catalog()}
         self.assertNotIn(
             self._ee_tool_name(), names,
             "ee_action_* must be filtered out for read-only agents.",
