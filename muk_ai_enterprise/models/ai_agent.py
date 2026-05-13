@@ -1,7 +1,7 @@
 from odoo import fields, models
 
 
-class MukAiAgent(models.Model):
+class AiAgent(models.Model):
 
     _inherit = 'muk_ai.agent'
 
@@ -14,7 +14,7 @@ class MukAiAgent(models.Model):
         relation='muk_ai_agent_ai_topic_rel',
         column1='muk_ai_agent_id',
         column2='ai_topic_id',
-        string="EE Topics (borrow tools)",
+        string="EE Topics",
         help=(
             "EE ai.topic records this agent borrows tools from. "
             "Each topic bundles ir.actions.server records with "

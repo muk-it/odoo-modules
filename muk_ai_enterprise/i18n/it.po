@@ -1,0 +1,112 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* muk_ai_enterprise
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-05-13 22:21+0000\n"
+"PO-Revision-Date: 2026-05-13 22:21+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: muk_ai_enterprise
+#: model:ir.model,name:muk_ai_enterprise.model_muk_ai_agent
+msgid "AI Agent"
+msgstr "Agente IA"
+
+#. module: muk_ai_enterprise
+#: model:ir.model,name:muk_ai_enterprise.model_muk_ai_session
+msgid "AI Session"
+msgstr "Sessione IA"
+
+#. module: muk_ai_enterprise
+#: model:ir.model.fields,field_description:muk_ai_enterprise.field_muk_ai_agent__display_name
+#: model:ir.model.fields,field_description:muk_ai_enterprise.field_muk_ai_session__display_name
+#: model:ir.model.fields,field_description:muk_ai_enterprise.field_muk_mcp_tool__display_name
+msgid "Display Name"
+msgstr "Nome visualizzato"
+
+#. module: muk_ai_enterprise
+#: model:ir.model.fields,field_description:muk_ai_enterprise.field_muk_ai_agent__ee_source_ids
+msgid "EE RAG Sources"
+msgstr "Sorgenti RAG EE"
+
+#. module: muk_ai_enterprise
+#: model:ir.model.fields,field_description:muk_ai_enterprise.field_muk_ai_agent__ee_topic_ids
+msgid "EE Topics"
+msgstr "Topic EE"
+
+#. module: muk_ai_enterprise
+#. odoo-python
+#: code:addons/muk_ai_enterprise/models/mcp_tool.py:0
+msgid "EE action %(name)s failed: %(error)s"
+msgstr "Azione EE %(name)s fallita: %(error)s"
+
+#. module: muk_ai_enterprise
+#: model:ir.model.fields,help:muk_ai_enterprise.field_muk_ai_agent__ee_source_ids
+msgid ""
+"EE ai.agent.source records this agent borrows RAG context from. Top-N "
+"similar chunks are appended to the system prompt for each user message."
+msgstr ""
+"Record ai.agent.source EE da cui questo agente prende contesto RAG. I primi "
+"N frammenti più simili vengono aggiunti al prompt di sistema per ogni "
+"messaggio utente."
+
+#. module: muk_ai_enterprise
+#: model:ir.model.fields,help:muk_ai_enterprise.field_muk_ai_agent__ee_topic_ids
+msgid ""
+"EE ai.topic records this agent borrows tools from. Each topic bundles "
+"ir.actions.server records with use_in_ai=True; they appear in this agent's "
+"sessions as ee_action_* tools."
+msgstr ""
+"Record ai.topic EE da cui questo agente prende strumenti. Ogni topic "
+"raggruppa record ir.actions.server con use_in_ai=True; appaiono nelle "
+"sessioni di questo agente come strumenti ee_action_*."
+
+#. module: muk_ai_enterprise
+#: model_terms:ir.ui.view,arch_db:muk_ai_enterprise.view_ai_agent_form_inherit_enterprise
+msgid "Enterprise"
+msgstr "Enterprise"
+
+#. module: muk_ai_enterprise
+#: model:ir.model.fields,field_description:muk_ai_enterprise.field_muk_ai_agent__id
+#: model:ir.model.fields,field_description:muk_ai_enterprise.field_muk_ai_session__id
+#: model:ir.model.fields,field_description:muk_ai_enterprise.field_muk_mcp_tool__id
+msgid "ID"
+msgstr "ID"
+
+#. module: muk_ai_enterprise
+#: model:ir.model,name:muk_ai_enterprise.model_muk_mcp_tool
+msgid "MCP Tool"
+msgstr "Strumento MCP"
+
+#. module: muk_ai_enterprise
+#. odoo-python
+#: code:addons/muk_ai_enterprise/models/mcp_tool.py:0
+msgid "Read-only agents cannot call EE action tools (%s)."
+msgstr "Gli agenti in sola lettura non possono chiamare gli strumenti di azione EE (%s)."
+
+#. module: muk_ai_enterprise
+#: model_terms:ir.ui.view,arch_db:muk_ai_enterprise.view_ai_agent_form_inherit_enterprise
+msgid ""
+"Selecting EE topics exposes their server-action tools\n"
+"                        as <code>ee_action_*</code> in this agent's sessions.\n"
+"                        Selecting EE RAG sources injects top-N similar chunks\n"
+"                        into the system prompt on each user message."
+msgstr ""
+"La selezione dei topic EE espone i relativi strumenti di azione server\n"
+"                        come <code>ee_action_*</code> nelle sessioni di questo agente.\n"
+"                        La selezione delle sorgenti RAG EE inserisce gli N frammenti più simili\n"
+"                        nel prompt di sistema a ogni messaggio utente."
+
+#. module: muk_ai_enterprise
+#. odoo-python
+#: code:addons/muk_ai_enterprise/models/mcp_tool.py:0
+msgid "Unknown EE action tool: %s"
+msgstr "Strumento di azione EE sconosciuto: %s"

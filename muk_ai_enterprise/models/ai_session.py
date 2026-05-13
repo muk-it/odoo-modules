@@ -1,0 +1,137 @@
+from contextlib import suppress
+
+from odoo import models
+
+from odoo.addons.ai.utils.llm_api_service import LLMApiService
+from odoo.addons.ai.utils.llm_providers import get_provider_for_embedding_model
+
+from odoo.addons.muk_ai_enterprise.tools import adapter
+
+
+class AiSession(models.Model):
+
+    _inherit = 'muk_ai.session'
+
+    # ----------------------------------------------------------
+    # Helper
+    # ----------------------------------------------------------
+
+    def _last_user_text(self):
+        for entry in reversed(self.conversation or []):
+            if (
+                not isinstance(entry, dict) or
+                entry.get('role') != 'user'
+            ):
+                continue
+            content = entry.get('content')
+            if isinstance(content, str):
+                return content
+            for part in content or []:
+                if (
+                    isinstance(part, dict) and
+                    part.get('type') in ('input_text', 'text')
+                ):
+                    return part.get('text') or ''
+        return ''
+
+    def _ee_embedding_model(self, sources):
+        with suppress(Exception):
+            if (
+                sources and
+                (ee_agent := sources[:1].agent_id) and
+                hasattr(ee_agent, '_get_embedding_model')
+            ):
+                return ee_agent._get_embedding_model()
+        return adapter.DEFAULT_EMBEDDING_MODEL
+
+    def _ee_embedding_dimensions(self):
+        with suppress(Exception):
+            embedding = self.env.get('ai.embedding')
+            if (
+                embedding is not None and
+                hasattr(embedding, '_get_dimensions')
+            ):
+                return embedding.sudo()._get_dimensions()
+        return adapter.DEFAULT_RAG_DIMENSIONS
+
+    def _compute_query_embedding(self, query, embedding_model):
+        with suppress(Exception):
+            provider = get_provider_for_embedding_model(self.env, embedding_model)
+            response = LLMApiService(env=self.env, provider=provider).get_embedding(
+                input=query,
+                dimensions=self._ee_embedding_dimensions(),
+                model=embedding_model,
+            )
+            return response['data'][0]['embedding']
+        return None
+
+    def _build_ee_rag_snippet(self, sources, query, top_n=adapter.DEFAULT_RAG_TOP_N):
+        if not sources or not query:
+            return ''
+        embedding_model = self._ee_embedding_model(sources)
+        if not (query_embedding := self._compute_query_embedding(query, embedding_model)):
+            return ''
+        with suppress(Exception):
+            chunks = self.env['ai.embedding'].sudo()._get_similar_chunks(
+                query_embedding=query_embedding,
+                sources=sources.sudo(),
+                embedding_model=embedding_model,
+                top_n=top_n,
+            )
+            return '\n---\n'.join(c.content for c in chunks if c.content)
+        return ''
+
+    def _ee_init_context(self, model_name, record_id):
+        if (
+            not model_name or not record_id or
+            self.env.registry.get(model_name) is None
+        ):
+            return []
+        with suppress(TypeError, ValueError, KeyError):
+            record = self.env[model_name].sudo().browse(int(record_id)).exists()
+            if record and hasattr(record, '_ai_initialise_context'):
+                with suppress(Exception):
+                    ctx = record._ai_initialise_context(
+                        adapter.CALLER_COMPONENT, None, None,
+                    )
+                    return [str(item) for item in (ctx or []) if item]
+        return []
+
+    def _append_ee_record_context(self, rendered):
+        snippet = adapter.render_init_context(self.view_context)
+        return f"{rendered}\n\n{snippet}" if snippet else rendered
+
+    def _append_ee_rag(self, rendered):
+        if (
+            not self.agent_id or
+            not (sources := self.agent_id.ee_source_ids) or
+            not (query := self._last_user_text())
+        ):
+            return rendered
+        with suppress(Exception):
+            snippet = self._build_ee_rag_snippet(sources, query)
+            if snippet:
+                return f"{rendered}\n\n<rag>\n{snippet}\n</rag>"
+        return rendered
+
+    def _tool_dispatch_context(self):
+        ctx = super()._tool_dispatch_context()
+        if self.agent_id:
+            ctx['muk_ai_session_agent_id'] = self.agent_id.id
+        return ctx
+
+    def _enrich_view_context(self, payload):
+        payload = super()._enrich_view_context(payload)
+        if (
+            isinstance(payload, dict) and
+            payload.get('kind') == 'record' and
+            'ee_init_context' not in payload and
+            (ee_ctx := self._ee_init_context(payload.get('model'), payload.get('id')))
+        ):
+            payload = {**payload, 'ee_init_context': ee_ctx}
+        return payload
+
+    def _render_system_prompt(self, raw):
+        return self._append_ee_rag(
+            self._append_ee_record_context(super()._render_system_prompt(raw))
+        )

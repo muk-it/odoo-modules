@@ -4,11 +4,8 @@ from odoo.tests.common import tagged
 from .common import BridgeTestCommon
 
 
-@tagged('post_install', '-at_install', 'muk_ai_enterprise')
+@tagged('post_install', '-at_install')
 class TestEeToolsViaMcp(BridgeTestCommon):
-    """Step 2: borrowed EE server actions show up as ee_action_* tools
-    and dispatch through EE's _ai_tool_run when called.
-    """
 
     @classmethod
     def setUpClass(cls):

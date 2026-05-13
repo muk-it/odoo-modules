@@ -3,12 +3,8 @@ from odoo.tests.common import tagged
 from .common import BridgeTestCommon
 
 
-@tagged('post_install', '-at_install', 'muk_ai_enterprise')
+@tagged('post_install', '-at_install')
 class TestRecordContext(BridgeTestCommon):
-    """Step 4: when a session pins a record view_context, the bridge
-    populates `ee_init_context` from `_ai_initialise_context`, and the
-    rendered system prompt contains it.
-    """
 
     def _make_session_with_record(self, model='res.users'):
         record = self.env[model].search([], limit=1)

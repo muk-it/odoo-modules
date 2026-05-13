@@ -5,11 +5,8 @@ from odoo.tests.common import tagged
 from .common import BridgeTestCommon
 
 
-@tagged('post_install', '-at_install', 'muk_ai_enterprise')
+@tagged('post_install', '-at_install')
 class TestRagBorrowing(BridgeTestCommon):
-    """Step 3: ai.embedding chunks for the agent's ee_source_ids appear
-    in the rendered system prompt as <rag>...</rag>.
-    """
 
     @classmethod
     def setUpClass(cls):

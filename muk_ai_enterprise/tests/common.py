@@ -1,18 +1,11 @@
 import json
 
-from contextlib import contextmanager
 from unittest.mock import patch
 
 from odoo.tests.common import TransactionCase
 
 
 class BridgeTestCommon(TransactionCase):
-    """Shared helpers for muk_ai_enterprise tests.
-
-    Mirrors muk_ai's `tests/common.py` but stays self-contained so the
-    bridge suite is runnable with just `-i muk_ai_enterprise`. Mocks the
-    OpenAI provider so no real LLM calls are ever issued.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -80,23 +73,3 @@ class BridgeTestCommon(TransactionCase):
             'usage': {'input_tokens': 4, 'output_tokens': 2},
         }
 
-    # ----------------------------------------------------------
-    # Misc
-    # ----------------------------------------------------------
-
-    @contextmanager
-    def _mute_logger(self, *names):
-        try:
-            from odoo.tests.common import warmup  # noqa: F401
-        except Exception:
-            pass
-        import logging
-        loggers = [logging.getLogger(n) for n in names]
-        previous = [(lg, lg.disabled) for lg in loggers]
-        for lg in loggers:
-            lg.disabled = True
-        try:
-            yield
-        finally:
-            for lg, was in previous:
-                lg.disabled = was

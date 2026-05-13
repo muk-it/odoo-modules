@@ -64,13 +64,13 @@ What's in the box
   an agent that has ``ee_topic_ids`` set, the bridge injects each
   borrowed Enterprise server action into ``get_tools()`` as
   ``ee_action_<xmlid_name>`` and dispatches ``_call``\\ s with that
-  prefix through Enterprise's ``_ai_tool_run``.
-- **muk_ai_enterprise.ee_tools adapter** — abstract model that
-  resolves a tool name back to its ``ir.actions.server`` record,
-  enforces the ``use_in_ai`` filter, coerces the action's JSON
-  schema into the MCP shape, runs the action against the session's
-  pinned record (or the calling user as a fallback), and serialises
-  the result back through the standard ``muk_mcp.log`` audit trail.
+  prefix through Enterprise's ``_ai_tool_run``. The same extension
+  carries the adapter helpers that resolve a tool name back to its
+  ``ir.actions.server`` record, enforce the ``use_in_ai`` filter,
+  coerce the action's JSON schema into the MCP shape, run the
+  action against the session's pinned record (or the calling user
+  as a fallback), and serialise the result back through the
+  standard ``muk_mcp.log`` audit trail.
 
 Configuration
 =============
