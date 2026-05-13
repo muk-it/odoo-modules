@@ -136,50 +136,6 @@
 <section class="oe_container">
 	<div class="oe_row oe_spaced">
 		<div class="text-justify" style="max-width:84%; margin:16px 8%">
-			<h3 class="oe_slogan">Compatibility Matrix</h3>
-			<table style="width:100%; border-collapse:collapse; margin-top:16px; font-size:14px;">
-				<thead>
-					<tr style="background-color:#f5f5f5; text-align:left;">
-						<th style="padding:10px 12px; border-bottom:2px solid #ddd;">Enterprise add-on</th>
-						<th style="padding:10px 12px; border-bottom:2px solid #ddd;">Borrowed via</th>
-						<th style="padding:10px 12px; border-bottom:2px solid #ddd;">Required</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>ai</code></td>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Core models (<code>ai.topic</code>, <code>ai.agent.source</code>, <code>ai.embedding</code>)</td>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#5D8DA8; color:#fff; padding:2px 8px; border-radius:3px; font-size:12px;">Yes</span></td>
-					</tr>
-					<tr>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>ai_server_actions</code></td>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Server actions exposed as <code>ee_action_*</code> tools</td>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#5D8DA8; color:#fff; padding:2px 8px; border-radius:3px; font-size:12px;">Optional</span></td>
-					</tr>
-					<tr>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>ai_knowledge</code> / <code>ai_documents</code></td>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;">RAG sources injected as <code>&lt;rag&gt;</code> snippets</td>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#5D8DA8; color:#fff; padding:2px 8px; border-radius:3px; font-size:12px;">Optional</span></td>
-					</tr>
-					<tr>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>ai_crm</code> / <code>ai_fields</code> / others</td>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Per-record <code>_ai_initialise_context</code> bridged into <code>&lt;ee_ctx&gt;</code></td>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#5D8DA8; color:#fff; padding:2px 8px; border-radius:3px; font-size:12px;">Optional</span></td>
-					</tr>
-					<tr>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>ai_livechat</code> / <code>ai_website</code></td>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;">No interference &mdash; both stay on their own runtime</td>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#999; color:#fff; padding:2px 8px; border-radius:3px; font-size:12px;">Coexists</span></td>
-					</tr>
-				</tbody>
-			</table>
-		</div>
-	</div>
-</section>
-
-<section class="oe_container">
-	<div class="oe_row oe_spaced">
-		<div class="text-justify" style="max-width:84%; margin:16px 8%">
 			<h3 class="oe_slogan">Configuration</h3>
 			<ol>
 				<li>Install <code>muk_ai_enterprise</code> &mdash; pulls in <code>muk_ai</code> and <code>ai</code>.</li>
@@ -273,78 +229,5 @@
 		<a class="btn btn-primary btn-lg m-3" href="mailto:sale@mukit.at?subject=Request%20Quote" style="font-size:1.2rem">
 			<i class="fa fa-envelope me-1"></i>REQUEST QUOTE
 		</a>
-	</div>
-</section>
-
-<section class="oe_container">
-	<div class="oe_row oe_spaced">
-		<h3 class="oe_slogan">Our Services</h3>
-		<div class="d-flex justify-content-between">
-			<div>
-				<div>
-					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
-						<img src="service_development.png" style="width: 100%; border-radius: 100%">
-					</div>
-					<h3
-						class="oe_slogan"
-						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
-					>
-						Odoo <br>Development
-					</h3>
-				</div>
-			</div>
-			<div>
-				<div>
-					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
-						<img src="service_integration.png" style="width: 100%; border-radius: 100%">
-					</div>
-					<h3
-						class="oe_slogan"
-						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
-					>
-						Odoo <br>Integration
-					</h3>
-				</div>
-			</div>
-			<div>
-				<div>
-					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
-						<img src="service_infrastructure.png" style="width: 100%; border-radius: 100%">
-					</div>
-					<h3
-						class="oe_slogan"
-						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
-					>
-						Odoo <br>Infrastructure
-					</h3>
-				</div>
-			</div>
-			<div>
-				<div>
-					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
-						<img src="service_training.png" style="width: 100%; border-radius: 100%">
-					</div>
-					<h3
-						class="oe_slogan"
-						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
-					>
-						Odoo <br>Training
-					</h3>
-				</div>
-			</div>
-			<div>
-				<div>
-					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
-						<img src="service_support.png" style="width: 100%; border-radius: 100%">
-					</div>
-					<h3
-						class="oe_slogan"
-						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
-					>
-						Odoo <br>Support
-					</h3>
-				</div>
-			</div>
-		</div>
 	</div>
 </section>
