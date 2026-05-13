@@ -1,6 +1,6 @@
 {
     'name': 'MuK AI Enterprise',
-    'summary': 'Use Enterprise AI tools, RAG sources and record context in MuK AI sessions',
+    'summary': 'Use Enterprise AI tools, RAG sources and record context',
     'description': '''
         One-way bridge: MuK AI sessions reach into the Odoo Enterprise
         AI primitives while the Enterprise side stays untouched. The
