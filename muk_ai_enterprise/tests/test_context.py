@@ -4,7 +4,7 @@ from .common import BridgeTestCommon
 
 
 @tagged('post_install', '-at_install')
-class TestRecordContext(BridgeTestCommon):
+class TestContext(BridgeTestCommon):
 
     # ----------------------------------------------------------
     # Helper

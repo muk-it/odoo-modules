@@ -5,7 +5,7 @@ from .common import BridgeTestCommon
 
 
 @tagged('post_install', '-at_install')
-class TestEeToolsViaMcp(BridgeTestCommon):
+class TestTools(BridgeTestCommon):
 
     # ----------------------------------------------------------
     # Setup
