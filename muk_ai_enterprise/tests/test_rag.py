@@ -6,12 +6,20 @@ from .common import BridgeTestCommon
 
 
 @tagged('post_install', '-at_install')
-class TestRagBorrowing(BridgeTestCommon):
+class TestRag(BridgeTestCommon):
+
+    # ----------------------------------------------------------
+    # Setup
+    # ----------------------------------------------------------
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.has_pgvector = cls._check_pgvector(cls.env)
+
+    # ----------------------------------------------------------
+    # Helper
+    # ----------------------------------------------------------
 
     @staticmethod
     def _check_pgvector(env):
@@ -45,11 +53,15 @@ class TestRagBorrowing(BridgeTestCommon):
         })
         attachment.write({'res_id': source.id})
         agent = self.env['muk_ai.agent'].create({
-            'name': 'Bridge RAG Borrower',
+            'name': 'Bridge RAG User',
             'system_prompt': 'You are a frobnicator.',
             'ee_source_ids': [(6, 0, [source.id])],
         })
         return agent, source, attachment
+
+    # ----------------------------------------------------------
+    # Tests
+    # ----------------------------------------------------------
 
     def test_rag_block_skipped_when_no_sources(self):
         agent = self.env['muk_ai.agent'].create({

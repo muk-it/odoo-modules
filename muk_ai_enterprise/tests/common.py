@@ -7,6 +7,10 @@ from odoo.tests.common import TransactionCase
 
 class BridgeTestCommon(TransactionCase):
 
+    # ----------------------------------------------------------
+    # Setup
+    # ----------------------------------------------------------
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -14,7 +18,7 @@ class BridgeTestCommon(TransactionCase):
         cls.provider.sudo().api_key = 'test-key'
 
     # ----------------------------------------------------------
-    # Provider mocking
+    # Provider
     # ----------------------------------------------------------
 
     def _patch_provider(self, payloads, captured=None):

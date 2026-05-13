@@ -51,23 +51,23 @@ msgstr "La acción EE %(name)s falló: %(error)s"
 #. module: muk_ai_enterprise
 #: model:ir.model.fields,help:muk_ai_enterprise.field_muk_ai_agent__ee_source_ids
 msgid ""
-"EE ai.agent.source records this agent borrows RAG context from. Top-N "
-"similar chunks are appended to the system prompt for each user message."
+"EE ai.agent.source records whose RAG chunks this agent uses. Top-N similar "
+"chunks are appended to the system prompt for each user message."
 msgstr ""
-"Registros ai.agent.source de EE de los que este agente toma prestado "
-"contexto RAG. Los N fragmentos más similares se añaden al prompt del sistema "
-"en cada mensaje del usuario."
+"Registros ai.agent.source de EE cuyos fragmentos RAG este agente utiliza. "
+"Los N fragmentos más similares se añaden al prompt del sistema en cada "
+"mensaje del usuario."
 
 #. module: muk_ai_enterprise
 #: model:ir.model.fields,help:muk_ai_enterprise.field_muk_ai_agent__ee_topic_ids
 msgid ""
-"EE ai.topic records this agent borrows tools from. Each topic bundles "
+"EE ai.topic records whose tools this agent uses. Each topic bundles "
 "ir.actions.server records with use_in_ai=True; they appear in this agent's "
 "sessions as ee_action_* tools."
 msgstr ""
-"Registros ai.topic de EE de los que este agente toma prestadas herramientas. "
-"Cada tópico agrupa registros ir.actions.server con use_in_ai=True; aparecen "
-"en las sesiones de este agente como herramientas ee_action_*."
+"Registros ai.topic de EE cuyas herramientas este agente utiliza. Cada tópico "
+"agrupa registros ir.actions.server con use_in_ai=True; aparecen en las "
+"sesiones de este agente como herramientas ee_action_*."
 
 #. module: muk_ai_enterprise
 #: model_terms:ir.ui.view,arch_db:muk_ai_enterprise.view_ai_agent_form_inherit_enterprise

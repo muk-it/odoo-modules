@@ -51,23 +51,23 @@ msgstr "EE-Aktion %(name)s fehlgeschlagen: %(error)s"
 #. module: muk_ai_enterprise
 #: model:ir.model.fields,help:muk_ai_enterprise.field_muk_ai_agent__ee_source_ids
 msgid ""
-"EE ai.agent.source records this agent borrows RAG context from. Top-N "
-"similar chunks are appended to the system prompt for each user message."
+"EE ai.agent.source records whose RAG chunks this agent uses. Top-N similar "
+"chunks are appended to the system prompt for each user message."
 msgstr ""
-"EE ai.agent.source-Datensätze, von denen dieser Agent RAG-Kontext entlehnt. "
+"EE ai.agent.source-Datensätze, deren RAG-Abschnitte dieser Agent verwendet. "
 "Die N ähnlichsten Abschnitte werden bei jeder Benutzernachricht an den "
 "System-Prompt angehängt."
 
 #. module: muk_ai_enterprise
 #: model:ir.model.fields,help:muk_ai_enterprise.field_muk_ai_agent__ee_topic_ids
 msgid ""
-"EE ai.topic records this agent borrows tools from. Each topic bundles "
+"EE ai.topic records whose tools this agent uses. Each topic bundles "
 "ir.actions.server records with use_in_ai=True; they appear in this agent's "
 "sessions as ee_action_* tools."
 msgstr ""
-"EE ai.topic-Datensätze, von denen dieser Agent Werkzeuge entlehnt. Jedes "
-"Topic bündelt ir.actions.server-Datensätze mit use_in_ai=True; sie "
-"erscheinen in den Sitzungen dieses Agenten als ee_action_*-Werkzeuge."
+"EE ai.topic-Datensätze, deren Werkzeuge dieser Agent verwendet. Jedes Topic "
+"bündelt ir.actions.server-Datensätze mit use_in_ai=True; sie erscheinen in "
+"den Sitzungen dieses Agenten als ee_action_*-Werkzeuge."
 
 #. module: muk_ai_enterprise
 #: model_terms:ir.ui.view,arch_db:muk_ai_enterprise.view_ai_agent_form_inherit_enterprise

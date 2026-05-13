@@ -51,21 +51,21 @@ msgstr "Azione EE %(name)s fallita: %(error)s"
 #. module: muk_ai_enterprise
 #: model:ir.model.fields,help:muk_ai_enterprise.field_muk_ai_agent__ee_source_ids
 msgid ""
-"EE ai.agent.source records this agent borrows RAG context from. Top-N "
-"similar chunks are appended to the system prompt for each user message."
+"EE ai.agent.source records whose RAG chunks this agent uses. Top-N similar "
+"chunks are appended to the system prompt for each user message."
 msgstr ""
-"Record ai.agent.source EE da cui questo agente prende contesto RAG. I primi "
-"N frammenti più simili vengono aggiunti al prompt di sistema per ogni "
+"Record ai.agent.source EE i cui frammenti RAG questo agente utilizza. I "
+"primi N frammenti più simili vengono aggiunti al prompt di sistema per ogni "
 "messaggio utente."
 
 #. module: muk_ai_enterprise
 #: model:ir.model.fields,help:muk_ai_enterprise.field_muk_ai_agent__ee_topic_ids
 msgid ""
-"EE ai.topic records this agent borrows tools from. Each topic bundles "
+"EE ai.topic records whose tools this agent uses. Each topic bundles "
 "ir.actions.server records with use_in_ai=True; they appear in this agent's "
 "sessions as ee_action_* tools."
 msgstr ""
-"Record ai.topic EE da cui questo agente prende strumenti. Ogni topic "
+"Record ai.topic EE i cui strumenti questo agente utilizza. Ogni topic "
 "raggruppa record ir.actions.server con use_in_ai=True; appaiono nelle "
 "sessioni di questo agente come strumenti ee_action_*."
 

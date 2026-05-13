@@ -16,7 +16,7 @@ class AiAgent(models.Model):
         column2='ai_topic_id',
         string="EE Topics",
         help=(
-            "EE ai.topic records this agent borrows tools from. "
+            "EE ai.topic records whose tools this agent uses. "
             "Each topic bundles ir.actions.server records with "
             "use_in_ai=True; they appear in this agent's sessions as "
             "ee_action_* tools."
@@ -30,8 +30,8 @@ class AiAgent(models.Model):
         column2='ai_source_id',
         string="EE RAG Sources",
         help=(
-            "EE ai.agent.source records this agent borrows RAG context "
-            "from. Top-N similar chunks are appended to the system "
+            "EE ai.agent.source records whose RAG chunks this agent "
+            "uses. Top-N similar chunks are appended to the system "
             "prompt for each user message."
         ),
     )

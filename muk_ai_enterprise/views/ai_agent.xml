@@ -7,7 +7,7 @@
         <field name="inherit_id" ref="muk_ai.view_ai_agent_form"/>
         <field name="arch" type="xml">
             <xpath expr="//notebook" position="inside">
-                <page string="Enterprise" name="ee_borrowing">
+                <page string="Enterprise" name="enterprise">
                     <group>
                         <field
                             name="ee_topic_ids"

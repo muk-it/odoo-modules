@@ -1,9 +1,9 @@
 {
-    'name': 'MuK AI Enterprise Bridge',
-    'summary': 'Borrow Enterprise AI tools, RAG sources and record context in MuK AI sessions',
+    'name': 'MuK AI Enterprise',
+    'summary': 'Use Enterprise AI tools, RAG sources and record context in MuK AI sessions',
     'description': '''
-        One-way bridge: MuK AI sessions consume Odoo Enterprise AI
-        building blocks while the Enterprise side stays untouched.
+        One-way bridge: MuK AI sessions reach into the Odoo Enterprise
+        AI primitives while the Enterprise side stays untouched. The
         Discuss ai_chat channels, systray and chatter buttons, ai.agent
         replies, LLMApiService and the ai_fields cron all keep their
         existing behaviour — both chats coexist side by side.

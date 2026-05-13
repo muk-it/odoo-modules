@@ -6,6 +6,9 @@ from .common import BridgeTestCommon
 @tagged('post_install', '-at_install')
 class TestRecordContext(BridgeTestCommon):
 
+    # ----------------------------------------------------------
+    # Helper
+    # ----------------------------------------------------------
     def _make_session_with_record(self, model='res.users'):
         record = self.env[model].search([], limit=1)
         if not record:
@@ -24,6 +27,10 @@ class TestRecordContext(BridgeTestCommon):
             'id': record.id,
         })
         return session, record
+
+    # ----------------------------------------------------------
+    # Tests
+    # ----------------------------------------------------------
 
     def test_record_view_context_gets_ee_init_context(self):
         session, record = self._make_session_with_record()

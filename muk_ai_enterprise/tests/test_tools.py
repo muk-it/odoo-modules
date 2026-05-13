@@ -7,6 +7,10 @@ from .common import BridgeTestCommon
 @tagged('post_install', '-at_install')
 class TestEeToolsViaMcp(BridgeTestCommon):
 
+    # ----------------------------------------------------------
+    # Setup
+    # ----------------------------------------------------------
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

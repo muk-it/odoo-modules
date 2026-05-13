@@ -1,6 +1,6 @@
 # MuK AI Enterprise Bridge
 
-One-way bridge so MuK AI sessions can borrow Odoo Enterprise AI
+One-way bridge so MuK AI sessions can use Odoo Enterprise AI
 building blocks. **MuK AI Enterprise Bridge** lets a `muk_ai.agent`
 opt-in to two Enterprise primitives — `ai.topic` server-action tools
 and `ai.agent.source` RAG sources — and automatically threads each
@@ -11,7 +11,7 @@ view context. The Enterprise side is never modified: the Discuss
 optional `ai_*` satellite keep their existing behaviour. Both chat
 clients coexist; the user picks which one to open.
 
-Borrowed Enterprise tools surface inside MuK AI sessions as MCP tools
+Enterprise tools surface inside MuK AI sessions as MCP tools
 named `ee_action_<xmlid_name>`, going through the same approval gate
 and audit log as native MuK AI tools. RAG snippets are appended to
 the rendered system prompt inside a `<rag>...</rag>` block, and the
@@ -27,8 +27,8 @@ M2M fields on the MuK AI agent.
 ## What's in the box
 
 - **`muk_ai.agent` extension** — two Many2many fields, `ee_topic_ids`
-  (→ `ai.topic`) for tool borrowing and `ee_source_ids` (→
-  `ai.agent.source`) for RAG borrowing, plus an *Enterprise* notebook
+  (→ `ai.topic`) for tool reuse and `ee_source_ids` (→
+  `ai.agent.source`) for RAG reuse, plus an *Enterprise* notebook
   page on the agent form to pick them.
 - **`muk_ai.session` extension** — appends a `<rag>` block to the
   rendered system prompt when the agent has `ee_source_ids` set and
@@ -37,7 +37,7 @@ M2M fields on the MuK AI agent.
   when their inputs are empty.
 - **`muk_mcp.tool` extension** — when a MuK AI session is running
   for an agent that has `ee_topic_ids` set, the bridge injects each
-  borrowed Enterprise server action into `get_tools()` as
+  Enterprise server action into `get_tools()` as
   `ee_action_<xmlid_name>` and dispatches `_call`s with that prefix
   through Enterprise's `_ai_tool_run`. The same extension carries
   the adapter helpers that resolve a tool name back to its
@@ -61,15 +61,15 @@ no-op and the rest of the bridge keeps working.
    `ai` automatically.
 2. Open *MuK AI > Agents* and edit a MuK AI agent.
 3. On the new **Enterprise** notebook page, pick the topics whose
-   server-action tools you want exposed (`EE Topics (borrow tools)`)
-   and the RAG sources you want injected (`EE RAG Sources`). Both
-   fields default to empty; selecting nothing opts out.
+   server-action tools you want exposed (`EE Topics`) and the RAG
+   sources you want injected (`EE RAG Sources`). Both fields default
+   to empty; selecting nothing opts out.
 4. Optional: open a record that has a non-trivial
    `_ai_initialise_context` override and open the MuK AI chat on it
    — the per-record context flows into the prompt automatically, no
    per-agent setting needed.
 
-### How tool borrowing works
+### How tools work
 
 Every action in the picked topics that has `use_in_ai=True` is
 exposed as a single MCP tool named `ee_action_<xmlid_name>`. The
@@ -86,10 +86,10 @@ MCP tool — including arguments, response, status and timing.
 
 When the MuK AI agent has `read_only=True`, `ee_action_*` tools are
 filtered out of the schema entirely and any direct dispatch raises a
-`UserError`, so a read-only agent can never mutate through borrowed
+`UserError`, so a read-only agent can never mutate through
 Enterprise tools.
 
-### How RAG borrowing works
+### How RAG works
 
 On every user message, the bridge embeds the latest user text via
 `LLMApiService.get_embedding(...)`, queries
@@ -131,7 +131,7 @@ Enterprise `ai_*` satellite. Optional satellites — `ai_documents`,
 
 Uninstalling a satellite cleans up its M2M references through
 Odoo's default `ondelete` behaviour, so a MuK AI agent that used to
-borrow `ai_crm.topic_create_lead` simply stops seeing
+expose `ai_crm.topic_create_lead` simply stops seeing
 `ee_action_topic_create_lead` after `ai_crm` is uninstalled — no
 crash, no orphaned tool entry.
 
@@ -144,7 +144,7 @@ log on to your Odoo server and go to the Apps menu. Trigger the debug
 mode and update the list by clicking on the "Update Apps List" link.
 Now install the module by clicking on the install button. Requires
 `muk_ai`, Enterprise `ai`, and a PostgreSQL server with the
-`pgvector` extension if you want RAG borrowing to work.
+`pgvector` extension if you want RAG to work.
 
 ## Upgrade
 

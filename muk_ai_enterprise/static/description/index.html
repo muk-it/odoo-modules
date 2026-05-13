@@ -1,15 +1,15 @@
 <section class="oe_container">
 	<div class="oe_row oe_spaced">
 		<h2 class="oe_slogan">MuK AI Enterprise Bridge</h2>
-		<h3 class="oe_slogan mb-0">Borrow Enterprise AI tools, RAG sources and record context in MuK AI sessions</h3>
+		<h3 class="oe_slogan mb-0">Use Enterprise AI tools, RAG sources and record context in MuK AI sessions</h3>
 		<img src="logo.png" style="width: 150px;" class="mx-auto center-block">
 		<h4 class="oe_slogan mt-0" style="font-size: 23px">MuK IT GmbH - www.mukit.at</h4>
-		<div class="mb-4" style="text-align: center;">
-			<span class="btn btn-sm mb-2" style="font-size:14px; font-weight:500; background-color:#5D8DA8; color:#fff; cursor:default;">
-				<i class="fa fa-check"></i> Enterprise
-			</span>
+        <div class="mb-4" style="text-align: center;">
 			<span class="btn btn-sm mb-2" style="font-size:14px; font-weight:500; background-color:#243742; color:#fff; cursor:default;">
-				<i class="fa fa-plug me-1"></i> Builds on MuK AI
+				<i class="fa fa-times"></i> Community
+			</span>
+			<span class="btn btn-sm mb-2" style="font-size:14px; font-weight:500; background-color:#5D8DA8; color:#fff; cursor:default;">
+				<i class="fa fa-check me-1"></i> Enterprise
 			</span>
 		</div>
 	</div>
@@ -53,7 +53,7 @@
 <section class="oe_container">
 	<div class="oe_row oe_spaced">
 		<div class="text-justify" style="max-width:84%; margin:16px 8%">
-			<h3 class="oe_slogan">Borrow Enterprise Tools (Server Actions)</h3>
+			<h3 class="oe_slogan">Use Enterprise Tools (Server Actions)</h3>
 			<p>
 				Pick one or more <code>ai.topic</code> records on a MuK AI
 				agent's new <em>Enterprise</em> tab. Every server action
@@ -65,7 +65,7 @@
 				<code>ir.actions.server</code> with the appropriate context.
 			</p>
 			<p>
-				Borrowed tools flow through the exact same governance as
+				These tools flow through the exact same governance as
 				native MuK AI tools: per-agent tool filter, read-only scope
 				enforcement, the session-scoped approval gate (one-shot,
 				allow-for-session, or reject), and the JSON-serialised
@@ -80,7 +80,7 @@
 <section class="oe_container">
 	<div class="oe_row oe_spaced">
 		<div class="text-justify" style="max-width:84%; margin:16px 8%">
-			<h3 class="oe_slogan">Borrow Enterprise RAG Sources</h3>
+			<h3 class="oe_slogan">Use Enterprise RAG Sources</h3>
 			<p>
 				Pick one or more <code>ai.agent.source</code> records on the
 				agent's <em>Enterprise</em> tab. On every user message the
@@ -139,7 +139,7 @@
 			<h3 class="oe_slogan">Configuration</h3>
 			<ol>
 				<li>Install <code>muk_ai_enterprise</code> &mdash; pulls in <code>muk_ai</code> and <code>ai</code>.</li>
-				<li>Open <em>MuK AI &gt; Configuration &gt; Agents</em> and edit the agent that should borrow EE assets.</li>
+				<li>Open <em>MuK AI &gt; Configuration &gt; Agents</em> and edit the agent that should use EE assets.</li>
 				<li>On the new <strong>Enterprise</strong> tab, pick the <code>ai.topic</code> records whose server actions you want exposed.</li>
 				<li>Pick the <code>ai.agent.source</code> records whose RAG chunks you want injected.</li>
 				<li>Optionally pin a model with enough context headroom to absorb the appended <code>&lt;rag&gt;</code> and <code>&lt;ee_ctx&gt;</code> blocks.</li>
