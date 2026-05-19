@@ -104,3 +104,4 @@ class TestContent(common.TransactionCase):
             'odoo://test/1', 'image/png', base64_str=original_b64,
         )
         self.assertEqual(block['data'], original_b64)
+

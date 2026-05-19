@@ -1,4 +1,7 @@
 import base64
+import io
+
+from reportlab.pdfgen import canvas
 
 from odoo.exceptions import UserError
 from odoo.tests import common, tagged
@@ -31,6 +34,14 @@ class TestReadResource(common.TransactionCase):
         self.assertEqual(len(result), 1)
         return result[0]
 
+    def _call_raw(self, uri, **kwargs):
+        payload = {'uri': uri, **kwargs}
+        result, _info = self.tool_model._call(
+            'read_resource', payload, self.env,
+        )
+        self.assertIsInstance(result, ToolContent)
+        return result
+
     def _make_attachment(self, name, mimetype, raw_bytes):
         return self.env['ir.attachment'].create({
             'name': name,
@@ -42,6 +53,22 @@ class TestReadResource(common.TransactionCase):
 
     def _attachment_uri(self, attachment):
         return 'odoo://attachment/%d' % attachment.id
+
+    def _build_pdf(self, text='Hello PDF World'):
+        buf = io.BytesIO()
+        c = canvas.Canvas(buf)
+        c.drawString(72, 720, text)
+        c.save()
+        return buf.getvalue()
+
+    def _build_xlsx(self, text='Hello XLSX World'):
+        from openpyxl import Workbook
+        buf = io.BytesIO()
+        wb = Workbook()
+        ws = wb.active
+        ws['A1'] = text
+        wb.save(buf)
+        return buf.getvalue()
 
     # ----------------------------------------------------------
     # Tests — attachment uri
@@ -95,13 +122,90 @@ class TestReadResource(common.TransactionCase):
         self.assertEqual(resource['name'], 'blob.bin')
         self.assertEqual(base64.b64decode(resource['blob']), raw)
 
-    def test_pdf_attachment_returns_resource_block(self):
+    def test_pdf_attachment_unparseable_returns_resource_only(self):
         raw = b'%PDF-1.4\n%not-really-a-pdf'
         att = self._make_attachment('doc.pdf', 'application/pdf', raw)
         block = self._call(self._attachment_uri(att))
         self.assertEqual(block['type'], 'resource')
         self.assertEqual(block['resource']['mimeType'], 'application/pdf')
         self.assertEqual(block['resource']['name'], 'doc.pdf')
+
+    def test_pdf_attachment_auto_returns_text_and_resource(self):
+        raw = self._build_pdf('Hello PDF World')
+        att = self._make_attachment('greet.pdf', 'application/pdf', raw)
+        blocks = self._call_raw(self._attachment_uri(att))
+        self.assertEqual(len(blocks), 2)
+        self.assertEqual(blocks[0]['type'], 'text')
+        self.assertIn('Hello PDF World', blocks[0]['text'])
+        self.assertEqual(blocks[1]['type'], 'resource')
+        self.assertEqual(
+            blocks[1]['resource']['mimeType'], 'application/pdf',
+        )
+        self.assertEqual(blocks[1]['resource']['name'], 'greet.pdf')
+        self.assertEqual(
+            base64.b64decode(blocks[1]['resource']['blob']), raw,
+        )
+
+    def test_pdf_attachment_format_resource_returns_resource_only(self):
+        raw = self._build_pdf('Hello PDF World')
+        att = self._make_attachment('greet.pdf', 'application/pdf', raw)
+        blocks = self._call_raw(
+            self._attachment_uri(att), format='resource',
+        )
+        self.assertEqual(len(blocks), 1)
+        self.assertEqual(blocks[0]['type'], 'resource')
+        self.assertEqual(
+            blocks[0]['resource']['mimeType'], 'application/pdf',
+        )
+
+    def test_pdf_attachment_format_text_returns_text_only(self):
+        raw = self._build_pdf('Hello PDF World')
+        att = self._make_attachment('greet.pdf', 'application/pdf', raw)
+        blocks = self._call_raw(
+            self._attachment_uri(att), format='text',
+        )
+        self.assertEqual(len(blocks), 1)
+        self.assertEqual(blocks[0]['type'], 'text')
+        self.assertIn('Hello PDF World', blocks[0]['text'])
+
+    def test_pdf_attachment_format_text_unparseable_raises(self):
+        raw = b'%PDF-1.4\n%not-really-a-pdf'
+        att = self._make_attachment('doc.pdf', 'application/pdf', raw)
+        with self.assertRaises(UserError):
+            self._call_raw(self._attachment_uri(att), format='text')
+
+    def test_unknown_format_raises(self):
+        att = self._make_attachment(
+            'notes.txt', 'text/plain', b'hello',
+        )
+        with self.assertRaises(UserError):
+            self._call_raw(self._attachment_uri(att), format='bogus')
+
+    def test_format_ignored_for_non_pdf(self):
+        att = self._make_attachment(
+            'notes.txt', 'text/plain', b'hello',
+        )
+        blocks = self._call_raw(
+            self._attachment_uri(att), format='resource',
+        )
+        self.assertEqual(len(blocks), 1)
+        self.assertEqual(blocks[0]['type'], 'text')
+        self.assertEqual(blocks[0]['text'], 'hello')
+
+    def test_xlsx_attachment_auto_returns_text_and_resource(self):
+        raw = self._build_xlsx('Hello XLSX World')
+        att = self._make_attachment(
+            'sheet.xlsx',
+            'application/vnd.openxmlformats-officedocument.'
+            'spreadsheetml.sheet',
+            raw,
+        )
+        blocks = self._call_raw(self._attachment_uri(att))
+        self.assertEqual(len(blocks), 2)
+        self.assertEqual(blocks[0]['type'], 'text')
+        self.assertIn('Hello XLSX World', blocks[0]['text'])
+        self.assertEqual(blocks[1]['type'], 'resource')
+        self.assertEqual(blocks[1]['resource']['name'], 'sheet.xlsx')
 
     def test_text_with_invalid_utf8_falls_back_to_resource(self):
         att = self._make_attachment(
