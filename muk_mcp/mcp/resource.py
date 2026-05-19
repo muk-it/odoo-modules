@@ -44,13 +44,13 @@ class MCPMixin(models.AbstractModel):
         self, uri, mimetype, raw, name, format
     ):
         blocks = []
-        if format != 'resource':
+        if format in ('auto', 'text'):
             index = self.env['ir.attachment']._index(
                 raw, mimetype
             )
             if text := (index or '').strip():
                 blocks.append(make_text_content(text))
-        if format != 'text':
+        if format in ('auto', 'resource'):
             blocks.append(make_content_for_bytes(
                 uri, mimetype, raw_bytes=raw, name=name or None,
             ))
