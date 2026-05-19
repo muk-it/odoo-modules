@@ -57,8 +57,7 @@ class MCPMixin(models.AbstractModel):
         if not blocks:
             raise UserError(_(
                 "Could not extract text from %(n)s (%(m)s).\n"
-                "The file may be scanned, encrypted, empty, "
-                "or not a text-bearing format.\n"
+                "The file may be scanned, encrypted, empty, or not a text-bearing format.\n"
                 "Use format='resource' or format='auto' to get the raw blob.",
                 n=name or uri,
                 m=mimetype or 'unknown',
