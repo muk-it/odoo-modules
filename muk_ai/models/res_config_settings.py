@@ -19,6 +19,11 @@ class ResConfigSettings(models.TransientModel):
         readonly=False,
     )
 
+    module_muk_ai_compat = fields.Boolean(
+        string='MuK AI Compatible Providers',
+        help='Ollama, vLLM, OpenRouter and every OpenAI-compatible LLM.',
+    )
+
     module_muk_ai_schedule = fields.Boolean(
         string='MuK AI Schedule',
         help='Run agents on a schedule, let them pause and resume themselves.',
