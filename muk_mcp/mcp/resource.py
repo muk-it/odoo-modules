@@ -125,13 +125,14 @@ class MCPMixin(models.AbstractModel):
         category='read',
     )
     def _mcp_read_resource(self, uri, format='auto'):
-        formats = self.READ_RESOURCE_FORMATS
-        if format not in formats:
+        if format not in self.READ_RESOURCE_FORMATS:
             raise UserError(_(
                 "Unsupported format %(f)r; expected one of: %(opts)s.",
-                f=format, opts=', '.join(formats),
+                f=format, opts=', '.join(self.READ_RESOURCE_FORMATS),
             ))
-        mimetype, raw, name = self._resolve_resource_uri(uri)
+        mimetype, raw, name = self._resolve_resource_uri(
+            uri
+        )
         normalized = normalize_mimetype(mimetype)
         if self._is_inline_block_mimetype(normalized):
             return ToolContent([make_content_for_bytes(
