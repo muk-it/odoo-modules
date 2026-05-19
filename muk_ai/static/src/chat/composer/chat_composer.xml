@@ -53,7 +53,6 @@
                     class="form-control border-0 shadow-none"
                     rows="1"
                     t-ref="input"
-                    t-att-value="props.value"
                     t-on-input="(ev) => this.onInputChange(ev)"
                     t-on-keydown="(ev) => this.onKeydown(ev)"
                     t-on-paste="(ev) => this.onPaste(ev)"

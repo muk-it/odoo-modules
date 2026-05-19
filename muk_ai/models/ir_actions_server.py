@@ -15,7 +15,7 @@ class IrActionsServer(models.Model):
     )
 
     # ----------------------------------------------------------
-    # Functions
+    # Helper
     # ----------------------------------------------------------
 
     def _run_action_ai_session(self, eval_context=None):

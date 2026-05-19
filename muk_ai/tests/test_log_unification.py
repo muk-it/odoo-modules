@@ -114,7 +114,7 @@ class TestLogUnification(AITestCommon):
         self.assertIn('tool_call', kinds)
         self.assertIn('tool_result', kinds)
 
-    def test_clear_drops_events_audit_survives(self):
+    def test_clear_preserves_events_and_appends_marker(self):
         session = self.env['muk_ai.session'].create({'name': 'clear-events'})
         session._append_event({'kind': 'user_message', 'content': 'hi', 'attachments': []})
         with self._patch_execute({'list_modules': '{"ok": true}'}):
@@ -131,16 +131,24 @@ class TestLogUnification(AITestCommon):
         before_kinds = {ev.kind for ev in session.event_ids}
         self.assertIn('tool_call', before_kinds)
         self.assertIn('user_message', before_kinds)
+        events_before = session.event_ids.sorted(lambda e: (e.sequence, e.id))
         audit_before = self.env['muk_mcp.log'].sudo().search([
             ('session_id', '=', session.id),
         ])
         self.assertTrue(audit_before)
         audit_ids = audit_before.ids
         session.clear()
-        remaining = session.event_ids
-        self.assertEqual(len(remaining), 1)
-        self.assertEqual(remaining.kind, 'command')
-        self.assertEqual((remaining.payload or {}).get('name'), '/clear')
+        remaining = session.event_ids.sorted(lambda e: (e.sequence, e.id))
+        self.assertEqual(
+            len(remaining), len(events_before) + 1,
+            "/clear must preserve prior event rows and append exactly one /clear marker",
+        )
+        for prior in events_before:
+            self.assertIn(prior.id, remaining.ids)
+        marker = remaining[-1]
+        self.assertEqual(marker.kind, 'command')
+        self.assertEqual((marker.payload or {}).get('name'), '/clear')
+        self.assertTrue(session.cleared_at)
         audit_after = self.env['muk_mcp.log'].sudo().search([
             ('id', 'in', audit_ids),
         ])
@@ -239,7 +247,17 @@ class TestLogUnification(AITestCommon):
         tool_calls = [
             entry for entry in unified if entry.get('kind') == 'tool_call'
         ]
-        self.assertEqual(len(tool_calls), 1)
+        self.assertEqual(
+            len(tool_calls), 2,
+            "Both pre-clear and post-clear tool_call events stay visible; /clear only resets LLM context",
+        )
+        command_indices = [i for i, k in enumerate(kinds) if k == 'command']
+        self.assertEqual(len(command_indices), 1)
+        boundary = command_indices[0]
+        pre_kinds = kinds[:boundary]
+        post_kinds = kinds[boundary + 1:]
+        self.assertIn('tool_call', pre_kinds)
+        self.assertIn('tool_call', post_kinds)
 
     def test_chat_audit_respects_global_mcp_logging(self):
         original_get = odoo_config.get
@@ -324,7 +342,7 @@ class TestLogUnification(AITestCommon):
         self.assertEqual(len(result['events']), 30)
         self.assertFalse(result['has_more_older'])
 
-    def test_clear_session_unlinks_old_events(self):
+    def test_clear_session_preserves_event_history(self):
         session = self.env['muk_ai.session'].create({'name': 'clear-trunc'})
         for index in range(120):
             session._append_event({
@@ -332,7 +350,9 @@ class TestLogUnification(AITestCommon):
             })
         self.assertEqual(len(session.event_ids), 120)
         session.clear()
-        self.assertEqual(len(session.event_ids), 1)
-        remaining = session.event_ids
-        self.assertEqual(remaining.kind, 'command')
-        self.assertEqual((remaining.payload or {}).get('name'), '/clear')
+        self.assertEqual(len(session.event_ids), 121)
+        ordered = session.event_ids.sorted(lambda e: (e.sequence, e.id))
+        self.assertEqual(ordered[0].kind, 'text')
+        self.assertEqual((ordered[0].payload or {}).get('content'), 'msg-0')
+        self.assertEqual(ordered[-1].kind, 'command')
+        self.assertEqual((ordered[-1].payload or {}).get('name'), '/clear')

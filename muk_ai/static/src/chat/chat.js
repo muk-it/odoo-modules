@@ -2,6 +2,7 @@ import { Component, markup, onMounted, onPatched, onWillStart, onWillUnmount, us
 
 import { _t } from '@web/core/l10n/translation';
 import { registry } from '@web/core/registry';
+import { router } from '@web/core/browser/router';
 import { user } from '@web/core/user';
 import { useService } from '@web/core/utils/hooks';
 import { useDropzone } from '@web/core/dropzone/dropzone_hook';
@@ -89,6 +90,10 @@ export class AIChat extends Component {
         this.session = useAiSession({
             surface: 'fullscreen',
             onRefresh: () => this._loadSessions(),
+            onForked: async (newId) => {
+                await this._loadSessions();
+                await this._selectSession(newId);
+            },
         });
         this.fileViewer = useFileViewer();
         this.state = useState({
@@ -334,6 +339,7 @@ export class AIChat extends Component {
         if (typeof window !== 'undefined' && window.innerWidth < 768) {
             this.state.sidebarHidden = true;
         }
+        router.pushState({ session_id: sessionId || undefined });
     }
     async onNewSession() {
         const name = _t('Chat %s', new Date().toLocaleString());

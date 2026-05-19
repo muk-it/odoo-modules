@@ -48,7 +48,12 @@ export class ChatWindow extends Component {
     setup() {
         this.action = useService('action');
         this.chatWindow = useService('muk_ai.chat_window');
-        this.session = useAiSession({ surface: 'window' });
+        this.session = useAiSession({
+            surface: 'window',
+            onForked: (newId) => {
+                this.chatWindow.open(newId);
+            },
+        });
         this.fileViewer = useFileViewer();
         this.rootRef = useRef('root');
         const { scrollRef, scrollToBottom, state: scrollState } = useChatScrollAnchor('scroll');

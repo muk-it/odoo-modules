@@ -55,6 +55,22 @@ export class ChatComposer extends Component {
         );
         useEffect(
             () => {
+                const el = this.inputRef.el;
+                if (!el) return;
+                const next = this.props.value || '';
+                if (el.value !== next) {
+                    el.value = next;
+                }
+                const cs = getComputedStyle(el);
+                const lh = parseFloat(cs.lineHeight) || 22;
+                const pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+                el.style.height = Math.min(el.scrollHeight, lh * 4 + pad) + 'px';
+                el.style.overflowY = el.scrollHeight > lh * 4 + pad ? 'auto' : 'hidden';
+                el.style.height = 'auto';
+            },
+        );
+        useEffect(
+            () => {
                 this.localState.slashActive = 0;
             },
             () => [this.slashCommands.length],
@@ -125,6 +141,10 @@ export class ChatComposer extends Component {
         this.props.onInput(event.target.value);
     }
     onSendOrStop() {
+        if (this.props.canSend && this.props.isQueueing) {
+            this.props.onSend();
+            return;
+        }
         if (this.props.canStop && this.props.onStop) {
             this.props.onStop();
             return;
@@ -138,10 +158,6 @@ export class ChatComposer extends Component {
             event.preventDefault();
             return;
         }
-        // Suppress native label-for-id forwarding and open the picker
-        // explicitly within the user-gesture chain. Chrome refuses to
-        // open the picker for a display:none input, so the paired
-        // .mk_file_input CSS keeps it in layout but visually hidden.
         const input = this.fileInputRef.el;
         if (!input) {
             return;

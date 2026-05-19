@@ -171,8 +171,9 @@ from the `muk_ai.model` record for the agent's active model.
 Start a message with `/` to open a pop-up of available commands:
 
 - `/help` — inline cheat sheet
-- `/clear` — confirm and wipe the current conversation and tool log,
-  keeping the session record and agent
+- `/clear` — reset the LLM's context for this session. The visible chat
+  history stays on screen above a divider; the model loses memory of
+  prior turns. Session record and agent are untouched.
 - `/compact` — ask the provider for a ≤500-token summary and replace
   the conversation with it, freeing context without losing continuity
 - `/unpin` — clear the view-context pin

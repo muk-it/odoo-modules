@@ -169,7 +169,7 @@ export function inputPlaceholder(state, defaultText) {
         return _t('Stop to interrupt…');
     }
     if (state.status === 'compacting') {
-        return _t('Compacting…');
+        return _t('Compacting in background — message will queue…');
     }
     return defaultText;
 }

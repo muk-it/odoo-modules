@@ -453,16 +453,21 @@ class TestAiSession(AITestCommon):
             session.start('hello')
         self.assertEqual(session.state, 'done')
         self.assertTrue(session.conversation)
-        self.assertTrue(session.fetch_events(limit=500)['events'])
+        events_before = session.fetch_events(limit=500)['events']
+        self.assertTrue(events_before)
         snapshot = session.clear()
         self.assertEqual(snapshot['state'], 'new')
         self.assertEqual(snapshot['iteration_count'], 0)
         self.assertEqual(snapshot['last_input_tokens'], 0)
         self.assertFalse(session.conversation)
+        self.assertTrue(session.cleared_at)
         unified = session.fetch_events(limit=500)['events']
-        self.assertEqual(len(unified), 1)
-        self.assertEqual(unified[0].get('kind'), 'command')
-        self.assertEqual(unified[0].get('name'), '/clear')
+        self.assertEqual(
+            len(unified), len(events_before) + 1,
+            "clear() must preserve prior events and append exactly one /clear marker",
+        )
+        self.assertEqual(unified[-1].get('kind'), 'command')
+        self.assertEqual(unified[-1].get('name'), '/clear')
 
     def test_clear_refuses_running(self):
         session = self.env['muk_ai.session'].create({'name': 'running'})
@@ -507,8 +512,10 @@ class TestAiSession(AITestCommon):
         self.assertEqual(snapshot['last_input_tokens'], 0)
         unified = session.fetch_events(limit=500)['events']
         last_entry = unified[-1]
-        self.assertEqual(last_entry.get('kind'), 'command')
+        self.assertEqual(last_entry.get('kind'), 'compact_progress')
         self.assertEqual(last_entry.get('name'), '/compact')
+        self.assertEqual(last_entry.get('state'), 'done')
+        self.assertFalse(last_entry.get('auto'))
         self.assertIn('summary', last_entry)
 
     def test_compact_refuses_empty(self):
@@ -587,7 +594,7 @@ class TestAiSession(AITestCommon):
         self.assertGreaterEqual(len(events_after), len(events_before))
         kinds = [event.get('kind') for event in events_after]
         names = [event.get('name') for event in events_after]
-        self.assertIn('command', kinds)
+        self.assertIn('compact_progress', kinds)
         self.assertIn('/compact', names)
 
     def test_compact_includes_available_tools_block(self):
@@ -839,6 +846,162 @@ class TestAiSession(AITestCommon):
         session = self.env['muk_ai.session'].create({'name': 'empty'})
         with self.assertRaises(UserError):
             session.regenerate_last_turn()
+
+    # ----------------------------------------------------------
+    # Tests: undo / fork
+    # ----------------------------------------------------------
+
+    def test_undo_to_event_truncates_log_and_conversation(self):
+        session = self.env['muk_ai.session'].create({'name': 'rewindable'})
+        with self._patch_provider([self._text_payload('answer 1')]):
+            session.start('question 1')
+        with self._patch_provider([self._text_payload('answer 2')]):
+            session.send_message('question 2')
+        with self._patch_provider([self._text_payload('answer 3')]):
+            session.send_message('question 3')
+        events = session.event_ids.sorted('sequence')
+        second_user = next(
+            event for event in events
+            if event.kind == 'user_message'
+            and 'question 2' in (event.payload or {}).get('content', '')
+        )
+        before_pairs = sum(
+            1 for entry in (session.conversation or [])
+            if isinstance(entry, dict) and entry.get('role') == 'user'
+        )
+        self.assertEqual(before_pairs, 3)
+        snapshot = session.undo_to_event(second_user.id)
+        self.assertEqual(snapshot['state'], 'done')
+        kept_users = [
+            entry for entry in (session.conversation or [])
+            if isinstance(entry, dict) and entry.get('role') == 'user'
+        ]
+        self.assertEqual(len(kept_users), 1)
+        kinds = [event.kind for event in session.event_ids.sorted('sequence')]
+        self.assertNotIn('tool_call', kinds)
+        self.assertEqual(kinds.count('user_message'), 1)
+        self.assertEqual(kinds.count('text'), 1)
+
+    def test_undo_to_event_refuses_while_running(self):
+        session = self.env['muk_ai.session'].create({'name': 'running'})
+        with self._patch_provider([self._text_payload('answer')]):
+            session.start('question')
+        target = session.event_ids.sorted('sequence')[0]
+        session.write({'state': 'running'})
+        with self.assertRaises(UserError):
+            session.undo_to_event(target.id)
+
+    def test_undo_to_event_on_assistant_keeps_preceding_user(self):
+        session = self.env['muk_ai.session'].create({'name': 'rewind-asst'})
+        with self._patch_provider([self._text_payload('answer 1')]):
+            session.start('question 1')
+        with self._patch_provider([self._text_payload('answer 2')]):
+            session.send_message('question 2')
+        events = session.event_ids.sorted('sequence')
+        last_text = next(
+            event for event in reversed(events)
+            if event.kind == 'text'
+        )
+        session.undo_to_event(last_text.id)
+        users = [
+            entry for entry in (session.conversation or [])
+            if isinstance(entry, dict) and entry.get('role') == 'user'
+        ]
+        self.assertEqual(len(users), 2)
+        self.assertEqual(
+            session.event_ids.sorted('sequence')[-1].kind, 'user_message',
+        )
+
+    def test_fork_at_event_creates_independent_session(self):
+        session = self.env['muk_ai.session'].create({'name': 'forkable'})
+        with self._patch_provider([self._text_payload('answer 1')]):
+            session.start('question 1')
+        with self._patch_provider([self._text_payload('answer 2')]):
+            session.send_message('question 2')
+        events = session.event_ids.sorted('sequence')
+        second_user = next(
+            event for event in events
+            if event.kind == 'user_message'
+            and 'question 2' in (event.payload or {}).get('content', '')
+        )
+        fork_id = session.fork_at_event(second_user.id)
+        fork = self.env['muk_ai.session'].browse(fork_id)
+        self.assertTrue(fork.exists())
+        self.assertNotEqual(fork.id, session.id)
+        self.assertIn('(fork)', fork.name)
+        fork_users = [
+            entry for entry in (fork.conversation or [])
+            if isinstance(entry, dict) and entry.get('role') == 'user'
+        ]
+        self.assertEqual(
+            len(fork_users), 2,
+            "fork keeps the clicked user message in the new session",
+        )
+        fork_kinds = [event.kind for event in fork.event_ids.sorted('sequence')]
+        self.assertEqual(fork_kinds[-1], 'user_message')
+        original_users = [
+            entry for entry in (session.conversation or [])
+            if isinstance(entry, dict) and entry.get('role') == 'user'
+        ]
+        self.assertEqual(len(original_users), 2)
+        self.assertEqual(fork.state, 'done')
+
+    def test_fork_at_event_preserves_agent(self):
+        agent = self.env['muk_ai.agent']._get_default()
+        session = self.env['muk_ai.session'].create({
+            'name': 'fork-agent', 'agent_id': agent.id,
+        })
+        with self._patch_provider([self._text_payload('answer 1')]):
+            session.start('question 1')
+        with self._patch_provider([self._text_payload('answer 2')]):
+            session.send_message('question 2')
+        target = next(
+            event for event in session.event_ids.sorted('sequence')
+            if event.kind == 'user_message'
+            and 'question 2' in (event.payload or {}).get('content', '')
+        )
+        fork_id = session.fork_at_event(target.id)
+        fork = self.env['muk_ai.session'].browse(fork_id)
+        self.assertEqual(fork.agent_id, agent)
+
+    def test_fork_refuses_while_running(self):
+        session = self.env['muk_ai.session'].create({'name': 'running-fork'})
+        with self._patch_provider([self._text_payload('answer')]):
+            session.start('question')
+        target = session.event_ids.sorted('sequence')[0]
+        session.write({'state': 'running'})
+        with self.assertRaises(UserError):
+            session.fork_at_event(target.id)
+
+    def test_compact_tail_drop_fallback_on_provider_error(self):
+        session = self.env['muk_ai.session'].create({'name': 'tail-drop'})
+        self._seed_large_conversation(session, pairs=8, chunk_chars=8000)
+        pre_len = len(session.conversation)
+
+        def boom(*args, **kwargs):
+            raise RuntimeError("context_length_exceeded: too big")
+
+        with patch.object(
+            type(self.provider),
+            '_request_responses',
+            autospec=True,
+            side_effect=boom,
+        ):
+            session.compact()
+        self.assertEqual(
+            session.state, 'done',
+            "tail-drop fallback should land in 'done', not 'error'",
+        )
+        self.assertLess(
+            len(session.conversation), pre_len,
+            "fallback must drop oldest entries",
+        )
+        events = session.fetch_events(limit=500)['events']
+        last = events[-1]
+        self.assertEqual(last.get('kind'), 'compact_progress')
+        self.assertEqual(last.get('state'), 'done')
+        self.assertEqual(last.get('fallback'), 'tail_drop')
+        self.assertIn('dropped', (last.get('summary') or '').lower())
 
     # ----------------------------------------------------------
     # Tests: attachments

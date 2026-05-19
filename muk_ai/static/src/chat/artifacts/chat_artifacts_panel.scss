@@ -40,7 +40,6 @@
         &:hover { color: var(--mk-text); }
         &.active {
             color: var(--mk-primary);
-            background: var(--mk-bg-soft);
             border-bottom-color: var(--mk-primary);
         }
     }

@@ -537,6 +537,9 @@ class AISession(models.Model):
             result.append(self._tool_entry_to_schema(ASK_USER_TOOL))
         return result
 
+    def _build_request_inputs(self):
+        return with_ui_ctx(self.conversation, self.view_context)
+
     # ----------------------------------------------------------
     # Helper Bus
     # ----------------------------------------------------------
@@ -687,6 +690,7 @@ class AISession(models.Model):
             if 'at' in entry
             else {**entry, 'at': fields.Datetime.now().isoformat()}
         )
+        event = self.env['muk_ai.session.event'].sudo()
         for _attempt in range(5):
             self.env.cr.execute(SQL(
                 "SELECT COALESCE(MAX(sequence), -1) + 1 "
@@ -696,17 +700,20 @@ class AISession(models.Model):
             sequence = self.env.cr.fetchone()[0]
             try:
                 with self.env.cr.savepoint():
-                    self.env['muk_ai.session.event'].sudo().create({
+                    event = self.env['muk_ai.session.event'].sudo().create({
                         'session_id': self.id,
                         'sequence': sequence,
                         'kind': stamped.get('kind') or '',
-                        'payload': stamped,
+                        'payload': {**stamped, 'event_id': None},
                         'at': fields.Datetime.now(),
                     })
+                event.payload = {**stamped, 'event_id': event.id}
+                stamped = {**stamped, 'event_id': event.id}
                 break
             except psycopg2.errors.UniqueViolation:
                 continue
         self._publish_event('log', stamped)
+        return event
 
     def _extend_conversation(self, items):
         self.conversation = [*(self.conversation or []), *(items or [])]
@@ -1136,9 +1143,6 @@ class AISession(models.Model):
                         'delta': flushed,
                     })
         self._commit_safe()
-
-    def _build_request_inputs(self):
-        return with_ui_ctx(self.conversation, self.view_context)
 
     def _stream_provider_round(self, provider, tool_schema, model, agent):
         buffer_state = {'text': '', 'last_text_flush': time.monotonic()}
@@ -1703,18 +1707,33 @@ class AISession(models.Model):
             entry for entry in prefix
             if not (isinstance(entry, dict) and entry.get('role') == 'system')
         ]
+        if not prefix:
+            non_system = [
+                entry for entry in (self.conversation or [])
+                if not (isinstance(entry, dict) and entry.get('role') == 'system')
+            ]
+            if len(non_system) >= 2:
+                prefix, tail = non_system[:-1], non_system[-1:]
+            elif non_system:
+                prefix, tail = non_system, []
         return prefix, tail
 
     def _find_prior_compact_summary(self):
         if not self.id:
             return None
-        prior_event = self.env['muk_ai.session.event'].sudo().search(
-            [('session_id', '=', self.id), ('kind', '=', 'command')],
-            order='sequence desc', limit=1,
+        prior = self.env['muk_ai.session.event'].sudo().search(
+            [
+                ('session_id', '=', self.id),
+                ('kind', 'in', ('compact_progress', 'command')),
+            ],
+            order='sequence desc', limit=5,
         )
-        payload = (prior_event.payload or {}) if prior_event else {}
-        if payload.get('name') == '/compact':
-            return payload.get('summary') or None
+        for event in prior:
+            payload = event.payload or {}
+            if event.kind == 'compact_progress' and payload.get('state') == 'done':
+                return payload.get('summary') or None
+            if event.kind == 'command' and payload.get('name') == '/compact':
+                return payload.get('summary') or None
         return None
 
     def _pre_compact_hook(self):
@@ -1753,6 +1772,7 @@ class AISession(models.Model):
         if not (self.conversation or []):
             return False
         resume_state = self.state if self.state == 'running' else None
+        self._begin_compact_progress(auto=True)
         self.write({'state': 'compacting'})
         self._publish_event('state', {'state': 'compacting'})
         self._do_compact()
@@ -1761,39 +1781,137 @@ class AISession(models.Model):
             self._publish_event('state', {'state': resume_state})
         return True
 
+    def _begin_compact_progress(self, auto=False):
+        event = self._append_event({
+            'kind': 'compact_progress',
+            'name': '/compact',
+            'auto': bool(auto),
+            'state': 'streaming',
+            'message_count': sum(
+                1 for item in (self.conversation or [])
+                if isinstance(item, dict) and item.get('role') in ('user', 'assistant')
+            ),
+            'tokens_estimate': self.last_input_tokens or 0,
+            'started_at': fields.Datetime.now().isoformat(),
+            'streamed_text': '',
+        })
+        return event
+
+    def _find_active_compact_event(self):
+        return self.env['muk_ai.session.event'].sudo().search([
+            ('session_id', '=', self.id),
+            ('kind', '=', 'compact_progress'),
+        ], order='sequence desc', limit=1)
+
+    def _patch_compact_progress(self, event, patch):
+        if not event:
+            return
+        payload = dict(event.payload or {})
+        payload.update(patch)
+        event.payload = payload
+        self._publish_event('compact_update', {
+            'event_id': event.id,
+            'patch': patch,
+        })
+
+    def _tail_drop_fallback(self, progress_event, prefix, tail, error):
+        dropped = sum(
+            1 for item in prefix
+            if isinstance(item, dict) and item.get('role') in ('user', 'assistant')
+        )
+        original_messages = sum(
+            1 for item in (self.conversation or [])
+            if isinstance(item, dict) and item.get('role') in ('user', 'assistant')
+        )
+        original_tokens = self.last_input_tokens
+        new_conversation = [*self._build_initial_inputs(), *tail]
+        self.write({
+            'conversation': new_conversation,
+            'pending_ask': False,
+            'error_message': False,
+            'last_input_tokens': 0,
+            'state': 'done',
+            'cleared_at': fields.Datetime.now(),
+        })
+        notice = _(
+            "Compaction failed (%(error)s) — dropped %(dropped)s oldest "
+            "message(s) without summary as a fallback.",
+            error=error or 'unknown error',
+            dropped=dropped,
+        )
+        self._patch_compact_progress(progress_event, {
+            'state': 'done',
+            'summary': notice,
+            'streamed_text': notice,
+            'original_messages': original_messages,
+            'original_tokens': original_tokens,
+            'fallback': 'tail_drop',
+        })
+        self._publish_event('state', {'state': 'done'})
+        if self.pending_ids:
+            self._drain_pending_message()
+            self._run_to_completion()
+
     def _do_compact(self):
         if not self._pre_compact_hook():
             self.write({'state': 'done'})
             self._publish_event('state', {'state': 'done'})
             return
-        self._publish_event('pre_compact', {
-            'message_count': len(self.conversation or []),
-            'last_input_tokens': self.last_input_tokens,
-        })
+        progress_event = self._find_active_compact_event()
+        if not progress_event or (progress_event.payload or {}).get('state') != 'streaming':
+            progress_event = self._begin_compact_progress(auto=False)
         prefix, tail = self._split_conversation_for_compact()
         if not prefix:
+            self._patch_compact_progress(progress_event, {
+                'state': 'cancelled',
+                'message': _("Nothing to compact — conversation too short."),
+            })
             self.write({'state': 'done'})
             self._publish_event('state', {'state': 'done'})
             return
         inputs = self._build_compact_inputs(prefix)
+        stream_state = {'text': '', 'last_flush': time.monotonic()}
+
+        def on_delta(kind, data):
+            if kind != 'text':
+                return
+            delta = (data or {}).get('delta') or ''
+            if not delta:
+                return
+            stream_state['text'] += delta
+            self._publish_event('compact_delta', {
+                'event_id': progress_event.id,
+                'delta': delta,
+            })
+            now = time.monotonic()
+            if now - stream_state['last_flush'] >= 0.5:
+                stream_state['last_flush'] = now
+                payload = dict(progress_event.payload or {})
+                payload['streamed_text'] = stream_state['text']
+                progress_event.payload = payload
+                self._commit_safe()
         try:
             payload = self._effective_provider()._request_responses(
                 inputs=inputs,
                 tools_schema=None,
+                on_delta=on_delta,
                 model=self._effective_model(),
             )
         except Exception as error:
-            self._transition_state('error', error=str(error))
+            self._tail_drop_fallback(progress_event, prefix, tail, str(error))
+            return
+        if (progress_event.payload or {}).get('state') == 'cancelled':
+            self.write({'state': 'done'})
+            self._publish_event('state', {'state': 'done'})
             return
         self._accrue_usage(payload.get('usage') or {})
-        summary = (payload.get('text') or '').strip()
+        summary = (payload.get('text') or stream_state['text'] or '').strip()
         if not summary:
-            self.write({'state': 'done'})
-            self._append_event({
-                'kind': 'command',
-                'name': '/compact',
+            self._patch_compact_progress(progress_event, {
+                'state': 'cancelled',
                 'message': _("Compaction skipped: provider returned no summary."),
             })
+            self.write({'state': 'done'})
             self._publish_event('state', {'state': 'done'})
             return
         original_messages = sum(
@@ -1821,10 +1939,10 @@ class AISession(models.Model):
             'state': 'done',
             'cleared_at': fields.Datetime.now(),
         })
-        self._append_event({
-            'kind': 'command',
-            'name': '/compact',
+        self._patch_compact_progress(progress_event, {
+            'state': 'done',
             'summary': summary,
+            'streamed_text': summary,
             'original_messages': original_messages,
             'original_tokens': original_tokens,
         })
@@ -1832,6 +1950,64 @@ class AISession(models.Model):
         if self.pending_ids:
             self._drain_pending_message()
             self._run_to_completion()
+
+    # ----------------------------------------------------------
+    # Helper History
+    # ----------------------------------------------------------
+
+    def _resolve_event(self, event_id):
+        self.ensure_one()
+        event = self.env['muk_ai.session.event'].sudo().search([
+            ('session_id', '=', self.id),
+            ('id', '=', int(event_id)),
+        ], limit=1)
+        if not event:
+            raise UserError(_("Event not found in this session."))
+        return event
+
+    def _conversation_cut_index(self, event):
+        earlier_user_msgs = self.env['muk_ai.session.event'].sudo().search_count([
+            ('session_id', '=', self.id),
+            ('sequence', '<', event.sequence),
+            ('kind', '=', 'user_message'),
+        ])
+        conv = list(self.conversation or [])
+        user_seen = 0
+        if event.kind == 'user_message':
+            for i, item in enumerate(conv):
+                if isinstance(item, dict) and item.get('role') == 'user':
+                    if user_seen == earlier_user_msgs:
+                        return i
+                    user_seen += 1
+            return len(conv)
+        for i, item in enumerate(conv):
+            if isinstance(item, dict) and item.get('role') == 'user':
+                user_seen += 1
+                if user_seen == earlier_user_msgs:
+                    return i + 1
+        return len(conv)
+
+    def _conversation_cut_index_for_fork(self, event):
+        earlier_user_msgs = self.env['muk_ai.session.event'].sudo().search_count([
+            ('session_id', '=', self.id),
+            ('sequence', '<', event.sequence),
+            ('kind', '=', 'user_message'),
+        ])
+        conv = list(self.conversation or [])
+        user_seen = 0
+        if event.kind == 'user_message':
+            for i, item in enumerate(conv):
+                if isinstance(item, dict) and item.get('role') == 'user':
+                    if user_seen == earlier_user_msgs:
+                        return i + 1
+                    user_seen += 1
+            return len(conv)
+        for i, item in enumerate(conv):
+            if isinstance(item, dict) and item.get('role') == 'user':
+                user_seen += 1
+                if user_seen > earlier_user_msgs:
+                    return i
+        return len(conv)
 
     # ----------------------------------------------------------
     # Functions
@@ -1853,6 +2029,7 @@ class AISession(models.Model):
             for event in reversed(rows):
                 payload = dict(event.payload or {})
                 payload.setdefault('kind', event.kind)
+                payload['event_id'] = event.id
                 if not payload.get('at') and event.at:
                     payload['at'] = event.at.isoformat()
                 events.append(payload)
@@ -2011,7 +2188,6 @@ class AISession(models.Model):
         if self.pending_ids:
             self.pending_ids.unlink()
             self.invalidate_recordset(['pending_ids'])
-        self.event_ids.sudo().unlink()
         self.write({
             'conversation': [],
             'pending_ask': False,
@@ -2026,7 +2202,7 @@ class AISession(models.Model):
         self._append_event({
             'kind': 'command',
             'name': '/clear',
-            'message': _("Conversation cleared."),
+            'message': _("Context cleared."),
         })
         self._publish_event('state', {'state': 'new'})
         self._publish_event('queue', {'pending': []})
@@ -2045,10 +2221,86 @@ class AISession(models.Model):
             raise UserError(_(
                 "Nothing to compact yet — the conversation is empty."
             ))
+        self._begin_compact_progress(auto=False)
         self.write({'state': 'compacting', 'error_message': False})
         self._publish_event('state', {'state': 'compacting'})
         self._trigger_worker()
         return self.get_snapshot()
+
+    def stop_compact(self):
+        if self.state != 'compacting':
+            return self.get_snapshot()
+        event = self._find_active_compact_event()
+        if event and (event.payload or {}).get('state') == 'streaming':
+            self._patch_compact_progress(event, {
+                'state': 'cancelled',
+                'message': _("Compaction cancelled by user."),
+            })
+        self.write({'state': 'done', 'error_message': False})
+        self._publish_event('state', {'state': 'done'})
+        return self.get_snapshot()
+
+    def undo_to_event(self, event_id):
+        if self.state in ('running', 'compacting'):
+            raise UserError(_(
+                "Cannot rewind while the session is running."
+            ))
+        if self.state == 'waiting':
+            raise UserError(_(
+                "Cannot rewind while the session is waiting for input."
+            ))
+        target = self._resolve_event(event_id)
+        cut_index = self._conversation_cut_index(target)
+        stale = self.env['muk_ai.session.event'].sudo().search([
+            ('session_id', '=', self.id),
+            ('sequence', '>=', target.sequence),
+        ])
+        if stale:
+            stale.unlink()
+        new_conv = list(self.conversation or [])[:cut_index]
+        self.write({
+            'conversation': new_conv,
+            'pending_ask': False,
+            'last_text': False,
+            'error_message': False,
+            'state': 'done' if new_conv else 'new',
+        })
+        self._publish_event('state', {'state': self.state})
+        return self.get_snapshot()
+
+    def fork_at_event(self, event_id):
+        if self.state in ('running', 'compacting'):
+            raise UserError(_(
+                "Cannot fork while the session is running."
+            ))
+        target = self._resolve_event(event_id)
+        cut_index = self._conversation_cut_index_for_fork(target)
+        new_conv = list(self.conversation or [])[:cut_index]
+        fork = self.copy({
+            'name': _("%s (fork)", self.name),
+            'conversation': new_conv,
+            'state': 'done' if new_conv else 'new',
+            'pending_ask': False,
+            'last_text': False,
+            'error_message': False,
+            'iteration_count': 0,
+            'attachment_ids': [(5, 0, 0)],
+            'event_ids': [(5, 0, 0)],
+            'pending_ids': [(5, 0, 0)],
+        })
+        source_events = self.env['muk_ai.session.event'].sudo().search([
+            ('session_id', '=', self.id),
+            ('sequence', '<=', target.sequence),
+        ], order='sequence, id')
+        for src in source_events:
+            self.env['muk_ai.session.event'].sudo().create({
+                'session_id': fork.id,
+                'sequence': src.sequence,
+                'kind': src.kind,
+                'payload': src.payload,
+                'at': src.at,
+            })
+        return fork.id
 
     def upload_attachments(self, files):
         attachments = self.env['ir.attachment'].sudo()

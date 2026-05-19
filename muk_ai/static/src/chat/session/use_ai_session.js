@@ -50,8 +50,8 @@ export const SLASH_COMMANDS = [
     },
 ];
 
-const COMPACT_WARN_RATIO = 0.85;
-const COMPACT_AUTO_RATIO = 0.95;
+const COMPACT_WARN_RATIO = 0.65;
+const COMPACT_AUTO_RATIO = 0.80;
 const STREAM_IDLE_MS = 3000;
 
 export function useAiSession(options = {}) {
@@ -258,6 +258,33 @@ export function useAiSession(options = {}) {
             state.viewContext = (event.payload || {}).view_context || null;
         } else if (event.type === 'queue') {
             state.pendingMessages = (event.payload || {}).pending || [];
+        } else if (event.type === 'compact_delta') {
+            const eventId = (event.payload || {}).event_id;
+            const delta = (event.payload || {}).delta || '';
+            if (eventId == null || !delta) {
+                return;
+            }
+            state.events = state.events.map((entry) => {
+                if (entry && entry.event_id === eventId && entry.kind === 'compact_progress') {
+                    return { ...entry, streamed_text: (entry.streamed_text || '') + delta };
+                }
+                return entry;
+            });
+            bumpStreamActivity();
+            requestScroll();
+        } else if (event.type === 'compact_update') {
+            const eventId = (event.payload || {}).event_id;
+            const patch = (event.payload || {}).patch || {};
+            if (eventId == null) {
+                return;
+            }
+            state.events = state.events.map((entry) => {
+                if (entry && entry.event_id === eventId && entry.kind === 'compact_progress') {
+                    return { ...entry, ...patch };
+                }
+                return entry;
+            });
+            requestScroll();
         }
     }
     async function handleUiAction(payload) {
@@ -479,15 +506,12 @@ export function useAiSession(options = {}) {
     function canSend() {
         const hasContent = state.input.trim().length > 0
             || state.pendingAttachments.length > 0;
-        const idle = state.status !== 'running'
-            && state.status !== 'compacting';
-        return !!state.sessionId && !state.loading && hasContent && idle;
+        return !!state.sessionId && !state.loading && hasContent;
     }
     function canAttach() {
         return !!state.sessionId
             && !state.loading
-            && state.status !== 'running'
-            && state.status !== 'compacting';
+            && state.status !== 'running';
     }
     function canStop() {
         return state.status === 'running';
@@ -496,10 +520,12 @@ export function useAiSession(options = {}) {
         return false;
     }
     function isQueueing() {
-        return state.status === 'running' || (
-            state.status === 'waiting'
-            && (state.pendingAsk || {}).kind === 'approval'
-        );
+        return state.status === 'running'
+            || state.status === 'compacting'
+            || (
+                state.status === 'waiting'
+                && (state.pendingAsk || {}).kind === 'approval'
+            );
     }
     function onInputChange(value) {
         state.input = value;
@@ -877,10 +903,11 @@ export function useAiSession(options = {}) {
         }
         const confirmed = await new Promise((resolve) => {
             dialog.add(ConfirmationDialog, {
-                title: _t("Clear conversation"),
+                title: _t("Clear context"),
                 body: _t(
-                    "Wipe the current conversation and tool log? " +
-                    "The session record and agent remain.",
+                    "Reset the LLM's context for this session? " +
+                    "The visible chat history stays on screen above a divider; " +
+                    "only the model loses memory of prior turns.",
                 ),
                 confirmLabel: _t("Clear"),
                 cancelLabel: _t("Cancel"),
@@ -917,23 +944,114 @@ export function useAiSession(options = {}) {
             );
             return;
         }
-        const savedStatus = state.status;
-        state.status = 'running';
         try {
             const snapshot = await orm.call(
                 'muk_ai.session', 'compact', [state.sessionId],
             );
             applySnapshot(snapshot);
-            if (!silent) {
-                notification.add(
-                    _t("Conversation compacted."),
-                    { type: 'success' },
-                );
-            }
         } catch (error) {
-            state.status = savedStatus;
             notification.add(
                 _t("Failed to compact conversation: %s", formatError(error)),
+                { type: 'danger' },
+            );
+        }
+    }
+    async function runStopCompact() {
+        if (!state.sessionId || state.status !== 'compacting') {
+            return;
+        }
+        try {
+            const snapshot = await orm.call(
+                'muk_ai.session', 'stop_compact', [state.sessionId],
+            );
+            applySnapshot(snapshot);
+        } catch (error) {
+            notification.add(
+                _t("Failed to stop compaction: %s", formatError(error)),
+                { type: 'danger' },
+            );
+        }
+    }
+    function _eventsFromOrAfter(eventId) {
+        const events = state.events || [];
+        const idx = events.findIndex((e) => Number(e.event_id) === Number(eventId));
+        if (idx < 0) {
+            return events.length;
+        }
+        return events.length - idx;
+    }
+    async function runUndoToEvent(eventId) {
+        if (!state.sessionId || !eventId) {
+            return;
+        }
+        if (state.status === 'running' || state.status === 'compacting'
+                || state.status === 'waiting') {
+            notification.add(
+                _t("Stop the session before rewinding."),
+                { type: 'warning' },
+            );
+            return;
+        }
+        const dropCount = _eventsFromOrAfter(eventId);
+        const confirmed = await new Promise((resolve) => {
+            dialog.add(ConfirmationDialog, {
+                title: _t("Rewind conversation"),
+                body: _t(
+                    "Remove this message and the %s event(s) that follow from "
+                    + "the conversation? This cannot be undone.",
+                    dropCount,
+                ),
+                confirmLabel: _t("Rewind"),
+                cancelLabel: _t("Cancel"),
+                confirm: () => resolve(true),
+                cancel: () => resolve(false),
+            });
+        });
+        if (!confirmed) {
+            return;
+        }
+        try {
+            const snapshot = await orm.call(
+                'muk_ai.session', 'undo_to_event',
+                [state.sessionId, eventId],
+            );
+            applySnapshot(snapshot);
+            if (options.onRefresh) {
+                await options.onRefresh();
+            }
+        } catch (error) {
+            notification.add(
+                _t("Failed to rewind: %s", formatError(error)),
+                { type: 'danger' },
+            );
+        }
+    }
+    async function runForkAtEvent(eventId) {
+        if (!state.sessionId || !eventId) {
+            return;
+        }
+        if (state.status === 'running' || state.status === 'compacting') {
+            notification.add(
+                _t("Stop the session before forking."),
+                { type: 'warning' },
+            );
+            return;
+        }
+        try {
+            const newId = await orm.call(
+                'muk_ai.session', 'fork_at_event',
+                [state.sessionId, eventId],
+            );
+            notification.add(
+                _t("Forked into a new session."),
+                { type: 'success' },
+            );
+            if (options.onForked) {
+                await options.onForked(newId);
+            }
+        } catch (error) {
+            notification.add(
+                _t("Failed to fork: %s", formatError(error)),
                 { type: 'danger' },
             );
         }
@@ -1008,7 +1126,6 @@ export function useAiSession(options = {}) {
                 [state.sessionId, [attachmentId]],
             );
         } catch (_error) {
-            // Non-fatal: attachment is cleaned when the session is unlinked.
         }
     }
     function toggleToolBlock(callId) {
@@ -1108,5 +1225,8 @@ export function useAiSession(options = {}) {
         rejectTool,
         answerWithOption,
         respondYesno,
+        runStopCompact,
+        runUndoToEvent,
+        runForkAtEvent,
     };
 }

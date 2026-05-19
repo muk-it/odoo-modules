@@ -471,7 +471,7 @@
     .mk_turn {
         display: flex;
         flex-direction: column;
-        margin-bottom: 1rem;
+        margin-bottom: 1.6rem;
         animation: mk-fade 0.2s ease;
     }
     @keyframes mk-fade {
@@ -480,14 +480,150 @@
     }
     .mk_turn_user      { align-items: flex-end; }
     .mk_turn_assistant { align-items: flex-start; }
-    .mk_turn_command   { align-items: stretch; }
-    .mk_command_card {
-        border: 1px dashed var(--mk-border-strong);
-        border-radius: 10px;
+    .mk_turn_command   { align-items: stretch; margin: 1rem 0 1.25rem; }
+    .mk_turn_in_history {
+        opacity: 0.55;
+        filter: saturate(0.7);
+        transition: opacity 0.15s ease;
+        &:hover { opacity: 0.85; }
+    }
+    .mk_context_divider {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        width: 100%;
+        user-select: none;
+    }
+    .mk_context_divider_line {
+        flex: 1 1 auto;
+        height: 1px;
+        background: linear-gradient(
+            to right,
+            transparent,
+            var(--mk-border-strong) 20%,
+            var(--mk-border-strong) 80%,
+            transparent
+        );
+    }
+    .mk_context_divider_label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.15rem 0.6rem;
+        border-radius: 999px;
         background: var(--mk-bg-soft);
+        border: 1px solid var(--mk-border);
+        font-size: 0.72rem;
+        line-height: 1.3;
+        color: var(--mk-text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+        code {
+            font-family: var(--mk-mono);
+            font-size: 0.72rem;
+            color: var(--mk-primary);
+            font-weight: 600;
+            background: none;
+            padding: 0;
+            letter-spacing: 0;
+            text-transform: none;
+        }
+    }
+    .mk_context_divider_sep {
+        opacity: 0.5;
+    }
+    .mk_context_divider_meta {
+        text-transform: none;
+        letter-spacing: 0;
+    }
+    .mk_context_divider_summary {
+        margin: 0.5rem auto 0;
         padding: 0.5rem 0.75rem;
+        max-width: 92%;
+        font-size: 0.82rem;
+        line-height: 1.5;
+        color: var(--mk-text-muted);
+        background: var(--mk-bg-soft);
+        border: 1px dashed var(--mk-border);
+        border-radius: 8px;
+    }
+    .mk_context_divider_label_muted {
+        opacity: 0.6;
+    }
+    .mk_compact_summary_details {
+        margin: 0.4rem auto 0;
+        max-width: 92%;
+        .mk_compact_summary_toggle {
+            cursor: pointer;
+            font-size: 0.78rem;
+            color: var(--mk-text-muted);
+            list-style: none;
+            padding: 0.2rem 0.4rem;
+            text-align: center;
+            &::-webkit-details-marker { display: none; }
+            &:hover { color: var(--mk-text); }
+            &::before {
+                content: '\f0da';
+                font-family: FontAwesome;
+                margin-right: 0.35rem;
+                font-size: 0.7rem;
+            }
+        }
+        &[open] .mk_compact_summary_toggle::before { content: '\f0d7'; }
+    }
+    .mk_compact_card {
+        align-self: stretch;
+        max-width: 92%;
+        margin: 0 auto;
+        padding: 0.7rem 0.9rem;
+        border-radius: 10px;
+        border: 1px solid var(--mk-border);
+        background: var(--mk-bg-soft);
         font-size: 0.85rem;
         color: var(--mk-text);
+        animation: mk-fade 0.2s ease;
+        &.mk_compact_card_error {
+            border-color: var(--mk-danger);
+            background: rgba(220, 53, 69, 0.06);
+        }
+    }
+    .mk_compact_card_head {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        color: var(--mk-text);
+        font-weight: 600;
+        font-size: 0.82rem;
+    }
+    .mk_compact_card_title {
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-size: 0.72rem;
+        color: var(--mk-primary);
+    }
+    .mk_compact_card_meta {
+        color: var(--mk-text-muted);
+        font-weight: 400;
+        font-size: 0.72rem;
+        flex: 1 1 auto;
+    }
+    .mk_compact_spinner {
+        color: var(--mk-primary);
+    }
+    .mk_compact_stop {
+        font-size: 0.75rem;
+        padding: 0.1rem 0.45rem;
+        color: var(--mk-text-muted);
+        text-decoration: none;
+        &:hover { color: var(--mk-danger); }
+    }
+    .mk_compact_card_body {
+        margin-top: 0.5rem;
+        line-height: 1.5;
+        max-height: 14rem;
+        overflow-y: auto;
+        font-size: 0.82rem;
     }
     .mk_ask_options {
         container-type: inline-size;
@@ -613,24 +749,6 @@
             }
         }
     }
-    .mk_command_head {
-        display: flex;
-        align-items: center;
-        gap: 0.2rem;
-        color: var(--mk-text-muted);
-        font-size: 0.8rem;
-        code {
-            font-family: var(--mk-mono);
-            color: var(--mk-primary);
-            font-weight: 600;
-            background: none;
-            padding: 0;
-        }
-    }
-    .mk_command_body {
-        margin-top: 0.4rem;
-        line-height: 1.5;
-    }
     .mk_bubble {
         max-width: 92%;
         padding: 0.7rem 0.95rem;
@@ -640,10 +758,55 @@
         word-wrap: break-word;
     }
     .mk_bubble_user {
+        position: relative;
+        margin-bottom: 1.5rem;
         background: var(--mk-primary) !important;
         color: #fff !important;
         border-bottom-right-radius: 4px;
         a { color: #fff; text-decoration: underline; }
+        .mk_msg_meta {
+            position: absolute;
+            top: 100%;
+            right: -0.1rem;
+            left: auto;
+            margin-top: 0.15rem;
+            display: flex;
+            flex-wrap: nowrap;
+            white-space: nowrap;
+            width: max-content;
+            align-items: center;
+            gap: 0.25rem;
+            opacity: 0;
+            z-index: 2;
+            transition: opacity 0.12s ease;
+        }
+        .mk_msg_btn,
+        .mk_msg_copy {
+            border: 0;
+            background: transparent;
+            color: var(--mk-text-muted, #6e7781);
+            font-size: 0.78rem;
+            width: 24px;
+            height: 22px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.12s ease, color 0.12s ease;
+            i { width: 1em; text-align: center; line-height: 1; }
+            &:hover { background: rgba(0, 0, 0, 0.05); color: var(--mk-text, #24292f); }
+        }
+        .mk_msg_fork:hover { color: var(--mk-primary); }
+        .mk_msg_undo:hover { color: var(--mk-warning, #b08800); }
+        .mk_msg_time {
+            color: var(--mk-text-muted, #6e7781);
+            font-size: 0.72rem;
+            user-select: text;
+        }
+        &:hover .mk_msg_meta,
+        &:focus-within .mk_msg_meta { opacity: 1; }
     }
     .mk_bubble_queued {
         opacity: 0.6;
@@ -689,6 +852,7 @@
         position: relative;
         max-width: 100%;
         padding: 0.1rem 0 0.25rem;
+        margin-bottom: 1.5rem;
         background: transparent;
         color: var(--mk-text);
         border: 0;
@@ -699,25 +863,37 @@
             position: absolute;
             top: 100%;
             left: -0.1rem;
-            margin-top: 0.1rem;
+            margin-top: 0.15rem;
             display: flex;
+            flex-wrap: nowrap;
+            white-space: nowrap;
+            width: max-content;
             align-items: center;
             gap: 0.25rem;
             opacity: 0;
             z-index: 2;
             transition: opacity 0.12s ease;
         }
+        .mk_msg_btn,
         .mk_msg_copy {
             border: 0;
             background: transparent;
             color: var(--mk-text-muted, #6e7781);
             font-size: 0.78rem;
-            padding: 0.1rem 0.4rem;
+            width: 24px;
+            height: 22px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             border-radius: 4px;
             cursor: pointer;
             transition: background 0.12s ease, color 0.12s ease;
+            i { width: 1em; text-align: center; line-height: 1; }
             &:hover { background: rgba(0, 0, 0, 0.05); color: var(--mk-text, #24292f); }
         }
+        .mk_msg_fork:hover { color: var(--mk-primary); }
+        .mk_msg_undo:hover { color: var(--mk-warning, #b08800); }
         .mk_msg_time {
             color: var(--mk-text-muted, #6e7781);
             font-size: 0.72rem;
@@ -1378,7 +1554,7 @@
         .mk_composer_wrap {
             padding: 0.5rem 0.75rem 0.75rem;
         }
-        .mk_bubble, .mk_tool, .mk_command_card {
+        .mk_bubble, .mk_tool, .mk_context_divider_summary {
             max-width: 100%;
         }
         .mk_main_header {
