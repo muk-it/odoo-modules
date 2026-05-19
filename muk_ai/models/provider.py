@@ -220,6 +220,12 @@ class AIProvider(models.Model):
     # ----------------------------------------------------------
 
     @api.depends('name')
+    def _compute_display_name(self):
+        labels = dict(self._fields['name']._description_selection(self.env))
+        for record in self:
+            record.display_name = labels.get(record.name) or record.name or ''
+
+    @api.depends('name')
     def _compute_capabilities(self):
         for record in self:
             impl = REGISTRY.get(record.name)
