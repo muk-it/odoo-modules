@@ -62,6 +62,19 @@
 							<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
 						</div>
 					</setting>
+					<setting
+						id="muk_ai_addon_voice"
+						string="MuK AI Voice"
+						help="Talk to the assistant: realtime STT and spoken replies via TTS."
+					>
+						<field
+							name="module_muk_ai_voice"
+							widget="module_link"
+						/>
+						<div class="content-group" invisible="not module_muk_ai_voice" id="msg_module_muk_ai_voice">
+							<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+						</div>
+					</setting>
 				</block>
 			</xpath>
 		</field>

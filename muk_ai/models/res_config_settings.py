@@ -33,3 +33,8 @@ class ResConfigSettings(models.TransientModel):
         string='MuK AI Skills',
         help='Pre-built agent skills the user or LLM can switch into.',
     )
+
+    module_muk_ai_voice = fields.Boolean(
+        string='MuK AI Voice',
+        help='Talk to the assistant: realtime STT and spoken replies via TTS.',
+    )
