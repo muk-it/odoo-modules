@@ -64,9 +64,10 @@ export class ChatComposer extends Component {
                 const cs = getComputedStyle(el);
                 const lh = parseFloat(cs.lineHeight) || 22;
                 const pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
-                el.style.height = Math.min(el.scrollHeight, lh * 4 + pad) + 'px';
-                el.style.overflowY = el.scrollHeight > lh * 4 + pad ? 'auto' : 'hidden';
+                const maxH = lh * 4 + pad;
                 el.style.height = 'auto';
+                el.style.height = Math.min(el.scrollHeight, maxH) + 'px';
+                el.style.overflowY = el.scrollHeight > maxH ? 'auto' : 'hidden';
             },
         );
         useEffect(

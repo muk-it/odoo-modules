@@ -347,9 +347,20 @@ class GoogleProvider(ProviderBase):
         carry_inputs,
         usage,
     ):
+        if error := event.get('error'):
+            message = error.get('message') or 'Unknown streaming error'
+            if code := error.get('status') or error.get('code'):
+                message = f'{message} (code: {code})'
+            self._raise(message)
+        if block := (event.get('promptFeedback') or {}).get('blockReason'):
+            self._raise(f'Prompt blocked by safety filter (reason: {block})')
         candidates = event.get('candidates') or []
         if candidates:
-            content = candidates[0].get('content') or {}
+            first = candidates[0]
+            finish = first.get('finishReason')
+            if finish and finish not in ('STOP', 'MAX_TOKENS', 'FINISH_REASON_UNSPECIFIED'):
+                self._raise(f'Response blocked by Google (finishReason: {finish})')
+            content = first.get('content') or {}
             for part in content.get('parts') or []:
                 self._stream_part(
                     part, on_delta, text_parts, message_text_parts,

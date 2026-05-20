@@ -331,9 +331,16 @@ class OpenAIProvider(ProviderBase):
                             rendered_item_ids.add(item.get('id'))
                             text_parts.append(snippet)
                             self._call_on_delta(on_delta, 'text', {'delta': snippet})
-            elif event_type == 'response.error':
-                error = event.get('error') or {}
-                self._raise(error.get('message') or 'Unknown streaming error')
+            elif event_type in ('error', 'response.error', 'response.failed'):
+                error = (
+                    event.get('error')
+                    or (event.get('response') or {}).get('error')
+                    or {}
+                )
+                message = error.get('message') or 'Unknown streaming error'
+                if code := error.get('code') or error.get('type'):
+                    message = f'{message} (code: {code})'
+                self._raise(message)
 
         tool_calls = []
         for entry in tool_calls_by_index.values():
