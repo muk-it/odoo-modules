@@ -247,8 +247,7 @@ class Partner(models.Model):
             note.value = html2plaintext(self.comment)
         kind = vcard.add('kind')
         kind.value = (
-            'org' 
-            if self.company_type == 'company' 
+            'org' if self.company_type == 'company'
             else 'individual'
         )
         uid = vcard.add('uid')

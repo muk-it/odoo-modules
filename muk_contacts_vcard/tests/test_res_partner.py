@@ -53,7 +53,6 @@ class TestResPartner(TransactionCase):
         self.assertIn('Dr.', partner.formatted_name)
         self.assertIn('PhD', partner.formatted_name)
 
-    @unittest.skipIf(vobject is None, 'vobject python package is not available')
     def test_build_vcard_includes_uid_and_home_contacts(self):
         partner = self.env['res.partner'].create({'name': 'Initial Name'})
         partner.write({
@@ -84,3 +83,35 @@ class TestResPartner(TransactionCase):
         uid = partner._ensure_vcard_uid()
         self.assertTrue(uid)
         self.assertEqual(partner.vcard_uid, uid)
+
+    def test_build_vcard_kind_org_for_company(self):
+        company = self.env['res.partner'].create({
+            'name': 'Acme Inc',
+            'company_type': 'company',
+        })
+        self.assertIn('KIND:org', company._build_vcard().serialize())
+
+    def test_build_vcard_kind_org_for_invoice_delivery_other(self):
+        company = self.env['res.partner'].create({
+            'name': 'Acme Inc',
+            'company_type': 'company',
+        })
+        for ptype in ('invoice', 'delivery', 'other'):
+            address = self.env['res.partner'].create({
+                'name': f'{ptype.title()} Address',
+                'parent_id': company.id,
+                'type': ptype,
+            })
+            self.assertIn(
+                'KIND:org',
+                address._build_vcard().serialize(),
+                msg=f'expected KIND:org for type={ptype}',
+            )
+
+    def test_build_vcard_kind_individual_for_contact(self):
+        partner = self.env['res.partner'].create({
+            'name': 'John Doe',
+            'company_type': 'person',
+            'type': 'contact',
+        })
+        self.assertIn('KIND:individual', partner._build_vcard().serialize())
