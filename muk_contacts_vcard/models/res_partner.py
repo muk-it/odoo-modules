@@ -239,6 +239,8 @@ class Partner(models.Model):
                 self.commercial_company_name, 
                 self.department
             ]
+        if self.is_company and 'org' in vcard.contents:
+            del vcard.contents['org']
         if self.role:
             role = vcard.add('role')
             role.value = self.role
@@ -250,6 +252,32 @@ class Partner(models.Model):
             'org' if self.company_type == 'company'
             else 'individual'
         )
+        if self.child_ids:
+            type_selection = dict(
+                self._fields['type']._description_selection(self.env)
+            )
+            extra_addresses = self.child_ids.filtered(
+                lambda c: c.type in ('invoice', 'delivery', 'other') and any(
+                    c[f] for f in ('street', 'street2', 'city', 'zip', 'country_id')
+                )
+            )
+            for idx, child in enumerate(extra_addresses, start=1):
+                adr = vcard.add('adr', group=f'item{idx}')
+                adr.value = vobject.vcard.Address(
+                    street=child.street or '',
+                    extended=child.street2 or '',
+                    city=child.city or '',
+                    region=child.state_id.name if child.state_id else '',
+                    code=child.zip or '',
+                    country=child.country_id.name if child.country_id else '',
+                )
+                adr.type_param = 'WORK'
+                label = vcard.add('x-ablabel', group=f'item{idx}')
+                label.value = (
+                    child.name
+                    if child.name and child.name != self.name
+                    else type_selection.get(child.type, child.type)
+                )
         uid = vcard.add('uid')
         uid.value = self._ensure_vcard_uid()
         rev = vcard.add('rev')
@@ -344,6 +372,15 @@ class Partner(models.Model):
         'name',
         'nickname',
         'parent_id',
+        'child_ids',
+        'child_ids.name',
+        'child_ids.type',
+        'child_ids.street',
+        'child_ids.street2',
+        'child_ids.city',
+        'child_ids.zip',
+        'child_ids.state_id',
+        'child_ids.country_id',
         'phone',
         'phone2',
         'role',

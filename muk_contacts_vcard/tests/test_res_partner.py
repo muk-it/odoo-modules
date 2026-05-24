@@ -84,29 +84,33 @@ class TestResPartner(TransactionCase):
         self.assertTrue(uid)
         self.assertEqual(partner.vcard_uid, uid)
 
+    def test_build_vcard_drops_org_for_company(self):
+        company = self.env['res.partner'].create({
+            'name': 'Acme Inc',
+            'company_type': 'company',
+        })
+        serialized = company._build_vcard().serialize()
+        self.assertNotIn('ORG:', serialized)
+        self.assertNotIn('ORG;', serialized)
+
+    def test_build_vcard_keeps_org_for_individual(self):
+        company = self.env['res.partner'].create({
+            'name': 'Acme Inc',
+            'company_type': 'company',
+        })
+        employee = self.env['res.partner'].create({
+            'name': 'Jane Doe',
+            'parent_id': company.id,
+            'type': 'contact',
+        })
+        self.assertIn('ORG:Acme Inc', employee._build_vcard().serialize())
+
     def test_build_vcard_kind_org_for_company(self):
         company = self.env['res.partner'].create({
             'name': 'Acme Inc',
             'company_type': 'company',
         })
         self.assertIn('KIND:org', company._build_vcard().serialize())
-
-    def test_build_vcard_kind_org_for_invoice_delivery_other(self):
-        company = self.env['res.partner'].create({
-            'name': 'Acme Inc',
-            'company_type': 'company',
-        })
-        for ptype in ('invoice', 'delivery', 'other'):
-            address = self.env['res.partner'].create({
-                'name': f'{ptype.title()} Address',
-                'parent_id': company.id,
-                'type': ptype,
-            })
-            self.assertIn(
-                'KIND:org',
-                address._build_vcard().serialize(),
-                msg=f'expected KIND:org for type={ptype}',
-            )
 
     def test_build_vcard_kind_individual_for_contact(self):
         partner = self.env['res.partner'].create({
@@ -115,3 +119,112 @@ class TestResPartner(TransactionCase):
             'type': 'contact',
         })
         self.assertIn('KIND:individual', partner._build_vcard().serialize())
+
+    def test_build_vcard_company_embeds_child_addresses_as_labeled_adr(self):
+        company = self.env['res.partner'].create({
+            'name': 'Acme Inc',
+            'company_type': 'company',
+            'street': '1 Main St',
+            'city': 'HQ City',
+        })
+        self.env['res.partner'].create({
+            'name': 'Invoice Address',
+            'parent_id': company.id,
+            'type': 'invoice',
+            'street': '10 Billing Rd',
+            'city': 'Bill City',
+            'zip': '12345',
+        })
+        self.env['res.partner'].create({
+            'name': 'Delivery Address',
+            'parent_id': company.id,
+            'type': 'delivery',
+            'street': '20 Ship Ave',
+            'city': 'Ship City',
+        })
+        self.env['res.partner'].create({
+            'name': 'Other Address',
+            'parent_id': company.id,
+            'type': 'other',
+            'street': '30 Side St',
+        })
+        self.env['res.partner'].create({
+            'name': 'Jane Doe',
+            'parent_id': company.id,
+            'type': 'contact',
+        })
+        serialized = company._build_vcard().serialize()
+        import re
+        groups = dict(
+            re.findall(r'(item\d+)\.X-ABLABEL:([^\r\n]+)', serialized)
+        )
+        self.assertEqual(len(groups), 3, msg='expected 3 grouped labels')
+        for group, label in groups.items():
+            self.assertRegex(
+                serialized,
+                rf'{group}\.ADR;TYPE=WORK:',
+                msg=f'no grouped ADR for {label}',
+            )
+        self.assertIn('10 Billing Rd', serialized)
+        self.assertIn('20 Ship Ave', serialized)
+        self.assertIn('30 Side St', serialized)
+
+    def test_build_vcard_uses_child_name_as_label_when_set(self):
+        company = self.env['res.partner'].create({
+            'name': 'Acme Inc',
+            'company_type': 'company',
+        })
+        self.env['res.partner'].create({
+            'name': 'Vienna Office Billing',
+            'parent_id': company.id,
+            'type': 'invoice',
+            'street': '10 Billing Rd',
+        })
+        self.env['res.partner'].create({
+            'name': 'Acme Inc',
+            'parent_id': company.id,
+            'type': 'delivery',
+            'street': '20 Ship Ave',
+        })
+        serialized = company._build_vcard().serialize()
+        self.assertIn('X-ABLABEL:Vienna Office Billing', serialized)
+        self.assertNotIn('X-ABLABEL:Acme Inc', serialized)
+        import re
+        self.assertEqual(
+            len(re.findall(r'X-ABLABEL:', serialized)),
+            2,
+            msg='expected 2 labels (custom + delivery fallback)',
+        )
+
+    def test_build_vcard_company_skips_empty_child_addresses(self):
+        company = self.env['res.partner'].create({
+            'name': 'Acme Inc',
+            'company_type': 'company',
+        })
+        self.env['res.partner'].create({
+            'name': 'Empty Invoice',
+            'parent_id': company.id,
+            'type': 'invoice',
+        })
+        serialized = company._build_vcard().serialize()
+        self.assertNotIn('X-ABLABEL', serialized)
+
+    def test_build_vcard_individual_does_not_embed_child_addresses(self):
+        company = self.env['res.partner'].create({
+            'name': 'Acme Inc',
+            'company_type': 'company',
+        })
+        person = self.env['res.partner'].create({
+            'name': 'John Doe',
+            'company_type': 'person',
+            'type': 'contact',
+            'parent_id': company.id,
+        })
+        self.env['res.partner'].create({
+            'name': 'Invoice Address',
+            'parent_id': company.id,
+            'type': 'invoice',
+            'street': '10 Billing Rd',
+        })
+        serialized = person._build_vcard().serialize()
+        self.assertNotIn('X-ABLABEL', serialized)
