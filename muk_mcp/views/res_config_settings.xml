@@ -79,6 +79,9 @@
 							name="module_muk_mcp_access"
 							widget="module_link"
 						/>
+						<div class="content-group" invisible="not module_muk_mcp_access" id="msg_module_muk_mcp_access">
+							<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+						</div>
 					</setting>
 					<setting
 						id="mcp_module_oauth"
@@ -89,6 +92,9 @@
 							name="module_muk_mcp_oauth"
 							widget="module_link"
 						/>
+						<div class="content-group" invisible="not module_muk_mcp_oauth" id="msg_module_muk_mcp_oauth">
+							<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+						</div>
 					</setting>
 					<setting
 						id="mcp_module_apps"
@@ -99,6 +105,9 @@
 							name="module_muk_mcp_apps"
 							widget="module_link"
 						/>
+						<div class="content-group" invisible="not module_muk_mcp_apps" id="msg_module_muk_mcp_apps">
+							<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+						</div>
 					</setting>
 				</block>
 			</xpath>
