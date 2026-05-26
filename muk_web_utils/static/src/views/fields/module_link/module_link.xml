@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_web_utils.ModuleLinkField">
+        <CheckBox
+            t-if="state.available"
+            id="props.id"
+            value="state.value"
+            className="'d-inline-block'"
+            disabled="props.readonly"
+            onChange.bind="onChange"
+        />
+        <a
+            t-else=""
+            t-att-href="appstoreLink"
+            target="_blank"
+            rel="noopener"
+            class="o_module_link text-decoration-none"
+            title="Get this add-on from the Odoo Apps store"
+        >
+            <i class="fa fa-cloud-download fa-lg"/>
+        </a>
+    </t>
+
+</templates>
