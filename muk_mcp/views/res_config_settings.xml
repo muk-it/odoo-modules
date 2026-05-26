@@ -69,6 +69,38 @@
                         />
 					</setting>
 				</block>
+				<block title="MCP Extensions" name="mcp_extensions">
+					<setting
+						id="mcp_module_access"
+						string="MCP Access"
+						help="Model-level whitelist — restrict which models AI agents can reach."
+					>
+						<field
+							name="module_muk_mcp_access"
+							widget="module_link"
+						/>
+					</setting>
+					<setting
+						id="mcp_module_oauth"
+						string="MCP OAuth"
+						help="OAuth 2.1 for MCP — connect Odoo to ChatGPT, Claude and more."
+					>
+						<field
+							name="module_muk_mcp_oauth"
+							widget="module_link"
+						/>
+					</setting>
+					<setting
+						id="mcp_module_apps"
+						string="MCP Apps"
+						help="Interactive UI resources rendered inline by AI clients."
+					>
+						<field
+							name="module_muk_mcp_apps"
+							widget="module_link"
+						/>
+					</setting>
+				</block>
 			</xpath>
 		</field>
 	</record>

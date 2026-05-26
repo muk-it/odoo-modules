@@ -31,6 +31,18 @@ class ResConfigSettings(models.TransientModel):
              "Set to 0 to disable. Used as default when generating new keys.",
     )
 
+    module_muk_mcp_access = fields.Boolean(
+        string="MCP Access",
+    )
+
+    module_muk_mcp_apps = fields.Boolean(
+        string="MCP Apps",
+    )
+
+    module_muk_mcp_oauth = fields.Boolean(
+        string="MCP OAuth",
+    )
+
     mcp_annotate_messages = fields.Boolean(
         string="Annotate Messages",
         config_parameter='muk_mcp.annotate_messages',
