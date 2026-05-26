@@ -1,0 +1,228 @@
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<h2 class="oe_slogan">MuK MCP Access</h2>
+		<h3 class="oe_slogan mb-0">Model-Level Access Control for the MCP Server</h3>
+		<img src="logo.png" style="width: 150px;" class="mx-auto center-block">
+		<h4 class="oe_slogan mt-0" style="font-size: 23px">MuK IT GmbH - www.mukit.at</h4>
+		<div class="mb-4" style="text-align: center;">
+			<span
+				class="btn btn-sm mb-2"
+				style="font-size:14px; font-weight:500; background-color:#243742; color:#fff; cursor:default;"
+			>
+				<i class="fa fa-check"></i> Community
+			</span>
+			<span
+				class="btn btn-sm mb-2"
+				style="font-size:14px; font-weight:500; background-color:#5D8DA8; color:#fff; cursor:default;"
+			>
+				<i class="fa fa-check me-1"></i> Enterprise
+			</span>
+		</div>
+		<div class="oe_demo oe_screenshot"
+			style="max-width: 84%; margin: 16px 8%">
+			<img src="screenshot.png">
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width: 84%; margin: 16px 8%;">
+			<h3 class="oe_slogan">Overview</h3>
+			<p class="oe_mt32">
+				Defence-in-depth add-on for
+				<a href="https://apps.odoo.com/apps/modules/19.0/muk_mcp">MuK MCP Server</a>.
+				Controls which Odoo models are reachable through MCP, independent
+				of the user's normal access rights. Administrators build a whitelist
+				of models and choose read-only or full access per model. When the
+				whitelist is empty every model is accessible &mdash; full backwards
+				compatibility. As soon as the first model is added only whitelisted
+				models are exposed; the AI agent cannot discover or query anything
+				else.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">How It Works</h3>
+			<p>
+				Even though Odoo's built-in access control lists protect your data,
+				an AI agent can still touch every model the user has access to.
+				<strong>MuK MCP Access</strong> adds an extra layer that sits
+				between the MCP tool call and the ORM:
+			</p>
+			<ul>
+				<li>
+					<strong>Empty list = no restrictions.</strong> Install the module
+					and nothing changes &mdash; every model stays accessible.
+				</li>
+				<li>
+					<strong>Add a model = whitelist is active.</strong> As soon as
+					you add the first entry, only whitelisted models are exposed to
+					MCP clients.
+				</li>
+				<li>
+					<strong>Per-model permissions.</strong> Choose read-only or full
+					read/write access for each model independently. Read-only
+					entries allow <code>search_read</code>, <code>describe_model</code>,
+					and <code>export_records</code>; write entries additionally allow
+					<code>create_records</code>, <code>update_records</code>,
+					<code>delete_records</code>, and <code>call_method</code>.
+				</li>
+			</ul>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Bulk Model Selection</h3>
+			<p>
+				Use the <em>Add Models</em> wizard to enable multiple models at
+				once. The wizard excludes transient models and models already in
+				the access list, and lets you set default read/write permissions
+				that are applied to every selected model.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Key Features</h3>
+			<table style="width:100%; border-collapse:collapse; margin-top:16px; font-size:14px;">
+				<thead>
+					<tr style="background-color:#f5f5f5; text-align:left;">
+						<th style="padding:10px 12px; border-bottom:2px solid #ddd;">Feature</th>
+						<th style="padding:10px 12px; border-bottom:2px solid #ddd;">Description</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><strong>Model Whitelist</strong></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Inline-editable list with boolean toggles for read and write</td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><strong>Bulk Wizard</strong></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Select multiple models and set permissions in one step</td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><strong>Tool Filtering</strong></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Filters <code>list_models</code> so the AI only sees allowed models</td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><strong>Full Coverage</strong></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Blocks all model-based tools: search, read, create, update, delete, describe, export</td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><strong>Key Scope Compatible</strong></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Works alongside MCP API key scopes and rate limits</td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><strong>Zero Overhead</strong></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">When the whitelist is empty, no checks are performed</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container oe_dark d-flex justify-content-around align-items-lg-center flex-column flex-lg-row">
+	<div class="d-flex flex-column m-3 ms-lg-4">
+		<h3 class="oe_slogan mb-3 mt-3 text-left">
+			<i class="fa fa-comments mr8"></i>Want more?
+		</h3>
+		<p>
+			Are you having troubles with your Odoo integration? Or do you feel
+			your system lacks of essential features? <br>If your answer is <b>YES</b>
+			to one of the above questions, feel free to contact us at anytime
+			with your inquiry. <br>We are looking forward to discuss your
+			needs and plan the next steps with you. <br>
+		</p>
+	</div>
+	<div class="oe_slogan d-flex flex-column ms-1 me-1 ms-lg-4 me-lg-4 flex-grow-1">
+		<a class="btn btn-primary btn-lg m-3" href="mailto:sale@mukit.at?subject=Request%20Quote" style="font-size:1.2rem">
+			<i class="fa fa-envelope me-1"></i>REQUEST QUOTE
+		</a>
+
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<h3 class="oe_slogan">Our Services</h3>
+		<div class="d-flex justify-content-between">
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="/service_development.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3
+						class="oe_slogan"
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Development
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="/service_integration.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3
+						class="oe_slogan"
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Integration
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="/service_infrastructure.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3
+						class="oe_slogan"
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Infrastructure
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="/service_training.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3
+						class="oe_slogan"
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Training
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="/service_support.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3
+						class="oe_slogan"
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Support
+					</h3>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>

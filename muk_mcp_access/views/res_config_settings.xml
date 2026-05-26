@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_res_config_settings_access" model="ir.ui.view">
+		<field name="name">res.config.settings.muk_mcp_access</field>
+		<field name="model">res.config.settings</field>
+		<field name="inherit_id" ref="muk_mcp.view_res_config_settings_form"/>
+		<field name="arch" type="xml">
+			<xpath expr="//div[@id='msg_module_muk_mcp_access']" position="replace">
+				<div
+					class="content-group"
+					invisible="not module_muk_mcp_access"
+					id="msg_module_muk_mcp_access"
+				>
+					<div class="mt16">
+						<button
+							name="%(muk_mcp_access.action_mcp_access_model)d"
+							type="action"
+							string="Manage Model Access"
+							icon="oi-arrow-right"
+							class="btn-link"
+						/>
+					</div>
+				</div>
+			</xpath>
+		</field>
+	</record>
+
+</odoo>

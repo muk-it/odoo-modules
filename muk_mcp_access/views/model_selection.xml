@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_model_selection_form" model="ir.ui.view">
+		<field name="name">muk_mcp_access.model.selection.form</field>
+		<field name="model">muk_mcp_access.model.selection</field>
+		<field name="arch" type="xml">
+			<form>
+				<sheet>
+					<group>
+						<div class="alert alert-info" role="alert" colspan="2">
+							Select the models to make accessible via MCP. Models
+							already in the access list are excluded.
+						</div>
+						<field name="_existing_model_ids" invisible="1"/>
+						<field name="model_ids" widget="many2many_tags" nolabel="1" colspan="2"/>
+					</group>
+					<group string="Default Permissions">
+						<field name="allow_read"/>
+						<field name="allow_write"/>
+					</group>
+				</sheet>
+				<footer>
+					<button
+						name="action_enable_models"
+						type="object"
+						string="Add Selected Models"
+						class="btn-primary"
+					/>
+					<button string="Cancel" special="cancel"/>
+				</footer>
+			</form>
+		</field>
+	</record>
+
+	<record id="action_model_selection" model="ir.actions.act_window">
+		<field name="name">Add Models</field>
+		<field name="res_model">muk_mcp_access.model.selection</field>
+		<field name="view_mode">form</field>
+		<field name="target">new</field>
+	</record>
+
+</odoo>
