@@ -7,7 +7,7 @@ import { ControlPanel } from '@web/search/control_panel/control_panel';
 import { getAutoLoadInterval } from '@muk_web_refresh/core/utils';
 import { REFRESH_VIEW_EVENT } from '@muk_web_refresh/services/refresh_service';
 
-import { useState, onWillDestroy, useEffect } from '@odoo/owl';
+import { useState, onWillDestroy, useEffect, useExternalListener } from '@odoo/owl';
 
 function useRefreshAnimation(timeout) {
     let timeoutId = null;
@@ -54,6 +54,13 @@ patch(ControlPanel.prototype, {
             ),
             counter: 0,
         });
+        this._refreshInFlight = false;
+        this.visibilityState = useState({
+            hidden: document.hidden,
+        });
+        useExternalListener(document, 'visibilitychange', () => {
+            this.visibilityState.hidden = document.hidden;
+        });
         onWillDestroy(() => {
             if (this._clickTimeout) {
                 clearTimeout(this._clickTimeout);
@@ -61,7 +68,7 @@ patch(ControlPanel.prototype, {
         });
         useEffect(
             () => {
-                if (!this.autoLoadState.active) {
+                if (!this.autoLoadState.active || this.visibilityState.hidden) {
                     return;
                 }
                 this.autoLoadState.counter = (
@@ -78,14 +85,19 @@ patch(ControlPanel.prototype, {
                             this.autoLoadState.counter = (
                                 this.getAutoLoadRefreshInterval()
                             );
-                            this.refreshView();
+                            if (!this._refreshInFlight) {
+                                this._refreshInFlight = true;
+                                this.refreshView().finally(() => {
+                                    this._refreshInFlight = false;
+                                });
+                            }
                         }
                     },
                     1000
                 );
                 return () => browser.clearInterval(interval);
             },
-            () => [this.autoLoadState.active]
+            () => [this.autoLoadState.active, this.visibilityState.hidden]
         );
     },
     checkAutoLoadAvailability() {
