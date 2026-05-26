@@ -4,6 +4,7 @@ from odoo import _, api, models
 from odoo.exceptions import UserError
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
+from odoo.addons.muk_mcp.tools.descriptions import context_field
 from odoo.addons.muk_mcp.tools.content import (
     is_textual_mimetype,
     make_content_for_bytes,
@@ -118,6 +119,7 @@ class MCPMixin(models.AbstractModel):
                     ),
                     'default': 'auto',
                 },
+                'context': context_field(),
             },
             'required': ['uri'],
         },

@@ -5,6 +5,7 @@ from odoo.exceptions import UserError
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
 from odoo.addons.muk_mcp.tools.descriptions import (
+    context_field,
     domain_field,
     fields_field,
     ids_field,
@@ -87,6 +88,7 @@ class MCPMixin(models.AbstractModel):
                     'type': 'string',
                     'description': "Sort order.",
                 },
+                'context': context_field(),
             },
             'required': ['model', 'fields'],
         },

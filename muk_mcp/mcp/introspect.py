@@ -1,7 +1,7 @@
 from odoo import api, models
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
-from odoo.addons.muk_mcp.tools.descriptions import model_field
+from odoo.addons.muk_mcp.tools.descriptions import context_field, model_field
 
 
 class MCPMixin(models.AbstractModel):
@@ -73,6 +73,7 @@ class MCPMixin(models.AbstractModel):
             'type': 'object',
             'properties': {
                 'model': model_field(),
+                'context': context_field(),
             },
             'required': ['model'],
         },

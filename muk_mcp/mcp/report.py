@@ -4,7 +4,7 @@ from odoo import _, api, models
 from odoo.exceptions import UserError
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
-from odoo.addons.muk_mcp.tools.descriptions import ids_field
+from odoo.addons.muk_mcp.tools.descriptions import context_field, ids_field
 from odoo.addons.muk_mcp.tools.parser import normalize_ids
 
 
@@ -65,6 +65,7 @@ class MCPMixin(models.AbstractModel):
                     ),
                 },
                 'ids': ids_field('render'),
+                'context': context_field(),
             },
             'required': ['report_ref', 'ids'],
         },
