@@ -4,7 +4,7 @@ import io
 import json
 
 from odoo.exceptions import UserError
-from odoo.tests import common
+from odoo.tests import common, tagged
 
 
 try:
@@ -13,6 +13,7 @@ except ImportError:
     xlsxwriter = None
 
 
+@tagged('post_install', '-at_install')
 class TestMcpExportRecords(common.TransactionCase):
 
     # ----------------------------------------------------------

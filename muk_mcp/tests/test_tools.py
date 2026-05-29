@@ -1,11 +1,12 @@
 import json
 
 from odoo.exceptions import UserError
-from odoo.tests import common
+from odoo.tests import common, tagged
 
 from odoo.addons.muk_mcp.tools.parser import coerce_json_value
 
 
+@tagged('post_install', '-at_install')
 class TestMcpTool(common.TransactionCase):
 
     # ----------------------------------------------------------

@@ -81,16 +81,17 @@ class MCPMixin(models.AbstractModel):
         except (AccessError, AttributeError) as exc:
             raise UserError(str(exc))
         target_ids = normalize_ids(ids)
-        if getattr(unbound, '_api_model', False):
-            recordset = target
-        else:
-            recordset = (
-                target.browse(target_ids)
-                if target_ids else target
-            )
         positional = coerce_json_value(args) or []
+        if not getattr(unbound, '_api_model', False):
+            if target_ids:
+                target = target.browse(target_ids)
+            elif positional:
+                target = target.browse(normalize_ids(
+                    positional[0]
+                ))
+                positional = positional[1:]
         keyword = dict(coerce_json_value(kwargs) or {})
         context_override = keyword.pop('context', None)
         if isinstance(context_override, dict) and context_override:
-            recordset = recordset.with_context(**context_override)
-        return unbound(recordset, *positional, **keyword)
+            target = target.with_context(**context_override)
+        return unbound(target, *positional, **keyword)

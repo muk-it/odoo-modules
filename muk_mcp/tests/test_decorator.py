@@ -1,7 +1,7 @@
 import json
 
 from odoo.exceptions import AccessError, UserError
-from odoo.tests import common
+from odoo.tests import common, tagged
 
 from odoo.addons.muk_mcp.core import tool as core_tool
 
@@ -44,6 +44,7 @@ TEST_REGISTRY = {
 }
 
 
+@tagged('post_install', '-at_install')
 class TestMcpDecoratorTool(common.TransactionCase):
 
     # ----------------------------------------------------------

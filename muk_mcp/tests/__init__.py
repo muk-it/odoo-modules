@@ -3,7 +3,7 @@ from . import test_batch
 from . import test_connect
 from . import test_content
 from . import test_controller
-from . import test_decorator_tool
+from . import test_decorator
 from . import test_dispatch
 from . import test_export
 from . import test_integration

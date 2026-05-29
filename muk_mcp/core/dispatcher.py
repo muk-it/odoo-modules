@@ -29,6 +29,9 @@ class MCPDispatcher(http.Dispatcher):
         self.request.session.can_save &= routing.get(
             'save_session', True
         )
+        self.request.future_response.headers.set(
+            'Connection', 'close'
+        )
         if cors := routing.get('cors'):
             set_header = self.request.future_response.headers.set
             methods = routing['methods'] or ['GET', 'POST', 'DELETE']
