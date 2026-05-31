@@ -15,6 +15,7 @@ class TestMCPAccessModel(common.TransactionCase):
         cls.mixin = cls.env['muk_mcp.mixin']
         cls.partner_model = cls.env.ref('base.model_res_partner')
         cls.user_model = cls.env.ref('base.model_res_users')
+        cls.country_model = cls.env.ref('base.model_res_country')
 
     # ----------------------------------------------------------
     # Tests: allowlist inactive (empty)
@@ -164,6 +165,101 @@ class TestMCPAccessModel(common.TransactionCase):
                 'allow_read': False,
                 'allow_write': False,
             })
+
+    # ----------------------------------------------------------
+    # Tests: record domain
+    # ----------------------------------------------------------
+
+    def test_no_domain_returns_none(self):
+        self.access_model.create({
+            'model_id': self.partner_model.id,
+            'allow_read': True,
+        })
+        self.assertIsNone(
+            self.access_model._get_model_domain('res.partner'),
+        )
+
+    def test_domain_returned_when_set(self):
+        self.access_model.create({
+            'model_id': self.partner_model.id,
+            'allow_read': True,
+            'domain': "[('is_company', '=', True)]",
+        })
+        self.assertEqual(
+            self.access_model._get_model_domain('res.partner'),
+            [('is_company', '=', True)],
+        )
+
+    def test_domain_inactive_allowlist_returns_none(self):
+        self.assertIsNone(
+            self.access_model._get_model_domain('res.partner'),
+        )
+
+    def test_invalid_domain_rejected(self):
+        with self.assertRaises(Exception):
+            self.access_model.create({
+                'model_id': self.partner_model.id,
+                'allow_read': True,
+                'domain': "[('does_not_exist', '=', 1)]",
+            })
+
+    def test_search_read_applies_domain(self):
+        self.access_model.create({
+            'model_id': self.country_model.id,
+            'allow_read': True,
+            'domain': "[('code', '=', 'BE')]",
+        })
+        rows = self.mixin._mcp_search_read(
+            'res.country',
+            domain=[('code', 'in', ['BE', 'FR'])],
+            fields=['code'],
+        )
+        codes = {row['code'] for row in rows}
+        self.assertEqual(codes, {'BE'})
+
+    def test_search_count_applies_domain(self):
+        self.access_model.create({
+            'model_id': self.country_model.id,
+            'allow_read': True,
+            'domain': "[('code', '=', 'BE')]",
+        })
+        result = self.mixin._mcp_search_count(
+            'res.country', domain=[('code', 'in', ['BE', 'FR'])],
+        )
+        self.assertEqual(result['count'], 1)
+
+    def test_read_records_blocks_out_of_domain(self):
+        self.access_model.create({
+            'model_id': self.country_model.id,
+            'allow_read': True,
+            'domain': "[('code', '=', 'BE')]",
+        })
+        with self.assertRaises(AccessError):
+            self.mixin._mcp_read_records(
+                'res.country', [self.env.ref('base.fr').id],
+            )
+
+    def test_read_records_allows_in_domain(self):
+        self.access_model.create({
+            'model_id': self.country_model.id,
+            'allow_read': True,
+            'domain': "[('code', '=', 'BE')]",
+        })
+        rows = self.mixin._mcp_read_records(
+            'res.country', [self.env.ref('base.be').id], fields=['code'],
+        )
+        self.assertEqual(rows[0]['code'], 'BE')
+
+    def test_domain_dynamic_user_context(self):
+        self.access_model.create({
+            'model_id': self.user_model.id,
+            'allow_read': True,
+            'domain': "[('id', '=', user.id)]",
+        })
+        self.assertEqual(
+            self.access_model._get_model_domain('res.users'),
+            [('id', '=', self.env.user.id)],
+        )
 
     # ----------------------------------------------------------
     # Tests: archived entries
