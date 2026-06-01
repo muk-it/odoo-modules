@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="action_ai_chat" model="ir.actions.client">
+		<field name="name">MuK AI Chat</field>
+		<field name="tag">muk_ai.chat</field>
+		<field name="path">ai</field>
+	</record>
+
+</odoo>

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.ChatSidebar">
+        <aside class="mk_sidebar d-flex flex-column">
+            <div class="mk_sidebar_header p-3 border-bottom">
+                <button class="btn btn-primary btn-sm w-100 fw-semibold" t-on-click="() => props.onNew()">
+                    <i class="fa fa-plus me-1" />
+                    <span>New Chat</span>
+                </button>
+                <div class="mk_sidebar_search mt-2" t-if="hasAnySession">
+                    <i class="fa fa-search mk_sidebar_search_icon"/>
+                    <input
+                        type="text"
+                        class="form-control form-control-sm mk_sidebar_search_input"
+                        placeholder="Search chats…"
+                        t-att-value="state.query"
+                        t-on-input="onQueryInput"
+                    />
+                    <button
+                        class="btn btn-link btn-sm mk_sidebar_search_clear"
+                        t-if="hasQuery"
+                        title="Clear"
+                        t-on-click="onClearQuery"
+                    >
+                        <i class="fa fa-times"/>
+                    </button>
+                </div>
+            </div>
+            <div class="mk_sidebar_list flex-grow-1">
+                <t t-if="!hasAnySession">
+                    <div class="text-center text-muted small py-4 px-3">
+                        <i class="fa fa-comments-o fa-2x d-block mb-2 opacity-50" />
+                        No chats yet.
+                    </div>
+                </t>
+                <t t-elif="props.searching and !groups.length">
+                    <div class="text-center text-muted small py-4 px-3">
+                        <i class="fa fa-spinner fa-spin fa-2x d-block mb-2 opacity-50" />
+                        Searching…
+                    </div>
+                </t>
+                <t t-elif="!groups.length">
+                    <div class="text-center text-muted small py-4 px-3">
+                        <i class="fa fa-search fa-2x d-block mb-2 opacity-50" />
+                        No chats match
+                        <strong t-esc="state.query" />.
+                    </div>
+                </t>
+                <t t-else="">
+                    <t t-foreach="groups" t-as="group" t-key="group.key">
+                        <div class="mk_sidebar_group_label" t-esc="group.label"/>
+                        <t t-foreach="group.sessions" t-as="session" t-key="session.id">
+                            <div
+                                class="mk_sidebar_item"
+                                t-att-class="{ active: session.id === props.activeSessionId, mk_running: session.state === 'running' || session.state === 'waiting' }"
+                                t-on-click="() => props.onSelect(session.id)"
+                                t-att-title="statusLabel(session.state)"
+                            >
+                                <span class="mk_sidebar_dot" t-att-class="'mk_state_' + session.state">
+                                    <t t-if="session.state === 'running'">
+                                        <i class="fa fa-circle-o-notch fa-spin" />
+                                    </t>
+                                    <t t-elif="session.state === 'waiting'">
+                                        <i class="fa fa-question" />
+                                    </t>
+                                    <t t-elif="session.state === 'error'">
+                                        <i class="fa fa-exclamation" />
+                                    </t>
+                                </span>
+                                <span class="mk_sidebar_name" t-esc="session.name" />
+                                <small class="mk_sidebar_sub text-muted" t-if="session.state === 'running'">thinking…</small>
+                                <small class="mk_sidebar_sub text-muted" t-elif="session.state === 'waiting'">awaiting you</small>
+                                <div class="mk_sidebar_actions">
+                                    <button
+                                        class="btn btn-link btn-sm"
+                                        title="Rename"
+                                        t-on-click="(ev) => this.onRenameClick(session, ev)"
+                                    >
+                                        <i class="fa fa-pencil" />
+                                    </button>
+                                    <button
+                                        class="btn btn-link btn-sm text-danger"
+                                        title="Delete"
+                                        t-on-click="(ev) => this.onDeleteClick(session, ev)"
+                                    >
+                                        <i class="fa fa-trash" />
+                                    </button>
+                                </div>
+                            </div>
+                        </t>
+                    </t>
+                    <div class="mk_sidebar_load_more text-center py-2" t-if="showLoadMore">
+                        <button
+                            class="btn btn-link btn-sm mk_sidebar_load_more_btn"
+                            t-att-disabled="props.loadingMore"
+                            t-on-click="onLoadMoreClick"
+                        >
+                            <t t-if="props.loadingMore">
+                                <i class="fa fa-spinner fa-spin me-1"/>Loading…
+                            </t>
+                            <t t-else="">
+                                Load more
+                            </t>
+                        </button>
+                    </div>
+                </t>
+            </div>
+        </aside>
+    </t>
+
+</templates>

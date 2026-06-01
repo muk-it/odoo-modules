@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_ai_session_search" model="ir.ui.view">
+		<field name="name">muk_ai.session.search</field>
+		<field name="model">muk_ai.session</field>
+		<field name="arch" type="xml">
+			<search>
+				<field name="name"/>
+				<field name="user_id"/>
+				<filter name="mine" string="Mine" domain="[('user_id', '=', uid)]"/>
+				<separator/>
+				<filter name="running" string="Running" domain="[('state', '=', 'running')]"/>
+				<filter name="waiting" string="Waiting" domain="[('state', '=', 'waiting')]"/>
+				<filter name="stopped" string="Stopped" domain="[('state', '=', 'stopped')]"/>
+				<filter name="done" string="Done" domain="[('state', '=', 'done')]"/>
+				<filter name="error" string="Error" domain="[('state', '=', 'error')]"/>
+				<group>
+					<filter name="group_state" string="State" context="{'group_by': 'state'}"/>
+					<filter name="group_user" string="Owner" context="{'group_by': 'user_id'}"/>
+				</group>
+			</search>
+		</field>
+	</record>
+
+	<record id="view_ai_session_list" model="ir.ui.view">
+		<field name="name">muk_ai.session.list</field>
+		<field name="model">muk_ai.session</field>
+		<field name="arch" type="xml">
+			<list create="0" edit="0">
+				<field name="create_date"/>
+				<field name="name"/>
+				<field name="user_id"/>
+				<field name="iteration_count" optional="hide"/>
+				<field name="total_input_tokens" optional="hide"/>
+				<field name="total_output_tokens" optional="hide"/>
+				<field name="total_cost" optional="show"/>
+				<field
+                    name="state"
+                    widget="badge"
+                    decoration-success="state == 'done'"
+                    decoration-danger="state == 'error'"
+                    decoration-info="state == 'running'"
+                    decoration-warning="state == 'waiting'"
+                />
+			</list>
+		</field>
+	</record>
+
+    <record id="view_muk_ai_session_pivot" model="ir.ui.view">
+		<field name="name">muk_ai.session.pivot</field>
+		<field name="model">muk_ai.session</field>
+		<field name="arch" type="xml">
+			<pivot>
+				<field name="user_id" type="row"/>
+				<field name="create_date" interval="day" type="col"/>
+				<field name="total_cost" type="measure"/>
+				<field name="total_input_tokens" type="measure"/>
+				<field name="total_output_tokens" type="measure"/>
+			</pivot>
+		</field>
+	</record>
+
+	<record id="view_muk_ai_session_graph" model="ir.ui.view">
+		<field name="name">muk_ai.session.graph</field>
+		<field name="model">muk_ai.session</field>
+		<field name="arch" type="xml">
+			<graph type="bar" sample="1">
+				<field name="create_date" interval="day"/>
+				<field name="total_cost" type="measure"/>
+			</graph>
+		</field>
+	</record>
+
+	<record id="view_ai_session_form" model="ir.ui.view">
+		<field name="name">muk_ai.session.form</field>
+		<field name="model">muk_ai.session</field>
+		<field name="arch" type="xml">
+			<form create="0" edit="0">
+				<header>
+					<button
+                        name="action_open"
+                        type="object"
+                        string="Open"
+                        class="btn-primary"
+                        icon="fa-comments"
+                        invisible="user_id != uid"
+                    />
+					<button
+                        name="action_stop"
+                        type="object"
+                        string="Stop"
+                        invisible="state not in ['running', 'waiting'] or user_id != uid"
+                        groups="!base.group_system"
+                    />
+					<button
+                        name="action_stop"
+                        type="object"
+                        string="Stop"
+                        invisible="state not in ['running', 'waiting']"
+                        groups="base.group_system"
+                    />
+					<field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="new,running,done"
+                    />
+				</header>
+				<sheet>
+					<div class="oe_title">
+						<label for="name"/>
+						<h1>
+							<field name="name" placeholder="Session"/>
+						</h1>
+					</div>
+					<group>
+						<group string="Metadata">
+							<field name="create_date"/>
+							<field name="user_id"/>
+							<field name="agent_id"/>
+						</group>
+						<group string="Usage">
+							<field name="total_input_tokens"/>
+							<field name="total_output_tokens"/>
+							<field name="total_cost"/>
+						</group>
+					</group>
+					<notebook>
+						<page string="Conversation" name="conversation">
+							<field
+                                name="display_events"
+                                widget="ai_session_events"
+                                nolabel="1"
+                                colspan="2"
+                            />
+						</page>
+						<page string="Attachments" name="attachments">
+							<field
+                                name="attachment_ids"
+                                widget="many2many_binary"
+                                nolabel="1"
+                                colspan="2"
+                            />
+						</page>
+						<page string="Raw" name="raw" groups="base.group_no_one">
+							<field
+                                name="conversation"
+                                widget="json_code"
+                                nolabel="1"
+                                colspan="2"
+                            />
+						</page>
+					</notebook>
+				</sheet>
+			</form>
+		</field>
+	</record>
+
+	<record id="action_ai_session" model="ir.actions.act_window">
+		<field name="name">Sessions</field>
+		<field name="res_model">muk_ai.session</field>
+		<field name="view_mode">list,pivot,graph,form</field>
+		<field name="search_view_id" ref="view_ai_session_search"/>
+		<field name="context">{'search_default_mine': 1}</field>
+		<field name="path">ai-sessions</field>
+	</record>
+
+</odoo>

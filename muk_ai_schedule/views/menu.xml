@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<menuitem
+		id="menu_muk_ai_schedule"
+		name="Schedules"
+		parent="muk_ai.menu_ai_root"
+		action="action_muk_ai_schedule"
+		sequence="30"
+		groups="base.group_system"
+	/>
+
+</odoo>

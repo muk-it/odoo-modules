@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_muk_ai_model_search" model="ir.ui.view">
+		<field name="name">muk_ai.model.search</field>
+		<field name="model">muk_ai.model</field>
+		<field name="arch" type="xml">
+			<search>
+				<field name="name"/>
+				<field name="technical_name"/>
+				<field name="provider_id"/>
+				<separator/>
+				<filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active', '=', False)]"
+                />
+				<group>
+					<filter
+                        name="group_provider"
+                        string="Provider"
+                        context="{'group_by': 'provider_id'}"
+                    />
+				</group>
+			</search>
+		</field>
+	</record>
+
+	<record id="view_muk_ai_model_list" model="ir.ui.view">
+		<field name="name">muk_ai.model.list</field>
+		<field name="model">muk_ai.model</field>
+		<field name="arch" type="xml">
+			<list>
+				<field name="sequence" widget="handle"/>
+				<field name="provider_id"/>
+				<field name="name"/>
+				<field name="technical_name"/>
+				<field name="context_window"/>
+				<field name="input_rate"/>
+				<field name="output_rate"/>
+				<field name="cached_rate"/>
+				<field name="currency"/>
+				<field name="active" widget="boolean_toggle"/>
+			</list>
+		</field>
+	</record>
+
+	<record id="view_muk_ai_model_form" model="ir.ui.view">
+		<field name="name">muk_ai.model.form</field>
+		<field name="model">muk_ai.model</field>
+		<field name="arch" type="xml">
+			<form>
+				<sheet>
+					<widget
+                        name="web_ribbon"
+                        title="Archived"
+                        bg_color="text-bg-danger"
+                        invisible="active"
+                    />
+					<div class="oe_title">
+						<label for="name"/>
+						<h1>
+							<field name="name"/>
+						</h1>
+					</div>
+					<group>
+						<group string="Identity">
+							<field name="provider_id"/>
+							<field name="technical_name"/>
+							<field name="context_window"/>
+						</group>
+						<group string="Pricing">
+							<field name="input_rate"/>
+							<field name="output_rate"/>
+							<field name="cached_rate"/>
+							<field name="currency"/>
+						</group>
+					</group>
+					<group string="Notes">
+						<field
+                            name="notes"
+                            nolabel="1"
+                            colspan="2"
+                            placeholder="Notes about this model — e.g. effective date, source."
+                        />
+					</group>
+				</sheet>
+			</form>
+		</field>
+	</record>
+
+	<record id="action_muk_ai_model" model="ir.actions.act_window">
+		<field name="name">AI Models</field>
+		<field name="res_model">muk_ai.model</field>
+		<field name="view_mode">list,form</field>
+		<field name="path">ai-models</field>
+	</record>
+
+</odoo>

@@ -1,0 +1,653 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.Chat">
+        <div class="mk_chat d-flex flex-column h-100 position-relative" t-ref="root">
+            <t t-call="muk_ai.ChatMainHeader"/>
+            <div class="mk_chat_body d-flex flex-grow-1 position-relative">
+            <ChatSidebar
+                t-if="!state.sidebarHidden"
+                sessions="state.sessions"
+                activeSessionId="session.state.sessionId"
+                onNew.bind="onNewSession"
+                onSelect.bind="onSelectSession"
+                onRename.bind="onRenameSession"
+                onDelete.bind="onDeleteSession"
+            />
+            <div
+                class="mk_sidebar_backdrop"
+                t-if="!state.sidebarHidden"
+                t-on-click="() => this.toggleSidebar()"
+            />
+            <main class="mk_main d-flex flex-column flex-grow-1">
+                <ChatSearch
+                    t-if="state.searchOpen"
+                    query="state.searchQuery"
+                    total="searchMatches.length"
+                    currentIdx="clampedActiveMatchIdx"
+                    onChange.bind="onSearchChange"
+                    onPrev.bind="onSearchPrev"
+                    onNext.bind="onSearchNext"
+                    onClose.bind="closeSearch"
+                />
+                <t t-if="state.loading">
+                    <div class="flex-grow-1 d-flex align-items-center justify-content-center text-muted">
+                        <i class="fa fa-spinner fa-spin me-2"/>
+                        <span>Loading…</span>
+                    </div>
+                </t>
+                <t t-elif="!session.state.sessionId">
+                    <div class="mk_empty flex-grow-1 d-flex flex-column align-items-center justify-content-center">
+                        <div class="mk_empty_badge d-inline-flex align-items-center justify-content-center rounded-circle shadow-sm">
+                            <i class="fa fa-comments-o"/>
+                        </div>
+                        <h2 class="fw-semibold mb-1">How can I help you today?</h2>
+                        <p t-if="suggestions.length" class="text-muted mb-0">Start a new chat or pick a suggestion to begin.</p>
+                        <p t-else="" class="text-muted mb-0">Start a new chat to begin.</p>
+                        <div t-if="suggestions.length" class="mk_suggestions">
+                            <t t-foreach="suggestions" t-as="s" t-key="s_index">
+                                <button class="mk_suggestion" t-on-click="() => this.onStartWithPrompt(s.prompt)">
+                                    <span class="mk_suggestion_label" t-esc="s.label"/>
+                                    <span class="mk_suggestion_preview" t-esc="s.prompt"/>
+                                </button>
+                            </t>
+                        </div>
+                    </div>
+                </t>
+                <t t-else="">
+                    <div class="mk_messages_wrap flex-grow-1 position-relative d-flex flex-column">
+                        <button t-if="!scrollState.atBottom"
+                                class="mk_scroll_bottom"
+                                type="button"
+                                title="Scroll to latest"
+                                t-on-click="() => this.scrollToBottom(true)">
+                            <i class="fa fa-arrow-down"/>
+                        </button>
+                        <div class="mk_messages flex-grow-1" t-ref="scrollArea">
+                        <div class="mk_messages_inner">
+                            <div t-if="session.state.hasMoreOlder" class="mk_load_older text-center small text-muted py-2">
+                                <t t-if="session.state.loadingOlder">
+                                    <i class="fa fa-spinner fa-spin me-1"/>Loading…
+                                </t>
+                                <t t-else="">
+                                    <button class="btn btn-link btn-sm" t-on-click="() => session.loadMoreEvents()">
+                                        Load older messages
+                                    </button>
+                                </t>
+                            </div>
+                            <t t-if="!renderedTurns.length and session.state.status !== 'running' and !session.state.pendingMessages.length">
+                                <div class="mk_empty_inline d-flex flex-column align-items-center justify-content-center text-center py-5">
+                                    <div class="mk_empty_badge d-inline-flex align-items-center justify-content-center rounded-circle shadow-sm mb-3">
+                                        <i class="fa fa-comments-o"/>
+                                    </div>
+                                    <p t-if="suggestions.length" class="text-muted mb-3">Type a message below or pick a suggestion.</p>
+                                    <p t-else="" class="text-muted mb-3">Type a message below to begin.</p>
+                                    <div t-if="suggestions.length" class="mk_suggestions">
+                                        <t t-foreach="suggestions" t-as="s" t-key="s_index">
+                                            <button class="mk_suggestion" t-on-click="() => this.onSubmitSuggestion(s.prompt)">
+                                                <span class="mk_suggestion_label" t-esc="s.label"/>
+                                                <span class="mk_suggestion_preview" t-esc="s.prompt"/>
+                                            </button>
+                                        </t>
+                                    </div>
+                                </div>
+                            </t>
+                            <t t-foreach="renderedTurns" t-as="turn" t-key="turn_index + '-' + (turn.at || '')">
+                                <t t-call="muk_ai.ChatTurn">
+                                    <t t-set="turn" t-value="turn"/>
+                                </t>
+                            </t>
+                            <t t-if="session.state.status === 'running'">
+                                <div class="mk_turn mk_turn_assistant">
+                                    <t t-foreach="session.state.streamingTools" t-as="tool" t-key="tool.callId">
+                                        <ToolCard
+                                            block="{ name: tool.name, arguments: tool.argsBuffer, callId: tool.callId, result: null }"
+                                            streaming="true"
+                                        />
+                                    </t>
+                                    <div
+                                        class="mk_bubble mk_bubble_assistant mk_markdown mk_streaming"
+                                        t-if="session.state.streamingText or session.state.streamingReasoning or !session.state.streamingTools.length"
+                                    >
+                                        <t t-if="session.state.streamingText" t-out="renderMarkdown(session.state.streamingText)"/>
+                                        <span t-else="" class="mk_thinking">
+                                            <span class="mk_dots"><span/><span/><span/></span>
+                                            <span class="mk_thinking_status" t-esc="session.state.streamingReasoning ? session.latestReasoningLine() : 'Thinking'"/>
+                                        </span>
+                                        <div t-if="session.state.streamIdle and session.state.streamingText" class="mk_thinking mk_thinking_idle mt-1">
+                                            <span class="mk_dots"><span/><span/><span/></span>
+                                            <span class="mk_thinking_status" t-esc="session.state.streamingReasoning ? session.latestReasoningLine() : 'Still working…'"/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </t>
+                            <t t-foreach="session.state.pendingMessages" t-as="queued" t-key="queued_index">
+                                <div class="mk_turn mk_turn_user mk_turn_queued">
+                                    <div class="mk_bubble mk_bubble_user mk_bubble_queued shadow-sm" t-att-title="queued.queued_at || ''">
+                                        <i class="fa fa-clock-o me-2"/>
+                                        <span t-esc="queued.content"/>
+                                        <button
+                                            class="btn btn-sm mk_queue_cancel"
+                                            type="button"
+                                            title="Cancel queued message"
+                                            t-on-click="() => session.cancelQueued(queued_index)"
+                                        >
+                                            <i class="fa fa-times"/>
+                                        </button>
+                                    </div>
+                                </div>
+                            </t>
+                            <t t-if="session.state.error">
+                                <div class="alert alert-danger rounded-3 mt-3">
+                                    <strong><i class="fa fa-exclamation-circle me-1"/>Error:</strong>
+                                    <span t-esc="session.state.error"/>
+                                </div>
+                            </t>
+                        </div>
+                        </div>
+                    </div>
+                    <div class="mk_composer_wrap">
+                        <ChatComposer
+                            value="session.state.input"
+                            placeholder="inputPlaceholder"
+                            disabled="composerDisabled"
+                            canSend="canSend"
+                            canStop="canStop"
+                            canAttach="canAttach"
+                            isQueueing="isQueueing"
+                            attachments="session.state.pendingAttachments"
+                            focusToken="session.state.focusToken"
+                            onInput.bind="onInputChange"
+                            onSend.bind="onSend"
+                            onStop.bind="onStop"
+                            onAttachFiles.bind="onAttachFiles"
+                            onRemoveAttachment.bind="onRemoveAttachment"
+                            onOpenAttachment.bind="onOpenAttachment"
+                        />
+                        <div class="mk_composer_hint d-flex gap-3 mt-1 ps-1">
+                            <span><kbd>Enter</kbd> to send</span>
+                            <span><kbd>Shift</kbd>+<kbd>Enter</kbd> for newline</span>
+                        </div>
+                    </div>
+                </t>
+            </main>
+            <ChatArtifactsPanel
+                t-if="!state.artifactsHidden"
+                session="session"
+                onClose="() => this.closeArtifacts()"
+                onOpenAttachment.bind="onOpenAttachment"
+            />
+            </div>
+        </div>
+    </t>
+
+    <t t-name="muk_ai.ChatMainHeader">
+        <div class="mk_main_header d-flex align-items-center gap-2">
+            <button
+                class="btn btn-link btn-sm mk_sidebar_toggle p-1"
+                t-on-click="() => this.toggleSidebar()"
+                title="Toggle sidebar"
+            >
+                <i class="fa" t-att-class="state.sidebarHidden ? 'fa-chevron-right' : 'fa-chevron-left'"/>
+            </button>
+            <span class="mk_avatar rounded-circle" t-if="session.state.sessionId">
+                <i class="fa fa-comment-o"/>
+            </span>
+            <span class="mk_main_title" t-esc="session.state.name || 'MuK AI Chat'"/>
+            <Dropdown t-if="session.state.sessionId and session.state.agents.length">
+                <button class="btn btn-sm mk_agent_pill rounded-pill d-inline-flex align-items-center gap-1" title="Switch agent">
+                    <i class="fa fa-user-circle-o"/>
+                    <span t-esc="session.state.agentName || 'No agent'"/>
+                    <i class="fa fa-caret-down small"/>
+                </button>
+                <t t-set-slot="content">
+                    <t t-foreach="session.state.agents" t-as="agent" t-key="agent.id">
+                        <DropdownItem
+                            class="{ 'active': session.state.agentId === agent.id }"
+                            onSelected="() => this.session.onSetAgent(agent.id)"
+                        >
+                            <div class="d-flex flex-column">
+                                <span class="fw-semibold" t-esc="agent.name"/>
+                                <small class="text-muted" t-if="agent.description" t-esc="agent.description"/>
+                            </div>
+                        </DropdownItem>
+                    </t>
+                    <DropdownItem
+                        class="{ 'active': !session.state.agentId }"
+                        onSelected="() => this.session.onSetAgent(null)"
+                    >
+                        <span class="text-muted fst-italic">No agent (defaults)</span>
+                    </DropdownItem>
+                </t>
+            </Dropdown>
+            <span
+                t-if="session.state.loading and session.state.sessionId"
+                class="mk_chat_header_loading text-muted small d-inline-flex align-items-center gap-1"
+                title="Loading session"
+            >
+                <i class="fa fa-spinner fa-spin"/>
+            </span>
+            <span
+                t-elif="session.state.sessionId"
+                class="mk_status_pill rounded-pill"
+                t-att-class="statusBadgeClass(session.state.status)"
+                t-esc="statusLabel(session.state.status)"
+            />
+            <span
+                t-if="session.state.status === 'waiting_schedule' and session.state.resumeAt"
+                class="mk_chat_header_resume text-muted small"
+                t-att-title="formatTimestamp(session.state.resumeAt)"
+            >
+                <t t-esc="resumeRelativeText"/>
+            </span>
+            <button
+                t-if="session.state.sessionId"
+                class="btn btn-sm mk_approval_pill rounded-pill border-0 d-inline-flex align-items-center gap-1"
+                t-att-class="approvalPill.className"
+                t-att-title="approvalPill.tooltip"
+                t-on-click="() => this.session.cycleApprovalMode()"
+            >
+                <i class="fa" t-att-class="approvalPill.icon"/>
+                <span t-esc="approvalPill.label"/>
+            </button>
+            <button
+                t-if="session.canRegenerate()"
+                class="btn btn-sm btn-outline-secondary rounded-pill d-inline-flex align-items-center gap-1"
+                title="Regenerate last answer"
+                t-on-click="() => this.session.onRegenerate()"
+            >
+                <i class="fa fa-refresh"/>
+                <span>Regenerate</span>
+            </button>
+            <div class="mk_tokens ms-auto d-flex align-items-center gap-2" t-if="session.state.sessionId">
+                <button
+                    class="btn btn-link btn-sm mk_search_toggle p-1"
+                    t-att-class="{ active: state.searchOpen }"
+                    t-on-click="() => this.toggleSearch()"
+                    title="Search this chat"
+                >
+                    <i class="fa fa-search"/>
+                </button>
+                <button
+                    class="btn btn-link btn-sm mk_artifacts_toggle p-1"
+                    t-att-class="{ active: !state.artifactsHidden }"
+                    t-on-click="() => this.toggleArtifacts()"
+                    title="Toggle artifacts panel"
+                >
+                    <i class="fa fa-paperclip"/>
+                </button>
+                <span
+                    class="mk_chip mk_ctx_chip rounded-pill d-inline-flex align-items-center"
+                    t-if="session.state.viewContext"
+                >
+                    <button
+                        class="btn btn-link p-0 border-0 text-reset text-decoration-none d-inline-flex align-items-center"
+                        t-att-title="viewContextTooltip"
+                        t-on-click="() => this.session.openPinnedContext()"
+                    >
+                        <i class="fa fa-thumb-tack mt-1 me-1"/><t t-esc="viewContextLabel"/>
+                    </button>
+                    <button
+                        class="btn btn-link p-0 border-0 text-reset ms-1 mk_ctx_unpin"
+                        title="Unpin view context"
+                        t-on-click="() => this.session.runUnpin()"
+                    >
+                        <i class="fa fa-times"/>
+                    </button>
+                </span>
+                <span class="mk_chip rounded-pill" title="Iterations">
+                    <i class="fa fa-repeat"/><t t-esc="session.state.iterationCount"/>
+                </span>
+                <span
+                    class="mk_chip mk_context_chip rounded-pill"
+                    t-att-class="contextClass"
+                    t-att-title="contextTooltip"
+                    t-if="session.state.contextWindow"
+                >
+                    <span class="mk_context_ring" t-att-style="`--pct:${contextPercent}`"/><t t-esc="contextPercent"/>%
+                </span>
+                <span class="mk_chip rounded-pill" title="Input tokens">
+                    <i class="fa fa-sign-in"/><t t-esc="session.state.inputTokens"/>
+                </span>
+                <span class="mk_chip rounded-pill" title="Output tokens">
+                    <i class="fa fa-sign-out"/><t t-esc="session.state.outputTokens"/>
+                </span>
+                <span class="mk_chip mk_cost_chip rounded-pill" t-att-title="costPill.tooltip">
+                    <i class="fa fa-dollar"/><t t-esc="costPill.label"/>
+                </span>
+                <button
+                    class="btn btn-link btn-sm mk_popout"
+                    title="Pop out chat to a floating window"
+                    t-on-click="() => this.onPopout()"
+                >
+                    <i class="fa fa-external-link"/>
+                </button>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="muk_ai.ChatTurn">
+        <t t-if="turn.role === 'user'">
+            <div class="mk_turn mk_turn_user" t-att-class="turn.inHistory ? 'mk_turn_in_history' : ''">
+                <div
+                    class="mk_bubble mk_bubble_user shadow-sm"
+                    t-att-id="'mk_msg_' + turn_index + '_user'"
+                    t-att-title="turn.at || ''"
+                >
+                    <t t-if="turn.text">
+                        <t t-out="renderUserText(turn.text)"/>
+                    </t>
+                    <div class="mk_bubble_attachments d-flex flex-wrap gap-2 mt-2" t-if="turn.attachments and turn.attachments.length">
+                        <t t-foreach="turn.attachments" t-as="attachment" t-key="attachment.id">
+                            <AttachmentCard
+                                attachment="attachment"
+                                onOpen.bind="onOpenAttachment"
+                            />
+                        </t>
+                    </div>
+                    <t t-call="muk_ai.ChatMsgMeta">
+                        <t t-set="meta_at" t-value="turn.at"/>
+                        <t t-set="meta_text" t-value="turn.text"/>
+                        <t t-set="meta_event_id" t-value="turn.eventId"/>
+                        <t t-set="meta_side" t-value="'mk_msg_meta_right'"/>
+                        <t t-set="meta_in_history" t-value="turn.inHistory"/>
+                    </t>
+                </div>
+            </div>
+        </t>
+        <t t-elif="turn.role === 'command'">
+            <div class="mk_turn mk_turn_command" t-att-title="turn.at || ''">
+                <div class="mk_context_divider" role="separator" aria-label="Context boundary">
+                    <span class="mk_context_divider_line"/>
+                    <span class="mk_context_divider_label">
+                        <code t-esc="turn.name"/>
+                        <t t-if="turn.summary">
+                            <span class="mk_context_divider_sep">·</span>
+                            <span class="mk_context_divider_meta">compacted <t t-esc="turn.originalMessages"/> msgs / <t t-esc="turn.originalTokens"/> tokens</span>
+                        </t>
+                        <t t-elif="turn.message">
+                            <span class="mk_context_divider_sep">·</span>
+                            <span class="mk_context_divider_meta" t-esc="turn.message"/>
+                        </t>
+                    </span>
+                    <span class="mk_context_divider_line"/>
+                </div>
+                <div class="mk_context_divider_summary mk_markdown" t-if="turn.summary" t-out="renderMarkdown(turn.summary)"/>
+            </div>
+        </t>
+        <t t-elif="turn.role === 'compact_progress'">
+            <div class="mk_turn mk_turn_command mk_turn_compact_progress" t-att-title="turn.at || ''">
+                <t t-if="turn.state === 'streaming'">
+                    <div class="mk_compact_card">
+                        <div class="mk_compact_card_head">
+                            <i class="fa fa-circle-o-notch fa-spin mk_compact_spinner"/>
+                            <span class="mk_compact_card_title">
+                                <t t-esc="turn.auto ? 'Auto-compacting' : 'Compacting'"/>
+                            </span>
+                            <span class="mk_compact_card_meta">
+                                · <t t-esc="turn.messageCount"/> msgs
+                                <t t-if="turn.tokensEstimate"> · ~<t t-esc="turn.tokensEstimate"/> tokens</t>
+                            </span>
+                            <button
+                                class="btn btn-sm btn-link mk_compact_stop"
+                                t-on-click="() => session.runStopCompact()"
+                            >
+                                <i class="fa fa-stop me-1"/>Stop
+                            </button>
+                        </div>
+                        <div class="mk_compact_card_body mk_markdown" t-if="turn.streamedText"
+                             t-out="renderMarkdown(turn.streamedText)"/>
+                        <div class="mk_compact_card_body text-muted small" t-else="">
+                            Summarizing conversation…
+                        </div>
+                    </div>
+                </t>
+                <t t-elif="turn.state === 'done'">
+                    <div class="mk_context_divider" role="separator" aria-label="Compaction boundary">
+                        <span class="mk_context_divider_line"/>
+                        <span class="mk_context_divider_label">
+                            <code><t t-esc="turn.auto ? 'auto-compact' : '/compact'"/></code>
+                            <span class="mk_context_divider_sep">·</span>
+                            <span class="mk_context_divider_meta">compacted <t t-esc="turn.originalMessages"/> msgs / <t t-esc="turn.originalTokens"/> tokens</span>
+                        </span>
+                        <span class="mk_context_divider_line"/>
+                    </div>
+                    <details class="mk_compact_summary_details" t-if="turn.summary">
+                        <summary class="mk_compact_summary_toggle">Show summary</summary>
+                        <div class="mk_context_divider_summary mk_markdown"
+                             t-out="renderMarkdown(turn.summary)"/>
+                    </details>
+                </t>
+                <t t-elif="turn.state === 'cancelled'">
+                    <div class="mk_context_divider" role="separator" aria-label="Compaction cancelled">
+                        <span class="mk_context_divider_line"/>
+                        <span class="mk_context_divider_label mk_context_divider_label_muted">
+                            <code><t t-esc="turn.auto ? 'auto-compact' : '/compact'"/></code>
+                            <span class="mk_context_divider_sep">·</span>
+                            <span class="mk_context_divider_meta" t-esc="turn.message || 'cancelled'"/>
+                        </span>
+                        <span class="mk_context_divider_line"/>
+                    </div>
+                </t>
+                <t t-elif="turn.state === 'error'">
+                    <div class="mk_compact_card mk_compact_card_error">
+                        <div class="mk_compact_card_head">
+                            <i class="fa fa-exclamation-triangle me-2 text-danger"/>
+                            <span class="mk_compact_card_title">Compaction failed</span>
+                        </div>
+                        <div class="mk_compact_card_body text-muted small" t-esc="turn.error"/>
+                    </div>
+                </t>
+            </div>
+        </t>
+        <t t-else="">
+            <div class="mk_turn mk_turn_assistant" t-att-class="turn.inHistory ? 'mk_turn_in_history' : ''">
+                <t t-foreach="turn.blocks" t-as="block" t-key="(block.callId || block.at || '') + '-' + block_index">
+                    <t t-if="block.type === 'text'">
+                        <div
+                            class="mk_bubble mk_bubble_assistant mk_markdown"
+                            t-att-id="'mk_msg_' + turn_index + '_' + block_index"
+                        >
+                            <t t-call="muk_ai.ChatMsgMeta">
+                                <t t-set="meta_at" t-value="block.at || turn.at"/>
+                                <t t-set="meta_text" t-value="block.text"/>
+                                <t t-set="meta_event_id" t-value="block.eventId || turn.eventId"/>
+                                <t t-set="meta_side" t-value="''"/>
+                                <t t-set="meta_in_history" t-value="turn.inHistory"/>
+                            </t>
+                            <div class="mk_bubble_body" t-out="renderAssistantMarkdown(block.text)"/>
+                        </div>
+                    </t>
+                    <t t-elif="block.type === 'tool'">
+                        <ToolCard
+                            t-if="!isToolHiddenForAsk(block, turn)"
+                            block="block"
+                            expanded="isToolExpanded(block.callId)"
+                            streaming="isToolStreaming(block)"
+                            onToggle.bind="toggleToolBlock"
+                        />
+                    </t>
+                    <t t-elif="block.type === 'ask'">
+                        <t t-call="muk_ai.AskCard">
+                            <t t-set="block" t-value="block"/>
+                        </t>
+                    </t>
+                </t>
+            </div>
+        </t>
+    </t>
+
+    <t t-name="muk_ai.ChatMsgMeta">
+        <div class="mk_msg_meta" t-att-class="meta_side">
+            <span class="mk_msg_time" t-if="meta_at" t-esc="formatTimestamp(meta_at)"/>
+            <button class="mk_msg_btn mk_msg_copy" type="button"
+                    title="Copy message"
+                    t-on-click="() => session.copyText(meta_text)">
+                <i class="fa fa-copy"/>
+            </button>
+            <button class="mk_msg_btn mk_msg_fork" type="button"
+                    t-if="meta_event_id and !meta_in_history"
+                    title="Branch — open a new session with the history up to this message"
+                    t-on-click="() => session.runForkAtEvent(meta_event_id)">
+                <i class="fa fa-code-fork"/>
+            </button>
+            <button class="mk_msg_btn mk_msg_undo" type="button"
+                    t-if="meta_event_id and !meta_in_history"
+                    title="Rewind — remove this message and everything after"
+                    t-on-click="() => session.runUndoToEvent(meta_event_id)">
+                <i class="fa fa-undo"/>
+            </button>
+        </div>
+    </t>
+
+    <t t-name="muk_ai.AskCard">
+        <t t-if="block.resolution === 'yesno'">
+            <div class="mk_ask_card">
+                <div class="mk_ask_head d-flex align-items-center">
+                    <i class="fa fa-shield me-2"/>
+                    <strong>Confirmation required</strong>
+                    <span class="ms-2 text-muted small" t-if="block.preview and (block.preview.model_label or block.preview.model)" t-esc="'· ' + (block.preview.model_label or block.preview.model)"/>
+                    <span class="ms-auto small" t-if="block.preview and block.preview.kind">
+                        <button
+                            class="btn btn-link btn-sm mk_ask_toggle p-0"
+                            t-att-title="askViewMode(block) === 'technical' ? 'Show friendly view' : 'Show technical view'"
+                            t-on-click="() => this.toggleAskView(block.callId)"
+                        >
+                            <i class="fa" t-att-class="askViewMode(block) === 'technical' ? 'fa-list' : 'fa-code'"/>
+                        </button>
+                    </span>
+                </div>
+                <div class="mk_ask_body">
+                    <p class="mb-2 small" t-if="block.text" t-esc="block.text"/>
+                    <t t-if="askViewMode(block) === 'human' and block.preview and block.preview.kind">
+                        <t t-call="muk_ai.AskPreview">
+                            <t t-set="preview" t-value="block.preview"/>
+                        </t>
+                    </t>
+                    <t t-elif="block.preview">
+                        <pre class="mk_ask_args small mb-2" t-esc="askArgsText(block)"/>
+                    </t>
+                </div>
+                <t t-if="session.state.pendingAsk and session.state.pendingAsk.call_id === block.callId">
+                    <div class="mk_ask_actions d-flex flex-wrap gap-2">
+                        <button class="btn btn-sm btn-primary" t-on-click="() => this.session.respondYesno('approve')">
+                            <i class="fa fa-check me-1"/>Approve
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary" t-on-click="() => this.session.respondYesno('session')" title="Auto-approve matching calls for the rest of this conversation" t-if="session.state.pendingAsk.kind === 'approval'">
+                            <i class="fa fa-star me-1"/>Allow for session
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" t-on-click="() => this.session.respondYesno('reject')">
+                            <i class="fa fa-times me-1"/>Reject
+                        </button>
+                    </div>
+                </t>
+                <t t-else="">
+                    <div class="mk_ask_resolved small text-muted">Resolved.</div>
+                </t>
+            </div>
+        </t>
+        <t t-else="">
+            <div class="mk_bubble mk_bubble_assistant mk_ask_simple">
+                <strong class="d-block mb-1"><i class="fa fa-question-circle me-1"/>Question</strong>
+                <span t-esc="block.text"/>
+                <t t-if="block.preview and block.preview.kind">
+                    <div class="mt-2">
+                        <t t-call="muk_ai.AskPreview">
+                            <t t-set="preview" t-value="block.preview"/>
+                        </t>
+                    </div>
+                </t>
+                <div class="mk_ask_options d-flex flex-wrap gap-2 mt-2" t-if="block.options and block.options.length">
+                    <t t-foreach="block.options" t-as="opt" t-key="opt_index">
+                        <button
+                            class="btn btn-sm btn-outline-primary mk_ask_option"
+                            t-att-disabled="session.state.status === 'running' or session.state.pendingAsk?.call_id !== block.callId"
+                            t-on-click="() => this.session.answerWithOption(opt)"
+                            t-esc="opt"
+                        />
+                    </t>
+                </div>
+            </div>
+        </t>
+    </t>
+
+    <t t-name="muk_ai.AskPreview">
+        <div class="mk_ask_preview">
+            <div class="mk_ask_title mb-2" t-esc="preview.title"/>
+            <t t-if="preview.kind === 'update'">
+                <div class="mk_ask_targets small text-muted mb-2" t-if="preview.targets and preview.targets.length">
+                    <i class="fa fa-angle-right me-1"/>
+                    <t t-foreach="preview.targets" t-as="tgt" t-key="tgt_index">
+                        <span class="mk_ask_target" t-esc="tgt.display_name"/>
+                        <span t-if="!tgt_last" class="text-muted">, </span>
+                    </t>
+                </div>
+                <table class="mk_ask_changes w-100">
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>From</th>
+                            <th>To</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="preview.changes" t-as="change" t-key="change_index">
+                            <tr>
+                                <td><strong t-esc="change.label"/><br/><code class="text-muted" t-esc="change.field"/></td>
+                                <td><span t-if="change.from" t-esc="change.from"/><span t-else="" class="mk_ask_empty">—</span></td>
+                                <td><span t-if="change.to" t-esc="change.to"/><span t-else="" class="mk_ask_empty">—</span></td>
+                            </tr>
+                        </t>
+                    </tbody>
+                </table>
+            </t>
+            <t t-elif="preview.kind === 'delete'">
+                <ul class="mk_ask_targets_list small mb-0">
+                    <t t-foreach="preview.targets" t-as="tgt" t-key="tgt_index">
+                        <li>
+                            <i class="fa fa-trash-o text-danger me-1"/>
+                            <span t-esc="tgt.display_name"/>
+                            <code class="text-muted ms-1" t-esc="'#' + tgt.id"/>
+                        </li>
+                    </t>
+                    <li t-if="!preview.targets or !preview.targets.length" class="mk_ask_empty">No records resolved.</li>
+                </ul>
+            </t>
+            <t t-elif="preview.kind === 'call'">
+                <div class="mk_ask_call mb-2">
+                    <i class="fa fa-bolt me-1"/>
+                    <code t-esc="preview.method"/>
+                    <span class="text-muted"> on </span>
+                    <span t-esc="preview.model_label or preview.model"/>
+                </div>
+                <ul class="mk_ask_targets_list small mb-0" t-if="preview.targets and preview.targets.length">
+                    <t t-foreach="preview.targets" t-as="tgt" t-key="tgt_index">
+                        <li>
+                            <span t-esc="tgt.display_name"/>
+                            <code class="text-muted ms-1" t-esc="'#' + tgt.id"/>
+                        </li>
+                    </t>
+                </ul>
+            </t>
+            <t t-elif="preview.kind === 'create'">
+                <table class="mk_ask_changes w-100">
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="preview.properties" t-as="prop" t-key="prop_index">
+                            <tr>
+                                <td><strong t-esc="prop.label"/><br/><code class="text-muted" t-esc="prop.field"/></td>
+                                <td><span t-if="prop.value" t-esc="prop.value"/><span t-else="" class="mk_ask_empty">—</span></td>
+                            </tr>
+                        </t>
+                    </tbody>
+                </table>
+            </t>
+        </div>
+    </t>
+
+</templates>

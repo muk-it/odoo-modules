@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo noupdate="1">
+
+	<record id="skill_reply" model="muk_ai.skill">
+		<field name="name">reply</field>
+		<field name="label">Reply</field>
+		<field name="description">Draft a chatter reply for the pinned record and open the mail composer wizard pre-filled with the draft.</field>
+		<field name="body"><![CDATA[
+Draft a chatter message and open the mail composer wizard pre-filled with the draft. Do NOT post
+the message — leave it for the user to review and send from the wizard.
+
+1. Resolve the target record from the pinned record in `<ui_ctx>` (model + id). If still missing,
+   call `ask_user` once for a record reference.
+2. Decide what the reply should say:
+   - If the user already wrote the message text in their request (the prompt after `/reply ...`
+     reads like a finished sentence to a recipient), use that text almost verbatim and just rewrap
+     it as short HTML paragraphs.
+   - If the user only gave a directive (e.g. "thank them for the quick turnaround", "ask when
+     shipping"), ground the draft: `search_read` on `mail.message` with domain
+     `[('model','=',<model>),('res_id','=',<id>),('message_type','in',['comment','email'])]`,
+     order `date desc`, limit 3, fields `date,subject,body,author_id`. Then write a tactful 60–90
+     word reply that follows the directive and references the most recent prior message
+     concretely. If there is no prior message, open with a short re-introduction.
+3. Wrap the draft as minimal HTML — `<p>…</p>` paragraphs only. No inline styles, no signature
+   (Odoo appends one).
+4. Call `open_action`:
+   - `action_ref`: `mail.action_email_compose_message_wizard`
+   - `additional_context`:
+     - `default_model`: target model
+     - `default_res_ids`: `[<id>]`
+     - `default_composition_mode`: `comment`
+     - `default_subtype_xmlid`: `mail.mt_comment`
+     - `default_body`: the HTML draft
+5. Reply with one short confirmation line, e.g. `Drafted reply to <display_name>; review and send
+   it from the composer.` Stop. Do not post the message yourself.
+        ]]></field>
+	</record>
+
+</odoo>

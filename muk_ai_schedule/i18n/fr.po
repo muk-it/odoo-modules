@@ -1,0 +1,955 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* muk_ai_schedule
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-05-05 16:51+0000\n"
+"PO-Revision-Date: 2026-05-05 16:51+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: muk_ai_schedule
+#. odoo-javascript
+#: code:addons/muk_ai_schedule/static/src/views/fields/schedule_countdown/schedule_countdown.js:0
+msgid "%sd %sh"
+msgstr "%sj %sh"
+
+#. module: muk_ai_schedule
+#. odoo-javascript
+#: code:addons/muk_ai_schedule/static/src/views/fields/schedule_countdown/schedule_countdown.js:0
+msgid "%sh %sm"
+msgstr "%sh %sm"
+
+#. module: muk_ai_schedule
+#. odoo-javascript
+#: code:addons/muk_ai_schedule/static/src/views/fields/schedule_countdown/schedule_countdown.js:0
+msgid "%sm %ss"
+msgstr "%sm %ss"
+
+#. module: muk_ai_schedule
+#. odoo-javascript
+#: code:addons/muk_ai_schedule/static/src/views/fields/schedule_countdown/schedule_countdown.js:0
+msgid "%ss"
+msgstr "%ss"
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/schedule.py:0
+msgid "'at' could not be parsed."
+msgstr "'at' n'a pas pu être analysé."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/schedule.py:0
+msgid "'at' must be an ISO 8601 datetime (got %(value)r)."
+msgstr "'at' doit être une date ISO 8601 (reçu %(value)r)."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/schedule.py:0
+msgid "'every' is required."
+msgstr "'every' est requis."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/schedule.py:0
+msgid "'every' must be an integer."
+msgstr "'every' doit être un entier."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/schedule.py:0
+msgid "'max_runs' must be an integer."
+msgstr "'max_runs' doit être un entier."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/schedule.py:0
+msgid "'max_runs' must be positive."
+msgstr "'max_runs' doit être positif."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/schedule.py:0
+msgid "'prompt' is required and must be non-empty."
+msgstr "'prompt' est requis et ne doit pas être vide."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/schedule.py:0
+msgid "'prompt' is too long (%(got)s chars, max %(max)s)."
+msgstr "'prompt' est trop long (%(got)s caractères, max %(max)s)."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/schedule.py:0
+msgid "'seconds_from_now' must be an integer."
+msgstr "'seconds_from_now' doit être un entier."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/schedule.py:0
+msgid "'until' must be an ISO 8601 datetime (got %(value)r)."
+msgstr "'until' doit être une date ISO 8601 (reçu %(value)r)."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/schedule.py:0
+msgid "'until' must be in the future."
+msgstr "'until' doit être dans le futur."
+
+#. module: muk_ai_schedule
+#. odoo-javascript
+#: code:addons/muk_ai_schedule/static/src/views/fields/schedule_countdown/schedule_countdown.js:0
+msgid "(due)"
+msgstr "(dû)"
+
+#. module: muk_ai_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_res_config_settings_form
+msgid "<i class=\"fa fa-arrow-right me-1\"/>Manage AI Schedules"
+msgstr "<i class=\"fa fa-arrow-right me-1\"/>Gérer les planifications IA"
+
+#. module: muk_ai_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_kanban
+msgid "<i class=\"fa fa-clock-o me-1\" role=\"img\" aria-label=\"Next call\"/>"
+msgstr "<i class=\"fa fa-clock-o me-1\" role=\"img\" aria-label=\"Prochain appel\"/>"
+
+#. module: muk_ai_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_kanban
+msgid "<i class=\"fa fa-comments-o me-1\" role=\"img\" aria-label=\"Sessions\"/>"
+msgstr "<i class=\"fa fa-comments-o me-1\" role=\"img\" aria-label=\"Sessions\"/>"
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/tools/recurrence.py:0
+msgid "A cron expression is required when interval_type is 'cron'."
+msgstr "Une expression cron est requise lorsque interval_type vaut 'cron'."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/tools/recurrence.py:0
+msgid ""
+"A monthday between 1 and 31 is required when interval_type is 'months'."
+msgstr ""
+"Un jour du mois entre 1 et 31 est requis lorsque interval_type vaut "
+"'months'."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/tools/recurrence.py:0
+msgid "A weekday is required when interval_type is 'weeks'."
+msgstr "Un jour de la semaine est requis lorsque interval_type vaut 'weeks'."
+
+#. module: muk_ai_schedule
+#: model:ir.model,name:muk_ai_schedule.model_muk_ai_schedule
+msgid "AI Schedule"
+msgstr "Planification IA"
+
+#. module: muk_ai_schedule
+#: model:ir.actions.act_window,name:muk_ai_schedule.action_muk_ai_schedule
+msgid "AI Schedules"
+msgstr "Planifications IA"
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/models/ai_session.py:0
+#: model:ir.model,name:muk_ai_schedule.model_muk_ai_session
+msgid "AI Session"
+msgstr "Session IA"
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/models/ai_session.py:0
+msgid "AI session %(link)s started for this record."
+msgstr "Session IA %(link)s démarrée pour cet enregistrement."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__active
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_kanban
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_search
+msgid "Active"
+msgstr "Actif"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__agent_id
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_form
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_search
+msgid "Agent"
+msgstr "Agent"
+
+#. module: muk_ai_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_kanban
+msgid "Archive"
+msgstr "Archiver"
+
+#. module: muk_ai_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_form
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_kanban
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_search
+msgid "Archived"
+msgstr "Archivé"
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/tools/recurrence.py:0
+msgid "Base must be a datetime instance."
+msgstr "Base doit être une instance datetime."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/schedule.py:0
+msgid "Cap exceeded (%(cap)s: %(observed)s/%(limit)s)."
+msgstr "Limite dépassée (%(cap)s : %(observed)s/%(limit)s)."
+
+#. module: muk_ai_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_form
+msgid "Caps"
+msgstr "Limites"
+
+#. module: muk_ai_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_ai_session_form_inherit_schedule
+msgid "Chain"
+msgstr "Chaîne"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_session__chain_session_count
+msgid "Chain Sessions"
+msgstr "Enchaîner les sessions"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,help:muk_ai_schedule.field_muk_ai_schedule__next_call
+msgid "Computed next firing time."
+msgstr "Prochain déclenchement calculé."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/tools/recurrence.py:0
+msgid "Could not compute a future month occurrence for monthday %(value)s."
+msgstr ""
+"Impossible de calculer une prochaine occurrence mensuelle pour le jour "
+"%(value)s."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__create_uid
+msgid "Created by"
+msgstr "Créé par"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__create_date
+msgid "Created on"
+msgstr "Créé le"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__cron_expression
+#: model:ir.model.fields.selection,name:muk_ai_schedule.selection__muk_ai_schedule__interval_type__cron
+msgid "Cron Expression"
+msgstr "Expression cron"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__monthday
+msgid "Day of Month"
+msgstr "Jour du mois"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,help:muk_ai_schedule.field_muk_ai_schedule__monthday
+msgid "Day of month, 1-31 (only for months interval)."
+msgstr "Jour du mois, 1-31 (uniquement pour l'intervalle de mois)."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,help:muk_ai_schedule.field_muk_ai_schedule__weekday
+msgid "Day of week (only for weeks interval)."
+msgstr "Jour de la semaine (uniquement pour l'intervalle de semaines)."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields.selection,name:muk_ai_schedule.selection__muk_ai_schedule__interval_type__days
+msgid "Days"
+msgstr "Jours"
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/schedule.py:0
+msgid "Delay must be at least %(min)s seconds (got %(got)s)."
+msgstr "Le délai doit être d'au moins %(min)s secondes (reçu %(got)s)."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/schedule.py:0
+msgid "Delay must be at most %(max)s seconds (got %(got)s)."
+msgstr "Le délai doit être au plus de %(max)s secondes (reçu %(got)s)."
+
+#. module: muk_ai_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_form
+msgid "Dispatch"
+msgstr "Dispatch"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__dispatch_mode
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_search
+msgid "Dispatch Mode"
+msgstr "Mode de dispatch"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__display_name
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_session__display_name
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_mcp_mixin__display_name
+msgid "Display Name"
+msgstr "Nom affiché"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__domain
+#: model:ir.model.fields.selection,name:muk_ai_schedule.selection__muk_ai_schedule__record_source__domain
+msgid "Domain"
+msgstr "Domaine"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,help:muk_ai_schedule.field_muk_ai_schedule__domain
+msgid "Domain on the target model. Used when Record Source is Domain."
+msgstr ""
+"Domaine sur le modèle cible. Utilisé lorsque la source d'enregistrements est"
+" Domaine."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,help:muk_ai_schedule.field_muk_ai_schedule__record_source
+msgid ""
+"Domain: simple Odoo domain on the target model. Python: safe-evaluated code "
+"that must assign a recordset to the `records` variable. Available context: "
+"env, now, today."
+msgstr ""
+"Domaine : domaine Odoo simple sur le modèle cible. Python : code évalué de "
+"manière sécurisée qui doit affecter un recordset à la variable `records`. "
+"Contexte disponible : env, now, today."
+
+#. module: muk_ai_schedule
+#: model:muk_ai.schedule,prompt:muk_ai_schedule.demo_schedule_quiet_partner_nudge
+msgid ""
+"Draft a short check-in message for {{ record.name }}. Reference any context "
+"from the latest 3 messages logged on the partner record. Tone: warm, "
+"professional, max 90 words. Do not send — only draft."
+msgstr ""
+"Rédigez un court message de suivi pour {{ record.name }}. Référez-vous au "
+"contexte des 3 derniers messages enregistrés sur l'enregistrement du "
+"partenaire. Ton : chaleureux, professionnel, 90 mots max. Ne pas envoyer — "
+"uniquement rédiger."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields.selection,name:muk_ai_schedule.selection__muk_ai_schedule__weekday__fri
+msgid "Friday"
+msgstr "Vendredi"
+
+#. module: muk_ai_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_ai_session_search_inherit_schedule
+msgid "From Schedule"
+msgstr "Depuis la planification"
+
+#. module: muk_ai_schedule
+#: model:muk_ai.schedule,prompt:muk_ai_schedule.demo_schedule_per_partner_welcome
+msgid ""
+"Generate a personalised welcome message for {{ record.name }}. Keep it under 80 words.\n"
+"\n"
+"Prior draft (if any): {{ previous_session.last_text }}"
+msgstr ""
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields.selection,name:muk_ai_schedule.selection__muk_ai_schedule__interval_type__hours
+msgid "Hours"
+msgstr "Heures"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,help:muk_ai_schedule.field_muk_ai_session__recur_runs_done
+msgid "How many recur fires this session has executed."
+msgstr "Nombre de déclenchements récurrents exécutés par cette session."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__id
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_session__id
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_mcp_mixin__id
+msgid "ID"
+msgstr "ID"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,help:muk_ai_schedule.field_muk_ai_session__res_id
+msgid "Identifier of the linked business record."
+msgstr "Identifiant de l'enregistrement métier lié."
+
+#. module: muk_ai_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_kanban
+msgid "Idle"
+msgstr "Inactif"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,help:muk_ai_schedule.field_muk_ai_schedule__prompt
+msgid ""
+"Initial prompt sent to the agent on each fire. Rendered as an inline "
+"template with the schedule's evaluation context."
+msgstr ""
+"Invite initiale envoyée à l'agent à chaque déclenchement. Rendue comme un "
+"modèle en ligne avec le contexte d'évaluation de la planification."
+
+#. module: muk_ai_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_form
+msgid "Initial prompt sent to the agent on each fire..."
+msgstr "Invite initiale envoyée à l'agent à chaque déclenchement…"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,help:muk_ai_schedule.field_muk_ai_schedule__note
+msgid "Internal notes for administrators."
+msgstr "Notes internes pour les administrateurs."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__interval_number
+msgid "Interval Number"
+msgstr "Nombre d'intervalle"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__interval_type
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_search
+msgid "Interval Type"
+msgstr "Type d'intervalle"
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/tools/recurrence.py:0
+msgid "Interval number must be a positive integer."
+msgstr "Le nombre d'intervalle doit être un entier positif."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/tools/recurrence.py:0
+msgid "Invalid cron expression %(value)s: %(error)s"
+msgstr "Expression cron invalide %(value)s : %(error)s"
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/tools/recurrence.py:0
+msgid "Invalid interval type %(value)s. Expected one of: %(allowed)s."
+msgstr "Type d'intervalle invalide %(value)s. Attendu : %(allowed)s."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/tools/recurrence.py:0
+msgid "Invalid weekday %(value)s. Expected one of: %(allowed)s."
+msgstr "Jour de la semaine invalide %(value)s. Attendu : %(allowed)s."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__last_call
+msgid "Last Call"
+msgstr "Dernier appel"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__write_uid
+msgid "Last Updated by"
+msgstr "Dernière mise à jour par"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__write_date
+msgid "Last Updated on"
+msgstr "Dernière mise à jour le"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_session__res_model
+msgid "Linked Model"
+msgstr "Modèle lié"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_session__res_id
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_ai_session_form_inherit_schedule
+msgid "Linked Record"
+msgstr "Enregistrement lié"
+
+#. module: muk_ai_schedule
+#: model:ir.model,name:muk_ai_schedule.model_muk_mcp_mixin
+msgid "MCP Tool Mixin"
+msgstr "Mixin d'outil MCP"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__max_cost_eur
+msgid "Max Cost (EUR)"
+msgstr "Coût max (EUR)"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__max_lifetime_hours
+msgid "Max Lifetime (hours)"
+msgstr "Durée de vie max (heures)"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__max_records_per_fire
+msgid "Max Records Per Fire"
+msgstr "Enregistrements max par déclenchement"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__max_resumes
+msgid "Max Resumes"
+msgstr "Reprises max"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__max_total_tokens
+msgid "Max Total Tokens"
+msgstr "Tokens totaux max"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields.selection,name:muk_ai_schedule.selection__muk_ai_schedule__interval_type__minutes
+msgid "Minutes"
+msgstr "Minutes"
+
+#. module: muk_ai_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_form
+msgid "Mode"
+msgstr "Mode"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,help:muk_ai_schedule.field_muk_ai_session__res_model
+msgid "Model of the business record this session is linked to."
+msgstr "Modèle de l'enregistrement métier auquel cette session est liée."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields.selection,name:muk_ai_schedule.selection__muk_ai_schedule__weekday__mon
+msgid "Monday"
+msgstr "Lundi"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields.selection,name:muk_ai_schedule.selection__muk_ai_schedule__interval_type__months
+msgid "Months"
+msgstr "Mois"
+
+#. module: muk_ai_schedule
+#: model:ir.actions.server,name:muk_ai_schedule.cron_fire_due_schedules_ir_actions_server
+msgid "MuK AI Schedule: Fire Due Schedules"
+msgstr "MuK AI Schedule : Déclencher les planifications dues"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__name
+msgid "Name"
+msgstr "Nom"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__next_call
+msgid "Next Call"
+msgstr "Prochain appel"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__note
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_form
+msgid "Notes"
+msgstr "Notes"
+
+#. module: muk_ai_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_kanban
+msgid "Open"
+msgstr "Ouvrir"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,help:muk_ai_schedule.field_muk_ai_schedule__max_cost_eur
+msgid "Override for the per-session cost cap. 0 uses the module default."
+msgstr ""
+"Remplacement de la limite de coût par session. 0 utilise la valeur par "
+"défaut du module."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,help:muk_ai_schedule.field_muk_ai_schedule__max_resumes
+msgid "Override for the per-session resume cap. 0 uses the module default."
+msgstr ""
+"Remplacement de la limite de reprises par session. 0 utilise la valeur par "
+"défaut du module."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,help:muk_ai_schedule.field_muk_ai_schedule__max_total_tokens
+msgid ""
+"Override for the per-session total token cap. 0 uses the module default."
+msgstr ""
+"Remplacement de la limite totale de tokens par session. 0 utilise la valeur "
+"par défaut du module."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,help:muk_ai_schedule.field_muk_ai_schedule__max_lifetime_hours
+msgid ""
+"Override for the per-session wall-clock lifetime cap. 0 uses the module "
+"default."
+msgstr ""
+"Remplacement de la limite d'horloge murale par session. 0 utilise la valeur "
+"par défaut du module."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__user_id
+msgid "Owner"
+msgstr "Propriétaire"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields.selection,name:muk_ai_schedule.selection__muk_ai_schedule__dispatch_mode__per_record
+msgid "Per Record"
+msgstr "Par enregistrement"
+
+#. module: muk_ai_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_form
+msgid "Per-Session Overrides"
+msgstr "Remplacements par session"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,help:muk_ai_schedule.field_muk_ai_schedule__max_records_per_fire
+msgid "Per-record dispatch caps the number of sessions spawned per cron tick."
+msgstr ""
+"Le dispatch par enregistrement plafonne le nombre de sessions créées par "
+"tick cron."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,help:muk_ai_schedule.field_muk_ai_session__recur_config
+msgid "Persisted schedule_recurring args: {every, until, max_runs}."
+msgstr "Arguments persistés de schedule_recurring : {every, until, max_runs}."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_session__previous_session_id
+msgid "Previous Session"
+msgstr "Session précédente"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,help:muk_ai_schedule.field_muk_ai_session__previous_session_id
+msgid "Prior session in the schedule's chain."
+msgstr "Session précédente dans la chaîne de la planification."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__prompt
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_form
+msgid "Prompt"
+msgstr "Invite"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__prompt_history
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_form
+msgid "Prompt History"
+msgstr "Historique d'invites"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__prompt_history_metadata
+msgid "Prompt History Metadata"
+msgstr "Métadonnées de l'historique d'invites"
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/schedule.py:0
+msgid "Provide exactly one of 'at' or 'seconds_from_now'."
+msgstr "Fournissez exactement l'un de 'at' ou 'seconds_from_now'."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/schedule.py:0
+msgid "Provide exactly one of 'until' or 'max_runs'."
+msgstr "Fournissez exactement l'un de 'until' ou 'max_runs'."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields.selection,name:muk_ai_schedule.selection__muk_ai_schedule__record_source__code
+msgid "Python"
+msgstr "Python"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,help:muk_ai_schedule.field_muk_ai_schedule__record_code
+msgid ""
+"Python code (safe-evaluated) that must assign a recordset to the `records` "
+"variable. Used when Record Source is Python. Example: records = "
+"env['res.partner'].search([], limit=10)"
+msgstr ""
+"Code Python (évalué de manière sécurisée) qui doit affecter un recordset à "
+"la variable `records`. Utilisé lorsque la source d'enregistrements est "
+"Python. Exemple : records = env['res.partner'].search([], limit=10)"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__record_code
+msgid "Record Code"
+msgstr "Code d'enregistrement"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__record_source
+msgid "Record Source"
+msgstr "Source d'enregistrements"
+
+#. module: muk_ai_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_form
+msgid "Records"
+msgstr "Enregistrements"
+
+#. module: muk_ai_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_ai_session_form_inherit_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_form
+msgid "Recurrence"
+msgstr "Récurrence"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_session__recur_config
+msgid "Recurrence Config"
+msgstr "Configuration de récurrence"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_session__recur_runs_done
+msgid "Recurrence Runs Done"
+msgstr "Exécutions de récurrence effectuées"
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/schedule.py:0
+msgid "Recurrence cap exceeded (%(done)s/%(limit)s)."
+msgstr "Limite de récurrence dépassée (%(done)s/%(limit)s)."
+
+#. module: muk_ai_schedule
+#: model:muk_ai.schedule,prompt:muk_ai_schedule.demo_schedule_daily_partner_count
+msgid ""
+"Report the count of active partners ({{ len(records) }} in scope) and the "
+"count of new partners created in the last 24 hours. One-paragraph digest, no"
+" bullet padding. Date: {{ today }}."
+msgstr ""
+"Rapportez le nombre de partenaires actifs ({{ len(records) }} dans le "
+"périmètre) et le nombre de nouveaux partenaires créés ces dernières 24 "
+"heures. Résumé en un paragraphe, sans puces. Date : {{ today }}."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_session__resume_at
+msgid "Resume At"
+msgstr "Reprendre à"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_session__resume_prompt
+msgid "Resume Prompt"
+msgstr "Invite de reprise"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__prompt_history_count
+msgid "Revisions"
+msgstr "Révisions"
+
+#. module: muk_ai_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_form
+msgid "Run Now"
+msgstr "Exécuter maintenant"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields.selection,name:muk_ai_schedule.selection__muk_ai_schedule__weekday__sat
+msgid "Saturday"
+msgstr "Samedi"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_session__schedule_id
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_ai_session_form_inherit_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_ai_session_search_inherit_schedule
+msgid "Schedule"
+msgstr "Planification"
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/tools/dispatch.py:0
+msgid "Schedule %(name)s has no active agent."
+msgstr "La planification %(name)s n'a pas d'agent actif."
+
+#. module: muk_ai_schedule
+#. odoo-javascript
+#: code:addons/muk_ai_schedule/static/src/views/fields/schedule_countdown/schedule_countdown.js:0
+msgid "Schedule Countdown"
+msgstr "Compte à rebours de planification"
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/models/schedule.py:0
+msgid "Schedule produced no sessions (empty domain or invalid agent)."
+msgstr ""
+"La planification n'a produit aucune session (domaine vide ou agent "
+"invalide)."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,help:muk_ai_schedule.field_muk_ai_session__schedule_id
+msgid "Schedule that spawned this session (null for interactive sessions)."
+msgstr ""
+"Planification ayant créé cette session (null pour les sessions "
+"interactives)."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/schedule.py:0
+msgid "Schedule tools can only be invoked from inside an AI session."
+msgstr ""
+"Les outils de planification ne peuvent être invoqués que depuis une session "
+"IA."
+
+#. module: muk_ai_schedule
+#: model:ir.ui.menu,name:muk_ai_schedule.menu_muk_ai_schedule
+msgid "Schedules"
+msgstr "Planifications"
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/schedule.py:0
+msgid "Session %(sid)s no longer exists."
+msgstr "La session %(sid)s n'existe plus."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/models/ai_session.py:0
+msgid "Session Chain"
+msgstr "Chaîne de sessions"
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/models/schedule.py:0
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__session_count
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_form
+msgid "Sessions"
+msgstr "Sessions"
+
+#. module: muk_ai_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_form
+msgid ""
+"Set a value to override the module default for sessions\n"
+"\t\t\t\t\t\t\t\tspawned by this schedule. Leave 0 to inherit the module\n"
+"\t\t\t\t\t\t\t\tdefault."
+msgstr ""
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields.selection,name:muk_ai_schedule.selection__muk_ai_schedule__dispatch_mode__single
+msgid "Single"
+msgstr "Unique"
+
+#. module: muk_ai_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_ai_session_form_inherit_schedule
+msgid "Source"
+msgstr "Source"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,help:muk_ai_schedule.field_muk_ai_schedule__cron_expression
+msgid "Standard 5-field cron expression (only for cron interval)."
+msgstr ""
+"Expression cron standard à 5 champs (uniquement pour l'intervalle cron)."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_session__state
+msgid "State"
+msgstr "État"
+
+#. module: muk_ai_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_form
+msgid "Status"
+msgstr "Statut"
+
+#. module: muk_ai_schedule
+#: model:muk_ai.schedule,prompt:muk_ai_schedule.demo_schedule_weekly_partner_digest
+msgid ""
+"Summarise this week's partner activity.\n"
+"\n"
+"Total partners in scope: {{ len(records) }}\n"
+"Date: {{ today }}\n"
+"\n"
+"Draft a one-paragraph executive summary highlighting any notable patterns or counts. Keep it under 120 words."
+msgstr ""
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields.selection,name:muk_ai_schedule.selection__muk_ai_schedule__weekday__sun
+msgid "Sunday"
+msgstr "Dimanche"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,help:muk_ai_schedule.field_muk_ai_session__resume_prompt
+msgid "Synthetic user message injected on next resume."
+msgstr "Message utilisateur synthétique injecté à la prochaine reprise."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__model_id
+msgid "Target Model"
+msgstr "Modèle cible"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,help:muk_ai_schedule.field_muk_ai_schedule__model_id
+msgid ""
+"Target model used to resolve `records` for the prompt template (single mode)"
+" or the dispatched recordset (per-record mode)."
+msgstr ""
+"Modèle cible utilisé pour résoudre `records` pour le modèle d'invite (mode "
+"unique) ou le recordset dispatché (mode par enregistrement)."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields.selection,name:muk_ai_schedule.selection__muk_ai_schedule__weekday__thu
+msgid "Thursday"
+msgstr "Jeudi"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields.selection,name:muk_ai_schedule.selection__muk_ai_schedule__weekday__tue
+msgid "Tuesday"
+msgstr "Mardi"
+
+#. module: muk_ai_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_kanban
+msgid "Unarchive"
+msgstr "Désarchiver"
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/tools/recurrence.py:0
+msgid "Unhandled interval type %(value)s."
+msgstr "Type d'intervalle non géré %(value)s."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields.selection,name:muk_ai_schedule.selection__muk_ai_session__state__schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_ai_session_search_inherit_schedule
+msgid "Scheduled"
+msgstr "Planifié"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,help:muk_ai_schedule.field_muk_ai_session__resume_at
+msgid "Wall-clock time at which the session is due to resume."
+msgstr "Heure murale à laquelle la session doit reprendre."
+
+#. module: muk_ai_schedule
+#: model:muk_ai.schedule,prompt:muk_ai_schedule.demo_schedule_recent_companies_python
+msgid ""
+"We tracked {{ len(records) }} companies updated in the last 7 days. List the"
+" 5 most recently changed and what stands out (industry, size, last write "
+"field if known). Plain prose, max 150 words. Date: {{ today }}."
+msgstr ""
+"Nous avons suivi {{ len(records) }} sociétés mises à jour ces 7 derniers "
+"jours. Listez les 5 modifiées le plus récemment et ce qui se distingue "
+"(secteur, taille, dernier champ écrit si connu). Prose simple, 150 mots max."
+" Date : {{ today }}."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields.selection,name:muk_ai_schedule.selection__muk_ai_schedule__weekday__wed
+msgid "Wednesday"
+msgstr "Mercredi"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_schedule__weekday
+msgid "Weekday"
+msgstr "Jour de la semaine"
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/tools/recurrence.py:0
+msgid "Weekday integer must be between 0 (Mon) and 6 (Sun)."
+msgstr ""
+"L'entier du jour de la semaine doit être compris entre 0 (Lun) et 6 (Dim)."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields.selection,name:muk_ai_schedule.selection__muk_ai_schedule__interval_type__weeks
+msgid "Weeks"
+msgstr "Semaines"
+
+#. module: muk_ai_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_form
+msgid "e.g. Weekly Pipeline Summary"
+msgstr "p. ex. Résumé hebdomadaire du pipeline"
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/models/ai_session.py:0
+msgid "id"
+msgstr "id"
+
+#. module: muk_ai_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_muk_ai_schedule_form
+msgid "records = env['res.partner'].search([], limit=10)"
+msgstr "records = env['res.partner'].search([], limit=10)"
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/models/schedule.py:0
+msgid "schedule_id"
+msgstr "schedule_id"

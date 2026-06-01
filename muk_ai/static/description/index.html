@@ -1,0 +1,630 @@
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<h2 class="oe_slogan">MuK AI Assistant</h2>
+		<h3 class="oe_slogan mb-0">Native AI Chat &amp; Agent Runtime for Odoo</h3>
+		<img src="logo.png" style="width: 150px;" class="mx-auto center-block">
+		<h4 class="oe_slogan mt-0" style="font-size: 23px">MuK IT GmbH - www.mukit.at</h4>
+		<div class="mb-4" style="text-align: center;">
+			<span
+				class="btn btn-sm mb-2"
+				style="font-size:14px; font-weight:500; background-color:#243742; color:#fff; cursor:default;"
+			>
+				<i class="fa fa-check"></i> Community
+			</span>
+			<span
+				class="btn btn-sm mb-2"
+				style="font-size:14px; font-weight:500; background-color:#5D8DA8; color:#fff; cursor:default;"
+			>
+				<i class="fa fa-check me-1"></i> Enterprise
+			</span>
+		</div>
+		<div class="oe_demo oe_screenshot"
+			style="max-width: 84%; margin: 16px 8%">
+			<img src="screenshot.png">
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width: 84%; margin: 16px 8%;">
+			<h3 class="oe_slogan">Overview</h3>
+			<p class="oe_mt32">
+				A complete agentic AI assistant inside Odoo. <strong>MuK AI</strong>
+				ships a native OWL chat client, a session-based agent runtime, and
+				three first-class LLM providers (<strong>OpenAI</strong>,
+				<strong>Anthropic</strong>, <strong>Google Gemini</strong>) with live
+				token and reasoning streaming. The assistant talks to your data through
+				the same <code>muk_mcp</code> tool registry your external AI clients
+				already use &mdash; one source of truth, one permission model, one
+				audit trail.
+			</p>
+			<p>
+				Includes human-in-the-loop <code>ask_user</code> support, a
+				session-scoped approval gate for risky writes, per-agent tool
+				filters, read-only scope enforcement, multimodal attachments
+				(images, PDFs, text files), lazy tool loading with a per-agent
+				essentials list, agent suggestion prompts, field history
+				versioning, and a prebuilt catalog of current GPT-5.x /
+				Claude 4.x / Gemini 2.5/3.x models with input/output/cache
+				pricing.
+			</p>
+			<p>
+				MuK AI is also the foundation for the rest of the MuK AI suite:
+				adding a new provider is a single-file drop-in via the providers
+				<code>REGISTRY</code>, and downstream add-ons plug extra tools,
+				agents and UI extensions onto the same runtime.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Chat Client</h3>
+			<p>
+				A full OWL-based chat action lives under <em>MuK AI &gt; Chat</em>
+				(also reachable at <code>/odoo/ai</code>). Sessions auto-save to
+				the database, stream replies live via the Odoo bus, and render
+				tool calls inline as collapsible cards with live-filling arguments
+				so users always see what the model is about to run. Markdown
+				rendering covers headings, lists, tables, inline code, and fenced
+				code blocks with syntax highlighting. A systray icon surfaces
+				running sessions across the UI, and a floating chat window
+				(Discuss-style) lets users keep talking while navigating other
+				views.
+			</p>
+			<p>
+				Keyboard-first by design: <kbd>Enter</kbd> sends,
+				<kbd>Shift</kbd>+<kbd>Enter</kbd> adds a newline, and a single
+				Send/Stop toggle handles mid-stream cancellation. Auto-scroll
+				pauses when the user scrolls up, so reading past replies is not
+				interrupted by the next delta.
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_chat.png">
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Live Reasoning Stream</h3>
+			<p>
+				When the underlying model exposes a reasoning channel
+				(<strong>OpenAI</strong> o-series and GPT-5 family,
+				<strong>Anthropic</strong> Opus 4.x and Sonnet 4.x with extended
+				or adaptive thinking), the chat replaces the static
+				&ldquo;Thinking&hellip;&rdquo; placeholder with the model's
+				latest reasoning sentence as it streams. The line rotates as new
+				thoughts arrive and disappears the moment the answer text starts
+				&mdash; you see <em>what</em> the agent is currently working
+				through, never a stale block of text. Models without a reasoning
+				channel (Gemini, GPT-4 family, Haiku) keep the original animated
+				dots fallback automatically.
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_reasoning.png">
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Multi-Provider Architecture</h3>
+			<p>
+				The provider layer is a thin Python registry plus stored
+				configuration records (<code>muk_ai.provider</code>). Each
+				provider class declares
+				<code>name / label / default_model / default_url / supports_*</code>,
+				implements <code>headers()</code> and <code>request()</code>, and
+				inherits shared HTTP + SSE streaming from
+				<code>ProviderBase</code>. Settings, default-model lookup,
+				capability probes, and dispatch are all derived from the same
+				<code>REGISTRY</code> &mdash; new providers ship as one Python
+				file and one mutate-line in the addon's
+				<code>__init__.py</code>, no fork of <code>muk_ai</code>
+				required.
+			</p>
+			<table style="width:100%; border-collapse:collapse; margin-top:16px; font-size:14px;">
+				<thead>
+					<tr style="background-color:#f5f5f5; text-align:left;">
+						<th style="padding:10px 12px; border-bottom:2px solid #ddd;">Provider</th>
+						<th style="padding:10px 12px; border-bottom:2px solid #ddd;">API surface</th>
+						<th style="padding:10px 12px; border-bottom:2px solid #ddd;">Streaming</th>
+						<th style="padding:10px 12px; border-bottom:2px solid #ddd;">Reasoning</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>openai</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Responses API</td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">SSE</span></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Summary stream on o-series &amp; GPT-5; encrypted carry for stateless mode</td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>anthropic</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Messages API</td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">SSE</span></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Extended thinking (legacy budget) and adaptive thinking (4.7+)</td>
+					</tr>
+					<tr>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>google</code></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Gemini API</td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">SSE</span></td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Falls back to the static thinking indicator</td>
+					</tr>
+				</tbody>
+			</table>
+			<p class="mt16">
+				The shipped catalog includes the current GPT-5.x family
+				(5, 5.1, 5.2, 5.4 incl. Pro variants, 5.5 + Pro), GPT-4.1
+				family, GPT-4o, the o-series; Claude Opus 4 / 4.1 / 4.5 / 4.6 /
+				4.7, Sonnet 4 / 4.5 / 4.6, Haiku 3.5 / 4.5; Gemini 2.5
+				Pro/Flash/Flash-Lite/Flash-Image and the 3.x previews &mdash;
+				each with context window and per-1M-token pricing for live cost
+				display.
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_providers.png">
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Agents &amp; Tool Filters</h3>
+			<p>
+				An <strong>Agent</strong> is a named preset: system prompt
+				(rendered with Odoo's inline-template engine for placeholders
+				like <code>{{ user.name }}</code> or <code>{{ today }}</code>),
+				model override, tool filter, an <strong>Essential Tools</strong>
+				list that controls which schemas ship eagerly (the rest stay
+				name-only and lazy-load on demand), native-tool toggles (web
+				search, image generation, code interpreter &mdash; auto-hidden
+				when the provider doesn't support them), read-only flag,
+				approval mode, and starter suggestion prompts. Every chat
+				session inherits from an agent &mdash; ship a "Sales Assistant"
+				with write access to leads alongside a "Read-only Analyst"
+				that cannot mutate anything. Read-only is enforced server-side
+				through the MCP scope check, not just by prompt instruction.
+			</p>
+			<p>
+				System prompts are versioned: every edit captures the previous
+				body into a <em>Prompt History</em> revision so you can audit
+				and roll back. Per-user rate limits throttle session creation,
+				and record rules keep each user's sessions private (own-only
+				for internal users, full access for system).
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_agent.png">
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Session-Scoped Approval Gate</h3>
+			<p>
+				Risky write calls pause the session and ask before running.
+				An update to a mail-tracked field, a workflow method like
+				<code>action_post</code> on an invoice, a deletion, or a
+				create on a high-impact model triggers an approval card inline
+				in the chat. The card explains <em>why</em> it fired
+				("approving because <code>state</code> is tracked on
+				<code>account.move</code>"), shows the proposed JSON arguments,
+				and offers three buttons: <strong>Approve once</strong>,
+				<strong>Allow for Session</strong> (auto-approves matching
+				calls for the rest of <em>this</em> session only), and
+				<strong>Reject</strong> (returns a
+				<code>rejected_by_user</code> tool output so the model can
+				recover). Every decision is logged under <em>Reports &gt;
+				Approval Log</em> with proposed vs. executed arguments.
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_approval.png">
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Floating Window &amp; View Context</h3>
+			<p>
+				A floating chat window (Discuss-style) lets the assistant stay
+				reachable while users navigate other views. When open, the
+				session sticks to the Odoo view the user is looking at &mdash;
+				form record, list, kanban, pivot, graph &mdash; and a header
+				pill shows the pinned context (e.g.
+				<code>sale.order &middot; SO-00042</code>) that opens that
+				view on click. Navigation fired by the agent
+				(<code>open_record</code>, <code>open_view</code>,
+				<code>open_action</code>) updates the pin automatically. The
+				context is injected at request time as a short
+				<code>&lt;ui_ctx&gt;</code> tag, so the model can resolve
+				references like "this order" or "the current list" without an
+				extra tool call. Type <code>/unpin</code> to clear it.
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_floating.png">
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Tool Dispatch via muk_mcp</h3>
+			<p>
+				Agents call exactly the same tool surface as your external MCP
+				clients &mdash; no duplicate catalog, no divergence. The MuK
+				AI agent registry pulls tools from <code>muk_mcp</code>
+				filtered by registry, and a handful of UI-specific tools
+				(<code>open_record</code>, <code>open_view</code>,
+				<code>open_action</code>, <code>show_notification</code>,
+				<code>ask_user</code>) are scoped to the in-Odoo agent. The
+				chat UI auto-dispatches any returned <code>ir.actions.*</code>
+				descriptor, so the model can navigate the user through the UI
+				as part of a reply.
+			</p>
+			<p>
+				When the LLM calls <code>ask_user</code> the session pauses in
+				<em>waiting</em> state and surfaces the question in the chat.
+				The user's answer is fed back as a
+				<code>function_call_output</code> so the model resumes the
+				turn exactly where it left off.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Lazy Tool Loading</h3>
+			<p>
+				Shipping every MCP tool's JSON schema in the
+				<code>tools</code> array of every turn is expensive on
+				context. Each agent declares a small
+				<strong>Essential Tools</strong> set that loads eagerly;
+				every other catalog tool is advertised by name only inside an
+				<code>&lt;available_tools&gt;</code> block appended to the
+				system prompt. The model fetches full schemas on demand
+				through a built-in meta-tool:
+			</p>
+			<ul>
+				<li>
+					<code>tool_load(names=[...])</code> &mdash; pulls one or
+					more schemas from the catalog. The names are appended to
+					the session's loaded-tools list and stay available for the
+					rest of the session.
+				</li>
+				<li>
+					<code>tool_load(names=[...], call={name, arguments})</code>
+					&mdash; load <em>and</em> execute one of the just-loaded
+					tools in the same round-trip; the schemas plus the inline
+					tool result come back in a single
+					<code>function_call_output</code>, no follow-up turn needed.
+					Preferred shape for one-shot lookups.
+				</li>
+			</ul>
+			<p>
+				Unknown names come back under an <code>unknown</code> key so
+				the model can recover gracefully. <code>ask_user</code> is
+				auto-injected when approvals are on, regardless of the
+				essentials list. Leaving <strong>Essential Tools</strong>
+				empty enables the default lazy mode (read-side primitives + UI
+				helpers + <code>ask_user</code>); populate it to override.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Runtime Context Block</h3>
+			<p>
+				Alongside the agent's system prompt and
+				<code>&lt;available_tools&gt;</code> list, each session
+				injects a short <code>&lt;runtime&gt;</code> block stating the
+				current Odoo version, today's date, the user (id, timezone),
+				the company (id), the active approval mode, and &mdash; when
+				relevant &mdash; the list of companies the user can access
+				with a hint to pass <code>allowed_company_ids</code> for
+				cross-company searches. The model never has to spend a turn
+				calling <code>whoami</code> or asking for the date to ground
+				its first reply.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Multimodal Attachments</h3>
+			<p>
+				Drop a file onto the composer, paste a screenshot, or click
+				the clip icon. Images render inline, PDFs and text files show
+				as pills. On send, every attachment is streamed to the active
+				provider as a native content block &mdash;
+				<code>input_image</code> / <code>input_file</code> for OpenAI
+				Responses, <code>image</code> / <code>document</code> blocks
+				for Anthropic Messages, inline base64 for Gemini, inline text
+				for small <code>.txt</code> / <code>.csv</code> /
+				<code>.md</code> files. Accepted: PNG, JPEG, WebP, GIF, PDF,
+				plain text, CSV, Markdown. Capped at 128 MiB per file with
+				oversize and unknown-type uploads rejected server-side.
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_attachments.png">
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Context-Window Meter &amp; Slash Commands</h3>
+			<p>
+				The chat header shows a colour-coded pill with the share of the
+				current model's context window consumed by the last turn's
+				input. Below 85 % is idle, 85&ndash;95 % flags a warning and
+				offers to auto-compact, 95 %+ triggers auto-compaction
+				silently &mdash; the conversation is replaced by a
+				&le;500-token summary so the session can keep going without
+				losing continuity. Context sizes come from the
+				<code>muk_ai.model</code> record for the agent's active model.
+			</p>
+			<p>
+				Start a message with <code>/</code> to open a popover of
+				available commands: <code>/help</code>,
+				<code>/clear</code> (wipe conversation, keep agent),
+				<code>/compact</code> (manual compaction),
+				<code>/unpin</code> (clear view-context pin).
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_slash.png">
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Streaming &amp; Bus Events</h3>
+			<p>
+				Replies stream over the Odoo bus as they arrive from the
+				provider. Each session inherits
+				<code>bus.listener.mixin</code> and routes events through the
+				owner's <em>partner</em> channel &mdash; not a guessable
+				string &mdash; so sessions cannot be eavesdropped by other
+				authenticated users. Text is delivered as
+				<code>text_delta</code> events; reasoning summaries as
+				<code>reasoning_delta</code>; tool calls stream as
+				<code>tool_call_start</code> + <code>tool_call_args_delta</code>
+				so the chat UI shows the tool card with live-filling arguments
+				before the tool even fires.
+			</p>
+			<p>
+				A per-stream idle watchdog aborts dead connections and marks
+				the session as errored. Runaway loops are capped per turn,
+				and the <code>ask_user</code>-at-cap edge is handled
+				gracefully so resumed sessions do not get stuck.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Security &amp; Audit</h3>
+			<p>
+				<strong>Internal User</strong> opens the chat and manages
+				their own sessions; <strong>System</strong> manages every
+				session, edits agents and providers, reviews approvals and
+				tool logs. Record rules scope sessions to their owner.
+				<code>open_action</code> honours per-action
+				<code>groups_id</code> so the model cannot hand a user a
+				descriptor they would not be allowed to reach through the
+				menu.
+			</p>
+			<p>
+				Every session carries an audit-ready tool log: user messages,
+				tool calls, tool results, assistant text, ask_user prompts,
+				answers, approval decisions &mdash; all JSON-serialised.
+				Combined with <code>muk_mcp</code>'s own log, any AI-driven
+				write on your data is traceable end to end.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Settings</h3>
+			<p>
+				Two one-line defaults under <em>Settings &gt; General Settings
+				&gt; MuK AI</em>: <strong>Default Provider</strong> (falls
+				back to the first active provider when an agent doesn't pin
+				one) and <strong>Default Agent</strong> (used for new chat
+				sessions when the user hasn't picked one). Everything else is
+				configured per-record on the provider, model, and agent
+				forms. A <strong>Test Connection</strong> button on the
+				provider form sends a tiny probe and reports success or
+				failure without leaving the page.
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_settings.png">
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container" id="muk-other-apps-desc" style="background-color: #f9fafb; padding-top: 1px; margin-bottom: -20px;">
+	<div class="oe_row oe_spaced">
+		<h3 class="oe_slogan">More Apps from MuK IT</h3>
+		<div class="d-flex flex-wrap justify-content-center align-items-stretch gap-4" style="margin: 24px auto;">
+			<div class="d-flex flex-column align-items-center text-center" style="width: 150px;">
+				<a class="d-flex flex-column align-items-center flex-grow-1" href="https://apps.odoo.com/apps/modules/19.0/muk_ai_schedule/" target="_blank" rel="noopener" style="text-decoration: none; color: inherit;">
+					<div class="d-flex align-items-center justify-content-center shadow-sm" style="width: 96px; height: 96px; border-radius: 20px; background-color: #fff;">
+						<img src="//apps.odoocdn.com/apps/assets/19.0/muk_ai_schedule/icon.png" alt="MuK AI Schedule" style="width: 72px; height: 72px; object-fit: contain; border-radius: 14px;">
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 15px; width: 100%; margin: 8px 0 2px; color: #000 !important; opacity: 1 !important; line-height: 18px;">MuK AI Schedule</h3>
+					<div style="font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; color: #5D8DA8; margin-bottom: 6px;">Cron Agents</div>
+				</a>
+				<a class="d-inline-block mt-auto" href="https://apps.odoo.com/apps/modules/19.0/muk_ai_schedule/" target="_blank" rel="noopener" style="padding: 6px 14px; border-radius: 999px; background-color: #243742; color: #fff; font-size: 12px; font-weight: 500; letter-spacing: 0.3px; text-decoration: none;">View Module &rsaquo;</a>
+			</div>
+			<div class="d-flex flex-column align-items-center text-center" style="width: 150px;">
+				<a class="d-flex flex-column align-items-center flex-grow-1" href="https://apps.odoo.com/apps/modules/19.0/muk_ai_skills/" target="_blank" rel="noopener" style="text-decoration: none; color: inherit;">
+					<div class="d-flex align-items-center justify-content-center shadow-sm" style="width: 96px; height: 96px; border-radius: 20px; background-color: #fff;">
+						<img src="//apps.odoocdn.com/apps/assets/19.0/muk_ai_skills/icon.png" alt="MuK AI Skills" style="width: 72px; height: 72px; object-fit: contain; border-radius: 14px;">
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 15px; width: 100%; margin: 8px 0 2px; color: #000 !important; opacity: 1 !important; line-height: 18px;">MuK AI Skills</h3>
+					<div style="font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; color: #5D8DA8; margin-bottom: 6px;">Agent Skills</div>
+				</a>
+				<a class="d-inline-block mt-auto" href="https://apps.odoo.com/apps/modules/19.0/muk_ai_skills/" target="_blank" rel="noopener" style="padding: 6px 14px; border-radius: 999px; background-color: #243742; color: #fff; font-size: 12px; font-weight: 500; letter-spacing: 0.3px; text-decoration: none;">View Module &rsaquo;</a>
+			</div>
+			<div class="d-flex flex-column align-items-center text-center" style="width: 150px;">
+				<a class="d-flex flex-column align-items-center flex-grow-1" href="https://apps.odoo.com/apps/modules/19.0/muk_mcp_oauth/" target="_blank" rel="noopener" style="text-decoration: none; color: inherit;">
+					<div class="d-flex align-items-center justify-content-center shadow-sm" style="width: 96px; height: 96px; border-radius: 20px; background-color: #fff;">
+						<img src="//apps.odoocdn.com/apps/assets/19.0/muk_mcp_oauth/icon.png" alt="MuK MCP OAuth" style="width: 72px; height: 72px; object-fit: contain; border-radius: 14px;">
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 15px; width: 100%; margin: 8px 0 2px; color: #000 !important; opacity: 1 !important; line-height: 18px;">MuK MCP OAuth</h3>
+					<div style="font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; color: #5D8DA8; margin-bottom: 6px;">MCP OAuth</div>
+				</a>
+				<a class="d-inline-block mt-auto" href="https://apps.odoo.com/apps/modules/19.0/muk_mcp_oauth/" target="_blank" rel="noopener" style="padding: 6px 14px; border-radius: 999px; background-color: #243742; color: #fff; font-size: 12px; font-weight: 500; letter-spacing: 0.3px; text-decoration: none;">View Module &rsaquo;</a>
+			</div>
+			<div class="d-flex flex-column align-items-center text-center" style="width: 150px;">
+				<a class="d-flex flex-column align-items-center flex-grow-1" href="https://apps.odoo.com/apps/modules/19.0/muk_oidc/" target="_blank" rel="noopener" style="text-decoration: none; color: inherit;">
+					<div class="d-flex align-items-center justify-content-center shadow-sm" style="width: 96px; height: 96px; border-radius: 20px; background-color: #fff;">
+						<img src="//apps.odoocdn.com/apps/assets/19.0/muk_oidc/icon.png" alt="MuK OpenID Connect" style="width: 72px; height: 72px; object-fit: contain; border-radius: 14px;">
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 15px; width: 100%; margin: 8px 0 2px; color: #000 !important; opacity: 1 !important; line-height: 18px;">MuK OpenID Connect</h3>
+					<div style="font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; color: #5D8DA8; margin-bottom: 6px;">OpenID Connect</div>
+				</a>
+				<a class="d-inline-block mt-auto" href="https://apps.odoo.com/apps/modules/19.0/muk_oidc/" target="_blank" rel="noopener" style="padding: 6px 14px; border-radius: 999px; background-color: #243742; color: #fff; font-size: 12px; font-weight: 500; letter-spacing: 0.3px; text-decoration: none;">View Module &rsaquo;</a>
+			</div>
+			<div class="d-flex flex-column align-items-center text-center" style="width: 150px;">
+				<a class="d-flex flex-column align-items-center flex-grow-1" href="https://apps.odoo.com/apps/modules/browse?series=19.0&author=MuK+IT" target="_blank" rel="noopener" style="text-decoration: none; color: inherit;">
+					<div class="d-flex align-items-center justify-content-center shadow-sm" style="width: 96px; height: 96px; border-radius: 20px; background-color: #fff; color: #5D8DA8;">
+						<i class="fa fa-th" style="font-size: 55px;"></i>
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 15px; width: 100%; margin: 8px 0 2px; color: #000 !important; opacity: 1 !important; line-height: 18px;">All MuK Apps</h3>
+					<div style="font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; color: #5D8DA8; margin-bottom: 6px;">Browse</div>
+				</a>
+				<a class="d-inline-block mt-auto" href="https://apps.odoo.com/apps/modules/browse?series=19.0&author=MuK+IT" target="_blank" rel="noopener" style="padding: 6px 14px; border-radius: 999px; background-color: #243742; color: #fff; font-size: 12px; font-weight: 500; letter-spacing: 0.3px; text-decoration: none;">View All &rsaquo;</a>
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container oe_dark d-flex justify-content-around align-items-lg-center flex-column flex-lg-row">
+	<div class="d-flex flex-column m-3 ms-lg-4">
+		<h3 class="oe_slogan mb-3 mt-3 text-left">
+			<i class="fa fa-comments mr8"></i>Want more?
+		</h3>
+		<p>
+			Are you having troubles with your Odoo integration? Or do you feel
+			your system lacks of essential features? <br>If your answer is <b>YES</b>
+			to one of the above questions, feel free to contact us at anytime
+			with your inquiry. <br>We are looking forward to discuss your
+			needs and plan the next steps with you. <br>
+		</p>
+	</div>
+	<div class="oe_slogan d-flex flex-column ms-1 me-1 ms-lg-4 me-lg-4 flex-grow-1">
+		<a class="btn btn-primary btn-lg m-3" href="mailto:sale@mukit.at?subject=Request%20Quote" style="font-size:1.2rem">
+			<i class="fa fa-envelope me-1"></i>REQUEST QUOTE
+		</a>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<h3 class="oe_slogan">Our Services</h3>
+		<div class="d-flex justify-content-between">
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="service_development.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3
+						class="oe_slogan"
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Development
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="service_integration.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3
+						class="oe_slogan"
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Integration
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="service_infrastructure.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3
+						class="oe_slogan"
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Infrastructure
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="service_training.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3
+						class="oe_slogan"
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Training
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="service_support.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3
+						class="oe_slogan"
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Support
+					</h3>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>

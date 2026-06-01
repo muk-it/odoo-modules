@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.PromptHistoryDialog">
+        <Dialog title="title" size="'lg'">
+            <div class="mk_prompt_history">
+                <div class="mk_prompt_history_sidebar">
+                    <div t-if="state.loading" class="text-muted small p-2">Loading…</div>
+                    <div t-elif="!state.entries.length" class="text-muted small p-2">No history yet.</div>
+                    <button t-foreach="state.entries" t-as="entry" t-key="entry.index"
+                            type="button"
+                            t-attf-class="mk_prompt_history_item {{ state.selectedIndex === entry.index ? 'selected' : '' }}"
+                            t-on-click="() => this.selectRevision(entry.index)">
+                        <div class="mk_prompt_history_item_date" t-out="formatDate(entry.create_date)"/>
+                        <div class="mk_prompt_history_item_user text-muted small" t-out="entry.create_user_name or ''"/>
+                    </button>
+                </div>
+                <div class="mk_prompt_history_body">
+                    <pre class="mk_prompt_history_pre">
+                        <t t-foreach="state.diffLines" t-as="line" t-key="line_index">
+                            <span t-attf-class="mk_prompt_history_line mk_prompt_history_{{ line.kind }}" t-out="line.text"/>
+                            <br/>
+                        </t>
+                    </pre>
+                </div>
+            </div>
+            <t t-set-slot="footer">
+                <button class="btn btn-primary"
+                        t-att-disabled="state.selectedIndex === null"
+                        t-on-click="onRestore">Restore This Version</button>
+                <button class="btn btn-secondary" t-on-click="() => this.props.close()">Close</button>
+            </t>
+        </Dialog>
+    </t>
+
+</templates>

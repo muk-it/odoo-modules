@@ -1,0 +1,116 @@
+import base64
+
+from odoo import _, api, models
+from odoo.exceptions import UserError
+
+from odoo.addons.muk_ai.tools.attachment import (
+    ALLOWED_MIMETYPES,
+    DEFAULT_MAX_UPLOAD_BYTES,
+    DEFAULT_TEXT_INLINE_LIMIT_KB,
+    IMAGE_MIMETYPES,
+    PDF_MIMETYPE,
+    TEXT_MIMETYPES,
+)
+
+
+class IrAttachment(models.Model):
+
+    _inherit = 'ir.attachment'
+
+    # ----------------------------------------------------------
+    # Helper
+    # ----------------------------------------------------------
+
+    @api.model
+    def _ai_max_size_bytes(self):
+        return int(self.env['ir.config_parameter'].sudo().get_param(
+            'web.max_file_upload_size', DEFAULT_MAX_UPLOAD_BYTES
+        ))
+
+    @api.model
+    def _ai_text_inline_limit_bytes(self):
+        return DEFAULT_TEXT_INLINE_LIMIT_KB * 1024
+
+    @api.model
+    def _ai_strategy_for(self, mimetype):
+        if mimetype in IMAGE_MIMETYPES:
+            return 'image'
+        if mimetype == PDF_MIMETYPE:
+            return 'file'
+        if mimetype in TEXT_MIMETYPES:
+            return 'inline_text'
+        return None
+
+    @api.model
+    def _ai_check_mimetype(self, mimetype):
+        if mimetype not in ALLOWED_MIMETYPES:
+            raise UserError(_(
+                "Attachment type %(mime)s is not supported. Allowed: %(allowed)s.",
+                mime=mimetype or '(unknown)',
+                allowed=', '.join(sorted(ALLOWED_MIMETYPES)),
+            ))
+
+    @api.model
+    def _ai_check_size(self, size):
+        if size > (limit := self._ai_max_size_bytes()):
+            raise UserError(_(
+                "Attachment exceeds the %(limit)s MiB size limit.",
+                limit=limit // (1024 * 1024),
+            ))
+
+    @api.model
+    def _ai_create_from_upload(self, filename, mimetype, data_b64, res_id=None):
+        self._ai_check_mimetype(mimetype)
+        try:
+            raw = base64.b64decode(data_b64 or '', validate=True)
+        except ValueError as error:
+            raise UserError(_(
+                "Attachment data is not valid base64: %s",
+                error
+            ))
+        self._ai_check_size(len(raw))
+        return self.create({
+            'name': filename or 'upload',
+            'raw': raw,
+            'mimetype': mimetype,
+            'res_model': 'muk_ai.session',
+            'res_id': res_id or 0,
+        })
+
+    def _ai_validate(self):
+        for record in self:
+            record.check_access('read')
+            record._ai_check_mimetype(record.mimetype)
+            record._ai_check_size(record.file_size or 0)
+
+    def _ai_describe(self):
+        return {
+            'id': self.id,
+            'filename': self.name,
+            'mimetype': self.mimetype,
+            'size': self.file_size or 0,
+        }
+
+    def _ai_materialize(self):
+        self._ai_validate()
+        raw = self.raw or b''
+        strategy = self._ai_strategy_for(
+            self.mimetype
+        )
+        block = {
+            'type': 'muk_ai_attachment',
+            'attachment_id': self.id,
+            'filename': self.name,
+            'mimetype': self.mimetype,
+            'strategy': strategy,
+        }
+        if strategy == 'inline_text':
+            limit = self._ai_text_inline_limit_bytes()
+            truncated = len(raw) > limit
+            if truncated:
+                raw = raw[:limit]
+            block['inline_text'] = raw.decode('utf-8', errors='replace')
+            block['truncated'] = truncated
+        else:
+            block['data_b64'] = base64.b64encode(raw).decode('ascii')
+        return block

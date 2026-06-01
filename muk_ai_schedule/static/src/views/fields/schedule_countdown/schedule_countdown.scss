@@ -1,0 +1,11 @@
+.mk_schedule_countdown {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.25rem;
+    font-variant-numeric: tabular-nums;
+
+    .mk_schedule_countdown_due {
+        opacity: 0.7;
+        font-style: italic;
+    }
+}

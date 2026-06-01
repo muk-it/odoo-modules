@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<menuitem
+		id="menu_ai_root"
+		name="MuK AI"
+		sequence="100"
+		web_icon="muk_ai,static/description/icon.png"
+		groups="base.group_user"
+	>
+		<menuitem
+			id="menu_ai_chat"
+			name="Chat"
+			action="action_ai_chat"
+			sequence="10"
+		/>
+
+		<menuitem
+			id="menu_ai_agent"
+			name="Agents"
+			action="action_ai_agent"
+			sequence="20"
+		/>
+
+		<menuitem
+			id="menu_ai_report"
+			name="Reports"
+			sequence="50"
+			groups="base.group_system"
+		>
+			<menuitem
+				id="menu_ai_session"
+				name="Sessions"
+				action="action_ai_session"
+				sequence="10"
+			/>
+			<menuitem
+				id="menu_ai_log"
+				name="Tool Logs"
+				action="muk_mcp.action_mcp_log"
+				sequence="20"
+			/>
+			<menuitem
+				id="menu_ai_approval"
+				name="Approval Log"
+				action="action_ai_approval"
+				sequence="30"
+			/>
+		</menuitem>
+
+		<menuitem
+			id="menu_ai_mcp"
+			name="MCP"
+			sequence="80"
+			groups="base.group_system"
+		>
+			<menuitem
+				id="menu_ai_tools"
+				name="Custom Tools"
+				action="muk_mcp.action_mcp_tool"
+				sequence="10"
+			/>
+			<menuitem
+				id="menu_ai_playground"
+				name="Playground"
+				action="muk_mcp.action_mcp_playground"
+				sequence="20"
+			/>
+		</menuitem>
+
+		<menuitem
+			id="menu_ai_config"
+			name="Configuration"
+			sequence="90"
+			groups="base.group_system"
+		>
+			<menuitem
+				id="menu_ai_provider"
+				name="Providers"
+				action="action_muk_ai_provider"
+				sequence="20"
+			/>
+			<menuitem
+				id="menu_ai_model"
+				name="Models"
+				action="action_muk_ai_model"
+				sequence="30"
+			/>
+		</menuitem>
+
+		<menuitem
+			id="menu_ai_settings"
+			name="Settings"
+			action="base_setup.action_general_configuration"
+			sequence="100"
+			groups="base.group_system"
+		/>
+	</menuitem>
+
+</odoo>

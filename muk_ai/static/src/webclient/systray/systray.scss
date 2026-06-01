@@ -1,0 +1,104 @@
+.mk_ai_systray_btn {
+    position: relative;
+    color: inherit;
+    padding: 7px 2px;
+    height: 100%;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    .mk_systray_icon {
+        width: 20px;
+        height: 20px;
+    }
+    &:hover { opacity: 0.85; }
+    .mk_systray_badge {
+        position: absolute;
+        top: 2px;
+        right: 4px;
+        .mk_systray_dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: block;
+            background: #0c7cd5;
+            box-shadow: 0 0 0 2px var(--o-cc1-bg, #fff);
+            animation: mk-pulse 1.2s ease-in-out infinite;
+        }
+    }
+}
+
+.mk_systray_menu {
+    min-width: 280px;
+    max-width: 340px;
+    padding: 0.25rem 0 !important;
+    --mk-primary:      var(--o-cc1-btn-primary, #714B67);
+    --mk-primary-rgb:  var(--primary-rgb, 113, 75, 103);
+    --mk-text-muted:   #6b7280;
+    --mk-warning:      #e0a800;
+    --mk-success:      #28a745;
+    --mk-danger:       #dc3545;
+    .mk_systray_header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.5rem 0.9rem;
+        border-bottom: 1px solid var(--o-input-border-color, #e7e9ed);
+        gap: 0.5rem;
+        .mk_systray_icon_sm {
+            width: 16px;
+            height: 16px;
+            color: var(--mk-primary, #714B67);
+        }
+    }
+    .mk_systray_divider {
+        height: 1px;
+        background: var(--o-input-border-color, #e7e9ed);
+        margin: 0.25rem 0;
+    }
+    .mk_systray_group_label {
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: var(--mk-text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        padding: 0.4rem 0.9rem 0.15rem;
+    }
+    .mk_systray_item {
+        display: flex !important;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.45rem 0.9rem !important;
+        font-size: 0.875rem;
+        .mk_systray_name {
+            flex: 1 1 auto;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .mk_systray_dot_wrap {
+            width: 16px;
+            height: 16px;
+            flex: 0 0 auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .mk_systray_dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--mk-text-muted);
+            &.mk_state_running { background: var(--mk-primary); animation: mk-pulse 1.2s ease-in-out infinite; }
+            &.mk_state_waiting { background: var(--mk-warning); }
+            &.mk_state_done { background: var(--mk-success); }
+            &.mk_state_error { background: var(--mk-danger); }
+            &.mk_state_stopped { background: var(--mk-text-muted); }
+        }
+        &.mk_systray_action i {
+            width: 16px;
+            text-align: center;
+        }
+    }
+}

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.ChatArtifactsPanel">
+        <aside class="mk_artifacts_panel d-flex flex-column">
+            <div class="mk_artifacts_header d-flex align-items-center">
+                <span class="mk_artifacts_title fw-semibold">Artifacts</span>
+                <button
+                    class="btn btn-link btn-sm ms-auto mk_artifacts_close p-1"
+                    t-on-click="() => this.props.onClose()"
+                    title="Close artifacts panel"
+                >
+                    <i class="fa fa-times"/>
+                </button>
+            </div>
+            <t t-if="tabs.length >= 2">
+                <div class="mk_artifacts_tabs d-flex" role="tablist">
+                    <t t-foreach="tabs" t-as="tab" t-key="tab.id">
+                        <button
+                            class="mk_artifacts_tab btn btn-link btn-sm"
+                            t-att-class="{ active: activeTab and activeTab.id === tab.id }"
+                            t-on-click="() => this.onSelectTab(tab.id)"
+                            role="tab"
+                        >
+                            <i t-if="tab.icon" class="fa me-1" t-att-class="tab.icon"/>
+                            <span t-esc="tab.label"/>
+                        </button>
+                    </t>
+                </div>
+            </t>
+            <div class="mk_artifacts_body flex-grow-1">
+                <t t-foreach="tabs" t-as="tab" t-key="tab.id">
+                    <div t-if="activeTab and activeTab.id === tab.id" class="mk_artifacts_body_slot h-100">
+                        <t t-if="tab.id === 'attachments'">
+                            <AttachmentsTab
+                                items="tab.items"
+                                session="props.session"
+                                onOpenAttachment="bodyProps.onOpenAttachment"
+                            />
+                        </t>
+                        <t t-else="">
+                            <t t-component="tab.component" t-props="bodyProps"/>
+                        </t>
+                    </div>
+                </t>
+                <div t-if="!activeTab" class="mk_artifacts_empty text-muted small p-3">
+                    No artifacts in this conversation yet.
+                </div>
+            </div>
+        </aside>
+    </t>
+
+</templates>

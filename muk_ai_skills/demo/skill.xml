@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo noupdate="1">
+
+	<record id="demo_skill_log" model="muk_ai.skill">
+		<field name="name">log</field>
+		<field name="label">Log Note</field>
+		<field name="description">Post a one-line internal log note on the pinned record's chatter — no composer, no review.</field>
+		<field name="body"><![CDATA[
+Post a quick internal log note on the pinned record's chatter. Fast complement to `/reply` —
+no composer, no recipients, no review. Use this when the user just wants to capture a short
+note for the team.
+
+1. Resolve the target record from the pinned record in `<ui_ctx>` (model + id). If still
+   missing, call `ask_user` once for a record reference.
+2. Take the user's text after `/log ...` as the note body. Do NOT rephrase, expand, or polish it;
+   that is what `/reply` is for. If the user gave no text after the slash command, call
+   `ask_user` once asking what to log.
+3. Wrap the text as minimal HTML — `<p>…</p>` paragraphs only. No styles, no signature.
+4. Call `call_method`:
+   - `model`: target model
+   - `method`: `message_post`
+   - `ids`: `[<id>]`
+   - `kwargs`:
+     - `body`: the HTML
+     - `subtype_xmlid`: `mail.mt_note`
+     - `message_type`: `comment`
+5. Reply with one short confirmation line, e.g. `Logged on <display_name>.` Stop. Do not open
+   the record or call any other tool.
+]]></field>
+	</record>
+
+	<record id="demo_skill_escalate" model="muk_ai.skill">
+		<field name="name">escalate</field>
+		<field name="label">Schedule Activity</field>
+		<field name="description">Schedule a follow-up activity (to-do, call, meeting, email) on the pinned record.</field>
+		<field name="body"><![CDATA[
+Schedule a `mail.activity` on the pinned record. Use when the user wants to create a follow-up
+todo, call, meeting, or email reminder tied to a record.
+
+1. Resolve the target record from the pinned record in `<ui_ctx>` (model + id). If still
+   missing, call `ask_user` once for a record reference.
+2. Collect the activity details. If the user already gave them in their request, use those; for
+   anything still missing, call `ask_user` ONCE with a single combined question covering the
+   missing pieces (type, deadline, assignee, summary). Acceptable activity types:
+   - To-Do    → `mail.mail_activity_data_todo`
+   - Call     → `mail.mail_activity_data_call`
+   - Meeting  → `mail.mail_activity_data_meeting`
+   - Email    → `mail.mail_activity_data_email`
+   Defaults if unspecified after asking once: type = To-Do, deadline = today + 3 days, assignee
+   = current user (omit `user_id`), summary = short echo of the user's request.
+3. Resolve the assignee: if a name was given, `search_read` `res.users` with
+   `[('name','ilike',<name>)]` (fall back to `login`), limit 5. Pick the unique match; if more
+   than one, call `ask_user` once with the candidate list.
+4. Call `call_method`:
+   - `model`: target model
+   - `method`: `activity_schedule`
+   - `ids`: `[<id>]`
+   - `kwargs`:
+     - `act_type_xmlid`: chosen xmlid
+     - `date_deadline`: ISO date string `YYYY-MM-DD`
+     - `summary`: short title
+     - `user_id`: assignee id (omit to default to current user)
+     - `note`: optional HTML, only if the user provided extra context
+5. Reply with one short confirmation: `Scheduled <type> on <display_name> for <date>, assigned
+   to <assignee>.` Stop. Do not open the record afterwards.
+]]></field>
+	</record>
+
+</odoo>

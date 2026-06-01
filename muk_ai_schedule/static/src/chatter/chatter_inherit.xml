@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai_schedule.AISessionBoxList" t-inherit="mail.Chatter" t-inherit-mode="extension">
+        <xpath expr="//SearchMessageResult" position="before">
+            <AISessionBox
+                t-if="state.thread and state.thread.model and state.thread.id"
+                threadModel="state.thread.model"
+                threadId="state.thread.id"
+            />
+        </xpath>
+    </t>
+
+</templates>

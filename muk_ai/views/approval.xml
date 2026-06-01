@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_muk_ai_approval_search" model="ir.ui.view">
+		<field name="name">muk_ai.approval.search</field>
+		<field name="model">muk_ai.approval</field>
+		<field name="arch" type="xml">
+			<search>
+				<field name="tool_name"/>
+				<field name="res_model"/>
+				<field name="method"/>
+				<field name="session_id"/>
+				<field name="agent_id"/>
+				<field name="user_id"/>
+				<filter
+                    name="filter_approved"
+                    string="Approved"
+					domain="[('decision', 'in', ['approved', 'approved_session', 'auto_approved'])]"
+                />
+				<filter
+                    name="filter_rejected"
+                    string="Rejected"
+					domain="[('decision', '=', 'rejected')]"
+                />
+				<group>
+                    <filter name="group_tool" string="Tool" context="{'group_by': 'tool_name'}"/>
+                    <filter name="group_model" string="Model" context="{'group_by': 'res_model'}"/>
+                    <filter name="group_decision" string="Decision" context="{'group_by': 'decision'}"/>
+                    <filter name="group_user" string="User" context="{'group_by': 'user_id'}"/>
+				</group>
+			</search>
+		</field>
+	</record>
+
+	<record id="view_muk_ai_approval_list" model="ir.ui.view">
+		<field name="name">muk_ai.approval.list</field>
+		<field name="model">muk_ai.approval</field>
+		<field name="arch" type="xml">
+			<list>
+				<field name="create_date"/>
+				<field name="tool_name"/>
+				<field name="res_model"/>
+				<field name="method"/>
+				<field name="decision"/>
+				<field name="user_id"/>
+				<field name="agent_id"/>
+				<field name="session_id"/>
+			</list>
+		</field>
+	</record>
+
+	<record id="view_muk_ai_approval_form" model="ir.ui.view">
+		<field name="name">muk_ai.approval.form</field>
+		<field name="model">muk_ai.approval</field>
+		<field name="arch" type="xml">
+			<form>
+				<sheet>
+					<group>
+						<group>
+							<field name="tool_name"/>
+							<field name="res_model"/>
+							<field name="method"/>
+							<field name="decision"/>
+						</group>
+						<group>
+							<field name="user_id"/>
+							<field name="agent_id"/>
+							<field name="session_id"/>
+							<field name="signature"/>
+						</group>
+					</group>
+					<group string="Risk">
+						<field name="reason"/>
+						<field name="res_ids"/>
+					</group>
+					<group string="Payload">
+						<field name="args_proposed" widget="json_code"/>
+						<field name="args_executed" widget="json_code"/>
+						<field name="reject_reason"/>
+					</group>
+				</sheet>
+			</form>
+		</field>
+	</record>
+
+	<record id="action_ai_approval" model="ir.actions.act_window">
+		<field name="name">Approval Log</field>
+		<field name="res_model">muk_ai.approval</field>
+		<field name="view_mode">list,form</field>
+		<field name="path">ai-approvals</field>
+	</record>
+
+</odoo>

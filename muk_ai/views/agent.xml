@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_ai_agent_search" model="ir.ui.view">
+		<field name="name">muk_ai.agent.search</field>
+		<field name="model">muk_ai.agent</field>
+		<field name="arch" type="xml">
+			<search>
+				<field
+                    name="name"
+                    string="Agent"
+                    filter_domain="['|', ('name', 'ilike', self), ('description', 'ilike', self)]"
+                />
+				<filter
+                    name="read_only"
+                    string="Read-only"
+                    domain="[('read_only', '=', True)]"
+                />
+				<separator/>
+				<filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active', '=', False)]"
+                />
+			</search>
+		</field>
+	</record>
+
+	<record id="view_ai_agent_kanban" model="ir.ui.view">
+		<field name="name">muk_ai.agent.kanban</field>
+		<field name="model">muk_ai.agent</field>
+		<field name="arch" type="xml">
+			<kanban sample="1" default_order="sequence, name">
+				<field name="id"/>
+				<field name="name"/>
+				<field name="description"/>
+				<field name="model_id"/>
+				<field name="image_128"/>
+				<field name="read_only"/>
+				<field name="enable_web_search"/>
+				<field name="enable_image_generation"/>
+				<field name="enable_code_interpreter"/>
+				<field name="active"/>
+				<templates>
+					<t t-name="menu">
+						<div class="container o_kanban_card_manage_pane">
+							<div class="o_kanban_card_manage_section">
+								<a type="open" class="dropdown-item" role="menuitem">Open</a>
+								<a t-if="record.active.raw_value" type="archive" class="dropdown-item" role="menuitem">Archive</a>
+								<a t-if="!record.active.raw_value" type="unarchive" class="dropdown-item" role="menuitem">Unarchive</a>
+							</div>
+						</div>
+					</t>
+					<t t-name="card">
+						<widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+						<div class="d-flex">
+							<aside>
+								<img
+                                    t-attf-src="/web/image/muk_ai.agent/{{record.id.raw_value}}/image_128"
+                                    alt="Agent"
+                                    class="rounded"
+                                    style="width: 64px; height: 64px; object-fit: cover;"
+                                />
+							</aside>
+							<main class="ms-2 flex-grow-1 overflow-hidden">
+								<h4 class="mb-0 text-truncate">
+									<field name="name"/>
+								</h4>
+								<field
+                                    t-if="record.model_id.raw_value"
+                                    name="model_id"
+                                    class="small px-1 text-bg-primary rounded"
+                                />
+							</main>
+						</div>
+						<div class="mt-2">
+							<field name="description" class="text-muted"/>
+						</div>
+						<div class="mt-2 d-flex flex-wrap gap-1">
+							<span t-if="record.read_only.raw_value" class="badge text-bg-secondary">Read-only</span>
+							<span t-if="record.enable_web_search.raw_value" class="badge text-bg-info">
+								<i class="fa fa-globe me-1" title="Web Search" role="img"/>Web
+							</span>
+							<span t-if="record.enable_image_generation.raw_value" class="badge text-bg-info">
+								<i class="fa fa-image me-1" title="Image Generation" role="img"/>Image
+							</span>
+							<span t-if="record.enable_code_interpreter.raw_value" class="badge text-bg-info">
+								<i class="fa fa-code me-1" title="Code Interpreter" role="img"/>Code
+							</span>
+						</div>
+					</t>
+				</templates>
+			</kanban>
+		</field>
+	</record>
+
+	<record id="view_ai_agent_list" model="ir.ui.view">
+		<field name="name">muk_ai.agent.list</field>
+		<field name="model">muk_ai.agent</field>
+		<field name="arch" type="xml">
+			<list>
+				<field name="sequence" widget="handle"/>
+				<field name="name"/>
+				<field name="model_id" optional="show"/>
+				<field name="read_only" widget="boolean_toggle" optional="show"/>
+			</list>
+		</field>
+	</record>
+
+	<record id="view_ai_agent_form" model="ir.ui.view">
+		<field name="name">muk_ai.agent.form</field>
+		<field name="model">muk_ai.agent</field>
+		<field name="arch" type="xml">
+			<form>
+				<sheet>
+					<div class="oe_button_box" name="button_box">
+						<button
+                                name="action_open_sessions"
+								type="object"
+								class="oe_stat_button"
+								icon="fa-comments-o"
+                        >
+							<field name="session_count" widget="statinfo" string="Sessions"/>
+						</button>
+						<button
+                                name="action_open_prompt_history"
+								type="object"
+								class="oe_stat_button"
+								icon="fa-history"
+                        >
+							<field name="prompt_history_count" widget="statinfo" string="Prompt History"/>
+						</button>
+					</div>
+					<widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+					<field name="image_1920" widget="image" class="oe_avatar" options="{'preview_image': 'image_128'}"/>
+					<div class="oe_title">
+						<label for="name"/>
+						<h1>
+							<field name="name" placeholder="e.g. Sales Assistant"/>
+						</h1>
+						<field name="description" placeholder="Short description shown to admins..."/>
+					</div>
+					<group>
+						<group string="Model">
+							<field name="model_id" options="{'no_create': True}"/>
+							<field name="supports_web_search" invisible="1"/>
+							<field name="supports_image_generation" invisible="1"/>
+							<field name="supports_code_interpreter" invisible="1"/>
+							<field
+                                name="enable_web_search"
+                                string="Web Search"
+                                widget="boolean_toggle"
+                                invisible="not supports_web_search"
+                            />
+							<field
+                                name="enable_image_generation"
+                                string="Image Generation"
+                                widget="boolean_toggle"
+                                invisible="not supports_image_generation"
+                            />
+							<field
+                                name="enable_code_interpreter"
+                                string="Code Interpreter"
+                                widget="boolean_toggle"
+                                invisible="not supports_code_interpreter"
+                            />
+						</group>
+						<group string="Behavior">
+							<field
+                                name="read_only"
+                                string="Readonly"
+                                widget="boolean_toggle"
+                            />
+							<field name="approval_mode"/>
+							<field
+                                name="tool_filter"
+                                widget="tool_picker"
+                                options="{'options_field': 'tool_filter_options'}"
+                            />
+							<field
+                                name="essential_tool_names"
+                                widget="tool_picker"
+                                options="{'options_field': 'tool_filter_options'}"
+                            />
+						</group>
+					</group>
+					<notebook>
+						<page string="Suggestions" name="suggestions">
+							<field name="suggestion_ids" nolabel="1">
+								<kanban>
+									<field name="id"/>
+									<field name="sequence"/>
+									<field name="label"/>
+									<field name="prompt"/>
+									<templates>
+										<t t-name="card" class="flex-row">
+											<main class="flex-grow-1 overflow-hidden">
+												<div class="fw-semibold text-truncate">
+													<field name="label"/>
+												</div>
+												<div class="small text-muted text-truncate">
+													<field name="prompt"/>
+												</div>
+											</main>
+										</t>
+									</templates>
+								</kanban>
+								<form>
+									<sheet>
+										<group>
+											<field name="label" placeholder="e.g. Explore"/>
+											<field name="sequence"/>
+										</group>
+										<group>
+											<field
+                                                name="prompt"
+                                                nolabel="1"
+                                                placeholder="Text sent to the assistant when the user clicks this suggestion..."
+                                            />
+										</group>
+									</sheet>
+								</form>
+							</field>
+							<div class="oe_form_box_info mt-2">
+								Starter prompts shown in the empty chat for this agent. Leave empty to show no suggestions.
+							</div>
+						</page>
+						<page string="System Prompt" name="system_prompt">
+							<field
+                                name="system_prompt"
+                                nolabel="1"
+                                colspan="2"
+                                widget="code"
+                                options="{'mode': 'qweb'}"
+                                placeholder="You are an Odoo assistant. ..."
+                            />
+						</page>
+						<page string="Help" name="prompt_help">
+							<div class="oe_form_box_info">
+								<h3>System Prompt — Placeholders</h3>
+								<p>
+									The prompt is rendered with Odoo's inline-template engine (same as mail templates) when the conversation starts
+									and again on <code>/compact</code>. Each <code>{{ expr }}</code> is evaluated against the session's render context.
+									Use <code>{{ expr ||| fallback }}</code> to provide a default when <code>expr</code> is empty.
+								</p>
+								<h4>Available variables</h4>
+								<ul>
+									<li><code>user</code> — the current <code>res.users</code> record. Common: <code>{{ user.name }}</code>, <code>{{ user.lang }}</code>.</li>
+									<li><code>company</code> — the current <code>res.company</code> record. Common: <code>{{ company.name }}</code>.</li>
+									<li><code>today</code> — today's date as ISO <code>YYYY-MM-DD</code>, rendered once when the session starts.</li>
+									<li><code>approval_mode</code> — <code>ask</code> or <code>off</code>, resolved per session (agent default + session override).</li>
+									<li><code>env</code> / <code>ctx</code> — advanced: the current environment and context for custom expressions.</li>
+								</ul>
+								<h4>Example</h4>
+								<div class="bg-light p-2 border rounded font-monospace small">
+									<div>You act on behalf of {{ user.name ||| the user }} at {{ company.name }}.</div>
+									<div>Today is {{ today }}. Respond in {{ user.lang ||| en_US }}.</div>
+									<div>Approval mode: {{ approval_mode }}.</div>
+								</div>
+							</div>
+						</page>
+					</notebook>
+				</sheet>
+				<chatter/>
+			</form>
+		</field>
+	</record>
+
+	<record id="action_ai_agent" model="ir.actions.act_window">
+		<field name="name">AI Agents</field>
+		<field name="res_model">muk_ai.agent</field>
+		<field name="view_mode">kanban,list,form</field>
+		<field name="path">ai-agents</field>
+	</record>
+
+</odoo>

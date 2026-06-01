@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_mcp_log_search_inherit_muk_ai" model="ir.ui.view">
+		<field name="name">muk_mcp.log.search.inherit.muk_ai</field>
+		<field name="model">muk_mcp.log</field>
+		<field name="inherit_id" ref="muk_mcp.view_mcp_log_search"/>
+		<field name="arch" type="xml">
+			<xpath expr="//filter[@name='ok']" position="before">
+				<filter name="chat" string="Chat" domain="[('source', '=', 'chat')]"/>
+				<filter name="mcp" string="MCP" domain="[('source', '=', 'mcp')]"/>
+				<separator/>
+			</xpath>
+			<xpath expr="//filter[@name='group_user']" position="after">
+				<filter name="group_source" string="Source" context="{'group_by': 'source'}"/>
+				<filter name="group_session" string="Chat Session" context="{'group_by': 'session_id'}"/>
+			</xpath>
+		</field>
+	</record>
+
+	<record id="view_mcp_log_list_inherit_muk_ai" model="ir.ui.view">
+		<field name="name">muk_mcp.log.list.inherit.muk_ai</field>
+		<field name="model">muk_mcp.log</field>
+		<field name="inherit_id" ref="muk_mcp.view_mcp_log_list"/>
+		<field name="arch" type="xml">
+			<xpath expr="//field[@name='tool_name']" position="before">
+				<field
+					name="source"
+					widget="badge"
+					decoration-info="source == 'chat'"
+					decoration-warning="source == 'mcp'"
+				/>
+			</xpath>
+			<xpath expr="//field[@name='ip_address']" position="after">
+				<field name="session_id" optional="hide"/>
+			</xpath>
+		</field>
+	</record>
+
+	<record id="view_mcp_log_form_inherit_muk_ai" model="ir.ui.view">
+		<field name="name">muk_mcp.log.form.inherit.muk_ai</field>
+		<field name="model">muk_mcp.log</field>
+		<field name="inherit_id" ref="muk_mcp.view_mcp_log_form"/>
+		<field name="arch" type="xml">
+			<xpath expr="//field[@name='method']" position="before">
+				<field
+					name="source"
+					widget="badge"
+					decoration-info="source == 'chat'"
+					decoration-warning="source == 'mcp'"
+				/>
+				<field name="session_id"/>
+			</xpath>
+		</field>
+	</record>
+
+</odoo>

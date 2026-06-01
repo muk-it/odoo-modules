@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_res_config_settings_form" model="ir.ui.view">
+		<field name="name">res.config.settings.form.muk_ai</field>
+		<field name="model">res.config.settings</field>
+		<field name="inherit_id" ref="base_setup.res_config_settings_view_form"/>
+		<field name="arch" type="xml">
+			<xpath expr="//block[@name='integration']" position="after">
+				<block title="MuK AI" name="muk_ai_settings">
+					<setting
+						id="muk_ai_default_provider"
+						string="Default Provider"
+						help="Provider used when an agent does not specify one."
+					>
+						<field name="ai_provider_id" options="{'no_create': True}"/>
+					</setting>
+					<setting
+						id="muk_ai_default_agent"
+						string="Default Agent"
+						help="Agent used for new chat sessions when none is specified."
+					>
+						<field name="ai_agent_id" options="{'no_create': True}"/>
+					</setting>
+					<setting
+						id="muk_ai_addon_compat"
+						string="MuK AI Compatible Providers"
+						help="Ollama, vLLM, OpenRouter and every OpenAI-compatible LLM."
+					>
+						<field
+							name="module_muk_ai_compat"
+							widget="module_link"
+						/>
+						<div class="content-group" invisible="not module_muk_ai_compat" id="msg_module_muk_ai_compat">
+							<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+						</div>
+					</setting>
+					<setting
+						id="muk_ai_addon_schedule"
+						string="MuK AI Schedule"
+						help="Run agents on a schedule, let them pause and resume themselves."
+					>
+						<field
+							name="module_muk_ai_schedule"
+							widget="module_link"
+						/>
+						<div class="content-group" invisible="not module_muk_ai_schedule" id="msg_module_muk_ai_schedule">
+							<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+						</div>
+					</setting>
+					<setting
+						id="muk_ai_addon_skills"
+						string="MuK AI Skills"
+						help="Pre-built agent skills the user or LLM can switch into."
+					>
+						<field
+							name="module_muk_ai_skills"
+							widget="module_link"
+						/>
+						<div class="content-group" invisible="not module_muk_ai_skills" id="msg_module_muk_ai_skills">
+							<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+						</div>
+					</setting>
+					<setting
+						id="muk_ai_addon_voice"
+						string="MuK AI Voice"
+						help="Talk to the assistant: realtime STT and spoken replies via TTS."
+					>
+						<field
+							name="module_muk_ai_voice"
+							widget="module_link"
+						/>
+						<div class="content-group" invisible="not module_muk_ai_voice" id="msg_module_muk_ai_voice">
+							<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+						</div>
+					</setting>
+				</block>
+			</xpath>
+		</field>
+	</record>
+
+</odoo>

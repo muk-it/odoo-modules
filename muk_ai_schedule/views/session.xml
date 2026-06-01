@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_ai_session_search_inherit_schedule" model="ir.ui.view">
+		<field name="name">muk_ai.session.search.inherit.schedule</field>
+		<field name="model">muk_ai.session</field>
+		<field name="inherit_id" ref="muk_ai.view_ai_session_search"/>
+		<field name="arch" type="xml">
+			<xpath expr="//field[@name='user_id']" position="after">
+				<field name="schedule_id"/>
+			</xpath>
+			<xpath expr="//filter[@name='done']" position="after">
+				<separator/>
+				<filter
+					name="from_schedule"
+					string="From Schedule"
+					domain="[('schedule_id', '!=', False)]"
+				/>
+				<filter
+					name="scheduled"
+					string="Scheduled"
+					domain="[('state', '=', 'schedule')]"
+				/>
+			</xpath>
+			<xpath expr="//filter[@name='group_user']" position="after">
+				<filter
+					name="group_schedule"
+					string="Schedule"
+					context="{'group_by': 'schedule_id'}"
+				/>
+			</xpath>
+		</field>
+	</record>
+
+	<record id="view_ai_session_list_inherit_schedule" model="ir.ui.view">
+		<field name="name">muk_ai.session.list.inherit.schedule</field>
+		<field name="model">muk_ai.session</field>
+		<field name="inherit_id" ref="muk_ai.view_ai_session_list"/>
+		<field name="arch" type="xml">
+			<xpath expr="//field[@name='user_id']" position="after">
+				<field name="schedule_id" optional="show"/>
+			</xpath>
+		</field>
+	</record>
+
+	<record id="view_ai_session_form_inherit_schedule" model="ir.ui.view">
+		<field name="name">muk_ai.session.form.inherit.schedule</field>
+		<field name="model">muk_ai.session</field>
+		<field name="inherit_id" ref="muk_ai.view_ai_session_form"/>
+		<field name="arch" type="xml">
+			<xpath expr="//sheet" position="inside">
+				<div class="oe_button_box" name="button_box">
+					<button
+						name="action_open_chain"
+						type="object"
+						class="oe_stat_button"
+						icon="fa-link"
+						invisible="chain_session_count &lt;= 1"
+					>
+						<field name="chain_session_count" widget="statinfo" string="Chain"/>
+					</button>
+				</div>
+			</xpath>
+			<xpath expr="//notebook/page[@name='conversation']" position="before">
+				<page string="Schedule" name="schedule">
+					<group>
+						<group string="Source">
+							<field name="schedule_id"/>
+							<field name="previous_session_id"/>
+						</group>
+						<group string="Linked Record">
+							<field name="res_model"/>
+							<field name="res_id"/>
+						</group>
+						<group string="Recurrence">
+							<field name="resume_at" widget="schedule_countdown"/>
+							<field name="recur_runs_done"/>
+							<field
+								name="recur_config"
+								widget="json_code"
+								groups="base.group_no_one"
+							/>
+						</group>
+					</group>
+				</page>
+			</xpath>
+		</field>
+	</record>
+
+</odoo>

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_muk_ai_provider_search" model="ir.ui.view">
+		<field name="name">muk_ai.provider.search</field>
+		<field name="model">muk_ai.provider</field>
+		<field name="arch" type="xml">
+			<search>
+				<field name="name"/>
+				<filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active', '=', False)]"
+                />
+			</search>
+		</field>
+	</record>
+
+	<record id="view_muk_ai_provider_list" model="ir.ui.view">
+		<field name="name">muk_ai.provider.list</field>
+		<field name="model">muk_ai.provider</field>
+		<field name="arch" type="xml">
+			<list>
+				<field name="sequence" widget="handle"/>
+				<field name="name"/>
+				<field name="default_model_id"/>
+				<field name="max_tokens"/>
+				<field name="request_timeout"/>
+				<field name="rate_limit"/>
+				<field name="active" widget="boolean_toggle"/>
+			</list>
+		</field>
+	</record>
+
+	<record id="view_muk_ai_provider_form" model="ir.ui.view">
+		<field name="name">muk_ai.provider.form</field>
+		<field name="model">muk_ai.provider</field>
+		<field name="arch" type="xml">
+			<form>
+				<header>
+					<button
+                        name="action_test_connection"
+                        type="object"
+                        string="Test Connection"
+                        class="btn-primary"
+                    />
+				</header>
+				<sheet>
+					<widget
+                        name="web_ribbon"
+                        title="Archived"
+                        bg_color="text-bg-danger"
+                        invisible="active"
+                    />
+					<div class="oe_title">
+						<label for="name"/>
+						<h1>
+							<field name="name"/>
+						</h1>
+					</div>
+					<group>
+						<group string="Credentials">
+							<field name="api_key" password="True"/>
+							<field
+                                name="default_model_id"
+                                options="{'no_create': True}"
+                            />
+						</group>
+						<group string="Limits">
+							<field name="max_tokens"/>
+							<label for="request_timeout"/>
+							<div class="d-flex align-items-center gap-2">
+								<field name="request_timeout" class="flex-grow-1"/>
+								<span>Seconds</span>
+							</div>
+							<label for="idle_timeout"/>
+							<div class="d-flex align-items-center gap-2">
+								<field name="idle_timeout" class="flex-grow-1"/>
+								<span>Seconds</span>
+							</div>
+							<label for="rate_limit"/>
+							<div class="d-flex align-items-center gap-2">
+								<field name="rate_limit" class="flex-grow-1"/>
+								<span>/ minute</span>
+							</div>
+						</group>
+					</group>
+					<notebook>
+						<page string="Models" name="models">
+							<field name="model_ids" context="{'default_provider_id': id}">
+								<list>
+									<field name="sequence" widget="handle"/>
+									<field name="name"/>
+									<field name="technical_name"/>
+									<field name="context_window"/>
+									<field name="input_rate"/>
+									<field name="output_rate"/>
+									<field name="cached_rate"/>
+									<field name="active" widget="boolean_toggle"/>
+								</list>
+							</field>
+						</page>
+					</notebook>
+				</sheet>
+			</form>
+		</field>
+	</record>
+
+	<record id="action_muk_ai_provider" model="ir.actions.act_window">
+		<field name="name">AI Providers</field>
+		<field name="res_model">muk_ai.provider</field>
+		<field name="view_mode">list,form</field>
+		<field name="path">ai-providers</field>
+	</record>
+
+</odoo>
