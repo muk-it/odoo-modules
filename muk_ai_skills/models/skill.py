@@ -153,10 +153,13 @@ class Skill(models.Model):
     # Constraints
     # ----------------------------------------------------------
 
-    _unique_name = models.Constraint(
-        'unique(name)',
-        "A skill with this technical name already exists.",
-    )
+    _sql_constraints = [
+        (
+            'unique_name',
+            'unique(name)',
+            "A skill with this technical name already exists.",
+        ),
+    ]
 
     @api.constrains('name')
     def _check_name_format(self):

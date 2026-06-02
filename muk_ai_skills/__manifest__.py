@@ -8,7 +8,7 @@
         addendum so the agent can pick one autonomously, and users
         can invoke them directly with a /<name> slash command in chat.
     ''',
-    'version': '19.0.1.0.22',
+    'version': '18.0.1.0.22',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',

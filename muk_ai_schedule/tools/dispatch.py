@@ -61,7 +61,11 @@ def _resolve_records(schedule):
             'timedelta': timedelta, 'relativedelta': relativedelta,
         }
         try:
-            safe_eval.safe_eval(code, eval_ctx, mode='exec')
+            # nocopy=True so the `records = ...` assignment lands back in
+            # eval_ctx (Odoo 18 safe_eval copies globals_dict by default,
+            # which would otherwise discard the result). Also the recommended
+            # mode when passing a live `env` in the context.
+            safe_eval.safe_eval(code, eval_ctx, mode='exec', nocopy=True)
         except Exception:
             return Model.browse([])
         result = eval_ctx.get('records')

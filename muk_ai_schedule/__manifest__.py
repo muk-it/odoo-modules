@@ -10,7 +10,7 @@
         matching a domain; chained sessions expose previous_session_id
         so an agent can recall last run's summary cheaply.
     ''',
-    'version': '19.0.1.0.35',
+    'version': '18.0.1.0.35',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -21,6 +21,9 @@
     'depends': [
         'muk_ai',
     ],
+    'external_dependencies': {
+        'python': ['croniter'],
+    },
     'data': [
         'security/ir.model.access.csv',
         'data/ir_cron.xml',

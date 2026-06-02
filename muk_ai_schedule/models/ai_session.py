@@ -118,23 +118,20 @@ class AISession(models.Model):
         return inputs
 
     @api.model
-    def _search(self, domain, offset=0, limit=None, order=None, *, active_test=True, bypass_access=False):
-        if self.env.su or self.env.is_admin() or bypass_access:
-            return super()._search(
-                domain, offset=offset, limit=limit, order=order,
-                active_test=active_test, bypass_access=bypass_access,
-            )
-        candidate_query = super()._search(
-            domain, order=order, active_test=active_test, bypass_access=True,
-        )
+    def _search(self, domain, offset=0, limit=None, order=None):
+        # Note: Odoo 18 BaseModel._search() has no active_test/bypass_access
+        # keyword arguments (added in 19). active_test is taken from context;
+        # rules are bypassed by searching as superuser (sudo).
+        if self.env.su or self.env.is_admin():
+            return super()._search(domain, offset=offset, limit=limit, order=order)
+        candidate_query = super(AISession, self.sudo())._search(domain, order=order)
         candidate_ids = list(candidate_query)
         if not candidate_ids:
             return candidate_query
         accessible = self.browse(candidate_ids)._filtered_access('read')
-        return super()._search(
+        return super(AISession, self.sudo())._search(
             [('id', 'in', list(accessible._ids))],
             offset=offset, limit=limit, order=order,
-            active_test=active_test, bypass_access=True,
         )
 
     def _check_access(self, operation):
