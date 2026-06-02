@@ -3,10 +3,15 @@ import json
 from unittest.mock import patch
 
 from odoo.exceptions import UserError
+from odoo.tests import tagged
 
 from odoo.addons.muk_ai.tests.common import AITestCommon
 
 
+# post_install: these reference account.move and create res.partner, which on
+# Odoo 18 require sibling modules (e.g. account) to be fully loaded — only
+# guaranteed once the registry is complete.
+@tagged('post_install', '-at_install')
 class TestApprovalRiskPredicate(AITestCommon):
 
     # ----------------------------------------------------------
@@ -100,6 +105,9 @@ class TestApprovalRiskPredicate(AITestCommon):
         self.assertNotEqual(a['signature'], b['signature'])
 
 
+# post_install: creates res.partner, which on Odoo 18 needs sibling modules
+# (e.g. account's required res.partner.autopost_bills) fully loaded.
+@tagged('post_install', '-at_install')
 class TestApprovalPreview(AITestCommon):
 
     # ----------------------------------------------------------

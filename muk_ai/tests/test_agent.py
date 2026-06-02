@@ -1,12 +1,17 @@
 from unittest.mock import patch
 
 from odoo import release
+from odoo.tests import tagged
 
 from odoo.addons.muk_ai.tools import DEFAULT_CONTEXT_WINDOW
 
 from odoo.addons.muk_ai.tests.common import AITestCommon
 
 
+# post_install: creates res.partner / multi-company records, which on Odoo 18
+# need sibling modules (e.g. account adds a required res.partner.autopost_bills
+# field) fully loaded — only guaranteed after the registry is complete.
+@tagged('post_install', '-at_install')
 class TestAiAgent(AITestCommon):
 
     # ----------------------------------------------------------

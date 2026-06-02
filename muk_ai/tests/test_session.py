@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from odoo import fields
 from odoo.exceptions import UserError
+from odoo.tests import tagged
 from odoo.tools import SQL
 
 from odoo.addons.muk_ai.tools import (
@@ -18,6 +19,9 @@ from odoo.addons.muk_ai.tools import (
 from odoo.addons.muk_ai.tests.common import AITestCommon
 
 
+# post_install: creates res.partner, which on Odoo 18 needs sibling modules
+# (e.g. account's required res.partner.autopost_bills) fully loaded.
+@tagged('post_install', '-at_install')
 class TestAiSession(AITestCommon):
 
     # ----------------------------------------------------------
