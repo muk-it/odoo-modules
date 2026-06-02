@@ -10,6 +10,7 @@
                 <AutoComplete
                     value="''"
                     sources="autocompleteSources"
+                    onSelect.bind="onSelect"
                     placeholder="state.selected.length ? '' : (props.placeholder || 'Add a tool...')"
                     resetOnSelect="true"
                     class="'o_input'"/>

@@ -70,6 +70,14 @@ export class ToolPickerField extends Component {
             },
         }];
     }
+    onSelect(option) {
+        // Odoo 18's AutoComplete requires a top-level onSelect prop and calls
+        // it with the chosen source option; we delegate to the per-option
+        // onSelect built in autocompleteSources (which 19 invokes directly).
+        if (option && typeof option.onSelect === 'function') {
+            option.onSelect();
+        }
+    }
     async _add(name) {
         if (this.state.selected.includes(name)) {
             return;

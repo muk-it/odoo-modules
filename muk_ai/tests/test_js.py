@@ -13,11 +13,16 @@ class TestHoot(odoo.tests.HttpCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        # group_system is required on Odoo 18: the Hoot test runner resolves a
+        # non-default addon's dependencies via ir.module.module.dependency
+        # .all_dependencies(), which is restricted to Settings access on 18
+        # (readable by all users on 19). The suite itself uses a mock server,
+        # so the elevated group does not affect the component tests.
         cls.hoot_user = new_test_user(
             cls.env,
             login='hoot_muk_ai',
             password='hoot_muk_ai',
-            groups='base.group_user',
+            groups='base.group_user,base.group_system',
             context={
                 'mail_create_nosubscribe': True,
                 'mail_notrack': True,

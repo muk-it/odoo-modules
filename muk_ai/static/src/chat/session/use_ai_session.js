@@ -506,7 +506,8 @@ export function useAiSession(options = {}) {
     function canSend() {
         const hasContent = state.input.trim().length > 0
             || state.pendingAttachments.length > 0;
-        return !!state.sessionId && !state.loading && hasContent;
+        return !!state.sessionId && !state.loading
+            && state.status !== 'running' && hasContent;
     }
     function canAttach() {
         return !!state.sessionId
