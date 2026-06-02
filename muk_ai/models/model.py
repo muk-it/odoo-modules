@@ -115,10 +115,13 @@ class AIModel(models.Model):
     # Constraints
     # ----------------------------------------------------------
 
-    _unique_provider_model = models.Constraint(
-        'unique(provider_id, technical_name)',
-        "A model with this provider and name already exists.",
-    )
+    _sql_constraints = [
+        (
+            'unique_provider_model',
+            'unique(provider_id, technical_name)',
+            "A model with this provider and name already exists.",
+        ),
+    ]
 
     @api.constrains('context_window')
     def _check_context_window(self):

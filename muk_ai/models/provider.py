@@ -237,7 +237,10 @@ class AIProvider(models.Model):
     # Constraints
     # ----------------------------------------------------------
 
-    _unique_name = models.Constraint(
-        'unique(name)',
-        "A provider with this name already exists.",
-    )
+    _sql_constraints = [
+        (
+            'unique_name',
+            'unique(name)',
+            "A provider with this name already exists.",
+        ),
+    ]

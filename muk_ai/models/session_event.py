@@ -47,7 +47,10 @@ class AISessionEvent(models.Model):
     # Constraints
     # ----------------------------------------------------------
 
-    _unique_session_sequence = models.Constraint(
-        'unique(session_id, sequence)',
-        "Session event sequence must be unique per session.",
-    )
+    _sql_constraints = [
+        (
+            'unique_session_sequence',
+            'unique(session_id, sequence)',
+            "Session event sequence must be unique per session.",
+        ),
+    ]

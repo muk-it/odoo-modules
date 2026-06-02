@@ -2,7 +2,7 @@ from odoo import _, api, models
 from odoo.exceptions import UserError
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
-from odoo.addons.muk_mcp.tools.parser import coerce_json_value
+from odoo.addons.muk_mcp.tools.common import coerce_json_value
 
 
 class AIWindow(models.AbstractModel):
