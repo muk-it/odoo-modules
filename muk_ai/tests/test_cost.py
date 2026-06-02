@@ -12,11 +12,16 @@ class TestSessionCostAccrual(AITestCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        # Large context window so the deliberately large per-round token
+        # counts below (chosen for clean cost math) stay well under the
+        # auto-compaction threshold (last_input_tokens / window >=
+        # COMPACT_AUTO_RATIO). Otherwise the 1M-token first round would trip
+        # _maybe_auto_compact on the next send and consume a mocked response.
         cls.model = cls.env['muk_ai.model'].create({
             'name': 'Test',
             'provider_id': cls.provider.id,
             'technical_name': 'test-cost-model',
-            'context_window': 128000,
+            'context_window': 100_000_000,
             'input_rate': 1.0,
             'output_rate': 2.0,
             'cached_rate': 0.0,
