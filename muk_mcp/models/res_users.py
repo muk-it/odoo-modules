@@ -8,6 +8,24 @@ class ResUsers(models.Model):
     _inherit = 'res.users'
 
     # ----------------------------------------------------------
+    # Properties
+    # ----------------------------------------------------------
+
+    @property
+    def SELF_READABLE_FIELDS(self):
+        return super().SELF_READABLE_FIELDS + [
+            'mcp_key_ids',
+            'mcp_session_ids',
+        ]
+
+    @property
+    def SELF_WRITEABLE_FIELDS(self):
+        return super().SELF_WRITEABLE_FIELDS + [
+            'mcp_key_ids',
+            'mcp_session_ids',
+        ]
+
+    # ----------------------------------------------------------
     # Fields
     # ----------------------------------------------------------
 
