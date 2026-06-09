@@ -14,7 +14,7 @@ from markupsafe import Markup, escape
 
 from odoo import SUPERUSER_ID, _, api, fields, models, modules, release
 from odoo.exceptions import AccessError, UserError
-from odoo.tools import SQL
+from odoo.tools import SQL, config
 from odoo.service.model import (
     MAX_TRIES_ON_CONCURRENCY_FAILURE,
     PG_CONCURRENCY_EXCEPTIONS_TO_RETRY,
@@ -37,7 +37,10 @@ from odoo.addons.muk_ai.tools import (
     MAX_WALLCLOCK_SECONDS,
     TERMINATING_TOOLS,
     TOOL_LOAD_TOOL,
+    TURN_WALLCLOCK_SECONDS,
     URL_REF_RE,
+    WALLCLOCK_MIN_SECONDS,
+    WALLCLOCK_SAFETY_MARGIN,
     WORKER_HEARTBEAT_INTERVAL,
     WORKER_STALE_THRESHOLD,
     StreamCancelled,
@@ -278,6 +281,18 @@ class AISession(models.Model):
         default=0,
     )
 
+    turn_wallclock_spent = fields.Float(
+        string="Turn Wallclock Spent",
+        help=(
+            "Cumulative compute seconds spent on the current user turn across "
+            "cron slices. Reset to zero on each new user turn. When it reaches "
+            "the per-turn wallclock budget the turn stops with an error."
+        ),
+        readonly=True,
+        default=0.0,
+        copy=False,
+    )
+
     total_input_tokens = fields.Integer(
         string="Input Tokens",
         readonly=True,
@@ -448,6 +463,51 @@ class AISession(models.Model):
         if self.agent_id and self.agent_id.approval_mode:
             return self.agent_id.approval_mode
         return 'ask'
+
+    @api.model
+    def _int_config_param(self, key, default):
+        raw = self.env['ir.config_parameter'].sudo().get_param(
+            key
+        )
+        try:
+            value = int(raw)
+        except (TypeError, ValueError):
+            return default
+        return value if value > 0 else default
+
+    @api.model
+    def _max_iterations(self):
+        return self._int_config_param(
+            'muk_ai.max_iterations', MAX_ITERATIONS
+        )
+
+    @api.model
+    def _cron_hard_limit_seconds(self):
+        limit = config['limit_time_real_cron']
+        if not limit or limit < 0:
+            limit = config['limit_time_real'] or 0
+        return limit if limit and limit > 0 else 0
+
+    @api.model
+    def _slice_wallclock_seconds(self):
+        configured = self._int_config_param(
+            'muk_ai.slice_wallclock_seconds',
+            MAX_WALLCLOCK_SECONDS
+        )
+        if hard := self._cron_hard_limit_seconds():
+            budget = max(
+                WALLCLOCK_MIN_SECONDS,
+                hard - WALLCLOCK_SAFETY_MARGIN
+            )
+            return min(configured, budget)
+        return configured
+
+    @api.model
+    def _turn_wallclock_seconds(self):
+        return self._int_config_param(
+            'muk_ai.turn_wallclock_seconds',
+            TURN_WALLCLOCK_SECONDS
+        )
 
     # ----------------------------------------------------------
     # Helper Inputs
@@ -739,7 +799,11 @@ class AISession(models.Model):
             self._append_event(self._user_message_log(
                 user_message, attachments
             ))
-        self.write({'state': 'running', 'error_message': False})
+        self.write({
+            'state': 'running',
+            'error_message': False,
+            'turn_wallclock_spent': 0.0,
+        })
         self._publish_event('state', {'state': 'running'})
 
     def _record_tool_result(
@@ -1439,8 +1503,38 @@ class AISession(models.Model):
                 })
         return None if paused or wait_for_user else has_terminating
 
+    def _turn_budget_error(self, turn_budget):
+        self._transition_state('error', error=_(
+            "Turn wallclock budget reached (%(s)s s). Send a new message to continue.",
+            s=int(turn_budget),
+        ))
+
+    def _yield_slice(self):
+        if modules.module.current_test:
+            return
+        self._commit_safe()
+        if crons := self._session_worker_crons():
+            with suppress(Exception):
+                random.choice(crons)._trigger()
+
+    def _handle_wallclock_expiry(self, slice_start, spent_before, turn_budget):
+        total = spent_before + (time.monotonic() - slice_start)
+        self.write({'turn_wallclock_spent': total})
+        if total >= turn_budget:
+            self._turn_budget_error(turn_budget)
+            return
+        self._yield_slice()
+
     def _run_to_completion(self, has_terminating=False):
-        deadline = time.monotonic() + MAX_WALLCLOCK_SECONDS
+        slice_start = time.monotonic()
+        spent_before = self.turn_wallclock_spent or 0.0
+        turn_budget = self._turn_wallclock_seconds()
+        if spent_before >= turn_budget:
+            self._turn_budget_error(turn_budget)
+            return
+        deadline = slice_start + min(
+            self._slice_wallclock_seconds(), turn_budget - spent_before
+        )
         while True:
             self._maybe_auto_compact()
             if self.state != 'running':
@@ -1449,30 +1543,28 @@ class AISession(models.Model):
                 has_terminating=has_terminating,
                 deadline=deadline
             )
+            if self.state == 'running' and time.monotonic() > deadline:
+                self._handle_wallclock_expiry(
+                    slice_start, spent_before, turn_budget
+                )
+                return
             if self.state != 'done':
                 return
             if not self._drain_pending_message():
                 return
             if time.monotonic() > deadline:
-                self._transition_state('error', error=_(
-                    "Wallclock cap reached (%(s)s s). Send a new message to continue.",
-                    s=MAX_WALLCLOCK_SECONDS,
-                ))
+                self._yield_slice()
                 return
             self._transition_state('running')
             has_terminating = False
 
     def _run_iterations(self, has_terminating=False, deadline=None):
-        deadline = deadline or time.monotonic() + MAX_WALLCLOCK_SECONDS
+        deadline = deadline or time.monotonic() + self._slice_wallclock_seconds()
         provider, model = self._effective_provider(), self._effective_model()
-        for _iteration in range(MAX_ITERATIONS):
+        for _iteration in range(self._max_iterations()):
             if self.state != 'running':
                 return
             if time.monotonic() > deadline:
-                self._transition_state('error', error=_(
-                    "Wallclock cap reached (%(s)s s). Send a new message to continue.",
-                    s=MAX_WALLCLOCK_SECONDS,
-                ))
                 return
             self.invalidate_recordset(['pending_ids', 'expanded_tool_names'])
             if self.pending_ids and self._drain_pending_message():
@@ -2115,7 +2207,11 @@ class AISession(models.Model):
             'answer': answer,
             'attachments': [a._ai_describe() for a in attachments],
         })
-        self.write({'state': 'running', 'pending_ask': False})
+        self.write({
+            'state': 'running',
+            'pending_ask': False,
+            'turn_wallclock_spent': 0.0,
+        })
         self._publish_event('state', {'state': 'running'})
         self._trigger_worker()
         return self.get_snapshot()
@@ -2175,6 +2271,7 @@ class AISession(models.Model):
             'pending_ask': False,
             'error_message': False,
             'state': 'running',
+            'turn_wallclock_spent': 0.0,
         })
         self._publish_event('state', {'state': 'running'})
         self._trigger_worker()

@@ -1,15 +1,18 @@
 import json
+import time
 
 from datetime import timedelta
 from unittest.mock import patch
 
 from odoo import fields
 from odoo.exceptions import UserError
-from odoo.tools import SQL
+from odoo.tools import SQL, config
 
 from odoo.addons.muk_ai.tools import (
     ADVISORY_LOCK_NAMESPACE,
     MAX_ITERATIONS,
+    WALLCLOCK_MIN_SECONDS,
+    WALLCLOCK_SAFETY_MARGIN,
     WORKER_STALE_THRESHOLD,
     format_ui_ctx_tag,
     render_ui_ctx,
@@ -226,6 +229,71 @@ class TestAiSession(AITestCommon):
             snapshot = self.session.start('loop')
         self.assertEqual(snapshot['state'], 'error')
         self.assertIn('Maximum iterations', self.session.error_message or '')
+
+    def test_max_iterations_is_configurable(self):
+        self.env['ir.config_parameter'].sudo().set_param('muk_ai.max_iterations', '3')
+        session = self.env['muk_ai.session'].create({'name': 'cfg iters'})
+        payloads = [
+            self._tool_payload('list_modules', {}, f'call_{i}')
+            for i in range(4)
+        ]
+        with self._patch_provider(payloads), self._patch_tool_call({'list_modules': '{}'}):
+            snapshot = session.start('loop')
+        self.assertEqual(snapshot['state'], 'error')
+        self.assertIn('Maximum iterations', session.error_message or '')
+
+    def test_int_config_param_falls_back_on_invalid(self):
+        ICP = self.env['ir.config_parameter'].sudo()
+        self.assertEqual(self.session._max_iterations(), MAX_ITERATIONS)
+        ICP.set_param('muk_ai.max_iterations', '7')
+        self.assertEqual(self.session._max_iterations(), 7)
+        ICP.set_param('muk_ai.max_iterations', 'nonsense')
+        self.assertEqual(self.session._max_iterations(), MAX_ITERATIONS)
+        ICP.set_param('muk_ai.max_iterations', '0')
+        self.assertEqual(self.session._max_iterations(), MAX_ITERATIONS)
+
+    def test_slice_wallclock_bounded_by_cron_limit(self):
+        ICP = self.env['ir.config_parameter'].sudo()
+        ICP.set_param('muk_ai.slice_wallclock_seconds', '99999')
+        hard = config['limit_time_real_cron']
+        if not hard or hard < 0:
+            hard = config['limit_time_real'] or 0
+        if hard:
+            expected = max(WALLCLOCK_MIN_SECONDS, hard - WALLCLOCK_SAFETY_MARGIN)
+            self.assertEqual(self.session._slice_wallclock_seconds(), expected)
+        ICP.set_param('muk_ai.slice_wallclock_seconds', '15')
+        self.assertEqual(self.session._slice_wallclock_seconds(), 15)
+
+    def test_wallclock_expiry_yields_when_turn_budget_remains(self):
+        self.session.write({'state': 'running', 'turn_wallclock_spent': 0.0})
+        self.session._handle_wallclock_expiry(
+            time.monotonic() - 100, 0.0, turn_budget=10000
+        )
+        self.assertEqual(self.session.state, 'running')
+        self.assertGreaterEqual(self.session.turn_wallclock_spent, 100)
+
+    def test_wallclock_expiry_errors_when_turn_budget_exhausted(self):
+        self.session.write({'state': 'running', 'turn_wallclock_spent': 0.0})
+        self.session._handle_wallclock_expiry(
+            time.monotonic() - 100, 50.0, turn_budget=120
+        )
+        self.assertEqual(self.session.state, 'error')
+        self.assertIn('Turn wallclock budget', self.session.error_message or '')
+
+    def test_new_user_turn_resets_turn_wallclock_spent(self):
+        session = self.env['muk_ai.session'].create({'name': 'reset turn'})
+        session.write({
+            'state': 'done',
+            'turn_wallclock_spent': 42.0,
+            'conversation': [{
+                'role': 'user',
+                'content': [{'type': 'input_text', 'text': 'hi'}],
+            }],
+        })
+        with self._patch_provider([self._text_payload('done')]):
+            session.send_message('next')
+        self.assertEqual(session.turn_wallclock_spent, 0.0)
+        self.assertEqual(session.state, 'done')
 
     def test_get_tool_schema_converts_inputschema_to_parameters(self):
         fake_tools = [

@@ -351,9 +351,19 @@ prompts, and answers. Combined with `muk_mcp`'s own audit log, every
 AI-driven read or write on your data is traceable end-to-end.
 
 The per-provider idle watchdog aborts dead connections. Runaway loops
-are capped by `MAX_ITERATIONS = 20` per turn and
+are capped by `MAX_ITERATIONS` (default 20) per slice and
 `MAX_TOOL_CALLS_PER_ROUND = 10`; an `ask_user`-at-cap edge is handled
 gracefully so resumed sessions do not get stuck.
+
+Long turns are sliced across cron ticks instead of dying. Each worker
+run gets a wallclock budget bounded below the cron process limit
+(`limit_time_real_cron`, falling back to `limit_time_real`) so it yields
+*before* Odoo kills the worker; at the boundary the session stays
+`running` and re-triggers a worker, resuming from its persisted
+conversation on the next tick — the same batch-cron pattern Odoo uses
+elsewhere. A per-turn wallclock budget bounds total work. All three caps
+are tunable via system parameters: `muk_ai.max_iterations`,
+`muk_ai.slice_wallclock_seconds`, `muk_ai.turn_wallclock_seconds`.
 
 Sessions inherit `bus.listener.mixin` and route streaming events
 through the owner's partner channel — not a guessable string — so one
