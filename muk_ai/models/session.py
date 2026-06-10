@@ -262,12 +262,12 @@ class AISession(models.Model):
         readonly=True,
     )
 
-    attachment_ids = fields.Many2many(
+    attachment_ids = fields.One2many(
         comodel_name='ir.attachment',
-        relation='muk_ai_session_ir_attachment_rel',
-        column1='session_id',
-        column2='attachment_id',
+        inverse_name='res_id',
+        domain=[('res_model', '=', 'muk_ai.session')],
         string="Attachments",
+        copy=False,
         readonly=True,
     )
 
@@ -786,8 +786,8 @@ class AISession(models.Model):
             raise UserError(_("One or more attachments could not be found."))
         attachments._ai_validate()
         if new := attachments - self.attachment_ids:
-            self.sudo().write({'attachment_ids': [(4, a.id) for a in new]})
             new.sudo().write({'res_model': 'muk_ai.session', 'res_id': self.id})
+            self.invalidate_recordset(['attachment_ids'])
         return attachments
 
     def _enqueue_user_turn(self, user_message, attachments, extend=True):
@@ -2381,7 +2381,6 @@ class AISession(models.Model):
             'last_text': False,
             'error_message': False,
             'iteration_count': 0,
-            'attachment_ids': [(5, 0, 0)],
             'event_ids': [(5, 0, 0)],
             'pending_ids': [(5, 0, 0)],
         })
@@ -2410,25 +2409,23 @@ class AISession(models.Model):
                 res_id=self.id,
             )
         if created:
-            self.sudo().write({'attachment_ids': [(4, aid) for aid in created.ids]})
+            self.invalidate_recordset(['attachment_ids'])
         return [a._ai_describe() for a in created]
 
     def discard_attachments(self, attachment_ids):
         if attachment_ids:
-            attachments = self.env['ir.attachment'].browse([
+            attachments = self.env['ir.attachment'].sudo().browse([
                 int(aid) for aid in attachment_ids
             ])
-            orphans = attachments.exists().filtered(
+            owned = attachments.exists().filtered(
                 lambda attachment: (
                     attachment.res_model == 'muk_ai.session'
                     and attachment.res_id == self.id
                 ),
             )
-            self.sudo().write({
-                'attachment_ids': [(3, aid) for aid in attachments.ids],
-            })
-            if orphans:
-                orphans.unlink()
+            if owned:
+                owned.unlink()
+                self.invalidate_recordset(['attachment_ids'])
         return True
 
     def set_view_context(self, payload):
