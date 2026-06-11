@@ -47,9 +47,13 @@ export const chatWindowService = {
             }
             return state.windows[0]?.sessionId || null;
         }
+        function sessionIds() {
+            return state.windows.map((w) => w.sessionId);
+        }
         return {
             state, open, close, toggleMinimized,
             get activeSessionId() { return activeSessionId(); },
+            get sessionIds() { return sessionIds(); },
         };
     },
 };

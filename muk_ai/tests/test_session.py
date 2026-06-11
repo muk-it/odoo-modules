@@ -50,6 +50,7 @@ class TestAiSession(AITestCommon):
         ):
             if captured is not None:
                 captured.append({
+                    'inputs': inputs,
                     'tools_schema': tools_schema,
                     'enable_web_search': kwargs.get('enable_web_search', False),
                     'enable_image_generation': kwargs.get('enable_image_generation', False),
@@ -1266,7 +1267,7 @@ class TestAiSession(AITestCommon):
         session.invalidate_recordset()
         self.assertEqual(session.state, 'running')
 
-    def test_recover_if_stuck_drops_pending_queue(self):
+    def test_recover_if_stuck_preserves_pending_queue(self):
         session = self._force_stale_session('queued-while-stuck')
         self.env['muk_ai.session.pending'].create({
             'session_id': session.id,
@@ -1276,7 +1277,7 @@ class TestAiSession(AITestCommon):
         self.assertTrue(session._recover_if_stuck())
         session.invalidate_recordset()
         self.assertEqual(session.state, 'error')
-        self.assertEqual(len(session.pending_ids), 0)
+        self.assertEqual(len(session.pending_ids), 1)
 
     def test_sweep_orphan_skips_session_with_held_lock(self):
         session = self._force_stale_session('busy-worker')
@@ -1351,61 +1352,233 @@ class TestAiSession(AITestCommon):
         self.assertEqual(session.state, 'error')
         self.assertIn('abandoned', session.error_message)
 
-    def test_commit_safe_retries_on_serialization_failure(self):
+    def test_commit_safe_raises_on_serialization_failure(self):
         from unittest.mock import MagicMock
 
         from psycopg2.errors import SerializationFailure
 
         from odoo.addons.muk_ai.models import session as session_module
 
-        attempts = {'commit': 0}
-
         def fake_commit():
-            attempts['commit'] += 1
-            if attempts['commit'] == 1:
-                raise SerializationFailure('simulated concurrent update')
+            raise SerializationFailure('simulated concurrent update')
 
         fake_cr = MagicMock(commit=fake_commit, rollback=MagicMock())
         fake_env = MagicMock(cr=fake_cr)
         fake_session = MagicMock(env=fake_env, id=1)
 
-        with (
-            patch.object(session_module.modules.module, 'current_test', False),
-            patch.object(session_module.time, 'sleep'),
-        ):
-            session_module.AISession._commit_safe(fake_session)
+        with patch.object(session_module.modules.module, 'current_test', False):
+            with self.assertRaises(SerializationFailure):
+                session_module.AISession._commit_safe(fake_session)
 
-        self.assertEqual(attempts['commit'], 2)
         self.assertEqual(fake_cr.rollback.call_count, 1)
-
-    def test_commit_safe_gives_up_after_max_retries(self):
-        from unittest.mock import MagicMock
-
-        from psycopg2.errors import SerializationFailure
-
-        from odoo.addons.muk_ai.models import session as session_module
-
-        attempts = {'commit': 0}
-
-        def fake_commit():
-            attempts['commit'] += 1
-            raise SerializationFailure('simulated persistent contention')
-
-        fake_cr = MagicMock(commit=fake_commit, rollback=MagicMock())
-        fake_env = MagicMock(cr=fake_cr)
-        fake_session = MagicMock(env=fake_env, id=1)
-
-        with (
-            patch.object(session_module.modules.module, 'current_test', False),
-            patch.object(session_module.time, 'sleep'),
-        ):
-            session_module.AISession._commit_safe(fake_session)
-
-        self.assertEqual(
-            attempts['commit'], session_module.MAX_TRIES_ON_CONCURRENCY_FAILURE,
-        )
-        self.assertEqual(
-            fake_cr.rollback.call_count,
-            session_module.MAX_TRIES_ON_CONCURRENCY_FAILURE,
-        )
         fake_session.invalidate_recordset.assert_called_once()
+
+    # ----------------------------------------------------------
+    # Tests: tool round resume locking
+    # ----------------------------------------------------------
+
+    def _make_waiting_approval_session(self, name='waiting-approval'):
+        session = self.env['muk_ai.session'].create({'name': name})
+        session.pending_ask = {
+            'kind': 'approval',
+            'call_id': 'lock_c1',
+            'name': 'delete_records',
+            'arguments': {'model': 'res.partner', 'ids': [1]},
+            'risk': {
+                'tool': 'delete_records',
+                'model': 'res.partner',
+                'ids': [1],
+                'method': '',
+                'reason': 'test',
+                'signature': 'lock-sig-1',
+            },
+            'tool_calls': [],
+            'outputs': [],
+            'resume_index': 0,
+            'has_terminating': False,
+        }
+        session.state = 'waiting'
+        return session
+
+    def test_approve_tool_aborts_when_session_lock_held(self):
+        session = self._make_waiting_approval_session('locked-approve')
+        with self._hold_session_lock(session.id):
+            with patch.object(
+                type(session), '_dispatch_tool_call', autospec=True,
+            ) as dispatch:
+                with self.assertRaises(UserError):
+                    session.approve_tool()
+        dispatch.assert_not_called()
+        session.invalidate_recordset()
+        self.assertEqual(session.state, 'waiting')
+        self.assertEqual((session.pending_ask or {}).get('call_id'), 'lock_c1')
+
+    def test_resume_tool_round_releases_session_lock(self):
+        session = self._make_waiting_approval_session('released-after-reject')
+        with patch.object(
+            type(session), '_trigger_worker', autospec=True, return_value=None,
+        ):
+            session.reject_tool(reason='unit-test rejection')
+        self.assertFalse(session.pending_ask)
+        with self._hold_session_lock(session.id):
+            pass
+
+    # ----------------------------------------------------------
+    # Tests: orphaned tool call closure
+    # ----------------------------------------------------------
+
+    def test_close_orphan_tool_calls_closes_unanswered_calls(self):
+        session = self.env['muk_ai.session'].create({'name': 'orphan-calls'})
+        session.conversation = [
+            {'role': 'user', 'content': 'hi'},
+            {'type': 'function_call', 'call_id': 'done_c1',
+             'name': 'list_modules', 'arguments': '{}'},
+            {'type': 'function_call_output', 'call_id': 'done_c1',
+             'output': '{}'},
+            {'type': 'function_call', 'call_id': 'orphan_c1',
+             'name': 'list_modules', 'arguments': '{}'},
+        ]
+        session._close_orphan_tool_calls('worker died')
+        outputs = [
+            entry for entry in session.conversation
+            if entry.get('type') == 'function_call_output'
+        ]
+        self.assertEqual(len(outputs), 2)
+        self.assertEqual(outputs[-1]['call_id'], 'orphan_c1')
+        self.assertIn('interrupted', outputs[-1]['output'])
+        session._close_orphan_tool_calls('worker died again')
+        self.assertEqual(len([
+            entry for entry in session.conversation
+            if entry.get('type') == 'function_call_output'
+        ]), 2)
+
+    def test_action_stop_flushes_orphaned_tool_outputs(self):
+        session = self._make_waiting_approval_session('stop-while-waiting')
+        session.conversation = [
+            {'role': 'user', 'content': 'hi'},
+            {'type': 'function_call', 'call_id': 'lock_c1',
+             'name': 'delete_records', 'arguments': '{}'},
+        ]
+        session.action_stop()
+        session.invalidate_recordset()
+        self.assertEqual(session.state, 'stopped')
+        self.assertFalse(session.pending_ask)
+        outputs = [
+            entry for entry in session.conversation
+            if entry.get('type') == 'function_call_output'
+        ]
+        self.assertEqual(len(outputs), 1)
+        self.assertEqual(outputs[0]['call_id'], 'lock_c1')
+        self.assertIn('stopped_by_user', outputs[0]['output'])
+
+    # ----------------------------------------------------------
+    # Tests: compaction split boundaries
+    # ----------------------------------------------------------
+
+    def test_split_conversation_tail_starts_at_user_turn(self):
+        session = self.env['muk_ai.session'].create({'name': 'split-pairs'})
+        u1 = {'role': 'user', 'content': 'u' * 5000}
+        a1 = {'role': 'assistant', 'content': 'a' * 5000}
+        u2 = {'role': 'user', 'content': 'x' * 5000}
+        a2 = {'role': 'assistant', 'content': 'y' * 2000}
+        fc = {'type': 'function_call', 'call_id': 'pair_c1',
+              'name': 'list_modules', 'arguments': '{}'}
+        fco = {'type': 'function_call_output', 'call_id': 'pair_c1',
+               'output': '{}'}
+        a3 = {'role': 'assistant', 'content': 'z' * 1500}
+        session.conversation = [u1, a1, u2, a2, fc, fco, a3]
+        prefix, tail = session._split_conversation_for_compact()
+        self.assertEqual(prefix, [u1, a1])
+        self.assertEqual(tail[0], u2)
+        self.assertNotIn(fc, prefix)
+        self.assertIn(fco, tail)
+
+    def test_split_conversation_single_user_turn_keeps_it_verbatim(self):
+        session = self.env['muk_ai.session'].create({'name': 'split-short'})
+        conversation = [
+            {'role': 'user', 'content': 'only turn'},
+            {'role': 'assistant', 'content': 'reply'},
+        ]
+        session.conversation = conversation
+        prefix, tail = session._split_conversation_for_compact()
+        self.assertEqual(prefix, [])
+        self.assertEqual(tail, conversation)
+
+    # ----------------------------------------------------------
+    # Tests: duplicate ask_user in one round
+    # ----------------------------------------------------------
+
+    def test_process_tool_round_skips_second_ask_user(self):
+        session = self.env['muk_ai.session'].create({'name': 'double-ask'})
+        session.state = 'running'
+        outputs = []
+        session._process_tool_round([
+            {'call_id': 'ask_c1', 'name': 'ask_user',
+             'arguments': {'question': 'First?'}},
+            {'call_id': 'ask_c2', 'name': 'ask_user',
+             'arguments': {'question': 'Second?'}},
+        ], outputs, 0)
+        self.assertEqual((session.pending_ask or {}).get('call_id'), 'ask_c1')
+        self.assertEqual(len(outputs), 1)
+        self.assertEqual(outputs[0]['call_id'], 'ask_c2')
+        self.assertIn('ask_user_already_pending', outputs[0]['output'])
+
+    # ----------------------------------------------------------
+    # Tests: turn limit warnings and cost budget
+    # ----------------------------------------------------------
+
+    def _extract_turn_limits(self, inputs):
+        for item in inputs or []:
+            content = item.get('content') if isinstance(item, dict) else None
+            if not isinstance(content, list):
+                continue
+            for block in content:
+                text = isinstance(block, dict) and block.get('text') or ''
+                if isinstance(text, str) and text.startswith('<turn_limits>'):
+                    return text
+        return None
+
+    def test_round_notice_warns_before_iteration_cliff(self):
+        self.env['ir.config_parameter'].sudo().set_param(
+            'muk_ai.max_iterations', '3'
+        )
+        self.addCleanup(
+            self.env['ir.config_parameter'].sudo().set_param,
+            'muk_ai.max_iterations', '',
+        )
+        captured = []
+        with self._patch_provider([
+            self._tool_payload('list_modules', {}, 'cliff_c1'),
+            self._tool_payload('list_modules', {}, 'cliff_c2'),
+            self._text_payload('wrapped up'),
+        ], captured), self._patch_tool_call({'list_modules': '{}'}):
+            self.session.start('count down')
+        self.assertEqual(len(captured), 3)
+        self.assertIsNone(self._extract_turn_limits(captured[0]['inputs']))
+        second = self._extract_turn_limits(captured[1]['inputs'])
+        self.assertIn('2 tool round(s) remain', second)
+        third = self._extract_turn_limits(captured[2]['inputs'])
+        self.assertIn('1 tool round(s) remain', third)
+
+    def test_turn_cost_budget_stops_turn(self):
+        self.env['ir.config_parameter'].sudo().set_param(
+            'muk_ai.turn_cost_limit', '0.01'
+        )
+        self.addCleanup(
+            self.env['ir.config_parameter'].sudo().set_param,
+            'muk_ai.turn_cost_limit', '',
+        )
+        self.session.write({'state': 'running', 'turn_cost_spent': 0.02})
+        captured = []
+        with self._patch_provider([], captured):
+            self.session._run_iterations()
+        self.assertEqual(captured, [])
+        self.assertEqual(self.session.state, 'error')
+        self.assertIn('cost budget', self.session.error_message)
+
+    def test_turn_cost_spent_resets_on_new_turn(self):
+        self.session.write({'turn_cost_spent': 0.5})
+        with self._patch_provider([self._text_payload('fresh turn')]):
+            self.session.start('hello again')
+        self.assertEqual(self.session.state, 'done')
+        self.assertLess(self.session.turn_cost_spent, 0.5)

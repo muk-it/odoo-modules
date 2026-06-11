@@ -780,7 +780,7 @@ test('renderMarkdown returns markup-wrapped HTML', async () => {
 });
 
 
-test('canSend requires text and an idle session', async () => {
+test('canSend requires text; running allows queueing', async () => {
     onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
     makeBusMock();
     const harness = makeHarness();
@@ -789,7 +789,7 @@ test('canSend requires text and an idle session', async () => {
     session.onInputChange('hi');
     expect(session.canSend()).toBe(true);
     session.state.status = 'running';
-    expect(session.canSend()).toBe(false);
+    expect(session.canSend()).toBe(true);
 });
 
 

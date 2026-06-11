@@ -12,7 +12,7 @@ import {
 describe.current.tags('muk_ai');
 
 
-function makeController({ activeSessionId = 1, model, metaData, searchModel, config } = {}) {
+function makeController({ sessionIds = [1], model, metaData, searchModel, config } = {}) {
     const calls = [];
     const orm = {
         call: (...args) => {
@@ -24,7 +24,7 @@ function makeController({ activeSessionId = 1, model, metaData, searchModel, con
         services: {
             orm,
             'muk_ai.chat_window': {
-                get activeSessionId() { return activeSessionId; },
+                get sessionIds() { return sessionIds; },
             },
         },
         searchModel,
@@ -45,12 +45,12 @@ test('captureViewContext noops when chat_window service missing', async () => {
     expect(calls).toEqual([]);
 });
 
-test('captureViewContext noops when no active session', () => {
+test('captureViewContext noops when no open windows', () => {
     const calls = [];
     const env = {
         services: {
             orm: { call: (...a) => { calls.push(a); return Promise.resolve({}); } },
-            'muk_ai.chat_window': { get activeSessionId() { return null; } },
+            'muk_ai.chat_window': { get sessionIds() { return []; } },
         },
     };
     captureViewContext(env, { kind: 'list', model: 'res.partner' });
@@ -62,7 +62,7 @@ test('captureViewContext noops when payload has no model', () => {
     const env = {
         services: {
             orm: { call: (...a) => { calls.push(a); return Promise.resolve({}); } },
-            'muk_ai.chat_window': { get activeSessionId() { return 7; } },
+            'muk_ai.chat_window': { get sessionIds() { return [7]; } },
         },
     };
     captureViewContext(env, { kind: 'list' });
@@ -77,7 +77,7 @@ test('captureViewContext dispatches set_view_context with silent orm if availabl
     const env = {
         services: {
             orm,
-            'muk_ai.chat_window': { get activeSessionId() { return 9; } },
+            'muk_ai.chat_window': { get sessionIds() { return [9]; } },
         },
     };
     captureViewContext(env, { kind: 'list', model: 'sale.order' });
@@ -86,6 +86,21 @@ test('captureViewContext dispatches set_view_context with silent orm if availabl
     expect(calls[0][1]).toBe('muk_ai.session');
     expect(calls[0][2]).toBe('set_view_context');
     expect(calls[0][3]).toEqual([9, { kind: 'list', model: 'sale.order' }]);
+});
+
+test('captureViewContext dispatches to every open window', async () => {
+    const calls = [];
+    const env = {
+        services: {
+            orm: { call: (...a) => { calls.push(a); return Promise.resolve({}); } },
+            'muk_ai.chat_window': { get sessionIds() { return [3, 5]; } },
+        },
+    };
+    captureViewContext(env, { kind: 'record', model: 'res.partner', id: 1 });
+    await Promise.resolve();
+    expect(calls).toHaveLength(2);
+    expect(calls[0][2][0]).toBe(3);
+    expect(calls[1][2][0]).toBe(5);
 });
 
 
@@ -192,9 +207,9 @@ test('makeGraphContextDispatch uses defaults when meta is missing', async () => 
 });
 
 
-test('dispatchers bail with no active session (no RPC)', () => {
+test('dispatchers bail with no open windows (no RPC)', () => {
     const ctrl = makeController({
-        activeSessionId: null,
+        sessionIds: [],
         model: { root: { resModel: 'res.partner' } },
         searchModel: { domain: [] },
     });

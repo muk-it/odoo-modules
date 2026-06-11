@@ -65,3 +65,42 @@ class TestAiSecurity(TransactionCase):
         Session.create({'name': 's2'})
         with self.assertRaises(UserError):
             Session.create({'name': 's3'})
+
+    # ----------------------------------------------------------
+    # Tests: cross-user method access
+    # ----------------------------------------------------------
+
+    def _owned_session(self):
+        return self.env['muk_ai.session'].with_user(self.user_a).create(
+            {'name': 'Owned'}
+        )
+
+    def test_fetch_events_allowed_for_owner(self):
+        session = self._owned_session()
+        result = session.with_user(self.user_a).fetch_events()
+        self.assertEqual(result['events'], [])
+
+    def test_fetch_events_denied_cross_user(self):
+        session = self._owned_session()
+        with self.assertRaises(AccessError):
+            session.with_user(self.user_b).fetch_events()
+
+    def test_get_snapshot_denied_cross_user(self):
+        session = self._owned_session()
+        with self.assertRaises(AccessError):
+            session.with_user(self.user_b).get_snapshot()
+
+    def test_discard_attachments_denied_cross_user(self):
+        session = self._owned_session()
+        with self.assertRaises(AccessError):
+            session.with_user(self.user_b).discard_attachments([1])
+
+    def test_action_open_denied_cross_user(self):
+        session = self._owned_session()
+        with self.assertRaises(AccessError):
+            session.with_user(self.user_b).action_open()
+
+    def test_action_stop_denied_cross_user(self):
+        session = self._owned_session()
+        with self.assertRaises(AccessError):
+            session.with_user(self.user_b).action_stop()

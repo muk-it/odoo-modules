@@ -15,8 +15,8 @@ patch(FormController.prototype, {
         let lastKey = null;
         const dispatch = () => {
             try {
-                const sessionId = chatWindow.activeSessionId;
-                if (!sessionId) {
+                const sessionIds = chatWindow.sessionIds || [];
+                if (!sessionIds.length) {
                     lastKey = null;
                     return;
                 }
@@ -41,7 +41,7 @@ patch(FormController.prototype, {
                         view_type: 'form',
                     };
                 }
-                const key = `${sessionId}:${JSON.stringify(payload)}`;
+                const key = `${sessionIds.join(',')}:${JSON.stringify(payload)}`;
                 if (key === lastKey) {
                     return;
                 }

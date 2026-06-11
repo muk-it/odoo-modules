@@ -4,6 +4,7 @@ import { _t } from '@web/core/l10n/translation';
 import { registry } from '@web/core/registry';
 import { user } from '@web/core/user';
 import { useService } from '@web/core/utils/hooks';
+import { debounce } from '@web/core/utils/timing';
 import { Dropdown } from '@web/core/dropdown/dropdown';
 import { DropdownItem } from '@web/core/dropdown/dropdown_item';
 
@@ -23,22 +24,33 @@ export class MukAISystray extends Component {
             loaded: false,
         });
         this._busHandler = null;
+        this._loadSeq = 0;
+        this._debouncedLoad = debounce(() => this._load(), 500, { leading: true, trailing: true });
         onWillStart(async () => {
             await this._load();
             this._connectBus();
         });
-        onWillUnmount(() => this._disconnectBus());
+        onWillUnmount(() => {
+            this._disconnectBus();
+            this._debouncedLoad.cancel();
+        });
     }
     async _load() {
+        const seq = ++this._loadSeq;
         try {
-            this.state.sessions = await this.orm.searchRead(
+            const sessions = await this.orm.searchRead(
                 'muk_ai.session',
                 [['user_id', '=', user.userId]],
                 ['id', 'name', 'state'],
                 { limit: SYSTRAY_LIMIT, order: 'create_date DESC' },
             );
+            if (seq === this._loadSeq) {
+                this.state.sessions = sessions;
+            }
         } catch (_e) {
-            this.state.sessions = [];
+            if (seq === this._loadSeq) {
+                this.state.sessions = [];
+            }
         }
         this.state.loaded = true;
     }
@@ -56,7 +68,7 @@ export class MukAISystray extends Component {
         if (!payload || !payload.session_id) return;
         const idx = this.state.sessions.findIndex((s) => s.id === payload.session_id);
         if (idx < 0) {
-            this._load();
+            this._debouncedLoad();
             return;
         }
         const updated = { ...this.state.sessions[idx] };

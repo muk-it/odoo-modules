@@ -19,6 +19,47 @@ class ResConfigSettings(models.TransientModel):
         readonly=False,
     )
 
+    ai_max_iterations = fields.Integer(
+        string="Max Iterations",
+        help=(
+            "Maximum number of LLM rounds per worker slice. The model is "
+            "warned shortly before the limit so it can wrap up. Set 0 to "
+            "use the built-in default (20)."
+        ),
+        config_parameter='muk_ai.max_iterations',
+    )
+
+    ai_slice_wallclock_seconds = fields.Integer(
+        string="Slice Wallclock (s)",
+        help=(
+            "Maximum seconds a single worker slice may run before the turn "
+            "is checkpointed and resumed by a fresh worker. Capped by the "
+            "cron time limit. Set 0 to use the built-in default (600)."
+        ),
+        config_parameter='muk_ai.slice_wallclock_seconds',
+    )
+
+    ai_turn_wallclock_seconds = fields.Integer(
+        string="Turn Wallclock (s)",
+        help=(
+            "Maximum total seconds a single user turn may run across all "
+            "worker slices before it stops with an error. Set 0 to use "
+            "the built-in default (3600)."
+        ),
+        config_parameter='muk_ai.turn_wallclock_seconds',
+    )
+
+    ai_turn_cost_limit = fields.Float(
+        string="Turn Cost Limit",
+        help=(
+            "Maximum amount a single user turn may spend, in the price "
+            "currency of the model. The model is warned at 80% and the "
+            "turn stops with an error when the limit is reached. Set 0 "
+            "to disable."
+        ),
+        config_parameter='muk_ai.turn_cost_limit',
+    )
+
     module_muk_ai_compat = fields.Boolean(
         string='MuK AI Compatible Providers',
         help='Ollama, vLLM, OpenRouter and every OpenAI-compatible LLM.',

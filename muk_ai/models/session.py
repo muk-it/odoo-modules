@@ -15,13 +15,11 @@ from markupsafe import Markup, escape
 from odoo import SUPERUSER_ID, _, api, fields, models, modules, release
 from odoo.exceptions import AccessError, UserError
 from odoo.tools import SQL, config
-from odoo.service.model import (
-    MAX_TRIES_ON_CONCURRENCY_FAILURE,
-    PG_CONCURRENCY_EXCEPTIONS_TO_RETRY,
-)
+from odoo.service.model import PG_CONCURRENCY_EXCEPTIONS_TO_RETRY
 
 from odoo.addons.muk_ai.tools import (
     ADVISORY_LOCK_NAMESPACE,
+    ITERATION_WARNING_ROUNDS,
     ALLOWED_MIMETYPES,
     ASK_USER_TOOL,
     ATTACHMENT_REF_MAX_BYTES,
@@ -47,6 +45,7 @@ from odoo.addons.muk_ai.tools import (
     build_tool_call_output,
     clean_view_context_payload,
     fetch_url,
+    is_unmaterialized_attachment,
     sanitize_json_schema,
     with_ui_ctx,
 )
@@ -293,6 +292,19 @@ class AISession(models.Model):
         copy=False,
     )
 
+    turn_cost_spent = fields.Float(
+        string="Turn Cost Spent",
+        help=(
+            "Cumulative amount spent on the current user turn across cron "
+            "slices, in the price currency of the model. Reset to zero on "
+            "each new user turn. When it reaches the per-turn cost limit "
+            "(muk_ai.turn_cost_limit) the turn stops with an error."
+        ),
+        readonly=True,
+        default=0.0,
+        copy=False,
+    )
+
     total_input_tokens = fields.Integer(
         string="Input Tokens",
         readonly=True,
@@ -509,6 +521,17 @@ class AISession(models.Model):
             TURN_WALLCLOCK_SECONDS
         )
 
+    @api.model
+    def _turn_cost_limit(self):
+        raw = self.env['ir.config_parameter'].sudo().get_param(
+            'muk_ai.turn_cost_limit'
+        )
+        try:
+            value = float(raw)
+        except (TypeError, ValueError):
+            return 0.0
+        return value if value > 0 else 0.0
+
     # ----------------------------------------------------------
     # Helper Inputs
     # ----------------------------------------------------------
@@ -607,6 +630,22 @@ class AISession(models.Model):
     def _bus_channel(self):
         return self.user_id.partner_id
 
+    def _public_pending_ask(self, pending=None):
+        pending = self.pending_ask if pending is None else pending
+        if not isinstance(pending, dict) or not pending:
+            return None
+        return {
+            key: value
+            for key, value in pending.items()
+            if key not in (
+                'arguments',
+                'tool_calls',
+                'outputs',
+                'resume_index',
+                'has_terminating',
+            )
+        }
+
     def _state_metrics(self):
         return {
             'state': self.state,
@@ -616,7 +655,7 @@ class AISession(models.Model):
             'last_input_tokens': self.last_input_tokens,
             'context_window': self._resolve_context_window(),
             'view_context': self.view_context or None,
-            'pending_ask': self.pending_ask or None,
+            'pending_ask': self._public_pending_ask(),
             'override_approval_mode': self.override_approval_mode or False,
             'effective_approval_mode': self._effective_approval_mode(),
             'total_cost': self.total_cost,
@@ -642,8 +681,28 @@ class AISession(models.Model):
                 'state': self.state,
             })
 
+    def _bus_log_payload(self, payload, limit=8192):
+        capped = dict(payload)
+        for key in ('result', 'arguments'):
+            if (value := capped.get(key)) is None:
+                continue
+            text = (
+                value
+                if isinstance(value, str)
+                else json.dumps(value, default=str)
+            )
+            if len(text) > limit:
+                capped[key] = text[:limit] + '…'
+                capped['truncated'] = True
+        return capped
+
     def _notify_state_transition(self, payload):
         new_state = (payload or {}).get('state')
+        if new_state == 'done' and (
+            self.pending_ids
+            or self.env.context.get('muk_ai_skip_done_notification')
+        ):
+            return
         if new_state in ('done', 'waiting', 'error'):
             ask = (payload or {}).get('ask') or self.pending_ask or {}
             ask_kind = ask.get('kind') if isinstance(ask, dict) else None
@@ -764,19 +823,43 @@ class AISession(models.Model):
                         'session_id': self.id,
                         'sequence': sequence,
                         'kind': stamped.get('kind') or '',
-                        'payload': {**stamped, 'event_id': None},
+                        'payload': stamped,
                         'at': fields.Datetime.now(),
                     })
-                event.payload = {**stamped, 'event_id': event.id}
                 stamped = {**stamped, 'event_id': event.id}
                 break
             except psycopg2.errors.UniqueViolation:
                 continue
-        self._publish_event('log', stamped)
+        self._publish_event('log', self._bus_log_payload(stamped))
         return event
 
     def _extend_conversation(self, items):
         self.conversation = [*(self.conversation or []), *(items or [])]
+
+    def _close_orphan_tool_calls(self, reason):
+        conversation = self.conversation or []
+        answered = {
+            item.get('call_id')
+            for item in conversation
+            if isinstance(item, dict)
+            and item.get('type') == 'function_call_output'
+        }
+        orphans = [
+            item['call_id']
+            for item in conversation
+            if isinstance(item, dict)
+            and item.get('type') == 'function_call'
+            and item.get('call_id')
+            and item['call_id'] not in answered
+        ]
+        if orphans:
+            self._extend_conversation([
+                build_tool_call_output(call_id, {
+                    'error': 'interrupted',
+                    'reason': reason,
+                })
+                for call_id in orphans
+            ])
 
     def _resolve_attachments(self, attachment_ids):
         requested = self.env['ir.attachment'].browse([
@@ -786,6 +869,11 @@ class AISession(models.Model):
             raise UserError(_("One or more attachments could not be found."))
         attachments._ai_validate()
         if new := attachments - self.attachment_ids:
+            if new.filtered(
+                lambda a: a.res_model and a.res_model != 'muk_ai.session'
+            ):
+                raise UserError(_("One or more attachments could not be found."))
+            new.check_access('write')
             new.sudo().write({'res_model': 'muk_ai.session', 'res_id': self.id})
             self.invalidate_recordset(['attachment_ids'])
         return attachments
@@ -802,7 +890,9 @@ class AISession(models.Model):
         self.write({
             'state': 'running',
             'error_message': False,
+            'claimed_at': False,
             'turn_wallclock_spent': 0.0,
+            'turn_cost_spent': 0.0,
         })
         self._publish_event('state', {'state': 'running'})
 
@@ -841,16 +931,12 @@ class AISession(models.Model):
 
     def _commit_safe(self):
         if not modules.module.current_test:
-            for attempt in range(1, MAX_TRIES_ON_CONCURRENCY_FAILURE + 1):
-                try:
-                    self.env.cr.commit()
-                    return
-                except PG_CONCURRENCY_EXCEPTIONS_TO_RETRY as exc:
-                    self.env.cr.rollback()
-                    if attempt == MAX_TRIES_ON_CONCURRENCY_FAILURE:
-                        self.invalidate_recordset()
-                        return
-                    time.sleep(random.uniform(0.0, 0.2 * (2 ** (attempt - 1))))
+            try:
+                self.env.cr.commit()
+            except PG_CONCURRENCY_EXCEPTIONS_TO_RETRY:
+                self.env.cr.rollback()
+                self.invalidate_recordset()
+                raise
 
     def _transition_state(self, state, error=None):
         self.write({'state': state} | ({'error_message': error} if error else {}))
@@ -863,10 +949,6 @@ class AISession(models.Model):
         ):
             idle = (fields.Datetime.now() - reference).total_seconds()
             if idle >= idle_seconds and self._try_session_xact_lock(self.id):
-                had_queue = bool(self.pending_ids)
-                if had_queue:
-                    self.pending_ids.unlink()
-                    self.invalidate_recordset(['pending_ids'])
                 self.write({
                     'state': 'error',
                     'error_message': _(
@@ -878,8 +960,6 @@ class AISession(models.Model):
                     'state': 'error',
                     'error': self.error_message
                 })
-                if had_queue:
-                    self._publish_event('queue', {'pending': []})
                 return True
         return False
 
@@ -890,6 +970,29 @@ class AISession(models.Model):
             ADVISORY_LOCK_NAMESPACE, session_id,
         ))
         return self.env.cr.fetchone()[0]
+
+    @api.model
+    def _try_session_lock(self, session_id):
+        self.env.cr.execute(SQL(
+            "SELECT pg_try_advisory_lock(%s, %s)",
+            ADVISORY_LOCK_NAMESPACE, session_id,
+        ))
+        return self.env.cr.fetchone()[0]
+
+    @api.model
+    def _release_session_lock(self, session_id):
+        statement = SQL(
+            "SELECT pg_advisory_unlock(%s, %s)",
+            ADVISORY_LOCK_NAMESPACE, session_id,
+        )
+        try:
+            self.env.cr.execute(statement)
+            self.env.cr.fetchone()
+        except Exception:
+            self.env.cr.rollback()
+            with suppress(Exception):
+                self.env.cr.execute(statement)
+                self.env.cr.fetchone()
 
     def _heartbeat_claim(self):
         if self:
@@ -1050,12 +1153,14 @@ class AISession(models.Model):
         if isinstance(action, dict) and (res_model := action.get('res_model')):
             if tool_name == 'open_record' or action.get('view_mode') == 'form':
                 if res_id := action.get('res_id'):
-                    record = self.env[res_model].sudo().browse(int(res_id))
+                    record = self.env[res_model].browse(int(res_id)).exists()
                     return {
                         'kind': 'record',
                         'model': res_model,
                         'id': int(res_id),
-                        'display_name': record.exists().display_name or str(res_id),
+                        'display_name': (
+                            record.has_access('read') and record.display_name
+                        ) or str(res_id),
                     }
             else:
                 payload = {
@@ -1208,11 +1313,41 @@ class AISession(models.Model):
                     })
         self._commit_safe()
 
-    def _stream_provider_round(self, provider, tool_schema, model, agent):
+    def _materialize_round_inputs(self, provider, cache, notice=None):
+        materialized = []
+        for item in self._build_request_inputs():
+            content = (
+                item.get('content')
+                if isinstance(item, dict) else None
+            )
+            if not isinstance(content, list):
+                materialized.append(item)
+                continue
+            blocks = []
+            for block in content:
+                if is_unmaterialized_attachment(block):
+                    key = block.get('attachment_id')
+                    if key is None:
+                        block = provider._materialize_block(block)
+                    else:
+                        if key not in cache:
+                            cache[key] = provider._materialize_block(block)
+                        block = cache[key]
+                blocks.append(block)
+            materialized.append({**item, 'content': blocks})
+        if notice:
+            materialized.append(notice)
+        return materialized
+
+    def _stream_provider_round(
+        self, provider, tool_schema, model, agent, cache=None, notice=None,
+    ):
         buffer_state = {'text': '', 'last_text_flush': time.monotonic()}
         try:
             payload = provider._request_responses(
-                inputs=self._build_request_inputs(),
+                inputs=self._materialize_round_inputs(
+                    provider, {} if cache is None else cache, notice=notice,
+                ),
                 tools_schema=tool_schema,
                 model=model,
                 on_delta=lambda kind, data: self._on_stream_delta(kind, data, buffer_state),
@@ -1252,6 +1387,7 @@ class AISession(models.Model):
                 'total_input_cost': (self.total_input_cost or 0.0) + delta['input_cost'],
                 'total_output_cost': (self.total_output_cost or 0.0) + delta['output_cost'],
                 'total_cost': (self.total_cost or 0.0) + delta['total_cost'],
+                'turn_cost_spent': (self.turn_cost_spent or 0.0) + delta['total_cost'],
             }
         return {}
 
@@ -1308,11 +1444,17 @@ class AISession(models.Model):
             def _resolve(value):
                 if isinstance(value, str):
                     if m := ATTACHMENT_REF_RE.match(value):
-                        attachment = self.env['ir.attachment'].sudo().browse(
+                        attachment = self.env['ir.attachment'].browse(
                             int(m.group(1))
                         )
+                        if not attachment.exists():
+                            return value
+                        try:
+                            attachment.check_access('read')
+                        except AccessError:
+                            return value
+                        attachment = attachment.sudo()
                         if (
-                            attachment.exists() and
                             attachment.datas and
                             attachment.file_size <= ATTACHMENT_REF_MAX_BYTES and
                             (not attachment.mimetype or attachment.mimetype in ALLOWED_MIMETYPES)
@@ -1477,6 +1619,13 @@ class AISession(models.Model):
                 self._skip_tool_call(outputs, call, call['_parse_error'])
                 continue
             if call['name'] == 'ask_user':
+                if wait_for_user:
+                    self._record_tool_call(call)
+                    self._skip_tool_call(
+                        outputs, call, 'ask_user_already_pending',
+                        log_result={'error': 'ask_user_already_pending'}
+                    )
+                    continue
                 self._register_ask_user(call)
                 wait_for_user = True
                 continue
@@ -1499,7 +1648,7 @@ class AISession(models.Model):
                 self.write({'state': 'waiting'})
                 self._publish_event('state', {
                     'state': 'waiting',
-                    'ask': self.pending_ask
+                    'ask': self._public_pending_ask(),
                 })
         return None if paused or wait_for_user else has_terminating
 
@@ -1508,6 +1657,45 @@ class AISession(models.Model):
             "Turn wallclock budget reached (%(s)s s). Send a new message to continue.",
             s=int(turn_budget),
         ))
+
+    def _cost_currency(self):
+        record = self._effective_model_record()
+        return (record and record.currency) or 'USD'
+
+    def _turn_cost_error(self, limit):
+        self._transition_state('error', error=_(
+            "Turn cost budget reached (%(amount).2f %(currency)s). "
+            "Send a new message to continue.",
+            amount=limit,
+            currency=self._cost_currency(),
+        ))
+
+    def _round_limit_notice(self, remaining):
+        parts = []
+        if remaining is not None:
+            parts.append(
+                f'Only {remaining} tool round(s) remain for this turn.'
+            )
+        if limit := self._turn_cost_limit():
+            spent = self.turn_cost_spent or 0.0
+            if spent >= 0.8 * limit:
+                currency = self._cost_currency()
+                parts.append(
+                    f'Only {max(limit - spent, 0.0):.2f} {currency} of the '
+                    f'{limit:.2f} {currency} turn cost budget remain.'
+                )
+        if not parts:
+            return None
+        parts.append(
+            'Finish the task now or summarize progress and next steps.'
+        )
+        return {
+            'role': 'user',
+            'content': [{
+                'type': 'input_text',
+                'text': f'<turn_limits>{" ".join(parts)}</turn_limits>',
+            }],
+        }
 
     def _yield_slice(self):
         if modules.module.current_test:
@@ -1545,7 +1733,9 @@ class AISession(models.Model):
             )
             if self.state == 'running' and time.monotonic() > deadline:
                 self._handle_wallclock_expiry(
-                    slice_start, spent_before, turn_budget
+                    slice_start,
+                    min(spent_before, self.turn_wallclock_spent or 0.0),
+                    turn_budget,
                 )
                 return
             if self.state != 'done':
@@ -1561,10 +1751,17 @@ class AISession(models.Model):
     def _run_iterations(self, has_terminating=False, deadline=None):
         deadline = deadline or time.monotonic() + self._slice_wallclock_seconds()
         provider, model = self._effective_provider(), self._effective_model()
-        for _iteration in range(self._max_iterations()):
+        materialize_cache = {}
+        max_iterations = self._max_iterations()
+        for _iteration in range(max_iterations):
             if self.state != 'running':
                 return
             if time.monotonic() > deadline:
+                return
+            if (cost_limit := self._turn_cost_limit()) and (
+                (self.turn_cost_spent or 0.0) >= cost_limit
+            ):
+                self._turn_cost_error(cost_limit)
                 return
             self.invalidate_recordset(['pending_ids', 'expanded_tool_names'])
             if self.pending_ids and self._drain_pending_message():
@@ -1575,9 +1772,15 @@ class AISession(models.Model):
                 if has_terminating
                 else (tool_schema, self.agent_id)
             )
+            remaining = max_iterations - _iteration
             try:
                 payload = self._stream_provider_round(
-                    provider, schema, model, round_agent
+                    provider, schema, model, round_agent,
+                    cache=materialize_cache,
+                    notice=self._round_limit_notice(
+                        remaining
+                        if remaining <= ITERATION_WARNING_ROUNDS else None
+                    ),
                 )
             except StreamCancelled:
                 self.invalidate_recordset(['state'])
@@ -1695,7 +1898,10 @@ class AISession(models.Model):
             'preview': preview,
         })
         self.write({'state': 'waiting', 'pending_ask': pending})
-        self._publish_event('state', {'state': 'waiting', 'ask': pending})
+        self._publish_event('state', {
+            'state': 'waiting',
+            'ask': self._public_pending_ask(pending),
+        })
 
     def _record_approval_audit(
         self,
@@ -1726,38 +1932,68 @@ class AISession(models.Model):
         })
 
     def _resume_tool_round(self, paused, approved, reject_reason=None):
-        call = {
-            'call_id': paused['call_id'],
-            'name': paused['name'],
-            'arguments': paused['arguments'],
-        }
-        outputs = list(paused.get('outputs') or [])
-        tool_calls = list(paused.get('tool_calls') or [])
-        has_terminating = bool(paused.get('has_terminating'))
-        self._record_tool_call(call)
-        if approved:
-            result, ok = self._dispatch_tool_call(
-                call['name'], call['arguments'], call['call_id']
-            )
-            if ok and call['name'] in self._get_terminating_tools():
-                has_terminating = True
-        else:
-            result = {
-                'error': 'rejected_by_user',
-                'reason': reject_reason or '',
+        if not self._try_session_lock(self.id):
+            raise UserError(_(
+                "The session is currently busy. Please try again."
+            ))
+        try:
+            call = {
+                'call_id': paused['call_id'],
+                'name': paused['name'],
+                'arguments': paused['arguments'],
             }
-            self._persist_synthetic_event(call, result, 'denied')
-        self._record_tool_result(
-            outputs, call['call_id'], call['name'], result
-        )
-        self.pending_ask = False
-        self._transition_state('running')
-        self._process_tool_round(
-            tool_calls,
-            outputs,
-            paused.get('resume_index', 0) + 1,
-            has_terminating=has_terminating,
-        )
+            outputs = list(paused.get('outputs') or [])
+            tool_calls = list(paused.get('tool_calls') or [])
+            has_terminating = bool(paused.get('has_terminating'))
+            self._record_tool_call(call)
+            if approved:
+                result, ok = self._dispatch_tool_call(
+                    call['name'], call['arguments'], call['call_id']
+                )
+                if ok and call['name'] in self._get_terminating_tools():
+                    has_terminating = True
+            else:
+                result = {
+                    'error': 'rejected_by_user',
+                    'reason': reject_reason or '',
+                }
+                self._persist_synthetic_event(call, result, 'denied')
+            self._record_tool_result(
+                outputs, call['call_id'], call['name'], result
+            )
+            self.write({'pending_ask': False, 'claimed_at': False})
+            self._transition_state('running')
+            self._process_tool_round(
+                tool_calls,
+                outputs,
+                paused.get('resume_index', 0) + 1,
+                has_terminating=has_terminating,
+            )
+        finally:
+            self._release_session_lock(self.id)
+
+    def _flush_orphaned_tool_outputs(self):
+        pending = dict(self.pending_ask or {})
+        if not pending:
+            return
+        outputs = list(pending.get('outputs') or [])
+        answered = {
+            entry.get('call_id') for entry in outputs
+            if isinstance(entry, dict)
+        }
+        calls = list(pending.get('tool_calls') or [])
+        if not calls and pending.get('call_id'):
+            calls = [{'call_id': pending['call_id']}]
+        for call in calls:
+            call_id = call.get('call_id')
+            if call_id and call_id not in answered:
+                answered.add(call_id)
+                outputs.append(build_tool_call_output(call_id, {
+                    'status': 'cancelled',
+                    'reason': 'stopped_by_user',
+                }))
+        if outputs:
+            self._extend_conversation(outputs)
 
     # ----------------------------------------------------------
     # Helper Compact
@@ -1791,6 +2027,10 @@ class AISession(models.Model):
                 break
             tail.insert(0, entry)
             used += est
+        while tail and not (
+            isinstance(tail[0], dict) and tail[0].get('role') == 'user'
+        ):
+            tail.pop(0)
         prefix = (
             (self.conversation or [])[:-len(tail)]
             if tail else list(self.conversation or [])
@@ -1799,15 +2039,22 @@ class AISession(models.Model):
             entry for entry in prefix
             if not (isinstance(entry, dict) and entry.get('role') == 'system')
         ]
-        if not prefix:
+        if not prefix or not tail:
             non_system = [
                 entry for entry in (self.conversation or [])
                 if not (isinstance(entry, dict) and entry.get('role') == 'system')
             ]
-            if len(non_system) >= 2:
-                prefix, tail = non_system[:-1], non_system[-1:]
-            elif non_system:
+            split = max(
+                (
+                    index for index, entry in enumerate(non_system)
+                    if isinstance(entry, dict) and entry.get('role') == 'user'
+                ),
+                default=None,
+            )
+            if split is None:
                 prefix, tail = non_system, []
+            else:
+                prefix, tail = non_system[:split], non_system[split:]
         return prefix, tail
 
     def _find_prior_compact_summary(self):
@@ -1867,7 +2114,11 @@ class AISession(models.Model):
         self._begin_compact_progress(auto=True)
         self.write({'state': 'compacting'})
         self._publish_event('state', {'state': 'compacting'})
-        self._do_compact()
+        compact = (
+            self.with_context(muk_ai_skip_done_notification=True)
+            if resume_state else self
+        )
+        compact._do_compact(resume=True)
         if resume_state and self.state == 'done':
             self.write({'state': resume_state})
             self._publish_event('state', {'state': resume_state})
@@ -1906,7 +2157,7 @@ class AISession(models.Model):
             'patch': patch,
         })
 
-    def _tail_drop_fallback(self, progress_event, prefix, tail, error):
+    def _tail_drop_fallback(self, progress_event, prefix, tail, error, resume=False):
         dropped = sum(
             1 for item in prefix
             if isinstance(item, dict) and item.get('role') in ('user', 'assistant')
@@ -1940,11 +2191,11 @@ class AISession(models.Model):
             'fallback': 'tail_drop',
         })
         self._publish_event('state', {'state': 'done'})
-        if self.pending_ids:
+        if not resume and self.pending_ids:
             self._drain_pending_message()
             self._run_to_completion()
 
-    def _do_compact(self):
+    def _do_compact(self, resume=False):
         if not self._pre_compact_hook():
             self.write({'state': 'done'})
             self._publish_event('state', {'state': 'done'})
@@ -1971,10 +2222,14 @@ class AISession(models.Model):
             if not delta:
                 return
             stream_state['text'] += delta
-            self._publish_event('compact_delta', {
-                'event_id': progress_event.id,
-                'delta': delta,
-            })
+            self._coalesce_and_emit(
+                stream_state,
+                'buffer',
+                'buffer_last',
+                delta,
+                'compact_delta',
+                extra={'event_id': progress_event.id},
+            )
             now = time.monotonic()
             if now - stream_state['last_flush'] >= 0.5:
                 stream_state['last_flush'] = now
@@ -1990,7 +2245,9 @@ class AISession(models.Model):
                 model=self._effective_model(),
             )
         except Exception as error:
-            self._tail_drop_fallback(progress_event, prefix, tail, str(error))
+            self._tail_drop_fallback(
+                progress_event, prefix, tail, str(error), resume=resume
+            )
             return
         if (progress_event.payload or {}).get('state') == 'cancelled':
             self.write({'state': 'done'})
@@ -2039,7 +2296,7 @@ class AISession(models.Model):
             'original_tokens': original_tokens,
         })
         self._publish_event('state', {'state': 'done'})
-        if self.pending_ids:
+        if not resume and self.pending_ids:
             self._drain_pending_message()
             self._run_to_completion()
 
@@ -2107,6 +2364,7 @@ class AISession(models.Model):
 
     def fetch_events(self, limit=100, before_sequence=None):
         if self.id:
+            self.check_access('read')
             domain = [('session_id', '=', self.id)]
             if before_sequence is not None:
                 domain.append(('sequence', '<', before_sequence))
@@ -2136,14 +2394,13 @@ class AISession(models.Model):
             'oldest_sequence': None,
         }
 
-    def get_snapshot(self):
+    def get_snapshot(self, include_conversation=False):
         events_window = self.fetch_events(limit=100)
-        return {
+        snapshot = {
             'id': self.id,
             'events': events_window['events'],
             'has_more_older': events_window['has_more_older'],
             'oldest_sequence': events_window['oldest_sequence'],
-            'conversation': self.conversation or [],
             'error_message': self.error_message,
             'last_text': self.last_text,
             'attachments': [a._ai_describe() for a in self.attachment_ids],
@@ -2152,6 +2409,9 @@ class AISession(models.Model):
             'pending_user_messages': self._serialize_pending(),
             **self._state_metrics(),
         }
+        if include_conversation:
+            snapshot['conversation'] = self.conversation or []
+        return snapshot
 
     def dismiss_notifications(self):
         if partner := self.env.user.partner_id:
@@ -2210,7 +2470,9 @@ class AISession(models.Model):
         self.write({
             'state': 'running',
             'pending_ask': False,
+            'claimed_at': False,
             'turn_wallclock_spent': 0.0,
+            'turn_cost_spent': 0.0,
         })
         self._publish_event('state', {'state': 'running'})
         self._trigger_worker()
@@ -2250,28 +2512,32 @@ class AISession(models.Model):
         if last_user is None:
             raise UserError(_("No user turn to regenerate from."))
         self.conversation = conv[:last_user + 1]
-        events = self.env['muk_ai.session.event'].sudo().search(
-            [('session_id', '=', self.id)],
-            order='sequence, id',
+        Event = self.env['muk_ai.session.event'].sudo()
+        last_user_event = Event.search(
+            [('session_id', '=', self.id), ('kind', '=', 'user_message')],
+            order='sequence desc, id desc',
+            limit=1,
         )
-        last_user_event = next(
-            (event for event in reversed(events) if event.kind == 'user_message'),
-            None,
-        )
-        stale = events.filtered(lambda event: (
-            event.sequence > last_user_event.sequence
-            or (
-                event.sequence == last_user_event.sequence
-                and event.id > last_user_event.id
-            )
-        )) if last_user_event else events
+        if last_user_event:
+            stale = Event.search([
+                ('session_id', '=', self.id),
+                '|',
+                ('sequence', '>', last_user_event.sequence),
+                '&',
+                ('sequence', '=', last_user_event.sequence),
+                ('id', '>', last_user_event.id),
+            ])
+        else:
+            stale = Event.search([('session_id', '=', self.id)])
         if stale:
-            stale.sudo().unlink()
+            stale.unlink()
         self.write({
             'pending_ask': False,
             'error_message': False,
             'state': 'running',
+            'claimed_at': False,
             'turn_wallclock_spent': 0.0,
+            'turn_cost_spent': 0.0,
         })
         self._publish_event('state', {'state': 'running'})
         self._trigger_worker()
@@ -2388,17 +2654,21 @@ class AISession(models.Model):
             ('session_id', '=', self.id),
             ('sequence', '<=', target.sequence),
         ], order='sequence, id')
-        for src in source_events:
-            self.env['muk_ai.session.event'].sudo().create({
-                'session_id': fork.id,
-                'sequence': src.sequence,
-                'kind': src.kind,
-                'payload': src.payload,
-                'at': src.at,
-            })
+        if source_events:
+            self.env['muk_ai.session.event'].sudo().create([
+                {
+                    'session_id': fork.id,
+                    'sequence': src.sequence,
+                    'kind': src.kind,
+                    'payload': src.payload,
+                    'at': src.at,
+                }
+                for src in source_events
+            ])
         return fork.id
 
     def upload_attachments(self, files):
+        self.check_access('write')
         attachments = self.env['ir.attachment'].sudo()
         created = self.env['ir.attachment']
         for entry in files or []:
@@ -2413,18 +2683,12 @@ class AISession(models.Model):
         return [a._ai_describe() for a in created]
 
     def discard_attachments(self, attachment_ids):
+        self.check_access('write')
         if attachment_ids:
-            attachments = self.env['ir.attachment'].sudo().browse([
-                int(aid) for aid in attachment_ids
-            ])
-            owned = attachments.exists().filtered(
-                lambda attachment: (
-                    attachment.res_model == 'muk_ai.session'
-                    and attachment.res_id == self.id
-                ),
-            )
+            ids = {int(aid) for aid in attachment_ids}
+            owned = self.attachment_ids.filtered(lambda a: a.id in ids)
             if owned:
-                owned.unlink()
+                owned.sudo().unlink()
                 self.invalidate_recordset(['attachment_ids'])
         return True
 
@@ -2514,7 +2778,7 @@ class AISession(models.Model):
     def action_open(self):
         self.ensure_one()
         if self.user_id.id != self.env.uid:
-            AccessError(_(
+            raise AccessError(_(
                 "Only the session owner can continue this chat."
             ))
         return {
@@ -2527,10 +2791,12 @@ class AISession(models.Model):
     def action_stop(self):
         self.ensure_one()
         if self.user_id.id != self.env.uid and not self.env.is_admin():
-            AccessError(_(
+            raise AccessError(_(
                 "Only the session owner or an administrator can stop this session."
             ))
         if self.state not in ('done', 'error', 'stopped'):
+            if self.state == 'waiting':
+                self._flush_orphaned_tool_outputs()
             self.write({'state': 'stopped', 'pending_ask': False})
             self._publish_event('state', {'state': 'stopped'})
         return self.get_snapshot()
@@ -2590,8 +2856,9 @@ class AISession(models.Model):
 
     @api.model
     def _cron_run_pending_sessions(self):
-        self._sweep_orphan_sessions()
-        if candidates := self._find_pending_session_ids():
+        candidates = self._find_pending_session_ids()
+        self._sweep_orphan_sessions(skip_ids=candidates)
+        if candidates:
             self._commit_safe()
             for sid in candidates:
                 if self._process_session_in_worker(sid):
@@ -2600,11 +2867,12 @@ class AISession(models.Model):
                 self._trigger_worker()
 
     @api.model
-    def _sweep_orphan_sessions(self):
+    def _sweep_orphan_sessions(self, skip_ids=None):
         threshold = fields.Datetime.now() - timedelta(
             seconds=WORKER_STALE_THRESHOLD
         )
         candidates = self.sudo().search([
+            ('id', 'not in', skip_ids or []),
             ('state', 'in', ('running', 'compacting')),
             ('write_date', '<', threshold),
             '|',
@@ -2712,6 +2980,7 @@ class AISession(models.Model):
                 .browse(session_id)
             )
             if session.exists():
+                session._close_orphan_tool_calls(message)
                 session.write({
                     'state': 'error',
                     'error_message': message,

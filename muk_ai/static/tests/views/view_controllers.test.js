@@ -36,6 +36,7 @@ function mockChatWindow(activeSessionId) {
         state: { windows: [] },
         open: () => {}, close: () => {}, toggleMinimized: () => {},
         get activeSessionId() { return activeSessionId; },
+        get sessionIds() { return activeSessionId ? [activeSessionId] : []; },
     });
 }
 

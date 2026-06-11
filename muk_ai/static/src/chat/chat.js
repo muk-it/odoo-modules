@@ -129,6 +129,7 @@ export class AIChat extends Component {
         ));
         this._userBusHandler = null;
         this._loadSeq = 0;
+        this._sessionFetchIds = new Set();
         useDropzone(
             this.rootRef,
             (event) => {
@@ -189,6 +190,10 @@ export class AIChat extends Component {
         onWillUnmount(() => {
             this._disconnectUserBus();
             this._uninstallRootPasteHandler();
+            if (this._sessionsSearchTimer !== null) {
+                window.clearTimeout(this._sessionsSearchTimer);
+                this._sessionsSearchTimer = null;
+            }
             if (this._resumeTickInterval !== null) {
                 window.clearInterval(this._resumeTickInterval);
                 this._resumeTickInterval = null;
@@ -557,6 +562,41 @@ export class AIChat extends Component {
         const file = toFileModel(attachment);
         this.fileViewer.open(file);
     }
+    async _fetchSidebarSession(sessionId) {
+        if (this.state.sessionsSearchMode || this._sessionFetchIds.has(sessionId)) {
+            return;
+        }
+        this._sessionFetchIds.add(sessionId);
+        try {
+            const seq = this._loadSeq;
+            const [session] = await this.orm.searchRead(
+                'muk_ai.session',
+                [['id', '=', sessionId], ['user_id', '=', user.userId]],
+                ['id', 'name', 'state', 'create_date'],
+                { limit: 1 },
+            );
+            if (!session
+                    || seq !== this._loadSeq
+                    || this.state.sessionsSearchMode
+                    || this.state.sessions.some((s) => s.id === session.id)) {
+                return;
+            }
+            const pos = this.state.sessions.findIndex(
+                (s) => s.create_date < session.create_date,
+            );
+            if (pos < 0) {
+                this.state.sessions = [...this.state.sessions, session];
+            } else {
+                this.state.sessions = [
+                    ...this.state.sessions.slice(0, pos),
+                    session,
+                    ...this.state.sessions.slice(pos),
+                ];
+            }
+        } finally {
+            this._sessionFetchIds.delete(sessionId);
+        }
+    }
     _connectUserBus() {
         this._disconnectUserBus();
         this._userBusHandler = (payload) => this._onUserBusEvent(payload);
@@ -574,7 +614,7 @@ export class AIChat extends Component {
         }
         const idx = this.state.sessions.findIndex((s) => s.id === payload.session_id);
         if (idx < 0) {
-            this._loadSessions();
+            this._fetchSidebarSession(payload.session_id);
             return;
         }
         const updated = { ...this.state.sessions[idx] };

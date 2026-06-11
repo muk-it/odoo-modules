@@ -3,8 +3,8 @@ export function captureViewContext(env, payload) {
     if (!chatWindow) {
         return;
     }
-    const sessionId = chatWindow.activeSessionId;
-    if (!sessionId) {
+    const sessionIds = chatWindow.sessionIds || [];
+    if (!sessionIds.length) {
         return;
     }
     if (!payload || !payload.model) {
@@ -12,9 +12,11 @@ export function captureViewContext(env, payload) {
     }
     const orm = env.services.orm;
     const caller = orm.silent || orm;
-    caller
-        .call('muk_ai.session', 'set_view_context', [sessionId, payload])
-        .catch(() => {});
+    for (const sessionId of sessionIds) {
+        caller
+            .call('muk_ai.session', 'set_view_context', [sessionId, payload])
+            .catch(() => {});
+    }
 }
 
 export async function probeCurrentView(env) {
@@ -83,8 +85,8 @@ function makeDispatch(controller, build) {
             if (!chatWindow) {
                 return;
             }
-            const sessionId = chatWindow.activeSessionId;
-            if (!sessionId) {
+            const sessionIds = chatWindow.sessionIds || [];
+            if (!sessionIds.length) {
                 lastKey = null;
                 return;
             }
@@ -92,7 +94,7 @@ function makeDispatch(controller, build) {
             if (!payload || !payload.model) {
                 return;
             }
-            const key = `${sessionId}:${JSON.stringify(payload)}`;
+            const key = `${sessionIds.join(',')}:${JSON.stringify(payload)}`;
             if (key === lastKey) {
                 return;
             }

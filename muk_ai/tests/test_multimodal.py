@@ -230,6 +230,19 @@ class TestMultimodalAttachments(AITestCommon):
         with self.assertRaises(UserError):
             session._resolve_attachments([999999999])
 
+    def test_resolve_rejects_foreign_attachment(self):
+        session = self.env['muk_ai.session'].create({'name': 'Foreign'})
+        foreign = self.env['ir.attachment'].create({
+            'name': 'invoice.png',
+            'datas': base64.b64encode(PNG_BYTES),
+            'mimetype': 'image/png',
+            'res_model': 'res.partner',
+            'res_id': self.env.user.partner_id.id,
+        })
+        with self.assertRaises(UserError):
+            session._resolve_attachments([foreign.id])
+        self.assertEqual(foreign.res_model, 'res.partner')
+
     # ----------------------------------------------------------
     # Tests: provider dispatcher materialization
     # ----------------------------------------------------------

@@ -137,6 +137,9 @@ export function useAiSession(options = {}) {
         }
     }
     function eventKey(entry) {
+        if (entry && entry.event_id != null) {
+            return 'id:' + entry.event_id;
+        }
         const {at, ...rest} = entry || {};
         return canonicalStringify(rest);
     }
@@ -441,6 +444,9 @@ export function useAiSession(options = {}) {
         if (!snapshot) {
             return;
         }
+        if (snapshot.id && snapshot.id !== state.sessionId) {
+            return;
+        }
         applySessionFields(snapshot);
         const incomingEvents = snapshot.events || [];
         if (incomingEvents.length || state.status !== 'running') {
@@ -473,16 +479,21 @@ export function useAiSession(options = {}) {
         if (state.loadingOlder || !state.hasMoreOlder || !state.sessionId) {
             return;
         }
+        const sessionId = state.sessionId;
+        const seq = loadSeq;
         state.loadingOlder = true;
         try {
             const result = await orm.call(
                 'muk_ai.session', 'fetch_events',
-                [state.sessionId],
+                [sessionId],
                 {
                     limit: 100,
                     before_sequence: state.oldestSequence,
                 },
             );
+            if (seq !== loadSeq || state.sessionId !== sessionId) {
+                return;
+            }
             const incoming = result.events || [];
             const merged = [...incoming, ...state.events];
             const seen = new Set();
@@ -500,7 +511,9 @@ export function useAiSession(options = {}) {
             state.hasMoreOlder = !!result.has_more_older;
             rebuildEventKeys();
         } finally {
-            state.loadingOlder = false;
+            if (seq === loadSeq && state.sessionId === sessionId) {
+                state.loadingOlder = false;
+            }
         }
     }
     function canSend() {

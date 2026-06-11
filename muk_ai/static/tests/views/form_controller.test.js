@@ -33,6 +33,7 @@ function mockChatWindow(activeSessionId) {
         close: () => {},
         toggleMinimized: () => {},
         get activeSessionId() { return activeSessionId; },
+        get sessionIds() { return activeSessionId ? [activeSessionId] : []; },
     });
 }
 

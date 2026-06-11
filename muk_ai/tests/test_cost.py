@@ -16,7 +16,7 @@ class TestSessionCostAccrual(AITestCommon):
             'name': 'Test',
             'provider_id': cls.provider.id,
             'technical_name': 'test-cost-model',
-            'context_window': 128000,
+            'context_window': 10_000_000,
             'input_rate': 1.0,
             'output_rate': 2.0,
             'cached_rate': 0.0,

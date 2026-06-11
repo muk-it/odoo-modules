@@ -102,6 +102,18 @@ test('activeSessionId is null when no windows', () => {
     expect(api.activeSessionId).toBe(null);
 });
 
+test('sessionIds lists every open window including minimized ones', () => {
+    const calls = [];
+    const api = chatWindowService.start(makeEnv({ calls }));
+    expect(api.sessionIds).toEqual([]);
+    api.open(10);
+    api.open(20);
+    api.toggleMinimized(20);
+    expect(api.sessionIds).toEqual([10, 20]);
+    api.close(10);
+    expect(api.sessionIds).toEqual([20]);
+});
+
 test('open triggers set_view_context from current record controller', async () => {
     const calls = [];
     const env = makeEnv({
