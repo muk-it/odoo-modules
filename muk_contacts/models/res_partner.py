@@ -160,6 +160,30 @@ class Partner(models.Model):
     # ORM
     #----------------------------------------------------------
 
+    @api.model
+    @api.readonly
+    def web_name_search(
+        self, name, specification, domain=None, operator='ilike', limit=100
+    ):
+        result = super().web_name_search(
+            name, specification, domain, operator, limit
+        )
+        if isinstance(result, list):
+            partners = self.browse([
+                values['id'] for values in result if values.get('id')
+            ])
+            icon_vals = {
+                partner.id: (partner.company_type, partner.type)
+                for partner in partners
+            }
+            for values in result:
+                company_type, partner_type = icon_vals.get(
+                    values.get('id'), (False, False)
+                )
+                values.setdefault('company_type', company_type)
+                values.setdefault('type', partner_type)
+        return result
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
