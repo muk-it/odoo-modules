@@ -1,6 +1,6 @@
 {
     'name': 'MuK AI Assistant',
-    'summary': 'Native agentic AI agent and chat runtime for Odoo',
+    'summary': 'Native agentic AI (ChatGPT, Claude, Gemini) agent and chat',
     'description': '''
         A complete agentic AI assistant inside Odoo. Ships a native OWL
         chat client (with floating window and systray), a session-based
