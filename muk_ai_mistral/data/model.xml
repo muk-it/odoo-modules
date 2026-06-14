@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo noupdate="1">
+
+	<!-- Mistral -->
+
+	<record id="model_mistral_large" model="muk_ai.model">
+		<field name="name">Mistral Large</field>
+		<field name="provider_id" ref="provider_mistral"/>
+		<field name="technical_name">mistral-large-latest</field>
+		<field name="context_window">128000</field>
+		<field name="input_rate">2.0</field>
+		<field name="output_rate">6.0</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_mistral_medium" model="muk_ai.model">
+		<field name="name">Mistral Medium 3</field>
+		<field name="provider_id" ref="provider_mistral"/>
+		<field name="technical_name">mistral-medium-latest</field>
+		<field name="context_window">128000</field>
+		<field name="input_rate">0.4</field>
+		<field name="output_rate">2.0</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_mistral_small" model="muk_ai.model">
+		<field name="name">Mistral Small 3</field>
+		<field name="provider_id" ref="provider_mistral"/>
+		<field name="technical_name">mistral-small-latest</field>
+		<field name="context_window">128000</field>
+		<field name="input_rate">0.1</field>
+		<field name="output_rate">0.3</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_magistral_medium" model="muk_ai.model">
+		<field name="name">Magistral Medium</field>
+		<field name="provider_id" ref="provider_mistral"/>
+		<field name="technical_name">magistral-medium-latest</field>
+		<field name="context_window">128000</field>
+		<field name="input_rate">2.0</field>
+		<field name="output_rate">5.0</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_magistral_small" model="muk_ai.model">
+		<field name="name">Magistral Small</field>
+		<field name="provider_id" ref="provider_mistral"/>
+		<field name="technical_name">magistral-small-latest</field>
+		<field name="context_window">128000</field>
+		<field name="input_rate">0.5</field>
+		<field name="output_rate">1.5</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_pixtral_large" model="muk_ai.model">
+		<field name="name">Pixtral Large</field>
+		<field name="provider_id" ref="provider_mistral"/>
+		<field name="technical_name">pixtral-large-latest</field>
+		<field name="context_window">128000</field>
+		<field name="input_rate">2.0</field>
+		<field name="output_rate">6.0</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_codestral" model="muk_ai.model">
+		<field name="name">Codestral</field>
+		<field name="provider_id" ref="provider_mistral"/>
+		<field name="technical_name">codestral-latest</field>
+		<field name="context_window">256000</field>
+		<field name="input_rate">0.3</field>
+		<field name="output_rate">0.9</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_ministral_8b" model="muk_ai.model">
+		<field name="name">Ministral 8B</field>
+		<field name="provider_id" ref="provider_mistral"/>
+		<field name="technical_name">ministral-8b-latest</field>
+		<field name="context_window">128000</field>
+		<field name="input_rate">0.1</field>
+		<field name="output_rate">0.1</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_ministral_3b" model="muk_ai.model">
+		<field name="name">Ministral 3B</field>
+		<field name="provider_id" ref="provider_mistral"/>
+		<field name="technical_name">ministral-3b-latest</field>
+		<field name="context_window">128000</field>
+		<field name="input_rate">0.04</field>
+		<field name="output_rate">0.04</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_open_mistral_nemo" model="muk_ai.model">
+		<field name="name">Mistral Nemo</field>
+		<field name="provider_id" ref="provider_mistral"/>
+		<field name="technical_name">open-mistral-nemo</field>
+		<field name="context_window">128000</field>
+		<field name="input_rate">0.15</field>
+		<field name="output_rate">0.15</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="provider_mistral" model="muk_ai.provider">
+		<field name="default_model_id" ref="model_mistral_medium"/>
+	</record>
+
+</odoo>
