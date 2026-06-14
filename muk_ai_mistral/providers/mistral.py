@@ -12,6 +12,7 @@ CODE_INTERPRETER_TOOL = 'code_interpreter'
 IMAGE_GENERATION_TOOL = 'image_generation'
 
 STREAM_ATTEMPTS = 2
+REQUEST_ATTEMPTS = 3
 
 
 class MistralProvider(ProviderBase):
@@ -78,9 +79,17 @@ class MistralProvider(ProviderBase):
             tools.append({'type': IMAGE_GENERATION_TOOL})
         if tools:
             body['tools'] = tools
-        if callable(on_delta):
+        connectors = (
+            enable_web_search
+            or enable_image_generation
+            or enable_code_interpreter
+        )
+        if callable(on_delta) and not connectors:
             return self._stream_request(body, on_delta)
-        return self._parse_response(self._post_json('/conversations', body))
+        result = self._buffered_request(body)
+        if callable(on_delta):
+            self._emit_text(on_delta, result)
+        return result
 
     # ----------------------------------------------------------
     # Inputs
@@ -356,6 +365,19 @@ class MistralProvider(ProviderBase):
     # Streaming
     # ----------------------------------------------------------
 
+    def _buffered_request(self, body):
+        error = None
+        for attempt in range(REQUEST_ATTEMPTS):
+            try:
+                return self._parse_response(self._post_json('/conversations', body))
+            except UserError as exc:
+                error = exc
+        raise error
+
+    def _emit_text(self, on_delta, result):
+        if result.get('text'):
+            self._call_on_delta(on_delta, 'text', {'delta': result['text']})
+
     def _stream_request(self, body, on_delta):
         progress = {'emitted': False}
         for attempt in range(STREAM_ATTEMPTS):
@@ -364,9 +386,8 @@ class MistralProvider(ProviderBase):
             except UserError:
                 if progress['emitted']:
                     raise
-        result = self._parse_response(self._post_json('/conversations', body))
-        if result.get('text'):
-            self._call_on_delta(on_delta, 'text', {'delta': result['text']})
+        result = self._buffered_request(body)
+        self._emit_text(on_delta, result)
         return result
 
     def _stream(self, body, on_delta, progress):

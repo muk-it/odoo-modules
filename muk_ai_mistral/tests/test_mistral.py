@@ -347,6 +347,42 @@ class TestAiMistralProvider(MistralTestCommon):
         self.assertEqual(result['text'], 'fallback answer')
         self.assertIn('fallback answer', [p.get('delta') for (k, p) in deltas if k == 'text'])
 
+    def test_connector_request_skips_streaming_and_emits(self):
+        posts = []
+
+        def fake_post(url, **kwargs):
+            posts.append(kwargs.get('json') or {})
+            return self._mock_http_response(self._text_response('web answer'))
+
+        deltas = []
+        with patch.object(requests, 'post', side_effect=fake_post):
+            result = self.provider._request_responses(
+                inputs=[], enable_web_search=True,
+                on_delta=lambda k, p: deltas.append((k, p)),
+            )
+        self.assertEqual(len(posts), 1)
+        self.assertNotIn('stream', posts[0])
+        self.assertIn({'type': 'web_search'}, posts[0]['tools'])
+        self.assertEqual(result['text'], 'web answer')
+        self.assertIn('web answer', [p.get('delta') for (k, p) in deltas if k == 'text'])
+
+    def test_buffered_request_retries_transient_server_error(self):
+        seq = [500, 200]
+
+        def fake_post(url, **kwargs):
+            code = seq.pop(0) if seq else 200
+            if code == 500:
+                resp = self._mock_http_response({}, status_code=500)
+                resp.text = ''
+                resp.raise_for_status.side_effect = requests.HTTPError('500', response=resp)
+                return resp
+            return self._mock_http_response(self._text_response('ok'))
+
+        with patch.object(requests, 'post', side_effect=fake_post):
+            result = self.provider._request_responses(inputs=[], enable_web_search=True)
+        self.assertEqual(result['text'], 'ok')
+        self.assertEqual(seq, [])
+
     def test_stream_renders_code_execution(self):
         sse = self._sse_lines([
             {'type': 'tool.execution.done', 'name': 'code_interpreter',
