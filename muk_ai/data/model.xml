@@ -239,6 +239,28 @@
 
 	<!-- Anthropic -->
 
+	<record id="model_claude_fable_5" model="muk_ai.model">
+		<field name="name">Claude Fable 5</field>
+		<field name="provider_id" ref="provider_anthropic"/>
+		<field name="technical_name">claude-fable-5</field>
+		<field name="context_window">1000000</field>
+		<field name="input_rate">10.0</field>
+		<field name="output_rate">50.0</field>
+		<field name="cached_rate">1.0</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_claude_opus_4_8" model="muk_ai.model">
+		<field name="name">Claude Opus 4.8</field>
+		<field name="provider_id" ref="provider_anthropic"/>
+		<field name="technical_name">claude-opus-4-8</field>
+		<field name="context_window">1000000</field>
+		<field name="input_rate">5.0</field>
+		<field name="output_rate">25.0</field>
+		<field name="cached_rate">0.5</field>
+		<field name="currency">USD</field>
+	</record>
+
 	<record id="model_claude_opus_4_7" model="muk_ai.model">
 		<field name="name">Claude Opus 4.7</field>
 		<field name="provider_id" ref="provider_anthropic"/>
@@ -254,7 +276,7 @@
 		<field name="name">Claude Opus 4.6</field>
 		<field name="provider_id" ref="provider_anthropic"/>
 		<field name="technical_name">claude-opus-4-6</field>
-		<field name="context_window">200000</field>
+		<field name="context_window">1000000</field>
 		<field name="input_rate">5.0</field>
 		<field name="output_rate">25.0</field>
 		<field name="cached_rate">0.5</field>
@@ -339,7 +361,7 @@
 	</record>
 
 	<record id="model_claude_haiku_3_5" model="muk_ai.model">
-		<field name="name">Claude Haiku 3.5</field>
+		<field name="name">Claude Haiku 3.5 (retired)</field>
 		<field name="provider_id" ref="provider_anthropic"/>
 		<field name="technical_name">claude-haiku-3-5</field>
 		<field name="context_window">200000</field>
@@ -347,6 +369,7 @@
 		<field name="output_rate">4.0</field>
 		<field name="cached_rate">0.08</field>
 		<field name="currency">USD</field>
+		<field name="active" eval="False"/>
 	</record>
 
 	<record id="model_claude_3_7_sonnet" model="muk_ai.model">
@@ -374,6 +397,29 @@
 		<field name="context_window">1000000</field>
 		<field name="input_rate">2.0</field>
 		<field name="output_rate">12.0</field>
+		<field name="cached_rate">0.2</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_gemini_3_5_flash" model="muk_ai.model">
+		<field name="name">Gemini 3.5 Flash</field>
+		<field name="provider_id" ref="provider_google"/>
+		<field name="technical_name">gemini-3.5-flash</field>
+		<field name="context_window">1000000</field>
+		<field name="input_rate">1.5</field>
+		<field name="output_rate">9.0</field>
+		<field name="cached_rate">0.15</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_gemini_3_1_flash_lite" model="muk_ai.model">
+		<field name="name">Gemini 3.1 Flash Lite</field>
+		<field name="provider_id" ref="provider_google"/>
+		<field name="technical_name">gemini-3.1-flash-lite</field>
+		<field name="context_window">1000000</field>
+		<field name="input_rate">0.25</field>
+		<field name="output_rate">1.5</field>
+		<field name="cached_rate">0.025</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -432,7 +478,7 @@
 	</record>
 
 	<record id="provider_google" model="muk_ai.provider">
-		<field name="default_model_id" ref="model_gemini_3_flash_preview"/>
+		<field name="default_model_id" ref="model_gemini_3_5_flash"/>
 	</record>
 
 </odoo>

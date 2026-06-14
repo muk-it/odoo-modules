@@ -23,7 +23,7 @@ class AnthropicProvider(ProviderBase):
 
     name = 'anthropic'
     label = "Anthropic"
-    default_model = 'claude-sonnet-4-5'
+    default_model = 'claude-sonnet-4-6'
     default_url = 'https://api.anthropic.com/v1'
 
     supports_web_search = True
