@@ -23,10 +23,10 @@ class ResConfigSettings(models.TransientModel):
         string="Max Iterations",
         help=(
             "Maximum number of LLM rounds per worker slice. The model is "
-            "warned shortly before the limit so it can wrap up. Set 0 to "
-            "use the built-in default (20)."
+            "warned shortly before the limit so it can wrap up."
         ),
         config_parameter='muk_ai.max_iterations',
+        default=20,
     )
 
     ai_slice_wallclock_seconds = fields.Integer(
@@ -34,19 +34,20 @@ class ResConfigSettings(models.TransientModel):
         help=(
             "Maximum seconds a single worker slice may run before the turn "
             "is checkpointed and resumed by a fresh worker. Capped by the "
-            "cron time limit. Set 0 to use the built-in default (600)."
+            "cron time limit."
         ),
         config_parameter='muk_ai.slice_wallclock_seconds',
+        default=600,
     )
 
     ai_turn_wallclock_seconds = fields.Integer(
         string="Turn Wallclock (s)",
         help=(
             "Maximum total seconds a single user turn may run across all "
-            "worker slices before it stops with an error. Set 0 to use "
-            "the built-in default (3600)."
+            "worker slices before it stops with an error."
         ),
         config_parameter='muk_ai.turn_wallclock_seconds',
+        default=3600,
     )
 
     ai_turn_cost_limit = fields.Float(
@@ -63,6 +64,11 @@ class ResConfigSettings(models.TransientModel):
     module_muk_ai_compat = fields.Boolean(
         string='MuK AI Compatible Providers',
         help='Ollama, vLLM, OpenRouter and every OpenAI-compatible LLM.',
+    )
+
+    module_muk_ai_mistral = fields.Boolean(
+        string='MuK AI Mistral',
+        help='Use Mistral AI as a provider.',
     )
 
     module_muk_ai_schedule = fields.Boolean(

@@ -27,14 +27,41 @@
 						<setting id="muk_ai_max_iterations">
 							<label string="Iteration Limit" for="ai_max_iterations"/>
 							<div class="text-muted">
-								The model is warned shortly before the limit so it can wrap up. Set to 0 for the default (20).
-							</div>
+								The model is warned shortly before the limit so it can wrap up.							</div>
 							<div class="content-group mt16">
 								<div class="row">
 									<div class="o_light_label">
 										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Max rounds" for="ai_max_iterations"/>
 										<field name="ai_max_iterations" class="w-25 text-center" nolabel="1"/>
 										<span class="col-auto ms-2">per Slice</span>
+									</div>
+								</div>
+							</div>
+						</setting>
+						<setting id="muk_ai_turn_wallclock">
+							<label string="Turn Runtime" for="ai_turn_wallclock_seconds"/>
+							<div class="text-muted">
+								A user turn exceeding this across all slices stops with an error.							</div>
+							<div class="content-group mt16">
+								<div class="row">
+									<div class="o_light_label">
+										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Timeout" for="ai_turn_wallclock_seconds"/>
+										<field name="ai_turn_wallclock_seconds" class="w-25 text-center" nolabel="1"/>
+										<span class="col-auto ms-2">in Seconds</span>
+									</div>
+								</div>
+							</div>
+						</setting>
+						<setting id="muk_ai_slice_wallclock">
+							<label string="Slice Runtime" for="ai_slice_wallclock_seconds"/>
+							<div class="text-muted">
+								A worker slice exceeding this is checkpointed and resumed by a fresh worker.							</div>
+							<div class="content-group mt16">
+								<div class="row">
+									<div class="o_light_label">
+										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Timeout" for="ai_slice_wallclock_seconds"/>
+										<field name="ai_slice_wallclock_seconds" class="w-25 text-center" nolabel="1"/>
+										<span class="col-auto ms-2">in Seconds</span>
 									</div>
 								</div>
 							</div>
@@ -54,36 +81,6 @@
 								</div>
 							</div>
 						</setting>
-						<setting id="muk_ai_slice_wallclock">
-							<label string="Slice Runtime" for="ai_slice_wallclock_seconds"/>
-							<div class="text-muted">
-								A worker slice exceeding this is checkpointed and resumed by a fresh worker. Set to 0 for the default (600).
-							</div>
-							<div class="content-group mt16">
-								<div class="row">
-									<div class="o_light_label">
-										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Timeout" for="ai_slice_wallclock_seconds"/>
-										<field name="ai_slice_wallclock_seconds" class="w-25 text-center" nolabel="1"/>
-										<span class="col-auto ms-2">in Seconds</span>
-									</div>
-								</div>
-							</div>
-						</setting>
-						<setting id="muk_ai_turn_wallclock">
-							<label string="Turn Runtime" for="ai_turn_wallclock_seconds"/>
-							<div class="text-muted">
-								A user turn exceeding this across all slices stops with an error. Set to 0 for the default (3600).
-							</div>
-							<div class="content-group mt16">
-								<div class="row">
-									<div class="o_light_label">
-										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Timeout" for="ai_turn_wallclock_seconds"/>
-										<field name="ai_turn_wallclock_seconds" class="w-25 text-center" nolabel="1"/>
-										<span class="col-auto ms-2">in Seconds</span>
-									</div>
-								</div>
-							</div>
-						</setting>
 					</block>
 					<block title="MuK AI Extensions" name="muk_ai_extensions">
 						<setting
@@ -96,6 +93,19 @@
 								widget="module_link"
 							/>
 							<div class="content-group" invisible="not module_muk_ai_compat" id="msg_module_muk_ai_compat">
+								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+							</div>
+						</setting>
+						<setting
+							id="muk_ai_addon_mistral"
+							string="MuK AI Mistral"
+							help="Mistral AI provider: Large, Medium, Magistral, Pixtral, Codestral and more."
+						>
+							<field
+								name="module_muk_ai_mistral"
+								widget="module_link"
+							/>
+							<div class="content-group" invisible="not module_muk_ai_mistral" id="msg_module_muk_ai_mistral">
 								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
 							</div>
 						</setting>
