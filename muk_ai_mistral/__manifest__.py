@@ -11,7 +11,7 @@
         interpreter and image generation — wired to the same capability
         toggles the other muk_ai providers use.
     ''',
-    'version': '19.0.1.0.1',
+    'version': '19.0.1.0.3',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -26,6 +26,7 @@
     'data': [
         'data/provider.xml',
         'data/model.xml',
+        'views/res_config_settings.xml',
     ],
     'images': [
         'static/description/banner.png',
