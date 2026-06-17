@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_mcp_access_model_search" model="ir.ui.view">
+		<field name="name">muk_mcp_access.model.search</field>
+		<field name="model">muk_mcp_access.model</field>
+		<field name="arch" type="xml">
+			<search>
+				<field name="model_id"/>
+				<field name="model_name"/>
+				<filter name="active" string="Active" domain="[('active', '=', True)]"/>
+				<filter name="inactive" string="Archived" domain="[('active', '=', False)]"/>
+				<separator/>
+				<filter name="allow_read" string="Read" domain="[('allow_read', '=', True)]"/>
+				<filter name="allow_write" string="Write" domain="[('allow_write', '=', True)]"/>
+				<filter name="read_only" string="Read Only" domain="[('allow_read', '=', True), ('allow_write', '=', False)]"/>
+				<group>
+					<filter name="group_write" string="Write Access" context="{'group_by': 'allow_write'}"/>
+				</group>
+			</search>
+		</field>
+	</record>
+
+	<record id="view_mcp_access_model_list" model="ir.ui.view">
+		<field name="name">muk_mcp_access.model.list</field>
+		<field name="model">muk_mcp_access.model</field>
+		<field name="arch" type="xml">
+			<list editable="bottom" js_class="mcp_access_list">
+				<field name="model_id"/>
+				<field name="model_name" optional="hide"/>
+				<field name="allow_read" widget="boolean_toggle"/>
+				<field name="allow_write" widget="boolean_toggle"/>
+				<field
+                    name="domain"
+                    widget="domain"
+                    options="{'model': 'model_name', 'foldable': True, 'in_dialog': true}"
+                    optional="hide"
+                />
+				<field name="active" widget="boolean_toggle" optional="hide"/>
+			</list>
+		</field>
+	</record>
+
+	<record id="view_mcp_access_model_form" model="ir.ui.view">
+		<field name="name">muk_mcp_access.model.form</field>
+		<field name="model">muk_mcp_access.model</field>
+		<field name="arch" type="xml">
+			<form>
+				<sheet>
+					<div class="oe_button_box" name="button_box"/>
+					<widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+					<group>
+						<group>
+							<field name="model_id"/>
+							<field name="model_name" invisible="1"/>
+						</group>
+						<group>
+							<field name="allow_read"/>
+							<field name="allow_write"/>
+							<field name="active" invisible="1"/>
+						</group>
+					</group>
+					<group string="Record Domain">
+						<field name="domain" widget="domain" options="{'model': 'model_name', 'foldable': True}" nolabel="1"/>
+					</group>
+				</sheet>
+			</form>
+		</field>
+	</record>
+
+	<record id="action_mcp_access_model" model="ir.actions.act_window">
+		<field name="name">Model Access</field>
+		<field name="res_model">muk_mcp_access.model</field>
+		<field name="view_mode">list,form</field>
+		<field name="context">{'search_default_active': 1}</field>
+		<field name="help" type="html">
+			<p class="o_view_nocontent_smiling_face">
+				No model access rules configured
+			</p>
+			<p>
+				When the list is empty every model is accessible via MCP.
+				Add models to restrict which ones AI agents can reach.
+			</p>
+		</field>
+	</record>
+
+</odoo>

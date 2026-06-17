@@ -1,0 +1,205 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* muk_mcp_access
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 17.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-05-26 21:50+0000\n"
+"PO-Revision-Date: 2026-05-26 21:50+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: muk_mcp_access
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model_selection___existing_model_ids
+msgid " Existing Model"
+msgstr ""
+
+#. module: muk_mcp_access
+#. odoo-python
+#: code:addons/muk_mcp_access/models/mcp_access.py:0
+msgid "%(model)s must allow at least read or write access."
+msgstr ""
+
+#. module: muk_mcp_access
+#: model:ir.ui.menu,name:muk_mcp_access.menu_mcp_access_model
+msgid "Access"
+msgstr ""
+
+#. module: muk_mcp_access
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model__active
+#: model_terms:ir.ui.view,arch_db:muk_mcp_access.view_mcp_access_model_search
+msgid "Active"
+msgstr ""
+
+#. module: muk_mcp_access
+#. odoo-javascript
+#: code:addons/muk_mcp_access/static/src/views/list/access_list_view.xml:0
+#: model:ir.actions.act_window,name:muk_mcp_access.action_model_selection
+msgid "Add Models"
+msgstr ""
+
+#. module: muk_mcp_access
+#: model_terms:ir.ui.view,arch_db:muk_mcp_access.view_model_selection_form
+msgid "Add Selected Models"
+msgstr ""
+
+#. module: muk_mcp_access
+#: model_terms:ir.ui.view,arch_db:muk_mcp_access.view_mcp_access_model_form
+#: model_terms:ir.ui.view,arch_db:muk_mcp_access.view_mcp_access_model_search
+msgid "Archived"
+msgstr ""
+
+#. module: muk_mcp_access
+#: model_terms:ir.ui.view,arch_db:muk_mcp_access.view_model_selection_form
+msgid "Cancel"
+msgstr ""
+
+#. module: muk_mcp_access
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model__create_uid
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model_selection__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: muk_mcp_access
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model__create_date
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model_selection__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: muk_mcp_access
+#: model_terms:ir.ui.view,arch_db:muk_mcp_access.view_model_selection_form
+msgid "Default Permissions"
+msgstr ""
+
+#. module: muk_mcp_access
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model__display_name
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model_selection__display_name
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_mixin__display_name
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_tool__display_name
+msgid "Display Name"
+msgstr "Nome visualizzato"
+
+#. module: muk_mcp_access
+#: model:ir.model.constraint,message:muk_mcp_access.constraint_muk_mcp_access_model_model_unique
+msgid "Each model can only appear once in the MCP access list."
+msgstr ""
+
+#. module: muk_mcp_access
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model__id
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model_selection__id
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_mixin__id
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_tool__id
+msgid "ID"
+msgstr ""
+
+#. module: muk_mcp_access
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model__write_uid
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model_selection__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: muk_mcp_access
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model__write_date
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model_selection__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: muk_mcp_access
+#: model:ir.model,name:muk_mcp_access.model_muk_mcp_access_model
+msgid "MCP Model Access"
+msgstr ""
+
+#. module: muk_mcp_access
+#: model:ir.model,name:muk_mcp_access.model_muk_mcp_access_model_selection
+msgid "MCP Model Selection Wizard"
+msgstr ""
+
+#. module: muk_mcp_access
+#: model:ir.model,name:muk_mcp_access.model_muk_mcp_tool
+msgid "MCP Tool"
+msgstr "Strumento MCP"
+
+#. module: muk_mcp_access
+#: model:ir.model,name:muk_mcp_access.model_muk_mcp_mixin
+msgid "MCP Tool Mixin"
+msgstr "Mixin strumento MCP"
+
+#. module: muk_mcp_access
+#: model_terms:ir.ui.view,arch_db:muk_mcp_access.view_res_config_settings_access
+msgid "Manage Model Access"
+msgstr ""
+
+#. module: muk_mcp_access
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model__model_id
+msgid "Model"
+msgstr ""
+
+#. module: muk_mcp_access
+#. odoo-python
+#: code:addons/muk_mcp_access/mcp/mixin.py:0
+msgid "Model %(model)r is not accessible via MCP."
+msgstr ""
+
+#. module: muk_mcp_access
+#: model:ir.actions.act_window,name:muk_mcp_access.action_mcp_access_model
+msgid "Model Access"
+msgstr ""
+
+#. module: muk_mcp_access
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model_selection__model_ids
+msgid "Models"
+msgstr ""
+
+#. module: muk_mcp_access
+#: model_terms:ir.actions.act_window,help:muk_mcp_access.action_mcp_access_model
+msgid "No model access rules configured"
+msgstr ""
+
+#. module: muk_mcp_access
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model__allow_read
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model_selection__allow_read
+#: model_terms:ir.ui.view,arch_db:muk_mcp_access.view_mcp_access_model_search
+msgid "Read"
+msgstr ""
+
+#. module: muk_mcp_access
+#: model_terms:ir.ui.view,arch_db:muk_mcp_access.view_mcp_access_model_search
+msgid "Read Only"
+msgstr ""
+
+#. module: muk_mcp_access
+#: model_terms:ir.ui.view,arch_db:muk_mcp_access.view_model_selection_form
+msgid ""
+"Select the models to make accessible via MCP. Models\n"
+"\t\t\t\t\t\t\talready in the access list are excluded."
+msgstr ""
+
+#. module: muk_mcp_access
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model__model_name
+msgid "Technical Name"
+msgstr ""
+
+#. module: muk_mcp_access
+#: model_terms:ir.actions.act_window,help:muk_mcp_access.action_mcp_access_model
+msgid ""
+"When the list is empty every model is accessible via MCP.\n"
+"\t\t\t\tAdd models to restrict which ones AI agents can reach."
+msgstr ""
+
+#. module: muk_mcp_access
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model__allow_write
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model_selection__allow_write
+#: model_terms:ir.ui.view,arch_db:muk_mcp_access.view_mcp_access_model_search
+msgid "Write"
+msgstr ""
+
+#. module: muk_mcp_access
+#: model_terms:ir.ui.view,arch_db:muk_mcp_access.view_mcp_access_model_search
+msgid "Write Access"
+msgstr ""

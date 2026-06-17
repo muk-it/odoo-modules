@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+
+	<t
+		t-name="muk_mcp_access.ListView.Buttons"
+		t-inherit="web.ListView.Buttons"
+		t-inherit-mode="primary"
+	>
+		<xpath expr="." position="inside">
+			<button
+				type="button"
+				class="btn btn-secondary"
+				t-on-click="onAddModelsButton"
+			>
+				Add Models
+			</button>
+		</xpath>
+	</t>
+
+</templates>
