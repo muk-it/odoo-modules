@@ -97,6 +97,19 @@
 						</div>
 					</setting>
 					<setting
+						id="mcp_module_enterprise"
+						string="MCP Enterprise"
+						help="Enterprise-managed MCP authorization via your IdP (ID-JAG / SEP-990)."
+					>
+						<field
+							name="module_muk_mcp_enterprise"
+							widget="module_link"
+						/>
+						<div class="content-group" invisible="not module_muk_mcp_enterprise" id="msg_module_muk_mcp_enterprise">
+							<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+						</div>
+					</setting>
+					<setting
 						id="mcp_module_apps"
 						string="MCP Apps"
 						help="Interactive UI resources rendered inline by AI clients."

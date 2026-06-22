@@ -31,6 +31,16 @@ class ResConfigSettings(models.TransientModel):
              "Set to 0 to disable. Used as default when generating new keys.",
     )
 
+    mcp_annotate_messages = fields.Boolean(
+        string="Annotate Messages",
+        config_parameter='muk_mcp.annotate_messages',
+        default=True,
+        help=(
+            "When enabled, chatter messages from MCP operations are "
+            "marked to distinguish AI-originated changes from manual ones."
+        ),
+    )
+
     module_muk_mcp_access = fields.Boolean(
         string="MCP Access",
     )
@@ -43,12 +53,7 @@ class ResConfigSettings(models.TransientModel):
         string="MCP OAuth",
     )
 
-    mcp_annotate_messages = fields.Boolean(
-        string="Annotate Messages",
-        config_parameter='muk_mcp.annotate_messages',
-        default=True,
-        help=(
-            "When enabled, chatter messages from MCP operations are "
-            "marked to distinguish AI-originated changes from manual ones."
-        ),
+    module_muk_mcp_enterprise = fields.Boolean(
+        string="MCP Enterprise",
     )
+
