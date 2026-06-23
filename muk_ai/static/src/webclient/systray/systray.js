@@ -1,14 +1,18 @@
-import { Component, onWillStart, onWillUnmount, useState } from '@odoo/owl';
+import { Component, onWillStart, onWillUnmount, useRef, useState } from '@odoo/owl';
 
 import { _t } from '@web/core/l10n/translation';
 import { registry } from '@web/core/registry';
 import { user } from '@web/core/user';
 import { useService } from '@web/core/utils/hooks';
+import { useHotkey } from '@web/core/hotkeys/hotkey_hook';
+import { isMacOS } from '@web/core/browser/feature_detection';
 import { debounce } from '@web/core/utils/timing';
 import { Dropdown } from '@web/core/dropdown/dropdown';
 import { DropdownItem } from '@web/core/dropdown/dropdown_item';
 
 const SYSTRAY_LIMIT = 8;
+const NEW_CHAT_HOTKEY = 'alt+shift+b';
+const FULL_CHAT_HOTKEY = 'alt+shift+f';
 
 export class MukAISystray extends Component {
     static template = 'muk_ai.Systray';
@@ -26,6 +30,16 @@ export class MukAISystray extends Component {
         this._busHandler = null;
         this._loadSeq = 0;
         this._debouncedLoad = debounce(() => this._load(), 500, { leading: true, trailing: true });
+        this.btnRef = useRef('systrayBtn');
+        useHotkey(NEW_CHAT_HOTKEY, () => this.onNewChat(), {
+            global: true,
+            bypassEditableProtection: true,
+            withOverlay: () => this.btnRef.el,
+        });
+        useHotkey(FULL_CHAT_HOTKEY, () => this.onOpenFullChat(), {
+            global: true,
+            bypassEditableProtection: true,
+        });
         onWillStart(async () => {
             await this._load();
             this._connectBus();
@@ -87,6 +101,12 @@ export class MukAISystray extends Component {
     }
     get hasRunning() {
         return this.runningCount > 0;
+    }
+    get newChatHotkeyLabel() {
+        return isMacOS() ? 'Ctrl+Shift+B' : 'Alt+Shift+B';
+    }
+    get fullChatHotkeyLabel() {
+        return isMacOS() ? 'Ctrl+Shift+F' : 'Alt+Shift+F';
     }
     statusDotClass(state) {
         return {

@@ -100,5 +100,13 @@
             width: 16px;
             text-align: center;
         }
+        .mk_systray_hotkey {
+            flex: 0 0 auto;
+            font-size: 0.7rem;
+            padding: 0.1rem 0.35rem;
+            color: var(--mk-text-muted);
+            background: var(--mk-bg-subtle, rgba(0, 0, 0, 0.05));
+            border-radius: 0.25rem;
+        }
     }
 }

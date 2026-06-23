@@ -3,7 +3,7 @@
 
     <t t-name="muk_ai.Systray">
         <Dropdown position="'bottom-end'" menuClass="'mk_systray_menu'">
-            <button class="mk_ai_systray_btn btn btn-link" title="MuK AI">
+            <button class="mk_ai_systray_btn btn btn-link" title="MuK AI" t-ref="systrayBtn">
                 <svg class="mk_systray_icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M12 8V5"/>
                     <circle cx="12" cy="3.5" r="1.1" fill="currentColor" stroke="none"/>
@@ -40,10 +40,12 @@
                 <DropdownItem class="'mk_systray_item mk_systray_action'" onSelected="() => this.onNewChat()">
                     <i class="fa fa-plus text-primary me-2" />
                     <span>New Chat</span>
+                    <kbd class="mk_systray_hotkey ms-auto" t-esc="newChatHotkeyLabel" />
                 </DropdownItem>
                 <DropdownItem class="'mk_systray_item mk_systray_action'" onSelected="() => this.onOpenFullChat()">
                     <i class="fa fa-expand text-primary me-2" />
                     <span>Open Full Chat</span>
+                    <kbd class="mk_systray_hotkey ms-auto" t-esc="fullChatHotkeyLabel" />
                 </DropdownItem>
                 <div class="mk_systray_divider" t-if="state.sessions.length" />
                 <div class="mk_systray_group_label" t-if="state.sessions.length">Recent sessions</div>
