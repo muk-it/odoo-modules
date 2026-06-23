@@ -80,6 +80,20 @@ class TestMcpPrompt(common.TransactionCase):
         names = [entry['name'] for entry in self.prompt_model.get_prompts()]
         self.assertIn('summarize_record', names)
 
+    def test_get_playground_prompts_exposes_kind_and_arguments(self):
+        by_name = {
+            entry['name']: entry
+            for entry in self.prompt_model.get_playground_prompts()
+        }
+        self.assertIn('summarize_record', by_name)
+        self.assertEqual(by_name['summarize_record']['kind'], 'method')
+        self.assertIn('activities_today', by_name)
+        self.assertEqual(by_name['activities_today']['kind'], 'db')
+        for entry in by_name.values():
+            self.assertIn('title', entry)
+            self.assertIn('description', entry)
+            self.assertIsInstance(entry['arguments'], list)
+
     def test_get_prompts_lists_xml_data_prompt(self):
         names = [entry['name'] for entry in self.prompt_model.get_prompts()]
         self.assertIn('activities_today', names)
@@ -185,6 +199,7 @@ class TestMcpPrompt(common.TransactionCase):
     def test_db_prompt_can_return_message_list(self):
         self.prompt_model.create({
             'name': 'mcp_test_db_messages',
+            'title': 'DB messages',
             'description': 'Returns explicit messages.',
             'body': (
                 "result = [{'role': 'user', 'content': 'hello'}]\n"
@@ -199,6 +214,7 @@ class TestMcpPrompt(common.TransactionCase):
     def test_db_prompt_missing_required_argument_raises(self):
         self.prompt_model.create({
             'name': 'mcp_test_db_required',
+            'title': 'DB required',
             'description': 'Requires an argument.',
             'arguments': json.dumps([{'name': 'topic', 'required': True}]),
             'body': "result = arguments.get('topic') or ''\n",
@@ -209,6 +225,7 @@ class TestMcpPrompt(common.TransactionCase):
     def test_db_prompt_shadows_builtin(self):
         self.prompt_model.create({
             'name': 'summarize_record',
+            'title': 'DB summarize override',
             'description': 'DB override of the builtin summarize prompt.',
             'arguments': json.dumps([
                 {'name': 'model', 'required': True},
@@ -227,6 +244,7 @@ class TestMcpPrompt(common.TransactionCase):
         with self.assertRaises(ValidationError):
             self.prompt_model.create({
                 'name': 'mcp_test_bad_code',
+                'title': 'Bad code',
                 'description': 'Invalid python.',
                 'body': "this is not valid python !!!\n",
             })
@@ -235,6 +253,7 @@ class TestMcpPrompt(common.TransactionCase):
         with self.assertRaises(ValidationError):
             self.prompt_model.create({
                 'name': 'mcp_test_bad_args',
+                'title': 'Bad args',
                 'description': 'Invalid arguments JSON.',
                 'arguments': "{not json",
                 'body': "result = ''\n",
@@ -244,6 +263,7 @@ class TestMcpPrompt(common.TransactionCase):
         with self.assertRaises(ValidationError):
             self.prompt_model.create({
                 'name': 'mcp_test_args_not_list',
+                'title': 'Args not list',
                 'description': 'Arguments is an object, not an array.',
                 'arguments': json.dumps({'name': 'x'}),
                 'body': "result = ''\n",

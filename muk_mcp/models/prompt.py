@@ -190,6 +190,19 @@ class MCPPrompt(models.Model):
         return result
 
     @api.model
+    def get_playground_prompts(self):
+        return [
+            {
+                'name': name,
+                'title': entry.get('title') or '',
+                'description': entry['description'],
+                'arguments': entry['arguments'],
+                'kind': entry['kind'],
+            }
+            for name, entry in get_prompt_index(self.env).items()
+        ]
+
+    @api.model
     def complete_argument(self, ref, argument):
         ref = ref or {}
         argument = argument or {}

@@ -102,6 +102,53 @@ export class MCPClient {
             raw: res.raw,
         };
     }
+    async getPrompts() {
+        await this._ensureInitialized();
+        const res = await this._post({
+            jsonrpc: "2.0",
+            id: this._nextId++,
+            method: "prompts/list",
+            params: {},
+        });
+        return res;
+    }
+    async getPrompt(name, args, { retried = false } = {}) {
+        await this._ensureInitialized();
+        const started = performance.now();
+        const res = await this._post({
+            jsonrpc: "2.0",
+            id: this._nextId++,
+            method: "prompts/get",
+            params: { name, arguments: args || {} },
+        });
+        const duration = Math.round(performance.now() - started);
+        if (res.status === 404 && !retried) {
+            this.sessionId = null;
+            this.initialized = false;
+            return this.getPrompt(name, args, { retried: true });
+        }
+        return {
+            status: res.status,
+            duration,
+            body: res.body,
+            raw: res.raw,
+        };
+    }
+    async complete(ref, argument, { retried = false } = {}) {
+        await this._ensureInitialized();
+        const res = await this._post({
+            jsonrpc: "2.0",
+            id: this._nextId++,
+            method: "completion/complete",
+            params: { ref, argument },
+        });
+        if (res.status === 404 && !retried) {
+            this.sessionId = null;
+            this.initialized = false;
+            return this.complete(ref, argument, { retried: true });
+        }
+        return res.body?.result?.completion?.values || [];
+    }
     async reset() {
         if (this.sessionId) {
             try {
