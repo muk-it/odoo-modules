@@ -74,7 +74,9 @@ def parse_jsonrpc_request(raw_body):
 def make_initialize_result(capabilities=None):
     caps = {
         'tools': {'listChanged': True},
+        'prompts': {'listChanged': True},
         'resources': {'subscribe': False, 'listChanged': False},
+        'completions': {},
     }
     if capabilities:
         caps.update(capabilities)
@@ -101,6 +103,13 @@ def make_text_content(text):
     return {
         'type': 'text',
         'text': str(text),
+    }
+
+
+def make_prompt_message(role, text):
+    return {
+        'role': role,
+        'content': make_text_content(text),
     }
 
 

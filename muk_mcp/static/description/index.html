@@ -329,6 +329,39 @@
 <section class="oe_container">
 	<div class="oe_row oe_spaced">
 		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Reusable Prompts</h3>
+			<p>
+				Beyond tools, the server exposes MCP <strong>prompts</strong> &mdash;
+				reusable, user-invoked templates that clients surface as slash
+				commands, for example <code>/mcp__odoo__summarize_record</code> in
+				Claude Code. Where a tool is called by the model on its own, a prompt
+				is chosen by the user: the client collects its declared arguments and
+				the server expands it into ready-to-send chat messages via the
+				<code>prompts/get</code> method.
+			</p>
+			<p>
+				Ships with two examples &mdash; <code>summarize_record</code> for a
+				quick record briefing and <code>activities_today</code> for the
+				current user's open activities. Any argument named <code>model</code>
+				is auto-completed with matching model names through the
+				<code>completion/complete</code> method.
+			</p>
+			<p>
+				Author prompts two ways, exactly like tools: ship them from your own
+				addon with the <code>@mcp_prompt</code> decorator, or create them in
+				the backend at <em>Settings &gt; MCP &gt; Prompts</em> with a JSON
+				argument list and a Python body run in the sandboxed
+				<code>safe_eval</code> context. A database prompt shadows a Python
+				prompt of the same name, and connected clients are notified
+				automatically when the prompt list changes.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
 			<h3 class="oe_slogan">MCP Label</h3>
 			<p>
 				Every chatter message authored by an MCP tool is tagged with a

@@ -4,6 +4,7 @@ from . import log
 from . import mail_message
 from . import notification
 from . import tool
+from . import prompt
 from . import session
 from . import res_config_settings
 from . import res_users

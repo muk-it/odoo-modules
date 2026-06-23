@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo noupdate="1">
+
+    <record id="prompt_activities_today" model="muk_mcp.prompt">
+        <field name="name">activities_today</field>
+        <field name="title">My activities due today</field>
+        <field name="sequence">10</field>
+        <field name="description">List the open activities assigned to me that are due today or already overdue, so I can plan my day.</field>
+        <field name="body">
+result = (
+    "List the open activities assigned to me that are due today or already "
+    "overdue, so I can plan my day.\n\n"
+    "1. Call the whoami tool to get my user id.\n"
+    "2. Use search_read on the 'mail.activity' model with a domain filtering "
+    "user_id to me and date_deadline on or before today, ordered by "
+    "date_deadline ascending. Read the summary, activity_type_id, "
+    "date_deadline, res_model and res_name fields.\n"
+    "3. Present the results grouped as 'Overdue' and 'Due today', each line "
+    "showing what needs doing, the related document and the due date.\n"
+    "4. Finish with a short, prioritized suggestion of what to tackle first."
+)
+</field>
+    </record>
+
+</odoo>

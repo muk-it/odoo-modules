@@ -2,6 +2,8 @@ id,name,model_id/id,group_id/id,perm_read,perm_write,perm_create,perm_unlink
 
 access_muk_mcp_tool_admin,access_muk_mcp_tool_admin,model_muk_mcp_tool,base.group_system,1,1,1,1
 access_muk_mcp_tool_user,access_muk_mcp_tool_user,model_muk_mcp_tool,base.group_user,1,0,0,0
+access_muk_mcp_prompt_admin,access_muk_mcp_prompt_admin,model_muk_mcp_prompt,base.group_system,1,1,1,1
+access_muk_mcp_prompt_user,access_muk_mcp_prompt_user,model_muk_mcp_prompt,base.group_user,1,0,0,0
 access_muk_mcp_session_admin,access_muk_mcp_session_admin,model_muk_mcp_session,base.group_system,1,1,1,1
 access_muk_mcp_session_user,access_muk_mcp_session_user,model_muk_mcp_session,base.group_user,1,1,1,1
 access_muk_mcp_notification_admin,access_muk_mcp_notification_admin,model_muk_mcp_notification,base.group_system,1,1,1,1

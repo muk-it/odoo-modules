@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_mcp_prompt_search" model="ir.ui.view">
+		<field name="name">muk_mcp.prompt.search</field>
+		<field name="model">muk_mcp.prompt</field>
+		<field name="arch" type="xml">
+			<search>
+				<field name="name"/>
+				<field name="title"/>
+				<field name="description"/>
+				<filter name="active" string="Active" domain="[('active', '=', True)]"/>
+			</search>
+		</field>
+	</record>
+
+	<record id="view_mcp_prompt_list" model="ir.ui.view">
+		<field name="name">muk_mcp.prompt.list</field>
+		<field name="model">muk_mcp.prompt</field>
+		<field name="arch" type="xml">
+			<list>
+				<field name="sequence" widget="handle"/>
+				<field name="name"/>
+				<field name="title"/>
+				<field name="description" optional="hide"/>
+				<field name="active" widget="boolean_toggle"/>
+			</list>
+		</field>
+	</record>
+
+	<record id="view_mcp_prompt_form" model="ir.ui.view">
+		<field name="name">muk_mcp.prompt.form</field>
+		<field name="model">muk_mcp.prompt</field>
+		<field name="arch" type="xml">
+			<form>
+				<sheet>
+					<div class="oe_title">
+						<h1>
+							<field name="name" placeholder="Prompt Name"/>
+						</h1>
+					</div>
+					<group>
+						<group>
+							<field name="title"/>
+							<field name="sequence"/>
+						</group>
+						<group>
+							<field name="active" widget="boolean_toggle"/>
+						</group>
+					</group>
+					<notebook>
+						<page string="Description" name="description">
+							<field
+								name="description"
+								placeholder="Describe what this prompt does..."
+							/>
+						</page>
+						<page string="Body" name="body">
+							<field
+								name="body"
+								widget="ace"
+								options="{'mode': 'python'}"
+							/>
+						</page>
+						<page string="Arguments" name="arguments">
+							<field
+								name="arguments"
+								widget="ace"
+								options="{'mode': 'javascript'}"
+							/>
+						</page>
+					</notebook>
+				</sheet>
+			</form>
+		</field>
+	</record>
+
+	<record id="action_mcp_prompt" model="ir.actions.act_window">
+		<field name="name">MCP Prompts</field>
+		<field name="res_model">muk_mcp.prompt</field>
+		<field name="view_mode">list,form</field>
+		<field name="context">{'search_default_active': 1}</field>
+		<field name="path">mcp-prompts</field>
+		<field name="help" type="html">
+			<p class="o_view_nocontent_smiling_face">
+				No MCP prompts configured.
+			</p>
+			<p>
+				Built-in prompts ship with the module. You can add custom
+				prompts here; a database prompt overrides a built-in one
+				with the same name.
+			</p>
+		</field>
+	</record>
+
+</odoo>

@@ -121,15 +121,9 @@ class MCPController(http.Controller):
             'resources/list': self._handle_resources_list,
             'resources/read': self._handle_resources_read,
             'resources/templates/list': self._handle_resource_templates_list,
-            'prompts/list': lambda p: {'prompts': []},
-            'prompts/get': lambda p: {'messages': []},
-            'completion/complete': lambda p: {
-                'completion': {
-                    'values': [], 
-                    'total': 0, 
-                    'hasMore': False
-                },
-            },
+            'prompts/list': self._handle_prompts_list,
+            'prompts/get': self._handle_prompts_get,
+            'completion/complete': self._handle_completion_complete,
             'logging/setLevel': lambda p: {},
         }
         if not (handler := handlers.get(method)):
@@ -313,6 +307,23 @@ class MCPController(http.Controller):
                 },
             ],
         }
+
+    def _handle_prompts_list(self, params):
+        return {
+            'prompts': request.env['muk_mcp.prompt'].sudo().get_prompts()
+        }
+
+    def _handle_prompts_get(self, params):
+        return request.env['muk_mcp.prompt'].sudo().get_prompt(
+            params.get('name'),
+            params.get('arguments') or {},
+        )
+
+    def _handle_completion_complete(self, params):
+        return request.env['muk_mcp.prompt'].sudo().complete_argument(
+            params.get('ref') or {},
+            params.get('argument') or {},
+        )
 
     # ----------------------------------------------------------
     # Routes

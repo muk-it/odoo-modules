@@ -1,4 +1,5 @@
 from . import mixin
+from . import prompt
 from . import action
 from . import resource
 from . import export

@@ -234,6 +234,89 @@ built-in tools organized into two categories:
 - `call_method` -- Call any public method on a model or recordset
   (private methods starting with `_` are blocked for safety).
 
+## Prompts
+
+Beyond tools, the server exposes MCP **prompts** -- reusable, user-invoked
+templates the client surfaces as slash commands (e.g.
+`/mcp__odoo__summarize_record` in Claude Code). Unlike tools, which the
+model calls on its own, a prompt is chosen by the user: the client collects
+its declared arguments and the server expands it into chat messages via the
+`prompts/get` method.
+
+The module ships two examples:
+
+- `summarize_record` (Python) -- summarize a single record given a `model`
+  and `record_id`.
+- `activities_today` (database) -- list the current user's activities that
+  are due today or overdue.
+
+Any argument named `model` is auto-completed with matching model names
+through the MCP `completion/complete` method. Like tools, prompts can be
+authored two ways, and a database prompt shadows a Python prompt of the
+same name.
+
+### Python Prompts -- From Other Addons
+
+Inherit `muk_mcp.mixin` and decorate a method with `@mcp_prompt`. The
+method returns the prompt text (a string) or a list of message dicts;
+declared arguments arrive as keyword arguments.
+
+```python
+from odoo import api, models
+
+from odoo.addons.muk_mcp.core.prompt import mcp_prompt
+
+
+class MCPMixin(models.AbstractModel):
+    _inherit = 'muk_mcp.mixin'
+
+    @api.model
+    @mcp_prompt(
+        name='summarize_record',
+        title='Summarize a record',
+        description='Summarize a single Odoo record.',
+        arguments=[
+            {'name': 'model', 'description': "e.g. 'sale.order'.", 'required': True},
+            {'name': 'record_id', 'description': 'Record id.', 'required': True},
+        ],
+    )
+    def _mcp_prompt_summarize_record(self, model, record_id):
+        return (
+            "Summarize the %s record with id %s. Call read_records, "
+            "then write a short factual summary." % (model, record_id)
+        )
+```
+
+### UI / Database Prompts
+
+Create prompts in the backend at **Settings > MCP > Prompts**, or ship them
+as `muk_mcp.prompt` data records. Each prompt has a name, title,
+description, an **Arguments** JSON array, and a **Body** of Python
+evaluated in a sandboxed `safe_eval` context (same variables as UI tools:
+`env`, `arguments`, `json`, `UserError`, `logger`). Set `result` to the
+prompt text or a list of message dicts.
+
+```xml
+<record id="prompt_summarize_record" model="muk_mcp.prompt">
+    <field name="name">summarize_record</field>
+    <field name="title">Summarize a record</field>
+    <field name="description">Summarize a single Odoo record.</field>
+    <field name="arguments">[
+        {"name": "model", "description": "e.g. 'sale.order'.", "required": true},
+        {"name": "record_id", "description": "Record id.", "required": true}
+    ]</field>
+    <field name="body">result = (
+    "Summarize the %s record with id %s."
+    % (arguments['model'], arguments['record_id'])
+)
+</field>
+</record>
+```
+
+Required arguments are validated before the body runs, so the body can read
+them directly (`arguments['model']`); optional arguments use
+`arguments.get('name')`.
+
 ## Extending the Tool Set
 
 There are two ways to add tools. Choose based on audience:
