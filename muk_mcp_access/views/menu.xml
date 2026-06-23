@@ -5,9 +5,9 @@
     <menuitem
         id="menu_mcp_access_model"
         name="Access"
-        parent="muk_mcp.menu_mcp_root"
+        parent="muk_mcp.menu_mcp_authentication"
         action="action_mcp_access_model"
-        sequence="15"
+        sequence="50"
     />
 
 </odoo>
