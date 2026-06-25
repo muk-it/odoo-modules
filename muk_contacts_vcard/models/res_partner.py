@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import uuid
 
-from odoo import models, fields, api, _
+from odoo import api, fields, models
 from odoo.tools import format_date, html2plaintext
-from odoo.exceptions import UserError
 
 try:
     import vobject
@@ -11,6 +12,7 @@ except ImportError:
 
 
 class Partner(models.Model):
+    """Extend partners with structured name, honorifics, and vCard fields."""
 
     _inherit = 'res.partner'
     _rec_names_search = [
@@ -19,13 +21,13 @@ class Partner(models.Model):
         'ref',
         'vat',
         'company_registry',
-        'contact_number'
+        'contact_number',
     ]
-    
+
     # ----------------------------------------------------------
     # Fields
     # ----------------------------------------------------------
-    
+
     name = fields.Char(
         compute='_compute_name',
         inverse='_inverse_name',
@@ -53,28 +55,28 @@ class Partner(models.Model):
     )
 
     formatted_name = fields.Char(
-        compute='_compute_formatted_name', 
-        string="Formatted Name",
-        store=True, 
+        compute='_compute_formatted_name',
+        string='Formatted Name',
+        store=True,
         readonly=True,
-        index=True
+        index=True,
     )
 
     department = fields.Char(
-        string="Department",
+        string='Department',
     )
 
     role = fields.Char(
-        string="Job Role",
+        string='Job Role',
     )
 
     gender = fields.Selection(
         selection=[
             ('m', 'Male'),
             ('f', 'Female'),
-            ('o', 'Other')
+            ('o', 'Other'),
         ],
-        string="Gender",
+        string='Gender',
     )
 
     honorific_prefix_ids = fields.Many2many(
@@ -85,7 +87,7 @@ class Partner(models.Model):
         string='Honorific Prefixes',
         domain=[('position', '=', 'preceding')],
     )
-    
+
     honorific_suffix_ids = fields.Many2many(
         comodel_name='muk_contacts_vcard.honorific',
         relation='partner_honorific_suffix_rel',
@@ -96,7 +98,7 @@ class Partner(models.Model):
     )
 
     birthdate = fields.Date(
-        string="Birthdate"
+        string='Birthdate',
     )
 
     birthdate_day = fields.Integer(
@@ -115,53 +117,61 @@ class Partner(models.Model):
 
     birthdate_placeholder = fields.Char(
         compute='_compute_birthdate_placeholder',
-        string="Birthdate Placeholder"
+        string='Birthdate Placeholder',
     )
 
     birthday = fields.Char(
         compute='_compute_birthday',
-        string="Birthday"
+        string='Birthday',
     )
 
     nickname = fields.Char(
-        string="Nickname"
+        string='Nickname',
     )
 
     email2 = fields.Char(
-        string="Email (Private)"
+        string='Email (Private)',
     )
 
     phone2 = fields.Char(
-        string="Phone (Private)"
+        string='Phone (Private)',
     )
 
     vcard_uid = fields.Char(
-        string="vCard UID",
+        string='vCard UID',
         readonly=True,
         copy=False,
     )
 
     vcard_modified = fields.Datetime(
         compute='_compute_vcard_modified',
-        string="vCard Modified",
+        string='vCard Modified',
         readonly=True,
         store=True,
         copy=False,
     )
 
-    #----------------------------------------------------------
+    # ----------------------------------------------------------
     # Helper
-    #----------------------------------------------------------
+    # ----------------------------------------------------------
 
     @api.model
-    def _build_name(self, firstname, middlename, lastname):
-        return ' '.join(
-            value for value in (firstname, middlename, lastname)
-            if value
-        )
+    def _build_name(
+        self,
+        firstname: str | bool,
+        middlename: str | bool,
+        lastname: str | bool,
+    ) -> str:
+        """Join the name parts into a single space-separated string."""
+        return ' '.join(value for value in (firstname, middlename, lastname) if value)
 
     @api.model
-    def _split_name(self, name, is_company=False):
+    def _split_name(
+        self,
+        name: str | bool,
+        is_company: bool = False,
+    ) -> tuple[str | bool, str | bool]:
+        """Split a display name into ``(lastname, firstname)`` parts."""
         if is_company or not name:
             return name or False, False
         parts = name.split(' ')
@@ -169,11 +179,13 @@ class Partner(models.Model):
             return ' '.join(parts[1:]), parts[0]
         return name, False
 
-    def _fields_sync(self, values):
+    def _fields_sync(self, values: dict) -> None:
+        """Flush the recordset before syncing dependent address fields."""
         self.flush_recordset()
         return super()._fields_sync(values)
 
-    def _get_complete_name(self):
+    def _get_complete_name(self) -> str:
+        """Decorate the complete name with honorific shortcuts on request."""
         complete_name = super()._get_complete_name()
         if self.name and self.env.context.get('partner_display_name_show_honorific'):
             prefix = ' '.join(self.mapped('honorific_prefix_ids.shortcut'))
@@ -181,16 +193,18 @@ class Partner(models.Model):
             decorated = ' '.join(filter(None, [prefix, self.name, suffix]))
             complete_name = complete_name.replace(self.name, decorated, 1)
         return complete_name.strip()
-        
-    def _ensure_vcard_uid(self):
+
+    def _ensure_vcard_uid(self) -> str:
+        """Assign and return a stable vCard UID, generating one if missing."""
         if not self.vcard_uid:
             self.vcard_uid = str(uuid.uuid4())
         return self.vcard_uid
 
-    def _build_vcard(self):
+    def _build_vcard(self) -> vobject.base.Component:
+        """Enrich the base vCard with extra contact and address details."""
         vcard = super()._build_vcard()
 
-        def get_vcard_content_element(name):
+        def get_vcard_content_element(name: str) -> vobject.base.ContentLine:
             elem = vcard.contents.get(name, False)
             return elem[0] if elem else vcard.add(name)
 
@@ -236,8 +250,8 @@ class Partner(models.Model):
         if self.commercial_company_name and self.department:
             org = get_vcard_content_element('org')
             org.value = [
-                self.commercial_company_name, 
-                self.department
+                self.commercial_company_name,
+                self.department,
             ]
         if self.is_company and 'org' in vcard.contents:
             del vcard.contents['org']
@@ -248,17 +262,22 @@ class Partner(models.Model):
             note = vcard.add('note')
             note.value = html2plaintext(self.comment)
         kind = vcard.add('kind')
-        kind.value = (
-            'org' if self.company_type == 'company'
-            else 'individual'
-        )
+        kind.value = 'org' if self.company_type == 'company' else 'individual'
         if self.child_ids:
-            type_selection = dict(
-                self._fields['type']._description_selection(self.env)
-            )
+            type_selection = dict(self._fields['type']._description_selection(self.env))
             extra_addresses = self.child_ids.filtered(
-                lambda c: c.type in ('invoice', 'delivery', 'other') and any(
-                    c[f] for f in ('street', 'street2', 'city', 'zip', 'country_id')
+                lambda c: (
+                    c.type in ('invoice', 'delivery', 'other')
+                    and any(
+                        c[f]
+                        for f in (
+                            'street',
+                            'street2',
+                            'city',
+                            'zip',
+                            'country_id',
+                        )
+                    )
                 )
             )
             for idx, child in enumerate(extra_addresses, start=1):
@@ -285,22 +304,22 @@ class Partner(models.Model):
         rev.value = modified.strftime('%Y%m%dT%H%M%SZ')
         return vcard
 
-    #----------------------------------------------------------
+    # ----------------------------------------------------------
     # Compute
-    #----------------------------------------------------------
+    # ----------------------------------------------------------
 
     @api.depends('firstname', 'middlename', 'lastname')
-    def _compute_name(self):
+    def _compute_name(self) -> None:
+        """Compose the display name from first, middle, and last name."""
         for record in self:
             record.name = self._build_name(
                 record.firstname, record.middlename, record.lastname
             )
 
-    def _inverse_name(self):
+    def _inverse_name(self) -> None:
+        """Split an edited display name back into first and last name."""
         for record in self.filtered(
-            lambda r: r.name != self._build_name(
-                r.firstname, r.middlename, r.lastname
-            )
+            lambda r: r.name != self._build_name(r.firstname, r.middlename, r.lastname)
         ):
             lastname, firstname = self._split_name(
                 (record.name or '').strip(), record.is_company
@@ -312,39 +331,43 @@ class Partner(models.Model):
     @api.depends(
         'type',
         'name',
-        'is_company', 
-        'honorific_prefix_ids', 
-        'honorific_suffix_ids', 
+        'is_company',
+        'honorific_prefix_ids',
+        'honorific_suffix_ids',
         'honorific_prefix_ids.name',
         'honorific_suffix_ids.name',
     )
-    def _compute_formatted_name(self):
+    def _compute_formatted_name(self) -> None:
+        """Build the formatted name, optionally including honorifics."""
         for record in self:
             record_ctx = (
-                record.with_context({
-                    'partner_display_name_hide_company': True,
-                    'partner_display_name_show_honorific': True,
-                })
+                record.with_context(
+                    {
+                        'partner_display_name_hide_company': True,
+                        'partner_display_name_show_honorific': True,
+                    }
+                )
                 if record.name and not record.is_company
                 else record.with_context({})
             )
             record.formatted_name = record_ctx._get_complete_name()
 
     @api.depends('birthdate')
-    def _compute_birthdate_vals(self):
+    def _compute_birthdate_vals(self) -> None:
+        """Derive the birthdate day and month numbers."""
         self.birthdate_day = False
         self.birthdate_month = False
         for record in self.filtered('birthdate'):
             record.birthdate_day = record.birthdate.day
             record.birthdate_month = record.birthdate.month
 
-    def _compute_birthdate_placeholder(self):
-        self.birthdate_placeholder = format_date(
-            self.env, fields.Date.today()
-        )
+    def _compute_birthdate_placeholder(self) -> None:
+        """Set a localized example date as the birthdate placeholder."""
+        self.birthdate_placeholder = format_date(self.env, fields.Date.today())
 
     @api.depends('birthdate')
-    def _compute_birthday(self):
+    def _compute_birthday(self) -> None:
+        """Format the birthdate as a short month-and-day label."""
         self.birthday = False
         for record in self.filtered('birthdate'):
             record.birthday = format_date(
@@ -390,5 +413,6 @@ class Partner(models.Model):
         'website',
         'zip',
     )
-    def _compute_vcard_modified(self):
+    def _compute_vcard_modified(self) -> None:
+        """Stamp the vCard modification time whenever exported data changes."""
         self.vcard_modified = fields.Datetime.now()
