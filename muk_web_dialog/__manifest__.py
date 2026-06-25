@@ -1,13 +1,13 @@
 {
-    'name': 'MuK Dialog', 
+    'name': 'MuK Dialog',
     'summary': 'Adds options for the dialogs',
-    'description': '''
+    'description': """
         This module adds an option to dialogs to expand it to full screen mode.
         Each user can the initial state of the dialogs in their preferences.
-    ''',
-    'version': '19.0.1.0.6',
+    """,
+    'version': '19.0.1.0.7',
     'category': 'Tools/UI',
-    'license': 'LGPL-3', 
+    'license': 'LGPL-3',
     'author': 'MuK IT',
     'website': 'http://www.mukit.at',
     'live_test_url': 'https://youtu.be/QCSJugQC-O4',
@@ -23,9 +23,9 @@
     'assets': {
         'web._assets_primary_variables': [
             (
-                'after', 
-                'web/static/src/scss/primary_variables.scss', 
-                'muk_web_dialog/static/src/scss/variables.scss'
+                'after',
+                'web/static/src/scss/primary_variables.scss',
+                'muk_web_dialog/static/src/scss/variables.scss',
             ),
         ],
         'web.assets_backend': [
