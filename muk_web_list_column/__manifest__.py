@@ -1,14 +1,14 @@
 {
-    'name': 'MuK List Columns', 
+    'name': 'MuK List Columns',
     'summary': 'Save the list column width',
-    'description': '''
-        When manually changing the column width, the changed width is saved in 
+    'description': """
+        When manually changing the column width, the changed width is saved in
         local storage. When loading the view, the saved values are used to define
         the column width.
-    ''',
-    'version': '19.0.1.0.3',
+    """,
+    'version': '19.0.1.0.4',
     'category': 'Tools/UI',
-    'license': 'LGPL-3', 
+    'license': 'LGPL-3',
     'author': 'MuK IT',
     'website': 'http://www.mukit.at',
     'live_test_url': 'https://my.mukit.at/r/f6m',
