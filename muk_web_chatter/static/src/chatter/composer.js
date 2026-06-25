@@ -3,30 +3,23 @@ import { patch } from '@web/core/utils/patch';
 
 import { Composer } from '@mail/core/common/composer';
 
+/** Tailor the send label, placeholder, and post data for internal-follower notes. */
 patch(Composer.prototype, {
     get SEND_TEXT() {
-        if (
-            this.props.type === 'note' &&
-            this.props.notifyInternalFollowers
-        ) {
+        if (this.props.type === 'note' && this.props.notifyInternalFollowers) {
             return _t('Send');
         }
         return super.SEND_TEXT;
     },
     get placeholder() {
-        if (
-            this.props.type === 'note' &&
-            this.props.notifyInternalFollowers
-        ) {
+        if (this.props.type === 'note' && this.props.notifyInternalFollowers) {
             return _t('Send a message to internal followers...');
         }
         return super.placeholder;
     },
     get postData() {
         const postData = super.postData;
-        postData.notifyInternalFollowers = (
-            this.props.notifyInternalFollowers || false
-        );
+        postData.notifyInternalFollowers = this.props.notifyInternalFollowers || false;
         return postData;
     },
 });
