@@ -1,38 +1,50 @@
+from __future__ import annotations
+
+from odoo import models
 from odoo.tests.common import TransactionCase, tagged
 
 
 @tagged('post_install', '-at_install', 'muk_ai_skills', 'prompt')
 class TestPromptAddendum(TransactionCase):
+    """Test the skill addendum injected into the system prompt."""
 
     # ----------------------------------------------------------
     # Setup
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.Skill = cls.env['muk_ai.skill']
         cls.Session = cls.env['muk_ai.session']
         cls.Agent = cls.env['muk_ai.agent']
-        cls.agent = cls.Agent.create({
-            'name': 'Prompt Test Agent',
-            'system_prompt': 'You are a helpful assistant.',
-        })
-        cls.other_agent = cls.Agent.create({
-            'name': 'Prompt Test Agent Other',
-        })
+        cls.agent = cls.Agent.create(
+            {
+                'name': 'Prompt Test Agent',
+                'system_prompt': 'You are a helpful assistant.',
+            }
+        )
+        cls.other_agent = cls.Agent.create(
+            {
+                'name': 'Prompt Test Agent Other',
+            }
+        )
 
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
 
-    def _make_session(self, agent=None):
-        return self.Session.create({
-            'name': 'Prompt Test Session',
-            'agent_id': (agent or self.agent).id,
-        })
+    def _make_session(self, agent: models.BaseModel | None = None) -> models.BaseModel:
+        """Create an AI session bound to the given or default agent."""
+        return self.Session.create(
+            {
+                'name': 'Prompt Test Session',
+                'agent_id': (agent or self.agent).id,
+            }
+        )
 
-    def _make_skill(self, **vals):
+    def _make_skill(self, **vals) -> models.BaseModel:
+        """Create a skill record, overriding the defaults with ``vals``."""
         defaults = {
             'name': 'sample_skill',
             'description': 'Sample skill description.',
@@ -40,7 +52,8 @@ class TestPromptAddendum(TransactionCase):
         defaults.update(vals)
         return self.Skill.create(defaults)
 
-    def _drop_existing_skills(self):
+    def _drop_existing_skills(self) -> None:
+        """Remove every existing skill to isolate the test fixtures."""
         self.env['muk_ai.skill'].sudo().search([]).unlink()
 
     # ----------------------------------------------------------

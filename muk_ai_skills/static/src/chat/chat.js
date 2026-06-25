@@ -15,6 +15,11 @@ import {
     setSkills,
 } from '@muk_ai_skills/chat/skill_cache';
 
+/**
+ * Wrap a chat component's send handler to dispatch `/skill` slash commands
+ * server-side, and keep the per-session skill cache in sync with the session id.
+ * @param {object} component the chat component whose session is patched
+ */
 function installSkillRouting(component) {
     const orm = useService('orm');
     const session = component.session;
@@ -38,7 +43,7 @@ function installSkillRouting(component) {
                     session.applySnapshot(snapshot);
                 } catch (error) {
                     component.env.services.notification.add(
-                        _t("Failed to invoke skill: %s", formatError(error)),
+                        _t('Failed to invoke skill: %s', formatError(error)),
                         { type: 'danger' },
                     );
                 }
@@ -67,7 +72,7 @@ function installSkillRouting(component) {
                     if (!cancelled) {
                         setSkills(sessionId, skills || []);
                     }
-                } catch (_error) {
+                } catch {
                     if (!cancelled) {
                         setSkills(sessionId, []);
                     }
@@ -83,6 +88,7 @@ function installSkillRouting(component) {
     );
 }
 
+/** Install skill slash-command routing on the main AI chat. */
 patch(AIChat.prototype, {
     setup() {
         super.setup();
@@ -90,6 +96,7 @@ patch(AIChat.prototype, {
     },
 });
 
+/** Install skill slash-command routing on the chat window. */
 patch(ChatWindow.prototype, {
     setup() {
         super.setup();

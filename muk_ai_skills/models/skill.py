@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 
 from odoo import _, api, fields, models
@@ -5,9 +7,10 @@ from odoo.exceptions import ValidationError
 
 
 class Skill(models.Model):
+    """Store a reusable AI skill with a body, description and resources."""
 
     _name = 'muk_ai.skill'
-    _description = "AI Skill"
+    _description = 'AI Skill'
     _inherit = ['muk_ai.revision.mixin', 'muk_ai.prompt.mixin']
     _order = 'sequence, name'
 
@@ -21,11 +24,11 @@ class Skill(models.Model):
     )
 
     name = fields.Char(
-        string="Technical Name",
+        string='Technical Name',
         help=(
-            "Lowercase technical identifier used in the slash command "
-            "and in the LLM-facing discovery list. Must match "
-            "[a-z][a-z0-9_]*."
+            'Lowercase technical identifier used in the slash command '
+            'and in the LLM-facing discovery list. Must match '
+            '[a-z][a-z0-9_]*.'
         ),
         required=True,
         index=True,
@@ -33,38 +36,38 @@ class Skill(models.Model):
     )
 
     label = fields.Char(
-        string="Label",
-        help="Human-readable label shown in lists and the chat menu.",
+        string='Label',
+        help='Human-readable label shown in lists and the chat menu.',
         translate=True,
     )
 
     active = fields.Boolean(
-        string="Active",
+        string='Active',
         default=True,
         copy=False,
     )
 
     sequence = fields.Integer(
-        string="Sequence",
+        string='Sequence',
         default=10,
     )
 
     description = fields.Text(
-        string="Description",
+        string='Description',
         help=(
-            "One-line description shown to the LLM in the system "
-            "prompt addendum so it can decide when to invoke the skill."
+            'One-line description shown to the LLM in the system '
+            'prompt addendum so it can decide when to invoke the skill.'
         ),
         required=True,
         translate=True,
     )
 
     body = fields.Text(
-        string="Body",
+        string='Body',
         help=(
-            "Markdown body returned when the skill is invoked. "
-            "Optional: a manifest-only skill may rely solely on its "
-            "attached resources."
+            'Markdown body returned when the skill is invoked. '
+            'Optional: a manifest-only skill may rely solely on its '
+            'attached resources.'
         ),
         translate=True,
     )
@@ -74,10 +77,10 @@ class Skill(models.Model):
         relation='muk_ai_skill_agent_rel',
         column1='skill_id',
         column2='agent_id',
-        string="Agents",
+        string='Agents',
         help=(
-            "Agents that can see this skill. Leave empty to make the "
-            "skill visible to every agent."
+            'Agents that can see this skill. Leave empty to make the '
+            'skill visible to every agent.'
         ),
     )
 
@@ -86,21 +89,21 @@ class Skill(models.Model):
         relation='muk_ai_skill_ir_attachment_rel',
         column1='skill_id',
         column2='attachment_id',
-        string="Resources",
+        string='Resources',
         help=(
-            "Attachments listed in the skill manifest. The agent can "
-            "fetch any of them via read_resource using the "
-            "uri from the manifest."
+            'Attachments listed in the skill manifest. The agent can '
+            'fetch any of them via read_resource using the '
+            'uri from the manifest.'
         ),
     )
 
     agent_count = fields.Integer(
-        string="Agent Count",
+        string='Agent Count',
         compute='_compute_agent_count',
     )
 
     attachment_count = fields.Integer(
-        string="Attachment Count",
+        string='Attachment Count',
         compute='_compute_attachment_count',
     )
 
@@ -109,14 +112,17 @@ class Skill(models.Model):
     # ----------------------------------------------------------
 
     @api.model
-    def _get_prompt_fields(self):
+    def _get_prompt_fields(self) -> list[str]:
+        """Return the field names rendered as prompt templates."""
         return ['body']
 
-    def _build_body(self, session=None):
+    def _build_body(self, session: models.BaseModel | None = None) -> str:
+        """Render the skill body, injecting the session prompt extras."""
         extras = session._session_prompt_extras() if session else {}
         return self._render_prompt(self.body or '', **extras)
 
-    def _resource_manifest(self):
+    def _resource_manifest(self) -> list[dict]:
+        """Return the manifest of attached resources with their uris."""
         return [
             {
                 'name': attachment.name or '',
@@ -132,20 +138,19 @@ class Skill(models.Model):
 
     @api.depends('label', 'name')
     @api.depends_context('lang')
-    def _compute_display_name(self):
+    def _compute_display_name(self) -> None:
         for record in self:
             record.display_name = record.label or (
-                record.name.replace('_', ' ').title()
-                if record.name else ''
+                record.name.replace('_', ' ').title() if record.name else ''
             )
 
     @api.depends('attachment_ids')
-    def _compute_attachment_count(self):
+    def _compute_attachment_count(self) -> None:
         for record in self:
             record.attachment_count = len(record.attachment_ids)
 
     @api.depends('agent_ids')
-    def _compute_agent_count(self):
+    def _compute_agent_count(self) -> None:
         for record in self:
             record.agent_count = len(record.agent_ids)
 
@@ -155,15 +160,21 @@ class Skill(models.Model):
 
     _unique_name = models.Constraint(
         'unique(name)',
-        "A skill with this technical name already exists.",
+        'A skill with this technical name already exists.',
     )
 
     @api.constrains('name')
-    def _check_name_format(self):
+    def _check_name_format(self) -> None:
+        """Validate the technical name against the lowercase identifier rule.
+
+        :raise ValidationError: when the name does not match [a-z][a-z0-9_]*
+        """
         name_check = re.compile(r'^[a-z][a-z0-9_]*$')
         for record in self:
             if not record.name or not name_check.match(record.name):
-                raise ValidationError(_(
-                    "Skill name %(name)r must match [a-z][a-z0-9_]*.",
-                    name=record.name or '',
-                ))
+                raise ValidationError(
+                    _(
+                        'Skill name %(name)r must match [a-z][a-z0-9_]*.',
+                        name=record.name or '',
+                    )
+                )

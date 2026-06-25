@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import json
 
+from odoo import models
 from odoo.exceptions import UserError
 from odoo.tests.common import tagged
 
@@ -8,13 +11,14 @@ from odoo.addons.muk_ai.tests.common import AITestCommon
 
 @tagged('post_install', '-at_install', 'muk_ai_skills', 'invoke')
 class TestInvokeSkill(AITestCommon):
+    """Test the invoke_skill MCP tool and the slash-command dispatch."""
 
     # ----------------------------------------------------------
     # Setup
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.Skill = cls.env['muk_ai.skill']
         cls.Session = cls.env['muk_ai.session']
@@ -27,13 +31,17 @@ class TestInvokeSkill(AITestCommon):
     # Helper
     # ----------------------------------------------------------
 
-    def _make_session(self, agent=None):
-        return self.Session.create({
-            'name': 'Invoke Test Session',
-            'agent_id': (agent or self.agent).id,
-        })
+    def _make_session(self, agent: models.BaseModel | None = None) -> models.BaseModel:
+        """Create an AI session bound to the given or default agent."""
+        return self.Session.create(
+            {
+                'name': 'Invoke Test Session',
+                'agent_id': (agent or self.agent).id,
+            }
+        )
 
-    def _make_skill(self, **vals):
+    def _make_skill(self, **vals) -> models.BaseModel:
+        """Create a skill record, overriding the defaults with ``vals``."""
         defaults = {
             'name': 'invoke_demo',
             'description': 'Demo invocation.',
@@ -42,10 +50,12 @@ class TestInvokeSkill(AITestCommon):
         defaults.update(vals)
         return self.Skill.create(defaults)
 
-    def _mixin_for(self, session):
+    def _mixin_for(self, session: models.BaseModel) -> models.BaseModel:
+        """Return the tools mixin bound to the given session context."""
         return self.Mixin.with_context(muk_mcp_session_id=session.id)
 
-    def _drop_existing_skills(self):
+    def _drop_existing_skills(self) -> None:
+        """Remove every existing skill to isolate the test fixtures."""
         self.env['muk_ai.skill'].sudo().search([]).unlink()
 
     # ----------------------------------------------------------
@@ -54,11 +64,13 @@ class TestInvokeSkill(AITestCommon):
 
     def test_invoke_returns_body_and_manifest(self):
         self._drop_existing_skills()
-        attachment = self.env['ir.attachment'].create({
-            'name': 'cheatsheet.md',
-            'datas': b'IyBDaGVhdHNoZWV0',
-            'mimetype': 'text/markdown',
-        })
+        attachment = self.env['ir.attachment'].create(
+            {
+                'name': 'cheatsheet.md',
+                'datas': b'IyBDaGVhdHNoZWV0',
+                'mimetype': 'text/markdown',
+            }
+        )
         skill = self._make_skill(
             attachment_ids=[(6, 0, [attachment.id])],
         )
@@ -148,13 +160,15 @@ class TestInvokeSkill(AITestCommon):
             session.invoke_skill_from_chat(skill.name, user_input='product xy')
         conversation = session.conversation or []
         user_turns = [
-            item for item in conversation
+            item
+            for item in conversation
             if isinstance(item, dict) and item.get('role') == 'user'
         ]
-        self.assertTrue(user_turns, "no user turn appended for skill args")
+        self.assertTrue(user_turns, 'no user turn appended for skill args')
         last_user = user_turns[-1]
         text_blocks = [
-            block for block in last_user.get('content') or []
+            block
+            for block in last_user.get('content') or []
             if isinstance(block, dict) and block.get('type') == 'input_text'
         ]
         self.assertEqual(len(text_blocks), 1)
@@ -164,9 +178,9 @@ class TestInvokeSkill(AITestCommon):
             for item in conversation
             if isinstance(item, dict) and item.get('type') == 'function_call'
         ]
-        self.assertTrue(any(
-            call.get('user_input') == 'product xy' for call in function_calls
-        ))
+        self.assertTrue(
+            any(call.get('user_input') == 'product xy' for call in function_calls)
+        )
 
     def test_invoke_skill_from_chat_blank_user_input_acts_like_no_args(self):
         self._drop_existing_skills()
@@ -176,7 +190,8 @@ class TestInvokeSkill(AITestCommon):
             session.invoke_skill_from_chat(skill.name, user_input='   ')
         conversation = session.conversation or []
         user_turns = [
-            item for item in conversation
+            item
+            for item in conversation
             if isinstance(item, dict) and item.get('role') == 'user'
         ]
         self.assertEqual(user_turns, [])

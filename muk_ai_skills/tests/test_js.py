@@ -1,17 +1,19 @@
-import odoo.tests
+from __future__ import annotations
 
+import odoo.tests
 from odoo.tests.common import new_test_user, tagged
 
 
 @tagged('post_install', '-at_install')
 class TestHoot(odoo.tests.HttpCase):
+    """Run the muk_ai_skills HOOT JavaScript test suite."""
 
     # ----------------------------------------------------------
     # Setup
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.hoot_user = new_test_user(
             cls.env,

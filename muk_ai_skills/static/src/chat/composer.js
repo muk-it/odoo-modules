@@ -4,6 +4,7 @@ import { ChatComposer } from '@muk_ai/chat/composer/chat_composer';
 
 import { getActiveSkills } from '@muk_ai_skills/chat/skill_cache';
 
+/** Merge visible skills into the composer's slash-command suggestions. */
 patch(ChatComposer.prototype, {
     get slashCommands() {
         const builtIn = super.slashCommands;
@@ -19,9 +20,7 @@ patch(ChatComposer.prototype, {
                 : `Invoke skill ${skill.label || skill.name}`,
             isSkill: true,
         }));
-        const matchingSkills = skillEntries.filter(
-            (c) => c.name.startsWith(prefix),
-        );
+        const matchingSkills = skillEntries.filter((c) => c.name.startsWith(prefix));
         const seen = new Set(builtIn.map((c) => c.name));
         const merged = [...builtIn];
         for (const entry of matchingSkills) {

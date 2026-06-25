@@ -15,7 +15,6 @@ import {
 describe.current.tags('muk_ai_skills');
 defineMailModels();
 
-
 function makeParent({ value = '' } = {}) {
     class Parent extends Component {
         static components = { ChatComposer };
@@ -38,12 +37,10 @@ function makeParent({ value = '' } = {}) {
     return { Parent, props: { value } };
 }
 
-
 function reset() {
     clearSkills(42);
     setActiveSessionId(null);
 }
-
 
 test('skills do not appear when no active session is set', async () => {
     reset();
@@ -53,7 +50,6 @@ test('skills do not appear when no active session is set', async () => {
     const labels = queryAll('.mk_slash_item').map((el) => el.textContent);
     expect(labels.some((l) => l.includes('/alpha'))).toBe(false);
 });
-
 
 test('active-session skills appear in the slash menu', async () => {
     reset();
@@ -69,7 +65,6 @@ test('active-session skills appear in the slash menu', async () => {
     expect(labels.some((l) => l.includes('/beta'))).toBe(true);
 });
 
-
 test('skill entries are filtered by typed prefix', async () => {
     reset();
     setSkills(42, [
@@ -84,7 +79,6 @@ test('skill entries are filtered by typed prefix', async () => {
     expect(labels.some((l) => l.includes('/beta'))).toBe(false);
 });
 
-
 test('skill description renders as the slash menu hint', async () => {
     reset();
     setSkills(42, [{ name: 'alpha', description: 'Do alpha things.' }]);
@@ -95,7 +89,6 @@ test('skill description renders as the slash menu hint', async () => {
     expect(item).not.toBe(null);
     expect(item.textContent).toMatch(/Do alpha things\./);
 });
-
 
 test('skills do not duplicate a built-in slash command of the same name', async () => {
     reset();
@@ -108,7 +101,6 @@ test('skills do not duplicate a built-in slash command of the same name', async 
     );
     expect(helpItems.length).toBe(1);
 });
-
 
 test('non-slash input is unaffected by skills', async () => {
     reset();
