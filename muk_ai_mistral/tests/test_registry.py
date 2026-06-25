@@ -1,10 +1,10 @@
+from .common import MistralTestCommon
 from odoo.addons.muk_ai.providers import REGISTRY
 from odoo.addons.muk_ai_mistral.providers.mistral import MistralProvider
 
-from .common import MistralTestCommon
-
 
 class TestMistralRegistry(MistralTestCommon):
+    """Assert the Mistral provider is registered, seeded and selectable."""
 
     # ----------------------------------------------------------
     # Registry
@@ -34,9 +34,11 @@ class TestMistralRegistry(MistralTestCommon):
         )
 
     def test_models_seeded_for_provider(self):
-        models = self.env['muk_ai.model'].search([
-            ('provider_id', '=', self.provider.id),
-        ])
+        models = self.env['muk_ai.model'].search(
+            [
+                ('provider_id', '=', self.provider.id),
+            ]
+        )
         self.assertEqual(len(models), 10)
         technical_names = set(models.mapped('technical_name'))
         self.assertIn('mistral-large-latest', technical_names)

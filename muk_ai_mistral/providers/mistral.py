@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import base64
 import json
+from collections.abc import Callable
 
 import requests
 
@@ -16,9 +19,10 @@ REQUEST_ATTEMPTS = 3
 
 
 class MistralProvider(ProviderBase):
+    """Talk to Mistral's stateless Conversations API for the muk_ai assistant."""
 
     name = 'mistral'
-    label = "Mistral AI"
+    label = 'Mistral AI'
     default_model = 'mistral-medium-latest'
     default_url = 'https://api.mistral.ai/v1'
 
@@ -30,7 +34,8 @@ class MistralProvider(ProviderBase):
     # Contract
     # ----------------------------------------------------------
 
-    def headers(self):
+    def headers(self) -> dict:
+        """Return the bearer-authenticated JSON request headers."""
         return {
             'Authorization': f'Bearer {self.api_key}',
             'Content-Type': 'application/json',
@@ -38,16 +43,22 @@ class MistralProvider(ProviderBase):
 
     def request(
         self,
-        inputs,
-        tools_schema=None,
-        text_schema=None,
-        on_delta=None,
-        model=None,
-        enable_web_search=False,
-        enable_image_generation=False,
-        enable_code_interpreter=False,
-        extra=None,
-    ):
+        inputs: list | None,
+        tools_schema: list | None = None,
+        text_schema: dict | None = None,
+        on_delta: Callable | None = None,
+        model: str | None = None,
+        enable_web_search: bool = False,
+        enable_image_generation: bool = False,
+        enable_code_interpreter: bool = False,
+        extra: dict | None = None,
+    ) -> dict:
+        """Build the Conversations request body and dispatch it to Mistral.
+
+        :param on_delta: optional streaming callback; ignored together with
+            the built-in connectors, which force a buffered request
+        :return: the parsed response payload (text, tool calls, usage)
+        """
         instructions, entries = self._inputs_to_entries(inputs)
         body = {
             'model': self.model_for(model),
@@ -80,9 +91,7 @@ class MistralProvider(ProviderBase):
         if tools:
             body['tools'] = tools
         connectors = (
-            enable_web_search
-            or enable_image_generation
-            or enable_code_interpreter
+            enable_web_search or enable_image_generation or enable_code_interpreter
         )
         if callable(on_delta) and not connectors:
             return self._stream_request(body, on_delta)
@@ -96,7 +105,11 @@ class MistralProvider(ProviderBase):
     # ----------------------------------------------------------
 
     @classmethod
-    def _inputs_to_entries(cls, inputs):
+    def _inputs_to_entries(cls, inputs: list | None) -> tuple[str, list]:
+        """Split system instructions out and map muk_ai inputs to entries.
+
+        :return: the joined system instructions and the Conversations entries
+        """
         system_parts = []
         entries = []
         for item in inputs or []:
@@ -111,45 +124,54 @@ class MistralProvider(ProviderBase):
                 arguments = item.get('arguments') or '{}'
                 if not isinstance(arguments, str):
                     arguments = json.dumps(arguments, default=str)
-                entries.append({
-                    'object': 'entry',
-                    'type': 'function.call',
-                    'tool_call_id': item.get('call_id') or '',
-                    'name': item.get('name') or '',
-                    'arguments': arguments,
-                })
+                entries.append(
+                    {
+                        'object': 'entry',
+                        'type': 'function.call',
+                        'tool_call_id': item.get('call_id') or '',
+                        'name': item.get('name') or '',
+                        'arguments': arguments,
+                    }
+                )
                 continue
             if item_type == 'function_call_output':
                 output = item.get('output')
                 if not isinstance(output, str):
                     output = json.dumps(output, default=str)
-                entries.append({
-                    'object': 'entry',
-                    'type': 'function.result',
-                    'tool_call_id': item.get('call_id') or '',
-                    'result': output,
-                })
+                entries.append(
+                    {
+                        'object': 'entry',
+                        'type': 'function.result',
+                        'tool_call_id': item.get('call_id') or '',
+                        'result': output,
+                    }
+                )
                 continue
             if role == 'user':
-                entries.append({
-                    'object': 'entry',
-                    'type': 'message.input',
-                    'role': 'user',
-                    'content': cls._user_content_to_mistral(item.get('content')),
-                })
+                entries.append(
+                    {
+                        'object': 'entry',
+                        'type': 'message.input',
+                        'role': 'user',
+                        'content': cls._user_content_to_mistral(item.get('content')),
+                    }
+                )
                 continue
             if role == 'assistant':
                 text = cls._text_from_content(item.get('content'))
-                entries.append({
-                    'object': 'entry',
-                    'type': 'message.output',
-                    'role': 'assistant',
-                    'content': text,
-                })
+                entries.append(
+                    {
+                        'object': 'entry',
+                        'type': 'message.output',
+                        'role': 'assistant',
+                        'content': text,
+                    }
+                )
         return '\n\n'.join(system_parts), entries
 
     @staticmethod
-    def _text_from_content(content):
+    def _text_from_content(content) -> str:
+        """Flatten a string or list-of-chunks content into plain text."""
         if isinstance(content, str):
             return content
         parts = []
@@ -160,6 +182,11 @@ class MistralProvider(ProviderBase):
 
     @classmethod
     def _user_content_to_mistral(cls, content):
+        """Map a user message content to Mistral text or multimodal parts.
+
+        :return: a plain string, or a list of text/image parts when the
+            message carries an image attachment
+        """
         if isinstance(content, str):
             return content
         if not content:
@@ -187,7 +214,11 @@ class MistralProvider(ProviderBase):
         return '\n\n'.join(text_parts)
 
     @staticmethod
-    def _attachment_to_part(block):
+    def _attachment_to_part(block: dict) -> dict | None:
+        """Convert a muk_ai attachment block to an image or text part.
+
+        :return: ``None`` when the block carries neither image data nor text
+        """
         strategy = block.get('strategy')
         mimetype = block.get('mimetype') or 'application/octet-stream'
         data_b64 = block.get('data_b64') or ''
@@ -206,7 +237,8 @@ class MistralProvider(ProviderBase):
         return {'type': 'text', 'text': prefix + text}
 
     @staticmethod
-    def _tools_to_mistral(tools_schema):
+    def _tools_to_mistral(tools_schema: list | None) -> list:
+        """Map muk_ai tool schemas to Mistral function-tool definitions."""
         if not tools_schema:
             return []
         seen = set()
@@ -216,23 +248,28 @@ class MistralProvider(ProviderBase):
             if not name or name in seen:
                 continue
             seen.add(name)
-            out.append({
-                'type': 'function',
-                'function': {
-                    'name': name,
-                    'description': tool.get('description') or '',
-                    'parameters': tool.get('parameters') or {
-                        'type': 'object', 'properties': {},
+            out.append(
+                {
+                    'type': 'function',
+                    'function': {
+                        'name': name,
+                        'description': tool.get('description') or '',
+                        'parameters': tool.get('parameters')
+                        or {
+                            'type': 'object',
+                            'properties': {},
+                        },
                     },
-                },
-            })
+                }
+            )
         return out
 
     # ----------------------------------------------------------
     # Parse
     # ----------------------------------------------------------
 
-    def _parse_response(self, payload):
+    def _parse_response(self, payload: dict) -> dict:
+        """Parse a buffered Conversations response into the muk_ai result."""
         text_parts = []
         message_text_parts = []
         tool_calls = []
@@ -241,7 +278,9 @@ class MistralProvider(ProviderBase):
             entry_type = entry.get('type')
             if entry_type == 'message.output':
                 self._consume_message_content(
-                    entry.get('content'), text_parts, message_text_parts,
+                    entry.get('content'),
+                    text_parts,
+                    message_text_parts,
                 )
             elif entry_type == 'tool.execution':
                 snippet = self._render_tool_execution(entry)
@@ -265,7 +304,13 @@ class MistralProvider(ProviderBase):
             ),
         }
 
-    def _consume_message_content(self, content, text_parts, message_text_parts):
+    def _consume_message_content(
+        self,
+        content,
+        text_parts: list,
+        message_text_parts: list,
+    ) -> None:
+        """Append rendered message content to the running text accumulators."""
         if isinstance(content, str):
             if content:
                 text_parts.append(content)
@@ -279,7 +324,8 @@ class MistralProvider(ProviderBase):
                 text_parts.append(snippet)
                 message_text_parts.append(snippet)
 
-    def _render_chunk(self, chunk):
+    def _render_chunk(self, chunk: dict) -> str:
+        """Render a single message content chunk to a markdown snippet."""
         chunk_type = chunk.get('type')
         if chunk_type == 'text':
             return chunk.get('text') or ''
@@ -291,7 +337,12 @@ class MistralProvider(ProviderBase):
             return self._render_tool_file(chunk)
         return ''
 
-    def _render_tool_file(self, chunk):
+    def _render_tool_file(self, chunk: dict) -> str:
+        """Download a generated file and render it as inline markdown.
+
+        :return: an inline image when the download succeeds, a textual
+            placeholder otherwise
+        """
         file_id = chunk.get('file_id')
         if not file_id:
             return ''
@@ -303,7 +354,8 @@ class MistralProvider(ProviderBase):
         return f'\n\n_(generated file: `{name}`)_\n\n'
 
     @staticmethod
-    def _render_tool_execution(entry):
+    def _render_tool_execution(entry: dict) -> str:
+        """Render a code-interpreter execution as fenced code blocks."""
         info = entry.get('info') or {}
         parts = []
         code = (info.get('code') or '').strip()
@@ -316,28 +368,41 @@ class MistralProvider(ProviderBase):
             return ''
         return '\n\n' + '\n\n'.join(parts) + '\n\n'
 
-    def _consume_function_call(self, entry, tool_calls, function_call_carries):
+    def _consume_function_call(
+        self,
+        entry: dict,
+        tool_calls: list,
+        function_call_carries: list,
+    ) -> None:
+        """Append a parsed function call and its carry input to the buffers."""
         call_id = entry.get('tool_call_id') or entry.get('id') or ''
         name = entry.get('name') or ''
         raw_args = entry.get('arguments')
         if raw_args is None:
             raw_args = '{}'
         args, parse_error = self._parse_tool_arguments(raw_args)
-        tool_calls.append({
-            'call_id': call_id,
-            'name': name,
-            'arguments': args,
-            '_parse_error': parse_error,
-        })
-        function_call_carries.append({
-            'type': 'function_call',
-            'name': name,
-            'arguments': raw_args if isinstance(raw_args, str) else json.dumps(args, default=str),
-            'call_id': call_id,
-        })
+        tool_calls.append(
+            {
+                'call_id': call_id,
+                'name': name,
+                'arguments': args,
+                '_parse_error': parse_error,
+            }
+        )
+        function_call_carries.append(
+            {
+                'type': 'function_call',
+                'name': name,
+                'arguments': raw_args
+                if isinstance(raw_args, str)
+                else json.dumps(args, default=str),
+                'call_id': call_id,
+            }
+        )
 
     @staticmethod
-    def _assistant_text_carry(text):
+    def _assistant_text_carry(text: str) -> dict:
+        """Wrap assistant text as a carry input for the next request."""
         return {
             'role': 'assistant',
             'content': [{'type': 'output_text', 'text': text}],
@@ -347,7 +412,11 @@ class MistralProvider(ProviderBase):
     # Files
     # ----------------------------------------------------------
 
-    def _download_file(self, file_id, file_type):
+    def _download_file(self, file_id: str, file_type: str) -> str | None:
+        """Fetch a generated file and return it as a base64 data URI.
+
+        :return: ``None`` when the download fails
+        """
         try:
             response = requests.get(
                 f'{self.api_url}/files/{file_id}/content',
@@ -365,22 +434,31 @@ class MistralProvider(ProviderBase):
     # Streaming
     # ----------------------------------------------------------
 
-    def _buffered_request(self, body):
+    def _buffered_request(self, body: dict) -> dict:
+        """Post the body without streaming, retrying transient failures.
+
+        :raise UserError: when every attempt fails
+        """
         error = None
-        for attempt in range(REQUEST_ATTEMPTS):
+        for _attempt in range(REQUEST_ATTEMPTS):
             try:
                 return self._parse_response(self._post_json('/conversations', body))
             except UserError as exc:
                 error = exc
         raise error
 
-    def _emit_text(self, on_delta, result):
+    def _emit_text(self, on_delta: Callable, result: dict) -> None:
+        """Emit the buffered result text as a single streaming delta."""
         if result.get('text'):
             self._call_on_delta(on_delta, 'text', {'delta': result['text']})
 
-    def _stream_request(self, body, on_delta):
+    def _stream_request(self, body: dict, on_delta: Callable) -> dict:
+        """Stream the request, falling back to a buffered request on failure.
+
+        :raise UserError: when a stream fails after emitting partial output
+        """
         progress = {'emitted': False}
-        for attempt in range(STREAM_ATTEMPTS):
+        for _attempt in range(STREAM_ATTEMPTS):
             try:
                 return self._stream(body, on_delta, progress)
             except UserError:
@@ -390,7 +468,8 @@ class MistralProvider(ProviderBase):
         self._emit_text(on_delta, result)
         return result
 
-    def _stream(self, body, on_delta, progress):
+    def _stream(self, body: dict, on_delta: Callable, progress: dict) -> dict:
+        """Consume the SSE stream and assemble the muk_ai result payload."""
         body = {**body, 'stream': True}
 
         def tracked(kind, payload):
@@ -420,18 +499,22 @@ class MistralProvider(ProviderBase):
             args, parse_error = self._parse_tool_arguments(
                 entry.get('arguments') or '{}',
             )
-            tool_calls.append({
-                'call_id': entry.get('call_id') or '',
-                'name': entry.get('name') or '',
-                'arguments': args,
-                '_parse_error': parse_error,
-            })
-            function_call_carries.append({
-                'type': 'function_call',
-                'name': entry.get('name') or '',
-                'arguments': json.dumps(args, default=str),
-                'call_id': entry.get('call_id') or '',
-            })
+            tool_calls.append(
+                {
+                    'call_id': entry.get('call_id') or '',
+                    'name': entry.get('name') or '',
+                    'arguments': args,
+                    '_parse_error': parse_error,
+                }
+            )
+            function_call_carries.append(
+                {
+                    'type': 'function_call',
+                    'name': entry.get('name') or '',
+                    'arguments': json.dumps(args, default=str),
+                    'call_id': entry.get('call_id') or '',
+                }
+            )
 
         carry_inputs = []
         if text.strip():
@@ -444,7 +527,16 @@ class MistralProvider(ProviderBase):
             'usage': state['usage'],
         }
 
-    def _handle_stream_event(self, event, state, on_delta):
+    def _handle_stream_event(
+        self,
+        event: dict,
+        state: dict,
+        on_delta: Callable,
+    ) -> None:
+        """Fold a single SSE event into the accumulating stream state.
+
+        :raise UserError: when the event reports a streaming error
+        """
         event_type = event.get('type') or ''
         if event_type == 'message.output.delta':
             content = event.get('content')
@@ -476,27 +568,48 @@ class MistralProvider(ProviderBase):
                 output_tokens=usage.get('completion_tokens'),
             )
         elif event_type in ('conversation.response.error', 'error'):
-            error = event.get('error') or event.get('message') or 'Unknown streaming error'
+            error = (
+                event.get('error') or event.get('message') or 'Unknown streaming error'
+            )
             if isinstance(error, dict):
                 error = error.get('message') or 'Unknown streaming error'
             self._raise(error)
 
-    def _accumulate_function_call(self, event, state, on_delta, complete=False):
+    def _accumulate_function_call(
+        self,
+        event: dict,
+        state: dict,
+        on_delta: Callable,
+        complete: bool = False,
+    ) -> None:
+        """Merge a streamed function-call event into its pending entry.
+
+        :param complete: replace the accumulated arguments instead of
+            appending the incremental delta
+        """
         index = event.get('output_index', len(state['tool_calls']))
-        entry = state['tool_calls'].setdefault(index, {
-            'call_id': '',
-            'name': '',
-            'arguments': '',
-        })
+        entry = state['tool_calls'].setdefault(
+            index,
+            {
+                'call_id': '',
+                'name': '',
+                'arguments': '',
+            },
+        )
         call_id = event.get('tool_call_id') or event.get('id')
         if call_id:
             entry['call_id'] = call_id
         name = event.get('name')
         if name and not entry['name']:
             entry['name'] = name
-            self._call_on_delta(on_delta, 'tool_start', {
-                'call_id': entry['call_id'], 'name': entry['name'],
-            })
+            self._call_on_delta(
+                on_delta,
+                'tool_start',
+                {
+                    'call_id': entry['call_id'],
+                    'name': entry['name'],
+                },
+            )
         arguments = event.get('arguments')
         if arguments:
             if not isinstance(arguments, str):
@@ -505,6 +618,11 @@ class MistralProvider(ProviderBase):
                 entry['arguments'] = arguments
             else:
                 entry['arguments'] += arguments
-            self._call_on_delta(on_delta, 'tool_args', {
-                'call_id': entry['call_id'], 'delta': arguments,
-            })
+            self._call_on_delta(
+                on_delta,
+                'tool_args',
+                {
+                    'call_id': entry['call_id'],
+                    'delta': arguments,
+                },
+            )

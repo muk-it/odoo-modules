@@ -1,7 +1,7 @@
 {
     'name': 'MuK AI Mistral',
     'summary': 'Mistral AI provider for the MuK AI Assistant',
-    'description': '''
+    'description': """
         Adds Mistral AI as a first-class provider for muk_ai. Ships the
         full Mistral catalogue pre-seeded with context windows and
         pricing, so the only thing left to configure is your API key.
@@ -10,8 +10,8 @@
         plus the Mistral built-in connectors — web search, code
         interpreter and image generation — wired to the same capability
         toggles the other muk_ai providers use.
-    ''',
-    'version': '19.0.1.0.3',
+    """,
+    'version': '19.0.1.0.5',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',
