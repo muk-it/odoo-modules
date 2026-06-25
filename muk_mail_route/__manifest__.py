@@ -1,13 +1,13 @@
 {
-    'name': 'MuK Mail Routing', 
+    'name': 'MuK Mail Routing',
     'summary': 'Collects unrouted and failed emails',
-    'description': '''
-        This module collects mails that could not be routed 
+    'description': """
+        This module collects mails that could not be routed
         and allows them to be assigned subsequently.
-    ''',
-    'version': '19.0.1.1.3',
+    """,
+    'version': '19.0.1.1.5',
     'category': 'Productivity/Mail',
-    'license': 'LGPL-3', 
+    'license': 'LGPL-3',
     'author': 'MuK IT',
     'website': 'http://www.mukit.at',
     'live_test_url': 'https://youtu.be/bG-65TUdz-Q',
