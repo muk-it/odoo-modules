@@ -62,6 +62,13 @@ function makeThrottledReload(reloadFn) {
 
 export const refreshService = {
     dependencies: ['bus_service', 'action'],
+    /**
+     * Subscribe to reload notifications and throttle them into view refreshes.
+     *
+     * @param {object} env
+     * @param {object} deps
+     * @returns {void}
+     */
     start(env, { bus_service, action: actionService }) {
         const throttledReload = makeThrottledReload(() =>
             env.bus.trigger(REFRESH_VIEW_EVENT),

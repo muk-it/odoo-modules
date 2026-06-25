@@ -45,6 +45,10 @@ function useRefreshAnimation(timeout) {
     return animate;
 }
 
+/**
+ * Extend the control panel with a manual refresh button and a per-view
+ * auto-load timer toggled by double-clicking the refresh action.
+ */
 patch(ControlPanel.prototype, {
     setup() {
         super.setup();
@@ -104,6 +108,11 @@ patch(ControlPanel.prototype, {
     getAutoLoadRefreshInterval() {
         return getAutoLoadInterval() / 1000;
     },
+    /**
+     * Build the per-action localStorage key tracking the auto-load toggle.
+     *
+     * @returns {string}
+     */
     getAutoLoadStorageKey() {
         const keys = [
             this.env?.config?.actionId ?? '',
