@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 
 TOOL_PREFIX = 'ee_action_'
@@ -11,12 +13,20 @@ DEFAULT_EMBEDDING_MODEL = 'text-embedding-3-small'
 EMPTY_SCHEMA = {'type': 'object', 'properties': {}}
 
 
-def action_tool_name(action_id, xml_id):
-    tech = xml_id.split('.', 1)[1] if xml_id and '.' in xml_id else f'action_{action_id}'
+def action_tool_name(action_id: int, xml_id: str | None) -> str:
+    """Build the ``ee_action_*`` tool name for a server action."""
+    tech = (
+        xml_id.split('.', 1)[1] if xml_id and '.' in xml_id else f'action_{action_id}'
+    )
     return f'{TOOL_PREFIX}{tech}'
 
 
-def coerce_schema(schema_text):
+def coerce_schema(schema_text: str | None) -> dict:
+    """Parse a JSON schema string into a valid object schema dict.
+
+    :return: the parsed schema, or a copy of ``EMPTY_SCHEMA`` when the
+        text is missing or not a JSON object
+    """
     if not schema_text:
         return dict(EMPTY_SCHEMA)
     try:
@@ -30,7 +40,8 @@ def coerce_schema(schema_text):
     return schema
 
 
-def serialize_result(result):
+def serialize_result(result) -> str:
+    """Render an EE action result as a string for the tool transport."""
     if result is None or isinstance(result, str):
         return result or ''
     try:
@@ -39,7 +50,8 @@ def serialize_result(result):
         return str(result)
 
 
-def render_init_context(view_context):
+def render_init_context(view_context: dict | None) -> str:
+    """Wrap the ``ee_init_context`` items of a view context in an XML block."""
     if not isinstance(view_context, dict):
         return ''
     items = view_context.get('ee_init_context') or []
