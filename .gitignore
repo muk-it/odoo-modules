@@ -1,57 +1,47 @@
-# Byte-compiled / optimized / DLL files
+# Python
 __pycache__/
 *.py[cod]
-
-# C extensions
 *.so
 
-# Distribution / packaging
-.Python
-env/
-bin/
-develop-eggs/
-dist/
-eggs/
-parts/
-sdist/
-var/
-*.egg-info/
-.installed.cfg
-*.egg
-*.eggs
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
+# Test / coverage
 .coverage
-.cache
-nosetests.xml
 coverage.xml
+htmlcov/
 
-# Pycharm
-.idea
+# Lint / type-check / JS tooling caches
+.ruff_cache/
+.mypy_cache/
+node_modules/
+package-lock.json
 
-# Eclipse
-.project
-.pydevproject
-.settings/
-
-# Rope
-.ropeproject
-
-# Sphinx documentation
-docs/_build/
-
-# Backup files
+# Editors / IDEs / OS
+.idea/
+.vscode/
 *~
 *.swp
+.DS_Store
+Thumbs.db
 
-# Modules
+# Tooling
 **/.gitignore
 !/.gitignore
 **/.gitlab-ci.yml
 !/.gitlab-ci.yml
+**/ruff.toml
+!/ruff.toml
+**/.pre-commit-config.yaml
+!/.pre-commit-config.yaml
+**/eslint.config.cjs
+!/eslint.config.cjs
+**/package.json
+!/package.json
+**/.prettierrc
+!/.prettierrc
+**/.prettierignore
+!/.prettierignore
+**/.coveragerc
+!/.coveragerc
+**/.editorconfig
+!/.editorconfig
+**/.gitattributes
+!/.gitattributes
