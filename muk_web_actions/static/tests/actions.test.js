@@ -1,29 +1,29 @@
-import { expect, test } from "@odoo/hoot";
-import { session } from "@web/session";
+import { expect, test } from '@odoo/hoot';
+import { session } from '@web/session';
 
-import "@muk_web_actions/search/action_menus/action_menus";
+import '@muk_web_actions/search/action_menus/action_menus';
 
-import { ActionMenus } from "@web/search/action_menus/action_menus";
+import { ActionMenus } from '@web/search/action_menus/action_menus';
 
-test.tags("muk_web_actions");
-test("executeAction batches active ids and blocks UI", async () => {
+test.tags('muk_web_actions');
+test('executeAction batches active ids and blocks UI', async () => {
     const doActionCalls = [];
     const self = {
         props: {
             getActiveIds: () => [1, 2, 3, 4, 5],
             isDomainSelected: false,
-            resModel: "product",
-            domain: [["id", ">", 0]],
+            resModel: 'product',
+            domain: [['id', '>', 0]],
             context: { test: true },
-            onActionExecuted: () => expect.step("action.executed"),
+            onActionExecuted: () => expect.step('action.executed'),
         },
         uiService: {
-            block: () => expect.step("ui.block"),
-            unblock: () => expect.step("ui.unblock"),
+            block: () => expect.step('ui.block'),
+            unblock: () => expect.step('ui.unblock'),
         },
         blockProgressService: {
             block: ({ totalSteps }) => expect.step(`progress.block:${totalSteps}`),
-            unblock: () => expect.step("progress.unblock"),
+            unblock: () => expect.step('progress.unblock'),
         },
         actionService: {
             doAction: async (actionId, options) => {
@@ -42,18 +42,18 @@ test("executeAction batches active ids and blocks UI", async () => {
     expect(doActionCalls[1].options.additionalContext.active_ids).toEqual([3, 4]);
     expect(doActionCalls[2].options.additionalContext.active_ids).toEqual([5]);
     expect.verifySteps([
-        "ui.block",
-        "progress.block:3",
-        "action.executed",
-        "action.executed",
-        "action.executed",
-        "ui.unblock",
-        "progress.unblock",
+        'ui.block',
+        'progress.block:3',
+        'action.executed',
+        'action.executed',
+        'action.executed',
+        'ui.unblock',
+        'progress.unblock',
     ]);
 });
 
-test.tags("muk_web_actions");
-test("executeAction uses domain selection search", async () => {
+test.tags('muk_web_actions');
+test('executeAction uses domain selection search', async () => {
     const realActiveIdsLimit = session.active_ids_limit;
     session.active_ids_limit = 80;
     try {
@@ -63,8 +63,8 @@ test("executeAction uses domain selection search", async () => {
             props: {
                 getActiveIds: () => [],
                 isDomainSelected: true,
-                resModel: "product",
-                domain: [["id", ">", 0]],
+                resModel: 'product',
+                domain: [['id', '>', 0]],
                 context: {},
                 onActionExecuted: () => {},
             },

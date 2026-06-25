@@ -1,13 +1,13 @@
 {
-    'name': 'MuK Web Actions', 
+    'name': 'MuK Web Actions',
     'summary': 'Allows to execute actions in batch',
-    'description': '''
-        Technical module to provide the possibility to execute 
+    'description': """
+        Technical module to provide the possibility to execute
         server actions and reports in batches on a client side.
-    ''',
-    'version': '19.0.1.1.2',
+    """,
+    'version': '19.0.1.1.3',
     'category': 'Tools/Utils',
-    'license': 'LGPL-3', 
+    'license': 'LGPL-3',
     'author': 'MuK IT',
     'website': 'http://www.mukit.at',
     'live_test_url': 'https://my.mukit.at/r/f6m',
