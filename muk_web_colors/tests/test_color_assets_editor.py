@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import base64
 
 from odoo.tests.common import TransactionCase, tagged
@@ -5,13 +7,14 @@ from odoo.tests.common import TransactionCase, tagged
 
 @tagged('post_install', '-at_install')
 class TestColorAssetsEditor(TransactionCase):
+    """Test reading, writing, and resetting customized color assets."""
 
     # ----------------------------------------------------------
     # Setup
     # ----------------------------------------------------------
-    
+
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.editor = cls.env['muk_web_colors.color_assets_editor']
         cls.light_url = '/muk_web_colors/static/src/scss/colors_light.scss'
@@ -29,13 +32,10 @@ class TestColorAssetsEditor(TransactionCase):
     # Helper
     # ----------------------------------------------------------
 
-    def _cleanup_custom_asset(self):
-        self.env['ir.attachment'].search([
-            ('url', '=', self.light_custom_url),
-        ]).unlink()
-        self.env['ir.asset'].search([
-            ('path', '=', self.light_custom_url),
-        ]).unlink()
+    def _cleanup_custom_asset(self) -> None:
+        """Remove any existing customized attachment and asset for the test URL."""
+        self.env['ir.attachment'].search([('url', '=', self.light_custom_url)]).unlink()
+        self.env['ir.asset'].search([('path', '=', self.light_custom_url)]).unlink()
 
     # ----------------------------------------------------------
     # Tests
@@ -47,13 +47,11 @@ class TestColorAssetsEditor(TransactionCase):
             self.light_bundle,
             self.variables,
         )
-        attachment = self.env['ir.attachment'].search([
-            ('url', '=', self.light_custom_url),
-        ])
+        attachment = self.env['ir.attachment'].search(
+            [('url', '=', self.light_custom_url)]
+        )
         self.assertEqual(len(attachment), 1)
-        asset = self.env['ir.asset'].search([
-            ('path', '=', self.light_custom_url),
-        ])
+        asset = self.env['ir.asset'].search([('path', '=', self.light_custom_url)])
         self.assertEqual(len(asset), 1)
         self.assertEqual(asset.directive, 'replace')
         self.assertEqual(asset.target, self.light_url)
@@ -69,12 +67,10 @@ class TestColorAssetsEditor(TransactionCase):
             self.light_bundle,
             [{'name': 'color_brand', 'value': '#AABBCC'}],
         )
-        attachment_2 = self.env['ir.attachment'].search([
-            ('url', '=', self.light_custom_url),
-        ])
-        asset_2 = self.env['ir.asset'].search([
-            ('path', '=', self.light_custom_url),
-        ])
+        attachment_2 = self.env['ir.attachment'].search(
+            [('url', '=', self.light_custom_url)]
+        )
+        asset_2 = self.env['ir.asset'].search([('path', '=', self.light_custom_url)])
         self.assertEqual(len(attachment_2), 1)
         self.assertEqual(len(asset_2), 1)
 
@@ -101,11 +97,9 @@ class TestColorAssetsEditor(TransactionCase):
             self.variables,
         )
         self.editor.reset_color_asset(self.light_url, self.light_bundle)
-        attachment = self.env['ir.attachment'].search([
-            ('url', '=', self.light_custom_url),
-        ])
-        asset = self.env['ir.asset'].search([
-            ('path', '=', self.light_custom_url),
-        ])
+        attachment = self.env['ir.attachment'].search(
+            [('url', '=', self.light_custom_url)]
+        )
+        asset = self.env['ir.asset'].search([('path', '=', self.light_custom_url)])
         self.assertFalse(attachment)
         self.assertFalse(asset)

@@ -1,12 +1,12 @@
 {
-    'name': 'MuK Colors', 
+    'name': 'MuK Colors',
     'summary': 'Customize your Odoo colors',
-    'description': '''
+    'description': """
         This module gives you options to customize the theme colors.
-    ''',
-    'version': '19.0.1.0.6',
+    """,
+    'version': '19.0.1.0.7',
     'category': 'Tools/UI',
-    'license': 'LGPL-3', 
+    'license': 'LGPL-3',
     'author': 'MuK IT',
     'website': 'http://www.mukit.at',
     'live_test_url': 'https://youtu.be/yNKoA8768m8',
@@ -25,16 +25,16 @@
         'web._assets_primary_variables': [
             ('prepend', 'muk_web_colors/static/src/scss/colors.scss'),
             (
-                'before', 
-                'muk_web_colors/static/src/scss/colors.scss', 
-                'muk_web_colors/static/src/scss/colors_light.scss'
+                'before',
+                'muk_web_colors/static/src/scss/colors.scss',
+                'muk_web_colors/static/src/scss/colors_light.scss',
             ),
         ],
         'web.assets_web_dark': [
             (
-                'after', 
-                'muk_web_colors/static/src/scss/colors.scss', 
-                'muk_web_colors/static/src/scss/colors_dark.scss'
+                'after',
+                'muk_web_colors/static/src/scss/colors.scss',
+                'muk_web_colors/static/src/scss/colors_dark.scss',
             ),
         ],
     },
