@@ -1,17 +1,17 @@
-import { expect, test } from "@odoo/hoot";
-import { mountView } from "@web/../tests/web_test_helpers";
+import { expect, test } from '@odoo/hoot';
+import { mountView } from '@web/../tests/web_test_helpers';
 
-import { defineProductModels, listArch } from "./helpers/product_model";
+import { defineProductModels, listArch } from './helpers/product_model';
 
-import "@muk_web_utils/views/fields/selection_icons/selection_icons";
+import '@muk_web_utils/views/fields/selection_icons/selection_icons';
 
 defineProductModels();
 
-test.tags("muk_web_utils");
-test("selection icons widget displays mapped and default icons", async () => {
+test.tags('muk_web_utils');
+test('selection icons widget displays mapped and default icons', async () => {
     await mountView({
-        type: "list",
-        resModel: "product",
+        type: 'list',
+        resModel: 'product',
         arch: listArch({
             body: `
                 <field
@@ -23,6 +23,6 @@ test("selection icons widget displays mapped and default icons", async () => {
             `,
         }),
     });
-    expect(".o_list_table tbody tr:nth-child(1) span.fa-check").toHaveCount(1);
-    expect(".o_list_table tbody tr:nth-child(2) span.fa-question").toHaveCount(1);
+    expect('.o_list_table tbody tr:nth-child(1) span.fa-check').toHaveCount(1);
+    expect('.o_list_table tbody tr:nth-child(2) span.fa-question').toHaveCount(1);
 });

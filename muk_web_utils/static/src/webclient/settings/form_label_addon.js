@@ -1,5 +1,3 @@
-/** @odoo-module */
-
 import { onWillStart, useState } from '@odoo/owl';
 
 import { patch } from '@web/core/utils/patch';
@@ -9,6 +7,7 @@ import { FormLabelHighlightText } from '@web/webclient/settings_form_view/highli
 import { moduleLinkField } from '@muk_web_utils/views/fields/module_link/module_link';
 import { probeModuleAvailable } from '@muk_web_utils/views/module_availability';
 
+/** Reveal the module-link addon hint on settings labels whose module is unavailable. */
 patch(FormLabelHighlightText.prototype, {
     setup() {
         super.setup();

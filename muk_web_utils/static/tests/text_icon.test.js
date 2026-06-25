@@ -1,17 +1,17 @@
-import { expect, test } from "@odoo/hoot";
-import { mountView } from "@web/../tests/web_test_helpers";
+import { expect, test } from '@odoo/hoot';
+import { mountView } from '@web/../tests/web_test_helpers';
 
-import { defineProductModels, listArch } from "./helpers/product_model";
+import { defineProductModels, listArch } from './helpers/product_model';
 
-import "@muk_web_utils/views/fields/text_icons/text_icon";
+import '@muk_web_utils/views/fields/text_icons/text_icon';
 
 defineProductModels();
 
-test.tags("muk_web_utils");
-test("text icon widget hides icon when value empty", async () => {
+test.tags('muk_web_utils');
+test('text icon widget hides icon when value empty', async () => {
     await mountView({
-        type: "list",
-        resModel: "product",
+        type: 'list',
+        resModel: 'product',
         arch: listArch({
             body: `
                 <field
@@ -23,6 +23,6 @@ test("text icon widget hides icon when value empty", async () => {
             `,
         }),
     });
-    expect(".o_list_table tbody tr:nth-child(1) .fa-book").toHaveCount(1);
-    expect(".o_list_table tbody tr:nth-child(2) .fa-book").toHaveCount(0);
+    expect('.o_list_table tbody tr:nth-child(1) .fa-book').toHaveCount(1);
+    expect('.o_list_table tbody tr:nth-child(2) .fa-book').toHaveCount(0);
 });

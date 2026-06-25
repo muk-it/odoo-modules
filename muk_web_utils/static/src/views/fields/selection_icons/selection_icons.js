@@ -1,8 +1,12 @@
 import { registry } from '@web/core/registry';
 import { exprToBoolean } from '@web/core/utils/strings';
 
-import { SelectionField, selectionField } from '@web/views/fields/selection/selection_field';
+import {
+    SelectionField,
+    selectionField,
+} from '@web/views/fields/selection/selection_field';
 
+/** Selection field that renders each value as a configurable icon instead of text. */
 export class SelectionIconsField extends SelectionField {
     static template = 'muk_web_utils.SelectionIconsField';
     static props = {

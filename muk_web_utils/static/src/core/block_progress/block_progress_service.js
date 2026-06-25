@@ -1,14 +1,22 @@
-import { registry } from "@web/core/registry";
+import { registry } from '@web/core/registry';
 
-import { BlockUIProgress } from "@muk_web_utils/core/block_progress/block_progress_ui";
+import { BlockUIProgress } from '@muk_web_utils/core/block_progress/block_progress_ui';
 
-const mainComponentRegistry = registry.category("main_components");
+const mainComponentRegistry = registry.category('main_components');
 
+/**
+ * Service exposing ``block``/``unblock`` to mount or remove the progress
+ * overlay from the main components registry.
+ */
 export const blockProgressService = {
     start() {
+        /**
+         * Mount the progress overlay with the given step data.
+         * @param {object} data progress payload with ``totalSteps`` and ``progressData``
+         */
         function block(data) {
             mainComponentRegistry.add(
-                "BlockUIProgress",
+                'BlockUIProgress',
                 {
                     Component: BlockUIProgress,
                     props: {
@@ -16,11 +24,11 @@ export const blockProgressService = {
                         progressData: data.progressData,
                     },
                 },
-                { force: true }
+                { force: true },
             );
         }
         function unblock() {
-            mainComponentRegistry.remove("BlockUIProgress");
+            mainComponentRegistry.remove('BlockUIProgress');
         }
         return {
             block,
@@ -29,4 +37,4 @@ export const blockProgressService = {
     },
 };
 
-registry.category("services").add("block_progress", blockProgressService);
+registry.category('services').add('block_progress', blockProgressService);

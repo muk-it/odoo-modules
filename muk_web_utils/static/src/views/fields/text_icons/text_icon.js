@@ -1,10 +1,11 @@
 import { registry } from '@web/core/registry';
-import { usePopover } from "@web/core/popover/popover_hook";
+import { usePopover } from '@web/core/popover/popover_hook';
 import { standardFieldProps } from '@web/views/fields/standard_field_props';
 
 import { Component, useRef } from '@odoo/owl';
-import { Tooltip } from "@web/core/tooltip/tooltip";
+import { Tooltip } from '@web/core/tooltip/tooltip';
 
+/** Field that displays an icon for textual values and reveals the text in a tooltip. */
 export class TextIconField extends Component {
     static template = 'muk_web_utils.TextIconField';
     static props = {
@@ -21,14 +22,14 @@ export class TextIconField extends Component {
     }
     get hasValue() {
         const value = this.props.record.data[this.props.name];
-        return !(value === undefined || value === false || value == '');
+        return !(value === undefined || value === false || value === '');
     }
     showTooltip() {
-        this.popover.open(this.iconRef.el, { 
+        this.popover.open(this.iconRef.el, {
             template: 'muk_web_utils.TextValueTooltip',
             info: {
-                value: this.props.record.data[this.props.name] 
-            }
+                value: this.props.record.data[this.props.name],
+            },
         });
     }
 }

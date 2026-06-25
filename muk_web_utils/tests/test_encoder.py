@@ -15,6 +15,7 @@ from odoo.addons.muk_web_utils.tools.encoder import (
 
 @tagged('post_install', '-at_install')
 class TestEncoder(common.TransactionCase):
+    """Test the JSON encoders and text helpers from ``tools.encoder``."""
 
     # ----------------------------------------------------------
     # Tests
@@ -106,7 +107,7 @@ class TestEncoder(common.TransactionCase):
     def test_ustr_sql_removes_null_bytes(self):
         result = ustr_sql(b'hello\x00world')
         self.assertNotIn('\x00', result)
-        self.assertIn('\uFFFD', result)
+        self.assertIn('\ufffd', result)
 
     def test_ustr_sql_normal_string(self):
         self.assertEqual(ustr_sql(b'hello world'), 'hello world')

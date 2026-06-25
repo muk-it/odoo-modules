@@ -1,5 +1,3 @@
-/** @odoo-module */
-
 import { Component, useState } from '@odoo/owl';
 
 import { _t } from '@web/core/l10n/translation';
@@ -13,6 +11,10 @@ import { probeModuleAvailable } from '@muk_web_utils/views/module_availability';
 
 const DEFAULT_APPS_BASE = 'https://apps.odoo.com/apps/modules/19.0';
 
+/**
+ * Boolean field that renders an Apps-store link and a checkbox, shown only when
+ * the linked Odoo module is available on the instance.
+ */
 export class ModuleLinkField extends Component {
     static template = 'muk_web_utils.ModuleLinkField';
     static components = { CheckBox };
@@ -30,11 +32,9 @@ export class ModuleLinkField extends Component {
             this.state.value = !!record.data[this.props.name];
         });
         if (this.moduleName) {
-            probeModuleAvailable(this.orm, this.moduleName).then(
-                (available) => {
-                    this.state.available = available;
-                },
-            );
+            probeModuleAvailable(this.orm, this.moduleName).then((available) => {
+                this.state.available = available;
+            });
         }
     }
     get moduleName() {

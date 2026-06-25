@@ -3,6 +3,11 @@ import { registry } from '@web/core/registry';
 
 const debugRegistry = registry.category('debug');
 
+/**
+ * Build a debug-menu item opening the reports bound to the current model.
+ * @param {object} context debug context with the active ``action`` and ``env``
+ * @returns {object|null} the menu item descriptor, or null when no model is set
+ */
 function manageReports({ action, env }) {
     if (!action.res_model) {
         return null;
