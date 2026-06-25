@@ -1,23 +1,28 @@
+from __future__ import annotations
+
 from odoo.tests import tagged
 from odoo.tests.common import HttpCase
 
 
 @tagged('post_install', '-at_install')
 class TestLlmsTxtController(HttpCase):
+    """Test the llms.txt routes and markdown content negotiation."""
 
     # ----------------------------------------------------------
     # Setup
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.website = cls.env['website'].search([], limit=1)
-        cls.website.write({
-            'llms_txt_enabled': True,
-            'llms_full_txt_enabled': True,
-            'llms_content_signal': 'all',
-        })
+        cls.website.write(
+            {
+                'llms_txt_enabled': True,
+                'llms_full_txt_enabled': True,
+                'llms_content_signal': 'all',
+            }
+        )
 
     # ----------------------------------------------------------
     # Tests
