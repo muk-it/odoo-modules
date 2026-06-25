@@ -54,19 +54,25 @@
 							</div>
 						</div>
 					</setting>
-					<setting
-						id="mcp_annotate_messages"
-						string="Annotate Messages"
-						help="Mark chatter messages originating from MCP."
-					>
-						<field name="mcp_annotate_messages"/>
-                        <button
-                            name="%(muk_mcp.action_connect)d"
-                            type="action"
-                            string="Connect AI"
-                            icon="oi-arrow-right"
-                            class="btn-link mt-3"
-                        />
+					<setting id="mcp_annotate_messages">
+						<label string="Annotate Messages" for="mcp_annotate_messages"/>
+						<div class="text-muted">
+							Mark chatter messages originating from MCP.
+						</div>
+						<div class="content-group mt16">
+							<div class="row">
+								<div class="o_light_label">
+									<field name="mcp_annotate_messages" nolabel="1"/>
+									<button
+										name="%(muk_mcp.action_connect)d"
+										type="action"
+										string="Connect AI"
+										icon="oi-arrow-right"
+										class="btn-link ms-2"
+									/>
+								</div>
+							</div>
+						</div>
 					</setting>
 				</block>
 				<block title="MCP Extensions" name="mcp_extensions">
@@ -99,7 +105,7 @@
 					<setting
 						id="mcp_module_enterprise"
 						string="MCP Enterprise"
-						help="Enterprise-managed MCP authorization via your IdP (ID-JAG / SEP-990)."
+						help="Enterprise MCP auth via your IdP (ID-JAG / SEP-990)."
 					>
 						<field
 							name="module_muk_mcp_enterprise"

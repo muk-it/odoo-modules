@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any
+
 from odoo import _, api, models
 from odoo.exceptions import UserError
 
@@ -11,6 +15,7 @@ from odoo.addons.muk_mcp.tools.parser import normalize_ids
 
 
 class MCPMixin(models.AbstractModel):
+    """Add MCP write tools to the shared MCP mixin."""
 
     _inherit = 'muk_mcp.mixin'
 
@@ -47,7 +52,12 @@ class MCPMixin(models.AbstractModel):
         },
         category='write',
     )
-    def _mcp_create_records(self, model, values):
+    def _mcp_create_records(
+        self,
+        model: str,
+        values,
+    ) -> dict[str, Any]:
+        """Create one record from ``values`` and return its id and display name."""
         record = self._resolve_model(model).create(values or {})
         return {
             'id': record.id,
@@ -70,8 +80,7 @@ class MCPMixin(models.AbstractModel):
                 'values': {
                     'type': 'object',
                     'description': (
-                        'Field values to change. Only include fields you '
-                        'want to modify.'
+                        'Field values to change. Only include fields you want to modify.'
                     ),
                 },
                 'context': context_field(),
@@ -80,7 +89,16 @@ class MCPMixin(models.AbstractModel):
         },
         category='write',
     )
-    def _mcp_update_records(self, model, ids, values):
+    def _mcp_update_records(
+        self,
+        model: str,
+        ids,
+        values,
+    ) -> dict[str, Any]:
+        """Write ``values`` to the records named by ``ids`` and return the affected ids.
+
+        :raise UserError: when ``ids`` resolves to an empty list.
+        """
         target_ids = normalize_ids(ids)
         if not target_ids:
             raise UserError(_('No record IDs provided'))
@@ -108,7 +126,11 @@ class MCPMixin(models.AbstractModel):
         },
         category='write',
     )
-    def _mcp_delete_records(self, model, ids):
+    def _mcp_delete_records(self, model: str, ids) -> dict[str, Any]:
+        """Unlink the records named by ``ids`` and return the deleted ids.
+
+        :raise UserError: when ``ids`` resolves to an empty list.
+        """
         target_ids = normalize_ids(ids)
         if not target_ids:
             raise UserError(_('No record IDs provided'))

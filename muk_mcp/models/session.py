@@ -1,15 +1,18 @@
+from __future__ import annotations
+
 import contextlib
 import uuid
 
-from odoo import api, tools, fields, models
+from odoo import api, fields, models, tools
 from odoo.tools import SQL
 from odoo.tools.misc import mute_logger
 
 
 class MCPSession(models.Model):
+    """A live MCP client session owned by a user."""
 
     _name = 'muk_mcp.session'
-    _description = "MCP Session"
+    _description = 'MCP Session'
     _order = 'create_date desc'
 
     # ----------------------------------------------------------
@@ -17,7 +20,7 @@ class MCPSession(models.Model):
     # ----------------------------------------------------------
 
     session_id = fields.Char(
-        string="Session ID",
+        string='Session ID',
         required=True,
         readonly=True,
         index=True,
@@ -26,7 +29,7 @@ class MCPSession(models.Model):
 
     user_id = fields.Many2one(
         comodel_name='res.users',
-        string="User",
+        string='User',
         required=True,
         readonly=True,
         index=True,
@@ -34,17 +37,17 @@ class MCPSession(models.Model):
     )
 
     initialized = fields.Boolean(
-        string="Initialized",
+        string='Initialized',
         default=False,
     )
 
     last_activity = fields.Datetime(
-        string="Last Activity",
+        string='Last Activity',
         default=fields.Datetime.now,
     )
 
     active = fields.Boolean(
-        string="Active",
+        string='Active',
         default=True,
     )
 
@@ -53,21 +56,27 @@ class MCPSession(models.Model):
     # ----------------------------------------------------------
 
     _active_session_idx = models.Index(
-        "(session_id, user_id) WHERE active IS TRUE"
+        '(session_id, user_id) WHERE active IS TRUE',
     )
 
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
 
-    def _touch(self):
+    def _touch(self) -> MCPSession:
+        """Bump ``last_activity`` at most once per minute via a guarded UPDATE.
+
+        Runs in a savepoint with SQL errors suppressed so activity tracking
+        never breaks the request.
+        """
         with (
             contextlib.suppress(Exception),
             mute_logger('odoo.sql_db'),
             self.env.cr.savepoint(),
         ):
-            self.env.cr.execute(SQL(
-                """
+            self.env.cr.execute(
+                SQL(
+                    """
                 UPDATE %s
                    SET last_activity = NOW() AT TIME ZONE 'UTC',
                        write_date = NOW() AT TIME ZONE 'UTC',
@@ -78,18 +87,20 @@ class MCPSession(models.Model):
                        OR last_activity < (NOW() AT TIME ZONE 'UTC') - make_interval(secs => %s)
                    )
                 """,
-                SQL.identifier(self._table),
-                self.env.uid,
-                tuple(self.ids),
-                60,
-            ))
+                    SQL.identifier(self._table),
+                    self.env.uid,
+                    tuple(self.ids),
+                    60,
+                ),
+            )
         return self
 
     # ----------------------------------------------------------
     # Actions
     # ----------------------------------------------------------
 
-    def action_revoke(self):
+    def action_revoke(self) -> None:
+        """Deactivate the selected sessions."""
         self.write({'active': False})
 
     # ----------------------------------------------------------
@@ -97,10 +108,15 @@ class MCPSession(models.Model):
     # ----------------------------------------------------------
 
     @api.autovacuum
-    def _autovacuum_sessions(self):
-        hours = int(self.env['ir.config_parameter'].sudo().get_param(
-            'muk_mcp.session_timeout_hours',
-            tools.config.get('mcp_session_timeout_hours', 24)
-        ))
+    def _autovacuum_sessions(self) -> None:
+        """Delete sessions inactive beyond the configured timeout."""
+        hours = int(
+            self.env['ir.config_parameter']
+            .sudo()
+            .get_param(
+                'muk_mcp.session_timeout_hours',
+                tools.config.get('mcp_session_timeout_hours', 24),
+            ),
+        )
         limit = fields.Datetime.subtract(fields.Datetime.now(), hours=hours)
         self.search([('last_activity', '<', limit)]).unlink()

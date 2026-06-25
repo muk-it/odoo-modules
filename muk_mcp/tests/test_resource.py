@@ -1,6 +1,7 @@
 import base64
 import io
 
+from openpyxl import Workbook
 from reportlab.pdfgen import canvas
 
 from odoo.exceptions import UserError
@@ -11,6 +12,7 @@ from odoo.addons.muk_mcp.tools.protocol import ToolContent
 
 @tagged('post_install', '-at_install')
 class TestReadResource(common.TransactionCase):
+    """Verify content-block resolution for attachment and record-field URIs."""
 
     # ----------------------------------------------------------
     # Setup
@@ -28,7 +30,9 @@ class TestReadResource(common.TransactionCase):
 
     def _call(self, uri):
         result, _info = self.tool_model._call(
-            'read_resource', {'uri': uri}, self.env,
+            'read_resource',
+            {'uri': uri},
+            self.env,
         )
         self.assertIsInstance(result, ToolContent)
         self.assertEqual(len(result), 1)
@@ -37,19 +41,23 @@ class TestReadResource(common.TransactionCase):
     def _call_raw(self, uri, **kwargs):
         payload = {'uri': uri, **kwargs}
         result, _info = self.tool_model._call(
-            'read_resource', payload, self.env,
+            'read_resource',
+            payload,
+            self.env,
         )
         self.assertIsInstance(result, ToolContent)
         return result
 
     def _make_attachment(self, name, mimetype, raw_bytes):
-        return self.env['ir.attachment'].create({
-            'name': name,
-            'mimetype': mimetype,
-            'datas': base64.b64encode(raw_bytes).decode('ascii'),
-            'res_model': 'res.partner',
-            'res_id': self.partner.id,
-        })
+        return self.env['ir.attachment'].create(
+            {
+                'name': name,
+                'mimetype': mimetype,
+                'datas': base64.b64encode(raw_bytes).decode('ascii'),
+                'res_model': 'res.partner',
+                'res_id': self.partner.id,
+            },
+        )
 
     def _attachment_uri(self, attachment):
         return 'odoo://attachment/%d' % attachment.id
@@ -62,7 +70,6 @@ class TestReadResource(common.TransactionCase):
         return buf.getvalue()
 
     def _build_xlsx(self, text='Hello XLSX World'):
-        from openpyxl import Workbook
         buf = io.BytesIO()
         wb = Workbook()
         ws = wb.active
@@ -76,7 +83,9 @@ class TestReadResource(common.TransactionCase):
 
     def test_text_attachment_returns_text_block(self):
         att = self._make_attachment(
-            'notes.txt', 'text/plain', b'hello world',
+            'notes.txt',
+            'text/plain',
+            b'hello world',
         )
         block = self._call(self._attachment_uri(att))
         self.assertEqual(block['type'], 'text')
@@ -84,7 +93,9 @@ class TestReadResource(common.TransactionCase):
 
     def test_json_attachment_returns_text_block(self):
         att = self._make_attachment(
-            'config.json', 'application/json', b'{"k": "v"}',
+            'config.json',
+            'application/json',
+            b'{"k": "v"}',
         )
         block = self._call(self._attachment_uri(att))
         self.assertEqual(block['type'], 'text')
@@ -139,30 +150,35 @@ class TestReadResource(common.TransactionCase):
         self.assertIn('Hello PDF World', blocks[0]['text'])
         self.assertEqual(blocks[1]['type'], 'resource')
         self.assertEqual(
-            blocks[1]['resource']['mimeType'], 'application/pdf',
+            blocks[1]['resource']['mimeType'],
+            'application/pdf',
         )
         self.assertEqual(blocks[1]['resource']['name'], 'greet.pdf')
         self.assertEqual(
-            base64.b64decode(blocks[1]['resource']['blob']), raw,
+            base64.b64decode(blocks[1]['resource']['blob']),
+            raw,
         )
 
     def test_pdf_attachment_format_resource_returns_resource_only(self):
         raw = self._build_pdf('Hello PDF World')
         att = self._make_attachment('greet.pdf', 'application/pdf', raw)
         blocks = self._call_raw(
-            self._attachment_uri(att), format='resource',
+            self._attachment_uri(att),
+            format='resource',
         )
         self.assertEqual(len(blocks), 1)
         self.assertEqual(blocks[0]['type'], 'resource')
         self.assertEqual(
-            blocks[0]['resource']['mimeType'], 'application/pdf',
+            blocks[0]['resource']['mimeType'],
+            'application/pdf',
         )
 
     def test_pdf_attachment_format_text_returns_text_only(self):
         raw = self._build_pdf('Hello PDF World')
         att = self._make_attachment('greet.pdf', 'application/pdf', raw)
         blocks = self._call_raw(
-            self._attachment_uri(att), format='text',
+            self._attachment_uri(att),
+            format='text',
         )
         self.assertEqual(len(blocks), 1)
         self.assertEqual(blocks[0]['type'], 'text')
@@ -176,17 +192,22 @@ class TestReadResource(common.TransactionCase):
 
     def test_unknown_format_raises(self):
         att = self._make_attachment(
-            'notes.txt', 'text/plain', b'hello',
+            'notes.txt',
+            'text/plain',
+            b'hello',
         )
         with self.assertRaises(UserError):
             self._call_raw(self._attachment_uri(att), format='bogus')
 
     def test_format_ignored_for_non_pdf(self):
         att = self._make_attachment(
-            'notes.txt', 'text/plain', b'hello',
+            'notes.txt',
+            'text/plain',
+            b'hello',
         )
         blocks = self._call_raw(
-            self._attachment_uri(att), format='resource',
+            self._attachment_uri(att),
+            format='resource',
         )
         self.assertEqual(len(blocks), 1)
         self.assertEqual(blocks[0]['type'], 'text')
@@ -196,8 +217,7 @@ class TestReadResource(common.TransactionCase):
         raw = self._build_xlsx('Hello XLSX World')
         att = self._make_attachment(
             'sheet.xlsx',
-            'application/vnd.openxmlformats-officedocument.'
-            'spreadsheetml.sheet',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             raw,
         )
         blocks = self._call_raw(self._attachment_uri(att))
@@ -209,7 +229,9 @@ class TestReadResource(common.TransactionCase):
 
     def test_text_with_invalid_utf8_falls_back_to_resource(self):
         att = self._make_attachment(
-            'broken.txt', 'text/plain', b'\xff\xfe\x00bad',
+            'broken.txt',
+            'text/plain',
+            b'\xff\xfe\x00bad',
         )
         block = self._call(self._attachment_uri(att))
         self.assertEqual(block['type'], 'resource')
@@ -217,7 +239,9 @@ class TestReadResource(common.TransactionCase):
 
     def test_mimetype_with_charset_is_normalized(self):
         att = self._make_attachment(
-            'notes.txt', 'text/plain; charset=utf-8', b'hi',
+            'notes.txt',
+            'text/plain; charset=utf-8',
+            b'hi',
         )
         block = self._call(self._attachment_uri(att))
         self.assertEqual(block['type'], 'text')
@@ -244,9 +268,12 @@ class TestReadResource(common.TransactionCase):
             b'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQ'
             b'VQYV2NgAAIAAAUAAarVyFEAAAAASUVORK5CYII='
         )
-        partner = self.env['res.partner'].create({
-            'name': 'Imgr', 'image_1920': raw_b64,
-        })
+        partner = self.env['res.partner'].create(
+            {
+                'name': 'Imgr',
+                'image_1920': raw_b64,
+            },
+        )
         block = self._call(
             'odoo://record/res.partner/%d/image_1920' % partner.id,
         )

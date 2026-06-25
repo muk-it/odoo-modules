@@ -6,6 +6,7 @@ from odoo.addons.muk_mcp.tools import content
 
 
 class TestContent(common.TransactionCase):
+    """Covers mimetype normalization and content block creation from bytes."""
 
     # ----------------------------------------------------------
     # Tests
@@ -19,7 +20,8 @@ class TestContent(common.TransactionCase):
 
     def test_normalize_mimetype_lowercases(self):
         self.assertEqual(
-            content.normalize_mimetype('IMAGE/PNG'), 'image/png',
+            content.normalize_mimetype('IMAGE/PNG'),
+            'image/png',
         )
 
     def test_normalize_mimetype_empty(self):
@@ -37,14 +39,17 @@ class TestContent(common.TransactionCase):
 
     def test_make_content_text_from_raw_bytes(self):
         block = content.make_content_for_bytes(
-            'odoo://test/1', 'text/plain', raw_bytes=b'hello',
+            'odoo://test/1',
+            'text/plain',
+            raw_bytes=b'hello',
         )
         self.assertEqual(block['type'], 'text')
         self.assertEqual(block['text'], 'hello')
 
     def test_make_content_text_from_base64(self):
         block = content.make_content_for_bytes(
-            'odoo://test/1', 'application/json',
+            'odoo://test/1',
+            'application/json',
             base64_str=base64.b64encode(b'{"k":1}').decode(),
         )
         self.assertEqual(block['type'], 'text')
@@ -53,7 +58,9 @@ class TestContent(common.TransactionCase):
     def test_make_content_image(self):
         raw = bytes(range(32))
         block = content.make_content_for_bytes(
-            'odoo://test/1', 'image/png', raw_bytes=raw,
+            'odoo://test/1',
+            'image/png',
+            raw_bytes=raw,
         )
         self.assertEqual(block['type'], 'image')
         self.assertEqual(block['mimeType'], 'image/png')
@@ -62,7 +69,9 @@ class TestContent(common.TransactionCase):
     def test_make_content_audio(self):
         raw = bytes(range(16))
         block = content.make_content_for_bytes(
-            'odoo://test/1', 'audio/wav', raw_bytes=raw,
+            'odoo://test/1',
+            'audio/wav',
+            raw_bytes=raw,
         )
         self.assertEqual(block['type'], 'audio')
         self.assertEqual(block['mimeType'], 'audio/wav')
@@ -71,7 +80,9 @@ class TestContent(common.TransactionCase):
     def test_make_content_resource_for_pdf(self):
         raw = b'%PDF-1.4\n%not-really'
         block = content.make_content_for_bytes(
-            'odoo://test/1', 'application/pdf', raw_bytes=raw,
+            'odoo://test/1',
+            'application/pdf',
+            raw_bytes=raw,
         )
         self.assertEqual(block['type'], 'resource')
         self.assertEqual(block['resource']['uri'], 'odoo://test/1')
@@ -80,14 +91,17 @@ class TestContent(common.TransactionCase):
 
     def test_make_content_resource_for_unknown_mime(self):
         block = content.make_content_for_bytes(
-            'odoo://test/1', '', raw_bytes=b'\x00\x01',
+            'odoo://test/1',
+            '',
+            raw_bytes=b'\x00\x01',
         )
         self.assertEqual(block['type'], 'resource')
         self.assertNotIn('mimeType', block['resource'])
 
     def test_text_with_invalid_utf8_falls_back_to_resource(self):
         block = content.make_content_for_bytes(
-            'odoo://test/1', 'text/plain',
+            'odoo://test/1',
+            'text/plain',
             raw_bytes=b'\xff\xfe\x00bad',
         )
         self.assertEqual(block['type'], 'resource')
@@ -101,7 +115,8 @@ class TestContent(common.TransactionCase):
         raw = bytes(range(32))
         original_b64 = base64.b64encode(raw).decode()
         block = content.make_content_for_bytes(
-            'odoo://test/1', 'image/png', base64_str=original_b64,
+            'odoo://test/1',
+            'image/png',
+            base64_str=original_b64,
         )
         self.assertEqual(block['data'], original_b64)
-

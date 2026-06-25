@@ -41,7 +41,7 @@ def migrate(cr, version):
     if 'try:' not in (current_code or '') or 'getattr' in (current_code or ''):
         return
     cr.execute(
-        "UPDATE muk_mcp_tool SET code = %s WHERE id = %s",
+        'UPDATE muk_mcp_tool SET code = %s WHERE id = %s',
         (LIST_MODELS_CODE, tool_id),
     )
     _logger.info(

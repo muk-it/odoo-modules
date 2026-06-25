@@ -10,4 +10,4 @@ def migrate(cr, version):
     """)
     has_body = cr.fetchone()
     if has_code and not has_body:
-        cr.execute("ALTER TABLE muk_mcp_prompt RENAME COLUMN code TO body")
+        cr.execute('ALTER TABLE muk_mcp_prompt RENAME COLUMN code TO body')

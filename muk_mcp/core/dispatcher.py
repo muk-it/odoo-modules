@@ -1,10 +1,15 @@
+from __future__ import annotations
+
 import json
+from collections.abc import Callable
+from typing import Any
 
 import werkzeug
 from werkzeug.exceptions import HTTPException
+from werkzeug.routing import Rule
 
 from odoo import http
-from odoo.http import CORS_MAX_AGE, Response
+from odoo.http import CORS_MAX_AGE, Request, Response
 
 from odoo.addons.muk_mcp.tools.common import (
     MCP_CORS_REQUEST_HEADERS,
@@ -13,6 +18,7 @@ from odoo.addons.muk_mcp.tools.common import (
 
 
 class MCPDispatcher(http.Dispatcher):
+    """Dispatcher for ``mcp`` routes, handling CORS preflight and JSON-RPC payloads."""
 
     routing_type = 'mcp'
 
@@ -21,16 +27,24 @@ class MCPDispatcher(http.Dispatcher):
     # ----------------------------------------------------------
 
     @classmethod
-    def is_compatible_with(cls, request):
+    def is_compatible_with(cls, request: Request) -> bool:
+        """Report whether this dispatcher can serve the given request."""
         return True
 
-    def pre_dispatch(self, rule, args):
+    def pre_dispatch(self, rule: Rule, args: dict[str, Any]) -> None:
+        """Apply CORS headers and content limits, answering OPTIONS preflight early.
+
+        :raise werkzeug.exceptions.HTTPException: aborts with a 204 response when the
+            request is a CORS preflight ``OPTIONS`` call.
+        """
         routing = rule.endpoint.routing
         self.request.session.can_save &= routing.get(
-            'save_session', True
+            'save_session',
+            True,
         )
         self.request.future_response.headers.set(
-            'Connection', 'close'
+            'Connection',
+            'close',
         )
         if cors := routing.get('cors'):
             set_header = self.request.future_response.headers.set
@@ -48,7 +62,8 @@ class MCPDispatcher(http.Dispatcher):
                 limit(rule.endpoint.func.__self__) if callable(limit) else limit
             )
 
-    def dispatch(self, endpoint, args):
+    def dispatch(self, endpoint: Callable, args: dict[str, Any]) -> Response:
+        """Parse any JSON body into ``jsonrpc_data``/``jsonrpc_batch`` then run the endpoint."""
         self.request.params = {**args, **self.request.get_http_params()}
         if self.request.httprequest.mimetype == 'application/json':
             body = self.request.httprequest.get_data(as_text=True)
@@ -70,7 +85,8 @@ class MCPDispatcher(http.Dispatcher):
             return result
         return self.request.make_json_response(result)
 
-    def handle_error(self, exc):
+    def handle_error(self, exc: Exception) -> Response | HTTPException:
+        """Convert an uncaught exception into a JSON-RPC internal error response."""
         if isinstance(exc, HTTPException):
             return exc
         error = {

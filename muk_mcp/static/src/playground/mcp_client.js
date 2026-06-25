@@ -1,6 +1,6 @@
-const MCP_ENDPOINT = "/mcp";
-const PROTOCOL_VERSION = "2025-03-26";
-export const STORAGE_KEY = "muk_mcp.playground.key";
+const MCP_ENDPOINT = '/mcp';
+const PROTOCOL_VERSION = '2025-03-26';
+export const STORAGE_KEY = 'muk_mcp.playground.key';
 
 export class MCPClient {
     constructor() {
@@ -9,7 +9,7 @@ export class MCPClient {
         this._nextId = 1;
     }
     get key() {
-        return sessionStorage.getItem(STORAGE_KEY) || "";
+        return sessionStorage.getItem(STORAGE_KEY) || '';
     }
     set key(value) {
         if (value) {
@@ -22,25 +22,25 @@ export class MCPClient {
     }
     _headers(extra = {}) {
         const headers = {
-            "Content-Type": "application/json",
-            Accept: "application/json",
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
             ...extra,
         };
         if (this.key) {
-            headers["Authorization"] = `Bearer ${this.key}`;
+            headers['Authorization'] = `Bearer ${this.key}`;
         }
         if (this.sessionId) {
-            headers["Mcp-Session-Id"] = this.sessionId;
+            headers['Mcp-Session-Id'] = this.sessionId;
         }
         return headers;
     }
     async _post(body) {
         const res = await fetch(MCP_ENDPOINT, {
-            method: "POST",
+            method: 'POST',
             headers: this._headers(),
             body: JSON.stringify(body),
         });
-        const sid = res.headers.get("Mcp-Session-Id");
+        const sid = res.headers.get('Mcp-Session-Id');
         if (sid) {
             this.sessionId = sid;
         }
@@ -58,24 +58,23 @@ export class MCPClient {
             return;
         }
         const init = await this._post({
-            jsonrpc: "2.0",
+            jsonrpc: '2.0',
             id: this._nextId++,
-            method: "initialize",
+            method: 'initialize',
             params: {
                 protocolVersion: PROTOCOL_VERSION,
                 capabilities: {},
-                clientInfo: { name: "muk_mcp.playground", version: "1.0" },
+                clientInfo: { name: 'muk_mcp.playground', version: '1.0' },
             },
         });
         if (init.status !== 200 || !init.body || init.body.error) {
             throw new Error(
-                init.body?.error?.message ||
-                    `Initialize failed (HTTP ${init.status})`
+                init.body?.error?.message || `Initialize failed (HTTP ${init.status})`,
             );
         }
         await this._post({
-            jsonrpc: "2.0",
-            method: "notifications/initialized",
+            jsonrpc: '2.0',
+            method: 'notifications/initialized',
             params: {},
         });
         this.initialized = true;
@@ -84,9 +83,9 @@ export class MCPClient {
         await this._ensureInitialized();
         const started = performance.now();
         const res = await this._post({
-            jsonrpc: "2.0",
+            jsonrpc: '2.0',
             id: this._nextId++,
-            method: "tools/call",
+            method: 'tools/call',
             params: { name, arguments: args },
         });
         const duration = Math.round(performance.now() - started);
@@ -105,9 +104,9 @@ export class MCPClient {
     async getPrompts() {
         await this._ensureInitialized();
         const res = await this._post({
-            jsonrpc: "2.0",
+            jsonrpc: '2.0',
             id: this._nextId++,
-            method: "prompts/list",
+            method: 'prompts/list',
             params: {},
         });
         return res;
@@ -116,9 +115,9 @@ export class MCPClient {
         await this._ensureInitialized();
         const started = performance.now();
         const res = await this._post({
-            jsonrpc: "2.0",
+            jsonrpc: '2.0',
             id: this._nextId++,
-            method: "prompts/get",
+            method: 'prompts/get',
             params: { name, arguments: args || {} },
         });
         const duration = Math.round(performance.now() - started);
@@ -137,9 +136,9 @@ export class MCPClient {
     async complete(ref, argument, { retried = false } = {}) {
         await this._ensureInitialized();
         const res = await this._post({
-            jsonrpc: "2.0",
+            jsonrpc: '2.0',
             id: this._nextId++,
-            method: "completion/complete",
+            method: 'completion/complete',
             params: { ref, argument },
         });
         if (res.status === 404 && !retried) {
@@ -153,7 +152,7 @@ export class MCPClient {
         if (this.sessionId) {
             try {
                 await fetch(MCP_ENDPOINT, {
-                    method: "DELETE",
+                    method: 'DELETE',
                     headers: this._headers(),
                 });
             } catch {

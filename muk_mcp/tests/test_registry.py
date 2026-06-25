@@ -1,11 +1,10 @@
-import json
-
 from odoo.tests import common
 
 from odoo.addons.muk_mcp.core import tool as core_tool
 
 
 class TestMcpRegistryFilter(common.TransactionCase):
+    """Verify tools are filtered by their registry scope when listed."""
 
     # ----------------------------------------------------------
     # Setup
@@ -69,6 +68,7 @@ class TestMcpRegistryFilter(common.TransactionCase):
         @core_tool.mcp_tool(**kwargs)
         def handler(self):
             return None
+
         return handler.__mcp_tool__
 
     # ----------------------------------------------------------
@@ -81,7 +81,9 @@ class TestMcpRegistryFilter(common.TransactionCase):
 
     def test_decorator_records_registry(self):
         meta = self._decorate(
-            name='scoped', description='Scoped', registry='ai'
+            name='scoped',
+            description='Scoped',
+            registry='ai',
         )
         self.assertEqual(meta['registry'], 'ai')
 
@@ -93,75 +95,90 @@ class TestMcpRegistryFilter(common.TransactionCase):
         self.assertIn('tool_multi', names)
 
     def test_filter_mcp_hides_ai_only(self):
-        names = set(core_tool.get_tool_index(
-            self.env, registry='mcp',
-        ).keys())
+        names = set(
+            core_tool.get_tool_index(
+                self.env,
+                registry='mcp',
+            ).keys(),
+        )
         self.assertIn('tool_unscoped', names)
         self.assertIn('tool_mcp_only', names)
         self.assertIn('tool_multi', names)
         self.assertNotIn('tool_ai_only', names)
 
     def test_filter_ai_hides_mcp_only(self):
-        names = set(core_tool.get_tool_index(
-            self.env, registry='ai',
-        ).keys())
+        names = set(
+            core_tool.get_tool_index(
+                self.env,
+                registry='ai',
+            ).keys(),
+        )
         self.assertIn('tool_unscoped', names)
         self.assertIn('tool_ai_only', names)
         self.assertNotIn('tool_mcp_only', names)
         self.assertNotIn('tool_multi', names)
 
     def test_filter_matches_csv_registry(self):
-        names = set(core_tool.get_tool_index(
-            self.env, registry='cron',
-        ).keys())
+        names = set(
+            core_tool.get_tool_index(
+                self.env,
+                registry='cron',
+            ).keys(),
+        )
         self.assertIn('tool_unscoped', names)
         self.assertIn('tool_multi', names)
         self.assertNotIn('tool_mcp_only', names)
         self.assertNotIn('tool_ai_only', names)
 
     def test_filter_unknown_registry_only_shows_unscoped(self):
-        names = set(core_tool.get_tool_index(
-            self.env, registry='ghost',
-        ).keys())
+        names = set(
+            core_tool.get_tool_index(
+                self.env,
+                registry='ghost',
+            ).keys(),
+        )
         self.assertIn('tool_unscoped', names)
         self.assertNotIn('tool_mcp_only', names)
         self.assertNotIn('tool_ai_only', names)
         self.assertNotIn('tool_multi', names)
 
     def test_get_tools_forwards_registry(self):
-        mcp_tools = {t['name'] for t in self.tool_model.get_tools(
-            registry='mcp',
-        )}
+        mcp_tools = {
+            t['name']
+            for t in self.tool_model.get_tools(
+                registry='mcp',
+            )
+        }
         self.assertIn('tool_unscoped', mcp_tools)
         self.assertIn('tool_mcp_only', mcp_tools)
         self.assertNotIn('tool_ai_only', mcp_tools)
 
     def test_db_record_registry_default_is_none(self):
-        record = self.tool_model.create({
-            'name': 'mcp_test_db_registry_default',
-            'description': 'Default',
-            'category': 'read',
-            'code': "result = {'ok': True}\n",
-        })
+        record = self.tool_model.create(
+            {
+                'name': 'mcp_test_db_registry_default',
+                'description': 'Default',
+                'category': 'read',
+                'code': "result = {'ok': True}\n",
+            },
+        )
         entry = core_tool.get_tool_index(self.env).get(record.name)
         self.assertIsNotNone(entry)
         self.assertFalse(entry.get('registry'))
         record.unlink()
 
     def test_db_record_registry_mcp_respected(self):
-        record = self.tool_model.create({
-            'name': 'mcp_test_db_registry_mcp',
-            'description': 'MCP only',
-            'category': 'read',
-            'registry': 'mcp',
-            'code': "result = {'ok': True}\n",
-        })
-        mcp_names = {
-            t['name'] for t in self.tool_model.get_tools(registry='mcp')
-        }
+        record = self.tool_model.create(
+            {
+                'name': 'mcp_test_db_registry_mcp',
+                'description': 'MCP only',
+                'category': 'read',
+                'registry': 'mcp',
+                'code': "result = {'ok': True}\n",
+            },
+        )
+        mcp_names = {t['name'] for t in self.tool_model.get_tools(registry='mcp')}
         self.assertIn(record.name, mcp_names)
-        ai_names = {
-            t['name'] for t in self.tool_model.get_tools(registry='ai')
-        }
+        ai_names = {t['name'] for t in self.tool_model.get_tools(registry='ai')}
         self.assertNotIn(record.name, ai_names)
         record.unlink()

@@ -1,11 +1,10 @@
-import json
-
 from odoo.tests import common
 
 from odoo.addons.muk_mcp.tools import protocol
 
 
 class TestBatch(common.TransactionCase):
+    """Covers JSON-RPC batch request parsing and validation of batch items."""
 
     # ----------------------------------------------------------
     # Tests
@@ -26,9 +25,9 @@ class TestBatch(common.TransactionCase):
             {'jsonrpc': '2.0', 'id': 1, 'method': 'ping', 'params': {}},
             {'id': 2, 'method': 'ping'},
         ]
-        data1, error1 = protocol.parse_jsonrpc_request(items[0])
+        _data1, error1 = protocol.parse_jsonrpc_request(items[0])
         self.assertIsNone(error1)
-        data2, error2 = protocol.parse_jsonrpc_request(items[1])
+        _data2, error2 = protocol.parse_jsonrpc_request(items[1])
         self.assertIsNotNone(error2)
 
     def test_parse_empty_batch(self):

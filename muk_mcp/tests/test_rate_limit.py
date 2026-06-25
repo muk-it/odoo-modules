@@ -1,12 +1,14 @@
-import time
 import threading
+import time
 
 from odoo.tests import common, tagged
 
 from odoo.addons.muk_mcp.tools.rate_limit import RateLimiter
 
+
 @tagged('post_install', '-at_install')
 class RateLimiterTestCase(common.TransactionCase):
+    """Verify rate limiting, window expiry, stale cleanup, and thread safety."""
 
     # ----------------------------------------------------------
     # Setup

@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any
+
 from odoo import _, api, models
 from odoo.exceptions import UserError
 
@@ -14,6 +18,7 @@ from odoo.addons.muk_mcp.tools.uri import record_field_uri
 
 
 class MCPMixin(models.AbstractModel):
+    """Add MCP read tools to the shared MCP mixin."""
 
     _inherit = 'muk_mcp.mixin'
 
@@ -22,11 +27,15 @@ class MCPMixin(models.AbstractModel):
     # ----------------------------------------------------------
 
     @api.model
-    def _swap_binary_to_uri(self, model, rows):
+    def _swap_binary_to_uri(
+        self,
+        model: str,
+        rows: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        """Replace populated binary field values in ``rows`` with ``odoo://`` resource URIs in place."""
         target = self.env[model]
         binary_fields = [
-            name for name, field in target._fields.items()
-            if field.type == 'binary'
+            name for name, field in target._fields.items() if field.type == 'binary'
         ]
         if not binary_fields:
             return rows
@@ -35,7 +44,7 @@ class MCPMixin(models.AbstractModel):
             if not rid:
                 continue
             for fname in binary_fields:
-                if fname in row and row[fname]:
+                if row.get(fname):
                     row[fname] = record_field_uri(model, rid, fname)
         return rows
 
@@ -63,7 +72,12 @@ class MCPMixin(models.AbstractModel):
         },
         category='read',
     )
-    def _mcp_search_count(self, model, domain=None):
+    def _mcp_search_count(
+        self,
+        model: str,
+        domain=None,
+    ) -> dict[str, Any]:
+        """Count records matching ``domain`` and return them under a ``count`` key."""
         return {
             'count': self._resolve_model(model).search_count(
                 coerce_json_value(domain) or [],
@@ -74,10 +88,10 @@ class MCPMixin(models.AbstractModel):
     @mcp_tool(
         name='search_read',
         description=(
-            "Search for records matching a domain filter and return their "
+            'Search for records matching a domain filter and return their '
             "field values. Always specify 'fields' to avoid returning all "
             "fields (which can be slow). Use 'limit' to paginate large "
-            "result sets."
+            'result sets.'
         ),
         input_schema={
             'type': 'object',
@@ -101,8 +115,7 @@ class MCPMixin(models.AbstractModel):
                 'order': {
                     'type': 'string',
                     'description': (
-                        "Sort order, e.g. 'create_date desc', "
-                        "'name asc, id desc'."
+                        "Sort order, e.g. 'create_date desc', 'name asc, id desc'."
                     ),
                 },
                 'context': context_field(),
@@ -113,13 +126,14 @@ class MCPMixin(models.AbstractModel):
     )
     def _mcp_search_read(
         self,
-        model,
+        model: str,
         domain=None,
-        fields=None,
-        limit=80,
-        offset=0,
-        order=None,
-    ):
+        fields: list[str] | None = None,
+        limit: int = 80,
+        offset: int = 0,
+        order: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Search records by ``domain`` and return their field values with binaries swapped to URIs."""
         rows = self._resolve_model(model).search_read(
             coerce_json_value(domain) or [],
             fields=fields,
@@ -150,7 +164,16 @@ class MCPMixin(models.AbstractModel):
         },
         category='read',
     )
-    def _mcp_read_records(self, model, ids, fields=None):
+    def _mcp_read_records(
+        self,
+        model: str,
+        ids,
+        fields: list[str] | None = None,
+    ) -> list[dict[str, Any]]:
+        """Read records by their database IDs with binaries swapped to URIs.
+
+        :raise UserError: when ``ids`` resolves to an empty list.
+        """
         target_ids = normalize_ids(ids)
         if not target_ids:
             raise UserError(_('No record IDs provided'))
@@ -213,13 +236,17 @@ class MCPMixin(models.AbstractModel):
     )
     def _mcp_read_group(
         self,
-        model,
-        groupby,
-        aggregates=None,
+        model: str,
+        groupby: list[str],
+        aggregates: list[str] | None = None,
         domain=None,
-        limit=None,
-        order=None,
-    ):
+        limit: int | None = None,
+        order: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Group records by one or more fields and return aggregate values, always including ``__count``.
+
+        :raise UserError: when ``groupby`` is empty.
+        """
         if not groupby:
             raise UserError(_('groupby is required'))
         aggregates = list(aggregates or [])

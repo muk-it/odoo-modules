@@ -1,10 +1,10 @@
 import odoo.tests
-
 from odoo.tests.common import new_test_user, tagged
 
 
 @tagged('post_install', '-at_install')
 class TestHoot(odoo.tests.HttpCase):
+    """Drive the browser-side Hoot suite tagged muk_mcp."""
 
     # ----------------------------------------------------------
     # Setup
@@ -33,8 +33,8 @@ class TestHoot(odoo.tests.HttpCase):
     def test_hoot_muk_mcp(self):
         self.browser_js(
             '/web/tests?headless&loglevel=2&preset=desktop&timeout=15000&tag=muk_mcp',
-            "",
-            "",
+            '',
+            '',
             login=self.hoot_user.login,
             timeout=1800,
             success_signal='[HOOT] Test suite succeeded',

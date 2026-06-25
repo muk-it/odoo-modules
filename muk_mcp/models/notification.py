@@ -1,13 +1,17 @@
+from __future__ import annotations
+
 import json
 import uuid
+from typing import Any
 
 from odoo import api, fields, models
 
 
 class MCPNotification(models.Model):
+    """Per-session queue of MCP notifications pending delivery."""
 
     _name = 'muk_mcp.notification'
-    _description = "MCP Notification"
+    _description = 'MCP Notification'
     _order = 'id asc'
 
     # ----------------------------------------------------------
@@ -16,29 +20,29 @@ class MCPNotification(models.Model):
 
     session_id = fields.Many2one(
         comodel_name='muk_mcp.session',
-        string="Session",
+        string='Session',
         required=True,
         index=True,
         ondelete='cascade',
     )
 
     event_id = fields.Char(
-        string="Event ID",
+        string='Event ID',
         required=True,
         index=True,
     )
 
     method = fields.Char(
-        string="Method",
+        string='Method',
         required=True,
     )
 
     params = fields.Text(
-        string="Params",
+        string='Params',
     )
 
     delivered = fields.Boolean(
-        string="Delivered",
+        string='Delivered',
         default=False,
     )
 
@@ -47,7 +51,7 @@ class MCPNotification(models.Model):
     # ----------------------------------------------------------
 
     _undelivered_idx = models.Index(
-        "(session_id, id) WHERE delivered IS NOT TRUE"
+        '(session_id, id) WHERE delivered IS NOT TRUE',
     )
 
     # ----------------------------------------------------------
@@ -55,11 +59,20 @@ class MCPNotification(models.Model):
     # ----------------------------------------------------------
 
     @api.model
-    def push_to_all_sessions(self, method, params=None):
-        sessions = self.env['muk_mcp.session'].sudo().search([
-            ('active', '=', True),
-            ('initialized', '=', True),
-        ])
+    def push_to_all_sessions(
+        self, method: str, params: dict[str, Any] | None = None
+    ) -> None:
+        """Queue a notification on every active, initialized session."""
+        sessions = (
+            self.env['muk_mcp.session']
+            .sudo()
+            .search(
+                [
+                    ('active', '=', True),
+                    ('initialized', '=', True),
+                ],
+            )
+        )
         if not sessions:
             return
         vals_list = [
@@ -78,13 +91,18 @@ class MCPNotification(models.Model):
     # ----------------------------------------------------------
 
     @api.autovacuum
-    def _autovacuum_notifications(self):
+    def _autovacuum_notifications(self) -> None:
+        """Delete delivered notification rows past their retention window."""
         delivered_limit = fields.Datetime.subtract(fields.Datetime.now(), days=1)
         stale_limit = fields.Datetime.subtract(fields.Datetime.now(), days=7)
         domain = [
             '|',
-            '&', ('delivered', '=', True), ('create_date', '<', delivered_limit),
-            '&', ('delivered', '=', False), ('create_date', '<', stale_limit),
+            '&',
+            ('delivered', '=', True),
+            ('create_date', '<', delivered_limit),
+            '&',
+            ('delivered', '=', False),
+            ('create_date', '<', stale_limit),
         ]
         while batch := self.search(domain, limit=5000):
             batch.unlink()

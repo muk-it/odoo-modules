@@ -4,6 +4,7 @@ from odoo.tests import common
 
 
 class TestConnect(common.TransactionCase):
+    """Covers the connect wizard MCP URL, key generation, and client snippets."""
 
     # ----------------------------------------------------------
     # Setup
@@ -13,7 +14,8 @@ class TestConnect(common.TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.env['ir.config_parameter'].sudo().set_param(
-            'web.base.url', 'https://odoo.example.com',
+            'web.base.url',
+            'https://odoo.example.com',
         )
         cls.wizard = cls.env['muk_mcp.connect'].create({})
 
@@ -26,7 +28,8 @@ class TestConnect(common.TransactionCase):
 
     def test_mcp_url_strips_trailing_slash(self):
         self.env['ir.config_parameter'].sudo().set_param(
-            'web.base.url', 'https://odoo.example.com/',
+            'web.base.url',
+            'https://odoo.example.com/',
         )
         wizard = self.env['muk_mcp.connect'].create({})
         self.assertEqual(wizard.mcp_url, 'https://odoo.example.com/mcp')
@@ -57,9 +60,13 @@ class TestConnect(common.TransactionCase):
 
     def test_claude_code_command_format(self):
         self.wizard.bearer_key = 'sk-test'
-        self.assertIn('claude mcp add --transport http odoo', self.wizard.claude_code_cmd)
+        self.assertIn(
+            'claude mcp add --transport http odoo', self.wizard.claude_code_cmd
+        )
         self.assertIn('https://odoo.example.com/mcp', self.wizard.claude_code_cmd)
-        self.assertIn('--header "Authorization: Bearer sk-test"', self.wizard.claude_code_cmd)
+        self.assertIn(
+            '--header "Authorization: Bearer sk-test"', self.wizard.claude_code_cmd
+        )
 
     def test_claude_desktop_uses_mcp_remote(self):
         self.wizard.bearer_key = 'sk-test'

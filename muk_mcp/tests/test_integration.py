@@ -13,6 +13,7 @@ from odoo.addons.muk_mcp.tools.exception import MCPScopeDenied
 
 @tagged('post_install', '-at_install')
 class TestMcpIntegration(common.TransactionCase):
+    """Exercise the full MCP stack through public model and tool APIs."""
 
     # ----------------------------------------------------------
     # Setup
@@ -27,23 +28,27 @@ class TestMcpIntegration(common.TransactionCase):
         cls.log_model = cls.env['muk_mcp.log']
         cls.notification_model = cls.env['muk_mcp.notification']
         cls.raw_token = secrets.token_urlsafe(32)
-        cls.mcp_key = cls.key_model.sudo().create({
-            'name': 'Integration Test Key',
-            'user_id': cls.env.user.id,
-            'key_hash': cls.key_model._hash_key(cls.raw_token),
-            'key_prefix': cls.raw_token[:8],
-            'scope': 'write',
-            'rate_limit': 0,
-        })
+        cls.mcp_key = cls.key_model.sudo().create(
+            {
+                'name': 'Integration Test Key',
+                'user_id': cls.env.user.id,
+                'key_hash': cls.key_model._hash_key(cls.raw_token),
+                'key_prefix': cls.raw_token[:8],
+                'scope': 'write',
+                'rate_limit': 0,
+            },
+        )
         cls.read_token = secrets.token_urlsafe(32)
-        cls.read_key = cls.key_model.sudo().create({
-            'name': 'Read-Only Test Key',
-            'user_id': cls.env.user.id,
-            'key_hash': cls.key_model._hash_key(cls.read_token),
-            'key_prefix': cls.read_token[:8],
-            'scope': 'read',
-            'rate_limit': 0,
-        })
+        cls.read_key = cls.key_model.sudo().create(
+            {
+                'name': 'Read-Only Test Key',
+                'user_id': cls.env.user.id,
+                'key_hash': cls.key_model._hash_key(cls.read_token),
+                'key_prefix': cls.read_token[:8],
+                'scope': 'read',
+                'rate_limit': 0,
+            },
+        )
 
     # ----------------------------------------------------------
     # Tests: Key authentication
@@ -63,10 +68,12 @@ class TestMcpIntegration(common.TransactionCase):
     # ----------------------------------------------------------
 
     def test_session_create_and_revoke(self):
-        session = self.session_model.sudo().create({
-            'user_id': self.env.user.id,
-            'initialized': False,
-        })
+        session = self.session_model.sudo().create(
+            {
+                'user_id': self.env.user.id,
+                'initialized': False,
+            },
+        )
         self.assertTrue(session.session_id)
         self.assertTrue(session.active)
         self.assertFalse(session.initialized)
@@ -77,13 +84,16 @@ class TestMcpIntegration(common.TransactionCase):
 
     def test_session_touch_updates_last_activity(self):
         old_time = fields.Datetime.subtract(
-            fields.Datetime.now(), hours=1
+            fields.Datetime.now(),
+            hours=1,
         )
-        session = self.session_model.sudo().create({
-            'user_id': self.env.user.id,
-            'initialized': True,
-            'last_activity': old_time,
-        })
+        session = self.session_model.sudo().create(
+            {
+                'user_id': self.env.user.id,
+                'initialized': True,
+                'last_activity': old_time,
+            },
+        )
         session._touch()
         session.invalidate_recordset()
         self.assertGreater(session.last_activity, old_time)
@@ -121,10 +131,7 @@ class TestMcpIntegration(common.TransactionCase):
 
     def test_write_scope_allows_all_tools(self):
         for entry in get_tool_index(self.env).values():
-            allowed = (
-                self.mcp_key.scope != 'read' or
-                entry['category'] == 'read'
-            )
+            allowed = self.mcp_key.scope != 'read' or entry['category'] == 'read'
             self.assertTrue(allowed)
 
     # ----------------------------------------------------------
@@ -193,16 +200,20 @@ class TestMcpIntegration(common.TransactionCase):
     # ----------------------------------------------------------
 
     def test_notification_push_to_all_sessions(self):
-        session = self.session_model.sudo().create({
-            'user_id': self.env.user.id,
-            'initialized': True,
-        })
+        session = self.session_model.sudo().create(
+            {
+                'user_id': self.env.user.id,
+                'initialized': True,
+            },
+        )
         self.notification_model.push_to_all_sessions(
             'notifications/tools/list_changed',
         )
-        notifications = self.notification_model.search([
-            ('session_id', '=', session.id),
-        ])
+        notifications = self.notification_model.search(
+            [
+                ('session_id', '=', session.id),
+            ],
+        )
         self.assertTrue(notifications)
         self.assertEqual(
             notifications[0].method,
@@ -211,20 +222,26 @@ class TestMcpIntegration(common.TransactionCase):
         self.assertFalse(notifications[0].delivered)
 
     def test_tool_change_triggers_notification(self):
-        session = self.session_model.sudo().create({
-            'user_id': self.env.user.id,
-            'initialized': True,
-        })
-        tool = self.tool_model.sudo().create({
-            'name': 'test_notify_tool',
-            'description': 'Test notification trigger',
-            'category': 'read',
-            'code': 'result = {}',
-        })
-        notifications = self.notification_model.search([
-            ('session_id', '=', session.id),
-            ('method', '=', 'notifications/tools/list_changed'),
-        ])
+        session = self.session_model.sudo().create(
+            {
+                'user_id': self.env.user.id,
+                'initialized': True,
+            },
+        )
+        tool = self.tool_model.sudo().create(
+            {
+                'name': 'test_notify_tool',
+                'description': 'Test notification trigger',
+                'category': 'read',
+                'code': 'result = {}',
+            },
+        )
+        notifications = self.notification_model.search(
+            [
+                ('session_id', '=', session.id),
+                ('method', '=', 'notifications/tools/list_changed'),
+            ],
+        )
         self.assertTrue(notifications)
         tool.unlink()
 
@@ -252,14 +269,16 @@ class TestMcpIntegration(common.TransactionCase):
 
     def test_rate_limit_enforcement(self):
         limited_token = secrets.token_urlsafe(32)
-        limited_key = self.key_model.sudo().create({
-            'name': 'Rate Limited Key',
-            'user_id': self.env.user.id,
-            'key_hash': self.key_model._hash_key(limited_token),
-            'key_prefix': limited_token[:8],
-            'scope': 'write',
-            'rate_limit': 3,
-        })
+        limited_key = self.key_model.sudo().create(
+            {
+                'name': 'Rate Limited Key',
+                'user_id': self.env.user.id,
+                'key_hash': self.key_model._hash_key(limited_token),
+                'key_prefix': limited_token[:8],
+                'scope': 'write',
+                'rate_limit': 3,
+            },
+        )
         for _ in range(3):
             self.assertTrue(limited_key._check_rate_limit())
         self.assertFalse(limited_key._check_rate_limit())
@@ -314,4 +333,3 @@ class TestMcpIntegration(common.TransactionCase):
         partner = self.env['res.partner'].create({'name': 'Normal Test'})
         msg = partner.message_post(body='Regular message')
         self.assertFalse(msg.mcp_name)
-

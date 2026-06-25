@@ -8,6 +8,7 @@ from odoo.addons.muk_mcp.tools.parser import coerce_json_value
 
 @tagged('post_install', '-at_install')
 class TestMcpTool(common.TransactionCase):
+    """Verify the CRUD, introspection, and coercion behavior of MCP tools."""
 
     # ----------------------------------------------------------
     # Setup
@@ -56,12 +57,15 @@ class TestMcpTool(common.TransactionCase):
         self.assertEqual(result['name']['type'], 'char')
 
     def test_search_read_handler(self):
-        result = self._call('search_read', {
-            'model': 'res.partner',
-            'domain': [['is_company', '=', True]],
-            'fields': ['name', 'email'],
-            'limit': 5,
-        })
+        result = self._call(
+            'search_read',
+            {
+                'model': 'res.partner',
+                'domain': [['is_company', '=', True]],
+                'fields': ['name', 'email'],
+                'limit': 5,
+            },
+        )
         self.assertIsInstance(result, list)
 
     def test_search_count_handler(self):
@@ -70,25 +74,34 @@ class TestMcpTool(common.TransactionCase):
         self.assertGreater(result['count'], 0)
 
     def test_create_and_delete_handler(self):
-        created = self._call('create_records', {
-            'model': 'res.partner.category',
-            'values': {'name': 'MCP Test Category'},
-        })
+        created = self._call(
+            'create_records',
+            {
+                'model': 'res.partner.category',
+                'values': {'name': 'MCP Test Category'},
+            },
+        )
         self.assertIn('id', created)
-        deleted = self._call('delete_records', {
-            'model': 'res.partner.category',
-            'ids': [created['id']],
-        })
+        deleted = self._call(
+            'delete_records',
+            {
+                'model': 'res.partner.category',
+                'ids': [created['id']],
+            },
+        )
         self.assertTrue(deleted['success'])
 
     def test_update_handler(self):
         record = self.env['res.partner.category'].create({'name': 'MCP Update'})
         try:
-            result = self._call('update_records', {
-                'model': 'res.partner.category',
-                'ids': [record.id],
-                'values': {'name': 'MCP Updated'},
-            })
+            result = self._call(
+                'update_records',
+                {
+                    'model': 'res.partner.category',
+                    'ids': [record.id],
+                    'values': {'name': 'MCP Updated'},
+                },
+            )
             self.assertTrue(result['success'])
             self.assertEqual(record.name, 'MCP Updated')
         finally:
@@ -97,11 +110,14 @@ class TestMcpTool(common.TransactionCase):
     def test_read_handler(self):
         partner = self.env['res.partner'].search([], limit=1)
         self.assertTrue(partner)
-        result = self._call('read_records', {
-            'model': 'res.partner',
-            'ids': [partner.id],
-            'fields': ['name'],
-        })
+        result = self._call(
+            'read_records',
+            {
+                'model': 'res.partner',
+                'ids': [partner.id],
+                'fields': ['name'],
+            },
+        )
         self.assertEqual(result[0]['id'], partner.id)
 
     def test_whoami_handler(self):
@@ -118,12 +134,15 @@ class TestMcpTool(common.TransactionCase):
         self.assertIn('read', result['current_user_rights'])
 
     def test_read_group_handler(self):
-        result = self._call('read_group', {
-            'model': 'res.partner',
-            'domain': [],
-            'groupby': ['is_company'],
-            'aggregates': ['id:count_distinct'],
-        })
+        result = self._call(
+            'read_group',
+            {
+                'model': 'res.partner',
+                'domain': [],
+                'groupby': ['is_company'],
+                'aggregates': ['id:count_distinct'],
+            },
+        )
         self.assertIsInstance(result, list)
 
     def test_read_records_swaps_binary_field_to_uri(self):
@@ -131,13 +150,20 @@ class TestMcpTool(common.TransactionCase):
             'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQ'
             'VQYV2NgAAIAAAUAAarVyFEAAAAASUVORK5CYII='
         )
-        partner = self.env['res.partner'].create({
-            'name': 'Bin', 'image_1920': png_b64,
-        })
-        result = self._call('read_records', {
-            'model': 'res.partner', 'ids': [partner.id],
-            'fields': ['name', 'image_1920'],
-        })
+        partner = self.env['res.partner'].create(
+            {
+                'name': 'Bin',
+                'image_1920': png_b64,
+            },
+        )
+        result = self._call(
+            'read_records',
+            {
+                'model': 'res.partner',
+                'ids': [partner.id],
+                'fields': ['name', 'image_1920'],
+            },
+        )
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]['name'], 'Bin')
         self.assertEqual(
@@ -146,18 +172,23 @@ class TestMcpTool(common.TransactionCase):
         )
 
     def test_search_read_swaps_binary_field_to_uri(self):
-        partner = self.env['res.partner'].create({
-            'name': 'Searchy',
-            'image_1920': (
-                'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQ'
-                'VQYV2NgAAIAAAUAAarVyFEAAAAASUVORK5CYII='
-            ),
-        })
-        result = self._call('search_read', {
-            'model': 'res.partner',
-            'domain': '[["id","=",%d]]' % partner.id,
-            'fields': ['name', 'image_1920'],
-        })
+        partner = self.env['res.partner'].create(
+            {
+                'name': 'Searchy',
+                'image_1920': (
+                    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQ'
+                    'VQYV2NgAAIAAAUAAarVyFEAAAAASUVORK5CYII='
+                ),
+            },
+        )
+        result = self._call(
+            'search_read',
+            {
+                'model': 'res.partner',
+                'domain': '[["id","=",%d]]' % partner.id,
+                'fields': ['name', 'image_1920'],
+            },
+        )
         self.assertEqual(len(result), 1)
         self.assertEqual(
             result[0]['image_1920'],
@@ -166,67 +197,93 @@ class TestMcpTool(common.TransactionCase):
 
     def test_invalid_model_raises(self):
         with self.assertRaises(UserError):
-            self._call('search_read', {
-                'model': 'nonexistent.model',
-                'domain': [],
-            })
+            self._call(
+                'search_read',
+                {
+                    'model': 'nonexistent.model',
+                    'domain': [],
+                },
+            )
 
     def test_private_method_blocked(self):
         with self.assertRaisesRegex(UserError, 'Private methods'):
-            self._call('call_method', {
-                'model': 'res.partner',
-                'method': '_check_company',
-            })
+            self._call(
+                'call_method',
+                {
+                    'model': 'res.partner',
+                    'method': '_check_company',
+                },
+            )
 
     def test_method_not_found(self):
         with self.assertRaisesRegex(UserError, 'does not exist'):
-            self._call('call_method', {
-                'model': 'res.partner',
-                'method': 'totally_nonexistent_method_xyz',
-            })
+            self._call(
+                'call_method',
+                {
+                    'model': 'res.partner',
+                    'method': 'totally_nonexistent_method_xyz',
+                },
+            )
 
     def test_empty_ids_raises(self):
         with self.assertRaises(UserError):
-            self._call('delete_records', {
-                'model': 'res.partner.category',
-                'ids': [],
-            })
+            self._call(
+                'delete_records',
+                {
+                    'model': 'res.partner.category',
+                    'ids': [],
+                },
+            )
 
     def test_read_group_without_groupby_raises(self):
         with self.assertRaises(UserError):
-            self._call('read_group', {
-                'model': 'res.partner',
-                'fields': ['is_company'],
-                'groupby': [],
-            })
+            self._call(
+                'read_group',
+                {
+                    'model': 'res.partner',
+                    'fields': ['is_company'],
+                    'groupby': [],
+                },
+            )
 
     def test_tool_result_contains_id_for_create(self):
-        created = self._call('create_records', {
-            'model': 'res.partner.category',
-            'values': {'name': 'MCP ID Test'},
-        })
+        created = self._call(
+            'create_records',
+            {
+                'model': 'res.partner.category',
+                'values': {'name': 'MCP ID Test'},
+            },
+        )
         self.assertIn('id', created)
         self.assertIsInstance(created['id'], int)
         self.env['res.partner.category'].browse(created['id']).unlink()
 
     def test_context_override_threads_through(self):
-        archived = self.env['res.partner'].create({
-            'name': 'MCP Archived Partner',
-            'active': False,
-        })
+        archived = self.env['res.partner'].create(
+            {
+                'name': 'MCP Archived Partner',
+                'active': False,
+            },
+        )
         try:
-            active_default = self._call('search_read', {
-                'model': 'res.partner',
-                'domain': [['id', '=', archived.id]],
-                'fields': ['id'],
-            })
+            active_default = self._call(
+                'search_read',
+                {
+                    'model': 'res.partner',
+                    'domain': [['id', '=', archived.id]],
+                    'fields': ['id'],
+                },
+            )
             self.assertEqual(active_default, [])
-            with_override = self._call('search_read', {
-                'model': 'res.partner',
-                'domain': [['id', '=', archived.id]],
-                'fields': ['id'],
-                'context': {'active_test': False},
-            })
+            with_override = self._call(
+                'search_read',
+                {
+                    'model': 'res.partner',
+                    'domain': [['id', '=', archived.id]],
+                    'fields': ['id'],
+                    'context': {'active_test': False},
+                },
+            )
             self.assertEqual(len(with_override), 1)
             self.assertEqual(with_override[0]['id'], archived.id)
         finally:
@@ -272,32 +329,42 @@ class TestMcpTool(common.TransactionCase):
         self.assertIsNone(result)
 
     def test_search_read_with_double_encoded_domain(self):
-        partner = self.env['res.partner'].create({
-            'name': 'MCP Double Encoded Domain',
-        })
+        partner = self.env['res.partner'].create(
+            {
+                'name': 'MCP Double Encoded Domain',
+            },
+        )
         try:
             inner = json.dumps([['id', '=', partner.id]])
             doubled = json.dumps(inner)
-            result = self._call('search_read', {
-                'model': 'res.partner',
-                'domain': doubled,
-                'fields': ['id', 'name'],
-            })
+            result = self._call(
+                'search_read',
+                {
+                    'model': 'res.partner',
+                    'domain': doubled,
+                    'fields': ['id', 'name'],
+                },
+            )
             self.assertEqual(len(result), 1)
             self.assertEqual(result[0]['id'], partner.id)
         finally:
             partner.unlink()
 
     def test_search_count_with_double_encoded_domain(self):
-        partner = self.env['res.partner'].create({
-            'name': 'MCP Double Encoded Count',
-        })
+        partner = self.env['res.partner'].create(
+            {
+                'name': 'MCP Double Encoded Count',
+            },
+        )
         try:
             doubled = json.dumps(json.dumps([['id', '=', partner.id]]))
-            result = self._call('search_count', {
-                'model': 'res.partner',
-                'domain': doubled,
-            })
+            result = self._call(
+                'search_count',
+                {
+                    'model': 'res.partner',
+                    'domain': doubled,
+                },
+            )
             self.assertEqual(result['count'], 1)
         finally:
             partner.unlink()
@@ -307,7 +374,9 @@ class TestMcpTool(common.TransactionCase):
         names = {t['name'] for t in tools}
         self.assertIn('get_messages', names)
         self.assertIn('post_message', names)
-        db_records = self.tool_model.search([
-            ('name', 'in', ['get_messages', 'post_message']),
-        ])
+        db_records = self.tool_model.search(
+            [
+                ('name', 'in', ['get_messages', 'post_message']),
+            ],
+        )
         self.assertEqual(len(db_records), 2)

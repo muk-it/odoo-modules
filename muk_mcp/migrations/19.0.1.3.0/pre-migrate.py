@@ -38,7 +38,7 @@ def migrate(cr, version):
         return
     tool_ids = [row[0] for row in rows]
     cr.execute(
-        "DELETE FROM muk_mcp_tool WHERE id IN %s",
+        'DELETE FROM muk_mcp_tool WHERE id IN %s',
         (tuple(tool_ids),),
     )
     cr.execute(
@@ -51,8 +51,7 @@ def migrate(cr, version):
         (PORTED_TOOL_XMLIDS,),
     )
     _logger.info(
-        "muk_mcp: removed %d DB tool records superseded by @mcp_tool Python "
-        "methods: %s",
+        'muk_mcp: removed %d DB tool records superseded by @mcp_tool Python methods: %s',
         len(rows),
         ', '.join(sorted(name for _id, name in rows)),
     )

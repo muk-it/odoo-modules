@@ -2,10 +2,12 @@ import json
 
 from odoo.tests import common
 
-from odoo.addons.muk_mcp.tools import protocol, common as mcp_common
+from odoo.addons.muk_mcp.tools import common as mcp_common
+from odoo.addons.muk_mcp.tools import protocol
 
 
 class TestProtocol(common.TransactionCase):
+    """Verify JSON-RPC parsing and MCP result/content construction helpers."""
 
     # ----------------------------------------------------------
     # Tests
@@ -31,12 +33,14 @@ class TestProtocol(common.TransactionCase):
         self.assertEqual(result['error']['message'], 'Method not found')
 
     def test_parse_jsonrpc_request_valid(self):
-        raw = json.dumps({
-            'jsonrpc': '2.0',
-            'id': 1,
-            'method': 'initialize',
-            'params': {},
-        })
+        raw = json.dumps(
+            {
+                'jsonrpc': '2.0',
+                'id': 1,
+                'method': 'initialize',
+                'params': {},
+            },
+        )
         data, error = protocol.parse_jsonrpc_request(raw)
         self.assertIsNone(error)
         self.assertIsNotNone(data)
@@ -47,7 +51,8 @@ class TestProtocol(common.TransactionCase):
         self.assertIsNone(data)
         self.assertIsNotNone(error)
         self.assertEqual(
-            error['error']['code'], mcp_common.JSONRPC_PARSE_ERROR
+            error['error']['code'],
+            mcp_common.JSONRPC_PARSE_ERROR,
         )
 
     def test_parse_jsonrpc_request_missing_version(self):
@@ -56,7 +61,8 @@ class TestProtocol(common.TransactionCase):
         self.assertIsNone(data)
         self.assertIsNotNone(error)
         self.assertEqual(
-            error['error']['code'], mcp_common.JSONRPC_INVALID_REQUEST
+            error['error']['code'],
+            mcp_common.JSONRPC_INVALID_REQUEST,
         )
 
     def test_parse_jsonrpc_request_missing_method(self):
@@ -68,12 +74,14 @@ class TestProtocol(common.TransactionCase):
     def test_make_initialize_result(self):
         result = protocol.make_initialize_result()
         self.assertEqual(
-            result['protocolVersion'], mcp_common.MCP_PROTOCOL_VERSION
+            result['protocolVersion'],
+            mcp_common.MCP_PROTOCOL_VERSION,
         )
         self.assertIn('tools', result['capabilities'])
         self.assertTrue(result['capabilities']['tools']['listChanged'])
         self.assertEqual(
-            result['serverInfo']['name'], mcp_common.MCP_SERVER_NAME
+            result['serverInfo']['name'],
+            mcp_common.MCP_SERVER_NAME,
         )
 
     def test_make_tool_result(self):
@@ -115,23 +123,28 @@ class TestProtocol(common.TransactionCase):
         self.assertEqual(content['type'], 'resource')
         self.assertEqual(content['resource']['uri'], 'odoo://attachment/1')
         self.assertEqual(
-            content['resource']['mimeType'], 'application/pdf',
+            content['resource']['mimeType'],
+            'application/pdf',
         )
         self.assertEqual(content['resource']['blob'], 'CCCC')
         self.assertNotIn('text', content['resource'])
 
     def test_make_resource_content_with_text(self):
         content = protocol.make_resource_content(
-            'odoo://thing/1', mime_type='text/plain', text='hi',
+            'odoo://thing/1',
+            mime_type='text/plain',
+            text='hi',
         )
         self.assertEqual(content['resource']['text'], 'hi')
         self.assertNotIn('blob', content['resource'])
 
     def test_tool_content_is_list(self):
-        blocks = protocol.ToolContent([
-            protocol.make_text_content('a'),
-            protocol.make_image_content('xx', 'image/png'),
-        ])
+        blocks = protocol.ToolContent(
+            [
+                protocol.make_text_content('a'),
+                protocol.make_image_content('xx', 'image/png'),
+            ],
+        )
         self.assertIsInstance(blocks, list)
         self.assertEqual(len(blocks), 2)
         self.assertEqual(blocks[0]['type'], 'text')

@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import base64
+from typing import Any
 
 from odoo import _, api, models
 from odoo.exceptions import UserError
@@ -9,6 +12,7 @@ from odoo.addons.muk_mcp.tools.parser import normalize_ids
 
 
 class MCPMixin(models.AbstractModel):
+    """Add the MCP report-printing tool to the shared MCP mixin."""
 
     _inherit = 'muk_mcp.mixin'
 
@@ -17,21 +21,24 @@ class MCPMixin(models.AbstractModel):
     # ----------------------------------------------------------
 
     @api.model
-    def _resolve_report(self, report_ref):
+    def _resolve_report(self, report_ref: str | int) -> models.BaseModel:
+        """Resolve a report reference given as an id, an xmlid, or a ``report_name`` to its ``ir.actions.report``."""
         if isinstance(report_ref, int):
             return self.env['ir.actions.report'].browse(
-                report_ref
+                report_ref,
             )
         if '.' in (ref := (report_ref or '').strip()):
             report = self.env.ref(ref, raise_if_not_found=False)
             if report and report._name == 'ir.actions.report':
                 return report
         return self.env['ir.actions.report'].search(
-            [('report_name', '=', ref)], limit=1,
+            [('report_name', '=', ref)],
+            limit=1,
         )
 
     @api.model
-    def _report_mimetype(self, report_type):
+    def _report_mimetype(self, report_type: str) -> tuple[str, str]:
+        """Map a report output type to its (extension, mimetype) pair."""
         if report_type == 'pdf':
             return 'application/pdf', 'pdf'
         if report_type == 'text':
@@ -48,11 +55,11 @@ class MCPMixin(models.AbstractModel):
     @mcp_tool(
         name='print_report',
         description=(
-            "Render an Odoo report for one or more records and return the "
-            "binary as base64. Accepts a report xmlid (e.g. "
+            'Render an Odoo report for one or more records and return the '
+            'binary as base64. Accepts a report xmlid (e.g. '
             "'sale.action_report_saleorder'), a report_name "
             "(e.g. 'sale.report_saleorder'), or the numeric id of an "
-            "ir.actions.report."
+            'ir.actions.report.'
         ),
         input_schema={
             'type': 'object',
@@ -60,8 +67,7 @@ class MCPMixin(models.AbstractModel):
                 'report_ref': {
                     'type': ['string', 'integer'],
                     'description': (
-                        "Report xmlid, report_name, or id of the "
-                        "ir.actions.report to render."
+                        'Report xmlid, report_name, or id of the ir.actions.report to render.'
                     ),
                 },
                 'ids': ids_field('render'),
@@ -71,11 +77,19 @@ class MCPMixin(models.AbstractModel):
         },
         category='read',
     )
-    def _mcp_print_report(self, report_ref, ids):
+    def _mcp_print_report(
+        self,
+        report_ref: str | int,
+        ids,
+    ) -> dict[str, Any]:
+        """Render the referenced report for ``ids`` and return its filename, mimetype and base64 content.
+
+        :raise UserError: when ``ids`` is empty or the report cannot be resolved.
+        """
         if not (target_ids := normalize_ids(ids)):
             raise UserError(_('No record IDs provided'))
         if not (report := self._resolve_report(report_ref)):
-            raise UserError(_("Report %r not found.", report_ref))
+            raise UserError(_('Report %r not found.', report_ref))
         content, report_type = report._render(report.report_name, target_ids)
         mimetype, extension = self._report_mimetype(report_type)
         name = report.name or report.report_name or 'report'

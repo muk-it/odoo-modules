@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any
+
 from odoo import api, models
 from odoo.exceptions import AccessError, UserError
 from odoo.service.model import get_public_method
@@ -8,12 +12,11 @@ from odoo.addons.muk_mcp.tools.descriptions import (
     ids_field,
     model_field,
 )
-from odoo.addons.muk_mcp.tools.parser import (
-    coerce_json_value,
-    normalize_ids
-)
+from odoo.addons.muk_mcp.tools.parser import coerce_json_value, normalize_ids
+
 
 class MCPMixin(models.AbstractModel):
+    """Add the ``call_method`` MCP tool for invoking model business logic."""
 
     _inherit = 'muk_mcp.mixin'
 
@@ -25,14 +28,14 @@ class MCPMixin(models.AbstractModel):
     @mcp_tool(
         name='call_method',
         description=(
-            "Call a public method on an Odoo model or recordset. Use this "
-            "for business logic actions like confirming a sale order "
+            'Call a public method on an Odoo model or recordset. Use this '
+            'for business logic actions like confirming a sale order '
             "(model='sale.order', method='action_confirm', ids=[42]) or "
             "posting an invoice (model='account.move', "
             "method='action_post', ids=[10]). Common methods: "
-            "action_confirm (sales/purchases), action_post (invoices), "
-            "action_done (pickings), action_assign (pickings), "
-            "action_cancel (most documents). Private methods (starting "
+            'action_confirm (sales/purchases), action_post (invoices), '
+            'action_done (pickings), action_assign (pickings), '
+            'action_cancel (most documents). Private methods (starting '
             "with '_') are blocked for safety."
         ),
         input_schema={
@@ -42,8 +45,7 @@ class MCPMixin(models.AbstractModel):
                 'method': {
                     'type': 'string',
                     'description': (
-                        "Public method name (e.g. 'action_confirm', "
-                        "'action_post', 'message_post')."
+                        "Public method name (e.g. 'action_confirm', 'action_post', 'message_post')."
                     ),
                 },
                 'ids': ids_field(
@@ -69,12 +71,19 @@ class MCPMixin(models.AbstractModel):
     )
     def _mcp_call_method(
         self,
-        model,
-        method,
+        model: str,
+        method: str,
         ids=None,
-        args=None,
-        kwargs=None,
-    ):
+        args: str | None = None,
+        kwargs: dict[str, Any] | None = None,
+    ) -> Any:
+        """Resolve the model, browse the target ids and invoke a public method.
+
+        Rejects private methods via :func:`get_public_method`. For non
+        ``@api.model`` methods the records to operate on come from ``ids``, or
+        else from the first positional argument. A ``context`` key inside
+        ``kwargs`` is applied to the recordset rather than passed through.
+        """
         target = self._resolve_model(model)
         try:
             unbound = get_public_method(target, method)
@@ -86,9 +95,11 @@ class MCPMixin(models.AbstractModel):
             if target_ids:
                 target = target.browse(target_ids)
             elif positional:
-                target = target.browse(normalize_ids(
-                    positional[0]
-                ))
+                target = target.browse(
+                    normalize_ids(
+                        positional[0],
+                    ),
+                )
                 positional = positional[1:]
         keyword = dict(coerce_json_value(kwargs) or {})
         context_override = keyword.pop('context', None)

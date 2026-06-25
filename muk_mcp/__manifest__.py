@@ -1,14 +1,14 @@
 {
     'name': 'MuK MCP Server',
     'summary': 'Model Context Protocol server for AI agent integration',
-    'description': '''
+    'description': """
         Implements a native MCP (Model Context Protocol) server inside
         Odoo, exposing business data and operations to any MCP-compatible
         AI client such as Claude Desktop, Claude Code, Cursor, Windsurf,
         or Codex CLI. The server speaks MCP Streamable HTTP at a single
         endpoint using MCP API keys for authentication.
-    ''',
-    'version': '19.0.1.7.4',
+    """,
+    'version': '19.0.1.7.9',
     'category': 'Tools/API',
     'license': 'LGPL-3',
     'author': 'MuK IT',

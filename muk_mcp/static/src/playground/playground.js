@@ -1,33 +1,40 @@
-import { Component, onMounted, onWillStart, onWillUnmount, useRef, useState } from "@odoo/owl";
-import { registry } from "@web/core/registry";
-import { useService } from "@web/core/utils/hooks";
-import { _t } from "@web/core/l10n/translation";
+import {
+    Component,
+    onMounted,
+    onWillStart,
+    onWillUnmount,
+    useRef,
+    useState,
+} from '@odoo/owl';
+import { registry } from '@web/core/registry';
+import { useService } from '@web/core/utils/hooks';
+import { _t } from '@web/core/l10n/translation';
 
-import { MCPClient } from "./mcp_client";
-import { KeyBar } from "./key_bar";
-import { ToolList } from "./tool_list";
-import { ToolDetail } from "./tool_detail";
-import { groupTools } from "./utils";
+import { MCPClient } from './mcp_client';
+import { KeyBar } from './key_bar';
+import { ToolList } from './tool_list';
+import { ToolDetail } from './tool_detail';
+import { groupTools } from './utils';
 
-const LAST_TOOL_STORAGE_KEY = "muk_mcp.playground.last_tool";
-const ACTIVE_PANEL_STORAGE_KEY = "muk_mcp.playground.active_panel";
-const TOOLS_PANEL_ID = "tools";
+const LAST_TOOL_STORAGE_KEY = 'muk_mcp.playground.last_tool';
+const ACTIVE_PANEL_STORAGE_KEY = 'muk_mcp.playground.active_panel';
+const TOOLS_PANEL_ID = 'tools';
 
 export class Playground extends Component {
-    static template = "muk_mcp.Playground";
+    static template = 'muk_mcp.Playground';
     static components = { KeyBar, ToolList, ToolDetail };
-    static props = ["*"];
+    static props = ['*'];
     setup() {
-        this.orm = useService("orm");
-        this.notification = useService("notification");
+        this.orm = useService('orm');
+        this.notification = useService('notification');
         this.client = new MCPClient();
-        this.rootRef = useRef("root");
+        this.rootRef = useRef('root');
         this.toolsPanelId = TOOLS_PANEL_ID;
         this.state = useState({
             loading: true,
             tools: [],
             groups: [],
-            search: "",
+            search: '',
             selected: null,
             keyPrefix: this._currentPrefix(),
             hasKey: !!this.client.key,
@@ -40,7 +47,7 @@ export class Playground extends Component {
         });
         onMounted(() => {
             const search = this.rootRef.el?.querySelector(
-                ".o_muk_mcp_list input[type=search]"
+                '.o_muk_mcp_list input[type=search]',
             );
             search?.focus();
         });
@@ -64,11 +71,13 @@ export class Playground extends Component {
     get panels() {
         const tools = {
             id: TOOLS_PANEL_ID,
-            label: _t("Tools"),
-            icon: "fa-wrench",
+            label: _t('Tools'),
+            icon: 'fa-wrench',
             sequence: 0,
         };
-        const extras = registry.category("muk_mcp.playground.panels").getEntries()
+        const extras = registry
+            .category('muk_mcp.playground.panels')
+            .getEntries()
             .map(([id, def]) => ({ id, sequence: 50, ...def }))
             .filter((p) => p.id !== TOOLS_PANEL_ID);
         return [tools, ...extras].sort((a, b) => a.sequence - b.sequence);
@@ -85,9 +94,9 @@ export class Playground extends Component {
         this.state.loading = true;
         try {
             const tools = await this.orm.call(
-                "muk_mcp.tool",
-                "get_playground_tools",
-                []
+                'muk_mcp.tool',
+                'get_playground_tools',
+                [],
             );
             this.state.tools = tools;
             this.state.groups = groupTools(tools);
@@ -98,8 +107,8 @@ export class Playground extends Component {
             }
         } catch (error) {
             this.notification.add(
-                _t("Failed to load tools: %s", error.message || error),
-                { type: "danger" }
+                _t('Failed to load tools: %s', error.message || error),
+                { type: 'danger' },
             );
         } finally {
             this.state.loading = false;
@@ -116,7 +125,7 @@ export class Playground extends Component {
                 tools.filter(
                     (t) =>
                         t.name.toLowerCase().includes(term) ||
-                        (t.description || "").toLowerCase().includes(term)
+                        (t.description || '').toLowerCase().includes(term),
                 ),
             ])
             .filter(([, tools]) => tools.length > 0);
@@ -143,10 +152,9 @@ export class Playground extends Component {
     }
     async onTryTool({ name, args }) {
         if (!this.client.key) {
-            this.notification.add(
-                _t("Select or generate an MCP key first."),
-                { type: "warning" }
-            );
+            this.notification.add(_t('Select or generate an MCP key first.'), {
+                type: 'warning',
+            });
             return;
         }
         this.state.running = true;
@@ -159,7 +167,7 @@ export class Playground extends Component {
                 status: 0,
                 duration: 0,
                 body: null,
-                raw: "",
+                raw: '',
                 exception: error.message || String(error),
             };
         } finally {
@@ -168,4 +176,4 @@ export class Playground extends Component {
     }
 }
 
-registry.category("actions").add("muk_mcp.playground", Playground);
+registry.category('actions').add('muk_mcp.playground', Playground);

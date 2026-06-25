@@ -1,8 +1,12 @@
+from __future__ import annotations
+
 import json
 import textwrap
+from typing import Any
 
-
-_DOMAIN_EXAMPLES = '\n'.join('  ' + json.dumps(d, ensure_ascii=False) for d in [
+_DOMAIN_EXAMPLES = '\n'.join(
+    '  ' + json.dumps(d, ensure_ascii=False)
+    for d in [
         [['is_company', '=', True]],
         ['|', ['email', 'ilike', '@gmail'], ['email', 'ilike', '@outlook']],
         [['state', '=', 'sale'], ['date_order', '>=', '2024-01-01']],
@@ -16,21 +20,24 @@ _CONTEXT_EXAMPLES = (
 )
 
 
-def model_field():
+def model_field() -> dict[str, Any]:
+    """Return the JSON schema for a technical model-name parameter."""
     return {
         'type': 'string',
         'description': "Technical model name (e.g. 'res.partner').",
     }
 
 
-def context_field():
+def context_field() -> dict[str, Any]:
+    """Return the JSON schema for an optional Odoo context-overrides parameter."""
     return {
         'type': 'object',
         'description': f'Optional Odoo context overrides. Examples: {_CONTEXT_EXAMPLES}.',
     }
 
 
-def domain_field(extra_note=''):
+def domain_field(extra_note: str = '') -> dict[str, Any]:
+    """Return the JSON schema for an Odoo domain parameter, with optional note appended."""
     description = textwrap.dedent(
         """\
         JSON-encoded Odoo domain array. Conditions are [field, operator, value];
@@ -38,23 +45,29 @@ def domain_field(extra_note=''):
         ilike, in, not in, child_of, parent_of. Examples (passed as JSON string):
         {examples}
         Pass [] or omit for no filter.
-        """
+        """,
     ).format(
-        examples=_DOMAIN_EXAMPLES
+        examples=_DOMAIN_EXAMPLES,
     )
     if extra_note:
         description += extra_note
     return {'type': 'string', 'description': description}
 
 
-def fields_field(*, required_hint=True, example=None, extra_note=''):
+def fields_field(
+    *,
+    required_hint: bool = True,
+    example: list[str] | None = None,
+    extra_note: str = '',
+) -> dict[str, Any]:
+    """Return the JSON schema for a field-names parameter, tuned by the given hints."""
     parts = ['Field names to return.']
     if required_hint:
         parts.append('ALWAYS specify this to avoid returning all fields (slow).')
     if extra_note:
         parts.append(extra_note)
     parts.append(
-        f'Example: {json.dumps(example or ["name", "email", "state"])}.'
+        f'Example: {json.dumps(example or ["name", "email", "state"])}.',
     )
     return {
         'type': 'array',
@@ -63,7 +76,8 @@ def fields_field(*, required_hint=True, example=None, extra_note=''):
     }
 
 
-def ids_field(verb='read', *, extra_note=''):
+def ids_field(verb: str = 'read', *, extra_note: str = '') -> dict[str, Any]:
+    """Return the JSON schema for a record-IDs parameter phrased with the given verb."""
     description = f'Record IDs to {verb}.'
     if extra_note:
         description += f' {extra_note}'

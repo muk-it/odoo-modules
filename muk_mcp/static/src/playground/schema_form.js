@@ -1,8 +1,8 @@
-import { Component } from "@odoo/owl";
-import { detectSchemaKind } from "./utils";
+import { Component } from '@odoo/owl';
+import { detectSchemaKind } from './utils';
 
 export class SchemaForm extends Component {
-    static template = "muk_mcp.SchemaForm";
+    static template = 'muk_mcp.SchemaForm';
     static props = {
         schema: Object,
         value: Object,
@@ -10,7 +10,7 @@ export class SchemaForm extends Component {
     };
     get fields() {
         const schema = this.props.schema || {};
-        if (schema.type !== "object") {
+        if (schema.type !== 'object') {
             return [];
         }
         const props = schema.properties || {};
@@ -27,7 +27,7 @@ export class SchemaForm extends Component {
     }
     setValue(name, newValue) {
         const next = { ...(this.props.value || {}) };
-        if (newValue === undefined || newValue === "") {
+        if (newValue === undefined || newValue === '') {
             delete next[name];
         } else {
             next[name] = newValue;
@@ -39,11 +39,11 @@ export class SchemaForm extends Component {
     }
     onIntChange(name, ev) {
         const v = ev.target.value;
-        this.setValue(name, v === "" ? undefined : parseInt(v, 10));
+        this.setValue(name, v === '' ? undefined : parseInt(v, 10));
     }
     onNumberChange(name, ev) {
         const v = ev.target.value;
-        this.setValue(name, v === "" ? undefined : parseFloat(v));
+        this.setValue(name, v === '' ? undefined : parseFloat(v));
     }
     onBoolChange(name, ev) {
         this.setValue(name, ev.target.checked);
@@ -59,7 +59,7 @@ export class SchemaForm extends Component {
         }
         try {
             this.setValue(name, JSON.parse(text));
-            ev.target.setCustomValidity("");
+            ev.target.setCustomValidity('');
         } catch (err) {
             ev.target.setCustomValidity(err.message);
             ev.target.reportValidity();
@@ -68,7 +68,7 @@ export class SchemaForm extends Component {
     jsonText(name) {
         const val = this.getValue(name);
         if (val === undefined || val === null) {
-            return "";
+            return '';
         }
         try {
             return JSON.stringify(val, null, 2);

@@ -1,5 +1,4 @@
 import json
-
 from unittest.mock import patch
 
 from odoo import api
@@ -21,6 +20,7 @@ def _mcp_test_log_probe(self):
 
 @tagged('post_install', '-at_install')
 class TestMcpLog(common.TransactionCase):
+    """Verify audit log records and the log rows emitted on tool execution."""
 
     # ----------------------------------------------------------
     # Setup
@@ -46,38 +46,44 @@ class TestMcpLog(common.TransactionCase):
     # ----------------------------------------------------------
 
     def test_create_log_record(self):
-        record = self.log_model.sudo().create({
-            'user_id': self.env.user.id,
-            'method': 'tools/call',
-            'tool_name': 'search_read',
-            'model_name': 'res.partner',
-            'status': 'ok',
-            'duration_ms': 42,
-        })
+        record = self.log_model.sudo().create(
+            {
+                'user_id': self.env.user.id,
+                'method': 'tools/call',
+                'tool_name': 'search_read',
+                'model_name': 'res.partner',
+                'status': 'ok',
+                'duration_ms': 42,
+            },
+        )
         self.assertTrue(record)
         self.assertEqual(record.status, 'ok')
         self.assertEqual(record.duration_ms, 42)
         self.assertEqual(record.tool_name, 'search_read')
 
     def test_create_error_log(self):
-        record = self.log_model.sudo().create({
-            'user_id': self.env.user.id,
-            'method': 'tools/call',
-            'tool_name': 'create_records',
-            'status': 'error',
-            'error_message': 'Something went wrong',
-        })
+        record = self.log_model.sudo().create(
+            {
+                'user_id': self.env.user.id,
+                'method': 'tools/call',
+                'tool_name': 'create_records',
+                'status': 'error',
+                'error_message': 'Something went wrong',
+            },
+        )
         self.assertEqual(record.status, 'error')
         self.assertEqual(record.error_message, 'Something went wrong')
 
     def test_create_denied_log(self):
-        record = self.log_model.sudo().create({
-            'user_id': self.env.user.id,
-            'method': 'tools/call',
-            'tool_name': 'delete_records',
-            'model_name': 'sale.order',
-            'status': 'denied',
-        })
+        record = self.log_model.sudo().create(
+            {
+                'user_id': self.env.user.id,
+                'method': 'tools/call',
+                'tool_name': 'delete_records',
+                'model_name': 'sale.order',
+                'status': 'denied',
+            },
+        )
         self.assertEqual(record.status, 'denied')
         self.assertEqual(record.model_name, 'sale.order')
 
@@ -91,32 +97,36 @@ class TestMcpLog(common.TransactionCase):
     def test_log_with_request_response_data(self):
         arguments = {'model': 'res.partner', 'domain': [], 'limit': 10}
         result = {'content': [{'type': 'text', 'text': '[]'}]}
-        record = self.log_model.sudo().create({
-            'user_id': self.env.user.id,
-            'method': 'tools/call',
-            'tool_name': 'search_read',
-            'model_name': 'res.partner',
-            'status': 'ok',
-            'duration_ms': 15,
-            'request_data': json.dumps(arguments, indent=4),
-            'response_data': json.dumps(result, indent=4),
-            'ip_address': '127.0.0.1',
-        })
+        record = self.log_model.sudo().create(
+            {
+                'user_id': self.env.user.id,
+                'method': 'tools/call',
+                'tool_name': 'search_read',
+                'model_name': 'res.partner',
+                'status': 'ok',
+                'duration_ms': 15,
+                'request_data': json.dumps(arguments, indent=4),
+                'response_data': json.dumps(result, indent=4),
+                'ip_address': '127.0.0.1',
+            },
+        )
         self.assertEqual(record.ip_address, '127.0.0.1')
         self.assertIn('res.partner', record.request_data)
         self.assertIn('content', record.response_data)
 
     def test_log_with_record_linkage(self):
-        record = self.log_model.sudo().create({
-            'user_id': self.env.user.id,
-            'method': 'tools/call',
-            'tool_name': 'create_records',
-            'model_name': 'res.partner',
-            'res_id': 42,
-            'res_ids': [42],
-            'status': 'ok',
-            'duration_ms': 10,
-        })
+        record = self.log_model.sudo().create(
+            {
+                'user_id': self.env.user.id,
+                'method': 'tools/call',
+                'tool_name': 'create_records',
+                'model_name': 'res.partner',
+                'res_id': 42,
+                'res_ids': [42],
+                'status': 'ok',
+                'duration_ms': 10,
+            },
+        )
         self.assertEqual(record.model_name, 'res.partner')
         self.assertEqual(record.res_id, 42)
         self.assertEqual(record.res_ids, [42])
@@ -145,14 +155,19 @@ class TestMcpLog(common.TransactionCase):
             captured.append(values)
 
         return captured, patch.object(
-            type(self.log_model), 'log', autospec=True, side_effect=_capture,
+            type(self.log_model),
+            'log',
+            autospec=True,
+            side_effect=_capture,
         )
 
     def test_tool_call_writes_log_on_success(self):
         captured, mock = self._captured_log()
         with mock:
             text, _info = self.tool_model._call(
-                'mcp_test_log_probe', {}, self.env,
+                'mcp_test_log_probe',
+                {},
+                self.env,
             )
         self.assertEqual(json.loads(text), {'ok': True})
         self.assertEqual(len(captured), 1)

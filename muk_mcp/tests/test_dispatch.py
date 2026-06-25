@@ -21,6 +21,7 @@ def _mcp_test_ctx_probe(self):
 
 
 class TestMcpDispatch(common.TransactionCase):
+    """Covers retrying wiring in the controller and context override propagation."""
 
     # ----------------------------------------------------------
     # Setup
@@ -49,7 +50,7 @@ class TestMcpDispatch(common.TransactionCase):
 
     def test_controller_wraps_tools_call_in_retrying(self):
         source = inspect.getsource(
-            mcp_controller.MCPController._handle_tools_call
+            mcp_controller.MCPController._handle_tools_call,
         )
         self.assertIn('retrying(', source)
         self.assertIn('partial(', source)
@@ -67,13 +68,15 @@ class TestMcpDispatch(common.TransactionCase):
         self.assertEqual(json.loads(text)['flag'], 'here')
 
     def test_context_override_reaches_db_tool(self):
-        tool = self.tool_model.sudo().create({
-            'name': 'mcp_test_ctx_probe_db',
-            'description': 'Return the probe flag from env.context.',
-            'category': 'read',
-            'code': "result = {'flag': env.context.get('muk_mcp_probe')}\n",
-            'input_schema': json.dumps({'type': 'object', 'properties': {}}),
-        })
+        tool = self.tool_model.sudo().create(
+            {
+                'name': 'mcp_test_ctx_probe_db',
+                'description': 'Return the probe flag from env.context.',
+                'category': 'read',
+                'code': "result = {'flag': env.context.get('muk_mcp_probe')}\n",
+                'input_schema': json.dumps({'type': 'object', 'properties': {}}),
+            },
+        )
         try:
             text, _info = self.tool_model._call(
                 'mcp_test_ctx_probe_db',

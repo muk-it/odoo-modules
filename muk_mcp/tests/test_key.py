@@ -4,6 +4,7 @@ from odoo.tests import common
 
 
 class TestMcpKey(common.TransactionCase):
+    """Verify API key authentication, default scope and rate-limit behaviour."""
 
     # ----------------------------------------------------------
     # Setup
@@ -14,13 +15,15 @@ class TestMcpKey(common.TransactionCase):
         super().setUpClass()
         cls.key_model = cls.env['muk_mcp.key']
         cls.raw_token = secrets.token_urlsafe(32)
-        cls.key = cls.key_model.create({
-            'name': 'Test Key',
-            'user_id': cls.env.user.id,
-            'key_hash': cls.key_model._hash_key(cls.raw_token),
-            'key_prefix': cls.raw_token[:8],
-            'rate_limit': 10,
-        })
+        cls.key = cls.key_model.create(
+            {
+                'name': 'Test Key',
+                'user_id': cls.env.user.id,
+                'key_hash': cls.key_model._hash_key(cls.raw_token),
+                'key_prefix': cls.raw_token[:8],
+                'rate_limit': 10,
+            },
+        )
 
     # ----------------------------------------------------------
     # Tests

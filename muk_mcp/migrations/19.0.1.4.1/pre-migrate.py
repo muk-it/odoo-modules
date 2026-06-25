@@ -36,6 +36,6 @@ def migrate(cr, version):
             (new_name, new_xmlid),
         )
     _logger.info(
-        "muk_mcp: renamed DB tools for v19.0.1.4.1: %s",
+        'muk_mcp: renamed DB tools for v19.0.1.4.1: %s',
         ', '.join(f'{old} -> {new}' for old, new, _n in TOOL_XMLID_RENAMES),
     )

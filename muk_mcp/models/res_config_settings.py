@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 from odoo import fields, models
 
 
 class ResConfigSettings(models.TransientModel):
+    """Add MCP session, logging, rate-limit and module toggles to settings."""
 
     _inherit = 'res.config.settings'
 
@@ -10,50 +13,49 @@ class ResConfigSettings(models.TransientModel):
     # ----------------------------------------------------------
 
     mcp_session_timeout = fields.Integer(
-        string="Session Timeout (hours)",
+        string='Session Timeout (hours)',
         config_parameter='muk_mcp.session_timeout_hours',
         default=24,
-        help="Inactive MCP sessions are cleaned up after this many hours.",
+        help='Inactive MCP sessions are cleaned up after this many hours.',
     )
 
     mcp_log_retention = fields.Integer(
-        string="Log Retention (days)",
+        string='Log Retention (days)',
         config_parameter='muk_mcp.log_autovacuum_days',
         default=30,
-        help="Audit logs older than this many days are automatically deleted.",
+        help='Audit logs older than this many days are automatically deleted.',
     )
 
     mcp_rate_limit_requests = fields.Integer(
-        string="Rate Limit (Requests)",
+        string='Rate Limit (Requests)',
         config_parameter='muk_mcp.rate_limit_requests',
         default=60,
-        help="Default maximum MCP requests per minute per key. "
-             "Set to 0 to disable. Used as default when generating new keys.",
+        help='Default maximum MCP requests per minute per key. '
+        'Set to 0 to disable. Used as default when generating new keys.',
     )
 
     mcp_annotate_messages = fields.Boolean(
-        string="Annotate Messages",
+        string='Annotate Messages',
         config_parameter='muk_mcp.annotate_messages',
         default=True,
         help=(
-            "When enabled, chatter messages from MCP operations are "
-            "marked to distinguish AI-originated changes from manual ones."
+            'When enabled, chatter messages from MCP operations are '
+            'marked to distinguish AI-originated changes from manual ones.'
         ),
     )
 
     module_muk_mcp_access = fields.Boolean(
-        string="MCP Access",
+        string='MCP Access',
     )
 
     module_muk_mcp_apps = fields.Boolean(
-        string="MCP Apps",
+        string='MCP Apps',
     )
 
     module_muk_mcp_oauth = fields.Boolean(
-        string="MCP OAuth",
+        string='MCP OAuth',
     )
 
     module_muk_mcp_enterprise = fields.Boolean(
-        string="MCP Enterprise",
+        string='MCP Enterprise',
     )
-
