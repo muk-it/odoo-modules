@@ -20,6 +20,10 @@ const LAST_TOOL_STORAGE_KEY = 'muk_mcp.playground.last_tool';
 const ACTIVE_PANEL_STORAGE_KEY = 'muk_mcp.playground.active_panel';
 const TOOLS_PANEL_ID = 'tools';
 
+/**
+ * Root client action rendering the MCP playground: tool browser, key bar, and
+ * pluggable side panels contributed via the `muk_mcp.playground.panels` registry.
+ */
 export class Playground extends Component {
     static template = 'muk_mcp.Playground';
     static components = { KeyBar, ToolList, ToolDetail };
@@ -68,6 +72,11 @@ export class Playground extends Component {
         const valid = this.panels.some((p) => p.id === stored);
         return valid ? stored : TOOLS_PANEL_ID;
     }
+    /**
+     * Assemble the ordered panel list: the built-in Tools panel plus any panels
+     * contributed to the `muk_mcp.playground.panels` registry, sorted by sequence.
+     * @returns {object[]} panel definitions carrying `id`, `label`, `icon`, `sequence`
+     */
     get panels() {
         const tools = {
             id: TOOLS_PANEL_ID,
@@ -90,6 +99,11 @@ export class Playground extends Component {
         this.state.activePanel = id;
         localStorage.setItem(ACTIVE_PANEL_STORAGE_KEY, id);
     }
+    /**
+     * Fetch the playground tool catalog, group it, and select an initial tool.
+     * Restores the last-used tool from localStorage when nothing is selected yet.
+     * @returns {Promise<void>}
+     */
     async loadTools() {
         this.state.loading = true;
         try {
@@ -114,6 +128,10 @@ export class Playground extends Component {
             this.state.loading = false;
         }
     }
+    /**
+     * Filter the grouped tools by the search term against name and description.
+     * @returns {Array} groups with non-matching tools and empty groups removed
+     */
     get filteredGroups() {
         const term = this.state.search.trim().toLowerCase();
         if (!term) {
@@ -150,6 +168,15 @@ export class Playground extends Component {
         this.state.hasKey = !!this.client.key;
         this.state.response = null;
     }
+    /**
+     * Run the selected tool against the MCP endpoint and store the response.
+     * Warns and aborts when no key is set; captures thrown errors as an
+     * exception response rather than propagating them.
+     * @param {object} request
+     * @param {string} request.name tool name
+     * @param {object} request.args tool arguments
+     * @returns {Promise<void>}
+     */
     async onTryTool({ name, args }) {
         if (!this.client.key) {
             this.notification.add(_t('Select or generate an MCP key first.'), {

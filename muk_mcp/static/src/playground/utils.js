@@ -1,3 +1,8 @@
+/**
+ * Deep-clone a JSON-serializable value, falling back to the original on failure.
+ * @param {*} value value to clone
+ * @returns {*} a structural copy, or the input itself if it cannot be serialized
+ */
 function safeClone(value) {
     try {
         return JSON.parse(JSON.stringify(value));
@@ -6,6 +11,11 @@ function safeClone(value) {
     }
 }
 
+/**
+ * Derive a sensible default value for a JSON schema node.
+ * @param {object} schema JSON schema fragment
+ * @returns {*} the explicit default, first enum value, or a per-type empty value
+ */
 export function schemaDefault(schema) {
     if (!schema || typeof schema !== 'object') {
         return undefined;
@@ -34,6 +44,12 @@ export function schemaDefault(schema) {
     }
 }
 
+/**
+ * Build the initial argument object for an object schema.
+ * Seeds only properties that are required or carry an explicit default.
+ * @param {object} schema JSON schema describing the tool arguments
+ * @returns {*} an object pre-filled with seed values, or the scalar default for non-objects
+ */
 export function buildInitialValue(schema) {
     if (!schema || schema.type !== 'object') {
         return schemaDefault(schema);
@@ -52,6 +68,11 @@ export function buildInitialValue(schema) {
     return out;
 }
 
+/**
+ * Recursively strip empty entries (undefined, '', null) from a value.
+ * @param {*} value value to prune
+ * @returns {*} the value with empty object/array members removed
+ */
 export function cleanValue(value) {
     if (Array.isArray(value)) {
         return value.map(cleanValue).filter((v) => v !== undefined);
@@ -69,6 +90,15 @@ export function cleanValue(value) {
     return value;
 }
 
+/**
+ * Build a copy-pasteable curl command for a tools/call request.
+ * @param {object} options
+ * @param {string} options.baseUrl origin the /mcp endpoint is served from
+ * @param {string} options.key MCP bearer key, omitted from the header when falsy
+ * @param {string} options.toolName name of the tool to invoke
+ * @param {object} options.args tool arguments
+ * @returns {string} a multi-line curl command
+ */
 export function buildCurl({ baseUrl, key, toolName, args }) {
     const body = {
         jsonrpc: '2.0',
@@ -85,6 +115,12 @@ export function buildCurl({ baseUrl, key, toolName, args }) {
     ].join('\n');
 }
 
+/**
+ * Build a pretty-printed JSON-RPC tools/call payload.
+ * @param {string} toolName name of the tool to invoke
+ * @param {object} args tool arguments
+ * @returns {string} the indented JSON-RPC request body
+ */
 export function buildJsonRpc(toolName, args) {
     return JSON.stringify(
         {
@@ -98,6 +134,11 @@ export function buildJsonRpc(toolName, args) {
     );
 }
 
+/**
+ * Pretty-print a JSON string, returning the input unchanged if it is not valid JSON.
+ * @param {string} text raw text that may contain JSON
+ * @returns {string} indented JSON, or the original text on parse failure
+ */
 export function prettyJson(text) {
     if (!text) {
         return '';
@@ -109,6 +150,12 @@ export function prettyJson(text) {
     }
 }
 
+/**
+ * Normalize a JSON-RPC response body into a render-friendly result descriptor.
+ * @param {object} body parsed JSON-RPC response, or a falsy value when absent
+ * @returns {object} a descriptor with `kind` ('empty'|'error'|'tool_error'|'ok'),
+ *   concatenated `text`, content `blocks`, and error `code`/`message` when applicable
+ */
 export function parseToolResult(body) {
     if (!body) {
         return { kind: 'empty', text: '', blocks: [] };
@@ -137,6 +184,11 @@ export function parseToolResult(body) {
     };
 }
 
+/**
+ * Map a JSON schema node to the form-widget kind that should render it.
+ * @param {object} schema JSON schema fragment
+ * @returns {string} one of 'enum', 'bool', 'int', 'number', 'string', or 'json'
+ */
 export function detectSchemaKind(schema) {
     if (!schema) {
         return 'json';
@@ -160,16 +212,31 @@ export function detectSchemaKind(schema) {
     return 'json';
 }
 
+/**
+ * Resolve the human-readable label for a tool category.
+ * @param {string} category category key
+ * @returns {string} the display label, or the key itself when unmapped
+ */
 export function categoryLabel(category) {
     const map = { read: 'Read', write: 'Write', other: 'Other' };
     return map[category] || category;
 }
 
+/**
+ * Resolve the Bootstrap badge class for a tool category.
+ * @param {string} category category key
+ * @returns {string} the badge CSS class, defaulting to 'text-bg-secondary'
+ */
 export function categoryBadge(category) {
     const map = { read: 'text-bg-info', write: 'text-bg-warning' };
     return map[category] || 'text-bg-secondary';
 }
 
+/**
+ * Group tools by category and sort each group by tool name.
+ * @param {object[]} tools tool descriptors carrying `name` and optional `category`
+ * @returns {Array} category-sorted entries of `[category, sortedTools]`
+ */
 export function groupTools(tools) {
     const groups = new Map();
     for (const tool of tools) {

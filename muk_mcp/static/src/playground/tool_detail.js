@@ -12,6 +12,10 @@ import {
     cleanValue,
 } from './utils';
 
+/**
+ * Detail pane for the selected tool: renders its argument form, schema, and the
+ * call response, and offers run plus curl/JSON-RPC copy actions.
+ */
 export class ToolDetail extends Component {
     static template = 'muk_mcp.ToolDetail';
     static components = { SchemaForm, ResponsePanel };
@@ -31,6 +35,10 @@ export class ToolDetail extends Component {
         this._ensureArgs(this.props.tool);
         onWillUpdateProps((next) => this._ensureArgs(next.tool));
     }
+    /**
+     * Lazily seed the argument state for a tool from its input schema, once per tool.
+     * @param {object} tool the tool descriptor, or a falsy value when none is selected
+     */
     _ensureArgs(tool) {
         if (tool && !(tool.name in this.state.argsByTool)) {
             this.state.argsByTool[tool.name] = buildInitialValue(
@@ -82,6 +90,9 @@ export class ToolDetail extends Component {
             this.props.tool.inputSchema || {},
         );
     }
+    /**
+     * Trigger a tool call with the current arguments, pruned of empty values.
+     */
     onRun() {
         if (!this.props.tool) {
             return;
@@ -97,6 +108,12 @@ export class ToolDetail extends Component {
         }
         return JSON.stringify(this.props.tool.inputSchema || {}, null, 2);
     }
+    /**
+     * Copy text to the clipboard and notify, reporting failure when unavailable.
+     * @param {string} text text to copy
+     * @param {string} message success notification message
+     * @returns {Promise<void>}
+     */
     async _copy(text, message) {
         try {
             await navigator.clipboard.writeText(text);
@@ -107,6 +124,10 @@ export class ToolDetail extends Component {
             });
         }
     }
+    /**
+     * Build a curl command for the tools/call request and copy it to the clipboard.
+     * Uses the stored key when present, otherwise a placeholder.
+     */
     onCopyCurl() {
         if (!this.props.tool) {
             return;

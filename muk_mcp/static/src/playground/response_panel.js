@@ -3,6 +3,10 @@ import { useService } from '@web/core/utils/hooks';
 import { _t } from '@web/core/l10n/translation';
 import { parseToolResult, prettyJson } from './utils';
 
+/**
+ * Renders a parsed tool-call response: status banner, text/content blocks,
+ * downloadable resources, and the raw JSON body, with copy-to-clipboard actions.
+ */
 export class ResponsePanel extends Component {
     static template = 'muk_mcp.ResponsePanel';
     static props = {
@@ -42,6 +46,11 @@ export class ResponsePanel extends Component {
     get blocks() {
         return this.parsed?.blocks || [];
     }
+    /**
+     * Produce the display text for the parsed result: pretty JSON for successful or
+     * tool-error results, a formatted message for JSON-RPC errors, else empty.
+     * @returns {string} the human-readable result text
+     */
     get prettyResult() {
         const parsed = this.parsed;
         if (!parsed) {
@@ -58,9 +67,20 @@ export class ResponsePanel extends Component {
     formatTextBlock(block) {
         return prettyJson(block.text);
     }
+    /**
+     * Build a base64 data URI for an inline resource block.
+     * @param {string} mimeType resource MIME type, defaulted when missing
+     * @param {string} base64 base64-encoded payload
+     * @returns {string} the data URI
+     */
     dataUri(mimeType, base64) {
         return `data:${mimeType || 'application/octet-stream'};base64,${base64}`;
     }
+    /**
+     * Derive a safe download filename for a resource block.
+     * @param {object} block content block carrying an optional `resource`
+     * @returns {string} the resource name, or a filesystem-safe slug of its URI
+     */
     downloadName(block) {
         if (block.resource?.name) {
             return block.resource.name;

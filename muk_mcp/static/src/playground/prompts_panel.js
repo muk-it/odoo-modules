@@ -9,6 +9,10 @@ import { KeyBar } from '@muk_mcp/playground/key_bar';
 const LAST_PROMPT_STORAGE_KEY = 'muk_mcp.playground.last_prompt';
 const ARGS_STORAGE_PREFIX = 'muk_mcp.playground.prompt_args::';
 
+/**
+ * Playground side panel for browsing prompts, filling their arguments (with
+ * debounced server-side completion), and previewing the rendered prompts/get result.
+ */
 export class PromptsPanel extends Component {
     static template = 'muk_mcp.PromptsPanel';
     static components = { KeyBar };
@@ -34,6 +38,11 @@ export class PromptsPanel extends Component {
             await this.loadPrompts();
         });
     }
+    /**
+     * Fetch the playground prompt catalog and select an initial prompt,
+     * restoring the last-used one from localStorage when nothing is selected.
+     * @returns {Promise<void>}
+     */
     async loadPrompts() {
         this.state.loading = true;
         try {
@@ -57,6 +66,10 @@ export class PromptsPanel extends Component {
             this.state.loading = false;
         }
     }
+    /**
+     * Filter prompts by the search term against name, title, and description.
+     * @returns {object[]} the matching prompts
+     */
     get filteredPrompts() {
         const term = this.state.search.trim().toLowerCase();
         if (!term) {
@@ -72,6 +85,11 @@ export class PromptsPanel extends Component {
     get selectedPrompt() {
         return this.state.prompts.find((p) => p.name === this.state.selected) || null;
     }
+    /**
+     * Resolve the argument map for the selected prompt, seeding it on first access
+     * from persisted localStorage values or empty strings per declared argument.
+     * @returns {object} the (lazily seeded) argument map for the active prompt
+     */
     get currentArgs() {
         const prompt = this.selectedPrompt;
         if (!prompt) {
@@ -90,6 +108,11 @@ export class PromptsPanel extends Component {
         this.state.argsByName[prompt.name] = seed;
         return seed;
     }
+    /**
+     * Read persisted prompt arguments from localStorage.
+     * @param {string} name prompt name used as the storage key suffix
+     * @returns {object | null} the parsed argument object, or null if absent/invalid
+     */
     _restoreArgs(name) {
         try {
             const raw = localStorage.getItem(ARGS_STORAGE_PREFIX + name);
@@ -99,6 +122,11 @@ export class PromptsPanel extends Component {
             return null;
         }
     }
+    /**
+     * Persist prompt arguments to localStorage, ignoring storage failures.
+     * @param {string} name prompt name used as the storage key suffix
+     * @param {object} args argument map to store
+     */
     _persistArgs(name, args) {
         try {
             localStorage.setItem(
@@ -142,6 +170,12 @@ export class PromptsPanel extends Component {
         this._persistArgs(prompt.name, next);
         this._scheduleComplete(argName, ev.target.value);
     }
+    /**
+     * Debounce a completion/complete request for an argument and store its results.
+     * No-ops when no prompt is selected or no key is set; errors are swallowed.
+     * @param {string} argName argument being completed
+     * @param {string} value current argument value to complete against
+     */
     _scheduleComplete(argName, value) {
         const prompt = this.selectedPrompt;
         if (!prompt || !this.client.key) {
@@ -175,6 +209,10 @@ export class PromptsPanel extends Component {
         this.state.argsByName[prompt.name] = seed;
         this._persistArgs(prompt.name, seed);
     }
+    /**
+     * Build the request arguments, dropping empty/null/undefined values.
+     * @returns {object} the pruned argument map for the active prompt
+     */
     _cleanArgs() {
         const out = {};
         for (const [k, v] of Object.entries(this.currentArgs)) {
@@ -184,6 +222,11 @@ export class PromptsPanel extends Component {
         }
         return out;
     }
+    /**
+     * Render the selected prompt via prompts/get and store the response.
+     * No-ops when no prompt is selected or a request is already running.
+     * @returns {Promise<void>}
+     */
     async onGet() {
         const prompt = this.selectedPrompt;
         if (!prompt || this.state.running) {
@@ -227,6 +270,11 @@ export class PromptsPanel extends Component {
     get responseDescription() {
         return this.state.response?.body?.result?.description || '';
     }
+    /**
+     * Extract displayable text from a prompt message, stringifying non-text content.
+     * @param {object} message a prompt message with a `content` field
+     * @returns {string} the text content, or a JSON dump of structured content
+     */
     messageText(message) {
         const content = message.content;
         if (content && typeof content === 'object') {
@@ -264,6 +312,10 @@ export class PromptsPanel extends Component {
         }
         return 'text-danger';
     }
+    /**
+     * Build the JSON-RPC prompts/get payload for the active prompt and its arguments.
+     * @returns {object} the JSON-RPC request body
+     */
     _payload() {
         return {
             jsonrpc: '2.0',
@@ -275,6 +327,12 @@ export class PromptsPanel extends Component {
             },
         };
     }
+    /**
+     * Copy text to the clipboard and notify, reporting failure when unavailable.
+     * @param {string} text text to copy
+     * @param {string} message success notification message
+     * @returns {Promise<void>}
+     */
     async _copy(text, message) {
         try {
             await navigator.clipboard.writeText(text);
@@ -283,6 +341,10 @@ export class PromptsPanel extends Component {
             this.notification.add(_t('Clipboard unavailable'), { type: 'danger' });
         }
     }
+    /**
+     * Build a curl command for the prompts/get request and copy it to the clipboard.
+     * Uses the stored key when present, otherwise a placeholder.
+     */
     onCopyCurl() {
         if (!this.selectedPrompt) {
             return;

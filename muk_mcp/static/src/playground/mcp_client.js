@@ -2,6 +2,10 @@ const MCP_ENDPOINT = '/mcp';
 const PROTOCOL_VERSION = '2025-03-26';
 export const STORAGE_KEY = 'muk_mcp.playground.key';
 
+/**
+ * Stateful JSON-RPC client for the MCP endpoint, handling session lifecycle,
+ * lazy initialization, and bearer-key persistence in sessionStorage.
+ */
 export class MCPClient {
     constructor() {
         this.sessionId = null;
@@ -20,6 +24,11 @@ export class MCPClient {
         this.sessionId = null;
         this.initialized = false;
     }
+    /**
+     * Assemble request headers, adding auth and session headers when available.
+     * @param {object} extra additional headers to merge in
+     * @returns {object} the complete header map
+     */
     _headers(extra = {}) {
         const headers = {
             'Content-Type': 'application/json',
@@ -34,6 +43,11 @@ export class MCPClient {
         }
         return headers;
     }
+    /**
+     * POST a JSON-RPC body to the endpoint and capture any returned session id.
+     * @param {object} body JSON-RPC request payload
+     * @returns {Promise<object>} `{ status, body, raw }` with the parsed and raw response
+     */
     async _post(body) {
         const res = await fetch(MCP_ENDPOINT, {
             method: 'POST',
@@ -53,6 +67,11 @@ export class MCPClient {
         }
         return { status: res.status, body: json, raw: text };
     }
+    /**
+     * Perform the MCP initialize handshake once per session.
+     * @returns {Promise<void>}
+     * @throws {Error} if the initialize call fails
+     */
     async _ensureInitialized() {
         if (this.initialized) {
             return;
@@ -79,6 +98,14 @@ export class MCPClient {
         });
         this.initialized = true;
     }
+    /**
+     * Invoke a tool, retrying once after re-initializing on a stale-session 404.
+     * @param {string} name tool name
+     * @param {object} args tool arguments
+     * @param {object} [options]
+     * @param {boolean} [options.retried] internal flag guarding against infinite retry
+     * @returns {Promise<object>} `{ status, duration, body, raw }`
+     */
     async callTool(name, args, { retried = false } = {}) {
         await this._ensureInitialized();
         const started = performance.now();
@@ -101,6 +128,10 @@ export class MCPClient {
             raw: res.raw,
         };
     }
+    /**
+     * List the available prompts via prompts/list.
+     * @returns {Promise<object>} the raw `{ status, body, raw }` response
+     */
     async getPrompts() {
         await this._ensureInitialized();
         const res = await this._post({
@@ -111,6 +142,14 @@ export class MCPClient {
         });
         return res;
     }
+    /**
+     * Fetch a rendered prompt via prompts/get, retrying once on a stale-session 404.
+     * @param {string} name prompt name
+     * @param {object} args prompt arguments
+     * @param {object} [options]
+     * @param {boolean} [options.retried] internal flag guarding against infinite retry
+     * @returns {Promise<object>} `{ status, duration, body, raw }`
+     */
     async getPrompt(name, args, { retried = false } = {}) {
         await this._ensureInitialized();
         const started = performance.now();
@@ -133,6 +172,14 @@ export class MCPClient {
             raw: res.raw,
         };
     }
+    /**
+     * Request argument autocompletion via completion/complete.
+     * @param {object} ref completion reference (e.g. `{ type, name }`)
+     * @param {object} argument the argument `{ name, value }` being completed
+     * @param {object} [options]
+     * @param {boolean} [options.retried] internal flag guarding against infinite retry
+     * @returns {Promise<Array>} the suggested completion values (empty when none)
+     */
     async complete(ref, argument, { retried = false } = {}) {
         await this._ensureInitialized();
         const res = await this._post({
@@ -148,6 +195,10 @@ export class MCPClient {
         }
         return res.body?.result?.completion?.values || [];
     }
+    /**
+     * Tear down the current session, best-effort deleting it server-side.
+     * @returns {Promise<void>}
+     */
     async reset() {
         if (this.sessionId) {
             try {

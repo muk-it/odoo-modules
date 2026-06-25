@@ -2,6 +2,10 @@ import { Component, useState } from '@odoo/owl';
 import { useService } from '@web/core/utils/hooks';
 import { _t } from '@web/core/l10n/translation';
 
+/**
+ * Toolbar for managing the playground MCP key: paste an existing key, generate a
+ * new scoped key server-side, or clear the key for the current tab.
+ */
 export class KeyBar extends Component {
     static template = 'muk_mcp.KeyBar';
     static props = {
@@ -41,6 +45,11 @@ export class KeyBar extends Component {
         this.props.onKeyChanged();
         this.notification.add(_t('Key set for this tab'), { type: 'success' });
     }
+    /**
+     * Generate a new scoped MCP key server-side, load its plaintext for this tab,
+     * and notify the user. Falls back to a timestamped name when none is entered.
+     * @returns {Promise<void>}
+     */
     async onGenerate() {
         const name =
             (this.state.pasteName || '').trim() ||
