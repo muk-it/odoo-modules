@@ -32,7 +32,7 @@ class TestHoot(odoo.tests.HttpCase):
     # ----------------------------------------------------------
 
     @odoo.tests.no_retry
-    def test_hoot_muk_web_refresh(self) -> None:
+    def test_hoot_muk_web_refresh(self):
         self.browser_js(
             '/web/tests?headless&loglevel=2&preset=desktop&timeout=15000&tag=muk_web_refresh',
             '',

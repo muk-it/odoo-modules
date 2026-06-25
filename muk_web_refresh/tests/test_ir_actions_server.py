@@ -40,7 +40,7 @@ class TestReloadViews(TransactionCase):
             'record': partner[:1],
         }
 
-    def test_refresh_sends_bus_notification(self) -> None:
+    def test_refresh_sends_bus_notification(self):
         partner = self.env['res.partner'].create({'name': 'Test Partner'})
         with mock_patch.object(type(self.env['bus.bus']), '_sendone') as mock_sendone:
             self.action._run_action_refresh_multi(
@@ -56,14 +56,14 @@ class TestReloadViews(TransactionCase):
             self.assertEqual(payload['rec_ids'], partner.ids)
             self.assertEqual(payload['view_types'], [])
 
-    def test_refresh_notifies_all_internal_users(self) -> None:
+    def test_refresh_notifies_all_internal_users(self):
         with mock_patch.object(type(self.env['bus.bus']), '_sendone') as mock_sendone:
             self.action._run_action_refresh_multi(
                 eval_context=self._make_eval_context(),
             )
             self.assertEqual(mock_sendone.call_count, 1)
 
-    def test_refresh_with_view_types(self) -> None:
+    def test_refresh_with_view_types(self):
         self.action.refresh_view_types = 'list, kanban'
         with mock_patch.object(type(self.env['bus.bus']), '_sendone') as mock_sendone:
             self.action._run_action_refresh_multi(
