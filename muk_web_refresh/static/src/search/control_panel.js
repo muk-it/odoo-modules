@@ -9,6 +9,12 @@ import { REFRESH_VIEW_EVENT } from '@muk_web_refresh/services/refresh_service';
 
 import { useState, onWillDestroy, useEffect, useExternalListener } from '@odoo/owl';
 
+/**
+ * Provide a callback that briefly flashes the refresh animation on the content.
+ *
+ * @param {number} timeout
+ * @returns {Function}
+ */
 function useRefreshAnimation(timeout) {
     let timeoutId = null;
 
@@ -48,10 +54,8 @@ patch(ControlPanel.prototype, {
             this.refreshView();
         });
         this.autoLoadState = useState({
-            active: (
-                this.checkAutoLoadAvailability() &&
-                !!this.getAutoLoadStorageValue()
-            ),
+            active:
+                this.checkAutoLoadAvailability() && !!this.getAutoLoadStorageValue(),
             counter: 0,
         });
         this._refreshInFlight = false;
@@ -71,44 +75,31 @@ patch(ControlPanel.prototype, {
                 if (!this.autoLoadState.active || this.visibilityState.hidden) {
                     return;
                 }
-                this.autoLoadState.counter = (
-                    this.getAutoLoadRefreshInterval()
-                );
-                const interval = browser.setInterval(
-                    () => {
-                        this.autoLoadState.counter = (
-                            this.autoLoadState.counter ?
-                            this.autoLoadState.counter - 1 :
-                            this.getAutoLoadRefreshInterval()
-                        );
-                        if (this.autoLoadState.counter <= 0) {
-                            this.autoLoadState.counter = (
-                                this.getAutoLoadRefreshInterval()
-                            );
-                            if (!this._refreshInFlight) {
-                                this._refreshInFlight = true;
-                                this.refreshView().finally(() => {
-                                    this._refreshInFlight = false;
-                                });
-                            }
+                this.autoLoadState.counter = this.getAutoLoadRefreshInterval();
+                const interval = browser.setInterval(() => {
+                    this.autoLoadState.counter = this.autoLoadState.counter
+                        ? this.autoLoadState.counter - 1
+                        : this.getAutoLoadRefreshInterval();
+                    if (this.autoLoadState.counter <= 0) {
+                        this.autoLoadState.counter = this.getAutoLoadRefreshInterval();
+                        if (!this._refreshInFlight) {
+                            this._refreshInFlight = true;
+                            this.refreshView().finally(() => {
+                                this._refreshInFlight = false;
+                            });
                         }
-                    },
-                    1000
-                );
+                    }
+                }, 1000);
                 return () => browser.clearInterval(interval);
             },
-            () => [this.autoLoadState.active, this.visibilityState.hidden]
+            () => [this.autoLoadState.active, this.visibilityState.hidden],
         );
     },
     checkAutoLoadAvailability() {
-        return ['kanban', 'list'].includes(
-            this.env.config.viewType
-        );
+        return ['kanban', 'list'].includes(this.env.config.viewType);
     },
     checkRefreshAvailability() {
-        return !['base_settings'].includes(
-            this.env.config.viewSubType
-        );
+        return !['base_settings'].includes(this.env.config.viewSubType);
     },
     getAutoLoadRefreshInterval() {
         return getAutoLoadInterval() / 1000;
@@ -122,30 +113,27 @@ patch(ControlPanel.prototype, {
         return `pager_autoload:${keys.join(',')}`;
     },
     getAutoLoadStorageValue() {
-        return browser.localStorage.getItem(
-            this.getAutoLoadStorageKey()
-        );
+        return browser.localStorage.getItem(this.getAutoLoadStorageKey());
     },
     setAutoLoadStorageValue() {
-        browser.localStorage.setItem(
-            this.getAutoLoadStorageKey(), true
-        );
+        browser.localStorage.setItem(this.getAutoLoadStorageKey(), true);
     },
     removeAutoLoadStorageValue() {
-        browser.localStorage.removeItem(
-            this.getAutoLoadStorageKey()
-        );
+        browser.localStorage.removeItem(this.getAutoLoadStorageKey());
     },
     toggleAutoLoad() {
-        this.autoLoadState.active = (
-            !this.autoLoadState.active
-        );
+        this.autoLoadState.active = !this.autoLoadState.active;
         if (this.autoLoadState.active) {
             this.setAutoLoadStorageValue();
         } else {
             this.removeAutoLoadStorageValue();
         }
     },
+    /**
+     * Reload the current view through the pager or the search model.
+     *
+     * @returns {Promise<boolean>}
+     */
     async refreshView() {
         if (this.pagerProps?.onUpdate) {
             await this.pagerProps.onUpdate({
@@ -165,15 +153,12 @@ patch(ControlPanel.prototype, {
             clearTimeout(this._clickTimeout);
             this._clickTimeout = null;
         }
-        this._clickTimeout = setTimeout(
-            async () => {
-                this._clickTimeout = null;
-                if (await this.refreshView()) {
-                    this.refreshAnimation();
-                }
-            }, 
-            300
-        );
+        this._clickTimeout = setTimeout(async () => {
+            this._clickTimeout = null;
+            if (await this.refreshView()) {
+                this.refreshAnimation();
+            }
+        }, 300);
     },
     onDblClickRefresh() {
         if (this._clickTimeout) {

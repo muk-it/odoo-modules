@@ -16,20 +16,28 @@ import '@muk_web_refresh/search/control_panel';
 
 function setTabHidden() {
     Object.defineProperty(document, 'hidden', {
-        value: true, configurable: true, writable: true,
+        value: true,
+        configurable: true,
+        writable: true,
     });
     Object.defineProperty(document, 'visibilityState', {
-        value: 'hidden', configurable: true, writable: true,
+        value: 'hidden',
+        configurable: true,
+        writable: true,
     });
     document.dispatchEvent(new Event('visibilitychange'));
 }
 
 function setTabVisible() {
     Object.defineProperty(document, 'hidden', {
-        value: false, configurable: true, writable: true,
+        value: false,
+        configurable: true,
+        writable: true,
     });
     Object.defineProperty(document, 'visibilityState', {
-        value: 'visible', configurable: true, writable: true,
+        value: 'visible',
+        configurable: true,
+        writable: true,
     });
     document.dispatchEvent(new Event('visibilitychange'));
 }
@@ -139,7 +147,9 @@ test.tags('muk_web_refresh');
 test('auto-refresh pauses when tab is hidden', async () => {
     onRpc('has_group', () => true);
     let rpcCount = 0;
-    onRpc('web_search_read', () => { rpcCount++; });
+    onRpc('web_search_read', () => {
+        rpcCount++;
+    });
     await mountView({
         type: 'list',
         resModel: 'product',
@@ -164,7 +174,10 @@ test('in-flight guard prevents overlapping refreshes', async () => {
     onRpc('has_group', () => true);
     const def = new Deferred();
     let rpcCount = 0;
-    onRpc('web_search_read', () => { rpcCount++; return def; });
+    onRpc('web_search_read', () => {
+        rpcCount++;
+        return def;
+    });
     await mountView({
         type: 'list',
         resModel: 'product',

@@ -1,16 +1,16 @@
 {
-    'name': 'MuK Web Refresh', 
+    'name': 'MuK Web Refresh',
     'summary': 'Refresh views manually, automatically, or from the backend',
-    'description': '''
+    'description': """
         Adds a refresh button to reload the current view with a single
         click. Double-click the button to toggle auto refresh, which
         reloads the view every 30 seconds. Configure automation rules
         with the Reload Views action type to trigger view refreshes
         from the backend via the bus.
-    ''',
-    'version': '19.0.1.1.6',
+    """,
+    'version': '19.0.1.1.7',
     'category': 'Tools/UI',
-    'license': 'LGPL-3', 
+    'license': 'LGPL-3',
     'author': 'MuK IT',
     'website': 'http://www.mukit.at',
     'live_test_url': 'https://youtu.be/LmDAgBBWZBQ',
@@ -37,7 +37,7 @@
                 'after',
                 'web/static/src/search/control_panel/control_panel.js',
                 'muk_web_refresh/static/src/search/control_panel.js',
-            ),            
+            ),
             (
                 'after',
                 'web/static/src/search/control_panel/control_panel.xml',

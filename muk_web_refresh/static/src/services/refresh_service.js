@@ -4,6 +4,13 @@ import { getAutoLoadInterval } from '@muk_web_refresh/core/utils';
 
 export const REFRESH_VIEW_EVENT = 'muk_web_refresh.refresh-view';
 
+/**
+ * Tell whether the current view matches the reload notification payload.
+ *
+ * @param {object} actionService
+ * @param {object} payload
+ * @returns {boolean}
+ */
 function shouldReload(actionService, payload) {
     const controller = actionService.currentController;
     if (!controller || controller.action.type !== 'ir.actions.act_window') {
@@ -25,6 +32,12 @@ function shouldReload(actionService, payload) {
     return true;
 }
 
+/**
+ * Wrap a reload callback so it fires at most once per third of the interval.
+ *
+ * @param {Function} reloadFn
+ * @returns {Function}
+ */
 function makeThrottledReload(reloadFn) {
     let lastReloadTime = 0;
     let pendingReload = null;
@@ -40,8 +53,8 @@ function makeThrottledReload(reloadFn) {
                     pendingReload = null;
                     lastReloadTime = Date.now();
                     await reloadFn();
-                }, 
-                getAutoLoadInterval() / 3 - elapsed
+                },
+                getAutoLoadInterval() / 3 - elapsed,
             );
         }
     };
@@ -50,8 +63,8 @@ function makeThrottledReload(reloadFn) {
 export const refreshService = {
     dependencies: ['bus_service', 'action'],
     start(env, { bus_service, action: actionService }) {
-        const throttledReload = makeThrottledReload(
-            () => env.bus.trigger(REFRESH_VIEW_EVENT)
+        const throttledReload = makeThrottledReload(() =>
+            env.bus.trigger(REFRESH_VIEW_EVENT),
         );
         bus_service.subscribe('muk_web_refresh.reload', (payload) => {
             if (shouldReload(actionService, payload)) {

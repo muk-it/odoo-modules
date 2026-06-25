@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 from odoo import _, fields, models
 
 
 class IrActionsServer(models.Model):
+    """Add a server action type that broadcasts view reload requests."""
 
     _inherit = 'ir.actions.server'
 
@@ -28,16 +31,15 @@ class IrActionsServer(models.Model):
     # Helper
     # ----------------------------------------------------------
 
-    def _generate_action_name(self):
+    def _generate_action_name(self) -> str:
+        """Return the default name for a reload-views action."""
         if self.state == 'refresh':
             return _('Reload Views')
         return super()._generate_action_name()
 
-    def _run_action_refresh_multi(self, eval_context=None):
-        records = (
-            eval_context.get('records') or 
-            eval_context.get('record')
-        )
+    def _run_action_refresh_multi(self, eval_context=None) -> None:
+        """Broadcast a view reload request over the bus."""
+        records = eval_context.get('records') or eval_context.get('record')
         message = {
             'model': self.model_id.model,
             'view_types': [
@@ -47,6 +49,4 @@ class IrActionsServer(models.Model):
             ],
             'rec_ids': records.ids if records else [],
         }
-        self.env['bus.bus']._sendone(
-            'broadcast', 'muk_web_refresh.reload', message
-        )
+        self.env['bus.bus']._sendone('broadcast', 'muk_web_refresh.reload', message)
