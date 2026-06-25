@@ -30,7 +30,7 @@ class MCPMixin(models.AbstractModel):
             'understand who you are acting as, what permissions you have, '
             'and what company context you are in. To target a specific '
             'company on a subsequent tool call, pass '
-            "context={'allowed_company_ids': [id]} in the tool arguments."
+            'context={"allowed_company_ids": [id]} in the tool arguments.'
         ),
         input_schema={
             'type': 'object',

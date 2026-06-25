@@ -89,8 +89,8 @@ class MCPMixin(models.AbstractModel):
         name='search_read',
         description=(
             'Search for records matching a domain filter and return their '
-            "field values. Always specify 'fields' to avoid returning all "
-            "fields (which can be slow). Use 'limit' to paginate large "
+            'field values. Always specify "fields" to avoid returning all '
+            'fields (which can be slow). Use "limit" to paginate large '
             'result sets.'
         ),
         input_schema={
@@ -115,7 +115,7 @@ class MCPMixin(models.AbstractModel):
                 'order': {
                     'type': 'string',
                     'description': (
-                        "Sort order, e.g. 'create_date desc', 'name asc, id desc'."
+                        'Sort order, e.g. "create_date desc", "name asc, id desc".'
                     ),
                 },
                 'context': context_field(),
@@ -225,7 +225,7 @@ class MCPMixin(models.AbstractModel):
                 'order': {
                     'type': 'string',
                     'description': (
-                        "Sort order for groups, e.g. 'amount_total:sum desc'."
+                        'Sort order for groups, e.g. "amount_total:sum desc".'
                     ),
                 },
                 'context': context_field(),

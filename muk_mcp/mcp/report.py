@@ -57,8 +57,8 @@ class MCPMixin(models.AbstractModel):
         description=(
             'Render an Odoo report for one or more records and return the '
             'binary as base64. Accepts a report xmlid (e.g. '
-            "'sale.action_report_saleorder'), a report_name "
-            "(e.g. 'sale.report_saleorder'), or the numeric id of an "
+            '"sale.action_report_saleorder"), a report_name '
+            '(e.g. "sale.report_saleorder"), or the numeric id of an '
             'ir.actions.report.'
         ),
         input_schema={

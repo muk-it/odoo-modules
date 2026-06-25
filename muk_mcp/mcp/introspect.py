@@ -22,8 +22,8 @@ class MCPMixin(models.AbstractModel):
         name='list_models',
         description=(
             'List available Odoo models with their technical names and '
-            "human-readable descriptions. Use 'search' to filter by "
-            "substring (e.g. 'sale', 'account', 'stock'). This is the "
+            'human-readable descriptions. Use "search" to filter by '
+            'substring (e.g. "sale", "account", "stock"). This is the '
             'starting point to discover what data exists in the system '
             'before querying it. Common models: res.partner (contacts), '
             'sale.order (sales), account.move (invoices), stock.picking '
@@ -36,8 +36,8 @@ class MCPMixin(models.AbstractModel):
                     'type': 'string',
                     'description': (
                         'Filter model names by substring (case-insensitive). '
-                        "Examples: 'sale', 'partner', 'account', 'stock', "
-                        "'project'."
+                        'Examples: "sale", "partner", "account", "stock", '
+                        '"project".'
                     ),
                 },
                 'limit': {
@@ -81,7 +81,7 @@ class MCPMixin(models.AbstractModel):
             'every field with its type, label, help text, required/readonly '
             'flags, and relation target (for Many2one/One2many/Many2many '
             'fields). Use this before search_read to know which fields '
-            "exist and what types they are. The 'selection' attribute "
+            'exist and what types they are. The "selection" attribute '
             'shows allowed values for Selection fields.'
         ),
         input_schema={

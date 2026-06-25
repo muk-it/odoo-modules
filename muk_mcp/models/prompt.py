@@ -75,7 +75,7 @@ class MCPPrompt(models.Model):
             '#   UserError   - odoo.exceptions.UserError\n'
             '#   logger      - logging.Logger for this prompt\n'
             '#\n'
-            "# Set 'result' to the prompt text (a string) or a list of\n"
+            '# Set "result" to the prompt text (a string) or a list of\n'
             '# message dicts to return it.\n'
             "result = ''\n"
         ),

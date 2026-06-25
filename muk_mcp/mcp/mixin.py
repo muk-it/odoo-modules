@@ -187,9 +187,9 @@ class MCPMixin(models.AbstractModel):
         name='list_modules',
         description=(
             'List installed Odoo modules with their names, versions, and '
-            "descriptions. Use 'search' to filter. This helps understand "
+            'descriptions. Use "search" to filter. This helps understand '
             'which apps and features are active in the system (e.g. is '
-            "'sale' installed? is 'stock' installed?)."
+            '"sale" installed? is "stock" installed?).'
         ),
         input_schema={
             'type': 'object',

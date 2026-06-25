@@ -30,13 +30,13 @@ class MCPMixin(models.AbstractModel):
         description=(
             'Call a public method on an Odoo model or recordset. Use this '
             'for business logic actions like confirming a sale order '
-            "(model='sale.order', method='action_confirm', ids=[42]) or "
-            "posting an invoice (model='account.move', "
-            "method='action_post', ids=[10]). Common methods: "
+            '(model="sale.order", method="action_confirm", ids=[42]) or '
+            'posting an invoice (model="account.move", '
+            'method="action_post", ids=[10]). Common methods: '
             'action_confirm (sales/purchases), action_post (invoices), '
             'action_done (pickings), action_assign (pickings), '
             'action_cancel (most documents). Private methods (starting '
-            "with '_') are blocked for safety."
+            'with "_") are blocked for safety.'
         ),
         input_schema={
             'type': 'object',
@@ -45,7 +45,7 @@ class MCPMixin(models.AbstractModel):
                 'method': {
                     'type': 'string',
                     'description': (
-                        "Public method name (e.g. 'action_confirm', 'action_post', 'message_post')."
+                        'Public method name (e.g. "action_confirm", "action_post", "message_post").'
                     ),
                 },
                 'ids': ids_field(

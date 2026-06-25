@@ -88,7 +88,7 @@ class MCPTool(models.Model):
             '#   UserError   - odoo.exceptions.UserError\n'
             '#   logger      - logging.Logger for this tool\n'
             '#\n'
-            "# Set 'result' to a JSON-serializable value to return it.\n"
+            '# Set "result" to a JSON-serializable value to return it.\n'
             'result = {}\n'
         ),
     )

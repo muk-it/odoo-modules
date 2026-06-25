@@ -66,8 +66,8 @@ class MCPMixin(models.AbstractModel):
         name='export_records',
         description=(
             'Export records as CSV or XLSX, returned as base64. '
-            "Field paths use '/' to traverse relations, e.g. "
-            "'partner_id/name' or 'order_line/product_id/default_code'. "
+            'Field paths use "/" to traverse relations, e.g. '
+            '"partner_id/name" or "order_line/product_id/default_code". '
             'Honours record rules and field access.'
         ),
         input_schema={

@@ -78,7 +78,7 @@ class MCPMixin(models.AbstractModel):
                 _(
                     'Could not extract text from %(n)s (%(m)s).\n'
                     'The file may be scanned, encrypted, empty, or not a text-bearing format.\n'
-                    "Use format='resource' or format='auto' to get the raw blob.",
+                    'Use format="resource" or format="auto" to get the raw blob.',
                     n=name or uri,
                     m=mimetype or 'unknown',
                 ),
@@ -124,8 +124,8 @@ class MCPMixin(models.AbstractModel):
                 'uri': {
                     'type': 'string',
                     'description': (
-                        "Resource uri. Examples: 'odoo://attachment/42', "
-                        "'odoo://record/res.partner/5/image_1920'."
+                        'Resource uri. Examples: "odoo://attachment/42", '
+                        '"odoo://record/res.partner/5/image_1920".'
                     ),
                 },
                 'format': {
@@ -133,8 +133,8 @@ class MCPMixin(models.AbstractModel):
                     'description': (
                         'Output format for indexable binary documents '
                         '(PDF, docx, xlsx, pptx, ODF). Ignored for '
-                        "text/image/audio. One of: 'auto' (default), "
-                        "'text', 'resource'. See the tool description "
+                        'text/image/audio. One of: "auto" (default), '
+                        '"text", "resource". See the tool description '
                         'for semantics.'
                     ),
                     'default': 'auto',
