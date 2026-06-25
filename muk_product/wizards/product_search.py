@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import ast
 
 from odoo import api, fields, models
@@ -5,7 +7,8 @@ from odoo.fields import Domain
 
 
 class ProductSearch(models.TransientModel):
-    
+    """Bulk-search products from a list of values and open the result."""
+
     _name = 'muk_product.product_search'
     _description = 'Product Search'
 
@@ -14,7 +17,7 @@ class ProductSearch(models.TransientModel):
     # ----------------------------------------------------------
 
     search_value = fields.Text(
-        string="Search",
+        string='Search',
     )
 
     value_split_operator = fields.Selection(
@@ -25,7 +28,7 @@ class ProductSearch(models.TransientModel):
             (';', 'Semicolon'),
             ('\t', 'Tab'),
         ],
-        string="Split by",
+        string='Split by',
         required=True,
         default='\n',
     )
@@ -35,7 +38,7 @@ class ProductSearch(models.TransientModel):
             ('=', 'Match'),
             ('ilike', 'Contains'),
         ],
-        string="Search with",
+        string='Search with',
         required=True,
         default='=',
     )
@@ -46,14 +49,14 @@ class ProductSearch(models.TransientModel):
             ('name', 'Product Name'),
             ('product_variant_ids.barcode', 'Barcode'),
         ],
-        string="Field",
+        string='Field',
         required=True,
         default='product_variant_ids.default_code',
     )
 
     search_domain = fields.Text(
         compute='_compute_search_domain',
-        string="Domain",
+        string='Domain',
         readonly=False,
         store=True,
     )
@@ -61,20 +64,20 @@ class ProductSearch(models.TransientModel):
     product_preview_ids = fields.One2many(
         compute='_compute_product_preview',
         comodel_name='product.template',
-        string="Preview Records",
+        string='Preview Records',
     )
-    
+
     product_preview_hint = fields.Boolean(
         compute='_compute_product_preview',
-        string="Preview Hint",
+        string='Preview Hint',
     )
 
     action_id = fields.Many2one(
         comodel_name='ir.actions.act_window',
-        string="Action",
+        string='Action',
         required=True,
         domain=[('res_model', '=', 'product.template')],
-        default=lambda self: self.env.ref('product.product_template_action_all', False)
+        default=lambda self: self.env.ref('product.product_template_action_all', False),
     )
 
     # ----------------------------------------------------------
@@ -82,12 +85,13 @@ class ProductSearch(models.TransientModel):
     # ----------------------------------------------------------
 
     @api.depends(
-        'search_value', 
-        'value_split_operator', 
-        'search_operator', 
-        'search_field'
+        'search_value',
+        'value_split_operator',
+        'search_operator',
+        'search_field',
     )
-    def _compute_search_domain(self):
+    def _compute_search_domain(self) -> None:
+        """Build the search domain from the split values and operator."""
         for record in self:
             search_domain = []
             search_parts = (record.search_value or '').split(
@@ -96,14 +100,17 @@ class ProductSearch(models.TransientModel):
             if search_parts and record.search_operator == '=':
                 search_domain = [(record.search_field, 'in', search_parts)]
             elif search_parts and record.search_operator == 'ilike':
-                search_domain = Domain.OR([
-                    [(record.search_field, record.search_operator, part)]
-                    for part in search_parts
-                ])
+                search_domain = Domain.OR(
+                    [
+                        [(record.search_field, record.search_operator, part)]
+                        for part in search_parts
+                    ]
+                )
             record.search_domain = repr(search_domain)
 
     @api.depends('search_domain')
-    def _compute_product_preview(self):
+    def _compute_product_preview(self) -> None:
+        """Preview up to seven matching templates and flag any overflow."""
         self.product_preview_ids = False
         self.product_preview_hint = False
         for record in self.filtered(
@@ -119,10 +126,9 @@ class ProductSearch(models.TransientModel):
     # Action
     # ----------------------------------------------------------
 
-    def action_search_products(self):
+    def action_search_products(self) -> dict:
+        """Return the configured action filtered by the computed domain."""
         self.ensure_one()
         action = self.action_id._get_action_dict()
-        action['domain'] = ast.literal_eval(
-            self.search_domain or '[]'
-        )
+        action['domain'] = ast.literal_eval(self.search_domain or '[]')
         return action

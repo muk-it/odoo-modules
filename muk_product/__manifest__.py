@@ -1,13 +1,13 @@
 {
-    'name': 'MuK Product', 
+    'name': 'MuK Product',
     'summary': 'Centralize your product views',
-    'description': '''
-        This module gives you a quick view of all your products, 
+    'description': """
+        This module gives you a quick view of all your products,
         accessible from your home menu.
-    ''',
-    'version': '19.0.1.4.3',
+    """,
+    'version': '19.0.1.4.5',
     'category': 'Sales/Product',
-    'license': 'LGPL-3', 
+    'license': 'LGPL-3',
     'author': 'MuK IT',
     'website': 'http://www.mukit.at',
     'live_test_url': 'https://my.mukit.at/r/f6m',

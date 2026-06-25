@@ -5,18 +5,21 @@ from odoo.tests.common import TransactionCase, tagged
 
 @tagged('post_install', '-at_install')
 class TestProductSearch(TransactionCase):
+    """Test the bulk product search wizard domain and preview."""
 
     # ----------------------------------------------------------
     # Tests
     # ----------------------------------------------------------
 
     def test_compute_search_domain_match_uses_in_operator(self):
-        wizard = self.env['muk_product.product_search'].create({
-            'search_value': 'REF00001\nREF00002',
-            'value_split_operator': '\n',
-            'search_operator': '=',
-            'search_field': 'product_variant_ids.default_code',
-        })
+        wizard = self.env['muk_product.product_search'].create(
+            {
+                'search_value': 'REF00001\nREF00002',
+                'value_split_operator': '\n',
+                'search_operator': '=',
+                'search_field': 'product_variant_ids.default_code',
+            }
+        )
         wizard._compute_search_domain()
         self.assertEqual(
             ast.literal_eval(wizard.search_domain),
@@ -27,12 +30,14 @@ class TestProductSearch(TransactionCase):
         template_a = self.env['product.template'].create({'name': 'Alpha'})
         template_b = self.env['product.template'].create({'name': 'Beta'})
         template_c = self.env['product.template'].create({'name': 'Gamma'})
-        wizard = self.env['muk_product.product_search'].create({
-            'search_value': 'Alpha\nBeta',
-            'value_split_operator': '\n',
-            'search_operator': 'ilike',
-            'search_field': 'name',
-        })
+        wizard = self.env['muk_product.product_search'].create(
+            {
+                'search_value': 'Alpha\nBeta',
+                'value_split_operator': '\n',
+                'search_operator': 'ilike',
+                'search_field': 'name',
+            }
+        )
         wizard._compute_search_domain()
         action = wizard.action_search_products()
         domain = action['domain']
@@ -44,19 +49,23 @@ class TestProductSearch(TransactionCase):
     def test_product_preview_shows_max_7_and_sets_hint_when_more(self):
         codes, templates = [], self.env['product.template']
         for i in range(1, 9):
-            template = self.env['product.template'].create({
-                'name': f'Template {i}',
-            })
+            template = self.env['product.template'].create(
+                {
+                    'name': f'Template {i}',
+                }
+            )
             template.product_variant_id.default_code = f'CODE{i}'
             templates |= template
             codes.append(f'CODE{i}')
 
-        wizard = self.env['muk_product.product_search'].create({
-            'search_value': '\n'.join(codes),
-            'value_split_operator': '\n',
-            'search_operator': '=',
-            'search_field': 'product_variant_ids.default_code',
-        })
+        wizard = self.env['muk_product.product_search'].create(
+            {
+                'search_value': '\n'.join(codes),
+                'value_split_operator': '\n',
+                'search_operator': '=',
+                'search_field': 'product_variant_ids.default_code',
+            }
+        )
         wizard._compute_search_domain()
         wizard._compute_product_preview()
         self.assertEqual(len(wizard.product_preview_ids), 7)

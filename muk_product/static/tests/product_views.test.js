@@ -1,22 +1,22 @@
-import { click } from "@odoo/hoot-dom";
-import { expect, test } from "@odoo/hoot";
-import { defineMailModels } from "@mail/../tests/mail_test_helpers";
+import { click } from '@odoo/hoot-dom';
+import { expect, test } from '@odoo/hoot';
+import { defineMailModels } from '@mail/../tests/mail_test_helpers';
 import {
     defineModels,
     fields,
     mockService,
     models,
     mountView,
-} from "@web/../tests/web_test_helpers";
+} from '@web/../tests/web_test_helpers';
 
-import "@muk_product/views/list/product_list_view";
-import "@muk_product/views/kanban/product/product_kanban_view";
+import '@muk_product/views/list/product_list_view';
+import '@muk_product/views/kanban/product/product_kanban_view';
 
 class ProductTemplate extends models.Model {
-    _name = "product.template";
+    _name = 'product.template';
     _records = [
-        { id: 1, name: "Product 1" },
-        { id: 2, name: "Product 2" },
+        { id: 1, name: 'Product 1' },
+        { id: 2, name: 'Product 2' },
     ];
     name = fields.Char();
 }
@@ -24,38 +24,38 @@ class ProductTemplate extends models.Model {
 defineModels([ProductTemplate]);
 defineMailModels();
 
-test.tags("muk_product");
-test("product_search_list: Search button triggers action", async () => {
+test.tags('muk_product');
+test('product_search_list: Search button triggers action', async () => {
     let lastAction = null;
-    mockService("action", {
+    mockService('action', {
         doAction(action) {
             lastAction = action;
         },
     });
     await mountView({
-        type: "list",
-        resModel: "product.template",
+        type: 'list',
+        resModel: 'product.template',
         arch: `
             <list js_class="product_search_list">
                 <field name="name"/>
             </list>`,
     });
-    expect(".mk_button_product_search").toHaveCount(1);
-    await click(".mk_button_product_search");
-    expect(lastAction).toBe("muk_product.action_product_search");
+    expect('.mk_button_product_search').toHaveCount(1);
+    await click('.mk_button_product_search');
+    expect(lastAction).toBe('muk_product.action_product_search');
 });
 
-test.tags("muk_product");
-test("product_search_kanban: Search button triggers action", async () => {
+test.tags('muk_product');
+test('product_search_kanban: Search button triggers action', async () => {
     let lastAction = null;
-    mockService("action", {
+    mockService('action', {
         doAction(action) {
             lastAction = action;
         },
     });
     await mountView({
-        type: "kanban",
-        resModel: "product.template",
+        type: 'kanban',
+        resModel: 'product.template',
         arch: `
             <kanban js_class="product_search_kanban">
                 <templates>
@@ -65,7 +65,7 @@ test("product_search_kanban: Search button triggers action", async () => {
                 </templates>
             </kanban>`,
     });
-    expect(".mk_button_product_search").toHaveCount(1);
-    await click(".mk_button_product_search");
-    expect(lastAction).toBe("muk_product.action_product_search");
+    expect('.mk_button_product_search').toHaveCount(1);
+    await click('.mk_button_product_search');
+    expect(lastAction).toBe('muk_product.action_product_search');
 });

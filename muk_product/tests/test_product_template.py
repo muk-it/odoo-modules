@@ -3,15 +3,18 @@ from odoo.tests.common import TransactionCase, tagged
 
 @tagged('post_install', '-at_install')
 class TestProductTemplate(TransactionCase):
+    """Test the manufacturer code sync between template and variant."""
 
-    #----------------------------------------------------------
+    # ----------------------------------------------------------
     # Tests
-    #----------------------------------------------------------
+    # ----------------------------------------------------------
 
     def test_manufacturer_code_compute_and_inverse_syncs_variant(self):
-        template = self.env['product.template'].create({
-            'name': 'Template',
-        })
+        template = self.env['product.template'].create(
+            {
+                'name': 'Template',
+            }
+        )
         variant = template.product_variant_id
         variant.manufacturer_code = 'VAR-001'
         template.invalidate_model(['manufacturer_code'])
