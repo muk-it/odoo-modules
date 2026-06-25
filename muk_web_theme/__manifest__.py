@@ -1,13 +1,13 @@
 {
-    'name': 'MuK Backend Theme', 
+    'name': 'MuK Backend Theme',
     'summary': 'Odoo Community Backend Theme',
-    'description': '''
-        This module offers a mobile compatible design for Odoo Community. 
+    'description': """
+        This module offers a mobile compatible design for Odoo Community.
         Furthermore it allows the user to define some design preferences.
-    ''',
-    'version': '19.0.1.4.3',
-    'category': 'Themes/Backend', 
-    'license': 'LGPL-3', 
+    """,
+    'version': '19.0.1.4.4',
+    'category': 'Themes/Backend',
+    'license': 'LGPL-3',
     'author': 'MuK IT',
     'website': 'http://www.mukit.at',
     'live_test_url': 'https://my.mukit.at/r/f6m',
@@ -32,14 +32,14 @@
     'assets': {
         'web._assets_primary_variables': [
             (
-                'after', 
-                'web/static/src/scss/primary_variables.scss', 
-                'muk_web_theme/static/src/scss/colors.scss'
+                'after',
+                'web/static/src/scss/primary_variables.scss',
+                'muk_web_theme/static/src/scss/colors.scss',
             ),
             (
-                'after', 
-                'web/static/src/scss/primary_variables.scss', 
-                'muk_web_theme/static/src/scss/variables.scss'
+                'after',
+                'web/static/src/scss/primary_variables.scss',
+                'muk_web_theme/static/src/scss/variables.scss',
             ),
         ],
         'web.assets_backend': [
@@ -54,7 +54,7 @@
     },
     'images': [
         'static/description/banner.png',
-        'static/description/theme_screenshot.png'
+        'static/description/theme_screenshot.png',
     ],
     'installable': True,
     'application': False,
