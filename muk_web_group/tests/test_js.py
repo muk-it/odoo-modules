@@ -1,14 +1,15 @@
-import odoo.tests
+from __future__ import annotations
 
-from odoo.tests.common import tagged
-from odoo.tests.common import new_test_user
+import odoo.tests
+from odoo.tests.common import new_test_user, tagged
 
 
 @tagged('post_install', '-at_install')
 class TestHoot(odoo.tests.HttpCase):
+    """Run the addon's HOOT browser test suite."""
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.hoot_user = new_test_user(
             cls.env,
@@ -26,8 +27,8 @@ class TestHoot(odoo.tests.HttpCase):
     def test_hoot_muk_web_group(self):
         self.browser_js(
             '/web/tests?headless&loglevel=2&preset=desktop&timeout=15000&tag=muk_web_group',
-            "",
-            "",
+            '',
+            '',
             login=self.hoot_user.login,
             timeout=1800,
             success_signal='[HOOT] Test suite succeeded',
