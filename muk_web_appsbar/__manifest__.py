@@ -1,13 +1,13 @@
 {
-    'name': 'MuK AppsBar', 
+    'name': 'MuK AppsBar',
     'summary': 'Adds a sidebar to the main screen',
-    'description': '''
+    'description': """
         This module adds a sidebar to the main screen. The sidebar has a list
         of all installed apps similar to the home menu to ease navigation.
-    ''',
-    'version': '19.0.1.1.7',
+    """,
+    'version': '19.0.1.1.8',
     'category': 'Tools/UI',
-    'license': 'LGPL-3', 
+    'license': 'LGPL-3',
     'author': 'MuK IT',
     'website': 'http://www.mukit.at',
     'live_test_url': 'https://youtu.be/kmu69REqKDU',
