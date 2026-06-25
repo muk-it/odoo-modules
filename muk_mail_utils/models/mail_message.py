@@ -1,10 +1,13 @@
+from __future__ import annotations
+
 import textwrap
 
-from odoo import models, fields, api
+from odoo import api, fields, models
 
 
 class MailMessage(models.Model):
-    
+    """Add a shortened display content derived from subject and preview."""
+
     _inherit = 'mail.message'
 
     # ----------------------------------------------------------
@@ -13,7 +16,7 @@ class MailMessage(models.Model):
 
     display_content = fields.Char(
         compute='_compute_display_content',
-        string="Display Content",
+        string='Display Content',
         compute_sudo=True,
         readonly=True,
         store=True,
@@ -33,13 +36,10 @@ class MailMessage(models.Model):
     # ----------------------------------------------------------
 
     @api.depends('subject', 'preview')
-    def _compute_display_content(self):
+    def _compute_display_content(self) -> None:
+        """Join subject and preview into a single shortened display string."""
         for record in self:
             display_content = ' | '.join(
-                text
-                for text in [record.subject, record.preview]
-                if text
+                text for text in [record.subject, record.preview] if text
             )
-            record.display_content = (
-                textwrap.shorten(display_content, 100)
-            )
+            record.display_content = textwrap.shorten(display_content, 100)

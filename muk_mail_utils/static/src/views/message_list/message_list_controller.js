@@ -1,19 +1,23 @@
-import { useState } from "@odoo/owl";
+import { useState } from '@odoo/owl';
 import { useService } from '@web/core/utils/hooks';
-import { makeActiveField } from "@web/model/relational_model/utils";
+import { makeActiveField } from '@web/model/relational_model/utils';
 
 import { SIZES } from '@web/core/ui/ui_service';
 
-import { Field } from "@web/views/fields/field";
+import { Field } from '@web/views/fields/field';
 import { ListController } from '@web/views/list/list_controller';
-import { AttachmentList } from "@mail/core/common/attachment_list";
+import { AttachmentList } from '@mail/core/common/attachment_list';
 
+/**
+ * List controller for the message search view: adds attachment, author, body
+ * and recipient active fields and drives a side preview pane for the selection.
+ */
 export class MessageListController extends ListController {
     static template = 'muk_mail_search.MessageListView';
     static components = {
         ...ListController.components,
         Field,
-        AttachmentList
+        AttachmentList,
     };
     setup() {
         super.setup();
@@ -49,9 +53,9 @@ export class MessageListController extends ListController {
             params.config.activeFields.notified_partner_ids = makeActiveField();
             params.config.activeFields.notified_partner_ids.related = {
                 fields: {
-                    display_name: { 
-                        name: 'display_name', 
-                        type: 'char' ,
+                    display_name: {
+                        name: 'display_name',
+                        type: 'char',
                         readonly: true,
                     },
                 },
@@ -65,16 +69,23 @@ export class MessageListController extends ListController {
     get previewEnabled() {
         return this.ui.size >= SIZES.XXL;
     }
+    /**
+     * Load the given record into the preview pane, inserting its attachments as
+     * non-deletable store records.
+     * @param {object} record the selected list record
+     */
     setSelectedRecord(record) {
         this.previewState.selectedRecord = record;
         this.previewState.messageBody = record.data.body;
-        this.previewState.attachments = record.data.attachment_ids.records.map((att) => {
-            return this.store['ir.attachment'].insert({
-                id: att.resId,
-                name: att.data.name,
-                mimetype: att.data.mimetype,
-                disableDeletable: true,
-            });
-        })
+        this.previewState.attachments = record.data.attachment_ids.records.map(
+            (att) => {
+                return this.store['ir.attachment'].insert({
+                    id: att.resId,
+                    name: att.data.name,
+                    mimetype: att.data.mimetype,
+                    disableDeletable: true,
+                });
+            },
+        );
     }
 }
