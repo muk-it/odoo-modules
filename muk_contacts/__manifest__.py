@@ -1,13 +1,13 @@
 {
-    'name': 'MuK Contacts', 
+    'name': 'MuK Contacts',
     'summary': 'Improves the contact app',
-    'description': '''
+    'description': """
         This module improves and extends the contact app
         and the related partner model.
-    ''',
-    'version': '19.0.1.1.9',
+    """,
+    'version': '19.0.1.1.11',
     'category': 'Sales/CRM',
-    'license': 'LGPL-3', 
+    'license': 'LGPL-3',
     'author': 'MuK IT',
     'website': 'http://www.mukit.at',
     'live_test_url': 'https://youtu.be/UE_owy582jY',
