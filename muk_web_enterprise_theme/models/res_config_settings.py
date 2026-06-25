@@ -1,12 +1,16 @@
-from odoo import api, fields, models
+from __future__ import annotations
+
+from odoo import fields, models
 
 
 class ResConfigSettings(models.TransientModel):
+    """Add backend theme favicon, background image and color settings."""
 
     _inherit = 'res.config.settings'
 
     @property
-    def THEME_COLOR_FIELDS(self):
+    def THEME_COLOR_FIELDS(self) -> list[str]:
+        """Return the appsbar color variable names managed by this theme."""
         return [
             'color_appbar_text',
             'color_appbar_active',
@@ -14,171 +18,190 @@ class ResConfigSettings(models.TransientModel):
         ]
 
     @property
-    def COLOR_ASSET_THEME_LIGHT_URL(self):
+    def COLOR_ASSET_THEME_LIGHT_URL(self) -> str:
+        """Return the URL of the light theme color asset."""
         return '/muk_web_enterprise_theme/static/src/scss/colors_light.scss'
-        
+
     @property
-    def COLOR_BUNDLE_THEME_LIGHT_NAME(self):
+    def COLOR_BUNDLE_THEME_LIGHT_NAME(self) -> str:
+        """Return the asset bundle name holding the light theme colors."""
         return 'web._assets_primary_variables'
 
     @property
-    def COLOR_ASSET_THEME_DARK_URL(self):
+    def COLOR_ASSET_THEME_DARK_URL(self) -> str:
+        """Return the URL of the dark theme color asset."""
         return '/muk_web_enterprise_theme/static/src/scss/colors_dark.scss'
-        
+
     @property
-    def COLOR_BUNDLE_THEME_DARK_NAME(self):
+    def COLOR_BUNDLE_THEME_DARK_NAME(self) -> str:
+        """Return the asset bundle name holding the dark theme colors."""
         return 'web.assets_web_dark'
-    
-    #----------------------------------------------------------
+
+    # ----------------------------------------------------------
     # Fields
-    #----------------------------------------------------------
-    
+    # ----------------------------------------------------------
+
     theme_favicon = fields.Binary(
         related='company_id.favicon',
-        readonly=False
+        readonly=False,
     )
-    
+
     theme_background_image_light = fields.Binary(
         related='company_id.background_image_light',
-        readonly=False
+        readonly=False,
     )
-    
+
     theme_background_image_dark = fields.Binary(
         related='company_id.background_image_dark',
-        readonly=False
+        readonly=False,
     )
-    
+
     theme_color_appbar_text_light = fields.Char(
-        string='AppsBar Text Light Color'
+        string='AppsBar Text Light Color',
     )
-    
+
     theme_color_appbar_active_light = fields.Char(
-        string='AppsBar Active Light Color'
+        string='AppsBar Active Light Color',
     )
-    
+
     theme_color_appbar_background_light = fields.Char(
-        string='AppsBar Background Light Color'
+        string='AppsBar Background Light Color',
     )
-    
+
     theme_color_appbar_text_dark = fields.Char(
-        string='AppsBar Text Dark Color'
+        string='AppsBar Text Dark Color',
     )
-    
+
     theme_color_appbar_active_dark = fields.Char(
-        string='AppsBar Active Dark Color'
+        string='AppsBar Active Dark Color',
     )
-    
+
     theme_color_appbar_background_dark = fields.Char(
-        string='AppsBar Background Dark Color'
+        string='AppsBar Background Dark Color',
     )
-    
-    #----------------------------------------------------------
+
+    # ----------------------------------------------------------
     # Helper
-    #----------------------------------------------------------
-    
-    def _get_light_theme_color_values(self):
-        return self.env['muk_web_colors.color_assets_editor'].get_color_variables_values(
-            self.COLOR_ASSET_THEME_LIGHT_URL, 
+    # ----------------------------------------------------------
+
+    def _get_light_theme_color_values(self) -> dict:
+        """Return the current light theme color values from the editor."""
+        return self.env[
+            'muk_web_colors.color_assets_editor'
+        ].get_color_variables_values(
+            self.COLOR_ASSET_THEME_LIGHT_URL,
             self.COLOR_BUNDLE_THEME_LIGHT_NAME,
-            self.THEME_COLOR_FIELDS
+            self.THEME_COLOR_FIELDS,
         )
-    
-    def _get_dark_theme_color_values(self):
-        return self.env['muk_web_colors.color_assets_editor'].get_color_variables_values(
-            self.COLOR_ASSET_THEME_DARK_URL, 
+
+    def _get_dark_theme_color_values(self) -> dict:
+        """Return the current dark theme color values from the editor."""
+        return self.env[
+            'muk_web_colors.color_assets_editor'
+        ].get_color_variables_values(
+            self.COLOR_ASSET_THEME_DARK_URL,
             self.COLOR_BUNDLE_THEME_DARK_NAME,
-            self.THEME_COLOR_FIELDS
+            self.THEME_COLOR_FIELDS,
         )
-        
-    def _set_light_theme_color_values(self, values):
+
+    def _set_light_theme_color_values(self, values: dict) -> dict:
+        """Populate the light theme color fields into the settings values."""
         colors = self._get_light_theme_color_values()
         for var, value in colors.items():
             values[f'theme_{var}_light'] = value
         return values
-        
-    def _set_dark_theme_color_values(self, values):
+
+    def _set_dark_theme_color_values(self, values: dict) -> dict:
+        """Populate the dark theme color fields into the settings values."""
         colors = self._get_dark_theme_color_values()
         for var, value in colors.items():
             values[f'theme_{var}_dark'] = value
         return values
 
-    def _detect_light_theme_color_change(self):
+    def _detect_light_theme_color_change(self) -> bool:
+        """Return whether any light theme color value differs from the asset."""
         colors = self._get_light_theme_color_values()
-        return any(
-            self[f'theme_{var}_light'] != val
-            for var, val in colors.items()
-        )
+        return any(self[f'theme_{var}_light'] != val for var, val in colors.items())
 
-    def _detect_dark_theme_color_change(self):
+    def _detect_dark_theme_color_change(self) -> bool:
+        """Return whether any dark theme color value differs from the asset."""
         colors = self._get_dark_theme_color_values()
-        return any(
-            self[f'theme_{var}_dark'] != val
-            for var, val in colors.items()
-        )
+        return any(self[f'theme_{var}_dark'] != val for var, val in colors.items())
 
     def _replace_light_theme_color_values(self):
+        """Write the configured light theme color values into the asset."""
         variables = [
             {
-                'name': field, 
-                'value': self[f'theme_{field}_light']
+                'name': field,
+                'value': self[f'theme_{field}_light'],
             }
             for field in self.THEME_COLOR_FIELDS
         ]
-        return self.env['muk_web_colors.color_assets_editor'].replace_color_variables_values(
-            self.COLOR_ASSET_THEME_LIGHT_URL, 
+        return self.env[
+            'muk_web_colors.color_assets_editor'
+        ].replace_color_variables_values(
+            self.COLOR_ASSET_THEME_LIGHT_URL,
             self.COLOR_BUNDLE_THEME_LIGHT_NAME,
-            variables
+            variables,
         )
 
     def _replace_dark_theme_color_values(self):
+        """Write the configured dark theme color values into the asset."""
         variables = [
             {
-                'name': field, 
-                'value': self[f'theme_{field}_dark']
+                'name': field,
+                'value': self[f'theme_{field}_dark'],
             }
             for field in self.THEME_COLOR_FIELDS
         ]
-        return self.env['muk_web_colors.color_assets_editor'].replace_color_variables_values(
-            self.COLOR_ASSET_THEME_DARK_URL, 
+        return self.env[
+            'muk_web_colors.color_assets_editor'
+        ].replace_color_variables_values(
+            self.COLOR_ASSET_THEME_DARK_URL,
             self.COLOR_BUNDLE_THEME_DARK_NAME,
-            variables
+            variables,
         )
 
-    def _reset_light_theme_color_assets(self):
+    def _reset_light_theme_color_assets(self) -> None:
+        """Reset the light theme color asset to its default values."""
         self.env['muk_web_colors.color_assets_editor'].reset_color_asset(
-            self.COLOR_ASSET_THEME_LIGHT_URL, 
+            self.COLOR_ASSET_THEME_LIGHT_URL,
             self.COLOR_BUNDLE_THEME_LIGHT_NAME,
         )
 
-    def _reset_dark_theme_color_assets(self):
+    def _reset_dark_theme_color_assets(self) -> None:
+        """Reset the dark theme color asset to its default values."""
         self.env['muk_web_colors.color_assets_editor'].reset_color_asset(
-            self.COLOR_ASSET_THEME_DARK_URL, 
+            self.COLOR_ASSET_THEME_DARK_URL,
             self.COLOR_BUNDLE_THEME_DARK_NAME,
         )
-    
-    #----------------------------------------------------------
+
+    # ----------------------------------------------------------
     # Action
-    #----------------------------------------------------------
-    
+    # ----------------------------------------------------------
+
     def action_reset_light_color_assets(self):
+        """Reset the light theme color asset before the standard reset."""
         self._reset_light_theme_color_assets()
         return super().action_reset_light_color_assets()
-    
+
     def action_reset_dark_color_assets(self):
+        """Reset the dark theme color asset before the standard reset."""
         self._reset_dark_theme_color_assets()
         return super().action_reset_dark_color_assets()
-    
-    #----------------------------------------------------------
-    # Functions
-    #----------------------------------------------------------
 
-    def get_values(self):
+    # ----------------------------------------------------------
+    # Functions
+    # ----------------------------------------------------------
+
+    def get_values(self) -> dict:
+        """Add the light and dark theme color values to the settings."""
         res = super().get_values()
         res = self._set_light_theme_color_values(res)
-        res = self._set_dark_theme_color_values(res)
-        return res
+        return self._set_dark_theme_color_values(res)
 
     def set_values(self):
+        """Persist changed light and dark theme color values into the assets."""
         res = super().set_values()
         if self._detect_light_theme_color_change():
             self._replace_light_theme_color_values()
