@@ -43,6 +43,35 @@ on top, so a key can never exceed the permissions of its owning user.
 Each key has a configurable rate limit (requests per minute). Set to
 0 for unlimited. The default is 60 requests per minute.
 
+## Multi-database Hosts
+
+The `/mcp` endpoint and everything under it (including the `muk_mcp_oauth`
+`token`, `authorize`, and `register` endpoints) is reached without an Odoo
+session cookie -- the bearer key or token is opaque until a database is loaded.
+On a host that serves **several databases** behind one origin, such a request
+cannot be mapped to a database and Odoo answers `404`. On a single-database host
+(one database per domain, `db_name` set, or `dbfilter = ^%h$`) there is nothing
+to do -- this is the recommended setup. (The root `/.well-known/oauth-*`
+discovery documents sit outside `/mcp`; `muk_mcp_oauth` resolves them the same
+way when it is also loaded server-wide -- otherwise, since external clients send
+no selector to them, serve those via a single-database host.)
+
+Where a multi-database origin is unavoidable, the target database can be
+selected per request in one of two ways:
+
+- **`X-Odoo-Database` header** -- handled by Odoo core, works out of the box.
+- **`?db=<name>` query parameter** -- handled by this module. Because it must
+  resolve the database *before* one is selected, the module has to be loaded
+  **server-wide** so its request hook runs at server start (the same
+  requirement as `muk_rest`):
+
+  Parameter: `--load=web,muk_mcp`
+  (or `server_wide_modules = web,muk_mcp` in the configuration file).
+
+Without a selector on a multi-database host, the request falls through to
+Odoo's standard database handling. The selector name defaults to `db` and can
+be changed with the `mcp_db_param` config option.
+
 ## Client Setup
 
 The MCP server endpoint is `https://<your-odoo>/mcp`. All clients
