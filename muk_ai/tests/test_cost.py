@@ -4,6 +4,7 @@ from odoo.addons.muk_ai.tests.common import AITestCommon
 
 
 class TestSessionCostAccrual(AITestCommon):
+    """Verify token-usage cost accrual on sessions."""
 
     # ----------------------------------------------------------
     # Setup
@@ -12,15 +13,17 @@ class TestSessionCostAccrual(AITestCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.model = cls.env['muk_ai.model'].create({
-            'name': 'Test',
-            'provider_id': cls.provider.id,
-            'technical_name': 'test-cost-model',
-            'context_window': 10_000_000,
-            'input_rate': 1.0,
-            'output_rate': 2.0,
-            'cached_rate': 0.0,
-        })
+        cls.model = cls.env['muk_ai.model'].create(
+            {
+                'name': 'Test',
+                'provider_id': cls.provider.id,
+                'technical_name': 'test-cost-model',
+                'context_window': 10_000_000,
+                'input_rate': 1.0,
+                'output_rate': 2.0,
+                'cached_rate': 0.0,
+            }
+        )
         cls.provider.default_model_id = cls.model.id
 
     # ----------------------------------------------------------
@@ -31,10 +34,12 @@ class TestSessionCostAccrual(AITestCommon):
         return {
             'text': text,
             'tool_calls': [],
-            'carry_inputs': [{
-                'type': 'message',
-                'content': [{'type': 'output_text', 'text': text}],
-            }],
+            'carry_inputs': [
+                {
+                    'type': 'message',
+                    'content': [{'type': 'output_text', 'text': text}],
+                }
+            ],
             'usage': {
                 'input_tokens': input_tokens,
                 'output_tokens': output_tokens,
@@ -55,7 +60,8 @@ class TestSessionCostAccrual(AITestCommon):
             **kwargs,
         ):
             if not remaining:
-                raise AssertionError('No more mocked responses')
+                msg = 'No more mocked responses'
+                raise AssertionError(msg)
             return remaining.pop(0)
 
         return patch.object(
@@ -70,25 +76,44 @@ class TestSessionCostAccrual(AITestCommon):
     # ----------------------------------------------------------
 
     def test_cost_accrues_on_completion(self):
-        session = self.env['muk_ai.session'].create({'name': 'cost-one', 'agent_id': False})
-        with self._patch_provider([self._payload(
-            input_tokens=1_000_000, output_tokens=500_000,
-        )]):
+        session = self.env['muk_ai.session'].create(
+            {'name': 'cost-one', 'agent_id': False}
+        )
+        with self._patch_provider(
+            [
+                self._payload(
+                    input_tokens=1_000_000,
+                    output_tokens=500_000,
+                )
+            ]
+        ):
             session.start('hi')
         self.assertAlmostEqual(session.total_input_cost, 1.0)
         self.assertAlmostEqual(session.total_output_cost, 1.0)
         self.assertAlmostEqual(session.total_cost, 2.0)
 
     def test_cost_accumulates_across_rounds(self):
-        session = self.env['muk_ai.session'].create({'name': 'cost-cum', 'agent_id': False})
-        with self._patch_provider([self._payload(
-            input_tokens=1_000_000, output_tokens=500_000,
-        )]):
+        session = self.env['muk_ai.session'].create(
+            {'name': 'cost-cum', 'agent_id': False}
+        )
+        with self._patch_provider(
+            [
+                self._payload(
+                    input_tokens=1_000_000,
+                    output_tokens=500_000,
+                )
+            ]
+        ):
             session.start('first')
         first_total = session.total_cost
-        with self._patch_provider([self._payload(
-            input_tokens=2_000_000, output_tokens=100_000,
-        )]):
+        with self._patch_provider(
+            [
+                self._payload(
+                    input_tokens=2_000_000,
+                    output_tokens=100_000,
+                )
+            ]
+        ):
             session.send_message('again')
         self.assertGreater(session.total_cost, first_total)
         self.assertAlmostEqual(session.total_cost - first_total, 2.2)
@@ -96,7 +121,9 @@ class TestSessionCostAccrual(AITestCommon):
     def test_cost_stays_zero_when_no_default_model(self):
         self.provider.default_model_id = False
         self.model.active = False
-        session = self.env['muk_ai.session'].create({'name': 'no-price', 'agent_id': False})
+        session = self.env['muk_ai.session'].create(
+            {'name': 'no-price', 'agent_id': False}
+        )
         with self._patch_provider([self._payload()]):
             session.start('hi')
         self.assertEqual(session.total_cost, 0.0)

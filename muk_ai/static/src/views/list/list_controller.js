@@ -5,6 +5,7 @@ import { ListController } from '@web/views/list/list_controller';
 
 import { makeListContextDispatch } from '@muk_ai/views/context';
 
+/** Capture the active list view as AI view context for open chat windows. */
 patch(ListController.prototype, {
     setup() {
         super.setup(...arguments);

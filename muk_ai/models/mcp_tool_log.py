@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 from odoo import api, fields, models, modules
 
 
 class MCPLog(models.Model):
+    """Tag MCP tool logs with their source and chat session."""
 
     _inherit = 'muk_mcp.log'
 
@@ -11,10 +14,10 @@ class MCPLog(models.Model):
 
     source = fields.Selection(
         selection=[
-            ('chat', "Chat"),
-            ('mcp', "MCP"),
+            ('chat', 'Chat'),
+            ('mcp', 'MCP'),
         ],
-        string="Source",
+        string='Source',
         readonly=True,
         required=True,
         default='mcp',
@@ -23,7 +26,7 @@ class MCPLog(models.Model):
 
     session_id = fields.Many2one(
         comodel_name='muk_ai.session',
-        string="Chat Session",
+        string='Chat Session',
         readonly=True,
         index=True,
         ondelete='cascade',
@@ -34,7 +37,8 @@ class MCPLog(models.Model):
     # ----------------------------------------------------------
 
     @api.model_create_multi
-    def create(self, vals_list):
+    def create(self, vals_list: list[dict]) -> MCPLog:
+        """Default ``session_id`` and ``source`` from the context when present."""
         ctx = self.env.context
         session_id = ctx.get('muk_mcp_session_id')
         if session_id:
@@ -49,7 +53,8 @@ class MCPLog(models.Model):
         return super().create(vals_list)
 
     @api.model
-    def log(self, **values):
+    def log(self, **values) -> None:
+        """Persist a log entry, creating it synchronously during tests."""
         if modules.module.current_test:
             self.sudo().create(values)
             return

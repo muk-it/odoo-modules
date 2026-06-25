@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from . import test_openai
 from . import test_anthropic
 from . import test_google

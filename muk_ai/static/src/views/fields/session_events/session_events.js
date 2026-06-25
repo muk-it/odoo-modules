@@ -16,6 +16,7 @@ import {
     toggleAskViewMode,
 } from '@muk_ai/chat/session/ask_view';
 
+/** Read-only field rendering a session's events as a chat-style transcript. */
 export class SessionEventsField extends Component {
     static template = 'muk_ai.SessionEventsField';
     static components = { AttachmentCard, ToolCard };
@@ -54,9 +55,7 @@ export class SessionEventsField extends Component {
         if (block.result !== null && block.result !== undefined) {
             return false;
         }
-        return turn.blocks.some(
-            (b) => b.type === 'ask' && b.callId === block.callId,
-        );
+        return turn.blocks.some((b) => b.type === 'ask' && b.callId === block.callId);
     }
     isToolStreaming() {
         return false;
@@ -72,10 +71,7 @@ export class SessionEventsField extends Component {
     }
     toggleAskView(callId) {
         const block = { callId };
-        this.state.askViews[callId] = toggleAskViewMode(
-            block,
-            this.state.askViews,
-        );
+        this.state.askViews[callId] = toggleAskViewMode(block, this.state.askViews);
     }
     askArgsText(block) {
         return askArgsText(block);

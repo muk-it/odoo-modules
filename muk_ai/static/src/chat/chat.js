@@ -1,4 +1,13 @@
-import { Component, markup, onMounted, onPatched, onWillStart, onWillUnmount, useRef, useState } from '@odoo/owl';
+import {
+    Component,
+    markup,
+    onMounted,
+    onPatched,
+    onWillStart,
+    onWillUnmount,
+    useRef,
+    useState,
+} from '@odoo/owl';
 
 import { _t } from '@web/core/l10n/translation';
 import { registry } from '@web/core/registry';
@@ -70,14 +79,24 @@ function normalizeSuggestions(raw) {
         }));
 }
 
+/** Full-page AI chat client: sidebar, conversation, and composer. */
 export class AIChat extends Component {
     static template = 'muk_ai.Chat';
-    static components = { ChatSidebar, ChatArtifactsPanel, ChatSearch, ToolCard, ChatComposer, AttachmentCard, Dropdown, DropdownItem };
+    static components = {
+        ChatSidebar,
+        ChatArtifactsPanel,
+        ChatSearch,
+        ToolCard,
+        ChatComposer,
+        AttachmentCard,
+        Dropdown,
+        DropdownItem,
+    };
     static props = ['*'];
     get suggestions() {
         const agents = this.session.state.agents || [];
-        const agent = agents.find((a) => a.id === this.session.state.agentId)
-            || agents[0];
+        const agent =
+            agents.find((a) => a.id === this.session.state.agentId) || agents[0];
         return normalizeSuggestions(agent && agent.suggestions);
     }
     setup() {
@@ -118,15 +137,18 @@ export class AIChat extends Component {
         this._sessionsSearchTimer = null;
         this._resumeTickInterval = null;
         this.rootRef = useRef('root');
-        const { scrollRef, scrollToBottom, state: scrollState } = useChatScrollAnchor('scrollArea');
+        const {
+            scrollRef,
+            scrollToBottom,
+            state: scrollState,
+        } = useChatScrollAnchor('scrollArea');
         this.scrollRef = scrollRef;
         this.scrollToBottom = scrollToBottom;
         this.scrollState = scrollState;
         this.session.setScrollCallback(scrollToBottom);
-        onScrollUpNearTop(scrollRef, () => preserveAnchor(
-            scrollRef,
-            () => this.session.loadMoreEvents(),
-        ));
+        onScrollUpNearTop(scrollRef, () =>
+            preserveAnchor(scrollRef, () => this.session.loadMoreEvents()),
+        );
         this._userBusHandler = null;
         this._loadSeq = 0;
         this._sessionFetchIds = new Set();
@@ -145,8 +167,7 @@ export class AIChat extends Component {
             await Promise.all([this._loadSessions(), this.session.loadAgents()]);
             this._connectUserBus();
             const requested = this._getRequestedSessionId();
-            const isMobile = typeof window !== 'undefined'
-                && window.innerWidth < 768;
+            const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
             let opened = false;
             if (requested) {
                 if (this.state.sessions.some((s) => s.id === requested)) {
@@ -159,10 +180,9 @@ export class AIChat extends Component {
                         this.state.sidebarHidden = true;
                         opened = true;
                     } else {
-                        this.notification.add(
-                            _t('That AI session no longer exists.'),
-                            { type: 'warning' },
-                        );
+                        this.notification.add(_t('That AI session no longer exists.'), {
+                            type: 'warning',
+                        });
                     }
                 }
             }
@@ -178,8 +198,10 @@ export class AIChat extends Component {
             this._installImageClickHandler();
             this._installRootPasteHandler();
             this._resumeTickInterval = window.setInterval(() => {
-                if (this.session.state.status === 'waiting_schedule'
-                        && this.session.state.resumeAt) {
+                if (
+                    this.session.state.status === 'waiting_schedule' &&
+                    this.session.state.resumeAt
+                ) {
                     this.state.resumeTick += 1;
                 }
             }, 5000);
@@ -260,9 +282,11 @@ export class AIChat extends Component {
         }
     }
     async _loadMoreSessions() {
-        if (this.state.sessionsLoadingMore
-                || !this.state.sessionsHasMore
-                || this.state.sessionsSearchMode) {
+        if (
+            this.state.sessionsLoadingMore ||
+            !this.state.sessionsHasMore ||
+            this.state.sessionsSearchMode
+        ) {
             return;
         }
         this.state.sessionsLoadingMore = true;
@@ -395,9 +419,7 @@ export class AIChat extends Component {
     toggleArtifacts() {
         const willOpen = this.state.artifactsHidden;
         this.state.artifactsHidden = !this.state.artifactsHidden;
-        if (willOpen
-                && typeof window !== 'undefined'
-                && window.innerWidth < 1200) {
+        if (willOpen && typeof window !== 'undefined' && window.innerWidth < 1200) {
             this.state.sidebarHidden = true;
         }
     }
@@ -478,7 +500,7 @@ export class AIChat extends Component {
         if (el) {
             try {
                 el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            } catch (_e) {
+            } catch {
                 el.scrollIntoView();
             }
             el.classList.add('mk_search_pulse');
@@ -515,9 +537,12 @@ export class AIChat extends Component {
             (e) => e.role === 'assistant' && e.text === text,
         );
         const firstIdx = entry ? entryFirstMatchIndex(matches, entry) : -1;
-        const sourceHtml = typeof rendered === 'string'
-            ? rendered
-            : (rendered && rendered.toString) ? rendered.toString() : String(rendered || '');
+        const sourceHtml =
+            typeof rendered === 'string'
+                ? rendered
+                : rendered && rendered.toString
+                  ? rendered.toString()
+                  : String(rendered || '');
         const highlighted = highlightHtml(
             sourceHtml,
             this.state.searchQuery,
@@ -571,14 +596,19 @@ export class AIChat extends Component {
             const seq = this._loadSeq;
             const [session] = await this.orm.searchRead(
                 'muk_ai.session',
-                [['id', '=', sessionId], ['user_id', '=', user.userId]],
+                [
+                    ['id', '=', sessionId],
+                    ['user_id', '=', user.userId],
+                ],
                 ['id', 'name', 'state', 'create_date'],
                 { limit: 1 },
             );
-            if (!session
-                    || seq !== this._loadSeq
-                    || this.state.sessionsSearchMode
-                    || this.state.sessions.some((s) => s.id === session.id)) {
+            if (
+                !session ||
+                seq !== this._loadSeq ||
+                this.state.sessionsSearchMode ||
+                this.state.sessions.some((s) => s.id === session.id)
+            ) {
                 return;
             }
             const pos = this.state.sessions.findIndex(
@@ -676,7 +706,7 @@ export class AIChat extends Component {
             const raw = params.get('session_id');
             const id = raw ? parseInt(raw, 10) : 0;
             return Number.isInteger(id) && id > 0 ? id : null;
-        } catch (_e) {
+        } catch {
             return null;
         }
     }
@@ -700,9 +730,7 @@ export class AIChat extends Component {
         if (pending && pending.call_id === block.callId) {
             return true;
         }
-        return turn.blocks.some(
-            (b) => b.type === 'ask' && b.callId === block.callId,
-        );
+        return turn.blocks.some((b) => b.type === 'ask' && b.callId === block.callId);
     }
     isToolStreaming(block) {
         if (block.result !== null && block.result !== undefined) {
@@ -760,9 +788,10 @@ export class AIChat extends Component {
         }
         return Math.max(
             0,
-            Math.min(100, Math.round(
-                (this.session.state.lastInputTokens / window) * 100,
-            )),
+            Math.min(
+                100,
+                Math.round((this.session.state.lastInputTokens / window) * 100),
+            ),
         );
     }
     get contextClass() {
@@ -779,10 +808,10 @@ export class AIChat extends Component {
         const tokens = this.session.state.lastInputTokens || 0;
         const window = this.session.state.contextWindow || 0;
         const fmt = new Intl.NumberFormat();
-        return _t(
-            'Context window: %(tokens)s / %(window)s tokens',
-            { tokens: fmt.format(tokens), window: fmt.format(window) },
-        );
+        return _t('Context window: %(tokens)s / %(window)s tokens', {
+            tokens: fmt.format(tokens),
+            window: fmt.format(window),
+        });
     }
     askArgsText(block) {
         return askArgsText(block);

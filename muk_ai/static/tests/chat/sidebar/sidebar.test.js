@@ -9,7 +9,6 @@ import { ChatSidebar } from '@muk_ai/chat/sidebar/chat_sidebar';
 describe.current.tags('muk_ai');
 defineMailModels();
 
-
 function makeParent({
     sessions = [],
     activeSessionId = null,
@@ -46,13 +45,11 @@ function makeParent({
     };
 }
 
-
 function isoDaysAgo(days) {
     const d = new Date();
     d.setDate(d.getDate() - days);
     return d.toISOString().slice(0, 19).replace('T', ' ');
 }
-
 
 test('shows empty-state when no sessions', async () => {
     const { Parent, props } = makeParent();
@@ -61,7 +58,6 @@ test('shows empty-state when no sessions', async () => {
     expect('.mk_sidebar_search').toHaveCount(0);
     expect(queryFirst('.mk_sidebar_list').textContent).toMatch(/No chats yet/);
 });
-
 
 test('groups sessions into Today / Yesterday / Previous 7 days / Previous 30 days / Older', async () => {
     const { Parent, props } = makeParent({
@@ -74,10 +70,17 @@ test('groups sessions into Today / Yesterday / Previous 7 days / Previous 30 day
         ],
     });
     await mountWithCleanup(Parent, { props });
-    const labels = queryAll('.mk_sidebar_group_label').map((el) => el.textContent.trim());
-    expect(labels).toEqual(['Today', 'Yesterday', 'Previous 7 days', 'Previous 30 days', 'Older']);
+    const labels = queryAll('.mk_sidebar_group_label').map((el) =>
+        el.textContent.trim(),
+    );
+    expect(labels).toEqual([
+        'Today',
+        'Yesterday',
+        'Previous 7 days',
+        'Previous 30 days',
+        'Older',
+    ]);
 });
-
 
 test('omits empty groups', async () => {
     const { Parent, props } = makeParent({
@@ -86,17 +89,33 @@ test('omits empty groups', async () => {
         ],
     });
     await mountWithCleanup(Parent, { props });
-    const labels = queryAll('.mk_sidebar_group_label').map((el) => el.textContent.trim());
+    const labels = queryAll('.mk_sidebar_group_label').map((el) =>
+        el.textContent.trim(),
+    );
     expect(labels).toEqual(['Older']);
 });
-
 
 test('search filters by name (case-insensitive, substring)', async () => {
     const { Parent, props } = makeParent({
         sessions: [
-            { id: 1, name: 'Sales pipeline', state: 'done', create_date: isoDaysAgo(0) },
-            { id: 2, name: 'Marketing brief', state: 'done', create_date: isoDaysAgo(0) },
-            { id: 3, name: 'sales follow-up', state: 'done', create_date: isoDaysAgo(0) },
+            {
+                id: 1,
+                name: 'Sales pipeline',
+                state: 'done',
+                create_date: isoDaysAgo(0),
+            },
+            {
+                id: 2,
+                name: 'Marketing brief',
+                state: 'done',
+                create_date: isoDaysAgo(0),
+            },
+            {
+                id: 3,
+                name: 'sales follow-up',
+                state: 'done',
+                create_date: isoDaysAgo(0),
+            },
         ],
     });
     await mountWithCleanup(Parent, { props });
@@ -104,16 +123,14 @@ test('search filters by name (case-insensitive, substring)', async () => {
     await contains('.mk_sidebar_search_input').edit('SALES', { confirm: false });
     expect('.mk_sidebar_item').toHaveCount(2);
     expect(queryAll('.mk_sidebar_name').map((el) => el.textContent)).toEqual([
-        'Sales pipeline', 'sales follow-up',
+        'Sales pipeline',
+        'sales follow-up',
     ]);
 });
 
-
 test('search empty-state when no match', async () => {
     const { Parent, props } = makeParent({
-        sessions: [
-            { id: 1, name: 'Foo', state: 'done', create_date: isoDaysAgo(0) },
-        ],
+        sessions: [{ id: 1, name: 'Foo', state: 'done', create_date: isoDaysAgo(0) }],
     });
     await mountWithCleanup(Parent, { props });
     await contains('.mk_sidebar_search_input').edit('zzz', { confirm: false });
@@ -121,7 +138,6 @@ test('search empty-state when no match', async () => {
     expect(queryFirst('.mk_sidebar_list').textContent).toMatch(/No chats match/);
     expect(queryFirst('.mk_sidebar_list strong').textContent).toBe('zzz');
 });
-
 
 test('clear button resets the query', async () => {
     const { Parent, props } = makeParent({
@@ -137,7 +153,6 @@ test('clear button resets the query', async () => {
     expect('.mk_sidebar_item').toHaveCount(2);
 });
 
-
 test('marks active session and emits onSelect on click', async () => {
     let selected = null;
     const { Parent, props } = makeParent({
@@ -146,7 +161,9 @@ test('marks active session and emits onSelect on click', async () => {
             { id: 8, name: 'B', state: 'done', create_date: isoDaysAgo(0) },
         ],
         activeSessionId: 7,
-        onSelect: (id) => { selected = id; },
+        onSelect: (id) => {
+            selected = id;
+        },
     });
     await mountWithCleanup(Parent, { props });
     const items = queryAll('.mk_sidebar_item');
@@ -155,7 +172,6 @@ test('marks active session and emits onSelect on click', async () => {
     await click(items[1]);
     expect(selected).toBe(8);
 });
-
 
 test('running and waiting states get visual indicators', async () => {
     const { Parent, props } = makeParent({
@@ -173,7 +189,6 @@ test('running and waiting states get visual indicators', async () => {
     expect('.mk_state_done .fa').toHaveCount(0);
     expect(queryAll('.mk_sidebar_item.mk_running').length).toBe(2);
 });
-
 
 test('does not crash on missing or malformed create_date', async () => {
     const { Parent, props } = makeParent({

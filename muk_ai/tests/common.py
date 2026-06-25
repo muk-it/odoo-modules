@@ -5,6 +5,7 @@ from odoo.tests.common import TransactionCase
 
 
 class AITestCommon(TransactionCase):
+    """Shared setup and mocking helpers for the AI provider/session tests."""
 
     # ----------------------------------------------------------
     # Setup
@@ -44,7 +45,8 @@ class AITestCommon(TransactionCase):
 
         def fake(self_arg, *args, **kwargs):
             if not remaining:
-                raise AssertionError('No more mocked responses')
+                msg = 'No more mocked responses'
+                raise AssertionError(msg)
             return remaining.pop(0)
 
         with patch.object(

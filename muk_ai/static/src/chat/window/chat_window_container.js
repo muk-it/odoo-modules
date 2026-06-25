@@ -5,6 +5,7 @@ import { useService } from '@web/core/utils/hooks';
 
 import { ChatWindow } from '@muk_ai/chat/window/chat_window';
 
+/** Root container rendering all open chat windows from the chat-window service. */
 export class ChatWindowContainer extends Component {
     static template = 'muk_ai.ChatWindowContainer';
     static components = { ChatWindow };

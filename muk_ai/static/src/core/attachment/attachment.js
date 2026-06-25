@@ -33,14 +33,32 @@ class InlineImageFile extends FileModelMixin(Object) {
     }
 }
 
+/**
+ * Wrap an attachment descriptor in a file-viewer model.
+ * @param {object} descriptor attachment descriptor or existing model
+ * @returns {AIAttachment} file model
+ */
 export function toFileModel(descriptor) {
-    return descriptor instanceof AIAttachment ? descriptor : new AIAttachment(descriptor);
+    return descriptor instanceof AIAttachment
+        ? descriptor
+        : new AIAttachment(descriptor);
 }
 
+/**
+ * Wrap a list of attachment descriptors in file-viewer models.
+ * @param {Array} descriptors attachment descriptors
+ * @returns {Array<AIAttachment>} file models
+ */
 export function toFileModels(descriptors) {
     return (descriptors || []).map(toFileModel);
 }
 
+/**
+ * Build a file-viewer model for an inline (data-URL) generated image.
+ * @param {string} src image data URL
+ * @param {object} options optional name and mimetype overrides
+ * @returns {InlineImageFile} file model
+ */
 export function toInlineImageFile(src, options) {
     return new InlineImageFile(src, options);
 }

@@ -16,6 +16,11 @@ function guessMimetype(file) {
     return EXTENSION_MIMETYPES[parts.pop().toLowerCase()] || '';
 }
 
+/**
+ * Read a File into a base64 payload with filename and guessed mimetype.
+ * @param {File} file the file to read
+ * @returns {Promise<object>} { filename, mimetype, data_b64 }
+ */
 export function fileToBase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();

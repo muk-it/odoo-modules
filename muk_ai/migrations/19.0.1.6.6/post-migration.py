@@ -1,4 +1,10 @@
-def migrate(cr, version):
+from __future__ import annotations
+
+from odoo.sql_db import Cursor
+
+
+def migrate(cr: Cursor, version: str) -> None:
+    """Switch the pending-session crons from ``code`` to ``ai_session`` state."""
     cr.execute(
         """
         UPDATE ir_act_server

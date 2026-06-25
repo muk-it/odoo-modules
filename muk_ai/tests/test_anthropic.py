@@ -3,11 +3,11 @@ from unittest.mock import MagicMock, patch
 import requests
 
 from odoo.addons.muk_ai.providers.anthropic import AnthropicProvider
-
 from odoo.addons.muk_ai.tests.common import AITestCommon
 
 
 class TestAiAnthropicProvider(AITestCommon):
+    """Verify the Anthropic provider request building, parsing, and streaming."""
 
     # ----------------------------------------------------------
     # Setup
@@ -26,9 +26,14 @@ class TestAiAnthropicProvider(AITestCommon):
         if text:
             content.append({'type': 'text', 'text': text})
         for call_id, name, input_ in tool_uses:
-            content.append({
-                'type': 'tool_use', 'id': call_id, 'name': name, 'input': input_,
-            })
+            content.append(
+                {
+                    'type': 'tool_use',
+                    'id': call_id,
+                    'name': name,
+                    'input': input_,
+                }
+            )
         return {
             'id': 'msg_1',
             'type': 'message',
@@ -43,14 +48,21 @@ class TestAiAnthropicProvider(AITestCommon):
     # ----------------------------------------------------------
 
     def test_inputs_to_anthropic_splits_system_and_merges_runs(self):
-        system, messages = AnthropicProvider._inputs_to_messages([
-            {'role': 'system', 'content': [{'type': 'input_text', 'text': 'sys1'}]},
-            {'role': 'system', 'content': [{'type': 'input_text', 'text': 'sys2'}]},
-            {'role': 'user', 'content': [{'type': 'input_text', 'text': 'hi'}]},
-            {'type': 'function_call', 'name': 't', 'arguments': '{"a": 1}', 'call_id': 'c1'},
-            {'type': 'function_call_output', 'call_id': 'c1', 'output': '"ok"'},
-            {'role': 'user', 'content': [{'type': 'input_text', 'text': 'next'}]},
-        ])
+        system, messages = AnthropicProvider._inputs_to_messages(
+            [
+                {'role': 'system', 'content': [{'type': 'input_text', 'text': 'sys1'}]},
+                {'role': 'system', 'content': [{'type': 'input_text', 'text': 'sys2'}]},
+                {'role': 'user', 'content': [{'type': 'input_text', 'text': 'hi'}]},
+                {
+                    'type': 'function_call',
+                    'name': 't',
+                    'arguments': '{"a": 1}',
+                    'call_id': 'c1',
+                },
+                {'type': 'function_call_output', 'call_id': 'c1', 'output': '"ok"'},
+                {'role': 'user', 'content': [{'type': 'input_text', 'text': 'next'}]},
+            ]
+        )
         self.assertIn('sys1', system)
         self.assertIn('sys2', system)
         self.assertEqual(messages[0]['role'], 'user')
@@ -74,13 +86,20 @@ class TestAiAnthropicProvider(AITestCommon):
         with patch.object(requests, 'post', side_effect=fake_post):
             result = self.provider._request_responses(
                 inputs=[
-                    {'role': 'system', 'content': [{'type': 'input_text', 'text': 'be brief'}]},
+                    {
+                        'role': 'system',
+                        'content': [{'type': 'input_text', 'text': 'be brief'}],
+                    },
                     {'role': 'user', 'content': [{'type': 'input_text', 'text': 'hi'}]},
                 ],
-                tools_schema=[{
-                    'type': 'function', 'name': 'x', 'description': 'd',
-                    'parameters': {'type': 'object', 'properties': {}},
-                }],
+                tools_schema=[
+                    {
+                        'type': 'function',
+                        'name': 'x',
+                        'description': 'd',
+                        'parameters': {'type': 'object', 'properties': {}},
+                    }
+                ],
             )
         self.assertTrue(captured['url'].endswith('/messages'))
         self.assertEqual(captured['body']['system'], 'be brief')
@@ -93,9 +112,12 @@ class TestAiAnthropicProvider(AITestCommon):
 
     def test_anthropic_request_parses_tool_use(self):
         def fake_post(url, **kwargs):
-            return self._mock_http_response(self._anthropic_body(
-                text='', tool_uses=[('toolu_1', 'list_modules', {'installed_only': True})],
-            ))
+            return self._mock_http_response(
+                self._anthropic_body(
+                    text='',
+                    tool_uses=[('toolu_1', 'list_modules', {'installed_only': True})],
+                )
+            )
 
         with patch.object(requests, 'post', side_effect=fake_post):
             result = self.provider._request_responses(inputs=[])
@@ -165,7 +187,8 @@ class TestAiAnthropicProvider(AITestCommon):
 
         with patch.object(requests, 'post', side_effect=fake_post):
             self.provider._request_responses(
-                inputs=[], enable_web_search=True,
+                inputs=[],
+                enable_web_search=True,
             )
         tools = captured['body'].get('tools') or []
         types = [t.get('type') for t in tools]
@@ -180,7 +203,8 @@ class TestAiAnthropicProvider(AITestCommon):
 
         with patch.object(requests, 'post', side_effect=fake_post):
             self.provider._request_responses(
-                inputs=[], enable_code_interpreter=True,
+                inputs=[],
+                enable_code_interpreter=True,
             )
         tools = captured['body'].get('tools') or []
         types = [t.get('type') for t in tools]
@@ -195,7 +219,8 @@ class TestAiAnthropicProvider(AITestCommon):
 
         with patch.object(requests, 'post', side_effect=fake_post):
             self.provider._request_responses(
-                inputs=[], enable_image_generation=True,
+                inputs=[],
+                enable_image_generation=True,
             )
         self.assertNotIn('tools', captured['body'])
 

@@ -2,9 +2,7 @@ import { describe, expect, test } from '@odoo/hoot';
 
 import { fileToBase64 } from '@muk_ai/core/attachment/file_helpers';
 
-
 describe.current.tags('muk_ai');
-
 
 test('fileToBase64 preserves filename + mimetype + base64 payload', async () => {
     const file = new File(['hello'], 'greeting.txt', { type: 'text/plain' });

@@ -1,12 +1,15 @@
+from __future__ import annotations
+
 from .base import ProviderBase
 
 REASONING_MODEL_PREFIXES = ('o1', 'o3', 'o4', 'gpt-5')
 
 
 class OpenAIProvider(ProviderBase):
+    """OpenAI Responses API adapter with reasoning and streaming support."""
 
     name = 'openai'
-    label = "OpenAI"
+    label = 'OpenAI'
     default_model = 'gpt-5-mini'
     default_url = 'https://api.openai.com/v1'
 
@@ -18,7 +21,8 @@ class OpenAIProvider(ProviderBase):
     # Contract
     # ----------------------------------------------------------
 
-    def headers(self):
+    def headers(self) -> dict:
+        """Return the OpenAI request headers with the bearer token."""
         return {
             'Authorization': f'Bearer {self.api_key}',
             'Content-Type': 'application/json',
@@ -35,7 +39,8 @@ class OpenAIProvider(ProviderBase):
         enable_image_generation=False,
         enable_code_interpreter=False,
         extra=None,
-    ):
+    ) -> dict:
+        """Build and run a Responses request, dispatching to streaming when requested."""
         model = self.model_for(model)
         body = {
             'model': model,
@@ -62,10 +67,12 @@ class OpenAIProvider(ProviderBase):
         if enable_image_generation:
             tools.append({'type': 'image_generation'})
         if enable_code_interpreter:
-            tools.append({
-                'type': 'code_interpreter',
-                'container': {'type': 'auto'},
-            })
+            tools.append(
+                {
+                    'type': 'code_interpreter',
+                    'container': {'type': 'auto'},
+                }
+            )
         if tools:
             body['tools'] = tools
             body['parallel_tool_calls'] = True
@@ -78,7 +85,8 @@ class OpenAIProvider(ProviderBase):
     # ----------------------------------------------------------
 
     @staticmethod
-    def _supports_reasoning(model):
+    def _supports_reasoning(model: str) -> bool:
+        """Return whether the model supports reasoning effort/summaries."""
         return any(model.startswith(prefix) for prefix in REASONING_MODEL_PREFIXES)
 
     # ----------------------------------------------------------
@@ -86,7 +94,8 @@ class OpenAIProvider(ProviderBase):
     # ----------------------------------------------------------
 
     @classmethod
-    def _rewrite_attachments(cls, inputs):
+    def _rewrite_attachments(cls, inputs) -> list:
+        """Rewrite attachment blocks to OpenAI form and drop thinking blocks."""
         rewritten = []
         for item in inputs or []:
             content = item.get('content') if isinstance(item, dict) else None
@@ -109,7 +118,8 @@ class OpenAIProvider(ProviderBase):
         return rewritten
 
     @staticmethod
-    def _attachment_to_openai(block):
+    def _attachment_to_openai(block: dict) -> dict:
+        """Convert an attachment block into an OpenAI input image/file/text block."""
         strategy = block.get('strategy')
         filename = block.get('filename') or 'attachment'
         mimetype = block.get('mimetype') or 'application/octet-stream'
@@ -135,17 +145,23 @@ class OpenAIProvider(ProviderBase):
     # ----------------------------------------------------------
 
     @staticmethod
-    def _render_image_call(item):
+    def _render_image_call(item: dict) -> str:
+        """Render an image-generation call result as a Markdown image, or ``''``."""
         if item.get('status') == 'failed':
             return ''
         result = (item.get('result') or '').strip()
         if not result:
             return ''
-        url = result if result.startswith('data:') or result.startswith('http') else f'data:image/png;base64,{result}'
+        url = (
+            result
+            if result.startswith(('data:', 'http'))
+            else f'data:image/png;base64,{result}'
+        )
         return f'\n\n![generated image]({url})\n\n'
 
     @staticmethod
-    def _render_code_call(item):
+    def _render_code_call(item: dict) -> str:
+        """Render a code-interpreter call as Markdown code, logs, and file notes."""
         code = (item.get('code') or '').strip()
         parts = []
         if code:
@@ -168,7 +184,8 @@ class OpenAIProvider(ProviderBase):
     # Parse
     # ----------------------------------------------------------
 
-    def _parse_response(self, payload):
+    def _parse_response(self, payload: dict) -> dict:
+        """Parse a non-streaming response into text, tool calls, carry inputs, and usage."""
         output = payload.get('output') or []
         text_parts = []
         tool_calls = []
@@ -177,12 +194,14 @@ class OpenAIProvider(ProviderBase):
             line_type = line.get('type')
             if line_type == 'function_call':
                 args, parse_error = self._parse_tool_arguments(line.get('arguments'))
-                tool_calls.append({
-                    'call_id': line.get('call_id'),
-                    'name': line.get('name'),
-                    'arguments': args,
-                    '_parse_error': parse_error,
-                })
+                tool_calls.append(
+                    {
+                        'call_id': line.get('call_id'),
+                        'name': line.get('name'),
+                        'arguments': args,
+                        '_parse_error': parse_error,
+                    }
+                )
                 carry_inputs.append(line)
             elif line_type == 'message':
                 for content in line.get('content') or []:
@@ -206,7 +225,9 @@ class OpenAIProvider(ProviderBase):
             'usage': self._usage(
                 input_tokens=usage.get('input_tokens'),
                 output_tokens=usage.get('output_tokens'),
-                cached_tokens=(usage.get('input_tokens_details') or {}).get('cached_tokens'),
+                cached_tokens=(usage.get('input_tokens_details') or {}).get(
+                    'cached_tokens'
+                ),
             ),
         }
 
@@ -214,7 +235,8 @@ class OpenAIProvider(ProviderBase):
     # Streaming
     # ----------------------------------------------------------
 
-    def _stream(self, body, on_delta):
+    def _stream(self, body: dict, on_delta) -> dict:
+        """Stream a Responses request, emitting deltas and assembling the final result."""
         body = {**body, 'stream': True}
         text_parts = []
         tool_calls_by_index = {}
@@ -235,7 +257,9 @@ class OpenAIProvider(ProviderBase):
                 b64 = image_b64_by_item.get(item_id)
                 if b64 and item_id not in rendered_item_ids:
                     rendered_item_ids.add(item_id)
-                    snippet = self._render_image_call({'status': 'completed', 'result': b64})
+                    snippet = self._render_image_call(
+                        {'status': 'completed', 'result': b64}
+                    )
                     if snippet:
                         text_parts.append(snippet)
                         self._call_on_delta(on_delta, 'text', {'delta': snippet})
@@ -259,10 +283,14 @@ class OpenAIProvider(ProviderBase):
                         'name': item.get('name'),
                         'arguments': '',
                     }
-                    self._call_on_delta(on_delta, 'tool_start', {
-                        'call_id': item.get('call_id'),
-                        'name': item.get('name'),
-                    })
+                    self._call_on_delta(
+                        on_delta,
+                        'tool_start',
+                        {
+                            'call_id': item.get('call_id'),
+                            'name': item.get('name'),
+                        },
+                    )
             elif event_type == 'response.function_call_arguments.delta':
                 index = event.get('output_index')
                 entry = tool_calls_by_index.get(index)
@@ -272,10 +300,14 @@ class OpenAIProvider(ProviderBase):
                 if not delta:
                     continue
                 entry['arguments'] += delta
-                self._call_on_delta(on_delta, 'tool_args', {
-                    'call_id': entry['call_id'],
-                    'delta': delta,
-                })
+                self._call_on_delta(
+                    on_delta,
+                    'tool_args',
+                    {
+                        'call_id': entry['call_id'],
+                        'delta': delta,
+                    },
+                )
             elif event_type == 'response.output_item.done':
                 item = event.get('item') or {}
                 item_type = item.get('type')
@@ -307,13 +339,16 @@ class OpenAIProvider(ProviderBase):
                 usage = resp.get('usage') or {}
                 for item in resp.get('output') or []:
                     item_type = item.get('type')
-                    if item_type == 'message' and not any(
-                        c.get('type') == 'message' for c in carry_inputs
-                    ):
-                        carry_inputs.append(item)
-                    elif item_type == 'reasoning' and not any(
-                        c.get('type') == 'reasoning' and c.get('id') == item.get('id')
-                        for c in carry_inputs
+                    if (
+                        item_type == 'message'
+                        and not any(c.get('type') == 'message' for c in carry_inputs)
+                    ) or (
+                        item_type == 'reasoning'
+                        and not any(
+                            c.get('type') == 'reasoning'
+                            and c.get('id') == item.get('id')
+                            for c in carry_inputs
+                        )
                     ):
                         carry_inputs.append(item)
                     elif item_type == 'image_generation_call':
@@ -345,12 +380,14 @@ class OpenAIProvider(ProviderBase):
         tool_calls = []
         for entry in tool_calls_by_index.values():
             args, parse_error = self._parse_tool_arguments(entry['arguments'])
-            tool_calls.append({
-                'call_id': entry['call_id'],
-                'name': entry['name'],
-                'arguments': args,
-                '_parse_error': parse_error,
-            })
+            tool_calls.append(
+                {
+                    'call_id': entry['call_id'],
+                    'name': entry['name'],
+                    'arguments': args,
+                    '_parse_error': parse_error,
+                }
+            )
         return {
             'text': ''.join(text_parts).strip(),
             'tool_calls': tool_calls,
@@ -358,6 +395,8 @@ class OpenAIProvider(ProviderBase):
             'usage': self._usage(
                 input_tokens=usage.get('input_tokens'),
                 output_tokens=usage.get('output_tokens'),
-                cached_tokens=(usage.get('input_tokens_details') or {}).get('cached_tokens'),
+                cached_tokens=(usage.get('input_tokens_details') or {}).get(
+                    'cached_tokens'
+                ),
             ),
         }

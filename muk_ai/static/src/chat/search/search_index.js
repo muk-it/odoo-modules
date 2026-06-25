@@ -8,6 +8,11 @@ function escapeHtml(str) {
         .replace(/'/g, '&#39;');
 }
 
+/**
+ * Build a searchable index of text entries from rendered conversation turns.
+ * @param {Array} renderedTurns rendered turns (user and assistant)
+ * @returns {Array} searchable entries with anchor ids
+ */
 export function buildIndex(renderedTurns) {
     const entries = [];
     const turns = renderedTurns || [];
@@ -45,6 +50,12 @@ export function buildIndex(renderedTurns) {
     return entries;
 }
 
+/**
+ * Find all case-insensitive occurrences of a query across the index.
+ * @param {Array} index searchable entries from buildIndex
+ * @param {string} query search query
+ * @returns {Array} matches with entry and start/end offsets
+ */
 export function findMatches(index, query) {
     const out = [];
     const q = (query || '').toLowerCase();
@@ -62,7 +73,13 @@ export function findMatches(index, query) {
     return out;
 }
 
-function _wrapTextNode(textNode, query, activeMatchIdx, entryFirstMatchIdx, counterRef) {
+function _wrapTextNode(
+    textNode,
+    query,
+    activeMatchIdx,
+    entryFirstMatchIdx,
+    counterRef,
+) {
     const text = textNode.nodeValue || '';
     const lower = text.toLowerCase();
     const q = query.toLowerCase();
@@ -78,13 +95,17 @@ function _wrapTextNode(textNode, query, activeMatchIdx, entryFirstMatchIdx, coun
             break;
         }
         if (at > from) {
-            frag.appendChild(textNode.ownerDocument.createTextNode(text.slice(from, at)));
+            frag.appendChild(
+                textNode.ownerDocument.createTextNode(text.slice(from, at)),
+            );
         }
         const idx = entryFirstMatchIdx + counterRef.local;
         const mark = textNode.ownerDocument.createElement('mark');
         const isActive = idx === activeMatchIdx;
         mark.setAttribute('class', isActive ? 'mk_search_hit_active' : 'mk_search_hit');
-        mark.appendChild(textNode.ownerDocument.createTextNode(text.slice(at, at + q.length)));
+        mark.appendChild(
+            textNode.ownerDocument.createTextNode(text.slice(at, at + q.length)),
+        );
         frag.appendChild(mark);
         counterRef.local += 1;
         mutated = true;
@@ -115,11 +136,22 @@ function _walk(node, fn) {
     }
 }
 
+/**
+ * Wrap query matches in HTML with <mark> tags, marking the active match.
+ * @param {string} html source HTML
+ * @param {string} query search query
+ * @param {number} activeMatchIdx global index of the active match
+ * @param {number} entryFirstMatchIdx global index of this entry's first match
+ * @returns {string} HTML with highlighted matches
+ */
 export function highlightHtml(html, query, activeMatchIdx, entryFirstMatchIdx) {
     if (!query) return html;
     if (typeof DOMParser === 'undefined') return html;
     const parser = new DOMParser();
-    const doc = parser.parseFromString(`<div id="__mk_root__">${html || ''}</div>`, 'text/html');
+    const doc = parser.parseFromString(
+        `<div id="__mk_root__">${html || ''}</div>`,
+        'text/html',
+    );
     const root = doc.getElementById('__mk_root__');
     if (!root) return html;
     const counter = { local: 0 };
@@ -129,12 +161,26 @@ export function highlightHtml(html, query, activeMatchIdx, entryFirstMatchIdx) {
     return root.innerHTML;
 }
 
+/**
+ * HTML-escape plain text and then highlight query matches within it.
+ * @param {string} text plain text
+ * @param {string} query search query
+ * @param {number} activeMatchIdx global index of the active match
+ * @param {number} entryFirstMatchIdx global index of this entry's first match
+ * @returns {string} escaped HTML with highlighted matches
+ */
 export function escapeAndHighlight(text, query, activeMatchIdx, entryFirstMatchIdx) {
     const safe = escapeHtml(text || '');
     if (!query) return safe;
     return highlightHtml(safe, query, activeMatchIdx, entryFirstMatchIdx);
 }
 
+/**
+ * Find the global index of an entry's first match.
+ * @param {Array} matches matches from findMatches
+ * @param {object} entry the index entry to locate
+ * @returns {number} the first match index, or -1 when absent
+ */
 export function entryFirstMatchIndex(matches, entry) {
     if (!entry) return -1;
     for (let i = 0; i < matches.length; i++) {

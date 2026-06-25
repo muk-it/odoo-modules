@@ -4,6 +4,7 @@ from odoo.addons.muk_ai.tests.common import AITestCommon
 
 
 class TestAutonameFromText(AITestCommon):
+    """Verify automatic session naming derived from message text."""
 
     def _f(self, raw):
         return self.env['muk_ai.session']._autoname_from_text(raw)
@@ -40,25 +41,30 @@ class TestAutonameFromText(AITestCommon):
 
 
 class TestSessionStartRenames(AITestCommon):
+    """Verify session renaming on the first agent turn."""
 
     def setUp(self):
         super().setUp()
         self._patches = [
             patch.object(
                 type(self.env['muk_ai.session']),
-                '_enqueue_user_turn', lambda *a, **k: None,
+                '_enqueue_user_turn',
+                lambda *a, **k: None,
             ),
             patch.object(
                 type(self.env['muk_ai.session']),
-                '_trigger_worker', lambda *a, **k: None,
+                '_trigger_worker',
+                lambda *a, **k: None,
             ),
             patch.object(
                 type(self.env['muk_ai.session']),
-                '_recover_if_stuck', lambda *a, **k: None,
+                '_recover_if_stuck',
+                lambda *a, **k: None,
             ),
             patch.object(
                 type(self.env['muk_ai.session']),
-                '_build_initial_inputs', lambda *a, **k: [],
+                '_build_initial_inputs',
+                lambda *a, **k: [],
             ),
         ]
         for p in self._patches:
@@ -66,9 +72,11 @@ class TestSessionStartRenames(AITestCommon):
             self.addCleanup(p.stop)
 
     def test_renames_from_first_user_message(self):
-        session = self.env['muk_ai.session'].create({
-            'name': 'Chat 2026-05-05 13:00:00',
-        })
+        session = self.env['muk_ai.session'].create(
+            {
+                'name': 'Chat 2026-05-05 13:00:00',
+            }
+        )
         session.start('Reset password for partner Joe')
         self.assertEqual(session.name, 'Reset password for partner Joe')
 

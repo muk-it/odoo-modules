@@ -2,6 +2,7 @@ import { Component } from '@odoo/owl';
 
 import { AttachmentCard } from '@muk_ai/core/attachment/attachment_card';
 
+/** Artifacts tab listing the session's attachments as cards. */
 export class AttachmentsTab extends Component {
     static template = 'muk_ai.AttachmentsTab';
     static components = { AttachmentCard };

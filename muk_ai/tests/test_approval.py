@@ -1,5 +1,4 @@
 import json
-
 from unittest.mock import patch
 
 from odoo.exceptions import UserError
@@ -8,6 +7,7 @@ from odoo.addons.muk_ai.tests.common import AITestCommon
 
 
 class TestApprovalRiskPredicate(AITestCommon):
+    """Verify which tool calls are classified as risky and require approval."""
 
     # ----------------------------------------------------------
     # Setup
@@ -23,84 +23,133 @@ class TestApprovalRiskPredicate(AITestCommon):
     # ----------------------------------------------------------
 
     def test_delete_on_sensitive_model_is_risky(self):
-        risk = self.env['muk_ai.approval']._assess_risk('delete_records', {
-            'model': 'res.partner', 'ids': [1, 2],
-        })
+        risk = self.env['muk_ai.approval']._assess_risk(
+            'delete_records',
+            {
+                'model': 'res.partner',
+                'ids': [1, 2],
+            },
+        )
         self.assertIsNotNone(risk)
         self.assertEqual(risk['tool'], 'delete_records')
         self.assertTrue(risk['signature'])
         self.assertIn('flagged sensitive', risk['reason'])
 
     def test_call_method_on_sensitive_model_is_risky(self):
-        risk = self.env['muk_ai.approval']._assess_risk('call_method', {
-            'model': 'account.move',
-            'method': 'action_post',
-            'ids': [1],
-        })
+        risk = self.env['muk_ai.approval']._assess_risk(
+            'call_method',
+            {
+                'model': 'account.move',
+                'method': 'action_post',
+                'ids': [1],
+            },
+        )
         self.assertIsNotNone(risk)
         self.assertEqual(risk['method'], 'action_post')
         self.assertIn('action_post', risk['reason'])
 
     def test_update_on_sensitive_model_is_risky(self):
-        risk = self.env['muk_ai.approval']._assess_risk('update_records', {
-            'model': 'res.partner',
-            'ids': [1],
-            'values': {'user_id': 1},
-        })
+        risk = self.env['muk_ai.approval']._assess_risk(
+            'update_records',
+            {
+                'model': 'res.partner',
+                'ids': [1],
+                'values': {'user_id': 1},
+            },
+        )
         self.assertIsNotNone(risk)
         self.assertEqual(risk['tool'], 'update_records')
 
     def test_update_on_non_sensitive_model_is_safe(self):
-        risk = self.env['muk_ai.approval']._assess_risk('update_records', {
-            'model': 'res.partner.category',
-            'ids': [1],
-            'values': {'name': 'tag'},
-        })
+        risk = self.env['muk_ai.approval']._assess_risk(
+            'update_records',
+            {
+                'model': 'res.partner.category',
+                'ids': [1],
+                'values': {'name': 'tag'},
+            },
+        )
         self.assertIsNone(risk)
 
     def test_create_on_sensitive_model_is_risky(self):
-        risk = self.env['muk_ai.approval']._assess_risk('create_records', {
-            'model': 'res.users',
-            'values': {'name': 'X'},
-        })
+        risk = self.env['muk_ai.approval']._assess_risk(
+            'create_records',
+            {
+                'model': 'res.users',
+                'values': {'name': 'X'},
+            },
+        )
         self.assertIsNotNone(risk)
 
     def test_create_on_non_sensitive_model_is_safe(self):
-        risk = self.env['muk_ai.approval']._assess_risk('create_records', {
-            'model': 'res.partner.category',
-            'values': {'name': 'Tag'},
-        })
+        risk = self.env['muk_ai.approval']._assess_risk(
+            'create_records',
+            {
+                'model': 'res.partner.category',
+                'values': {'name': 'Tag'},
+            },
+        )
         self.assertIsNone(risk)
 
     def test_signature_stable_for_same_tool_and_model(self):
-        a = self.env['muk_ai.approval']._assess_risk('update_records', {
-            'model': 'res.partner', 'ids': [1], 'values': {'user_id': 2},
-        })
-        b = self.env['muk_ai.approval']._assess_risk('update_records', {
-            'model': 'res.partner', 'ids': [9], 'values': {'user_id': 3},
-        })
+        a = self.env['muk_ai.approval']._assess_risk(
+            'update_records',
+            {
+                'model': 'res.partner',
+                'ids': [1],
+                'values': {'user_id': 2},
+            },
+        )
+        b = self.env['muk_ai.approval']._assess_risk(
+            'update_records',
+            {
+                'model': 'res.partner',
+                'ids': [9],
+                'values': {'user_id': 3},
+            },
+        )
         self.assertEqual(a['signature'], b['signature'])
 
     def test_signature_differs_when_tool_differs(self):
-        a = self.env['muk_ai.approval']._assess_risk('delete_records', {
-            'model': 'res.partner', 'ids': [1],
-        })
-        b = self.env['muk_ai.approval']._assess_risk('update_records', {
-            'model': 'res.partner', 'ids': [1], 'values': {'name': 'X'},
-        })
+        a = self.env['muk_ai.approval']._assess_risk(
+            'delete_records',
+            {
+                'model': 'res.partner',
+                'ids': [1],
+            },
+        )
+        b = self.env['muk_ai.approval']._assess_risk(
+            'update_records',
+            {
+                'model': 'res.partner',
+                'ids': [1],
+                'values': {'name': 'X'},
+            },
+        )
         self.assertNotEqual(a['signature'], b['signature'])
 
     def test_signature_differs_when_method_differs(self):
-        a = self.env['muk_ai.approval']._assess_risk('call_method', {
-            'model': 'account.move', 'ids': [1], 'method': 'action_post',
-        })
-        b = self.env['muk_ai.approval']._assess_risk('call_method', {
-            'model': 'account.move', 'ids': [1], 'method': 'action_archive',
-        })
+        a = self.env['muk_ai.approval']._assess_risk(
+            'call_method',
+            {
+                'model': 'account.move',
+                'ids': [1],
+                'method': 'action_post',
+            },
+        )
+        b = self.env['muk_ai.approval']._assess_risk(
+            'call_method',
+            {
+                'model': 'account.move',
+                'ids': [1],
+                'method': 'action_archive',
+            },
+        )
         self.assertNotEqual(a['signature'], b['signature'])
 
 
 class TestApprovalPreview(AITestCommon):
+    """Verify the structured approval preview rendering."""
 
     # ----------------------------------------------------------
     # Tests
@@ -108,10 +157,14 @@ class TestApprovalPreview(AITestCommon):
 
     def test_update_preview_shows_field_label_and_from_to(self):
         partner = self.env['res.partner'].create({'name': 'Preview Target'})
-        preview = self.env['muk_ai.approval']._build_preview('update_records', {
-            'model': 'res.partner', 'ids': [partner.id],
-            'values': {'name': 'New Name'},
-        })
+        preview = self.env['muk_ai.approval']._build_preview(
+            'update_records',
+            {
+                'model': 'res.partner',
+                'ids': [partner.id],
+                'values': {'name': 'New Name'},
+            },
+        )
         self.assertEqual(preview['kind'], 'update')
         self.assertEqual(len(preview['changes']), 1)
         change = preview['changes'][0]
@@ -125,39 +178,54 @@ class TestApprovalPreview(AITestCommon):
     def test_update_preview_resolves_many2one_id_to_display_name(self):
         partner = self.env['res.partner'].create({'name': 'M2o Target'})
         user = self.env.ref('base.user_admin')
-        preview = self.env['muk_ai.approval']._build_preview('update_records', {
-            'model': 'res.partner', 'ids': [partner.id],
-            'values': {'user_id': user.id},
-        })
+        preview = self.env['muk_ai.approval']._build_preview(
+            'update_records',
+            {
+                'model': 'res.partner',
+                'ids': [partner.id],
+                'values': {'user_id': user.id},
+            },
+        )
         change = preview['changes'][0]
         self.assertEqual(change['to'], user.display_name)
 
     def test_delete_preview_lists_display_names(self):
         p1 = self.env['res.partner'].create({'name': 'Del1'})
         p2 = self.env['res.partner'].create({'name': 'Del2'})
-        preview = self.env['muk_ai.approval']._build_preview('delete_records', {
-            'model': 'res.partner', 'ids': [p1.id, p2.id],
-        })
+        preview = self.env['muk_ai.approval']._build_preview(
+            'delete_records',
+            {
+                'model': 'res.partner',
+                'ids': [p1.id, p2.id],
+            },
+        )
         self.assertEqual(preview['kind'], 'delete')
         names = sorted(t['display_name'] for t in preview['targets'])
         self.assertEqual(names, ['Del1', 'Del2'])
 
     def test_call_method_preview_shows_method_and_targets(self):
         partner = self.env['res.partner'].create({'name': 'CallTarget'})
-        preview = self.env['muk_ai.approval']._build_preview('call_method', {
-            'model': 'res.partner', 'method': 'action_archive',
-            'ids': [partner.id],
-        })
+        preview = self.env['muk_ai.approval']._build_preview(
+            'call_method',
+            {
+                'model': 'res.partner',
+                'method': 'action_archive',
+                'ids': [partner.id],
+            },
+        )
         self.assertEqual(preview['kind'], 'call')
         self.assertEqual(preview['method'], 'action_archive')
         self.assertEqual(len(preview['targets']), 1)
         self.assertEqual(preview['targets'][0]['id'], partner.id)
 
     def test_create_preview_lists_property_labels(self):
-        preview = self.env['muk_ai.approval']._build_preview('create_records', {
-            'model': 'res.partner',
-            'values': {'name': 'New Guy', 'email': 'new@x.test'},
-        })
+        preview = self.env['muk_ai.approval']._build_preview(
+            'create_records',
+            {
+                'model': 'res.partner',
+                'values': {'name': 'New Guy', 'email': 'new@x.test'},
+            },
+        )
         self.assertEqual(preview['kind'], 'create')
         fields_seen = {p['field'] for p in preview['properties']}
         self.assertEqual(fields_seen, {'name', 'email'})
@@ -166,14 +234,19 @@ class TestApprovalPreview(AITestCommon):
         self.assertEqual(name_prop['value'], 'New Guy')
 
     def test_preview_survives_missing_model_gracefully(self):
-        preview = self.env['muk_ai.approval']._build_preview('delete_records', {
-            'model': 'nonexistent.model', 'ids': [1, 2],
-        })
+        preview = self.env['muk_ai.approval']._build_preview(
+            'delete_records',
+            {
+                'model': 'nonexistent.model',
+                'ids': [1, 2],
+            },
+        )
         self.assertEqual(preview['kind'], 'delete')
         self.assertEqual(preview['targets'], [])
 
 
 class TestApprovalFlow(AITestCommon):
+    """Verify the end-to-end approval request and resolution flow."""
 
     # ----------------------------------------------------------
     # Setup
@@ -201,7 +274,8 @@ class TestApprovalFlow(AITestCommon):
             **kwargs,
         ):
             if not remaining:
-                raise AssertionError('No more mocked responses')
+                msg = 'No more mocked responses'
+                raise AssertionError(msg)
             return remaining.pop(0)
 
         return patch.object(
@@ -229,17 +303,21 @@ class TestApprovalFlow(AITestCommon):
         args = {'model': 'res.partner', 'ids': ids or [42]}
         return {
             'text': '',
-            'tool_calls': [{
-                'call_id': call_id,
-                'name': 'delete_records',
-                'arguments': args,
-            }],
-            'carry_inputs': [{
-                'type': 'function_call',
-                'name': 'delete_records',
-                'arguments': json.dumps(args),
-                'call_id': call_id,
-            }],
+            'tool_calls': [
+                {
+                    'call_id': call_id,
+                    'name': 'delete_records',
+                    'arguments': args,
+                }
+            ],
+            'carry_inputs': [
+                {
+                    'type': 'function_call',
+                    'name': 'delete_records',
+                    'arguments': json.dumps(args),
+                    'call_id': call_id,
+                }
+            ],
             'usage': {'input_tokens': 2, 'output_tokens': 1},
         }
 
@@ -247,10 +325,12 @@ class TestApprovalFlow(AITestCommon):
         return {
             'text': text,
             'tool_calls': [],
-            'carry_inputs': [{
-                'type': 'message',
-                'content': [{'type': 'output_text', 'text': text}],
-            }],
+            'carry_inputs': [
+                {
+                    'type': 'message',
+                    'content': [{'type': 'output_text', 'text': text}],
+                }
+            ],
             'usage': {'input_tokens': 1, 'output_tokens': 1},
         }
 
@@ -277,10 +357,12 @@ class TestApprovalFlow(AITestCommon):
             snapshot = session.approve_tool()
         self.assertEqual(snapshot['state'], 'done')
         self.assertIn('delete_records', calls)
-        audit = self.env['muk_ai.approval'].search([
-            ('session_id', '=', session.id),
-            ('decision', '=', 'approved'),
-        ])
+        audit = self.env['muk_ai.approval'].search(
+            [
+                ('session_id', '=', session.id),
+                ('decision', '=', 'approved'),
+            ]
+        )
         self.assertEqual(len(audit), 1)
         self.assertFalse(session.pending_ask)
 
@@ -310,13 +392,16 @@ class TestApprovalFlow(AITestCommon):
         ):
             snapshot = session.reject_tool(reason='not now')
         self.assertEqual(snapshot['state'], 'done')
-        audit = self.env['muk_ai.approval'].search([
-            ('session_id', '=', session.id),
-            ('decision', '=', 'rejected'),
-        ])
+        audit = self.env['muk_ai.approval'].search(
+            [
+                ('session_id', '=', session.id),
+                ('decision', '=', 'rejected'),
+            ]
+        )
         self.assertEqual(len(audit), 1)
         tool_outputs_in_conversation = [
-            item for item in session.conversation or []
+            item
+            for item in session.conversation or []
             if isinstance(item, dict) and item.get('type') == 'function_call_output'
         ]
         self.assertTrue(tool_outputs_in_conversation)
@@ -337,17 +422,24 @@ class TestApprovalFlow(AITestCommon):
         self.assertTrue(session.approved_signatures)
 
         tool_patch2, calls2 = self._patch_tool({'delete_records': '{"success": true}'})
-        with self._patch_provider([
-            self._delete_call_payload(call_id='c2', ids=[22]),
-            self._text('auto ok'),
-        ]), tool_patch2:
+        with (
+            self._patch_provider(
+                [
+                    self._delete_call_payload(call_id='c2', ids=[22]),
+                    self._text('auto ok'),
+                ]
+            ),
+            tool_patch2,
+        ):
             snapshot = session.send_message('del 22')
         self.assertEqual(snapshot['state'], 'done')
         self.assertIn('delete_records', calls2)
-        auto = self.env['muk_ai.approval'].search([
-            ('session_id', '=', session.id),
-            ('decision', '=', 'auto_approved'),
-        ])
+        auto = self.env['muk_ai.approval'].search(
+            [
+                ('session_id', '=', session.id),
+                ('decision', '=', 'auto_approved'),
+            ]
+        )
         self.assertEqual(len(auto), 1)
 
     def test_approve_for_session_memory_is_scoped_to_that_session(self):
@@ -365,18 +457,28 @@ class TestApprovalFlow(AITestCommon):
         self.assertFalse(s2.approved_signatures)
 
     def test_agent_approval_mode_off_bypasses(self):
-        agent = self.env['muk_ai.agent'].create({
-            'name': 'Fast',
-            'approval_mode': 'off',
-        })
-        session = self.env['muk_ai.session'].create({
-            'name': 'no-approval', 'agent_id': agent.id,
-        })
+        agent = self.env['muk_ai.agent'].create(
+            {
+                'name': 'Fast',
+                'approval_mode': 'off',
+            }
+        )
+        session = self.env['muk_ai.session'].create(
+            {
+                'name': 'no-approval',
+                'agent_id': agent.id,
+            }
+        )
         tool_patch, calls = self._patch_tool({'delete_records': '{"success": true}'})
-        with self._patch_provider([
-            self._delete_call_payload(),
-            self._text('done'),
-        ]), tool_patch:
+        with (
+            self._patch_provider(
+                [
+                    self._delete_call_payload(),
+                    self._text('done'),
+                ]
+            ),
+            tool_patch,
+        ):
             snapshot = session.start('delete')
         self.assertEqual(snapshot['state'], 'done')
         self.assertIn('delete_records', calls)
@@ -384,28 +486,34 @@ class TestApprovalFlow(AITestCommon):
         self.assertEqual(
             self.env['muk_ai.approval'].search_count(
                 [('session_id', '=', session.id)],
-            ), 0,
+            ),
+            0,
         )
 
     def test_write_to_non_sensitive_model_does_not_trigger_approval(self):
         session = self.env['muk_ai.session'].create({'name': 'safe'})
         args = {
-            'model': 'res.partner.category', 'ids': [1],
+            'model': 'res.partner.category',
+            'ids': [1],
             'values': {'name': 'harmless'},
         }
         update_payload = {
             'text': '',
-            'tool_calls': [{
-                'call_id': 'u1',
-                'name': 'update_records',
-                'arguments': args,
-            }],
-            'carry_inputs': [{
-                'type': 'function_call',
-                'name': 'update_records',
-                'arguments': json.dumps(args),
-                'call_id': 'u1',
-            }],
+            'tool_calls': [
+                {
+                    'call_id': 'u1',
+                    'name': 'update_records',
+                    'arguments': args,
+                }
+            ],
+            'carry_inputs': [
+                {
+                    'type': 'function_call',
+                    'name': 'update_records',
+                    'arguments': json.dumps(args),
+                    'call_id': 'u1',
+                }
+            ],
             'usage': {'input_tokens': 1, 'output_tokens': 1},
         }
         tool_patch, calls = self._patch_tool({'update_records': '{"success": true}'})
@@ -423,7 +531,8 @@ class TestApprovalFlow(AITestCommon):
         self.assertEqual(session.state, 'waiting')
         self.assertEqual(len(session.pending_ids), 1)
         self.assertEqual(
-            session.pending_ids[0].content, 'queued while waiting',
+            session.pending_ids[0].content,
+            'queued while waiting',
         )
         self.assertEqual(
             snapshot['pending_user_messages'][0]['content'],

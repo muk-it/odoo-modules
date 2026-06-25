@@ -1,12 +1,9 @@
 import base64
 import socket
-
 from unittest.mock import MagicMock, patch
 
-from odoo.addons.muk_ai.tools.url_fetch import _validate_url
-
 from odoo.addons.muk_ai.tests.common import AITestCommon
-
+from odoo.addons.muk_ai.tools.url_fetch import _validate_url
 
 PNG_1x1_RED = base64.b64encode(
     bytes.fromhex(
@@ -18,6 +15,7 @@ PNG_1x1_RED = base64.b64encode(
 
 
 class TestUrlFetchHardening(AITestCommon):
+    """Verify SSRF guards and size caps for the @url fetch helper."""
 
     # ----------------------------------------------------------
     # Setup
@@ -25,10 +23,16 @@ class TestUrlFetchHardening(AITestCommon):
 
     def setUp(self):
         super().setUp()
-        self.session = self.env['muk_ai.session'].sudo().create({
-            'name': 'url-fetch-test',
-            'user_id': self.env.user.id,
-        })
+        self.session = (
+            self.env['muk_ai.session']
+            .sudo()
+            .create(
+                {
+                    'name': 'url-fetch-test',
+                    'user_id': self.env.user.id,
+                }
+            )
+        )
 
     # ----------------------------------------------------------
     # Helper
@@ -68,12 +72,15 @@ class TestUrlFetchHardening(AITestCommon):
 
     def test_rejects_private_ip(self):
         url = 'https://internal.example.com/secret.png'
-        with patch(
-            'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
-            return_value=self._addrinfo('10.0.0.1'),
-        ), patch(
-            'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
-        ) as mock_pool_cls:
+        with (
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
+                return_value=self._addrinfo('10.0.0.1'),
+            ),
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
+            ) as mock_pool_cls,
+        ):
             args = {'values': {'image_1920': f'@url:{url}'}}
             resolved, refs = self.session._resolve_value_refs(args)
         mock_pool_cls.assert_not_called()
@@ -82,12 +89,15 @@ class TestUrlFetchHardening(AITestCommon):
 
     def test_rejects_loopback(self):
         url = 'https://localhost/admin'
-        with patch(
-            'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
-            return_value=self._addrinfo('127.0.0.1'),
-        ), patch(
-            'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
-        ) as mock_pool_cls:
+        with (
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
+                return_value=self._addrinfo('127.0.0.1'),
+            ),
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
+            ) as mock_pool_cls,
+        ):
             args = {'values': {'image_1920': f'@url:{url}'}}
             resolved, refs = self.session._resolve_value_refs(args)
         mock_pool_cls.assert_not_called()
@@ -96,12 +106,15 @@ class TestUrlFetchHardening(AITestCommon):
 
     def test_rejects_link_local(self):
         url = 'https://metadata.example/aws'
-        with patch(
-            'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
-            return_value=self._addrinfo('169.254.169.254'),
-        ), patch(
-            'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
-        ) as mock_pool_cls:
+        with (
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
+                return_value=self._addrinfo('169.254.169.254'),
+            ),
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
+            ) as mock_pool_cls,
+        ):
             args = {'values': {'image_1920': f'@url:{url}'}}
             resolved, refs = self.session._resolve_value_refs(args)
         mock_pool_cls.assert_not_called()
@@ -114,12 +127,15 @@ class TestUrlFetchHardening(AITestCommon):
         chunks = [big_chunk] * 17
         response = self._mock_response(chunks)
         pool = self._mock_pool(response)
-        with patch(
-            'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
-            return_value=self._addrinfo('8.8.8.8'),
-        ), patch(
-            'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
-            return_value=pool,
+        with (
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
+                return_value=self._addrinfo('8.8.8.8'),
+            ),
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
+                return_value=pool,
+            ),
         ):
             args = {'values': {'image_1920': f'@url:{url}'}}
             resolved, refs = self.session._resolve_value_refs(args)
@@ -133,12 +149,15 @@ class TestUrlFetchHardening(AITestCommon):
         png = base64.b64decode(PNG_1x1_RED)
         response = self._mock_response([png])
         pool = self._mock_pool(response)
-        with patch(
-            'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
-            return_value=self._addrinfo('8.8.8.8'),
-        ), patch(
-            'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
-            return_value=pool,
+        with (
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
+                return_value=self._addrinfo('8.8.8.8'),
+            ),
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
+                return_value=pool,
+            ),
         ):
             args = {'values': {'image_1920': f'@url:{url}'}}
             self.session._resolve_value_refs(args)
@@ -152,13 +171,16 @@ class TestUrlFetchHardening(AITestCommon):
         png = base64.b64decode(PNG_1x1_RED)
         response = self._mock_response([png[:8], png[8:]])
         pool = self._mock_pool(response)
-        with patch(
-            'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
-            return_value=self._addrinfo('8.8.8.8'),
-        ), patch(
-            'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
-            return_value=pool,
-        ) as mock_pool_cls:
+        with (
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
+                return_value=self._addrinfo('8.8.8.8'),
+            ),
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
+                return_value=pool,
+            ) as mock_pool_cls,
+        ):
             args = {'values': {'image_1920': f'@url:{url}'}}
             resolved, refs = self.session._resolve_value_refs(args)
         self.assertEqual(resolved['values']['image_1920'], PNG_1x1_RED)
@@ -198,13 +220,16 @@ class TestUrlFetchHardening(AITestCommon):
         png = base64.b64decode(PNG_1x1_RED)
         response = self._mock_response([png])
         pool = self._mock_pool(response)
-        with patch(
-            'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
-            return_value=self._addrinfo('8.8.8.8'),
-        ), patch(
-            'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
-            return_value=pool,
-        ) as mock_pool_cls:
+        with (
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
+                return_value=self._addrinfo('8.8.8.8'),
+            ),
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
+                return_value=pool,
+            ) as mock_pool_cls,
+        ):
             args = {'values': {'image_1920': f'@url:{url}'}}
             self.session._resolve_value_refs(args)
         kwargs = mock_pool_cls.call_args.kwargs

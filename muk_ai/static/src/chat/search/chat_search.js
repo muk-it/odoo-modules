@@ -1,5 +1,6 @@
 import { Component, onMounted, useRef } from '@odoo/owl';
 
+/** In-conversation search bar with match navigation controls. */
 export class ChatSearch extends Component {
     static template = 'muk_ai.ChatSearch';
     static props = {

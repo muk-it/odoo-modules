@@ -1,7 +1,7 @@
 {
     'name': 'MuK AI Assistant',
     'summary': 'Native agentic AI (ChatGPT, Claude, Gemini) agent and chat',
-    'description': '''
+    'description': """
         A complete agentic AI assistant inside Odoo. Ships a native OWL
         chat client (with floating window and systray), a session-based
         agent runtime, and three first-class LLM providers (OpenAI
@@ -9,8 +9,8 @@
         and reasoning streaming. Talks to your data through the same
         muk_mcp tool registry your external AI clients use — one source
         of truth, one permission model, one audit trail.
-    ''',
-    'version': '19.0.1.6.21',
+    """,
+    'version': '19.0.1.6.23',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',

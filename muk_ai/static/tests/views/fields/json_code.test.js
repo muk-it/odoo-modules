@@ -12,7 +12,6 @@ import '@muk_ai/views/fields/json_code/json_code';
 describe.current.tags('muk_ai');
 defineMailModels();
 
-
 class MukAiModelStub extends models.Model {
     _name = 'muk_ai.model_stub';
     name = fields.Char();
@@ -23,7 +22,6 @@ class MukAiModelStub extends models.Model {
     ];
 }
 defineModels([MukAiModelStub]);
-
 
 test('JsonCodeField renders CodeEditor with pretty-printed initial value', async () => {
     await mountView({
@@ -37,7 +35,6 @@ test('JsonCodeField renders CodeEditor with pretty-printed initial value', async
     expect(text).toMatch(/"key"/);
     expect(text).toMatch(/"value"/);
 });
-
 
 test('JsonCodeField surfaces a danger notification on invalid JSON save', async () => {
     await mountView({

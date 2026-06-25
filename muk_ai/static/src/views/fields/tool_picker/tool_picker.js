@@ -12,6 +12,7 @@ const CATEGORY_COLOR = {
     write: 2,
 };
 
+/** Field widget picking tool names from the catalog as colour-coded tags. */
 export class ToolPickerField extends Component {
     static template = 'muk_ai.ToolPickerField';
     static components = { AutoComplete, TagsList };
@@ -54,21 +55,30 @@ export class ToolPickerField extends Component {
         });
     }
     get autocompleteSources() {
-        return [{
-            options: (request) => {
-                const taken = new Set(this.state.selected);
-                const q = (request || '').toLowerCase();
-                const matches = this.state.options
-                    .filter((o) => !taken.has(o.name) && o.name.toLowerCase().includes(q));
-                if (!matches.length) {
-                    return [{ label: _t('No matching tool'), unselectable: true, cssClass: 'fst-italic' }];
-                }
-                return matches.map((o) => ({
-                    label: o.name,
-                    onSelect: () => this._add(o.name),
-                }));
+        return [
+            {
+                options: (request) => {
+                    const taken = new Set(this.state.selected);
+                    const q = (request || '').toLowerCase();
+                    const matches = this.state.options.filter(
+                        (o) => !taken.has(o.name) && o.name.toLowerCase().includes(q),
+                    );
+                    if (!matches.length) {
+                        return [
+                            {
+                                label: _t('No matching tool'),
+                                unselectable: true,
+                                cssClass: 'fst-italic',
+                            },
+                        ];
+                    }
+                    return matches.map((o) => ({
+                        label: o.name,
+                        onSelect: () => this._add(o.name),
+                    }));
+                },
             },
-        }];
+        ];
     }
     async _add(name) {
         if (this.state.selected.includes(name)) {
@@ -103,9 +113,8 @@ export const toolPickerField = {
         optionsField: options.options_field || '',
         placeholder: placeholder || attrs?.placeholder || '',
     }),
-    fieldDependencies: ({ options }) => (
-        options.options_field ? [{ name: options.options_field, type: 'json' }] : []
-    ),
+    fieldDependencies: ({ options }) =>
+        options.options_field ? [{ name: options.options_field, type: 'json' }] : [],
 };
 
 registry.category('fields').add('tool_picker', toolPickerField);

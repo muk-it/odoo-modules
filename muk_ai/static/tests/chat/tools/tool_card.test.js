@@ -9,7 +9,6 @@ import { ToolCard } from '@muk_ai/chat/tools/tool_card';
 describe.current.tags('muk_ai');
 defineMailModels();
 
-
 function makeParent({ block, expanded = false, streaming = false, onToggle } = {}) {
     class Parent extends Component {
         static components = { ToolCard };
@@ -32,7 +31,6 @@ function makeParent({ block, expanded = false, streaming = false, onToggle } = {
     return { Parent, props: { block, expanded, streaming, onToggle } };
 }
 
-
 test('renders the tool name and a wrench icon when collapsed and idle', async () => {
     const { Parent, props } = makeParent({
         block: { name: 'list_modules', arguments: null, callId: 'c1' },
@@ -44,10 +42,13 @@ test('renders the tool name and a wrench icon when collapsed and idle', async ()
     expect('.mk_tool_body').toHaveCount(0);
 });
 
-
 test('streaming swaps wrench for spinner and shows running… status', async () => {
     const { Parent, props } = makeParent({
-        block: { name: 'search_records', arguments: { model: 'res.partner' }, callId: 'c2' },
+        block: {
+            name: 'search_records',
+            arguments: { model: 'res.partner' },
+            callId: 'c2',
+        },
         streaming: true,
     });
     await mountWithCleanup(Parent, { props });
@@ -55,7 +56,6 @@ test('streaming swaps wrench for spinner and shows running… status', async () 
     expect('.fa-wrench').toHaveCount(0);
     expect(queryFirst('.mk_tool_status').textContent.trim()).toBe('running…');
 });
-
 
 test('summary inlines whitespace and truncates over 60 chars with an ellipsis', async () => {
     const longArgs = { padding: 'x'.repeat(200) };
@@ -69,7 +69,6 @@ test('summary inlines whitespace and truncates over 60 chars with an ellipsis', 
     expect(/\s{2,}/.test(summary)).toBe(false);
 });
 
-
 test('summary is empty when block has no arguments', async () => {
     const { Parent, props } = makeParent({
         block: { name: 't', arguments: null, callId: 'c1' },
@@ -78,11 +77,11 @@ test('summary is empty when block has no arguments', async () => {
     expect(queryFirst('.mk_tool_preview').textContent).toBe('');
 });
 
-
 test('expanded shows pretty-printed arguments and parsed JSON-string result', async () => {
     const { Parent, props } = makeParent({
         block: {
-            name: 't', callId: 'c1',
+            name: 't',
+            callId: 'c1',
             arguments: { ids: [1, 2] },
             result: '{"ok":true,"count":2}',
         },
@@ -96,7 +95,6 @@ test('expanded shows pretty-printed arguments and parsed JSON-string result', as
     expect(code[1].textContent).toBe('{\n  "ok": true,\n  "count": 2\n}');
 });
 
-
 test('expanded with non-JSON string result keeps it verbatim', async () => {
     const { Parent, props } = makeParent({
         block: { name: 't', callId: 'c1', arguments: null, result: 'plain answer' },
@@ -105,7 +103,6 @@ test('expanded with non-JSON string result keeps it verbatim', async () => {
     await mountWithCleanup(Parent, { props });
     expect(queryFirst('.mk_tool_section code').textContent).toBe('plain answer');
 });
-
 
 test('expanded with no result shows the running placeholder', async () => {
     const { Parent, props } = makeParent({
@@ -117,31 +114,32 @@ test('expanded with no result shows the running placeholder', async () => {
     expect(document.querySelectorAll('.mk_tool_section').length).toBe(2);
 });
 
-
 test('clicking the head emits onToggle with the callId', async () => {
     let toggled = null;
     const { Parent, props } = makeParent({
         block: { name: 't', callId: 'abc', arguments: null },
-        onToggle: (id) => { toggled = id; },
+        onToggle: (id) => {
+            toggled = id;
+        },
     });
     await mountWithCleanup(Parent, { props });
     await click('.mk_tool_head');
     expect(toggled).toBe('abc');
 });
 
-
 test('streaming suppresses onToggle clicks', async () => {
     let toggled = null;
     const { Parent, props } = makeParent({
         block: { name: 't', callId: 'abc', arguments: null },
         streaming: true,
-        onToggle: (id) => { toggled = id; },
+        onToggle: (id) => {
+            toggled = id;
+        },
     });
     await mountWithCleanup(Parent, { props });
     await click('.mk_tool_head');
     expect(toggled).toBe(null);
 });
-
 
 test('applies mk_tool_write kind class for create/update tool names', async () => {
     const { Parent, props } = makeParent({
@@ -151,7 +149,6 @@ test('applies mk_tool_write kind class for create/update tool names', async () =
     expect('.mk_tool_write').toHaveCount(1);
 });
 
-
 test('applies mk_tool_read kind class for search tool names', async () => {
     const { Parent, props } = makeParent({
         block: { name: 'search_read', arguments: null, callId: 'c2' },
@@ -159,7 +156,6 @@ test('applies mk_tool_read kind class for search tool names', async () => {
     await mountWithCleanup(Parent, { props });
     expect('.mk_tool_read').toHaveCount(1);
 });
-
 
 test('applies mk_tool_nav kind class for open tool names', async () => {
     const { Parent, props } = makeParent({
@@ -169,11 +165,12 @@ test('applies mk_tool_nav kind class for open tool names', async () => {
     expect('.mk_tool_nav').toHaveCount(1);
 });
 
-
 test('applies mk_tool_error when result contains an error', async () => {
     const { Parent, props } = makeParent({
         block: {
-            name: 'search_read', arguments: null, callId: 'c4',
+            name: 'search_read',
+            arguments: null,
+            callId: 'c4',
             result: { error: 'access denied' },
         },
     });
@@ -181,18 +178,18 @@ test('applies mk_tool_error when result contains an error', async () => {
     expect('.mk_tool_error').toHaveCount(1);
 });
 
-
 test('applies mk_tool_error when result JSON string contains an error', async () => {
     const { Parent, props } = makeParent({
         block: {
-            name: 'search_read', arguments: null, callId: 'c5',
+            name: 'search_read',
+            arguments: null,
+            callId: 'c5',
             result: '{"error": "nope"}',
         },
     });
     await mountWithCleanup(Parent, { props });
     expect('.mk_tool_error').toHaveCount(1);
 });
-
 
 test('falls back to default kind for unknown tool name', async () => {
     const { Parent, props } = makeParent({
@@ -201,7 +198,6 @@ test('falls back to default kind for unknown tool name', async () => {
     await mountWithCleanup(Parent, { props });
     expect('.mk_tool_default').toHaveCount(1);
 });
-
 
 test('detects diff body in result and swaps to language-diff pre', async () => {
     const diff = [

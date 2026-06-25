@@ -14,7 +14,6 @@ import '@muk_ai/views/form/form_controller';
 describe.current.tags('muk_ai');
 defineMailModels();
 
-
 class FormPartner extends models.Model {
     _name = 'muk_ai.form_partner';
     name = fields.Char();
@@ -25,18 +24,20 @@ class FormPartner extends models.Model {
 }
 defineModels([FormPartner]);
 
-
 function mockChatWindow(activeSessionId) {
     mockService('muk_ai.chat_window', {
         state: { windows: [] },
         open: () => {},
         close: () => {},
         toggleMinimized: () => {},
-        get activeSessionId() { return activeSessionId; },
-        get sessionIds() { return activeSessionId ? [activeSessionId] : []; },
+        get activeSessionId() {
+            return activeSessionId;
+        },
+        get sessionIds() {
+            return activeSessionId ? [activeSessionId] : [];
+        },
     });
 }
-
 
 test('form controller dispatches a record view_context on mount', async () => {
     const captured = [];
@@ -58,7 +59,6 @@ test('form controller dispatches a record view_context on mount', async () => {
     expect(captured[0][1].id).toBe(1);
 });
 
-
 test('form controller bails when no active session is set', async () => {
     const captured = [];
     mockChatWindow(null);
@@ -74,7 +74,6 @@ test('form controller bails when no active session is set', async () => {
     });
     expect(captured).toEqual([]);
 });
-
 
 test('form controller dispatches a list payload while creating a new record', async () => {
     const captured = [];

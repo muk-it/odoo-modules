@@ -10,14 +10,12 @@ import {
 
 describe.current.tags('muk_ai');
 
-
 function asString(html) {
     if (html == null) return '';
     if (typeof html === 'string') return html;
     if (html.toString) return html.toString();
     return String(html);
 }
-
 
 test('buildIndex picks user text and assistant text-blocks only', () => {
     const turns = [
@@ -39,7 +37,6 @@ test('buildIndex picks user text and assistant text-blocks only', () => {
     expect(idx[2].anchorId).toBe('mk_msg_1_2');
 });
 
-
 test('findMatches counts every occurrence case-insensitively', () => {
     const turns = [
         { role: 'user', text: 'Hello hello HELLO' },
@@ -48,7 +45,6 @@ test('findMatches counts every occurrence case-insensitively', () => {
     const matches = findMatches(buildIndex(turns), 'hello');
     expect(matches.length).toBe(4);
 });
-
 
 test('findMatches ignores tool/ask content (scope)', () => {
     const turns = [
@@ -64,7 +60,6 @@ test('findMatches ignores tool/ask content (scope)', () => {
     expect(matches.length).toBe(0);
 });
 
-
 test('escapeAndHighlight HTML-escapes input then wraps the active match', () => {
     const out = asString(escapeAndHighlight('a<b>hello</b>c hello', 'hello', 1, 0));
     expect(out.includes('&lt;b&gt;')).toBe(true);
@@ -74,20 +69,20 @@ test('escapeAndHighlight HTML-escapes input then wraps the active match', () => 
     expect(active).toBe(1);
 });
 
-
 test('highlightHtml preserves anchor href and skips script/style/mark', () => {
-    const html = '<p>hello <a href="https://x">hello</a></p>'
-        + '<script>var hello = 1;</script>'
-        + '<mark class="mk_search_hit">hello</mark>';
+    const html =
+        '<p>hello <a href="https://x">hello</a></p>' +
+        '<script>var hello = 1;</script>' +
+        '<mark class="mk_search_hit">hello</mark>';
     const out = asString(highlightHtml(html, 'hello', 0, 0));
     expect(out.includes('href="https://x"')).toBe(true);
     expect(out.includes('var hello = 1;')).toBe(true);
-    const total = (out.match(/mk_search_hit(?!_active)/g) || []).length
-        + (out.match(/mk_search_hit_active/g) || []).length;
+    const total =
+        (out.match(/mk_search_hit(?!_active)/g) || []).length +
+        (out.match(/mk_search_hit_active/g) || []).length;
     expect(total).toBeGreaterThan(0);
     expect(total).toBeLessThan(5);
 });
-
 
 test('entryFirstMatchIndex returns -1 when entry has no matches', () => {
     const turns = [
@@ -99,7 +94,6 @@ test('entryFirstMatchIndex returns -1 when entry has no matches', () => {
     expect(entryFirstMatchIndex(matches, idx[0])).toBe(0);
     expect(entryFirstMatchIndex(matches, idx[1])).toBe(-1);
 });
-
 
 test('entryFirstMatchIndex matches across separate buildIndex calls (anchorId fallback)', () => {
     const turns = [
@@ -114,11 +108,8 @@ test('entryFirstMatchIndex matches across separate buildIndex calls (anchorId fa
     expect(entryFirstMatchIndex(matchesA, idxB[1])).toBe(1);
 });
 
-
 test('only the activeMatchIdx-th hit gets the active class', () => {
-    const turns = [
-        { role: 'user', text: 'foo foo foo' },
-    ];
+    const turns = [{ role: 'user', text: 'foo foo foo' }];
     const idx = buildIndex(turns);
     const matches = findMatches(idx, 'foo');
     expect(matches.length).toBe(3);

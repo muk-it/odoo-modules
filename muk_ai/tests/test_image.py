@@ -5,9 +5,7 @@ from unittest.mock import MagicMock, patch
 import urllib3.exceptions
 
 from odoo.addons.muk_ai.models import session as session_module
-
 from odoo.addons.muk_ai.tests.common import AITestCommon
-
 
 PNG_1x1_RED = base64.b64encode(
     bytes.fromhex(
@@ -19,6 +17,7 @@ PNG_1x1_RED = base64.b64encode(
 
 
 class TestImageRefPersistence(AITestCommon):
+    """Verify generated-image reference extraction and attachment persistence."""
 
     # ----------------------------------------------------------
     # Setup
@@ -26,10 +25,16 @@ class TestImageRefPersistence(AITestCommon):
 
     def setUp(self):
         super().setUp()
-        self.session = self.env['muk_ai.session'].sudo().create({
-            'name': 'image-refs-test',
-            'user_id': self.env.user.id,
-        })
+        self.session = (
+            self.env['muk_ai.session']
+            .sudo()
+            .create(
+                {
+                    'name': 'image-refs-test',
+                    'user_id': self.env.user.id,
+                }
+            )
+        )
 
     # ----------------------------------------------------------
     # Helper
@@ -41,10 +46,16 @@ class TestImageRefPersistence(AITestCommon):
         return int(match.group(1)) if match else None
 
     def _count_session_attachments(self):
-        return self.env['ir.attachment'].sudo().search_count([
-            ('res_model', '=', 'muk_ai.session'),
-            ('res_id', '=', self.session.id),
-        ])
+        return (
+            self.env['ir.attachment']
+            .sudo()
+            .search_count(
+                [
+                    ('res_model', '=', 'muk_ai.session'),
+                    ('res_id', '=', self.session.id),
+                ]
+            )
+        )
 
     # ----------------------------------------------------------
     # Persist
@@ -54,10 +65,16 @@ class TestImageRefPersistence(AITestCommon):
         text = f'Here you go: ![generated.png](data:image/png;base64,{PNG_1x1_RED})'
         before = self._count_session_attachments()
         new_text = self.session._persist_inline_images(text)
-        after = self.env['ir.attachment'].sudo().search([
-            ('res_model', '=', 'muk_ai.session'),
-            ('res_id', '=', self.session.id),
-        ])
+        after = (
+            self.env['ir.attachment']
+            .sudo()
+            .search(
+                [
+                    ('res_model', '=', 'muk_ai.session'),
+                    ('res_id', '=', self.session.id),
+                ]
+            )
+        )
         self.assertEqual(len(after) - before, 1)
         attachment = after[-1]
         self.assertIn(f'/web/image/{attachment.id}', new_text)
@@ -77,10 +94,12 @@ class TestImageRefPersistence(AITestCommon):
 
     def test_persist_text_and_carry_share_one_attachment(self):
         b64_text = f'Reply: ![x.png](data:image/png;base64,{PNG_1x1_RED})'
-        carry = [{
-            'role': 'assistant',
-            'content': [{'type': 'output_text', 'text': b64_text}],
-        }]
+        carry = [
+            {
+                'role': 'assistant',
+                'content': [{'type': 'output_text', 'text': b64_text}],
+            }
+        ]
         before = self._count_session_attachments()
         cache = {}
         new_text = self.session._persist_inline_images(b64_text, cache=cache)
@@ -106,13 +125,19 @@ class TestImageRefPersistence(AITestCommon):
     # ----------------------------------------------------------
 
     def test_resolve_attachment_ref_loads_bytes(self):
-        attachment = self.env['ir.attachment'].sudo().create({
-            'name': 'test.png',
-            'datas': PNG_1x1_RED,
-            'mimetype': 'image/png',
-            'res_model': 'muk_ai.session',
-            'res_id': self.session.id,
-        })
+        attachment = (
+            self.env['ir.attachment']
+            .sudo()
+            .create(
+                {
+                    'name': 'test.png',
+                    'datas': PNG_1x1_RED,
+                    'mimetype': 'image/png',
+                    'res_model': 'muk_ai.session',
+                    'res_id': self.session.id,
+                }
+            )
+        )
         args = {
             'model': 'product.template',
             'ids': [1],
@@ -131,30 +156,46 @@ class TestImageRefPersistence(AITestCommon):
         self.assertEqual(refs, [])
 
     def test_resolve_attachment_ref_oversized_keeps_placeholder(self):
-        attachment = self.env['ir.attachment'].sudo().create({
-            'name': 'big.png',
-            'datas': PNG_1x1_RED,
-            'mimetype': 'image/png',
-            'res_model': 'muk_ai.session',
-            'res_id': self.session.id,
-        })
+        attachment = (
+            self.env['ir.attachment']
+            .sudo()
+            .create(
+                {
+                    'name': 'big.png',
+                    'datas': PNG_1x1_RED,
+                    'mimetype': 'image/png',
+                    'res_model': 'muk_ai.session',
+                    'res_id': self.session.id,
+                }
+            )
+        )
         with patch.object(session_module, 'ATTACHMENT_REF_MAX_BYTES', 0):
             args = {'values': {'image_1920': f'@attachment:{attachment.id}'}}
             resolved, refs = self.session._resolve_value_refs(args)
-        self.assertEqual(resolved['values']['image_1920'], f'@attachment:{attachment.id}')
+        self.assertEqual(
+            resolved['values']['image_1920'], f'@attachment:{attachment.id}'
+        )
         self.assertEqual(refs, [])
 
     def test_resolve_attachment_ref_disallowed_mimetype_keeps_placeholder(self):
-        attachment = self.env['ir.attachment'].sudo().create({
-            'name': 'evil.bin',
-            'datas': PNG_1x1_RED,
-            'res_model': 'muk_ai.session',
-            'res_id': self.session.id,
-        })
+        attachment = (
+            self.env['ir.attachment']
+            .sudo()
+            .create(
+                {
+                    'name': 'evil.bin',
+                    'datas': PNG_1x1_RED,
+                    'res_model': 'muk_ai.session',
+                    'res_id': self.session.id,
+                }
+            )
+        )
         attachment.sudo().mimetype = 'application/octet-stream'
         args = {'values': {'image_1920': f'@attachment:{attachment.id}'}}
         resolved, refs = self.session._resolve_value_refs(args)
-        self.assertEqual(resolved['values']['image_1920'], f'@attachment:{attachment.id}')
+        self.assertEqual(
+            resolved['values']['image_1920'], f'@attachment:{attachment.id}'
+        )
         self.assertEqual(refs, [])
 
     def test_resolve_url_ref_fetches_and_b64_encodes(self):
@@ -167,13 +208,16 @@ class TestImageRefPersistence(AITestCommon):
         pool.urlopen.return_value = response
         pool.close.return_value = None
         url = 'https://example.com/cat.png'
-        with patch(
-            'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
-            return_value=[(0, 0, 0, '', ('8.8.8.8', 0))],
-        ), patch(
-            'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
-            return_value=pool,
-        ) as mock_pool_cls:
+        with (
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
+                return_value=[(0, 0, 0, '', ('8.8.8.8', 0))],
+            ),
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
+                return_value=pool,
+            ) as mock_pool_cls,
+        ):
             args = {'values': {'image_1920': f'@url:{url}'}}
             resolved, refs = self.session._resolve_value_refs(args)
         mock_pool_cls.assert_called_once()
@@ -188,12 +232,15 @@ class TestImageRefPersistence(AITestCommon):
         pool = MagicMock()
         pool.urlopen.side_effect = urllib3.exceptions.HTTPError('500')
         pool.close.return_value = None
-        with patch(
-            'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
-            return_value=[(0, 0, 0, '', ('8.8.8.8', 0))],
-        ), patch(
-            'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
-            return_value=pool,
+        with (
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
+                return_value=[(0, 0, 0, '', ('8.8.8.8', 0))],
+            ),
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
+                return_value=pool,
+            ),
         ):
             args = {'values': {'image_1920': f'@url:{url}'}}
             resolved, refs = self.session._resolve_value_refs(args)
@@ -201,11 +248,17 @@ class TestImageRefPersistence(AITestCommon):
         self.assertEqual(refs, [])
 
     def test_resolve_walks_nested_dicts_and_lists(self):
-        attachment = self.env['ir.attachment'].sudo().create({
-            'name': 'nested.png',
-            'datas': PNG_1x1_RED,
-            'mimetype': 'image/png',
-        })
+        attachment = (
+            self.env['ir.attachment']
+            .sudo()
+            .create(
+                {
+                    'name': 'nested.png',
+                    'datas': PNG_1x1_RED,
+                    'mimetype': 'image/png',
+                }
+            )
+        )
         args = {
             'values': {
                 'main_image': f'@attachment:{attachment.id}',

@@ -4,20 +4,24 @@ import { chatWindowService } from '@muk_ai/chat/window/chat_window_service';
 
 describe.current.tags('muk_ai');
 
-
 function makeEnv({ currentController = null, calls } = {}) {
     const env = {
         services: {
             action: { currentController },
             orm: {
-                call: (...args) => { calls.push(['call', ...args]); return Promise.resolve({}); },
-                read: (...args) => { calls.push(['read', ...args]); return Promise.resolve([]); },
+                call: (...args) => {
+                    calls.push(['call', ...args]);
+                    return Promise.resolve({});
+                },
+                read: (...args) => {
+                    calls.push(['read', ...args]);
+                    return Promise.resolve([]);
+                },
             },
         },
     };
     return env;
 }
-
 
 test('open registers a window for an unseen session id', () => {
     const calls = [];
@@ -131,14 +135,19 @@ test('open triggers set_view_context from current record controller', async () =
     for (let i = 0; i < 5; i++) {
         await Promise.resolve();
     }
-    const setCalls = calls.filter((c) => c[0] === 'call' && c[2] === 'set_view_context');
+    const setCalls = calls.filter(
+        (c) => c[0] === 'call' && c[2] === 'set_view_context',
+    );
     expect(setCalls).toHaveLength(1);
-    expect(setCalls[0][3]).toEqual([11, {
-        kind: 'record',
-        model: 'res.partner',
-        id: 42,
-        display_name: 'Acme',
-    }]);
+    expect(setCalls[0][3]).toEqual([
+        11,
+        {
+            kind: 'record',
+            model: 'res.partner',
+            id: 42,
+            display_name: 'Acme',
+        },
+    ]);
 });
 
 test('open with list controller builds a list payload', async () => {
@@ -146,7 +155,11 @@ test('open with list controller builds a list payload', async () => {
     const env = makeEnv({
         calls,
         currentController: {
-            props: { resModel: 'sale.order', type: 'kanban', domain: [['state', '=', 'sale']] },
+            props: {
+                resModel: 'sale.order',
+                type: 'kanban',
+                domain: [['state', '=', 'sale']],
+            },
         },
     });
     const api = chatWindowService.start(env);
@@ -154,7 +167,9 @@ test('open with list controller builds a list payload', async () => {
     for (let i = 0; i < 5; i++) {
         await Promise.resolve();
     }
-    const setCalls = calls.filter((c) => c[0] === 'call' && c[2] === 'set_view_context');
+    const setCalls = calls.filter(
+        (c) => c[0] === 'call' && c[2] === 'set_view_context',
+    );
     expect(setCalls).toHaveLength(1);
     expect(setCalls[0][3][1]).toEqual({
         kind: 'list',
@@ -171,6 +186,8 @@ test('open without a current controller skips context dispatch', async () => {
     for (let i = 0; i < 3; i++) {
         await Promise.resolve();
     }
-    const setCalls = calls.filter((c) => c[0] === 'call' && c[2] === 'set_view_context');
+    const setCalls = calls.filter(
+        (c) => c[0] === 'call' && c[2] === 'set_view_context',
+    );
     expect(setCalls).toEqual([]);
 });

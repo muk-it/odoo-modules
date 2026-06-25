@@ -14,6 +14,7 @@ const SYSTRAY_LIMIT = 8;
 const NEW_CHAT_HOTKEY = 'alt+shift+b';
 const FULL_CHAT_HOTKEY = 'alt+shift+f';
 
+/** Systray dropdown for launching AI chat windows and recent sessions. */
 export class MukAISystray extends Component {
     static template = 'muk_ai.Systray';
     static components = { Dropdown, DropdownItem };
@@ -29,7 +30,10 @@ export class MukAISystray extends Component {
         });
         this._busHandler = null;
         this._loadSeq = 0;
-        this._debouncedLoad = debounce(() => this._load(), 500, { leading: true, trailing: true });
+        this._debouncedLoad = debounce(() => this._load(), 500, {
+            leading: true,
+            trailing: true,
+        });
         this.btnRef = useRef('systrayBtn');
         useHotkey(NEW_CHAT_HOTKEY, () => this.onNewChat(), {
             global: true,
@@ -61,7 +65,7 @@ export class MukAISystray extends Component {
             if (seq === this._loadSeq) {
                 this.state.sessions = sessions;
             }
-        } catch (_e) {
+        } catch {
             if (seq === this._loadSeq) {
                 this.state.sessions = [];
             }
@@ -109,14 +113,16 @@ export class MukAISystray extends Component {
         return isMacOS() ? 'Ctrl+Shift+F' : 'Alt+Shift+F';
     }
     statusDotClass(state) {
-        return {
-            new: 'mk_state_new',
-            running: 'mk_state_running',
-            waiting: 'mk_state_waiting',
-            done: 'mk_state_done',
-            error: 'mk_state_error',
-            stopped: 'mk_state_stopped',
-        }[state] || 'mk_state_new';
+        return (
+            {
+                new: 'mk_state_new',
+                running: 'mk_state_running',
+                waiting: 'mk_state_waiting',
+                done: 'mk_state_done',
+                error: 'mk_state_error',
+                stopped: 'mk_state_stopped',
+            }[state] || 'mk_state_new'
+        );
     }
     async onNewChat() {
         const name = _t('Chat %s', new Date().toLocaleString());
@@ -136,8 +142,6 @@ export class MukAISystray extends Component {
     }
 }
 
-registry.category('systray').add(
-    'muk_ai.Systray',
-    { Component: MukAISystray },
-    { sequence: 60 },
-);
+registry
+    .category('systray')
+    .add('muk_ai.Systray', { Component: MukAISystray }, { sequence: 60 });

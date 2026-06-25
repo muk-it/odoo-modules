@@ -1,13 +1,16 @@
 import json
 import time
-
 from datetime import timedelta
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
+
+from psycopg2.errors import SerializationFailure
 
 from odoo import fields
 from odoo.exceptions import UserError
 from odoo.tools import SQL, config
 
+from odoo.addons.muk_ai.models import session as session_module
+from odoo.addons.muk_ai.tests.common import AITestCommon
 from odoo.addons.muk_ai.tools import (
     ADVISORY_LOCK_NAMESPACE,
     MAX_ITERATIONS,
@@ -18,10 +21,9 @@ from odoo.addons.muk_ai.tools import (
     render_ui_ctx,
 )
 
-from odoo.addons.muk_ai.tests.common import AITestCommon
-
 
 class TestAiSession(AITestCommon):
+    """Verify AI session lifecycle, events, and message handling."""
 
     # ----------------------------------------------------------
     # Setup
@@ -49,15 +51,22 @@ class TestAiSession(AITestCommon):
             **kwargs,
         ):
             if captured is not None:
-                captured.append({
-                    'inputs': inputs,
-                    'tools_schema': tools_schema,
-                    'enable_web_search': kwargs.get('enable_web_search', False),
-                    'enable_image_generation': kwargs.get('enable_image_generation', False),
-                    'enable_code_interpreter': kwargs.get('enable_code_interpreter', False),
-                })
+                captured.append(
+                    {
+                        'inputs': inputs,
+                        'tools_schema': tools_schema,
+                        'enable_web_search': kwargs.get('enable_web_search', False),
+                        'enable_image_generation': kwargs.get(
+                            'enable_image_generation', False
+                        ),
+                        'enable_code_interpreter': kwargs.get(
+                            'enable_code_interpreter', False
+                        ),
+                    }
+                )
             if not remaining:
-                raise AssertionError('No more mocked responses')
+                msg = 'No more mocked responses'
+                raise AssertionError(msg)
             return remaining.pop(0)
 
         return patch.object(
@@ -84,17 +93,21 @@ class TestAiSession(AITestCommon):
     def _tool_payload(self, name, arguments, call_id='call_1'):
         return {
             'text': '',
-            'tool_calls': [{
-                'call_id': call_id,
-                'name': name,
-                'arguments': arguments,
-            }],
-            'carry_inputs': [{
-                'type': 'function_call',
-                'name': name,
-                'arguments': json.dumps(arguments),
-                'call_id': call_id,
-            }],
+            'tool_calls': [
+                {
+                    'call_id': call_id,
+                    'name': name,
+                    'arguments': arguments,
+                }
+            ],
+            'carry_inputs': [
+                {
+                    'type': 'function_call',
+                    'name': name,
+                    'arguments': json.dumps(arguments),
+                    'call_id': call_id,
+                }
+            ],
             'usage': {'input_tokens': 4, 'output_tokens': 2},
         }
 
@@ -102,10 +115,12 @@ class TestAiSession(AITestCommon):
         return {
             'text': text,
             'tool_calls': [],
-            'carry_inputs': [{
-                'type': 'message',
-                'content': [{'type': 'output_text', 'text': text}],
-            }],
+            'carry_inputs': [
+                {
+                    'type': 'message',
+                    'content': [{'type': 'output_text', 'text': text}],
+                }
+            ],
             'usage': {'input_tokens': 3, 'output_tokens': 1},
         }
 
@@ -115,7 +130,7 @@ class TestAiSession(AITestCommon):
             if not isinstance(content, list):
                 continue
             for block in content:
-                text = isinstance(block, dict) and block.get('text') or ''
+                text = (isinstance(block, dict) and block.get('text')) or ''
                 if isinstance(text, str) and text.startswith('<ui_ctx>'):
                     return text
         return None
@@ -125,11 +140,15 @@ class TestAiSession(AITestCommon):
         session.write({'state': state})
         session.flush_recordset()
         stale = fields.Datetime.now() - timedelta(seconds=WORKER_STALE_THRESHOLD + 30)
-        self.env.cr.execute(SQL(
-            "UPDATE muk_ai_session SET write_date = %s, claimed_at = %s "
-            "WHERE id = %s",
-            stale, stale, session.id,
-        ))
+        self.env.cr.execute(
+            SQL(
+                'UPDATE muk_ai_session SET write_date = %s, claimed_at = %s '
+                'WHERE id = %s',
+                stale,
+                stale,
+                session.id,
+            )
+        )
         session.invalidate_recordset()
         return session
 
@@ -137,20 +156,28 @@ class TestAiSession(AITestCommon):
         class _Holder:
             def __init__(self_, registry):
                 self_._cr = registry.cursor()
+
             def __enter__(self_):
-                self_._cr.execute(SQL(
-                    "SELECT pg_try_advisory_lock(%s, %s)",
-                    ADVISORY_LOCK_NAMESPACE, session_id,
-                ))
+                self_._cr.execute(
+                    SQL(
+                        'SELECT pg_try_advisory_lock(%s, %s)',
+                        ADVISORY_LOCK_NAMESPACE,
+                        session_id,
+                    )
+                )
                 acquired = self_._cr.fetchone()[0]
                 assert acquired, 'failed to acquire test lock'
                 return self_._cr
+
             def __exit__(self_, *exc):
                 try:
-                    self_._cr.execute(SQL(
-                        "SELECT pg_advisory_unlock(%s, %s)",
-                        ADVISORY_LOCK_NAMESPACE, session_id,
-                    ))
+                    self_._cr.execute(
+                        SQL(
+                            'SELECT pg_advisory_unlock(%s, %s)',
+                            ADVISORY_LOCK_NAMESPACE,
+                            session_id,
+                        )
+                    )
                     self_._cr.fetchone()
                 finally:
                     self_._cr.close()
@@ -170,21 +197,32 @@ class TestAiSession(AITestCommon):
         self.assertEqual(self.session.total_input_tokens, 3)
 
     def test_start_dispatches_tool_then_completes(self):
-        with self._patch_provider([
-            self._tool_payload('list_modules', {}, 'call_a'),
-            self._text_payload('ok done'),
-        ]), self._patch_tool_call({'list_modules': '{"modules": ["base"]}'}):
+        with (
+            self._patch_provider(
+                [
+                    self._tool_payload('list_modules', {}, 'call_a'),
+                    self._text_payload('ok done'),
+                ]
+            ),
+            self._patch_tool_call({'list_modules': '{"modules": ["base"]}'}),
+        ):
             snapshot = self.session.start('list installed modules')
         self.assertEqual(snapshot['state'], 'done')
         self.assertEqual(self.session.iteration_count, 2)
-        kinds = [entry['kind'] for entry in self.session.fetch_events(limit=500)['events']]
+        kinds = [
+            entry['kind'] for entry in self.session.fetch_events(limit=500)['events']
+        ]
         self.assertIn('tool_call', kinds)
         self.assertIn('tool_result', kinds)
 
     def test_ask_user_pauses_session(self):
-        with self._patch_provider([
-            self._tool_payload('ask_user', {'question': 'Which company?'}, 'call_q'),
-        ]):
+        with self._patch_provider(
+            [
+                self._tool_payload(
+                    'ask_user', {'question': 'Which company?'}, 'call_q'
+                ),
+            ]
+        ):
             snapshot = self.session.start('which company')
         self.assertEqual(snapshot['state'], 'waiting')
         pending = self.session.pending_ask or {}
@@ -192,9 +230,11 @@ class TestAiSession(AITestCommon):
         self.assertEqual(pending.get('text'), 'Which company?')
 
     def test_answer_resumes_session(self):
-        with self._patch_provider([
-            self._tool_payload('ask_user', {'question': 'Which year?'}, 'call_q'),
-        ]):
+        with self._patch_provider(
+            [
+                self._tool_payload('ask_user', {'question': 'Which year?'}, 'call_q'),
+            ]
+        ):
             self.session.start('pick a year')
         self.assertEqual(self.session.state, 'waiting')
         with self._patch_provider([self._text_payload('Got it: 2026')]):
@@ -209,7 +249,8 @@ class TestAiSession(AITestCommon):
 
     def test_provider_error_marks_session_error(self):
         def boom(*args, **kwargs):
-            raise UserError('provider down')
+            msg = 'provider down'
+            raise UserError(msg)
 
         with patch.object(
             type(self.provider),
@@ -226,7 +267,10 @@ class TestAiSession(AITestCommon):
             self._tool_payload('list_modules', {}, f'call_{i}')
             for i in range(MAX_ITERATIONS + 1)
         ]
-        with self._patch_provider(payloads), self._patch_tool_call({'list_modules': '{}'}):
+        with (
+            self._patch_provider(payloads),
+            self._patch_tool_call({'list_modules': '{}'}),
+        ):
             snapshot = self.session.start('loop')
         self.assertEqual(snapshot['state'], 'error')
         self.assertIn('Maximum iterations', self.session.error_message or '')
@@ -235,10 +279,12 @@ class TestAiSession(AITestCommon):
         self.env['ir.config_parameter'].sudo().set_param('muk_ai.max_iterations', '3')
         session = self.env['muk_ai.session'].create({'name': 'cfg iters'})
         payloads = [
-            self._tool_payload('list_modules', {}, f'call_{i}')
-            for i in range(4)
+            self._tool_payload('list_modules', {}, f'call_{i}') for i in range(4)
         ]
-        with self._patch_provider(payloads), self._patch_tool_call({'list_modules': '{}'}):
+        with (
+            self._patch_provider(payloads),
+            self._patch_tool_call({'list_modules': '{}'}),
+        ):
             snapshot = session.start('loop')
         self.assertEqual(snapshot['state'], 'error')
         self.assertIn('Maximum iterations', session.error_message or '')
@@ -283,14 +329,18 @@ class TestAiSession(AITestCommon):
 
     def test_new_user_turn_resets_turn_wallclock_spent(self):
         session = self.env['muk_ai.session'].create({'name': 'reset turn'})
-        session.write({
-            'state': 'done',
-            'turn_wallclock_spent': 42.0,
-            'conversation': [{
-                'role': 'user',
-                'content': [{'type': 'input_text', 'text': 'hi'}],
-            }],
-        })
+        session.write(
+            {
+                'state': 'done',
+                'turn_wallclock_spent': 42.0,
+                'conversation': [
+                    {
+                        'role': 'user',
+                        'content': [{'type': 'input_text', 'text': 'hi'}],
+                    }
+                ],
+            }
+        )
         with self._patch_provider([self._text_payload('done')]):
             session.send_message('next')
         self.assertEqual(session.turn_wallclock_spent, 0.0)
@@ -313,15 +363,20 @@ class TestAiSession(AITestCommon):
         self.assertEqual(set(by_name), {'t1', 't2', 'ask_user'})
         self.assertEqual(by_name['t1']['type'], 'function')
         self.assertEqual(by_name['t1']['parameters'], {'type': 'object'})
-        self.assertEqual(by_name['t2']['parameters'], {'type': 'object', 'properties': {}})
+        self.assertEqual(
+            by_name['t2']['parameters'], {'type': 'object', 'properties': {}}
+        )
         self.assertIn('question', by_name['ask_user']['parameters']['properties'])
 
     def test_bus_event_published_on_state_change(self):
-        with patch.object(
-            type(self.env['bus.bus']),
-            '_sendone',
-            autospec=True,
-        ) as bus_mock, self._patch_provider([self._text_payload('done')]):
+        with (
+            patch.object(
+                type(self.env['bus.bus']),
+                '_sendone',
+                autospec=True,
+            ) as bus_mock,
+            self._patch_provider([self._text_payload('done')]),
+        ):
             self.session.start('hi')
         partner = self.session.user_id.partner_id
         targets = [call.args[1] for call in bus_mock.call_args_list]
@@ -331,8 +386,16 @@ class TestAiSession(AITestCommon):
         payload = {
             'text': '',
             'tool_calls': [
-                {'call_id': 'write_1', 'name': 'write_record', 'arguments': {'model': 'x'}},
-                {'call_id': 'ask_1', 'name': 'ask_user', 'arguments': {'question': 'confirm?'}},
+                {
+                    'call_id': 'write_1',
+                    'name': 'write_record',
+                    'arguments': {'model': 'x'},
+                },
+                {
+                    'call_id': 'ask_1',
+                    'name': 'ask_user',
+                    'arguments': {'question': 'confirm?'},
+                },
             ],
             'carry_inputs': [],
             'usage': {'input_tokens': 1, 'output_tokens': 1},
@@ -343,44 +406,55 @@ class TestAiSession(AITestCommon):
             dispatched.append(name)
             return '{"ok": true}', {}, arguments.get('model')
 
-        with self._patch_provider([payload]), patch.object(
-            type(self.env['muk_mcp.tool']),
-            '_execute',
-            autospec=True,
-            side_effect=fake_dispatch,
+        with (
+            self._patch_provider([payload]),
+            patch.object(
+                type(self.env['muk_mcp.tool']),
+                '_execute',
+                autospec=True,
+                side_effect=fake_dispatch,
+            ),
         ):
             snapshot = self.env['muk_ai.session'].create({'name': 'race'}).start('go')
         self.assertEqual(snapshot['state'], 'waiting')
         self.assertNotIn('write_record', dispatched)
 
     def test_effective_model_uses_agent_override(self):
-        model = self.env['muk_ai.model'].create({
-            'name': 'Big',
-            'provider_id': self.provider.id,
-            'technical_name': 'test-big',
-            'context_window': 128000,
-            'input_rate': 1.0,
-            'output_rate': 2.0,
-        })
-        agent = self.env['muk_ai.agent'].create({
-            'name': 'Big',
-            'model_id': model.id,
-        })
-        session = self.env['muk_ai.session'].create({
-            'name': 'Big session',
-            'agent_id': agent.id,
-        })
+        model = self.env['muk_ai.model'].create(
+            {
+                'name': 'Big',
+                'provider_id': self.provider.id,
+                'technical_name': 'test-big',
+                'context_window': 128000,
+                'input_rate': 1.0,
+                'output_rate': 2.0,
+            }
+        )
+        agent = self.env['muk_ai.agent'].create(
+            {
+                'name': 'Big',
+                'model_id': model.id,
+            }
+        )
+        session = self.env['muk_ai.session'].create(
+            {
+                'name': 'Big session',
+                'agent_id': agent.id,
+            }
+        )
         self.assertEqual(session._effective_model(), 'test-big')
 
     def test_effective_model_falls_back_to_global_default(self):
-        fallback = self.env['muk_ai.model'].create({
-            'name': 'Fallback',
-            'provider_id': self.provider.id,
-            'technical_name': 'test-fallback',
-            'context_window': 128000,
-            'input_rate': 1.0,
-            'output_rate': 2.0,
-        })
+        fallback = self.env['muk_ai.model'].create(
+            {
+                'name': 'Fallback',
+                'provider_id': self.provider.id,
+                'technical_name': 'test-fallback',
+                'context_window': 128000,
+                'input_rate': 1.0,
+                'output_rate': 2.0,
+            }
+        )
         self.provider.default_model_id = fallback.id
         session = self.env['muk_ai.session'].create({'name': 'No override'})
         session.agent_id = False
@@ -391,12 +465,19 @@ class TestAiSession(AITestCommon):
         open_view_result = (
             '{"type": "ir.actions.act_window", "res_model": "res.partner"}'
         )
-        with self._patch_provider([
-            self._tool_payload(
-                'open_view', {'model': 'res.partner'}, 'call_v',
+        with (
+            self._patch_provider(
+                [
+                    self._tool_payload(
+                        'open_view',
+                        {'model': 'res.partner'},
+                        'call_v',
+                    ),
+                    self._text_payload('Opened the partner list.'),
+                ]
             ),
-            self._text_payload('Opened the partner list.'),
-        ]), self._patch_tool_call({'open_view': open_view_result}):
+            self._patch_tool_call({'open_view': open_view_result}),
+        ):
             snapshot = session.start('show partners')
         self.assertEqual(snapshot['state'], 'done')
         self.assertEqual(session.iteration_count, 2)
@@ -406,7 +487,11 @@ class TestAiSession(AITestCommon):
         payload = {
             'text': '',
             'tool_calls': [
-                {'call_id': 'open_1', 'name': 'open_view', 'arguments': {'model': 'res.partner'}},
+                {
+                    'call_id': 'open_1',
+                    'name': 'open_view',
+                    'arguments': {'model': 'res.partner'},
+                },
                 {'call_id': 'extra_1', 'name': 'list_modules', 'arguments': {}},
             ],
             'carry_inputs': [],
@@ -424,27 +509,34 @@ class TestAiSession(AITestCommon):
                 )
             return '{}', {}, arguments.get('model')
 
-        with self._patch_provider([payload, self._text_payload('Done.')]), patch.object(
-            type(self.env['muk_mcp.tool']),
-            '_execute',
-            autospec=True,
-            side_effect=recorder,
+        with (
+            self._patch_provider([payload, self._text_payload('Done.')]),
+            patch.object(
+                type(self.env['muk_mcp.tool']),
+                '_execute',
+                autospec=True,
+                side_effect=recorder,
+            ),
         ):
             snapshot = self.env['muk_ai.session'].create({'name': 'skip'}).start('go')
         self.assertEqual(snapshot['state'], 'done')
         self.assertEqual(dispatched, ['open_view'])
 
     def test_agent_capability_flags_forwarded_to_provider(self):
-        agent = self.env['muk_ai.agent'].create({
-            'name': 'Power',
-            'enable_web_search': True,
-            'enable_image_generation': True,
-            'enable_code_interpreter': True,
-        })
-        session = self.env['muk_ai.session'].create({
-            'name': 'Power session',
-            'agent_id': agent.id,
-        })
+        agent = self.env['muk_ai.agent'].create(
+            {
+                'name': 'Power',
+                'enable_web_search': True,
+                'enable_image_generation': True,
+                'enable_code_interpreter': True,
+            }
+        )
+        session = self.env['muk_ai.session'].create(
+            {
+                'name': 'Power session',
+                'agent_id': agent.id,
+            }
+        )
         captured = []
         with self._patch_provider([self._text_payload('ok')], captured=captured):
             session.start('go')
@@ -455,10 +547,12 @@ class TestAiSession(AITestCommon):
 
     def test_agent_capability_flags_default_off(self):
         agent = self.env['muk_ai.agent'].create({'name': 'Plain'})
-        session = self.env['muk_ai.session'].create({
-            'name': 'default flags',
-            'agent_id': agent.id,
-        })
+        session = self.env['muk_ai.session'].create(
+            {
+                'name': 'default flags',
+                'agent_id': agent.id,
+            }
+        )
         captured = []
         with self._patch_provider([self._text_payload('ok')], captured=captured):
             session.start('go')
@@ -492,22 +586,28 @@ class TestAiSession(AITestCommon):
         self.assertEqual(session.total_input_tokens, 162)
 
     def test_snapshot_exposes_context_window(self):
-        model = self.env['muk_ai.model'].create({
-            'name': 'Bounded',
-            'provider_id': self.provider.id,
-            'technical_name': 'test-bounded',
-            'context_window': 50000,
-            'input_rate': 1.0,
-            'output_rate': 2.0,
-        })
-        agent = self.env['muk_ai.agent'].create({
-            'name': 'Bounded',
-            'model_id': model.id,
-        })
-        session = self.env['muk_ai.session'].create({
-            'name': 'with agent',
-            'agent_id': agent.id,
-        })
+        model = self.env['muk_ai.model'].create(
+            {
+                'name': 'Bounded',
+                'provider_id': self.provider.id,
+                'technical_name': 'test-bounded',
+                'context_window': 50000,
+                'input_rate': 1.0,
+                'output_rate': 2.0,
+            }
+        )
+        agent = self.env['muk_ai.agent'].create(
+            {
+                'name': 'Bounded',
+                'model_id': model.id,
+            }
+        )
+        session = self.env['muk_ai.session'].create(
+            {
+                'name': 'with agent',
+                'agent_id': agent.id,
+            }
+        )
         snapshot = session.get_snapshot()
         self.assertEqual(snapshot['context_window'], 50000)
         self.assertEqual(snapshot['last_input_tokens'], 0)
@@ -532,8 +632,9 @@ class TestAiSession(AITestCommon):
         self.assertTrue(session.cleared_at)
         unified = session.fetch_events(limit=500)['events']
         self.assertEqual(
-            len(unified), len(events_before) + 1,
-            "clear() must preserve prior events and append exactly one /clear marker",
+            len(unified),
+            len(events_before) + 1,
+            'clear() must preserve prior events and append exactly one /clear marker',
         )
         self.assertEqual(unified[-1].get('kind'), 'command')
         self.assertEqual(unified[-1].get('name'), '/clear')
@@ -551,15 +652,21 @@ class TestAiSession(AITestCommon):
         big = 'x' * chunk_chars
         bulky = list(session.conversation or [])
         for index in range(pairs):
-            bulky.append({
-                'role': 'user',
-                'content': [{'type': 'input_text', 'text': f'user-{index} {big}'}],
-            })
-            bulky.append({
-                'type': 'message',
-                'role': 'assistant',
-                'content': [{'type': 'output_text', 'text': f'assistant-{index} {big}'}],
-            })
+            bulky.append(
+                {
+                    'role': 'user',
+                    'content': [{'type': 'input_text', 'text': f'user-{index} {big}'}],
+                }
+            )
+            bulky.append(
+                {
+                    'type': 'message',
+                    'role': 'assistant',
+                    'content': [
+                        {'type': 'output_text', 'text': f'assistant-{index} {big}'}
+                    ],
+                }
+            )
         session.conversation = bulky
 
     def test_compact_replaces_conversation_with_summary(self):
@@ -595,12 +702,8 @@ class TestAiSession(AITestCommon):
     def test_compact_preserves_recent_tail(self):
         session = self.env['muk_ai.session'].create({'name': 'tail-keep'})
         self._seed_large_conversation(session, pairs=12, chunk_chars=12000)
-        last_assistant_text = (
-            session.conversation[-1]['content'][0]['text']
-        )
-        last_user_text = (
-            session.conversation[-2]['content'][0]['text']
-        )
+        last_assistant_text = session.conversation[-1]['content'][0]['text']
+        last_user_text = session.conversation[-2]['content'][0]['text']
         with self._patch_provider([self._text_payload('compact summary')]):
             session.compact()
         tail_texts = []
@@ -618,7 +721,8 @@ class TestAiSession(AITestCommon):
         self._seed_large_conversation(session, pairs=10, chunk_chars=10000)
         captured = []
         with self._patch_provider(
-            [self._text_payload('first summary text')], captured=captured,
+            [self._text_payload('first summary text')],
+            captured=captured,
         ):
             session.compact()
         self.assertTrue(captured)
@@ -646,7 +750,7 @@ class TestAiSession(AITestCommon):
             session.compact()
         self.assertTrue(captured_second)
         last_user_text = ''
-        for block in (captured_second[0][-1].get('content') or []):
+        for block in captured_second[0][-1].get('content') or []:
             if isinstance(block, dict) and isinstance(block.get('text'), str):
                 last_user_text = block['text']
                 break
@@ -690,7 +794,8 @@ class TestAiSession(AITestCommon):
             session.compact()
         self.assertGreater(session.total_input_tokens, before_input_tokens)
         self.assertGreaterEqual(
-            session.total_input_cost or 0.0, before_input_cost,
+            session.total_input_cost or 0.0,
+            before_input_cost,
         )
 
     def test_compact_empty_summary_rollback(self):
@@ -758,7 +863,8 @@ class TestAiSession(AITestCommon):
         with self._patch_provider([self._text_payload('hi')]):
             session.start('hello')
         tag_entries = [
-            entry for entry in session.conversation or []
+            entry
+            for entry in session.conversation or []
             if isinstance(entry.get('content'), list)
             and any(
                 isinstance(block, dict)
@@ -777,13 +883,19 @@ class TestAiSession(AITestCommon):
             f'"res_id": {partner.id}, "view_mode": "form", '
             '"views": [[false, "form"]], "target": "current"}'
         )
-        with self._patch_provider([
-            self._tool_payload(
-                'open_record', {'model': 'res.partner', 'res_id': partner.id},
-                'call_or',
+        with (
+            self._patch_provider(
+                [
+                    self._tool_payload(
+                        'open_record',
+                        {'model': 'res.partner', 'res_id': partner.id},
+                        'call_or',
+                    ),
+                    self._text_payload('Opened partner.'),
+                ]
             ),
-            self._text_payload('Opened partner.'),
-        ]), self._patch_tool_call({'open_record': open_record_result}):
+            self._patch_tool_call({'open_record': open_record_result}),
+        ):
             session.start('show ViewCtx Partner')
         self.assertEqual(session.state, 'done')
         self.assertIsInstance(session.view_context, dict)
@@ -799,12 +911,19 @@ class TestAiSession(AITestCommon):
             '"view_mode": "list", "views": [[false, "list"]], '
             '"domain": [["is_company", "=", true]], "target": "current"}'
         )
-        with self._patch_provider([
-            self._tool_payload(
-                'open_view', {'model': 'res.partner'}, 'call_ov',
+        with (
+            self._patch_provider(
+                [
+                    self._tool_payload(
+                        'open_view',
+                        {'model': 'res.partner'},
+                        'call_ov',
+                    ),
+                    self._text_payload('Opened the list.'),
+                ]
             ),
-            self._text_payload('Opened the list.'),
-        ]), self._patch_tool_call({'open_view': open_view_result}):
+            self._patch_tool_call({'open_view': open_view_result}),
+        ):
             session.start('show companies')
         self.assertEqual(session.state, 'done')
         self.assertIsInstance(session.view_context, dict)
@@ -818,19 +937,23 @@ class TestAiSession(AITestCommon):
 
     def test_set_view_context_record(self):
         session = self.env['muk_ai.session'].create({'name': 'set'})
-        snapshot = session.set_view_context({
-            'kind': 'record',
-            'model': 'res.partner',
-            'id': 99,
-            'display_name': 'Demo',
-        })
+        snapshot = session.set_view_context(
+            {
+                'kind': 'record',
+                'model': 'res.partner',
+                'id': 99,
+                'display_name': 'Demo',
+            }
+        )
         self.assertEqual(session.view_context.get('id'), 99)
         self.assertEqual(snapshot['view_context']['model'], 'res.partner')
 
     def test_set_view_context_clears_on_none(self):
         session = self.env['muk_ai.session'].create({'name': 'clear-ctx'})
         session.view_context = {
-            'kind': 'record', 'model': 'res.partner', 'id': 3,
+            'kind': 'record',
+            'model': 'res.partner',
+            'id': 3,
         }
         session.set_view_context(None)
         self.assertFalse(session.view_context)
@@ -848,7 +971,9 @@ class TestAiSession(AITestCommon):
     def test_unpin_view_context(self):
         session = self.env['muk_ai.session'].create({'name': 'unpin'})
         session.view_context = {
-            'kind': 'record', 'model': 'res.partner', 'id': 3,
+            'kind': 'record',
+            'model': 'res.partner',
+            'id': 3,
         }
         snapshot = session.unpin_view_context()
         self.assertFalse(session.view_context)
@@ -861,7 +986,9 @@ class TestAiSession(AITestCommon):
     def test_snapshot_exposes_view_context(self):
         session = self.env['muk_ai.session'].create({'name': 'snap'})
         session.view_context = {
-            'kind': 'record', 'model': 'res.partner', 'id': 5,
+            'kind': 'record',
+            'model': 'res.partner',
+            'id': 5,
             'display_name': 'Who',
         }
         snapshot = session.get_snapshot()
@@ -874,12 +1001,14 @@ class TestAiSession(AITestCommon):
         self.assertIsNone(format_ui_ctx_tag({}))
 
     def test_render_ui_ctx_formats_list(self):
-        tag = format_ui_ctx_tag({
-            'kind': 'list',
-            'model': 'sale.order',
-            'view_type': 'kanban',
-            'domain': [['state', '=', 'sale']],
-        })
+        tag = format_ui_ctx_tag(
+            {
+                'kind': 'list',
+                'model': 'sale.order',
+                'view_type': 'kanban',
+                'domain': [['state', '=', 'sale']],
+            }
+        )
         self.assertTrue(tag.startswith('<ui_ctx>'))
         self.assertIn('sale.order', tag)
         self.assertIn('kanban', tag)
@@ -900,7 +1029,9 @@ class TestAiSession(AITestCommon):
             snapshot = session.regenerate_last_turn()
         self.assertEqual(snapshot['state'], 'done')
         self.assertIn('four', session.last_text or '')
-        kinds = [entry.get('kind') for entry in session.fetch_events(limit=500)['events']]
+        kinds = [
+            entry.get('kind') for entry in session.fetch_events(limit=500)['events']
+        ]
         self.assertEqual(kinds[-2:], ['user_message', 'text'])
         self.assertLessEqual(len(session.conversation or []), len(original_conv))
         self.assertGreater(len(original_log), 0)
@@ -930,19 +1061,22 @@ class TestAiSession(AITestCommon):
             session.send_message('question 3')
         events = session.event_ids.sorted('sequence')
         second_user = next(
-            event for event in events
+            event
+            for event in events
             if event.kind == 'user_message'
             and 'question 2' in (event.payload or {}).get('content', '')
         )
         before_pairs = sum(
-            1 for entry in (session.conversation or [])
+            1
+            for entry in (session.conversation or [])
             if isinstance(entry, dict) and entry.get('role') == 'user'
         )
         self.assertEqual(before_pairs, 3)
         snapshot = session.undo_to_event(second_user.id)
         self.assertEqual(snapshot['state'], 'done')
         kept_users = [
-            entry for entry in (session.conversation or [])
+            entry
+            for entry in (session.conversation or [])
             if isinstance(entry, dict) and entry.get('role') == 'user'
         ]
         self.assertEqual(len(kept_users), 1)
@@ -967,18 +1101,17 @@ class TestAiSession(AITestCommon):
         with self._patch_provider([self._text_payload('answer 2')]):
             session.send_message('question 2')
         events = session.event_ids.sorted('sequence')
-        last_text = next(
-            event for event in reversed(events)
-            if event.kind == 'text'
-        )
+        last_text = next(event for event in reversed(events) if event.kind == 'text')
         session.undo_to_event(last_text.id)
         users = [
-            entry for entry in (session.conversation or [])
+            entry
+            for entry in (session.conversation or [])
             if isinstance(entry, dict) and entry.get('role') == 'user'
         ]
         self.assertEqual(len(users), 2)
         self.assertEqual(
-            session.event_ids.sorted('sequence')[-1].kind, 'user_message',
+            session.event_ids.sorted('sequence')[-1].kind,
+            'user_message',
         )
 
     def test_fork_at_event_creates_independent_session(self):
@@ -989,7 +1122,8 @@ class TestAiSession(AITestCommon):
             session.send_message('question 2')
         events = session.event_ids.sorted('sequence')
         second_user = next(
-            event for event in events
+            event
+            for event in events
             if event.kind == 'user_message'
             and 'question 2' in (event.payload or {}).get('content', '')
         )
@@ -999,17 +1133,20 @@ class TestAiSession(AITestCommon):
         self.assertNotEqual(fork.id, session.id)
         self.assertIn('(fork)', fork.name)
         fork_users = [
-            entry for entry in (fork.conversation or [])
+            entry
+            for entry in (fork.conversation or [])
             if isinstance(entry, dict) and entry.get('role') == 'user'
         ]
         self.assertEqual(
-            len(fork_users), 2,
-            "fork keeps the clicked user message in the new session",
+            len(fork_users),
+            2,
+            'fork keeps the clicked user message in the new session',
         )
         fork_kinds = [event.kind for event in fork.event_ids.sorted('sequence')]
         self.assertEqual(fork_kinds[-1], 'user_message')
         original_users = [
-            entry for entry in (session.conversation or [])
+            entry
+            for entry in (session.conversation or [])
             if isinstance(entry, dict) and entry.get('role') == 'user'
         ]
         self.assertEqual(len(original_users), 2)
@@ -1017,15 +1154,19 @@ class TestAiSession(AITestCommon):
 
     def test_fork_at_event_preserves_agent(self):
         agent = self.env['muk_ai.agent']._get_default()
-        session = self.env['muk_ai.session'].create({
-            'name': 'fork-agent', 'agent_id': agent.id,
-        })
+        session = self.env['muk_ai.session'].create(
+            {
+                'name': 'fork-agent',
+                'agent_id': agent.id,
+            }
+        )
         with self._patch_provider([self._text_payload('answer 1')]):
             session.start('question 1')
         with self._patch_provider([self._text_payload('answer 2')]):
             session.send_message('question 2')
         target = next(
-            event for event in session.event_ids.sorted('sequence')
+            event
+            for event in session.event_ids.sorted('sequence')
             if event.kind == 'user_message'
             and 'question 2' in (event.payload or {}).get('content', '')
         )
@@ -1048,7 +1189,8 @@ class TestAiSession(AITestCommon):
         pre_len = len(session.conversation)
 
         def boom(*args, **kwargs):
-            raise RuntimeError("context_length_exceeded: too big")
+            msg = 'context_length_exceeded: too big'
+            raise RuntimeError(msg)
 
         with patch.object(
             type(self.provider),
@@ -1058,12 +1200,14 @@ class TestAiSession(AITestCommon):
         ):
             session.compact()
         self.assertEqual(
-            session.state, 'done',
+            session.state,
+            'done',
             "tail-drop fallback should land in 'done', not 'error'",
         )
         self.assertLess(
-            len(session.conversation), pre_len,
-            "fallback must drop oldest entries",
+            len(session.conversation),
+            pre_len,
+            'fallback must drop oldest entries',
         )
         events = session.fetch_events(limit=500)['events']
         last = events[-1]
@@ -1078,11 +1222,15 @@ class TestAiSession(AITestCommon):
 
     def test_upload_attachments_creates_and_links(self):
         session = self.env['muk_ai.session'].create({'name': 'upload'})
-        descriptors = session.upload_attachments([{
-            'filename': 'note.txt',
-            'mimetype': 'text/plain',
-            'data_b64': 'aGVsbG8=',
-        }])
+        descriptors = session.upload_attachments(
+            [
+                {
+                    'filename': 'note.txt',
+                    'mimetype': 'text/plain',
+                    'data_b64': 'aGVsbG8=',
+                }
+            ]
+        )
         self.assertEqual(len(descriptors), 1)
         self.assertEqual(descriptors[0]['filename'], 'note.txt')
         self.assertTrue(session.attachment_ids)
@@ -1091,16 +1239,19 @@ class TestAiSession(AITestCommon):
 
     def test_discard_attachments_unlinks_orphans(self):
         session = self.env['muk_ai.session'].create({'name': 'discard'})
-        session.upload_attachments([{
-            'filename': 'a.txt', 'mimetype': 'text/plain',
-            'data_b64': 'YQ==',
-        }])
+        session.upload_attachments(
+            [
+                {
+                    'filename': 'a.txt',
+                    'mimetype': 'text/plain',
+                    'data_b64': 'YQ==',
+                }
+            ]
+        )
         attachment = session.attachment_ids[0]
         attachment_id = attachment.id
         session.discard_attachments([attachment_id])
-        self.assertFalse(
-            self.env['ir.attachment'].browse(attachment_id).exists()
-        )
+        self.assertFalse(self.env['ir.attachment'].browse(attachment_id).exists())
 
     # ----------------------------------------------------------
     # Tests: view context cleaners
@@ -1108,31 +1259,42 @@ class TestAiSession(AITestCommon):
 
     def test_set_view_context_list_with_domain(self):
         session = self.env['muk_ai.session'].create({'name': 'ctx-list'})
-        session.set_view_context({
-            'kind': 'list', 'model': 'sale.order', 'view_type': 'kanban',
-            'domain': [['state', '=', 'sale']],
-        })
+        session.set_view_context(
+            {
+                'kind': 'list',
+                'model': 'sale.order',
+                'view_type': 'kanban',
+                'domain': [['state', '=', 'sale']],
+            }
+        )
         self.assertEqual(session.view_context['kind'], 'list')
         self.assertEqual(session.view_context['view_type'], 'kanban')
         self.assertEqual(session.view_context['domain'], [['state', '=', 'sale']])
 
     def test_set_view_context_action(self):
         session = self.env['muk_ai.session'].create({'name': 'ctx-action'})
-        session.set_view_context({
-            'kind': 'action', 'model': 'sale.order', 'action_id': 42,
-        })
+        session.set_view_context(
+            {
+                'kind': 'action',
+                'model': 'sale.order',
+                'action_id': 42,
+            }
+        )
         self.assertEqual(session.view_context['kind'], 'action')
         self.assertEqual(session.view_context['action_id'], 42)
 
     def test_set_view_context_pivot_with_measures(self):
         session = self.env['muk_ai.session'].create({'name': 'ctx-pivot'})
-        session.set_view_context({
-            'kind': 'pivot', 'model': 'sale.order',
-            'pivot_measures': ['amount_total'],
-            'pivot_row_groupby': ['partner_id'],
-            'pivot_column_groupby': ['user_id'],
-            'domain': [['state', '=', 'sale']],
-        })
+        session.set_view_context(
+            {
+                'kind': 'pivot',
+                'model': 'sale.order',
+                'pivot_measures': ['amount_total'],
+                'pivot_row_groupby': ['partner_id'],
+                'pivot_column_groupby': ['user_id'],
+                'domain': [['state', '=', 'sale']],
+            }
+        )
         self.assertEqual(session.view_context['view_type'], 'pivot')
         self.assertEqual(session.view_context['pivot_measures'], ['amount_total'])
         self.assertEqual(session.view_context['pivot_row_groupby'], ['partner_id'])
@@ -1140,11 +1302,15 @@ class TestAiSession(AITestCommon):
 
     def test_set_view_context_graph(self):
         session = self.env['muk_ai.session'].create({'name': 'ctx-graph'})
-        session.set_view_context({
-            'kind': 'graph', 'model': 'sale.order',
-            'graph_mode': 'bar', 'graph_measure': 'amount_total',
-            'graph_groupbys': ['partner_id'],
-        })
+        session.set_view_context(
+            {
+                'kind': 'graph',
+                'model': 'sale.order',
+                'graph_mode': 'bar',
+                'graph_measure': 'amount_total',
+                'graph_groupbys': ['partner_id'],
+            }
+        )
         self.assertEqual(session.view_context['view_type'], 'graph')
         self.assertEqual(session.view_context['graph_mode'], 'bar')
         self.assertEqual(session.view_context['graph_measure'], 'amount_total')
@@ -1153,39 +1319,56 @@ class TestAiSession(AITestCommon):
     def test_set_view_context_rejects_non_string_model(self):
         session = self.env['muk_ai.session'].create({'name': 'ctx-bad-model'})
         with self.assertRaises(UserError):
-            session.set_view_context({
-                'kind': 'list', 'model': 42,
-            })
+            session.set_view_context(
+                {
+                    'kind': 'list',
+                    'model': 42,
+                }
+            )
 
     def test_set_view_context_rejects_non_list_domain(self):
         session = self.env['muk_ai.session'].create({'name': 'ctx-bad-domain'})
         with self.assertRaises(UserError):
-            session.set_view_context({
-                'kind': 'list', 'model': 'res.partner', 'domain': 'oops',
-            })
+            session.set_view_context(
+                {
+                    'kind': 'list',
+                    'model': 'res.partner',
+                    'domain': 'oops',
+                }
+            )
 
     def test_set_view_context_rejects_non_list_pivot_fields(self):
         session = self.env['muk_ai.session'].create({'name': 'ctx-pivot-bad'})
         with self.assertRaises(UserError):
-            session.set_view_context({
-                'kind': 'pivot', 'model': 'sale.order',
-                'pivot_measures': 'oops',
-            })
+            session.set_view_context(
+                {
+                    'kind': 'pivot',
+                    'model': 'sale.order',
+                    'pivot_measures': 'oops',
+                }
+            )
 
     def test_set_view_context_rejects_non_list_graph_groupbys(self):
         session = self.env['muk_ai.session'].create({'name': 'ctx-graph-bad'})
         with self.assertRaises(UserError):
-            session.set_view_context({
-                'kind': 'graph', 'model': 'sale.order',
-                'graph_groupbys': 'oops',
-            })
+            session.set_view_context(
+                {
+                    'kind': 'graph',
+                    'model': 'sale.order',
+                    'graph_groupbys': 'oops',
+                }
+            )
 
     def test_set_view_context_rejects_non_string_graph_mode(self):
         session = self.env['muk_ai.session'].create({'name': 'ctx-graph-mode'})
         with self.assertRaises(UserError):
-            session.set_view_context({
-                'kind': 'graph', 'model': 'sale.order', 'graph_mode': 123,
-            })
+            session.set_view_context(
+                {
+                    'kind': 'graph',
+                    'model': 'sale.order',
+                    'graph_mode': 123,
+                }
+            )
 
     # ----------------------------------------------------------
     # Tests: approval mode toggle
@@ -1220,9 +1403,11 @@ class TestAiSession(AITestCommon):
 
     def test_send_message_routes_pending_question_to_answer(self):
         session = self.env['muk_ai.session'].create({'name': 'pending'})
-        with self._patch_provider([
-            self._tool_payload('ask_user', {'question': 'Which year?'}, 'call_q'),
-        ]):
+        with self._patch_provider(
+            [
+                self._tool_payload('ask_user', {'question': 'Which year?'}, 'call_q'),
+            ]
+        ):
             session.start('pick a year')
         self.assertEqual(session.state, 'waiting')
         with self._patch_provider([self._text_payload('2026')]):
@@ -1236,7 +1421,8 @@ class TestAiSession(AITestCommon):
         self.assertEqual(session.state, 'running')
         self.assertEqual(len(session.pending_ids), 1)
         self.assertEqual(
-            session.pending_ids[0].content, 'queued while running',
+            session.pending_ids[0].content,
+            'queued while running',
         )
         self.assertEqual(
             snapshot['pending_user_messages'][0]['content'],
@@ -1269,10 +1455,12 @@ class TestAiSession(AITestCommon):
 
     def test_recover_if_stuck_preserves_pending_queue(self):
         session = self._force_stale_session('queued-while-stuck')
-        self.env['muk_ai.session.pending'].create({
-            'session_id': session.id,
-            'content': 'queued before sweep',
-        })
+        self.env['muk_ai.session.pending'].create(
+            {
+                'session_id': session.id,
+                'content': 'queued before sweep',
+            }
+        )
         self.assertEqual(len(session.pending_ids), 1)
         self.assertTrue(session._recover_if_stuck())
         session.invalidate_recordset()
@@ -1301,10 +1489,12 @@ class TestAiSession(AITestCommon):
 
     def test_sweep_orphan_skips_session_with_recent_heartbeat(self):
         session = self.env['muk_ai.session'].create({'name': 'live-heartbeat'})
-        session.write({
-            'state': 'running',
-            'claimed_at': fields.Datetime.now(),
-        })
+        session.write(
+            {
+                'state': 'running',
+                'claimed_at': fields.Datetime.now(),
+            }
+        )
         self.env['muk_ai.session']._sweep_orphan_sessions()
         session.invalidate_recordset()
         self.assertEqual(session.state, 'running')
@@ -1333,16 +1523,26 @@ class TestAiSession(AITestCommon):
         with self._hold_session_lock(session.id):
             self.env['muk_ai.session']._sweep_orphan_sessions()
             session.invalidate_recordset()
-            self.assertEqual(session.state, 'running',
-                'live worker mid-tool must NOT be killed by the orphan sweep')
+            self.assertEqual(
+                session.state,
+                'running',
+                'live worker mid-tool must NOT be killed by the orphan sweep',
+            )
             snapshot = session.send_message('done?')
             session.invalidate_recordset()
-            self.assertEqual(session.state, 'running',
-                'live worker mid-tool must NOT be killed by send_message recovery')
-            self.assertEqual(len(session.pending_ids), 1,
-                'follow-up message should queue, not abort the run')
             self.assertEqual(
-                snapshot['pending_user_messages'][0]['content'], 'done?',
+                session.state,
+                'running',
+                'live worker mid-tool must NOT be killed by send_message recovery',
+            )
+            self.assertEqual(
+                len(session.pending_ids),
+                1,
+                'follow-up message should queue, not abort the run',
+            )
+            self.assertEqual(
+                snapshot['pending_user_messages'][0]['content'],
+                'done?',
             )
 
     def test_pdf_ocr_session_recovers_after_worker_death(self):
@@ -1353,14 +1553,9 @@ class TestAiSession(AITestCommon):
         self.assertIn('abandoned', session.error_message)
 
     def test_commit_safe_raises_on_serialization_failure(self):
-        from unittest.mock import MagicMock
-
-        from psycopg2.errors import SerializationFailure
-
-        from odoo.addons.muk_ai.models import session as session_module
-
         def fake_commit():
-            raise SerializationFailure('simulated concurrent update')
+            msg = 'simulated concurrent update'
+            raise SerializationFailure(msg)
 
         fake_cr = MagicMock(commit=fake_commit, rollback=MagicMock())
         fake_env = MagicMock(cr=fake_cr)
@@ -1404,7 +1599,9 @@ class TestAiSession(AITestCommon):
         session = self._make_waiting_approval_session('locked-approve')
         with self._hold_session_lock(session.id):
             with patch.object(
-                type(session), '_dispatch_tool_call', autospec=True,
+                type(session),
+                '_dispatch_tool_call',
+                autospec=True,
             ) as dispatch:
                 with self.assertRaises(UserError):
                     session.approve_tool()
@@ -1416,7 +1613,10 @@ class TestAiSession(AITestCommon):
     def test_resume_tool_round_releases_session_lock(self):
         session = self._make_waiting_approval_session('released-after-reject')
         with patch.object(
-            type(session), '_trigger_worker', autospec=True, return_value=None,
+            type(session),
+            '_trigger_worker',
+            autospec=True,
+            return_value=None,
         ):
             session.reject_tool(reason='unit-test rejection')
         self.assertFalse(session.pending_ask)
@@ -1431,40 +1631,59 @@ class TestAiSession(AITestCommon):
         session = self.env['muk_ai.session'].create({'name': 'orphan-calls'})
         session.conversation = [
             {'role': 'user', 'content': 'hi'},
-            {'type': 'function_call', 'call_id': 'done_c1',
-             'name': 'list_modules', 'arguments': '{}'},
-            {'type': 'function_call_output', 'call_id': 'done_c1',
-             'output': '{}'},
-            {'type': 'function_call', 'call_id': 'orphan_c1',
-             'name': 'list_modules', 'arguments': '{}'},
+            {
+                'type': 'function_call',
+                'call_id': 'done_c1',
+                'name': 'list_modules',
+                'arguments': '{}',
+            },
+            {'type': 'function_call_output', 'call_id': 'done_c1', 'output': '{}'},
+            {
+                'type': 'function_call',
+                'call_id': 'orphan_c1',
+                'name': 'list_modules',
+                'arguments': '{}',
+            },
         ]
         session._close_orphan_tool_calls('worker died')
         outputs = [
-            entry for entry in session.conversation
+            entry
+            for entry in session.conversation
             if entry.get('type') == 'function_call_output'
         ]
         self.assertEqual(len(outputs), 2)
         self.assertEqual(outputs[-1]['call_id'], 'orphan_c1')
         self.assertIn('interrupted', outputs[-1]['output'])
         session._close_orphan_tool_calls('worker died again')
-        self.assertEqual(len([
-            entry for entry in session.conversation
-            if entry.get('type') == 'function_call_output'
-        ]), 2)
+        self.assertEqual(
+            len(
+                [
+                    entry
+                    for entry in session.conversation
+                    if entry.get('type') == 'function_call_output'
+                ]
+            ),
+            2,
+        )
 
     def test_action_stop_flushes_orphaned_tool_outputs(self):
         session = self._make_waiting_approval_session('stop-while-waiting')
         session.conversation = [
             {'role': 'user', 'content': 'hi'},
-            {'type': 'function_call', 'call_id': 'lock_c1',
-             'name': 'delete_records', 'arguments': '{}'},
+            {
+                'type': 'function_call',
+                'call_id': 'lock_c1',
+                'name': 'delete_records',
+                'arguments': '{}',
+            },
         ]
         session.action_stop()
         session.invalidate_recordset()
         self.assertEqual(session.state, 'stopped')
         self.assertFalse(session.pending_ask)
         outputs = [
-            entry for entry in session.conversation
+            entry
+            for entry in session.conversation
             if entry.get('type') == 'function_call_output'
         ]
         self.assertEqual(len(outputs), 1)
@@ -1481,10 +1700,13 @@ class TestAiSession(AITestCommon):
         a1 = {'role': 'assistant', 'content': 'a' * 5000}
         u2 = {'role': 'user', 'content': 'x' * 5000}
         a2 = {'role': 'assistant', 'content': 'y' * 2000}
-        fc = {'type': 'function_call', 'call_id': 'pair_c1',
-              'name': 'list_modules', 'arguments': '{}'}
-        fco = {'type': 'function_call_output', 'call_id': 'pair_c1',
-               'output': '{}'}
+        fc = {
+            'type': 'function_call',
+            'call_id': 'pair_c1',
+            'name': 'list_modules',
+            'arguments': '{}',
+        }
+        fco = {'type': 'function_call_output', 'call_id': 'pair_c1', 'output': '{}'}
         a3 = {'role': 'assistant', 'content': 'z' * 1500}
         session.conversation = [u1, a1, u2, a2, fc, fco, a3]
         prefix, tail = session._split_conversation_for_compact()
@@ -1512,12 +1734,22 @@ class TestAiSession(AITestCommon):
         session = self.env['muk_ai.session'].create({'name': 'double-ask'})
         session.state = 'running'
         outputs = []
-        session._process_tool_round([
-            {'call_id': 'ask_c1', 'name': 'ask_user',
-             'arguments': {'question': 'First?'}},
-            {'call_id': 'ask_c2', 'name': 'ask_user',
-             'arguments': {'question': 'Second?'}},
-        ], outputs, 0)
+        session._process_tool_round(
+            [
+                {
+                    'call_id': 'ask_c1',
+                    'name': 'ask_user',
+                    'arguments': {'question': 'First?'},
+                },
+                {
+                    'call_id': 'ask_c2',
+                    'name': 'ask_user',
+                    'arguments': {'question': 'Second?'},
+                },
+            ],
+            outputs,
+            0,
+        )
         self.assertEqual((session.pending_ask or {}).get('call_id'), 'ask_c1')
         self.assertEqual(len(outputs), 1)
         self.assertEqual(outputs[0]['call_id'], 'ask_c2')
@@ -1533,25 +1765,30 @@ class TestAiSession(AITestCommon):
             if not isinstance(content, list):
                 continue
             for block in content:
-                text = isinstance(block, dict) and block.get('text') or ''
+                text = (isinstance(block, dict) and block.get('text')) or ''
                 if isinstance(text, str) and text.startswith('<turn_limits>'):
                     return text
         return None
 
     def test_round_notice_warns_before_iteration_cliff(self):
-        self.env['ir.config_parameter'].sudo().set_param(
-            'muk_ai.max_iterations', '3'
-        )
+        self.env['ir.config_parameter'].sudo().set_param('muk_ai.max_iterations', '3')
         self.addCleanup(
             self.env['ir.config_parameter'].sudo().set_param,
-            'muk_ai.max_iterations', '',
+            'muk_ai.max_iterations',
+            '',
         )
         captured = []
-        with self._patch_provider([
-            self._tool_payload('list_modules', {}, 'cliff_c1'),
-            self._tool_payload('list_modules', {}, 'cliff_c2'),
-            self._text_payload('wrapped up'),
-        ], captured), self._patch_tool_call({'list_modules': '{}'}):
+        with (
+            self._patch_provider(
+                [
+                    self._tool_payload('list_modules', {}, 'cliff_c1'),
+                    self._tool_payload('list_modules', {}, 'cliff_c2'),
+                    self._text_payload('wrapped up'),
+                ],
+                captured,
+            ),
+            self._patch_tool_call({'list_modules': '{}'}),
+        ):
             self.session.start('count down')
         self.assertEqual(len(captured), 3)
         self.assertIsNone(self._extract_turn_limits(captured[0]['inputs']))
@@ -1566,7 +1803,8 @@ class TestAiSession(AITestCommon):
         )
         self.addCleanup(
             self.env['ir.config_parameter'].sudo().set_param,
-            'muk_ai.turn_cost_limit', '',
+            'muk_ai.turn_cost_limit',
+            '',
         )
         self.session.write({'state': 'running', 'turn_cost_spent': 0.02})
         captured = []

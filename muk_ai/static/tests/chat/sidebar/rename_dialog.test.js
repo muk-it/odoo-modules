@@ -15,7 +15,6 @@ describe.current.tags('muk_ai');
 defineMailModels();
 patchTranslations();
 
-
 test('RenameDialog focuses the input pre-filled with initial value', async () => {
     const env = await makeDialogMockEnv();
     await mountWithCleanup(RenameDialog, {
@@ -31,7 +30,6 @@ test('RenameDialog focuses the input pre-filled with initial value', async () =>
     expect(input.value).toBe('Old Chat');
 });
 
-
 test('RenameDialog confirms trimmed value and closes on Enter', async () => {
     const env = await makeDialogMockEnv();
     let received = null;
@@ -39,9 +37,13 @@ test('RenameDialog confirms trimmed value and closes on Enter', async () => {
     await mountWithCleanup(RenameDialog, {
         env,
         props: {
-            close: () => { closed = true; },
+            close: () => {
+                closed = true;
+            },
             initial: 'Old',
-            onConfirm: (v) => { received = v; },
+            onConfirm: (v) => {
+                received = v;
+            },
         },
     });
     await contains('input').edit('  New Name  ');
@@ -51,7 +53,6 @@ test('RenameDialog confirms trimmed value and closes on Enter', async () => {
     expect(closed).toBe(true);
 });
 
-
 test('RenameDialog Enter with unchanged value is a noop', async () => {
     const env = await makeDialogMockEnv();
     let attempts = 0;
@@ -60,14 +61,15 @@ test('RenameDialog Enter with unchanged value is a noop', async () => {
         props: {
             close: () => {},
             initial: 'Same',
-            onConfirm: () => { attempts++; },
+            onConfirm: () => {
+                attempts++;
+            },
         },
     });
     await press('Enter');
     await tick();
     expect(attempts).toBe(0);
 });
-
 
 test('RenameDialog cancel button closes without invoking onConfirm', async () => {
     const env = await makeDialogMockEnv();
@@ -76,13 +78,17 @@ test('RenameDialog cancel button closes without invoking onConfirm', async () =>
     await mountWithCleanup(RenameDialog, {
         env,
         props: {
-            close: () => { closed = true; },
+            close: () => {
+                closed = true;
+            },
             initial: 'X',
-            onConfirm: () => { confirmed = true; },
+            onConfirm: () => {
+                confirmed = true;
+            },
         },
     });
-    const cancel = [...document.querySelectorAll('button')].find(
-        (b) => /cancel/i.test(b.textContent),
+    const cancel = [...document.querySelectorAll('button')].find((b) =>
+        /cancel/i.test(b.textContent),
     );
     expect(cancel).not.toBe(undefined);
     cancel.click();

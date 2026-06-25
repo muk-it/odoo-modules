@@ -1,6 +1,6 @@
 import { describe, expect, test } from '@odoo/hoot';
 import { animationFrame } from '@odoo/hoot-mock';
-import { click, queryAll, queryFirst } from '@odoo/hoot-dom';
+import { click, queryFirst } from '@odoo/hoot-dom';
 import { Component, useState, xml } from '@odoo/owl';
 import { contains, mountWithCleanup } from '@web/../tests/web_test_helpers';
 import { defineMailModels } from '@mail/../tests/mail_test_helpers';
@@ -9,7 +9,6 @@ import { ChatSidebar } from '@muk_ai/chat/sidebar/chat_sidebar';
 
 describe.current.tags('muk_ai');
 defineMailModels();
-
 
 function makeHostFactory({
     sessions = [],
@@ -62,7 +61,6 @@ function makeHostFactory({
     return Host;
 }
 
-
 test('shows Load more button when hasMore is true and no search active', async () => {
     const Host = makeHostFactory({
         sessions: [{ id: 1, name: 'A', state: 'done', create_date: null }],
@@ -71,7 +69,6 @@ test('shows Load more button when hasMore is true and no search active', async (
     await mountWithCleanup(Host);
     expect(queryFirst('.mk_sidebar_load_more_btn')).not.toBe(null);
 });
-
 
 test('Load more button clicks emit onLoadMore', async () => {
     const Host = makeHostFactory({
@@ -82,7 +79,6 @@ test('Load more button clicks emit onLoadMore', async () => {
     await click(queryFirst('.mk_sidebar_load_more_btn'));
     expect(host.loadMoreCalls).toBe(1);
 });
-
 
 test('Load more hidden during server search mode', async () => {
     const Host = makeHostFactory({
@@ -96,7 +92,6 @@ test('Load more hidden during server search mode', async () => {
     expect(queryFirst('.mk_sidebar_load_more_btn')).toBe(null);
 });
 
-
 test('typing in the search input emits onQuery (server search)', async () => {
     const Host = makeHostFactory({
         sessions: [{ id: 1, name: 'A', state: 'done', create_date: null }],
@@ -105,7 +100,6 @@ test('typing in the search input emits onQuery (server search)', async () => {
     await contains('.mk_sidebar_search_input').edit('hello', { confirm: false });
     expect(host.queries.includes('hello')).toBe(true);
 });
-
 
 test('clearing search emits empty onQuery', async () => {
     const Host = makeHostFactory({
@@ -117,7 +111,6 @@ test('clearing search emits empty onQuery', async () => {
     const last = host.queries[host.queries.length - 1];
     expect(last === '').toBe(true);
 });
-
 
 test('searching indicator shows when sessions empty + searching=true', async () => {
     const Host = makeHostFactory({

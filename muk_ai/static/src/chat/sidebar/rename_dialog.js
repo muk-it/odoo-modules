@@ -3,6 +3,7 @@ import { Component, useRef, useState, onMounted } from '@odoo/owl';
 import { _t } from '@web/core/l10n/translation';
 import { Dialog } from '@web/core/dialog/dialog';
 
+/** Modal dialog prompting for a new session name. */
 export class RenameDialog extends Component {
     static template = 'muk_ai.RenameDialog';
     static components = { Dialog };

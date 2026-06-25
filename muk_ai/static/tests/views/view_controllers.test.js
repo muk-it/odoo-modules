@@ -17,7 +17,6 @@ import '@muk_ai/views/graph/graph_controller';
 describe.current.tags('muk_ai');
 defineMailModels();
 
-
 class MukAiViewModel extends models.Model {
     _name = 'muk_ai.view_model';
     name = fields.Char();
@@ -30,16 +29,20 @@ class MukAiViewModel extends models.Model {
 }
 defineModels([MukAiViewModel]);
 
-
 function mockChatWindow(activeSessionId) {
     mockService('muk_ai.chat_window', {
         state: { windows: [] },
-        open: () => {}, close: () => {}, toggleMinimized: () => {},
-        get activeSessionId() { return activeSessionId; },
-        get sessionIds() { return activeSessionId ? [activeSessionId] : []; },
+        open: () => {},
+        close: () => {},
+        toggleMinimized: () => {},
+        get activeSessionId() {
+            return activeSessionId;
+        },
+        get sessionIds() {
+            return activeSessionId ? [activeSessionId] : [];
+        },
     });
 }
-
 
 test('list controller dispatches a list view_context on mount', async () => {
     const captured = [];
@@ -58,7 +61,6 @@ test('list controller dispatches a list view_context on mount', async () => {
     expect(captured[0].model).toBe('muk_ai.view_model');
     expect(captured[0].view_type).toBe('list');
 });
-
 
 test('kanban controller dispatches a kanban view_context', async () => {
     const captured = [];
@@ -83,7 +85,6 @@ test('kanban controller dispatches a kanban view_context', async () => {
     expect(captured[0].view_type).toBe('kanban');
 });
 
-
 test('pivot controller dispatches pivot context with measures + groupbys', async () => {
     const captured = [];
     mockChatWindow(13);
@@ -102,7 +103,6 @@ test('pivot controller dispatches pivot context with measures + groupbys', async
     expect(captured.length).toBeGreaterThan(0);
     expect(captured[0].kind).toBe('pivot');
 });
-
 
 test('graph controller dispatches graph context with mode and measure', async () => {
     const captured = [];

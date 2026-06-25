@@ -3,6 +3,11 @@ import { onMounted, onPatched, onWillUnmount, useRef, useState } from '@odoo/owl
 const SCROLL_NEAR_BOTTOM = 160;
 const SCROLL_NEAR_TOP_DEFAULT = 200;
 
+/**
+ * Hook keeping a scroller pinned to the bottom while the user is near it.
+ * @param {string} refName t-ref name of the scroll container
+ * @returns {object} { scrollRef, scrollToBottom, state }
+ */
 export function useChatScrollAnchor(refName = 'scroll') {
     const scrollRef = useRef(refName);
     const state = useState({ atBottom: true });
@@ -56,7 +61,17 @@ export function useChatScrollAnchor(refName = 'scroll') {
     return { scrollRef, scrollToBottom, state };
 }
 
-export function onScrollUpNearTop(scrollerRef, callback, thresholdPx = SCROLL_NEAR_TOP_DEFAULT) {
+/**
+ * Invoke a callback once when the user scrolls up near the top of a scroller.
+ * @param {object} scrollerRef t-ref to the scroll container
+ * @param {Function} callback handler run near the top (may be async)
+ * @param {number} thresholdPx distance from top that triggers the callback
+ */
+export function onScrollUpNearTop(
+    scrollerRef,
+    callback,
+    thresholdPx = SCROLL_NEAR_TOP_DEFAULT,
+) {
     let lastScrollTop = null;
     let pending = false;
     function listener() {
@@ -65,9 +80,14 @@ export function onScrollUpNearTop(scrollerRef, callback, thresholdPx = SCROLL_NE
             return;
         }
         const top = el.scrollTop;
-        const direction = lastScrollTop === null
-            ? 'init'
-            : (top < lastScrollTop ? 'up' : (top > lastScrollTop ? 'down' : 'same'));
+        const direction =
+            lastScrollTop === null
+                ? 'init'
+                : top < lastScrollTop
+                  ? 'up'
+                  : top > lastScrollTop
+                    ? 'down'
+                    : 'same';
         lastScrollTop = top;
         if (pending) {
             return;
@@ -98,6 +118,12 @@ export function onScrollUpNearTop(scrollerRef, callback, thresholdPx = SCROLL_NE
     });
 }
 
+/**
+ * Run an async mutation while preserving the scroller's distance from bottom.
+ * @param {object} scrollerRef t-ref to the scroll container
+ * @param {Function} fn async mutation to run
+ * @returns {Promise<void>}
+ */
 export async function preserveAnchor(scrollerRef, fn) {
     const el = scrollerRef.el;
     const savedDelta = el ? el.scrollHeight - el.scrollTop : 0;

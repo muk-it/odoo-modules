@@ -1,16 +1,26 @@
-import re
+from __future__ import annotations
 
+import re
 
 DEFAULT_TEXT_INLINE_LIMIT_KB = 256
 DEFAULT_MAX_UPLOAD_BYTES = 128 * 1024 * 1024
 ATTACHMENT_REF_MAX_BYTES = 4 * 1024 * 1024
 
-IMAGE_MIMETYPES = frozenset({
-    'image/png', 'image/jpeg', 'image/webp', 'image/gif',
-})
-TEXT_MIMETYPES = frozenset({
-    'text/plain', 'text/csv', 'text/markdown',
-})
+IMAGE_MIMETYPES = frozenset(
+    {
+        'image/png',
+        'image/jpeg',
+        'image/webp',
+        'image/gif',
+    }
+)
+TEXT_MIMETYPES = frozenset(
+    {
+        'text/plain',
+        'text/csv',
+        'text/markdown',
+    }
+)
 PDF_MIMETYPE = 'application/pdf'
 ALLOWED_MIMETYPES = IMAGE_MIMETYPES | TEXT_MIMETYPES | {PDF_MIMETYPE}
 
@@ -21,7 +31,8 @@ ATTACHMENT_REF_RE = re.compile(r'^@attachment:(\d+)$')
 URL_REF_RE = re.compile(r'^@url:(https://\S+)$')
 
 
-def is_unmaterialized_attachment(block):
+def is_unmaterialized_attachment(block) -> bool:
+    """Return whether a content block is an attachment placeholder lacking its data."""
     return (
         isinstance(block, dict)
         and block.get('type') == 'muk_ai_attachment'

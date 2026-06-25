@@ -9,13 +9,18 @@ import { ChatSidebar } from '@muk_ai/chat/sidebar/chat_sidebar';
 describe.current.tags('muk_ai');
 defineMailModels();
 
-
 function dateAtLocal(daysOffset, hour, minute) {
     const now = new Date();
-    const local = new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysOffset, hour, minute, 0);
+    const local = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() + daysOffset,
+        hour,
+        minute,
+        0,
+    );
     return local.toISOString().slice(0, 19).replace('T', ' ');
 }
-
 
 function makeParent(sessions) {
     class Parent extends Component {
@@ -35,7 +40,6 @@ function makeParent(sessions) {
     return { Parent, props: { sessions } };
 }
 
-
 function bucketsFromDom() {
     const buckets = {};
     let current = null;
@@ -51,14 +55,38 @@ function bucketsFromDom() {
     return buckets;
 }
 
-
 test('buckets sessions by direct timestamp comparison (today / yesterday / week / month / older)', async () => {
     const sessions = [
-        { id: 1, name: 'Today 09:00', state: 'done', create_date: dateAtLocal(0, 9, 0) },
-        { id: 2, name: 'Yesterday 18:00', state: 'done', create_date: dateAtLocal(-1, 18, 0) },
-        { id: 3, name: 'Five days ago', state: 'done', create_date: dateAtLocal(-5, 12, 0) },
-        { id: 4, name: 'Fifteen days ago', state: 'done', create_date: dateAtLocal(-15, 12, 0) },
-        { id: 5, name: 'Sixty days ago', state: 'done', create_date: dateAtLocal(-60, 12, 0) },
+        {
+            id: 1,
+            name: 'Today 09:00',
+            state: 'done',
+            create_date: dateAtLocal(0, 9, 0),
+        },
+        {
+            id: 2,
+            name: 'Yesterday 18:00',
+            state: 'done',
+            create_date: dateAtLocal(-1, 18, 0),
+        },
+        {
+            id: 3,
+            name: 'Five days ago',
+            state: 'done',
+            create_date: dateAtLocal(-5, 12, 0),
+        },
+        {
+            id: 4,
+            name: 'Fifteen days ago',
+            state: 'done',
+            create_date: dateAtLocal(-15, 12, 0),
+        },
+        {
+            id: 5,
+            name: 'Sixty days ago',
+            state: 'done',
+            create_date: dateAtLocal(-60, 12, 0),
+        },
     ];
     const { Parent, props } = makeParent(sessions);
     await mountWithCleanup(Parent, { props });
@@ -70,11 +98,20 @@ test('buckets sessions by direct timestamp comparison (today / yesterday / week 
     expect(buckets['Older']).toEqual(['Sixty days ago']);
 });
 
-
 test('yesterday-evening session does not leak into Today bucket (regression for #773)', async () => {
     const sessions = [
-        { id: 1, name: 'Today morning', state: 'done', create_date: dateAtLocal(0, 9, 0) },
-        { id: 2, name: 'Yesterday evening', state: 'done', create_date: dateAtLocal(-1, 22, 30) },
+        {
+            id: 1,
+            name: 'Today morning',
+            state: 'done',
+            create_date: dateAtLocal(0, 9, 0),
+        },
+        {
+            id: 2,
+            name: 'Yesterday evening',
+            state: 'done',
+            create_date: dateAtLocal(-1, 22, 30),
+        },
     ];
     const { Parent, props } = makeParent(sessions);
     await mountWithCleanup(Parent, { props });
@@ -83,11 +120,8 @@ test('yesterday-evening session does not leak into Today bucket (regression for 
     expect(buckets['Yesterday']).toEqual(['Yesterday evening']);
 });
 
-
 test('null create_date falls into Older bucket', async () => {
-    const sessions = [
-        { id: 1, name: 'No date', state: 'done', create_date: null },
-    ];
+    const sessions = [{ id: 1, name: 'No date', state: 'done', create_date: null }];
     const { Parent, props } = makeParent(sessions);
     await mountWithCleanup(Parent, { props });
     const buckets = bucketsFromDom();

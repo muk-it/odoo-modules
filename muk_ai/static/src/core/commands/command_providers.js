@@ -28,17 +28,26 @@ providerRegistry.add('muk_ai_sessions', {
             ['id', 'name'],
             { limit: 20, order: 'create_date DESC' },
         );
-        const commands = [{
-            name: _t('New Chat'),
-            category: 'muk_ai',
-            async action() {
-                const [sessionId] = await env.services.orm.create('muk_ai.session', [{
-                    name: needle || _t('Chat %s', new Date().toLocaleString()),
-                }]);
-                await seedSessionContext(env, sessionId);
-                await openChat(env, sessionId);
+        const commands = [
+            {
+                name: _t('New Chat'),
+                category: 'muk_ai',
+                async action() {
+                    const [sessionId] = await env.services.orm.create(
+                        'muk_ai.session',
+                        [
+                            {
+                                name:
+                                    needle ||
+                                    _t('Chat %s', new Date().toLocaleString()),
+                            },
+                        ],
+                    );
+                    await seedSessionContext(env, sessionId);
+                    await openChat(env, sessionId);
+                },
             },
-        }];
+        ];
         for (const session of sessions) {
             commands.push({
                 name: session.name || _t('Chat %s', session.id),

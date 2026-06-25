@@ -6,10 +6,18 @@ import { SLASH_COMMANDS } from '@muk_ai/chat/session/use_ai_session';
 let fileInputCounter = 0;
 
 const ACCEPT = [
-    'image/png', 'image/jpeg', 'image/webp', 'image/gif',
-    'application/pdf', 'text/plain', 'text/csv', 'text/markdown', '.md',
+    'image/png',
+    'image/jpeg',
+    'image/webp',
+    'image/gif',
+    'application/pdf',
+    'text/plain',
+    'text/csv',
+    'text/markdown',
+    '.md',
 ].join(',');
 
+/** Message composer: text input, attachments, slash commands, and send/stop. */
 export class ChatComposer extends Component {
     static template = 'muk_ai.ChatComposer';
     static components = { AttachmentCard };
@@ -53,23 +61,21 @@ export class ChatComposer extends Component {
             },
             () => [this.props.focusToken],
         );
-        useEffect(
-            () => {
-                const el = this.inputRef.el;
-                if (!el) return;
-                const next = this.props.value || '';
-                if (el.value !== next) {
-                    el.value = next;
-                }
-                const cs = getComputedStyle(el);
-                const lh = parseFloat(cs.lineHeight) || 22;
-                const pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
-                const maxH = lh * 4 + pad;
-                el.style.height = 'auto';
-                el.style.height = Math.min(el.scrollHeight, maxH) + 'px';
-                el.style.overflowY = el.scrollHeight > maxH ? 'auto' : 'hidden';
-            },
-        );
+        useEffect(() => {
+            const el = this.inputRef.el;
+            if (!el) return;
+            const next = this.props.value || '';
+            if (el.value !== next) {
+                el.value = next;
+            }
+            const cs = getComputedStyle(el);
+            const lh = parseFloat(cs.lineHeight) || 22;
+            const pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+            const maxH = lh * 4 + pad;
+            el.style.height = 'auto';
+            el.style.height = Math.min(el.scrollHeight, maxH) + 'px';
+            el.style.overflowY = el.scrollHeight > maxH ? 'auto' : 'hidden';
+        });
         useEffect(
             () => {
                 this.localState.slashActive = 0;
@@ -98,7 +104,8 @@ export class ChatComposer extends Component {
             }
             if (event.key === 'ArrowUp') {
                 event.preventDefault();
-                this.localState.slashActive = (this.localState.slashActive - 1 + count) % count;
+                this.localState.slashActive =
+                    (this.localState.slashActive - 1 + count) % count;
                 return;
             }
             if (event.key === 'Tab' && !event.shiftKey) {

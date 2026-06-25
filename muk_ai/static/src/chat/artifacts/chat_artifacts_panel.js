@@ -4,6 +4,7 @@ import { registry } from '@web/core/registry';
 
 import { AttachmentsTab } from '@muk_ai/chat/artifacts/types/attachments_tab';
 
+/** Side panel grouping session artifacts (attachments, etc.) into tabs. */
 export class ChatArtifactsPanel extends Component {
     static template = 'muk_ai.ChatArtifactsPanel';
     static components = { AttachmentsTab };
@@ -25,10 +26,10 @@ export class ChatArtifactsPanel extends Component {
             if (!def || typeof def.collect !== 'function') {
                 continue;
             }
-            let items = [];
+            let items;
             try {
                 items = def.collect(sessionState) || [];
-            } catch (_e) {
+            } catch {
                 items = [];
             }
             if (!items.length) {
@@ -51,8 +52,8 @@ export class ChatArtifactsPanel extends Component {
         if (!tabs.length) {
             return null;
         }
-        const wanted = this.state.activeTabId
-            && tabs.find((t) => t.id === this.state.activeTabId);
+        const wanted =
+            this.state.activeTabId && tabs.find((t) => t.id === this.state.activeTabId);
         return wanted || tabs[0];
     }
     get bodyProps() {

@@ -8,6 +8,7 @@ import { RenameDialog } from '@muk_ai/chat/sidebar/rename_dialog';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/** Sidebar listing chat sessions grouped by date, with rename/delete actions. */
 export class ChatSidebar extends Component {
     static template = 'muk_ai.ChatSidebar';
     static props = {
@@ -29,21 +30,26 @@ export class ChatSidebar extends Component {
         this.state = useState({ query: '' });
     }
     statusLabel(state) {
-        return {
-            new: _t('New'),
-            running: _t('Running'),
-            waiting: _t('Waiting'),
-            done: _t('Done'),
-            error: _t('Error'),
-            stopped: _t('Stopped'),
-        }[state] || state;
+        return (
+            {
+                new: _t('New'),
+                running: _t('Running'),
+                waiting: _t('Waiting'),
+                done: _t('Done'),
+                error: _t('Error'),
+                stopped: _t('Stopped'),
+            }[state] || state
+        );
     }
     get groups() {
         const query = this.state.query.trim().toLowerCase();
         const useServerSearch = !!this.props.onQuery;
-        const filtered = (query && !useServerSearch)
-            ? this.props.sessions.filter((s) => (s.name || '').toLowerCase().includes(query))
-            : this.props.sessions;
+        const filtered =
+            query && !useServerSearch
+                ? this.props.sessions.filter((s) =>
+                      (s.name || '').toLowerCase().includes(query),
+                  )
+                : this.props.sessions;
         const dayAnchor = new Date();
         dayAnchor.setHours(0, 0, 0, 0);
         const startOfDay = dayAnchor.getTime();
@@ -78,7 +84,9 @@ export class ChatSidebar extends Component {
         return !!this.state.query.trim();
     }
     get hasAnySession() {
-        return this.props.sessions.length > 0 || this.hasQuery || !!this.props.searchMode;
+        return (
+            this.props.sessions.length > 0 || this.hasQuery || !!this.props.searchMode
+        );
     }
     get isServerSearch() {
         return !!this.props.searchMode || (!!this.props.onQuery && this.hasQuery);
@@ -126,9 +134,10 @@ export class ChatSidebar extends Component {
         if (!value) {
             return null;
         }
-        const normalized = typeof value === 'string' && !value.includes('T')
-            ? value.replace(' ', 'T') + 'Z'
-            : value;
+        const normalized =
+            typeof value === 'string' && !value.includes('T')
+                ? value.replace(' ', 'T') + 'Z'
+                : value;
         const ts = new Date(normalized).getTime();
         return Number.isFinite(ts) ? ts : null;
     }

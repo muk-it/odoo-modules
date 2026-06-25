@@ -1,21 +1,28 @@
+from __future__ import annotations
+
+from collections.abc import Callable
+
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 from odoo.addons.muk_ai.providers import REGISTRY
+from odoo.addons.muk_ai.providers.base import ProviderBase
 from odoo.addons.muk_ai.tools import is_unmaterialized_attachment
 
 
 class AIProvider(models.Model):
+    """Configured LLM provider account exposing a streaming request client."""
 
     _name = 'muk_ai.provider'
-    _description = "AI Provider"
+    _description = 'AI Provider'
     _order = 'sequence, name'
 
     # ----------------------------------------------------------
     # Selections
     # ----------------------------------------------------------
 
-    def _selection_name(self):
+    def _selection_name(self) -> list[tuple[str, str]]:
+        """Return the selection of registered provider names and labels."""
         return [(cls.name, cls.label) for cls in REGISTRY.values()]
 
     # ----------------------------------------------------------
@@ -24,81 +31,81 @@ class AIProvider(models.Model):
 
     name = fields.Selection(
         selection=lambda self: self._selection_name(),
-        string="Provider",
+        string='Provider',
         readonly=True,
         required=True,
     )
 
     active = fields.Boolean(
-        string="Active",
+        string='Active',
         default=True,
     )
 
     sequence = fields.Integer(
-        string="Sequence",
+        string='Sequence',
         default=10,
     )
 
     api_key = fields.Char(
-        string="API Key",
-        help="Authentication token for this provider.",
-        groups="base.group_system",
+        string='API Key',
+        help='Authentication token for this provider.',
+        groups='base.group_system',
     )
 
     max_tokens = fields.Integer(
-        string="Max Tokens",
-        help="Maximum completion tokens per request.",
+        string='Max Tokens',
+        help='Maximum completion tokens per request.',
         required=True,
         default=4096,
     )
 
     request_timeout = fields.Integer(
-        string="Request Timeout",
-        help="Provider request timeout in seconds.",
+        string='Request Timeout',
+        help='Provider request timeout in seconds.',
         required=True,
         default=60,
     )
 
     idle_timeout = fields.Integer(
-        string="Idle Timeout",
-        help="Seconds without a streamed chunk before aborting the connection.",
+        string='Idle Timeout',
+        help='Seconds without a streamed chunk before aborting the connection.',
         required=True,
         default=45,
     )
 
     rate_limit = fields.Integer(
-        string="Rate Limit",
-        help="Max sessions a single user may create per minute. 0 = disabled.",
+        string='Rate Limit',
+        help='Max sessions a single user may create per minute. 0 = disabled.',
         required=True,
         default=10,
     )
 
     default_model_id = fields.Many2one(
         comodel_name='muk_ai.model',
-        string="Default Model",
-        help="Model used when an agent does not specify one.",
+        string='Default Model',
+        help='Model used when an agent does not specify one.',
         domain="[('provider_id', '=', id)]",
     )
 
     model_ids = fields.One2many(
         comodel_name='muk_ai.model',
-        string="Models",
+        string='Models',
         inverse_name='provider_id',
     )
 
     supports_web_search = fields.Boolean(
         compute='_compute_capabilities',
-        string="Supports Web Search",
+        string='Supports Web Search',
     )
 
     supports_image_generation = fields.Boolean(
         compute='_compute_capabilities',
-        string="Supports Image Generation",
+        string='Supports Image Generation',
     )
 
     supports_code_interpreter = fields.Boolean(
         compute='_compute_capabilities',
-        string="Supports Code Interpreter",
+        string='Supports Code Interpreter',
     )
 
     # ----------------------------------------------------------
@@ -106,19 +113,26 @@ class AIProvider(models.Model):
     # ----------------------------------------------------------
 
     @api.model
-    def _get_default(self):
+    def _get_default(self) -> AIProvider:
+        """Return the company default provider, or the first active one."""
         preferred = self.env.company.default_ai_provider_id
         if preferred and preferred.active:
             return preferred
         return self.search([('active', '=', True)], limit=1)
 
-    def _get_client(self):
+    def _get_client(self) -> ProviderBase:
+        """Instantiate the provider client from the registry.
+
+        :raise UserError: when no addon registers this provider
+        """
         if (impl_cls := REGISTRY.get(self.name)) is None:
-            raise UserError(_(
-                'AI provider %(provider)s is not supported. '
-                'Install an addon that registers it.',
-                provider=self.name,
-            ))
+            raise UserError(
+                _(
+                    'AI provider %(provider)s is not supported. '
+                    'Install an addon that registers it.',
+                    provider=self.name,
+                )
+            )
         return impl_cls(
             api_key=self.sudo().api_key or '',
             request_timeout=self.request_timeout,
@@ -126,21 +140,24 @@ class AIProvider(models.Model):
             max_tokens=self.max_tokens,
         )
 
-    def _resolve_model_name(self, override=None):
+    def _resolve_model_name(self, override: str | None = None) -> str:
+        """Return the technical model name, honoring an explicit override."""
         return (
             override
             or self.default_model_id.technical_name
             or REGISTRY[self.name].default_model
         )
 
-    def _build_request_extra(self):
+    def _build_request_extra(self) -> dict:
+        """Return provider-agnostic request metadata."""
         return {
             'metadata': {
                 'odoo_user_id': self.env.uid,
             },
         }
 
-    def _materialize_block(self, block):
+    def _materialize_block(self, block: dict) -> dict:
+        """Resolve an unmaterialized attachment block to its content."""
         if not is_unmaterialized_attachment(block):
             return block
         attachment = self.env['ir.attachment'].browse(
@@ -154,33 +171,28 @@ class AIProvider(models.Model):
         return attachment._ai_materialize()
 
     def _materialize_item(self, item):
-        content = (
-            item.get('content')
-            if isinstance(item, dict) else None
-        )
+        """Materialize every attachment block inside a single input item."""
+        content = item.get('content') if isinstance(item, dict) else None
         if not isinstance(content, list):
             return item
-        return {
-            **item,
-            'content': [
-                self._materialize_block(b) for b in content
-            ]
-        }
+        return {**item, 'content': [self._materialize_block(b) for b in content]}
 
-    def _materialize_inputs(self, inputs):
+    def _materialize_inputs(self, inputs: list | None) -> list:
+        """Materialize attachment blocks across all input items."""
         return [self._materialize_item(item) for item in inputs or []]
 
     def _request_responses(
         self,
-        inputs,
-        tools_schema=None,
-        text_schema=None,
-        on_delta=None,
-        model=None,
-        enable_web_search=False,
-        enable_image_generation=False,
-        enable_code_interpreter=False
-    ):
+        inputs: list,
+        tools_schema: list | None = None,
+        text_schema: dict | None = None,
+        on_delta: Callable | None = None,
+        model: str | None = None,
+        enable_web_search: bool = False,
+        enable_image_generation: bool = False,
+        enable_code_interpreter: bool = False,
+    ) -> dict:
+        """Send a streaming responses request through the provider client."""
         return self._get_client().request(
             inputs=self._materialize_inputs(inputs),
             tools_schema=tools_schema,
@@ -197,18 +209,20 @@ class AIProvider(models.Model):
     # Actions
     # ----------------------------------------------------------
 
-    def action_test_connection(self):
+    def action_test_connection(self) -> dict:
+        """Test the provider connection and return a success notification."""
         self._get_client().test_connection()
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
             'params': {
                 'type': 'success',
-                'title': _("AI Provider"),
+                'title': _('AI Provider'),
                 'message': _(
-                    "Connection to %(provider)s succeeded.",
+                    'Connection to %(provider)s succeeded.',
                     provider=dict(self._selection_name()).get(
-                        self.name, self.name,
+                        self.name,
+                        self.name,
                     ),
                 ),
                 'sticky': False,
@@ -220,18 +234,24 @@ class AIProvider(models.Model):
     # ----------------------------------------------------------
 
     @api.depends('name')
-    def _compute_display_name(self):
+    def _compute_display_name(self) -> None:
+        """Set the display name from the provider selection label."""
         labels = dict(self._fields['name']._description_selection(self.env))
         for record in self:
             record.display_name = labels.get(record.name) or record.name or ''
 
     @api.depends('name')
-    def _compute_capabilities(self):
+    def _compute_capabilities(self) -> None:
+        """Reflect the registry capability flags onto the record."""
         for record in self:
             impl = REGISTRY.get(record.name)
             record.supports_web_search = bool(impl and impl.supports_web_search)
-            record.supports_image_generation = bool(impl and impl.supports_image_generation)
-            record.supports_code_interpreter = bool(impl and impl.supports_code_interpreter)
+            record.supports_image_generation = bool(
+                impl and impl.supports_image_generation
+            )
+            record.supports_code_interpreter = bool(
+                impl and impl.supports_code_interpreter
+            )
 
     # ----------------------------------------------------------
     # Constraints
@@ -239,5 +259,5 @@ class AIProvider(models.Model):
 
     _unique_name = models.Constraint(
         'unique(name)',
-        "A provider with this name already exists.",
+        'A provider with this name already exists.',
     )

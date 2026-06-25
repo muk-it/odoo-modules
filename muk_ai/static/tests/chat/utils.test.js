@@ -16,7 +16,6 @@ import {
 describe.current.tags('muk_ai');
 patchTranslations();
 
-
 test('statusLabel maps known statuses to translated label', () => {
     expect(statusLabel('running').toString()).toMatch(/Running/i);
     expect(statusLabel('waiting').toString()).toMatch(/Waiting/i);
@@ -158,7 +157,9 @@ test('formatRelativeTime renders future minutes/seconds', () => {
 });
 
 test('formatRelativeTime renders future hours/minutes', () => {
-    const future = new Date(Date.now() + 3 * 3600 * 1000 + 12 * 60 * 1000).toISOString();
+    const future = new Date(
+        Date.now() + 3 * 3600 * 1000 + 12 * 60 * 1000,
+    ).toISOString();
     const text = formatRelativeTime(future).toString();
     expect(text).toMatch(/h/);
 });

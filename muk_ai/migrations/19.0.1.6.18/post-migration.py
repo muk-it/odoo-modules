@@ -1,4 +1,10 @@
-def migrate(cr, version):
+from __future__ import annotations
+
+from odoo.sql_db import Cursor
+
+
+def migrate(cr: Cursor, version: str) -> None:
+    """Refresh model context windows and the Google provider default model."""
     cr.execute(
         """
         UPDATE muk_ai_model

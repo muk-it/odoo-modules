@@ -11,6 +11,7 @@ const LINE_HEIGHT = 13;
 const VERTICAL_PAD = 4;
 const MIN_LINES = 1;
 
+/** Field widget editing a JSON value in an auto-sizing code editor. */
 export class JsonCodeField extends Component {
     static template = 'muk_ai.JsonCodeField';
     static props = {
@@ -31,7 +32,10 @@ export class JsonCodeField extends Component {
         useRecordObserver((record) => {
             const stringified = this._stringify(record.data[this.props.name]);
             this.state.initialValue = stringified;
-            this.state.lineCount = Math.max(MIN_LINES, (stringified.match(/\n/g) || []).length + 1);
+            this.state.lineCount = Math.max(
+                MIN_LINES,
+                (stringified.match(/\n/g) || []).length + 1,
+            );
         });
         const { model } = this.props.record;
         useBus(model.bus, 'WILL_SAVE_URGENTLY', () => this.commitChanges());
@@ -76,10 +80,10 @@ export class JsonCodeField extends Component {
                 parsed = JSON.parse(raw);
             } catch (error) {
                 this.notification.add(
-                    _t(
-                        'Invalid JSON in %(field)s: %(error)s',
-                        { field: this.props.string || this.props.name, error: error.message },
-                    ),
+                    _t('Invalid JSON in %(field)s: %(error)s', {
+                        field: this.props.string || this.props.name,
+                        error: error.message,
+                    }),
                     { type: 'danger', sticky: true },
                 );
                 await this.props.record.setInvalidField(this.props.name);

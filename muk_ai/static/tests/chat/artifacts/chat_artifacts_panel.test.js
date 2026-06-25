@@ -11,7 +11,6 @@ describe.current.tags('muk_ai');
 defineMailModels();
 patchTranslations();
 
-
 function makeSession({ pendingAttachments = [], events = [] } = {}) {
     return {
         state: {
@@ -21,8 +20,7 @@ function makeSession({ pendingAttachments = [], events = [] } = {}) {
     };
 }
 
-
-function mountPanel(sessionLike, opts = {}) {
+function mountPanel(sessionLike, _opts = {}) {
     const closed = { count: 0 };
     const opened = [];
     class Parent extends Component {
@@ -44,18 +42,17 @@ function mountPanel(sessionLike, opts = {}) {
     return mountWithCleanup(Parent, {
         props: {
             session: sessionLike,
-            onClose: () => { closed.count += 1; },
+            onClose: () => {
+                closed.count += 1;
+            },
             onOpenAttachment: (att) => opened.push(att),
         },
     }).then((parent) => ({ parent, closed, opened }));
 }
 
-
 test('renders attachments tab with two cards from pending + user events', async () => {
     const session = makeSession({
-        pendingAttachments: [
-            { id: 1, filename: 'a.png', mimetype: 'image/png' },
-        ],
+        pendingAttachments: [{ id: 1, filename: 'a.png', mimetype: 'image/png' }],
         events: [
             {
                 kind: 'user_message',
@@ -71,16 +68,13 @@ test('renders attachments tab with two cards from pending + user events', async 
     expect(cards.length).toBe(2);
 });
 
-
 test('clicking a card forwards attachment via onOpenAttachment', async () => {
     const session = makeSession({
         events: [
             {
                 kind: 'user_message',
                 content: 'x',
-                attachments: [
-                    { id: 9, filename: 'c.txt', mimetype: 'text/plain' },
-                ],
+                attachments: [{ id: 9, filename: 'c.txt', mimetype: 'text/plain' }],
             },
         ],
     });
@@ -89,7 +83,6 @@ test('clicking a card forwards attachment via onOpenAttachment', async () => {
     expect(opened.length).toBe(1);
     expect(opened[0].id).toBe(9);
 });
-
 
 test('close button triggers onClose prop', async () => {
     const session = makeSession({
@@ -100,14 +93,12 @@ test('close button triggers onClose prop', async () => {
     expect(closed.count).toBe(1);
 });
 
-
 test('panel renders empty placeholder when no artifacts contributed', async () => {
     const session = makeSession({});
     await mountPanel(session);
     const empty = queryFirst('.mk_artifacts_panel .mk_artifacts_empty');
     expect(empty).not.toBe(null);
 });
-
 
 test('attachments dedupe by id across pending + events', async () => {
     const session = makeSession({

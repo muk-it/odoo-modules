@@ -12,14 +12,18 @@ export const sessionNotificationService = {
                 return;
             }
             for (const close of set) {
-                try { close(); } catch (_e) {}
+                try {
+                    close();
+                } catch {
+                    /* ignore */
+                }
             }
             closers.delete(sessionId);
         }
         function dismissInbox(sessionId) {
-            env.services.orm.silent.call(
-                'muk_ai.session', 'dismiss_notifications', [[sessionId]],
-            ).catch(() => {});
+            env.services.orm.silent
+                .call('muk_ai.session', 'dismiss_notifications', [[sessionId]])
+                .catch(() => {});
         }
         function markActive(sessionId) {
             if (!sessionId) {
@@ -47,11 +51,12 @@ export const sessionNotificationService = {
             if (active.has(payload.session_id)) {
                 return;
             }
-            const type = payload.state === 'error'
-                ? 'danger'
-                : payload.state === 'waiting'
-                    ? 'warning'
-                    : 'success';
+            const type =
+                payload.state === 'error'
+                    ? 'danger'
+                    : payload.state === 'waiting'
+                      ? 'warning'
+                      : 'success';
             const close = env.services.notification.add(
                 payload.message || payload.title || _t('AI session updated'),
                 {
@@ -59,17 +64,19 @@ export const sessionNotificationService = {
                     title: payload.title || _t('AI Session'),
                     sticky: payload.state !== 'done',
                     className: 'mk_ai_notification',
-                    buttons: [{
-                        name: _t('Open Chat'),
-                        primary: true,
-                        onClick: () => {
-                            env.services.action.doAction({
-                                type: 'ir.actions.client',
-                                tag: 'muk_ai.chat',
-                                params: { session_id: payload.session_id },
-                            });
+                    buttons: [
+                        {
+                            name: _t('Open Chat'),
+                            primary: true,
+                            onClick: () => {
+                                env.services.action.doAction({
+                                    type: 'ir.actions.client',
+                                    tag: 'muk_ai.chat',
+                                    params: { session_id: payload.session_id },
+                                });
+                            },
                         },
-                    }],
+                    ],
                 },
             );
             if (payload.state !== 'done') {
@@ -82,12 +89,13 @@ export const sessionNotificationService = {
             }
         }
         env.services.bus_service.subscribe(
-            'muk_ai.session_notification', onNotification,
+            'muk_ai.session_notification',
+            onNotification,
         );
         return { markActive, markInactive };
     },
 };
 
-registry.category('services').add(
-    'muk_ai.session_notification', sessionNotificationService,
-);
+registry
+    .category('services')
+    .add('muk_ai.session_notification', sessionNotificationService);

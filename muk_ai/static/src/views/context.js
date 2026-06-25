@@ -1,3 +1,8 @@
+/**
+ * Push a view-context payload to every open chat window's session.
+ * @param {object} env component environment
+ * @param {object} payload view context payload
+ */
 export function captureViewContext(env, payload) {
     const chatWindow = env.services?.['muk_ai.chat_window'];
     if (!chatWindow) {
@@ -19,6 +24,11 @@ export function captureViewContext(env, payload) {
     }
 }
 
+/**
+ * Probe the current action controller and build its view-context payload.
+ * @param {object} env component environment
+ * @returns {Promise<object|null>} view context payload, or null when none
+ */
 export async function probeCurrentView(env) {
     try {
         const current = env.services?.action?.currentController;
@@ -35,9 +45,15 @@ export async function probeCurrentView(env) {
             const caller = orm.silent || orm;
             let displayName = '';
             try {
-                const rows = await caller.read(resModel, [props.resId], ['display_name']);
+                const rows = await caller.read(
+                    resModel,
+                    [props.resId],
+                    ['display_name'],
+                );
                 displayName = rows?.[0]?.display_name || '';
-            } catch (_e) {}
+            } catch {
+                /* ignore */
+            }
             const payload = { kind: 'record', model: resModel, id: props.resId };
             if (displayName) {
                 payload.display_name = displayName;
@@ -51,11 +67,18 @@ export async function probeCurrentView(env) {
             payload.domain = domain;
         }
         return payload;
-    } catch (_e) {
+    } catch {
         return null;
     }
 }
 
+/**
+ * Seed a session's view context from an explicit payload or the current view.
+ * @param {object} env component environment
+ * @param {number} sessionId target session id
+ * @param {object} [payload] explicit payload; probed when omitted
+ * @returns {Promise<boolean>} whether the context was set
+ */
 export async function seedSessionContext(env, sessionId, payload = null) {
     if (!sessionId) {
         return false;
@@ -72,7 +95,7 @@ export async function seedSessionContext(env, sessionId, payload = null) {
     try {
         await caller.call('muk_ai.session', 'set_view_context', [sessionId, ctx]);
         return true;
-    } catch (_e) {
+    } catch {
         return false;
     }
 }
@@ -100,10 +123,18 @@ function makeDispatch(controller, build) {
             }
             lastKey = key;
             captureViewContext(controller.env, payload);
-        } catch (_e) {}
+        } catch {
+            /* ignore */
+        }
     };
 }
 
+/**
+ * Build a dispatcher capturing list/kanban view context for a controller.
+ * @param {object} controller the view controller
+ * @param {string} viewType the list-family view type (e.g. 'list', 'kanban')
+ * @returns {Function} a dedup-guarded dispatch callback
+ */
 export function makeListContextDispatch(controller, viewType) {
     return makeDispatch(controller, (ctrl) => {
         const root = ctrl.model?.root;
@@ -124,6 +155,11 @@ export function makeListContextDispatch(controller, viewType) {
     });
 }
 
+/**
+ * Build a dispatcher capturing pivot view context for a controller.
+ * @param {object} controller the pivot controller
+ * @returns {Function} a dedup-guarded dispatch callback
+ */
 export function makePivotContextDispatch(controller) {
     return makeDispatch(controller, (ctrl) => {
         const meta = ctrl.model?.metaData;
@@ -147,6 +183,11 @@ export function makePivotContextDispatch(controller) {
     });
 }
 
+/**
+ * Build a dispatcher capturing graph view context for a controller.
+ * @param {object} controller the graph controller
+ * @returns {Function} a dedup-guarded dispatch callback
+ */
 export function makeGraphContextDispatch(controller) {
     return makeDispatch(controller, (ctrl) => {
         const meta = ctrl.model?.metaData;
@@ -155,7 +196,9 @@ export function makeGraphContextDispatch(controller) {
             return null;
         }
         const domain = ctrl.env.searchModel?.domain || [];
-        const groupBys = (meta?.groupBy || []).map((g) => g.fieldName || g).filter(Boolean);
+        const groupBys = (meta?.groupBy || [])
+            .map((g) => g.fieldName || g)
+            .filter(Boolean);
         const payload = {
             kind: 'graph',
             model: resModel,

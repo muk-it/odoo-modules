@@ -11,8 +11,13 @@ import {
 
 describe.current.tags('muk_ai');
 
-
-function makeController({ sessionIds = [1], model, metaData, searchModel, config } = {}) {
+function makeController({
+    sessionIds = [1],
+    model,
+    metaData,
+    searchModel,
+    config,
+} = {}) {
     const calls = [];
     const orm = {
         call: (...args) => {
@@ -24,7 +29,9 @@ function makeController({ sessionIds = [1], model, metaData, searchModel, config
         services: {
             orm,
             'muk_ai.chat_window': {
-                get sessionIds() { return sessionIds; },
+                get sessionIds() {
+                    return sessionIds;
+                },
             },
         },
         searchModel,
@@ -33,12 +40,16 @@ function makeController({ sessionIds = [1], model, metaData, searchModel, config
     return { env, calls, model, metaData };
 }
 
-
 test('captureViewContext noops when chat_window service missing', async () => {
     const calls = [];
     const env = {
         services: {
-            orm: { call: (...a) => { calls.push(a); return Promise.resolve({}); } },
+            orm: {
+                call: (...a) => {
+                    calls.push(a);
+                    return Promise.resolve({});
+                },
+            },
         },
     };
     captureViewContext(env, { kind: 'list', model: 'res.partner' });
@@ -49,8 +60,17 @@ test('captureViewContext noops when no open windows', () => {
     const calls = [];
     const env = {
         services: {
-            orm: { call: (...a) => { calls.push(a); return Promise.resolve({}); } },
-            'muk_ai.chat_window': { get sessionIds() { return []; } },
+            orm: {
+                call: (...a) => {
+                    calls.push(a);
+                    return Promise.resolve({});
+                },
+            },
+            'muk_ai.chat_window': {
+                get sessionIds() {
+                    return [];
+                },
+            },
         },
     };
     captureViewContext(env, { kind: 'list', model: 'res.partner' });
@@ -61,8 +81,17 @@ test('captureViewContext noops when payload has no model', () => {
     const calls = [];
     const env = {
         services: {
-            orm: { call: (...a) => { calls.push(a); return Promise.resolve({}); } },
-            'muk_ai.chat_window': { get sessionIds() { return [7]; } },
+            orm: {
+                call: (...a) => {
+                    calls.push(a);
+                    return Promise.resolve({});
+                },
+            },
+            'muk_ai.chat_window': {
+                get sessionIds() {
+                    return [7];
+                },
+            },
         },
     };
     captureViewContext(env, { kind: 'list' });
@@ -72,12 +101,27 @@ test('captureViewContext noops when payload has no model', () => {
 
 test('captureViewContext dispatches set_view_context with silent orm if available', async () => {
     const calls = [];
-    const silent = { call: (...a) => { calls.push(['silent', ...a]); return Promise.resolve({}); } };
-    const orm = { call: (...a) => { calls.push(['loud', ...a]); return Promise.resolve({}); }, silent };
+    const silent = {
+        call: (...a) => {
+            calls.push(['silent', ...a]);
+            return Promise.resolve({});
+        },
+    };
+    const orm = {
+        call: (...a) => {
+            calls.push(['loud', ...a]);
+            return Promise.resolve({});
+        },
+        silent,
+    };
     const env = {
         services: {
             orm,
-            'muk_ai.chat_window': { get sessionIds() { return [9]; } },
+            'muk_ai.chat_window': {
+                get sessionIds() {
+                    return [9];
+                },
+            },
         },
     };
     captureViewContext(env, { kind: 'list', model: 'sale.order' });
@@ -92,8 +136,17 @@ test('captureViewContext dispatches to every open window', async () => {
     const calls = [];
     const env = {
         services: {
-            orm: { call: (...a) => { calls.push(a); return Promise.resolve({}); } },
-            'muk_ai.chat_window': { get sessionIds() { return [3, 5]; } },
+            orm: {
+                call: (...a) => {
+                    calls.push(a);
+                    return Promise.resolve({});
+                },
+            },
+            'muk_ai.chat_window': {
+                get sessionIds() {
+                    return [3, 5];
+                },
+            },
         },
     };
     captureViewContext(env, { kind: 'record', model: 'res.partner', id: 1 });
@@ -102,7 +155,6 @@ test('captureViewContext dispatches to every open window', async () => {
     expect(calls[0][2][0]).toBe(3);
     expect(calls[1][2][0]).toBe(5);
 });
-
 
 test('makeListContextDispatch builds payload with view_type + domain and only fires on change', async () => {
     const ctrl = makeController({
@@ -143,10 +195,11 @@ test('makeListContextDispatch omits empty domain', async () => {
     makeListContextDispatch(ctrl, 'list')();
     await Promise.resolve();
     expect(ctrl.calls[0][2][1]).toEqual({
-        kind: 'list', model: 'res.partner', view_type: 'list',
+        kind: 'list',
+        model: 'res.partner',
+        view_type: 'list',
     });
 });
-
 
 test('makePivotContextDispatch forwards active measures + groupbys', async () => {
     const ctrl = makeController({
@@ -169,7 +222,6 @@ test('makePivotContextDispatch forwards active measures + groupbys', async () =>
     expect(payload.pivot_column_groupby).toEqual(['user_id']);
     expect(payload.domain).toEqual([['state', '=', 'sale']]);
 });
-
 
 test('makeGraphContextDispatch uses meta mode + measure + groupBy fieldNames', async () => {
     const ctrl = makeController({
@@ -206,7 +258,6 @@ test('makeGraphContextDispatch uses defaults when meta is missing', async () => 
     expect(payload.graph_groupbys).toEqual([]);
 });
 
-
 test('dispatchers bail with no open windows (no RPC)', () => {
     const ctrl = makeController({
         sessionIds: [],
@@ -217,7 +268,6 @@ test('dispatchers bail with no open windows (no RPC)', () => {
     expect(ctrl.calls).toEqual([]);
 });
 
-
 test('probeCurrentView returns null without a current controller', async () => {
     const env = { services: { action: { currentController: null } } };
     expect(await probeCurrentView(env)).toBe(null);
@@ -226,12 +276,17 @@ test('probeCurrentView returns null without a current controller', async () => {
 test('probeCurrentView builds a record payload with display_name', async () => {
     const env = {
         services: {
-            action: { currentController: { props: { resModel: 'res.partner', resId: 5 } } },
+            action: {
+                currentController: { props: { resModel: 'res.partner', resId: 5 } },
+            },
             orm: { read: async () => [{ display_name: 'Acme' }] },
         },
     };
     expect(await probeCurrentView(env)).toEqual({
-        kind: 'record', model: 'res.partner', id: 5, display_name: 'Acme',
+        kind: 'record',
+        model: 'res.partner',
+        id: 5,
+        display_name: 'Acme',
     });
 });
 
@@ -240,14 +295,20 @@ test('probeCurrentView falls back to a list payload without resId', async () => 
         services: {
             action: {
                 currentController: {
-                    props: { resModel: 'sale.order', type: 'kanban', domain: [['state', '=', 'sale']] },
+                    props: {
+                        resModel: 'sale.order',
+                        type: 'kanban',
+                        domain: [['state', '=', 'sale']],
+                    },
                 },
             },
             orm: { read: async () => [] },
         },
     };
     expect(await probeCurrentView(env)).toEqual({
-        kind: 'list', model: 'sale.order', view_type: 'kanban',
+        kind: 'list',
+        model: 'sale.order',
+        view_type: 'kanban',
         domain: [['state', '=', 'sale']],
     });
 });
@@ -256,9 +317,14 @@ test('seedSessionContext probes and dispatches set_view_context', async () => {
     const calls = [];
     const env = {
         services: {
-            action: { currentController: { props: { resModel: 'res.partner', resId: 9 } } },
+            action: {
+                currentController: { props: { resModel: 'res.partner', resId: 9 } },
+            },
             orm: {
-                call: (...a) => { calls.push(['call', ...a]); return Promise.resolve({}); },
+                call: (...a) => {
+                    calls.push(['call', ...a]);
+                    return Promise.resolve({});
+                },
                 read: async () => [{ display_name: 'Globex' }],
             },
         },
@@ -268,18 +334,29 @@ test('seedSessionContext probes and dispatches set_view_context', async () => {
     expect(calls).toHaveLength(1);
     expect(calls[0][1]).toBe('muk_ai.session');
     expect(calls[0][2]).toBe('set_view_context');
-    expect(calls[0][3]).toEqual([42, {
-        kind: 'record', model: 'res.partner', id: 9, display_name: 'Globex',
-    }]);
+    expect(calls[0][3]).toEqual([
+        42,
+        {
+            kind: 'record',
+            model: 'res.partner',
+            id: 9,
+            display_name: 'Globex',
+        },
+    ]);
 });
 
 test('seedSessionContext respects an explicit payload over the probe', async () => {
     const calls = [];
     const env = {
         services: {
-            action: { currentController: { props: { resModel: 'res.partner', resId: 9 } } },
+            action: {
+                currentController: { props: { resModel: 'res.partner', resId: 9 } },
+            },
             orm: {
-                call: (...a) => { calls.push(['call', ...a]); return Promise.resolve({}); },
+                call: (...a) => {
+                    calls.push(['call', ...a]);
+                    return Promise.resolve({});
+                },
                 read: async () => [{ display_name: 'Globex' }],
             },
         },
@@ -295,7 +372,12 @@ test('seedSessionContext returns false without a sessionId', async () => {
     const calls = [];
     const env = {
         services: {
-            orm: { call: (...a) => { calls.push(a); return Promise.resolve({}); } },
+            orm: {
+                call: (...a) => {
+                    calls.push(a);
+                    return Promise.resolve({});
+                },
+            },
         },
     };
     expect(await seedSessionContext(env, null)).toBe(false);
@@ -307,7 +389,12 @@ test('seedSessionContext returns false when there is nothing to pin', async () =
     const env = {
         services: {
             action: { currentController: null },
-            orm: { call: (...a) => { calls.push(a); return Promise.resolve({}); } },
+            orm: {
+                call: (...a) => {
+                    calls.push(a);
+                    return Promise.resolve({});
+                },
+            },
         },
     };
     expect(await seedSessionContext(env, 7)).toBe(false);

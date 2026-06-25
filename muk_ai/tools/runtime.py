@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 DEFAULT_CONTEXT_WINDOW = 128000
 
 MAX_ITERATIONS = 20
@@ -15,36 +17,37 @@ WORKER_STALE_THRESHOLD = 60
 COMPACT_AUTO_RATIO = 0.80
 COMPACT_WARN_RATIO = 0.65
 COMPACT_SUMMARY_SYSTEM = (
-    "You are performing a CONTEXT CHECKPOINT COMPACTION. "
-    "Do NOT continue the conversation. Do NOT respond to any questions in it. "
-    "Output ONLY the structured summary, in the same language as the conversation."
+    'You are performing a CONTEXT CHECKPOINT COMPACTION. '
+    'Do NOT continue the conversation. Do NOT respond to any questions in it. '
+    'Output ONLY the structured summary, in the same language as the conversation.'
 )
 COMPACT_SUMMARY_TEMPLATE = (
-    "Produce a handoff summary using exactly this Markdown structure. "
-    "Keep section order. Preserve exact file paths, function names, error "
-    "messages, and user-stated constraints.\n\n"
-    "## Goal\n"
-    "## Constraints & Preferences\n"
-    "## Progress\n"
-    "### Done\n"
-    "### In Progress\n"
-    "### Blocked\n"
-    "## Key Decisions\n"
-    "## Next Steps\n"
-    "## Critical Context\n"
-    "## Relevant Files\n"
+    'Produce a handoff summary using exactly this Markdown structure. '
+    'Keep section order. Preserve exact file paths, function names, error '
+    'messages, and user-stated constraints.\n\n'
+    '## Goal\n'
+    '## Constraints & Preferences\n'
+    '## Progress\n'
+    '### Done\n'
+    '### In Progress\n'
+    '### Blocked\n'
+    '## Key Decisions\n'
+    '## Next Steps\n'
+    '## Critical Context\n'
+    '## Relevant Files\n'
 )
 COMPACT_SUMMARY_REINJECTION = (
-    "Another language model produced this summary of earlier work. "
-    "Use it to continue the task without duplicating completed work."
+    'Another language model produced this summary of earlier work. '
+    'Use it to continue the task without duplicating completed work.'
 )
 
 
 class StreamCancelled(Exception):
-    pass
+    """Raised to abort an in-progress streaming agent turn."""
 
 
-def coerce_ids(values):
+def coerce_ids(values) -> list[int]:
+    """Coerce an iterable of values into a list of integer ids, dropping non-numeric ones."""
     ids = []
     for value in values or []:
         if isinstance(value, bool):
@@ -61,6 +64,7 @@ def coerce_ids(values):
 
 
 def sanitize_json_schema(schema):
+    """Recursively normalize a JSON schema, ensuring arrays declare ``items``."""
     if not isinstance(schema, dict):
         return schema
     cleaned = dict(schema)
@@ -75,7 +79,5 @@ def sanitize_json_schema(schema):
         }
     for key in ('anyOf', 'oneOf', 'allOf'):
         if isinstance(cleaned.get(key), list):
-            cleaned[key] = [
-                sanitize_json_schema(s) for s in cleaned[key]
-            ]
+            cleaned[key] = [sanitize_json_schema(s) for s in cleaned[key]]
     return cleaned

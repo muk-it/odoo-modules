@@ -1,10 +1,13 @@
+from __future__ import annotations
+
 from odoo import fields, models
 
 
 class AISessionEvent(models.Model):
+    """Ordered append-only event in a session's replay log."""
 
     _name = 'muk_ai.session.event'
-    _description = "AI Session Event"
+    _description = 'AI Session Event'
     _order = 'session_id, sequence, id'
 
     # ----------------------------------------------------------
@@ -13,32 +16,32 @@ class AISessionEvent(models.Model):
 
     session_id = fields.Many2one(
         comodel_name='muk_ai.session',
-        string="Session",
+        string='Session',
         required=True,
         index=True,
         ondelete='cascade',
     )
 
     sequence = fields.Integer(
-        string="Sequence",
+        string='Sequence',
         required=True,
         default=0,
         index=True,
     )
 
     kind = fields.Char(
-        string="Kind",
+        string='Kind',
         required=True,
         index=True,
     )
 
     payload = fields.Json(
-        string="Payload",
+        string='Payload',
         required=True,
     )
 
     at = fields.Datetime(
-        string="At",
+        string='At',
         required=True,
         default=fields.Datetime.now,
     )
@@ -49,5 +52,5 @@ class AISessionEvent(models.Model):
 
     _unique_session_sequence = models.Constraint(
         'unique(session_id, sequence)',
-        "Session event sequence must be unique per session.",
+        'Session event sequence must be unique per session.',
     )

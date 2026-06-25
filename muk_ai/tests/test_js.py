@@ -1,10 +1,10 @@
 import odoo.tests
-
 from odoo.tests.common import new_test_user, tagged
 
 
 @tagged('post_install', '-at_install')
 class TestHoot(odoo.tests.HttpCase):
+    """Run the front-end Hoot JavaScript unit tests."""
 
     # ----------------------------------------------------------
     # Setup

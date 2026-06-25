@@ -8,7 +8,6 @@ from odoo.exceptions import UserError
 from odoo.addons.muk_ai.models import ir_attachment as ir_att
 from odoo.addons.muk_ai.providers.anthropic import AnthropicProvider
 from odoo.addons.muk_ai.providers.openai import OpenAIProvider
-
 from odoo.addons.muk_ai.tests.common import AITestCommon
 
 
@@ -29,6 +28,7 @@ PDF_BYTES = (
 
 
 class TestMultimodalAttachments(AITestCommon):
+    """Verify multimodal attachment handling across providers."""
 
     # ----------------------------------------------------------
     # Setup
@@ -44,13 +44,15 @@ class TestMultimodalAttachments(AITestCommon):
     # ----------------------------------------------------------
 
     def _make_attachment(self, filename, mimetype, raw):
-        return self.env['ir.attachment'].create({
-            'name': filename,
-            'datas': base64.b64encode(raw),
-            'mimetype': mimetype,
-            'res_model': 'muk_ai.session',
-            'res_id': self.session.id,
-        })
+        return self.env['ir.attachment'].create(
+            {
+                'name': filename,
+                'datas': base64.b64encode(raw),
+                'mimetype': mimetype,
+                'res_model': 'muk_ai.session',
+                'res_id': self.session.id,
+            }
+        )
 
     # ----------------------------------------------------------
     # Tests: mimetype / size validation
@@ -62,7 +64,8 @@ class TestMultimodalAttachments(AITestCommon):
 
     def test_reject_oversize(self):
         self.env['ir.config_parameter'].sudo().set_param(
-            'web.max_file_upload_size', str(1024 * 1024),
+            'web.max_file_upload_size',
+            str(1024 * 1024),
         )
         with self.assertRaises(UserError):
             self.env['ir.attachment']._ai_check_size(2 * 1024 * 1024)
@@ -86,7 +89,8 @@ class TestMultimodalAttachments(AITestCommon):
         self.assertEqual(block['strategy'], 'image')
         self.assertEqual(block['mimetype'], 'image/png')
         self.assertEqual(
-            base64.b64decode(block['data_b64']), PNG_BYTES,
+            base64.b64decode(block['data_b64']),
+            PNG_BYTES,
         )
         self.assertNotIn('inline_text', block)
 
@@ -95,7 +99,8 @@ class TestMultimodalAttachments(AITestCommon):
         block = attachment._ai_materialize()
         self.assertEqual(block['strategy'], 'file')
         self.assertEqual(
-            base64.b64decode(block['data_b64']), PDF_BYTES,
+            base64.b64decode(block['data_b64']),
+            PDF_BYTES,
         )
 
     def test_materialize_text_inline(self):
@@ -121,17 +126,22 @@ class TestMultimodalAttachments(AITestCommon):
     # ----------------------------------------------------------
 
     def test_upload_attachments(self):
-        descriptors = self.session.upload_attachments([{
-            'filename': 'pic.png',
-            'mimetype': 'image/png',
-            'data_b64': base64.b64encode(PNG_BYTES).decode('ascii'),
-        }])
+        descriptors = self.session.upload_attachments(
+            [
+                {
+                    'filename': 'pic.png',
+                    'mimetype': 'image/png',
+                    'data_b64': base64.b64encode(PNG_BYTES).decode('ascii'),
+                }
+            ]
+        )
         self.assertEqual(len(descriptors), 1)
         self.assertEqual(descriptors[0]['filename'], 'pic.png')
         self.assertEqual(descriptors[0]['mimetype'], 'image/png')
         self.assertTrue(descriptors[0]['id'])
         self.assertIn(
-            descriptors[0]['id'], self.session.attachment_ids.ids,
+            descriptors[0]['id'],
+            self.session.attachment_ids.ids,
         )
         attachment = self.env['ir.attachment'].browse(descriptors[0]['id'])
         self.assertEqual(attachment.res_model, 'muk_ai.session')
@@ -139,26 +149,38 @@ class TestMultimodalAttachments(AITestCommon):
 
     def test_action_upload_rejects_bad_mimetype(self):
         with self.assertRaises(UserError):
-            self.session.upload_attachments([{
-                'filename': 'nope.exe',
-                'mimetype': 'application/x-msdownload',
-                'data_b64': base64.b64encode(b'MZ').decode('ascii'),
-            }])
+            self.session.upload_attachments(
+                [
+                    {
+                        'filename': 'nope.exe',
+                        'mimetype': 'application/x-msdownload',
+                        'data_b64': base64.b64encode(b'MZ').decode('ascii'),
+                    }
+                ]
+            )
 
     def test_action_upload_rejects_bad_base64(self):
         with self.assertRaises(UserError):
-            self.session.upload_attachments([{
-                'filename': 'x.png',
-                'mimetype': 'image/png',
-                'data_b64': 'not-base64!!!',
-            }])
+            self.session.upload_attachments(
+                [
+                    {
+                        'filename': 'x.png',
+                        'mimetype': 'image/png',
+                        'data_b64': 'not-base64!!!',
+                    }
+                ]
+            )
 
     def test_discard_attachments(self):
-        descriptors = self.session.upload_attachments([{
-            'filename': 'pic.png',
-            'mimetype': 'image/png',
-            'data_b64': base64.b64encode(PNG_BYTES).decode('ascii'),
-        }])
+        descriptors = self.session.upload_attachments(
+            [
+                {
+                    'filename': 'pic.png',
+                    'mimetype': 'image/png',
+                    'data_b64': base64.b64encode(PNG_BYTES).decode('ascii'),
+                }
+            ]
+        )
         attachment_id = descriptors[0]['id']
         self.session.discard_attachments([attachment_id])
         self.assertNotIn(attachment_id, self.session.attachment_ids.ids)
@@ -168,11 +190,15 @@ class TestMultimodalAttachments(AITestCommon):
 
     def test_unlink_session_cleans_attachments(self):
         session = self.env['muk_ai.session'].create({'name': 'Disposable'})
-        descriptors = session.upload_attachments([{
-            'filename': 'pic.png',
-            'mimetype': 'image/png',
-            'data_b64': base64.b64encode(PNG_BYTES).decode('ascii'),
-        }])
+        descriptors = session.upload_attachments(
+            [
+                {
+                    'filename': 'pic.png',
+                    'mimetype': 'image/png',
+                    'data_b64': base64.b64encode(PNG_BYTES).decode('ascii'),
+                }
+            ]
+        )
         attachment_id = descriptors[0]['id']
         session.unlink()
         self.assertFalse(
@@ -189,8 +215,7 @@ class TestMultimodalAttachments(AITestCommon):
         with self._mock_responses([self._make_text_response('done')]):
             session.start('Describe this', attachment_ids=[attachment.id])
         user_entries = [
-            item for item in session.conversation or []
-            if item.get('role') == 'user'
+            item for item in session.conversation or [] if item.get('role') == 'user'
         ]
         self.assertTrue(user_entries)
         blocks = user_entries[0]['content']
@@ -202,13 +227,15 @@ class TestMultimodalAttachments(AITestCommon):
         self.assertEqual(attachment_blocks[0]['attachment_id'], attachment.id)
         self.assertIn(attachment, session.attachment_ids)
         event_users = [
-            e for e in session.fetch_events(limit=500)['events']
+            e
+            for e in session.fetch_events(limit=500)['events']
             if e.get('kind') == 'user_message'
         ]
         self.assertEqual(len(event_users), 1)
         self.assertEqual(len(event_users[0]['attachments']), 1)
         self.assertEqual(
-            event_users[0]['attachments'][0]['id'], attachment.id,
+            event_users[0]['attachments'][0]['id'],
+            attachment.id,
         )
 
     def test_send_message_attachment_only(self):
@@ -217,8 +244,7 @@ class TestMultimodalAttachments(AITestCommon):
         with self._mock_responses([self._make_text_response('done')]):
             session.start(None, attachment_ids=[attachment.id])
         user_entries = [
-            item for item in session.conversation or []
-            if item.get('role') == 'user'
+            item for item in session.conversation or [] if item.get('role') == 'user'
         ]
         self.assertEqual(len(user_entries), 1)
         blocks = user_entries[0]['content']
@@ -232,13 +258,15 @@ class TestMultimodalAttachments(AITestCommon):
 
     def test_resolve_rejects_foreign_attachment(self):
         session = self.env['muk_ai.session'].create({'name': 'Foreign'})
-        foreign = self.env['ir.attachment'].create({
-            'name': 'invoice.png',
-            'datas': base64.b64encode(PNG_BYTES),
-            'mimetype': 'image/png',
-            'res_model': 'res.partner',
-            'res_id': self.env.user.partner_id.id,
-        })
+        foreign = self.env['ir.attachment'].create(
+            {
+                'name': 'invoice.png',
+                'datas': base64.b64encode(PNG_BYTES),
+                'mimetype': 'image/png',
+                'res_model': 'res.partner',
+                'res_id': self.env.user.partner_id.id,
+            }
+        )
         with self.assertRaises(UserError):
             session._resolve_attachments([foreign.id])
         self.assertEqual(foreign.res_model, 'res.partner')
@@ -249,37 +277,44 @@ class TestMultimodalAttachments(AITestCommon):
 
     def test_provider_materializes_attachment_blocks(self):
         attachment = self._make_attachment('pic.png', 'image/png', PNG_BYTES)
-        inputs = [{
-            'role': 'user',
-            'content': [
-                {'type': 'input_text', 'text': 'look'},
-                {
-                    'type': 'muk_ai_attachment',
-                    'attachment_id': attachment.id,
-                    'filename': 'pic.png',
-                    'mimetype': 'image/png',
-                },
-            ],
-        }]
+        inputs = [
+            {
+                'role': 'user',
+                'content': [
+                    {'type': 'input_text', 'text': 'look'},
+                    {
+                        'type': 'muk_ai_attachment',
+                        'attachment_id': attachment.id,
+                        'filename': 'pic.png',
+                        'mimetype': 'image/png',
+                    },
+                ],
+            }
+        ]
         materialized = self.provider._materialize_inputs(inputs)
         blocks = materialized[0]['content']
         self.assertEqual(blocks[0]['type'], 'input_text')
         self.assertEqual(blocks[1]['type'], 'muk_ai_attachment')
         self.assertEqual(blocks[1]['strategy'], 'image')
         self.assertEqual(
-            base64.b64decode(blocks[1]['data_b64']), PNG_BYTES,
+            base64.b64decode(blocks[1]['data_b64']),
+            PNG_BYTES,
         )
 
     def test_provider_handles_missing_attachment(self):
-        inputs = [{
-            'role': 'user',
-            'content': [{
-                'type': 'muk_ai_attachment',
-                'attachment_id': 999999999,
-                'filename': 'gone.png',
-                'mimetype': 'image/png',
-            }],
-        }]
+        inputs = [
+            {
+                'role': 'user',
+                'content': [
+                    {
+                        'type': 'muk_ai_attachment',
+                        'attachment_id': 999999999,
+                        'filename': 'gone.png',
+                        'mimetype': 'image/png',
+                    }
+                ],
+            }
+        ]
         materialized = self.provider._materialize_inputs(inputs)
         block = materialized[0]['content'][0]
         self.assertEqual(block['type'], 'input_text')
@@ -291,31 +326,39 @@ class TestMultimodalAttachments(AITestCommon):
     # ----------------------------------------------------------
 
     def test_openai_rewrite_image(self):
-        inputs = [{
-            'role': 'user',
-            'content': [{
-                'type': 'muk_ai_attachment',
-                'strategy': 'image',
-                'mimetype': 'image/png',
-                'data_b64': 'AAAA',
-            }],
-        }]
+        inputs = [
+            {
+                'role': 'user',
+                'content': [
+                    {
+                        'type': 'muk_ai_attachment',
+                        'strategy': 'image',
+                        'mimetype': 'image/png',
+                        'data_b64': 'AAAA',
+                    }
+                ],
+            }
+        ]
         rewritten = OpenAIProvider._rewrite_attachments(inputs)
         block = rewritten[0]['content'][0]
         self.assertEqual(block['type'], 'input_image')
         self.assertEqual(block['image_url'], 'data:image/png;base64,AAAA')
 
     def test_openai_rewrite_pdf(self):
-        inputs = [{
-            'role': 'user',
-            'content': [{
-                'type': 'muk_ai_attachment',
-                'strategy': 'file',
-                'mimetype': 'application/pdf',
-                'filename': 'doc.pdf',
-                'data_b64': 'AAAA',
-            }],
-        }]
+        inputs = [
+            {
+                'role': 'user',
+                'content': [
+                    {
+                        'type': 'muk_ai_attachment',
+                        'strategy': 'file',
+                        'mimetype': 'application/pdf',
+                        'filename': 'doc.pdf',
+                        'data_b64': 'AAAA',
+                    }
+                ],
+            }
+        ]
         rewritten = OpenAIProvider._rewrite_attachments(inputs)
         block = rewritten[0]['content'][0]
         self.assertEqual(block['type'], 'input_file')
@@ -323,17 +366,21 @@ class TestMultimodalAttachments(AITestCommon):
         self.assertEqual(block['file_data'], 'data:application/pdf;base64,AAAA')
 
     def test_openai_rewrite_inline_text(self):
-        inputs = [{
-            'role': 'user',
-            'content': [{
-                'type': 'muk_ai_attachment',
-                'strategy': 'inline_text',
-                'mimetype': 'text/plain',
-                'filename': 'note.txt',
-                'inline_text': 'hello',
-                'truncated': False,
-            }],
-        }]
+        inputs = [
+            {
+                'role': 'user',
+                'content': [
+                    {
+                        'type': 'muk_ai_attachment',
+                        'strategy': 'inline_text',
+                        'mimetype': 'text/plain',
+                        'filename': 'note.txt',
+                        'inline_text': 'hello',
+                        'truncated': False,
+                    }
+                ],
+            }
+        ]
         rewritten = OpenAIProvider._rewrite_attachments(inputs)
         block = rewritten[0]['content'][0]
         self.assertEqual(block['type'], 'input_text')
@@ -345,15 +392,19 @@ class TestMultimodalAttachments(AITestCommon):
     # ----------------------------------------------------------
 
     def test_anthropic_rewrite_image(self):
-        inputs = [{
-            'role': 'user',
-            'content': [{
-                'type': 'muk_ai_attachment',
-                'strategy': 'image',
-                'mimetype': 'image/jpeg',
-                'data_b64': 'AAAA',
-            }],
-        }]
+        inputs = [
+            {
+                'role': 'user',
+                'content': [
+                    {
+                        'type': 'muk_ai_attachment',
+                        'strategy': 'image',
+                        'mimetype': 'image/jpeg',
+                        'data_b64': 'AAAA',
+                    }
+                ],
+            }
+        ]
         _, messages = AnthropicProvider._inputs_to_messages(inputs)
         block = messages[0]['content'][0]
         self.assertEqual(block['type'], 'image')
@@ -362,32 +413,40 @@ class TestMultimodalAttachments(AITestCommon):
         self.assertEqual(block['source']['data'], 'AAAA')
 
     def test_anthropic_rewrite_pdf(self):
-        inputs = [{
-            'role': 'user',
-            'content': [{
-                'type': 'muk_ai_attachment',
-                'strategy': 'file',
-                'mimetype': 'application/pdf',
-                'data_b64': 'AAAA',
-            }],
-        }]
+        inputs = [
+            {
+                'role': 'user',
+                'content': [
+                    {
+                        'type': 'muk_ai_attachment',
+                        'strategy': 'file',
+                        'mimetype': 'application/pdf',
+                        'data_b64': 'AAAA',
+                    }
+                ],
+            }
+        ]
         _, messages = AnthropicProvider._inputs_to_messages(inputs)
         block = messages[0]['content'][0]
         self.assertEqual(block['type'], 'document')
         self.assertEqual(block['source']['media_type'], 'application/pdf')
 
     def test_anthropic_rewrite_inline_text(self):
-        inputs = [{
-            'role': 'user',
-            'content': [{
-                'type': 'muk_ai_attachment',
-                'strategy': 'inline_text',
-                'mimetype': 'text/markdown',
-                'filename': 'note.md',
-                'inline_text': '# header\nhi',
-                'truncated': True,
-            }],
-        }]
+        inputs = [
+            {
+                'role': 'user',
+                'content': [
+                    {
+                        'type': 'muk_ai_attachment',
+                        'strategy': 'inline_text',
+                        'mimetype': 'text/markdown',
+                        'filename': 'note.md',
+                        'inline_text': '# header\nhi',
+                        'truncated': True,
+                    }
+                ],
+            }
+        ]
         _, messages = AnthropicProvider._inputs_to_messages(inputs)
         block = messages[0]['content'][0]
         self.assertEqual(block['type'], 'text')

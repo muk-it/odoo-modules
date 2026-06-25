@@ -12,7 +12,8 @@ function collectAttachments(sessionState) {
     const pending = sessionState.pendingAttachments || [];
     for (const att of pending) {
         if (!att) continue;
-        const key = att.id != null ? `id:${att.id}` : `n:${att.filename || ''}:${out.length}`;
+        const key =
+            att.id != null ? `id:${att.id}` : `n:${att.filename || ''}:${out.length}`;
         if (seen.has(key)) continue;
         seen.add(key);
         out.push(att);
@@ -20,14 +21,16 @@ function collectAttachments(sessionState) {
     const events = sessionState.events || [];
     for (const event of events) {
         if (!event) continue;
-        const role = event.kind === 'user_message' || event.kind === 'answer'
-            ? 'user'
-            : null;
+        const role =
+            event.kind === 'user_message' || event.kind === 'answer' ? 'user' : null;
         if (role !== 'user') continue;
         const atts = event.attachments || [];
         for (const att of atts) {
             if (!att) continue;
-            const key = att.id != null ? `id:${att.id}` : `n:${att.filename || ''}:${out.length}`;
+            const key =
+                att.id != null
+                    ? `id:${att.id}`
+                    : `n:${att.filename || ''}:${out.length}`;
             if (seen.has(key)) continue;
             seen.add(key);
             out.push(att);
@@ -36,13 +39,17 @@ function collectAttachments(sessionState) {
     return out;
 }
 
-registry.category('muk_ai.artifact_types').add('attachments', {
-    id: 'attachments',
-    label: _t('Attachments'),
-    icon: 'fa-paperclip',
-    sequence: 10,
-    component: AttachmentsTab,
-    collect: collectAttachments,
-}, { force: true });
+registry.category('muk_ai.artifact_types').add(
+    'attachments',
+    {
+        id: 'attachments',
+        label: _t('Attachments'),
+        icon: 'fa-paperclip',
+        sequence: 10,
+        component: AttachmentsTab,
+        collect: collectAttachments,
+    },
+    { force: true },
+);
 
 export { collectAttachments };

@@ -2,6 +2,7 @@ from odoo.addons.muk_ai.tests.common import AITestCommon
 
 
 class TestAiPromptHistory(AITestCommon):
+    """Verify prompt revision history tracking on prompt-bearing records."""
 
     # ----------------------------------------------------------
     # Setup
@@ -10,10 +11,12 @@ class TestAiPromptHistory(AITestCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.agent = cls.env['muk_ai.agent'].create({
-            'name': 'HistoricAgent',
-            'system_prompt': 'line one\nline two',
-        })
+        cls.agent = cls.env['muk_ai.agent'].create(
+            {
+                'name': 'HistoricAgent',
+                'system_prompt': 'line one\nline two',
+            }
+        )
 
     # ----------------------------------------------------------
     # Tests
@@ -63,10 +66,12 @@ class TestAiPromptHistory(AITestCommon):
         self.assertEqual(result['tag'], 'display_notification')
 
     def test_history_grows_unbounded(self):
-        agent = self.env['muk_ai.agent'].create({
-            'name': 'Unbounded',
-            'system_prompt': 'v0',
-        })
+        agent = self.env['muk_ai.agent'].create(
+            {
+                'name': 'Unbounded',
+                'system_prompt': 'v0',
+            }
+        )
         for i in range(1, 6):
             agent.write({'system_prompt': 'v%d' % i})
         self.assertEqual(agent.prompt_history_count, 5)

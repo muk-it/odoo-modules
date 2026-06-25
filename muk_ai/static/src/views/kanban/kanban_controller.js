@@ -5,6 +5,7 @@ import { KanbanController } from '@web/views/kanban/kanban_controller';
 
 import { makeListContextDispatch } from '@muk_ai/views/context';
 
+/** Capture the active kanban view as AI view context for open chat windows. */
 patch(KanbanController.prototype, {
     setup() {
         super.setup(...arguments);

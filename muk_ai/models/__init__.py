@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from . import ir_actions_server
 from . import ir_attachment
 from . import ir_model

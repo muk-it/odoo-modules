@@ -7,11 +7,9 @@ import '@muk_ai/core/commands/command_providers';
 describe.current.tags('muk_ai');
 patchTranslations();
 
-
 function getProvider() {
     return registry.category('command_provider').get('muk_ai_sessions');
 }
-
 
 function makeEnv({ sessions = [], createdIds = [100] } = {}) {
     const seen = [];
@@ -39,13 +37,11 @@ function makeEnv({ sessions = [], createdIds = [100] } = {}) {
     return { env, seen };
 }
 
-
 test('provider is registered in the command_provider registry with namespace #', () => {
     const provider = getProvider();
     expect(provider).not.toBe(undefined);
     expect(provider.namespace).toBe('#');
 });
-
 
 test('provider returns a "New Chat" entry first, then sessions', async () => {
     const { env } = makeEnv({
@@ -62,15 +58,15 @@ test('provider returns a "New Chat" entry first, then sessions', async () => {
     expect(commands[2].name).toBe('Bravo');
 });
 
-
 test('provider filters sessions when a search value is given', async () => {
     const { env, seen } = makeEnv({ sessions: [] });
     const provider = getProvider();
     await provider.provide(env, { searchValue: 'rep' });
     const domain = seen.find((s) => s.op === 'search_read').domain;
-    expect(domain.some((d) => d[0] === 'name' && d[1] === 'ilike' && d[2] === 'rep')).toBe(true);
+    expect(
+        domain.some((d) => d[0] === 'name' && d[1] === 'ilike' && d[2] === 'rep'),
+    ).toBe(true);
 });
-
 
 test('running a session command opens the chat via action service', async () => {
     const { env } = makeEnv({ sessions: [{ id: 7, name: 'Demo' }] });
@@ -83,7 +79,6 @@ test('running a session command opens the chat via action service', async () => 
     expect(env.services.action.actions[0].params.session_id).toBe(7);
 });
 
-
 test('running "New Chat" creates session then opens it', async () => {
     const { env, seen } = makeEnv({ sessions: [], createdIds: [33] });
     const provider = getProvider();
@@ -94,7 +89,6 @@ test('running "New Chat" creates session then opens it', async () => {
     expect(env.services.action.actions[0].params.session_id).toBe(33);
 });
 
-
 test('New Chat without a search value uses a timestamped default name', async () => {
     const { env, seen } = makeEnv({ createdIds: [34] });
     const provider = getProvider();
@@ -103,7 +97,6 @@ test('New Chat without a search value uses a timestamped default name', async ()
     const created = seen.find((s) => s.op === 'create');
     expect(String(created.values[0].name)).toMatch(/Chat /);
 });
-
 
 test('session with empty name falls back to a "Chat N" label', async () => {
     const { env } = makeEnv({ sessions: [{ id: 9, name: '' }] });

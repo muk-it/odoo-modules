@@ -8,8 +8,6 @@ registry.category('command_setup').add('#', {
     emptyMessage: _t('No AI chat or agent found.'),
 });
 
-registry.category('command_categories').add(
-    'muk_ai',
-    { namespace: '#', name: _t('MuK AI') },
-    { sequence: 60 },
-);
+registry
+    .category('command_categories')
+    .add('muk_ai', { namespace: '#', name: _t('MuK AI') }, { sequence: 60 });

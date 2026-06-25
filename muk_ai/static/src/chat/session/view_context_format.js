@@ -1,5 +1,10 @@
 import { _t } from '@web/core/l10n/translation';
 
+/**
+ * Build a short label for a pinned view context.
+ * @param {object} ctx view context payload
+ * @returns {string} display label
+ */
 export function viewContextLabel(ctx) {
     if (!ctx) {
         return '';
@@ -17,6 +22,11 @@ export function viewContextLabel(ctx) {
     return ctx.model || '';
 }
 
+/**
+ * Build the multi-line tooltip for a pinned view context.
+ * @param {object} ctx view context payload
+ * @returns {string} tooltip text
+ */
 export function viewContextTooltip(ctx) {
     if (!ctx) {
         return '';

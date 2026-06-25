@@ -3,6 +3,7 @@ from odoo.tests.common import TransactionCase, new_test_user
 
 
 class TestAiSecurity(TransactionCase):
+    """Verify access rights and record-level security on AI models."""
 
     # ----------------------------------------------------------
     # Setup
@@ -12,13 +13,19 @@ class TestAiSecurity(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user_a = new_test_user(
-            cls.env, login='ai_user_a', groups='base.group_user',
+            cls.env,
+            login='ai_user_a',
+            groups='base.group_user',
         )
         cls.user_b = new_test_user(
-            cls.env, login='ai_user_b', groups='base.group_user',
+            cls.env,
+            login='ai_user_b',
+            groups='base.group_user',
         )
         cls.manager = new_test_user(
-            cls.env, login='ai_manager', groups='base.group_system',
+            cls.env,
+            login='ai_manager',
+            groups='base.group_system',
         )
 
     # ----------------------------------------------------------
@@ -26,26 +33,26 @@ class TestAiSecurity(TransactionCase):
     # ----------------------------------------------------------
 
     def test_user_sees_own_sessions_only(self):
-        session_a = self.env['muk_ai.session'].with_user(self.user_a).create(
-            {'name': 'A session'}
+        session_a = (
+            self.env['muk_ai.session']
+            .with_user(self.user_a)
+            .create({'name': 'A session'})
         )
-        self.env['muk_ai.session'].with_user(self.user_b).create(
-            {'name': 'B session'}
-        )
-        visible_to_a = self.env['muk_ai.session'].with_user(self.user_a).search(
-            [('name', 'in', ('A session', 'B session'))]
+        self.env['muk_ai.session'].with_user(self.user_b).create({'name': 'B session'})
+        visible_to_a = (
+            self.env['muk_ai.session']
+            .with_user(self.user_a)
+            .search([('name', 'in', ('A session', 'B session'))])
         )
         self.assertEqual(visible_to_a, session_a)
 
     def test_manager_sees_all_sessions(self):
-        self.env['muk_ai.session'].with_user(self.user_a).create(
-            {'name': 'A session'}
-        )
-        self.env['muk_ai.session'].with_user(self.user_b).create(
-            {'name': 'B session'}
-        )
-        visible = self.env['muk_ai.session'].with_user(self.manager).search(
-            [('name', 'in', ('A session', 'B session'))]
+        self.env['muk_ai.session'].with_user(self.user_a).create({'name': 'A session'})
+        self.env['muk_ai.session'].with_user(self.user_b).create({'name': 'B session'})
+        visible = (
+            self.env['muk_ai.session']
+            .with_user(self.manager)
+            .search([('name', 'in', ('A session', 'B session'))])
         )
         self.assertEqual(len(visible), 2)
 
@@ -71,8 +78,8 @@ class TestAiSecurity(TransactionCase):
     # ----------------------------------------------------------
 
     def _owned_session(self):
-        return self.env['muk_ai.session'].with_user(self.user_a).create(
-            {'name': 'Owned'}
+        return (
+            self.env['muk_ai.session'].with_user(self.user_a).create({'name': 'Owned'})
         )
 
     def test_fetch_events_allowed_for_owner(self):

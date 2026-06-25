@@ -8,7 +8,6 @@ import { useChatScrollAnchor } from '@muk_ai/chat/session/use_scroll_anchor';
 describe.current.tags('muk_ai');
 defineMailModels();
 
-
 function makeHarness() {
     let api;
     class Harness extends Component {
@@ -27,7 +26,6 @@ function makeHarness() {
     return { Harness, getApi: () => api };
 }
 
-
 test('scroll anchor initializes atBottom true and scrolls on mount', async () => {
     const harness = makeHarness();
     await mountWithCleanup(harness.Harness, { props: {} });
@@ -35,7 +33,6 @@ test('scroll anchor initializes atBottom true and scrolls on mount', async () =>
     expect(api.state.atBottom).toBe(true);
     expect(api.scrollRef.el).not.toBe(null);
 });
-
 
 test('scrollToBottom(force) sets atBottom=true', async () => {
     const harness = makeHarness();
@@ -45,7 +42,6 @@ test('scrollToBottom(force) sets atBottom=true', async () => {
     api.scrollToBottom(true);
     expect(api.state.atBottom).toBe(true);
 });
-
 
 test('scrollToBottom without force and user scrolled up flips atBottom to false', async () => {
     const harness = makeHarness();
@@ -59,7 +55,6 @@ test('scrollToBottom without force and user scrolled up flips atBottom to false'
     expect(api.state.atBottom).toBe(false);
 });
 
-
 test('scroll event at the bottom marks atBottom true', async () => {
     const harness = makeHarness();
     await mountWithCleanup(harness.Harness, { props: {} });
@@ -71,7 +66,6 @@ test('scroll event at the bottom marks atBottom true', async () => {
     el.dispatchEvent(new Event('scroll'));
     expect(api.state.atBottom).toBe(true);
 });
-
 
 test('scroll event far from the bottom marks atBottom false', async () => {
     const harness = makeHarness();

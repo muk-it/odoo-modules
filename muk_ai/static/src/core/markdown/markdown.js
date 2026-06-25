@@ -1,6 +1,12 @@
 const SAFE_SCHEME = /^(https?:|mailto:|#|\/)/i;
 const SAFE_IMG_SCHEME = /^(https?:|data:image\/(png|jpeg|jpg|gif|webp);base64,|\/)/i;
-const HTML_ESCAPE = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+const HTML_ESCAPE = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+};
 
 function escapeHtml(text) {
     return String(text).replace(/[&<>"']/g, (c) => HTML_ESCAPE[c]);
@@ -14,7 +20,7 @@ function highlightFence(code, lang) {
     }
     try {
         return Prism.highlight(code, Prism.languages[safeLang], safeLang);
-    } catch (_err) {
+    } catch {
         return escapeHtml(code);
     }
 }
@@ -155,6 +161,11 @@ function buildRenderer() {
 
 let renderer = null;
 
+/**
+ * Render Markdown source to sanitized HTML, lazily building the renderer.
+ * @param {string} source Markdown text
+ * @returns {string} rendered HTML, or '' for empty input
+ */
 export function renderMarkdown(source) {
     if (!source) {
         return '';
@@ -179,14 +190,17 @@ if (typeof window !== 'undefined' && !window.__mkCopyBound) {
             btn.textContent = 'Copy';
             btn.classList.remove('mk_code_copy_done', 'mk_code_copy_fail');
         };
-        navigator.clipboard.writeText(code.textContent).then(() => {
-            btn.textContent = 'Copied';
-            btn.classList.add('mk_code_copy_done');
-            setTimeout(reset, 1500);
-        }).catch(() => {
-            btn.textContent = 'Failed';
-            btn.classList.add('mk_code_copy_fail');
-            setTimeout(reset, 1500);
-        });
+        navigator.clipboard
+            .writeText(code.textContent)
+            .then(() => {
+                btn.textContent = 'Copied';
+                btn.classList.add('mk_code_copy_done');
+                setTimeout(reset, 1500);
+            })
+            .catch(() => {
+                btn.textContent = 'Failed';
+                btn.classList.add('mk_code_copy_fail');
+                setTimeout(reset, 1500);
+            });
     });
 }

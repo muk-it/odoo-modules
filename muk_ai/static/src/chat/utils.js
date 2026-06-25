@@ -8,6 +8,11 @@ const MINUTE_MS = 60 * SECOND_MS;
 const HOUR_MS = 60 * MINUTE_MS;
 const DAY_MS = 24 * HOUR_MS;
 
+/**
+ * Extract a human-readable message from an RPC or JS error.
+ * @param {*} error error object or value
+ * @returns {string} the best available message
+ */
 export function formatError(error) {
     return error?.data?.message || error?.message || String(error);
 }
@@ -29,17 +34,27 @@ function parseDateTime(at) {
         if (sql.isValid) {
             return sql.toLocal();
         }
-    } catch (_e) {
+    } catch {
         return null;
     }
     return null;
 }
 
+/**
+ * Format a timestamp as a localized absolute date-time string.
+ * @param {*} at ISO/SQL string or Luxon DateTime
+ * @returns {string} formatted date-time, or '' when unparseable
+ */
 export function formatTimestamp(at) {
     const dt = parseDateTime(at);
     return dt ? formatDateTime(dt) : '';
 }
 
+/**
+ * Format the time until a future timestamp as a compact relative string.
+ * @param {*} at ISO/SQL string or Luxon DateTime
+ * @returns {string} relative time (e.g. '5m 3s'), or '' when past/invalid
+ */
 export function formatRelativeTime(at) {
     const dt = parseDateTime(at);
     if (!dt) {
@@ -68,6 +83,11 @@ export function formatRelativeTime(at) {
     return _t('%sd %sh', d, h);
 }
 
+/**
+ * Format a duration in seconds as the largest whole unit (d/h/m/s).
+ * @param {*} seconds duration in seconds
+ * @returns {string} formatted duration, or '' for non-positive/invalid input
+ */
 export function formatDurationSeconds(seconds) {
     const value = Number(seconds);
     if (!Number.isFinite(value) || value <= 0) {
@@ -97,23 +117,40 @@ const STATUS_BADGE_CLASSES = {
     stopped: 'mk_state_stopped',
 };
 
+/**
+ * Map a session status code to its translated label.
+ * @param {string} status session status code
+ * @returns {string} translated label, or the raw status when unknown
+ */
 export function statusLabel(status) {
-    return {
-        new: _t('New'),
-        running: _t('Running'),
-        compacting: _t('Compacting'),
-        waiting: _t('Waiting'),
-        waiting_schedule: _t('Scheduled'),
-        done: _t('Done'),
-        error: _t('Error'),
-        stopped: _t('Stopped'),
-    }[status] || status;
+    return (
+        {
+            new: _t('New'),
+            running: _t('Running'),
+            compacting: _t('Compacting'),
+            waiting: _t('Waiting'),
+            waiting_schedule: _t('Scheduled'),
+            done: _t('Done'),
+            error: _t('Error'),
+            stopped: _t('Stopped'),
+        }[status] || status
+    );
 }
 
+/**
+ * Map a session status code to its badge CSS class.
+ * @param {string} status session status code
+ * @returns {string} badge CSS class
+ */
 export function statusBadgeClass(status) {
     return STATUS_BADGE_CLASSES[status] || 'mk_state_new';
 }
 
+/**
+ * Format a USD cost with precision scaled to its magnitude.
+ * @param {*} cost cost value
+ * @returns {string} formatted cost
+ */
 export function formatCost(cost) {
     const value = Number(cost) || 0;
     if (!value) {
@@ -128,6 +165,11 @@ export function formatCost(cost) {
     return value.toFixed(2);
 }
 
+/**
+ * Build the tooltip text showing the running session cost.
+ * @param {*} cost cost value
+ * @returns {string} translated tooltip text
+ */
 export function costTooltip(cost) {
     const value = Number(cost) || 0;
     return _t('Session cost so far: $%s (USD)', value.toFixed(6));
@@ -137,6 +179,11 @@ function hasOverride(state) {
     return state.approvalMode !== false && state.approvalMode !== undefined;
 }
 
+/**
+ * Build the approval-mode pill descriptor (label, icon, class, tooltip).
+ * @param {object} state session UI state
+ * @returns {object} pill descriptor for rendering
+ */
 export function approvalPill(state) {
     const mode = state.effectiveApprovalMode || 'ask';
     const isOff = mode === 'off';
@@ -146,15 +193,21 @@ export function approvalPill(state) {
         icon: isOff ? 'fa-bolt' : 'fa-shield',
         className: `${isOff ? 'mk_approval_bypass' : 'mk_approval_ask'}${override ? ' mk_approval_override' : ''}`,
         tooltip: isOff
-            ? (override
+            ? override
                 ? _t('Bypass (override). Click to cycle.')
-                : _t('Bypass (from agent). Click to cycle.'))
-            : (override
-                ? _t('Ask before risky writes (override). Click to cycle.')
-                : _t('Ask before risky writes (from agent). Click to cycle.')),
+                : _t('Bypass (from agent). Click to cycle.')
+            : override
+              ? _t('Ask before risky writes (override). Click to cycle.')
+              : _t('Ask before risky writes (from agent). Click to cycle.'),
     };
 }
 
+/**
+ * Pick the composer placeholder text for the current session status.
+ * @param {object} state session UI state
+ * @param {string} defaultText fallback placeholder when idle
+ * @returns {string} placeholder text
+ */
 export function inputPlaceholder(state, defaultText) {
     if (state.status === 'waiting') {
         const kind = (state.pendingAsk || {}).kind;

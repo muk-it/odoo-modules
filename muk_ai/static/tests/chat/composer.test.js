@@ -9,7 +9,6 @@ import { ChatComposer } from '@muk_ai/chat/composer/chat_composer';
 describe.current.tags('muk_ai');
 defineMailModels();
 
-
 function makeParent({
     attachments = [],
     canAttach = true,
@@ -55,14 +54,12 @@ function makeParent({
     };
 }
 
-
 test('renders no cards when attachments is empty', async () => {
     const { Parent, props } = makeParent();
     await mountWithCleanup(Parent, { props });
     expect('.mk_att_card').toHaveCount(0);
     expect('.mk_attach').toHaveCount(1);
 });
-
 
 test('renders image thumb for image attachment', async () => {
     const { Parent, props } = makeParent({
@@ -76,7 +73,6 @@ test('renders image thumb for image attachment', async () => {
     expect('.mk_att_card .o_image').toHaveCount(0);
     expect(queryFirst('.mk_att_card_thumb').getAttribute('alt')).toBe('pic.png');
 });
-
 
 test('renders o_image tile with mimetype for pdf attachment', async () => {
     const { Parent, props } = makeParent({
@@ -92,7 +88,6 @@ test('renders o_image tile with mimetype for pdf attachment', async () => {
     expect('.mk_att_card_thumb').toHaveCount(0);
 });
 
-
 test('renders o_image tile with mimetype for plain text attachment', async () => {
     const { Parent, props } = makeParent({
         attachments: [
@@ -100,15 +95,21 @@ test('renders o_image tile with mimetype for plain text attachment', async () =>
         ],
     });
     await mountWithCleanup(Parent, { props });
-    expect(queryFirst('.mk_att_card .o_image').getAttribute('data-mimetype')).toBe('text/plain');
+    expect(queryFirst('.mk_att_card .o_image').getAttribute('data-mimetype')).toBe(
+        'text/plain',
+    );
 });
-
 
 test('opens attachment when clicking the card', async () => {
     let opened = null;
     const { Parent, props } = makeParent({
         attachments: [
-            { id: 101, filename: 'report.pdf', mimetype: 'application/pdf', size: 2048 },
+            {
+                id: 101,
+                filename: 'report.pdf',
+                mimetype: 'application/pdf',
+                size: 2048,
+            },
         ],
         onOpenAttachment: (attachment) => {
             opened = attachment.id;
@@ -118,7 +119,6 @@ test('opens attachment when clicking the card', async () => {
     await click('.mk_att_card');
     expect(opened).toBe(101);
 });
-
 
 test('removes attachment via the card remove button', async () => {
     let removedId = null;
@@ -136,7 +136,6 @@ test('removes attachment via the card remove button', async () => {
     expect(removedId).toBe(101);
 });
 
-
 test('disables attach button when canAttach is false', async () => {
     const { Parent, props } = makeParent({ canAttach: false });
     await mountWithCleanup(Parent, { props });
@@ -147,7 +146,6 @@ test('disables attach button when canAttach is false', async () => {
     expect(input).not.toBe(null);
     expect(input.disabled).toBe(true);
 });
-
 
 function makeInteractiveParent({
     value = '',
@@ -189,10 +187,18 @@ function makeInteractiveParent({
     };
     return {
         Parent,
-        props: { value, canSend, canStop, canAttach, onInput, onSend, onStop, onAttachFiles },
+        props: {
+            value,
+            canSend,
+            canStop,
+            canAttach,
+            onInput,
+            onSend,
+            onStop,
+            onAttachFiles,
+        },
     };
 }
-
 
 test('Enter triggers onSend when canSend=true', async () => {
     let sent = 0;
@@ -205,7 +211,6 @@ test('Enter triggers onSend when canSend=true', async () => {
     area.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     expect(sent).toBe(1);
 });
-
 
 test('Enter routes to onStop when canStop=true takes priority over canSend', async () => {
     let sent = 0;
@@ -224,7 +229,6 @@ test('Enter routes to onStop when canStop=true takes priority over canSend', asy
     expect(sent).toBe(0);
 });
 
-
 test('Shift+Enter does not trigger send', async () => {
     let sent = 0;
     const { Parent, props } = makeInteractiveParent({
@@ -238,7 +242,6 @@ test('Shift+Enter does not trigger send', async () => {
     expect(sent).toBe(0);
 });
 
-
 test('typing / shows slash command menu', async () => {
     const { Parent, props } = makeInteractiveParent({ value: '/' });
     await mountWithCleanup(Parent, { props });
@@ -247,7 +250,6 @@ test('typing / shows slash command menu', async () => {
     expect(items[0].textContent).toMatch(/\/help|\/clear|\/compact|\/unpin/);
 });
 
-
 test('typing /co filters slash menu to /compact', async () => {
     const { Parent, props } = makeInteractiveParent({ value: '/co' });
     await mountWithCleanup(Parent, { props });
@@ -255,7 +257,6 @@ test('typing /co filters slash menu to /compact', async () => {
     expect(items.length).toBe(1);
     expect(items[0].textContent).toMatch(/\/compact/);
 });
-
 
 test('slash menu ArrowDown cycles active entry', async () => {
     const { Parent, props } = makeInteractiveParent({ value: '/' });
@@ -270,12 +271,13 @@ test('slash menu ArrowDown cycles active entry', async () => {
     expect(after.length).toBe(before.length);
 });
 
-
 test('Tab picks the active slash command via onInput', async () => {
     let picked = null;
     const { Parent, props } = makeInteractiveParent({
         value: '/co',
-        onInput: (v) => { picked = v; },
+        onInput: (v) => {
+            picked = v;
+        },
     });
     await mountWithCleanup(Parent, { props });
     queryFirst('.mk_composer textarea').dispatchEvent(
@@ -284,12 +286,13 @@ test('Tab picks the active slash command via onInput', async () => {
     expect(picked).toBe('/compact');
 });
 
-
 test('Tab preserves trailing arguments when picking a slash command', async () => {
     let picked = null;
     const { Parent, props } = makeInteractiveParent({
         value: '/co some thing',
-        onInput: (v) => { picked = v; },
+        onInput: (v) => {
+            picked = v;
+        },
     });
     await mountWithCleanup(Parent, { props });
     queryFirst('.mk_composer textarea').dispatchEvent(
@@ -298,12 +301,13 @@ test('Tab preserves trailing arguments when picking a slash command', async () =
     expect(picked).toBe('/compact some thing');
 });
 
-
 test('Escape in slash mode clears the composer value', async () => {
     let inputValue = '/';
     const { Parent, props } = makeInteractiveParent({
         value: '/',
-        onInput: (v) => { inputValue = v; },
+        onInput: (v) => {
+            inputValue = v;
+        },
     });
     await mountWithCleanup(Parent, { props });
     queryFirst('.mk_composer textarea').dispatchEvent(
@@ -312,14 +316,14 @@ test('Escape in slash mode clears the composer value', async () => {
     expect(inputValue).toBe('');
 });
 
-
 test('paste with image file invokes onAttachFiles when canAttach', async () => {
     const received = [];
     const { Parent, props } = makeInteractiveParent({
         onAttachFiles: (files) => received.push(...files),
     });
     const cmp = await mountWithCleanup(Parent, { props });
-    const composer = cmp.__owl__.children[Object.keys(cmp.__owl__.children)[0]]?.component;
+    const composer =
+        cmp.__owl__.children[Object.keys(cmp.__owl__.children)[0]]?.component;
     const file = new File(['x'], 'p.png', { type: 'image/png' });
     const clipboardData = {
         items: [{ kind: 'file', getAsFile: () => file }],
@@ -329,7 +333,6 @@ test('paste with image file invokes onAttachFiles when canAttach', async () => {
     expect(received[0].name).toBe('p.png');
 });
 
-
 test('paste does nothing when canAttach is false', async () => {
     const received = [];
     const { Parent, props } = makeInteractiveParent({
@@ -337,14 +340,14 @@ test('paste does nothing when canAttach is false', async () => {
         onAttachFiles: (files) => received.push(...files),
     });
     const cmp = await mountWithCleanup(Parent, { props });
-    const composer = cmp.__owl__.children[Object.keys(cmp.__owl__.children)[0]]?.component;
+    const composer =
+        cmp.__owl__.children[Object.keys(cmp.__owl__.children)[0]]?.component;
     const clipboardData = {
         items: [{ kind: 'file', getAsFile: () => new File(['x'], 'p.png') }],
     };
     composer.onPaste({ clipboardData, preventDefault: () => {} });
     expect(received).toEqual([]);
 });
-
 
 test('file input change forwards files to onAttachFiles', async () => {
     const received = [];
@@ -360,41 +363,44 @@ test('file input change forwards files to onAttachFiles', async () => {
     expect(received[0].name).toBe('p.png');
 });
 
-
 test('onInputChange wraps the event target value and calls onInput', async () => {
     let captured = null;
     const { Parent, props } = makeInteractiveParent({
-        onInput: (v) => { captured = v; },
+        onInput: (v) => {
+            captured = v;
+        },
     });
     const cmp = await mountWithCleanup(Parent, { props });
-    const composer = cmp.__owl__.children[Object.keys(cmp.__owl__.children)[0]]?.component;
+    const composer =
+        cmp.__owl__.children[Object.keys(cmp.__owl__.children)[0]]?.component;
     composer.onInputChange({ target: { value: 'typing' } });
     expect(captured).toBe('typing');
 });
 
-
 test('hoverSlashCommand moves active index', async () => {
     const { Parent, props } = makeInteractiveParent({ value: '/' });
     const cmp = await mountWithCleanup(Parent, { props });
-    const composer = cmp.__owl__.children[Object.keys(cmp.__owl__.children)[0]]?.component;
+    const composer =
+        cmp.__owl__.children[Object.keys(cmp.__owl__.children)[0]]?.component;
     composer.hoverSlashCommand(2);
     expect(composer.localState.slashActive).toBe(2);
 });
 
-
 test('ArrowUp wraps from 0 to end of slash list', async () => {
     const { Parent, props } = makeInteractiveParent({ value: '/' });
     const cmp = await mountWithCleanup(Parent, { props });
-    const composer = cmp.__owl__.children[Object.keys(cmp.__owl__.children)[0]]?.component;
+    const composer =
+        cmp.__owl__.children[Object.keys(cmp.__owl__.children)[0]]?.component;
     composer.localState.slashActive = 0;
     const count = composer.slashCommands.length;
     composer.onKeydown({
-        key: 'ArrowUp', isComposing: false, shiftKey: false,
+        key: 'ArrowUp',
+        isComposing: false,
+        shiftKey: false,
         preventDefault: () => {},
     });
     expect(composer.localState.slashActive).toBe(count - 1);
 });
-
 
 test('Enter in slash menu picks command then sends', async () => {
     let picked = null;
@@ -402,19 +408,23 @@ test('Enter in slash menu picks command then sends', async () => {
     const { Parent, props } = makeInteractiveParent({
         value: '/co',
         canSend: true,
-        onInput: (v) => { picked = v; },
+        onInput: (v) => {
+            picked = v;
+        },
         onSend: () => sent++,
     });
     const cmp = await mountWithCleanup(Parent, { props });
-    const composer = cmp.__owl__.children[Object.keys(cmp.__owl__.children)[0]]?.component;
+    const composer =
+        cmp.__owl__.children[Object.keys(cmp.__owl__.children)[0]]?.component;
     composer.onKeydown({
-        key: 'Enter', isComposing: false, shiftKey: false,
+        key: 'Enter',
+        isComposing: false,
+        shiftKey: false,
         preventDefault: () => {},
     });
     expect(picked).toBe('/compact');
     expect(sent).toBe(1);
 });
-
 
 test('Enter while composing (IME) is ignored', async () => {
     let sent = 0;
@@ -424,7 +434,11 @@ test('Enter while composing (IME) is ignored', async () => {
     });
     await mountWithCleanup(Parent, { props });
     queryFirst('.mk_composer textarea').dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'Enter', isComposing: true, bubbles: true }),
+        new KeyboardEvent('keydown', {
+            key: 'Enter',
+            isComposing: true,
+            bubbles: true,
+        }),
     );
     expect(sent).toBe(0);
 });

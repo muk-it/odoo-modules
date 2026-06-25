@@ -5,6 +5,7 @@ import { GraphController } from '@web/views/graph/graph_controller';
 
 import { makeGraphContextDispatch } from '@muk_ai/views/context';
 
+/** Capture the active graph view as AI view context for open chat windows. */
 patch(GraphController.prototype, {
     setup() {
         super.setup(...arguments);

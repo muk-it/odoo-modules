@@ -4,6 +4,7 @@ import { humanSize } from '@web/core/utils/binary';
 
 import { toFileModel } from '@muk_ai/core/attachment/attachment';
 
+/** Compact card previewing a single attachment with name, size, and thumbnail. */
 export class AttachmentCard extends Component {
     static template = 'muk_ai.AttachmentCard';
     static props = {

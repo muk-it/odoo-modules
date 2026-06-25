@@ -1,4 +1,12 @@
-import { Component, onMounted, onWillStart, onWillUnmount, useEffect, useRef, useState } from '@odoo/owl';
+import {
+    Component,
+    onMounted,
+    onWillStart,
+    onWillUnmount,
+    useEffect,
+    useRef,
+    useState,
+} from '@odoo/owl';
 
 import { _t } from '@web/core/l10n/translation';
 import { useDropzone } from '@web/core/dropzone/dropzone_hook';
@@ -36,6 +44,7 @@ import {
     viewContextTooltip,
 } from '@muk_ai/chat/session/view_context_format';
 
+/** Floating chat window hosting one AI session with composer and turns. */
 export class ChatWindow extends Component {
     static template = 'muk_ai.ChatWindow';
     static components = { ChatComposer, ToolCard, AttachmentCard };
@@ -56,17 +65,20 @@ export class ChatWindow extends Component {
         });
         this.fileViewer = useFileViewer();
         this.rootRef = useRef('root');
-        const { scrollRef, scrollToBottom, state: scrollState } = useChatScrollAnchor('scroll');
+        const {
+            scrollRef,
+            scrollToBottom,
+            state: scrollState,
+        } = useChatScrollAnchor('scroll');
         this.scrollRef = scrollRef;
         this.scrollToBottom = scrollToBottom;
         this.scrollState = scrollState;
         this.session.setScrollCallback(scrollToBottom);
         this.windowState = useState({ askViews: {}, resumeTick: 0 });
         this._resumeTickInterval = null;
-        onScrollUpNearTop(scrollRef, () => preserveAnchor(
-            scrollRef,
-            () => this.session.loadMoreEvents(),
-        ));
+        onScrollUpNearTop(scrollRef, () =>
+            preserveAnchor(scrollRef, () => this.session.loadMoreEvents()),
+        );
         useDropzone(
             this.rootRef,
             (event) => {
@@ -90,8 +102,10 @@ export class ChatWindow extends Component {
         onMounted(() => {
             this._installRootPasteHandler();
             this._resumeTickInterval = window.setInterval(() => {
-                if (this.session.state.status === 'waiting_schedule'
-                        && this.session.state.resumeAt) {
+                if (
+                    this.session.state.status === 'waiting_schedule' &&
+                    this.session.state.resumeAt
+                ) {
                     this.windowState.resumeTick += 1;
                 }
             }, 5000);
@@ -162,9 +176,7 @@ export class ChatWindow extends Component {
         if (pending && pending.call_id === block.callId) {
             return true;
         }
-        return turn.blocks.some(
-            (b) => b.type === 'ask' && b.callId === block.callId,
-        );
+        return turn.blocks.some((b) => b.type === 'ask' && b.callId === block.callId);
     }
     isToolStreaming(block) {
         if (block.result !== null && block.result !== undefined) {

@@ -1,6 +1,10 @@
 import { describe, expect, test } from '@odoo/hoot';
-import { click, queryFirst } from '@odoo/hoot-dom';
-import { mockService, mountWithCleanup, onRpc, patchTranslations } from '@web/../tests/web_test_helpers';
+import {
+    mockService,
+    mountWithCleanup,
+    onRpc,
+    patchTranslations,
+} from '@web/../tests/web_test_helpers';
 import { defineMailModels } from '@mail/../tests/mail_test_helpers';
 
 import { AIChat } from '@muk_ai/chat/chat';
@@ -9,24 +13,45 @@ describe.current.tags('muk_ai');
 defineMailModels();
 patchTranslations();
 
-
 const SESSION_RECORD = {
-    id: 7, name: 'Demo session', state: 'done',
-    events: [], oldest_sequence: null, has_more_older: false, pending_ask: null, view_context: null,
-    last_text: '', error_message: null,
-    iteration_count: 0, total_input_tokens: 0, total_output_tokens: 0,
-    last_input_tokens: 0, context_window: 8000, total_cost: 0,
-    agent_id: false, override_approval_mode: false, effective_approval_mode: 'ask',
+    id: 7,
+    name: 'Demo session',
+    state: 'done',
+    events: [],
+    oldest_sequence: null,
+    has_more_older: false,
+    pending_ask: null,
+    view_context: null,
+    last_text: '',
+    error_message: null,
+    iteration_count: 0,
+    total_input_tokens: 0,
+    total_output_tokens: 0,
+    last_input_tokens: 0,
+    context_window: 8000,
+    total_cost: 0,
+    agent_id: false,
+    override_approval_mode: false,
+    effective_approval_mode: 'ask',
 };
 
 const SNAPSHOT_RUNNING = {
-    state: 'running', events: [], oldest_sequence: null, has_more_older: false, pending_ask: null, view_context: null,
-    error_message: null, iteration_count: 0,
-    total_input_tokens: 0, total_output_tokens: 0, total_cost: 0,
-    last_input_tokens: 0, context_window: 8000,
-    override_approval_mode: false, effective_approval_mode: 'ask',
+    state: 'running',
+    events: [],
+    oldest_sequence: null,
+    has_more_older: false,
+    pending_ask: null,
+    view_context: null,
+    error_message: null,
+    iteration_count: 0,
+    total_input_tokens: 0,
+    total_output_tokens: 0,
+    total_cost: 0,
+    last_input_tokens: 0,
+    context_window: 8000,
+    override_approval_mode: false,
+    effective_approval_mode: 'ask',
 };
-
 
 function registerMocks({ sessions = [], agents = [] } = {}) {
     onRpc('muk_ai.session', 'search_read', () => sessions);
@@ -37,10 +62,14 @@ function registerMocks({ sessions = [], agents = [] } = {}) {
     const events = { opened: [], actions: [] };
     mockService('muk_ai.chat_window', {
         state: { windows: [] },
-        open: (id) => { events.opened.push(id); },
+        open: (id) => {
+            events.opened.push(id);
+        },
         close: () => {},
         toggleMinimized: () => {},
-        get activeSessionId() { return null; },
+        get activeSessionId() {
+            return null;
+        },
     });
     mockService('bus_service', {
         addChannel() {},
@@ -51,7 +80,6 @@ function registerMocks({ sessions = [], agents = [] } = {}) {
     mockService('notification', { add: () => {} });
     return events;
 }
-
 
 test('AIChat mounts and loads sessions into the sidebar', async () => {
     registerMocks({
@@ -64,7 +92,6 @@ test('AIChat mounts and loads sessions into the sidebar', async () => {
     expect(chat.state.sessions.length).toBe(2);
     expect(chat.state.loading).toBe(false);
 });
-
 
 test('AIChat suggestions come from the active agent', async () => {
     registerMocks({
@@ -89,23 +116,28 @@ test('AIChat suggestions come from the active agent', async () => {
     expect(list[1]).toEqual({ label: 'Summarize', prompt: 'summarize this' });
 });
 
-
 test('onNewSession creates a fresh session and selects it', async () => {
-    const events = registerMocks({ sessions: [] });
+    registerMocks({ sessions: [] });
     onRpc('muk_ai.session', 'create', () => [42]);
     const chat = await mountWithCleanup(AIChat, { props: {} });
     await chat.onNewSession();
     expect(chat.session.state.sessionId).toBe(42);
 });
 
-
 test('onNewSession carries over view_context from the previous session', async () => {
     registerMocks({ sessions: [{ id: 5, name: 'One', state: 'done' }] });
-    onRpc('muk_ai.session', 'read', ({ args }) => [{
-        ...SESSION_RECORD,
-        id: args[0][0],
-        view_context: { kind: 'record', model: 'res.partner', id: 99, display_name: 'Acme' },
-    }]);
+    onRpc('muk_ai.session', 'read', ({ args }) => [
+        {
+            ...SESSION_RECORD,
+            id: args[0][0],
+            view_context: {
+                kind: 'record',
+                model: 'res.partner',
+                id: 99,
+                display_name: 'Acme',
+            },
+        },
+    ]);
     onRpc('muk_ai.session', 'create', () => [101]);
     const seedCalls = [];
     onRpc('muk_ai.session', 'set_view_context', ({ args }) => {
@@ -123,7 +155,6 @@ test('onNewSession carries over view_context from the previous session', async (
     ]);
 });
 
-
 test('onSelectSession loads the session from the sidebar', async () => {
     registerMocks({
         sessions: [{ id: 5, name: 'One', state: 'done' }],
@@ -132,7 +163,6 @@ test('onSelectSession loads the session from the sidebar', async () => {
     await chat.onSelectSession(5);
     expect(chat.session.state.sessionId).toBe(5);
 });
-
 
 test('onRenameSession writes new name and updates state for active session', async () => {
     registerMocks({ sessions: [{ id: 5, name: 'Old', state: 'done' }] });
@@ -148,7 +178,6 @@ test('onRenameSession writes new name and updates state for active session', asy
     expect(chat.session.state.name).toBe('New');
 });
 
-
 test('onDeleteSession unlinks and selects the next session', async () => {
     let unlinked = null;
     registerMocks({
@@ -157,13 +186,15 @@ test('onDeleteSession unlinks and selects the next session', async () => {
             { id: 6, name: 'Two', state: 'done' },
         ],
     });
-    onRpc('muk_ai.session', 'unlink', ({ args }) => { unlinked = args; return true; });
+    onRpc('muk_ai.session', 'unlink', ({ args }) => {
+        unlinked = args;
+        return true;
+    });
     const chat = await mountWithCleanup(AIChat, { props: {} });
     await chat.onSelectSession(5);
     await chat.onDeleteSession(5);
     expect(unlinked).toEqual([[5]]);
 });
-
 
 test('toggleSidebar flips sidebarHidden', async () => {
     registerMocks({ sessions: [] });
@@ -173,7 +204,6 @@ test('toggleSidebar flips sidebarHidden', async () => {
     expect(chat.state.sidebarHidden).toBe(!before);
 });
 
-
 test('onPopout opens a chat window for the active session', async () => {
     const events = registerMocks({ sessions: [{ id: 9, name: 'Pop', state: 'done' }] });
     const chat = await mountWithCleanup(AIChat, { props: {} });
@@ -182,14 +212,12 @@ test('onPopout opens a chat window for the active session', async () => {
     expect(events.opened).toEqual([9]);
 });
 
-
 test('onPopout is a noop when no active session', async () => {
     const events = registerMocks({ sessions: [] });
     const chat = await mountWithCleanup(AIChat, { props: {} });
     chat.onPopout();
     expect(events.opened).toEqual([]);
 });
-
 
 test('onSubmitSuggestion starts sending with the suggested prompt', async () => {
     registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
@@ -204,7 +232,6 @@ test('onSubmitSuggestion starts sending with the suggested prompt', async () => 
     expect(startArgs).toEqual([7, 'List installed modules.']);
 });
 
-
 test('onInputChange proxies into the session state', async () => {
     registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
     const chat = await mountWithCleanup(AIChat, { props: {} });
@@ -213,13 +240,11 @@ test('onInputChange proxies into the session state', async () => {
     expect(chat.session.state.input).toBe('typed text');
 });
 
-
 test('statusLabel delegates to the shared util', async () => {
     registerMocks({ sessions: [] });
     const chat = await mountWithCleanup(AIChat, { props: {} });
     expect(String(chat.statusLabel('running'))).toMatch(/Running/i);
 });
-
 
 test('canSend/canAttach/canStop reflect session helpers', async () => {
     registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
@@ -232,14 +257,12 @@ test('canSend/canAttach/canStop reflect session helpers', async () => {
     expect(chat.canAttach).toBe(true);
 });
 
-
 test('inputPlaceholder falls back to default when idle', async () => {
     registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
     const chat = await mountWithCleanup(AIChat, { props: {} });
     await chat.onSelectSession(7);
     expect(String(chat.inputPlaceholder)).toMatch(/Message the assistant/i);
 });
-
 
 test('_refreshSidebar reflects session status back into the sidebar row', async () => {
     registerMocks({
@@ -252,7 +275,6 @@ test('_refreshSidebar reflects session status back into the sidebar row', async 
     expect(chat.state.sessions[0].state).toBe('error');
 });
 
-
 test('_onUserBusEvent updates an existing sidebar row in place', async () => {
     registerMocks({
         sessions: [{ id: 7, name: 'Old', state: 'done' }],
@@ -263,22 +285,23 @@ test('_onUserBusEvent updates an existing sidebar row in place', async () => {
     expect(chat.state.sessions[0].name).toBe('New');
 });
 
-
 test('_onUserBusEvent for the active session mirrors fields on session state', async () => {
     registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
     const chat = await mountWithCleanup(AIChat, { props: {} });
     await chat.onSelectSession(7);
     chat._onUserBusEvent({
-        session_id: 7, state: 'running',
-        iteration_count: 3, total_input_tokens: 42,
-        last_input_tokens: 10, context_window: 8000,
+        session_id: 7,
+        state: 'running',
+        iteration_count: 3,
+        total_input_tokens: 42,
+        last_input_tokens: 10,
+        context_window: 8000,
     });
     expect(chat.session.state.status).toBe('running');
     expect(chat.session.state.iterationCount).toBe(3);
     expect(chat.session.state.inputTokens).toBe(42);
     expect(chat.session.state.lastInputTokens).toBe(10);
 });
-
 
 test('_onUserBusEvent with empty sidebar leaves state idle', async () => {
     registerMocks();
@@ -288,7 +311,6 @@ test('_onUserBusEvent with empty sidebar leaves state idle', async () => {
     expect(chat.state.sessions).toEqual([]);
 });
 
-
 test('_onUserBusEvent ignores empty payload', async () => {
     registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
     const chat = await mountWithCleanup(AIChat, { props: {} });
@@ -297,7 +319,6 @@ test('_onUserBusEvent ignores empty payload', async () => {
     chat._onUserBusEvent({});
     expect(chat.state.sessions[0].state).toBe(before);
 });
-
 
 test('isToolHiddenForAsk returns true for pending-approval tool blocks', async () => {
     registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
@@ -309,7 +330,6 @@ test('isToolHiddenForAsk returns true for pending-approval tool blocks', async (
     expect(chat.isToolHiddenForAsk(block, turn)).toBe(true);
 });
 
-
 test('isToolHiddenForAsk returns false when the block has a result', async () => {
     registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
     const chat = await mountWithCleanup(AIChat, { props: {} });
@@ -317,7 +337,6 @@ test('isToolHiddenForAsk returns false when the block has a result', async () =>
     const block = { result: 'ok', callId: 'c1' };
     expect(chat.isToolHiddenForAsk(block, { blocks: [] })).toBe(false);
 });
-
 
 test('isToolHiddenForAsk returns true when turn already has an ask block for the same callId', async () => {
     registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
@@ -329,7 +348,6 @@ test('isToolHiddenForAsk returns true when turn already has an ask block for the
     expect(chat.isToolHiddenForAsk(block, turn)).toBe(true);
 });
 
-
 test('toggleToolBlock proxies session.toggleToolBlock', async () => {
     registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
     const chat = await mountWithCleanup(AIChat, { props: {} });
@@ -337,7 +355,6 @@ test('toggleToolBlock proxies session.toggleToolBlock', async () => {
     chat.toggleToolBlock('c1');
     expect(chat.isToolExpanded('c1')).toBe(true);
 });
-
 
 test('renderMarkdown proxies session.renderMarkdown', async () => {
     registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
@@ -347,19 +364,15 @@ test('renderMarkdown proxies session.renderMarkdown', async () => {
     expect(html).toMatch(/<strong>/);
 });
 
-
 test('onRemoveAttachment forwards to session.onRemoveAttachment', async () => {
     registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
     onRpc('muk_ai.session', 'discard_attachments', () => true);
     const chat = await mountWithCleanup(AIChat, { props: {} });
     await chat.onSelectSession(7);
-    chat.session.state.pendingAttachments = [
-        { id: 1, filename: 'a.txt' },
-    ];
+    chat.session.state.pendingAttachments = [{ id: 1, filename: 'a.txt' }];
     await chat.onRemoveAttachment(1);
     expect(chat.session.state.pendingAttachments).toEqual([]);
 });
-
 
 test('onSend dispatches the session send flow and refreshes sidebar', async () => {
     registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
@@ -367,11 +380,21 @@ test('onSend dispatches the session send flow and refreshes sidebar', async () =
     onRpc('muk_ai.session', 'start', () => {
         started = true;
         return {
-            state: 'running', events: [], oldest_sequence: null, has_more_older: false, pending_ask: null, view_context: null,
-            error_message: null, iteration_count: 0,
-            total_input_tokens: 0, total_output_tokens: 0, total_cost: 0,
-            last_input_tokens: 0, context_window: 8000,
-            override_approval_mode: false, effective_approval_mode: 'ask',
+            state: 'running',
+            events: [],
+            oldest_sequence: null,
+            has_more_older: false,
+            pending_ask: null,
+            view_context: null,
+            error_message: null,
+            iteration_count: 0,
+            total_input_tokens: 0,
+            total_output_tokens: 0,
+            total_cost: 0,
+            last_input_tokens: 0,
+            context_window: 8000,
+            override_approval_mode: false,
+            effective_approval_mode: 'ask',
         };
     });
     const chat = await mountWithCleanup(AIChat, { props: {} });
@@ -381,18 +404,27 @@ test('onSend dispatches the session send flow and refreshes sidebar', async () =
     expect(started).toBe(true);
 });
 
-
 test('onStop dispatches session stop flow', async () => {
     registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
     let stopped = false;
     onRpc('muk_ai.session', 'action_stop', () => {
         stopped = true;
         return {
-            state: 'stopped', events: [], oldest_sequence: null, has_more_older: false, pending_ask: null, view_context: null,
-            error_message: null, iteration_count: 0,
-            total_input_tokens: 0, total_output_tokens: 0, total_cost: 0,
-            last_input_tokens: 0, context_window: 8000,
-            override_approval_mode: false, effective_approval_mode: 'ask',
+            state: 'stopped',
+            events: [],
+            oldest_sequence: null,
+            has_more_older: false,
+            pending_ask: null,
+            view_context: null,
+            error_message: null,
+            iteration_count: 0,
+            total_input_tokens: 0,
+            total_output_tokens: 0,
+            total_cost: 0,
+            last_input_tokens: 0,
+            context_window: 8000,
+            override_approval_mode: false,
+            effective_approval_mode: 'ask',
         };
     });
     const chat = await mountWithCleanup(AIChat, { props: {} });
@@ -400,7 +432,6 @@ test('onStop dispatches session stop flow', async () => {
     await chat.onStop();
     expect(stopped).toBe(true);
 });
-
 
 test('onAttachFiles forwards to session.onAttachFiles', async () => {
     registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
@@ -416,20 +447,29 @@ test('onAttachFiles forwards to session.onAttachFiles', async () => {
     expect(uploaded[0].filename).toBe('p.png');
 });
 
-
 test('onStartWithPrompt creates a session then sends the prompt', async () => {
     registerMocks({ sessions: [] });
     let startedWith = null;
-    let createdId = 42;
+    const createdId = 42;
     onRpc('muk_ai.session', 'create', () => [createdId]);
     onRpc('muk_ai.session', 'start', ({ args }) => {
         startedWith = args;
         return {
-            state: 'running', events: [], oldest_sequence: null, has_more_older: false, pending_ask: null, view_context: null,
-            error_message: null, iteration_count: 0,
-            total_input_tokens: 0, total_output_tokens: 0, total_cost: 0,
-            last_input_tokens: 0, context_window: 8000,
-            override_approval_mode: false, effective_approval_mode: 'ask',
+            state: 'running',
+            events: [],
+            oldest_sequence: null,
+            has_more_older: false,
+            pending_ask: null,
+            view_context: null,
+            error_message: null,
+            iteration_count: 0,
+            total_input_tokens: 0,
+            total_output_tokens: 0,
+            total_cost: 0,
+            last_input_tokens: 0,
+            context_window: 8000,
+            override_approval_mode: false,
+            effective_approval_mode: 'ask',
         };
     });
     const chat = await mountWithCleanup(AIChat, { props: {} });
@@ -437,18 +477,21 @@ test('onStartWithPrompt creates a session then sends the prompt', async () => {
     expect(startedWith).toEqual([42, 'Say hello']);
 });
 
-
 test('onOpenAttachment opens via the file viewer', async () => {
     registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
     const chat = await mountWithCleanup(AIChat, { props: {} });
     const opened = [];
     chat.fileViewer.open = (file) => opened.push(file);
     await chat.onSelectSession(7);
-    chat.onOpenAttachment({ id: 5, filename: 'p.png', mimetype: 'image/png', size: 10 });
+    chat.onOpenAttachment({
+        id: 5,
+        filename: 'p.png',
+        mimetype: 'image/png',
+        size: 10,
+    });
     expect(opened).toHaveLength(1);
     expect(opened[0].id).toBe(5);
 });
-
 
 test('contextPercent returns an integer ratio of last/context window', async () => {
     registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
@@ -459,7 +502,6 @@ test('contextPercent returns an integer ratio of last/context window', async () 
     expect(chat.contextPercent).toBe(25);
 });
 
-
 test('contextPercent is 0 when lastInputTokens is 0', async () => {
     registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
     const chat = await mountWithCleanup(AIChat, { props: {} });
@@ -467,7 +509,6 @@ test('contextPercent is 0 when lastInputTokens is 0', async () => {
     chat.session.state.lastInputTokens = 0;
     expect(chat.contextPercent).toBe(0);
 });
-
 
 test('isToolStreaming is true for null-result blocks while running', async () => {
     registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
@@ -478,7 +519,6 @@ test('isToolStreaming is true for null-result blocks while running', async () =>
     expect(chat.isToolStreaming({ result: undefined, callId: 'c2' })).toBe(true);
 });
 
-
 test('isToolStreaming is false once a result lands', async () => {
     registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
     const chat = await mountWithCleanup(AIChat, { props: {} });
@@ -487,7 +527,6 @@ test('isToolStreaming is false once a result lands', async () => {
     expect(chat.isToolStreaming({ result: '[]', callId: 'c3' })).toBe(false);
     expect(chat.isToolStreaming({ result: { error: 'x' }, callId: 'c4' })).toBe(false);
 });
-
 
 test('isToolStreaming is false when status is not running', async () => {
     registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
@@ -498,7 +537,6 @@ test('isToolStreaming is false when status is not running', async () => {
     chat.session.state.status = 'waiting';
     expect(chat.isToolStreaming({ result: null, callId: 'c6' })).toBe(false);
 });
-
 
 test('isToolStreaming is true while compacting', async () => {
     registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });

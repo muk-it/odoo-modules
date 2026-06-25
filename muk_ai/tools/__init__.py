@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from .call import (
     ASK_USER_TOOL,
     TERMINATING_TOOLS,

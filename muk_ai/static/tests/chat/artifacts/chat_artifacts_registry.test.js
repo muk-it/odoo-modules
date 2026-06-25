@@ -16,7 +16,6 @@ describe.current.tags('muk_ai');
 defineMailModels();
 patchTranslations();
 
-
 class FakeTab extends Component {
     static template = xml`
         <div class="mk_fake_tab">
@@ -32,15 +31,17 @@ class FakeTab extends Component {
     };
 }
 
-
 afterEach(() => {
     for (const id of ['fake', 'fake2']) {
         if (ARTIFACT_TYPES.contains(id)) {
-            try { ARTIFACT_TYPES.remove(id); } catch (_e) {}
+            try {
+                ARTIFACT_TYPES.remove(id);
+            } catch {
+                /* ignore */
+            }
         }
     }
 });
-
 
 function mountPanel(sessionLike) {
     class Parent extends Component {
@@ -57,16 +58,19 @@ function mountPanel(sessionLike) {
     return mountWithCleanup(Parent, { props: { session: sessionLike } });
 }
 
-
 test('a registered artifact type contributes a tab next to attachments', async () => {
-    ARTIFACT_TYPES.add('fake', {
-        id: 'fake',
-        label: 'Fake',
-        icon: 'fa-flask',
-        sequence: 50,
-        component: FakeTab,
-        collect: () => [{ a: 1 }, { b: 2 }],
-    }, { force: true });
+    ARTIFACT_TYPES.add(
+        'fake',
+        {
+            id: 'fake',
+            label: 'Fake',
+            icon: 'fa-flask',
+            sequence: 50,
+            component: FakeTab,
+            collect: () => [{ a: 1 }, { b: 2 }],
+        },
+        { force: true },
+    );
     const session = {
         state: {
             pendingAttachments: [{ id: 1, filename: 'a.png', mimetype: 'image/png' }],
@@ -81,16 +85,19 @@ test('a registered artifact type contributes a tab next to attachments', async (
     expect(labels.some((l) => l.includes('Attachments'))).toBe(true);
 });
 
-
 test('initial active tab is the lowest-sequence registered type', async () => {
-    ARTIFACT_TYPES.add('fake2', {
-        id: 'fake2',
-        label: 'Fake2',
-        icon: 'fa-flask',
-        sequence: 50,
-        component: FakeTab,
-        collect: () => [{ a: 1 }, { b: 2 }],
-    }, { force: true });
+    ARTIFACT_TYPES.add(
+        'fake2',
+        {
+            id: 'fake2',
+            label: 'Fake2',
+            icon: 'fa-flask',
+            sequence: 50,
+            component: FakeTab,
+            collect: () => [{ a: 1 }, { b: 2 }],
+        },
+        { force: true },
+    );
     const session = {
         state: {
             pendingAttachments: [{ id: 1, filename: 'a.png', mimetype: 'image/png' }],
@@ -105,7 +112,6 @@ test('initial active tab is the lowest-sequence registered type', async () => {
     expect(attBtn.classList.contains('active')).toBe(true);
     expect(fakeBtn.classList.contains('active')).toBe(false);
 });
-
 
 test('only a single non-empty type → no tab strip', async () => {
     const session = {

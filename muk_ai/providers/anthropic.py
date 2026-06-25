@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 
 from odoo.exceptions import UserError
@@ -8,21 +10,26 @@ ANTHROPIC_VERSION = '2023-06-01'
 WEB_SEARCH_TOOL_TYPE = 'web_search_20250305'
 CODE_EXECUTION_TOOL_TYPE = 'code_execution_20250825'
 
-THINKING_MODEL_TOKENS = (
-    'opus-4', 'sonnet-4', '3-7-sonnet'
-)
+THINKING_MODEL_TOKENS = ('opus-4', 'sonnet-4', '3-7-sonnet')
 LEGACY_THINKING_MODEL_TOKENS = (
-    'opus-4-0', 'opus-4-1', 'opus-4-5', 'opus-4-6',
-    '3-7-sonnet', 'sonnet-4-0', 'sonnet-4-5', 'sonnet-4-6',
+    'opus-4-0',
+    'opus-4-1',
+    'opus-4-5',
+    'opus-4-6',
+    '3-7-sonnet',
+    'sonnet-4-0',
+    'sonnet-4-5',
+    'sonnet-4-6',
 )
 THINKING_BUDGET_TOKENS = 1024
 ADAPTIVE_THINKING_EFFORT = 'medium'
 
 
 class AnthropicProvider(ProviderBase):
+    """Anthropic Messages API adapter with thinking and streaming support."""
 
     name = 'anthropic'
-    label = "Anthropic"
+    label = 'Anthropic'
     default_model = 'claude-sonnet-4-6'
     default_url = 'https://api.anthropic.com/v1'
 
@@ -34,7 +41,8 @@ class AnthropicProvider(ProviderBase):
     # Contract
     # ----------------------------------------------------------
 
-    def headers(self):
+    def headers(self) -> dict:
+        """Return the Anthropic request headers including the API version."""
         return {
             'x-api-key': self.api_key,
             'anthropic-version': ANTHROPIC_VERSION,
@@ -52,7 +60,8 @@ class AnthropicProvider(ProviderBase):
         enable_image_generation=False,
         enable_code_interpreter=False,
         extra=None,
-    ):
+    ) -> dict:
+        """Build and run a Messages request, retrying once without thinking on error."""
         model = self.model_for(model)
         system_text, messages = self._inputs_to_messages(inputs)
         max_tokens = self.max_tokens or 4096
@@ -76,15 +85,19 @@ class AnthropicProvider(ProviderBase):
             body['system'] = system_text
         tools = self._tools_to_anthropic(tools_schema)
         if enable_web_search:
-            tools.append({
-                'type': WEB_SEARCH_TOOL_TYPE,
-                'name': 'web_search',
-            })
+            tools.append(
+                {
+                    'type': WEB_SEARCH_TOOL_TYPE,
+                    'name': 'web_search',
+                }
+            )
         if enable_code_interpreter:
-            tools.append({
-                'type': CODE_EXECUTION_TOOL_TYPE,
-                'name': 'code_execution',
-            })
+            tools.append(
+                {
+                    'type': CODE_EXECUTION_TOOL_TYPE,
+                    'name': 'code_execution',
+                }
+            )
         if tools:
             body['tools'] = tools
         try:
@@ -100,17 +113,20 @@ class AnthropicProvider(ProviderBase):
     # Thinking
     # ----------------------------------------------------------
 
-    def _invoke(self, body, on_delta):
+    def _invoke(self, body: dict, on_delta) -> dict:
+        """Dispatch the request to the streaming or non-streaming path."""
         if callable(on_delta):
             return self._stream(body, on_delta)
         return self._parse_response(self._post_json('/messages', body))
 
     @staticmethod
-    def _supports_thinking(model):
+    def _supports_thinking(model: str) -> bool:
+        """Return whether the model supports extended thinking."""
         return any(token in model for token in THINKING_MODEL_TOKENS)
 
     @staticmethod
-    def _uses_adaptive_thinking(model):
+    def _uses_adaptive_thinking(model: str) -> bool:
+        """Return whether the model uses adaptive (vs budgeted) thinking."""
         return not any(token in model for token in LEGACY_THINKING_MODEL_TOKENS)
 
     # ----------------------------------------------------------
@@ -118,7 +134,8 @@ class AnthropicProvider(ProviderBase):
     # ----------------------------------------------------------
 
     @staticmethod
-    def _text_from_content(content):
+    def _text_from_content(content) -> str:
+        """Flatten a content value (string or block list) into plain text."""
         if isinstance(content, str):
             return content
         parts = []
@@ -129,7 +146,8 @@ class AnthropicProvider(ProviderBase):
         return ''.join(parts)
 
     @classmethod
-    def _inputs_to_messages(cls, inputs):
+    def _inputs_to_messages(cls, inputs) -> tuple[str, list[dict]]:
+        """Convert canonical inputs into Anthropic system text and messages."""
         system_parts = []
         messages = []
 
@@ -152,22 +170,28 @@ class AnthropicProvider(ProviderBase):
                     arguments = json.loads(item.get('arguments') or '{}')
                 except ValueError:
                     arguments = {}
-                append('assistant', {
-                    'type': 'tool_use',
-                    'id': item.get('call_id'),
-                    'name': item.get('name'),
-                    'input': arguments,
-                })
+                append(
+                    'assistant',
+                    {
+                        'type': 'tool_use',
+                        'id': item.get('call_id'),
+                        'name': item.get('name'),
+                        'input': arguments,
+                    },
+                )
                 continue
             if item_type == 'function_call_output':
                 output = item.get('output')
                 if not isinstance(output, str):
                     output = json.dumps(output, default=str)
-                append('user', {
-                    'type': 'tool_result',
-                    'tool_use_id': item.get('call_id'),
-                    'content': output,
-                })
+                append(
+                    'user',
+                    {
+                        'type': 'tool_result',
+                        'tool_use_id': item.get('call_id'),
+                        'content': output,
+                    },
+                )
                 continue
             if role in ('user', 'assistant'):
                 for block in cls._content_to_anthropic(item.get('content')):
@@ -176,7 +200,8 @@ class AnthropicProvider(ProviderBase):
         return '\n\n'.join(system_parts), messages
 
     @classmethod
-    def _content_to_anthropic(cls, content):
+    def _content_to_anthropic(cls, content) -> list[dict]:
+        """Convert canonical content blocks into Anthropic content blocks."""
         if isinstance(content, str):
             return [{'type': 'text', 'text': content}]
         blocks = []
@@ -188,17 +213,20 @@ class AnthropicProvider(ProviderBase):
                 blocks.append(cls._attachment_to_anthropic(chunk))
             elif chunk_type == 'muk_ai_thinking':
                 if chunk.get('thinking'):
-                    blocks.append({
-                        'type': 'thinking',
-                        'thinking': chunk['thinking'],
-                        'signature': chunk.get('signature') or '',
-                    })
+                    blocks.append(
+                        {
+                            'type': 'thinking',
+                            'thinking': chunk['thinking'],
+                            'signature': chunk.get('signature') or '',
+                        }
+                    )
             elif chunk.get('text'):
                 blocks.append({'type': 'text', 'text': chunk['text']})
         return blocks
 
     @staticmethod
-    def _attachment_to_anthropic(block):
+    def _attachment_to_anthropic(block: dict) -> dict:
+        """Convert an attachment block into an Anthropic image/document/text block."""
         strategy = block.get('strategy')
         mimetype = block.get('mimetype') or 'application/octet-stream'
         data_b64 = block.get('data_b64') or ''
@@ -228,7 +256,8 @@ class AnthropicProvider(ProviderBase):
         return {'type': 'text', 'text': prefix + text}
 
     @staticmethod
-    def _tools_to_anthropic(tools_schema):
+    def _tools_to_anthropic(tools_schema) -> list[dict]:
+        """Convert tool schemas to Anthropic tool definitions, deduplicated by name."""
         if not tools_schema:
             return []
         seen = set()
@@ -238,20 +267,25 @@ class AnthropicProvider(ProviderBase):
             if name in seen:
                 continue
             seen.add(name)
-            out.append({
-                'name': name,
-                'description': tool.get('description') or '',
-                'input_schema': tool.get('parameters') or {
-                    'type': 'object', 'properties': {},
-                },
-            })
+            out.append(
+                {
+                    'name': name,
+                    'description': tool.get('description') or '',
+                    'input_schema': tool.get('parameters')
+                    or {
+                        'type': 'object',
+                        'properties': {},
+                    },
+                }
+            )
         return out
 
     # ----------------------------------------------------------
     # Parse
     # ----------------------------------------------------------
 
-    def _parse_response(self, payload):
+    def _parse_response(self, payload: dict) -> dict:
+        """Parse a non-streaming response into text, tool calls, carry inputs, and usage."""
         content = payload.get('content') or []
         text_parts = []
         tool_calls = []
@@ -263,38 +297,50 @@ class AnthropicProvider(ProviderBase):
                 text = block.get('text') or ''
                 if text:
                     text_parts.append(text)
-                    assistant_content.append({
-                        'type': 'output_text', 'text': text,
-                    })
+                    assistant_content.append(
+                        {
+                            'type': 'output_text',
+                            'text': text,
+                        }
+                    )
             elif block_type == 'thinking':
                 thinking = block.get('thinking') or ''
                 if thinking:
-                    assistant_content.append({
-                        'type': 'muk_ai_thinking',
-                        'thinking': thinking,
-                        'signature': block.get('signature') or '',
-                    })
+                    assistant_content.append(
+                        {
+                            'type': 'muk_ai_thinking',
+                            'thinking': thinking,
+                            'signature': block.get('signature') or '',
+                        }
+                    )
             elif block_type == 'tool_use':
                 call_id = block.get('id')
                 name = block.get('name')
                 arguments = block.get('input') or {}
-                tool_calls.append({
-                    'call_id': call_id,
-                    'name': name,
-                    'arguments': arguments,
-                    '_parse_error': None,
-                })
-                function_call_carries.append({
-                    'type': 'function_call',
-                    'name': name,
-                    'arguments': json.dumps(arguments, default=str),
-                    'call_id': call_id,
-                })
+                tool_calls.append(
+                    {
+                        'call_id': call_id,
+                        'name': name,
+                        'arguments': arguments,
+                        '_parse_error': None,
+                    }
+                )
+                function_call_carries.append(
+                    {
+                        'type': 'function_call',
+                        'name': name,
+                        'arguments': json.dumps(arguments, default=str),
+                        'call_id': call_id,
+                    }
+                )
         carry_inputs = []
         if assistant_content:
-            carry_inputs.append({
-                'role': 'assistant', 'content': assistant_content,
-            })
+            carry_inputs.append(
+                {
+                    'role': 'assistant',
+                    'content': assistant_content,
+                }
+            )
         carry_inputs.extend(function_call_carries)
         usage = payload.get('usage') or {}
         return {
@@ -312,7 +358,8 @@ class AnthropicProvider(ProviderBase):
     # Streaming
     # ----------------------------------------------------------
 
-    def _stream(self, body, on_delta):
+    def _stream(self, body: dict, on_delta) -> dict:
+        """Stream a Messages request, emitting deltas and assembling the final result."""
         body = {**body, 'stream': True}
         blocks_by_index = {}
         usage = self._usage()
@@ -328,39 +375,51 @@ class AnthropicProvider(ProviderBase):
             entry_type = entry.get('type')
             if entry_type == 'thinking':
                 if entry.get('thinking'):
-                    assistant_content.append({
-                        'type': 'muk_ai_thinking',
-                        'thinking': entry['thinking'],
-                        'signature': entry.get('signature') or '',
-                    })
+                    assistant_content.append(
+                        {
+                            'type': 'muk_ai_thinking',
+                            'thinking': entry['thinking'],
+                            'signature': entry.get('signature') or '',
+                        }
+                    )
             elif entry_type == 'text':
                 text = entry.get('text') or ''
                 if text:
                     text_parts.append(text)
-                    assistant_content.append({
-                        'type': 'output_text', 'text': text,
-                    })
+                    assistant_content.append(
+                        {
+                            'type': 'output_text',
+                            'text': text,
+                        }
+                    )
             elif entry_type == 'tool_use':
                 args, parse_error = self._parse_tool_arguments(
                     entry.get('partial_json'),
                 )
-                tool_calls.append({
-                    'call_id': entry['call_id'],
-                    'name': entry['name'],
-                    'arguments': args,
-                    '_parse_error': parse_error,
-                })
-                function_call_carries.append({
-                    'type': 'function_call',
-                    'name': entry['name'],
-                    'arguments': json.dumps(args, default=str),
-                    'call_id': entry['call_id'],
-                })
+                tool_calls.append(
+                    {
+                        'call_id': entry['call_id'],
+                        'name': entry['name'],
+                        'arguments': args,
+                        '_parse_error': parse_error,
+                    }
+                )
+                function_call_carries.append(
+                    {
+                        'type': 'function_call',
+                        'name': entry['name'],
+                        'arguments': json.dumps(args, default=str),
+                        'call_id': entry['call_id'],
+                    }
+                )
         carry_inputs = []
         if assistant_content:
-            carry_inputs.append({
-                'role': 'assistant', 'content': assistant_content,
-            })
+            carry_inputs.append(
+                {
+                    'role': 'assistant',
+                    'content': assistant_content,
+                }
+            )
         carry_inputs.extend(function_call_carries)
         return {
             'text': ''.join(text_parts).strip(),
@@ -369,7 +428,10 @@ class AnthropicProvider(ProviderBase):
             'usage': usage,
         }
 
-    def _handle_stream_event(self, event, on_delta, blocks_by_index, usage):
+    def _handle_stream_event(
+        self, event: dict, on_delta, blocks_by_index: dict, usage: dict
+    ) -> None:
+        """Apply one streaming event to the accumulators and forward deltas."""
         event_type = event.get('type') or ''
         if event_type == 'message_start':
             start_usage = (event.get('message') or {}).get('usage') or {}
@@ -395,10 +457,14 @@ class AnthropicProvider(ProviderBase):
                     'partial_json': '',
                 }
                 blocks_by_index[index] = entry
-                self._call_on_delta(on_delta, 'tool_start', {
-                    'call_id': entry['call_id'],
-                    'name': entry['name'],
-                })
+                self._call_on_delta(
+                    on_delta,
+                    'tool_start',
+                    {
+                        'call_id': entry['call_id'],
+                        'name': entry['name'],
+                    },
+                )
         elif event_type == 'content_block_delta':
             index = event.get('index', 0)
             entry = blocks_by_index.get(index)
@@ -427,10 +493,14 @@ class AnthropicProvider(ProviderBase):
                 if not partial:
                     return
                 entry['partial_json'] += partial
-                self._call_on_delta(on_delta, 'tool_args', {
-                    'call_id': entry['call_id'],
-                    'delta': partial,
-                })
+                self._call_on_delta(
+                    on_delta,
+                    'tool_args',
+                    {
+                        'call_id': entry['call_id'],
+                        'delta': partial,
+                    },
+                )
         elif event_type == 'message_delta':
             delta_usage = event.get('usage') or {}
             if 'output_tokens' in delta_usage:

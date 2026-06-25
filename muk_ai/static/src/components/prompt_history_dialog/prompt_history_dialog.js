@@ -5,6 +5,7 @@ import { registry } from '@web/core/registry';
 import { Dialog } from '@web/core/dialog/dialog';
 import { useService } from '@web/core/utils/hooks';
 
+/** Dialog showing a prompt field's revision history with diff and restore. */
 export class PromptHistoryDialog extends Component {
     static template = 'muk_ai.PromptHistoryDialog';
     static components = { Dialog };
@@ -85,7 +86,7 @@ export class PromptHistoryDialog extends Component {
         }
         try {
             return new Date(value).toLocaleString();
-        } catch (_error) {
+        } catch {
             return value;
         }
     }

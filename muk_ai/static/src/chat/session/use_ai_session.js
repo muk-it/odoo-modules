@@ -51,9 +51,14 @@ export const SLASH_COMMANDS = [
 ];
 
 const COMPACT_WARN_RATIO = 0.65;
-const COMPACT_AUTO_RATIO = 0.80;
+const COMPACT_AUTO_RATIO = 0.8;
 const STREAM_IDLE_MS = 3000;
 
+/**
+ * Hook owning an AI chat session: state, streaming, tool calls, and commands.
+ * @param {object} [options] session hook options (callbacks, defaults)
+ * @returns {object} reactive session API consumed by chat components
+ */
 export function useAiSession(options = {}) {
     const orm = useService('orm');
     const bus = useService('bus_service');
@@ -140,7 +145,7 @@ export function useAiSession(options = {}) {
         if (entry && entry.event_id != null) {
             return 'id:' + entry.event_id;
         }
-        const {at, ...rest} = entry || {};
+        const { at: _at, ...rest } = entry || {};
         return canonicalStringify(rest);
     }
     function canonicalStringify(value) {
@@ -151,9 +156,13 @@ export function useAiSession(options = {}) {
             return '[' + value.map(canonicalStringify).join(',') + ']';
         }
         const keys = Object.keys(value).sort();
-        return '{' + keys.map(
-            (k) => JSON.stringify(k) + ':' + canonicalStringify(value[k]),
-        ).join(',') + '}';
+        return (
+            '{' +
+            keys
+                .map((k) => JSON.stringify(k) + ':' + canonicalStringify(value[k]))
+                .join(',') +
+            '}'
+        );
     }
     function onBusEvent(event) {
         if (!event || event.session_id !== state.sessionId) {
@@ -212,7 +221,9 @@ export function useAiSession(options = {}) {
                 return;
             }
             state.streamingTools = state.streamingTools.map((t) =>
-                t.callId === callId ? { ...t, argsBuffer: (t.argsBuffer || '') + delta } : t,
+                t.callId === callId
+                    ? { ...t, argsBuffer: (t.argsBuffer || '') + delta }
+                    : t,
             );
             bumpStreamActivity();
             requestScroll();
@@ -248,7 +259,10 @@ export function useAiSession(options = {}) {
             }
             if (event.payload.resume_at !== undefined) {
                 state.resumeAt = normalizeResumeAt(event.payload.resume_at);
-            } else if (event.payload.state && event.payload.state !== 'waiting_schedule') {
+            } else if (
+                event.payload.state &&
+                event.payload.state !== 'waiting_schedule'
+            ) {
                 state.resumeAt = '';
             }
         } else if (event.type === 'rename') {
@@ -268,8 +282,15 @@ export function useAiSession(options = {}) {
                 return;
             }
             state.events = state.events.map((entry) => {
-                if (entry && entry.event_id === eventId && entry.kind === 'compact_progress') {
-                    return { ...entry, streamed_text: (entry.streamed_text || '') + delta };
+                if (
+                    entry &&
+                    entry.event_id === eventId &&
+                    entry.kind === 'compact_progress'
+                ) {
+                    return {
+                        ...entry,
+                        streamed_text: (entry.streamed_text || '') + delta,
+                    };
                 }
                 return entry;
             });
@@ -282,7 +303,11 @@ export function useAiSession(options = {}) {
                 return;
             }
             state.events = state.events.map((entry) => {
-                if (entry && entry.event_id === eventId && entry.kind === 'compact_progress') {
+                if (
+                    entry &&
+                    entry.event_id === eventId &&
+                    entry.kind === 'compact_progress'
+                ) {
                     return { ...entry, ...patch };
                 }
                 return entry;
@@ -332,15 +357,17 @@ export function useAiSession(options = {}) {
         let loadError = null;
         try {
             const [result] = await orm.read(
-                'muk_ai.session', [sessionId], SESSION_READ_FIELDS,
+                'muk_ai.session',
+                [sessionId],
+                SESSION_READ_FIELDS,
             );
             record = result || null;
             if (record) {
                 try {
-                    snapshot = await orm.call(
-                        'muk_ai.session', 'get_snapshot', [sessionId],
-                    );
-                } catch (error) {
+                    snapshot = await orm.call('muk_ai.session', 'get_snapshot', [
+                        sessionId,
+                    ]);
+                } catch {
                     snapshot = null;
                 }
             }
@@ -422,7 +449,7 @@ export function useAiSession(options = {}) {
             try {
                 const utc = value.toUTC();
                 return utc.isValid ? utc.toISO() : '';
-            } catch (_e) {
+            } catch {
                 return '';
             }
         }
@@ -437,7 +464,11 @@ export function useAiSession(options = {}) {
         state.agentId = Array.isArray(agent) ? agent[0] : null;
         state.agentName = Array.isArray(agent) ? agent[1] : '';
         const owner = record.user_id;
-        state.ownerId = Array.isArray(owner) ? owner[0] : (typeof owner === 'number' ? owner : null);
+        state.ownerId = Array.isArray(owner)
+            ? owner[0]
+            : typeof owner === 'number'
+              ? owner
+              : null;
         rebuildEventKeys();
     }
     function applySnapshot(snapshot) {
@@ -458,11 +489,11 @@ export function useAiSession(options = {}) {
                 state.hasMoreOlder = !!snapshot.has_more_older;
             }
         }
-        const preserveStreaming = state.status === 'running' && (
-            (state.streamingText && state.streamingText.length)
-            || (state.streamingReasoning && state.streamingReasoning.length)
-            || (state.streamingTools && state.streamingTools.length)
-        );
+        const preserveStreaming =
+            state.status === 'running' &&
+            ((state.streamingText && state.streamingText.length) ||
+                (state.streamingReasoning && state.streamingReasoning.length) ||
+                (state.streamingTools && state.streamingTools.length));
         if (!preserveStreaming) {
             state.streamingText = '';
             state.streamingReasoning = '';
@@ -471,9 +502,7 @@ export function useAiSession(options = {}) {
         rebuildEventKeys();
     }
     function rebuildEventKeys() {
-        eventKeys = new Set(
-            (state.events || []).map((entry) => eventKey(entry)),
-        );
+        eventKeys = new Set((state.events || []).map((entry) => eventKey(entry)));
     }
     async function loadMoreEvents() {
         if (state.loadingOlder || !state.hasMoreOlder || !state.sessionId) {
@@ -484,7 +513,8 @@ export function useAiSession(options = {}) {
         state.loadingOlder = true;
         try {
             const result = await orm.call(
-                'muk_ai.session', 'fetch_events',
+                'muk_ai.session',
+                'fetch_events',
                 [sessionId],
                 {
                     limit: 100,
@@ -505,7 +535,10 @@ export function useAiSession(options = {}) {
                 seen.add(k);
                 return true;
             });
-            if (result.oldest_sequence !== undefined && result.oldest_sequence !== null) {
+            if (
+                result.oldest_sequence !== undefined &&
+                result.oldest_sequence !== null
+            ) {
                 state.oldestSequence = result.oldest_sequence;
             }
             state.hasMoreOlder = !!result.has_more_older;
@@ -517,14 +550,12 @@ export function useAiSession(options = {}) {
         }
     }
     function canSend() {
-        const hasContent = state.input.trim().length > 0
-            || state.pendingAttachments.length > 0;
+        const hasContent =
+            state.input.trim().length > 0 || state.pendingAttachments.length > 0;
         return !!state.sessionId && !state.loading && hasContent;
     }
     function canAttach() {
-        return !!state.sessionId
-            && !state.loading
-            && state.status !== 'running';
+        return !!state.sessionId && !state.loading && state.status !== 'running';
     }
     function canStop() {
         return state.status === 'running';
@@ -533,12 +564,11 @@ export function useAiSession(options = {}) {
         return false;
     }
     function isQueueing() {
-        return state.status === 'running'
-            || state.status === 'compacting'
-            || (
-                state.status === 'waiting'
-                && (state.pendingAsk || {}).kind === 'approval'
-            );
+        return (
+            state.status === 'running' ||
+            state.status === 'compacting' ||
+            (state.status === 'waiting' && (state.pendingAsk || {}).kind === 'approval')
+        );
     }
     function onInputChange(value) {
         state.input = value;
@@ -570,7 +600,8 @@ export function useAiSession(options = {}) {
             requestScroll();
             try {
                 const snapshot = await orm.call(
-                    'muk_ai.session', 'enqueue_message',
+                    'muk_ai.session',
+                    'enqueue_message',
                     [state.sessionId, message],
                     { attachment_ids: attachmentIds },
                 );
@@ -587,8 +618,8 @@ export function useAiSession(options = {}) {
             return;
         }
         await maybeAutoCompact();
-        const wasWaitingQuestion = state.status === 'waiting'
-            && (state.pendingAsk || {}).kind === 'question';
+        const wasWaitingQuestion =
+            state.status === 'waiting' && (state.pendingAsk || {}).kind === 'question';
         const optimistic = wasWaitingQuestion
             ? {
                   kind: 'answer',
@@ -609,13 +640,14 @@ export function useAiSession(options = {}) {
         try {
             const method = wasWaitingQuestion
                 ? 'answer'
-                : (
-                    state.iterationCount === 0 && state.events.length <= 1 && !state.streamingText
-                        ? 'start'
-                        : 'send_message'
-                );
+                : state.iterationCount === 0 &&
+                    state.events.length <= 1 &&
+                    !state.streamingText
+                  ? 'start'
+                  : 'send_message';
             const snapshot = await orm.call(
-                'muk_ai.session', method,
+                'muk_ai.session',
+                method,
                 [state.sessionId, message],
                 { attachment_ids: attachmentIds },
             );
@@ -632,14 +664,12 @@ export function useAiSession(options = {}) {
             return;
         }
         const removed = state.pendingMessages[index];
-        state.pendingMessages = state.pendingMessages.filter(
-            (_m, i) => i !== index,
-        );
+        state.pendingMessages = state.pendingMessages.filter((_m, i) => i !== index);
         try {
-            const snapshot = await orm.call(
-                'muk_ai.session', 'cancel_queued',
-                [state.sessionId, index],
-            );
+            const snapshot = await orm.call('muk_ai.session', 'cancel_queued', [
+                state.sessionId,
+                index,
+            ]);
             applySnapshot(snapshot);
         } catch (error) {
             if (removed) {
@@ -660,37 +690,41 @@ export function useAiSession(options = {}) {
             return;
         }
         try {
-            const snapshot = await orm.call(
-                'muk_ai.session', 'action_stop', [state.sessionId],
-            );
+            const snapshot = await orm.call('muk_ai.session', 'action_stop', [
+                state.sessionId,
+            ]);
             applySnapshot(snapshot);
         } catch (error) {
-            notification.add(
-                _t('Failed to stop session: %s', formatError(error)),
-                { type: 'danger' },
-            );
+            notification.add(_t('Failed to stop session: %s', formatError(error)), {
+                type: 'danger',
+            });
         }
     }
     async function onRegenerate() {
-        if (!state.sessionId || state.status === 'running' || state.status === 'waiting') {
+        if (
+            !state.sessionId ||
+            state.status === 'running' ||
+            state.status === 'waiting'
+        ) {
             return;
         }
         try {
-            const snapshot = await orm.call(
-                'muk_ai.session', 'regenerate_last_turn', [state.sessionId],
-            );
+            const snapshot = await orm.call('muk_ai.session', 'regenerate_last_turn', [
+                state.sessionId,
+            ]);
             applySnapshot(snapshot);
         } catch (error) {
-            notification.add(
-                _t('Failed to regenerate: %s', formatError(error)),
-                { type: 'danger' },
-            );
+            notification.add(_t('Failed to regenerate: %s', formatError(error)), {
+                type: 'danger',
+            });
         }
     }
     function canRegenerate() {
         if (!state.sessionId) return false;
         if (state.status === 'running' || state.status === 'waiting') return false;
-        return (state.events || []).some((e) => e.kind === 'user_message' || e.kind === 'answer');
+        return (state.events || []).some(
+            (e) => e.kind === 'user_message' || e.kind === 'answer',
+        );
     }
     async function onAttachFiles(files) {
         if (!state.sessionId || !files || !files.length) {
@@ -698,18 +732,15 @@ export function useAiSession(options = {}) {
         }
         try {
             const payloads = await Promise.all(files.map((file) => fileToBase64(file)));
-            const descriptors = await orm.call(
-                'muk_ai.session', 'upload_attachments',
-                [state.sessionId, payloads],
-            );
-            state.pendingAttachments = [
-                ...state.pendingAttachments, ...descriptors,
-            ];
+            const descriptors = await orm.call('muk_ai.session', 'upload_attachments', [
+                state.sessionId,
+                payloads,
+            ]);
+            state.pendingAttachments = [...state.pendingAttachments, ...descriptors];
         } catch (error) {
-            notification.add(
-                _t('Attachment upload failed: %s', formatError(error)),
-                { type: 'danger' },
-            );
+            notification.add(_t('Attachment upload failed: %s', formatError(error)), {
+                type: 'danger',
+            });
         }
     }
     function parseSlashCommand(raw) {
@@ -752,21 +783,17 @@ export function useAiSession(options = {}) {
             return;
         }
         if (!state.viewContext) {
-            notification.add(
-                _t("No view context is pinned."),
-                { type: 'info' },
-            );
+            notification.add(_t('No view context is pinned.'), { type: 'info' });
             return;
         }
         try {
-            const snapshot = await orm.call(
-                'muk_ai.session', 'unpin_view_context',
-                [state.sessionId],
-            );
+            const snapshot = await orm.call('muk_ai.session', 'unpin_view_context', [
+                state.sessionId,
+            ]);
             applySnapshot(snapshot);
         } catch (error) {
             notification.add(
-                _t("Failed to clear view context: %s", formatError(error)),
+                _t('Failed to clear view context: %s', formatError(error)),
                 { type: 'danger' },
             );
         }
@@ -776,21 +803,22 @@ export function useAiSession(options = {}) {
             return;
         }
         try {
-            const snapshot = await orm.call(
-                'muk_ai.session', 'set_approval_mode',
-                [state.sessionId, mode || false],
-            );
+            const snapshot = await orm.call('muk_ai.session', 'set_approval_mode', [
+                state.sessionId,
+                mode || false,
+            ]);
             applySnapshot(snapshot);
         } catch (error) {
             notification.add(
-                _t("Failed to set approval mode: %s", formatError(error)),
+                _t('Failed to set approval mode: %s', formatError(error)),
                 { type: 'danger' },
             );
         }
     }
     function isAwaitingApproval() {
-        return state.status === 'waiting'
-            && (state.pendingAsk || {}).kind === 'approval';
+        return (
+            state.status === 'waiting' && (state.pendingAsk || {}).kind === 'approval'
+        );
     }
     function cycleApprovalMode() {
         const current = state.approvalMode;
@@ -831,7 +859,10 @@ export function useAiSession(options = {}) {
         }
         try {
             const snapshot = await orm.call(
-                'muk_ai.session', method, [state.sessionId], kwargs,
+                'muk_ai.session',
+                method,
+                [state.sessionId],
+                kwargs,
             );
             applySnapshot(snapshot);
         } catch (error) {
@@ -839,15 +870,13 @@ export function useAiSession(options = {}) {
         }
     }
     async function approveTool() {
-        return _runApproval(
-            'approve_tool',
-            (e) => _t('Failed to approve tool: %s', formatError(e)),
+        return _runApproval('approve_tool', (e) =>
+            _t('Failed to approve tool: %s', formatError(e)),
         );
     }
     async function approveForSession() {
-        return _runApproval(
-            'approve_for_session',
-            (e) => _t('Failed to approve tool: %s', formatError(e)),
+        return _runApproval('approve_for_session', (e) =>
+            _t('Failed to approve tool: %s', formatError(e)),
         );
     }
     async function rejectTool(reason) {
@@ -882,16 +911,13 @@ export function useAiSession(options = {}) {
             maybePopoutBeforeAction();
             await actionService.doAction(action);
         } catch (error) {
-            notification.add(
-                _t("Failed to open view: %s", formatError(error)),
-                { type: 'danger' },
-            );
+            notification.add(_t('Failed to open view: %s', formatError(error)), {
+                type: 'danger',
+            });
         }
     }
     function _helpSummary() {
-        return SLASH_COMMANDS
-            .map((c) => `**${c.name}** — ${c.hint}`)
-            .join('\n\n');
+        return SLASH_COMMANDS.map((c) => `**${c.name}** — ${c.hint}`).join('\n\n');
     }
     function appendLocalCommandLog(name, extra) {
         const entry = {
@@ -908,22 +934,21 @@ export function useAiSession(options = {}) {
             return;
         }
         if (state.status === 'running') {
-            notification.add(
-                _t("Stop the running session before clearing."),
-                { type: 'warning' },
-            );
+            notification.add(_t('Stop the running session before clearing.'), {
+                type: 'warning',
+            });
             return;
         }
         const confirmed = await new Promise((resolve) => {
             dialog.add(ConfirmationDialog, {
-                title: _t("Clear context"),
+                title: _t('Clear context'),
                 body: _t(
                     "Reset the LLM's context for this session? " +
-                    "The visible chat history stays on screen above a divider; " +
-                    "only the model loses memory of prior turns.",
+                        'The visible chat history stays on screen above a divider; ' +
+                        'only the model loses memory of prior turns.',
                 ),
-                confirmLabel: _t("Clear"),
-                cancelLabel: _t("Cancel"),
+                confirmLabel: _t('Clear'),
+                cancelLabel: _t('Cancel'),
                 confirm: () => resolve(true),
                 cancel: () => resolve(false),
             });
@@ -932,39 +957,37 @@ export function useAiSession(options = {}) {
             return;
         }
         try {
-            const snapshot = await orm.call(
-                'muk_ai.session', 'clear', [state.sessionId],
-            );
+            const snapshot = await orm.call('muk_ai.session', 'clear', [
+                state.sessionId,
+            ]);
             applySnapshot(snapshot);
             if (options.onRefresh) {
                 await options.onRefresh();
             }
         } catch (error) {
-            notification.add(
-                _t("Failed to clear session: %s", formatError(error)),
-                { type: 'danger' },
-            );
+            notification.add(_t('Failed to clear session: %s', formatError(error)), {
+                type: 'danger',
+            });
         }
     }
-    async function runCompact({ silent }) {
+    async function runCompact({ silent: _silent }) {
         if (!state.sessionId) {
             return;
         }
         if (state.status === 'running') {
-            notification.add(
-                _t("Stop the running session before compacting."),
-                { type: 'warning' },
-            );
+            notification.add(_t('Stop the running session before compacting.'), {
+                type: 'warning',
+            });
             return;
         }
         try {
-            const snapshot = await orm.call(
-                'muk_ai.session', 'compact', [state.sessionId],
-            );
+            const snapshot = await orm.call('muk_ai.session', 'compact', [
+                state.sessionId,
+            ]);
             applySnapshot(snapshot);
         } catch (error) {
             notification.add(
-                _t("Failed to compact conversation: %s", formatError(error)),
+                _t('Failed to compact conversation: %s', formatError(error)),
                 { type: 'danger' },
             );
         }
@@ -974,15 +997,14 @@ export function useAiSession(options = {}) {
             return;
         }
         try {
-            const snapshot = await orm.call(
-                'muk_ai.session', 'stop_compact', [state.sessionId],
-            );
+            const snapshot = await orm.call('muk_ai.session', 'stop_compact', [
+                state.sessionId,
+            ]);
             applySnapshot(snapshot);
         } catch (error) {
-            notification.add(
-                _t("Failed to stop compaction: %s", formatError(error)),
-                { type: 'danger' },
-            );
+            notification.add(_t('Failed to stop compaction: %s', formatError(error)), {
+                type: 'danger',
+            });
         }
     }
     function _eventsFromOrAfter(eventId) {
@@ -997,25 +1019,27 @@ export function useAiSession(options = {}) {
         if (!state.sessionId || !eventId) {
             return;
         }
-        if (state.status === 'running' || state.status === 'compacting'
-                || state.status === 'waiting') {
-            notification.add(
-                _t("Stop the session before rewinding."),
-                { type: 'warning' },
-            );
+        if (
+            state.status === 'running' ||
+            state.status === 'compacting' ||
+            state.status === 'waiting'
+        ) {
+            notification.add(_t('Stop the session before rewinding.'), {
+                type: 'warning',
+            });
             return;
         }
         const dropCount = _eventsFromOrAfter(eventId);
         const confirmed = await new Promise((resolve) => {
             dialog.add(ConfirmationDialog, {
-                title: _t("Rewind conversation"),
+                title: _t('Rewind conversation'),
                 body: _t(
-                    "Remove this message and the %s event(s) that follow from "
-                    + "the conversation? This cannot be undone.",
+                    'Remove this message and the %s event(s) that follow from ' +
+                        'the conversation? This cannot be undone.',
                     dropCount,
                 ),
-                confirmLabel: _t("Rewind"),
-                cancelLabel: _t("Cancel"),
+                confirmLabel: _t('Rewind'),
+                cancelLabel: _t('Cancel'),
                 confirm: () => resolve(true),
                 cancel: () => resolve(false),
             });
@@ -1024,19 +1048,18 @@ export function useAiSession(options = {}) {
             return;
         }
         try {
-            const snapshot = await orm.call(
-                'muk_ai.session', 'undo_to_event',
-                [state.sessionId, eventId],
-            );
+            const snapshot = await orm.call('muk_ai.session', 'undo_to_event', [
+                state.sessionId,
+                eventId,
+            ]);
             applySnapshot(snapshot);
             if (options.onRefresh) {
                 await options.onRefresh();
             }
         } catch (error) {
-            notification.add(
-                _t("Failed to rewind: %s", formatError(error)),
-                { type: 'danger' },
-            );
+            notification.add(_t('Failed to rewind: %s', formatError(error)), {
+                type: 'danger',
+            });
         }
     }
     async function runForkAtEvent(eventId) {
@@ -1044,29 +1067,24 @@ export function useAiSession(options = {}) {
             return;
         }
         if (state.status === 'running' || state.status === 'compacting') {
-            notification.add(
-                _t("Stop the session before forking."),
-                { type: 'warning' },
-            );
+            notification.add(_t('Stop the session before forking.'), {
+                type: 'warning',
+            });
             return;
         }
         try {
-            const newId = await orm.call(
-                'muk_ai.session', 'fork_at_event',
-                [state.sessionId, eventId],
-            );
-            notification.add(
-                _t("Forked into a new session."),
-                { type: 'success' },
-            );
+            const newId = await orm.call('muk_ai.session', 'fork_at_event', [
+                state.sessionId,
+                eventId,
+            ]);
+            notification.add(_t('Forked into a new session.'), { type: 'success' });
             if (options.onForked) {
                 await options.onForked(newId);
             }
         } catch (error) {
-            notification.add(
-                _t("Failed to fork: %s", formatError(error)),
-                { type: 'danger' },
-            );
+            notification.add(_t('Failed to fork: %s', formatError(error)), {
+                type: 'danger',
+            });
         }
     }
     async function maybeAutoCompact() {
@@ -1077,16 +1095,18 @@ export function useAiSession(options = {}) {
         if (ratio >= COMPACT_AUTO_RATIO) {
             await runCompact({ silent: true });
             notification.add(
-                _t("Auto-compacted: context window was %s%% full.",
-                    Math.round(ratio * 100)),
+                _t(
+                    'Auto-compacted: context window was %s%% full.',
+                    Math.round(ratio * 100),
+                ),
                 { type: 'info' },
             );
         } else if (ratio >= COMPACT_WARN_RATIO && !state.autoCompactPending) {
             state.autoCompactPending = true;
             notification.add(
                 _t(
-                    "Context window at %s%%. Type /compact to free room " +
-                    "before continuing.",
+                    'Context window at %s%%. Type /compact to free room ' +
+                        'before continuing.',
                     Math.round(ratio * 100),
                 ),
                 { type: 'warning' },
@@ -1101,7 +1121,7 @@ export function useAiSession(options = {}) {
                 ['id', 'name', 'description', 'suggestions'],
                 { order: 'sequence, name' },
             );
-        } catch (_error) {
+        } catch {
             state.agents = [];
         }
     }
@@ -1116,10 +1136,9 @@ export function useAiSession(options = {}) {
             state.agentId = agentId || null;
             state.agentName = agentName;
         } catch (error) {
-            notification.add(
-                _t('Failed to change agent: %s', formatError(error)),
-                { type: 'danger' },
-            );
+            notification.add(_t('Failed to change agent: %s', formatError(error)), {
+                type: 'danger',
+            });
         }
     }
     async function onSetAgent(agentId) {
@@ -1134,11 +1153,12 @@ export function useAiSession(options = {}) {
             return;
         }
         try {
-            await orm.call(
-                'muk_ai.session', 'discard_attachments',
-                [state.sessionId, [attachmentId]],
-            );
-        } catch (_error) {
+            await orm.call('muk_ai.session', 'discard_attachments', [
+                state.sessionId,
+                [attachmentId],
+            ]);
+        } catch {
+            /* ignore */
         }
     }
     function toggleToolBlock(callId) {
@@ -1169,7 +1189,12 @@ export function useAiSession(options = {}) {
         }
         const lines = text
             .split(/\n+/)
-            .map((l) => l.trim().replace(/^[#*\->\s]+/, '').replace(/[*]+$/, ''))
+            .map((l) =>
+                l
+                    .trim()
+                    .replace(/^[#*\->\s]+/, '')
+                    .replace(/[*]+$/, ''),
+            )
             .filter((l) => l.length > 0);
         if (!lines.length) {
             return '';

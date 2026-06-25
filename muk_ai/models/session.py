@@ -1,25 +1,25 @@
+from __future__ import annotations
+
 import base64
 import json
 import random
 import re
 import time
-
+from collections.abc import Iterable
 from contextlib import suppress
 from datetime import timedelta
 
 import psycopg2
 import urllib3
-
 from markupsafe import Markup, escape
 
 from odoo import SUPERUSER_ID, _, api, fields, models, modules, release
 from odoo.exceptions import AccessError, UserError
-from odoo.tools import SQL, config
 from odoo.service.model import PG_CONCURRENCY_EXCEPTIONS_TO_RETRY
+from odoo.tools import SQL, config
 
 from odoo.addons.muk_ai.tools import (
     ADVISORY_LOCK_NAMESPACE,
-    ITERATION_WARNING_ROUNDS,
     ALLOWED_MIMETYPES,
     ASK_USER_TOOL,
     ATTACHMENT_REF_MAX_BYTES,
@@ -30,6 +30,7 @@ from odoo.addons.muk_ai.tools import (
     COMPACT_SUMMARY_TEMPLATE,
     DEFAULT_CONTEXT_WINDOW,
     INLINE_IMAGE_RE,
+    ITERATION_WARNING_ROUNDS,
     MAX_ITERATIONS,
     MAX_TOOL_CALLS_PER_ROUND,
     MAX_WALLCLOCK_SECONDS,
@@ -52,10 +53,11 @@ from odoo.addons.muk_ai.tools import (
 
 
 class AISession(models.Model):
+    """Stateful agent conversation: runtime, streaming, tools, and approvals."""
 
     _name = 'muk_ai.session'
     _inherit = ['bus.listener.mixin']
-    _description = "AI Session"
+    _description = 'AI Session'
     _order = 'create_date desc'
 
     # ----------------------------------------------------------
@@ -63,22 +65,22 @@ class AISession(models.Model):
     # ----------------------------------------------------------
 
     name = fields.Char(
-        string="Name",
+        string='Name',
         required=True,
         index=True,
     )
 
     state = fields.Selection(
         selection=[
-            ('new', "New"),
-            ('running', "Running"),
-            ('compacting', "Compacting"),
-            ('waiting', "Waiting"),
-            ('stopped', "Stopped"),
-            ('done', "Done"),
-            ('error', "Error"),
+            ('new', 'New'),
+            ('running', 'Running'),
+            ('compacting', 'Compacting'),
+            ('waiting', 'Waiting'),
+            ('stopped', 'Stopped'),
+            ('done', 'Done'),
+            ('error', 'Error'),
         ],
-        string="State",
+        string='State',
         readonly=True,
         required=True,
         default='new',
@@ -87,11 +89,11 @@ class AISession(models.Model):
     )
 
     claimed_at = fields.Datetime(
-        string="Worker Claimed At",
+        string='Worker Claimed At',
         help=(
-            "Heartbeat written by the cron worker while processing this "
-            "session. Sessions in `running` or `compacting` state with a "
-            "stale heartbeat are reclaimed as orphans by the next cron tick."
+            'Heartbeat written by the cron worker while processing this '
+            'session. Sessions in `running` or `compacting` state with a '
+            'stale heartbeat are reclaimed as orphans by the next cron tick.'
         ),
         readonly=True,
         index=True,
@@ -99,12 +101,12 @@ class AISession(models.Model):
     )
 
     user_context = fields.Json(
-        string="User Context",
+        string='User Context',
         help=(
             "Snapshot of the calling user's environment context captured at "
-            "trigger time. Restored by the cron worker so tools see the same "
-            "language, timezone, and allowed companies as the originating "
-            "request."
+            'trigger time. Restored by the cron worker so tools see the same '
+            'language, timezone, and allowed companies as the originating '
+            'request.'
         ),
         readonly=True,
         copy=False,
@@ -112,7 +114,7 @@ class AISession(models.Model):
 
     user_id = fields.Many2one(
         comodel_name='res.users',
-        string="Owner",
+        string='Owner',
         readonly=True,
         required=True,
         default=lambda self: self.env.user,
@@ -125,26 +127,26 @@ class AISession(models.Model):
 
     agent_id = fields.Many2one(
         comodel_name='muk_ai.agent',
-        string="Agent",
+        string='Agent',
         default=lambda self: self.env['muk_ai.agent']._get_default(),
         ondelete='set null',
     )
 
     override_approval_mode = fields.Selection(
         selection=[
-            ('ask', "Ask on writes"),
-            ('off', "Never ask"),
+            ('ask', 'Ask on writes'),
+            ('off', 'Never ask'),
         ],
-        string="Approval Mode Override",
+        string='Approval Mode Override',
         help=(
             "Per-session override for the agent's approval policy. "
-            "Leave empty to inherit from the agent."
+            'Leave empty to inherit from the agent.'
         ),
     )
 
     effective_approval_mode = fields.Char(
         compute='_compute_effective_approval_mode',
-        string="Effective Approval Mode",
+        string='Effective Approval Mode',
     )
 
     # ----------------------------------------------------------
@@ -152,96 +154,96 @@ class AISession(models.Model):
     # ----------------------------------------------------------
 
     conversation = fields.Json(
-        string="Conversation",
+        string='Conversation',
         readonly=True,
         default=list,
     )
 
     cleared_at = fields.Datetime(
-        string="Cleared At",
-        help="Wall-clock marker set by /clear and /compact.",
+        string='Cleared At',
+        help='Wall-clock marker set by /clear and /compact.',
         readonly=True,
         copy=False,
     )
 
     event_ids = fields.One2many(
         comodel_name='muk_ai.session.event',
-        string="Events",
+        string='Events',
         readonly=True,
         inverse_name='session_id',
     )
 
     display_events = fields.Json(
         compute='_compute_display_events',
-        string="Conversation Events",
+        string='Conversation Events',
         help=(
-            "Flat list of session events in the shape consumed by the "
+            'Flat list of session events in the shape consumed by the '
             "chat-style events widget. Mirrors `fetch_events()['events']`."
         ),
     )
 
     log_ids = fields.One2many(
         comodel_name='muk_mcp.log',
-        string="Tool Calls",
+        string='Tool Calls',
         readonly=True,
         inverse_name='session_id',
     )
 
     last_text = fields.Text(
-        string="Last AI Message",
+        string='Last AI Message',
         readonly=True,
     )
 
     view_context = fields.Json(
-        string="View Context",
+        string='View Context',
         help=(
-            "Sticky description of the Odoo view the user is looking at. "
-            "Injected as a <ui_ctx> tag on every provider request until it "
-            "is replaced by a navigation tool result or cleared via /unpin."
+            'Sticky description of the Odoo view the user is looking at. '
+            'Injected as a <ui_ctx> tag on every provider request until it '
+            'is replaced by a navigation tool result or cleared via /unpin.'
         ),
         readonly=True,
     )
 
     pending_ask = fields.Json(
-        string="Pending Ask",
+        string='Pending Ask',
         help=(
-            "What the session is paused on: a free-text question from "
+            'What the session is paused on: a free-text question from '
             "ask_user (`kind: 'question'`) or a risky tool call awaiting "
             "explicit confirmation (`kind: 'approval'`). The UI reads this "
-            "to render the pending ask card; the resume path depends on "
-            "`kind`."
+            'to render the pending ask card; the resume path depends on '
+            '`kind`.'
         ),
         readonly=True,
     )
 
     approved_signatures = fields.Json(
-        string="Approved Signatures",
+        string='Approved Signatures',
         help=(
-            "Risk signatures the user has approved for this conversation. "
-            "A signature in this list bypasses the approval gate on the "
-            "next matching tool call. Scope is this session only."
+            'Risk signatures the user has approved for this conversation. '
+            'A signature in this list bypasses the approval gate on the '
+            'next matching tool call. Scope is this session only.'
         ),
         readonly=True,
     )
 
     pending_ids = fields.One2many(
         comodel_name='muk_ai.session.pending',
-        string="Pending Messages",
+        string='Pending Messages',
         help=(
-            "FIFO queue of user messages typed while the session was busy. "
-            "Drained as one combined turn at the end of `_run_to_completion`."
+            'FIFO queue of user messages typed while the session was busy. '
+            'Drained as one combined turn at the end of `_run_to_completion`.'
         ),
         readonly=True,
         inverse_name='session_id',
     )
 
     expanded_tool_names = fields.Json(
-        string="Loaded Tools",
+        string='Loaded Tools',
         help=(
-            "Tool names whose full schemas have been loaded into this "
-            "session via tool_load. Append-only within a session. "
-            "Essentials and meta-tools (tool_load, ask_user) are always "
-            "loaded regardless of this list."
+            'Tool names whose full schemas have been loaded into this '
+            'session via tool_load. Append-only within a session. '
+            'Essentials and meta-tools (tool_load, ask_user) are always '
+            'loaded regardless of this list.'
         ),
         readonly=True,
         default=list,
@@ -249,15 +251,15 @@ class AISession(models.Model):
 
     pending_user_messages = fields.Json(
         compute='_compute_pending_user_messages',
-        string="Queued User Messages",
+        string='Queued User Messages',
         help=(
-            "Serialized snapshot of `pending_ids` in the shape consumed by "
-            "the chat client."
+            'Serialized snapshot of `pending_ids` in the shape consumed by '
+            'the chat client.'
         ),
     )
 
     error_message = fields.Text(
-        string="Error",
+        string='Error',
         readonly=True,
     )
 
@@ -265,7 +267,7 @@ class AISession(models.Model):
         comodel_name='ir.attachment',
         inverse_name='res_id',
         domain=[('res_model', '=', 'muk_ai.session')],
-        string="Attachments",
+        string='Attachments',
         copy=False,
         readonly=True,
     )
@@ -275,17 +277,17 @@ class AISession(models.Model):
     # ----------------------------------------------------------
 
     iteration_count = fields.Integer(
-        string="Iterations",
+        string='Iterations',
         readonly=True,
         default=0,
     )
 
     turn_wallclock_spent = fields.Float(
-        string="Turn Wallclock Spent",
+        string='Turn Wallclock Spent',
         help=(
-            "Cumulative compute seconds spent on the current user turn across "
-            "cron slices. Reset to zero on each new user turn. When it reaches "
-            "the per-turn wallclock budget the turn stops with an error."
+            'Cumulative compute seconds spent on the current user turn across '
+            'cron slices. Reset to zero on each new user turn. When it reaches '
+            'the per-turn wallclock budget the turn stops with an error.'
         ),
         readonly=True,
         default=0.0,
@@ -293,12 +295,12 @@ class AISession(models.Model):
     )
 
     turn_cost_spent = fields.Float(
-        string="Turn Cost Spent",
+        string='Turn Cost Spent',
         help=(
-            "Cumulative amount spent on the current user turn across cron "
-            "slices, in the price currency of the model. Reset to zero on "
-            "each new user turn. When it reaches the per-turn cost limit "
-            "(muk_ai.turn_cost_limit) the turn stops with an error."
+            'Cumulative amount spent on the current user turn across cron '
+            'slices, in the price currency of the model. Reset to zero on '
+            'each new user turn. When it reaches the per-turn cost limit '
+            '(muk_ai.turn_cost_limit) the turn stops with an error.'
         ),
         readonly=True,
         default=0.0,
@@ -306,23 +308,23 @@ class AISession(models.Model):
     )
 
     total_input_tokens = fields.Integer(
-        string="Input Tokens",
+        string='Input Tokens',
         readonly=True,
         default=0,
     )
 
     total_output_tokens = fields.Integer(
-        string="Output Tokens",
+        string='Output Tokens',
         readonly=True,
         default=0,
     )
 
     total_input_cost = fields.Float(
-        string="Input Cost (USD)",
+        string='Input Cost (USD)',
         help=(
-            "Cumulative USD spent on input tokens for this session. "
-            "Frozen at accrual time against the model record that was "
-            "active; later pricing edits do not rewrite history."
+            'Cumulative USD spent on input tokens for this session. '
+            'Frozen at accrual time against the model record that was '
+            'active; later pricing edits do not rewrite history.'
         ),
         readonly=True,
         default=0.0,
@@ -330,26 +332,26 @@ class AISession(models.Model):
     )
 
     total_output_cost = fields.Float(
-        string="Output Cost (USD)",
-        help="Cumulative USD spent on output tokens for this session.",
+        string='Output Cost (USD)',
+        help='Cumulative USD spent on output tokens for this session.',
         readonly=True,
         default=0.0,
         digits=(12, 6),
     )
 
     total_cost = fields.Float(
-        string="Total Cost (USD)",
-        help="Cumulative USD for this session (input + output).",
+        string='Total Cost (USD)',
+        help='Cumulative USD for this session (input + output).',
         readonly=True,
         default=0.0,
         digits=(12, 6),
     )
 
     last_input_tokens = fields.Integer(
-        string="Last Input Tokens",
+        string='Last Input Tokens',
         help=(
-            "Input tokens consumed by the most recent provider round. "
-            "Drives the context-window usage meter."
+            'Input tokens consumed by the most recent provider round. '
+            'Drives the context-window usage meter.'
         ),
         readonly=True,
         default=0,
@@ -357,7 +359,7 @@ class AISession(models.Model):
 
     context_window = fields.Integer(
         compute='_compute_context_window',
-        string="Context Window",
+        string='Context Window',
         help="Effective context window size for the session's active model.",
     )
 
@@ -366,14 +368,17 @@ class AISession(models.Model):
     # ----------------------------------------------------------
 
     @api.model
-    def _get_terminating_tools(self):
+    def _get_terminating_tools(self) -> set[str]:
+        """Return the names of tools that terminate a tool round."""
         return TERMINATING_TOOLS
 
     @api.model
-    def _get_system_prompt(self):
+    def _get_system_prompt(self) -> str:
+        """Return the default agent's system prompt."""
         return self.env['muk_ai.agent']._get_default().system_prompt
 
-    def _effective_system_prompt(self):
+    def _effective_system_prompt(self) -> str:
+        """Render the session's system prompt from its agent or the default."""
         raw = (
             self.agent_id.system_prompt
             if self.agent_id and self.agent_id.system_prompt
@@ -381,11 +386,10 @@ class AISession(models.Model):
         )
         return self._render_system_prompt(raw or '')
 
-    def _build_available_tools_block(self):
+    def _build_available_tools_block(self) -> str:
+        """Build the prompt block listing deferred, name-only tools."""
         catalog_names = {
-            entry['name']
-            for entry in self._get_filtered_catalog()
-            if entry.get('name')
+            entry['name'] for entry in self._get_filtered_catalog() if entry.get('name')
         }
         loaded = set(self._loaded_tool_names()) & catalog_names
         if deferred := sorted(catalog_names - loaded):
@@ -404,7 +408,7 @@ class AISession(models.Model):
                 ),
                 'tool_load(names=["<tool>"], call={name: "<tool>", arguments: {...}})',
                 (
-                    'Returns {loaded: {...}, call: {output: <result>}}. No '
+                    'Returns {loaded: {...}, call: {output: <result>}}. No '  # noqa: RUF027 — literal prompt text, not an f-string
                     'follow-up turn. This is the strongly preferred shape '
                     'for any deferred tool — never load and then call in '
                     'two separate rounds when one will do.'
@@ -416,22 +420,25 @@ class AISession(models.Model):
             return '\n'.join(lines)
         return ''
 
-    def _available_tools_extra_paragraphs(self):
+    def _available_tools_extra_paragraphs(self) -> list[str]:
+        """Return extra paragraphs appended to the available-tools block."""
         return []
 
-    def _session_prompt_extras(self):
+    def _session_prompt_extras(self) -> dict:
+        """Return template variables exposed to the system prompt."""
         return {
             'approval_mode': (
-                self._effective_approval_mode()
-                if self and self.id else 'ask'
+                self._effective_approval_mode() if self and self.id else 'ask'
             ),
         }
 
-    def _render_system_prompt(self, raw):
+    def _render_system_prompt(self, raw: str) -> str:
+        """Render a raw system prompt with the session's template extras."""
         agent = self.agent_id or self.env['muk_ai.agent']._get_default()
         return agent._render_prompt(raw, **self._session_prompt_extras())
 
-    def _build_runtime_block(self):
+    def _build_runtime_block(self) -> str:
+        """Build the prompt block stating runtime facts about the session."""
         lines = [
             '<runtime>',
             'Facts about this session. Use them directly; do not look them up.',
@@ -447,29 +454,31 @@ class AISession(models.Model):
         lines.append('</runtime>')
         return '\n'.join(lines)
 
-    def _effective_model_record(self):
+    def _effective_model_record(self) -> models.BaseModel:
+        """Return the model record used by the session's agent or default."""
         if self.agent_id and self.agent_id.model_id:
             return self.agent_id.model_id
         return self.env['muk_ai.provider']._get_default().default_model_id
 
-    def _effective_provider(self):
+    def _effective_provider(self) -> models.BaseModel:
+        """Return the provider backing the session's effective model."""
         if record := self._effective_model_record():
             return record.provider_id
         return self.env['muk_ai.provider']._get_default()
 
-    def _effective_model(self):
+    def _effective_model(self) -> str | None:
+        """Return the technical name of the effective model, or ``None``."""
         if record := self._effective_model_record():
             return record.technical_name
         return None
 
-    def _resolve_context_window(self):
+    def _resolve_context_window(self) -> int:
+        """Return the effective model's context window, or the default."""
         record = self._effective_model_record()
-        return (
-            (record.context_window if record else 0) or
-            DEFAULT_CONTEXT_WINDOW
-        )
+        return (record.context_window if record else 0) or DEFAULT_CONTEXT_WINDOW
 
-    def _effective_approval_mode(self):
+    def _effective_approval_mode(self) -> str:
+        """Return the approval mode from the override, agent, or default."""
         if self.override_approval_mode:
             return self.override_approval_mode
         if self.agent_id and self.agent_id.approval_mode:
@@ -477,10 +486,9 @@ class AISession(models.Model):
         return 'ask'
 
     @api.model
-    def _int_config_param(self, key, default):
-        raw = self.env['ir.config_parameter'].sudo().get_param(
-            key
-        )
+    def _int_config_param(self, key: str, default: int) -> int:
+        """Return a positive integer config parameter, or the default."""
+        raw = self.env['ir.config_parameter'].sudo().get_param(key)
         try:
             value = int(raw)
         except (TypeError, ValueError):
@@ -488,44 +496,40 @@ class AISession(models.Model):
         return value if value > 0 else default
 
     @api.model
-    def _max_iterations(self):
-        return self._int_config_param(
-            'muk_ai.max_iterations', MAX_ITERATIONS
-        )
+    def _max_iterations(self) -> int:
+        """Return the configured maximum LLM rounds per worker slice."""
+        return self._int_config_param('muk_ai.max_iterations', MAX_ITERATIONS)
 
     @api.model
-    def _cron_hard_limit_seconds(self):
+    def _cron_hard_limit_seconds(self) -> int:
+        """Return the cron real-time hard limit in seconds, or ``0``."""
         limit = config['limit_time_real_cron']
         if not limit or limit < 0:
             limit = config['limit_time_real'] or 0
         return limit if limit and limit > 0 else 0
 
     @api.model
-    def _slice_wallclock_seconds(self):
+    def _slice_wallclock_seconds(self) -> int:
+        """Return the per-slice wallclock budget capped by the cron limit."""
         configured = self._int_config_param(
-            'muk_ai.slice_wallclock_seconds',
-            MAX_WALLCLOCK_SECONDS
+            'muk_ai.slice_wallclock_seconds', MAX_WALLCLOCK_SECONDS
         )
         if hard := self._cron_hard_limit_seconds():
-            budget = max(
-                WALLCLOCK_MIN_SECONDS,
-                hard - WALLCLOCK_SAFETY_MARGIN
-            )
+            budget = max(WALLCLOCK_MIN_SECONDS, hard - WALLCLOCK_SAFETY_MARGIN)
             return min(configured, budget)
         return configured
 
     @api.model
-    def _turn_wallclock_seconds(self):
+    def _turn_wallclock_seconds(self) -> int:
+        """Return the configured total wallclock budget for a user turn."""
         return self._int_config_param(
-            'muk_ai.turn_wallclock_seconds',
-            TURN_WALLCLOCK_SECONDS
+            'muk_ai.turn_wallclock_seconds', TURN_WALLCLOCK_SECONDS
         )
 
     @api.model
-    def _turn_cost_limit(self):
-        raw = self.env['ir.config_parameter'].sudo().get_param(
-            'muk_ai.turn_cost_limit'
-        )
+    def _turn_cost_limit(self) -> float:
+        """Return the configured per-turn cost limit, or ``0.0`` when unset."""
+        raw = self.env['ir.config_parameter'].sudo().get_param('muk_ai.turn_cost_limit')
         try:
             value = float(raw)
         except (TypeError, ValueError):
@@ -537,11 +541,9 @@ class AISession(models.Model):
     # ----------------------------------------------------------
 
     @staticmethod
-    def _tool_entry_to_schema(entry):
-        schema = (
-            entry.get('inputSchema') or
-            {'type': 'object', 'properties': {}}
-        )
+    def _tool_entry_to_schema(entry: dict) -> dict:
+        """Convert a tool catalog entry into a provider function schema."""
+        schema = entry.get('inputSchema') or {'type': 'object', 'properties': {}}
         return {
             'type': 'function',
             'name': entry['name'],
@@ -550,69 +552,97 @@ class AISession(models.Model):
             'strict': False,
         }
 
-    def _build_user_entry(self, user_message=None, attachments=None):
+    def _build_user_entry(
+        self,
+        user_message: str | None = None,
+        attachments: models.BaseModel | None = None,
+    ) -> dict | None:
+        """Build a user conversation entry from a message and attachments."""
         content = []
         if user_message:
             content.append({'type': 'input_text', 'text': user_message})
         for attachment in attachments or []:
-            content.append({
-                'type': 'muk_ai_attachment',
-                'attachment_id': attachment.id,
-                'filename': attachment.name,
-                'mimetype': attachment.mimetype,
-            })
+            content.append(
+                {
+                    'type': 'muk_ai_attachment',
+                    'attachment_id': attachment.id,
+                    'filename': attachment.name,
+                    'mimetype': attachment.mimetype,
+                }
+            )
         return {'role': 'user', 'content': content} if content else None
 
-    def _build_initial_inputs(self, user_message=None, attachments=None):
+    def _build_initial_inputs(
+        self,
+        user_message: str | None = None,
+        attachments: models.BaseModel | None = None,
+    ) -> list[dict]:
+        """Build the initial system and user inputs for a fresh turn."""
         parts = [
             self._effective_system_prompt(),
             self._build_runtime_block(),
             self._build_available_tools_block(),
         ]
-        inputs = [{
-            'role': 'system',
-            'content': [{
-                'type': 'input_text',
-                'text': '\n\n'.join(part for part in parts if part),
-            }],
-        }]
+        inputs = [
+            {
+                'role': 'system',
+                'content': [
+                    {
+                        'type': 'input_text',
+                        'text': '\n\n'.join(part for part in parts if part),
+                    }
+                ],
+            }
+        ]
         if user_entry := self._build_user_entry(user_message, attachments):
             inputs.append(user_entry)
         return inputs
 
-    def _user_message_log(self, user_message, attachments):
+    def _user_message_log(
+        self, user_message: str | None, attachments: models.BaseModel
+    ) -> dict:
+        """Build the persisted log entry for a user message."""
         return {
             'kind': 'user_message',
             'content': user_message or '',
             'attachments': [a._ai_describe() for a in attachments],
         }
 
-    def _get_filtered_catalog(self):
-        tool_env = self.env(context={**self.env.context, **self._tool_dispatch_context()})
+    def _get_filtered_catalog(self) -> list[dict]:
+        """Return the tool catalog filtered by the session's agent."""
+        tool_env = self.env(
+            context={**self.env.context, **self._tool_dispatch_context()}
+        )
         catalog = list(tool_env['muk_mcp.tool'].sudo().get_tools(registry='odoo'))
         if self.agent_id:
             catalog = self.agent_id.apply_tool_filter(catalog)
         return catalog
 
-    def _get_essential_tool_names(self):
+    def _get_essential_tool_names(self) -> list[str]:
+        """Return the essential tool names from the agent or the default set."""
         if self.agent_id:
             return self.agent_id._get_essential_tool_names()
         return self.env['muk_ai.agent']._get_default_essential_tool_names()
 
-    def _loaded_tool_names(self):
+    def _loaded_tool_names(self) -> list[str]:
+        """Return the de-duplicated essential and expanded tool names."""
         seen, result = set(), []
-        for name in self._get_essential_tool_names() + list(self.expanded_tool_names or []):
+        for name in self._get_essential_tool_names() + list(
+            self.expanded_tool_names or []
+        ):
             if name and name not in seen:
                 seen.add(name)
                 result.append(name)
         return result
 
-    def _get_tool_schema(self):
-        catalog_by_name = {entry['name']: entry for entry in self._get_filtered_catalog()}
+    def _get_tool_schema(self) -> list[dict]:
+        """Build the function schema list for currently loaded tools."""
+        catalog_by_name = {
+            entry['name']: entry for entry in self._get_filtered_catalog()
+        }
         loaded = set(self._loaded_tool_names()) & set(catalog_by_name)
         result = [
-            self._tool_entry_to_schema(catalog_by_name[name])
-            for name in sorted(loaded)
+            self._tool_entry_to_schema(catalog_by_name[name]) for name in sorted(loaded)
         ]
         if set(catalog_by_name) - loaded:
             result.append(self._tool_entry_to_schema(TOOL_LOAD_TOOL))
@@ -620,24 +650,28 @@ class AISession(models.Model):
             result.append(self._tool_entry_to_schema(ASK_USER_TOOL))
         return result
 
-    def _build_request_inputs(self):
+    def _build_request_inputs(self) -> list[dict]:
+        """Return the conversation inputs annotated with the UI context."""
         return with_ui_ctx(self.conversation, self.view_context)
 
     # ----------------------------------------------------------
     # Helper Bus
     # ----------------------------------------------------------
 
-    def _bus_channel(self):
+    def _bus_channel(self) -> models.BaseModel:
+        """Return the partner used as the session's bus channel."""
         return self.user_id.partner_id
 
-    def _public_pending_ask(self, pending=None):
+    def _public_pending_ask(self, pending: dict | None = None) -> dict | None:
+        """Return the pending ask payload stripped of internal keys."""
         pending = self.pending_ask if pending is None else pending
         if not isinstance(pending, dict) or not pending:
             return None
         return {
             key: value
             for key, value in pending.items()
-            if key not in (
+            if key
+            not in (
                 'arguments',
                 'tool_calls',
                 'outputs',
@@ -646,7 +680,8 @@ class AISession(models.Model):
             )
         }
 
-    def _state_metrics(self):
+    def _state_metrics(self) -> dict:
+        """Return the public state and usage metrics broadcast on the bus."""
         return {
             'state': self.state,
             'iteration_count': self.iteration_count,
@@ -661,46 +696,53 @@ class AISession(models.Model):
             'total_cost': self.total_cost,
         }
 
-    def _publish_event(self, event_type, payload):
-        self._bus_send('muk_ai.event', {
-            'session_id': self.id,
-            'type': event_type,
-            'payload': payload,
-        })
-        if event_type == 'state':
-            self._bus_send('muk_ai.session_state', {
+    def _publish_event(self, event_type: str, payload: dict) -> None:
+        """Broadcast a session event and any derived state notifications."""
+        self._bus_send(
+            'muk_ai.event',
+            {
                 'session_id': self.id,
-                'name': self.name,
-                **self._state_metrics(),
-            })
+                'type': event_type,
+                'payload': payload,
+            },
+        )
+        if event_type == 'state':
+            self._bus_send(
+                'muk_ai.session_state',
+                {
+                    'session_id': self.id,
+                    'name': self.name,
+                    **self._state_metrics(),
+                },
+            )
             self._notify_state_transition(payload)
         elif event_type == 'rename':
-            self._bus_send('muk_ai.session_state', {
-                'session_id': self.id,
-                'name': self.name,
-                'state': self.state,
-            })
+            self._bus_send(
+                'muk_ai.session_state',
+                {
+                    'session_id': self.id,
+                    'name': self.name,
+                    'state': self.state,
+                },
+            )
 
-    def _bus_log_payload(self, payload, limit=8192):
+    def _bus_log_payload(self, payload: dict, limit: int = 8192) -> dict:
+        """Return a copy of the payload with large fields truncated for the bus."""
         capped = dict(payload)
         for key in ('result', 'arguments'):
             if (value := capped.get(key)) is None:
                 continue
-            text = (
-                value
-                if isinstance(value, str)
-                else json.dumps(value, default=str)
-            )
+            text = value if isinstance(value, str) else json.dumps(value, default=str)
             if len(text) > limit:
                 capped[key] = text[:limit] + '…'
                 capped['truncated'] = True
         return capped
 
-    def _notify_state_transition(self, payload):
+    def _notify_state_transition(self, payload: dict) -> None:
+        """Emit bus and inbox notifications for terminal state transitions."""
         new_state = (payload or {}).get('state')
         if new_state == 'done' and (
-            self.pending_ids
-            or self.env.context.get('muk_ai_skip_done_notification')
+            self.pending_ids or self.env.context.get('muk_ai_skip_done_notification')
         ):
             return
         if new_state in ('done', 'waiting', 'error'):
@@ -708,102 +750,113 @@ class AISession(models.Model):
             ask_kind = ask.get('kind') if isinstance(ask, dict) else None
             title, message = self._notification_summary(new_state, payload, ask_kind)
             with suppress(Exception):
-                self._bus_send('muk_ai.session_notification', {
-                    'session_id': self.id,
-                    'session_name': self.name,
-                    'state': new_state,
-                    'ask_kind': ask_kind,
-                    'title': title,
-                    'message': message,
-                })
+                self._bus_send(
+                    'muk_ai.session_notification',
+                    {
+                        'session_id': self.id,
+                        'session_name': self.name,
+                        'state': new_state,
+                        'ask_kind': ask_kind,
+                        'title': title,
+                        'message': message,
+                    },
+                )
             if new_state == 'waiting':
                 self._post_inbox_notification(title, message)
 
-    def _notification_summary(self, new_state, payload, ask_kind):
-        name = self.name or _("AI Session")
+    def _notification_summary(
+        self, new_state: str, payload: dict, ask_kind: str | None
+    ) -> tuple[str, str]:
+        """Return the notification title and message for a state transition."""
+        name = self.name or _('AI Session')
         if new_state == 'done':
             return (
-                _("AI session finished"),
-                _("Session “%(name)s” has finished.", name=name),
+                _('AI session finished'),
+                _('Session “%(name)s” has finished.', name=name),
             )
         if new_state == 'error':
             raw = (payload or {}).get('error') or self.error_message
             return (
-                _("AI session error"),
+                _('AI session error'),
                 _(
-                    "Session “%(name)s” stopped: %(reason)s",
+                    'Session “%(name)s” stopped: %(reason)s',
                     name=name,
-                    reason=self._short_error_reason(raw) if raw else _("unknown error"),
+                    reason=self._short_error_reason(raw) if raw else _('unknown error'),
                 ),
             )
         if ask_kind == 'approval':
             return (
-                _("AI session needs approval"),
+                _('AI session needs approval'),
                 _(
-                    "Session “%(name)s” is waiting for your approval before "
-                    "running a tool.",
+                    'Session “%(name)s” is waiting for your approval before '
+                    'running a tool.',
                     name=name,
                 ),
             )
         return (
-            _("AI session needs your input"),
-            _("Session “%(name)s” is waiting for your answer.", name=name),
+            _('AI session needs your input'),
+            _('Session “%(name)s” is waiting for your answer.', name=name),
         )
 
-    def _short_error_reason(self, raw):
+    def _short_error_reason(self, raw: str) -> str:
+        """Extract a short, single-line reason from a raw error string."""
         text = raw.strip()[:8192]
         if match := re.search(r'\{.*\}', text, flags=re.DOTALL):
             try:
                 data = json.loads(match.group(0))
-                error = (
-                    data.get('error')
-                    if isinstance(data, dict)
-                    else None
-                )
+            except ValueError:
+                data = None
+            if isinstance(data, dict):
+                error = data.get('error')
                 if isinstance(error, dict) and error.get('message'):
                     text = error['message']
                 elif data.get('message'):
                     text = data['message']
-            except (ValueError, AttributeError):
-                pass
         text = ' '.join(text.split())
         return text[:197] + '…' if len(text) > 200 else text
 
-    def _post_inbox_notification(self, title, message):
+    def _post_inbox_notification(self, title: str, message: str) -> None:
+        """Post an inbox notification linking back to the chat session."""
         if partner := self.user_id.partner_id:
-            body = (
-                Markup('<p>%s</p>') % escape(message) +
-                Markup('<p><a href="/odoo/ai?session_id=%s">%s</a></p>') % (
-                    self.id, _("Open Chat")
-                )
-            )
+            body = Markup('<p>%s</p>') % escape(message) + Markup(
+                '<p><a href="/odoo/ai?session_id=%s">%s</a></p>'
+            ) % (self.id, _('Open Chat'))
             with suppress(Exception):
-                mail_message = self.env['mail.message'].sudo().create({
-                    'message_type': 'user_notification',
-                    'subtype_id': self.env['ir.model.data']._xmlid_to_res_id(
-                        'mail.mt_note'
-                    ),
-                    'model': self._name,
-                    'res_id': self.id,
-                    'author_id': self.env.ref('base.partner_root').id,
-                    'subject': title,
-                    'body': body,
-                    'partner_ids': [(4, partner.id)],
-                    'muk_ai_session_id': self.id,
-                })
-                self.env['mail.notification'].sudo().create({
-                    'mail_message_id': mail_message.id,
-                    'res_partner_id': partner.id,
-                    'notification_type': 'inbox',
-                    'is_read': False,
-                })
+                mail_message = (
+                    self.env['mail.message']
+                    .sudo()
+                    .create(
+                        {
+                            'message_type': 'user_notification',
+                            'subtype_id': self.env['ir.model.data']._xmlid_to_res_id(
+                                'mail.mt_note'
+                            ),
+                            'model': self._name,
+                            'res_id': self.id,
+                            'author_id': self.env.ref('base.partner_root').id,
+                            'subject': title,
+                            'body': body,
+                            'partner_ids': [(4, partner.id)],
+                            'muk_ai_session_id': self.id,
+                        }
+                    )
+                )
+                self.env['mail.notification'].sudo().create(
+                    {
+                        'mail_message_id': mail_message.id,
+                        'res_partner_id': partner.id,
+                        'notification_type': 'inbox',
+                        'is_read': False,
+                    }
+                )
                 partner._bus_send_store(mail_message)
 
     # ----------------------------------------------------------
     # Helper State
     # ----------------------------------------------------------
 
-    def _append_event(self, entry):
+    def _append_event(self, entry: dict) -> models.BaseModel:
+        """Append an event with the next sequence and broadcast it."""
         stamped = (
             entry
             if 'at' in entry
@@ -811,21 +864,29 @@ class AISession(models.Model):
         )
         event = self.env['muk_ai.session.event'].sudo()
         for _attempt in range(5):
-            self.env.cr.execute(SQL(
-                "SELECT COALESCE(MAX(sequence), -1) + 1 "
-                "FROM muk_ai_session_event WHERE session_id = %s",
-                self.id,
-            ))
+            self.env.cr.execute(
+                SQL(
+                    'SELECT COALESCE(MAX(sequence), -1) + 1 '
+                    'FROM muk_ai_session_event WHERE session_id = %s',
+                    self.id,
+                )
+            )
             sequence = self.env.cr.fetchone()[0]
             try:
                 with self.env.cr.savepoint():
-                    event = self.env['muk_ai.session.event'].sudo().create({
-                        'session_id': self.id,
-                        'sequence': sequence,
-                        'kind': stamped.get('kind') or '',
-                        'payload': stamped,
-                        'at': fields.Datetime.now(),
-                    })
+                    event = (
+                        self.env['muk_ai.session.event']
+                        .sudo()
+                        .create(
+                            {
+                                'session_id': self.id,
+                                'sequence': sequence,
+                                'kind': stamped.get('kind') or '',
+                                'payload': stamped,
+                                'at': fields.Datetime.now(),
+                            }
+                        )
+                    )
                 stamped = {**stamped, 'event_id': event.id}
                 break
             except psycopg2.errors.UniqueViolation:
@@ -833,16 +894,17 @@ class AISession(models.Model):
         self._publish_event('log', self._bus_log_payload(stamped))
         return event
 
-    def _extend_conversation(self, items):
+    def _extend_conversation(self, items: list[dict]) -> None:
+        """Append items to the stored conversation."""
         self.conversation = [*(self.conversation or []), *(items or [])]
 
-    def _close_orphan_tool_calls(self, reason):
+    def _close_orphan_tool_calls(self, reason: str) -> None:
+        """Emit interrupted outputs for tool calls left without a result."""
         conversation = self.conversation or []
         answered = {
             item.get('call_id')
             for item in conversation
-            if isinstance(item, dict)
-            and item.get('type') == 'function_call_output'
+            if isinstance(item, dict) and item.get('type') == 'function_call_output'
         }
         orphans = [
             item['call_id']
@@ -853,83 +915,108 @@ class AISession(models.Model):
             and item['call_id'] not in answered
         ]
         if orphans:
-            self._extend_conversation([
-                build_tool_call_output(call_id, {
-                    'error': 'interrupted',
-                    'reason': reason,
-                })
-                for call_id in orphans
-            ])
+            self._extend_conversation(
+                [
+                    build_tool_call_output(
+                        call_id,
+                        {
+                            'error': 'interrupted',
+                            'reason': reason,
+                        },
+                    )
+                    for call_id in orphans
+                ]
+            )
 
-    def _resolve_attachments(self, attachment_ids):
-        requested = self.env['ir.attachment'].browse([
-            int(aid) for aid in attachment_ids or []
-        ])
+    def _resolve_attachments(
+        self, attachment_ids: Iterable[int] | None
+    ) -> models.BaseModel:
+        """Validate and bind requested attachments to this session.
+
+        :raise UserError: when an attachment is missing or not accessible
+        """
+        requested = self.env['ir.attachment'].browse(
+            [int(aid) for aid in attachment_ids or []]
+        )
         if (attachments := requested.exists()) != requested:
-            raise UserError(_("One or more attachments could not be found."))
+            raise UserError(_('One or more attachments could not be found.'))
         attachments._ai_validate()
         if new := attachments - self.attachment_ids:
-            if new.filtered(
-                lambda a: a.res_model and a.res_model != 'muk_ai.session'
-            ):
-                raise UserError(_("One or more attachments could not be found."))
+            if new.filtered(lambda a: a.res_model and a.res_model != 'muk_ai.session'):
+                raise UserError(_('One or more attachments could not be found.'))
             new.check_access('write')
             new.sudo().write({'res_model': 'muk_ai.session', 'res_id': self.id})
             self.invalidate_recordset(['attachment_ids'])
         return attachments
 
-    def _enqueue_user_turn(self, user_message, attachments, extend=True):
-        if extend and (user_entry := self._build_user_entry(
-            user_message, attachments
-        )):
+    def _enqueue_user_turn(
+        self,
+        user_message: str | None,
+        attachments: models.BaseModel,
+        extend: bool = True,
+    ) -> None:
+        """Start a running turn from a user message and attachments."""
+        if extend and (user_entry := self._build_user_entry(user_message, attachments)):
             self._extend_conversation([user_entry])
         if user_message or attachments:
-            self._append_event(self._user_message_log(
-                user_message, attachments
-            ))
-        self.write({
-            'state': 'running',
-            'error_message': False,
-            'claimed_at': False,
-            'turn_wallclock_spent': 0.0,
-            'turn_cost_spent': 0.0,
-        })
+            self._append_event(self._user_message_log(user_message, attachments))
+        self.write(
+            {
+                'state': 'running',
+                'error_message': False,
+                'claimed_at': False,
+                'turn_wallclock_spent': 0.0,
+                'turn_cost_spent': 0.0,
+            }
+        )
         self._publish_event('state', {'state': 'running'})
 
     def _record_tool_result(
-        self, outputs, call_id, name, output_result, log_result=None
-    ):
+        self,
+        outputs: list,
+        call_id: str,
+        name: str,
+        output_result,
+        log_result=None,
+    ) -> None:
+        """Append a tool output and record the matching result event."""
         outputs.append(build_tool_call_output(call_id, output_result))
-        self._append_event({
-            'kind': 'tool_result',
-            'name': name,
-            'result': output_result if log_result is None else log_result,
-            'call_id': call_id,
-        })
+        self._append_event(
+            {
+                'kind': 'tool_result',
+                'name': name,
+                'result': output_result if log_result is None else log_result,
+                'call_id': call_id,
+            }
+        )
 
-    def _persist_synthetic_event(self, call, result, status):
+    def _persist_synthetic_event(self, call: dict, result, status: str) -> None:
+        """Persist an MCP log entry for a synthetic (non-provider) tool call."""
         arguments = call.get('arguments') or {}
-        self.env['muk_mcp.log'].sudo().create({
-            'method': 'tools/call',
-            'tool_name': call.get('name') or '',
-            'model_name': (
-                arguments.get('model') or ''
-                if isinstance(arguments, dict) else ''
-            ),
-            'user_id': self.env.uid,
-            'status': status,
-            'duration_ms': 0,
-            'request_data': json.dumps(arguments, default=str),
-            'response_data': json.dumps(result, default=str),
-            'error_message': (
-                result.get('error') or result.get('reason')
-                if isinstance(result, dict) else None
-            ),
-            'source': 'chat',
-            'session_id': self.id,
-        })
+        self.env['muk_mcp.log'].sudo().create(
+            {
+                'method': 'tools/call',
+                'tool_name': call.get('name') or '',
+                'model_name': (
+                    arguments.get('model') or '' if isinstance(arguments, dict) else ''
+                ),
+                'user_id': self.env.uid,
+                'status': status,
+                'duration_ms': 0,
+                'request_data': json.dumps(arguments, default=str),
+                'response_data': json.dumps(result, default=str),
+                'error_message': (
+                    result.get('error') or result.get('reason')
+                    if isinstance(result, dict)
+                    else None
+                ),
+                'source': 'chat',
+                'session_id': self.id,
+            }
+        )
 
-    def _commit_safe(self):
+    def _commit_safe(self) -> None:
+        """Commit outside tests, re-raising on serialization conflicts."""
         if not modules.module.current_test:
             try:
                 self.env.cr.commit()
@@ -938,67 +1025,80 @@ class AISession(models.Model):
                 self.invalidate_recordset()
                 raise
 
-    def _transition_state(self, state, error=None):
+    def _transition_state(self, state: str, error: str | None = None) -> None:
+        """Persist a new state and publish the matching state event."""
         self.write({'state': state} | ({'error_message': error} if error else {}))
-        self._publish_event('state', {'state': state} | ({'error': error} if error else {}))
+        self._publish_event(
+            'state', {'state': state} | ({'error': error} if error else {})
+        )
 
-    def _recover_if_stuck(self, idle_seconds=WORKER_STALE_THRESHOLD):
-        if (
-            self.state in ('running', 'compacting')
-            and (reference := self.claimed_at or self.write_date)
+    def _recover_if_stuck(self, idle_seconds: int = WORKER_STALE_THRESHOLD) -> bool:
+        """Mark a stalled running session as errored when idle too long."""
+        if self.state in ('running', 'compacting') and (
+            reference := self.claimed_at or self.write_date
         ):
             idle = (fields.Datetime.now() - reference).total_seconds()
             if idle >= idle_seconds and self._try_session_xact_lock(self.id):
-                self.write({
-                    'state': 'error',
-                    'error_message': _(
-                        "Previous turn timed out after %(idle)s seconds with no activity.",
-                        idle=int(idle),
-                    ),
-                })
-                self._publish_event('state', {
-                    'state': 'error',
-                    'error': self.error_message
-                })
+                self.write(
+                    {
+                        'state': 'error',
+                        'error_message': _(
+                            'Previous turn timed out after %(idle)s seconds with no activity.',
+                            idle=int(idle),
+                        ),
+                    }
+                )
+                self._publish_event(
+                    'state', {'state': 'error', 'error': self.error_message}
+                )
                 return True
         return False
 
     @api.model
-    def _try_session_xact_lock(self, session_id):
-        self.env.cr.execute(SQL(
-            "SELECT pg_try_advisory_xact_lock(%s, %s)",
-            ADVISORY_LOCK_NAMESPACE, session_id,
-        ))
+    def _try_session_xact_lock(self, session_id: int) -> bool:
+        """Try to take a transaction-scoped advisory lock on the session."""
+        self.env.cr.execute(
+            SQL(
+                'SELECT pg_try_advisory_xact_lock(%s, %s)',
+                ADVISORY_LOCK_NAMESPACE,
+                session_id,
+            )
+        )
         return self.env.cr.fetchone()[0]
 
     @api.model
-    def _try_session_lock(self, session_id):
-        self.env.cr.execute(SQL(
-            "SELECT pg_try_advisory_lock(%s, %s)",
-            ADVISORY_LOCK_NAMESPACE, session_id,
-        ))
+    def _try_session_lock(self, session_id: int) -> bool:
+        """Try to take a session-scoped advisory lock on the session."""
+        self.env.cr.execute(
+            SQL(
+                'SELECT pg_try_advisory_lock(%s, %s)',
+                ADVISORY_LOCK_NAMESPACE,
+                session_id,
+            )
+        )
         return self.env.cr.fetchone()[0]
 
     @api.model
-    def _release_session_lock(self, session_id):
+    def _release_session_lock(self, session_id: int) -> None:
+        """Release the session advisory lock, retrying once after rollback."""
         statement = SQL(
-            "SELECT pg_advisory_unlock(%s, %s)",
-            ADVISORY_LOCK_NAMESPACE, session_id,
+            'SELECT pg_advisory_unlock(%s, %s)',
+            ADVISORY_LOCK_NAMESPACE,
+            session_id,
         )
         try:
             self.env.cr.execute(statement)
             self.env.cr.fetchone()
-        except Exception:
+        except Exception:  # noqa: BLE001 — unlock is best-effort across cursor state
             self.env.cr.rollback()
             with suppress(Exception):
                 self.env.cr.execute(statement)
                 self.env.cr.fetchone()
 
-    def _heartbeat_claim(self):
+    def _heartbeat_claim(self) -> None:
+        """Refresh the worker claim timestamp and commit safely."""
         if self:
-            self.sudo().write({
-                'claimed_at': fields.Datetime.now()
-            })
+            self.sudo().write({'claimed_at': fields.Datetime.now()})
             self._commit_safe()
 
     # ----------------------------------------------------------
@@ -1006,54 +1106,72 @@ class AISession(models.Model):
     # ----------------------------------------------------------
 
     @api.model
-    def _get_rate_limit(self):
+    def _get_rate_limit(self) -> int:
+        """Return the default provider's per-minute session rate limit."""
         provider = self.env['muk_ai.provider']._get_default()
         return max(0, provider.rate_limit or 0) if provider else 0
 
     @api.model
-    def _check_rate_limit(self, batch_size=1):
+    def _check_rate_limit(self, batch_size: int = 1) -> None:
+        """Raise when creating ``batch_size`` sessions exceeds the rate limit.
+
+        :raise UserError: when the per-minute rate limit would be exceeded
+        """
         if limit := self._get_rate_limit():
-            count = self.sudo().search_count([
-                ('user_id', '=', self.env.user.id),
-                ('create_date', '>=', fields.Datetime.now() - timedelta(minutes=1)),
-            ])
+            count = self.sudo().search_count(
+                [
+                    ('user_id', '=', self.env.user.id),
+                    ('create_date', '>=', fields.Datetime.now() - timedelta(minutes=1)),
+                ]
+            )
             if count + batch_size > limit:
-                raise UserError(_(
-                    "Rate limit reached (%(count)s sessions in the last minute.",
-                    count=count
-                ))
+                raise UserError(
+                    _(
+                        'Rate limit reached (%(count)s sessions in the last minute.',
+                        count=count,
+                    )
+                )
 
     # ----------------------------------------------------------
     # Helper Tool Dispatch
     # ----------------------------------------------------------
 
-    def _tool_dispatch_context(self):
+    def _tool_dispatch_context(self) -> dict:
+        """Return the context keys threaded through tool dispatch."""
         return {'muk_mcp_session_id': self.id}
 
-    def _dispatch_tool_call(self, name, arguments, call_id):
+    def _dispatch_tool_call(self, name: str, arguments: dict, call_id: str) -> tuple:
+        """Execute a tool call and return its output and success flag."""
         if name == 'tool_load':
             return self._dispatch_tool_load(arguments, parent_call_id=call_id), True
         enforce_scope = 'read' if self.agent_id and self.agent_id.read_only else None
         arguments, resolved_refs = self._resolve_value_refs(arguments)
         try:
-            tool_env = self.env(context={
-                **self.env.context, **self._tool_dispatch_context()
-            })
+            tool_env = self.env(
+                context={**self.env.context, **self._tool_dispatch_context()}
+            )
             text, _info = tool_env['muk_mcp.tool']._call(
                 name, arguments, tool_env, enforce_scope=enforce_scope
             )
-        except Exception as error:
+        except Exception as error:  # noqa: BLE001 — report any tool failure to the LLM
             return {'error': str(error)}, False
         self._maybe_publish_ui_action(text, name, call_id)
-        if previews := [r['preview_url'] for r in resolved_refs if r.get('preview_url')]:
+        if previews := [
+            r['preview_url'] for r in resolved_refs if r.get('preview_url')
+        ]:
             if isinstance(text, str):
                 text += '\n\n' + '\n\n'.join(f'![image set]({u})' for u in previews)
             elif isinstance(text, dict):
                 text = {**text, 'image_previews': previews}
         return text, True
 
-    def _dispatch_tool_load(self, arguments, parent_call_id=None):
-        bad_names = {'error': "Argument 'names' must be a non-empty list of tool name strings."}
+    def _dispatch_tool_load(
+        self, arguments: dict, parent_call_id: str | None = None
+    ) -> dict:
+        """Load tool schemas by name and optionally run an inline call."""
+        bad_names = {
+            'error': "Argument 'names' must be a non-empty list of tool name strings."
+        }
         requested = arguments.get('names') if isinstance(arguments, dict) else None
         if not isinstance(requested, list):
             return bad_names
@@ -1064,7 +1182,9 @@ class AISession(models.Model):
         ]
         if not names:
             return bad_names
-        catalog_by_name = {entry['name']: entry for entry in self._get_filtered_catalog()}
+        catalog_by_name = {
+            entry['name']: entry for entry in self._get_filtered_catalog()
+        }
         loaded = {}
         unknown = []
         for name in names:
@@ -1072,60 +1192,69 @@ class AISession(models.Model):
                 loaded[name] = {
                     'description': entry.get('description') or '',
                     'inputSchema': (
-                        entry.get('inputSchema') or
-                        {'type': 'object', 'properties': {}}
+                        entry.get('inputSchema') or {'type': 'object', 'properties': {}}
                     ),
                 }
             else:
                 unknown.append(name)
         if loaded:
-            self.write({'expanded_tool_names': list(dict.fromkeys(
-                list(self.expanded_tool_names or []) + list(loaded)
-            ))})
+            self.write(
+                {
+                    'expanded_tool_names': list(
+                        dict.fromkeys(
+                            list(self.expanded_tool_names or []) + list(loaded)
+                        )
+                    )
+                }
+            )
         response = {'loaded': loaded, 'unknown': unknown}
-        if call_spec := (arguments.get('call') if isinstance(arguments, dict) else None):
+        if call_spec := (
+            arguments.get('call') if isinstance(arguments, dict) else None
+        ):
             response['call'] = self._dispatch_tool_load_inline_call(
                 call_spec, loaded, parent_call_id
             )
         return response
 
-    def _dispatch_tool_load_inline_call(self, call_spec, loaded, parent_call_id):
+    def _dispatch_tool_load_inline_call(
+        self, call_spec, loaded: dict, parent_call_id: str | None
+    ) -> dict:
+        """Execute a tool call bundled into a ``tool_load`` request."""
         if not isinstance(call_spec, dict):
-            return {'error': "`call` must be an object with `name` and optional `arguments`."}
+            return {
+                'error': '`call` must be an object with `name` and optional `arguments`.'
+            }
         if not (target := str(call_spec.get('name') or '').strip()):
-            return {'error': "`call.name` is required."}
+            return {'error': '`call.name` is required.'}
         if target not in loaded:
-            return {'error': (
-                f"`call.name` {target!r} must be one of the just-loaded names; "
-                "include it in `names` and try again."
-            )}
+            return {
+                'error': (
+                    f'`call.name` {target!r} must be one of the just-loaded names; '
+                    'include it in `names` and try again.'
+                )
+            }
         target_args = call_spec.get('arguments') or {}
         if not isinstance(target_args, dict):
-            return {'error': "`call.arguments` must be an object."}
-        inline_call_id = f"{parent_call_id or 'tool_load'}__{target}"
-        self._record_tool_call({
-            'name': target,
-            'arguments': target_args,
-            'call_id': inline_call_id
-        })
-        result, ok = self._dispatch_tool_call(
-            target, target_args, inline_call_id
+            return {'error': '`call.arguments` must be an object.'}
+        inline_call_id = f'{parent_call_id or "tool_load"}__{target}'
+        self._record_tool_call(
+            {'name': target, 'arguments': target_args, 'call_id': inline_call_id}
         )
-        self._append_event({
-            'kind': 'tool_result',
-            'name': target,
-            'result': result,
-            'call_id': inline_call_id,
-        })
+        result, ok = self._dispatch_tool_call(target, target_args, inline_call_id)
+        self._append_event(
+            {
+                'kind': 'tool_result',
+                'name': target,
+                'result': result,
+                'call_id': inline_call_id,
+            }
+        )
         return {'name': target, 'output': result, 'ok': ok}
 
-    def _maybe_publish_ui_action(self, text, name, call_id):
+    def _maybe_publish_ui_action(self, text, name: str, call_id: str) -> None:
+        """Publish a UI action when a tool returns an Odoo action payload."""
         try:
-            action = (
-                json.loads(text)
-                if isinstance(text, str)
-                else None
-            )
+            action = json.loads(text) if isinstance(text, str) else None
         except ValueError:
             action = None
         if (
@@ -1133,11 +1262,9 @@ class AISession(models.Model):
             and isinstance(t := action.get('type'), str)
             and t.startswith('ir.actions.')
         ):
-            self._publish_event('ui_action', {
-                'call_id': call_id,
-                'name': name,
-                'action': action
-            })
+            self._publish_event(
+                'ui_action', {'call_id': call_id, 'name': name, 'action': action}
+            )
             if name in self._get_terminating_tools():
                 self._apply_ui_action(name, action)
 
@@ -1145,11 +1272,13 @@ class AISession(models.Model):
     # Helper View Context
     # ----------------------------------------------------------
 
-    def _apply_ui_action(self, tool_name, action):
+    def _apply_ui_action(self, tool_name: str, action: dict) -> None:
+        """Pin the view context derived from a terminating UI action."""
         if payload := self._view_context_from_action(tool_name, action):
             self._write_view_context(payload)
 
-    def _view_context_from_action(self, tool_name, action):
+    def _view_context_from_action(self, tool_name: str, action: dict) -> dict | None:
+        """Derive a view-context payload from an Odoo action, or ``None``."""
         if isinstance(action, dict) and (res_model := action.get('res_model')):
             if tool_name == 'open_record' or action.get('view_mode') == 'form':
                 if res_id := action.get('res_id'):
@@ -1160,13 +1289,15 @@ class AISession(models.Model):
                         'id': int(res_id),
                         'display_name': (
                             record.has_access('read') and record.display_name
-                        ) or str(res_id),
+                        )
+                        or str(res_id),
                     }
             else:
                 payload = {
                     'kind': 'list',
                     'model': res_model,
-                    'view_type': (action.get('view_mode') or '').split(',')[0] or 'list',
+                    'view_type': (action.get('view_mode') or '').split(',')[0]
+                    or 'list',
                 }
                 if isinstance(domain := action.get('domain'), list) and domain:
                     payload['domain'] = domain
@@ -1175,10 +1306,12 @@ class AISession(models.Model):
                 return payload
         return None
 
-    def _enrich_view_context(self, payload):
+    def _enrich_view_context(self, payload: dict) -> dict:
+        """Return the view-context payload, optionally enriched by subclasses."""
         return payload
 
-    def _write_view_context(self, payload):
+    def _write_view_context(self, payload: dict | None) -> None:
+        """Persist the view context and broadcast its change."""
         if payload:
             payload = self._enrich_view_context(payload)
         self.write({'view_context': payload or False})
@@ -1188,7 +1321,11 @@ class AISession(models.Model):
     # Helper Streaming
     # ----------------------------------------------------------
 
-    def _check_cancelled(self, buffer_state):
+    def _check_cancelled(self, buffer_state: dict) -> None:
+        """Persist partial output and heartbeat, raising when cancelled.
+
+        :raise StreamCancelled: when the session has been stopped
+        """
         last = buffer_state.get('last_state_check', 0)
         if (now := time.monotonic()) - last >= 0.3:
             buffer_state['last_state_check'] = now
@@ -1205,17 +1342,14 @@ class AISession(models.Model):
                 self.claimed_at = fields.Datetime.now()
                 self._commit_safe()
 
-    def _on_stream_delta(self, kind, payload, buffer_state):
+    def _on_stream_delta(self, kind: str, payload: dict, buffer_state: dict) -> None:
+        """Coalesce and publish a streamed delta of the given kind."""
         self._check_cancelled(buffer_state)
         if kind == 'text':
             if delta := (payload or {}).get('delta') or '':
                 buffer_state['full_text'] = buffer_state.get('full_text', '') + delta
                 self._coalesce_and_emit(
-                    buffer_state,
-                    'text',
-                    'last_text_flush',
-                    delta,
-                    'text_delta'
+                    buffer_state, 'text', 'last_text_flush', delta, 'text_delta'
                 )
         elif kind == 'reasoning':
             if delta := (payload or {}).get('delta') or '':
@@ -1224,14 +1358,17 @@ class AISession(models.Model):
                     'reasoning',
                     'last_reasoning_flush',
                     delta,
-                    'reasoning_delta'
+                    'reasoning_delta',
                 )
         elif kind == 'tool_start':
             self._flush_text_buffer(buffer_state)
-            self._publish_event('tool_call_start', {
-                'call_id': payload.get('call_id'),
-                'name': payload.get('name'),
-            })
+            self._publish_event(
+                'tool_call_start',
+                {
+                    'call_id': payload.get('call_id'),
+                    'name': payload.get('name'),
+                },
+            )
             self._commit_safe()
         elif kind == 'tool_args':
             call_id = payload.get('call_id')
@@ -1249,77 +1386,83 @@ class AISession(models.Model):
 
     def _coalesce_and_emit(
         self,
-        buffer_state,
-        content_key,
-        last_key,
-        delta,
-        event_type,
-        extra=None
-    ):
+        buffer_state: dict,
+        content_key: str,
+        last_key: str,
+        delta: str,
+        event_type: str,
+        extra: dict | None = None,
+    ) -> None:
+        """Buffer a delta and emit it once size or time thresholds are met."""
         now = time.monotonic()
         buffer_state.setdefault(content_key, '')
         buffer_state.setdefault(last_key, now)
         buffer_state[content_key] += delta
         if (
-            len(buffer_state[content_key]) >= 80 or
-            (now - buffer_state[last_key]) >= 0.1
+            len(buffer_state[content_key]) >= 80
+            or (now - buffer_state[last_key]) >= 0.1
         ):
             flushed = buffer_state[content_key]
             buffer_state[content_key] = ''
             buffer_state[last_key] = now
-            self._publish_event(event_type, {
-                'delta': flushed, **(extra or {})
-            })
+            self._publish_event(event_type, {'delta': flushed, **(extra or {})})
             self._commit_safe()
 
-    def _flush_text_buffer(self, buffer_state):
+    def _flush_text_buffer(self, buffer_state: dict) -> None:
+        """Flush any buffered text delta to the bus."""
         if flushed := buffer_state.get('text'):
             buffer_state['text'] = ''
-            self._publish_event('text_delta', {
-                'delta': flushed
-            })
+            self._publish_event('text_delta', {'delta': flushed})
             self._commit_safe()
 
-    def _persist_partial(self, buffer_state):
+    def _persist_partial(self, buffer_state: dict) -> None:
+        """Persist buffered assistant text as a partial conversation message."""
         if text := buffer_state.get('full_text'):
-            self.write({
-                'last_text': text,
-                'conversation': [*(self.conversation or []), {
-                    'type': 'message',
-                    'role': 'assistant',
-                    'content': [{'type': 'output_text', 'text': text}],
-                }],
-            })
-            self._append_event({
-                'kind': 'text',
-                'content': text
-            })
+            self.write(
+                {
+                    'last_text': text,
+                    'conversation': [
+                        *(self.conversation or []),
+                        {
+                            'type': 'message',
+                            'role': 'assistant',
+                            'content': [{'type': 'output_text', 'text': text}],
+                        },
+                    ],
+                }
+            )
+            self._append_event({'kind': 'text', 'content': text})
             self.flush_recordset()
 
-    def _flush_stream_buffer(self, buffer_state):
+    def _flush_stream_buffer(self, buffer_state: dict) -> None:
+        """Flush all remaining text, reasoning, and tool-arg buffers."""
         self._flush_text_buffer(buffer_state)
         if flushed := buffer_state.get('reasoning'):
             buffer_state['reasoning'] = ''
-            self._publish_event('reasoning_delta', {
-                'delta': flushed
-            })
+            self._publish_event('reasoning_delta', {'delta': flushed})
         for key in list(buffer_state.keys()):
             if key.startswith('tool_args_') and not key.endswith('_last'):
                 if flushed := buffer_state.get(key):
                     buffer_state[key] = ''
-                    self._publish_event('tool_call_args_delta', {
-                        'call_id': key[len('tool_args_'):],
-                        'delta': flushed,
-                    })
+                    self._publish_event(
+                        'tool_call_args_delta',
+                        {
+                            'call_id': key[len('tool_args_') :],
+                            'delta': flushed,
+                        },
+                    )
         self._commit_safe()
 
-    def _materialize_round_inputs(self, provider, cache, notice=None):
+    def _materialize_round_inputs(
+        self,
+        provider: models.BaseModel,
+        cache: dict,
+        notice: dict | None = None,
+    ) -> list:
+        """Materialize attachment blocks for a round, caching by attachment id."""
         materialized = []
         for item in self._build_request_inputs():
-            content = (
-                item.get('content')
-                if isinstance(item, dict) else None
-            )
+            content = item.get('content') if isinstance(item, dict) else None
             if not isinstance(content, list):
                 materialized.append(item)
                 continue
@@ -1340,17 +1483,31 @@ class AISession(models.Model):
         return materialized
 
     def _stream_provider_round(
-        self, provider, tool_schema, model, agent, cache=None, notice=None,
-    ):
+        self,
+        provider: models.BaseModel,
+        tool_schema: list,
+        model: str | None,
+        agent: models.BaseModel,
+        cache: dict | None = None,
+        notice: dict | None = None,
+    ) -> dict:
+        """Run one streaming provider round, flushing buffers on completion.
+
+        :raise StreamCancelled: when the session is cancelled mid-stream
+        """
         buffer_state = {'text': '', 'last_text_flush': time.monotonic()}
         try:
             payload = provider._request_responses(
                 inputs=self._materialize_round_inputs(
-                    provider, {} if cache is None else cache, notice=notice,
+                    provider,
+                    {} if cache is None else cache,
+                    notice=notice,
                 ),
                 tools_schema=tool_schema,
                 model=model,
-                on_delta=lambda kind, data: self._on_stream_delta(kind, data, buffer_state),
+                on_delta=lambda kind, data: self._on_stream_delta(
+                    kind, data, buffer_state
+                ),
                 enable_web_search=bool(agent and agent.enable_web_search),
                 enable_image_generation=bool(agent and agent.enable_image_generation),
                 enable_code_interpreter=bool(agent and agent.enable_code_interpreter),
@@ -1365,7 +1522,8 @@ class AISession(models.Model):
     # Auto-name
     # ----------------------------------------------------------
 
-    def _autoname_from_text(self, raw):
+    def _autoname_from_text(self, raw: str) -> str:
+        """Derive a short session title from the first sentence of text."""
         text = re.sub(r'\s+', ' ', (raw or '')).strip()
         text = re.split(r'[.!?\n;:]', text, maxsplit=1)[0].strip()
         text = text.strip('"\'`“”‘’,. -').strip()
@@ -1380,18 +1538,22 @@ class AISession(models.Model):
     # Helper Agent Loop
     # ----------------------------------------------------------
 
-    def _accrue_cost_deltas(self, usage):
+    def _accrue_cost_deltas(self, usage: dict | None) -> dict:
+        """Return the cumulative cost field deltas for a usage payload."""
         if record := self._effective_model_record():
             delta = record._compute_usage_cost(usage or {})
             return {
-                'total_input_cost': (self.total_input_cost or 0.0) + delta['input_cost'],
-                'total_output_cost': (self.total_output_cost or 0.0) + delta['output_cost'],
+                'total_input_cost': (self.total_input_cost or 0.0)
+                + delta['input_cost'],
+                'total_output_cost': (self.total_output_cost or 0.0)
+                + delta['output_cost'],
                 'total_cost': (self.total_cost or 0.0) + delta['total_cost'],
                 'turn_cost_spent': (self.turn_cost_spent or 0.0) + delta['total_cost'],
             }
         return {}
 
-    def _persist_inline_images(self, text, cache=None):
+    def _persist_inline_images(self, text: str, cache: dict | None = None) -> str:
+        """Replace inline base64 images with stored attachment references."""
         if text and 'data:image/' in text:
             if cache is None:
                 cache = {}
@@ -1404,13 +1566,17 @@ class AISession(models.Model):
                     attachment_id = cached
                 else:
                     try:
-                        attachment = self.env['ir.attachment'].sudo()._ai_create_from_upload(
-                            alt or 'generated.png',
-                            mimetype,
-                            b64,
-                            res_id=self.id,
+                        attachment = (
+                            self.env['ir.attachment']
+                            .sudo()
+                            ._ai_create_from_upload(
+                                alt or 'generated.png',
+                                mimetype,
+                                b64,
+                                res_id=self.id,
+                            )
                         )
-                    except Exception:
+                    except Exception:  # noqa: BLE001 — keep raw image on store failure
                         return match.group(0)
                     attachment_id = attachment.id
                     cache[b64] = attachment_id
@@ -1423,30 +1589,48 @@ class AISession(models.Model):
             return INLINE_IMAGE_RE.sub(_replace, text)
         return text
 
-    def _persist_inline_images_in_carry(self, items, cache):
+    def _persist_inline_images_in_carry(self, items: list | None, cache: dict) -> list:
+        """Persist inline images inside carried conversation items."""
         out = []
         for item in items or []:
-            if isinstance(item, dict) and isinstance(content := item.get('content'), list):
-                out.append({**item, 'content': [
-                    {**c, 'text': self._persist_inline_images(c['text'], cache=cache)}
-                    if isinstance(c, dict) and isinstance(c.get('text'), str) and 'data:image/' in c['text']
-                    else c
-                    for c in content
-                ]})
+            if isinstance(item, dict) and isinstance(
+                content := item.get('content'), list
+            ):
+                out.append(
+                    {
+                        **item,
+                        'content': [
+                            {
+                                **c,
+                                'text': self._persist_inline_images(
+                                    c['text'], cache=cache
+                                ),
+                            }
+                            if isinstance(c, dict)
+                            and isinstance(c.get('text'), str)
+                            and 'data:image/' in c['text']
+                            else c
+                            for c in content
+                        ],
+                    }
+                )
             else:
                 out.append(item)
         return out
 
-    def _resolve_value_refs(self, arguments):
+    def _resolve_value_refs(self, arguments: dict) -> tuple[dict, list]:
+        """Inline attachment and URL references in tool arguments.
+
+        :return: the resolved arguments and the list of resolved reference
+            descriptors carrying preview URLs
+        """
         refs = []
         if isinstance(arguments, dict):
 
             def _resolve(value):
                 if isinstance(value, str):
                     if m := ATTACHMENT_REF_RE.match(value):
-                        attachment = self.env['ir.attachment'].browse(
-                            int(m.group(1))
-                        )
+                        attachment = self.env['ir.attachment'].browse(int(m.group(1)))
                         if not attachment.exists():
                             return value
                         try:
@@ -1455,14 +1639,19 @@ class AISession(models.Model):
                             return value
                         attachment = attachment.sudo()
                         if (
-                            attachment.datas and
-                            attachment.file_size <= ATTACHMENT_REF_MAX_BYTES and
-                            (not attachment.mimetype or attachment.mimetype in ALLOWED_MIMETYPES)
+                            attachment.datas
+                            and attachment.file_size <= ATTACHMENT_REF_MAX_BYTES
+                            and (
+                                not attachment.mimetype
+                                or attachment.mimetype in ALLOWED_MIMETYPES
+                            )
                         ):
-                            refs.append({
-                                'kind': 'attachment',
-                                'preview_url': f'/web/image/{attachment.id}'
-                            })
+                            refs.append(
+                                {
+                                    'kind': 'attachment',
+                                    'preview_url': f'/web/image/{attachment.id}',
+                                }
+                            )
                             return attachment.datas.decode()
                         return value
                     if m := URL_REF_RE.match(value):
@@ -1471,10 +1660,7 @@ class AISession(models.Model):
                             content = fetch_url(url)
                         except (UserError, urllib3.exceptions.HTTPError):
                             return value
-                        refs.append({
-                            'kind': 'url',
-                            'preview_url': url
-                        })
+                        refs.append({'kind': 'url', 'preview_url': url})
                         return base64.b64encode(content).decode()
                     return value
                 if isinstance(value, dict):
@@ -1486,22 +1672,28 @@ class AISession(models.Model):
             return _resolve(arguments), refs
         return arguments, refs
 
-    def _accrue_usage(self, usage):
+    def _accrue_usage(self, usage: dict | None) -> None:
+        """Accumulate token counts and costs from a round's usage payload."""
         usage = usage or {}
         round_input_tokens = usage.get('input_tokens')
-        self.write({
-            'iteration_count': self.iteration_count + 1,
-            'total_input_tokens': self.total_input_tokens + (round_input_tokens or 0),
-            'total_output_tokens': self.total_output_tokens + usage.get('output_tokens', 0),
-            'last_input_tokens': (
-                self.last_input_tokens
-                if round_input_tokens is None
-                else round_input_tokens
-            ),
-            **self._accrue_cost_deltas(usage),
-        })
+        self.write(
+            {
+                'iteration_count': self.iteration_count + 1,
+                'total_input_tokens': self.total_input_tokens
+                + (round_input_tokens or 0),
+                'total_output_tokens': self.total_output_tokens
+                + usage.get('output_tokens', 0),
+                'last_input_tokens': (
+                    self.last_input_tokens
+                    if round_input_tokens is None
+                    else round_input_tokens
+                ),
+                **self._accrue_cost_deltas(usage),
+            }
+        )
 
-    def _accrue_round_payload(self, payload):
+    def _accrue_round_payload(self, payload: dict) -> None:
+        """Accrue usage and persist text and carried inputs from a round."""
         usage = payload.get('usage') or {}
         self._accrue_usage(usage)
         image_cache = {}
@@ -1517,48 +1709,50 @@ class AISession(models.Model):
             ),
         )
 
-    def _finalize_round(self, payload):
+    def _finalize_round(self, payload: dict) -> None:
+        """Transition to done or error based on the round's text output."""
         if payload.get('text'):
             self._transition_state('done')
         else:
-            self._transition_state(
-                'error', error=_("AI returned no output.")
-            )
+            self._transition_state('error', error=_('AI returned no output.'))
 
-    def _skip_reason(self, has_ask_user, has_terminating):
+    def _skip_reason(self, has_ask_user: bool, has_terminating: bool) -> str | None:
+        """Return why remaining tool calls should be skipped, or ``None``."""
         if has_ask_user:
             return 'skipped: ask_user pending, call again after user answer'
         if has_terminating:
-            return 'skipped: terminating tool already ran; emit a short summary and stop'
+            return (
+                'skipped: terminating tool already ran; emit a short summary and stop'
+            )
         return None
 
-    def _record_tool_call(self, call):
+    def _record_tool_call(self, call: dict) -> None:
+        """Record a tool-call event with any subclass-provided extras."""
         event = {
             'kind': 'tool_call',
             'name': call['name'],
             'arguments': call['arguments'],
             'call_id': call['call_id'],
         }
-        event.update(self._tool_call_event_extra(
-            call
-        ))
+        event.update(self._tool_call_event_extra(call))
         self._append_event(event)
 
-    def _tool_call_event_extra(self, call):
+    def _tool_call_event_extra(self, call: dict) -> dict:
+        """Return extra fields to attach to a tool-call event."""
         return {}
 
-    def _skip_tool_call(self, outputs, call, reason, log_result=None):
+    def _skip_tool_call(
+        self, outputs: list, call: dict, reason: str, log_result=None
+    ) -> None:
+        """Record a skipped tool call and emit a synthetic denied result."""
         result = {'error': reason}
         self._persist_synthetic_event(call, result, 'denied')
         self._record_tool_result(
-            outputs,
-            call['call_id'],
-            call['name'],
-            result,
-            log_result=log_result
+            outputs, call['call_id'], call['name'], result, log_result=log_result
         )
 
-    def _register_ask_user(self, call):
+    def _register_ask_user(self, call: dict) -> None:
+        """Register a pending question from an ``ask_user`` tool call."""
         args = call['arguments'] or {}
         ask = {
             'call_id': call['call_id'],
@@ -1570,49 +1764,54 @@ class AISession(models.Model):
         self.pending_ask = {'kind': 'question', **ask}
         self._append_event({'kind': 'ask_user', **ask})
 
-    def _execute_tool_call(self, call, tool_calls, outputs, index, has_terminating):
+    def _execute_tool_call(
+        self,
+        call: dict,
+        tool_calls: list,
+        outputs: list,
+        index: int,
+        has_terminating: bool,
+    ) -> bool | None:
+        """Run one tool call, handling approval gating and result recording."""
         gate = self._check_approval_gate(call['name'], call['arguments'])
         if gate['action'] == 'pause':
             self._enter_waiting_approval(
-                call,
-                tool_calls,
-                outputs,
-                index,
-                has_terminating,
-                gate
+                call, tool_calls, outputs, index, has_terminating, gate
             )
             return None
         self._record_tool_call(call)
         if gate['action'] == 'auto_approved':
             self._record_approval_audit(
-                decision='auto_approved',
-                call=call,
-                risk=gate['risk']
+                decision='auto_approved', call=call, risk=gate['risk']
             )
         self._heartbeat_claim()
         result, ok = self._dispatch_tool_call(
-            call['name'],
-            call['arguments'],
-            call['call_id']
+            call['name'], call['arguments'], call['call_id']
         )
         self._heartbeat_claim()
-        self._record_tool_result(
-            outputs,
-            call['call_id'],
-            call['name'],
-            result
-        )
+        self._record_tool_result(outputs, call['call_id'], call['name'], result)
         return ok and call['name'] in self._get_terminating_tools()
 
-    def _process_tool_round(self, tool_calls, outputs, start_index, has_terminating=False):
+    def _process_tool_round(
+        self,
+        tool_calls: list,
+        outputs: list,
+        start_index: int,
+        has_terminating: bool = False,
+    ) -> bool | None:
+        """Run a round of tool calls, returning the terminating state or ``None``."""
         has_ask_user = any(c.get('name') == 'ask_user' for c in tool_calls)
         wait_for_user, paused = False, False
         for index in range(start_index, len(tool_calls)):
             call = tool_calls[index]
             if index >= MAX_TOOL_CALLS_PER_ROUND:
                 self._record_tool_call(call)
-                self._skip_tool_call(outputs, call, 'tool_call_limit_exceeded',
-                    log_result={'error': 'tool_call_limit_exceeded'})
+                self._skip_tool_call(
+                    outputs,
+                    call,
+                    'tool_call_limit_exceeded',
+                    log_result={'error': 'tool_call_limit_exceeded'},
+                )
                 continue
             if call.get('_parse_error'):
                 self._record_tool_call(call)
@@ -1622,8 +1821,10 @@ class AISession(models.Model):
                 if wait_for_user:
                     self._record_tool_call(call)
                     self._skip_tool_call(
-                        outputs, call, 'ask_user_already_pending',
-                        log_result={'error': 'ask_user_already_pending'}
+                        outputs,
+                        call,
+                        'ask_user_already_pending',
+                        log_result={'error': 'ask_user_already_pending'},
                     )
                     continue
                 self._register_ask_user(call)
@@ -1646,36 +1847,47 @@ class AISession(models.Model):
             self._extend_conversation(outputs)
             if wait_for_user:
                 self.write({'state': 'waiting'})
-                self._publish_event('state', {
-                    'state': 'waiting',
-                    'ask': self._public_pending_ask(),
-                })
+                self._publish_event(
+                    'state',
+                    {
+                        'state': 'waiting',
+                        'ask': self._public_pending_ask(),
+                    },
+                )
         return None if paused or wait_for_user else has_terminating
 
-    def _turn_budget_error(self, turn_budget):
-        self._transition_state('error', error=_(
-            "Turn wallclock budget reached (%(s)s s). Send a new message to continue.",
-            s=int(turn_budget),
-        ))
+    def _turn_budget_error(self, turn_budget: float) -> None:
+        """Transition to error when the turn wallclock budget is exhausted."""
+        self._transition_state(
+            'error',
+            error=_(
+                'Turn wallclock budget reached (%(s)s s). Send a new message to continue.',
+                s=int(turn_budget),
+            ),
+        )
 
-    def _cost_currency(self):
+    def _cost_currency(self) -> str:
+        """Return the currency of the effective model, defaulting to USD."""
         record = self._effective_model_record()
         return (record and record.currency) or 'USD'
 
-    def _turn_cost_error(self, limit):
-        self._transition_state('error', error=_(
-            "Turn cost budget reached (%(amount).2f %(currency)s). "
-            "Send a new message to continue.",
-            amount=limit,
-            currency=self._cost_currency(),
-        ))
+    def _turn_cost_error(self, limit: float) -> None:
+        """Transition to error when the turn cost budget is reached."""
+        self._transition_state(
+            'error',
+            error=_(
+                'Turn cost budget reached (%(amount).2f %(currency)s). '
+                'Send a new message to continue.',
+                amount=limit,
+                currency=self._cost_currency(),
+            ),
+        )
 
-    def _round_limit_notice(self, remaining):
+    def _round_limit_notice(self, remaining: int | None) -> dict | None:
+        """Build a user-visible notice about remaining round and cost budget."""
         parts = []
         if remaining is not None:
-            parts.append(
-                f'Only {remaining} tool round(s) remain for this turn.'
-            )
+            parts.append(f'Only {remaining} tool round(s) remain for this turn.')
         if limit := self._turn_cost_limit():
             spent = self.turn_cost_spent or 0.0
             if spent >= 0.8 * limit:
@@ -1686,18 +1898,19 @@ class AISession(models.Model):
                 )
         if not parts:
             return None
-        parts.append(
-            'Finish the task now or summarize progress and next steps.'
-        )
+        parts.append('Finish the task now or summarize progress and next steps.')
         return {
             'role': 'user',
-            'content': [{
-                'type': 'input_text',
-                'text': f'<turn_limits>{" ".join(parts)}</turn_limits>',
-            }],
+            'content': [
+                {
+                    'type': 'input_text',
+                    'text': f'<turn_limits>{" ".join(parts)}</turn_limits>',
+                }
+            ],
         }
 
-    def _yield_slice(self):
+    def _yield_slice(self) -> None:
+        """Commit and trigger a worker cron to continue the turn elsewhere."""
         if modules.module.current_test:
             return
         self._commit_safe()
@@ -1705,7 +1918,10 @@ class AISession(models.Model):
             with suppress(Exception):
                 random.choice(crons)._trigger()
 
-    def _handle_wallclock_expiry(self, slice_start, spent_before, turn_budget):
+    def _handle_wallclock_expiry(
+        self, slice_start: float, spent_before: float, turn_budget: float
+    ) -> None:
+        """Persist spent time and either error out or yield the slice."""
         total = spent_before + (time.monotonic() - slice_start)
         self.write({'turn_wallclock_spent': total})
         if total >= turn_budget:
@@ -1713,7 +1929,8 @@ class AISession(models.Model):
             return
         self._yield_slice()
 
-    def _run_to_completion(self, has_terminating=False):
+    def _run_to_completion(self, has_terminating: bool = False) -> None:
+        """Drive the turn across iterations and slices until it settles."""
         slice_start = time.monotonic()
         spent_before = self.turn_wallclock_spent or 0.0
         turn_budget = self._turn_wallclock_seconds()
@@ -1727,10 +1944,7 @@ class AISession(models.Model):
             self._maybe_auto_compact()
             if self.state != 'running':
                 return
-            self._run_iterations(
-                has_terminating=has_terminating,
-                deadline=deadline
-            )
+            self._run_iterations(has_terminating=has_terminating, deadline=deadline)
             if self.state == 'running' and time.monotonic() > deadline:
                 self._handle_wallclock_expiry(
                     slice_start,
@@ -1748,12 +1962,15 @@ class AISession(models.Model):
             self._transition_state('running')
             has_terminating = False
 
-    def _run_iterations(self, has_terminating=False, deadline=None):
+    def _run_iterations(
+        self, has_terminating: bool = False, deadline: float | None = None
+    ) -> None:
+        """Run provider rounds until completion, deadline, or budget limits."""
         deadline = deadline or time.monotonic() + self._slice_wallclock_seconds()
         provider, model = self._effective_provider(), self._effective_model()
         materialize_cache = {}
         max_iterations = self._max_iterations()
-        for _iteration in range(max_iterations):
+        for iteration in range(max_iterations):
             if self.state != 'running':
                 return
             if time.monotonic() > deadline:
@@ -1768,18 +1985,18 @@ class AISession(models.Model):
                 has_terminating = False
             tool_schema = self._get_tool_schema()
             schema, round_agent = (
-                (None, None)
-                if has_terminating
-                else (tool_schema, self.agent_id)
+                (None, None) if has_terminating else (tool_schema, self.agent_id)
             )
-            remaining = max_iterations - _iteration
+            remaining = max_iterations - iteration
             try:
                 payload = self._stream_provider_round(
-                    provider, schema, model, round_agent,
+                    provider,
+                    schema,
+                    model,
+                    round_agent,
                     cache=materialize_cache,
                     notice=self._round_limit_notice(
-                        remaining
-                        if remaining <= ITERATION_WARNING_ROUNDS else None
+                        remaining if remaining <= ITERATION_WARNING_ROUNDS else None
                     ),
                 )
             except StreamCancelled:
@@ -1801,28 +2018,33 @@ class AISession(models.Model):
                 return
             has_terminating = has_terminating or result
         if self.state == 'running':
-            self._transition_state(
-                'error', error=_("Maximum iterations reached.")
-            )
+            self._transition_state('error', error=_('Maximum iterations reached.'))
 
     # ----------------------------------------------------------
     # Queue
     # ----------------------------------------------------------
 
-    def _serialize_pending(self):
+    def _serialize_pending(self) -> list[dict]:
+        """Return the serialized payloads of queued pending messages."""
         return [p._to_payload() for p in self.pending_ids]
 
-    def enqueue_message(self, user_message, attachment_ids=None):
-        self.env['muk_ai.session.pending'].create({
-            'session_id': self.id,
-            'content': user_message or '',
-            'attachment_ids': list(attachment_ids or []),
-        })
+    def enqueue_message(
+        self, user_message: str | None, attachment_ids: list[int] | None = None
+    ) -> dict:
+        """Queue a user message and return the session snapshot."""
+        self.env['muk_ai.session.pending'].create(
+            {
+                'session_id': self.id,
+                'content': user_message or '',
+                'attachment_ids': list(attachment_ids or []),
+            }
+        )
         self.invalidate_recordset(['pending_ids'])
         self._publish_event('queue', {'pending': self._serialize_pending()})
         return self.get_snapshot()
 
-    def cancel_queued(self, index):
+    def cancel_queued(self, index: int) -> dict:
+        """Remove a queued message by index and return the snapshot."""
         pending = self.pending_ids
         if 0 <= index < len(pending):
             pending[index].unlink()
@@ -1830,7 +2052,8 @@ class AISession(models.Model):
             self._publish_event('queue', {'pending': self._serialize_pending()})
         return self.get_snapshot()
 
-    def _drain_pending_message(self):
+    def _drain_pending_message(self) -> bool:
+        """Merge queued messages into a new turn; return whether any drained."""
         if pending := self.pending_ids:
             contents = [p.content or '' for p in pending]
             attachment_ids = [aid for p in pending for aid in (p.attachment_ids or [])]
@@ -1847,13 +2070,18 @@ class AISession(models.Model):
     # Helper Approval
     # ----------------------------------------------------------
 
-    def _require_pending_approval(self):
+    def _require_pending_approval(self) -> dict:
+        """Return the pending approval payload, or raise when none is active.
+
+        :raise UserError: when the session is not awaiting approval
+        """
         pending = dict(self.pending_ask or {})
         if self.state != 'waiting' or pending.get('kind') != 'approval':
-            raise UserError(_("Session is not waiting for approval."))
+            raise UserError(_('Session is not waiting for approval.'))
         return pending
 
-    def _check_approval_gate(self, name, arguments):
+    def _check_approval_gate(self, name: str, arguments: dict) -> dict:
+        """Decide whether a tool call dispatches, auto-approves, or pauses."""
         if self._effective_approval_mode() == 'off':
             return {'action': 'dispatch'}
         risk = self.env['muk_ai.approval']._assess_risk(name, arguments)
@@ -1865,17 +2093,19 @@ class AISession(models.Model):
 
     def _enter_waiting_approval(
         self,
-        call,
-        tool_calls,
-        outputs,
-        index,
-        has_terminating,
-        gate,
-    ):
+        call: dict,
+        tool_calls: list,
+        outputs: list,
+        index: int,
+        has_terminating: bool,
+        gate: dict,
+    ) -> None:
+        """Pause the round awaiting user approval of a risky tool call."""
         risk = gate['risk']
-        preview = self.env['muk_ai.approval']._build_preview(
-            call['name'], call['arguments']
-        ) or {}
+        preview = (
+            self.env['muk_ai.approval']._build_preview(call['name'], call['arguments'])
+            or {}
+        )
         pending = {
             'kind': 'approval',
             'call_id': call['call_id'],
@@ -1890,52 +2120,64 @@ class AISession(models.Model):
             'resume_index': index,
             'has_terminating': has_terminating,
         }
-        self._append_event({
-            'kind': 'ask_user',
-            'call_id': call['call_id'],
-            'text': risk.get('reason') or '',
-            'resolution': 'yesno',
-            'preview': preview,
-        })
+        self._append_event(
+            {
+                'kind': 'ask_user',
+                'call_id': call['call_id'],
+                'text': risk.get('reason') or '',
+                'resolution': 'yesno',
+                'preview': preview,
+            }
+        )
         self.write({'state': 'waiting', 'pending_ask': pending})
-        self._publish_event('state', {
-            'state': 'waiting',
-            'ask': self._public_pending_ask(pending),
-        })
+        self._publish_event(
+            'state',
+            {
+                'state': 'waiting',
+                'ask': self._public_pending_ask(pending),
+            },
+        )
 
     def _record_approval_audit(
         self,
-        decision,
-        call,
-        risk,
-        args_executed=None,
-        reject_reason=None,
-    ):
-        self.env['muk_ai.approval'].sudo().create({
-            'session_id': self.id,
-            'agent_id': self.agent_id.id if self.agent_id else False,
-            'user_id': self.env.user.id,
-            'decision': decision,
-            'tool_name': call.get('name') or '',
-            'res_model': risk.get('model') or '',
-            'res_ids': risk.get('ids') or [],
-            'method': risk.get('method') or '',
-            'reason': risk.get('reason') or '',
-            'signature': risk.get('signature') or '',
-            'args_proposed': call.get('arguments') or {},
-            'args_executed': (
-                args_executed
-                if args_executed is not None
-                else (call.get('arguments') or {})
-            ),
-            'reject_reason': reject_reason or False,
-        })
+        decision: str,
+        call: dict,
+        risk: dict,
+        args_executed: dict | None = None,
+        reject_reason: str | None = None,
+    ) -> None:
+        """Create an approval audit record for a tool-call decision."""
+        self.env['muk_ai.approval'].sudo().create(
+            {
+                'session_id': self.id,
+                'agent_id': self.agent_id.id if self.agent_id else False,
+                'user_id': self.env.user.id,
+                'decision': decision,
+                'tool_name': call.get('name') or '',
+                'res_model': risk.get('model') or '',
+                'res_ids': risk.get('ids') or [],
+                'method': risk.get('method') or '',
+                'reason': risk.get('reason') or '',
+                'signature': risk.get('signature') or '',
+                'args_proposed': call.get('arguments') or {},
+                'args_executed': (
+                    args_executed
+                    if args_executed is not None
+                    else (call.get('arguments') or {})
+                ),
+                'reject_reason': reject_reason or False,
+            }
+        )
 
-    def _resume_tool_round(self, paused, approved, reject_reason=None):
+    def _resume_tool_round(
+        self, paused: dict, approved: bool, reject_reason: str | None = None
+    ) -> None:
+        """Resume a paused tool round after an approval decision.
+
+        :raise UserError: when the session lock cannot be acquired
+        """
         if not self._try_session_lock(self.id):
-            raise UserError(_(
-                "The session is currently busy. Please try again."
-            ))
+            raise UserError(_('The session is currently busy. Please try again.'))
         try:
             call = {
                 'call_id': paused['call_id'],
@@ -1958,9 +2200,7 @@ class AISession(models.Model):
                     'reason': reject_reason or '',
                 }
                 self._persist_synthetic_event(call, result, 'denied')
-            self._record_tool_result(
-                outputs, call['call_id'], call['name'], result
-            )
+            self._record_tool_result(outputs, call['call_id'], call['name'], result)
             self.write({'pending_ask': False, 'claimed_at': False})
             self._transition_state('running')
             self._process_tool_round(
@@ -1972,14 +2212,14 @@ class AISession(models.Model):
         finally:
             self._release_session_lock(self.id)
 
-    def _flush_orphaned_tool_outputs(self):
+    def _flush_orphaned_tool_outputs(self) -> None:
+        """Emit cancelled outputs for tool calls left pending on stop."""
         pending = dict(self.pending_ask or {})
         if not pending:
             return
         outputs = list(pending.get('outputs') or [])
         answered = {
-            entry.get('call_id') for entry in outputs
-            if isinstance(entry, dict)
+            entry.get('call_id') for entry in outputs if isinstance(entry, dict)
         }
         calls = list(pending.get('tool_calls') or [])
         if not calls and pending.get('call_id'):
@@ -1988,10 +2228,15 @@ class AISession(models.Model):
             call_id = call.get('call_id')
             if call_id and call_id not in answered:
                 answered.add(call_id)
-                outputs.append(build_tool_call_output(call_id, {
-                    'status': 'cancelled',
-                    'reason': 'stopped_by_user',
-                }))
+                outputs.append(
+                    build_tool_call_output(
+                        call_id,
+                        {
+                            'status': 'cancelled',
+                            'reason': 'stopped_by_user',
+                        },
+                    )
+                )
         if outputs:
             self._extend_conversation(outputs)
 
@@ -1999,7 +2244,8 @@ class AISession(models.Model):
     # Helper Compact
     # ----------------------------------------------------------
 
-    def _estimate_entry_tokens(self, entry):
+    def _estimate_entry_tokens(self, entry) -> int:
+        """Roughly estimate the token count of a conversation entry."""
         if not isinstance(entry, dict):
             return 0
         total = 0
@@ -2018,7 +2264,8 @@ class AISession(models.Model):
                 total += len(value) // 4
         return total
 
-    def _split_conversation_for_compact(self):
+    def _split_conversation_for_compact(self) -> tuple[list, list]:
+        """Split the conversation into a summarizable prefix and a kept tail."""
         keep_budget = max(2000, min(20000, self._resolve_context_window() // 5))
         tail, used = [], 0
         for entry in reversed(self.conversation or []):
@@ -2032,21 +2279,25 @@ class AISession(models.Model):
         ):
             tail.pop(0)
         prefix = (
-            (self.conversation or [])[:-len(tail)]
-            if tail else list(self.conversation or [])
+            (self.conversation or [])[: -len(tail)]
+            if tail
+            else list(self.conversation or [])
         )
         prefix = [
-            entry for entry in prefix
+            entry
+            for entry in prefix
             if not (isinstance(entry, dict) and entry.get('role') == 'system')
         ]
         if not prefix or not tail:
             non_system = [
-                entry for entry in (self.conversation or [])
+                entry
+                for entry in (self.conversation or [])
                 if not (isinstance(entry, dict) and entry.get('role') == 'system')
             ]
             split = max(
                 (
-                    index for index, entry in enumerate(non_system)
+                    index
+                    for index, entry in enumerate(non_system)
                     if isinstance(entry, dict) and entry.get('role') == 'user'
                 ),
                 default=None,
@@ -2057,15 +2308,21 @@ class AISession(models.Model):
                 prefix, tail = non_system[:split], non_system[split:]
         return prefix, tail
 
-    def _find_prior_compact_summary(self):
+    def _find_prior_compact_summary(self) -> str | None:
+        """Return the most recent prior compaction summary, if any."""
         if not self.id:
             return None
-        prior = self.env['muk_ai.session.event'].sudo().search(
-            [
-                ('session_id', '=', self.id),
-                ('kind', 'in', ('compact_progress', 'command')),
-            ],
-            order='sequence desc', limit=5,
+        prior = (
+            self.env['muk_ai.session.event']
+            .sudo()
+            .search(
+                [
+                    ('session_id', '=', self.id),
+                    ('kind', 'in', ('compact_progress', 'command')),
+                ],
+                order='sequence desc',
+                limit=5,
+            )
         )
         for event in prior:
             payload = event.payload or {}
@@ -2075,18 +2332,23 @@ class AISession(models.Model):
                 return payload.get('summary') or None
         return None
 
-    def _pre_compact_hook(self):
+    def _pre_compact_hook(self) -> bool:
+        """Return whether compaction should proceed (override hook)."""
         return True
 
-    def _build_compact_inputs(self, prefix):
+    def _build_compact_inputs(self, prefix: list) -> list:
+        """Build the summarization request inputs for a compaction."""
         budget = max(500, min(4000, self._resolve_context_window() // 200))
         prompt_parts = [COMPACT_SUMMARY_TEMPLATE, f'\nOutput ≤{budget} tokens.\n']
         if prior_summary := self._find_prior_compact_summary():
-            prompt_parts.insert(0, (
-                f'<previous-summary>\n{prior_summary}\n</previous-summary>\n\n'
-                'Update the structure above: preserve still-true points, '
-                'drop stale ones, merge new info.\n\n'
-            ))
+            prompt_parts.insert(
+                0,
+                (
+                    f'<previous-summary>\n{prior_summary}\n</previous-summary>\n\n'
+                    'Update the structure above: preserve still-true points, '
+                    'drop stale ones, merge new info.\n\n'
+                ),
+            )
         prompt_text = ''.join(prompt_parts)
         return [
             {
@@ -2100,7 +2362,8 @@ class AISession(models.Model):
             },
         ]
 
-    def _maybe_auto_compact(self):
+    def _maybe_auto_compact(self) -> bool:
+        """Auto-compact when input tokens approach the context window."""
         if self.state == 'compacting':
             return False
         window = self._resolve_context_window()
@@ -2116,7 +2379,8 @@ class AISession(models.Model):
         self._publish_event('state', {'state': 'compacting'})
         compact = (
             self.with_context(muk_ai_skip_done_notification=True)
-            if resume_state else self
+            if resume_state
+            else self
         )
         compact._do_compact(resume=True)
         if resume_state and self.state == 'done':
@@ -2124,91 +2388,130 @@ class AISession(models.Model):
             self._publish_event('state', {'state': resume_state})
         return True
 
-    def _begin_compact_progress(self, auto=False):
-        event = self._append_event({
-            'kind': 'compact_progress',
-            'name': '/compact',
-            'auto': bool(auto),
-            'state': 'streaming',
-            'message_count': sum(
-                1 for item in (self.conversation or [])
-                if isinstance(item, dict) and item.get('role') in ('user', 'assistant')
-            ),
-            'tokens_estimate': self.last_input_tokens or 0,
-            'started_at': fields.Datetime.now().isoformat(),
-            'streamed_text': '',
-        })
-        return event
+    def _begin_compact_progress(self, auto: bool = False) -> models.BaseModel:
+        """Append and return a streaming compaction-progress event."""
+        return self._append_event(
+            {
+                'kind': 'compact_progress',
+                'name': '/compact',
+                'auto': bool(auto),
+                'state': 'streaming',
+                'message_count': sum(
+                    1
+                    for item in (self.conversation or [])
+                    if isinstance(item, dict)
+                    and item.get('role') in ('user', 'assistant')
+                ),
+                'tokens_estimate': self.last_input_tokens or 0,
+                'started_at': fields.Datetime.now().isoformat(),
+                'streamed_text': '',
+            }
+        )
 
-    def _find_active_compact_event(self):
-        return self.env['muk_ai.session.event'].sudo().search([
-            ('session_id', '=', self.id),
-            ('kind', '=', 'compact_progress'),
-        ], order='sequence desc', limit=1)
+    def _find_active_compact_event(self) -> models.BaseModel:
+        """Return the latest compaction-progress event for the session."""
+        return (
+            self.env['muk_ai.session.event']
+            .sudo()
+            .search(
+                [
+                    ('session_id', '=', self.id),
+                    ('kind', '=', 'compact_progress'),
+                ],
+                order='sequence desc',
+                limit=1,
+            )
+        )
 
-    def _patch_compact_progress(self, event, patch):
+    def _patch_compact_progress(self, event: models.BaseModel, patch: dict) -> None:
+        """Merge a patch into a compaction-progress event and broadcast it."""
         if not event:
             return
         payload = dict(event.payload or {})
         payload.update(patch)
         event.payload = payload
-        self._publish_event('compact_update', {
-            'event_id': event.id,
-            'patch': patch,
-        })
+        self._publish_event(
+            'compact_update',
+            {
+                'event_id': event.id,
+                'patch': patch,
+            },
+        )
 
-    def _tail_drop_fallback(self, progress_event, prefix, tail, error, resume=False):
+    def _tail_drop_fallback(
+        self,
+        progress_event: models.BaseModel,
+        prefix: list,
+        tail: list,
+        error: str | None,
+        resume: bool = False,
+    ) -> None:
+        """Drop the oldest messages without a summary when compaction fails."""
         dropped = sum(
-            1 for item in prefix
+            1
+            for item in prefix
             if isinstance(item, dict) and item.get('role') in ('user', 'assistant')
         )
         original_messages = sum(
-            1 for item in (self.conversation or [])
+            1
+            for item in (self.conversation or [])
             if isinstance(item, dict) and item.get('role') in ('user', 'assistant')
         )
         original_tokens = self.last_input_tokens
         new_conversation = [*self._build_initial_inputs(), *tail]
-        self.write({
-            'conversation': new_conversation,
-            'pending_ask': False,
-            'error_message': False,
-            'last_input_tokens': 0,
-            'state': 'done',
-            'cleared_at': fields.Datetime.now(),
-        })
+        self.write(
+            {
+                'conversation': new_conversation,
+                'pending_ask': False,
+                'error_message': False,
+                'last_input_tokens': 0,
+                'state': 'done',
+                'cleared_at': fields.Datetime.now(),
+            }
+        )
         notice = _(
-            "Compaction failed (%(error)s) — dropped %(dropped)s oldest "
-            "message(s) without summary as a fallback.",
+            'Compaction failed (%(error)s) — dropped %(dropped)s oldest '
+            'message(s) without summary as a fallback.',
             error=error or 'unknown error',
             dropped=dropped,
         )
-        self._patch_compact_progress(progress_event, {
-            'state': 'done',
-            'summary': notice,
-            'streamed_text': notice,
-            'original_messages': original_messages,
-            'original_tokens': original_tokens,
-            'fallback': 'tail_drop',
-        })
+        self._patch_compact_progress(
+            progress_event,
+            {
+                'state': 'done',
+                'summary': notice,
+                'streamed_text': notice,
+                'original_messages': original_messages,
+                'original_tokens': original_tokens,
+                'fallback': 'tail_drop',
+            },
+        )
         self._publish_event('state', {'state': 'done'})
         if not resume and self.pending_ids:
             self._drain_pending_message()
             self._run_to_completion()
 
-    def _do_compact(self, resume=False):
+    def _do_compact(self, resume: bool = False) -> None:
+        """Summarize the conversation prefix into a compact replacement."""
         if not self._pre_compact_hook():
             self.write({'state': 'done'})
             self._publish_event('state', {'state': 'done'})
             return
         progress_event = self._find_active_compact_event()
-        if not progress_event or (progress_event.payload or {}).get('state') != 'streaming':
+        if (
+            not progress_event
+            or (progress_event.payload or {}).get('state') != 'streaming'
+        ):
             progress_event = self._begin_compact_progress(auto=False)
         prefix, tail = self._split_conversation_for_compact()
         if not prefix:
-            self._patch_compact_progress(progress_event, {
-                'state': 'cancelled',
-                'message': _("Nothing to compact — conversation too short."),
-            })
+            self._patch_compact_progress(
+                progress_event,
+                {
+                    'state': 'cancelled',
+                    'message': _('Nothing to compact — conversation too short.'),
+                },
+            )
             self.write({'state': 'done'})
             self._publish_event('state', {'state': 'done'})
             return
@@ -2237,6 +2540,7 @@ class AISession(models.Model):
                 payload['streamed_text'] = stream_state['text']
                 progress_event.payload = payload
                 self._commit_safe()
+
         try:
             payload = self._effective_provider()._request_responses(
                 inputs=inputs,
@@ -2244,7 +2548,7 @@ class AISession(models.Model):
                 on_delta=on_delta,
                 model=self._effective_model(),
             )
-        except Exception as error:
+        except Exception as error:  # noqa: BLE001 — fall back to tail-drop on any failure
             self._tail_drop_fallback(
                 progress_event, prefix, tail, str(error), resume=resume
             )
@@ -2256,15 +2560,19 @@ class AISession(models.Model):
         self._accrue_usage(payload.get('usage') or {})
         summary = (payload.get('text') or stream_state['text'] or '').strip()
         if not summary:
-            self._patch_compact_progress(progress_event, {
-                'state': 'cancelled',
-                'message': _("Compaction skipped: provider returned no summary."),
-            })
+            self._patch_compact_progress(
+                progress_event,
+                {
+                    'state': 'cancelled',
+                    'message': _('Compaction skipped: provider returned no summary.'),
+                },
+            )
             self.write({'state': 'done'})
             self._publish_event('state', {'state': 'done'})
             return
         original_messages = sum(
-            1 for item in (self.conversation or [])
+            1
+            for item in (self.conversation or [])
             if isinstance(item, dict) and item.get('role') in ('user', 'assistant')
         )
         original_tokens = self.last_input_tokens
@@ -2273,28 +2581,35 @@ class AISession(models.Model):
             {
                 'type': 'message',
                 'role': 'assistant',
-                'content': [{
-                    'type': 'output_text',
-                    'text': f'{COMPACT_SUMMARY_REINJECTION}\n\n{summary}',
-                }],
+                'content': [
+                    {
+                        'type': 'output_text',
+                        'text': f'{COMPACT_SUMMARY_REINJECTION}\n\n{summary}',
+                    }
+                ],
             },
             *tail,
         ]
-        self.write({
-            'conversation': new_conversation,
-            'pending_ask': False,
-            'error_message': False,
-            'last_input_tokens': 0,
-            'state': 'done',
-            'cleared_at': fields.Datetime.now(),
-        })
-        self._patch_compact_progress(progress_event, {
-            'state': 'done',
-            'summary': summary,
-            'streamed_text': summary,
-            'original_messages': original_messages,
-            'original_tokens': original_tokens,
-        })
+        self.write(
+            {
+                'conversation': new_conversation,
+                'pending_ask': False,
+                'error_message': False,
+                'last_input_tokens': 0,
+                'state': 'done',
+                'cleared_at': fields.Datetime.now(),
+            }
+        )
+        self._patch_compact_progress(
+            progress_event,
+            {
+                'state': 'done',
+                'summary': summary,
+                'streamed_text': summary,
+                'original_messages': original_messages,
+                'original_tokens': original_tokens,
+            },
+        )
         self._publish_event('state', {'state': 'done'})
         if not resume and self.pending_ids:
             self._drain_pending_message()
@@ -2304,22 +2619,40 @@ class AISession(models.Model):
     # Helper History
     # ----------------------------------------------------------
 
-    def _resolve_event(self, event_id):
+    def _resolve_event(self, event_id: int) -> models.BaseModel:
+        """Return a session event by id, or raise when missing.
+
+        :raise UserError: when the event is not part of this session
+        """
         self.ensure_one()
-        event = self.env['muk_ai.session.event'].sudo().search([
-            ('session_id', '=', self.id),
-            ('id', '=', int(event_id)),
-        ], limit=1)
+        event = (
+            self.env['muk_ai.session.event']
+            .sudo()
+            .search(
+                [
+                    ('session_id', '=', self.id),
+                    ('id', '=', int(event_id)),
+                ],
+                limit=1,
+            )
+        )
         if not event:
-            raise UserError(_("Event not found in this session."))
+            raise UserError(_('Event not found in this session.'))
         return event
 
-    def _conversation_cut_index(self, event):
-        earlier_user_msgs = self.env['muk_ai.session.event'].sudo().search_count([
-            ('session_id', '=', self.id),
-            ('sequence', '<', event.sequence),
-            ('kind', '=', 'user_message'),
-        ])
+    def _conversation_cut_index(self, event: models.BaseModel) -> int:
+        """Return the conversation index to cut at when undoing to an event."""
+        earlier_user_msgs = (
+            self.env['muk_ai.session.event']
+            .sudo()
+            .search_count(
+                [
+                    ('session_id', '=', self.id),
+                    ('sequence', '<', event.sequence),
+                    ('kind', '=', 'user_message'),
+                ]
+            )
+        )
         conv = list(self.conversation or [])
         user_seen = 0
         if event.kind == 'user_message':
@@ -2336,12 +2669,19 @@ class AISession(models.Model):
                     return i + 1
         return len(conv)
 
-    def _conversation_cut_index_for_fork(self, event):
-        earlier_user_msgs = self.env['muk_ai.session.event'].sudo().search_count([
-            ('session_id', '=', self.id),
-            ('sequence', '<', event.sequence),
-            ('kind', '=', 'user_message'),
-        ])
+    def _conversation_cut_index_for_fork(self, event: models.BaseModel) -> int:
+        """Return the conversation index to cut at when forking at an event."""
+        earlier_user_msgs = (
+            self.env['muk_ai.session.event']
+            .sudo()
+            .search_count(
+                [
+                    ('session_id', '=', self.id),
+                    ('sequence', '<', event.sequence),
+                    ('kind', '=', 'user_message'),
+                ]
+            )
+        )
         conv = list(self.conversation or [])
         user_seen = 0
         if event.kind == 'user_message':
@@ -2362,16 +2702,23 @@ class AISession(models.Model):
     # Functions
     # ----------------------------------------------------------
 
-    def fetch_events(self, limit=100, before_sequence=None):
+    def fetch_events(
+        self, limit: int = 100, before_sequence: int | None = None
+    ) -> dict:
+        """Return a window of session events with older-page metadata."""
         if self.id:
             self.check_access('read')
             domain = [('session_id', '=', self.id)]
             if before_sequence is not None:
                 domain.append(('sequence', '<', before_sequence))
-            rows = self.env['muk_ai.session.event'].sudo().search(
-                domain,
-                order='sequence desc, id desc',
-                limit=limit + 1,
+            rows = (
+                self.env['muk_ai.session.event']
+                .sudo()
+                .search(
+                    domain,
+                    order='sequence desc, id desc',
+                    limit=limit + 1,
+                )
             )
             has_more = len(rows) > limit
             rows = rows[:limit]
@@ -2394,7 +2741,8 @@ class AISession(models.Model):
             'oldest_sequence': None,
         }
 
-    def get_snapshot(self, include_conversation=False):
+    def get_snapshot(self, include_conversation: bool = False) -> dict:
+        """Return a client snapshot of the session state and recent events."""
         events_window = self.fetch_events(limit=100)
         snapshot = {
             'id': self.id,
@@ -2413,22 +2761,37 @@ class AISession(models.Model):
             snapshot['conversation'] = self.conversation or []
         return snapshot
 
-    def dismiss_notifications(self):
+    def dismiss_notifications(self) -> bool:
+        """Mark this session's inbox notifications as read for the user."""
         if partner := self.env.user.partner_id:
-            messages = self.env['mail.message'].sudo().search([
-                ('muk_ai_session_id', 'in', self.ids),
-                ('notification_ids.res_partner_id', '=', partner.id),
-                ('notification_ids.is_read', '=', False),
-            ])
+            messages = (
+                self.env['mail.message']
+                .sudo()
+                .search(
+                    [
+                        ('muk_ai_session_id', 'in', self.ids),
+                        ('notification_ids.res_partner_id', '=', partner.id),
+                        ('notification_ids.is_read', '=', False),
+                    ]
+                )
+            )
             if messages:
                 messages.with_user(self.env.user).set_message_done()
             return True
         return False
 
-    def start(self, user_message=None, attachment_ids=None):
+    def start(
+        self,
+        user_message: str | None = None,
+        attachment_ids: list[int] | None = None,
+    ) -> dict:
+        """Start a session turn and trigger a worker.
+
+        :raise UserError: when the session is not in a startable state
+        """
         self._recover_if_stuck()
         if self.state not in ('new', 'error', 'stopped'):
-            raise UserError(_("Session is not in a startable state."))
+            raise UserError(_('Session is not in a startable state.'))
         attachments = self._resolve_attachments(attachment_ids)
         if not self.conversation:
             if title := self._autoname_from_text(user_message):
@@ -2442,43 +2805,61 @@ class AISession(models.Model):
         self._trigger_worker()
         return self.get_snapshot()
 
-    def answer(self, answer, attachment_ids=None):
+    def answer(self, answer: str, attachment_ids: list[int] | None = None) -> dict:
+        """Answer a pending question and resume the turn.
+
+        :raise UserError: when the session is not awaiting an answer
+        """
         self._recover_if_stuck()
         pending = self.pending_ask or {}
         if self.state != 'waiting' or pending.get('kind') != 'question':
-            raise UserError(_("Session is not waiting for user input."))
+            raise UserError(_('Session is not waiting for user input.'))
         question = pending.get('text') or ''
         attachments = self._resolve_attachments(attachment_ids)
         if call_id := pending.get('call_id'):
-            self._extend_conversation([build_tool_call_output(call_id, {
-                'status': 'answered',
-                'question': question,
-                'answer': answer,
-            })])
+            self._extend_conversation(
+                [
+                    build_tool_call_output(
+                        call_id,
+                        {
+                            'status': 'answered',
+                            'question': question,
+                            'answer': answer,
+                        },
+                    )
+                ]
+            )
             if attachments:
                 self._extend_conversation([self._build_user_entry(None, attachments)])
         else:
             followup_text = f'Answer to "{question}": {answer}' if question else answer
             if user_entry := self._build_user_entry(followup_text, attachments):
                 self._extend_conversation([user_entry])
-        self._append_event({
-            'kind': 'answer',
-            'question': question,
-            'answer': answer,
-            'attachments': [a._ai_describe() for a in attachments],
-        })
-        self.write({
-            'state': 'running',
-            'pending_ask': False,
-            'claimed_at': False,
-            'turn_wallclock_spent': 0.0,
-            'turn_cost_spent': 0.0,
-        })
+        self._append_event(
+            {
+                'kind': 'answer',
+                'question': question,
+                'answer': answer,
+                'attachments': [a._ai_describe() for a in attachments],
+            }
+        )
+        self.write(
+            {
+                'state': 'running',
+                'pending_ask': False,
+                'claimed_at': False,
+                'turn_wallclock_spent': 0.0,
+                'turn_cost_spent': 0.0,
+            }
+        )
         self._publish_event('state', {'state': 'running'})
         self._trigger_worker()
         return self.get_snapshot()
 
-    def send_message(self, user_message, attachment_ids=None):
+    def send_message(
+        self, user_message: str, attachment_ids: list[int] | None = None
+    ) -> dict:
+        """Route a user message to start, answer, queue, or extend a turn."""
         self._recover_if_stuck()
         if self.state in ('running', 'compacting'):
             return self.enqueue_message(user_message, attachment_ids=attachment_ids)
@@ -2495,23 +2876,27 @@ class AISession(models.Model):
         self._trigger_worker()
         return self.get_snapshot()
 
-    def regenerate_last_turn(self):
+    def regenerate_last_turn(self) -> dict:
+        """Rewind to the last user turn and re-run it.
+
+        :raise UserError: when running, waiting, or no user turn exists
+        """
         if self.state in ('running', 'waiting'):
-            raise UserError(_(
-                "Cannot regenerate while the session is running or waiting."
-            ))
+            raise UserError(
+                _('Cannot regenerate while the session is running or waiting.')
+            )
         conv = list(self.conversation or [])
         last_user = next(
             (
-                idx for idx in range(len(conv) - 1, -1, -1)
-                if isinstance(conv[idx], dict)
-                and conv[idx].get('role') == 'user'
+                idx
+                for idx in range(len(conv) - 1, -1, -1)
+                if isinstance(conv[idx], dict) and conv[idx].get('role') == 'user'
             ),
             None,
         )
         if last_user is None:
-            raise UserError(_("No user turn to regenerate from."))
-        self.conversation = conv[:last_user + 1]
+            raise UserError(_('No user turn to regenerate from.'))
+        self.conversation = conv[: last_user + 1]
         Event = self.env['muk_ai.session.event'].sudo()
         last_user_event = Event.search(
             [('session_id', '=', self.id), ('kind', '=', 'user_message')],
@@ -2519,155 +2904,195 @@ class AISession(models.Model):
             limit=1,
         )
         if last_user_event:
-            stale = Event.search([
-                ('session_id', '=', self.id),
-                '|',
-                ('sequence', '>', last_user_event.sequence),
-                '&',
-                ('sequence', '=', last_user_event.sequence),
-                ('id', '>', last_user_event.id),
-            ])
+            stale = Event.search(
+                [
+                    ('session_id', '=', self.id),
+                    '|',
+                    ('sequence', '>', last_user_event.sequence),
+                    '&',
+                    ('sequence', '=', last_user_event.sequence),
+                    ('id', '>', last_user_event.id),
+                ]
+            )
         else:
             stale = Event.search([('session_id', '=', self.id)])
         if stale:
             stale.unlink()
-        self.write({
-            'pending_ask': False,
-            'error_message': False,
-            'state': 'running',
-            'claimed_at': False,
-            'turn_wallclock_spent': 0.0,
-            'turn_cost_spent': 0.0,
-        })
+        self.write(
+            {
+                'pending_ask': False,
+                'error_message': False,
+                'state': 'running',
+                'claimed_at': False,
+                'turn_wallclock_spent': 0.0,
+                'turn_cost_spent': 0.0,
+            }
+        )
         self._publish_event('state', {'state': 'running'})
         self._trigger_worker()
         return self.get_snapshot()
 
-    def clear(self):
+    def clear(self) -> dict:
+        """Reset the conversation and session state to new.
+
+        :raise UserError: when the session is running or compacting
+        """
         if self.state in ('running', 'compacting'):
-            raise UserError(_(
-                "Cannot clear the conversation while the session is running."
-            ))
+            raise UserError(
+                _('Cannot clear the conversation while the session is running.')
+            )
         if self.pending_ids:
             self.pending_ids.unlink()
             self.invalidate_recordset(['pending_ids'])
-        self.write({
-            'conversation': [],
-            'pending_ask': False,
-            'approved_signatures': [],
-            'last_text': False,
-            'error_message': False,
-            'iteration_count': 0,
-            'last_input_tokens': 0,
-            'state': 'new',
-            'cleared_at': fields.Datetime.now(),
-        })
-        self._append_event({
-            'kind': 'command',
-            'name': '/clear',
-            'message': _("Context cleared."),
-        })
+        self.write(
+            {
+                'conversation': [],
+                'pending_ask': False,
+                'approved_signatures': [],
+                'last_text': False,
+                'error_message': False,
+                'iteration_count': 0,
+                'last_input_tokens': 0,
+                'state': 'new',
+                'cleared_at': fields.Datetime.now(),
+            }
+        )
+        self._append_event(
+            {
+                'kind': 'command',
+                'name': '/clear',
+                'message': _('Context cleared.'),
+            }
+        )
         self._publish_event('state', {'state': 'new'})
         self._publish_event('queue', {'pending': []})
         return self.get_snapshot()
 
-    def compact(self):
+    def compact(self) -> dict:
+        """Begin asynchronous conversation compaction.
+
+        :raise UserError: when running, waiting, or the conversation is empty
+        """
         if self.state in ('running', 'compacting'):
-            raise UserError(_(
-                "Cannot compact while the session is running. Stop first."
-            ))
+            raise UserError(
+                _('Cannot compact while the session is running. Stop first.')
+            )
         if self.state == 'waiting':
-            raise UserError(_(
-                "Cannot compact while the session is waiting for user input."
-            ))
+            raise UserError(
+                _('Cannot compact while the session is waiting for user input.')
+            )
         if not self.conversation:
-            raise UserError(_(
-                "Nothing to compact yet — the conversation is empty."
-            ))
+            raise UserError(_('Nothing to compact yet — the conversation is empty.'))
         self._begin_compact_progress(auto=False)
         self.write({'state': 'compacting', 'error_message': False})
         self._publish_event('state', {'state': 'compacting'})
         self._trigger_worker()
         return self.get_snapshot()
 
-    def stop_compact(self):
+    def stop_compact(self) -> dict:
+        """Cancel an in-progress compaction and return to done."""
         if self.state != 'compacting':
             return self.get_snapshot()
         event = self._find_active_compact_event()
         if event and (event.payload or {}).get('state') == 'streaming':
-            self._patch_compact_progress(event, {
-                'state': 'cancelled',
-                'message': _("Compaction cancelled by user."),
-            })
+            self._patch_compact_progress(
+                event,
+                {
+                    'state': 'cancelled',
+                    'message': _('Compaction cancelled by user.'),
+                },
+            )
         self.write({'state': 'done', 'error_message': False})
         self._publish_event('state', {'state': 'done'})
         return self.get_snapshot()
 
-    def undo_to_event(self, event_id):
+    def undo_to_event(self, event_id: int) -> dict:
+        """Rewind the conversation and events back to before an event.
+
+        :raise UserError: when the session is running, compacting, or waiting
+        """
         if self.state in ('running', 'compacting'):
-            raise UserError(_(
-                "Cannot rewind while the session is running."
-            ))
+            raise UserError(_('Cannot rewind while the session is running.'))
         if self.state == 'waiting':
-            raise UserError(_(
-                "Cannot rewind while the session is waiting for input."
-            ))
+            raise UserError(_('Cannot rewind while the session is waiting for input.'))
         target = self._resolve_event(event_id)
         cut_index = self._conversation_cut_index(target)
-        stale = self.env['muk_ai.session.event'].sudo().search([
-            ('session_id', '=', self.id),
-            ('sequence', '>=', target.sequence),
-        ])
+        stale = (
+            self.env['muk_ai.session.event']
+            .sudo()
+            .search(
+                [
+                    ('session_id', '=', self.id),
+                    ('sequence', '>=', target.sequence),
+                ]
+            )
+        )
         if stale:
             stale.unlink()
         new_conv = list(self.conversation or [])[:cut_index]
-        self.write({
-            'conversation': new_conv,
-            'pending_ask': False,
-            'last_text': False,
-            'error_message': False,
-            'state': 'done' if new_conv else 'new',
-        })
+        self.write(
+            {
+                'conversation': new_conv,
+                'pending_ask': False,
+                'last_text': False,
+                'error_message': False,
+                'state': 'done' if new_conv else 'new',
+            }
+        )
         self._publish_event('state', {'state': self.state})
         return self.get_snapshot()
 
-    def fork_at_event(self, event_id):
+    def fork_at_event(self, event_id: int) -> int:
+        """Fork a new session copied up to the given event; return its id.
+
+        :raise UserError: when the session is running or compacting
+        """
         if self.state in ('running', 'compacting'):
-            raise UserError(_(
-                "Cannot fork while the session is running."
-            ))
+            raise UserError(_('Cannot fork while the session is running.'))
         target = self._resolve_event(event_id)
         cut_index = self._conversation_cut_index_for_fork(target)
         new_conv = list(self.conversation or [])[:cut_index]
-        fork = self.copy({
-            'name': _("%s (fork)", self.name),
-            'conversation': new_conv,
-            'state': 'done' if new_conv else 'new',
-            'pending_ask': False,
-            'last_text': False,
-            'error_message': False,
-            'iteration_count': 0,
-            'event_ids': [(5, 0, 0)],
-            'pending_ids': [(5, 0, 0)],
-        })
-        source_events = self.env['muk_ai.session.event'].sudo().search([
-            ('session_id', '=', self.id),
-            ('sequence', '<=', target.sequence),
-        ], order='sequence, id')
+        fork = self.copy(
+            {
+                'name': _('%s (fork)', self.name),
+                'conversation': new_conv,
+                'state': 'done' if new_conv else 'new',
+                'pending_ask': False,
+                'last_text': False,
+                'error_message': False,
+                'iteration_count': 0,
+                'event_ids': [(5, 0, 0)],
+                'pending_ids': [(5, 0, 0)],
+            }
+        )
+        source_events = (
+            self.env['muk_ai.session.event']
+            .sudo()
+            .search(
+                [
+                    ('session_id', '=', self.id),
+                    ('sequence', '<=', target.sequence),
+                ],
+                order='sequence, id',
+            )
+        )
         if source_events:
-            self.env['muk_ai.session.event'].sudo().create([
-                {
-                    'session_id': fork.id,
-                    'sequence': src.sequence,
-                    'kind': src.kind,
-                    'payload': src.payload,
-                    'at': src.at,
-                }
-                for src in source_events
-            ])
+            self.env['muk_ai.session.event'].sudo().create(
+                [
+                    {
+                        'session_id': fork.id,
+                        'sequence': src.sequence,
+                        'kind': src.kind,
+                        'payload': src.payload,
+                        'at': src.at,
+                    }
+                    for src in source_events
+                ]
+            )
         return fork.id
 
-    def upload_attachments(self, files):
+    def upload_attachments(self, files: list[dict] | None) -> list[dict]:
+        """Create session attachments from uploads and return descriptors."""
         self.check_access('write')
         attachments = self.env['ir.attachment'].sudo()
         created = self.env['ir.attachment']
@@ -2682,7 +3107,8 @@ class AISession(models.Model):
             self.invalidate_recordset(['attachment_ids'])
         return [a._ai_describe() for a in created]
 
-    def discard_attachments(self, attachment_ids):
+    def discard_attachments(self, attachment_ids: list[int] | None) -> bool:
+        """Unlink the named attachments owned by this session."""
         self.check_access('write')
         if attachment_ids:
             ids = {int(aid) for aid in attachment_ids}
@@ -2692,31 +3118,41 @@ class AISession(models.Model):
                 self.invalidate_recordset(['attachment_ids'])
         return True
 
-    def set_view_context(self, payload):
+    def set_view_context(self, payload: dict | None) -> dict:
+        """Pin or clear the session's view context from a client payload."""
         kind = payload.get('kind') if isinstance(payload, dict) else None
         self._write_view_context(
-            None if payload is None or kind == 'none'
+            None
+            if payload is None or kind == 'none'
             else clean_view_context_payload(kind, payload)
         )
         return self.get_snapshot()
 
-    def unpin_view_context(self):
+    def unpin_view_context(self) -> dict:
+        """Clear the pinned view context and record the command."""
         self._write_view_context(None)
-        self._append_event({
-            'kind': 'command',
-            'name': '/unpin',
-            'message': _("View context cleared."),
-        })
+        self._append_event(
+            {
+                'kind': 'command',
+                'name': '/unpin',
+                'message': _('View context cleared.'),
+            }
+        )
         return self.get_snapshot()
 
-    def set_approval_mode(self, mode):
+    def set_approval_mode(self, mode: str | None) -> dict:
+        """Override the session approval mode.
+
+        :raise UserError: when the mode is not ``ask`` or ``off``
+        """
         if mode and mode not in ('ask', 'off'):
-            raise UserError(_("Unknown approval mode %(mode)r.", mode=mode))
+            raise UserError(_('Unknown approval mode %(mode)r.', mode=mode))
         self.write({'override_approval_mode': mode or False})
         self._publish_event('state', {'state': self.state})
         return self.get_snapshot()
 
-    def approve_tool(self):
+    def approve_tool(self) -> dict:
+        """Approve the pending tool call once and resume the round."""
         pending = self._require_pending_approval()
         self._record_approval_audit(
             decision='approved',
@@ -2731,7 +3167,8 @@ class AISession(models.Model):
             self._trigger_worker()
         return self.get_snapshot()
 
-    def approve_for_session(self):
+    def approve_for_session(self) -> dict:
+        """Approve the pending call and whitelist its signature for the session."""
         pending = self._require_pending_approval()
         risk = pending.get('risk') or {}
         if signature := risk.get('signature'):
@@ -2752,9 +3189,10 @@ class AISession(models.Model):
             self._trigger_worker()
         return self.get_snapshot()
 
-    def reject_tool(self, reason=None):
+    def reject_tool(self, reason: str | None = None) -> dict:
+        """Reject the pending tool call and resume the round with the rejection."""
         pending = self._require_pending_approval()
-        reason = (reason or '').strip() or _("User rejected the call.")
+        reason = (reason or '').strip() or _('User rejected the call.')
         self._record_approval_audit(
             decision='rejected',
             call={
@@ -2764,9 +3202,7 @@ class AISession(models.Model):
             risk=pending.get('risk') or {},
             reject_reason=reason,
         )
-        self._resume_tool_round(
-            pending, approved=False, reject_reason=reason
-        )
+        self._resume_tool_round(pending, approved=False, reject_reason=reason)
         if self.state == 'running':
             self._trigger_worker()
         return self.get_snapshot()
@@ -2775,25 +3211,31 @@ class AISession(models.Model):
     # Actions
     # ----------------------------------------------------------
 
-    def action_open(self):
+    def action_open(self) -> dict:
+        """Return the client action that opens this chat session.
+
+        :raise AccessError: when the caller is not the session owner
+        """
         self.ensure_one()
         if self.user_id.id != self.env.uid:
-            raise AccessError(_(
-                "Only the session owner can continue this chat."
-            ))
+            raise AccessError(_('Only the session owner can continue this chat.'))
         return {
             'type': 'ir.actions.client',
             'tag': 'muk_ai.chat',
-            'name': self.name or _("AI Chat"),
+            'name': self.name or _('AI Chat'),
             'params': {'session_id': self.id},
         }
 
-    def action_stop(self):
+    def action_stop(self) -> dict:
+        """Stop the session, flushing any pending tool outputs.
+
+        :raise AccessError: when the caller is not the owner or an admin
+        """
         self.ensure_one()
         if self.user_id.id != self.env.uid and not self.env.is_admin():
-            raise AccessError(_(
-                "Only the session owner or an administrator can stop this session."
-            ))
+            raise AccessError(
+                _('Only the session owner or an administrator can stop this session.')
+            )
         if self.state not in ('done', 'error', 'stopped'):
             if self.state == 'waiting':
                 self._flush_orphaned_tool_outputs()
@@ -2806,12 +3248,14 @@ class AISession(models.Model):
     # ----------------------------------------------------------
 
     @api.depends('agent_id', 'agent_id.model_id', 'agent_id.model_id.context_window')
-    def _compute_context_window(self):
+    def _compute_context_window(self) -> None:
+        """Resolve the effective context window for each session."""
         for record in self:
             record.context_window = record._resolve_context_window()
 
     @api.depends('override_approval_mode', 'agent_id', 'agent_id.approval_mode')
-    def _compute_effective_approval_mode(self):
+    def _compute_effective_approval_mode(self) -> None:
+        """Resolve the effective approval mode for each session."""
         for record in self:
             record.effective_approval_mode = record._effective_approval_mode()
 
@@ -2821,16 +3265,17 @@ class AISession(models.Model):
         'pending_ids.content',
         'pending_ids.attachment_ids',
     )
-    def _compute_pending_user_messages(self):
+    def _compute_pending_user_messages(self) -> None:
+        """Serialize the queued pending messages for the client."""
         for record in self:
             record.pending_user_messages = record._serialize_pending()
 
     @api.depends('event_ids', 'event_ids.sequence', 'event_ids.payload')
-    def _compute_display_events(self):
+    def _compute_display_events(self) -> None:
+        """Load the most recent events for display."""
         for record in self:
             record.display_events = (
-                record.fetch_events(limit=100)['events']
-                if record.id else []
+                record.fetch_events(limit=100)['events'] if record.id else []
             )
 
     # ----------------------------------------------------------
@@ -2838,16 +3283,20 @@ class AISession(models.Model):
     # ----------------------------------------------------------
 
     @api.model_create_multi
-    def create(self, vals_list):
+    def create(self, vals_list: list[dict]) -> AISession:
+        """Enforce the rate limit and broadcast initial state on create."""
         self._check_rate_limit(batch_size=len(vals_list) or 1)
         records = super().create(vals_list)
         for record in records:
             with suppress(Exception):
-                record._bus_send('muk_ai.session_state', {
-                    'session_id': record.id,
-                    'name': record.name,
-                    'state': record.state,
-                })
+                record._bus_send(
+                    'muk_ai.session_state',
+                    {
+                        'session_id': record.id,
+                        'name': record.name,
+                        'state': record.state,
+                    },
+                )
         return records
 
     # ----------------------------------------------------------
@@ -2855,7 +3304,8 @@ class AISession(models.Model):
     # ----------------------------------------------------------
 
     @api.model
-    def _cron_run_pending_sessions(self):
+    def _cron_run_pending_sessions(self) -> None:
+        """Sweep orphans and process pending sessions in this worker slot."""
         candidates = self._find_pending_session_ids()
         self._sweep_orphan_sessions(skip_ids=candidates)
         if candidates:
@@ -2867,78 +3317,98 @@ class AISession(models.Model):
                 self._trigger_worker()
 
     @api.model
-    def _sweep_orphan_sessions(self, skip_ids=None):
-        threshold = fields.Datetime.now() - timedelta(
-            seconds=WORKER_STALE_THRESHOLD
-        )
-        candidates = self.sudo().search([
-            ('id', 'not in', skip_ids or []),
-            ('state', 'in', ('running', 'compacting')),
-            ('write_date', '<', threshold),
-            '|',
+    def _sweep_orphan_sessions(self, skip_ids: list[int] | None = None) -> None:
+        """Mark abandoned running or compacting sessions as errored."""
+        threshold = fields.Datetime.now() - timedelta(seconds=WORKER_STALE_THRESHOLD)
+        candidates = self.sudo().search(
+            [
+                ('id', 'not in', skip_ids or []),
+                ('state', 'in', ('running', 'compacting')),
+                ('write_date', '<', threshold),
+                '|',
                 ('claimed_at', '=', False),
                 ('claimed_at', '<', threshold),
-        ])
+            ]
+        )
         for session in candidates:
             if not self._try_session_xact_lock(session.id):
                 continue
             try:
                 with self.env.cr.savepoint():
-                    session.write({
+                    session.write(
+                        {
+                            'state': 'error',
+                            'error_message': _(
+                                'Worker abandoned the session — please retry.'
+                            ),
+                        }
+                    )
+                session._publish_event(
+                    'state',
+                    {
                         'state': 'error',
-                        'error_message': _(
-                            "Worker abandoned the session — please retry."
-                        ),
-                    })
-                session._publish_event('state', {
-                    'state': 'error',
-                    'error': session.error_message,
-                })
+                        'error': session.error_message,
+                    },
+                )
             except psycopg2.errors.SerializationFailure:
                 continue
 
     @api.model
-    def _session_worker_crons(self):
-        return self.env['ir.cron'].sudo().search([
-            ('state', '=', 'ai_session'),
-            ('active', '=', True),
-        ])
+    def _session_worker_crons(self) -> models.BaseModel:
+        """Return the active AI-session worker cron records."""
+        return (
+            self.env['ir.cron']
+            .sudo()
+            .search(
+                [
+                    ('state', '=', 'ai_session'),
+                    ('active', '=', True),
+                ]
+            )
+        )
 
     @api.model
-    def _active_worker_count(self):
+    def _active_worker_count(self) -> int:
+        """Return the number of active worker crons, at least one."""
         return max(1, len(self._session_worker_crons()))
 
     @api.model
-    def _find_pending_session_ids(self, limit=None):
+    def _find_pending_session_ids(self, limit: int | None = None) -> list[int]:
+        """Return ids of pending sessions, oldest first, up to a limit."""
         if limit is None:
             limit = self._active_worker_count()
-        self.env.cr.execute(SQL(
-            """
+        self.env.cr.execute(
+            SQL(
+                """
             SELECT id FROM muk_ai_session
             WHERE state IN ('running', 'compacting')
             ORDER BY write_date
             LIMIT %s
             """,
-            limit,
-        ))
+                limit,
+            )
+        )
         return [row[0] for row in self.env.cr.fetchall()]
 
     @api.model
-    def _process_session_in_worker(self, session_id):
+    def _process_session_in_worker(self, session_id: int) -> bool:
+        """Process one session under an advisory lock in a fresh cursor."""
         processed = False
         with self.pool.cursor() as cr:
-            cr.execute(SQL(
-                "SELECT pg_try_advisory_lock(%s, %s)",
-                ADVISORY_LOCK_NAMESPACE,
-                session_id,
-            ))
+            cr.execute(
+                SQL(
+                    'SELECT pg_try_advisory_lock(%s, %s)',
+                    ADVISORY_LOCK_NAMESPACE,
+                    session_id,
+                )
+            )
             if cr.fetchone()[0]:
                 try:
                     env_su = api.Environment(cr, SUPERUSER_ID, {})
                     session_su = env_su['muk_ai.session'].browse(session_id)
-                    if (
-                        session_su.exists()
-                        and session_su.state in ('running', 'compacting')
+                    if session_su.exists() and session_su.state in (
+                        'running',
+                        'compacting',
                     ):
                         env = api.Environment(
                             cr,
@@ -2956,42 +3426,48 @@ class AISession(models.Model):
                             cr.commit()
                         except StreamCancelled:
                             cr.rollback()
-                        except Exception as error:
+                        except Exception as error:  # noqa: BLE001 — record any worker failure
                             cr.rollback()
-                            self._mark_session_error(
-                                session_id, str(error)
-                            )
+                            self._mark_session_error(session_id, str(error))
                         processed = True
                 finally:
                     with suppress(Exception):
-                        cr.execute(SQL(
-                            "SELECT pg_advisory_unlock(%s, %s)",
-                            ADVISORY_LOCK_NAMESPACE,
-                            session_id,
-                        ))
+                        cr.execute(
+                            SQL(
+                                'SELECT pg_advisory_unlock(%s, %s)',
+                                ADVISORY_LOCK_NAMESPACE,
+                                session_id,
+                            )
+                        )
                         cr.fetchone()
         return processed
 
     @api.model
-    def _mark_session_error(self, session_id, message):
+    def _mark_session_error(self, session_id: int, message: str) -> None:
+        """Mark a session errored in its own cursor and notify the client."""
         with self.pool.cursor() as cr:
-            session = (
-                api.Environment(cr, SUPERUSER_ID, {})['muk_ai.session']
-                .browse(session_id)
+            session = api.Environment(cr, SUPERUSER_ID, {})['muk_ai.session'].browse(
+                session_id
             )
             if session.exists():
                 session._close_orphan_tool_calls(message)
-                session.write({
-                    'state': 'error',
-                    'error_message': message,
-                })
-                session._publish_event('state', {
-                    'state': 'error',
-                    'error': message,
-                })
+                session.write(
+                    {
+                        'state': 'error',
+                        'error_message': message,
+                    }
+                )
+                session._publish_event(
+                    'state',
+                    {
+                        'state': 'error',
+                        'error': message,
+                    },
+                )
                 cr.commit()
 
-    def _capture_user_context(self):
+    def _capture_user_context(self) -> dict:
+        """Return the JSON-serializable subset of the current context."""
         safe = {}
         for key, value in (self.env.context or {}).items():
             try:
@@ -3001,10 +3477,13 @@ class AISession(models.Model):
             safe[key] = value
         return safe
 
-    def _trigger_worker(self):
-        self.sudo().write({
-            'user_context': self._capture_user_context(),
-        })
+    def _trigger_worker(self) -> None:
+        """Persist the user context and trigger a worker (or run inline in tests)."""
+        self.sudo().write(
+            {
+                'user_context': self._capture_user_context(),
+            }
+        )
         if modules.module.current_test:
             for session in self:
                 if session.state == 'compacting':
