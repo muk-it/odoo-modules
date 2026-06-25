@@ -1,23 +1,24 @@
-import base64
+from __future__ import annotations
+
 import email.mime.image
 import email.mime.multipart
 import email.mime.text
 
 import odoo.tests
-
-from odoo.tests.common import new_test_user
-from odoo.tests.common import tagged
+from odoo import models
+from odoo.tests.common import new_test_user, tagged
 
 
 @tagged('post_install', '-at_install')
 class TestMailPreview(odoo.tests.HttpCase):
+    """Test the RFC 822 email attachment preview controller."""
 
     # ----------------------------------------------------------
     # Setup
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.test_user = new_test_user(
             cls.env,
@@ -40,45 +41,57 @@ class TestMailPreview(odoo.tests.HttpCase):
     # ----------------------------------------------------------
 
     @classmethod
-    def _create_html_eml(cls):
+    def _create_html_eml(cls) -> models.BaseModel:
+        """Create an HTML email attachment with common headers."""
         msg = email.mime.multipart.MIMEMultipart()
         msg['Subject'] = 'Test HTML Email'
         msg['From'] = 'sender@example.com'
         msg['To'] = 'recipient@example.com'
         msg['Cc'] = 'cc@example.com'
-        msg.attach(email.mime.text.MIMEText(
-            '<html><body><p>Hello World</p></body></html>', 'html',
-        ))
-        return cls.env['ir.attachment'].create({
-            'name': 'html_email.eml',
-            'raw': msg.as_bytes(),
-            'mimetype': 'message/rfc822',
-            'public': True,
-        })
+        msg.attach(
+            email.mime.text.MIMEText(
+                '<html><body><p>Hello World</p></body></html>',
+                'html',
+            )
+        )
+        return cls.env['ir.attachment'].create(
+            {
+                'name': 'html_email.eml',
+                'raw': msg.as_bytes(),
+                'mimetype': 'message/rfc822',
+                'public': True,
+            }
+        )
 
     @classmethod
-    def _create_plain_eml(cls):
+    def _create_plain_eml(cls) -> models.BaseModel:
+        """Create a plain text email attachment."""
         msg = email.mime.text.MIMEText(
-            'This is plain text content.\nLine two.', 'plain',
+            'This is plain text content.\nLine two.',
+            'plain',
         )
         msg['Subject'] = 'Plain Text Email'
         msg['From'] = 'plain@example.com'
         msg['To'] = 'recipient@example.com'
-        return cls.env['ir.attachment'].create({
-            'name': 'plain_email.eml',
-            'raw': msg.as_bytes(),
-            'mimetype': 'message/rfc822',
-            'public': True,
-        })
+        return cls.env['ir.attachment'].create(
+            {
+                'name': 'plain_email.eml',
+                'raw': msg.as_bytes(),
+                'mimetype': 'message/rfc822',
+                'public': True,
+            }
+        )
 
     @classmethod
-    def _create_cid_eml(cls):
+    def _create_cid_eml(cls) -> models.BaseModel:
+        """Create an HTML email attachment referencing an inline CID image."""
         msg = email.mime.multipart.MIMEMultipart('related')
         msg['Subject'] = 'Email with CID Image'
         msg['From'] = 'images@example.com'
         msg['To'] = 'recipient@example.com'
         html = email.mime.text.MIMEText(
-            '<html><body><img src="cid:test123"/></body></html>', 'html',
+            '<html><body><img src="cid:test123"/></body></html>',
+            'html',
         )
         msg.attach(html)
         pixel = (
@@ -91,39 +104,50 @@ class TestMailPreview(odoo.tests.HttpCase):
         img.add_header('Content-ID', '<test123>')
         img.add_header('Content-Disposition', 'inline', filename='pixel.png')
         msg.attach(img)
-        return cls.env['ir.attachment'].create({
-            'name': 'cid_email.eml',
-            'raw': msg.as_bytes(),
-            'mimetype': 'message/rfc822',
-            'public': True,
-        })
+        return cls.env['ir.attachment'].create(
+            {
+                'name': 'cid_email.eml',
+                'raw': msg.as_bytes(),
+                'mimetype': 'message/rfc822',
+                'public': True,
+            }
+        )
 
     @classmethod
-    def _create_attachment_eml(cls):
+    def _create_attachment_eml(cls) -> models.BaseModel:
+        """Create an HTML email attachment carrying a file attachment."""
         msg = email.mime.multipart.MIMEMultipart('mixed')
         msg['Subject'] = 'Email with Attachment'
         msg['From'] = 'attach@example.com'
         msg['To'] = 'recipient@example.com'
-        msg.attach(email.mime.text.MIMEText(
-            '<html><body><p>See attached.</p></body></html>', 'html',
-        ))
+        msg.attach(
+            email.mime.text.MIMEText(
+                '<html><body><p>See attached.</p></body></html>',
+                'html',
+            )
+        )
         att = email.mime.text.MIMEText('col1,col2\na,b\n', 'csv')
         att.add_header(
-            'Content-Disposition', 'attachment', filename='data.csv',
+            'Content-Disposition',
+            'attachment',
+            filename='data.csv',
         )
         msg.attach(att)
-        return cls.env['ir.attachment'].create({
-            'name': 'attachment_email.eml',
-            'raw': msg.as_bytes(),
-            'mimetype': 'message/rfc822',
-            'public': True,
-        })
+        return cls.env['ir.attachment'].create(
+            {
+                'name': 'attachment_email.eml',
+                'raw': msg.as_bytes(),
+                'mimetype': 'message/rfc822',
+                'public': True,
+            }
+        )
 
     # ----------------------------------------------------------
     # Tests
     # ----------------------------------------------------------
 
-    def _preview(self, attachment):
+    def _preview(self, attachment: models.BaseModel):
+        """Authenticate and request the mail preview for an attachment."""
         self.authenticate(self.test_user.login, 'preview_test_user')
         return self.url_open(
             f'/muk_web_preview/preview/mail/{attachment.id}',

@@ -1,14 +1,14 @@
 {
     'name': 'MuK Preview',
     'summary': 'Extends the file viewer with additional preview types',
-    'description': '''
+    'description': """
         Extends the built-in file viewer with additional preview support
         for file types such as email messages, CSV files, and Microsoft
         Office documents (docx, xlsx, pptx). The module also adds common
         text-based mimetypes to the viewer so they can be previewed
         directly without downloading.
-    ''',
-    'version': '19.0.1.0.2',
+    """,
+    'version': '19.0.1.0.3',
     'category': 'Tools/Utils',
     'license': 'LGPL-3',
     'author': 'MuK IT',

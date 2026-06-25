@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import base64
 import email
 import email.policy
+from email.message import EmailMessage
 
-import lxml.html
 import lxml.etree
-
+import lxml.html
 from markupsafe import Markup, escape
 
 from odoo import http
@@ -13,13 +15,14 @@ from odoo.tools.mail import html_sanitize
 
 
 class MailPreviewController(http.Controller):
+    """Render RFC 822 email attachments as a styled HTML preview."""
 
     # ----------------------------------------------------------
     # Properties
     # ----------------------------------------------------------
 
     @property
-    def _preview_css(self):
+    def _preview_css(self) -> str:
         return (
             'body {'
             '  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",'
@@ -48,12 +51,15 @@ class MailPreviewController(http.Controller):
     # Helper
     # ----------------------------------------------------------
 
-    def _parse_email(self, raw_bytes):
+    def _parse_email(self, raw_bytes: bytes) -> EmailMessage:
+        """Parse raw email bytes into a message using the SMTP policy."""
         return email.message_from_bytes(
-            raw_bytes, policy=email.policy.SMTP,
+            raw_bytes,
+            policy=email.policy.SMTP,
         )
 
-    def _extract_body(self, msg):
+    def _extract_body(self, msg: EmailMessage) -> str:
+        """Return the sanitized HTML body, wrapping plain text in a pre block."""
         body = msg.get_body(preferencelist=('html', 'plain'))
         if body is None:
             return ''
@@ -62,7 +68,8 @@ class MailPreviewController(http.Controller):
             content = f'<pre>{escape(content)}</pre>'
         return html_sanitize(content)
 
-    def _extract_inline_images(self, msg):
+    def _extract_inline_images(self, msg: EmailMessage) -> dict[str, str]:
+        """Collect inline images keyed by content id as base64 data URLs."""
         images = {}
         for part in msg.walk():
             content_type = part.get_content_type()
@@ -78,7 +85,8 @@ class MailPreviewController(http.Controller):
             images[cid] = f'data:{content_type};base64,{b64}'
         return images
 
-    def _extract_attachments(self, msg):
+    def _extract_attachments(self, msg: EmailMessage) -> list[dict]:
+        """Collect non-inline attachment parts with their name and size."""
         attachments = []
         for part in msg.walk():
             if part.get_content_maintype() == 'multipart':
@@ -91,16 +99,21 @@ class MailPreviewController(http.Controller):
             if not filename and not disposition.startswith('attachment'):
                 continue
             raw = part.get_content()
-            size = len(raw) if isinstance(raw, bytes) else len(
-                raw.encode(),
+            size = len(raw) if isinstance(raw, bytes) else len(raw.encode())
+            attachments.append(
+                {
+                    'name': filename or 'attachment',
+                    'size': size,
+                }
             )
-            attachments.append({
-                'name': filename or 'attachment',
-                'size': size,
-            })
         return attachments
 
-    def _resolve_cid_images(self, html_body, inline_images):
+    def _resolve_cid_images(
+        self,
+        html_body: str,
+        inline_images: dict[str, str],
+    ) -> str:
+        """Rewrite ``cid:`` image sources to their inline data URLs."""
         if not inline_images or not html_body:
             return html_body
         try:
@@ -114,14 +127,19 @@ class MailPreviewController(http.Controller):
                 if cid in inline_images:
                     node.set('src', inline_images[cid])
         return lxml.etree.tostring(
-            root, pretty_print=False, encoding='unicode',
+            root,
+            pretty_print=False,
+            encoding='unicode',
         )
 
-    def _render_header(self, msg):
+    def _render_header(self, msg: EmailMessage) -> str:
+        """Render the common email headers as an HTML table."""
         rows = []
         for label, header in [
-            ('From', 'From'), ('To', 'To'),
-            ('Cc', 'Cc'), ('Date', 'Date'),
+            ('From', 'From'),
+            ('To', 'To'),
+            ('Cc', 'Cc'),
+            ('Date', 'Date'),
             ('Subject', 'Subject'),
         ]:
             value = msg.get(header, '')
@@ -132,20 +150,16 @@ class MailPreviewController(http.Controller):
                 )
         if not rows:
             return ''
-        return (
-            f'<div class="muk_mail_header">'
-            f'<table>{"".join(rows)}</table></div>'
-        )
+        return f'<div class="muk_mail_header"><table>{"".join(rows)}</table></div>'
 
-    def _render_attachments(self, attachments):
+    def _render_attachments(self, attachments: list[dict]) -> str:
+        """Render the attachment list as an HTML block with file sizes."""
         if not attachments:
             return ''
         items = []
         for att in attachments:
             size_kb = max(1, att['size'] // 1024)
-            items.append(
-                f'<li>{escape(att["name"])} ({size_kb} KB)</li>'
-            )
+            items.append(f'<li>{escape(att["name"])} ({size_kb} KB)</li>')
         return (
             '<div class="muk_mail_attachments">'
             '<div class="muk_label">Attachments:</div>'
@@ -172,16 +186,17 @@ class MailPreviewController(http.Controller):
     )
     def preview_mail(
         self,
-        model='ir.attachment',
+        model: str = 'ir.attachment',
         id=None,
-        field='raw',
-        filename=None,
-        filename_field='name',
-        mimetype=None,
-        unique=False,
-        access_token=None,
+        field: str = 'raw',
+        filename: str | None = None,
+        filename_field: str = 'name',
+        mimetype: str | None = None,
+        unique: bool = False,
+        access_token: str | None = None,
         **kw,
-    ):
+    ) -> Markup:
+        """Serve an HTML preview of an RFC 822 email attachment field."""
         record = request.env['ir.binary']._find_record(
             res_model=model,
             res_id=id and int(id),
@@ -189,7 +204,11 @@ class MailPreviewController(http.Controller):
             field=field,
         )
         stream = request.env['ir.binary']._get_stream_from(
-            record, field, filename, filename_field, mimetype,
+            record,
+            field,
+            filename,
+            filename_field,
+            mimetype,
         )
         msg = self._parse_email(stream.read())
         body = self._extract_body(msg)

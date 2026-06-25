@@ -17,10 +17,7 @@ const TEXT_MIMETYPES = [
     'application/sql',
 ];
 
-const CSV_MIMETYPES = [
-    'text/csv',
-    'text/tab-separated-values',
-];
+const CSV_MIMETYPES = ['text/csv', 'text/tab-separated-values'];
 
 const OFFICE_MIMETYPES = [
     'application/msword',
@@ -31,43 +28,41 @@ const OFFICE_MIMETYPES = [
     'application/vnd.openxmlformats-officedocument.presentationml.presentation',
 ];
 
+/** Extend file/attachment models with mail, CSV, and Office preview support. */
 const patchModel = {
     get isMail() {
         return this.mimetype && this.mimetype.startsWith('message/rfc822');
     },
     get isCSV() {
-        return CSV_MIMETYPES.includes(this.mimetype) || (
-            this.name && /\.(csv|tsv)$/i.test(this.name)
+        return (
+            CSV_MIMETYPES.includes(this.mimetype) ||
+            (this.name && /\.(csv|tsv)$/i.test(this.name))
         );
     },
     get isOffice() {
         if (!session.preview_office_enabled) {
             return false;
         }
-        return OFFICE_MIMETYPES.includes(this.mimetype) || (
-            this.name && /\.(docx?|xlsx?|pptx?)$/i.test(this.name)
+        return (
+            OFFICE_MIMETYPES.includes(this.mimetype) ||
+            (this.name && /\.(docx?|xlsx?|pptx?)$/i.test(this.name))
         );
     },
     get isText() {
         return super.isText || TEXT_MIMETYPES.includes(this.mimetype);
     },
     get isViewable() {
-        return super.isViewable || (!this.uploading && (
-            this.isMail || this.isCSV || this.isOffice
-        ));
+        return (
+            super.isViewable ||
+            (!this.uploading && (this.isMail || this.isCSV || this.isOffice))
+        );
     },
     get defaultSource() {
         if (this.isMail) {
-            return url(
-                `/muk_web_preview/preview/mail/${this.id}`,
-                this.urlQueryParams,
-            );
+            return url(`/muk_web_preview/preview/mail/${this.id}`, this.urlQueryParams);
         }
         if (this.isCSV) {
-            return url(
-                `/muk_web_preview/preview/csv/${this.id}`,
-                this.urlQueryParams,
-            );
+            return url(`/muk_web_preview/preview/csv/${this.id}`, this.urlQueryParams);
         }
         return super.defaultSource;
     },

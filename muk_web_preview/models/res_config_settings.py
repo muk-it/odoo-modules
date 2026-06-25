@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 from odoo import fields, models
 
 
 class ResConfigSettings(models.TransientModel):
+    """Add the Office preview setting to the general settings."""
 
     _inherit = 'res.config.settings'
 

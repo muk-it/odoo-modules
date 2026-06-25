@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import csv
 import io
 
@@ -8,21 +10,22 @@ from odoo.http import request
 
 
 class CSVPreviewController(http.Controller):
+    """Render CSV and TSV attachments as a styled HTML table preview."""
 
     # ----------------------------------------------------------
     # Properties
     # ----------------------------------------------------------
 
     @property
-    def _max_preview_rows(self):
+    def _max_preview_rows(self) -> int:
         return 500
 
     @property
-    def _max_preview_cols(self):
+    def _max_preview_cols(self) -> int:
         return 50
 
     @property
-    def _preview_css(self):
+    def _preview_css(self) -> str:
         return (
             'body { font-family: Arial, sans-serif; margin: 0; padding: 16px; }'
             'table { border-collapse: collapse; width: 100%; font-size: 13px; }'
@@ -44,7 +47,8 @@ class CSVPreviewController(http.Controller):
     # Helper
     # ----------------------------------------------------------
 
-    def _decode_raw(self, raw):
+    def _decode_raw(self, raw: bytes) -> str:
+        """Decode raw bytes trying a set of encodings, replacing on failure."""
         for encoding in ('utf-8-sig', 'utf-8', 'latin-1'):
             try:
                 return raw.decode(encoding)
@@ -52,22 +56,23 @@ class CSVPreviewController(http.Controller):
                 continue
         return raw.decode('utf-8', errors='replace')
 
-    def _sniff_dialect(self, text):
+    def _sniff_dialect(self, text: str) -> type[csv.Dialect] | csv.Dialect:
+        """Detect the CSV dialect from a text sample, defaulting to Excel."""
         try:
             return csv.Sniffer().sniff(text[:8192])
         except csv.Error:
             return csv.excel
 
-    def _render_row(self, row, tag):
-        cols = row[:self._max_preview_cols]
-        cells = ''.join(
-            f'<{tag}>{escape(cell)}</{tag}>' for cell in cols
-        )
+    def _render_row(self, row: list[str], tag: str) -> str:
+        """Render a CSV row as an HTML table row, truncating extra columns."""
+        cols = row[: self._max_preview_cols]
+        cells = ''.join(f'<{tag}>{escape(cell)}</{tag}>' for cell in cols)
         if len(row) > self._max_preview_cols:
-            cells += f'<{tag}>\u2026</{tag}>'
+            cells += f'<{tag}>…</{tag}>'
         return f'<tr>{cells}</tr>'
 
-    def _render_table(self, text):
+    def _render_table(self, text: str) -> str:
+        """Render the decoded CSV text as an HTML table, capping the row count."""
         dialect = self._sniff_dialect(text)
         reader = csv.reader(io.StringIO(text), dialect)
         rows = []
@@ -82,7 +87,7 @@ class CSVPreviewController(http.Controller):
         if truncated:
             table += (
                 '<div class="muk_truncated">'
-                f'Showing first {self._max_preview_rows} rows\u2026'
+                f'Showing first {self._max_preview_rows} rows…'
                 '</div>'
             )
         return table
@@ -106,16 +111,17 @@ class CSVPreviewController(http.Controller):
     )
     def preview_csv(
         self,
-        model='ir.attachment',
+        model: str = 'ir.attachment',
         id=None,
-        field='raw',
-        filename=None,
-        filename_field='name',
-        mimetype=None,
-        unique=False,
-        access_token=None,
+        field: str = 'raw',
+        filename: str | None = None,
+        filename_field: str = 'name',
+        mimetype: str | None = None,
+        unique: bool = False,
+        access_token: str | None = None,
         **kw,
-    ):
+    ) -> Markup:
+        """Serve an HTML table preview of a CSV/TSV attachment field."""
         record = request.env['ir.binary']._find_record(
             res_model=model,
             res_id=id and int(id),
@@ -123,7 +129,11 @@ class CSVPreviewController(http.Controller):
             field=field,
         )
         stream = request.env['ir.binary']._get_stream_from(
-            record, field, filename, filename_field, mimetype,
+            record,
+            field,
+            filename,
+            filename_field,
+            mimetype,
         )
         text = self._decode_raw(stream.read())
         table = self._render_table(text)

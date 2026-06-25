@@ -1,18 +1,19 @@
-import odoo.tests
+from __future__ import annotations
 
-from odoo.tests.common import new_test_user
-from odoo.tests.common import tagged
+import odoo.tests
+from odoo.tests.common import new_test_user, tagged
 
 
 @tagged('post_install', '-at_install')
 class TestCSVPreview(odoo.tests.HttpCase):
+    """Test the CSV/TSV attachment preview controller."""
 
     # ----------------------------------------------------------
     # Setup
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.test_user = new_test_user(
             cls.env,
@@ -25,18 +26,22 @@ class TestCSVPreview(odoo.tests.HttpCase):
                 'no_reset_password': True,
             },
         )
-        cls.csv_attachment = cls.env['ir.attachment'].create({
-            'name': 'test_data.csv',
-            'raw': b'Name,Email,Age\nAlice,alice@example.com,30\nBob,bob@example.com,25\n',
-            'mimetype': 'text/csv',
-            'public': True,
-        })
-        cls.tsv_attachment = cls.env['ir.attachment'].create({
-            'name': 'test_data.tsv',
-            'raw': b'Name\tEmail\tAge\nAlice\talice@example.com\t30\n',
-            'mimetype': 'text/tab-separated-values',
-            'public': True,
-        })
+        cls.csv_attachment = cls.env['ir.attachment'].create(
+            {
+                'name': 'test_data.csv',
+                'raw': b'Name,Email,Age\nAlice,alice@example.com,30\nBob,bob@example.com,25\n',
+                'mimetype': 'text/csv',
+                'public': True,
+            }
+        )
+        cls.tsv_attachment = cls.env['ir.attachment'].create(
+            {
+                'name': 'test_data.tsv',
+                'raw': b'Name\tEmail\tAge\nAlice\talice@example.com\t30\n',
+                'mimetype': 'text/tab-separated-values',
+                'public': True,
+            }
+        )
 
     # ----------------------------------------------------------
     # Tests
@@ -55,12 +60,14 @@ class TestCSVPreview(odoo.tests.HttpCase):
 
     def test_csv_preview_escapes_html(self):
         self.authenticate(self.test_user.login, 'csv_preview_test_user')
-        attachment = self.env['ir.attachment'].create({
-            'name': 'xss_test.csv',
-            'raw': b'Name,Value\n<script>alert(1)</script>,safe\n',
-            'mimetype': 'text/csv',
-            'public': True,
-        })
+        attachment = self.env['ir.attachment'].create(
+            {
+                'name': 'xss_test.csv',
+                'raw': b'Name,Value\n<script>alert(1)</script>,safe\n',
+                'mimetype': 'text/csv',
+                'public': True,
+            }
+        )
         response = self.url_open(
             f'/muk_web_preview/preview/csv/{attachment.id}',
         )
