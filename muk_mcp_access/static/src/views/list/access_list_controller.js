@@ -1,17 +1,17 @@
-/** @odoo-module */
-
 import { useService } from '@web/core/utils/hooks';
 
 import { ListController } from '@web/views/list/list_controller';
 
+/**
+ * List controller for MCP access entries, adding a button that opens the
+ * model-selection wizard.
+ */
 export class AccessListController extends ListController {
     setup() {
         super.setup();
         this.actionService = useService('action');
     }
     onAddModelsButton() {
-        this.actionService.doAction(
-            'muk_mcp_access.action_model_selection',
-        );
+        this.actionService.doAction('muk_mcp_access.action_model_selection');
     }
 }

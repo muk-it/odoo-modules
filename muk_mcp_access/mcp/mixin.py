@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from odoo import _, api, models
 from odoo.exceptions import AccessError
 from odoo.fields import Domain
@@ -7,6 +9,7 @@ from odoo.addons.muk_mcp.tools.parser import coerce_json_value, normalize_ids
 
 
 class MCPMixin(models.AbstractModel):
+    """Enforce the access allowlist and record domains on MCP operations."""
 
     _inherit = 'muk_mcp.mixin'
 
@@ -15,27 +18,36 @@ class MCPMixin(models.AbstractModel):
     # ----------------------------------------------------------
 
     @api.model
-    def _resolve_model(self, model):
+    def _resolve_model(self, model: str) -> models.BaseModel:
+        """Resolve a model after asserting it is reachable for the current tool category.
+
+        :raise AccessError: when the model is not exposed via MCP for the
+            request's tool category.
+        """
         result = super()._resolve_model(model)
         category = (
-            getattr(request, '_mcp_tool_category', None)
-            if request else None
+            getattr(request, '_mcp_tool_category', None) if request else None
         ) or 'read'
         if not self.env['muk_mcp_access.model']._is_model_allowed(
-            model, category,
+            model,
+            category,
         ):
-            raise AccessError(_(
-                "Model %(model)r is not accessible via MCP.",
-                model=model,
-            ))
+            raise AccessError(
+                _(
+                    'Model %(model)r is not accessible via MCP.',
+                    model=model,
+                )
+            )
         return result
 
     @api.model
-    def _mcp_record_domain(self, model):
+    def _mcp_record_domain(self, model: str) -> list | None:
+        """Return the configured record domain for a model, or ``None`` when unrestricted."""
         return self.env['muk_mcp_access.model']._get_model_domain(model)
 
     @api.model
-    def _mcp_apply_domain(self, model, domain):
+    def _mcp_apply_domain(self, model: str, domain) -> list:
+        """Combine the caller domain with the model's configured record domain."""
         extra = self._mcp_record_domain(model)
         if extra is None:
             return domain
@@ -43,24 +55,44 @@ class MCPMixin(models.AbstractModel):
         return list(Domain(base) & Domain(extra))
 
     @api.model
-    def _mcp_assert_records_allowed(self, model, ids):
+    def _mcp_assert_records_allowed(self, model: str, ids) -> None:
+        """Assert every id falls within the model's configured record domain.
+
+        :raise AccessError: when any record lies outside the configured domain.
+        """
         extra = self._mcp_record_domain(model)
         ids = normalize_ids(ids)
         if extra is None or not ids:
             return
-        allowed = set(self.env[model].with_context(active_test=False).search(
-            Domain('id', 'in', ids) & Domain(extra),
-        ).ids)
+        allowed = set(
+            self.env[model]
+            .with_context(active_test=False)
+            .search(
+                Domain('id', 'in', ids) & Domain(extra),
+            )
+            .ids
+        )
         forbidden = [rid for rid in ids if rid not in allowed]
         if forbidden:
-            raise AccessError(_(
-                "Records %(ids)s of %(model)r are not accessible via MCP.",
-                ids=forbidden, model=model,
-            ))
+            raise AccessError(
+                _(
+                    'Records %(ids)s of %(model)r are not accessible via MCP.',
+                    ids=forbidden,
+                    model=model,
+                )
+            )
 
     @api.model
-    def _resolve_resource_record_field(self, model, record_id, field):
+    def _resolve_resource_record_field(
+        self,
+        model: str,
+        record_id: int,
+        field: str,
+    ) -> tuple[str, bytes, str]:
+        """Assert record access before resolving a binary field resource."""
         self._mcp_assert_records_allowed(model, [record_id])
         return super()._resolve_resource_record_field(
-            model, record_id, field,
+            model,
+            record_id,
+            field,
         )
