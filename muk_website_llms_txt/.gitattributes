@@ -1,2 +1,0 @@
-# Normalize line endings to LF for all text files (matches .editorconfig / prettier).
-* text=auto eol=lf

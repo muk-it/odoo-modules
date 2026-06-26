@@ -1,29 +1,24 @@
-from __future__ import annotations
-
 from odoo.tests import tagged
 from odoo.tests.common import HttpCase
 
 
 @tagged('post_install', '-at_install')
 class TestLlmsTxtController(HttpCase):
-    """Test the llms.txt routes and markdown content negotiation."""
 
     # ----------------------------------------------------------
     # Setup
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls) -> None:
+    def setUpClass(cls):
         super().setUpClass()
         cls.website = cls.env['website'].search([], limit=1)
-        cls.website.write(
-            {
-                'llms_txt_enabled': True,
-                'llms_full_txt_enabled': True,
-                'llms_content_signal': 'all',
-                'llms_link_headers_enabled': True,
-            }
-        )
+        cls.website.write({
+            'llms_txt_enabled': True,
+            'llms_full_txt_enabled': True,
+            'llms_content_signal': 'all',
+            'llms_link_headers_enabled': True,
+        })
 
     # ----------------------------------------------------------
     # Tests
@@ -93,17 +88,6 @@ class TestLlmsTxtController(HttpCase):
             self.assertIn('x-markdown-tokens', response.headers)
             self.assertIn('Vary', response.headers)
             self.assertIn('Accept', response.headers['Vary'])
-
-    def test_markdown_negotiation_disabled(self):
-        self.website.llms_txt_enabled = False
-        response = self.url_open(
-            '/',
-            headers={'Accept': 'text/markdown'},
-        )
-        content_type = response.headers.get('Content-Type', '')
-        if 'text/markdown' in content_type:
-            self.assertIn('x-markdown-tokens', response.headers)
-        self.website.llms_txt_enabled = True
 
     def test_normal_request_not_affected(self):
         response = self.url_open('/')

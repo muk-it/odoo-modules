@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import re
 
 from lxml import etree
@@ -17,12 +15,7 @@ _cleaner = Cleaner(
 )
 
 
-def _extract_main_content(html_content: str) -> str:
-    """Return the main content area of an HTML document as an HTML string.
-
-    :return: the ``#wrap`` or ``<main>`` subtree when present, otherwise
-        the whole document body or the original input on parse failure
-    """
+def _extract_main_content(html_content):
     try:
         doc = etree.HTML(_cleaner.clean_html(html_content))
     except etree.Error:
@@ -38,8 +31,7 @@ def _extract_main_content(html_content: str) -> str:
     return etree.tostring(main, encoding='unicode', method='html')
 
 
-def html_to_markdown(html_content: str | bytes | None, base_url: str = '') -> str:
-    """Convert website HTML into clean, collapsed plain-text markdown."""
+def html_to_markdown(html_content, base_url=''):
     if not html_content:
         return ''
     if isinstance(html_content, bytes):
@@ -50,16 +42,14 @@ def html_to_markdown(html_content: str | bytes | None, base_url: str = '') -> st
     return text.strip()
 
 
-def estimate_tokens(text: str | None) -> int:
-    """Estimate the number of LLM tokens in ``text`` from its word count."""
+def estimate_tokens(text):
     if not text:
         return 0
     words = len(text.split())
     return int(words * 1.3)
 
 
-def build_content_signal(policy: str) -> str:
-    """Map a content-signal policy to its ``Content-Signal`` header value."""
+def build_content_signal(policy):
     signals = {
         'all': 'ai-train=yes, search=yes, ai-input=yes',
         'search_input': 'ai-train=no, search=yes, ai-input=yes',

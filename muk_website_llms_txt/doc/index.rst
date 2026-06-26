@@ -54,16 +54,10 @@ Once installed and enabled, your website will automatically serve:
 Response headers include ``x-markdown-tokens`` (estimated token count) and
 ``Content-Signal`` (AI usage policy).
 
-When Agent Discovery is enabled, website page responses also carry a
-``Link`` header (RFC 8288) pointing agents to the exposed machine-readable
-resources and to the markdown alternate of the current page, for example::
-
-    Link: </shop>; rel="alternate"; type="text/markdown"; title="Markdown",
-          </llms.txt>; rel="describedby"; type="text/plain"; title="LLMs.txt",
-          </llms-full.txt>; rel="describedby"; type="text/plain"; title="LLMs-full.txt"
-
-Only resources that are actually exposed are advertised. Pages that carry the
-markdown alternate also send ``Vary: Accept``.
+When Agent Discovery is enabled, website page responses also carry a ``Link``
+header (RFC 8288) pointing agents to the exposed machine-readable resources and
+to the markdown alternate of the current page. Pages that carry the markdown
+alternate also send ``Vary: Accept``.
 
 Credits
 =======

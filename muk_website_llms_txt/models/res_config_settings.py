@@ -1,10 +1,7 @@
-from __future__ import annotations
-
 from odoo import fields, models
 
 
 class ResConfigSettings(models.TransientModel):
-    """Expose the website llms.txt settings on the configuration screen."""
 
     _inherit = 'res.config.settings'
 

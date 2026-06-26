@@ -1,15 +1,14 @@
-from odoo.tests.common import TransactionCase, tagged
+from odoo.tests.common import tagged, TransactionCase
 
 from odoo.addons.muk_website_llms_txt.tools.converter import (
-    build_content_signal,
-    estimate_tokens,
     html_to_markdown,
+    estimate_tokens,
+    build_content_signal,
 )
 
 
 @tagged('post_install', '-at_install')
 class TestConverter(TransactionCase):
-    """Test the HTML-to-markdown conversion and signal helpers."""
 
     # ----------------------------------------------------------
     # Tests
@@ -50,10 +49,7 @@ class TestConverter(TransactionCase):
         self.assertNotIn('alert', result)
 
     def test_strip_nav_and_footer(self):
-        html = (
-            '<nav>Navigation</nav><main><p>Main content</p></main>'
-            '<footer>Footer</footer>'
-        )
+        html = '<nav>Navigation</nav><main><p>Main content</p></main><footer>Footer</footer>'
         result = html_to_markdown(html)
         self.assertIn('Main content', result)
         self.assertNotIn('Navigation', result)
@@ -114,7 +110,7 @@ class TestConverter(TransactionCase):
         self.assertEqual(result, 'ai-train=yes, search=yes, ai-input=yes')
 
     def test_complex_page(self):
-        html = """
+        html = '''
         <html>
         <body>
             <nav class="o_header_standard">Menu</nav>
@@ -130,7 +126,7 @@ class TestConverter(TransactionCase):
             <footer class="o_footer">Copyright</footer>
         </body>
         </html>
-        """
+        '''
         result = html_to_markdown(html)
         self.assertIn('Welcome', result)
         self.assertIn('great', result)
