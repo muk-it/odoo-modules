@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 from odoo import fields, models
 
 
 class ResConfigSettings(models.TransientModel):
+    """Expose the website llms.txt settings on the configuration screen."""
 
     _inherit = 'res.config.settings'
 
@@ -41,5 +44,10 @@ class ResConfigSettings(models.TransientModel):
 
     llms_include_events = fields.Boolean(
         related='website_id.llms_include_events',
+        readonly=False,
+    )
+
+    llms_link_headers_enabled = fields.Boolean(
+        related='website_id.llms_link_headers_enabled',
         readonly=False,
     )

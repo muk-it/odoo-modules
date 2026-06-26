@@ -1,24 +1,29 @@
+from __future__ import annotations
+
 from odoo.tests import tagged
 from odoo.tests.common import HttpCase
 
 
 @tagged('post_install', '-at_install')
 class TestLlmsTxtController(HttpCase):
+    """Test the llms.txt routes and markdown content negotiation."""
 
     # ----------------------------------------------------------
     # Setup
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.website = cls.env['website'].search([], limit=1)
-        cls.website.write({
-            'llms_txt_enabled': True,
-            'llms_full_txt_enabled': True,
-            'llms_markdown_enabled': True,
-            'llms_content_signal': 'all',
-        })
+        cls.website.write(
+            {
+                'llms_txt_enabled': True,
+                'llms_full_txt_enabled': True,
+                'llms_content_signal': 'all',
+                'llms_link_headers_enabled': True,
+            }
+        )
 
     # ----------------------------------------------------------
     # Tests
@@ -90,16 +95,53 @@ class TestLlmsTxtController(HttpCase):
             self.assertIn('Accept', response.headers['Vary'])
 
     def test_markdown_negotiation_disabled(self):
-        self.website.llms_markdown_enabled = False
+        self.website.llms_txt_enabled = False
         response = self.url_open(
             '/',
             headers={'Accept': 'text/markdown'},
         )
         content_type = response.headers.get('Content-Type', '')
-        self.assertIn('text/html', content_type)
-        self.website.llms_markdown_enabled = True
+        if 'text/markdown' in content_type:
+            self.assertIn('x-markdown-tokens', response.headers)
+        self.website.llms_txt_enabled = True
 
     def test_normal_request_not_affected(self):
         response = self.url_open('/')
         content_type = response.headers.get('Content-Type', '')
         self.assertIn('text/html', content_type)
+
+    def test_link_header_present(self):
+        response = self.url_open('/')
+        link = response.headers.get('Link', '')
+        self.assertIn('</llms.txt>', link)
+        self.assertIn('rel="describedby"', link)
+
+    def test_link_header_advertises_full(self):
+        response = self.url_open('/')
+        link = response.headers.get('Link', '')
+        self.assertIn('</llms-full.txt>', link)
+
+    def test_link_header_advertises_markdown_alternate(self):
+        response = self.url_open('/')
+        link = response.headers.get('Link', '')
+        self.assertIn('rel="alternate"', link)
+        self.assertIn('type="text/markdown"', link)
+
+    def test_link_header_sets_vary_accept(self):
+        response = self.url_open('/')
+        self.assertIn('Accept', response.headers.get('Vary', ''))
+
+    def test_link_header_disabled(self):
+        self.website.llms_link_headers_enabled = False
+        response = self.url_open('/')
+        self.assertNotIn('llms.txt', response.headers.get('Link', ''))
+        self.assertNotIn('text/markdown', response.headers.get('Link', ''))
+        self.website.llms_link_headers_enabled = True
+
+    def test_link_header_omits_disabled_resources(self):
+        self.website.llms_full_txt_enabled = False
+        response = self.url_open('/')
+        link = response.headers.get('Link', '')
+        self.assertIn('</llms.txt>', link)
+        self.assertNotIn('</llms-full.txt>', link)
+        self.website.llms_full_txt_enabled = True

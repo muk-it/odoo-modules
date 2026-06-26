@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import logging
 
 from odoo import http
-from odoo.http import request
+from odoo.http import Response, request
 
 from odoo.addons.muk_website_llms_txt.tools.converter import (
     build_content_signal,
@@ -12,6 +14,7 @@ _logger = logging.getLogger(__name__)
 
 
 class LlmsTxtController(http.Controller):
+    """Serve the ``/llms.txt`` and ``/llms-full.txt`` discovery files."""
 
     # ----------------------------------------------------------
     # Routes
@@ -25,7 +28,8 @@ class LlmsTxtController(http.Controller):
         multilang=False,
         sitemap=False,
     )
-    def llms_txt(self, **kwargs):
+    def llms_txt(self, **kwargs) -> Response:
+        """Return the llms.txt index of published website content."""
         if not request.website.llms_txt_enabled:
             return request.not_found()
         content = request.website._get_llms_txt_content()
@@ -33,11 +37,14 @@ class LlmsTxtController(http.Controller):
         content_signal = build_content_signal(
             request.website.llms_content_signal or 'all'
         )
-        return request.make_response(content, [
-            ('Content-Type', 'text/plain; charset=utf-8'),
-            ('x-markdown-tokens', str(token_count)),
-            ('Content-Signal', content_signal),
-        ])
+        return request.make_response(
+            content,
+            [
+                ('Content-Type', 'text/plain; charset=utf-8'),
+                ('x-markdown-tokens', str(token_count)),
+                ('Content-Signal', content_signal),
+            ],
+        )
 
     @http.route(
         '/llms-full.txt',
@@ -47,7 +54,8 @@ class LlmsTxtController(http.Controller):
         multilang=False,
         sitemap=False,
     )
-    def llms_full_txt(self, **kwargs):
+    def llms_full_txt(self, **kwargs) -> Response:
+        """Return the llms-full.txt dump of all published page content."""
         if not request.website.llms_full_txt_enabled:
             return request.not_found()
         content = request.website._get_llms_full_txt_content()
@@ -55,8 +63,11 @@ class LlmsTxtController(http.Controller):
         content_signal = build_content_signal(
             request.website.llms_content_signal or 'all'
         )
-        return request.make_response(content, [
-            ('Content-Type', 'text/plain; charset=utf-8'),
-            ('x-markdown-tokens', str(token_count)),
-            ('Content-Signal', content_signal),
-        ])
+        return request.make_response(
+            content,
+            [
+                ('Content-Type', 'text/plain; charset=utf-8'),
+                ('x-markdown-tokens', str(token_count)),
+                ('Content-Signal', content_signal),
+            ],
+        )

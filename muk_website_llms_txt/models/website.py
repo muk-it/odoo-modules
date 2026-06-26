@@ -1,11 +1,16 @@
+from __future__ import annotations
+
 import logging
 
 from odoo import fields, models
+
+from odoo.addons.muk_website_llms_txt.tools.converter import html_to_markdown
 
 _logger = logging.getLogger(__name__)
 
 
 class Website(models.Model):
+    """Build the llms.txt and llms-full.txt content for the website."""
 
     _inherit = 'website'
 
@@ -14,95 +19,139 @@ class Website(models.Model):
     # ----------------------------------------------------------
 
     llms_txt_enabled = fields.Boolean(
-        string="Enable llms.txt",
+        string='Enable llms.txt',
         default=True,
         help=(
-            "Serve a /llms.txt file with an AI-readable index "
-            "of your published website content."
-        )
+            'Serve a /llms.txt file with an AI-readable index '
+            'of your published website content.'
+        ),
     )
 
     llms_full_txt_enabled = fields.Boolean(
-        string="Enable llms-full.txt",
+        string='Enable llms-full.txt',
         default=True,
         help=(
-            "Serve a /llms-full.txt file with the full markdown "
-            "content of all published pages."
-        )
+            'Serve a /llms-full.txt file with the full markdown '
+            'content of all published pages.'
+        ),
     )
 
     llms_content_signal = fields.Selection(
         selection=[
-            ('all', "Allow AI training + search + input"),
-            ('search_input', "Allow search + AI input only"),
-            ('input_only', "Allow AI input only"),
-            ('none', "No AI usage permitted"),
+            ('all', 'Allow AI training + search + input'),
+            ('search_input', 'Allow search + AI input only'),
+            ('input_only', 'Allow AI input only'),
+            ('none', 'No AI usage permitted'),
         ],
-        string="Content Signal Policy",
+        string='Content Signal Policy',
         default='all',
         help=(
-            "Control how AI systems may use your content. "
-            "Sent via the Content-Signal HTTP header."
-        )
+            'Control how AI systems may use your content. '
+            'Sent via the Content-Signal HTTP header.'
+        ),
     )
 
     llms_include_pages = fields.Boolean(
-        string="Include Pages",
+        string='Include Pages',
         default=True,
-        help="Include published website pages in llms.txt."
+        help='Include published website pages in llms.txt.',
     )
 
     llms_include_blogs = fields.Boolean(
-        string="Include Blog Posts",
+        string='Include Blog Posts',
         default=True,
-        help="Include published blog posts in llms.txt."
+        help='Include published blog posts in llms.txt.',
     )
 
     llms_include_products = fields.Boolean(
-        string="Include Products",
+        string='Include Products',
         default=True,
-        help="Include published products in llms.txt."
+        help='Include published products in llms.txt.',
     )
 
     llms_include_events = fields.Boolean(
-        string="Include Events",
+        string='Include Events',
         default=True,
-        help="Include published events in llms.txt."
+        help='Include published events in llms.txt.',
+    )
+
+    llms_link_headers_enabled = fields.Boolean(
+        string='Agent Discovery Link Headers',
+        default=True,
+        help=(
+            'Advertise machine-readable resources to AI agents and crawlers '
+            'by adding RFC 8288 Link response headers to your website pages.'
+        ),
     )
 
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
 
-    def _get_llms_base_url(self):
+    def _get_llms_link_header(self, path: str = '') -> str:
+        """Return the RFC 8288 Link header advertising discovery resources.
+
+        :param path: the current request path, advertised as the markdown
+            alternate of the page when provided
+        :return: a comma-joined ``Link`` header value pointing to the
+            resources this website currently exposes, or an empty string
+            when none are enabled
+        """
         self.ensure_one()
-        base_url = (
-            self.domain
-            or self.env['ir.config_parameter']
-            .sudo()
-            .get_param('web.base.url', '')
+        links = []
+        if path:
+            links.append(
+                f'<{path}>; rel="alternate"; type="text/markdown"; title="Markdown"'
+            )
+        if self.llms_txt_enabled:
+            links.append(
+                '</llms.txt>; rel="describedby"; type="text/plain"; title="LLMs.txt"'
+            )
+        if self.llms_full_txt_enabled:
+            links.append(
+                '</llms-full.txt>; rel="describedby"; '
+                'type="text/plain"; title="LLMs-full.txt"'
+            )
+        return ', '.join(links)
+
+    def _get_llms_base_url(self) -> str:
+        """Return the website's public base URL without a trailing slash."""
+        self.ensure_one()
+        base_url = self.domain or self.env['ir.config_parameter'].sudo().get_param(
+            'web.base.url', ''
         )
         return base_url.rstrip('/')
 
-    def _get_llms_header_lines(self):
+    def _get_llms_header_lines(self) -> list[str]:
+        """Return the markdown header lines for the llms.txt document."""
         self.ensure_one()
         return [f'# {self.name or "Odoo Website"}']
 
-    def _is_module_installed(self, module_name):
-        return bool(self.env['ir.module.module'].sudo().search(
-            [('name', '=', module_name), ('state', '=', 'installed')],
-            limit=1
-        ))
+    def _is_module_installed(self, module_name: str) -> bool:
+        """Return whether the named Odoo module is installed."""
+        return bool(
+            self.env['ir.module.module']
+            .sudo()
+            .search(
+                [('name', '=', module_name), ('state', '=', 'installed')],
+                limit=1,
+            )
+        )
 
-    def _get_llms_txt_pages(self, base_url):
+    def _get_llms_txt_pages(self, base_url: str) -> list[str]:
+        """Return llms.txt index lines for the published website pages."""
         if not self.llms_include_pages:
             return []
-        pages = self.env['website.page'].sudo().search(
-            [
-                ('website_published', '=', True),
-                ('website_id', 'in', [self.id, False]),
-            ],
-            order='url'
+        pages = (
+            self.env['website.page']
+            .sudo()
+            .search(
+                [
+                    ('website_published', '=', True),
+                    ('website_id', 'in', [self.id, False]),
+                ],
+                order='url',
+            )
         )
         if not pages:
             return []
@@ -115,18 +164,20 @@ class Website(models.Model):
             lines.append(f'- [{name}]({url})')
         return lines
 
-    def _get_llms_txt_blogs(self, base_url):
-        if (
-            not self.llms_include_blogs or
-            not self._is_module_installed('website_blog')
-        ):
+    def _get_llms_txt_blogs(self, base_url: str) -> list[str]:
+        """Return llms.txt index lines for the published blog posts."""
+        if not self.llms_include_blogs or not self._is_module_installed('website_blog'):
             return []
-        blog_posts = self.env['blog.post'].sudo().search(
-            [
-                ('website_published', '=', True),
-                ('website_id', 'in', [self.id, False]),
-            ],
-            order='published_date desc'
+        blog_posts = (
+            self.env['blog.post']
+            .sudo()
+            .search(
+                [
+                    ('website_published', '=', True),
+                    ('website_id', 'in', [self.id, False]),
+                ],
+                order='published_date desc',
+            )
         )
         if not blog_posts:
             return []
@@ -140,18 +191,22 @@ class Website(models.Model):
                 lines.append(f'- [{name}]({url})')
         return lines
 
-    def _get_llms_txt_products(self, base_url):
-        if (
-            not self.llms_include_products or
-            not self._is_module_installed('website_sale')
+    def _get_llms_txt_products(self, base_url: str) -> list[str]:
+        """Return llms.txt index lines for the published products."""
+        if not self.llms_include_products or not self._is_module_installed(
+            'website_sale'
         ):
             return []
-        products = self.env['product.template'].sudo().search(
-            [
-                ('website_published', '=', True),
-                ('website_id', 'in', [self.id, False]),
-            ],
-            order='name'
+        products = (
+            self.env['product.template']
+            .sudo()
+            .search(
+                [
+                    ('website_published', '=', True),
+                    ('website_id', 'in', [self.id, False]),
+                ],
+                order='name',
+            )
         )
         if not products:
             return []
@@ -167,18 +222,22 @@ class Website(models.Model):
                 lines.append(f'- [{name}]({url})')
         return lines
 
-    def _get_llms_txt_events(self, base_url):
-        if (
-            not self.llms_include_events or
-            not self._is_module_installed('website_event')
+    def _get_llms_txt_events(self, base_url: str) -> list[str]:
+        """Return llms.txt index lines for the published events."""
+        if not self.llms_include_events or not self._is_module_installed(
+            'website_event'
         ):
             return []
-        events = self.env['event.event'].sudo().search(
-            [
-                ('website_published', '=', True),
-                ('website_id', 'in', [self.id, False]),
-            ],
-            order='date_begin'
+        events = (
+            self.env['event.event']
+            .sudo()
+            .search(
+                [
+                    ('website_published', '=', True),
+                    ('website_id', 'in', [self.id, False]),
+                ],
+                order='date_begin',
+            )
         )
         if not events:
             return []
@@ -189,7 +248,8 @@ class Website(models.Model):
             lines.append(f'- [{name}]({url})')
         return lines
 
-    def _get_llms_txt_content(self):
+    def _get_llms_txt_content(self) -> str:
+        """Assemble the full llms.txt index document for this website."""
         self.ensure_one()
         base_url = self._get_llms_base_url()
         lines = self._get_llms_header_lines()
@@ -200,21 +260,29 @@ class Website(models.Model):
         lines.append('')
         return '\n'.join(lines)
 
-    def _format_llms_full_entry(self, name, url, content=''):
+    def _format_llms_full_entry(
+        self, name: str, url: str, content: str = ''
+    ) -> list[str]:
+        """Return the markdown lines for one llms-full.txt content entry."""
         entry = ['', '---', '', f'## {name}', '', f'URL: {url}', '']
         if content:
             entry.append(content)
         return entry
 
-    def _get_llms_full_pages(self, base_url, html_to_markdown):
+    def _get_llms_full_pages(self, base_url: str, html_to_markdown) -> list[str]:
+        """Return llms-full.txt entries with the markdown of each page."""
         if not self.llms_include_pages:
             return []
-        pages = self.env['website.page'].sudo().search(
-            [
-                ('website_published', '=', True),
-                ('website_id', 'in', [self.id, False]),
-            ],
-            order='url'
+        pages = (
+            self.env['website.page']
+            .sudo()
+            .search(
+                [
+                    ('website_published', '=', True),
+                    ('website_id', 'in', [self.id, False]),
+                ],
+                order='url',
+            )
         )
         parts = []
         for page in pages:
@@ -229,18 +297,20 @@ class Website(models.Model):
             parts += self._format_llms_full_entry(name, url, content)
         return parts
 
-    def _get_llms_full_blogs(self, base_url, html_to_markdown):
-        if (
-            not self.llms_include_blogs or
-            not self._is_module_installed('website_blog')
-        ):
+    def _get_llms_full_blogs(self, base_url: str, html_to_markdown) -> list[str]:
+        """Return llms-full.txt entries with the markdown of each blog post."""
+        if not self.llms_include_blogs or not self._is_module_installed('website_blog'):
             return []
-        blog_posts = self.env['blog.post'].sudo().search(
-            [
-                ('website_published', '=', True),
-                ('website_id', 'in', [self.id, False]),
-            ],
-            order='published_date desc'
+        blog_posts = (
+            self.env['blog.post']
+            .sudo()
+            .search(
+                [
+                    ('website_published', '=', True),
+                    ('website_id', 'in', [self.id, False]),
+                ],
+                order='published_date desc',
+            )
         )
         parts = []
         for post in blog_posts:
@@ -249,24 +319,26 @@ class Website(models.Model):
             content = ''
             content_html = post.content or ''
             if content_html:
-                content = html_to_markdown(
-                    content_html, base_url=base_url
-                ) or ''
+                content = html_to_markdown(content_html, base_url=base_url) or ''
             parts += self._format_llms_full_entry(name, url, content)
         return parts
 
-    def _get_llms_full_products(self, base_url, html_to_markdown):
-        if (
-            not self.llms_include_products or
-            not self._is_module_installed('website_sale')
+    def _get_llms_full_products(self, base_url: str, html_to_markdown) -> list[str]:
+        """Return llms-full.txt entries with the markdown of each product."""
+        if not self.llms_include_products or not self._is_module_installed(
+            'website_sale'
         ):
             return []
-        products = self.env['product.template'].sudo().search(
-            [
-                ('website_published', '=', True),
-                ('website_id', 'in', [self.id, False]),
-            ],
-            order='name'
+        products = (
+            self.env['product.template']
+            .sudo()
+            .search(
+                [
+                    ('website_published', '=', True),
+                    ('website_id', 'in', [self.id, False]),
+                ],
+                order='name',
+            )
         )
         parts = []
         for product in products:
@@ -281,20 +353,16 @@ class Website(models.Model):
                 entry.append(desc.strip())
             website_desc = product.website_description or ''
             if website_desc:
-                content = html_to_markdown(
-                    website_desc, base_url=base_url
-                )
+                content = html_to_markdown(website_desc, base_url=base_url)
                 if content:
                     entry.append('')
                     entry.append(content)
             parts += entry
         return parts
 
-    def _get_llms_full_txt_content(self):
+    def _get_llms_full_txt_content(self) -> str:
+        """Assemble the full llms-full.txt markdown dump for this website."""
         self.ensure_one()
-        from odoo.addons.muk_website_llms_txt.tools.converter import (
-            html_to_markdown,
-        )
         base_url = self._get_llms_base_url()
         parts = self._get_llms_header_lines()
         parts += self._get_llms_full_pages(base_url, html_to_markdown)
