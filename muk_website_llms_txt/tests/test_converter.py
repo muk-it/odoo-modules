@@ -4,7 +4,29 @@ from odoo.addons.muk_website_llms_txt.tools.converter import (
     html_to_markdown,
     estimate_tokens,
     build_content_signal,
+    extract_jsonld,
+    extract_metadata,
+    page_to_agent_markdown,
 )
+
+PRODUCT_PAGE = """
+<html>
+<head>
+    <title>Cool Mug</title>
+    <meta name="description" content="A nice ceramic mug."/>
+    <meta property="og:image" content="https://example.com/mug.jpg"/>
+    <script type="application/ld+json">
+    {"@context": "https://schema.org", "@type": "Product", "name": "Cool Mug",
+     "sku": "MUG-1", "brand": {"@type": "Brand", "name": "MuKware"},
+     "offers": {"@type": "Offer", "price": "9.90", "priceCurrency": "EUR",
+                "availability": "https://schema.org/InStock"}}
+    </script>
+</head>
+<body>
+    <div id="wrap"><h1>Cool Mug</h1><p>A nice ceramic mug.</p></div>
+</body>
+</html>
+"""
 
 
 @tagged('post_install', '-at_install')
@@ -134,3 +156,60 @@ class TestConverter(TransactionCase):
         self.assertIn('Contact us', result)
         self.assertNotIn('Menu', result)
         self.assertNotIn('Copyright', result)
+
+    def test_extract_jsonld(self):
+        objects = extract_jsonld(PRODUCT_PAGE)
+        self.assertEqual(len(objects), 1)
+        self.assertEqual(objects[0]['@type'], 'Product')
+
+    def test_extract_jsonld_empty(self):
+        self.assertEqual(extract_jsonld('<p>no script</p>'), [])
+        self.assertEqual(extract_jsonld(None), [])
+
+    def test_extract_jsonld_flattens_arrays(self):
+        html = (
+            '<script type="application/ld+json">'
+            '[{"@type": "Product", "name": "A"}, {"@type": "Breadcrumb"}]'
+            '</script>'
+            '<script type="application/ld+json">'
+            '{"@type": "Organization", "name": "B"}</script>'
+        )
+        objects = extract_jsonld(html)
+        self.assertEqual(len(objects), 3)
+        self.assertTrue(all(isinstance(obj, dict) for obj in objects))
+
+    def test_extract_metadata(self):
+        meta = extract_metadata(PRODUCT_PAGE)
+        self.assertEqual(meta['title'], 'Cool Mug')
+        self.assertEqual(meta['description'], 'A nice ceramic mug.')
+        self.assertEqual(meta['image'], 'https://example.com/mug.jpg')
+
+    def test_agent_markdown_has_frontmatter(self):
+        result = page_to_agent_markdown(PRODUCT_PAGE)
+        self.assertTrue(result.startswith('---'))
+        self.assertIn('title: "Cool Mug"', result)
+        self.assertIn('description: "A nice ceramic mug."', result)
+
+    def test_agent_markdown_preserves_jsonld(self):
+        result = page_to_agent_markdown(PRODUCT_PAGE)
+        self.assertIn('```json', result)
+        self.assertIn('"@type": "Product"', result)
+        self.assertIn('"sku": "MUG-1"', result)
+
+    def test_agent_markdown_product_summary(self):
+        result = page_to_agent_markdown(PRODUCT_PAGE)
+        self.assertIn('**Product:**', result)
+        self.assertIn('Cool Mug', result)
+        self.assertIn('9.90 EUR', result)
+        self.assertIn('InStock', result)
+        self.assertIn('SKU: MUG-1', result)
+
+    def test_agent_markdown_keeps_body(self):
+        result = page_to_agent_markdown(PRODUCT_PAGE)
+        self.assertIn('A nice ceramic mug.', result)
+
+    def test_agent_markdown_without_metadata(self):
+        result = page_to_agent_markdown('<div id="wrap"><p>Plain body</p></div>')
+        self.assertNotIn('---', result)
+        self.assertNotIn('```json', result)
+        self.assertIn('Plain body', result)

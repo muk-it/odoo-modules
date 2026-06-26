@@ -118,10 +118,7 @@ class Website(models.Model):
         return [f'# {self.name or "Odoo Website"}']
 
     def _is_module_installed(self, module_name):
-        return bool(self.env['ir.module.module'].sudo().search(
-            [('name', '=', module_name), ('state', '=', 'installed')],
-            limit=1
-        ))
+        return module_name in self.env['ir.module.module']._installed()
 
     def _get_llms_txt_pages(self, base_url):
         if not self.llms_include_pages:

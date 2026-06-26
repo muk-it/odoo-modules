@@ -67,6 +67,10 @@ class TestLlmsTxtController(HttpCase):
         self.assertIn('x-markdown-tokens', response.headers)
         self.assertIn('Content-Signal', response.headers)
 
+    def test_llms_txt_has_cache_control(self):
+        response = self.url_open('/llms.txt')
+        self.assertIn('max-age', response.headers.get('Cache-Control', ''))
+
     def test_llms_txt_contains_pages_section(self):
         response = self.url_open('/llms.txt')
         content = response.text

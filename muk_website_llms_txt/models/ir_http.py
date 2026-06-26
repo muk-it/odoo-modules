@@ -4,7 +4,7 @@ from odoo import models
 from odoo.http import request
 
 from odoo.addons.muk_website_llms_txt.tools.converter import (
-    html_to_markdown,
+    page_to_agent_markdown,
     estimate_tokens,
     build_content_signal,
 )
@@ -65,7 +65,7 @@ class IrHttp(models.AbstractModel):
         super()._post_dispatch(response)
         if cls._can_convert_to_markdown(response):
             try:
-                markdown = html_to_markdown(
+                markdown = page_to_agent_markdown(
                     response.get_data(as_text=True)
                 )
                 if markdown:

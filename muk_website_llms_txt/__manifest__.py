@@ -7,7 +7,7 @@
         AI agents and crawlers can discover your content via /llms.txt
         and request any page as clean markdown via the Accept header.
     ''',
-    'version': '17.0.1.1.0',
+    'version': '17.0.1.2.0',
     'category': 'Website/SEO',
     'license': 'LGPL-3',
     'author': 'MuK IT',

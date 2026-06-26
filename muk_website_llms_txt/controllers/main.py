@@ -35,6 +35,7 @@ class LlmsTxtController(http.Controller):
         )
         return request.make_response(content, [
             ('Content-Type', 'text/plain; charset=utf-8'),
+            ('Cache-Control', 'public, max-age=3600'),
             ('x-markdown-tokens', str(token_count)),
             ('Content-Signal', content_signal),
         ])
@@ -57,6 +58,7 @@ class LlmsTxtController(http.Controller):
         )
         return request.make_response(content, [
             ('Content-Type', 'text/plain; charset=utf-8'),
+            ('Cache-Control', 'public, max-age=3600'),
             ('x-markdown-tokens', str(token_count)),
             ('Content-Signal', content_signal),
         ])
