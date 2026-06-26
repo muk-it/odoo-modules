@@ -8,7 +8,7 @@ from odoo.http import Response, request
 from odoo.addons.muk_website_llms_txt.tools.converter import (
     build_content_signal,
     estimate_tokens,
-    html_to_markdown,
+    page_to_agent_markdown,
 )
 
 _logger = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ class IrHttp(models.AbstractModel):
     @classmethod
     def _rewrite_response_as_markdown(cls, response: Response) -> None:
         """Replace ``response`` body and headers with its markdown rendering."""
-        markdown = html_to_markdown(response.get_data(as_text=True))
+        markdown = page_to_agent_markdown(response.get_data(as_text=True))
         if not markdown:
             return
         website = request.website

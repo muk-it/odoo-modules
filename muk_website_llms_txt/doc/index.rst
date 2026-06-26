@@ -49,7 +49,13 @@ Once installed and enabled, your website will automatically serve:
 - ``/llms-full.txt`` -- Full markdown content of all published pages for deep
   AI ingestion.
 - Any page responds with clean markdown when an AI agent sends
-  ``Accept: text/markdown`` in the HTTP request.
+  ``Accept: text/markdown`` in the HTTP request. The markdown is wrapped with
+  a YAML metadata frontmatter (title, description, image), a one-line product
+  summary, and the page's preserved schema.org JSON-LD as a fenced ``json``
+  block, following the Cloudflare "Markdown for Agents" convention.
+
+The ``/llms.txt`` and ``/llms-full.txt`` responses are served with a
+``Cache-Control: public, max-age=3600`` header.
 
 Response headers include ``x-markdown-tokens`` (estimated token count) and
 ``Content-Signal`` (AI usage policy).

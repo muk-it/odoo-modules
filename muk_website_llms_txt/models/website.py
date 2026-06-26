@@ -129,14 +129,7 @@ class Website(models.Model):
 
     def _is_module_installed(self, module_name: str) -> bool:
         """Return whether the named Odoo module is installed."""
-        return bool(
-            self.env['ir.module.module']
-            .sudo()
-            .search(
-                [('name', '=', module_name), ('state', '=', 'installed')],
-                limit=1,
-            )
-        )
+        return module_name in self.env['ir.module.module']._installed()
 
     def _get_llms_txt_pages(self, base_url: str) -> list[str]:
         """Return llms.txt index lines for the published website pages."""
