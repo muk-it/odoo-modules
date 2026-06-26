@@ -46,3 +46,8 @@ class ResConfigSettings(models.TransientModel):
         related='website_id.llms_include_events',
         readonly=False,
     )
+
+    llms_link_headers_enabled = fields.Boolean(
+        related='website_id.llms_link_headers_enabled',
+        readonly=False,
+    )

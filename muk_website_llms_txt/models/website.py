@@ -75,9 +75,44 @@ class Website(models.Model):
         help='Include published events in llms.txt.',
     )
 
+    llms_link_headers_enabled = fields.Boolean(
+        string='Agent Discovery Link Headers',
+        default=True,
+        help=(
+            'Advertise machine-readable resources to AI agents and crawlers '
+            'by adding RFC 8288 Link response headers to your website pages.'
+        ),
+    )
+
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
+
+    def _get_llms_link_header(self, path: str = '') -> str:
+        """Return the RFC 8288 Link header advertising discovery resources.
+
+        :param path: the current request path, advertised as the markdown
+            alternate of the page when provided
+        :return: a comma-joined ``Link`` header value pointing to the
+            resources this website currently exposes, or an empty string
+            when none are enabled
+        """
+        self.ensure_one()
+        links = []
+        if path:
+            links.append(
+                f'<{path}>; rel="alternate"; type="text/markdown"; title="Markdown"'
+            )
+        if self.llms_txt_enabled:
+            links.append(
+                '</llms.txt>; rel="describedby"; type="text/plain"; title="LLMs.txt"'
+            )
+        if self.llms_full_txt_enabled:
+            links.append(
+                '</llms-full.txt>; rel="describedby"; '
+                'type="text/plain"; title="LLMs-full.txt"'
+            )
+        return ', '.join(links)
 
     def _get_llms_base_url(self) -> str:
         """Return the website's public base URL without a trailing slash."""

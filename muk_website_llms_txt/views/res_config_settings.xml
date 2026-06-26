@@ -33,6 +33,13 @@
 						<field name="llms_content_signal"/>
 					</setting>
 					<setting
+						id="llms_link_headers_setting"
+						string="Agent Discovery"
+						help="Advertise machine-readable resources via Link response headers on your website pages."
+					>
+						<field name="llms_link_headers_enabled"/>
+					</setting>
+					<setting
 						id="llms_include_setting"
 						string="Content Sources"
 						help="Choose which content types to include in llms.txt."

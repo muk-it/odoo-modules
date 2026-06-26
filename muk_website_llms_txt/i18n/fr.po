@@ -21,6 +21,37 @@ msgid "AI & Agents"
 msgstr "IA et agents"
 
 #. module: muk_website_llms_txt
+#: model:ir.model.fields,help:muk_website_llms_txt.field_res_config_settings__llms_link_headers_enabled
+#: model:ir.model.fields,help:muk_website_llms_txt.field_website__llms_link_headers_enabled
+msgid ""
+"Advertise machine-readable resources to AI agents and crawlers by adding RFC "
+"8288 Link response headers to your website pages."
+msgstr ""
+"Annoncer les ressources lisibles par machine aux agents IA et robots "
+"d'exploration en ajoutant des en-têtes de réponse Link RFC 8288 à vos pages "
+"de site web."
+
+#. module: muk_website_llms_txt
+#: model_terms:ir.ui.view,arch_db:muk_website_llms_txt.res_config_settings_view_form
+msgid ""
+"Advertise machine-readable resources via Link response headers on your "
+"website pages."
+msgstr ""
+"Annoncer les ressources lisibles par machine via des en-têtes de réponse "
+"Link sur vos pages de site web."
+
+#. module: muk_website_llms_txt
+#: model_terms:ir.ui.view,arch_db:muk_website_llms_txt.res_config_settings_view_form
+msgid "Agent Discovery"
+msgstr "Découverte d'agents"
+
+#. module: muk_website_llms_txt
+#: model:ir.model.fields,field_description:muk_website_llms_txt.field_res_config_settings__llms_link_headers_enabled
+#: model:ir.model.fields,field_description:muk_website_llms_txt.field_website__llms_link_headers_enabled
+msgid "Agent Discovery Link Headers"
+msgstr "En-têtes Link de découverte d'agents"
+
+#. module: muk_website_llms_txt
 #: model:ir.model.fields.selection,name:muk_website_llms_txt.selection__website__llms_content_signal__input_only
 msgid "Allow AI input only"
 msgstr "Autoriser uniquement l'entrée IA"
