@@ -3,8 +3,6 @@ from odoo.exceptions import AccessError
 from odoo.http import request
 from odoo.osv import expression
 
-from odoo.addons.muk_mcp.tools.parser import coerce_json_value, normalize_ids
-
 
 class MCPMixin(models.AbstractModel):
 
@@ -39,13 +37,13 @@ class MCPMixin(models.AbstractModel):
         extra = self._mcp_record_domain(model)
         if extra is None:
             return domain
-        base = coerce_json_value(domain) or []
+        base = self._coerce_json_value(domain) or []
         return expression.AND([base, extra])
 
     @api.model
     def _mcp_assert_records_allowed(self, model, ids):
         extra = self._mcp_record_domain(model)
-        ids = normalize_ids(ids)
+        ids = self._normalize_ids(ids)
         if extra is None or not ids:
             return
         allowed = set(self.env[model].with_context(active_test=False).search(

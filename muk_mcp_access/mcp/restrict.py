@@ -38,16 +38,16 @@ class MCPMixin(models.AbstractModel):
     def _mcp_read_group(
         self,
         model,
+        fields,
         groupby,
-        aggregates=None,
         domain=None,
         limit=None,
         order=None,
     ):
         return super()._mcp_read_group(
             model,
+            fields,
             groupby,
-            aggregates=aggregates,
             domain=self._mcp_apply_domain(model, domain),
             limit=limit,
             order=order,

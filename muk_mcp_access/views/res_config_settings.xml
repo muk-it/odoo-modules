@@ -7,22 +7,20 @@
 		<field name="model">res.config.settings</field>
 		<field name="inherit_id" ref="muk_mcp.view_res_config_settings_form"/>
 		<field name="arch" type="xml">
-			<xpath expr="//div[@id='msg_module_muk_mcp_access']" position="replace">
-				<div
-					class="content-group"
-					invisible="not module_muk_mcp_access"
-					id="msg_module_muk_mcp_access"
+			<xpath expr="//block[@name='mcp_settings']" position="inside">
+				<setting
+					id="mcp_access_models_setting"
+					string="Model Access"
+					help="Restrict which models AI agents can reach via MCP."
 				>
-					<div class="mt16">
-						<button
-							name="%(muk_mcp_access.action_mcp_access_model)d"
-							type="action"
-							string="Manage Model Access"
-							icon="oi-arrow-right"
-							class="btn-link"
-						/>
-					</div>
-				</div>
+					<button
+						name="%(muk_mcp_access.action_mcp_access_model)d"
+						type="action"
+						string="Manage Model Access"
+						icon="oi-arrow-right"
+						class="btn-link"
+					/>
+				</setting>
 			</xpath>
 		</field>
 	</record>
