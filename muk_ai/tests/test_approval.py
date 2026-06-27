@@ -16,7 +16,7 @@ class TestApprovalRiskPredicate(AITestCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls._mark_sensitive('res.partner', 'account.move', 'muk_ai.session')
+        cls._mark_sensitive('res.partner', 'muk_ai.session')
 
     # ----------------------------------------------------------
     # Tests
@@ -39,14 +39,14 @@ class TestApprovalRiskPredicate(AITestCommon):
         risk = self.env['muk_ai.approval']._assess_risk(
             'call_method',
             {
-                'model': 'account.move',
-                'method': 'action_post',
+                'model': 'res.partner',
+                'method': 'action_archive',
                 'ids': [1],
             },
         )
         self.assertIsNotNone(risk)
-        self.assertEqual(risk['method'], 'action_post')
-        self.assertIn('action_post', risk['reason'])
+        self.assertEqual(risk['method'], 'action_archive')
+        self.assertIn('action_archive', risk['reason'])
 
     def test_update_on_sensitive_model_is_risky(self):
         risk = self.env['muk_ai.approval']._assess_risk(
@@ -132,17 +132,17 @@ class TestApprovalRiskPredicate(AITestCommon):
         a = self.env['muk_ai.approval']._assess_risk(
             'call_method',
             {
-                'model': 'account.move',
+                'model': 'res.partner',
                 'ids': [1],
-                'method': 'action_post',
+                'method': 'action_archive',
             },
         )
         b = self.env['muk_ai.approval']._assess_risk(
             'call_method',
             {
-                'model': 'account.move',
+                'model': 'res.partner',
                 'ids': [1],
-                'method': 'action_archive',
+                'method': 'action_unarchive',
             },
         )
         self.assertNotEqual(a['signature'], b['signature'])
