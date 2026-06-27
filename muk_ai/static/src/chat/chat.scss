@@ -1285,6 +1285,95 @@
         .mk_tool_head { cursor: default; pointer-events: none; }
         .mk_tool_icon { background: var(--mk-primary); color: #fff; }
     }
+    .mk_tool_group {
+        margin: 0.4rem 0;
+        border: 1px solid var(--mk-border);
+        border-radius: 8px;
+        background: var(--mk-bg);
+        max-width: 92%;
+        overflow: hidden;
+        transition: border-color 0.15s ease;
+        &:hover { border-color: var(--mk-border-strong); }
+        &.mk_tool_group_has_error { border-color: #f1c0c0; }
+    }
+    .mk_tool_group_head {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        width: 100%;
+        background: none;
+        border: 0;
+        padding: 0.45rem 0.7rem;
+        text-align: left;
+        cursor: pointer;
+        font-size: 0.82rem;
+        color: var(--mk-text-muted);
+        &:hover { background: var(--mk-bg-soft); }
+        .mk_chevron {
+            color: var(--mk-text-muted);
+            transition: transform 0.15s ease;
+            font-size: 0.7rem;
+        }
+        .mk_tool_group_icon {
+            width: 22px;
+            height: 22px;
+            border-radius: 5px;
+            background: rgba(var(--mk-primary-rgb), 0.1);
+            color: var(--mk-primary);
+            font-size: 0.68rem;
+            flex: 0 0 auto;
+        }
+        .mk_tool_group_label {
+            font-weight: 600;
+            color: var(--mk-text);
+            flex: 0 0 auto;
+        }
+        .mk_tool_group_chips {
+            display: flex;
+            gap: 0.25rem;
+            flex-wrap: nowrap;
+            flex: 1 1 auto;
+            min-width: 0;
+            overflow: hidden;
+        }
+        .mk_tool_group_spacer { flex: 1 1 auto; }
+        .mk_tool_group_chip {
+            font-family: var(--mk-mono);
+            font-size: 0.72rem;
+            background: var(--mk-bg-soft);
+            border: 1px solid var(--mk-border);
+            border-radius: 5px;
+            padding: 0 0.35rem;
+            color: var(--mk-text-muted);
+            white-space: nowrap;
+            flex: 0 0 auto;
+        }
+        .mk_tool_group_chip_more { font-family: inherit; }
+        .mk_tool_group_status {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            flex: 0 0 auto;
+        }
+        .mk_tg_badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
+            font-size: 0.72rem;
+            font-weight: 600;
+            border-radius: 20px;
+            padding: 0 0.45rem;
+        }
+        .mk_tg_ok  { color: #1a7f37; background: rgba(45, 164, 78, 0.12); }
+        .mk_tg_err { color: #cf222e; background: rgba(207, 34, 46, 0.10); }
+    }
+    .mk_tool_group[data-expanded="1"] .mk_chevron { transform: rotate(90deg); }
+    .mk_tool_group_body {
+        padding: 0.1rem 0.6rem 0.5rem;
+        border-top: 1px solid var(--mk-border);
+        background: var(--mk-bg-soft);
+        .mk_tool { max-width: 100%; }
+    }
     .mk_composer_wrap {
         max-width: 1080px;
         margin: 0 auto;

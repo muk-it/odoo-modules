@@ -442,8 +442,10 @@
         </t>
         <t t-else="">
             <div class="mk_turn mk_turn_assistant" t-att-class="turn.inHistory ? 'mk_turn_in_history' : ''">
-                <t t-foreach="turn.blocks" t-as="block" t-key="(block.callId || block.at || '') + '-' + block_index">
-                    <t t-if="block.type === 'text'">
+                <t t-foreach="turnItems(turn)" t-as="item" t-key="item.key">
+                    <t t-set="block" t-value="item.block"/>
+                    <t t-set="block_index" t-value="item.blockIndex"/>
+                    <t t-if="item.type === 'text'">
                         <div
                             class="mk_bubble mk_bubble_assistant mk_markdown"
                             t-att-id="'mk_msg_' + turn_index + '_' + block_index"
@@ -458,7 +460,7 @@
                             <div class="mk_bubble_body" t-out="renderAssistantMarkdown(block.text)"/>
                         </div>
                     </t>
-                    <t t-elif="block.type === 'tool'">
+                    <t t-elif="item.type === 'tool'">
                         <ToolCard
                             t-if="!isToolHiddenForAsk(block, turn)"
                             block="block"
@@ -467,7 +469,15 @@
                             onToggle.bind="toggleToolBlock"
                         />
                     </t>
-                    <t t-elif="block.type === 'ask'">
+                    <t t-elif="item.type === 'group'">
+                        <ToolGroup
+                            tools="item.tools"
+                            compact="isCompact"
+                            isToolExpanded.bind="isToolExpanded"
+                            onToggleTool.bind="toggleToolBlock"
+                        />
+                    </t>
+                    <t t-elif="item.type === 'ask'">
                         <t t-call="muk_ai.AskCard">
                             <t t-set="block" t-value="block"/>
                         </t>

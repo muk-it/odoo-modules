@@ -52,6 +52,7 @@ import {
     highlightHtml,
 } from '@muk_ai/chat/search/search_index';
 import { ToolCard } from '@muk_ai/chat/tools/tool_card';
+import { ToolGroup, buildTurnItems } from '@muk_ai/chat/tools/tool_group';
 import {
     askArgsText,
     askViewMode,
@@ -87,6 +88,7 @@ export class AIChat extends Component {
         ChatArtifactsPanel,
         ChatSearch,
         ToolCard,
+        ToolGroup,
         ChatComposer,
         AttachmentCard,
         Dropdown,
@@ -738,6 +740,14 @@ export class AIChat extends Component {
         }
         const status = this.session.state.status;
         return status === 'running' || status === 'compacting';
+    }
+    turnItems(turn) {
+        return buildTurnItems(turn.blocks, (block) =>
+            this.isToolHiddenForAsk(block, turn),
+        );
+    }
+    get isCompact() {
+        return false;
     }
     get canSend() {
         return this.isOwner && this.session.canSend();

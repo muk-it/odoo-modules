@@ -22,6 +22,7 @@ function truncatePrompt(value) {
     return text.slice(0, PROMPT_PREVIEW_MAX) + '…';
 }
 
+/** Collapsible card for a single tool call: name, arguments, and result. */
 export class ToolCard extends Component {
     static template = 'muk_ai.ToolCard';
     static props = {

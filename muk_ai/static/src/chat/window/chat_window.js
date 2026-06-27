@@ -34,6 +34,7 @@ import {
     useChatScrollAnchor,
 } from '@muk_ai/chat/session/use_scroll_anchor';
 import { ToolCard } from '@muk_ai/chat/tools/tool_card';
+import { ToolGroup, buildTurnItems } from '@muk_ai/chat/tools/tool_group';
 import {
     askArgsText,
     askViewMode,
@@ -47,7 +48,7 @@ import {
 /** Floating chat window hosting one AI session with composer and turns. */
 export class ChatWindow extends Component {
     static template = 'muk_ai.ChatWindow';
-    static components = { ChatComposer, ToolCard, AttachmentCard };
+    static components = { ChatComposer, ToolCard, ToolGroup, AttachmentCard };
     static props = {
         sessionId: { type: Number },
         minimized: { type: Boolean, optional: true },
@@ -187,6 +188,14 @@ export class ChatWindow extends Component {
     }
     toggleToolBlock(callId) {
         this.session.toggleToolBlock(callId);
+    }
+    turnItems(turn) {
+        return buildTurnItems(turn.blocks, (block) =>
+            this.isToolHiddenForAsk(block, turn),
+        );
+    }
+    get isCompact() {
+        return true;
     }
     get canSend() {
         return this.session.canSend();

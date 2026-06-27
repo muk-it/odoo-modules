@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.ToolGroup">
+        <div class="mk_tool_group"
+             t-att-class="errCount ? 'mk_tool_group_has_error' : ''"
+             t-att-data-expanded="state.expanded ? 1 : 0">
+            <button type="button" class="mk_tool_group_head" t-on-click="() => this.toggle()">
+                <i class="fa fa-chevron-right mk_chevron"/>
+                <span class="mk_tool_group_icon d-inline-flex align-items-center justify-content-center">
+                    <i class="fa fa-wrench"/>
+                </span>
+                <span class="mk_tool_group_label">Used <t t-esc="count"/> tools</span>
+                <span class="mk_tool_group_chips" t-if="!props.compact">
+                    <t t-foreach="chips.shown" t-as="nm" t-key="nm_index">
+                        <span class="mk_tool_group_chip" t-esc="nm"/>
+                    </t>
+                    <span t-if="chips.hasMore" class="mk_tool_group_chip mk_tool_group_chip_more">…</span>
+                </span>
+                <span t-else="" class="mk_tool_group_spacer"/>
+                <span class="mk_tool_group_status">
+                    <span t-if="okCount" class="mk_tg_badge mk_tg_ok">
+                        <i class="fa fa-check"/> <t t-esc="okCount"/>
+                    </span>
+                    <span t-if="errCount" class="mk_tg_badge mk_tg_err">
+                        <i class="fa fa-times"/> <t t-esc="errCount"/>
+                    </span>
+                </span>
+            </button>
+            <div class="mk_tool_group_body" t-if="state.expanded">
+                <t t-foreach="props.tools" t-as="tool" t-key="tool.block.callId || tool_index">
+                    <ToolCard
+                        block="tool.block"
+                        expanded="props.isToolExpanded(tool.block.callId)"
+                        streaming="false"
+                        onToggle="props.onToggleTool"
+                    />
+                </t>
+            </div>
+        </div>
+    </t>
+
+</templates>
