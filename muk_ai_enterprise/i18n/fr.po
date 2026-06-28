@@ -110,3 +110,9 @@ msgstr ""
 #: code:addons/muk_ai_enterprise/models/mcp_tool.py:0
 msgid "Unknown EE action tool: %s"
 msgstr "Outil d'action EE inconnu : %s"
+
+#. module: muk_ai_enterprise
+#. odoo-javascript
+#: code:addons/muk_ai_enterprise/static/src/webclient/systray/systray.xml:0
+msgid "Open Odoo AI"
+msgstr "Ouvrir Odoo IA"

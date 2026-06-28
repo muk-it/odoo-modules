@@ -5,11 +5,12 @@ building blocks. **MuK AI Enterprise Bridge** lets a `muk_ai.agent`
 opt-in to two Enterprise primitives — `ai.topic` server-action tools
 and `ai.agent.source` RAG sources — and automatically threads each
 record's `Model._ai_initialise_context` output into the MuK AI chat's
-view context. The Enterprise side is never modified: the Discuss
-`ai_chat` channels, the systray / chatter / composer buttons, the
-`ai.agent` replies, `LLMApiService`, the `ai_fields` cron and every
-optional `ai_*` satellite keep their existing behaviour. Both chat
-clients coexist; the user picks which one to open.
+view context. The Enterprise data/model layer is never modified. Its
+systray button is folded into the MuK AI dropdown as **Open Odoo AI**
+(`Alt+Shift+R`) — one AI icon, not two. Everything else (Discuss
+`ai_chat` channels, chatter / composer buttons, command-palette
+`Ask AI`, `ai.agent` replies, `LLMApiService`, `ai_fields` cron,
+optional `ai_*` satellites) keeps its existing behaviour.
 
 Enterprise tools surface inside MuK AI sessions as MCP tools
 named `ee_action_<xmlid_name>`, going through the same approval gate

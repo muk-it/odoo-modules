@@ -3,12 +3,12 @@
     'summary': 'Use Enterprise AI tools, RAG sources and record context',
     'description': """
         One-way bridge: MuK AI sessions reach into the Odoo Enterprise
-        AI primitives while the Enterprise side stays untouched. The
-        Discuss ai_chat channels, systray and chatter buttons, ai.agent
-        replies, LLMApiService and the ai_fields cron all keep their
-        existing behaviour — both chats coexist side by side.
+        AI primitives while the Enterprise data/model layer stays
+        untouched. The Enterprise systray button is folded into the MuK
+        AI dropdown as 'Open Odoo AI' — one icon, not two. Everything
+        else keeps its existing behaviour.
     """,
-    'version': '19.0.1.0.6',
+    'version': '19.0.1.0.7',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -27,6 +27,9 @@
     'assets': {
         'web.assets_backend': [
             'muk_ai_enterprise/static/src/webclient/**/*',
+        ],
+        'web.assets_unit_tests': [
+            'muk_ai_enterprise/static/tests/**/*.test.js',
         ],
     },
     'images': [
