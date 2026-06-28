@@ -166,6 +166,16 @@ class AISession(models.Model):
         copy=False,
     )
 
+    notification_unread = fields.Boolean(
+        string='Notification Unread',
+        help=(
+            'Set on a terminal state change, cleared when the user opens '
+            'the session; drives the systray attention badge.'
+        ),
+        readonly=True,
+        copy=False,
+    )
+
     event_ids = fields.One2many(
         comodel_name='muk_ai.session.event',
         string='Events',
@@ -749,6 +759,7 @@ class AISession(models.Model):
             ask = (payload or {}).get('ask') or self.pending_ask or {}
             ask_kind = ask.get('kind') if isinstance(ask, dict) else None
             title, message = self._notification_summary(new_state, payload, ask_kind)
+            self.notification_unread = True
             with suppress(Exception):
                 self._bus_send(
                     'muk_ai.session_notification',
@@ -759,10 +770,11 @@ class AISession(models.Model):
                         'ask_kind': ask_kind,
                         'title': title,
                         'message': message,
+                        'at': fields.Datetime.to_string(fields.Datetime.now()),
                     },
                 )
-            if new_state == 'waiting':
-                self._post_inbox_notification(title, message)
+            self._post_inbox_notification(title, message)
+            self._push_notification_badge(self.user_id)
 
     def _notification_summary(
         self, new_state: str, payload: dict, ask_kind: str | None
@@ -816,40 +828,27 @@ class AISession(models.Model):
         return text[:197] + '…' if len(text) > 200 else text
 
     def _post_inbox_notification(self, title: str, message: str) -> None:
-        """Post an inbox notification linking back to the chat session."""
-        if partner := self.user_id.partner_id:
-            body = Markup('<p>%s</p>') % escape(message) + Markup(
-                '<p><a href="/odoo/ai?session_id=%s">%s</a></p>'
-            ) % (self.id, _('Open Chat'))
-            with suppress(Exception):
-                mail_message = (
-                    self.env['mail.message']
-                    .sudo()
-                    .create(
-                        {
-                            'message_type': 'user_notification',
-                            'subtype_id': self.env['ir.model.data']._xmlid_to_res_id(
-                                'mail.mt_note'
-                            ),
-                            'model': self._name,
-                            'res_id': self.id,
-                            'author_id': self.env.ref('base.partner_root').id,
-                            'subject': title,
-                            'body': body,
-                            'partner_ids': [(4, partner.id)],
-                            'muk_ai_session_id': self.id,
-                        }
-                    )
-                )
-                self.env['mail.notification'].sudo().create(
-                    {
-                        'mail_message_id': mail_message.id,
-                        'res_partner_id': partner.id,
-                        'notification_type': 'inbox',
-                        'is_read': False,
-                    }
-                )
-                partner._bus_send_store(mail_message)
+        """Notify the owner through Discuss inbox and mobile/web push.
+
+        Routes through ``message_notify`` so the standard pipeline fires web
+        push and Enterprise OCN mobile push. Only inbox-preference owners are
+        notified; email-preference owners would receive an email per event, so
+        they are skipped and rely on the systray badge instead.
+        """
+        user = self.user_id
+        if not user or not user.partner_id or user.notification_type != 'inbox':
+            return
+        with suppress(Exception):
+            mail_message = self.env['mail.thread'].message_notify(
+                partner_ids=user.partner_id.ids,
+                model=self._name,
+                res_id=self.id,
+                author_id=self.env.ref('base.partner_root').id,
+                subject=title,
+                body=Markup('<p>%s</p>') % escape(message),
+            )
+            if mail_message:
+                mail_message.sudo().muk_ai_session_id = self.id
 
     # ----------------------------------------------------------
     # Helper State
@@ -2762,7 +2761,7 @@ class AISession(models.Model):
         return snapshot
 
     def dismiss_notifications(self) -> bool:
-        """Mark this session's inbox notifications as read for the user."""
+        """Clear the attention flag and mark inbox notifications read."""
         if partner := self.env.user.partner_id:
             messages = (
                 self.env['mail.message']
@@ -2777,8 +2776,48 @@ class AISession(models.Model):
             )
             if messages:
                 messages.with_user(self.env.user).set_message_done()
+            self.filtered('notification_unread').notification_unread = False
+            self._push_notification_badge(self.env.user)
             return True
         return False
+
+    @api.model
+    def _notification_unread_session_ids(self, user: models.BaseModel) -> list:
+        """Return the ids of the user's sessions awaiting attention."""
+        if not user:
+            return []
+        return (
+            self.sudo()
+            .search(
+                [
+                    ('user_id', '=', user.id),
+                    ('notification_unread', '=', True),
+                ]
+            )
+            .ids
+        )
+
+    @api.model
+    def _notification_badge_payload(self, user: models.BaseModel) -> dict:
+        """Return the badge count and unread session ids for a user."""
+        ids = self._notification_unread_session_ids(user)
+        return {'count': len(ids), 'session_ids': ids}
+
+    @api.model
+    def notification_badge(self) -> dict:
+        """Return the attention badge payload for the current user."""
+        return self._notification_badge_payload(self.env.user)
+
+    def _push_notification_badge(self, user: models.BaseModel) -> None:
+        """Push the attention badge payload to the user's systray."""
+        if not user or not user.partner_id:
+            return
+        with suppress(Exception):
+            self.env['bus.bus']._sendone(
+                user.partner_id,
+                'muk_ai.notification_badge',
+                self._notification_badge_payload(user),
+            )
 
     def start(
         self,

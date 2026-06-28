@@ -56,6 +56,82 @@ test('systray loads sessions and exposes runningCount for 2 of 3 sessions', asyn
     expect(systray.hasRunning).toBe(true);
 });
 
+test('systray loads the notification badge count and renders it', async () => {
+    onRpc('muk_ai.session', 'search_read', () => []);
+    onRpc('muk_ai.session', 'notification_badge', () => ({
+        count: 3,
+        session_ids: [1, 2, 3],
+    }));
+    makeBusMock();
+    makeChatWindowService();
+    const systray = await mountWithCleanup(MukAISystray, { props: {} });
+    expect(systray.state.badgeCount).toBe(3);
+    expect(systray.badgeLabel).toBe('3');
+    expect('.mk_systray_count').toHaveText('3');
+    expect('.mk_systray_badge .mk_systray_dot').toHaveCount(0);
+});
+
+test('the notification badge updates live from the bus', async () => {
+    onRpc('muk_ai.session', 'search_read', () => []);
+    onRpc('muk_ai.session', 'notification_badge', () => ({
+        count: 1,
+        session_ids: [7],
+    }));
+    const bus = makeBusMock();
+    makeChatWindowService();
+    const systray = await mountWithCleanup(MukAISystray, { props: {} });
+    expect(systray.state.badgeCount).toBe(1);
+    bus.emit('muk_ai.notification_badge', { count: 5, session_ids: [1, 2, 3, 4, 5] });
+    expect(systray.state.badgeCount).toBe(5);
+    bus.emit('muk_ai.notification_badge', { count: 0, session_ids: [] });
+    expect(systray.state.badgeCount).toBe(0);
+    expect(systray.state.unreadIds).toEqual([]);
+});
+
+test('badgeLabel caps large counts at 99+', async () => {
+    onRpc('muk_ai.session', 'search_read', () => []);
+    onRpc('muk_ai.session', 'notification_badge', () => ({
+        count: 250,
+        session_ids: [],
+    }));
+    makeBusMock();
+    makeChatWindowService();
+    const systray = await mountWithCleanup(MukAISystray, { props: {} });
+    expect(systray.badgeLabel).toBe('99+');
+});
+
+test('the badge falls back to the running dot when the count is zero', async () => {
+    onRpc('muk_ai.session', 'search_read', () => [
+        { id: 1, name: 'Chat A', state: 'running' },
+    ]);
+    onRpc('muk_ai.session', 'notification_badge', () => ({
+        count: 0,
+        session_ids: [],
+    }));
+    makeBusMock();
+    makeChatWindowService();
+    await mountWithCleanup(MukAISystray, { props: {} });
+    expect('.mk_systray_count').toHaveCount(0);
+    expect('.mk_systray_badge .mk_systray_dot.mk_state_running').toHaveCount(1);
+});
+
+test('systray marks which recent sessions are unread', async () => {
+    onRpc('muk_ai.session', 'search_read', () => [
+        { id: 1, name: 'Chat A', state: 'done' },
+        { id: 2, name: 'Chat B', state: 'done' },
+    ]);
+    onRpc('muk_ai.session', 'notification_badge', () => ({
+        count: 1,
+        session_ids: [2],
+    }));
+    makeBusMock();
+    makeChatWindowService();
+    const systray = await mountWithCleanup(MukAISystray, { props: {} });
+    expect(systray.state.unreadIds).toEqual([2]);
+    expect(systray.isUnread(2)).toBe(true);
+    expect(systray.isUnread(1)).toBe(false);
+});
+
 test('systray handles RPC failure by showing empty list', async () => {
     onRpc('muk_ai.session', 'search_read', () => {
         throw new Error('down');

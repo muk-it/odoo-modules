@@ -7,6 +7,7 @@ from psycopg2.errors import SerializationFailure
 
 from odoo import fields
 from odoo.exceptions import UserError
+from odoo.tests.common import new_test_user
 from odoo.tools import SQL, config
 
 from odoo.addons.muk_ai.models import session as session_module
@@ -183,6 +184,27 @@ class TestAiSession(AITestCommon):
                     self_._cr.close()
 
         return _Holder(self.env.registry)
+
+    def _session_inbox_messages(self, session=None):
+        session = session or self.session
+        partner = session.user_id.partner_id
+        return self.env['mail.message'].search(
+            [
+                ('model', '=', 'muk_ai.session'),
+                ('res_id', '=', session.id),
+                ('notification_ids.res_partner_id', '=', partner.id),
+                ('notification_ids.notification_type', '=', 'inbox'),
+            ]
+        )
+
+    def _inbox_session(self, name='inbox session'):
+        user = new_test_user(
+            self.env,
+            login='nb_inbox_%s' % name.replace(' ', '_'),
+            notification_type='inbox',
+            groups='base.group_user',
+        )
+        return self.env['muk_ai.session'].with_user(user).create({'name': name})
 
     # ----------------------------------------------------------
     # Tests: lifecycle
@@ -381,6 +403,85 @@ class TestAiSession(AITestCommon):
         partner = self.session.user_id.partner_id
         targets = [call.args[1] for call in bus_mock.call_args_list]
         self.assertTrue(any(t == partner for t in targets))
+
+    def test_state_notification_payload_is_timestamped(self):
+        captured = []
+        with patch.object(
+            type(self.env['bus.bus']),
+            '_sendone',
+            autospec=True,
+            side_effect=lambda *a, **k: captured.append((a[2], a[3])),
+        ):
+            self.session._notify_state_transition({'state': 'done'})
+        payloads = [
+            body
+            for channel, body in captured
+            if channel == 'muk_ai.session_notification'
+        ]
+        self.assertTrue(payloads)
+        self.assertTrue(all(p.get('at') for p in payloads))
+
+    def test_done_transition_notifies_inbox_user(self):
+        session = self._inbox_session('inbox done')
+        before = self._session_inbox_messages(session)
+        session._notify_state_transition({'state': 'done'})
+        after = self._session_inbox_messages(session)
+        self.assertEqual(len(after) - len(before), 1)
+        self.assertTrue(session.notification_unread)
+
+    def test_error_transition_notifies_inbox_user(self):
+        session = self._inbox_session('inbox error')
+        before = self._session_inbox_messages(session)
+        session._notify_state_transition({'state': 'error', 'error': 'boom'})
+        after = self._session_inbox_messages(session)
+        self.assertEqual(len(after) - len(before), 1)
+
+    def test_email_pref_user_is_flagged_but_not_notified(self):
+        user = new_test_user(
+            self.env,
+            login='nb_email_pref',
+            notification_type='email',
+            groups='base.group_user',
+        )
+        session = (
+            self.env['muk_ai.session'].with_user(user).create({'name': 'email pref'})
+        )
+        session._notify_state_transition({'state': 'done'})
+        self.assertFalse(self._session_inbox_messages(session))
+        self.assertTrue(session.notification_unread)
+
+    def test_skipped_done_transition_leaves_session_unflagged(self):
+        self.session.notification_unread = False
+        self.session.with_context(
+            muk_ai_skip_done_notification=True
+        )._notify_state_transition({'state': 'done'})
+        self.assertFalse(self.session.notification_unread)
+
+    def test_notification_badge_counts_unread_sessions(self):
+        Session = self.env['muk_ai.session']
+        base = Session.notification_badge()
+        a = Session.create({'name': 'badge a'})
+        b = Session.create({'name': 'badge b'})
+        a._notify_state_transition({'state': 'done'})
+        b._notify_state_transition({'state': 'waiting'})
+        badge = Session.notification_badge()
+        self.assertEqual(badge['count'], base['count'] + 2)
+        self.assertIn(a.id, badge['session_ids'])
+        a.dismiss_notifications()
+        after = Session.notification_badge()
+        self.assertEqual(after['count'], base['count'] + 1)
+        self.assertNotIn(a.id, after['session_ids'])
+
+    def test_state_transition_pushes_badge(self):
+        captured = []
+        with patch.object(
+            type(self.env['bus.bus']),
+            '_sendone',
+            autospec=True,
+            side_effect=lambda *a, **k: captured.append(a[2]),
+        ):
+            self.session._notify_state_transition({'state': 'done'})
+        self.assertIn('muk_ai.notification_badge', captured)
 
     def test_ask_user_skips_sibling_tool_calls(self):
         payload = {

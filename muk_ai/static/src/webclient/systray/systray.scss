@@ -14,8 +14,9 @@
     &:hover { opacity: 0.85; }
     .mk_systray_badge {
         position: absolute;
-        top: 2px;
-        right: 4px;
+        top: 3px;
+        right: 2px;
+        pointer-events: none;
         .mk_systray_dot {
             width: 8px;
             height: 8px;
@@ -107,6 +108,13 @@
             color: var(--mk-text-muted);
             background: var(--mk-bg-subtle, rgba(0, 0, 0, 0.05));
             border-radius: 0.25rem;
+        }
+        &.mk_systray_item_unread {
+            background: rgba(var(--mk-primary-rgb), 0.12);
+            .mk_systray_name {
+                color: var(--mk-primary);
+                font-weight: 600;
+            }
         }
     }
 }

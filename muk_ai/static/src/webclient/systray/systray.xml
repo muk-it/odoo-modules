@@ -13,7 +13,8 @@
                     <circle cx="9" cy="13.5" r="1.3" fill="currentColor" stroke="none"/>
                     <circle cx="15" cy="13.5" r="1.3" fill="currentColor" stroke="none"/>
                 </svg>
-                <span class="mk_systray_badge" t-if="hasRunning">
+                <span t-if="state.badgeCount" class="mk_systray_count badge rounded-pill" t-esc="badgeLabel" />
+                <span t-elif="hasRunning" class="mk_systray_badge">
                     <span class="mk_systray_dot mk_state_running" />
                 </span>
             </button>
@@ -50,7 +51,7 @@
                 <div class="mk_systray_divider" t-if="state.sessions.length" />
                 <div class="mk_systray_group_label" t-if="state.sessions.length">Recent sessions</div>
                 <t t-foreach="state.sessions" t-as="s" t-key="s.id">
-                    <DropdownItem class="'mk_systray_item'" onSelected="() => this.onOpenSession(s)">
+                    <DropdownItem class="isUnread(s.id) ? 'mk_systray_item mk_systray_item_unread' : 'mk_systray_item'" onSelected="() => this.onOpenSession(s)">
                         <span class="mk_systray_dot_wrap">
                             <span class="mk_systray_dot" t-att-class="statusDotClass(s.state)" />
                         </span>

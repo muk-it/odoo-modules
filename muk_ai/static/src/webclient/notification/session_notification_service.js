@@ -1,5 +1,62 @@
 import { _t } from '@web/core/l10n/translation';
+import { deserializeDateTime } from '@web/core/l10n/dates';
 import { registry } from '@web/core/registry';
+
+/** Drop replayed notifications older than this; the inbox keeps the durable copy. */
+export const NOTIFICATION_FRESHNESS_MS = 2 * 60 * 1000;
+
+/**
+ * Return the age in milliseconds of a server-stamped notification, or ``null``.
+ *
+ * @param {string|undefined} at Server datetime string (naive UTC) of emission.
+ * @param {number} now Current epoch milliseconds.
+ * @returns {number|null} Age in milliseconds, or ``null`` when ``at`` is unusable.
+ */
+export function notificationAgeMs(at, now) {
+    if (!at) {
+        return null;
+    }
+    try {
+        const emitted = deserializeDateTime(at);
+        const ms = emitted?.toMillis?.();
+        return Number.isFinite(ms) ? now - ms : null;
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Decide whether a session notification should pop as a toast in this tab.
+ *
+ * Suppresses notifications for the session already open and active here, for
+ * background or hidden tabs (only the visible tab toasts, which also dedupes
+ * across tabs), and for stale replays from the bus backlog. A missing or
+ * unparsable timestamp is treated as fresh so older payloads still show.
+ *
+ * @param {object} payload The ``muk_ai.session_notification`` bus payload.
+ * @param {object} ctx Decision context.
+ * @param {boolean} ctx.isActive Whether the session is open and active here.
+ * @param {boolean} ctx.isVisible Whether this tab is currently visible.
+ * @param {number} ctx.now Current epoch milliseconds.
+ * @param {number} [ctx.freshnessMs] Maximum tolerated age before dropping.
+ * @returns {boolean} ``true`` when the toast should be shown.
+ */
+export function shouldShowNotification(
+    payload,
+    { isActive, isVisible, now, freshnessMs = NOTIFICATION_FRESHNESS_MS },
+) {
+    if (!payload || !payload.session_id) {
+        return false;
+    }
+    if (isActive || !isVisible) {
+        return false;
+    }
+    const age = notificationAgeMs(payload.at, now);
+    if (age !== null && age > freshnessMs) {
+        return false;
+    }
+    return true;
+}
 
 export const sessionNotificationService = {
     dependencies: ['action', 'bus_service', 'notification', 'orm'],
@@ -45,10 +102,12 @@ export const sessionNotificationService = {
             }
         }
         function onNotification(payload) {
-            if (!payload || !payload.session_id) {
-                return;
-            }
-            if (active.has(payload.session_id)) {
+            const show = shouldShowNotification(payload, {
+                isActive: active.has(payload?.session_id),
+                isVisible: document.visibilityState === 'visible',
+                now: Date.now(),
+            });
+            if (!show) {
                 return;
             }
             const type =

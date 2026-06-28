@@ -27,8 +27,10 @@ export class MukAISystray extends Component {
         this.state = useState({
             sessions: [],
             loaded: false,
+            badgeCount: 0,
         });
         this._busHandler = null;
+        this._badgeHandler = null;
         this._loadSeq = 0;
         this._debouncedLoad = debounce(() => this._load(), 500, {
             leading: true,
@@ -45,7 +47,7 @@ export class MukAISystray extends Component {
             bypassEditableProtection: true,
         });
         onWillStart(async () => {
-            await this._load();
+            await Promise.all([this._load(), this._loadBadge()]);
             this._connectBus();
         });
         onWillUnmount(() => {
@@ -72,14 +74,35 @@ export class MukAISystray extends Component {
         }
         this.state.loaded = true;
     }
+    async _loadBadge() {
+        try {
+            this._applyBadge(
+                await this.orm.call('muk_ai.session', 'notification_badge', []),
+            );
+        } catch {
+            this._applyBadge({ count: 0, session_ids: [] });
+        }
+    }
+    _applyBadge(payload) {
+        if (payload && typeof payload.count === 'number') {
+            this.state.badgeCount = payload.count;
+            this.state.unreadIds = payload.session_ids || [];
+        }
+    }
     _connectBus() {
         this._busHandler = (payload) => this._onBusEvent(payload);
         this.bus.subscribe('muk_ai.session_state', this._busHandler);
+        this._badgeHandler = (payload) => this._applyBadge(payload);
+        this.bus.subscribe('muk_ai.notification_badge', this._badgeHandler);
     }
     _disconnectBus() {
         if (this._busHandler) {
             this.bus.unsubscribe('muk_ai.session_state', this._busHandler);
             this._busHandler = null;
+        }
+        if (this._badgeHandler) {
+            this.bus.unsubscribe('muk_ai.notification_badge', this._badgeHandler);
+            this._badgeHandler = null;
         }
     }
     _onBusEvent(payload) {
@@ -105,6 +128,12 @@ export class MukAISystray extends Component {
     }
     get hasRunning() {
         return this.runningCount > 0;
+    }
+    get badgeLabel() {
+        return this.state.badgeCount > 99 ? '99+' : String(this.state.badgeCount);
+    }
+    isUnread(sessionId) {
+        return this.state.unreadIds.includes(sessionId);
     }
     get newChatHotkeyLabel() {
         return isMacOS() ? 'Ctrl+Shift+B' : 'Alt+Shift+B';

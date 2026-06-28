@@ -19,12 +19,12 @@
     .o_notification_buttons {
         margin-top: 0.5rem;
         display: flex;
-        width: 100%  !important;
+        width: 100% !important;
         justify-content: flex-start !important;
         .btn-link {
-            justify-content: flex-start !important;
-            width: 100% !important;
+            width: auto !important;
             padding-left: 0;
+            text-align: left;
         }
     }
 }
