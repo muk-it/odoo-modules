@@ -99,7 +99,7 @@
 						<setting
 							id="muk_ai_addon_mistral"
 							string="MuK AI Mistral"
-							help="Mistral AI provider: Large, Medium, Magistral, Pixtral, Codestral and more."
+							help="Mistral AI: Large, Medium, Magistral, Pixtral, Codestral."
 						>
 							<field
 								name="module_muk_ai_mistral"
@@ -112,7 +112,7 @@
 						<setting
 							id="muk_ai_addon_schedule"
 							string="MuK AI Schedule"
-							help="Run agents on a schedule, let them pause and resume themselves."
+							help="Run agents on a schedule; let them pause and resume."
 						>
 							<field
 								name="module_muk_ai_schedule"
