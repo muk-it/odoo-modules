@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai_enterprise.Systray" t-inherit="muk_ai.Systray" t-inherit-mode="extension">
+        <xpath expr="//DropdownItem[2]" position="after">
+            <DropdownItem class="'mk_systray_item mk_systray_action'" onSelected="() => this.onOpenOdooAI()">
+                <img class="mk_systray_odoo_ai_icon me-2" src="/ai/static/description/icon.png" alt="Odoo AI" />
+                <span>Open Odoo AI</span>
+                <kbd class="mk_systray_hotkey ms-auto" t-esc="odooAIHotkeyLabel" />
+            </DropdownItem>
+        </xpath>
+    </t>
+
+</templates>

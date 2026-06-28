@@ -8,7 +8,7 @@
         replies, LLMApiService and the ai_fields cron all keep their
         existing behaviour — both chats coexist side by side.
     """,
-    'version': '19.0.1.0.5',
+    'version': '19.0.1.0.6',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -24,6 +24,11 @@
     'data': [
         'views/ai_agent.xml',
     ],
+    'assets': {
+        'web.assets_backend': [
+            'muk_ai_enterprise/static/src/webclient/**/*',
+        ],
+    },
     'images': [
         'static/description/banner.png',
     ],
