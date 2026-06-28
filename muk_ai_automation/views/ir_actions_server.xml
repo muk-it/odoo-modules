@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+    <record id="view_ir_actions_server_form_agent" model="ir.ui.view">
+        <field name="name">ir.actions.server.form.agent</field>
+        <field name="model">ir.actions.server</field>
+        <field name="inherit_id" ref="base.view_server_action_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="before">
+                <group string="AI Agent" invisible="state != 'ai_agent'">
+                    <group>
+                        <field name="agent_id"
+                               options="{'no_create': True}"
+                               required="state == 'ai_agent'"/>
+                        <field name="agent_dispatch_mode"/>
+                        <field name="agent_record_source"/>
+                        <field name="agent_record_domain"
+                               invisible="agent_record_source != 'domain'"/>
+                        <field name="agent_max_records_per_fire"/>
+                    </group>
+                    <group>
+                        <field name="agent_chain_strategy"/>
+                    </group>
+                    <group colspan="2">
+                        <field name="agent_prompt"
+                               nolabel="1"
+                               placeholder="e.g. Summarize this record: {{ record.display_name }}"/>
+                    </group>
+                    <group colspan="2"
+                           invisible="agent_record_source != 'code'">
+                        <field name="agent_record_code"
+                               nolabel="1"
+                               widget="code"
+                               options="{'mode': 'python'}"
+                               placeholder="records = env['res.partner'].search([], limit=10)"/>
+                    </group>
+                    <group string="Caps" colspan="2">
+                        <group>
+                            <field name="agent_max_resumes"/>
+                            <field name="agent_max_lifetime_hours"/>
+                        </group>
+                        <group>
+                            <field name="agent_max_total_tokens"/>
+                            <field name="agent_max_cost_eur"/>
+                        </group>
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,43 @@
+.o-mail-AISessionBox {
+    .o-mail-AISessionBox-header {
+        user-select: none;
+    }
+
+    .o-mail-AISessionBox-item {
+        min-width: 0;
+        line-height: 1.4;
+
+        transition: background-color 0.15s ease;
+
+        &:hover {
+            background-color: var(--bs-tertiary-bg) !important;
+        }
+
+        > * {
+            min-width: 0;
+        }
+
+        .o-mail-AISessionBox-state {
+            min-width: 5.5rem;
+            justify-content: center;
+            display: inline-flex;
+            align-items: center;
+            white-space: nowrap;
+        }
+
+        .o-mail-AISessionBox-name {
+            flex: 1 1 auto;
+        }
+
+        .o-mail-AISessionBox-meta {
+            flex: 0 1 auto;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .o-mail-AISessionBox-date {
+            white-space: nowrap;
+        }
+    }
+}

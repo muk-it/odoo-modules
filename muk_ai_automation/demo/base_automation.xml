@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo noupdate="1">
+
+    <record id="demo_rule_partner_on_create" model="base.automation">
+        <field name="name">AI summarize on partner create</field>
+        <field name="model_id" ref="base.model_res_partner"/>
+        <field name="trigger">on_create</field>
+        <field name="active" eval="False"/>
+        <field name="action_server_ids" eval="[(4, ref('demo_agent_action_partner_summary'))]"/>
+    </record>
+
+</odoo>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo noupdate="1">
+
+    <record id="demo_agent_action_partner_summary" model="ir.actions.server">
+        <field name="name">Summarize New Partner</field>
+        <field name="model_id" ref="base.model_res_partner"/>
+        <field name="state">ai_agent</field>
+        <field name="agent_id" ref="muk_ai.agent_general"/>
+        <field name="agent_prompt">Summarize this new partner: {{ record.display_name }} ({{ record.email }})</field>
+        <field name="agent_dispatch_mode">per_record</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+    <record id="view_base_automation_search_agent" model="ir.ui.view">
+        <field name="name">base.automation.search.agent</field>
+        <field name="model">base.automation</field>
+        <field name="inherit_id" ref="base_automation.view_base_automation_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//search/field[@name='model_id']" position="after">
+                <separator/>
+                <filter name="filter_action_agent"
+                        string="AI Agent Rules"
+                        domain="[('action_server_ids.state', '=', 'ai_agent')]"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
