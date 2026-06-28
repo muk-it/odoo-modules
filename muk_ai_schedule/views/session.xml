@@ -67,6 +67,11 @@
 					<group>
 						<group string="Source">
 							<field name="schedule_id"/>
+							<field
+								name="action_server_id"
+								readonly="1"
+								invisible="not action_server_id"
+							/>
 							<field name="previous_session_id"/>
 						</group>
 						<group string="Linked Record">

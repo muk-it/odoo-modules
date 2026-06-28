@@ -1,12 +1,15 @@
+from __future__ import annotations
+
 from datetime import timedelta
 
-from odoo import fields
+from odoo import fields, models
 from odoo.exceptions import UserError
 from odoo.tests.common import TransactionCase, tagged
 
 
 @tagged('post_install', '-at_install', 'muk_ai_schedule')
 class TestScheduleTools(TransactionCase):
+    """Covers the schedule_resume and schedule_recurring MCP tool behaviours."""
 
     # ----------------------------------------------------------
     # Setup
@@ -15,9 +18,11 @@ class TestScheduleTools(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.agent = cls.env['muk_ai.agent'].create({
-            'name': 'Schedule Tools Agent',
-        })
+        cls.agent = cls.env['muk_ai.agent'].create(
+            {
+                'name': 'Schedule Tools Agent',
+            }
+        )
         cls.Session = cls.env['muk_ai.session']
         cls.Mixin = cls.env['muk_mcp.mixin']
         cls.Schedule = cls.env['muk_ai.schedule']
@@ -26,7 +31,8 @@ class TestScheduleTools(TransactionCase):
     # Helper
     # ----------------------------------------------------------
 
-    def _make_session(self, **vals):
+    def _make_session(self, **vals) -> models.BaseModel:
+        """Create a session from the default values overridden by ``vals``."""
         defaults = {
             'name': 'Tools Test Session',
             'agent_id': self.agent.id,
@@ -34,7 +40,8 @@ class TestScheduleTools(TransactionCase):
         defaults.update(vals)
         return self.Session.create(defaults)
 
-    def _make_schedule(self, **vals):
+    def _make_schedule(self, **vals) -> models.BaseModel:
+        """Create a schedule from the default values overridden by ``vals``."""
         defaults = {
             'name': 'Tools Test Schedule',
             'agent_id': self.agent.id,
@@ -46,7 +53,8 @@ class TestScheduleTools(TransactionCase):
         defaults.update(vals)
         return self.Schedule.create(defaults)
 
-    def _mixin_for(self, session):
+    def _mixin_for(self, session: models.BaseModel) -> models.BaseModel:
+        """Return the MCP mixin bound to ``session`` via context."""
         return self.Mixin.with_context(muk_mcp_session_id=session.id)
 
     # ----------------------------------------------------------
@@ -57,7 +65,8 @@ class TestScheduleTools(TransactionCase):
         session = self._make_session()
         before = fields.Datetime.now()
         result = self._mixin_for(session)._mcp_schedule_resume(
-            seconds_from_now=120, prompt='ping',
+            seconds_from_now=120,
+            prompt='ping',
         )
         self.assertTrue(result['ok'])
         self.assertEqual(session.state, 'schedule')
@@ -71,7 +80,8 @@ class TestScheduleTools(TransactionCase):
         target = fields.Datetime.now() + timedelta(hours=1)
         target_str = fields.Datetime.to_string(target)
         result = self._mixin_for(session)._mcp_schedule_resume(
-            at=target_str, prompt='ping',
+            at=target_str,
+            prompt='ping',
         )
         self.assertTrue(result['ok'])
         self.assertEqual(session.state, 'schedule')
@@ -96,20 +106,23 @@ class TestScheduleTools(TransactionCase):
         session = self._make_session()
         with self.assertRaises(UserError):
             self._mixin_for(session)._mcp_schedule_resume(
-                seconds_from_now=10, prompt='ping',
+                seconds_from_now=10,
+                prompt='ping',
             )
 
     def test_schedule_resume_max_delay_violation(self):
         session = self._make_session()
         with self.assertRaises(UserError):
             self._mixin_for(session)._mcp_schedule_resume(
-                seconds_from_now=99_999_999, prompt='ping',
+                seconds_from_now=99_999_999,
+                prompt='ping',
             )
 
     def test_schedule_resume_requires_session_context(self):
         with self.assertRaises(UserError):
             self.Mixin._mcp_schedule_resume(
-                seconds_from_now=120, prompt='ping',
+                seconds_from_now=120,
+                prompt='ping',
             )
 
     # ----------------------------------------------------------
@@ -119,7 +132,9 @@ class TestScheduleTools(TransactionCase):
     def test_schedule_recurring_persists_config(self):
         session = self._make_session()
         result = self._mixin_for(session)._mcp_schedule_recurring(
-            every=120, max_runs=3, prompt='ping',
+            every=120,
+            max_runs=3,
+            prompt='ping',
         )
         self.assertTrue(result['ok'])
         self.assertEqual(session.state, 'schedule')
@@ -131,42 +146,50 @@ class TestScheduleTools(TransactionCase):
 
     def test_schedule_recurring_refuses_after_max_runs(self):
         session = self._make_session()
-        session.write({
-            'recur_config': {
-                'every': 120,
-                'max_runs': 3,
-                'started_at': fields.Datetime.to_string(fields.Datetime.now()),
-                'prompt': 'ping',
-            },
-            'recur_runs_done': 3,
-        })
+        session.write(
+            {
+                'recur_config': {
+                    'every': 120,
+                    'max_runs': 3,
+                    'started_at': fields.Datetime.to_string(fields.Datetime.now()),
+                    'prompt': 'ping',
+                },
+                'recur_runs_done': 3,
+            }
+        )
         result = self._mixin_for(session)._mcp_schedule_recurring(
-            every=120, max_runs=3, prompt='ping',
+            every=120,
+            max_runs=3,
+            prompt='ping',
         )
         self.assertFalse(result['ok'])
         self.assertEqual(result['cap'], 'recur_max_runs')
         self.assertEqual(session.state, 'error')
-        events = self.env['muk_ai.session.event'].search([
-            ('session_id', '=', session.id),
-            ('kind', '=', 'cap_exceeded'),
-        ])
+        events = self.env['muk_ai.session.event'].search(
+            [
+                ('session_id', '=', session.id),
+                ('kind', '=', 'cap_exceeded'),
+            ]
+        )
         self.assertEqual(len(events), 1)
 
     def test_schedule_recurring_rejects_both_until_and_max_runs(self):
         session = self._make_session()
-        future = fields.Datetime.to_string(
-            fields.Datetime.now() + timedelta(days=1)
-        )
+        future = fields.Datetime.to_string(fields.Datetime.now() + timedelta(days=1))
         with self.assertRaises(UserError):
             self._mixin_for(session)._mcp_schedule_recurring(
-                every=120, until=future, max_runs=3, prompt='ping',
+                every=120,
+                until=future,
+                max_runs=3,
+                prompt='ping',
             )
 
     def test_schedule_recurring_rejects_neither_until_nor_max_runs(self):
         session = self._make_session()
         with self.assertRaises(UserError):
             self._mixin_for(session)._mcp_schedule_recurring(
-                every=120, prompt='ping',
+                every=120,
+                prompt='ping',
             )
 
     # ----------------------------------------------------------
@@ -178,15 +201,18 @@ class TestScheduleTools(TransactionCase):
         session = self._make_session(schedule_id=schedule.id)
         session.write({'recur_runs_done': 5})
         result = self._mixin_for(session)._mcp_schedule_resume(
-            seconds_from_now=120, prompt='ping',
+            seconds_from_now=120,
+            prompt='ping',
         )
         self.assertFalse(result['ok'])
         self.assertEqual(result['cap'], 'max_resumes')
         self.assertEqual(session.state, 'error')
-        events = self.env['muk_ai.session.event'].search([
-            ('session_id', '=', session.id),
-            ('kind', '=', 'cap_exceeded'),
-        ])
+        events = self.env['muk_ai.session.event'].search(
+            [
+                ('session_id', '=', session.id),
+                ('kind', '=', 'cap_exceeded'),
+            ]
+        )
         self.assertEqual(len(events), 1)
         self.assertEqual(events.payload.get('cap'), 'max_resumes')
 
@@ -197,12 +223,15 @@ class TestScheduleTools(TransactionCase):
     def test_resume_then_cron_picks_up(self):
         session = self._make_session()
         self._mixin_for(session)._mcp_schedule_resume(
-            seconds_from_now=120, prompt='ping',
+            seconds_from_now=120,
+            prompt='ping',
         )
         self.assertEqual(session.state, 'schedule')
-        session.write({
-            'resume_at': fields.Datetime.now() - timedelta(minutes=1),
-        })
+        session.write(
+            {
+                'resume_at': fields.Datetime.now() - timedelta(minutes=1),
+            }
+        )
         self.env.flush_all()
         ids = self.Session._find_pending_session_ids()
         self.assertIn(session.id, ids)

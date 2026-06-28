@@ -15,6 +15,10 @@ const MINUTE = 60 * SECOND;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 
+/**
+ * Datetime field that renders a live ticking countdown to the target time,
+ * refreshing when the bound session transitions back to running.
+ */
 export class ScheduleCountdownField extends Component {
     static template = 'muk_ai_schedule.ScheduleCountdownField';
     static props = { ...standardFieldProps };
@@ -54,10 +58,11 @@ export class ScheduleCountdownField extends Component {
         try {
             const dt = DateTime.fromISO(String(raw), { zone: 'utc' }).toLocal();
             return dt.isValid ? dt : null;
-        } catch (_e) {
+        } catch {
             return null;
         }
     }
+    /** Milliseconds until the target time (negative once past), or null when empty. */
     get diffMs() {
         const target = this.value;
         if (!target) {
@@ -80,6 +85,7 @@ export class ScheduleCountdownField extends Component {
     get pastLabel() {
         return _t('(due)');
     }
+    /** Human-readable remaining time at the coarsest sensible unit (empty once due). */
     get countdownText() {
         const diff = this.diffMs;
         if (diff === null || diff <= 0) {

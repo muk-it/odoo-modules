@@ -1,13 +1,18 @@
-from contextlib import contextmanager
-from unittest.mock import patch
+from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
+from unittest.mock import MagicMock, patch
+
+from odoo import models
 from odoo.tests.common import TransactionCase, tagged
 
-from odoo.addons.muk_ai_schedule.tools.dispatch import _resolve_records, fire_schedule
+from odoo.addons.muk_ai_automation.tools.dispatch import _resolve_records
 
 
 @tagged('post_install', '-at_install', 'muk_ai_schedule')
 class TestScheduleFire(TransactionCase):
+    """Covers single and per-record dispatch, record sources, and fire actions."""
 
     # ----------------------------------------------------------
     # Setup
@@ -20,19 +25,22 @@ class TestScheduleFire(TransactionCase):
         cls.provider.sudo().api_key = 'test-key'
         cls.env.company.default_ai_provider_id = cls.provider
         cls.partner_model = cls.env['ir.model']._get('res.partner')
-        cls.agent = cls.env['muk_ai.agent'].create({
-            'name': 'Schedule Dispatch Agent',
-        })
-        cls.partners = cls.env['res.partner'].create([
-            {'name': 'Dispatch Partner %d' % i} for i in range(6)
-        ])
+        cls.agent = cls.env['muk_ai.agent'].create(
+            {
+                'name': 'Schedule Dispatch Agent',
+            }
+        )
+        cls.partners = cls.env['res.partner'].create(
+            [{'name': 'Dispatch Partner %d' % i} for i in range(6)]
+        )
 
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
 
     @contextmanager
-    def _mock_provider(self, text='ok'):
+    def _mock_provider(self, text: str = 'ok') -> Iterator[MagicMock]:
+        """Patch the provider response request to yield a fixed ``text`` payload."""
         payload = {
             'text': text,
             'tool_calls': [],
@@ -51,7 +59,8 @@ class TestScheduleFire(TransactionCase):
         ) as mock:
             yield mock
 
-    def _make_schedule(self, **vals):
+    def _make_schedule(self, **vals) -> models.BaseModel:
+        """Create a schedule from the default values overridden by ``vals``."""
         defaults = {
             'name': 'Dispatch Schedule',
             'agent_id': self.agent.id,
@@ -63,8 +72,27 @@ class TestScheduleFire(TransactionCase):
         defaults.update(vals)
         return self.env['muk_ai.schedule'].create(defaults)
 
-    def _domain_for(self, partners):
+    def _domain_for(self, partners: models.BaseModel) -> str:
+        """Return a domain string matching the ids of ``partners``."""
         return "[('id', 'in', %s)]" % str(partners.ids)
+
+    def _fire(self, schedule: models.BaseModel) -> models.BaseModel:
+        """Fire ``schedule`` and return the sessions newly spawned by it."""
+        before_ids = set(
+            self.env['muk_ai.session']
+            .search(
+                [('schedule_id', '=', schedule.id)],
+            )
+            .ids
+        )
+        schedule.action_fire_now()
+        return self.env['muk_ai.session'].search(
+            [
+                ('schedule_id', '=', schedule.id),
+                ('id', 'not in', list(before_ids)),
+            ],
+            order='id',
+        )
 
     # ----------------------------------------------------------
     # Tests Single Mode
@@ -73,7 +101,7 @@ class TestScheduleFire(TransactionCase):
     def test_single_dispatch_creates_one_session(self):
         schedule = self._make_schedule()
         with self._mock_provider():
-            sessions = fire_schedule(schedule)
+            sessions = self._fire(schedule)
         self.assertEqual(len(sessions), 1)
         session = sessions
         self.assertEqual(session.schedule_id, schedule)
@@ -89,7 +117,7 @@ class TestScheduleFire(TransactionCase):
             dispatch_mode='per_record',
         )
         with self._mock_provider():
-            sessions = fire_schedule(schedule)
+            sessions = self._fire(schedule)
         self.assertEqual(len(sessions), 1)
         session = sessions
         self.assertEqual(session.res_model, 'res.partner')
@@ -109,7 +137,7 @@ class TestScheduleFire(TransactionCase):
             prompt='Count: {{ len(records) }}.',
         )
         with self._mock_provider():
-            sessions = fire_schedule(schedule)
+            sessions = self._fire(schedule)
         self.assertEqual(len(sessions), 1)
         session = sessions
         user_turn = next(
@@ -132,7 +160,7 @@ class TestScheduleFire(TransactionCase):
             max_records_per_fire=3,
         )
         with self._mock_provider():
-            sessions = fire_schedule(schedule)
+            sessions = self._fire(schedule)
         self.assertEqual(len(sessions), 3)
 
     def test_per_record_dispatch_chains_previous_session_id(self):
@@ -144,10 +172,10 @@ class TestScheduleFire(TransactionCase):
             max_records_per_fire=10,
         )
         with self._mock_provider():
-            first = fire_schedule(schedule)
+            first = self._fire(schedule)
         first_by_partner = {s.res_id: s for s in first}
         with self._mock_provider():
-            second = fire_schedule(schedule)
+            second = self._fire(schedule)
         self.assertEqual(len(second), 2)
         for session in second:
             previous = first_by_partner.get(session.res_id)
@@ -163,7 +191,7 @@ class TestScheduleFire(TransactionCase):
             max_records_per_fire=10,
         )
         with self._mock_provider():
-            sessions = fire_schedule(schedule)
+            sessions = self._fire(schedule)
         self.assertEqual(len(sessions), 2)
         seen_ids = sorted(s.res_id for s in sessions)
         self.assertEqual(seen_ids, sorted(partners.ids))
@@ -180,7 +208,7 @@ class TestScheduleFire(TransactionCase):
         )
         before = {p.id: len(p.message_ids) for p in partners}
         with self._mock_provider():
-            fire_schedule(schedule)
+            self._fire(schedule)
         after = {p.id: len(p.message_ids) for p in partners.browse(partners.ids)}
         for pid in partners.ids:
             self.assertGreater(after[pid], before[pid])
@@ -193,7 +221,7 @@ class TestScheduleFire(TransactionCase):
             max_records_per_fire=10,
         )
         with self._mock_provider():
-            sessions = fire_schedule(schedule)
+            sessions = self._fire(schedule)
         self.assertFalse(sessions)
 
     # ----------------------------------------------------------
@@ -208,11 +236,12 @@ class TestScheduleFire(TransactionCase):
             record_code=(
                 "records = env['res.partner'].search("
                 "[('id', 'in', %s)], limit=2, order='id')"
-            ) % str(partners.ids),
+            )
+            % str(partners.ids),
             prompt='Got: {{ len(records) }}.',
         )
         with self._mock_provider():
-            sessions = fire_schedule(schedule)
+            sessions = self._fire(schedule)
         self.assertEqual(len(sessions), 1)
         rendered = next(
             (e for e in sessions.conversation if e.get('role') == 'user'),
@@ -227,13 +256,11 @@ class TestScheduleFire(TransactionCase):
             dispatch_mode='per_record',
             model_id=self.partner_model.id,
             record_source='code',
-            record_code=(
-                "records = env['res.partner'].browse(%s)"
-            ) % str(partners.ids),
+            record_code=("records = env['res.partner'].browse(%s)") % str(partners.ids),
             max_records_per_fire=10,
         )
         with self._mock_provider():
-            sessions = fire_schedule(schedule)
+            sessions = self._fire(schedule)
         self.assertEqual(len(sessions), 3)
         self.assertEqual(
             sorted(s.res_id for s in sessions),
@@ -246,7 +273,7 @@ class TestScheduleFire(TransactionCase):
             record_source='code',
             record_code='this is not valid python <<<',
         )
-        records = _resolve_records(schedule)
+        records = _resolve_records(schedule.action_server_id)
         self.assertEqual(len(records), 0)
         self.assertEqual(records._name, 'res.partner')
 
@@ -254,9 +281,9 @@ class TestScheduleFire(TransactionCase):
         schedule = self._make_schedule(
             model_id=self.partner_model.id,
             record_source='code',
-            record_code="records = [1, 2, 3]",
+            record_code='records = [1, 2, 3]',
         )
-        records = _resolve_records(schedule)
+        records = _resolve_records(schedule.action_server_id)
         self.assertEqual(len(records), 0)
         self.assertEqual(records._name, 'res.partner')
 
@@ -266,7 +293,7 @@ class TestScheduleFire(TransactionCase):
             record_source='code',
             record_code='   ',
         )
-        records = _resolve_records(schedule)
+        records = _resolve_records(schedule.action_server_id)
         self.assertEqual(len(records), 0)
         self.assertEqual(records._name, 'res.partner')
 
@@ -277,14 +304,15 @@ class TestScheduleFire(TransactionCase):
             model_id=self.partner_model.id,
             record_source='code',
             record_code=(
-                "cutoff = (now - relativedelta(years=10)).isoformat()\n"
+                'cutoff = (now - relativedelta(years=10)).isoformat()\n'
                 "records = env['res.partner'].search("
                 "[('id', 'in', %s), ('write_date', '>=', cutoff)])"
-            ) % str(recent.ids),
+            )
+            % str(recent.ids),
             prompt='Got: {{ len(records) }}.',
         )
         with self._mock_provider():
-            sessions = fire_schedule(schedule)
+            sessions = self._fire(schedule)
         rendered = next(
             (e for e in sessions.conversation if e.get('role') == 'user'),
             None,
@@ -306,6 +334,18 @@ class TestScheduleFire(TransactionCase):
             [('schedule_id', '=', schedule.id)],
         )
         self.assertGreaterEqual(after_count - before_count, 1)
+        self.assertEqual(action['type'], 'ir.actions.act_window')
+
+    def test_action_fire_now_owner_opens_chat(self):
+        admin = self.env.ref('base.user_admin')
+        schedule = self._make_schedule()
+        with self._mock_provider():
+            action = schedule.with_user(admin).action_fire_now()
+        spawned = self.env['muk_ai.session'].search(
+            [('schedule_id', '=', schedule.id)],
+            limit=1,
+        )
+        self.assertEqual(spawned.user_id, admin)
         self.assertEqual(action['type'], 'ir.actions.client')
 
     def test_action_fire_now_per_record_returns_act_window(self):
@@ -330,12 +370,14 @@ class TestScheduleFire(TransactionCase):
             prompt='Broken {{ undefined_var.x }}.',
         )
         with self._mock_provider():
-            sessions = fire_schedule(schedule)
+            sessions = self._fire(schedule)
         self.assertEqual(len(sessions), 1)
-        events = self.env['muk_ai.session.event'].search([
-            ('session_id', '=', sessions.id),
-            ('kind', '=', 'prompt_render_error'),
-        ])
+        events = self.env['muk_ai.session.event'].search(
+            [
+                ('session_id', '=', sessions.id),
+                ('kind', '=', 'prompt_render_error'),
+            ]
+        )
         self.assertEqual(len(events), 1)
         self.assertIn('error', events.payload)
 
@@ -349,7 +391,7 @@ class TestScheduleFire(TransactionCase):
             interval_number=2,
         )
         with self._mock_provider():
-            fire_schedule(schedule)
+            self._fire(schedule)
         self.assertTrue(schedule.last_call)
         self.assertTrue(schedule.next_call)
         delta = (schedule.next_call - schedule.last_call).total_seconds()

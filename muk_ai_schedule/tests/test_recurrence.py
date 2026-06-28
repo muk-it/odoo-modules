@@ -8,6 +8,7 @@ from odoo.addons.muk_ai_schedule.tools.recurrence import compute_next_call
 
 @tagged('post_install', '-at_install', 'muk_ai_schedule')
 class TestRecurrence(TransactionCase):
+    """Covers next-call computation across every interval type."""
 
     def test_minutes_interval(self):
         base = datetime(2026, 1, 1, 12, 0, 0)
@@ -66,7 +67,8 @@ class TestRecurrence(TransactionCase):
     def test_cron_bad_expression(self):
         with self.assertRaises(ValidationError):
             compute_next_call(
-                'cron', 1,
+                'cron',
+                1,
                 cron_expression='not a cron',
                 base=datetime(2026, 1, 1),
             )

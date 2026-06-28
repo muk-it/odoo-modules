@@ -23,17 +23,23 @@
 		<div class="text-justify" style="max-width: 84%; margin: 16px 8%;">
 			<h3 class="oe_slogan">Overview</h3>
 			<p class="oe_mt32">
-				<strong>MuK AI Schedule</strong> extends
-				<code>muk_ai</code> with cron-driven, autonomous agent
-				sessions. Admins define <code>muk_ai.schedule</code>
-				records that fire on a chosen cadence, each one
-				launching a fresh AI session under a chosen agent and
-				prompt with no user in the loop. A per-record dispatch
-				mode fans a single schedule into one session per record
-				matching a domain (or arbitrary Python), and chained
-				sessions expose the previous run's transcript so an
-				agent can recall what it did last time without burning
-				context. Pure runtime extension &mdash; no fork of
+				<strong>MuK AI Schedule</strong> turns a
+				<code>muk_ai.schedule</code> record into a cron-driven,
+				autonomous agent session. Each schedule <em>owns</em> its
+				own <code>ir.actions.server</code> (an
+				<code>ai_agent</code> action from
+				<code>muk_ai_automation</code>) plus a dedicated
+				<code>ir.cron</code> &mdash; one cron per schedule, with no
+				central sweep and no advisory lock. The cron runs the owned
+				action; resolving the target recordset, rendering the
+				prompt, spawning and chaining sessions and mirroring to
+				chatter are all provided by the
+				<code>muk_ai_automation</code> dependency. A per-record
+				dispatch mode fans a single schedule into one session per
+				record matching a domain (or arbitrary Python), and chained
+				sessions expose the previous run's transcript so an agent
+				can recall what it did last time without burning context.
+				Pure runtime extension &mdash; no fork of
 				<code>muk_ai</code>.
 			</p>
 		</div>
@@ -48,14 +54,15 @@
 				Each schedule carries a name, agent, prompt template,
 				recurrence (minute/hour/day/week/month/cron), dispatch
 				mode and target model with either a domain or
-				safe-evaluated Python record source. A live
+				safe-evaluated Python record source. On save it provisions
+				its own server action and cron, kept in sync on every edit
+				and removed on delete. A live
 				<code>schedule_countdown</code> widget shows
 				<em>Nd Nh</em> / <em>Nm Ns</em> until the next fire on
-				every list, kanban and form view, and updates without
-				a page reload as the cron worker advances times.
-				Prompt edits are versioned via the reusable
-				<code>muk_ai.revision.mixin</code> from
-				<code>muk_ai</code>; the History stat button rolls
+				every list, kanban and form view, and updates without a
+				page reload as the cron advances times. Prompt edits are
+				versioned via the reusable <code>muk_ai.revision.mixin</code>
+				from <code>muk_ai</code>; the History stat button rolls
 				back to any prior revision.
 			</p>
 			<div class="oe_demo oe_screenshot mt16">
@@ -70,16 +77,18 @@
 		<div class="text-justify" style="max-width:84%; margin:16px 8%">
 			<h3 class="oe_slogan">Self-Pacing Tools</h3>
 			<p>
-				Two MCP tools registered on the in-Odoo agent let a
-				running session defer itself across cron ticks.
-				<code>schedule_resume</code> pauses until a wall-clock
-				time and stores a synthetic user message to fire on
-				wake-up &mdash; so the agent picks up exactly where
-				it left off, with the instruction it gave itself
-				fresh in context. <code>schedule_recurring</code>
-				re-fires the same session on a fixed cadence with
-				hard caps and supports <code>{run}</code> /
-				<code>{total}</code> placeholders in the prompt.
+				Two MCP tools registered on the in-Odoo agent let a running
+				session defer itself across cron ticks.
+				<code>schedule_resume</code> pauses until a wall-clock time
+				and stores a synthetic user message to fire on wake-up
+				&mdash; so the agent picks up exactly where it left off,
+				with the instruction it gave itself fresh in context.
+				<code>schedule_recurring</code> re-fires the same session on
+				a fixed cadence with hard caps and supports
+				<code>{run}</code> / <code>{total}</code> placeholders in
+				the prompt. Both reuse <code>muk_ai</code>'s existing
+				pending-session crons for pickup &mdash; no dedicated resume
+				worker is added.
 			</p>
 			<div class="oe_demo oe_screenshot mt16">
 				<img src="screenshot_self_pace.png">
@@ -93,16 +102,18 @@
 		<div class="text-justify" style="max-width:84%; margin:16px 8%">
 			<h3 class="oe_slogan">Per-Record Dispatch &amp; Chaining</h3>
 			<p>
-				In <em>Per Record</em> mode the schedule resolves its
-				target recordset on every fire and creates one session
-				per record. Sessions inherit <code>res_model</code> /
-				<code>res_id</code> and post an internal note to that
-				record's chatter, so every AI run a record spawned
-				stays visible from the record itself. Chained sessions
-				expose a <code>previous_session</code> proxy
-				(<code>last_text</code>, <code>tool_log</code>) so a
-				digest agent can avoid repeating itself without
-				pasting full transcripts into the next prompt.
+				In <em>Per Record</em> mode the owned action resolves its
+				target recordset on every fire and creates one session per
+				record. Sessions inherit <code>res_model</code> /
+				<code>res_id</code>, and <code>muk_ai_automation</code>
+				posts an internal note to that record's chatter, so every
+				AI run a record spawned stays visible from the record
+				itself. Chained sessions expose a
+				<code>previous_session</code> proxy
+				(<code>last_text</code>, <code>tool_log</code>) so a digest
+				agent can avoid repeating itself without pasting full
+				transcripts into the next prompt. The Chain stat button on
+				the session form opens the whole chain at a glance.
 			</p>
 			<div class="oe_demo oe_screenshot mt16">
 				<img src="screenshot_session_chain.png">
@@ -116,14 +127,14 @@
 		<div class="text-justify" style="max-width:84%; margin:16px 8%">
 			<h3 class="oe_slogan">Hard Caps</h3>
 			<p>
-				Every spawned session is bounded by four limits
-				&mdash; max resumes, lifetime hours, total tokens, and
-				cost in EUR &mdash; configurable per schedule and
-				falling back to module-wide defaults. Caps are checked
-				before every <code>schedule_resume</code> /
-				<code>schedule_recurring</code> call; any breach
-				aborts the session with a <code>cap_exceeded</code>
-				event so a runaway agent can never bill unbounded.
+				Every spawned session is bounded by four limits &mdash; max
+				resumes (50), lifetime hours (720), total tokens
+				(1,000,000), and cost in EUR (5.00) &mdash; configurable per
+				schedule and falling back to module-wide defaults. Caps are
+				checked before every <code>schedule_resume</code> /
+				<code>schedule_recurring</code> call; any breach aborts the
+				session with a <code>cap_exceeded</code> event so a runaway
+				agent can never bill unbounded.
 			</p>
 		</div>
 	</div>

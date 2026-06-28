@@ -1,14 +1,13 @@
-import calendar
+from __future__ import annotations
 
+import calendar
 from datetime import datetime, timedelta
 
-from dateutil.relativedelta import relativedelta
-
 from croniter import croniter
+from dateutil.relativedelta import relativedelta
 
 from odoo import _, fields
 from odoo.exceptions import ValidationError
-
 
 WEEKDAY_CODES = {
     'mon': 0,
@@ -23,73 +22,87 @@ WEEKDAY_CODES = {
 INTERVAL_TYPES = ('minutes', 'hours', 'days', 'weeks', 'months', 'cron')
 
 
-def _coerce_weekday(weekday):
+def _coerce_weekday(weekday: int | str) -> int:
+    """Normalize a weekday code or index to a Monday-zero integer.
+
+    :raise odoo.exceptions.ValidationError: when the value is out of range
+        or not a known weekday code
+    """
     if isinstance(weekday, int):
         if 0 <= weekday <= 6:
             return weekday
-        raise ValidationError(_(
-            "Weekday integer must be between 0 (Mon) and 6 (Sun)."
-        ))
+        raise ValidationError(_('Weekday integer must be between 0 (Mon) and 6 (Sun).'))
     if isinstance(weekday, str):
         code = weekday.lower()
         if code in WEEKDAY_CODES:
             return WEEKDAY_CODES[code]
-    raise ValidationError(_(
-        "Invalid weekday %(value)s. Expected one of: %(allowed)s.",
-        value=weekday,
-        allowed=', '.join(WEEKDAY_CODES),
-    ))
+    raise ValidationError(
+        _(
+            'Invalid weekday %(value)s. Expected one of: %(allowed)s.',
+            value=weekday,
+            allowed=', '.join(WEEKDAY_CODES),
+        )
+    )
 
 
 def compute_next_call(
-    interval_type,
-    interval_number,
-    weekday=None,
-    monthday=None,
-    cron_expression=None,
+    interval_type: str,
+    interval_number: int,
+    weekday: int | str | None = None,
+    monthday: int | None = None,
+    cron_expression: str | None = None,
     *,
-    base=None,
-):
+    base: datetime | None = None,
+) -> datetime:
+    """Compute the next fire time for a recurrence definition.
+
+    :param base: anchor time the next occurrence is computed from; defaults
+        to now
+    :raise odoo.exceptions.ValidationError: when the recurrence definition is
+        invalid or no future occurrence can be found
+    """
     if interval_type not in INTERVAL_TYPES:
-        raise ValidationError(_(
-            "Invalid interval type %(value)s. Expected one of: %(allowed)s.",
-            value=interval_type,
-            allowed=', '.join(INTERVAL_TYPES),
-        ))
+        raise ValidationError(
+            _(
+                'Invalid interval type %(value)s. Expected one of: %(allowed)s.',
+                value=interval_type,
+                allowed=', '.join(INTERVAL_TYPES),
+            )
+        )
 
     if base is None:
         base = fields.Datetime.now()
     if not isinstance(base, datetime):
-        raise ValidationError(_("Base must be a datetime instance."))
+        raise ValidationError(_('Base must be a datetime instance.'))
 
     if interval_type == 'cron':
         if not cron_expression:
-            raise ValidationError(_(
-                "A cron expression is required when interval_type is 'cron'."
-            ))
+            raise ValidationError(
+                _("A cron expression is required when interval_type is 'cron'.")
+            )
         try:
             iterator = croniter(cron_expression, base)
         except (ValueError, KeyError) as exc:
-            raise ValidationError(_(
-                "Invalid cron expression %(value)s: %(error)s",
-                value=cron_expression,
-                error=exc,
-            )) from exc
+            raise ValidationError(
+                _(
+                    'Invalid cron expression %(value)s: %(error)s',
+                    value=cron_expression,
+                    error=exc,
+                )
+            ) from exc
         return iterator.get_next(datetime)
 
     if not isinstance(interval_number, int) or interval_number < 1:
-        raise ValidationError(_(
-            "Interval number must be a positive integer."
-        ))
+        raise ValidationError(_('Interval number must be a positive integer.'))
 
     if interval_type in {'minutes', 'hours', 'days'}:
         return base + timedelta(**{interval_type: interval_number})
 
     if interval_type == 'weeks':
         if weekday is None:
-            raise ValidationError(_(
-                "A weekday is required when interval_type is 'weeks'."
-            ))
+            raise ValidationError(
+                _("A weekday is required when interval_type is 'weeks'.")
+            )
         target_weekday = _coerce_weekday(weekday)
         delta_days = (target_weekday - base.weekday()) % 7 or 7
         result = base + timedelta(days=delta_days)
@@ -99,13 +112,17 @@ def compute_next_call(
 
     if interval_type == 'months':
         if not isinstance(monthday, int) or not 1 <= monthday <= 31:
-            raise ValidationError(_(
-                "A monthday between 1 and 31 is required when interval_type is 'months'."
-            ))
+            raise ValidationError(
+                _(
+                    "A monthday between 1 and 31 is required when interval_type is 'months'."
+                )
+            )
         candidate = base.replace(day=1) + relativedelta(months=interval_number)
         time_kw = {
-            'hour': base.hour, 'minute': base.minute,
-            'second': base.second, 'microsecond': base.microsecond,
+            'hour': base.hour,
+            'minute': base.minute,
+            'second': base.second,
+            'microsecond': base.microsecond,
         }
         for _attempt in range(12):
             last_day = calendar.monthrange(candidate.year, candidate.month)[1]
@@ -113,12 +130,16 @@ def compute_next_call(
             if result > base:
                 return result
             candidate = candidate + relativedelta(months=1)
-        raise ValidationError(_(
-            "Could not compute a future month occurrence for monthday %(value)s.",
-            value=monthday,
-        ))
+        raise ValidationError(
+            _(
+                'Could not compute a future month occurrence for monthday %(value)s.',
+                value=monthday,
+            )
+        )
 
-    raise ValidationError(_(
-        "Unhandled interval type %(value)s.",
-        value=interval_type,
-    ))
+    raise ValidationError(
+        _(
+            'Unhandled interval type %(value)s.',
+            value=interval_type,
+        )
+    )

@@ -1,10 +1,14 @@
+from __future__ import annotations
+
+from odoo import models
 from odoo.tests import TransactionCase, tagged
 
-from odoo.addons.muk_ai_schedule.tools.dispatch import PreviousProxy
+from odoo.addons.muk_ai_automation.tools.dispatch import PreviousProxy
 
 
 @tagged('post_install', '-at_install')
 class TestPromptRender(TransactionCase):
+    """Covers prompt evaluation context, previous-session proxy, and fallbacks."""
 
     # ----------------------------------------------------------
     # Setup
@@ -15,20 +19,24 @@ class TestPromptRender(TransactionCase):
         super().setUpClass()
         cls.partner = cls.env.ref('base.partner_admin')
         cls.partner_model = cls.env['ir.model']._get('res.partner')
-        cls.agent = cls.env['muk_ai.agent'].create({
-            'name': 'Schedule Test Agent',
-        })
+        cls.agent = cls.env['muk_ai.agent'].create(
+            {
+                'name': 'Schedule Test Agent',
+            }
+        )
 
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
 
-    def _make_session(self, **vals):
+    def _make_session(self, **vals) -> models.BaseModel:
+        """Create a session from the default values overridden by ``vals``."""
         defaults = {'name': 'Schedule Test Session'}
         defaults.update(vals)
         return self.env['muk_ai.session'].create(defaults)
 
-    def _make_schedule(self, **vals):
+    def _make_schedule(self, **vals) -> models.BaseModel:
+        """Create a schedule from the default values overridden by ``vals``."""
         defaults = {
             'name': 'Test Schedule',
             'agent_id': self.agent.id,
