@@ -18,7 +18,6 @@
         'Mathias Markl <mathias.markl@mukit.at>',
     ],
     'depends': [
-        'mail',
         'base_automation',
         'muk_ai',
     ],
