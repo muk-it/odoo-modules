@@ -40,7 +40,8 @@ class MCPController(http.Controller):
         if config.get('mcp_logging', True):
             key = getattr(request, '_mcp_key', None)
             request.env['muk_mcp.log'].log(
-                key_id=key.id if key else None,
+                key_name=key.name if key else None,
+                key_prefix=key.key_prefix if key else None,
                 user_id=request.env.uid,
                 method=method,
                 ip_address=request.httprequest.remote_addr,

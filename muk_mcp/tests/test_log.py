@@ -1,4 +1,5 @@
 import json
+import secrets
 from unittest.mock import patch
 
 from odoo import api
@@ -176,7 +177,7 @@ class TestMcpLog(common.TransactionCase):
         self.assertEqual(entry['tool_name'], 'mcp_test_log_probe')
         self.assertEqual(entry['user_id'], self.env.uid)
         self.assertEqual(entry['status'], 'ok')
-        self.assertNotIn('key_id', entry)
+        self.assertNotIn('key_name', entry)
         self.assertIn('duration_ms', entry)
 
     def test_tool_call_writes_log_on_error(self):
@@ -186,3 +187,37 @@ class TestMcpLog(common.TransactionCase):
         self.assertEqual(len(captured), 1)
         self.assertEqual(captured[0]['status'], 'error')
         self.assertEqual(captured[0]['tool_name'], 'mcp_test_unknown_tool')
+
+    # ----------------------------------------------------------
+    # Tests: key snapshot must survive key deletion
+    # ----------------------------------------------------------
+
+    def test_key_snapshot_survives_key_deletion(self):
+        key_model = self.env['muk_mcp.key']
+        raw_token = secrets.token_urlsafe(32)
+        key = key_model.create(
+            {
+                'name': 'Doomed Key',
+                'user_id': self.env.user.id,
+                'key_hash': key_model._hash_key(raw_token),
+                'key_prefix': raw_token[:8],
+            },
+        )
+        record = self.log_model.sudo().create(
+            {
+                'key_name': key.name,
+                'key_prefix': key.key_prefix,
+                'user_id': self.env.user.id,
+                'method': 'tools/call',
+                'tool_name': 'search_read',
+                'status': 'ok',
+            },
+        )
+        key.unlink()
+        self.assertTrue(record.exists())
+        self.assertEqual(record.key_name, 'Doomed Key')
+        self.assertEqual(record.key_prefix, raw_token[:8])
+        self.assertEqual(
+            record.read(['key_name'])[0]['key_name'],
+            'Doomed Key',
+        )

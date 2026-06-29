@@ -239,7 +239,8 @@ class MCPTool(models.Model):
             values['response_data'] = error
         with contextlib.suppress(Exception):
             if key := getattr(request, '_mcp_key', None):
-                values['key_id'] = key.id
+                values['key_name'] = key.name
+                values['key_prefix'] = key.key_prefix
             values['ip_address'] = request.httprequest.remote_addr if request else None
         return values
 

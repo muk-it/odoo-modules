@@ -19,12 +19,17 @@ class MCPLog(models.Model):
     # Fields
     # ----------------------------------------------------------
 
-    key_id = fields.Many2one(
-        comodel_name='muk_mcp.key',
+    key_name = fields.Char(
         string='API Key',
         readonly=True,
         index=True,
-        ondelete='set null',
+        help='Label of the API key used.',
+    )
+
+    key_prefix = fields.Char(
+        string='Key Prefix',
+        readonly=True,
+        help='First characters of the API key used.',
     )
 
     user_id = fields.Many2one(

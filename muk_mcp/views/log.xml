@@ -30,7 +30,8 @@
 		<field name="arch" type="xml">
 			<list create="false" edit="false">
 				<field name="create_date" string="Time"/>
-				<field name="key_id"/>
+				<field name="key_name"/>
+				<field name="key_prefix" optional="hide"/>
 				<field name="user_id"/>
 				<field name="method"/>
 				<field name="tool_name"/>
@@ -98,7 +99,8 @@
 						<group>
 							<field name="create_date"/>
 							<field name="user_id"/>
-							<field name="key_id"/>
+							<field name="key_name"/>
+							<field name="key_prefix"/>
 							<field name="duration_ms"/>
 						</group>
 						<group>
