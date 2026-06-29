@@ -88,3 +88,8 @@ class ResConfigSettings(models.TransientModel):
         string='MuK AI Voice',
         help='Talk to the assistant: realtime STT and spoken replies via TTS.',
     )
+
+    module_muk_ai_workflows = fields.Boolean(
+        string='MuK AI Workflows',
+        help='Multi-step AI playbooks and stateful business processes.',
+    )
