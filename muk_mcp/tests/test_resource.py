@@ -123,7 +123,7 @@ class TestReadResource(common.TransactionCase):
         self.assertEqual(block['mimeType'], 'audio/wav')
 
     def test_binary_attachment_returns_resource_block_with_name(self):
-        raw = bytes(range(64))
+        raw = b'\x00' * 64
         att = self._make_attachment('blob.bin', 'application/octet-stream', raw)
         block = self._call(self._attachment_uri(att))
         self.assertEqual(block['type'], 'resource')

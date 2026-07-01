@@ -87,7 +87,7 @@ class MCPMixin(models.AbstractModel):
     ) -> tuple[str, bytes, str]:
         """Load an ``ir.attachment`` as ``(mimetype, raw, name)``.
 
-        Enforces read access via :meth:`ir.attachment.check`.
+        Enforces read access via :meth:`ir.attachment.check_access`.
 
         :raise UserError: if the attachment does not exist.
         """
@@ -99,7 +99,7 @@ class MCPMixin(models.AbstractModel):
                     aid=attachment_id,
                 ),
             )
-        attachment.check('read')
+        attachment.check_access('read')
         return (
             attachment.mimetype or '',
             attachment.raw or b'',
