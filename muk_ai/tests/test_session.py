@@ -1238,6 +1238,66 @@ class TestAiSession(AITestCommon):
             'user_message',
         )
 
+    def test_undo_after_answer_with_attachments_keeps_alignment(self):
+        session = self.env['muk_ai.session'].create({'name': 'answer-attach'})
+        with self._patch_provider(
+            [self._tool_payload('ask_user', {'question': 'Which file?'}, 'call_q')]
+        ):
+            session.start('question 1')
+        session.upload_attachments(
+            [
+                {
+                    'filename': 'note.txt',
+                    'mimetype': 'text/plain',
+                    'data_b64': 'aGVsbG8=',
+                }
+            ]
+        )
+        attachment = session.attachment_ids[0]
+        with self._patch_provider([self._text_payload('answer 1')]):
+            session.answer('this one', attachment_ids=[attachment.id])
+        with self._patch_provider([self._text_payload('answer 2')]):
+            session.send_message('question 2')
+        marked = [
+            entry
+            for entry in (session.conversation or [])
+            if isinstance(entry, dict) and entry.get('_answer_entry')
+        ]
+        self.assertEqual(len(marked), 1)
+        events = session.event_ids.sorted('sequence')
+        second_user = next(
+            event
+            for event in events
+            if event.kind == 'user_message'
+            and 'question 2' in (event.payload or {}).get('content', '')
+        )
+        session.undo_to_event(second_user.id)
+        kinds = [event.kind for event in session.event_ids.sorted('sequence')]
+        self.assertEqual(kinds.count('user_message'), 1)
+        conv = session.conversation or []
+        self.assertTrue(
+            any(
+                isinstance(entry, dict) and entry.get('_answer_entry') for entry in conv
+            )
+        )
+        counted = [
+            entry
+            for entry in conv
+            if isinstance(entry, dict)
+            and entry.get('role') == 'user'
+            and not entry.get('_answer_entry')
+        ]
+        self.assertEqual(len(counted), 1)
+
+    def test_request_inputs_strip_internal_keys(self):
+        session = self.env['muk_ai.session'].create({'name': 'strip'})
+        session.conversation = [
+            {'role': 'user', 'content': 'hi'},
+            {'role': 'user', 'content': 'files', '_answer_entry': True},
+        ]
+        for item in session._build_request_inputs():
+            self.assertNotIn('_answer_entry', item)
+
     def test_fork_at_event_creates_independent_session(self):
         session = self.env['muk_ai.session'].create({'name': 'forkable'})
         with self._patch_provider([self._text_payload('answer 1')]):

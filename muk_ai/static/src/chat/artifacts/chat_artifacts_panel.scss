@@ -21,7 +21,9 @@
         color: var(--mk-text-muted);
         text-decoration: none;
         line-height: 1;
-        &:hover { color: var(--mk-text); }
+        &:hover {
+            color: var(--mk-text);
+        }
     }
     .mk_artifacts_tabs {
         gap: 0.25rem;
@@ -37,7 +39,9 @@
         border-radius: 6px 6px 0 0;
         border-bottom: 2px solid transparent;
         margin-bottom: -1px;
-        &:hover { color: var(--mk-text); }
+        &:hover {
+            color: var(--mk-text);
+        }
         &.active {
             color: var(--mk-primary);
             border-bottom-color: var(--mk-primary);

@@ -67,7 +67,9 @@ function buildRenderer() {
             first.content = first.content.slice(match[0].length);
             const checked = match[1].toLowerCase() === 'x';
             const box = new state.Token('html_inline', '', 0);
-            box.content = `<input type="checkbox" disabled${checked ? ' checked' : ''}> `;
+            box.content = `<input type="checkbox" disabled${
+                checked ? ' checked' : ''
+            }> `;
             tok.children.unshift(box);
             tokens[i - 2].attrJoin('class', 'mk_md_task');
         }

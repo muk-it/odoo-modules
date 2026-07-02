@@ -33,7 +33,14 @@
     }
     .mk_prompt_history_pre {
         margin: 0;
-        font-family: var(--font-family-monospace, ui-monospace, SFMono-Regular, Menlo, Monaco, monospace);
+        font-family: var(
+            --font-family-monospace,
+            ui-monospace,
+            SFMono-Regular,
+            Menlo,
+            Monaco,
+            monospace
+        );
         font-size: 12px;
         line-height: 1.5;
         white-space: pre-wrap;
@@ -57,7 +64,7 @@
         font-weight: 600;
     }
     .mk_prompt_history_hunk {
-        background-color: rgba(99, 102, 241, 0.10);
+        background-color: rgba(99, 102, 241, 0.1);
         color: #4338ca;
     }
     .mk_prompt_history_empty {

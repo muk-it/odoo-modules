@@ -661,9 +661,21 @@ class AISession(models.Model):
             result.append(self._tool_entry_to_schema(ASK_USER_TOOL))
         return result
 
+    @staticmethod
+    def _strip_internal_keys(items: Iterable) -> list:
+        """Return conversation items without internal underscore-prefixed keys."""
+        return [
+            {key: value for key, value in item.items() if not key.startswith('_')}
+            if isinstance(item, dict)
+            else item
+            for item in (items or [])
+        ]
+
     def _build_request_inputs(self) -> list[dict]:
         """Return the conversation inputs annotated with the UI context."""
-        return with_ui_ctx(self.conversation, self.view_context)
+        return with_ui_ctx(
+            self._strip_internal_keys(self.conversation), self.view_context
+        )
 
     # ----------------------------------------------------------
     # Helper Bus
@@ -2563,7 +2575,7 @@ class AISession(models.Model):
                 'role': 'system',
                 'content': [{'type': 'input_text', 'text': COMPACT_SUMMARY_SYSTEM}],
             },
-            *prefix,
+            *self._strip_internal_keys(prefix),
             {
                 'role': 'user',
                 'content': [{'type': 'input_text', 'text': prompt_text}],
@@ -2848,6 +2860,20 @@ class AISession(models.Model):
             raise UserError(_('Event not found in this session.'))
         return event
 
+    @staticmethod
+    def _is_counted_user_entry(item) -> bool:
+        """Return whether the item is a user entry backed by a user_message event.
+
+        Answer-carried entries (marked ``_answer_entry``) belong to an
+        ``answer`` event and must not shift the positional mapping between
+        ``user_message`` events and user conversation items.
+        """
+        return (
+            isinstance(item, dict)
+            and item.get('role') == 'user'
+            and not item.get('_answer_entry')
+        )
+
     def _conversation_cut_index(self, event: models.BaseModel) -> int:
         """Return the conversation index to cut at when undoing to an event."""
         earlier_user_msgs = (
@@ -2865,13 +2891,13 @@ class AISession(models.Model):
         user_seen = 0
         if event.kind == 'user_message':
             for i, item in enumerate(conv):
-                if isinstance(item, dict) and item.get('role') == 'user':
+                if self._is_counted_user_entry(item):
                     if user_seen == earlier_user_msgs:
                         return i
                     user_seen += 1
             return len(conv)
         for i, item in enumerate(conv):
-            if isinstance(item, dict) and item.get('role') == 'user':
+            if self._is_counted_user_entry(item):
                 user_seen += 1
                 if user_seen == earlier_user_msgs:
                     return i + 1
@@ -2894,13 +2920,13 @@ class AISession(models.Model):
         user_seen = 0
         if event.kind == 'user_message':
             for i, item in enumerate(conv):
-                if isinstance(item, dict) and item.get('role') == 'user':
+                if self._is_counted_user_entry(item):
                     if user_seen == earlier_user_msgs:
                         return i + 1
                     user_seen += 1
             return len(conv)
         for i, item in enumerate(conv):
-            if isinstance(item, dict) and item.get('role') == 'user':
+            if self._is_counted_user_entry(item):
                 user_seen += 1
                 if user_seen > earlier_user_msgs:
                     return i
@@ -3072,12 +3098,12 @@ class AISession(models.Model):
                     {'status': 'answered', 'question': question, 'answer': answer},
                 )
             )
-            if attachments:
-                continuation.append(self._build_user_entry(None, attachments))
+            if attachments and (entry := self._build_user_entry(None, attachments)):
+                continuation.append({**entry, '_answer_entry': True})
         else:
             followup_text = f'Answer to "{question}": {answer}' if question else answer
             if user_entry := self._build_user_entry(followup_text, attachments):
-                continuation.append(user_entry)
+                continuation.append({**user_entry, '_answer_entry': True})
         self._resume_turn(
             continuation,
             {

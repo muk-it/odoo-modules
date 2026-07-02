@@ -26,19 +26,19 @@
     overflow: hidden;
     font-size: 14px;
     color: var(--o-cc1-text, #111827);
-    --mk-primary:      var(--o-cc1-btn-primary, #714B67);
-    --mk-primary-rgb:  var(--primary-rgb, 113, 75, 103);
-    --mk-bg:           var(--o-cc1-bg, #ffffff);
-    --mk-bg-muted:     var(--tertiary-bg, #f9fafb);
-    --mk-bg-soft:      var(--secondary-bg-subtle, #f7f8f8);
-    --mk-border:       var(--o-input-border-color, #e7e9ed);
+    --mk-primary: var(--o-cc1-btn-primary, #714b67);
+    --mk-primary-rgb: var(--primary-rgb, 113, 75, 103);
+    --mk-bg: var(--o-cc1-bg, #ffffff);
+    --mk-bg-muted: var(--tertiary-bg, #f9fafb);
+    --mk-bg-soft: var(--secondary-bg-subtle, #f7f8f8);
+    --mk-border: var(--o-input-border-color, #e7e9ed);
     --mk-border-strong: var(--border-color, #d8dadd);
-    --mk-text:         var(--o-cc1-text, #111827);
-    --mk-text-muted:   #6b7280;
-    --mk-danger:       #dc3545;
-    --mk-warning:      #e0a800;
-    --mk-success:      #28a745;
-    --mk-mono:         ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --mk-text: var(--o-cc1-text, #111827);
+    --mk-text-muted: #6b7280;
+    --mk-danger: #dc3545;
+    --mk-warning: #e0a800;
+    --mk-success: #28a745;
+    --mk-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 .mk_window_min {
@@ -89,10 +89,19 @@
         background: rgba(255, 255, 255, 0.4);
         border: 0;
         padding: 0;
-        &.mk_state_running { background: #ffd666; animation: mk-blink 1s steps(2, end) infinite; }
-        &.mk_state_waiting { background: #ffd666; }
-        &.mk_state_done { background: #6df49a; }
-        &.mk_state_error { background: #ff9aa3; }
+        &.mk_state_running {
+            background: #ffd666;
+            animation: mk-blink 1s steps(2, end) infinite;
+        }
+        &.mk_state_waiting {
+            background: #ffd666;
+        }
+        &.mk_state_done {
+            background: #6df49a;
+        }
+        &.mk_state_error {
+            background: #ff9aa3;
+        }
     }
     .mk_window_actions {
         display: inline-flex;
@@ -109,7 +118,10 @@
         cursor: pointer;
         color: rgba(255, 255, 255, 0.85);
         font-size: 0.85rem;
-        &:hover { background: rgba(255, 255, 255, 0.15); color: #fff; }
+        &:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+        }
     }
 }
 
@@ -129,7 +141,10 @@
         background: rgba(40, 167, 69, 0.12);
         font-weight: 500;
         font-variant-numeric: tabular-nums;
-        i { opacity: 0.9; font-size: 0.7rem; }
+        i {
+            opacity: 0.9;
+            font-size: 0.7rem;
+        }
     }
     .mk_ctx_chip {
         display: inline-flex;
@@ -148,7 +163,10 @@
         &:hover {
             background: rgba(var(--mk-primary-rgb), 0.22);
         }
-        i { opacity: 0.85; font-size: 0.7rem; }
+        i {
+            opacity: 0.85;
+            font-size: 0.7rem;
+        }
         .mk_ctx_unpin {
             margin-bottom: 2px;
         }
@@ -167,18 +185,43 @@
 
 .mk_window_inner {
     padding: 0.75rem;
-    .mk_bubble { max-width: 92%; padding: 0.55rem 0.75rem; font-size: 0.88rem; }
-    .mk_bubble_assistant { max-width: 100%; padding: 0.1rem 0 0.25rem; font-size: 0.88rem; }
-    .mk_bubble_assistant.mk_ask_simple { padding: 0.55rem 0.75rem; }
-    .mk_tool   { max-width: 92%; }
-    .mk_turn   { margin-bottom: 0.75rem; }
+    .mk_bubble {
+        max-width: 92%;
+        padding: 0.55rem 0.75rem;
+        font-size: 0.88rem;
+    }
+    .mk_bubble_assistant {
+        max-width: 100%;
+        padding: 0.1rem 0 0.25rem;
+        font-size: 0.88rem;
+    }
+    .mk_bubble_assistant.mk_ask_simple {
+        padding: 0.55rem 0.75rem;
+    }
+    .mk_tool {
+        max-width: 92%;
+    }
+    .mk_turn {
+        margin-bottom: 0.75rem;
+    }
 }
 
 .mk_window_composer {
     border-top: 1px solid var(--mk-border);
     padding: 0.5rem;
     background: var(--mk-bg);
-    .mk_composer { border-radius: 10px; padding: 0.35rem 0.35rem 0.35rem 0.75rem; }
-    .mk_composer textarea { font-size: 0.88rem; min-height: 32px; max-height: 140px; padding: 0.3rem 0; }
-    .mk_send { width: 30px; height: 30px; }
+    .mk_composer {
+        border-radius: 10px;
+        padding: 0.35rem 0.35rem 0.35rem 0.75rem;
+    }
+    .mk_composer textarea {
+        font-size: 0.88rem;
+        min-height: 32px;
+        max-height: 140px;
+        padding: 0.3rem 0;
+    }
+    .mk_send {
+        width: 30px;
+        height: 30px;
+    }
 }

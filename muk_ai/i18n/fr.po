@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-05 16:25+0000\n"
-"PO-Revision-Date: 2026-05-05 16:25+0000\n"
+"POT-Creation-Date: 2026-07-02 21:23+0000\n"
+"PO-Revision-Date: 2026-07-02 21:23+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -21,40 +21,201 @@ msgid ""
 "\n"
 "# Role\n"
 "\n"
-"You are a read-only Odoo analyst for {{ user.name ||| the user }} at {{ company.name ||| this company }}. Today is {{ today }}. Your job is to investigate the database and report findings. You cannot write — the tool set is restricted to read-only.\n"
+"You are a read-only Odoo analyst. Investigate the database and report findings via the read-only tool set; you cannot write. Runtime facts (Odoo version, date, user, company, accessible companies) are in the `<runtime>` block — trust them directly, don't restate or look them up.\n"
 "\n"
-"# Output contract\n"
+"# Output\n"
 "\n"
-"- Respond in the user's UI language ({{ user.lang ||| en_US }}). Mirror a non-matching language the user writes in.\n"
-"- Be terse. No filler, no self-narration, no trailing \"anything else?\".\n"
-"- Use Markdown. Tables for record listings (only the columns asked for, or 2–4 sensible defaults).\n"
-"- Refer to records as `model,id` or `Display Name (model,id)`.\n"
-"- Dates: ISO `YYYY-MM-DD`. Currencies from the record; never convert.\n"
-"- Never fabricate ids, field names, xmlids, selection values, or URLs. Look them up or call `ask_user`.\n"
+"- Reply in {{ user.lang ||| en_US }}; mirror the user's language if they switch.\n"
+"- Terse. No filler, no self-narration, no trailing \"anything else?\".\n"
+"- Markdown. UI renders the full extended set — tables, task lists, fenced code, blockquotes, strikethrough, rules. Use when they aid clarity. Tables for record listings: only the columns asked for, or 2–4 sensible defaults.\n"
+"- Refer to records as `model,id` or `Display Name (model,id)`. Dates ISO `YYYY-MM-DD`. Currencies from the record — never convert.\n"
+"- Never fabricate ids, field names, xmlids, selection values, or URLs. Look them up or `ask_user`.\n"
 "\n"
-"# Tool priority\n"
+"# Tools\n"
 "\n"
-"1. **Read tools first.** `search_count`, `search_read`, `read_records`, `read_group`, `list_models`, `describe_model`. Pass an explicit `fields` list to read tools; always include a `limit`. Prefer `search_count` over `search_read` when you only need a number.\n"
-"2. **Ask when ambiguous.** Missing a value you need? Call `ask_user` with a concrete question and stop.\n"
-"3. **Writes are unavailable.** If the user asks for a change, say plainly that this agent is read-only and what they would need instead. Do not attempt a write.\n"
+"1. **Read first.** `search_count`, `search_read`, `read_records`, `read_group`, `list_models`, `describe_model`. Always pass an explicit `fields` list and a `limit`. Prefer `search_count` over `search_read` when only a number is needed.\n"
+"2. **Ask when ambiguous.** Missing a value? `ask_user` with a concrete question and stop.\n"
+"3. **Writes are unavailable.** If the user asks for a change, say plainly the agent is read-only and what they would need instead. Don't attempt a write.\n"
 "\n"
-"# Tool errors\n"
+"# Time\n"
 "\n"
-"- Fix bad inputs and retry ONCE. On a second failure: explain the error in plain words, quote the failing call, stop. Do not loop.\n"
+"- `Date` in the runtime block is the user's local date. Use it directly on Date fields: `[('invoice_date', '>=', today)]`.\n"
+"- Datetime fields are stored UTC; the UI applies the user's tz on display. For \"today\" on a datetime field, build a UTC range covering 00:00 → 24:00 of the user's local day in the tz from the runtime block.\n"
 "\n"
-"# Efficiency\n"
+"# Multi-company\n"
 "\n"
-"- One or two tool calls are usually enough. Past five, stop and summarize what you have.\n"
-"- Unbounded searches are a mistake. Always domain + limit.\n"
-"- Don't re-fetch data already present in the conversation.\n"
+"- Searches are scoped to the active company by default. Pass `allowed_company_ids` in `context` to search across the companies the user can access (listed in the runtime block when more than one).\n"
+"\n"
+"# Loops & limits\n"
+"\n"
+"- Bad input → fix and retry ONCE. Second failure: explain in plain words, quote the failing call, stop. Don't loop.\n"
+"- Past five tool calls without progress: stop and summarize.\n"
+"- Always domain + limit on searches. Don't refetch data already in the conversation.\n"
+"\n"
+"# Documentation\n"
+"\n"
+"- For conceptual / \"how does X work\" questions, point at https://www.odoo.com/documentation/{{ odoo_series }}/. Cite the page; don't paste long quotes.\n"
 "\n"
 "# Stop conditions\n"
 "\n"
-"- After you've answered: stop.\n"
-"- After `ask_user`: stop and wait.\n"
-"- If the question requires a write and the user insists: explain the limitation, suggest using the General Assistant, stop.\n"
+"- Question answered → stop.\n"
+"- `ask_user` → stop and wait.\n"
+"- User insists on a write → explain the limitation, suggest the General Assistant, stop.\n"
 "        "
 msgstr ""
+"\n"
+"# Rôle\n"
+"\n"
+"Vous êtes un analyste Odoo en lecture seule. Examinez la base de données et présentez vos conclusions via l'ensemble d'outils en lecture seule ; vous ne pouvez pas écrire. Les informations d'exécution (version d'Odoo, date, utilisateur, société, sociétés accessibles) se trouvent dans le bloc `<runtime>` — fiez-vous-y directement, ne les reformulez pas et ne les recherchez pas.\n"
+"\n"
+"# Sortie\n"
+"\n"
+"- Répondez en {{ user.lang ||| en_US }} ; adoptez la langue de l'utilisateur s'il en change.\n"
+"- Soyez concis. Pas de remplissage, pas d'auto-narration, pas de « autre chose ? » final.\n"
+"- Markdown. L'interface affiche l'ensemble étendu complet — tableaux, listes de tâches, blocs de code, citations, texte barré, séparateurs. Utilisez-les lorsqu'ils améliorent la clarté. Tableaux pour les listes d'enregistrements : uniquement les colonnes demandées, ou 2 à 4 colonnes par défaut pertinentes.\n"
+"- Désignez les enregistrements par `model,id` ou `Nom affiché (model,id)`. Dates au format ISO `YYYY-MM-DD`. Devises issues de l'enregistrement — ne convertissez jamais.\n"
+"- N'inventez jamais d'ids, de noms de champs, de xmlids, de valeurs de sélection ni d'URL. Recherchez-les ou utilisez `ask_user`.\n"
+"\n"
+"# Outils\n"
+"\n"
+"1. **Lire d'abord.** `search_count`, `search_read`, `read_records`, `read_group`, `list_models`, `describe_model`. Passez toujours une liste `fields` explicite et une `limit`. Préférez `search_count` à `search_read` lorsqu'un simple nombre suffit.\n"
+"2. **Demander en cas d'ambiguïté.** Une valeur manque ? `ask_user` avec une question concrète, puis arrêtez-vous.\n"
+"3. **Les écritures sont indisponibles.** Si l'utilisateur demande une modification, indiquez clairement que l'agent est en lecture seule et ce dont il aurait besoin à la place. Ne tentez pas d'écriture.\n"
+"\n"
+"# Temps\n"
+"\n"
+"- `Date` dans le bloc runtime est la date locale de l'utilisateur. Utilisez-la directement sur les champs Date : `[('invoice_date', '>=', today)]`.\n"
+"- Les champs Datetime sont stockés en UTC ; l'interface applique le fuseau horaire de l'utilisateur à l'affichage. Pour « aujourd'hui » sur un champ datetime, construisez une plage UTC couvrant 00:00 → 24:00 du jour local de l'utilisateur dans le fuseau indiqué dans le bloc runtime.\n"
+"\n"
+"# Multi-sociétés\n"
+"\n"
+"- Les recherches sont limitées par défaut à la société active. Passez `allowed_company_ids` dans `context` pour rechercher dans les sociétés auxquelles l'utilisateur a accès (listées dans le bloc runtime lorsqu'il y en a plusieurs).\n"
+"\n"
+"# Boucles et limites\n"
+"\n"
+"- Entrée invalide → corrigez et réessayez UNE FOIS. Deuxième échec : expliquez en termes simples, citez l'appel en échec, arrêtez-vous. Ne bouclez pas.\n"
+"- Au-delà de cinq appels d'outils sans progrès : arrêtez-vous et résumez.\n"
+"- Toujours un domaine + une limite sur les recherches. Ne rechargez pas des données déjà présentes dans la conversation.\n"
+"\n"
+"# Documentation\n"
+"\n"
+"- Pour les questions conceptuelles / « comment fonctionne X », renvoyez vers https://www.odoo.com/documentation/{{ odoo_series }}/. Citez la page ; ne collez pas de longues citations.\n"
+"\n"
+"# Conditions d'arrêt\n"
+"\n"
+"- Question résolue → arrêtez-vous.\n"
+"- `ask_user` → arrêtez-vous et attendez.\n"
+"- L'utilisateur insiste pour une écriture → expliquez la limitation, suggérez l'Assistant général, arrêtez-vous.\n"
+"        "
+
+#. module: muk_ai
+#: model:muk_ai.agent,system_prompt:muk_ai.agent_general
+msgid ""
+"\n"
+"# Role\n"
+"\n"
+"You are an Odoo ERP assistant embedded in the backend. Answer questions and perform tasks by calling tools against this database. Never guess data that belongs in the database — look it up. Runtime facts (Odoo version, date, user, company, approval mode, accessible companies) are in the `<runtime>` block — trust them directly, don't restate or look them up.\n"
+"\n"
+"# Output\n"
+"\n"
+"- Reply in {{ user.lang ||| en_US }}; mirror the user's language if they switch.\n"
+"- Terse. No filler (\"Sure,\", \"Happy to,\", \"Let me…\"), no self-narration, no trailing \"anything else?\".\n"
+"- Markdown. The UI renders the full extended set — tables, task lists (`- [ ]` / `- [x]`), fenced code with language hint, blockquotes, strikethrough, inline `code`, rules. Use when they aid clarity, never for decoration. Tables for record listings: only the columns asked for, or 2–4 sensible defaults.\n"
+"- Refer to records as `model,id` (e.g. `res.partner,42`) or `Display Name (model,id)`. Dates ISO `YYYY-MM-DD`. Currencies from the record — never invent or convert.\n"
+"- Never fabricate ids, field names, xmlids, selection values, or URLs. Look them up or call `ask_user`.\n"
+"\n"
+"# Tools — priority\n"
+"\n"
+"1. **Read first.** `search_read`, `read_records`, `search_count`, `read_group`. Always pass an explicit `fields` list and a `limit`. Prefer `search_count` over `search_read` when only a number is needed.\n"
+"2. **Navigate on request.** `open_record` / `open_view` / `open_action` are TERMINATING — after one succeeds, one short sentence describing what you opened, then stop. To find the action behind a menu the user named, walk `ir.ui.menu` → `ir.actions.act_window`. To preset view state, pass `pivot_row_groupby` / `pivot_measures` / `graph_mode` / `graph_groupbys` / `graph_measure` / `search_default_<filter>` via `additional_context`.\n"
+"3. **Ask when ambiguous.** Missing a value (which record, period, field)? `ask_user` with a concrete question and stop. Don't guess. If an answer points at an id that doesn't exist, say so and ask again — never silently substitute.\n"
+"4. **Write last, minimally.** `create_records` / `update_records` / `delete_records` / `call_method` only on explicit ask. Smallest write that answers; no bundled extras. Don't chain writes speculatively — do one, confirm, then proceed.\n"
+"\n"
+"# Time\n"
+"\n"
+"- `Date` in the runtime block is the user's local date. Use it directly on Date fields: `[('date_deadline', '=', today)]`.\n"
+"- Datetime fields (`create_date`, `start`, `stop`, `date`, …) are stored UTC; the UI applies the user's tz only on display. For \"today\" on a datetime field, build a UTC range covering 00:00 → 24:00 of the user's local day in the tz from the runtime block. Off-by-one timezone errors silently miss or double-count records.\n"
+"\n"
+"# Multi-company\n"
+"\n"
+"- Searches are scoped to the active company by default. To search across the companies the user can access (listed in the runtime block when more than one), pass `allowed_company_ids` (list of ids) in `context`.\n"
+"\n"
+"# Writes — safety\n"
+"\n"
+"- Approval mode is in the runtime block. When `ask`, risky writes pause for the user — the gate is the source of truth. Never bypass; never ask the user to disable it.\n"
+"- Before a destructive call (`delete_records`, mass archive, `call_method` that unlinks), state in one sentence what will change and how many records.\n"
+"\n"
+"# Loops & limits\n"
+"\n"
+"- Bad input → fix and retry ONCE. Second failure: explain in plain words, quote the failing call, stop. Don't loop.\n"
+"- Past five tool calls without progress: stop and summarize what you have.\n"
+"- Always domain + limit on searches. Unbounded `search_read` is a mistake.\n"
+"- Don't refetch data already in the conversation.\n"
+"\n"
+"# Documentation\n"
+"\n"
+"- For conceptual / \"how does X work\" questions, point at https://www.odoo.com/documentation/{{ odoo_series }}/ — applications under `/applications/`, developer reference under `/developer/`. Cite the page; don't paste long quotes.\n"
+"\n"
+"# Stop conditions\n"
+"\n"
+"- Terminating tool succeeded → one sentence, then stop.\n"
+"- Question answered → stop.\n"
+"- `ask_user` → stop and wait for the answer.\n"
+"- Max-iteration guard would be next → stop and say what is missing.\n"
+"        "
+msgstr ""
+"\n"
+"# Rôle\n"
+"\n"
+"Vous êtes un assistant ERP Odoo intégré au backend. Répondez aux questions et effectuez des tâches en appelant des outils sur cette base de données. Ne devinez jamais des données qui appartiennent à la base — recherchez-les. Les informations d'exécution (version d'Odoo, date, utilisateur, société, mode d'approbation, sociétés accessibles) se trouvent dans le bloc `<runtime>` — fiez-vous-y directement, ne les reformulez pas et ne les recherchez pas.\n"
+"\n"
+"# Sortie\n"
+"\n"
+"- Répondez en {{ user.lang ||| en_US }} ; adoptez la langue de l'utilisateur s'il en change.\n"
+"- Soyez concis. Pas de remplissage (« Bien sûr, », « Avec plaisir, », « Laissez-moi… »), pas d'auto-narration, pas de « autre chose ? » final.\n"
+"- Markdown. L'interface affiche l'ensemble étendu complet — tableaux, listes de tâches (`- [ ]` / `- [x]`), blocs de code avec indication de langage, citations, texte barré, `code` en ligne, séparateurs. Utilisez-les lorsqu'ils améliorent la clarté, jamais pour décorer. Tableaux pour les listes d'enregistrements : uniquement les colonnes demandées, ou 2 à 4 colonnes par défaut pertinentes.\n"
+"- Désignez les enregistrements par `model,id` (p. ex. `res.partner,42`) ou `Nom affiché (model,id)`. Dates au format ISO `YYYY-MM-DD`. Devises issues de l'enregistrement — n'inventez jamais et ne convertissez jamais.\n"
+"- N'inventez jamais d'ids, de noms de champs, de xmlids, de valeurs de sélection ni d'URL. Recherchez-les ou appelez `ask_user`.\n"
+"\n"
+"# Outils — priorité\n"
+"\n"
+"1. **Lire d'abord.** `search_read`, `read_records`, `search_count`, `read_group`. Passez toujours une liste `fields` explicite et une `limit`. Préférez `search_count` à `search_read` lorsqu'un simple nombre suffit.\n"
+"2. **Naviguer sur demande.** `open_record` / `open_view` / `open_action` sont TERMINAUX — après un succès, une courte phrase décrivant ce que vous avez ouvert, puis arrêtez-vous. Pour trouver l'action derrière un menu nommé par l'utilisateur, parcourez `ir.ui.menu` → `ir.actions.act_window`. Pour prérégler l'état de la vue, passez `pivot_row_groupby` / `pivot_measures` / `graph_mode` / `graph_groupbys` / `graph_measure` / `search_default_<filter>` via `additional_context`.\n"
+"3. **Demander en cas d'ambiguïté.** Une valeur manque (quel enregistrement, quelle période, quel champ) ? `ask_user` avec une question concrète, puis arrêtez-vous. Ne devinez pas. Si une réponse pointe vers un id qui n'existe pas, dites-le et redemandez — ne substituez jamais silencieusement.\n"
+"4. **Écrire en dernier, au minimum.** `create_records` / `update_records` / `delete_records` / `call_method` uniquement sur demande explicite. La plus petite écriture qui répond ; pas d'extras groupés. N'enchaînez pas les écritures de manière spéculative — faites-en une, confirmez, puis continuez.\n"
+"\n"
+"# Temps\n"
+"\n"
+"- `Date` dans le bloc runtime est la date locale de l'utilisateur. Utilisez-la directement sur les champs Date : `[('date_deadline', '=', today)]`.\n"
+"- Les champs Datetime (`create_date`, `start`, `stop`, `date`, …) sont stockés en UTC ; l'interface n'applique le fuseau horaire de l'utilisateur qu'à l'affichage. Pour « aujourd'hui » sur un champ datetime, construisez une plage UTC couvrant 00:00 → 24:00 du jour local de l'utilisateur dans le fuseau indiqué dans le bloc runtime. Les erreurs de fuseau horaire d'un jour font manquer ou compter en double des enregistrements en silence.\n"
+"\n"
+"# Multi-sociétés\n"
+"\n"
+"- Les recherches sont limitées par défaut à la société active. Pour rechercher dans les sociétés auxquelles l'utilisateur a accès (listées dans le bloc runtime lorsqu'il y en a plusieurs), passez `allowed_company_ids` (liste d'ids) dans `context`.\n"
+"\n"
+"# Écritures — sécurité\n"
+"\n"
+"- Le mode d'approbation figure dans le bloc runtime. En mode `ask`, les écritures risquées sont mises en pause pour l'utilisateur — cette barrière fait foi. Ne la contournez jamais ; ne demandez jamais à l'utilisateur de la désactiver.\n"
+"- Avant un appel destructif (`delete_records`, archivage en masse, `call_method` qui supprime), indiquez en une phrase ce qui va changer et combien d'enregistrements sont concernés.\n"
+"\n"
+"# Boucles et limites\n"
+"\n"
+"- Entrée invalide → corrigez et réessayez UNE FOIS. Deuxième échec : expliquez en termes simples, citez l'appel en échec, arrêtez-vous. Ne bouclez pas.\n"
+"- Au-delà de cinq appels d'outils sans progrès : arrêtez-vous et résumez ce que vous avez.\n"
+"- Toujours un domaine + une limite sur les recherches. Un `search_read` sans limite est une erreur.\n"
+"- Ne rechargez pas des données déjà présentes dans la conversation.\n"
+"\n"
+"# Documentation\n"
+"\n"
+"- Pour les questions conceptuelles / « comment fonctionne X », renvoyez vers https://www.odoo.com/documentation/{{ odoo_series }}/ — applications sous `/applications/`, référence développeur sous `/developer/`. Citez la page ; ne collez pas de longues citations.\n"
+"\n"
+"# Conditions d'arrêt\n"
+"\n"
+"- Outil terminal réussi → une phrase, puis arrêtez-vous.\n"
+"- Question résolue → arrêtez-vous.\n"
+"- `ask_user` → arrêtez-vous et attendez la réponse.\n"
+"- La garde d'itérations max serait la prochaine étape → arrêtez-vous et dites ce qui manque.\n"
+"        "
 
 #. module: muk_ai
 #: model:muk_ai.agent.suggestion,prompt:muk_ai.agent_read_only_suggestion_overdue
@@ -76,6 +237,165 @@ msgid ""
 "- Grand total amount due across all overdue invoices.\n"
 "        "
 msgstr ""
+"\n"
+"Listez toutes les factures clients ouvertes en retard.\n"
+"\n"
+"Périmètre : `account.move`, type `out_invoice`, état `posted`, `payment_state` différent de `paid`, `invoice_date_due` dans le passé.\n"
+"\n"
+"Colonnes du tableau :\n"
+"- Client sous la forme `Nom affiché (res.partner,id)`\n"
+"- Numéro de facture\n"
+"- Date d'échéance (ISO)\n"
+"- Montant dû (résiduel)\n"
+"- Jours de retard\n"
+"\n"
+"Triez par jours de retard, les plus en retard d'abord. Après le tableau :\n"
+"- Tranches d'ancienneté (nombre et somme du montant dû) : `<30`, `30–60`, `60–90`, `90+` jours.\n"
+"- Total général du montant dû sur l'ensemble des factures en retard.\n"
+"        "
+
+#. module: muk_ai
+#: model:muk_ai.agent.suggestion,prompt:muk_ai.agent_general_suggestion_summarize
+msgid ""
+"\n"
+"My morning sales briefing — what's my pipeline status and who should I call today?\n"
+"\n"
+"Scope: open opportunities I own (`crm.lead` where I am the salesperson, not won/lost). Reference each opportunity as `Customer Name (crm.lead,id)` so I can click through.\n"
+"\n"
+"1. **Status line** — one sentence with: total open opportunities, total expected revenue (sum), weighted pipeline (sum of `expected_revenue * probability / 100`), and how that compares to last month.\n"
+"\n"
+"2. **Call list today** — the top 5 deals to contact first, ranked. For each: customer, amount, stage, and **why now** in one sentence. Priority order:\n"
+"   - **Closing this week** — expected close in the next 7 days, still open.\n"
+"   - **Customer waiting** — the last message on the opp (`mail.message` on `crm.lead`, ignore auto/system) is from the customer, not from me.\n"
+"   - **Slipping** — expected close date already past, still open.\n"
+"   - **Hot but quiet** — amount in the top 20% of my pipeline, no activity in 7+ days.\n"
+"\n"
+"3. **Risk watch** — opportunities where the close date is in the past AND there has been no activity in 14+ days: customer, amount, days slipped, last activity type. These are at high risk of being lost.\n"
+"\n"
+"4. **Pipeline by stage** — compact 1-line-per-stage table: stage name, count, sum of expected revenue.\n"
+"\n"
+"Keep each section tight. If a section is empty, say so in a single line and move on.\n"
+"        "
+msgstr ""
+"\n"
+"Mon briefing commercial du matin — quel est l'état de mon pipeline et qui dois-je appeler aujourd'hui ?\n"
+"\n"
+"Périmètre : opportunités ouvertes dont je suis responsable (`crm.lead` où je suis le vendeur, ni gagnées ni perdues). Référencez chaque opportunité sous la forme `Nom du client (crm.lead,id)` pour que je puisse cliquer dessus.\n"
+"\n"
+"1. **Ligne d'état** — une phrase avec : nombre total d'opportunités ouvertes, revenu total attendu (somme), pipeline pondéré (somme de `expected_revenue * probability / 100`), et la comparaison avec le mois dernier.\n"
+"\n"
+"2. **Liste d'appels du jour** — les 5 meilleures affaires à contacter en premier, classées. Pour chacune : client, montant, étape, et **pourquoi maintenant** en une phrase. Ordre de priorité :\n"
+"   - **Clôture cette semaine** — clôture prévue dans les 7 prochains jours, encore ouverte.\n"
+"   - **Client en attente** — le dernier message sur l'opportunité (`mail.message` sur `crm.lead`, ignorer les messages auto/système) vient du client, pas de moi.\n"
+"   - **En dérapage** — date de clôture prévue déjà dépassée, encore ouverte.\n"
+"   - **Chaude mais silencieuse** — montant dans le top 20 % de mon pipeline, aucune activité depuis 7 jours ou plus.\n"
+"\n"
+"3. **Surveillance des risques** — opportunités dont la date de clôture est dépassée ET sans activité depuis 14 jours ou plus : client, montant, jours de dérapage, type de la dernière activité. Elles présentent un risque élevé d'être perdues.\n"
+"\n"
+"4. **Pipeline par étape** — tableau compact d'une ligne par étape : nom de l'étape, nombre, somme du revenu attendu.\n"
+"\n"
+"Gardez chaque section concise. Si une section est vide, dites-le en une seule ligne et passez à la suite.\n"
+"        "
+
+#. module: muk_ai
+#: model:muk_ai.agent.suggestion,prompt:muk_ai.agent_general_suggestion_draft
+msgid ""
+"\n"
+"My project task triage — what's overdue, what's due this week, what's blocked.\n"
+"\n"
+"Scope: `project.task` assigned to me (`user_ids` contains the current user), excluding closed stages (`stage_id.fold = False` where available, else skip stages named Done / Cancelled / similar).\n"
+"\n"
+"1. **Overdue** — `date_deadline` in the past.\n"
+"   - Read all matching tasks. If there are more than 5, show only the first 5 in the table but still analyze the full list to pick the most urgent.\n"
+"   - Table columns: task as `Task Name (project.task,id)`, project, deadline (ISO), days overdue, stage, priority.\n"
+"   - Sort by days overdue descending, then priority.\n"
+"   - If truncated, add `(+N more)` below the table.\n"
+"   - After the table, pick **the single most urgent** from the full list and explain in one sentence why.\n"
+"\n"
+"2. **Due this week** — `date_deadline` in the next 7 days, excluding overdue. Same columns, sort by deadline ascending.\n"
+"\n"
+"3. **No deadline set** — my open tasks with no `date_deadline`. Top 10 by priority then most recently updated. These need scheduling.\n"
+"\n"
+"4. **Waiting or blocked** — tasks where either:\n"
+"   - the last message (`mail.message`) on the task is from someone else asking for input, or\n"
+"   - the task has unfinished dependencies (`depend_on_ids` not all in a closed stage).\n"
+"   For each: task, who's waiting or what's blocking, days waiting.\n"
+"\n"
+"End with a footer line: `X open · Y overdue · Z due this week · W unscheduled`.\n"
+"        "
+msgstr ""
+"\n"
+"Mon triage des tâches de projet — ce qui est en retard, ce qui est dû cette semaine, ce qui est bloqué.\n"
+"\n"
+"Périmètre : `project.task` qui me sont assignées (`user_ids` contient l'utilisateur actuel), en excluant les étapes clôturées (`stage_id.fold = False` si disponible, sinon ignorer les étapes nommées Terminé / Annulé / similaires).\n"
+"\n"
+"1. **En retard** — `date_deadline` dans le passé.\n"
+"   - Lisez toutes les tâches correspondantes. S'il y en a plus de 5, n'affichez que les 5 premières dans le tableau mais analysez quand même la liste complète pour choisir la plus urgente.\n"
+"   - Colonnes du tableau : tâche sous la forme `Nom de la tâche (project.task,id)`, projet, échéance (ISO), jours de retard, étape, priorité.\n"
+"   - Triez par jours de retard décroissants, puis par priorité.\n"
+"   - En cas de troncature, ajoutez `(+N de plus)` sous le tableau.\n"
+"   - Après le tableau, choisissez **la tâche la plus urgente** de la liste complète et expliquez en une phrase pourquoi.\n"
+"\n"
+"2. **Dû cette semaine** — `date_deadline` dans les 7 prochains jours, hors retards. Mêmes colonnes, tri par échéance croissante.\n"
+"\n"
+"3. **Sans échéance** — mes tâches ouvertes sans `date_deadline`. Top 10 par priorité puis par mise à jour la plus récente. Elles doivent être planifiées.\n"
+"\n"
+"4. **En attente ou bloquées** — tâches où soit :\n"
+"   - le dernier message (`mail.message`) sur la tâche vient de quelqu'un d'autre demandant une contribution, soit\n"
+"   - la tâche a des dépendances non terminées (`depend_on_ids` pas toutes dans une étape clôturée).\n"
+"   Pour chacune : tâche, qui attend ou ce qui bloque, jours d'attente.\n"
+"\n"
+"Terminez par une ligne de pied de page : `X ouvertes · Y en retard · Z dues cette semaine · W non planifiées`.\n"
+"        "
+
+#. module: muk_ai
+#: model:muk_ai.agent.suggestion,prompt:muk_ai.agent_general_suggestion_sales
+msgid ""
+"\n"
+"Sales figures report — snapshot across the key periods.\n"
+"\n"
+"Scope: posted customer invoices (`account.move`, type `out_invoice`, state `posted`); subtract matching credit notes (`out_refund`). Use the company default currency; do not convert.\n"
+"\n"
+"1. **Headline** (tax-excluded totals). For each period show: total invoiced, number of invoices, average invoice value.\n"
+"   - Today\n"
+"   - Week-to-date (Monday → today)\n"
+"   - Month-to-date\n"
+"   - Quarter-to-date\n"
+"   - Year-to-date\n"
+"\n"
+"2. **Month-over-month** — current MTD vs the same day-of-month last month (e.g. if today is the 12th, compare against the 1st–12th of last month). Show % change on revenue.\n"
+"\n"
+"3. **Top 5 customers this month** — customer as `Display Name (res.partner,id)`, total invoiced, invoice count. Sort by invoiced descending.\n"
+"\n"
+"4. **Top 5 products this month** — invoice lines grouped by product: product, quantity sold, revenue. Sort by revenue descending.\n"
+"\n"
+"5. **By salesperson this month** — salesperson, invoice count, revenue. Sort by revenue descending.\n"
+"\n"
+"End with a one-line observation if something looks off (e.g. \"MTD is trending ~X% below last month's pace at this point\" or \"no invoices posted yet this week\").\n"
+"        "
+msgstr ""
+"\n"
+"Rapport des chiffres de vente — instantané sur les périodes clés.\n"
+"\n"
+"Périmètre : factures clients comptabilisées (`account.move`, type `out_invoice`, état `posted`) ; soustrayez les avoirs correspondants (`out_refund`). Utilisez la devise par défaut de la société ; ne convertissez pas.\n"
+"\n"
+"1. **Chiffres clés** (totaux hors taxes). Pour chaque période, affichez : total facturé, nombre de factures, valeur moyenne par facture.\n"
+"   - Aujourd'hui\n"
+"   - Semaine à date (lundi → aujourd'hui)\n"
+"   - Mois à date\n"
+"   - Trimestre à date\n"
+"   - Année à date\n"
+"\n"
+"2. **Mois sur mois** — mois à date actuel vs le même jour du mois précédent (p. ex. si nous sommes le 12, comparez avec le 1er–12 du mois dernier). Affichez la variation en % du chiffre d'affaires.\n"
+"\n"
+"3. **Top 5 clients ce mois-ci** — client sous la forme `Nom affiché (res.partner,id)`, total facturé, nombre de factures. Tri par montant facturé décroissant.\n"
+"\n"
+"4. **Top 5 produits ce mois-ci** — lignes de facture regroupées par produit : produit, quantité vendue, chiffre d'affaires. Tri par chiffre d'affaires décroissant.\n"
+"\n"
+"5. **Par vendeur ce mois-ci** — vendeur, nombre de factures, chiffre d'affaires. Tri par chiffre d'affaires décroissant.\n"
+"\n"
+"Terminez par une observation d'une ligne si quelque chose semble anormal (p. ex. « le mois à date est environ X % en dessous du rythme du mois dernier à ce stade » ou « aucune facture comptabilisée cette semaine »).\n"
+"        "
 
 #. module: muk_ai
 #: model:muk_ai.agent.suggestion,prompt:muk_ai.agent_read_only_suggestion_pipeline
@@ -94,6 +414,60 @@ msgid ""
 "End with two totals on one line: total open opportunities and total expected revenue.\n"
 "    "
 msgstr ""
+"\n"
+"Résumez le pipeline CRM ouvert (tous responsables, ni gagné ni perdu).\n"
+"\n"
+"Pour chaque étape dans l'ordre du pipeline :\n"
+"- Nom de l'étape, nombre d'opportunités, somme du revenu attendu.\n"
+"- Top 3 par revenu attendu : client, montant, vendeur, date de clôture prévue.\n"
+"\n"
+"Ensuite :\n"
+"- **En dérapage** : opportunités ouvertes dont la date de clôture prévue est déjà dépassée — client, montant, vendeur, jours de dérapage.\n"
+"- **Dormantes** : opportunités ouvertes sans activité au cours des 14 derniers jours — client, montant, vendeur, jours depuis la dernière activité.\n"
+"\n"
+"Terminez par deux totaux sur une ligne : nombre total d'opportunités ouvertes et revenu total attendu.\n"
+"    "
+
+#. module: muk_ai
+#: model:muk_ai.agent.suggestion,prompt:muk_ai.agent_general_suggestion_explore
+msgid ""
+"\n"
+"Today's overview — focused triage for right now.\n"
+"\n"
+"1. **Activities overdue or due today** (assigned to me)\n"
+"   - Read **all** matching activities. If there are more than 5, show only the first 5 in the table but still analyze the full list to pick the most urgent.\n"
+"   - Table columns: activity type, deadline (ISO), record as `Display Name (model,id)`, days overdue (0 = today). Sort by days overdue descending.\n"
+"   - If truncated, add `(+N more)` below the table.\n"
+"   - After the table, pick **the single most urgent** from the full list and explain in one sentence why, with the record reference.\n"
+"\n"
+"2. **Inbox highlights** — summarize my unread Discuss messages. **Do not mark anything as read** (no calls to `set_message_done`, `mark_as_read`, `channel_fetched`, or similar).\n"
+"   - Surface up to 5 of the most relevant: @mentions of me first, then DMs with a clear question or decision request, then channel threads that look unresolved.\n"
+"   - Per item: sender, one-line gist, and a reference to the record the message is on as `Display Name (model,id)` so I can jump to it.\n"
+"   - End with a one-liner: total unread across mentions, DMs, and channels.\n"
+"\n"
+"3. **Calendar today** — short list of today's events I attend: time range, title, attendees count.\n"
+"\n"
+"Keep it compact: small Markdown tables, no filler. Skip any section with zero results in a single line.\n"
+"        "
+msgstr ""
+"\n"
+"Aperçu du jour — triage ciblé pour maintenant.\n"
+"\n"
+"1. **Activités en retard ou dues aujourd'hui** (qui me sont assignées)\n"
+"   - Lisez **toutes** les activités correspondantes. S'il y en a plus de 5, n'affichez que les 5 premières dans le tableau mais analysez quand même la liste complète pour choisir la plus urgente.\n"
+"   - Colonnes du tableau : type d'activité, échéance (ISO), enregistrement sous la forme `Nom affiché (model,id)`, jours de retard (0 = aujourd'hui). Tri par jours de retard décroissants.\n"
+"   - En cas de troncature, ajoutez `(+N de plus)` sous le tableau.\n"
+"   - Après le tableau, choisissez **l'activité la plus urgente** de la liste complète et expliquez en une phrase pourquoi, avec la référence de l'enregistrement.\n"
+"\n"
+"2. **Points saillants de la boîte de réception** — résumez mes messages Discuss non lus. **Ne marquez rien comme lu** (aucun appel à `set_message_done`, `mark_as_read`, `channel_fetched` ou similaire).\n"
+"   - Faites ressortir jusqu'à 5 des plus pertinents : d'abord les @mentions me concernant, puis les messages directs avec une question claire ou une demande de décision, puis les fils de canaux qui semblent non résolus.\n"
+"   - Par élément : expéditeur, l'essentiel en une ligne, et une référence à l'enregistrement porteur du message sous la forme `Nom affiché (model,id)` pour que je puisse y accéder.\n"
+"   - Terminez par une ligne : total des non-lus entre mentions, messages directs et canaux.\n"
+"\n"
+"3. **Agenda du jour** — courte liste des événements du jour auxquels je participe : plage horaire, titre, nombre de participants.\n"
+"\n"
+"Restez compact : petits tableaux Markdown, pas de remplissage. Expédiez toute section sans résultat en une seule ligne.\n"
+"        "
 
 #. module: muk_ai
 #. odoo-python
@@ -106,6 +480,12 @@ msgstr "%(field)s restauré depuis la révision %(index)d."
 #: code:addons/muk_ai/providers/base.py:0
 msgid "%(provider)s API key is not configured."
 msgstr "La clé API %(provider)s n'est pas configurée."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+msgid "%s (fork)"
+msgstr "%s (copie)"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -216,9 +596,39 @@ msgid "<i class=\"fa fa-image me-1\" title=\"Image Generation\" role=\"img\"/>Im
 msgstr "<i class=\"fa fa-image me-1\" title=\"Génération d'images\" role=\"img\"/>Image"
 
 #. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "<span class=\"col-auto ms-2\">in Days</span>"
+msgstr "<span class=\"col-auto ms-2\">en jours</span>"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "<span class=\"col-auto ms-2\">in Hours</span>"
+msgstr "<span class=\"col-auto ms-2\">en heures</span>"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "<span class=\"col-auto ms-2\">in Seconds</span>"
+msgstr "<span class=\"col-auto ms-2\">en secondes</span>"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "<span class=\"col-auto ms-2\">per Minute</span>"
+msgstr "<span class=\"col-auto ms-2\">par minute</span>"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "<span class=\"col-auto ms-2\">per Slice</span>"
+msgstr "<span class=\"col-auto ms-2\">par tranche</span>"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "<span class=\"col-auto ms-2\">per Turn</span>"
+msgstr "<span class=\"col-auto ms-2\">par tour</span>"
+
+#. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_muk_ai_provider_form
-msgid "<span>/ minute</span>"
-msgstr "<span>/ minute</span>"
+msgid "<span class=\"text-nowrap\">/ Minute</span>"
+msgstr "<span class=\"text-nowrap\">/ minute</span>"
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_muk_ai_provider_form
@@ -287,6 +697,21 @@ msgid "A provider with this name already exists."
 msgstr "Un fournisseur portant ce nom existe déjà."
 
 #. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "A user turn exceeding this across all slices stops with an error."
+msgstr ""
+"Un tour utilisateur dépassant cette valeur sur l'ensemble des tranches "
+"s'arrête avec une erreur."
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid ""
+"A worker slice exceeding this is checkpointed and resumed by a fresh worker."
+msgstr ""
+"Une tranche de worker dépassant cette valeur est sauvegardée par point de "
+"contrôle puis reprise par un nouveau worker."
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/core/commands/command_setup.js:0
 msgid "AI"
@@ -327,6 +752,11 @@ msgstr "Modèle IA"
 #: model:ir.actions.act_window,name:muk_ai.action_muk_ai_model
 msgid "AI Models"
 msgstr "Modèles IA"
+
+#. module: muk_ai
+#: model:ir.model,name:muk_ai.model_muk_ai_prompt_mixin
+msgid "AI Prompt Renderer"
+msgstr "Moteur de rendu des prompts IA"
 
 #. module: muk_ai
 #. odoo-python
@@ -440,11 +870,6 @@ msgid "API Key"
 msgstr "Clé API"
 
 #. module: muk_ai
-#: model:ir.module.category,description:muk_ai.module_category_muk_ai
-msgid "Access to MuK AI features."
-msgstr "Accès aux fonctionnalités MuK AI."
-
-#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/view_context_format.js:0
 msgid "Action"
@@ -481,12 +906,6 @@ msgstr "État de l'activité"
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__activity_type_icon
 msgid "Activity Type Icon"
 msgstr "Icône du type d'activité"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/webclient/settings/form_label_addon.xml:0
-msgid "Add-on"
-msgstr "Module complémentaire"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent_suggestion__agent_id
@@ -529,6 +948,11 @@ msgstr "Autoriser pour la session"
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
 msgid "Allow for session"
 msgstr "Autoriser pour la session"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Annotate Messages"
+msgstr "Annoter les messages"
 
 #. module: muk_ai
 #: model:ir.actions.act_window,name:muk_ai.action_ai_approval
@@ -578,12 +1002,6 @@ msgstr "Signatures approuvées"
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_approval__decision__auto_approved
 msgid "Approved by Rule"
 msgstr "Approuvé par règle"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/views/fields/module_link/module_link.js:0
-msgid "Apps store URL override"
-msgstr "Remplacement de l'URL de l'Apps Store"
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_kanban
@@ -706,6 +1124,13 @@ msgid "Attachments"
 msgstr "Pièces jointes"
 
 #. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Audit logs older than this period are automatically deleted."
+msgstr ""
+"Les journaux d'audit antérieurs à cette période sont automatiquement "
+"supprimés."
+
+#. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_provider__api_key
 msgid "Authentication token for this provider."
 msgstr "Jeton d'authentification pour ce fournisseur."
@@ -739,6 +1164,13 @@ msgstr "Variables disponibles"
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
 msgid "Behavior"
 msgstr "Comportement"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+msgid "Branch — open a new session with the history up to this message"
+msgstr ""
+"Brancher — ouvrir une nouvelle session avec l'historique jusqu'à ce message"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -807,8 +1239,30 @@ msgstr ""
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+msgid "Cannot fork while the session is running."
+msgstr ""
+"Impossible de dupliquer pendant que la session est en cours d'exécution."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
 msgid "Cannot regenerate while the session is running or waiting."
 msgstr "Impossible de régénérer pendant que la session s'exécute ou attend."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+msgid "Cannot rewind while the session is running."
+msgstr ""
+"Impossible de revenir en arrière pendant que la session est en cours "
+"d'exécution."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+msgid "Cannot rewind while the session is waiting for input."
+msgstr ""
+"Impossible de revenir en arrière pendant que la session attend une saisie."
 
 #. module: muk_ai
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_mcp_log__source__chat
@@ -847,8 +1301,8 @@ msgstr "Effacer"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
-msgid "Clear conversation"
-msgstr "Effacer la conversation"
+msgid "Clear context"
+msgstr "Effacer le contexte"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__cleared_at
@@ -860,6 +1314,13 @@ msgstr "Effacé le"
 #: code:addons/muk_ai/static/src/chat/session/view_context_format.js:0
 msgid "Click to open · /unpin to clear"
 msgstr "Cliquer pour ouvrir · /unpin pour effacer"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+msgid "Client action call id does not match a pending action."
+msgstr ""
+"L'id d'appel de l'action client ne correspond à aucune action en attente."
 
 #. module: muk_ai
 #. odoo-javascript
@@ -895,8 +1356,48 @@ msgstr "Compactage"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
-msgid "Compacting…"
-msgstr "Compactage en cours…"
+msgid "Compacting in background — message will queue…"
+msgstr "Compactage en arrière-plan — le message sera mis en file d'attente…"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+msgid "Compaction boundary"
+msgstr "Limite de compactage"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+msgid "Compaction cancelled"
+msgstr "Compactage annulé"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+msgid "Compaction cancelled by user."
+msgstr "Compactage annulé par l'utilisateur."
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+msgid "Compaction failed"
+msgstr "Échec du compactage"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+msgid ""
+"Compaction failed (%(error)s) — dropped %(dropped)s oldest message(s) "
+"without summary as a fallback."
+msgstr ""
+"Échec du compactage (%(error)s) — %(dropped)s message(s) les plus anciens "
+"supprimés sans résumé, en solution de repli."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+msgid "Compaction skipped: provider returned no summary."
+msgstr "Compactage ignoré : le fournisseur n'a renvoyé aucun résumé."
 
 #. module: muk_ai
 #: model:ir.model,name:muk_ai.model_res_company
@@ -920,6 +1421,11 @@ msgid "Confirmation required"
 msgstr "Confirmation requise"
 
 #. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Connect AI"
+msgstr "Connecter l'IA"
+
+#. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/provider.py:0
 msgid "Connection to %(provider)s succeeded."
@@ -941,6 +1447,18 @@ msgstr "Fenêtre de contexte"
 #: code:addons/muk_ai/models/model.py:0
 msgid "Context Window must be a positive integer."
 msgstr "La fenêtre de contexte doit être un entier positif."
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+msgid "Context boundary"
+msgstr "Limite de contexte"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+msgid "Context cleared."
+msgstr "Contexte effacé."
 
 #. module: muk_ai
 #. odoo-javascript
@@ -968,18 +1486,6 @@ msgid "Conversation Events"
 msgstr "Événements de conversation"
 
 #. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/models/session.py:0
-msgid "Conversation cleared."
-msgstr "Conversation effacée."
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
-msgid "Conversation compacted."
-msgstr "Conversation compactée."
-
-#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
 #: code:addons/muk_ai/static/src/views/fields/session_events/session_events.js:0
@@ -998,6 +1504,11 @@ msgstr "Échec de la copie"
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
 msgid "Copy message"
 msgstr "Copier le message"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Cost Limit"
+msgstr "Limite de coût"
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_model__cached_rate
@@ -1080,6 +1591,31 @@ msgid "Cumulative USD spent on output tokens for this session."
 msgstr "USD cumulé dépensé en tokens de sortie pour cette session."
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_session__turn_cost_spent
+msgid ""
+"Cumulative amount spent on the current user turn across cron slices, in the "
+"price currency of the model. Reset to zero on each new user turn. When it "
+"reaches the per-turn cost limit (muk_ai.turn_cost_limit) the turn stops with"
+" an error."
+msgstr ""
+"Montant cumulé dépensé pour le tour utilisateur en cours sur l'ensemble des "
+"tranches cron, dans la devise de tarification du modèle. Remis à zéro à "
+"chaque nouveau tour utilisateur. Lorsqu'il atteint la limite de coût par "
+"tour (muk_ai.turn_cost_limit), le tour s'arrête avec une erreur."
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_session__turn_wallclock_spent
+msgid ""
+"Cumulative compute seconds spent on the current user turn across cron "
+"slices. Reset to zero on each new user turn. When it reaches the per-turn "
+"wallclock budget the turn stops with an error."
+msgstr ""
+"Secondes de calcul cumulées consommées pour le tour utilisateur en cours sur"
+" l'ensemble des tranches cron. Remises à zéro à chaque nouveau tour "
+"utilisateur. Lorsqu'elles atteignent le budget de temps réel par tour, le "
+"tour s'arrête avec une erreur."
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_model__currency
 msgid "Currency"
 msgstr "Devise"
@@ -1140,8 +1676,15 @@ msgstr "Fournisseur par défaut"
 
 #. module: muk_ai
 #: model:muk_ai.agent,description:muk_ai.agent_general
-msgid "Default preset with full tool access."
+msgid "Default agent with full tool access."
 msgstr "Préréglage par défaut avec accès complet aux outils."
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Default rate limit for new API keys. Set to 0 to disable."
+msgstr ""
+"Limite de débit par défaut pour les nouvelles clés API. Définir à 0 pour "
+"désactiver."
 
 #. module: muk_ai
 #. odoo-javascript
@@ -1176,6 +1719,7 @@ msgstr "Description"
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent_suggestion__display_name
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_approval__display_name
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_model__display_name
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_prompt_mixin__display_name
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_provider__display_name
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_revision_mixin__display_name
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__display_name
@@ -1187,7 +1731,7 @@ msgstr "Description"
 #: model:ir.model.fields,field_description:muk_ai.field_res_company__display_name
 #: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__display_name
 msgid "Display Name"
-msgstr "Nom affiché"
+msgstr "Nom d'affichage"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -1258,6 +1802,12 @@ msgstr "Erreur :"
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__essential_tool_names
 msgid "Essential Tools"
 msgstr "Outils essentiels"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+msgid "Event not found in this session."
+msgstr "Événement introuvable dans cette session."
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__event_ids
@@ -1334,6 +1884,12 @@ msgstr "Échec de l'exécution de l'action UI : %s"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+msgid "Failed to fork: %s"
+msgstr "Échec de la duplication : %s"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
 msgid "Failed to open view: %s"
 msgstr "Échec de l'ouverture de la vue : %s"
 
@@ -1358,8 +1914,20 @@ msgstr "Échec du rejet de l'outil : %s"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+msgid "Failed to rewind: %s"
+msgstr "Échec du retour en arrière : %s"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
 msgid "Failed to set approval mode: %s"
 msgstr "Échec de la définition du mode d'approbation : %s"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+msgid "Failed to stop compaction: %s"
+msgstr "Échec de l'arrêt du compactage : %s"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -1400,6 +1968,12 @@ msgstr "Icône Font Awesome, p. ex. fa-tasks"
 
 #. module: muk_ai
 #. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+msgid "Forked into a new session."
+msgstr "Dupliquée dans une nouvelle session."
+
+#. module: muk_ai
+#. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
 msgid "From"
 msgstr "De"
@@ -1408,12 +1982,6 @@ msgstr "De"
 #: model:muk_ai.agent,name:muk_ai.agent_general
 msgid "General Assistant"
 msgstr "Assistant général"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/views/fields/module_link/module_link.xml:0
-msgid "Get this add-on from the Odoo Apps store"
-msgstr "Obtenez ce module sur l'Odoo Apps store"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -1463,6 +2031,7 @@ msgstr "Comment puis-je vous aider aujourd'hui ?"
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent_suggestion__id
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_approval__id
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_model__id
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_prompt_mixin__id
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_provider__id
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_revision_mixin__id
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__id
@@ -1542,6 +2111,11 @@ msgid "Image Generation"
 msgstr "Génération d'images"
 
 #. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Inactive sessions are cleaned up after this period."
+msgstr "Les sessions inactives sont nettoyées après cette période."
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_model__input_rate
 msgid "Input $/M tokens"
 msgstr "Entrée $/M tokens"
@@ -1587,6 +2161,11 @@ msgstr "Charge utile de contexte de vue invalide (kind=%(kind)r)."
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__message_is_follower
 msgid "Is Follower"
 msgstr "Est abonné"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Iteration Limit"
+msgstr "Limite d'itérations"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -1713,6 +2292,11 @@ msgid "Loading…"
 msgstr "Chargement…"
 
 #. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Log Retention"
+msgstr "Conservation des journaux"
+
+#. module: muk_ai
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_mcp_log__source__mcp
 #: model:ir.ui.menu,name:muk_ai.menu_ai_mcp
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_mcp_log_search_inherit_muk_ai
@@ -1725,6 +2309,11 @@ msgid "MCP Audit Log"
 msgstr "Journal d'audit MCP"
 
 #. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "MCP Server"
+msgstr "Serveur MCP"
+
+#. module: muk_ai
 #: model:ir.model,name:muk_ai.model_muk_mcp_tool
 msgid "MCP Tool"
 msgstr "Outil MCP"
@@ -1735,9 +2324,14 @@ msgid "MCP Tool Mixin"
 msgstr "Mixin d'outil MCP"
 
 #. module: muk_ai
-#: model:res.groups,name:muk_ai.group_ai_manager
-msgid "Manager"
-msgstr "Gestionnaire"
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Mark chatter messages originating from MCP."
+msgstr "Marquer les messages du chatter provenant de MCP."
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__ai_max_iterations
+msgid "Max Iterations"
+msgstr "Itérations max"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_provider__max_tokens
@@ -1745,10 +2339,36 @@ msgid "Max Tokens"
 msgstr "Tokens max"
 
 #. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Max requests"
+msgstr "Requêtes max"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Max rounds"
+msgstr "Cycles max"
+
+#. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_provider__rate_limit
 msgid "Max sessions a single user may create per minute. 0 = disabled."
 msgstr ""
 "Sessions max qu'un seul utilisateur peut créer par minute. 0 = désactivé."
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Max spend"
+msgstr "Dépense max"
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__ai_turn_cost_limit
+msgid ""
+"Maximum amount a single user turn may spend, in the price currency of the "
+"model. The model is warned at 80% and the turn stops with an error when the "
+"limit is reached. Set 0 to disable."
+msgstr ""
+"Montant maximum qu'un seul tour utilisateur peut dépenser, dans la devise de"
+" tarification du modèle. Le modèle est averti à 80 % et le tour s'arrête "
+"avec une erreur lorsque la limite est atteinte. Définir à 0 pour désactiver."
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_provider__max_tokens
@@ -1765,6 +2385,43 @@ msgstr "Tokens d'entrée maximaux acceptés par le fournisseur pour ce modèle."
 #: code:addons/muk_ai/models/session.py:0
 msgid "Maximum iterations reached."
 msgstr "Nombre maximal d'itérations atteint."
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__ai_max_iterations
+msgid ""
+"Maximum number of LLM rounds per worker slice. The model is warned shortly "
+"before the limit so it can wrap up."
+msgstr ""
+"Nombre maximum de cycles LLM par tranche de worker. Le modèle est averti peu"
+" avant la limite afin de pouvoir conclure."
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__ai_slice_wallclock_seconds
+msgid ""
+"Maximum seconds a single worker slice may run before the turn is "
+"checkpointed and resumed by a fresh worker. Capped by the cron time limit."
+msgstr ""
+"Nombre maximum de secondes d'exécution d'une seule tranche de worker avant "
+"que le tour ne soit sauvegardé par point de contrôle et repris par un "
+"nouveau worker. Plafonné par la limite de temps du cron."
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid ""
+"Maximum spend per user turn in the model's price currency. Set to 0 to "
+"disable."
+msgstr ""
+"Dépense maximum par tour utilisateur dans la devise de tarification du "
+"modèle. Définir à 0 pour désactiver."
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__ai_turn_wallclock_seconds
+msgid ""
+"Maximum total seconds a single user turn may run across all worker slices "
+"before it stops with an error."
+msgstr ""
+"Nombre total maximum de secondes qu'un seul tour utilisateur peut durer sur "
+"l'ensemble des tranches de worker avant de s'arrêter avec une erreur."
 
 #. module: muk_ai
 #: model:ir.model,name:muk_ai.model_mail_message
@@ -1811,6 +2468,11 @@ msgid "Mine"
 msgstr "Les miens"
 
 #. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Mistral AI: Large, Medium, Magistral, Pixtral, Codestral."
+msgstr "Mistral AI : Large, Medium, Magistral, Pixtral, Codestral."
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/views/fields/json_code/json_code.js:0
 msgid "Mode"
@@ -1847,23 +2509,9 @@ msgstr "Modèles"
 
 #. module: muk_ai
 #. odoo-javascript
-#: code:addons/muk_ai/static/src/views/fields/module_link/module_link.js:0
-msgid "Module Link"
-msgstr "Lien du module"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/views/fields/module_link/module_link.js:0
-msgid "Module technical name"
-msgstr "Nom technique du module"
-
-#. module: muk_ai
-#. odoo-javascript
 #: code:addons/muk_ai/static/src/core/commands/command_setup.js:0
 #: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
-#: model:ir.module.category,name:muk_ai.module_category_muk_ai
 #: model:ir.ui.menu,name:muk_ai.menu_ai_root
-#: model:res.groups.privilege,name:muk_ai.res_groups_privilege_muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "MuK AI"
 msgstr "MuK AI"
@@ -1872,6 +2520,23 @@ msgstr "MuK AI"
 #: model:ir.actions.client,name:muk_ai.action_ai_chat
 msgid "MuK AI Chat"
 msgstr "MuK AI Chat"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_compat
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "MuK AI Compatible Providers"
+msgstr "Fournisseurs compatibles MuK AI"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "MuK AI Extensions"
+msgstr "Extensions MuK AI"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_mistral
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "MuK AI Mistral"
+msgstr "MuK AI Mistral"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_schedule
@@ -1892,82 +2557,47 @@ msgid "MuK AI Skills"
 msgstr "MuK AI Skills"
 
 #. module: muk_ai
-#: model:ir.actions.server,name:muk_ai.cron_log_daily_usage_ir_actions_server
-msgid "MuK AI: Log Daily Usage"
-msgstr "MuK AI : Journaliser l'utilisation quotidienne"
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_voice
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "MuK AI Voice"
+msgstr "MuK AI Voice"
 
 #. module: muk_ai
-#: model:ir.actions.server,name:muk_ai.action_run_pending_sessions_1
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_workflows
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "MuK AI Workflows"
+msgstr "MuK AI Workflows"
+
+#. module: muk_ai
+#: model:ir.actions.server,name:muk_ai.cron_run_pending_sessions_1_ir_actions_server
 msgid "MuK AI: Session Worker 1"
 msgstr "MuK AI : Worker de session 1"
 
 #. module: muk_ai
-#: model:ir.actions.server,name:muk_ai.action_run_pending_sessions_2
+#: model:ir.actions.server,name:muk_ai.cron_run_pending_sessions_2_ir_actions_server
 msgid "MuK AI: Session Worker 2"
 msgstr "MuK AI : Worker de session 2"
 
 #. module: muk_ai
-#: model:ir.actions.server,name:muk_ai.action_run_pending_sessions_3
+#: model:ir.actions.server,name:muk_ai.cron_run_pending_sessions_3_ir_actions_server
 msgid "MuK AI: Session Worker 3"
 msgstr "MuK AI : Worker de session 3"
 
 #. module: muk_ai
-#: model:ir.actions.server,name:muk_ai.action_run_pending_sessions_4
+#: model:ir.actions.server,name:muk_ai.cron_run_pending_sessions_4_ir_actions_server
 msgid "MuK AI: Session Worker 4"
 msgstr "MuK AI : Worker de session 4"
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_workflows
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Multi-step AI playbooks and stateful business processes."
+msgstr "Playbooks IA multi-étapes et processus métier avec état."
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__my_activity_date_deadline
 msgid "My Activity Deadline"
 msgstr "Date limite de mon activité"
-
-#. module: muk_ai
-#: model:muk_ai.agent.suggestion,prompt:muk_ai.agent_general_suggestion_summarize
-msgid ""
-"My morning sales briefing — what's my pipeline status and who should I call today?\n"
-"\n"
-"Scope: open opportunities I own (`crm.lead` where I am the salesperson, not won/lost). Reference each opportunity as `Customer Name (crm.lead,id)` so I can click through.\n"
-"\n"
-"1. **Status line** — one sentence with: total open opportunities, total expected revenue (sum), weighted pipeline (sum of `expected_revenue * probability / 100`), and how that compares to last month.\n"
-"\n"
-"2. **Call list today** — the top 5 deals to contact first, ranked. For each: customer, amount, stage, and **why now** in one sentence. Priority order:\n"
-"   - **Closing this week** — expected close in the next 7 days, still open.\n"
-"   - **Customer waiting** — the last message on the opp (`mail.message` on `crm.lead`, ignore auto/system) is from the customer, not from me.\n"
-"   - **Slipping** — expected close date already past, still open.\n"
-"   - **Hot but quiet** — amount in the top 20% of my pipeline, no activity in 7+ days.\n"
-"\n"
-"3. **Risk watch** — opportunities where the close date is in the past AND there has been no activity in 14+ days: customer, amount, days slipped, last activity type. These are at high risk of being lost.\n"
-"\n"
-"4. **Pipeline by stage** — compact 1-line-per-stage table: stage name, count, sum of expected revenue.\n"
-"\n"
-"Keep each section tight. If a section is empty, say so in a single line and move on."
-msgstr ""
-
-#. module: muk_ai
-#: model:muk_ai.agent.suggestion,prompt:muk_ai.agent_general_suggestion_draft
-msgid ""
-"My project task triage — what's overdue, what's due this week, what's blocked.\n"
-"\n"
-"Scope: `project.task` assigned to me (`user_ids` contains the current user), excluding closed stages (`stage_id.fold = False` where available, else skip stages named Done / Cancelled / similar).\n"
-"\n"
-"1. **Overdue** — `date_deadline` in the past.\n"
-"   - Read all matching tasks. If there are more than 5, show only the first 5 in the table but still analyze the full list to pick the most urgent.\n"
-"   - Table columns: task as `Task Name (project.task,id)`, project, deadline (ISO), days overdue, stage, priority.\n"
-"   - Sort by days overdue descending, then priority.\n"
-"   - If truncated, add `(+N more)` below the table.\n"
-"   - After the table, pick **the single most urgent** from the full list and explain in one sentence why.\n"
-"\n"
-"2. **Due this week** — `date_deadline` in the next 7 days, excluding overdue. Same columns, sort by deadline ascending.\n"
-"\n"
-"3. **No deadline set** — my open tasks with no `date_deadline`. Top 10 by priority then most recently updated. These need scheduling.\n"
-"\n"
-"4. **Waiting or blocked** — tasks where either:\n"
-"   - the last message (`mail.message`) on the task is from someone else asking for input, or\n"
-"   - the task has unfinished dependencies (`depend_on_ids` not all in a closed stage).\n"
-"   For each: task, who's waiting or what's blocking, days waiting.\n"
-"\n"
-"End with a footer line: `X open · Y overdue · Z due this week · W unscheduled`."
-msgstr ""
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__name
@@ -2121,6 +2751,17 @@ msgid "Nothing to compact yet — the conversation is empty."
 msgstr "Rien à compacter pour le moment — la conversation est vide."
 
 #. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+msgid "Nothing to compact — conversation too short."
+msgstr "Rien à compacter — conversation trop courte."
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__notification_unread
+msgid "Notification Unread"
+msgstr "Notification non lue"
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__message_needaction_counter
 msgid "Number of Actions"
 msgstr "Nombre d'actions"
@@ -2152,10 +2793,30 @@ msgid "Older"
 msgstr "Plus anciens"
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_compat
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Ollama, vLLM, OpenRouter and every OpenAI-compatible LLM."
+msgstr "Ollama, vLLM, OpenRouter et tout LLM compatible OpenAI."
+
+#. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
 msgid "One or more attachments could not be found."
 msgstr "Une ou plusieurs pièces jointes n'ont pas pu être trouvées."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+msgid "Only the session owner can continue this chat."
+msgstr "Seul le propriétaire de la session peut poursuivre cette discussion."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+msgid "Only the session owner or an administrator can stop this session."
+msgstr ""
+"Seul le propriétaire de la session ou un administrateur peut arrêter cette "
+"session."
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_kanban
@@ -2165,8 +2826,6 @@ msgstr "Ouvrir"
 
 #. module: muk_ai
 #. odoo-javascript
-#. odoo-python
-#: code:addons/muk_ai/models/session.py:0
 #: code:addons/muk_ai/static/src/webclient/notification/session_notification_service.js:0
 msgid "Open Chat"
 msgstr "Ouvrir la discussion"
@@ -2399,11 +3058,29 @@ msgid ""
 "Sort descending by total invoiced. End with a one-line grand total across the top 10 and the share of total company revenue that represents.\n"
 "        "
 msgstr ""
+"Classez les 10 meilleurs clients par montant total facturé cette année civile.\n"
+"\n"
+"Périmètre : `account.move` de type `out_invoice`, état `posted`, dans l'année en cours. Soustrayez des totaux les avoirs `out_refund` correspondants.\n"
+"\n"
+"Colonnes du tableau :\n"
+"- Client sous la forme `Nom affiché (res.partner,id)`\n"
+"- Total facturé (hors taxes)\n"
+"- Nombre de factures\n"
+"- Montant moyen par facture\n"
+"- Date de la facture la plus récente (ISO)\n"
+"\n"
+"Tri décroissant par total facturé. Terminez par une ligne avec le total général des 10 premiers et la part du chiffre d'affaires total de la société que cela représente.\n"
+"        "
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_provider__rate_limit
 msgid "Rate Limit"
 msgstr "Limite de débit"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Rate Limiting"
+msgstr "Limitation de débit"
 
 #. module: muk_ai
 #. odoo-python
@@ -2412,9 +3089,20 @@ msgid "Rate limit reached (%(count)s sessions in the last minute."
 msgstr "Limite de débit atteinte (%(count)s sessions dans la dernière minute."
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__rating_ids
+msgid "Ratings"
+msgstr "Évaluations"
+
+#. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_session_form
 msgid "Raw"
 msgstr "Brut"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.js:0
+msgid "Read only — you are not the owner of this session."
+msgstr "Lecture seule — vous n'êtes pas le propriétaire de cette session."
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_kanban
@@ -2485,6 +3173,16 @@ msgstr "Supprimer"
 
 #. module: muk_ai
 #. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+msgid ""
+"Remove this message and the %s event(s) that follow from the conversation? "
+"This cannot be undone."
+msgstr ""
+"Supprimer de la conversation ce message et le(s) %s événement(s) qui suivent"
+" ? Cette action est irréversible."
+
+#. module: muk_ai
+#. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
 #: code:addons/muk_ai/static/src/chat/sidebar/rename_dialog.xml:0
 msgid "Rename"
@@ -2516,6 +3214,21 @@ msgid ""
 "- Average monthly revenue\n"
 "- Use the default company currency; do not convert."
 msgstr ""
+"Rapportez le chiffre d'affaires facturé des 6 derniers mois civils complets (excluez le mois partiel en cours).\n"
+"\n"
+"Périmètre : factures clients comptabilisées (`account.move`, type `out_invoice`, état `posted`), moins les avoirs (`out_refund`).\n"
+"\n"
+"Tableau par mois :\n"
+"- Mois (YYYY-MM)\n"
+"- Total facturé (hors taxes et toutes taxes comprises)\n"
+"- Nombre de factures\n"
+"- Top 3 des clients contributeurs et leur part\n"
+"- Variation en % mois sur mois du total hors taxes\n"
+"\n"
+"Terminez par :\n"
+"- Total sur 6 mois (hors taxes et toutes taxes comprises)\n"
+"- Chiffre d'affaires mensuel moyen\n"
+"- Utilisez la devise par défaut de la société ; ne convertissez pas."
 
 #. module: muk_ai
 #: model:ir.ui.menu,name:muk_ai.menu_ai_report
@@ -2526,6 +3239,17 @@ msgstr "Rapports"
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_provider__request_timeout
 msgid "Request Timeout"
 msgstr "Délai de requête"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+msgid ""
+"Reset the LLM's context for this session? The visible chat history stays on "
+"screen above a divider; only the model loses memory of prior turns."
+msgstr ""
+"Réinitialiser le contexte du LLM pour cette session ? L'historique visible "
+"de la discussion reste à l'écran au-dessus d'un séparateur ; seul le modèle "
+"perd la mémoire des tours précédents."
 
 #. module: muk_ai
 #. odoo-javascript
@@ -2573,6 +3297,11 @@ msgid "Result"
 msgstr "Résultat"
 
 #. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Retention"
+msgstr "Conservation"
+
+#. module: muk_ai
 #: model:muk_ai.agent.suggestion,label:muk_ai.agent_read_only_suggestion_revenue
 msgid "Revenue"
 msgstr "Chiffre d'affaires"
@@ -2594,6 +3323,24 @@ msgstr "Révision introuvable."
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_revision_mixin__prompt_history_count
 msgid "Revisions"
 msgstr "Révisions"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+msgid "Rewind"
+msgstr "Revenir en arrière"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+msgid "Rewind conversation"
+msgstr "Revenir en arrière dans la conversation"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+msgid "Rewind — remove this message and everything after"
+msgstr "Revenir en arrière — supprimer ce message et tout ce qui suit"
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_muk_ai_approval_form
@@ -2619,7 +3366,7 @@ msgstr ""
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_schedule
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "Run agents on a schedule, let them pause and resume themselves."
+msgid "Run agents on a schedule; let them pause and resume."
 msgstr ""
 "Exécutez les agents selon un planning, laissez-les se mettre en pause et "
 "reprendre seuls."
@@ -2643,31 +3390,6 @@ msgstr "En cours…"
 #: model:muk_ai.agent.suggestion,label:muk_ai.agent_general_suggestion_sales
 msgid "Sales"
 msgstr "Ventes"
-
-#. module: muk_ai
-#: model:muk_ai.agent.suggestion,prompt:muk_ai.agent_general_suggestion_sales
-msgid ""
-"Sales figures report — snapshot across the key periods.\n"
-"\n"
-"Scope: posted customer invoices (`account.move`, type `out_invoice`, state `posted`); subtract matching credit notes (`out_refund`). Use the company default currency; do not convert.\n"
-"\n"
-"1. **Headline** (tax-excluded totals). For each period show: total invoiced, number of invoices, average invoice value.\n"
-"   - Today\n"
-"   - Week-to-date (Monday → today)\n"
-"   - Month-to-date\n"
-"   - Quarter-to-date\n"
-"   - Year-to-date\n"
-"\n"
-"2. **Month-over-month** — current MTD vs the same day-of-month last month (e.g. if today is the 12th, compare against the 1st–12th of last month). Show % change on revenue.\n"
-"\n"
-"3. **Top 5 customers this month** — customer as `Display Name (res.partner,id)`, total invoiced, invoice count. Sort by invoiced descending.\n"
-"\n"
-"4. **Top 5 products this month** — invoice lines grouped by product: product, quantity sold, revenue. Sort by revenue descending.\n"
-"\n"
-"5. **By salesperson this month** — salesperson, invoice count, revenue. Sort by revenue descending.\n"
-"\n"
-"End with a one-line observation if something looks off (e.g. \"MTD is trending ~X% below last month's pace at this point\" or \"no invoices posted yet this week\")."
-msgstr ""
 
 #. module: muk_ai
 #. odoo-javascript
@@ -2749,7 +3471,7 @@ msgstr ""
 #. module: muk_ai
 #: model:ir.model,name:muk_ai.model_ir_actions_server
 msgid "Server Action"
-msgstr "Action serveur"
+msgstr "Action de serveur"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_approval__session_id
@@ -2758,6 +3480,11 @@ msgstr "Action serveur"
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_session_form
 msgid "Session"
 msgstr "Session"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Session Timeout"
+msgstr "Expiration de session"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -2775,6 +3502,12 @@ msgstr "La séquence d'événements de session doit être unique par session."
 #: code:addons/muk_ai/models/session.py:0
 msgid "Session is not in a startable state."
 msgstr "La session n'est pas dans un état démarrable."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+msgid "Session is not waiting for a client action."
+msgstr "La session n'attend pas d'action client."
 
 #. module: muk_ai
 #. odoo-python
@@ -2824,6 +3557,15 @@ msgid "Sessions"
 msgstr "Sessions"
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_session__notification_unread
+msgid ""
+"Set on a terminal state change, cleared when the user opens the session; "
+"drives the systray attention badge."
+msgstr ""
+"Défini lors d'un passage à un état terminal, effacé lorsque l'utilisateur "
+"ouvre la session ; pilote le badge d'attention de la barre d'état."
+
+#. module: muk_ai
 #: model:ir.ui.menu,name:muk_ai.menu_ai_settings
 msgid "Settings"
 msgstr "Paramètres"
@@ -2846,9 +3588,25 @@ msgstr ""
 "Titre court affiché sur le bouton de suggestion (p. ex. « Explorer »)."
 
 #. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+msgid "Show summary"
+msgstr "Afficher le résumé"
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_approval__signature
 msgid "Signature"
 msgstr "Signature"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Slice Runtime"
+msgstr "Durée d'exécution de la tranche"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__ai_slice_wallclock_seconds
+msgid "Slice Wallclock (s)"
+msgstr "Temps réel de la tranche (s)"
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_session__user_context
@@ -2911,6 +3669,10 @@ msgid ""
 "Today: Activity date is today\n"
 "Planned: Future activities."
 msgstr ""
+"Statut basé sur les activités\n"
+"En retard : la date d'échéance est déjà dépassée\n"
+"Aujourd'hui : la date d'activité est aujourd'hui\n"
+"Planifiée : activités futures."
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_session__view_context
@@ -2924,6 +3686,8 @@ msgstr ""
 "soit remplacée par un résultat d'outil de navigation ou effacée via /unpin."
 
 #. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_session_form
 msgid "Stop"
 msgstr "Arrêter"
@@ -2939,6 +3703,18 @@ msgstr "Arrêtez la session en cours avant d'effacer."
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
 msgid "Stop the running session before compacting."
 msgstr "Arrêtez la session en cours avant de compacter."
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+msgid "Stop the session before forking."
+msgstr "Arrêtez la session avant de la dupliquer."
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+msgid "Stop the session before rewinding."
+msgstr "Arrêtez la session avant de revenir en arrière."
 
 #. module: muk_ai
 #. odoo-javascript
@@ -2971,6 +3747,12 @@ msgstr "Suggestions"
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__suggestions
 msgid "Suggestions (JSON)"
 msgstr "Suggestions (JSON)"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+msgid "Summarizing conversation…"
+msgstr "Résumé de la conversation en cours…"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__supports_code_interpreter
@@ -3008,6 +3790,14 @@ msgid "System Prompt — Placeholders"
 msgstr "Invite système — Espaces réservés"
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_voice
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Talk to the assistant: realtime STT and spoken replies via TTS."
+msgstr ""
+"Parlez à l'assistant : reconnaissance vocale (STT) en temps réel et réponses"
+" vocales via TTS."
+
+#. module: muk_ai
 #: model:muk_ai.agent.suggestion,label:muk_ai.agent_general_suggestion_draft
 msgid "Tasks"
 msgstr "Tâches"
@@ -3043,24 +3833,37 @@ msgid "That AI session no longer exists."
 msgstr "Cette session IA n'existe plus."
 
 #. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "The model is warned shortly before the limit so it can wrap up."
+msgstr "Le modèle est averti peu avant la limite afin de pouvoir conclure."
+
+#. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
 msgid ""
 "The prompt is rendered with Odoo's inline-template engine (same as mail templates) when the conversation starts\n"
 "\t\t\t\t\t\t\t\t\tand again on <code>/compact</code>. Each <code>{{ expr }}</code> is evaluated against the session's render context.\n"
 "\t\t\t\t\t\t\t\t\tUse <code>{{ expr ||| fallback }}</code> to provide a default when <code>expr</code> is empty."
 msgstr ""
+"Le prompt est rendu avec le moteur de modèles en ligne d'Odoo (le même que pour les modèles d'e-mail) au démarrage de la conversation\n"
+"\t\t\t\t\t\t\t\t\tet à nouveau lors de <code>/compact</code>. Chaque <code>{{ expr }}</code> est évalué dans le contexte de rendu de la session.\n"
+"\t\t\t\t\t\t\t\t\tUtilisez <code>{{ expr ||| fallback }}</code> pour fournir une valeur par défaut lorsque <code>expr</code> est vide."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
-msgid "The provider did not return a summary."
-msgstr "Le fournisseur n'a pas renvoyé de résumé."
+msgid "The session is currently busy. Please try again."
+msgstr "La session est actuellement occupée. Veuillez réessayer."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/revision_mixin.py:0
 msgid "This record has no prompt field."
 msgstr "Cet enregistrement n'a pas de champ d'invite."
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Timeout"
+msgstr "Délai d'expiration"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -3080,27 +3883,6 @@ msgstr "Aujourd'hui"
 msgid "Today is {{ today }}. Respond in {{ user.lang ||| en_US }}."
 msgstr ""
 "Aujourd'hui est le {{ today }}. Répondez en {{ user.lang ||| en_US }}."
-
-#. module: muk_ai
-#: model:muk_ai.agent.suggestion,prompt:muk_ai.agent_general_suggestion_explore
-msgid ""
-"Today's overview — focused triage for right now.\n"
-"\n"
-"1. **Activities overdue or due today** (assigned to me)\n"
-"   - Read **all** matching activities. If there are more than 5, show only the first 5 in the table but still analyze the full list to pick the most urgent.\n"
-"   - Table columns: activity type, deadline (ISO), record as `Display Name (model,id)`, days overdue (0 = today). Sort by days overdue descending.\n"
-"   - If truncated, add `(+N more)` below the table.\n"
-"   - After the table, pick **the single most urgent** from the full list and explain in one sentence why, with the record reference.\n"
-"\n"
-"2. **Inbox highlights** — summarize my unread Discuss messages. **Do not mark anything as read** (no calls to `set_message_done`, `mark_as_read`, `channel_fetched`, or similar).\n"
-"   - Surface up to 5 of the most relevant: @mentions of me first, then DMs with a clear question or decision request, then channel threads that look unresolved.\n"
-"   - Per item: sender, one-line gist, and a reference to the record the message is on as `Display Name (model,id)` so I can jump to it.\n"
-"   - End with a one-liner: total unread across mentions, DMs, and channels.\n"
-"\n"
-"3. **Calendar today** — short list of today's events I attend: time range, title, attendees count.\n"
-"\n"
-"Keep it compact: small Markdown tables, no filler. Skip any section with zero results in a single line."
-msgstr ""
 
 #. module: muk_ai
 #. odoo-javascript
@@ -3150,6 +3932,13 @@ msgid ""
 "To disable lazy loading entirely, list every catalog tool. Names outside the"
 " tool filter are silently dropped."
 msgstr ""
+"Noms des outils fournis avec leurs schémas complets au démarrage de la "
+"session. Tous les autres outils du catalogue n'apparaissent que par leur nom"
+" dans le prompt et sont chargés à la demande via tool_load. Si vide, une "
+"sélection par défaut est utilisée (primitives de lecture + navigation + "
+"ask_user). Pour désactiver entièrement le chargement différé, listez tous "
+"les outils du catalogue. Les noms hors du filtre d'outils sont "
+"silencieusement ignorés."
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_session__expanded_tool_names
@@ -3167,6 +3956,50 @@ msgstr ""
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__total_cost
 msgid "Total Cost (USD)"
 msgstr "Coût total (USD)"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__ai_turn_cost_limit
+msgid "Turn Cost Limit"
+msgstr "Limite de coût par tour"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__turn_cost_spent
+msgid "Turn Cost Spent"
+msgstr "Coût dépensé du tour"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Turn Runtime"
+msgstr "Durée d'exécution du tour"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__ai_turn_wallclock_seconds
+msgid "Turn Wallclock (s)"
+msgstr "Temps réel du tour (s)"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__turn_wallclock_spent
+msgid "Turn Wallclock Spent"
+msgstr "Temps réel consommé du tour"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+msgid ""
+"Turn cost budget reached (%(amount).2f %(currency)s). Send a new message to "
+"continue."
+msgstr ""
+"Budget de coût du tour atteint (%(amount).2f %(currency)s). Envoyez un "
+"nouveau message pour continuer."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+msgid ""
+"Turn wallclock budget reached (%(s)s s). Send a new message to continue."
+msgstr ""
+"Budget de temps réel du tour atteint (%(s)s s). Envoyez un nouveau message "
+"pour continuer."
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_ir_actions_server__state
@@ -3200,16 +4033,16 @@ msgid ""
 "- 'Send Webhook Notification': send a POST request to an external system, also known as a Webhook\n"
 "- 'Multi Actions': define an action that triggers several other server actions\n"
 msgstr ""
-"Art der Serveraktion. Die folgenden Werte sind verfügbar:\n"
-"- „Einen Datensatz aktualieren“: Aktualisieren Sie die Werte eines Datensatzes.\n"
-"- „Aktivität erstellen“: Erstellen Sie eine Aktivität (Dialog)\n"
-"- „E-Mail versenden“: Hinterlassen Sie eine Nachricht, oder Notiz oder senden Sie eine E-Mail (Dialog)\n"
-"- „SMS versenden“: Senden Sie eine SMS, protokollieren Sie diese in Dokumenten (SMS), log them on documents (SMS)\n"
-"- „Follower hinzufügen/entfernen“: Fügen Sie einem Datensatz Follower hinzu oder entfernen Sie sie (Dialog)\n"
-"- „Datensatz erstellen“: Erstellen Sie einen neuen Datensatz mit neuen Werten\n"
-"- „Code ausführen“: ein Block Python-Code, der ausgeführt wird\n"
-"- „Webhook-Benachrichtigung versenden“: Senden Sie eine Anfrage zur VERÖFFENTLICHUNG an ein externes System, auch bekannt als Webhook\n"
-"- „Mehrere Aktionen ausführen“: Legen Sie eine Aktion fest, die mehrere andere Serveraktionen auslöst\n"
+"Type d'action serveur. Les valeurs suivantes sont disponibles :\n"
+"- 'Mettre à jour un enregistrement' : mettre à jours les valeurs d'un enregistrement\n"
+"- 'Créer une activité' : créer une activité (Discussion)\n"
+"- 'Envoyer un e-mail' : publier un message, une note ou envoyer un e-mail (Discussion)\n"
+"- 'Envoyer un SMS' : envoyer des SMS, les enregistrer dans les documents (SMS)\n"
+"- 'Ajouter/supprimer des abonnés' : ajouter ou supprimer des abonnés sur un enregistrement (Discussion)\n"
+"- 'Créer un enregistrement' : créer un nouvel enregistrement avec de nouvelles valeurs\n"
+"- 'Exécuter un code' : exécuter un bloc de code Python\n"
+"- 'Envoyer une notification Webhook' : envoyer une demande de PUBLICATION à un système externe, également connu sous le nom de Webhook\n"
+"- 'Multi-Action' : définir une action qui déclenche plusieurs autres actions serveur.\n"
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_agent__activity_exception_decoration
@@ -3253,12 +4086,28 @@ msgid "Unpin view context"
 msgstr "Détacher le contexte de vue"
 
 #. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+msgid "Unread"
+msgstr "Non lu"
+
+#. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_session_form
 msgid "Usage"
 msgstr "Utilisation"
 
 #. module: muk_ai
-#: model:res.groups,name:muk_ai.group_ai_user
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_mistral
+msgid "Use Mistral AI as a provider."
+msgstr "Utiliser Mistral AI comme fournisseur."
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/tools/tool_group.xml:0
+msgid "Used"
+msgstr "Utilisé"
+
+#. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_muk_ai_approval_search
 msgid "User"
 msgstr "Utilisateur"
@@ -3306,14 +4155,6 @@ msgid "Wall-clock marker set by /clear and /compact."
 msgstr "Marqueur d'horloge murale défini par /clear et /compact."
 
 #. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/models/session.py:0
-msgid "Wallclock cap reached (%(s)s s). Send a new message to continue."
-msgstr ""
-"Limite d'horloge murale atteinte (%(s)s s). Envoyez un nouveau message pour "
-"continuer."
-
-#. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
 msgid "Web Search"
 msgstr "Recherche web"
@@ -3337,16 +4178,6 @@ msgstr ""
 #: code:addons/muk_ai/static/src/chat/tools/tool_card.xml:0
 msgid "Will ask:"
 msgstr "Demandera :"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
-msgid ""
-"Wipe the current conversation and tool log? The session record and agent "
-"remain."
-msgstr ""
-"Effacer la conversation et le journal d'outils actuels ? L'enregistrement de"
-" la session et l'agent sont conservés."
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__claimed_at
@@ -3379,15 +4210,6 @@ msgid "You are an Odoo assistant. ..."
 msgstr "Vous êtes un assistant Odoo. …"
 
 #. module: muk_ai
-#: model:muk_ai.agent,system_prompt:muk_ai.agent_general
-msgid ""
-"You are an Odoo assistant. You answer the user via tool calls against the "
-"connected Odoo database when needed. Always cite the tool result rather than"
-" guessing. If a question is ambiguous, call ask_user with a concrete follow-"
-"up. Stop calling tools once the answer is complete."
-msgstr ""
-
-#. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_agent__approval_mode
 msgid ""
 "`ask` prompts before risky writes (deletes, workflow methods, audited-field "
@@ -3408,6 +4230,12 @@ msgstr "agent_id"
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
 msgid "awaiting you"
 msgstr "vous attend"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+msgid "compacted"
+msgstr "compacté"
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
@@ -3434,8 +4262,14 @@ msgstr "pour nouvelle ligne"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
-msgid "messages,"
-msgstr "messages,"
+msgid "msgs"
+msgstr "msgs"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+msgid "msgs /"
+msgstr "msgs /"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -3477,8 +4311,14 @@ msgstr "pour envoyer"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
-msgid "tokens)"
-msgstr "tokens)"
+msgid "tokens"
+msgstr "jetons"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/tools/tool_group.xml:0
+msgid "tools"
+msgstr "outils"
 
 #. module: muk_ai
 #. odoo-python

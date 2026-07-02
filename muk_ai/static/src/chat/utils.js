@@ -191,7 +191,9 @@ export function approvalPill(state) {
     return {
         label: isOff ? _t('Bypass') : _t('Ask'),
         icon: isOff ? 'fa-bolt' : 'fa-shield',
-        className: `${isOff ? 'mk_approval_bypass' : 'mk_approval_ask'}${override ? ' mk_approval_override' : ''}`,
+        className: `${isOff ? 'mk_approval_bypass' : 'mk_approval_ask'}${
+            override ? ' mk_approval_override' : ''
+        }`,
         tooltip: isOff
             ? override
                 ? _t('Bypass (override). Click to cycle.')

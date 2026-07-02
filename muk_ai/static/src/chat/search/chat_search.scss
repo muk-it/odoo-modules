@@ -27,14 +27,21 @@
         color: var(--mk-text-muted);
         text-decoration: none;
         line-height: 1;
-        &:hover { color: var(--mk-text); }
-        &[disabled] { opacity: 0.45; cursor: not-allowed; }
+        &:hover {
+            color: var(--mk-text);
+        }
+        &[disabled] {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
     }
     .mk_search_toggle {
         color: var(--mk-text-muted);
         padding: 3px 6px;
         border-radius: 6px;
-        &:hover { color: var(--mk-primary); }
+        &:hover {
+            color: var(--mk-primary);
+        }
         &.active {
             color: var(--mk-primary);
             background: rgba(var(--mk-primary-rgb), 0.1);
@@ -61,7 +68,11 @@
         animation: mk_search_pulse 600ms ease-out;
     }
     @keyframes mk_search_pulse {
-        0%   { box-shadow: 0 0 0 0 rgba(var(--mk-primary-rgb), 0.55); }
-        100% { box-shadow: 0 0 0 14px rgba(var(--mk-primary-rgb), 0); }
+        0% {
+            box-shadow: 0 0 0 0 rgba(var(--mk-primary-rgb), 0.55);
+        }
+        100% {
+            box-shadow: 0 0 0 14px rgba(var(--mk-primary-rgb), 0);
+        }
     }
 }
