@@ -113,7 +113,7 @@
                             </div>
                         </t>
                         <t t-else="">
-                            <t t-foreach="renderedTurns" t-as="turn" t-key="turn_index + '-' + (turn.at || '')">
+                            <t t-foreach="renderedTurns" t-as="turn" t-key="turn.clientKey || (turn.eventId ? 'e' + turn.eventId : turn_index + '-' + (turn.at || ''))">
                                 <t t-call="muk_ai.ChatTurn">
                                     <t t-set="turn" t-value="turn"/>
                                 </t>

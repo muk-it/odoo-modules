@@ -10,6 +10,10 @@ function withEventId(obj, eventId) {
     return eventId ? { ...obj, eventId } : obj;
 }
 
+function withClientKey(obj, clientKey) {
+    return clientKey ? { ...obj, clientKey } : obj;
+}
+
 function decorateToolBlock(block, entry) {
     for (const [, decorate] of toolBlockDecorators.getEntries()) {
         decorate(block, entry);
@@ -32,31 +36,37 @@ export function buildRenderedTurns(log) {
         const eventId = entry.event_id || null;
         if (entry.kind === 'user_message') {
             turns.push(
-                withEventId(
-                    withAt(
-                        {
-                            role: 'user',
-                            text: entry.content,
-                            attachments: entry.attachments || [],
-                        },
-                        at,
+                withClientKey(
+                    withEventId(
+                        withAt(
+                            {
+                                role: 'user',
+                                text: entry.content,
+                                attachments: entry.attachments || [],
+                            },
+                            at,
+                        ),
+                        eventId,
                     ),
-                    eventId,
+                    entry._clientKey,
                 ),
             );
             current = null;
         } else if (entry.kind === 'answer') {
             turns.push(
-                withEventId(
-                    withAt(
-                        {
-                            role: 'user',
-                            text: entry.answer,
-                            attachments: entry.attachments || [],
-                        },
-                        at,
+                withClientKey(
+                    withEventId(
+                        withAt(
+                            {
+                                role: 'user',
+                                text: entry.answer,
+                                attachments: entry.attachments || [],
+                            },
+                            at,
+                        ),
+                        eventId,
                     ),
-                    eventId,
+                    entry._clientKey,
                 ),
             );
             current = null;

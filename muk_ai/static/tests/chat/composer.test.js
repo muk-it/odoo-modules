@@ -1,6 +1,7 @@
 import { describe, expect, test } from '@odoo/hoot';
+import { animationFrame } from '@odoo/hoot-mock';
 import { click, queryAll, queryFirst } from '@odoo/hoot-dom';
-import { Component, xml } from '@odoo/owl';
+import { Component, useState, xml } from '@odoo/owl';
 import { mountWithCleanup } from '@web/../tests/web_test_helpers';
 import { defineMailModels } from '@mail/../tests/mail_test_helpers';
 
@@ -441,4 +442,100 @@ test('Enter while composing (IME) is ignored', async () => {
         }),
     );
     expect(sent).toBe(0);
+});
+
+test('focusToken bump never steals focus from another text input', async () => {
+    let parent;
+    class Parent extends Component {
+        static components = { ChatComposer };
+        static props = {};
+        static template = xml`
+            <div>
+                <input class="mk_other_input" type="text"/>
+                <ChatComposer
+                    value="''"
+                    placeholder="'type'"
+                    canSend="false"
+                    canStop="false"
+                    canAttach="false"
+                    attachments="[]"
+                    focusToken="state.token"
+                    onInput="() => {}"
+                    onSend="() => {}"
+                />
+            </div>
+        `;
+        setup() {
+            this.state = useState({ token: 0 });
+            parent = this;
+        }
+    }
+    await mountWithCleanup(Parent, { props: {} });
+    const other = queryFirst('.mk_other_input');
+    const composer = queryFirst('.mk_composer textarea');
+    other.focus();
+    parent.state.token += 1;
+    await animationFrame();
+    expect(other.ownerDocument.activeElement).toBe(other);
+    other.blur();
+    parent.state.token += 1;
+    await animationFrame();
+    expect(composer.ownerDocument.activeElement).toBe(composer);
+});
+
+test('Enter sends on live textarea text even when the canSend prop is stale', async () => {
+    let sent = 0;
+    const { Parent, props } = makeInteractiveParent({
+        canSend: false,
+        onSend: () => sent++,
+    });
+    await mountWithCleanup(Parent, { props });
+    const composer = queryFirst('.mk_composer textarea');
+    composer.value = 'same-frame text';
+    composer.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
+    );
+    expect(sent).toBe(1);
+    composer.value = '   ';
+    composer.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
+    );
+    expect(sent).toBe(1);
+});
+
+test('Enter with live text while running queues the send instead of stopping', async () => {
+    let sent = 0;
+    let stopped = 0;
+    class Parent extends Component {
+        static components = { ChatComposer };
+        static props = {};
+        static template = xml`
+            <ChatComposer
+                value="''"
+                placeholder="'type'"
+                canSend="false"
+                canStop="true"
+                canAttach="false"
+                isQueueing="true"
+                attachments="[]"
+                onInput="() => {}"
+                onSend="props.onSend"
+                onStop="props.onStop"
+            />
+        `;
+    }
+    Parent.props = {
+        onSend: { type: Function },
+        onStop: { type: Function },
+    };
+    await mountWithCleanup(Parent, {
+        props: { onSend: () => sent++, onStop: () => stopped++ },
+    });
+    const composer = queryFirst('.mk_composer textarea');
+    composer.value = 'queued while running';
+    composer.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
+    );
+    expect(sent).toBe(1);
+    expect(stopped).toBe(0);
 });

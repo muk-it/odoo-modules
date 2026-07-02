@@ -55,9 +55,19 @@ export class ChatComposer extends Component {
         this.localState = useState({ slashActive: 0 });
         useEffect(
             () => {
-                if (this.inputRef.el) {
-                    this.inputRef.el.focus();
+                const el = this.inputRef.el;
+                if (!el) {
+                    return;
                 }
+                const active = document.activeElement;
+                if (
+                    active &&
+                    active !== el &&
+                    active.matches('textarea, input, [contenteditable="true"]')
+                ) {
+                    return;
+                }
+                el.focus();
             },
             () => [this.props.focusToken],
         );
@@ -149,7 +159,9 @@ export class ChatComposer extends Component {
         this.props.onInput(event.target.value);
     }
     onSendOrStop() {
-        if (this.props.canSend && this.props.isQueueing) {
+        const hasLiveText = !!(this.inputRef.el && this.inputRef.el.value.trim());
+        const canSend = this.props.canSend || hasLiveText;
+        if (canSend && this.props.isQueueing) {
             this.props.onSend();
             return;
         }
@@ -157,7 +169,7 @@ export class ChatComposer extends Component {
             this.props.onStop();
             return;
         }
-        if (this.props.canSend) {
+        if (canSend) {
             this.props.onSend();
         }
     }

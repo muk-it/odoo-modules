@@ -54,6 +54,8 @@ const COMPACT_WARN_RATIO = 0.65;
 const COMPACT_AUTO_RATIO = 0.8;
 const STREAM_IDLE_MS = 3000;
 
+let clientKeySeq = 0;
+
 /**
  * Hook owning an AI chat session: state, streaming, tool calls, and commands.
  * @param {object} [options] session hook options (callbacks, defaults)
@@ -104,11 +106,13 @@ export function useAiSession(options = {}) {
         streamIdle: false,
         resumeAt: '',
     });
-    let busHandler = null;
     let eventKeys = new Set();
     let onScrollCallback = null;
     let streamIdleTimer = null;
     let loadSeq = 0;
+    let pendingLoad = null;
+    const busHandler = (payload) => onBusEvent(payload);
+    bus.subscribe('muk_ai.event', busHandler);
     function clearStreamIdleTimer() {
         if (streamIdleTimer) {
             clearTimeout(streamIdleTimer);
@@ -130,23 +134,15 @@ export function useAiSession(options = {}) {
             }
         }, STREAM_IDLE_MS);
     }
-    function connectBus() {
-        disconnectBus();
-        busHandler = (payload) => onBusEvent(payload);
-        bus.subscribe('muk_ai.event', busHandler);
-    }
-    function disconnectBus() {
-        if (busHandler) {
-            bus.unsubscribe('muk_ai.event', busHandler);
-            busHandler = null;
-        }
+    function contentKey(entry) {
+        const { at: _at, event_id: _id, _clientKey: _ck, ...rest } = entry || {};
+        return canonicalStringify(rest);
     }
     function eventKey(entry) {
         if (entry && entry.event_id != null) {
             return 'id:' + entry.event_id;
         }
-        const { at: _at, ...rest } = entry || {};
-        return canonicalStringify(rest);
+        return contentKey(entry);
     }
     function canonicalStringify(value) {
         if (value === null || typeof value !== 'object') {
@@ -165,7 +161,14 @@ export function useAiSession(options = {}) {
         );
     }
     function onBusEvent(event) {
-        if (!event || event.session_id !== state.sessionId) {
+        if (!event) {
+            return;
+        }
+        if (pendingLoad && event.session_id === pendingLoad.sessionId) {
+            pendingLoad.buffer.push(event);
+            return;
+        }
+        if (event.session_id !== state.sessionId) {
             return;
         }
         if (event.type === 'log') {
@@ -174,7 +177,24 @@ export function useAiSession(options = {}) {
                 return;
             }
             eventKeys.add(key);
-            state.events = [...state.events, event.payload];
+            const twinKey = contentKey(event.payload);
+            const twinIndex = state.events.findIndex(
+                (entry) =>
+                    entry &&
+                    entry._clientKey &&
+                    entry.event_id == null &&
+                    contentKey(entry) === twinKey,
+            );
+            if (twinIndex >= 0) {
+                const next = [...state.events];
+                next[twinIndex] = {
+                    ...event.payload,
+                    _clientKey: next[twinIndex]._clientKey,
+                };
+                state.events = next;
+            } else {
+                state.events = [...state.events, event.payload];
+            }
             const kind = event.payload?.kind;
             if (kind === 'text') {
                 state.streamingText = '';
@@ -345,13 +365,15 @@ export function useAiSession(options = {}) {
         const previousSessionId = state.sessionId;
         state.loading = true;
         if (!sessionId) {
-            disconnectBus();
+            pendingLoad = null;
             sessionNotification.markInactive(previousSessionId);
             clearStreamIdleTimer();
             _resetSessionState(null);
             state.loading = false;
             return null;
         }
+        const myLoad = { sessionId, buffer: [] };
+        pendingLoad = myLoad;
         let record = null;
         let snapshot = null;
         let loadError = null;
@@ -377,10 +399,12 @@ export function useAiSession(options = {}) {
         if (seq !== loadSeq) {
             return record;
         }
-        disconnectBus();
         sessionNotification.markInactive(previousSessionId);
         clearStreamIdleTimer();
         _resetSessionState(sessionId);
+        if (pendingLoad === myLoad) {
+            pendingLoad = null;
+        }
         if (loadError) {
             state.error = formatError(loadError);
             state.loading = false;
@@ -395,10 +419,11 @@ export function useAiSession(options = {}) {
                 state.hasMoreOlder = !!snapshot.has_more_older;
                 rebuildEventKeys();
             }
-            connectBus();
+            for (const buffered of myLoad.buffer) {
+                onBusEvent(buffered);
+            }
         }
         state.loading = false;
-        state.focusToken += 1;
         return record;
     }
     function _resetSessionState(sessionId) {
@@ -479,7 +504,30 @@ export function useAiSession(options = {}) {
             return;
         }
         applySessionFields(snapshot);
-        const incomingEvents = snapshot.events || [];
+        const clientKeysById = new Map();
+        const clientKeysByContent = new Map();
+        for (const entry of state.events || []) {
+            if (!entry || !entry._clientKey) {
+                continue;
+            }
+            if (entry.event_id != null) {
+                clientKeysById.set(entry.event_id, entry._clientKey);
+            } else {
+                clientKeysByContent.set(contentKey(entry), entry._clientKey);
+            }
+        }
+        let incomingEvents = snapshot.events || [];
+        if (clientKeysById.size || clientKeysByContent.size) {
+            incomingEvents = incomingEvents.map((entry) => {
+                if (!entry) {
+                    return entry;
+                }
+                const key =
+                    clientKeysById.get(entry.event_id) ??
+                    clientKeysByContent.get(contentKey(entry));
+                return key ? { ...entry, _clientKey: key } : entry;
+            });
+        }
         if (incomingEvents.length || state.status !== 'running') {
             state.events = incomingEvents;
             if (snapshot.oldest_sequence !== undefined) {
@@ -620,14 +668,21 @@ export function useAiSession(options = {}) {
         await maybeAutoCompact();
         const wasWaitingQuestion =
             state.status === 'waiting' && (state.pendingAsk || {}).kind === 'question';
+        const clientKey = 'ck' + ++clientKeySeq;
         const optimistic = wasWaitingQuestion
             ? {
                   kind: 'answer',
                   answer: message,
                   question: (state.pendingAsk || {}).text,
                   attachments,
+                  _clientKey: clientKey,
               }
-            : { kind: 'user_message', content: message, attachments };
+            : {
+                  kind: 'user_message',
+                  content: message,
+                  attachments,
+                  _clientKey: clientKey,
+              };
         state.events = [...state.events, optimistic];
         eventKeys.add(eventKey(optimistic));
         state.streamingText = '';
@@ -1232,7 +1287,7 @@ export function useAiSession(options = {}) {
     }
     onWillUnmount(() => {
         sessionNotification.markInactive(state.sessionId);
-        disconnectBus();
+        bus.unsubscribe('muk_ai.event', busHandler);
         clearStreamIdleTimer();
     });
     return {

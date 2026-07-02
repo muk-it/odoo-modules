@@ -24,6 +24,17 @@ test('answer kind becomes a user turn (uses entry.answer)', () => {
     expect(turns).toEqual([{ role: 'user', text: 'yes', attachments: [] }]);
 });
 
+test('user turns carry the entry _clientKey as clientKey', () => {
+    const turns = buildRenderedTurns([
+        { kind: 'user_message', content: 'hi', attachments: [], _clientKey: 'ck1' },
+        { kind: 'answer', answer: 'yes', attachments: [], _clientKey: 'ck2' },
+        { kind: 'user_message', content: 'bare', attachments: [] },
+    ]);
+    expect(turns[0].clientKey).toBe('ck1');
+    expect(turns[1].clientKey).toBe('ck2');
+    expect(turns[2].clientKey).toBe(undefined);
+});
+
 test('text and tool_call merge into one assistant turn', () => {
     const turns = buildRenderedTurns([
         { kind: 'text', content: 'thinking…' },

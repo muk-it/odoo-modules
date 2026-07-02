@@ -1,4 +1,5 @@
 import { describe, expect, test } from '@odoo/hoot';
+import { animationFrame } from '@odoo/hoot-mock';
 import { Component, xml } from '@odoo/owl';
 import { mockService, mountWithCleanup, onRpc } from '@web/../tests/web_test_helpers';
 import { defineMailModels } from '@mail/../tests/mail_test_helpers';
@@ -136,6 +137,17 @@ test('load reads session and applies record to state', async () => {
     expect(session.state.loading).toBe(false);
 });
 
+test('load never bumps focusToken', async () => {
+    onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
+    onRpc('muk_ai.session', 'get_snapshot', () => snapshotFor(SESSION_RECORD));
+    makeBusMock();
+    const harness = makeHarness();
+    const session = await mountAndLoad(harness);
+    expect(session.state.focusToken).toBe(0);
+    await session.load(9);
+    expect(session.state.focusToken).toBe(0);
+});
+
 test('load is atomic: previous events stay visible until new snapshot arrives', async () => {
     const SECOND_RECORD = { ...SESSION_RECORD, id: 9, name: 'Second' };
     let resolveSecondRead;
@@ -184,6 +196,117 @@ test('load is atomic: previous events stay visible until new snapshot arrives', 
     expect(session.state.events.length).toBe(1);
     expect(session.state.events[0].content).toBe('second answer');
     expect(session.state.loading).toBe(false);
+});
+
+test('bus events arriving during load are applied once the snapshot lands', async () => {
+    const SECOND_RECORD = { ...SESSION_RECORD, id: 9, name: 'Second' };
+    let resolveSnapshot;
+    const snapshotGate = new Promise((resolve) => {
+        resolveSnapshot = () =>
+            resolve(
+                snapshotFor({
+                    ...SECOND_RECORD,
+                    events: [{ kind: 'text', content: 'from snapshot', event_id: 50 }],
+                }),
+            );
+    });
+    onRpc('muk_ai.session', 'read', ({ args }) =>
+        args[0][0] === 7 ? [SESSION_RECORD] : [SECOND_RECORD],
+    );
+    onRpc('muk_ai.session', 'get_snapshot', ({ args }) =>
+        args[0] === 7 ? snapshotFor(SESSION_RECORD) : snapshotGate,
+    );
+    const bus = makeBusMock();
+    const harness = makeHarness();
+    const session = await mountAndLoad(harness);
+    const loading = session.load(9);
+    bus.emit({
+        session_id: 9,
+        type: 'log',
+        payload: { kind: 'text', content: 'from snapshot', event_id: 50 },
+    });
+    bus.emit({
+        session_id: 9,
+        type: 'log',
+        payload: { kind: 'text', content: 'streamed during load', event_id: 51 },
+    });
+    resolveSnapshot();
+    await loading;
+    expect(session.state.sessionId).toBe(9);
+    expect(session.state.events.filter((e) => e.event_id === 50)).toHaveLength(1);
+    expect(session.state.events.filter((e) => e.event_id === 51)).toHaveLength(1);
+});
+
+test('optimistic user message keeps its render identity across the persisted swap', async () => {
+    onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
+    onRpc('muk_ai.session', 'send_message', () => ({
+        ...SNAPSHOT_RUNNING,
+        events: [
+            ...SESSION_RECORD.events,
+            {
+                kind: 'user_message',
+                content: 'stable bubble',
+                attachments: [],
+                event_id: 77,
+                at: '2026-07-02 22:00:00',
+            },
+        ],
+    }));
+    const bus = makeBusMock();
+    const harness = makeHarness();
+    const session = await mountAndLoad(harness);
+    session.onInputChange('stable bubble');
+    await session.onSend();
+    const persisted = session.state.events.filter((e) => e.content === 'stable bubble');
+    expect(persisted).toHaveLength(1);
+    expect(persisted[0].event_id).toBe(77);
+    expect(persisted[0]._clientKey).toMatch(/^ck\d+$/);
+    bus.emit({
+        session_id: 7,
+        type: 'log',
+        payload: {
+            kind: 'user_message',
+            content: 'stable bubble',
+            attachments: [],
+            event_id: 77,
+            at: '2026-07-02 22:00:00',
+        },
+    });
+    expect(
+        session.state.events.filter((e) => e.content === 'stable bubble'),
+    ).toHaveLength(1);
+});
+
+test('bus echo replaces the optimistic twin in place instead of appending', async () => {
+    onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
+    let resolveSend;
+    const sendGate = new Promise((resolve) => {
+        resolveSend = () => resolve({ ...SNAPSHOT_RUNNING, events: [] });
+    });
+    onRpc('muk_ai.session', 'send_message', () => sendGate);
+    const bus = makeBusMock();
+    const harness = makeHarness();
+    const session = await mountAndLoad(harness);
+    session.onInputChange('echo first');
+    const sending = session.onSend();
+    await animationFrame();
+    bus.emit({
+        session_id: 7,
+        type: 'log',
+        payload: {
+            kind: 'user_message',
+            content: 'echo first',
+            attachments: [],
+            event_id: 88,
+            at: '2026-07-02 22:00:01',
+        },
+    });
+    const echoed = session.state.events.filter((e) => e.content === 'echo first');
+    expect(echoed).toHaveLength(1);
+    expect(echoed[0].event_id).toBe(88);
+    expect(echoed[0]._clientKey).toMatch(/^ck\d+$/);
+    resolveSend();
+    await sending;
 });
 
 test('canSend is false while load is in flight', async () => {
