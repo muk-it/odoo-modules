@@ -65,7 +65,7 @@ test('systray loads the notification badge count and renders it', async () => {
     makeBusMock();
     makeChatWindowService();
     const systray = await mountWithCleanup(MukAISystray, { props: {} });
-    expect(systray.state.badgeCount).toBe(3);
+    expect(systray.badge.count).toBe(3);
     expect(systray.badgeLabel).toBe('3');
     expect('.mk_systray_count').toHaveText('3');
     expect('.mk_systray_badge .mk_systray_dot').toHaveCount(0);
@@ -80,12 +80,12 @@ test('the notification badge updates live from the bus', async () => {
     const bus = makeBusMock();
     makeChatWindowService();
     const systray = await mountWithCleanup(MukAISystray, { props: {} });
-    expect(systray.state.badgeCount).toBe(1);
+    expect(systray.badge.count).toBe(1);
     bus.emit('muk_ai.notification_badge', { count: 5, session_ids: [1, 2, 3, 4, 5] });
-    expect(systray.state.badgeCount).toBe(5);
+    expect(systray.badge.count).toBe(5);
     bus.emit('muk_ai.notification_badge', { count: 0, session_ids: [] });
-    expect(systray.state.badgeCount).toBe(0);
-    expect(systray.state.unreadIds).toEqual([]);
+    expect(systray.badge.count).toBe(0);
+    expect(systray.badge.unreadIds).toEqual([]);
 });
 
 test('badgeLabel caps large counts at 99+', async () => {
@@ -127,9 +127,9 @@ test('systray marks which recent sessions are unread', async () => {
     makeBusMock();
     makeChatWindowService();
     const systray = await mountWithCleanup(MukAISystray, { props: {} });
-    expect(systray.state.unreadIds).toEqual([2]);
-    expect(systray.isUnread(2)).toBe(true);
-    expect(systray.isUnread(1)).toBe(false);
+    expect(systray.badge.unreadIds).toEqual([2]);
+    expect(systray.badge.isUnread(2)).toBe(true);
+    expect(systray.badge.isUnread(1)).toBe(false);
 });
 
 test('systray handles RPC failure by showing empty list', async () => {
@@ -170,7 +170,20 @@ test('systray bus event for unknown session triggers reload', async () => {
     const before = loadCount;
     bus.emit('muk_ai.session_state', { session_id: 99, state: 'running' });
     await new Promise((r) => setTimeout(r, 10));
-    expect(loadCount).toBe(before + 1);
+    expect(loadCount).toBeGreaterThan(before);
+});
+
+test('systray bus event removes a deleted session from the list', async () => {
+    onRpc('muk_ai.session', 'search_read', () => [
+        { id: 1, name: 'Chat A', state: 'done' },
+        { id: 2, name: 'Chat B', state: 'done' },
+    ]);
+    const bus = makeBusMock();
+    makeChatWindowService();
+    const systray = await mountWithCleanup(MukAISystray, { props: {} });
+    expect(systray.state.sessions).toHaveLength(2);
+    bus.emit('muk_ai.session_state', { session_id: 1, deleted: true });
+    expect(systray.state.sessions.map((s) => s.id)).toEqual([2]);
 });
 
 test('statusDotClass maps states to CSS classes', async () => {

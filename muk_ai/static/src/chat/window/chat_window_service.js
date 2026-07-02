@@ -13,7 +13,7 @@ function ensurePrism() {
 }
 
 export const chatWindowService = {
-    dependencies: ['action', 'orm'],
+    dependencies: ['action', 'bus_service', 'orm'],
     start(env) {
         const state = reactive({
             windows: [],
@@ -35,6 +35,11 @@ export const chatWindowService = {
             const idx = state.windows.findIndex((w) => w.sessionId === sessionId);
             if (idx >= 0) state.windows.splice(idx, 1);
         }
+        env.services.bus_service.subscribe('muk_ai.session_state', (payload) => {
+            if (payload && payload.deleted && payload.session_id) {
+                close(payload.session_id);
+            }
+        });
         function toggleMinimized(sessionId) {
             const entry = find(sessionId);
             if (entry) entry.minimized = !entry.minimized;

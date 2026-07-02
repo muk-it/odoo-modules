@@ -8,6 +8,7 @@ function makeEnv({ currentController = null, calls } = {}) {
     const env = {
         services: {
             action: { currentController },
+            bus_service: { subscribe: () => {} },
             orm: {
                 call: (...args) => {
                     calls.push(['call', ...args]);

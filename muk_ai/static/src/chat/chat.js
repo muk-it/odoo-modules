@@ -22,6 +22,7 @@ import { DropdownItem } from '@web/core/dropdown/dropdown_item';
 
 import { toFileModel, toInlineImageFile } from '@muk_ai/core/attachment/attachment';
 import { AttachmentCard } from '@muk_ai/core/attachment/attachment_card';
+import { useNotificationBadge } from '@muk_ai/core/notification_badge';
 import {
     approvalPill,
     costTooltip,
@@ -117,6 +118,7 @@ export class AIChat extends Component {
             },
         });
         this.fileViewer = useFileViewer();
+        this.badge = useNotificationBadge();
         this.state = useState({
             loading: true,
             sessions: [],
@@ -348,7 +350,9 @@ export class AIChat extends Component {
             this._sessionsSearchTimer = null;
         }
         if (!trimmed) {
+            this._sessionsSearchSeq++;
             this.state.sessionsSearchMode = false;
+            this.state.sessionsSearching = false;
             this._loadSessions();
             return;
         }
@@ -642,6 +646,15 @@ export class AIChat extends Component {
     }
     _onUserBusEvent(payload) {
         if (!payload || !payload.session_id) {
+            return;
+        }
+        if (payload.deleted) {
+            this.state.sessions = this.state.sessions.filter(
+                (s) => s.id !== payload.session_id,
+            );
+            if (this.session.state.sessionId === payload.session_id) {
+                this._selectSession(this.state.sessions[0]?.id || null);
+            }
             return;
         }
         const idx = this.state.sessions.findIndex((s) => s.id === payload.session_id);

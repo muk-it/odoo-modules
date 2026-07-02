@@ -24,6 +24,7 @@ from odoo.addons.muk_ai.tools import (
     ASK_USER_TOOL,
     ATTACHMENT_REF_MAX_BYTES,
     ATTACHMENT_REF_RE,
+    CLIENT_ACTION_TIMEOUT_SECONDS,
     COMPACT_AUTO_RATIO,
     COMPACT_SUMMARY_REINJECTION,
     COMPACT_SUMMARY_SYSTEM,
@@ -677,7 +678,7 @@ class AISession(models.Model):
         pending = self.pending_ask if pending is None else pending
         if not isinstance(pending, dict) or not pending:
             return None
-        return {
+        public = {
             key: value
             for key, value in pending.items()
             if key
@@ -687,8 +688,20 @@ class AISession(models.Model):
                 'outputs',
                 'resume_index',
                 'has_terminating',
+                'results',
             )
         }
+        if isinstance(public.get('actions'), list):
+            results = pending.get('results') or {}
+            public['actions'] = [
+                {
+                    'call_id': action.get('call_id'),
+                    'name': action.get('name'),
+                    'done': action.get('call_id') in results,
+                }
+                for action in public['actions']
+            ]
+        return public
 
     def _state_metrics(self) -> dict:
         """Return the public state and usage metrics broadcast on the bus."""
@@ -1038,6 +1051,7 @@ class AISession(models.Model):
         ):
             idle = (fields.Datetime.now() - reference).total_seconds()
             if idle >= idle_seconds and self._try_session_xact_lock(self.id):
+                self._close_orphan_tool_calls('previous turn timed out')
                 self.write(
                     {
                         'state': 'error',
@@ -1715,10 +1729,19 @@ class AISession(models.Model):
         else:
             self._transition_state('error', error=_('AI returned no output.'))
 
-    def _skip_reason(self, has_ask_user: bool, has_terminating: bool) -> str | None:
+    def _skip_reason(
+        self,
+        has_ask_user: bool,
+        has_terminating: bool,
+        has_client_action: bool = False,
+    ) -> str | None:
         """Return why remaining tool calls should be skipped, or ``None``."""
         if has_ask_user:
             return 'skipped: ask_user pending, call again after user answer'
+        if has_client_action:
+            return (
+                'skipped: client action pending, call again after the client responds'
+            )
         if has_terminating:
             return (
                 'skipped: terminating tool already ran; emit a short summary and stop'
@@ -1750,6 +1773,89 @@ class AISession(models.Model):
             outputs, call['call_id'], call['name'], result, log_result=log_result
         )
 
+    def _client_tool_names(self) -> set[str]:
+        """Return the catalog tool names the client must execute.
+
+        Overridable hook: the default scans the registry catalog once and
+        treats ``meta.execute == 'client'`` as client-executed.
+        """
+        return {
+            entry['name']
+            for entry in self._get_filtered_catalog()
+            if entry.get('name')
+            and (entry.get('_meta') or {}).get('execute') == 'client'
+        }
+
+    def _is_client_tool(self, name: str) -> bool:
+        """Return whether the named tool must be executed by the client."""
+        return bool(name) and name in self._client_tool_names()
+
+    def _client_action_deferred(self, call: dict) -> str | None:
+        """Return a skip reason when the call cannot join the open action batch.
+
+        Overridable hook: subclasses that gate individual client actions
+        (e.g. behind an approval) return a reason so the call is skipped
+        instead of clobbering the already pending batch.
+        """
+        return None
+
+    def _client_action_with_cursor(self, pending: dict) -> dict:
+        """Return the pending dict with the first unanswered action mirrored.
+
+        The mirrored ``call_id``/``name``/``arguments`` keys keep
+        single-action consumers working while ``actions``/``results``
+        carry the batch.
+        """
+        results = pending.get('results') or {}
+        cursor = next(
+            (
+                action
+                for action in (pending.get('actions') or [])
+                if action.get('call_id') not in results
+            ),
+            None,
+        )
+        for key in ('call_id', 'name', 'arguments'):
+            pending.pop(key, None)
+        if cursor:
+            pending.update(
+                {
+                    'call_id': cursor['call_id'],
+                    'name': cursor['name'],
+                    'arguments': cursor['arguments'],
+                }
+            )
+        return pending
+
+    def _register_client_action(self, call: dict) -> None:
+        """Append a pending client-executed tool call awaiting the client."""
+        pending = dict(self.pending_ask or {})
+        if pending.get('kind') != 'client_action':
+            pending = {
+                'kind': 'client_action',
+                'registered_at': fields.Datetime.to_string(fields.Datetime.now()),
+                'actions': [],
+                'results': {},
+            }
+        pending['actions'] = [
+            *(pending.get('actions') or []),
+            {
+                'call_id': call['call_id'],
+                'name': call['name'],
+                'arguments': call['arguments'],
+            },
+        ]
+        self.pending_ask = self._client_action_with_cursor(pending)
+        self._record_tool_call(call)
+        self._append_event(
+            {
+                'kind': 'client_action',
+                'call_id': call['call_id'],
+                'name': call['name'],
+                'arguments': call['arguments'],
+            }
+        )
+
     def _register_ask_user(self, call: dict) -> None:
         """Register a pending question from an ``ask_user`` tool call."""
         args = call['arguments'] or {}
@@ -1762,6 +1868,75 @@ class AISession(models.Model):
         }
         self.pending_ask = {'kind': 'question', **ask}
         self._append_event({'kind': 'ask_user', **ask})
+
+    def _resume_turn(self, continuation: list, event: dict | None = None) -> None:
+        """Append a pause's continuation and event, clear it, and resume the turn."""
+        self._extend_conversation(continuation)
+        if event:
+            self._append_event(event)
+        self.write(
+            {
+                'state': 'running',
+                'pending_ask': False,
+                'claimed_at': False,
+                'turn_wallclock_spent': 0.0,
+                'turn_cost_spent': 0.0,
+            }
+        )
+        self._publish_event('state', {'state': 'running'})
+        self._trigger_worker()
+
+    def _require_pending_client_action(self, call_id: str | None = None) -> dict:
+        """Return the pending client action batch, validating state and call id.
+
+        :raise UserError: when the session is not awaiting this client action
+        """
+        pending = dict(self.pending_ask or {})
+        if self.state != 'waiting' or pending.get('kind') != 'client_action':
+            raise UserError(_('Session is not waiting for a client action.'))
+        if call_id is None:
+            return pending
+        results = pending.get('results') or {}
+        unanswered = {
+            action.get('call_id')
+            for action in (pending.get('actions') or [])
+            if action.get('call_id') not in results
+        }
+        if call_id not in unanswered:
+            raise UserError(_('Client action call id does not match a pending action.'))
+        return pending
+
+    def _apply_client_result(self, pending: dict, call_id: str, result) -> None:
+        """Record one client tool result and resume once the batch completes."""
+        actions = pending.get('actions') or []
+        named = next(
+            (action for action in actions if action.get('call_id') == call_id),
+            {},
+        )
+        pending['results'] = {**(pending.get('results') or {}), call_id: result}
+        self._append_event(
+            {
+                'kind': 'client_action_result',
+                'call_id': call_id,
+                'name': named.get('name'),
+                'result': result,
+            }
+        )
+        if any(action.get('call_id') not in pending['results'] for action in actions):
+            self.pending_ask = self._client_action_with_cursor(pending)
+            self._publish_event(
+                'state',
+                {'state': 'waiting', 'ask': self._public_pending_ask()},
+            )
+            return
+        self._resume_turn(
+            [
+                build_tool_call_output(
+                    action['call_id'], pending['results'][action['call_id']]
+                )
+                for action in actions
+            ]
+        )
 
     def _execute_tool_call(
         self,
@@ -1801,6 +1976,7 @@ class AISession(models.Model):
         """Run a round of tool calls, returning the terminating state or ``None``."""
         has_ask_user = any(c.get('name') == 'ask_user' for c in tool_calls)
         wait_for_user, paused = False, False
+        client_names = self._client_tool_names()
         for index in range(start_index, len(tool_calls)):
             call = tool_calls[index]
             if index >= MAX_TOOL_CALLS_PER_ROUND:
@@ -1829,7 +2005,32 @@ class AISession(models.Model):
                 self._register_ask_user(call)
                 wait_for_user = True
                 continue
-            if skip := self._skip_reason(has_ask_user, has_terminating):
+            if (
+                not has_ask_user
+                and not has_terminating
+                and call['name'] in client_names
+            ):
+                batch_open = (
+                    wait_for_user
+                    and (self.pending_ask or {}).get('kind') == 'client_action'
+                )
+                skip = None
+                if wait_for_user and not batch_open:
+                    skip = 'client_action_already_pending'
+                elif batch_open:
+                    skip = self._client_action_deferred(call)
+                if skip:
+                    self._record_tool_call(call)
+                    self._skip_tool_call(
+                        outputs, call, skip, log_result={'error': skip}
+                    )
+                    continue
+                self._register_client_action(call)
+                wait_for_user = True
+                continue
+            if skip := self._skip_reason(
+                has_ask_user, has_terminating, has_client_action=wait_for_user
+            ):
                 self._record_tool_call(call)
                 self._skip_tool_call(
                     outputs, call, skip, log_result={'error': 'skipped'}
@@ -1842,6 +2043,8 @@ class AISession(models.Model):
                 paused = True
                 break
             has_terminating = has_terminating or outcome
+            if call['name'] == TOOL_LOAD_TOOL['name']:
+                client_names = self._client_tool_names()
         if not paused:
             self._extend_conversation(outputs)
             if wait_for_user:
@@ -2221,8 +2424,14 @@ class AISession(models.Model):
             entry.get('call_id') for entry in outputs if isinstance(entry, dict)
         }
         calls = list(pending.get('tool_calls') or [])
+        if not calls:
+            calls = [
+                {'call_id': action.get('call_id')}
+                for action in (pending.get('actions') or [])
+            ]
         if not calls and pending.get('call_id'):
             calls = [{'call_id': pending['call_id']}]
+        results = pending.get('results') or {}
         for call in calls:
             call_id = call.get('call_id')
             if call_id and call_id not in answered:
@@ -2230,10 +2439,10 @@ class AISession(models.Model):
                 outputs.append(
                     build_tool_call_output(
                         call_id,
-                        {
-                            'status': 'cancelled',
-                            'reason': 'stopped_by_user',
-                        },
+                        results.get(
+                            call_id,
+                            {'status': 'cancelled', 'reason': 'stopped_by_user'},
+                        ),
                     )
                 )
         if outputs:
@@ -2855,44 +3064,29 @@ class AISession(models.Model):
             raise UserError(_('Session is not waiting for user input.'))
         question = pending.get('text') or ''
         attachments = self._resolve_attachments(attachment_ids)
+        continuation = []
         if call_id := pending.get('call_id'):
-            self._extend_conversation(
-                [
-                    build_tool_call_output(
-                        call_id,
-                        {
-                            'status': 'answered',
-                            'question': question,
-                            'answer': answer,
-                        },
-                    )
-                ]
+            continuation.append(
+                build_tool_call_output(
+                    call_id,
+                    {'status': 'answered', 'question': question, 'answer': answer},
+                )
             )
             if attachments:
-                self._extend_conversation([self._build_user_entry(None, attachments)])
+                continuation.append(self._build_user_entry(None, attachments))
         else:
             followup_text = f'Answer to "{question}": {answer}' if question else answer
             if user_entry := self._build_user_entry(followup_text, attachments):
-                self._extend_conversation([user_entry])
-        self._append_event(
+                continuation.append(user_entry)
+        self._resume_turn(
+            continuation,
             {
                 'kind': 'answer',
                 'question': question,
                 'answer': answer,
                 'attachments': [a._ai_describe() for a in attachments],
-            }
+            },
         )
-        self.write(
-            {
-                'state': 'running',
-                'pending_ask': False,
-                'claimed_at': False,
-                'turn_wallclock_spent': 0.0,
-                'turn_cost_spent': 0.0,
-            }
-        )
-        self._publish_event('state', {'state': 'running'})
-        self._trigger_worker()
         return self.get_snapshot()
 
     def send_message(
@@ -2904,7 +3098,7 @@ class AISession(models.Model):
             return self.enqueue_message(user_message, attachment_ids=attachment_ids)
         if self.state == 'waiting':
             kind = (self.pending_ask or {}).get('kind')
-            if kind == 'approval':
+            if kind in ('approval', 'client_action'):
                 return self.enqueue_message(user_message, attachment_ids=attachment_ids)
             if kind == 'question':
                 return self.answer(user_message, attachment_ids=attachment_ids)
@@ -3246,6 +3440,49 @@ class AISession(models.Model):
             self._trigger_worker()
         return self.get_snapshot()
 
+    def submit_client_result(self, call_id: str, result) -> dict:
+        """Submit a client-executed tool result, resuming once all are in.
+
+        :raise UserError: when the session is busy or not awaiting this
+            client action
+        """
+        if not self._try_session_lock(self.id):
+            raise UserError(_('The session is currently busy. Please try again.'))
+        try:
+            pending = self._require_pending_client_action(call_id)
+            self._apply_client_result(pending, call_id, result)
+        finally:
+            self._release_session_lock(self.id)
+        return self.get_snapshot()
+
+    def reject_client_action(
+        self, call_id: str | None = None, reason: str | None = None
+    ) -> dict:
+        """Reject one or all pending client actions with an error result.
+
+        Without ``call_id`` every unanswered action in the batch is
+        rejected, which always resumes the turn.
+
+        :raise UserError: when the session is busy or not awaiting this
+            client action
+        """
+        if not self._try_session_lock(self.id):
+            raise UserError(_('The session is currently busy. Please try again.'))
+        try:
+            pending = self._require_pending_client_action(call_id)
+            result = {'error': 'rejected', 'reason': reason or ''}
+            if call_id is not None:
+                self._apply_client_result(pending, call_id, result)
+                return self.get_snapshot()
+            results = pending.get('results') or {}
+            for action in pending.get('actions') or []:
+                if action.get('call_id') in results:
+                    continue
+                self._apply_client_result(pending, action['call_id'], result)
+            return self.get_snapshot()
+        finally:
+            self._release_session_lock(self.id)
+
     # ----------------------------------------------------------
     # Actions
     # ----------------------------------------------------------
@@ -3338,15 +3575,63 @@ class AISession(models.Model):
                 )
         return records
 
+    def unlink(self) -> bool:
+        """Broadcast deletions so open chat surfaces drop the session live."""
+        users = self.user_id
+        for record in self:
+            with suppress(Exception):
+                record._bus_send(
+                    'muk_ai.session_state',
+                    {'session_id': record.id, 'deleted': True},
+                )
+        result = super().unlink()
+        for session_user in users:
+            with suppress(Exception):
+                self._push_notification_badge(session_user)
+        return result
+
     # ----------------------------------------------------------
     # Cron
     # ----------------------------------------------------------
+
+    @api.model
+    def _client_action_timeout(self) -> int:
+        """Return the stale client-action timeout in seconds (0 disables)."""
+        raw = (
+            self.env['ir.config_parameter']
+            .sudo()
+            .get_param('muk_ai.client_action_timeout', CLIENT_ACTION_TIMEOUT_SECONDS)
+        )
+        try:
+            return int(raw)
+        except (TypeError, ValueError):
+            return CLIENT_ACTION_TIMEOUT_SECONDS
+
+    @api.model
+    def _sweep_stale_client_actions(self) -> None:
+        """Auto-reject client-action batches whose client never responded."""
+        timeout = self._client_action_timeout()
+        if timeout <= 0:
+            return
+        threshold = fields.Datetime.now() - timedelta(seconds=timeout)
+        for session in self.sudo().search([('state', '=', 'waiting')]):
+            pending = session.pending_ask or {}
+            if pending.get('kind') != 'client_action':
+                continue
+            registered = fields.Datetime.to_datetime(pending.get('registered_at') or '')
+            if not registered or registered > threshold:
+                continue
+            with suppress(UserError):
+                session.reject_client_action(
+                    reason='timeout: the client did not respond'
+                )
 
     @api.model
     def _cron_run_pending_sessions(self) -> None:
         """Sweep orphans and process pending sessions in this worker slot."""
         candidates = self._find_pending_session_ids()
         self._sweep_orphan_sessions(skip_ids=candidates)
+        self._sweep_stale_client_actions()
         if candidates:
             self._commit_safe()
             for sid in candidates:
@@ -3374,6 +3659,7 @@ class AISession(models.Model):
                 continue
             try:
                 with self.env.cr.savepoint():
+                    session._close_orphan_tool_calls('worker abandoned the session')
                     session.write(
                         {
                             'state': 'error',

@@ -10,6 +10,8 @@ import { debounce } from '@web/core/utils/timing';
 import { Dropdown } from '@web/core/dropdown/dropdown';
 import { DropdownItem } from '@web/core/dropdown/dropdown_item';
 
+import { useNotificationBadge } from '@muk_ai/core/notification_badge';
+
 const SYSTRAY_LIMIT = 8;
 const NEW_CHAT_HOTKEY = 'alt+shift+b';
 const FULL_CHAT_HOTKEY = 'alt+shift+f';
@@ -27,10 +29,9 @@ export class MukAISystray extends Component {
         this.state = useState({
             sessions: [],
             loaded: false,
-            badgeCount: 0,
         });
+        this.badge = useNotificationBadge();
         this._busHandler = null;
-        this._badgeHandler = null;
         this._loadSeq = 0;
         this._debouncedLoad = debounce(() => this._load(), 500, {
             leading: true,
@@ -47,7 +48,7 @@ export class MukAISystray extends Component {
             bypassEditableProtection: true,
         });
         onWillStart(async () => {
-            await Promise.all([this._load(), this._loadBadge()]);
+            await this._load();
             this._connectBus();
         });
         onWillUnmount(() => {
@@ -58,14 +59,25 @@ export class MukAISystray extends Component {
     async _load() {
         const seq = ++this._loadSeq;
         try {
-            const sessions = await this.orm.searchRead(
-                'muk_ai.session',
-                [['user_id', '=', user.userId]],
-                ['id', 'name', 'state'],
-                { limit: SYSTRAY_LIMIT, order: 'create_date DESC' },
-            );
+            const [recent, unread] = await Promise.all([
+                this.orm.searchRead(
+                    'muk_ai.session',
+                    [['user_id', '=', user.userId]],
+                    ['id', 'name', 'state'],
+                    { limit: SYSTRAY_LIMIT, order: 'create_date DESC' },
+                ),
+                this.orm.searchRead(
+                    'muk_ai.session',
+                    [
+                        ['user_id', '=', user.userId],
+                        ['notification_unread', '=', true],
+                    ],
+                    ['id', 'name', 'state'],
+                    { limit: SYSTRAY_LIMIT, order: 'create_date DESC' },
+                ),
+            ]);
             if (seq === this._loadSeq) {
-                this.state.sessions = sessions;
+                this.state.sessions = this._mergeUnreadFirst(unread, recent);
             }
         } catch {
             if (seq === this._loadSeq) {
@@ -74,39 +86,35 @@ export class MukAISystray extends Component {
         }
         this.state.loaded = true;
     }
-    async _loadBadge() {
-        try {
-            this._applyBadge(
-                await this.orm.call('muk_ai.session', 'notification_badge', []),
-            );
-        } catch {
-            this._applyBadge({ count: 0, session_ids: [] });
+    _mergeUnreadFirst(unread, recent) {
+        const merged = [...unread];
+        const seen = new Set(unread.map((s) => s.id));
+        for (const session of recent) {
+            if (!seen.has(session.id)) {
+                seen.add(session.id);
+                merged.push(session);
+            }
         }
-    }
-    _applyBadge(payload) {
-        if (payload && typeof payload.count === 'number') {
-            this.state.badgeCount = payload.count;
-            this.state.unreadIds = payload.session_ids || [];
-        }
+        return merged;
     }
     _connectBus() {
         this._busHandler = (payload) => this._onBusEvent(payload);
         this.bus.subscribe('muk_ai.session_state', this._busHandler);
-        this._badgeHandler = (payload) => this._applyBadge(payload);
-        this.bus.subscribe('muk_ai.notification_badge', this._badgeHandler);
     }
     _disconnectBus() {
         if (this._busHandler) {
             this.bus.unsubscribe('muk_ai.session_state', this._busHandler);
             this._busHandler = null;
         }
-        if (this._badgeHandler) {
-            this.bus.unsubscribe('muk_ai.notification_badge', this._badgeHandler);
-            this._badgeHandler = null;
-        }
     }
     _onBusEvent(payload) {
         if (!payload || !payload.session_id) return;
+        if (payload.deleted) {
+            this.state.sessions = this.state.sessions.filter(
+                (s) => s.id !== payload.session_id,
+            );
+            return;
+        }
         const idx = this.state.sessions.findIndex((s) => s.id === payload.session_id);
         if (idx < 0) {
             this._debouncedLoad();
@@ -130,10 +138,7 @@ export class MukAISystray extends Component {
         return this.runningCount > 0;
     }
     get badgeLabel() {
-        return this.state.badgeCount > 99 ? '99+' : String(this.state.badgeCount);
-    }
-    isUnread(sessionId) {
-        return this.state.unreadIds.includes(sessionId);
+        return this.badge.count > 99 ? '99+' : String(this.badge.count);
     }
     get newChatHotkeyLabel() {
         return isMacOS() ? 'Ctrl+Shift+B' : 'Alt+Shift+B';

@@ -139,6 +139,11 @@ class TestAiSession(AITestCommon):
     def _force_stale_session(self, name='long-tool', state='running'):
         session = self.env['muk_ai.session'].create({'name': name})
         session.write({'state': state})
+        self._backdate_session(session)
+        return session
+
+    def _backdate_session(self, session) -> None:
+        """Force the session's write/claim timestamps past the stale threshold."""
         session.flush_recordset()
         stale = fields.Datetime.now() - timedelta(seconds=WORKER_STALE_THRESHOLD + 30)
         self.env.cr.execute(
@@ -151,7 +156,6 @@ class TestAiSession(AITestCommon):
             )
         )
         session.invalidate_recordset()
-        return session
 
     def _hold_session_lock(self, session_id):
         class _Holder:
@@ -482,6 +486,25 @@ class TestAiSession(AITestCommon):
         ):
             self.session._notify_state_transition({'state': 'done'})
         self.assertIn('muk_ai.notification_badge', captured)
+
+    def test_unlink_broadcasts_deletion(self):
+        session = self.env['muk_ai.session'].create({'name': 'to delete'})
+        session_id = session.id
+        captured = []
+        with patch.object(
+            type(self.env['bus.bus']),
+            '_sendone',
+            autospec=True,
+            side_effect=lambda *a, **k: captured.append((a[2], a[3])),
+        ):
+            session.unlink()
+        deletions = [
+            message
+            for ntype, message in captured
+            if ntype == 'muk_ai.session_state' and message.get('deleted')
+        ]
+        self.assertTrue(deletions)
+        self.assertEqual(deletions[0]['session_id'], session_id)
 
     def test_ask_user_skips_sibling_tool_calls(self):
         payload = {
@@ -1553,6 +1576,54 @@ class TestAiSession(AITestCommon):
         self.assertFalse(session._recover_if_stuck())
         session.invalidate_recordset()
         self.assertEqual(session.state, 'running')
+
+    def test_recover_if_stuck_closes_orphan_tool_calls(self):
+        session = self._force_stale_session('stale-orphan')
+        session.conversation = [
+            {'role': 'user', 'content': 'hi'},
+            {
+                'type': 'function_call',
+                'call_id': 'orphan_c1',
+                'name': 'list_modules',
+                'arguments': '{}',
+            },
+        ]
+        self._backdate_session(session)
+        self.assertTrue(session._recover_if_stuck())
+        session.invalidate_recordset()
+        self.assertEqual(session.state, 'error')
+        outputs = [
+            entry
+            for entry in session.conversation
+            if entry.get('type') == 'function_call_output'
+        ]
+        self.assertEqual(len(outputs), 1)
+        self.assertEqual(outputs[0]['call_id'], 'orphan_c1')
+        self.assertIn('interrupted', outputs[0]['output'])
+
+    def test_sweep_orphan_closes_orphan_tool_calls(self):
+        session = self._force_stale_session('swept-orphan')
+        session.conversation = [
+            {'role': 'user', 'content': 'hi'},
+            {
+                'type': 'function_call',
+                'call_id': 'orphan_c2',
+                'name': 'list_modules',
+                'arguments': '{}',
+            },
+        ]
+        self._backdate_session(session)
+        self.env['muk_ai.session']._sweep_orphan_sessions()
+        session.invalidate_recordset()
+        self.assertEqual(session.state, 'error')
+        outputs = [
+            entry
+            for entry in session.conversation
+            if entry.get('type') == 'function_call_output'
+        ]
+        self.assertEqual(len(outputs), 1)
+        self.assertEqual(outputs[0]['call_id'], 'orphan_c2')
+        self.assertIn('interrupted', outputs[0]['output'])
 
     def test_recover_if_stuck_preserves_pending_queue(self):
         session = self._force_stale_session('queued-while-stuck')

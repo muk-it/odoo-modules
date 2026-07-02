@@ -8,6 +8,7 @@
             <ChatSidebar
                 t-if="!state.sidebarHidden"
                 sessions="state.sessions"
+                unreadIds="badge.unreadIds"
                 activeSessionId="session.state.sessionId"
                 onNew.bind="onNewSession"
                 onSelect.bind="onSelectSession"

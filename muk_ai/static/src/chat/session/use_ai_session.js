@@ -597,7 +597,7 @@ export function useAiSession(options = {}) {
             };
             state.pendingMessages = [...state.pendingMessages, optimisticEntry];
             state.focusToken += 1;
-            requestScroll();
+            requestScroll(true);
             try {
                 const snapshot = await orm.call(
                     'muk_ai.session',
@@ -633,10 +633,12 @@ export function useAiSession(options = {}) {
         state.streamingText = '';
         state.streamingReasoning = '';
         state.streamingTools = [];
+        const previousAsk = state.pendingAsk;
+        const previousStatus = state.status;
         state.pendingAsk = null;
         state.status = 'running';
         state.error = null;
-        requestScroll();
+        requestScroll(true);
         try {
             const method = wasWaitingQuestion
                 ? 'answer'
@@ -653,7 +655,14 @@ export function useAiSession(options = {}) {
             );
             applySnapshot(snapshot);
         } catch (error) {
-            state.status = 'error';
+            if (wasWaitingQuestion) {
+                state.events = state.events.filter((entry) => entry !== optimistic);
+                eventKeys.delete(eventKey(optimistic));
+                state.pendingAsk = previousAsk;
+                state.status = previousStatus;
+            } else {
+                state.status = 'error';
+            }
             state.error = formatError(error);
         }
         state.focusToken += 1;
@@ -1216,9 +1225,9 @@ export function useAiSession(options = {}) {
     function setScrollCallback(callback) {
         onScrollCallback = callback;
     }
-    function requestScroll() {
+    function requestScroll(force = false) {
         if (onScrollCallback) {
-            onScrollCallback();
+            onScrollCallback(force);
         }
     }
     onWillUnmount(() => {

@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import json
 
+# ----------------------------------------------------------
+# Tool Round Behavior
+# ----------------------------------------------------------
+
 TERMINATING_TOOLS = frozenset(
     {
         'open_record',
@@ -10,6 +14,10 @@ TERMINATING_TOOLS = frozenset(
         'show_notification',
     }
 )
+
+# ----------------------------------------------------------
+# Builtin Tool Schemas
+# ----------------------------------------------------------
 
 TOOL_LOAD_TOOL = {
     'name': 'tool_load',

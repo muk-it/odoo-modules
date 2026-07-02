@@ -13,6 +13,7 @@ export class ChatSidebar extends Component {
     static template = 'muk_ai.ChatSidebar';
     static props = {
         sessions: { type: Array },
+        unreadIds: { type: Array, optional: true },
         activeSessionId: { type: [Number, { value: null }], optional: true },
         hasMore: { type: Boolean, optional: true },
         loadingMore: { type: Boolean, optional: true },
@@ -28,6 +29,9 @@ export class ChatSidebar extends Component {
     setup() {
         this.dialog = useService('dialog');
         this.state = useState({ query: '' });
+    }
+    isUnread(sessionId) {
+        return (this.props.unreadIds || []).includes(sessionId);
     }
     statusLabel(state) {
         return (

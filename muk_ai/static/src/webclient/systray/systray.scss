@@ -11,11 +11,17 @@
         width: 20px;
         height: 20px;
     }
-    &:hover { opacity: 0.85; }
+    &:hover {
+        opacity: 0.85;
+    }
+    .mk_systray_count {
+        top: 0;
+        pointer-events: none;
+    }
     .mk_systray_badge {
         position: absolute;
         top: 3px;
-        right: 2px;
+        left: 0;
         pointer-events: none;
         .mk_systray_dot {
             width: 8px;
@@ -33,12 +39,12 @@
     min-width: 280px;
     max-width: 340px;
     padding: 0.25rem 0 !important;
-    --mk-primary:      var(--o-cc1-btn-primary, #714B67);
-    --mk-primary-rgb:  var(--primary-rgb, 113, 75, 103);
-    --mk-text-muted:   #6b7280;
-    --mk-warning:      #e0a800;
-    --mk-success:      #28a745;
-    --mk-danger:       #dc3545;
+    --mk-primary: var(--o-cc1-btn-primary, #714b67);
+    --mk-primary-rgb: var(--primary-rgb, 113, 75, 103);
+    --mk-text-muted: #6b7280;
+    --mk-warning: #e0a800;
+    --mk-success: #28a745;
+    --mk-danger: #dc3545;
     .mk_systray_header {
         display: flex;
         align-items: center;
@@ -49,7 +55,7 @@
         .mk_systray_icon_sm {
             width: 16px;
             height: 16px;
-            color: var(--mk-primary, #714B67);
+            color: var(--mk-primary, #714b67);
         }
     }
     .mk_systray_divider {
@@ -91,11 +97,22 @@
             height: 8px;
             border-radius: 50%;
             background: var(--mk-text-muted);
-            &.mk_state_running { background: var(--mk-primary); animation: mk-pulse 1.2s ease-in-out infinite; }
-            &.mk_state_waiting { background: var(--mk-warning); }
-            &.mk_state_done { background: var(--mk-success); }
-            &.mk_state_error { background: var(--mk-danger); }
-            &.mk_state_stopped { background: var(--mk-text-muted); }
+            &.mk_state_running {
+                background: var(--mk-primary);
+                animation: mk-pulse 1.2s ease-in-out infinite;
+            }
+            &.mk_state_waiting {
+                background: var(--mk-warning);
+            }
+            &.mk_state_done {
+                background: var(--mk-success);
+            }
+            &.mk_state_error {
+                background: var(--mk-danger);
+            }
+            &.mk_state_stopped {
+                background: var(--mk-text-muted);
+            }
         }
         &.mk_systray_action i {
             width: 16px;

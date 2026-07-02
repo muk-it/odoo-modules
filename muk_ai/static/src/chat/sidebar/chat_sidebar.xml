@@ -53,7 +53,7 @@
                         <t t-foreach="group.sessions" t-as="session" t-key="session.id">
                             <div
                                 class="mk_sidebar_item"
-                                t-att-class="{ active: session.id === props.activeSessionId, mk_running: session.state === 'running' || session.state === 'waiting' }"
+                                t-att-class="{ active: session.id === props.activeSessionId, mk_running: session.state === 'running' || session.state === 'waiting', mk_unread: isUnread(session.id) }"
                                 t-on-click="() => props.onSelect(session.id)"
                                 t-att-title="statusLabel(session.state)"
                             >
@@ -69,6 +69,7 @@
                                     </t>
                                 </span>
                                 <span class="mk_sidebar_name" t-esc="session.name" />
+                                <span class="mk_sidebar_unread" t-if="isUnread(session.id)" title="Unread" />
                                 <small class="mk_sidebar_sub text-muted" t-if="session.state === 'running'">thinking…</small>
                                 <small class="mk_sidebar_sub text-muted" t-elif="session.state === 'waiting'">awaiting you</small>
                                 <div class="mk_sidebar_actions">

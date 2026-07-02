@@ -11,10 +11,19 @@ from odoo.tools.translate import LazyTranslate
 
 _lt = LazyTranslate('muk_ai')
 
+# ----------------------------------------------------------
+# Fetch Limits
+# ----------------------------------------------------------
+
 CONNECT_TIMEOUT = 5
 READ_TIMEOUT = 25
 CHUNK_SIZE = 64 * 1024
 URL_FETCH_MAX_BYTES = 16 * 1024 * 1024
+
+# ----------------------------------------------------------
+# SSRF Guard
+# ----------------------------------------------------------
+
 UNSAFE_IP_ATTRS = (
     'is_private',
     'is_loopback',

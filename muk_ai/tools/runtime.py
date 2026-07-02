@@ -1,18 +1,35 @@
 from __future__ import annotations
 
+# ----------------------------------------------------------
+# Model Defaults
+# ----------------------------------------------------------
+
 DEFAULT_CONTEXT_WINDOW = 128000
+
+# ----------------------------------------------------------
+# Turn Budgets
+# ----------------------------------------------------------
 
 MAX_ITERATIONS = 20
 MAX_TOOL_CALLS_PER_ROUND = 10
 ITERATION_WARNING_ROUNDS = 2
 MAX_WALLCLOCK_SECONDS = 600
 TURN_WALLCLOCK_SECONDS = 3600
+CLIENT_ACTION_TIMEOUT_SECONDS = 600
 WALLCLOCK_SAFETY_MARGIN = 30
 WALLCLOCK_MIN_SECONDS = 30
+
+# ----------------------------------------------------------
+# Worker Coordination
+# ----------------------------------------------------------
 
 ADVISORY_LOCK_NAMESPACE = 0x4D554B41
 WORKER_HEARTBEAT_INTERVAL = 5
 WORKER_STALE_THRESHOLD = 60
+
+# ----------------------------------------------------------
+# Context Compaction
+# ----------------------------------------------------------
 
 COMPACT_AUTO_RATIO = 0.80
 COMPACT_WARN_RATIO = 0.65

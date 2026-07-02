@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from contextlib import contextmanager
 from unittest.mock import MagicMock, patch
 
@@ -27,12 +29,14 @@ class AITestCommon(TransactionCase):
     # ----------------------------------------------------------
 
     @classmethod
-    def _mark_sensitive(cls, *model_names):
+    def _mark_sensitive(cls, *model_names: str) -> None:
+        """Flag the given models as AI-sensitive for approval tests."""
         cls.env['ir.model'].sudo().search(
             [('model', 'in', list(model_names))],
         ).write({'ai_sensitive': True})
 
-    def _mock_http_response(self, payload, status_code=200):
+    def _mock_http_response(self, payload: dict, status_code: int = 200) -> MagicMock:
+        """Build a mocked HTTP response returning the given JSON payload."""
         response = MagicMock()
         response.status_code = status_code
         response.json.return_value = payload
@@ -40,7 +44,8 @@ class AITestCommon(TransactionCase):
         return response
 
     @contextmanager
-    def _mock_responses(self, payloads):
+    def _mock_responses(self, payloads: list):
+        """Patch the provider to pop one mocked payload per LLM request."""
         remaining = list(payloads)
 
         def fake(self_arg, *args, **kwargs):
@@ -57,7 +62,8 @@ class AITestCommon(TransactionCase):
         ) as mock:
             yield mock
 
-    def _make_text_response(self, text='ok'):
+    def _make_text_response(self, text: str = 'ok') -> dict:
+        """Build a provider payload emitting plain assistant text."""
         return {
             'text': text,
             'tool_calls': [],
