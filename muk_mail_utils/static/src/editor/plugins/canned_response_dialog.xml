@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<templates xml:space="preserve">
+
+    <t t-name="muk_mail_utils.CannedResponseDialog">
+        <Dialog size="'md'" title="title" footer="false" contentClass="'mk_canned_response_dialog'">
+            <input
+                type="text"
+                class="form-control"
+                t-ref="autofocus"
+                placeholder="Search canned responses..."
+                t-on-input="onSearchInput"
+            />
+            <ul
+                class="list-group list-group-flush mt-2 mk_canned_response_list"
+                t-if="state.records.length"
+            >
+                <li t-foreach="state.records" t-as="record" t-key="record.id">
+                    <button
+                        type="button"
+                        class="list-group-item list-group-item-action w-100 text-start"
+                        t-att-class="{ active: record_index === state.selectedIndex }"
+                        t-on-click="() => this.onRecordClick(record_index)"
+                        t-on-mouseenter="() => this.onRecordMouseEnter(record_index)"
+                    >
+                        <strong t-esc="record.source" />
+                        <div
+                            class="small text-muted text-truncate"
+                            t-esc="record.substitution"
+                        />
+                    </button>
+                </li>
+            </ul>
+            <div t-else="" class="text-muted text-center py-3">
+                No canned responses found.
+            </div>
+        </Dialog>
+    </t>
+
+</templates>

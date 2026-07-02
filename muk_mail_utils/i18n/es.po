@@ -22,6 +22,18 @@ msgid "Author:"
 msgstr "Autor:"
 
 #. module: muk_mail_utils
+#. odoo-javascript
+#: code:addons/muk_mail_utils/static/src/editor/plugins/canned_response_plugin.js:0
+msgid "Canned Response"
+msgstr "Respuesta predefinida"
+
+#. module: muk_mail_utils
+#. odoo-javascript
+#: code:addons/muk_mail_utils/static/src/editor/plugins/canned_response_dialog.js:0
+msgid "Canned Responses"
+msgstr "Respuestas predefinidas"
+
+#. module: muk_mail_utils
 #: model:ir.model.fields,field_description:muk_mail_utils.field_mail_mail__display_content
 #: model:ir.model.fields,field_description:muk_mail_utils.field_mail_message__display_content
 msgid "Display Content"
@@ -38,6 +50,12 @@ msgid "ID"
 msgstr "ID"
 
 #. module: muk_mail_utils
+#. odoo-javascript
+#: code:addons/muk_mail_utils/static/src/editor/plugins/canned_response_plugin.js:0
+msgid "Insert a canned response"
+msgstr "Insertar una respuesta predefinida"
+
+#. module: muk_mail_utils
 #: model:ir.model,name:muk_mail_utils.model_mail_message
 msgid "Message"
 msgstr "Mensaje"
@@ -47,6 +65,12 @@ msgstr "Mensaje"
 #: code:addons/muk_mail_utils/static/src/views/message_list/message_list.xml:0
 msgid "No Preview! Please select a message."
 msgstr "¡Sin vista previa! Por favor, seleccione un mensaje."
+
+#. module: muk_mail_utils
+#. odoo-javascript
+#: code:addons/muk_mail_utils/static/src/editor/plugins/canned_response_dialog.xml:0
+msgid "No canned responses found."
+msgstr "No se encontraron respuestas predefinidas."
 
 #. module: muk_mail_utils
 #: model:ir.model.fields,field_description:muk_mail_utils.field_mail_mail__preview
@@ -59,6 +83,12 @@ msgstr "Vista previa"
 #: code:addons/muk_mail_utils/static/src/views/message_list/message_list.xml:0
 msgid "Recipients:"
 msgstr "Destinatarios:"
+
+#. module: muk_mail_utils
+#. odoo-javascript
+#: code:addons/muk_mail_utils/static/src/editor/plugins/canned_response_dialog.xml:0
+msgid "Search canned responses..."
+msgstr "Buscar respuestas predefinidas..."
 
 #. module: muk_mail_utils
 #: model:ir.model.fields,help:muk_mail_utils.field_mail_mail__preview
