@@ -17,7 +17,7 @@ class AITestCommon(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.provider = cls.env.ref('muk_ai.provider_openai')
-        cls.provider.sudo().api_key = 'test-key'
+        cls.provider.sudo().write({'api_key': 'test-key', 'active': True})
         cls.provider_anthropic = cls.env.ref('muk_ai.provider_anthropic')
         cls.provider_anthropic.sudo().api_key = 'test-key'
         cls.provider_google = cls.env.ref('muk_ai.provider_google')

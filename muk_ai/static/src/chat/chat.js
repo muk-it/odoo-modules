@@ -376,16 +376,29 @@ export class AIChat extends Component {
         }
         router.pushState({ session_id: sessionId || undefined });
     }
+    /**
+     * Create and switch to a new session. Raises state.loading before the
+     * first RPC so the composer (canSend gates on it) stays closed for the
+     * whole switch — a send in that window would run in the outgoing
+     * session and paint nothing in the new one.
+     */
     async onNewSession() {
         const name = _t('Chat %s', new Date().toLocaleString());
         const carryOver = this.session.state.viewContext;
-        const sessionId = await this.orm.create('muk_ai.session', [{ name }]);
-        const id = Array.isArray(sessionId) ? sessionId[0] : sessionId;
-        if (carryOver && carryOver.model) {
-            await seedSessionContext(this.env, id, carryOver);
+        this.session.state.loading = true;
+        let id;
+        try {
+            const sessionId = await this.orm.create('muk_ai.session', [{ name }]);
+            id = Array.isArray(sessionId) ? sessionId[0] : sessionId;
+            if (carryOver && carryOver.model) {
+                await seedSessionContext(this.env, id, carryOver);
+            }
+        } catch (error) {
+            this.session.state.loading = false;
+            throw error;
         }
-        await this._loadSessions();
         await this._selectSession(id);
+        await this._loadSessions();
     }
     async onStartWithPrompt(prompt) {
         await this.onNewSession();

@@ -1,4 +1,5 @@
 import { describe, expect, test } from '@odoo/hoot';
+import { animationFrame } from '@odoo/hoot-mock';
 import {
     mockService,
     mountWithCleanup,
@@ -80,6 +81,29 @@ function registerMocks({ sessions = [], agents = [] } = {}) {
     mockService('notification', { add: () => {} });
     return events;
 }
+
+test('onNewSession keeps the composer closed until the new session is bound', async () => {
+    registerMocks({ sessions: [{ id: 5, name: 'One', state: 'done' }] });
+    let resolveCreate;
+    const createGate = new Promise((resolve) => {
+        resolveCreate = () => resolve([99]);
+    });
+    onRpc('muk_ai.session', 'create', () => createGate);
+    onRpc('muk_ai.session', 'get_snapshot', () => ({
+        ...SNAPSHOT_RUNNING,
+        state: 'new',
+    }));
+    const chat = await mountWithCleanup(AIChat, { props: {} });
+    await chat.onSelectSession(5);
+    expect(chat.session.state.loading).toBe(false);
+    const switching = chat.onNewSession();
+    await animationFrame();
+    expect(chat.session.state.loading).toBe(true);
+    resolveCreate();
+    await switching;
+    expect(chat.session.state.sessionId).toBe(99);
+    expect(chat.session.state.loading).toBe(false);
+});
 
 test('AIChat mounts and loads sessions into the sidebar', async () => {
     registerMocks({

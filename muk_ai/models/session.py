@@ -2245,7 +2245,29 @@ class AISession(models.Model):
     def enqueue_message(
         self, user_message: str | None, attachment_ids: list[int] | None = None
     ) -> dict:
-        """Queue a user message and return the session snapshot."""
+        """Queue a user message and return the session snapshot.
+
+        Locks the session row to serialize against the terminal
+        transition of the running turn, whose queue drain would
+        otherwise miss a row inserted concurrently. When the locked
+        state is already terminal no drain will ever run again, so
+        instead of queueing, the snapshot is returned with the marker
+        ``queue_rejected_state`` and the caller re-sends the message
+        through the regular send path.
+        """
+        self.ensure_one()
+        self.flush_recordset()
+        self.env.cr.execute(
+            'SELECT state FROM muk_ai_session WHERE id = %s FOR UPDATE',
+            [self.id],
+        )
+        row = self.env.cr.fetchone()
+        state = row[0] if row else self.state
+        self.invalidate_recordset(['state'])
+        if state not in ('running', 'waiting', 'compacting'):
+            snapshot = self.get_snapshot()
+            snapshot['queue_rejected_state'] = state
+            return snapshot
         self.env['muk_ai.session.pending'].create(
             {
                 'session_id': self.id,

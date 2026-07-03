@@ -111,6 +111,7 @@ export function useAiSession(options = {}) {
     let streamIdleTimer = null;
     let loadSeq = 0;
     let pendingLoad = null;
+    let requeueRerouting = false;
     const busHandler = (payload) => onBusEvent(payload);
     bus.subscribe('muk_ai.event', busHandler);
     function clearStreamIdleTimer() {
@@ -633,6 +634,33 @@ export function useAiSession(options = {}) {
     function onInputChange(value) {
         state.input = value;
     }
+    /**
+     * Re-dispatch a message the server refused to queue (the turn ended
+     * mid-flight, so no drain would ever run it) through the regular
+     * send path, preserving any draft typed meanwhile.
+     * @param {object} snapshot
+     * @param {string} message
+     * @param {Array} attachments
+     */
+    async function redispatchRejected(snapshot, message, attachments) {
+        applySnapshot(snapshot);
+        const draft = state.input;
+        const draftAttachments = [...state.pendingAttachments];
+        state.input = message;
+        state.pendingAttachments = attachments;
+        if (!requeueRerouting) {
+            requeueRerouting = true;
+            try {
+                await onSend();
+            } finally {
+                requeueRerouting = false;
+            }
+            if (draft) {
+                state.input = draft;
+                state.pendingAttachments = draftAttachments;
+            }
+        }
+    }
     async function onSend() {
         if (!canSend()) {
             return;
@@ -665,6 +693,13 @@ export function useAiSession(options = {}) {
                     [state.sessionId, message],
                     { attachment_ids: attachmentIds },
                 );
+                if (snapshot && snapshot.queue_rejected_state) {
+                    state.pendingMessages = state.pendingMessages.filter(
+                        (m) => m !== optimisticEntry,
+                    );
+                    await redispatchRejected(snapshot, message, attachments);
+                    return;
+                }
                 applySnapshot(snapshot);
             } catch (error) {
                 notification.add(
@@ -720,6 +755,12 @@ export function useAiSession(options = {}) {
                 [state.sessionId, message],
                 { attachment_ids: attachmentIds },
             );
+            if (snapshot && snapshot.queue_rejected_state) {
+                state.events = state.events.filter((entry) => entry !== optimistic);
+                eventKeys.delete(eventKey(optimistic));
+                await redispatchRejected(snapshot, message, attachments);
+                return;
+            }
             applySnapshot(snapshot);
         } catch (error) {
             if (wasWaitingQuestion) {

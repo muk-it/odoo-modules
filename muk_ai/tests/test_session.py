@@ -1613,6 +1613,21 @@ class TestAiSession(AITestCommon):
             'queued while running',
         )
 
+    def test_enqueue_message_queues_while_running(self):
+        session = self.env['muk_ai.session'].create({'name': 'queue-live'})
+        session.write({'state': 'running'})
+        snapshot = session.enqueue_message('queued live')
+        self.assertNotIn('queue_rejected_state', snapshot)
+        self.assertEqual(len(session.pending_ids), 1)
+        self.assertEqual(session.pending_ids[0].content, 'queued live')
+
+    def test_enqueue_message_rejects_when_turn_already_over(self):
+        session = self.env['muk_ai.session'].create({'name': 'queue-late'})
+        session.write({'state': 'done'})
+        snapshot = session.enqueue_message('raced past the turn end')
+        self.assertEqual(snapshot['queue_rejected_state'], 'done')
+        self.assertFalse(session.pending_ids)
+
     # ----------------------------------------------------------
     # Tests: worker recovery
     # ----------------------------------------------------------

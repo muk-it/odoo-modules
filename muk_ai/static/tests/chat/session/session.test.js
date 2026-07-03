@@ -388,6 +388,102 @@ test('onSend routes subsequent turns through send_message', async () => {
     expect(sent).toBe(true);
 });
 
+test('onSend queues through enqueue_message while a turn is running', async () => {
+    const running = { ...SESSION_RECORD, state: 'running' };
+    onRpc('muk_ai.session', 'read', () => [running]);
+    onRpc('muk_ai.session', 'get_snapshot', () => snapshotFor(running));
+    const calls = [];
+    onRpc('muk_ai.session', 'enqueue_message', ({ args }) => {
+        calls.push(args);
+        return snapshotFor(running, {
+            pending_user_messages: [{ content: args[1], attachment_ids: [] }],
+        });
+    });
+    makeBusMock();
+    const harness = makeHarness();
+    const session = await mountAndLoad(harness);
+    session.onInputChange('while running');
+    await session.onSend();
+    expect(calls).toEqual([[7, 'while running']]);
+    expect(session.state.pendingMessages).toHaveLength(1);
+    expect(session.state.pendingMessages[0].content).toBe('while running');
+});
+
+test('rejected queue attempt re-dispatches through the regular send path', async () => {
+    const running = { ...SESSION_RECORD, state: 'running' };
+    onRpc('muk_ai.session', 'read', () => [running]);
+    onRpc('muk_ai.session', 'get_snapshot', () => snapshotFor(running));
+    onRpc('muk_ai.session', 'enqueue_message', () =>
+        snapshotFor(SESSION_RECORD, { queue_rejected_state: 'done' }),
+    );
+    const sends = [];
+    onRpc('muk_ai.session', 'send_message', ({ args }) => {
+        sends.push(args);
+        return { ...SNAPSHOT_RUNNING, events: SESSION_RECORD.events };
+    });
+    makeBusMock();
+    const harness = makeHarness();
+    const session = await mountAndLoad(harness);
+    session.onInputChange('raced past the end');
+    await session.onSend();
+    expect(sends).toEqual([[7, 'raced past the end']]);
+    expect(session.state.pendingMessages).toHaveLength(0);
+    expect(session.state.status).toBe('running');
+    expect(session.state.input).toBe('');
+});
+
+test('queue rejection re-send preserves a draft typed meanwhile', async () => {
+    const running = { ...SESSION_RECORD, state: 'running' };
+    onRpc('muk_ai.session', 'read', () => [running]);
+    onRpc('muk_ai.session', 'get_snapshot', () => snapshotFor(running));
+    let resolveEnqueue;
+    const enqueueGate = new Promise((resolve) => {
+        resolveEnqueue = () =>
+            resolve(snapshotFor(SESSION_RECORD, { queue_rejected_state: 'done' }));
+    });
+    onRpc('muk_ai.session', 'enqueue_message', () => enqueueGate);
+    onRpc('muk_ai.session', 'send_message', () => ({ ...SNAPSHOT_RUNNING }));
+    makeBusMock();
+    const harness = makeHarness();
+    const session = await mountAndLoad(harness);
+    session.onInputChange('first message');
+    const sending = session.onSend();
+    await animationFrame();
+    session.onInputChange('draft in progress');
+    resolveEnqueue();
+    await sending;
+    expect(session.state.input).toBe('draft in progress');
+});
+
+test('send_message rejection re-dispatches once through a fresh send', async () => {
+    onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
+    const sends = [];
+    onRpc('muk_ai.session', 'send_message', ({ args }) => {
+        sends.push(args);
+        if (sends.length === 1) {
+            return snapshotFor(SESSION_RECORD, { queue_rejected_state: 'done' });
+        }
+        return {
+            ...SNAPSHOT_RUNNING,
+            events: [
+                ...SESSION_RECORD.events,
+                { kind: 'user_message', content: args[1], attachments: [] },
+            ],
+        };
+    });
+    makeBusMock();
+    const harness = makeHarness();
+    const session = await mountAndLoad(harness);
+    session.onInputChange('flipped mid-flight');
+    await session.onSend();
+    expect(sends).toHaveLength(2);
+    expect(sends[1]).toEqual([7, 'flipped mid-flight']);
+    const optimistic = session.state.events.filter(
+        (e) => e.content === 'flipped mid-flight',
+    );
+    expect(optimistic).toHaveLength(1);
+});
+
 test('bus log event with text kind appends to state.events and clears streamingText', async () => {
     onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
     const bus = makeBusMock();
