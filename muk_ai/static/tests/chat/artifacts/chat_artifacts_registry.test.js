@@ -124,3 +124,34 @@ test('only a single non-empty type → no tab strip', async () => {
     await animationFrame();
     expect(queryFirst('.mk_artifacts_panel .mk_artifacts_tabs')).toBe(null);
 });
+
+test('assistant inline images (persisted /web/image markdown) appear as attachments', () => {
+    const collect = ARTIFACT_TYPES.get('attachments').collect;
+    const items = collect({
+        pendingAttachments: [],
+        events: [
+            { kind: 'user_message', content: 'generate an image', attachments: [] },
+            {
+                kind: 'text',
+                content:
+                    'Here you go ![rocket logo](/web/image/1032) _(attachment 1032 — to set on a record use `image_1920="@attachment:1032"`)_',
+            },
+        ],
+    });
+    expect(items.length).toBe(1);
+    expect(items[0].id).toBe(1032);
+    expect(items[0].filename).toBe('rocket logo');
+    expect(items[0].mimetype).toBe('image/png');
+});
+
+test('assistant inline images dedupe against repeated references', () => {
+    const collect = ARTIFACT_TYPES.get('attachments').collect;
+    const items = collect({
+        pendingAttachments: [],
+        events: [
+            { kind: 'text', content: '![a](/web/image/7) and again ![a](/web/image/7)' },
+            { kind: 'text', content: '![b](/web/image/8)' },
+        ],
+    });
+    expect(items.map((i) => i.id)).toEqual([7, 8]);
+});

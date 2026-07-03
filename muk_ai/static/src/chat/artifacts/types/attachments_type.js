@@ -3,6 +3,8 @@ import { registry } from '@web/core/registry';
 
 import { AttachmentsTab } from '@muk_ai/chat/artifacts/types/attachments_tab';
 
+const INLINE_IMAGE_MD = /!\[([^\]]*)\]\(\/web\/image\/(\d+)\)/g;
+
 function collectAttachments(sessionState) {
     if (!sessionState) {
         return [];
@@ -23,17 +25,29 @@ function collectAttachments(sessionState) {
         if (!event) continue;
         const role =
             event.kind === 'user_message' || event.kind === 'answer' ? 'user' : null;
-        if (role !== 'user') continue;
-        const atts = event.attachments || [];
-        for (const att of atts) {
-            if (!att) continue;
-            const key =
-                att.id != null
-                    ? `id:${att.id}`
-                    : `n:${att.filename || ''}:${out.length}`;
-            if (seen.has(key)) continue;
-            seen.add(key);
-            out.push(att);
+        if (role === 'user') {
+            const atts = event.attachments || [];
+            for (const att of atts) {
+                if (!att) continue;
+                const key =
+                    att.id != null
+                        ? `id:${att.id}`
+                        : `n:${att.filename || ''}:${out.length}`;
+                if (seen.has(key)) continue;
+                seen.add(key);
+                out.push(att);
+            }
+        } else if (event.kind === 'text' && event.content) {
+            for (const match of String(event.content).matchAll(INLINE_IMAGE_MD)) {
+                const key = `id:${Number(match[2])}`;
+                if (seen.has(key)) continue;
+                seen.add(key);
+                out.push({
+                    id: Number(match[2]),
+                    filename: match[1] || 'generated.png',
+                    mimetype: 'image/png',
+                });
+            }
         }
     }
     return out;

@@ -156,6 +156,7 @@ function buildRenderer() {
                 return '';
             }
         }
+        token.attrSet('class', 'mk_md_image');
         return self.renderToken(tokens, idx, options, env);
     };
     return md;
