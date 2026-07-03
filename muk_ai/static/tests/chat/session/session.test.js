@@ -947,6 +947,17 @@ test('renderMarkdown returns markup-wrapped HTML', async () => {
     expect(html).toMatch(/<strong>/);
 });
 
+test('renderMarkdown returns a stable markup object for the same text', async () => {
+    onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
+    makeBusMock();
+    const harness = makeHarness();
+    const session = await mountAndLoad(harness);
+    const first = session.renderMarkdown('**bold**');
+    const second = session.renderMarkdown('**bold**');
+    expect(first).toBe(second);
+    expect(session.renderMarkdown('*other*')).not.toBe(first);
+});
+
 test('canSend requires text; running allows queueing', async () => {
     onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
     makeBusMock();
@@ -1811,4 +1822,53 @@ test('tool_result log bumps streamIdle activity', async () => {
         },
     });
     expect(session.state.streamIdle).toBe(false);
+});
+
+test('tool_call_result completes only the matching streaming tool card', async () => {
+    onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
+    onRpc('muk_ai.session', 'get_snapshot', () => snapshotFor(SESSION_RECORD));
+    const bus = makeBusMock();
+    const harness = makeHarness();
+    const session = await mountAndLoad(harness);
+    session.state.status = 'running';
+    bus.emit({
+        session_id: 7,
+        type: 'tool_call_start',
+        payload: { call_id: 'c1', name: 'search_read' },
+    });
+    bus.emit({
+        session_id: 7,
+        type: 'tool_call_start',
+        payload: { call_id: 'c2', name: 'write' },
+    });
+    bus.emit({
+        session_id: 7,
+        type: 'tool_call_result',
+        payload: { call_id: 'c1', name: 'search_read', result: '[]' },
+    });
+    const [first, second] = session.state.streamingTools;
+    expect(first.done).toBe(true);
+    expect(first.result).toBe('[]');
+    expect(second.done).toBe(undefined);
+    expect(session.state.streamingTools.length).toBe(2);
+});
+
+test('tool_call_result without call_id leaves streaming tools untouched', async () => {
+    onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
+    onRpc('muk_ai.session', 'get_snapshot', () => snapshotFor(SESSION_RECORD));
+    const bus = makeBusMock();
+    const harness = makeHarness();
+    const session = await mountAndLoad(harness);
+    session.state.status = 'running';
+    bus.emit({
+        session_id: 7,
+        type: 'tool_call_start',
+        payload: { call_id: 'c1', name: 'search_read' },
+    });
+    bus.emit({
+        session_id: 7,
+        type: 'tool_call_result',
+        payload: { result: '[]' },
+    });
+    expect(session.state.streamingTools[0].done).toBe(undefined);
 });

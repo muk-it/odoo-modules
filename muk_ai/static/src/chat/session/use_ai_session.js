@@ -247,6 +247,18 @@ export function useAiSession(options = {}) {
             );
             bumpStreamActivity();
             requestScroll();
+        } else if (event.type === 'tool_call_result') {
+            const { call_id: callId, result } = event.payload || {};
+            if (!callId) {
+                return;
+            }
+            state.streamingTools = state.streamingTools.map((t) =>
+                t.callId === callId
+                    ? { ...t, done: true, result: result === undefined ? null : result }
+                    : t,
+            );
+            bumpStreamActivity();
+            requestScroll();
         } else if (event.type === 'state') {
             if (event.payload.state) {
                 state.status = event.payload.state;
@@ -1265,8 +1277,22 @@ export function useAiSession(options = {}) {
         }
         return lines[lines.length - 1];
     }
+    const markdownCache = new Map();
     function renderMarkdown(text) {
-        return markup(renderMarkdownToHtml(text));
+        if (typeof text !== 'string') {
+            return markup(renderMarkdownToHtml(text));
+        }
+        let cached = markdownCache.get(text);
+        if (cached === undefined) {
+            cached = markup(renderMarkdownToHtml(text));
+        } else {
+            markdownCache.delete(text);
+        }
+        markdownCache.set(text, cached);
+        if (markdownCache.size > 400) {
+            markdownCache.delete(markdownCache.keys().next().value);
+        }
+        return cached;
     }
     function copyText(text) {
         if (!text || !navigator.clipboard) {
