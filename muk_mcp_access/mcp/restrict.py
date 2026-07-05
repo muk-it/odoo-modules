@@ -72,9 +72,15 @@ class MCPMixin(models.AbstractModel):
 
     @api.model
     def _mcp_create_records(self, model: str, values) -> dict[str, Any]:
-        """Create a record and assert it stays within the configured record domain."""
-        result = super()._mcp_create_records(model, values)
-        self._mcp_assert_records_allowed(model, [result['id']])
+        """Create a record and assert it stays within the configured record domain.
+
+        :raise AccessError: when the created record lies outside the
+            configured domain; the savepoint rolls the insert back so the
+            forbidden record is never persisted.
+        """
+        with self.env.cr.savepoint():
+            result = super()._mcp_create_records(model, values)
+            self._mcp_assert_records_allowed(model, [result['id']])
         return result
 
     @api.model

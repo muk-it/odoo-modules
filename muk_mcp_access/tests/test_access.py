@@ -301,6 +301,49 @@ class TestMCPAccessModel(common.TransactionCase):
         )
         self.assertEqual(rows[0]['code'], 'BE')
 
+    def test_create_out_of_domain_does_not_persist(self):
+        self.access_model.create(
+            {
+                'model_id': self.partner_model.id,
+                'allow_read': True,
+                'allow_write': True,
+                'domain': "[('is_company', '=', True)]",
+            }
+        )
+        raised = False
+        try:
+            self.mixin._mcp_create_records(
+                'res.partner',
+                {'name': 'MCP_BOUNDARY', 'is_company': False},
+            )
+        except AccessError:
+            raised = True
+        self.assertTrue(raised)
+        self.assertFalse(
+            self.env['res.partner']
+            .with_context(active_test=False)
+            .search([('name', '=', 'MCP_BOUNDARY')]),
+        )
+
+    def test_create_in_domain_succeeds(self):
+        self.access_model.create(
+            {
+                'model_id': self.partner_model.id,
+                'allow_read': True,
+                'allow_write': True,
+                'domain': "[('is_company', '=', True)]",
+            }
+        )
+        result = self.mixin._mcp_create_records(
+            'res.partner',
+            {'name': 'MCP_IN_DOMAIN', 'is_company': True},
+        )
+        self.assertTrue(result['id'])
+        self.assertEqual(
+            self.env['res.partner'].browse(result['id']).name,
+            'MCP_IN_DOMAIN',
+        )
+
     def test_domain_dynamic_user_context(self):
         self.access_model.create(
             {
