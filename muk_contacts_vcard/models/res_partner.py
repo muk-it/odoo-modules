@@ -197,7 +197,7 @@ class Partner(models.Model):
     def _ensure_vcard_uid(self) -> str:
         """Assign and return a stable vCard UID, generating one if missing."""
         if not self.vcard_uid:
-            self.vcard_uid = str(uuid.uuid4())
+            self.sudo().vcard_uid = str(uuid.uuid4())
         return self.vcard_uid
 
     def _build_vcard(self) -> vobject.base.Component:
@@ -336,6 +336,8 @@ class Partner(models.Model):
         'honorific_suffix_ids',
         'honorific_prefix_ids.name',
         'honorific_suffix_ids.name',
+        'honorific_prefix_ids.shortcut',
+        'honorific_suffix_ids.shortcut',
     )
     def _compute_formatted_name(self) -> None:
         """Build the formatted name, optionally including honorifics."""
@@ -388,6 +390,8 @@ class Partner(models.Model):
         'gender',
         'honorific_prefix_ids',
         'honorific_suffix_ids',
+        'honorific_prefix_ids.shortcut',
+        'honorific_suffix_ids.shortcut',
         'image_1920',
         'lang',
         'lastname',

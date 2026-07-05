@@ -2,7 +2,7 @@ import re
 from datetime import timedelta
 
 from odoo import Command, fields
-from odoo.tests.common import TransactionCase, tagged
+from odoo.tests.common import TransactionCase, new_test_user, tagged
 
 
 @tagged('post_install', '-at_install')
@@ -79,6 +79,59 @@ class TestResPartner(TransactionCase):
         self.assertIn(partner.vcard_uid, serialized)
         self.assertIn('EMAIL', serialized)
         self.assertIn('TYPE=HOME', serialized)
+
+    def test_vcard_export_does_not_require_partner_write_access(self):
+        user = new_test_user(self.env, login='vcard_ro', groups='base.group_user')
+        partner = self.env['res.partner'].create(
+            {
+                'firstname': 'Jane',
+                'lastname': 'Doe',
+            }
+        )
+        self.assertFalse(partner.vcard_uid)
+        content = partner.with_user(user)._get_vcard_file()
+        self.assertTrue(content)
+        self.assertTrue(partner.vcard_uid)
+
+    def test_formatted_name_recomputes_on_shortcut_change(self):
+        honorific = self.env['muk_contacts_vcard.honorific'].create(
+            {
+                'name': 'Doctor',
+                'shortcut': 'Dr.',
+                'position': 'preceding',
+            }
+        )
+        partner = self.env['res.partner'].create(
+            {
+                'firstname': 'John',
+                'lastname': 'Doe',
+                'honorific_prefix_ids': [Command.set(honorific.ids)],
+            }
+        )
+        self.assertEqual(partner.formatted_name, 'Dr. John Doe')
+        honorific.shortcut = 'Dr'
+        self.assertIn(
+            partner,
+            self.env.records_to_compute(partner._fields['vcard_modified']),
+        )
+        partner.invalidate_recordset(['formatted_name'])
+        self.assertEqual(partner.formatted_name, 'Dr John Doe')
+
+    def test_portal_user_can_read_honorific_shortcut(self):
+        portal = new_test_user(
+            self.env, login='vcard_portal', groups='base.group_portal'
+        )
+        honorific = self.env['muk_contacts_vcard.honorific'].create(
+            {
+                'name': 'Doctor',
+                'shortcut': 'Dr.',
+                'position': 'preceding',
+            }
+        )
+        partner = portal.partner_id.commercial_partner_id
+        partner.honorific_prefix_ids = [Command.set(honorific.ids)]
+        result = partner.with_user(portal).mapped('honorific_prefix_ids.shortcut')
+        self.assertEqual(result, ['Dr.'])
 
     def test_ensure_vcard_uid_sets_uid(self):
         partner = self.env['res.partner'].create({'name': 'Initial Name'})
