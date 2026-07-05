@@ -1262,10 +1262,21 @@ class AISession(models.Model):
         if not isinstance(target_args, dict):
             return {'error': '`call.arguments` must be an object.'}
         inline_call_id = f'{parent_call_id or "tool_load"}__{target}'
-        self._record_tool_call(
-            {'name': target, 'arguments': target_args, 'call_id': inline_call_id}
-        )
-        result, ok = self._dispatch_tool_call(target, target_args, inline_call_id)
+        call = {'name': target, 'arguments': target_args, 'call_id': inline_call_id}
+        self._record_tool_call(call)
+        gate = self._check_approval_gate(target, target_args)
+        if gate['action'] == 'pause':
+            result = {
+                'error': 'requires_approval',
+                'reason': gate['risk'].get('reason') or '',
+            }
+            ok = False
+        else:
+            if gate['action'] == 'auto_approved':
+                self._record_approval_audit(
+                    decision='auto_approved', call=call, risk=gate['risk']
+                )
+            result, ok = self._dispatch_tool_call(target, target_args, inline_call_id)
         self._append_event(
             {
                 'kind': 'tool_result',
