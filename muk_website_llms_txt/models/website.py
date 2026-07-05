@@ -131,6 +131,20 @@ class Website(models.Model):
         """Return whether the named Odoo module is installed."""
         return module_name in self.env['ir.module.module']._installed()
 
+    def _get_llms_page_domain(self) -> list[tuple[str, str, object]]:
+        """Return the domain matching the publicly visible website pages.
+
+        Mirrors the visibility gate the framework enforces when serving a
+        page, so pages restricted to signed-in users, a password or a group
+        are never exposed to anonymous requesters through the sudo search.
+        """
+        return [
+            ('website_published', '=', True),
+            ('website_id', 'in', [self.id, False]),
+            ('visibility', 'in', (False, '')),
+            ('group_ids', '=', False),
+        ]
+
     def _get_llms_txt_pages(self, base_url: str) -> list[str]:
         """Return llms.txt index lines for the published website pages."""
         if not self.llms_include_pages:
@@ -139,10 +153,7 @@ class Website(models.Model):
             self.env['website.page']
             .sudo()
             .search(
-                [
-                    ('website_published', '=', True),
-                    ('website_id', 'in', [self.id, False]),
-                ],
+                self._get_llms_page_domain(),
                 order='url',
             )
         )
@@ -270,10 +281,7 @@ class Website(models.Model):
             self.env['website.page']
             .sudo()
             .search(
-                [
-                    ('website_published', '=', True),
-                    ('website_id', 'in', [self.id, False]),
-                ],
+                self._get_llms_page_domain(),
                 order='url',
             )
         )
