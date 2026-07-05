@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from contextlib import AbstractContextManager
-from datetime import timedelta
+from datetime import datetime, timedelta
 from unittest.mock import patch
+
+from freezegun import freeze_time
 
 from odoo import fields, models
 from odoo.tests import TransactionCase, tagged
@@ -90,6 +92,52 @@ class TestCronSweep(TransactionCase):
         sched_b = self._make_schedule(name='Sched B')
         self.assertNotEqual(sched_a.cron_id, sched_b.cron_id)
         self.assertNotEqual(sched_a.action_server_id, sched_b.action_server_id)
+
+    # ----------------------------------------------------------
+    # Tests Owned Cron Reschedule
+    # ----------------------------------------------------------
+
+    def _make_job_snapshot(self, cron: models.BaseModel, nextcall: datetime) -> dict:
+        """Build the job dict that ir.cron._reschedule_later expects."""
+        return {
+            'id': cron.id,
+            'nextcall': nextcall,
+            'interval_type': cron.interval_type,
+            'interval_number': cron.interval_number,
+        }
+
+    def test_cron_expression_reschedule_follows_expression(self):
+        schedule = self._make_schedule(
+            interval_type='cron',
+            cron_expression='0 9 * * 1',
+        )
+        cron = schedule.cron_id.sudo()
+        now = fields.Datetime.now()
+        job = self._make_job_snapshot(cron, now - timedelta(minutes=1))
+        self.env['ir.cron']._reschedule_later(job)
+        cron.invalidate_recordset(['nextcall'])
+        nextcall = cron.nextcall
+        self.assertEqual(
+            (nextcall.hour, nextcall.minute, nextcall.weekday()), (9, 0, 0)
+        )
+        self.assertGreater(nextcall, now)
+
+    def test_monthly_monthday_31_does_not_drift_after_auto_fire(self):
+        schedule = self._make_schedule(
+            interval_type='months',
+            interval_number=1,
+            monthday=31,
+        )
+        cron = schedule.cron_id.sudo()
+        cron.nextcall = datetime(2026, 2, 28, 9, 0)
+        job = self._make_job_snapshot(cron, cron.nextcall)
+        with freeze_time('2026-02-28 09:00:05'):
+            self.env['ir.cron']._reschedule_later(job)
+        cron.invalidate_recordset(['nextcall'])
+        self.assertEqual(
+            (cron.nextcall.year, cron.nextcall.month, cron.nextcall.day),
+            (2026, 3, 31),
+        )
 
     # ----------------------------------------------------------
     # Tests _find_pending_session_ids extension
