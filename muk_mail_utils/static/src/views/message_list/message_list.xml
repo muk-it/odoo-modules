@@ -22,29 +22,29 @@
                     unlinkAttachment.bind="() => {}"
                 />
             </div>
-            <div 
-                t-if="previewState.selectedRecord"  
+            <div
+                t-if="previewState.selectedRecord"
                 t-att-class="previewState.attachments.length > 0 ? 'py-1 border-top' : 'pb-1'"
             >
                 <div>
                     <div class="text-muted">
                         <small>Author:</small>
                     </div>
-                    <Field 
-                        name="'author_id'" 
-                        record="previewState.selectedRecord" 
+                    <Field
+                        name="'author_id'"
+                        record="previewState.selectedRecord"
                         type="'many2one_avatar'"
                         canOpen="false"
                         readonly="true"
                     />
                 </div>
-                <div t-if="previewState.selectedRecord.data.notified_partner_ids.length > 0" class="pt-1">
+                <div t-if="previewState.selectedRecord.data.notified_partner_ids.count > 0" class="pt-1">
                     <div class="text-muted">
                         <small>Recipients:</small>
                     </div>
-                    <Field 
-                        name="'notified_partner_ids'" 
-                        record="previewState.selectedRecord" 
+                    <Field
+                        name="'notified_partner_ids'"
+                        record="previewState.selectedRecord"
                         type="'many2many_tags_avatar'"
                         readonly="true"
                     />

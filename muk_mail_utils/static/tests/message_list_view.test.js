@@ -1,4 +1,5 @@
 import { expect, test } from '@odoo/hoot';
+import { animationFrame, press } from '@odoo/hoot-dom';
 
 import {
     defineModels,
@@ -78,4 +79,49 @@ test('selecting a row updates the message preview', async () => {
         '.o_list_table tbody tr.o_data_row:eq(1) td.o_data_cell:eq(0)',
     ).click();
     expect('.mk_message_preview').toHaveText(/Hello from second/);
+});
+
+test.tags('muk_mail_utils');
+test('keyboard navigation off the data rows does not crash the preview', async () => {
+    patchUiSize({ size: SIZES.XXL });
+    await mountView({
+        type: 'list',
+        resModel: 'x_test_message',
+        arch: `
+            <list js_class="message_list">
+                <field name="author_id"/>
+                <field name="body"/>
+            </list>
+        `,
+    });
+    await contains(
+        '.o_list_table tbody tr.o_data_row:eq(0) td.o_data_cell:eq(0)',
+    ).click();
+    expect(
+        '.o_list_table tbody tr.o_data_row:eq(0) td.o_data_cell:eq(0)',
+    ).toBeFocused();
+    expect('.mk_message_preview').toHaveText(/Hello from first/);
+    await press('ArrowUp');
+    await animationFrame();
+    expect('.mk_message_preview').toHaveText(/Hello from first/);
+});
+
+test.tags('muk_mail_utils');
+test('preview shows the recipients of the selected message', async () => {
+    patchUiSize({ size: SIZES.XXL });
+    await mountView({
+        type: 'list',
+        resModel: 'x_test_message',
+        arch: `
+            <list js_class="message_list">
+                <field name="author_id"/>
+                <field name="body"/>
+            </list>
+        `,
+    });
+    await contains(
+        '.o_list_table tbody tr.o_data_row:eq(0) td.o_data_cell:eq(0)',
+    ).click();
+    expect('.mk_message_preview').toHaveText(/Recipients:/);
+    expect('.mk_message_preview [name="notified_partner_ids"]').toHaveCount(1);
 });

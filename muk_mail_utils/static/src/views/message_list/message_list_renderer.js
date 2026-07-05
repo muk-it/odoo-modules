@@ -19,7 +19,9 @@ export class MessageListRenderer extends ListRenderer {
         if (futureCell) {
             const dataPointId = futureCell.closest('tr').dataset.id;
             const records = this.props.list.records.filter((x) => x.id === dataPointId);
-            this.props.setSelectedRecord(records[0]);
+            if (records[0]) {
+                this.props.setSelectedRecord(records[0]);
+            }
         }
         return futureCell;
     }
