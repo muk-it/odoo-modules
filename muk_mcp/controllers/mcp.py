@@ -62,6 +62,11 @@ class MCPController(http.Controller):
             message += f'\n\n{trace}'
         return message
 
+    def _get_tool_enforce_scope(self) -> str | None:
+        """Return the scope to enforce on tool calls, derived from the API key."""
+        key = getattr(request, '_mcp_key', None)
+        return key.scope if key else None
+
     def _get_session(self, session_id: str | None) -> models.BaseModel | None:
         """Return the active session for the current user, refreshing its last-seen time."""
         if (
@@ -316,8 +321,7 @@ class MCPController(http.Controller):
                 [protocol.make_text_content('Tool name is required')],
                 is_error=True,
             )
-        key = getattr(request, '_mcp_key', None)
-        enforce_scope = key.scope if key else None
+        enforce_scope = self._get_tool_enforce_scope()
         try:
             result, _record_info = retrying(
                 partial(
