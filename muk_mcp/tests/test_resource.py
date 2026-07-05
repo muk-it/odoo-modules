@@ -23,7 +23,23 @@ class TestReadResource(common.TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.tool_model = cls.env['muk_mcp.tool']
+        cls.mixin = cls.env['muk_mcp.mixin']
         cls.partner = cls.env['res.partner'].create({'name': 'Att Owner'})
+        png_b64 = (
+            b'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQ'
+            b'VQYV2NgAAIAAAUAAarVyFEAAAAASUVORK5CYII='
+        )
+        cls.acl_partner = cls.env['res.partner'].create(
+            {
+                'name': 'Confidential Owner',
+                'image_1920': png_b64,
+            },
+        )
+        cls.acl_user = new_test_user(
+            cls.env,
+            login='mcp_field_acl_user',
+            groups='base.group_user',
+        )
 
     # ----------------------------------------------------------
     # Helper
@@ -301,59 +317,26 @@ class TestReadResource(common.TransactionCase):
         with self.assertRaises(UserError):
             self._call('odoo://record/no.such.model/1/x')
 
-
-@tagged('post_install', '-at_install')
-class TestResourceFieldAcl(common.TransactionCase):
-    """Verify record-field URIs enforce field-level (``groups``) ACL."""
-
-    # ----------------------------------------------------------
-    # Setup
-    # ----------------------------------------------------------
-
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.mixin = cls.env['muk_mcp.mixin']
-        png_b64 = (
-            b'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQ'
-            b'VQYV2NgAAIAAAUAAarVyFEAAAAASUVORK5CYII='
-        )
-        cls.partner = cls.env['res.partner'].create(
-            {
-                'name': 'Confidential Owner',
-                'image_1920': png_b64,
-            },
-        )
-        cls.user = new_test_user(
-            cls.env,
-            login='mcp_field_acl_user',
-            groups='base.group_user',
-        )
-
-    # ----------------------------------------------------------
-    # Tests
-    # ----------------------------------------------------------
-
-    def test_read_resource_enforces_field_groups(self):
+    def test_record_field_enforces_field_groups(self):
         self.patch(
             self.env['res.partner']._fields['image_1920'],
             'groups',
             'base.group_system',
         )
-        self.partner.with_user(self.user).check_access('read')
-        mixin = self.mixin.with_user(self.user)
+        self.acl_partner.with_user(self.acl_user).check_access('read')
+        mixin = self.mixin.with_user(self.acl_user)
         with self.assertRaises(AccessError):
             mixin._resolve_resource_record_field(
                 'res.partner',
-                self.partner.id,
+                self.acl_partner.id,
                 'image_1920',
             )
 
-    def test_read_resource_allows_ungrouped_field(self):
-        mixin = self.mixin.with_user(self.user)
+    def test_record_field_allows_ungrouped_field(self):
+        mixin = self.mixin.with_user(self.acl_user)
         mimetype, raw, _name = mixin._resolve_resource_record_field(
             'res.partner',
-            self.partner.id,
+            self.acl_partner.id,
             'image_1920',
         )
         self.assertTrue(mimetype.startswith('image/'))
