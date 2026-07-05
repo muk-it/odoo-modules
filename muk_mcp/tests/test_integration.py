@@ -27,11 +27,12 @@ class TestMcpIntegration(common.TransactionCase):
         cls.session_model = cls.env['muk_mcp.session']
         cls.log_model = cls.env['muk_mcp.log']
         cls.notification_model = cls.env['muk_mcp.notification']
+        cls.key_user = cls.env.ref('base.user_admin')
         cls.raw_token = secrets.token_urlsafe(32)
         cls.mcp_key = cls.key_model.sudo().create(
             {
                 'name': 'Integration Test Key',
-                'user_id': cls.env.user.id,
+                'user_id': cls.key_user.id,
                 'key_hash': cls.key_model._hash_key(cls.raw_token),
                 'key_prefix': cls.raw_token[:8],
                 'scope': 'write',
@@ -42,7 +43,7 @@ class TestMcpIntegration(common.TransactionCase):
         cls.read_key = cls.key_model.sudo().create(
             {
                 'name': 'Read-Only Test Key',
-                'user_id': cls.env.user.id,
+                'user_id': cls.key_user.id,
                 'key_hash': cls.key_model._hash_key(cls.read_token),
                 'key_prefix': cls.read_token[:8],
                 'scope': 'read',

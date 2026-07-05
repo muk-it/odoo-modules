@@ -135,6 +135,17 @@ class MCPKey(models.Model):
             count=count,
         )
 
+    @api.model
+    def _authenticate_user_condition(self) -> SQL:
+        """Return the SQL predicate the key's owning user must satisfy.
+
+        Aliased ``u`` in :meth:`authenticate`. Defaults to requiring an
+        active user, mirroring Odoo core ``_check_apikey_credentials``.
+        Override to relax it, e.g. to authenticate keys owned by
+        intentionally inactive service users.
+        """
+        return SQL('u.active = true')
+
     # ----------------------------------------------------------
     # Functions
     # ----------------------------------------------------------
@@ -181,18 +192,26 @@ class MCPKey(models.Model):
     def authenticate(self, token: str) -> MCPKey | None:
         """Resolve a bearer token to its active key and stamp last use.
 
-        :return: the matching key, or ``None`` when no active key matches
+        Requires the key to be active and its owning user to satisfy
+        :meth:`_authenticate_user_condition` (by default an active user,
+        mirroring Odoo core ``_check_apikey_credentials``), so archiving a
+        user immediately revokes their MCP keys.
+
+        :return: the matching key, or ``None`` when no active key owned by an
+            eligible user matches
         """
         table = SQL.identifier(self._table)
         self.env.cr.execute(
             SQL(
                 """
-            SELECT id FROM %s
-            WHERE key_hash = %s AND active = true
+            SELECT k.id FROM %s k
+            JOIN res_users u ON u.id = k.user_id
+            WHERE k.key_hash = %s AND k.active = true AND %s
             LIMIT 1
             """,
                 table,
                 self._hash_key(token),
+                self._authenticate_user_condition(),
             ),
         )
         row = self.env.cr.fetchone()

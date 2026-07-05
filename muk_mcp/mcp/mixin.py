@@ -115,12 +115,15 @@ class MCPMixin(models.AbstractModel):
     ) -> tuple[str, bytes, str]:
         """Read a binary field of a record as ``(mimetype, raw, name)``.
 
-        Enforces record read access, then prefers the backing
-        ``ir.attachment`` (for attachment-stored fields), falling back to the
-        decoded field value with a guessed mimetype.
+        Enforces record read access and field-level (``groups``) access,
+        then prefers the backing ``ir.attachment`` (for attachment-stored
+        fields), falling back to the decoded field value with a guessed
+        mimetype.
 
         :raise UserError: if the field is not a binary field, the record is
             missing, or the value is empty.
+        :raise AccessError: if the user lacks read access on the record or
+            the field.
         """
         target = self._resolve_model(model)
         if target._fields.get(field) is None or target._fields[field].type != 'binary':
@@ -140,6 +143,7 @@ class MCPMixin(models.AbstractModel):
                 ),
             )
         record.check_access('read')
+        record._check_field_access(target._fields[field], 'read')
         attachment = (
             self.env['ir.attachment']
             .sudo()
