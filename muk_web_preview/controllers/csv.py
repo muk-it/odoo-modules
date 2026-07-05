@@ -111,6 +111,7 @@ class CSVPreviewController(http.Controller):
     )
     def preview_csv(
         self,
+        xmlid: str | None = None,
         model: str = 'ir.attachment',
         id=None,
         field: str = 'raw',
@@ -123,6 +124,7 @@ class CSVPreviewController(http.Controller):
     ) -> Markup:
         """Serve an HTML table preview of a CSV/TSV attachment field."""
         record = request.env['ir.binary']._find_record(
+            xmlid=xmlid,
             res_model=model,
             res_id=id and int(id),
             access_token=access_token,

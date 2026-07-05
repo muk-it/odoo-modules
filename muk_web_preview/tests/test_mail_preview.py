@@ -35,6 +35,15 @@ class TestMailPreview(odoo.tests.HttpCase):
         cls.eml_plain = cls._create_plain_eml()
         cls.eml_cid = cls._create_cid_eml()
         cls.eml_attachment = cls._create_attachment_eml()
+        cls.eml_bad_charset = cls._create_bad_charset_eml()
+        cls.env['ir.model.data'].create(
+            {
+                'name': 'test_mail_preview_html_eml',
+                'module': 'muk_web_preview',
+                'model': 'ir.attachment',
+                'res_id': cls.eml_html.id,
+            }
+        )
 
     # ----------------------------------------------------------
     # Helper
@@ -142,6 +151,28 @@ class TestMailPreview(odoo.tests.HttpCase):
             }
         )
 
+    @classmethod
+    def _create_bad_charset_eml(cls) -> models.BaseModel:
+        """Create an HTML email attachment declaring an unknown charset."""
+        raw = (
+            b'From: sender@example.com\r\n'
+            b'To: recipient@example.com\r\n'
+            b'Subject: Bad Charset Email\r\n'
+            b'MIME-Version: 1.0\r\n'
+            b'Content-Type: text/html; charset="bogus-charset-xyz"\r\n'
+            b'Content-Transfer-Encoding: 7bit\r\n'
+            b'\r\n'
+            b'<p>hello bad charset</p>\r\n'
+        )
+        return cls.env['ir.attachment'].create(
+            {
+                'name': 'bad_charset_email.eml',
+                'raw': raw,
+                'mimetype': 'message/rfc822',
+                'public': True,
+            }
+        )
+
     # ----------------------------------------------------------
     # Tests
     # ----------------------------------------------------------
@@ -203,6 +234,21 @@ class TestMailPreview(odoo.tests.HttpCase):
     def test_file_attachment_body(self):
         response = self._preview(self.eml_attachment)
         self.assertIn('See attached.', response.text)
+
+    def test_bad_charset_body_does_not_crash(self):
+        response = self._preview(self.eml_bad_charset)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('muk_mail_body', response.text)
+        self.assertIn('hello bad charset', response.text)
+
+    def test_xmlid_route(self):
+        self.authenticate(self.test_user.login, 'preview_test_user')
+        response = self.url_open(
+            '/muk_web_preview/preview/mail/muk_web_preview.test_mail_preview_html_eml',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Hello World', response.text)
+        self.assertIn('muk_mail_body', response.text)
 
     def test_unauthenticated(self):
         response = self.url_open(

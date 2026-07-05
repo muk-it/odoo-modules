@@ -58,12 +58,24 @@ class MailPreviewController(http.Controller):
             policy=email.policy.SMTP,
         )
 
+    def _safe_get_content(self, part: EmailMessage) -> str | bytes:
+        """Return the part content, decoding leniently on unknown charsets."""
+        try:
+            return part.get_content()
+        except (LookupError, UnicodeError, ValueError):
+            payload = part.get_payload(decode=True)
+            if payload is None:
+                return ''
+            if part.get_content_maintype() == 'text':
+                return payload.decode('utf-8', errors='replace')
+            return payload
+
     def _extract_body(self, msg: EmailMessage) -> str:
         """Return the sanitized HTML body, wrapping plain text in a pre block."""
         body = msg.get_body(preferencelist=('html', 'plain'))
         if body is None:
             return ''
-        content = body.get_content()
+        content = self._safe_get_content(body)
         if body.get_content_type() != 'text/html':
             content = f'<pre>{escape(content)}</pre>'
         return html_sanitize(content)
@@ -78,7 +90,7 @@ class MailPreviewController(http.Controller):
             cid = part.get('Content-ID', '').strip('<> ')
             if not cid:
                 continue
-            raw = part.get_content()
+            raw = self._safe_get_content(part)
             if isinstance(raw, str):
                 raw = raw.encode()
             b64 = base64.b64encode(raw).decode()
@@ -98,7 +110,7 @@ class MailPreviewController(http.Controller):
                 continue
             if not filename and not disposition.startswith('attachment'):
                 continue
-            raw = part.get_content()
+            raw = self._safe_get_content(part)
             size = len(raw) if isinstance(raw, bytes) else len(raw.encode())
             attachments.append(
                 {
@@ -186,6 +198,7 @@ class MailPreviewController(http.Controller):
     )
     def preview_mail(
         self,
+        xmlid: str | None = None,
         model: str = 'ir.attachment',
         id=None,
         field: str = 'raw',
@@ -198,6 +211,7 @@ class MailPreviewController(http.Controller):
     ) -> Markup:
         """Serve an HTML preview of an RFC 822 email attachment field."""
         record = request.env['ir.binary']._find_record(
+            xmlid=xmlid,
             res_model=model,
             res_id=id and int(id),
             access_token=access_token,

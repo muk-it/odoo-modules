@@ -42,6 +42,14 @@ class TestCSVPreview(odoo.tests.HttpCase):
                 'public': True,
             }
         )
+        cls.env['ir.model.data'].create(
+            {
+                'name': 'test_csv_preview_attachment',
+                'module': 'muk_web_preview',
+                'model': 'ir.attachment',
+                'res_id': cls.csv_attachment.id,
+            }
+        )
 
     # ----------------------------------------------------------
     # Tests
@@ -81,6 +89,15 @@ class TestCSVPreview(odoo.tests.HttpCase):
             f'/muk_web_preview/preview/csv/{self.tsv_attachment.id}',
         )
         self.assertEqual(response.status_code, 200)
+        self.assertIn('Alice', response.text)
+
+    def test_csv_preview_xmlid_route(self):
+        self.authenticate(self.test_user.login, 'csv_preview_test_user')
+        response = self.url_open(
+            '/muk_web_preview/preview/csv/muk_web_preview.test_csv_preview_attachment',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('<table>', response.text)
         self.assertIn('Alice', response.text)
 
     def test_csv_preview_unauthenticated(self):
