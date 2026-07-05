@@ -53,6 +53,50 @@ test('executeAction batches active ids and blocks UI', async () => {
 });
 
 test.tags('muk_web_actions');
+test('executeAction unblocks UI when a batch action rejects', async () => {
+    let doActionCalls = 0;
+    const self = {
+        props: {
+            getActiveIds: () => [1, 2, 3, 4, 5],
+            isDomainSelected: false,
+            resModel: 'product',
+            domain: false,
+            context: {},
+            onActionExecuted: () => {},
+        },
+        uiService: {
+            block: () => expect.step('ui.block'),
+            unblock: () => expect.step('ui.unblock'),
+        },
+        blockProgressService: {
+            block: ({ totalSteps }) => expect.step(`progress.block:${totalSteps}`),
+            unblock: () => expect.step('progress.unblock'),
+        },
+        actionService: {
+            doAction: async () => {
+                doActionCalls++;
+                if (doActionCalls === 2) {
+                    throw new Error('boom');
+                }
+            },
+        },
+    };
+    await expect(
+        ActionMenus.prototype.executeAction.call(self, {
+            id: 99,
+            execute_in_batch: true,
+            execution_batch_size: 2,
+        }),
+    ).rejects.toThrow('boom');
+    expect.verifySteps([
+        'ui.block',
+        'progress.block:3',
+        'ui.unblock',
+        'progress.unblock',
+    ]);
+});
+
+test.tags('muk_web_actions');
 test('executeAction uses domain selection search', async () => {
     const realActiveIdsLimit = session.active_ids_limit;
     session.active_ids_limit = 80;

@@ -43,31 +43,34 @@ patch(ActionMenus.prototype, {
             totalSteps: totalBatches,
             progressData: importProgress,
         });
-        for (let i = 0; i < activeIds.length; i += batchSize) {
-            const batchIds = activeIds.slice(i, i + batchSize);
-            const activeIdsContext = {
-                active_id: batchIds[0],
-                active_ids: batchIds,
-                active_model: this.props.resModel,
-            };
-            if (this.props.domain) {
-                activeIdsContext.active_domain = this.props.domain;
+        try {
+            for (let i = 0; i < activeIds.length; i += batchSize) {
+                const batchIds = activeIds.slice(i, i + batchSize);
+                const activeIdsContext = {
+                    active_id: batchIds[0],
+                    active_ids: batchIds,
+                    active_model: this.props.resModel,
+                };
+                if (this.props.domain) {
+                    activeIdsContext.active_domain = this.props.domain;
+                }
+                const context = makeContext([this.props.context, activeIdsContext]);
+                await this.actionService.doAction(action.id, {
+                    additionalContext: context,
+                    onClose: this.props.onActionExecuted,
+                });
+                importProgress.step = Math.floor(i / batchSize) + 1;
+                importProgress.value = Math.round(
+                    (importProgress.step / totalBatches) * 100,
+                );
+                if (i + batchSize < activeIds.length) {
+                    const delay = session.test_mode ? 0 : 5400;
+                    await new Promise((resolve) => setTimeout(resolve, delay));
+                }
             }
-            const context = makeContext([this.props.context, activeIdsContext]);
-            await this.actionService.doAction(action.id, {
-                additionalContext: context,
-                onClose: this.props.onActionExecuted,
-            });
-            importProgress.step = Math.floor(i / batchSize) + 1;
-            importProgress.value = Math.round(
-                (importProgress.step / totalBatches) * 100,
-            );
-            if (i + batchSize < activeIds.length) {
-                const delay = session.test_mode ? 0 : 5400;
-                await new Promise((resolve) => setTimeout(resolve, delay));
-            }
+        } finally {
+            this.uiService.unblock();
+            this.blockProgressService.unblock();
         }
-        this.uiService.unblock();
-        this.blockProgressService.unblock();
     },
 });

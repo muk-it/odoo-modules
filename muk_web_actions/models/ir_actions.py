@@ -43,7 +43,7 @@ class IrActionsActions(models.Model):
                 )
         return [frozendict(v) for v in binding_values_by_id.values()]
 
-    @tools.ormcache('model_name')
+    @tools.ormcache('model_name', 'self.env.lang')
     def _get_bindings(self, model_name: str) -> frozendict:
         """Return action bindings enriched with batch-execution values."""
         res = dict(super()._get_bindings(model_name))
