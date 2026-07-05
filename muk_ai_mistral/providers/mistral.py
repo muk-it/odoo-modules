@@ -184,8 +184,8 @@ class MistralProvider(ProviderBase):
     def _user_content_to_mistral(cls, content):
         """Map a user message content to Mistral text or multimodal parts.
 
-        :return: a plain string, or a list of text/image parts when the
-            message carries an image attachment
+        :return: a plain string, or a list of text/image/document parts
+            when the message carries an image or document attachment
         """
         if isinstance(content, str):
             return content
@@ -200,7 +200,7 @@ class MistralProvider(ProviderBase):
                 part = cls._attachment_to_part(chunk)
                 if part is None:
                     continue
-                if part.get('type') == 'image_url':
+                if part.get('type') in ('image_url', 'document_url'):
                     multimodal.append(part)
                 else:
                     text_parts.append(part.get('text') or '')
@@ -215,9 +215,9 @@ class MistralProvider(ProviderBase):
 
     @staticmethod
     def _attachment_to_part(block: dict) -> dict | None:
-        """Convert a muk_ai attachment block to an image or text part.
+        """Convert a muk_ai attachment block to an image, document or text part.
 
-        :return: ``None`` when the block carries neither image data nor text
+        :return: ``None`` when the block carries no image, document or text data
         """
         strategy = block.get('strategy')
         mimetype = block.get('mimetype') or 'application/octet-stream'
@@ -227,6 +227,11 @@ class MistralProvider(ProviderBase):
             return {
                 'type': 'image_url',
                 'image_url': f'data:{mimetype};base64,{data_b64}',
+            }
+        if strategy == 'file' and data_b64:
+            return {
+                'type': 'document_url',
+                'document_url': f'data:{mimetype};base64,{data_b64}',
             }
         text = block.get('inline_text') or ''
         prefix = f'--- File: {filename} ({mimetype}) ---\n'

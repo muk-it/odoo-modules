@@ -370,6 +370,50 @@ class TestAiMistralProvider(MistralTestCommon):
         self.assertEqual(content[0]['type'], 'image_url')
         self.assertEqual(content[0]['image_url'], 'data:image/png;base64,AAA=')
 
+    def test_attachment_pdf_becomes_document_part(self):
+        captured = {}
+
+        def fake_post(url, **kwargs):
+            captured['body'] = kwargs.get('json')
+            return self._mock_http_response(self._text_response('ok'))
+
+        with patch.object(requests, 'post', side_effect=fake_post):
+            self.provider._request_responses(
+                inputs=[
+                    {
+                        'role': 'user',
+                        'content': [
+                            {'type': 'input_text', 'text': 'Summarize this'},
+                            {
+                                'type': 'muk_ai_attachment',
+                                'strategy': 'file',
+                                'mimetype': 'application/pdf',
+                                'data_b64': 'AAA=',
+                                'filename': 'invoice.pdf',
+                            },
+                        ],
+                    }
+                ],
+            )
+        content = captured['body']['inputs'][0]['content']
+        parts = content if isinstance(content, list) else [content]
+        doc_parts = [
+            part
+            for part in parts
+            if isinstance(part, dict) and part.get('type') == 'document_url'
+        ]
+        self.assertTrue(doc_parts)
+        self.assertEqual(
+            doc_parts[0]['document_url'], 'data:application/pdf;base64,AAA='
+        )
+        text_parts = [
+            part
+            for part in parts
+            if isinstance(part, dict) and part.get('type') == 'text'
+        ]
+        self.assertTrue(text_parts)
+        self.assertIn('Summarize this', text_parts[0]['text'])
+
     def test_attachment_text_becomes_text_with_filename_prefix(self):
         captured = {}
 
