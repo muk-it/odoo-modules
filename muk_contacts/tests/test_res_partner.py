@@ -47,6 +47,27 @@ class TestResPartner(TransactionCase):
         )
         self.assertEqual(child.contact_number, parent.contact_number)
 
+    def test_detaching_child_does_not_collide_on_contact_number(self):
+        company = self.env['res.partner'].create(
+            {
+                'name': 'Company Partner',
+                'is_company': True,
+            }
+        )
+        self.assertTrue(company.contact_number)
+        child = self.env['res.partner'].create(
+            {
+                'name': 'Child Partner',
+                'parent_id': company.id,
+                'type': 'contact',
+            }
+        )
+        self.assertEqual(child.contact_number, company.contact_number)
+        child.write({'parent_id': False})
+        child.flush_recordset()
+        self.assertTrue(child.contact_number)
+        self.assertNotEqual(child.contact_number, company.contact_number)
+
     def test_address_get_respects_default_invoice_delivery(self):
         partner = self.env['res.partner'].create({'name': 'Address Partner'})
         invoice = self.env['res.partner'].create(

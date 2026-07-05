@@ -200,3 +200,20 @@ class Partner(models.Model):
             ):
                 vals['contact_number'] = self._get_next_contact_number()
         return super().create(vals_list)
+
+    def write(self, vals: dict) -> bool:
+        """Renumber detached children still carrying an inherited contact number."""
+        if (
+            'parent_id' in vals
+            and not vals.get('parent_id')
+            and 'contact_number' not in vals
+        ):
+            for record in self:
+                if (
+                    record.parent_id
+                    and record.contact_number
+                    and record.contact_number
+                    == record.commercial_partner_id.contact_number
+                ):
+                    record.contact_number = self._get_next_contact_number()
+        return super().write(vals)
