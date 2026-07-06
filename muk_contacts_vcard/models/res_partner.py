@@ -244,7 +244,7 @@ class Partner(models.Model):
             tel = vcard.add('tel')
             tel.value = self.phone2
             tel.type_param = 'HOME'
-        if self.category_id:
+        if self.category_id and self.env['res.partner.category'].has_access('read'):
             categories = vcard.add('categories')
             categories.value = self.mapped('category_id.name')
         if self.commercial_company_name and self.department:

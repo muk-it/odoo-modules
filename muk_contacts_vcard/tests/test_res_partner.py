@@ -133,15 +133,23 @@ class TestResPartner(TransactionCase):
         result = partner.with_user(portal).mapped('honorific_prefix_ids.shortcut')
         self.assertEqual(result, ['Dr.'])
 
-    def test_portal_user_can_read_partner_category(self):
+    def test_partner_category_not_readable_by_portal(self):
         portal = new_test_user(
             self.env, login='vcard_portal_cat', groups='base.group_portal'
         )
+        self.assertFalse(
+            self.env['res.partner.category'].with_user(portal).has_access('read')
+        )
+
+    def test_build_vcard_includes_categories_for_internal_user(self):
         category = self.env['res.partner.category'].create({'name': 'VIP'})
-        partner = portal.partner_id.commercial_partner_id
-        partner.category_id = [Command.set(category.ids)]
-        result = partner.with_user(portal).mapped('category_id.name')
-        self.assertEqual(result, ['VIP'])
+        partner = self.env['res.partner'].create(
+            {
+                'name': 'Tagged Partner',
+                'category_id': [Command.set(category.ids)],
+            }
+        )
+        self.assertIn('CATEGORIES', partner._build_vcard().serialize())
 
     def test_ensure_vcard_uid_sets_uid(self):
         partner = self.env['res.partner'].create({'name': 'Initial Name'})
