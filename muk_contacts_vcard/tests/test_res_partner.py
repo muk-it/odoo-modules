@@ -133,6 +133,16 @@ class TestResPartner(TransactionCase):
         result = partner.with_user(portal).mapped('honorific_prefix_ids.shortcut')
         self.assertEqual(result, ['Dr.'])
 
+    def test_portal_user_can_read_partner_category(self):
+        portal = new_test_user(
+            self.env, login='vcard_portal_cat', groups='base.group_portal'
+        )
+        category = self.env['res.partner.category'].create({'name': 'VIP'})
+        partner = portal.partner_id.commercial_partner_id
+        partner.category_id = [Command.set(category.ids)]
+        result = partner.with_user(portal).mapped('category_id.name')
+        self.assertEqual(result, ['VIP'])
+
     def test_ensure_vcard_uid_sets_uid(self):
         partner = self.env['res.partner'].create({'name': 'Initial Name'})
         partner.write(
