@@ -101,12 +101,14 @@ class AiSession(models.Model):
     def _ee_init_context(
         self, model_name: str | None, record_id: int | None
     ) -> list[str]:
-        """Return the EE ``_ai_initialise_context`` items for a record."""
+        """Return the EE ``_ai_initialise_context`` items for a readable record."""
         if not model_name or not record_id or self.env.registry.get(model_name) is None:
             return []
         with suppress(TypeError, ValueError, KeyError):
-            record = self.env[model_name].sudo().browse(int(record_id)).exists()
-            if record and hasattr(record, '_ai_initialise_context'):
+            record = self.env[model_name].browse(int(record_id)).exists()
+            if not record or not record.has_access('read'):
+                return []
+            if hasattr(record, '_ai_initialise_context'):
                 with suppress(Exception):
                     ctx = record._ai_initialise_context(
                         adapter.CALLER_COMPONENT,
