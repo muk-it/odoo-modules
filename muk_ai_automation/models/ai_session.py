@@ -82,6 +82,22 @@ class AISession(models.Model):
         owner = self.user_id or self.env.user
         return record.with_user(owner).has_access('read')
 
+    @api.model
+    def _non_owner_sensitive_fields(self) -> tuple[str, ...]:
+        """Return transcript fields hidden from non-owner, non-admin readers.
+
+        These carry tool and RAG output produced under the owner's (or
+        ``sudo``) privileges, so they must be blanked for a reader who only
+        gained record-level access through the linked business record.
+        """
+        return ('conversation',)
+
+    def _hides_transcript_from_current_user(self) -> bool:
+        """Return whether the caller must be denied this session's transcript."""
+        if self.env.su or self.env.is_admin():
+            return False
+        return self.user_id.id != self.env.uid
+
     def _build_request_inputs(self) -> list[dict]:
         """Extend request inputs with the linked record context when present."""
         inputs = super()._build_request_inputs()
@@ -105,8 +121,8 @@ class AISession(models.Model):
         record, records, previous = empty, empty, PreviousProxy(None)
         if self and self.id:
             linked = self._linked_record()
-            if linked is not None:
-                record = linked
+            if linked is not None and self._owner_can_read(linked):
+                record = linked.with_user(self.user_id or self.env.user)
             previous = PreviousProxy(self.previous_session_id or None)
             action = self.action_server_id
             if action and action.agent_dispatch_mode == 'single':
@@ -218,6 +234,43 @@ class AISession(models.Model):
         if forbidden_ids:
             return self.browse(forbidden_ids), error_func
         return None
+
+    def read(
+        self, fields: list[str] | None = None, load: str = '_classic_read'
+    ) -> list[dict]:
+        """Blank transcript fields when a non-owner reads a granted session.
+
+        The record-level grant added by :meth:`_check_access` lets a non-owner
+        see a session and its metadata, but the transcript fields hold data
+        gathered under the owner's privileges. Empty them for non-owner,
+        non-admin readers while preserving owner and admin behavior.
+        """
+        result = super().read(fields, load)
+        if not result or self.env.su or self.env.is_admin():
+            return result
+        sensitive = self._non_owner_sensitive_fields()
+        if fields is not None and not any(name in fields for name in sensitive):
+            return result
+        uid = self.env.uid
+        owner_by_id = {
+            session.id: session.user_id.id
+            for session in self.sudo().browse([row['id'] for row in result])
+        }
+        for row in result:
+            if owner_by_id.get(row['id']) == uid:
+                continue
+            for name in sensitive:
+                if name in row:
+                    row[name] = []
+        return result
+
+    def get_snapshot(self, include_conversation: bool = False) -> dict:
+        """Drop the transcript from snapshots taken by non-owner readers."""
+        if include_conversation and self._hides_transcript_from_current_user():
+            snapshot = super().get_snapshot(include_conversation=False)
+            snapshot['conversation'] = []
+            return snapshot
+        return super().get_snapshot(include_conversation=include_conversation)
 
     @api.model_create_multi
     def create(self, vals_list: list[dict]) -> AISession:

@@ -1,0 +1,65 @@
+from __future__ import annotations
+
+from odoo.tests.common import TransactionCase, new_test_user, tagged
+
+
+@tagged('post_install', '-at_install')
+class TestSessionTranscriptAccess(TransactionCase):
+    """Test that granted non-owner readers never see the session transcript."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        """Set up an owned session with a transcript linked to a shared record."""
+        super().setUpClass()
+        cls.owner = new_test_user(
+            cls.env,
+            login='transcript_owner',
+            groups='base.group_user',
+        )
+        cls.reader = new_test_user(
+            cls.env,
+            login='transcript_reader',
+            groups='base.group_user',
+        )
+        cls.record = cls.env['res.partner'].create({'name': 'Linked Record'})
+        cls.transcript = [{'role': 'assistant', 'content': 'secret tool output'}]
+        cls.session = (
+            cls.env['muk_ai.session']
+            .with_user(cls.owner)
+            .create(
+                {
+                    'name': 'Linked Session',
+                    'res_model': 'res.partner',
+                    'res_id': cls.record.id,
+                }
+            )
+        )
+        cls.session.sudo().write({'conversation': cls.transcript})
+
+    def test_reader_can_read_metadata(self):
+        session = self.session.with_user(self.reader)
+        self.assertTrue(session.with_user(self.reader).has_access('read'))
+        self.assertEqual(session.read(['name'])[0]['name'], 'Linked Session')
+
+    def test_reader_read_blanks_conversation(self):
+        session = self.session.with_user(self.reader)
+        row = session.read(['name', 'conversation'])[0]
+        self.assertEqual(row['name'], 'Linked Session')
+        self.assertEqual(row['conversation'], [])
+
+    def test_reader_snapshot_hides_conversation(self):
+        session = self.session.with_user(self.reader)
+        snapshot = session.get_snapshot(include_conversation=True)
+        self.assertEqual(snapshot.get('conversation'), [])
+
+    def test_owner_keeps_conversation(self):
+        session = self.session.with_user(self.owner)
+        self.assertEqual(
+            session.read(['conversation'])[0]['conversation'], self.transcript
+        )
+        snapshot = session.get_snapshot(include_conversation=True)
+        self.assertEqual(snapshot['conversation'], self.transcript)
+
+    def test_admin_keeps_conversation(self):
+        row = self.session.read(['conversation'])[0]
+        self.assertEqual(row['conversation'], self.transcript)
