@@ -1,3 +1,4 @@
+from . import test_automation_caps
 from . import test_recurrence
 from . import test_prompt_render
 from . import test_schedule_fire

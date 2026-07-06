@@ -406,16 +406,19 @@ class AISchedule(models.Model):
         ctx = {}
         if self.model_id:
             ctx['active_model'] = self.model_id.model
-        spawned = self.action_server_id.sudo().with_context(**ctx).run()
+        Session = self.env['muk_ai.session'].sudo()
+        last_id = Session.search([], order='id desc', limit=1).id or 0
+        self.action_server_id.sudo().with_context(**ctx).run()
         now = fields.Datetime.now()
         self.cron_id.sudo().write({'lastcall': now})
         self._recompute_next_call_on_cron(base=now)
-        Session = self.env['muk_ai.session']
-        if (
-            isinstance(spawned, type(Session))
-            and len(spawned) == 1
-            and spawned.user_id.id == self.env.uid
-        ):
+        spawned = Session.search(
+            [
+                ('action_server_id', '=', self.action_server_id.id),
+                ('id', '>', last_id),
+            ]
+        )
+        if len(spawned) == 1 and spawned.user_id.id == self.env.uid:
             return spawned.action_open()
         return self.action_open_sessions()
 

@@ -43,9 +43,11 @@ class ScheduleToolsMixin(models.AbstractModel):
         return session
 
     def _schedule_effective_caps(self, session: models.BaseModel) -> dict:
-        """Return the per-session caps, falling back to the module defaults."""
+        """Return the per-session caps from the schedule, action, or defaults."""
         if session.schedule_id:
             return session.schedule_id._effective_caps()
+        if action := session.action_server_id:
+            return action._agent_effective_caps()
         return {
             'max_resumes': DEFAULT_MAX_RESUMES,
             'max_lifetime_hours': DEFAULT_MAX_LIFETIME_HOURS,
