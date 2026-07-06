@@ -24,15 +24,19 @@ class MCPController(http.Controller):
     # Helper
     # ----------------------------------------------------------
 
+    def _get_request_rate_limiter(self) -> models.BaseModel | None:
+        """Return the rate-limiter record bound to the request, if any."""
+        return getattr(request, '_mcp_key', None)
+
     def _check_rate_limit(self, count: int = 1) -> bool:
-        """Reject and log the request when its API key is over its rate limit."""
-        if key := getattr(request, '_mcp_key', None):
-            if not key._check_rate_limit(count=count):
-                self._log_request(
-                    'rate_limited',
-                    status='rate_limited',
-                )
-                return False
+        """Reject and log the request when its rate-limiter is over its limit."""
+        limiter = self._get_request_rate_limiter()
+        if limiter and not limiter._check_rate_limit(count=count):
+            self._log_request(
+                'rate_limited',
+                status='rate_limited',
+            )
+            return False
         return True
 
     def _log_request(self, method: str, **kwargs: Any) -> None:
