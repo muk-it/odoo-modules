@@ -72,6 +72,23 @@ class MCPTool(models.Model):
         return env[model_name].browse(res_id).exists() or env.user
 
     @api.model
+    def _agent_ee_actions(self) -> models.BaseModel:
+        """Return the AI-enabled EE actions the session agent may run.
+
+        :return: the ``ir.actions.server`` recordset scoped to the session
+            agent's topics, or an empty recordset when no in-scope agent is
+            bound, the agent has no topics, or the agent is read-only
+        """
+        agent = (
+            self.env['muk_ai.agent']
+            .sudo()
+            .browse(self.env.context.get('muk_ai_session_agent_id') or 0)
+        )
+        if not agent.exists() or agent.read_only or not agent.ee_topic_ids:
+            return self.env['ir.actions.server']
+        return agent.ee_topic_ids.sudo().mapped('tool_ids').filtered('use_in_ai')
+
+    @api.model
     def _ee_tools_for_topics(self, topics: models.BaseModel) -> list[dict]:
         """Return tool descriptors for the AI-enabled actions of EE topics."""
         actions = topics.sudo().mapped('tool_ids').filtered('use_in_ai')
@@ -114,7 +131,8 @@ class MCPTool(models.Model):
                     tool_name,
                 )
             )
-        if not (action := self._resolve_ee_action(tool_name)):
+        action = self._resolve_ee_action(tool_name)
+        if not action or action not in env['muk_mcp.tool']._agent_ee_actions():
             raise UserError(_('Unknown EE action tool: %s', tool_name))
         record = self._resolve_ee_record(env)
         try:
