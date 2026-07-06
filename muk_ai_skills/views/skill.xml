@@ -10,7 +10,24 @@
 				<field name="name"/>
 				<field name="label"/>
 				<field name="description"/>
+				<field name="owner_id"/>
 				<field name="agent_ids"/>
+				<filter
+                    name="my_skills"
+                    string="My Skills"
+                    domain="[('owner_id', '=', uid)]"
+                />
+				<filter
+                    name="shared_with_me"
+                    string="Shared with Me"
+                    domain="[('owner_id', '!=', uid), ('user_ids', 'in', uid)]"
+                />
+				<filter
+                    name="shared_everyone"
+                    string="Shared with Everyone"
+                    domain="[('user_ids', '=', False)]"
+                />
+				<separator/>
 				<filter
                     name="active"
                     string="Active"
@@ -34,6 +51,11 @@
                 />
 				<group>
 					<filter
+                        name="group_owner"
+                        string="Owner"
+                        context="{'group_by': 'owner_id'}"
+                    />
+					<filter
                         name="group_agent"
                         string="Agent"
                         context="{'group_by': 'agent_ids'}"
@@ -54,6 +76,9 @@
 				<field name="description"/>
 				<field name="agent_count"/>
 				<field name="attachment_count"/>
+				<field name="user_count"/>
+				<field name="user_ids"/>
+				<field name="owner_id"/>
 				<field name="active"/>
 				<templates>
 					<t t-name="menu">
@@ -79,6 +104,16 @@
 							<field name="description" class="text-muted"/>
 						</div>
 						<div class="mt-2 d-flex flex-wrap gap-1">
+							<span t-if="!record.user_ids.raw_value.length" class="badge text-bg-success">
+								<i class="fa fa-users me-1" title="Shared with everyone" role="img"/>Everyone
+							</span>
+							<span t-if="record.user_ids.raw_value.length and !record.user_count.raw_value" class="badge text-bg-secondary">
+								<i class="fa fa-lock me-1" title="Private to the owner" role="img"/>Private
+							</span>
+							<span t-if="record.user_count.raw_value" class="badge text-bg-warning">
+								<i class="fa fa-lock me-1" title="Shared with selected users" role="img"/>
+								<field name="user_count"/> Users
+							</span>
 							<span t-if="!record.agent_count.raw_value" class="badge text-bg-secondary">
 								<i class="fa fa-globe me-1" title="Global" role="img"/>Global
 							</span>
@@ -105,6 +140,8 @@
 				<field name="sequence" widget="handle"/>
 				<field name="name"/>
 				<field name="label"/>
+				<field name="owner_id" optional="show"/>
+				<field name="user_ids" widget="many2many_tags" optional="hide"/>
 				<field name="description" optional="show"/>
 				<field name="agent_count" string="Agents" optional="show"/>
 				<field name="attachment_count" string="Resources" optional="show"/>
@@ -119,6 +156,7 @@
 		<field name="arch" type="xml">
 			<form>
 				<sheet>
+					<field name="is_editable" invisible="1"/>
 					<div class="oe_button_box" name="button_box">
 						<button
                             name="action_open_prompt_history"
@@ -133,21 +171,77 @@
 					<div class="oe_title">
 						<label for="label"/>
 						<h1>
-							<field name="label" placeholder="e.g. Quote Follow-up"/>
+							<field
+                                name="label"
+                                placeholder="e.g. Quote Follow-up"
+                                readonly="not is_editable"
+                            />
 						</h1>
 					</div>
 					<group>
 						<group>
-							<field name="name" placeholder="e.g. quote_followup"/>
+							<field
+                                name="name"
+                                placeholder="e.g. quote_followup"
+                                readonly="not is_editable"
+                            />
 							<field
                                 name="agent_ids"
                                 widget="many2many_tags"
                                 options="{'no_create': True}"
+                                readonly="not is_editable"
                             />
 						</group>
 						<group>
-							<field name="sequence"/>
-							<field name="active" widget="boolean_toggle"/>
+							<field name="sequence" readonly="not is_editable"/>
+							<field
+                                name="active"
+                                widget="boolean_toggle"
+                                readonly="not is_editable"
+                            />
+						</group>
+					</group>
+					<group string="Sharing">
+						<group>
+							<field
+                                name="owner_id"
+                                groups="base.group_system"
+                                options="{'no_create': True}"
+                            />
+							<field
+                                name="owner_id"
+                                groups="!base.group_system"
+                                readonly="1"
+                            />
+							<field
+                                name="user_ids"
+                                widget="many2many_tags"
+                                options="{'no_create': True}"
+                                readonly="not is_editable"
+                            />
+						</group>
+						<group>
+							<div class="text-muted" colspan="2">
+								An empty share list makes the skill visible
+								to everyone. New skills start private to
+								their owner.
+							</div>
+							<button
+                                name="action_share_everyone"
+                                type="object"
+                                string="Share with Everyone"
+                                class="btn btn-secondary"
+                                invisible="not user_ids or not is_editable"
+                                colspan="2"
+                            />
+							<button
+                                name="action_make_private"
+                                type="object"
+                                string="Make Private"
+                                class="btn btn-secondary"
+                                invisible="user_ids or not is_editable"
+                                colspan="2"
+                            />
 						</group>
 					</group>
 					<group string="Description">
@@ -156,6 +250,7 @@
                             nolabel="1"
                             colspan="2"
                             placeholder="One-line description shown to the LLM in the system prompt."
+                            readonly="not is_editable"
                         />
 					</group>
 					<notebook>
@@ -166,10 +261,15 @@
                                 colspan="2"
                                 widget="code"
                                 placeholder="Markdown body returned when the skill is invoked."
+                                readonly="not is_editable"
                             />
 						</page>
 						<page string="Resources" name="resources">
-							<field name="attachment_ids" widget="many2many_binary"/>
+							<field
+                                name="attachment_ids"
+                                widget="many2many_binary"
+                                readonly="not is_editable"
+                            />
 						</page>
 					</notebook>
 				</sheet>

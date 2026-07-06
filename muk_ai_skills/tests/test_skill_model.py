@@ -67,7 +67,7 @@ class TestSkillModel(TransactionCase):
     # Tests constraints
     # ----------------------------------------------------------
 
-    def test_name_unique_constraint(self):
+    def test_name_unique_per_owner_constraint(self):
         self._make_skill(name='unique_one', description='d')
         with self.assertRaises(IntegrityError), mute_logger('odoo.sql_db'):
             with self.env.cr.savepoint():

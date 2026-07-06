@@ -8,7 +8,7 @@
         parent="muk_ai.menu_ai_root"
         action="action_muk_ai_skill"
         sequence="35"
-        groups="base.group_system"
+        groups="base.group_user"
     />
 
 </odoo>

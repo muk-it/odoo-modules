@@ -4,6 +4,7 @@
 
 	<record id="skill_reply" model="muk_ai.skill">
 		<field name="name">reply</field>
+		<field name="user_ids" eval="[(5, 0, 0)]"/>
 		<field name="label">Reply</field>
 		<field name="description">Draft a chatter reply for the pinned record and open the mail composer wizard pre-filled with the draft.</field>
 		<field name="body"><![CDATA[

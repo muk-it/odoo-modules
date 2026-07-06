@@ -19,8 +19,11 @@ class AISession(models.Model):
     # ----------------------------------------------------------
 
     def _visible_skills(self) -> models.BaseModel:
-        """Return the active skills visible to this session's agent."""
+        """Return the active skills visible to this session's agent and user."""
+        skill_model = self.env['muk_ai.skill'].sudo()
+        user = self.user_id or self.env.user
         domain = [('active', '=', True)]
+        domain += skill_model._user_visibility_domain(user)
         agent_ids = self.agent_id.ids if self.agent_id else []
         if agent_ids:
             domain += [
@@ -30,7 +33,24 @@ class AISession(models.Model):
             ]
         else:
             domain += [('agent_ids', '=', False)]
-        return self.env['muk_ai.skill'].sudo().search(domain)
+        return self._dedupe_visible_skills(skill_model.search(domain), user)
+
+    @api.model
+    def _dedupe_visible_skills(
+        self, skills: models.BaseModel, user: models.BaseModel
+    ) -> models.BaseModel:
+        """Keep one skill per name, preferring the one owned by the user.
+
+        Ties between skills the user does not own resolve to the first
+        record in search order, which the model keeps deterministic by
+        ordering on ``sequence, name, id``.
+        """
+        chosen: dict[str, models.BaseModel] = {}
+        for skill in skills:
+            current = chosen.get(skill.name)
+            if current is None or (skill.owner_id == user and current.owner_id != user):
+                chosen[skill.name] = skill
+        return skills.filtered(lambda s: chosen.get(s.name) == s)
 
     def _format_skill_addendum(self, skills: models.BaseModel) -> str:
         """Render the ``<available_skills>`` system-prompt addendum."""
@@ -107,14 +127,7 @@ class AISession(models.Model):
         skills = (
             self.browse(int(session_id)).exists()._visible_skills()
             if session_id
-            else self.env['muk_ai.skill']
-            .sudo()
-            .search(
-                [
-                    ('active', '=', True),
-                    ('agent_ids', '=', False),
-                ]
-            )
+            else self._visible_skills()
         )
         return [
             {

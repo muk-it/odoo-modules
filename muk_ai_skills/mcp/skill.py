@@ -41,8 +41,8 @@ class SkillToolsMixin(models.AbstractModel):
 
         :raise UserError: when the skill is unknown or not visible
         """
-        skill = self.env['muk_ai.skill'].sudo().search([('name', '=', name)], limit=1)
-        if not skill or skill not in session._visible_skills():
+        skill = session._visible_skills().filtered(lambda s: s.name == name)[:1]
+        if not skill:
             raise UserError(_('Skill %(name)r is invalid.', name=name))
         return skill
 

@@ -12,7 +12,7 @@ class Skill(models.Model):
     _name = 'muk_ai.skill'
     _description = 'AI Skill'
     _inherit = ['muk_ai.revision.mixin', 'muk_ai.prompt.mixin']
-    _order = 'sequence, name'
+    _order = 'sequence, name, id'
 
     # ----------------------------------------------------------
     # Fields
@@ -50,6 +50,35 @@ class Skill(models.Model):
     sequence = fields.Integer(
         string='Sequence',
         default=10,
+    )
+
+    owner_id = fields.Many2one(
+        comodel_name='res.users',
+        string='Owner',
+        help=(
+            'User who owns the skill. Only the owner or an '
+            'administrator can edit or delete it.'
+        ),
+        required=True,
+        default=lambda self: self.env.user,
+        index=True,
+        copy=False,
+    )
+
+    user_ids = fields.Many2many(
+        comodel_name='res.users',
+        relation='muk_ai_skill_res_users_rel',
+        column1='skill_id',
+        column2='user_id',
+        string='Shared With',
+        help=(
+            'Users the skill is shared with. If empty, the skill is '
+            'shared with all users. New skills default to being '
+            'private to their owner. Scheduled and automated agent '
+            'sessions run as their configured user and only see the '
+            'skills visible to that user.'
+        ),
+        default=lambda self: self.env.user,
     )
 
     description = fields.Text(
@@ -107,9 +136,35 @@ class Skill(models.Model):
         compute='_compute_attachment_count',
     )
 
+    user_count = fields.Integer(
+        compute='_compute_user_count',
+        string='User Count',
+    )
+
+    is_editable = fields.Boolean(
+        compute='_compute_is_editable',
+        string='Editable',
+    )
+
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
+
+    @api.model
+    def _user_visibility_domain(self, user: models.BaseModel) -> list:
+        """Return the domain of skills visible to the given user.
+
+        A skill is visible when the user owns it, when it is shared
+        with everyone (empty share list) or when the user is in the
+        share list.
+        """
+        return [
+            '|',
+            '|',
+            ('owner_id', '=', user.id),
+            ('user_ids', '=', False),
+            ('user_ids', 'in', user.ids),
+        ]
 
     @api.model
     def _get_prompt_fields(self) -> list[str]:
@@ -117,9 +172,17 @@ class Skill(models.Model):
         return ['body']
 
     def _build_body(self, session: models.BaseModel | None = None) -> str:
-        """Render the skill body, injecting the session prompt extras."""
+        """Render the skill body under the invoking user's own privileges.
+
+        The skill is fetched through a superuser recordset for visibility
+        filtering, but the body is user-authored: rendering it with the
+        superuser environment would let a ``{{ ... }}`` fragment run ORM
+        writes that bypass every access rule. Dropping ``sudo`` restores
+        ACL enforcement for the current user before the template runs.
+        """
+        record = self.sudo(False)
         extras = session._session_prompt_extras() if session else {}
-        return self._render_prompt(self.body or '', **extras)
+        return record._render_prompt(record.body or '', **extras)
 
     def _resource_manifest(self) -> list[dict]:
         """Return the manifest of attached resources with their uris."""
@@ -131,6 +194,19 @@ class Skill(models.Model):
             }
             for attachment in self.attachment_ids
         ]
+
+    # ----------------------------------------------------------
+    # Actions
+    # ----------------------------------------------------------
+
+    def action_share_everyone(self) -> None:
+        """Clear the share list so the skill is visible to all users."""
+        self.write({'user_ids': [(5, 0, 0)]})
+
+    def action_make_private(self) -> None:
+        """Reset the share list so only the owner can see the skill."""
+        for record in self:
+            record.user_ids = [(6, 0, record.owner_id.ids)]
 
     # ----------------------------------------------------------
     # Compute
@@ -154,13 +230,35 @@ class Skill(models.Model):
         for record in self:
             record.agent_count = len(record.agent_ids)
 
+    @api.depends('user_ids', 'owner_id')
+    def _compute_user_count(self) -> None:
+        for record in self:
+            record.user_count = len(record.user_ids - record.owner_id)
+
+    @api.depends('owner_id')
+    @api.depends_context('uid')
+    def _compute_is_editable(self) -> None:
+        is_admin = self.env.user.has_group('base.group_system')
+        for record in self:
+            record.is_editable = is_admin or record.owner_id == self.env.user
+
+    @api.onchange('owner_id')
+    def _onchange_owner_id(self) -> None:
+        """Move the stale creator default of the share list to the new owner."""
+        for record in self:
+            if (
+                record.user_ids._origin == self.env.user
+                and record.owner_id._origin != self.env.user
+            ):
+                record.user_ids = record.owner_id
+
     # ----------------------------------------------------------
     # Constraints
     # ----------------------------------------------------------
 
-    _unique_name = models.Constraint(
-        'unique(name)',
-        'A skill with this technical name already exists.',
+    _unique_name_owner = models.Constraint(
+        'unique(name, owner_id)',
+        'You already own a skill with this technical name.',
     )
 
     @api.constrains('name')
@@ -178,3 +276,16 @@ class Skill(models.Model):
                         name=record.name or '',
                     )
                 )
+
+    # ----------------------------------------------------------
+    # ORM
+    # ----------------------------------------------------------
+
+    @api.model_create_multi
+    def create(self, vals_list: list[dict]) -> models.BaseModel:
+        """Create skills, defaulting the share list to the skill owner."""
+        for vals in vals_list:
+            if 'user_ids' not in vals:
+                owner_id = vals.get('owner_id') or self.env.uid
+                vals['user_ids'] = [(6, 0, [owner_id])]
+        return super().create(vals_list)
