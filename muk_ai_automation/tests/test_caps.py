@@ -69,22 +69,9 @@ class TestCaps(TransactionCase):
         defaults.update(vals)
         return self.env['ir.actions.server'].create(defaults)
 
-    def _effective_caps(
-        self, action: models.BaseModel, session: models.BaseModel
-    ) -> dict:
-        """Return the session caps, falling back to action-derived defaults."""
-        if hasattr(session, '_agent_effective_caps'):
-            return session._agent_effective_caps()
-        return {
-            'max_resumes': (action.agent_max_resumes or AGENT_DEFAULT_MAX_RESUMES),
-            'max_lifetime_hours': (
-                action.agent_max_lifetime_hours or AGENT_DEFAULT_MAX_LIFETIME_HOURS
-            ),
-            'max_total_tokens': (
-                action.agent_max_total_tokens or AGENT_DEFAULT_MAX_TOTAL_TOKENS
-            ),
-            'max_cost_eur': (action.agent_max_cost_eur or AGENT_DEFAULT_MAX_COST_EUR),
-        }
+    def _effective_caps(self, session: models.BaseModel) -> dict:
+        """Resolve the caps of a spawned session through its server action."""
+        return session.action_server_id._agent_effective_caps()
 
     def test_agent_max_resumes_propagates(self):
         action = self._make_action(agent_max_resumes=7)
@@ -95,7 +82,7 @@ class TestCaps(TransactionCase):
             limit=1,
         )
         self.assertTrue(session)
-        caps = self._effective_caps(action, session)
+        caps = self._effective_caps(session)
         self.assertEqual(caps['max_resumes'], 7)
 
     def test_agent_max_total_tokens_propagates(self):
@@ -107,7 +94,7 @@ class TestCaps(TransactionCase):
             limit=1,
         )
         self.assertTrue(session)
-        caps = self._effective_caps(action, session)
+        caps = self._effective_caps(session)
         self.assertEqual(caps['max_total_tokens'], 12345)
 
     def test_caps_default_to_module_defaults_when_zero(self):
@@ -124,7 +111,7 @@ class TestCaps(TransactionCase):
             limit=1,
         )
         self.assertTrue(session)
-        caps = self._effective_caps(action, session)
+        caps = self._effective_caps(session)
         self.assertEqual(caps['max_resumes'], AGENT_DEFAULT_MAX_RESUMES)
         self.assertEqual(caps['max_lifetime_hours'], AGENT_DEFAULT_MAX_LIFETIME_HOURS)
         self.assertEqual(caps['max_total_tokens'], AGENT_DEFAULT_MAX_TOTAL_TOKENS)

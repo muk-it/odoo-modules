@@ -77,10 +77,16 @@ class AISession(models.Model):
         record = self.env[self.res_model].sudo().browse(self.res_id)
         return record if record.exists() else None
 
+    def _owner_can_read(self, record: models.BaseModel) -> bool:
+        """Return whether the session owner may read the linked record."""
+        owner = self.user_id or self.env.user
+        return record.with_user(owner).has_access('read')
+
     def _build_request_inputs(self) -> list[dict]:
         """Extend request inputs with the linked record context when present."""
         inputs = super()._build_request_inputs()
-        if record := self._linked_record():
+        record = self._linked_record()
+        if record is not None and self._owner_can_read(record):
             inputs = with_record_ctx(
                 inputs,
                 {
@@ -119,6 +125,8 @@ class AISession(models.Model):
         """Post a chatter note on the linked record pointing at this session."""
         record = self._linked_record()
         if record is None or not hasattr(record, 'message_post'):
+            return
+        if not self._owner_can_read(record):
             return
         link = Markup(
             '<a href="/odoo/action-muk_ai.action_ai_session/{sid}">{label}</a>'

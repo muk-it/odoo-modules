@@ -98,8 +98,9 @@ class IrActionsServer(models.Model):
     agent_max_resumes = fields.Integer(
         string='Agent Max Resumes',
         help=(
-            'Maximum number of times a spawned session may resume before it '
-            'is aborted. Zero falls back to the module-wide default.'
+            'Maximum number of times a spawned session may resume. Enforced '
+            'when the session resumes through MuK AI Schedule; zero falls '
+            'back to the module-wide default.'
         ),
         default=0,
     )
@@ -107,8 +108,9 @@ class IrActionsServer(models.Model):
     agent_max_lifetime_hours = fields.Integer(
         string='Agent Max Lifetime (hours)',
         help=(
-            'Maximum wall-clock lifetime of a spawned session in hours before '
-            'it is aborted. Zero falls back to the module-wide default.'
+            'Maximum wall-clock lifetime of a spawned session in hours. '
+            'Enforced when the session resumes through MuK AI Schedule; zero '
+            'falls back to the module-wide default.'
         ),
         default=0,
     )
@@ -116,8 +118,9 @@ class IrActionsServer(models.Model):
     agent_max_total_tokens = fields.Integer(
         string='Agent Max Total Tokens',
         help=(
-            'Maximum total tokens a spawned session may consume before it is '
-            'aborted. Zero falls back to the module-wide default.'
+            'Maximum total tokens a spawned session may consume. Enforced '
+            'when the session resumes through MuK AI Schedule; zero falls '
+            'back to the module-wide default.'
         ),
         default=0,
     )
@@ -125,8 +128,9 @@ class IrActionsServer(models.Model):
     agent_max_cost_eur = fields.Float(
         string='Agent Max Cost (EUR)',
         help=(
-            'Maximum cumulative cost in EUR a spawned session may incur before '
-            'it is aborted. Zero falls back to the module-wide default.'
+            'Maximum cumulative cost in EUR a spawned session may incur. '
+            'Enforced when the session resumes through MuK AI Schedule; zero '
+            'falls back to the module-wide default.'
         ),
         default=0.0,
     )
@@ -167,14 +171,20 @@ class IrActionsServer(models.Model):
     # Actions
     # ----------------------------------------------------------
 
-    def _run_action_ai_agent(
-        self, eval_context: dict | None = None
-    ) -> models.BaseModel:
-        """Fire the configured AI agent for a single-record run."""
-        return fire_action(self, eval_context or {})
+    def _run_action_ai_agent(self, eval_context: dict | None = None) -> bool:
+        """Fire the configured AI agent for a single-record run.
 
-    def _run_action_ai_agent_multi(
-        self, eval_context: dict | None = None
-    ) -> models.BaseModel:
-        """Fire the configured AI agent for a multi-record run."""
-        return fire_action(self, eval_context or {})
+        :return: ``False`` per the server-action runner contract; the spawned
+            session ids are exposed via ``eval_context['__agent_spawned__']``
+        """
+        fire_action(self, eval_context or {})
+        return False
+
+    def _run_action_ai_agent_multi(self, eval_context: dict | None = None) -> bool:
+        """Fire the configured AI agent for a multi-record run.
+
+        :return: ``False`` per the server-action runner contract; the spawned
+            session ids are exposed via ``eval_context['__agent_spawned__']``
+        """
+        fire_action(self, eval_context or {})
+        return False
