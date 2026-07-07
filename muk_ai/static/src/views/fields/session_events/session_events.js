@@ -7,6 +7,7 @@ import { standardFieldProps } from '@web/views/fields/standard_field_props';
 
 import { AttachmentCard } from '@muk_ai/core/attachment/attachment_card';
 import { ToolCard } from '@muk_ai/chat/tools/tool_card';
+import { buildTurnItems } from '@muk_ai/chat/tools/tool_group';
 import { renderMarkdown as renderMarkdownToHtml } from '@muk_ai/core/markdown/markdown';
 import { buildRenderedTurns } from '@muk_ai/chat/session/turns';
 import { formatTimestamp } from '@muk_ai/chat/utils';
@@ -38,6 +39,14 @@ export class SessionEventsField extends Component {
             return [];
         }
         return buildRenderedTurns(value);
+    }
+    turnItems(turn) {
+        return buildTurnItems(turn.blocks, (block) =>
+            this.isToolHiddenForAsk(block, turn),
+        );
+    }
+    get isCompact() {
+        return true;
     }
     renderMarkdown(source) {
         return markup(renderMarkdownToHtml(source));
