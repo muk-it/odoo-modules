@@ -97,6 +97,19 @@
 							</div>
 						</setting>
 						<setting
+							id="muk_ai_addon_mcp"
+							string="MuK AI MCP"
+							help="Connect remote MCP servers whose tools AI agents can call."
+						>
+							<field
+								name="module_muk_ai_mcp"
+								widget="module_link"
+							/>
+							<div class="content-group" invisible="not module_muk_ai_mcp" id="msg_module_muk_ai_mcp">
+								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+							</div>
+						</setting>
+						<setting
 							id="muk_ai_addon_mistral"
 							string="MuK AI Mistral"
 							help="Mistral AI: Large, Medium, Magistral, Pixtral, Codestral."

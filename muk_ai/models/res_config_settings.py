@@ -69,6 +69,11 @@ class ResConfigSettings(models.TransientModel):
         help='Ollama, vLLM, OpenRouter and every OpenAI-compatible LLM.',
     )
 
+    module_muk_ai_mcp = fields.Boolean(
+        string='MuK AI MCP',
+        help='Connect remote MCP servers whose tools AI agents can call.',
+    )
+
     module_muk_ai_mistral = fields.Boolean(
         string='MuK AI Mistral',
         help='Use Mistral AI as a provider.',
