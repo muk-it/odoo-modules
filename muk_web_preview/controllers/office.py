@@ -105,10 +105,10 @@ class OfficePreviewController(http.Controller):
     def serve_office_file(self, id, token: str | None = None, **kw):
         """Stream the attachment file when its access token is valid."""
         if not token or not self._verify_token(token, id):
-            return request.not_found()
+            raise request.not_found()
         attachment = request.env['ir.attachment'].sudo().browse(id)
         if not attachment.exists():
-            return request.not_found()
+            raise request.not_found()
         stream = (
             request.env['ir.binary']
             .sudo()
