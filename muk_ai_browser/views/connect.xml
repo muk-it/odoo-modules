@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<template id="connect_page" name="MuK AI Browser Pairing">
+		<t t-call="web.frontend_layout">
+			<t t-set="no_header" t-value="True"/>
+			<t t-set="no_footer" t-value="True"/>
+			<div class="container my-5">
+				<div class="row justify-content-center">
+					<div class="col-md-6">
+						<div
+							id="muk_ai_browser_connect"
+							class="card shadow-sm"
+							t-att-data-extension-id="extension_id"
+							t-att-data-base-url="base_url"
+							t-att-data-csrf="csrf_token"
+						>
+							<div class="card-body text-center">
+								<h4 class="card-title mb-3">Connect the MuK AI Browser extension</h4>
+								<p class="text-muted">
+									Pair this Odoo account with the browser extension to let
+									the AI agent act on your live web pages.
+								</p>
+								<button
+									id="muk_ai_browser_pair_btn"
+									type="button"
+									class="btn btn-primary"
+								>
+									Generate pairing code
+								</button>
+								<div id="muk_ai_browser_status" class="mt-3 small text-muted"/>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<script type="text/javascript">
+				document.addEventListener('DOMContentLoaded', function () {
+					const root = document.getElementById('muk_ai_browser_connect');
+					const button = document.getElementById('muk_ai_browser_pair_btn');
+					const status = document.getElementById('muk_ai_browser_status');
+					if (!root || !button) {
+						return;
+					}
+					button.addEventListener('click', async function () {
+						status.textContent = 'Generating…';
+						try {
+							const response = await fetch('/muk_ai_browser/connect/begin', {
+								method: 'POST',
+								headers: { 'Content-Type': 'application/json' },
+								body: JSON.stringify({
+									jsonrpc: '2.0',
+									method: 'call',
+									params: { device_label: navigator.userAgent },
+								}),
+							});
+							const data = await response.json();
+							const result = (data &amp;&amp; data.result) || {};
+							const code = result.pairing_code;
+							const extensionId = root.dataset.extensionId;
+							if (code &amp;&amp; extensionId &amp;&amp; window.chrome &amp;&amp; chrome.runtime) {
+								chrome.runtime.sendMessage(extensionId, {
+									type: 'pair',
+									code: code,
+								});
+								status.textContent = 'Pairing code sent to the extension.';
+							} else if (code) {
+								status.textContent = 'Pairing code: ' + code;
+							} else {
+								status.textContent = 'Could not generate a pairing code.';
+							}
+						} catch (error) {
+							status.textContent = 'Pairing failed: ' + error;
+						}
+					});
+				});
+			</script>
+		</t>
+	</template>
+
+</odoo>

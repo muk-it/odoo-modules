@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<menuitem
+		id="menu_browser_keys"
+		name="Connected Browsers"
+		parent="base.menu_custom"
+		action="action_browser_key"
+		sequence="50"
+	/>
+
+	<menuitem
+		id="menu_browser_permissions"
+		name="Site Permissions"
+		parent="base.menu_custom"
+		action="action_browser_permission"
+		sequence="51"
+	/>
+
+</odoo>

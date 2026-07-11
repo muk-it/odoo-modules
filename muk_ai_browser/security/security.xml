@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="rule_browser_session_user" model="ir.rule">
+		<field name="name">Browser Session: own sessions</field>
+		<field name="model_id" ref="model_muk_ai_browser_session"/>
+		<field name="domain_force">[('ai_session_id.user_id', '=', user.id)]</field>
+		<field name="groups" eval="[(4, ref('base.group_user'))]"/>
+		<field name="perm_read" eval="True"/>
+		<field name="perm_write" eval="True"/>
+		<field name="perm_create" eval="True"/>
+		<field name="perm_unlink" eval="True"/>
+	</record>
+
+	<record id="rule_browser_session_admin" model="ir.rule">
+		<field name="name">Browser Session: admin access</field>
+		<field name="model_id" ref="model_muk_ai_browser_session"/>
+		<field name="domain_force">[(1, '=', 1)]</field>
+		<field name="groups" eval="[(4, ref('base.group_system'))]"/>
+		<field name="perm_read" eval="True"/>
+		<field name="perm_write" eval="True"/>
+		<field name="perm_create" eval="True"/>
+		<field name="perm_unlink" eval="True"/>
+	</record>
+
+	<record id="rule_browser_event_user" model="ir.rule">
+		<field name="name">Browser Event: own session</field>
+		<field name="model_id" ref="model_muk_ai_browser_event"/>
+		<field name="domain_force">[('browser_session_id.ai_session_id.user_id', '=', user.id)]</field>
+		<field name="groups" eval="[(4, ref('base.group_user'))]"/>
+		<field name="perm_read" eval="True"/>
+		<field name="perm_write" eval="True"/>
+		<field name="perm_create" eval="True"/>
+		<field name="perm_unlink" eval="True"/>
+	</record>
+
+	<record id="rule_browser_event_admin" model="ir.rule">
+		<field name="name">Browser Event: admin access</field>
+		<field name="model_id" ref="model_muk_ai_browser_event"/>
+		<field name="domain_force">[(1, '=', 1)]</field>
+		<field name="groups" eval="[(4, ref('base.group_system'))]"/>
+		<field name="perm_read" eval="True"/>
+		<field name="perm_write" eval="True"/>
+		<field name="perm_create" eval="True"/>
+		<field name="perm_unlink" eval="True"/>
+	</record>
+
+	<record id="rule_browser_permission_user" model="ir.rule">
+		<field name="name">Browser Permission: own grants</field>
+		<field name="model_id" ref="model_muk_ai_browser_permission"/>
+		<field name="domain_force">[('user_id', '=', user.id)]</field>
+		<field name="groups" eval="[(4, ref('base.group_user'))]"/>
+		<field name="perm_read" eval="True"/>
+		<field name="perm_write" eval="True"/>
+		<field name="perm_create" eval="True"/>
+		<field name="perm_unlink" eval="True"/>
+	</record>
+
+	<record id="rule_browser_permission_admin" model="ir.rule">
+		<field name="name">Browser Permission: admin access</field>
+		<field name="model_id" ref="model_muk_ai_browser_permission"/>
+		<field name="domain_force">[(1, '=', 1)]</field>
+		<field name="groups" eval="[(4, ref('base.group_system'))]"/>
+		<field name="perm_read" eval="True"/>
+		<field name="perm_write" eval="True"/>
+		<field name="perm_create" eval="True"/>
+		<field name="perm_unlink" eval="True"/>
+	</record>
+
+</odoo>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+    <record id="config_risky_keywords" model="ir.config_parameter">
+        <field name="key">muk_ai_browser.risky_keywords</field>
+        <field name="value">checkout,payment,purchase,delete,place order,buy now,confirm order</field>
+    </record>
+</odoo>
