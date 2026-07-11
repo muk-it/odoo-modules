@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 from odoo.exceptions import UserError
 from odoo.tests.common import tagged
 
@@ -256,3 +258,105 @@ class TestTools(BridgeTestCommon):
     def test_ee_action_risk_none_for_non_sensitive_model(self):
         risk = self.env['muk_ai.approval']._assess_risk(self._ee_tool_name(), {})
         self.assertIsNone(risk)
+
+    def test_pinned_foreign_model_record_not_passed(self):
+        probe = self.env['ir.actions.server'].create(
+            {
+                'name': 'Record Probe Action',
+                'model_id': self.env['ir.model']._get_id('res.partner'),
+                'state': 'code',
+                'code': "ai['result'] = {'model': record._name, 'ids': record.ids}",
+                'use_in_ai': True,
+                'ai_tool_description': 'Report the model of the passed record',
+            }
+        )
+        self.topic.tool_ids = [(4, probe.id)]
+        session = self._make_session(
+            view_context={
+                'kind': 'record',
+                'model': 'res.users',
+                'id': self.env.user.id,
+            }
+        )
+        tool_env = self.env(
+            context={
+                **self.env.context,
+                'muk_mcp_session_id': session.id,
+                'muk_ai_session_agent_id': self.agent.id,
+            }
+        )
+        payload, _info, model = tool_env['muk_mcp.tool']._call_ee_action(
+            self._ee_tool_name(probe), {}, tool_env
+        )
+        result = json.loads(payload)
+        self.assertEqual(model, 'res.partner')
+        self.assertEqual(result['model'], 'res.partner')
+        self.assertEqual(result['ids'], [])
+
+    def test_unpinned_session_gets_empty_recordset_not_user(self):
+        probe = self.env['ir.actions.server'].create(
+            {
+                'name': 'Record Probe Action',
+                'model_id': self.env['ir.model']._get_id('res.partner'),
+                'state': 'code',
+                'code': "ai['result'] = {'model': record._name, 'ids': record.ids}",
+                'use_in_ai': True,
+                'ai_tool_description': 'Report the model of the passed record',
+            }
+        )
+        self.topic.tool_ids = [(4, probe.id)]
+        session = self._make_session()
+        tool_env = self.env(
+            context={
+                **self.env.context,
+                'muk_mcp_session_id': session.id,
+                'muk_ai_session_agent_id': self.agent.id,
+            }
+        )
+        payload, _info, _model = tool_env['muk_mcp.tool']._call_ee_action(
+            self._ee_tool_name(probe), {}, tool_env
+        )
+        result = json.loads(payload)
+        self.assertEqual(result['model'], 'res.partner')
+        self.assertEqual(result['ids'], [])
+
+    def test_call_ee_action_next_activity_creates_activity(self):
+        todo = self.env.ref('mail.mail_activity_data_todo')
+        activity_action = self.env['ir.actions.server'].create(
+            {
+                'name': 'Schedule Follow-up Action',
+                'model_id': self.env['ir.model']._get_id('res.partner'),
+                'state': 'next_activity',
+                'activity_type_id': todo.id,
+                'activity_summary': 'Follow up',
+                'use_in_ai': True,
+                'ai_tool_description': 'Schedule a follow-up activity',
+            }
+        )
+        self.topic.tool_ids = [(4, activity_action.id)]
+        partner = self.env['res.partner'].create({'name': 'Follow-up Lead'})
+        session = self._make_session(
+            view_context={
+                'kind': 'record',
+                'model': 'res.partner',
+                'id': partner.id,
+            }
+        )
+        tool_env = self.env(
+            context={
+                **self.env.context,
+                'muk_mcp_session_id': session.id,
+                'muk_ai_session_agent_id': self.agent.id,
+            }
+        )
+        tool_env['muk_mcp.tool']._call_ee_action(
+            self._ee_tool_name(activity_action), {}, tool_env
+        )
+        activities = self.env['mail.activity'].search(
+            [
+                ('res_model', '=', 'res.partner'),
+                ('res_id', '=', partner.id),
+            ]
+        )
+        self.assertEqual(len(activities), 1)
+        self.assertEqual(activities.activity_type_id, todo)

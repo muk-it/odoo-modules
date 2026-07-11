@@ -135,8 +135,18 @@ class MCPTool(models.Model):
         if not action or action not in env['muk_mcp.tool']._agent_ee_actions():
             raise UserError(_('Unknown EE action tool: %s', tool_name))
         record = self._resolve_ee_record(env)
+        target = action.model_id.model
+        if not target or record._name != target:
+            record = env[target] if target else env['ir.actions.server'].browse()
+        runner = action.with_env(env)
+        if record:
+            runner = runner.with_context(
+                active_model=record._name,
+                active_id=record.id,
+                active_ids=record.ids,
+            )
         try:
-            result = action.with_env(env)._ai_tool_run(record, dict(arguments or {}))
+            result = runner._ai_tool_run(record, dict(arguments or {}))
         except (UserError, psycopg2.errors.SerializationFailure):
             raise
         except Exception as exc:
