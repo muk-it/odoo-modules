@@ -8,7 +8,7 @@ from odoo.addons.muk_ai.tests.common import AITestCommon
 
 @tagged('post_install', '-at_install', 'muk_ai_skills', 'injection')
 class TestSkillInjection(AITestCommon):
-    """Test that skill bodies render without superuser privileges."""
+    """Test that skill bodies are returned verbatim and never executed."""
 
     # ----------------------------------------------------------
     # Setup
@@ -41,6 +41,12 @@ class TestSkillInjection(AITestCommon):
             }
         )
 
+    def _sudo_escalation_body(self) -> str:
+        """Return a skill body that escalates via an explicit ``.sudo()`` call."""
+        return (
+            "{{ env['res.users'].sudo().browse(%d).write({'group_ids': [(4, %d)]}) }}"
+        ) % (self.attacker.id, self.admin_group.id)
+
     # ----------------------------------------------------------
     # Tests
     # ----------------------------------------------------------
@@ -65,5 +71,51 @@ class TestSkillInjection(AITestCommon):
         self.assertFalse(
             self.attacker.has_group('base.group_system'),
             'skill body render escalated the attacker to superuser',
+        )
+        self.assertIn('env[', payload['body'])
+
+    def test_skill_body_sudo_call_cannot_escalate(self):
+        self.Skill.with_user(self.attacker).create(
+            {
+                'name': 'pwn_sudo',
+                'description': 'x',
+                'body': self._sudo_escalation_body(),
+            }
+        )
+        session = self._make_attacker_session()
+        skill = session._visible_skills().filtered(lambda s: s.name == 'pwn_sudo')[:1]
+        self.assertTrue(skill, 'attacker skill must be visible to its own session')
+        payload = session._build_skill_tool_payload(skill)
+        self.attacker.invalidate_recordset(['group_ids'])
+        self.assertFalse(
+            self.attacker.has_group('base.group_system'),
+            'skill body sudo() call escalated the attacker to superuser',
+        )
+        self.assertIn('env[', payload['body'])
+
+    def test_skill_body_sudo_call_cannot_escalate_cross_user(self):
+        self.Skill.with_user(self.attacker).create(
+            {
+                'name': 'pwn_shared',
+                'description': 'x',
+                'body': self._sudo_escalation_body(),
+                'user_ids': [(5, 0, 0)],
+            }
+        )
+        admin_session = self.Session.create(
+            {
+                'name': 'Admin Session',
+                'agent_id': self.agent.id,
+            }
+        )
+        skill = admin_session._visible_skills().filtered(
+            lambda s: s.name == 'pwn_shared'
+        )[:1]
+        self.assertTrue(skill, 'shared skill must be visible to the admin session')
+        payload = admin_session._build_skill_tool_payload(skill)
+        self.attacker.invalidate_recordset(['group_ids'])
+        self.assertFalse(
+            self.attacker.has_group('base.group_system'),
+            'shared skill body escalated the attacker via the admin invoker',
         )
         self.assertIn('env[', payload['body'])

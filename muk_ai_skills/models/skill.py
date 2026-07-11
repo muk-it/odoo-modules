@@ -172,17 +172,16 @@ class Skill(models.Model):
         return ['body']
 
     def _build_body(self, session: models.BaseModel | None = None) -> str:
-        """Render the skill body under the invoking user's own privileges.
+        """Return the skill body verbatim without evaluating it as a template.
 
-        The skill is fetched through a superuser recordset for visibility
-        filtering, but the body is user-authored: rendering it with the
-        superuser environment would let a ``{{ ... }}`` fragment run ORM
-        writes that bypass every access rule. Dropping ``sudo`` restores
-        ACL enforcement for the current user before the template runs.
+        Skill bodies are user-authored and can be shared across users, so
+        rendering them through the inline template engine would let a
+        ``{{ ... }}`` fragment run ORM writes under the invoking user's
+        rights (``.sudo()`` inside the expression escalates even under a
+        non-superuser environment). The body is returned as inert text,
+        matching the MCP ``invoke_skill`` path, so it never executes.
         """
-        record = self.sudo(False)
-        extras = session._session_prompt_extras() if session else {}
-        return record._render_prompt(record.body or '', **extras)
+        return self.body or ''
 
     def _resource_manifest(self) -> list[dict]:
         """Return the manifest of attached resources with their uris."""
