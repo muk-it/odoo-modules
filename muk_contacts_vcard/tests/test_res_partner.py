@@ -117,6 +117,25 @@ class TestResPartner(TransactionCase):
         partner.invalidate_recordset(['formatted_name'])
         self.assertEqual(partner.formatted_name, 'Dr John Doe')
 
+    def test_formatted_name_recomputes_on_parent_rename(self):
+        company = self.env['res.partner'].create(
+            {
+                'name': 'OldCo',
+                'is_company': True,
+            }
+        )
+        child = self.env['res.partner'].create(
+            {
+                'parent_id': company.id,
+                'type': 'invoice',
+                'street': 'Street 1',
+            }
+        )
+        self.assertIn('OldCo', child.formatted_name)
+        company.name = 'NewCo'
+        child.invalidate_recordset(['formatted_name'])
+        self.assertIn('NewCo', child.formatted_name)
+
     def test_portal_user_can_read_honorific_shortcut(self):
         portal = new_test_user(
             self.env, login='vcard_portal', groups='base.group_portal'
