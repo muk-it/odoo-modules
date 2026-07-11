@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import date, datetime, time, timedelta
 
 from dateutil.relativedelta import relativedelta
@@ -32,12 +33,22 @@ class PreviousProxy:
             return []
         return [
             {
-                'name': log.name or '',
-                'arguments': log.arguments or {},
-                'output': log.output or {},
+                'name': log.tool_name or '',
+                'arguments': self._decode(log.request_data),
+                'output': self._decode(log.response_data),
             }
             for log in self._session.log_ids
         ]
+
+    @staticmethod
+    def _decode(value: str | None) -> object:
+        """Return ``value`` parsed as JSON, or the raw text when not JSON."""
+        if not value:
+            return ''
+        try:
+            return json.loads(value)
+        except (ValueError, TypeError):
+            return value
 
 
 def post_session_event(session: models.BaseModel, kind: str, payload: dict) -> None:

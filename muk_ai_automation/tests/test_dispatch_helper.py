@@ -102,6 +102,23 @@ class TestDispatchHelper(TransactionCase):
         self.assertEqual(proxy.last_text, '')
         self.assertEqual(proxy.tool_log, [])
 
+    def test_previous_proxy_tool_log_with_logged_session(self):
+        session = self.env['muk_ai.session'].create({'name': 'Logged Session'})
+        self.env['muk_mcp.log'].sudo().create(
+            {
+                'tool_name': 'search',
+                'request_data': '{"model": "res.partner"}',
+                'response_data': '{"ids": [1]}',
+                'session_id': session.id,
+                'source': 'chat',
+            }
+        )
+        log = PreviousProxy(session).tool_log
+        self.assertEqual(len(log), 1)
+        self.assertEqual(log[0]['name'], 'search')
+        self.assertEqual(log[0]['arguments'], {'model': 'res.partner'})
+        self.assertEqual(log[0]['output'], {'ids': [1]})
+
     def test_create_session_writes_action_server_id(self):
         action = self._make_action()
         with self._mock_provider():

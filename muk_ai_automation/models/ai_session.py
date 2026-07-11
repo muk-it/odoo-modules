@@ -90,7 +90,7 @@ class AISession(models.Model):
         ``sudo``) privileges, so they must be blanked for a reader who only
         gained record-level access through the linked business record.
         """
-        return ('conversation',)
+        return ('conversation', 'display_events', 'last_text')
 
     def _hides_transcript_from_current_user(self) -> bool:
         """Return whether the caller must be denied this session's transcript."""
@@ -261,16 +261,25 @@ class AISession(models.Model):
                 continue
             for name in sensitive:
                 if name in row:
-                    row[name] = []
+                    row[name] = False if name == 'last_text' else []
         return result
+
+    def fetch_events(
+        self, limit: int = 100, before_sequence: int | None = None
+    ) -> dict:
+        """Return an empty event window for non-owner, non-admin readers."""
+        if self and self._hides_transcript_from_current_user():
+            return {'events': [], 'has_more_older': False, 'oldest_sequence': None}
+        return super().fetch_events(limit=limit, before_sequence=before_sequence)
 
     def get_snapshot(self, include_conversation: bool = False) -> dict:
         """Drop the transcript from snapshots taken by non-owner readers."""
-        if include_conversation and self._hides_transcript_from_current_user():
-            snapshot = super().get_snapshot(include_conversation=False)
-            snapshot['conversation'] = []
-            return snapshot
-        return super().get_snapshot(include_conversation=include_conversation)
+        snapshot = super().get_snapshot(include_conversation=include_conversation)
+        if self and self._hides_transcript_from_current_user():
+            snapshot['last_text'] = False
+            if include_conversation:
+                snapshot['conversation'] = []
+        return snapshot
 
     @api.model_create_multi
     def create(self, vals_list: list[dict]) -> AISession:

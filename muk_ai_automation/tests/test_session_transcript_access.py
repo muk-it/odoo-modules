@@ -35,6 +35,10 @@ class TestSessionTranscriptAccess(TransactionCase):
             )
         )
         cls.session.sudo().write({'conversation': cls.transcript})
+        cls.session.sudo()._append_event(
+            {'kind': 'text', 'content': 'secret tool output'}
+        )
+        cls.session.sudo().write({'last_text': 'secret tool output'})
 
     def test_reader_can_read_metadata(self):
         session = self.session.with_user(self.reader)
@@ -52,6 +56,24 @@ class TestSessionTranscriptAccess(TransactionCase):
         snapshot = session.get_snapshot(include_conversation=True)
         self.assertEqual(snapshot.get('conversation'), [])
 
+    def test_reader_fetch_events_is_empty(self):
+        session = self.session.with_user(self.reader)
+        self.assertEqual(session.fetch_events()['events'], [])
+
+    def test_reader_display_events_blanked(self):
+        session = self.session.with_user(self.reader)
+        self.assertEqual(session.read(['display_events'])[0]['display_events'], [])
+
+    def test_reader_snapshot_hides_events_and_last_text(self):
+        session = self.session.with_user(self.reader)
+        snapshot = session.get_snapshot(include_conversation=True)
+        self.assertEqual(snapshot['events'], [])
+        self.assertFalse(snapshot['last_text'])
+
+    def test_reader_read_blanks_last_text(self):
+        session = self.session.with_user(self.reader)
+        self.assertFalse(session.read(['last_text'])[0]['last_text'])
+
     def test_owner_keeps_conversation(self):
         session = self.session.with_user(self.owner)
         self.assertEqual(
@@ -59,6 +81,12 @@ class TestSessionTranscriptAccess(TransactionCase):
         )
         snapshot = session.get_snapshot(include_conversation=True)
         self.assertEqual(snapshot['conversation'], self.transcript)
+
+    def test_owner_still_sees_events(self):
+        session = self.session.with_user(self.owner)
+        self.assertTrue(session.fetch_events()['events'])
+        snapshot = session.get_snapshot(include_conversation=True)
+        self.assertEqual(snapshot['last_text'], 'secret tool output')
 
     def test_admin_keeps_conversation(self):
         row = self.session.read(['conversation'])[0]
