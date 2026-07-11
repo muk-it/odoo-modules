@@ -212,8 +212,8 @@ class Partner(models.Model):
                 if (
                     record.parent_id
                     and record.contact_number
-                    and record.contact_number
-                    == record.commercial_partner_id.contact_number
+                    and record.commercial_partner_id != record
+                    and record.contact_number == record.commercial_partner_id.contact_number
                 ):
                     record.contact_number = self._get_next_contact_number()
         return super().write(vals)
