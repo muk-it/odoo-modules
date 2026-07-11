@@ -17,6 +17,22 @@ class MailMessage(models.Model):
     # ----------------------------------------------------------
 
     @api.model
+    def _get_view_cache_key(
+        self, view_id=None, view_type: str = 'form', **options
+    ) -> tuple:
+        """Extend the cache key with the user-dependent routing dimensions."""
+        key = super()._get_view_cache_key(view_id, view_type, **options)
+        failed_view = self.env.ref(
+            'muk_mail_route.view_mail_message_failed_list', raise_if_not_found=False
+        )
+        if failed_view and view_id == failed_view.id:
+            key += (
+                self.env.user.has_group('base.group_erp_manager'),
+                self.env['ir.model.access']._get_allowed_models(),
+            )
+        return key
+
+    @api.model
     def _get_view(self, view_id=None, view_type: str = 'form', **options) -> tuple:
         """Inject a routing button per configuration into the failed list."""
         arch, view = super()._get_view(view_id, view_type, **options)

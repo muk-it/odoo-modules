@@ -107,12 +107,13 @@ class Router(models.TransientModel):
             'message': message,
             'model': self.env[configuration.model],
         }
-        safe_eval(
-            configuration.code.strip(),
-            eval_context,
-            mode='exec',
-            filename=str(self),
-        )
+        if configuration.code:
+            safe_eval(
+                configuration.code.strip(),
+                eval_context,
+                mode='exec',
+                filename=str(self),
+            )
         record = self.env[configuration.model].create(eval_context.get('values', {}))
         self._attach_messages(message, record)
         return record.id

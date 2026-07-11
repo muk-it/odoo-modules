@@ -101,6 +101,30 @@ class TestRouter(MailCommon):
         self.assertEqual(msg_1.attachment_ids.res_model, 'res.partner')
         self.assertEqual(msg_1.attachment_ids.res_id, msg_1.res_id)
 
+    def test_route_new_with_empty_code(self):
+        config = self.env['muk_mail_route.configuration'].create(
+            {
+                'name': 'Empty Code',
+                'model_id': self.model_res_partner.id,
+                'route_type': 'new',
+            }
+        )
+        config.write({'code': False})
+
+        msg = self._post_message(subject='Empty Code Partner')
+        wizard = self.env['muk_mail_route.router'].create(
+            {
+                'configuration_id': config.id,
+                'message_ids': [fields.Command.set([msg.id])],
+            }
+        )
+        action = wizard.action_route()
+
+        self.assertEqual(action.get('res_model'), 'res.partner')
+
+        msg.invalidate_model(['model', 'res_id'])
+        self.assertEqual(msg.model, 'res.partner')
+
     def test_route_existing_attaches_messages_and_can_notify_internal(self):
         config = self.env['muk_mail_route.configuration'].create(
             {
