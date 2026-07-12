@@ -899,8 +899,8 @@ class TestAiSession(AITestCommon):
         self._seed_large_conversation(session)
         with self._patch_provider([self._text_payload('compact summary')]):
             session.compact()
-        first = session.conversation[0]
-        text = first.get('content', [{}])[0].get('text', '')
+        system = session._build_request_inputs()[0]
+        text = system.get('content', [{}])[0].get('text', '')
         self.assertIn('<available_tools>', text)
 
     def test_compact_accrues_cost(self):

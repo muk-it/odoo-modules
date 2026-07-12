@@ -3,6 +3,7 @@ import { markup, onWillUnmount, useEnv, useState } from '@odoo/owl';
 import { ConfirmationDialog } from '@web/core/confirmation_dialog/confirmation_dialog';
 import { _t } from '@web/core/l10n/translation';
 import { useService } from '@web/core/utils/hooks';
+import { SelectCreateDialog } from '@web/views/view_dialogs/select_create_dialog';
 
 import { fileToBase64 } from '@muk_ai/core/attachment/file_helpers';
 import { renderMarkdown as renderMarkdownToHtml } from '@muk_ai/core/markdown/markdown';
@@ -47,6 +48,10 @@ export const SLASH_COMMANDS = [
     {
         name: '/unpin',
         hint: 'Clear the view context pinned to this session',
+    },
+    {
+        name: '/handover',
+        hint: 'Transfer this chat to another user',
     },
 ];
 
@@ -302,6 +307,10 @@ export function useAiSession(options = {}) {
             if (event.payload && event.payload.name) {
                 state.name = event.payload.name;
             }
+        } else if (event.type === 'agent_switched') {
+            const payload = event.payload || {};
+            state.agentId = payload.agent_id || null;
+            state.agentName = payload.agent_name || '';
         } else if (event.type === 'ui_action') {
             handleUiAction(event.payload);
         } else if (event.type === 'view_context') {
@@ -894,6 +903,10 @@ export function useAiSession(options = {}) {
             await runUnpin();
             return;
         }
+        if (slash.name === '/handover') {
+            openHandoverPicker(slash.args);
+            return;
+        }
     }
     async function runUnpin() {
         if (!state.sessionId) {
@@ -1204,6 +1217,60 @@ export function useAiSession(options = {}) {
             });
         }
     }
+    async function onHandover(userId) {
+        if (!state.sessionId || !userId) {
+            return;
+        }
+        if (state.status === 'running' || state.status === 'compacting') {
+            notification.add(_t('Stop the session before handing it over.'), {
+                type: 'warning',
+            });
+            return;
+        }
+        try {
+            await orm.call('muk_ai.session', 'action_handover', [
+                state.sessionId,
+                userId,
+            ]);
+            notification.add(_t('Chat handed over.'), { type: 'success' });
+            if (options.onHandedOver) {
+                await options.onHandedOver(state.sessionId);
+            }
+        } catch (error) {
+            notification.add(_t('Failed to hand over: %s', formatError(error)), {
+                type: 'danger',
+            });
+        }
+    }
+    /**
+     * Open a user picker and hand the current chat to the chosen user.
+     * @param {string} [query] optional name prefilter typed after /handover
+     */
+    function openHandoverPicker(query = '') {
+        if (!state.sessionId) {
+            return;
+        }
+        const domain = [
+            ['share', '=', false],
+            ['active', '=', true],
+            ['id', '!=', state.ownerId],
+        ];
+        if (query) {
+            domain.push(['name', 'ilike', query]);
+        }
+        dialog.add(SelectCreateDialog, {
+            resModel: 'res.users',
+            title: _t('Hand over chat to…'),
+            domain,
+            noCreate: true,
+            multiSelect: false,
+            onSelected: (resIds) => {
+                if (resIds && resIds[0]) {
+                    onHandover(resIds[0]);
+                }
+            },
+        });
+    }
     async function maybeAutoCompact() {
         if (!state.contextWindow || !state.lastInputTokens) {
             return;
@@ -1397,5 +1464,6 @@ export function useAiSession(options = {}) {
         runStopCompact,
         runUndoToEvent,
         runForkAtEvent,
+        openHandoverPicker,
     };
 }

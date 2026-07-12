@@ -3,9 +3,10 @@ from __future__ import annotations
 from contextlib import contextmanager
 from unittest.mock import MagicMock, patch
 
-from odoo.tests.common import TransactionCase
+from odoo.tests.common import TransactionCase, tagged
 
 
+@tagged('post_install', '-at_install')
 class AITestCommon(TransactionCase):
     """Shared setup and mocking helpers for the AI provider/session tests."""
 

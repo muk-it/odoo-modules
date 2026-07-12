@@ -108,6 +108,11 @@ class AIProvider(models.Model):
         string='Supports Code Interpreter',
     )
 
+    supports_vision = fields.Boolean(
+        compute='_compute_capabilities',
+        string='Supports Vision',
+    )
+
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
@@ -252,6 +257,7 @@ class AIProvider(models.Model):
             record.supports_code_interpreter = bool(
                 impl and impl.supports_code_interpreter
             )
+            record.supports_vision = bool(impl and impl.supports_vision)
 
     # ----------------------------------------------------------
     # Constraints

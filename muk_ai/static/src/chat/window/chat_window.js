@@ -63,6 +63,7 @@ export class ChatWindow extends Component {
             onForked: (newId) => {
                 this.chatWindow.open(newId);
             },
+            onHandedOver: () => this.props.onClose(),
         });
         this.fileViewer = useFileViewer();
         this.rootRef = useRef('root');

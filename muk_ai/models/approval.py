@@ -3,8 +3,8 @@ from __future__ import annotations
 import hashlib
 import json
 
-from odoo import api, fields, models
-from odoo.exceptions import AccessError
+from odoo import _, api, fields, models
+from odoo.exceptions import AccessError, MissingError
 from odoo.fields import Field
 
 from odoo.addons.muk_ai.tools import coerce_ids
@@ -190,10 +190,12 @@ class AIApproval(models.Model):
                 return str(value[1])
             if isinstance(value, int):
                 try:
-                    rec = self.env[field.comodel_name].sudo().browse(value)
+                    rec = self.env[field.comodel_name].browse(value).exists()
+                    return rec.display_name or f'#{value}'
                 except KeyError:
                     return f'#{value}'
-                return rec.exists().display_name or f'#{value}'
+                except (AccessError, MissingError):
+                    return _('(no access)')
             return str(value)
         if field.type in ('many2many', 'one2many'):
             if not isinstance(value, list) or not value:
@@ -201,21 +203,32 @@ class AIApproval(models.Model):
             if isinstance(value[0], (list, tuple)):
                 return f'({len(value)} command(s))'
             try:
-                recs = self.env[field.comodel_name].sudo().browse(value)
+                recs = self.env[field.comodel_name].browse(value).exists()
+                return ', '.join(r.display_name or f'#{r.id}' for r in recs)
             except KeyError:
                 return str(value)
-            return ', '.join(r.display_name or f'#{r.id}' for r in recs.exists())
+            except (AccessError, MissingError):
+                return _('(%(count)s record(s), no access)', count=len(value))
         return self._fmt_scalar(value)
 
     @api.model
     def _targets_display_names(self, model_name: str, ids: list[int]) -> list[dict]:
-        """Return id and display name for each target record."""
+        """Return id and display name for each target the caller may read.
+
+        Names of records the caller cannot read are masked rather than resolved
+        with elevated rights, so the approval card never leaks protected data.
+        """
         if not model_name or model_name not in self.env or not ids:
             return []
-        recs = self.env[model_name].sudo().browse(ids).exists()
-        return [
-            {'id': r.id, 'display_name': r.display_name or f'#{r.id}'} for r in recs
-        ]
+        result = []
+        for record in self.env[model_name].browse(ids):
+            try:
+                record.check_access('read')
+                name = record.display_name or f'#{record.id}'
+            except (AccessError, MissingError):
+                name = _('(no access)')
+            result.append({'id': record.id, 'display_name': name})
+        return result
 
     @api.model
     def _model_label(self, model_name: str) -> str:
@@ -238,8 +251,8 @@ class AIApproval(models.Model):
         if model is None or not ids:
             return {}
         try:
-            return {row['id']: row for row in model.sudo().browse(ids).read(names)}
-        except AccessError:
+            return {row['id']: row for row in model.browse(ids).read(names)}
+        except (AccessError, MissingError):
             return {}
 
     @api.model

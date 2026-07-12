@@ -46,6 +46,8 @@ from .attachment import (
     INLINE_IMAGE_RE,
     PDF_MIMETYPE,
     TEXT_MIMETYPES,
+    TOOL_VISION_MAX_B64_CHARS,
+    TOOL_VISION_MAX_IMAGES,
     URL_REF_RE,
     is_unmaterialized_attachment,
 )

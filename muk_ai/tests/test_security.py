@@ -1,7 +1,8 @@
 from odoo.exceptions import AccessError, UserError
-from odoo.tests.common import TransactionCase, new_test_user
+from odoo.tests.common import TransactionCase, new_test_user, tagged
 
 
+@tagged('post_install', '-at_install')
 class TestAiSecurity(TransactionCase):
     """Verify access rights and record-level security on AI models."""
 

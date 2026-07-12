@@ -119,6 +119,17 @@ class AIAgent(models.Model):
         tracking=True,
     )
 
+    allow_handoff = fields.Boolean(
+        string='Allow Handoff',
+        help=(
+            'Expose this agent as a target for the switch_agent / list_agents '
+            'handoff tools, so a router or another agent can hand the '
+            'conversation to it.'
+        ),
+        default=False,
+        tracking=True,
+    )
+
     tool_filter = fields.Json(
         string='Tool Filter',
         help=('List of tool names this agent may call. Empty = all tools allowed.'),

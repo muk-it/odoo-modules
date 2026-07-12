@@ -179,7 +179,7 @@ class TestAiAgent(AITestCommon):
         self.assertIn('Companies accessible', block)
         self.assertIn('MuK Extra Test Co', block)
 
-    def test_initial_inputs_include_runtime_block(self):
+    def test_system_message_includes_runtime_block(self):
         agent = self.env['muk_ai.agent'].create(
             {
                 'name': 'Inputs',
@@ -192,8 +192,7 @@ class TestAiAgent(AITestCommon):
                 'agent_id': agent.id,
             }
         )
-        inputs = session._build_initial_inputs(user_message='hi')
-        system_text = inputs[0]['content'][0]['text']
+        system_text = session._system_message()['content'][0]['text']
         self.assertIn('Be concise.', system_text)
         self.assertIn('<runtime>', system_text)
         self.assertIn(f'Odoo: {release.version}', system_text)

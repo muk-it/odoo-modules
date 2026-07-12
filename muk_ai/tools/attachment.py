@@ -11,6 +11,14 @@ DEFAULT_MAX_UPLOAD_BYTES = 128 * 1024 * 1024
 ATTACHMENT_REF_MAX_BYTES = 4 * 1024 * 1024
 
 # ----------------------------------------------------------
+# Tool Vision Limits
+# ----------------------------------------------------------
+
+TOOL_VISION_MAX_IMAGES = 4
+TOOL_VISION_MAX_BYTES = 4 * 1024 * 1024
+TOOL_VISION_MAX_B64_CHARS = (TOOL_VISION_MAX_BYTES * 4) // 3 + 4
+
+# ----------------------------------------------------------
 # Allowed Mimetypes
 # ----------------------------------------------------------
 

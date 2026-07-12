@@ -172,6 +172,11 @@
                                 string="Readonly"
                                 widget="boolean_toggle"
                             />
+							<field
+                                name="allow_handoff"
+                                string="Allow Handoff"
+                                widget="boolean_toggle"
+                            />
 							<field name="approval_mode"/>
 							<field
                                 name="tool_filter"

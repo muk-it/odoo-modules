@@ -27,6 +27,7 @@ class ProviderBase:
     supports_web_search = False
     supports_image_generation = False
     supports_code_interpreter = False
+    supports_vision = True
 
     # ----------------------------------------------------------
     # Setup

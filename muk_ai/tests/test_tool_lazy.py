@@ -62,10 +62,9 @@ class TestToolLazy(AITestCommon):
     # Tests: tool index in system prompt
     # ----------------------------------------------------------
 
-    def test_initial_inputs_include_tool_index_in_system_message(self):
+    def test_system_message_includes_tool_index(self):
         with self._patch_catalog():
-            inputs = self.session._build_initial_inputs(user_message='hi')
-        system_text = inputs[0]['content'][0]['text']
+            system_text = self.session._system_message()['content'][0]['text']
         self.assertIn('<available_tools>', system_text)
         self.assertIn('</available_tools>', system_text)
         for name in ('rare_tool', 'another_rare'):

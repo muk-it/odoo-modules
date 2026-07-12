@@ -116,6 +116,15 @@ export class AIChat extends Component {
                 await this._loadSessions();
                 await this._selectSession(newId);
             },
+            onHandedOver: async (sessionId) => {
+                this.state.sessions = this.state.sessions.filter(
+                    (s) => s.id !== sessionId,
+                );
+                if (this.session.state.sessionId === sessionId) {
+                    await this._selectSession(this.state.sessions[0]?.id || null);
+                }
+                await this._loadSessions();
+            },
         });
         this.fileViewer = useFileViewer();
         this.badge = useNotificationBadge();

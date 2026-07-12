@@ -30,6 +30,7 @@ from odoo.addons.muk_ai.tools import (
     COMPACT_SUMMARY_SYSTEM,
     COMPACT_SUMMARY_TEMPLATE,
     DEFAULT_CONTEXT_WINDOW,
+    IMAGE_MIMETYPES,
     INLINE_IMAGE_RE,
     ITERATION_WARNING_ROUNDS,
     MAX_ITERATIONS,
@@ -37,6 +38,8 @@ from odoo.addons.muk_ai.tools import (
     MAX_WALLCLOCK_SECONDS,
     TERMINATING_TOOLS,
     TOOL_LOAD_TOOL,
+    TOOL_VISION_MAX_B64_CHARS,
+    TOOL_VISION_MAX_IMAGES,
     TURN_WALLCLOCK_SECONDS,
     URL_REF_RE,
     WALLCLOCK_MIN_SECONDS,
@@ -211,6 +214,16 @@ class AISession(models.Model):
             'Sticky description of the Odoo view the user is looking at. '
             'Injected as a <ui_ctx> tag on every provider request until it '
             'is replaced by a navigation tool result or cleared via /unpin.'
+        ),
+        readonly=True,
+    )
+
+    deferred_vision_attachment_ids = fields.Json(
+        string='Deferred Vision Attachments',
+        help=(
+            'Attachment ids of images returned by tools in the current round, '
+            'held until every function_call_output of the round is emitted so '
+            'the images follow all tool results (required by vision providers).'
         ),
         readonly=True,
     )
@@ -396,6 +409,16 @@ class AISession(models.Model):
             else self._get_system_prompt()
         )
         return self._render_system_prompt(raw or '')
+
+    def _system_prompt_addenda(self) -> list[str]:
+        """Return capability blocks appended after the agent system prompt.
+
+        Extension modules override this to contribute focused-element, skill,
+        todo, browser or workflow guidance without polluting the agent's own
+        rendered prompt in :meth:`_effective_system_prompt`, mirroring how the
+        runtime and available-tools blocks are assembled as separate parts.
+        """
+        return []
 
     def _build_available_tools_block(self) -> str:
         """Build the prompt block listing deferred, name-only tools."""
@@ -583,31 +606,33 @@ class AISession(models.Model):
             )
         return {'role': 'user', 'content': content} if content else None
 
+    def _system_message(self) -> dict:
+        """Return the system message rebuilt from the current agent and context."""
+        parts = [
+            self._effective_system_prompt(),
+            *self._system_prompt_addenda(),
+            self._build_runtime_block(),
+            self._build_available_tools_block(),
+        ]
+        return {
+            'role': 'system',
+            'content': [
+                {
+                    'type': 'input_text',
+                    'text': '\n\n'.join(part for part in parts if part),
+                }
+            ],
+        }
+
     def _build_initial_inputs(
         self,
         user_message: str | None = None,
         attachments: models.BaseModel | None = None,
     ) -> list[dict]:
-        """Build the initial system and user inputs for a fresh turn."""
-        parts = [
-            self._effective_system_prompt(),
-            self._build_runtime_block(),
-            self._build_available_tools_block(),
-        ]
-        inputs = [
-            {
-                'role': 'system',
-                'content': [
-                    {
-                        'type': 'input_text',
-                        'text': '\n\n'.join(part for part in parts if part),
-                    }
-                ],
-            }
-        ]
+        """Build the initial user input for a fresh turn (system prompt added per request)."""
         if user_entry := self._build_user_entry(user_message, attachments):
-            inputs.append(user_entry)
-        return inputs
+            return [user_entry]
+        return []
 
     def _user_message_log(
         self, user_message: str | None, attachments: models.BaseModel
@@ -672,10 +697,20 @@ class AISession(models.Model):
         ]
 
     def _build_request_inputs(self) -> list[dict]:
-        """Return the conversation inputs annotated with the UI context."""
-        return with_ui_ctx(
-            self._strip_internal_keys(self.conversation), self.view_context
-        )
+        """Return a fresh system message followed by the annotated conversation.
+
+        Any system item persisted by an older version is dropped so the system
+        message always reflects the current agent.
+        """
+        history = [
+            item
+            for item in self._strip_internal_keys(self.conversation)
+            if not (isinstance(item, dict) and item.get('role') == 'system')
+        ]
+        return [
+            self._system_message(),
+            *with_ui_ctx(history, self.view_context),
+        ]
 
     # ----------------------------------------------------------
     # Helper Bus
@@ -1003,13 +1038,18 @@ class AISession(models.Model):
         output_result,
         log_result=None,
     ) -> None:
-        """Append a tool output and record the matching result event."""
-        outputs.append(build_tool_call_output(call_id, output_result))
+        """Append a tool output and record the matching result event.
+
+        Image-bearing results are split: the text-only payload becomes the
+        ``function_call_output`` and any images are persisted and appended as a
+        follow-up user entry so the vision model can see them.
+        """
+        cleaned = self._append_tool_output_with_vision(outputs, call_id, output_result)
         self._append_event(
             {
                 'kind': 'tool_result',
                 'name': name,
-                'result': output_result if log_result is None else log_result,
+                'result': cleaned if log_result is None else log_result,
                 'call_id': call_id,
             }
         )
@@ -1654,6 +1694,184 @@ class AISession(models.Model):
                 out.append(item)
         return out
 
+    def _vision_enabled(self) -> bool:
+        """Return whether the effective provider can consume image inputs."""
+        provider = self._effective_provider()
+        return bool(provider and provider.supports_vision)
+
+    @staticmethod
+    def _image_content_blocks(content) -> list:
+        """Return the image blocks from an MCP-style content list."""
+        if not isinstance(content, list):
+            return []
+        return [
+            block
+            for block in content
+            if isinstance(block, dict) and block.get('type') == 'image'
+        ]
+
+    def _collect_tool_image_specs(self, result) -> list:
+        """Return normalized image specs a tool result carries.
+
+        Supports the ``{'images': [{'data', 'mimetype', 'name'}, ...]}``
+        convention and MCP image content blocks
+        (``{'type': 'image', 'data', 'mimeType'}``).
+        """
+        blocks = []
+        if isinstance(result, dict):
+            blocks += [b for b in (result.get('images') or []) if isinstance(b, dict)]
+            blocks += self._image_content_blocks(result.get('content'))
+        elif isinstance(result, list):
+            blocks += self._image_content_blocks(result)
+        specs = []
+        for block in blocks:
+            data = block.get('data') or block.get('data_b64')
+            if not isinstance(data, str) or not data:
+                continue
+            specs.append(
+                {
+                    'data': re.sub(r'\s+', '', data),
+                    'mimetype': (
+                        block.get('mimetype') or block.get('mimeType') or 'image/png'
+                    ),
+                    'name': (
+                        block.get('name') or block.get('filename') or 'tool-image.png'
+                    ),
+                }
+            )
+        return specs
+
+    def _strip_tool_images(self, result) -> object:
+        """Return the tool result with inline image payloads removed."""
+        if isinstance(result, dict):
+            cleaned = {key: value for key, value in result.items() if key != 'images'}
+            if isinstance(cleaned.get('content'), list):
+                cleaned['content'] = [
+                    block
+                    for block in cleaned['content']
+                    if not (isinstance(block, dict) and block.get('type') == 'image')
+                ]
+            return cleaned
+        if isinstance(result, list):
+            return [
+                block
+                for block in result
+                if not (isinstance(block, dict) and block.get('type') == 'image')
+            ]
+        return result
+
+    def _persist_tool_image(self, spec: dict) -> models.BaseModel:
+        """Persist one tool image spec as a session attachment, or skip on error."""
+        empty = self.env['ir.attachment']
+        if spec['mimetype'] not in IMAGE_MIMETYPES:
+            return empty
+        data = spec['data']
+        if data.startswith('data:') and ',' in data:
+            data = data.split(',', 1)[1]
+        if not data or len(data) > TOOL_VISION_MAX_B64_CHARS:
+            return empty
+        try:
+            return (
+                self.env['ir.attachment']
+                .sudo()
+                ._ai_create_from_upload(
+                    spec['name'], spec['mimetype'], data, res_id=self.id
+                )
+            )
+        except UserError:
+            return empty
+
+    def _extract_tool_vision(self, result) -> tuple[models.BaseModel, object]:
+        """Pop image payloads from a tool result and persist them as attachments.
+
+        :return: the created attachments and the text-only result to send back
+            as the ``function_call_output``
+        """
+        empty = self.env['ir.attachment']
+        specs = self._collect_tool_image_specs(result)
+        if not specs:
+            return empty, result
+        if not self._vision_enabled():
+            return empty, self._note_vision_unavailable(self._strip_tool_images(result))
+        attachments = empty
+        for spec in specs[:TOOL_VISION_MAX_IMAGES]:
+            attachments |= self._persist_tool_image(spec)
+        cleaned = self._strip_tool_images(result)
+        if not attachments:
+            cleaned = self._note_vision_unavailable(cleaned)
+        return attachments, cleaned
+
+    @staticmethod
+    def _note_vision_unavailable(cleaned) -> object:
+        """Append a note when a tool's images could not be shown to the model."""
+        note = (
+            'Note: images were produced but cannot be shown to this model; '
+            'rely on the textual/structural result instead.'
+        )
+        if isinstance(cleaned, dict):
+            text = cleaned.get('text')
+            return {**cleaned, 'text': f'{text}\n{note}' if text else note}
+        return cleaned
+
+    def _append_tool_output_with_vision(
+        self, outputs: list, call_id: str, result
+    ) -> object:
+        """Append a tool output and defer any image payload for the round.
+
+        The text-only result becomes the ``function_call_output`` immediately.
+        Image attachments are held on the session (not appended inline) and
+        flushed by ``_flush_deferred_vision`` once every function_call_output of
+        the round is emitted, so images always follow all tool results across a
+        pause/resume boundary (providers reject a tool_result after other user
+        content).
+
+        :return: the cleaned, text-only result for event logging
+        """
+        attachments, cleaned = self._extract_tool_vision(result)
+        outputs.append(build_tool_call_output(call_id, cleaned))
+        if attachments:
+            deferred = list(self.deferred_vision_attachment_ids or [])
+            deferred += [a.id for a in attachments if a.id not in deferred]
+            self.deferred_vision_attachment_ids = deferred
+        return cleaned
+
+    def _flush_deferred_vision(self, outputs: list) -> list:
+        """Return ``outputs`` with the round's deferred vision images appended.
+
+        Emits a single trailing user entry carrying every image a tool produced
+        this round, then clears the buffer. A no-op when nothing was deferred.
+        """
+        ids = list(self.deferred_vision_attachment_ids or [])
+        if not ids:
+            return outputs
+        attachments = self.env['ir.attachment'].browse(ids).exists()
+        self.deferred_vision_attachment_ids = False
+        entry = self._build_user_entry(None, attachments)
+        if not entry:
+            return outputs
+        return [*outputs, {**entry, '_vision_entry': True}]
+
+    @staticmethod
+    def _order_round_outputs(outputs: list) -> list:
+        """Return round outputs with tool results first and user entries last.
+
+        Keeps every ``function_call_output`` contiguous after the assistant's
+        tool calls, appending any injected vision user entries afterwards.
+        """
+        tool_outputs = [
+            item
+            for item in outputs
+            if isinstance(item, dict) and item.get('type') == 'function_call_output'
+        ]
+        others = [
+            item
+            for item in outputs
+            if not (
+                isinstance(item, dict) and item.get('type') == 'function_call_output'
+            )
+        ]
+        return tool_outputs + others
+
     def _resolve_value_refs(self, arguments: dict) -> tuple[dict, list]:
         """Inline attachment and URL references in tool arguments.
 
@@ -1942,7 +2160,7 @@ class AISession(models.Model):
                 'kind': 'client_action_result',
                 'call_id': call_id,
                 'name': named.get('name'),
-                'result': result,
+                'result': self._strip_tool_images(result),
             }
         )
         if any(action.get('call_id') not in pending['results'] for action in actions):
@@ -1952,13 +2170,13 @@ class AISession(models.Model):
                 {'state': 'waiting', 'ask': self._public_pending_ask()},
             )
             return
+        continuation = []
+        for action in actions:
+            self._append_tool_output_with_vision(
+                continuation, action['call_id'], pending['results'][action['call_id']]
+            )
         self._resume_turn(
-            [
-                build_tool_call_output(
-                    action['call_id'], pending['results'][action['call_id']]
-                )
-                for action in actions
-            ]
+            self._flush_deferred_vision(self._order_round_outputs(continuation))
         )
 
     def _execute_tool_call(
@@ -2069,7 +2287,10 @@ class AISession(models.Model):
             if call['name'] == TOOL_LOAD_TOOL['name']:
                 client_names = self._client_tool_names()
         if not paused:
-            self._extend_conversation(outputs)
+            ordered = self._order_round_outputs(outputs)
+            if not wait_for_user:
+                ordered = self._flush_deferred_vision(ordered)
+            self._extend_conversation(ordered)
             if wait_for_user:
                 self.write({'state': 'waiting'})
                 self._publish_event(
@@ -2192,8 +2413,7 @@ class AISession(models.Model):
     ) -> None:
         """Run provider rounds until completion, deadline, or budget limits."""
         deadline = deadline or time.monotonic() + self._slice_wallclock_seconds()
-        provider, model = self._effective_provider(), self._effective_model()
-        materialize_cache = {}
+        materialize_cache, provider_key = {}, None
         max_iterations = self._max_iterations()
         for iteration in range(max_iterations):
             if self.state != 'running':
@@ -2208,6 +2428,9 @@ class AISession(models.Model):
             self.invalidate_recordset(['pending_ids', 'expanded_tool_names'])
             if self.pending_ids and self._drain_pending_message():
                 has_terminating = False
+            provider, model = self._effective_provider(), self._effective_model()
+            if provider.id != provider_key:
+                provider_key, materialize_cache = provider.id, {}
             tool_schema = self._get_tool_schema()
             schema, round_agent = (
                 (None, None) if has_terminating else (tool_schema, self.agent_id)
@@ -2490,6 +2713,7 @@ class AISession(models.Model):
                         ),
                     )
                 )
+        outputs = self._flush_deferred_vision(self._order_round_outputs(outputs))
         if outputs:
             self._extend_conversation(outputs)
 
@@ -2536,29 +2760,20 @@ class AISession(models.Model):
             if tail
             else list(self.conversation or [])
         )
-        prefix = [
-            entry
-            for entry in prefix
-            if not (isinstance(entry, dict) and entry.get('role') == 'system')
-        ]
         if not prefix or not tail:
-            non_system = [
-                entry
-                for entry in (self.conversation or [])
-                if not (isinstance(entry, dict) and entry.get('role') == 'system')
-            ]
+            conversation = list(self.conversation or [])
             split = max(
                 (
                     index
-                    for index, entry in enumerate(non_system)
+                    for index, entry in enumerate(conversation)
                     if isinstance(entry, dict) and entry.get('role') == 'user'
                 ),
                 default=None,
             )
             if split is None:
-                prefix, tail = non_system, []
+                prefix, tail = conversation, []
             else:
-                prefix, tail = non_system[:split], non_system[split:]
+                prefix, tail = conversation[:split], conversation[split:]
         return prefix, tail
 
     def _find_prior_compact_summary(self) -> str | None:
@@ -2711,7 +2926,7 @@ class AISession(models.Model):
             if isinstance(item, dict) and item.get('role') in ('user', 'assistant')
         )
         original_tokens = self.last_input_tokens
-        new_conversation = [*self._build_initial_inputs(), *tail]
+        new_conversation = list(tail)
         self.write(
             {
                 'conversation': new_conversation,
@@ -2830,7 +3045,6 @@ class AISession(models.Model):
         )
         original_tokens = self.last_input_tokens
         new_conversation = [
-            *self._build_initial_inputs(),
             {
                 'type': 'message',
                 'role': 'assistant',
@@ -2897,14 +3111,16 @@ class AISession(models.Model):
     def _is_counted_user_entry(item) -> bool:
         """Return whether the item is a user entry backed by a user_message event.
 
-        Answer-carried entries (marked ``_answer_entry``) belong to an
-        ``answer`` event and must not shift the positional mapping between
-        ``user_message`` events and user conversation items.
+        Answer-carried entries (``_answer_entry``) and tool-produced vision
+        entries (``_vision_entry``) have no ``user_message`` event, so they must
+        not shift the positional mapping between events and user conversation
+        items.
         """
         return (
             isinstance(item, dict)
             and item.get('role') == 'user'
             and not item.get('_answer_entry')
+            and not item.get('_vision_entry')
         )
 
     def _conversation_cut_index(self, event: models.BaseModel) -> int:
@@ -3182,7 +3398,7 @@ class AISession(models.Model):
             (
                 idx
                 for idx in range(len(conv) - 1, -1, -1)
-                if isinstance(conv[idx], dict) and conv[idx].get('role') == 'user'
+                if self._is_counted_user_entry(conv[idx])
             ),
             None,
         )
@@ -3577,6 +3793,40 @@ class AISession(models.Model):
             self.write({'state': 'stopped', 'pending_ask': False})
             self._publish_event('state', {'state': 'stopped'})
         return self.get_snapshot()
+
+    def action_handover(self, new_user_id: int) -> bool:
+        """Transfer ownership of this session to another internal user.
+
+        :param new_user_id: the target ``res.users`` id
+        :raise AccessError: when the caller is not the owner or an admin
+        :raise UserError: when the session is busy or the target is invalid
+        """
+        self.ensure_one()
+        if self.user_id.id != self.env.uid and not self.env.is_admin():
+            raise AccessError(
+                _('Only the session owner or an administrator can hand over this chat.')
+            )
+        if self.state in ('running', 'compacting'):
+            raise UserError(_('Stop the session before handing it over.'))
+        target = self.env['res.users'].sudo().browse(new_user_id).exists()
+        if not target or target.share or not target.active:
+            raise UserError(_('Select an active internal user to hand over to.'))
+        if target.id == self.user_id.id:
+            return True
+        old_owner, session = self.user_id, self.sudo()
+        session.write({'user_id': target.id, 'notification_unread': True})
+        session._publish_event('state', {'state': session.state})
+        session._post_inbox_notification(
+            _('Chat handed over to you'),
+            _(
+                '%(name)s handed you the chat "%(chat)s".',
+                name=old_owner.name,
+                chat=session.name or '',
+            ),
+        )
+        session._push_notification_badge(target)
+        session._push_notification_badge(old_owner)
+        return True
 
     # ----------------------------------------------------------
     # Compute

@@ -6,10 +6,12 @@
 		<field name="name">General Assistant</field>
 		<field name="sequence">10</field>
 		<field name="enable_web_search" eval="True"/>
+		<field name="allow_handoff" eval="True"/>
 		<field name="description">Default agent with full tool access.</field>
 		<field name="essential_tool_names" eval="[
             'ask_user',
             'describe_model',
+            'list_agents',
             'list_models',
             'open_action',
             'open_record',
@@ -18,6 +20,7 @@
             'read_records',
             'search_count',
             'search_read',
+            'switch_agent',
         ]"/>
 		<field name="system_prompt"><![CDATA[
 # Role
@@ -70,6 +73,48 @@ You are an Odoo ERP assistant embedded in the backend. Answer questions and perf
 - Question answered → stop.
 - `ask_user` → stop and wait for the answer.
 - Max-iteration guard would be next → stop and say what is missing.
+        ]]></field>
+	</record>
+
+	<record id="agent_router" model="muk_ai.agent">
+		<field name="name">Router</field>
+		<field name="sequence">5</field>
+		<field name="allow_handoff" eval="True"/>
+		<field name="read_only" eval="True"/>
+		<field name="approval_mode">off</field>
+		<field name="description">Routes the conversation to the best specialist agent.</field>
+		<field name="tool_filter" eval="[
+            'ask_user',
+            'describe_model',
+            'list_agents',
+            'open_record',
+            'read_records',
+            'search_read',
+            'switch_agent',
+        ]"/>
+		<field name="essential_tool_names" eval="[
+            'ask_user',
+            'list_agents',
+            'switch_agent',
+        ]"/>
+		<field name="system_prompt"><![CDATA[
+# Role
+
+You are the Router — a dispatcher, not a specialist. Send the user to the right agent, fast.
+
+# How to route
+
+1. Read the request. Call `list_agents` to see the available specialists and what each does.
+2. Pick the single best specialist and call `switch_agent` with its id — from the next turn that agent takes over the conversation.
+3. If nothing fits, answer briefly yourself with the read tools, or ask one clarifying question with `ask_user`.
+4. You only route the opening request; a specialist hands back or over later on its own.
+
+# Rules
+
+- Route on the first clear signal — don't interrogate. At most one `ask_user`, only when the domain is genuinely unclear.
+- Never do specialist work yourself (building pages, writing emails, deep analysis) — hand off instead.
+- After `switch_agent`, one short sentence naming who is taking over, then stop.
+- Terse. No filler.
         ]]></field>
 	</record>
 
