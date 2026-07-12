@@ -200,6 +200,8 @@ class MCPKey(models.Model):
         :return: the matching key, or ``None`` when no active key owned by an
             eligible user matches
         """
+        self.env['res.users'].flush_model(['active'])
+        self.flush_model(['key_hash', 'active', 'user_id'])
         table = SQL.identifier(self._table)
         self.env.cr.execute(
             SQL(
