@@ -48,3 +48,17 @@ class ProductTemplate(models.Model):
     def _inverse_manufacturer_code(self) -> None:
         """Propagate the manufacturer code back to the product variant."""
         self._set_product_variant_field('manufacturer_code')
+
+    # ----------------------------------------------------------
+    # ORM
+    # ----------------------------------------------------------
+
+    @api.model_create_multi
+    def create(self, vals_list: list[dict]) -> ProductTemplate:
+        """Auto-fill missing variant codes after the core value fixup runs."""
+        templates = super(
+            ProductTemplate,
+            self.with_context(skip_product_code_automation=True),
+        ).create(vals_list)
+        templates.product_variant_ids._assign_missing_product_codes()
+        return templates.with_env(self.env)

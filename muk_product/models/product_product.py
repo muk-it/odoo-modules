@@ -82,6 +82,17 @@ class ProductProduct(models.Model):
         ]
         return f'(= {" + ".join(joined)})'
 
+    def _assign_missing_product_codes(self) -> None:
+        """Fill the default code and barcode of variants that still lack one."""
+        for record in self:
+            vals = {}
+            if not record.default_code:
+                vals['default_code'] = record._get_next_default_code()
+            if not record.barcode:
+                vals['barcode'] = record._get_next_barcode()
+            if vals:
+                record.write(vals)
+
     # ----------------------------------------------------------
     # Compute
     # ----------------------------------------------------------
@@ -116,9 +127,10 @@ class ProductProduct(models.Model):
     @api.model_create_multi
     def create(self, vals_list: list[dict]) -> ProductProduct:
         """Assign automatic default codes and barcodes when missing."""
-        for vals in vals_list:
-            if not vals.get('default_code', False):
-                vals['default_code'] = self._get_next_default_code()
-            if not vals.get('barcode', False):
-                vals['barcode'] = self._get_next_barcode()
+        if not self.env.context.get('skip_product_code_automation'):
+            for vals in vals_list:
+                if not vals.get('default_code', False):
+                    vals['default_code'] = self._get_next_default_code()
+                if not vals.get('barcode', False):
+                    vals['barcode'] = self._get_next_barcode()
         return super().create(vals_list)
