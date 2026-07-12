@@ -89,18 +89,12 @@ class AISession(models.Model):
             'resources': manifest,
         }
 
-    def _effective_system_prompt(self) -> str:
-        """Append the skill addendum to the effective system prompt."""
-        rendered = super()._effective_system_prompt()
-        if not self or not self.id:
-            return rendered
-        skills = self._visible_skills()
-        if not skills:
-            return rendered
-        addendum = self._format_skill_addendum(skills)
-        if not rendered:
-            return addendum
-        return f'{rendered}\n\n{addendum}'
+    def _system_prompt_addenda(self) -> list[str]:
+        """Append the available-skills block when the session exposes skills."""
+        addenda = super()._system_prompt_addenda()
+        if self and self.id and (skills := self._visible_skills()):
+            addenda.append(self._format_skill_addendum(skills))
+        return addenda
 
     def _available_tools_extra_paragraphs(self) -> list[str]:
         """Add a guidance paragraph steering invoke_skill away from tools."""

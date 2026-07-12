@@ -63,14 +63,14 @@ class TestPromptAddendum(TransactionCase):
     def test_no_skills_no_addendum(self):
         self._drop_existing_skills()
         session = self._make_session()
-        rendered = session._effective_system_prompt()
+        rendered = session._system_message()['content'][0]['text']
         self.assertNotIn('<available_skills>', rendered)
 
     def test_global_skill_appears_in_addendum(self):
         self._drop_existing_skills()
         self._make_skill(name='alpha', description='Do alpha things.')
         session = self._make_session()
-        rendered = session._effective_system_prompt()
+        rendered = session._system_message()['content'][0]['text']
         self.assertIn('<available_skills>', rendered)
         self.assertIn('`alpha`', rendered)
         self.assertIn('Do alpha things.', rendered)
@@ -83,14 +83,14 @@ class TestPromptAddendum(TransactionCase):
             agent_ids=[(6, 0, [self.other_agent.id])],
         )
         session = self._make_session(self.agent)
-        rendered = session._effective_system_prompt()
+        rendered = session._system_message()['content'][0]['text']
         self.assertNotIn('only_other', rendered)
 
     def test_addendum_appended_after_base_prompt(self):
         self._drop_existing_skills()
         self._make_skill(name='beta', description='Beta does beta.')
         session = self._make_session()
-        rendered = session._effective_system_prompt()
+        rendered = session._system_message()['content'][0]['text']
         base = 'You are a helpful assistant.'
         self.assertIn(base, rendered)
         self.assertLess(rendered.index(base), rendered.index('<available_skills>'))
@@ -100,5 +100,5 @@ class TestPromptAddendum(TransactionCase):
         skill = self._make_skill(name='gamma', description='Gamma.')
         skill.active = False
         session = self._make_session()
-        rendered = session._effective_system_prompt()
+        rendered = session._system_message()['content'][0]['text']
         self.assertNotIn('gamma', rendered)
