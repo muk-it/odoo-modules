@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from odoo.exceptions import AccessError
-from odoo.tests import common
+from odoo.tests import common, tagged
 
 
+@tagged('post_install', '-at_install')
 class TestMCPAccessModel(common.TransactionCase):
     """Test model-level access control and record domains for MCP."""
 
@@ -356,6 +357,126 @@ class TestMCPAccessModel(common.TransactionCase):
             self.access_model._get_model_domain('res.users'),
             [('id', '=', self.env.user.id)],
         )
+
+    # ----------------------------------------------------------
+    # Tests: export_records record domain
+    # ----------------------------------------------------------
+
+    def test_export_records_applies_domain(self):
+        self.access_model.create(
+            {
+                'model_id': self.country_model.id,
+                'allow_read': True,
+                'domain': "[('code', '=', 'BE')]",
+            }
+        )
+        result = self.mixin._mcp_export_records(
+            'res.country',
+            fields=['code'],
+            domain=[('code', 'in', ['BE', 'FR'])],
+        )
+        self.assertEqual(result['row_count'], 1)
+
+    def test_export_records_blocks_out_of_domain_ids(self):
+        self.access_model.create(
+            {
+                'model_id': self.country_model.id,
+                'allow_read': True,
+                'domain': "[('code', '=', 'BE')]",
+            }
+        )
+        with self.assertRaises(AccessError):
+            self.mixin._mcp_export_records(
+                'res.country',
+                fields=['code'],
+                ids=[self.env.ref('base.fr').id],
+            )
+
+    # ----------------------------------------------------------
+    # Tests: call_method record domain
+    # ----------------------------------------------------------
+
+    def test_call_method_blocks_out_of_domain(self):
+        self.access_model.create(
+            {
+                'model_id': self.partner_model.id,
+                'allow_read': True,
+                'allow_write': True,
+                'domain': "[('is_company', '=', True)]",
+            }
+        )
+        partner = self.env['res.partner'].create(
+            {'name': 'MCP_CM_OUT', 'is_company': False},
+        )
+        with self.assertRaises(AccessError):
+            self.mixin._mcp_call_method(
+                'res.partner',
+                'write',
+                ids=[partner.id],
+                args='[{"comment": "x"}]',
+            )
+        self.assertFalse(partner.comment)
+
+    def test_call_method_allows_in_domain(self):
+        self.access_model.create(
+            {
+                'model_id': self.partner_model.id,
+                'allow_read': True,
+                'allow_write': True,
+                'domain': "[('is_company', '=', True)]",
+            }
+        )
+        partner = self.env['res.partner'].create(
+            {'name': 'MCP_CM_IN', 'is_company': True},
+        )
+        self.mixin._mcp_call_method(
+            'res.partner',
+            'write',
+            ids=[partner.id],
+            args='[{"comment": "ok"}]',
+        )
+        self.assertEqual(partner.comment, '<p>ok</p>')
+
+    # ----------------------------------------------------------
+    # Tests: print_report allowlist and record domain
+    # ----------------------------------------------------------
+
+    def test_print_report_blocks_unlisted_model(self):
+        self.access_model.create(
+            {
+                'model_id': self.partner_model.id,
+                'allow_read': True,
+            }
+        )
+        report = self.env['ir.actions.report'].create(
+            {
+                'name': 'MCP Country Report',
+                'model': 'res.country',
+                'report_name': 'muk_mcp_access.test_country_report',
+                'report_type': 'qweb-html',
+            }
+        )
+        with self.assertRaises(AccessError):
+            self.mixin._mcp_print_report(report.id, [self.env.ref('base.be').id])
+
+    def test_print_report_blocks_out_of_domain(self):
+        self.access_model.create(
+            {
+                'model_id': self.country_model.id,
+                'allow_read': True,
+                'domain': "[('code', '=', 'BE')]",
+            }
+        )
+        report = self.env['ir.actions.report'].create(
+            {
+                'name': 'MCP Country Report',
+                'model': 'res.country',
+                'report_name': 'muk_mcp_access.test_country_report',
+                'report_type': 'qweb-html',
+            }
+        )
+        with self.assertRaises(AccessError):
+            self.mixin._mcp_print_report(report.id, [self.env.ref('base.fr').id])
 
     # ----------------------------------------------------------
     # Tests: archived entries
