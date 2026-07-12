@@ -107,16 +107,16 @@ class AISession(models.Model):
     # Prompt
     # ----------------------------------------------------------
 
-    def _effective_system_prompt(self) -> str:
+    def _system_prompt_addenda(self) -> list[str]:
         """Append live-browser context so the agent reads the page itself.
 
         With a browser session attached, tell the model it is connected to the
         user's current tab so it calls ``read_page``/``click``/``fill`` directly
         instead of asking the user to paste page content or a URL.
         """
-        prompt = super()._effective_system_prompt()
+        addenda = super()._system_prompt_addenda()
         if not (self.id and self._has_active_browser_session()):
-            return prompt
+            return addenda
         origin = self._browser_last_origin() or _('the page they are viewing')
         note = _(
             'You are connected to the live web browser the user is working in, '
@@ -130,7 +130,8 @@ class AISession(models.Model):
             'when the task is genuinely ambiguous after you have read the page.',
             origin=origin,
         )
-        return f'{prompt}\n\n{note}'
+        addenda.append(note)
+        return addenda
 
     # ----------------------------------------------------------
     # Safety

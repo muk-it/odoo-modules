@@ -9,7 +9,7 @@
         in the page, while reasoning, secrets, audit and approvals stay
         server-side.
     """,
-    'version': '19.0.1.0.6',
+    'version': '19.0.1.0.7',
     'category': 'Productivity',
     'license': 'Other proprietary',
     'author': 'MuK IT',

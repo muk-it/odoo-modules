@@ -1,5 +1,21 @@
 from odoo.addons.muk_ai_browser.tests.common import BrowserTestCommon
 
+BROWSER_CLIENT_TOOLS = frozenset(
+    {
+        'click',
+        'fill',
+        'hover',
+        'navigate',
+        'navigate_back',
+        'press_key',
+        'read_page',
+        'screenshot',
+        'scroll',
+        'select_option',
+        'wait_for',
+    }
+)
+
 
 class TestVisibility(BrowserTestCommon):
     """Verify client tools are gated on an active browser session."""
@@ -9,6 +25,7 @@ class TestVisibility(BrowserTestCommon):
             entry['name']
             for entry in session._get_filtered_catalog()
             if (entry.get('_meta') or {}).get('execute') == 'client'
+            and entry['name'] in BROWSER_CLIENT_TOOLS
         }
 
     def test_client_tools_absent_without_browser_session(self):
