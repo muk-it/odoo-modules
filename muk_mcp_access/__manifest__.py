@@ -10,7 +10,7 @@
         first model is added only whitelisted models are exposed — the AI
         agent cannot discover or query anything else.
     """,
-    'version': '19.0.1.1.6',
+    'version': '19.0.1.1.7',
     'category': 'Tools/API',
     'license': 'LGPL-3',
     'author': 'MuK IT',
