@@ -55,9 +55,6 @@ class TestMcpKey(common.TransactionCase):
         self.assertFalse(self.key._check_rate_limit())
 
     def test_authenticate_archived_user_denied(self):
-        condition = self.key_model._authenticate_user_condition().code
-        if 'u.active' not in condition:
-            self.skipTest('active-user condition relaxed by an installed module')
         user = new_test_user(
             self.env,
             login='mcp_archived_user',
