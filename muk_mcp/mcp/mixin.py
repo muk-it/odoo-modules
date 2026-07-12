@@ -33,6 +33,15 @@ class MCPMixin(models.AbstractModel):
         return self.env[model]
 
     @api.model
+    def _mcp_apply_domain(self, model: str, domain) -> list:
+        """Hook to merge a configured record domain into the caller domain."""
+        return domain
+
+    @api.model
+    def _mcp_assert_records_allowed(self, model: str, ids) -> None:
+        """Hook to assert the records may be exposed via MCP."""
+
+    @api.model
     def _resolve_resource_uri(self, uri: str) -> tuple[str, bytes, str]:
         """Parse an MCP resource URI and dispatch to its handler.
 

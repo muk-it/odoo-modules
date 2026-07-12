@@ -90,6 +90,8 @@ class MCPMixin(models.AbstractModel):
             raise UserError(_('No record IDs provided'))
         if not (report := self._resolve_report(report_ref)):
             raise UserError(_('Report %r not found.', report_ref))
+        self._resolve_model(report.model)
+        self._mcp_assert_records_allowed(report.model, target_ids)
         content, report_type = report._render(report.report_name, target_ids)
         mimetype, extension = self._report_mimetype(report_type)
         name = report.name or report.report_name or 'report'

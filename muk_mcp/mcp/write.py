@@ -57,8 +57,15 @@ class MCPMixin(models.AbstractModel):
         model: str,
         values,
     ) -> dict[str, Any]:
-        """Create one record from ``values`` and return its id and display name."""
-        record = self._resolve_model(model).create(values or {})
+        """Create one record from ``values`` and return its id and display name.
+
+        :raise AccessError: when the created record lies outside the
+            configured record domain; the savepoint rolls the insert back
+            so the forbidden record is never persisted.
+        """
+        with self.env.cr.savepoint():
+            record = self._resolve_model(model).create(values or {})
+            self._mcp_assert_records_allowed(model, [record.id])
         return {
             'id': record.id,
             'display_name': record.display_name,
@@ -102,6 +109,7 @@ class MCPMixin(models.AbstractModel):
         target_ids = normalize_ids(ids)
         if not target_ids:
             raise UserError(_('No record IDs provided'))
+        self._mcp_assert_records_allowed(model, target_ids)
         self._resolve_model(model).browse(target_ids).write(values or {})
         return {'success': True, 'ids': target_ids}
 
@@ -134,5 +142,6 @@ class MCPMixin(models.AbstractModel):
         target_ids = normalize_ids(ids)
         if not target_ids:
             raise UserError(_('No record IDs provided'))
+        self._mcp_assert_records_allowed(model, target_ids)
         self._resolve_model(model).browse(target_ids).unlink()
         return {'success': True, 'deleted_ids': target_ids}

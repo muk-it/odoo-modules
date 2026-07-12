@@ -1,9 +1,10 @@
 import secrets
 
-from odoo.tests import common
+from odoo.tests import common, tagged
 from odoo.tests.common import new_test_user
 
 
+@tagged('post_install', '-at_install')
 class TestMcpKey(common.TransactionCase):
     """Verify API key authentication, default scope and rate-limit behaviour."""
 

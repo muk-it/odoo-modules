@@ -80,7 +80,7 @@ class MCPMixin(models.AbstractModel):
         """Count records matching ``domain`` and return them under a ``count`` key."""
         return {
             'count': self._resolve_model(model).search_count(
-                coerce_json_value(domain) or [],
+                coerce_json_value(self._mcp_apply_domain(model, domain)) or [],
             ),
         }
 
@@ -135,7 +135,7 @@ class MCPMixin(models.AbstractModel):
     ) -> list[dict[str, Any]]:
         """Search records by ``domain`` and return their field values with binaries swapped to URIs."""
         rows = self._resolve_model(model).search_read(
-            coerce_json_value(domain) or [],
+            coerce_json_value(self._mcp_apply_domain(model, domain)) or [],
             fields=fields,
             limit=limit,
             offset=offset,
@@ -177,6 +177,7 @@ class MCPMixin(models.AbstractModel):
         target_ids = normalize_ids(ids)
         if not target_ids:
             raise UserError(_('No record IDs provided'))
+        self._mcp_assert_records_allowed(model, target_ids)
         rows = self._resolve_model(model).browse(target_ids).read(fields)
         return self._swap_binary_to_uri(model, rows)
 
@@ -253,7 +254,7 @@ class MCPMixin(models.AbstractModel):
         if '__count' not in aggregates:
             aggregates.append('__count')
         return self._resolve_model(model).formatted_read_group(
-            coerce_json_value(domain) or [],
+            coerce_json_value(self._mcp_apply_domain(model, domain)) or [],
             groupby=groupby,
             aggregates=aggregates,
             limit=limit,

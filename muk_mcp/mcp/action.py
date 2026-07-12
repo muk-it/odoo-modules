@@ -92,15 +92,12 @@ class MCPMixin(models.AbstractModel):
         target_ids = normalize_ids(ids)
         positional = coerce_json_value(args) or []
         if not getattr(unbound, '_api_model', False):
-            if target_ids:
-                target = target.browse(target_ids)
-            elif positional:
-                target = target.browse(
-                    normalize_ids(
-                        positional[0],
-                    ),
-                )
+            if not target_ids and positional:
+                target_ids = normalize_ids(positional[0])
                 positional = positional[1:]
+            if target_ids:
+                self._mcp_assert_records_allowed(model, target_ids)
+                target = target.browse(target_ids)
         keyword = dict(coerce_json_value(kwargs) or {})
         context_override = keyword.pop('context', None)
         if isinstance(context_override, dict) and context_override:
