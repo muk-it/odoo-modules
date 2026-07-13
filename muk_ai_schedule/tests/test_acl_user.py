@@ -25,7 +25,16 @@ class TestACLUser(TransactionCase):
             login='ai_sched_user_b',
             groups='base.group_user',
         )
-        cls.agent = cls.env.ref('muk_ai.agent_read_only').sudo()
+        cls.agent = (
+            cls.env['muk_ai.agent']
+            .sudo()
+            .create(
+                {
+                    'name': 'Read-only Analyst (test)',
+                    'read_only': True,
+                },
+            )
+        )
         cls.Schedule = cls.env['muk_ai.schedule']
 
     def _vals(self) -> dict:
