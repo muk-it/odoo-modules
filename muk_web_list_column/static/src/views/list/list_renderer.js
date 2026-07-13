@@ -12,8 +12,11 @@ patch(ListRenderer.prototype, {
     onStartResizeWithSave(ev) {
         this.columnWidths.onStartResize(ev);
         const th = ev.target.closest('th');
-        const resizeStoppingEvents = ['keydown', 'mousedown', 'mouseup'];
-        const saveWidth = () => {
+        const resizeStoppingEvents = ['keydown', 'pointerdown', 'pointerup'];
+        const saveWidth = (ev) => {
+            if (ev && ev.type === 'pointerdown' && ev.button === 0) {
+                return;
+            }
             if (th.style.width && th.dataset.name) {
                 setColumnWidth(
                     this.props.list.resModel,
