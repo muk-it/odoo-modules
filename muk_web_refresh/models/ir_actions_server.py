@@ -38,7 +38,7 @@ class IrActionsServer(models.Model):
         return super()._generate_action_name()
 
     def _run_action_refresh_multi(self, eval_context=None) -> None:
-        """Broadcast a view reload request over the bus."""
+        """Send a view reload request to internal users over the bus."""
         records = eval_context.get('records') or eval_context.get('record')
         message = {
             'model': self.model_id.model,
@@ -49,4 +49,6 @@ class IrActionsServer(models.Model):
             ],
             'rec_ids': records.ids if records else [],
         }
-        self.env['bus.bus']._sendone('broadcast', 'muk_web_refresh.reload', message)
+        self.env['bus.bus']._sendone(
+            self.env.ref('base.group_user'), 'muk_web_refresh.reload', message
+        )

@@ -50,11 +50,20 @@ class TestReloadViews(TransactionCase):
             channel = mock_sendone.call_args[0][0]
             notification_type = mock_sendone.call_args[0][1]
             payload = mock_sendone.call_args[0][2]
-            self.assertEqual(channel, 'broadcast')
+            self.assertEqual(channel, self.env.ref('base.group_user'))
             self.assertEqual(notification_type, 'muk_web_refresh.reload')
             self.assertEqual(payload['model'], 'res.partner')
             self.assertEqual(payload['rec_ids'], partner.ids)
             self.assertEqual(payload['view_types'], [])
+
+    def test_refresh_not_broadcast_to_public(self):
+        with mock_patch.object(type(self.env['bus.bus']), '_sendone') as mock_sendone:
+            self.action._run_action_refresh_multi(
+                eval_context=self._make_eval_context(),
+            )
+            channel = mock_sendone.call_args[0][0]
+            self.assertNotEqual(channel, 'broadcast')
+            self.assertEqual(channel, self.env.ref('base.group_user'))
 
     def test_refresh_notifies_all_internal_users(self):
         with mock_patch.object(type(self.env['bus.bus']), '_sendone') as mock_sendone:
