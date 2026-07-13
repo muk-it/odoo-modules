@@ -9,5 +9,8 @@
         <xpath expr="//t[@t-key='msg.id']" position="attributes">
             <attribute name="t-foreach">displayMessages</attribute>
         </xpath>
+        <xpath expr="//t[@t-set='prevMsg']" position="attributes">
+            <attribute name="t-value">displayMessages[msg_index - 1]</attribute>
+        </xpath>
     </t>
 </templates>
