@@ -16,10 +16,12 @@ class IrHttp(models.AbstractModel):
         """Add a ``has_background_image`` flag to each allowed company."""
         result = super().session_info()
         if self.env.user._is_internal():
+            allowed = result['user_companies']['allowed_companies']
             for company in self.env.user.company_ids.with_context(bin_size=True):
-                result['user_companies']['allowed_companies'][company.id].update(
-                    {
-                        'has_background_image': bool(company.background_image),
-                    }
-                )
+                if entry := allowed.get(company.id):
+                    entry.update(
+                        {
+                            'has_background_image': bool(company.background_image),
+                        }
+                    )
         return result
