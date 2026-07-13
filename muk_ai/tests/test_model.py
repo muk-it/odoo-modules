@@ -1,4 +1,5 @@
 from odoo.exceptions import ValidationError
+from odoo.tools import mute_logger
 
 from odoo.addons.muk_ai.tests.common import AITestCommon
 
@@ -85,7 +86,7 @@ class TestAiModel(AITestCommon):
 
     def test_unique_provider_model(self):
         self._make_model('dup', provider=self.provider)
-        with self.assertRaises(Exception):
+        with mute_logger('odoo.sql_db'), self.assertRaises(Exception):
             self._make_model('dup', provider=self.provider)
 
     def test_same_model_name_allowed_across_providers(self):
