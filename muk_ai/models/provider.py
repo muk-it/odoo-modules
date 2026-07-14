@@ -139,6 +139,7 @@ class AIProvider(models.Model):
                 )
             )
         return impl_cls(
+            env=self.env,
             api_key=self.sudo().api_key or '',
             request_timeout=self.request_timeout,
             idle_timeout=self.idle_timeout,

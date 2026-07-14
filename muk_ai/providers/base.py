@@ -9,6 +9,7 @@ import psycopg2
 import requests
 
 from odoo import _
+from odoo.api import Environment
 from odoo.exceptions import UserError
 
 from odoo.addons.muk_ai.tools import StreamCancelled
@@ -35,12 +36,14 @@ class ProviderBase:
 
     def __init__(
         self,
+        env: Environment | None = None,
         api_key: str = '',
         request_timeout: int = 60,
         idle_timeout: int = 45,
         max_tokens: int = 4096,
     ) -> None:
-        """Store the API key and request/streaming timeouts for this provider."""
+        """Store the API key, timeouts, and the environment used to translate errors."""
+        self.env = env
         self._api_key = api_key or ''
         self.request_timeout = request_timeout
         self.idle_timeout = idle_timeout
