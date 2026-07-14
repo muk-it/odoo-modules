@@ -5,11 +5,14 @@ from datetime import date, datetime, time, timedelta
 
 from dateutil.relativedelta import relativedelta
 
-from odoo import _, fields, models
+from odoo import fields, models
 from odoo.exceptions import UserError
 from odoo.tools import safe_eval
+from odoo.tools.translate import LazyTranslate
 
 from odoo.addons.muk_ai_automation.tools.constants import MAX_PROMPT_CHARS
+
+_lt = LazyTranslate(__name__)
 
 
 class PreviousProxy:
@@ -235,7 +238,7 @@ def _create_session(
         session.write(
             {
                 'state': 'error',
-                'error_message': str(exc) or _('Session start failed.'),
+                'error_message': str(exc) or session.env._('Session start failed.'),
             }
         )
     return session
@@ -246,7 +249,7 @@ def fire_action(action: models.BaseModel, eval_context: dict) -> models.BaseMode
     action.ensure_one()
     if not action.agent_id or not action.agent_id.active:
         raise UserError(
-            _(
+            _lt(
                 'Server action %(name)s has no active agent.',
                 name=action.display_name,
             )
