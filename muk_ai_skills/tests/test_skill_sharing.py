@@ -4,7 +4,8 @@ from psycopg2 import IntegrityError
 
 from odoo import models
 from odoo.exceptions import AccessError
-from odoo.tests.common import Form, TransactionCase, new_test_user, tagged
+from odoo.tests.common import TransactionCase, new_test_user, tagged
+from odoo.tests import Form
 from odoo.tools import mute_logger
 from odoo.tools.safe_eval import safe_eval
 
