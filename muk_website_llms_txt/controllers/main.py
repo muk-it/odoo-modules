@@ -31,7 +31,7 @@ class LlmsTxtController(http.Controller):
     def llms_txt(self, **kwargs) -> Response:
         """Return the llms.txt index of published website content."""
         if not request.website.llms_txt_enabled:
-            return request.not_found()
+            raise request.not_found()
         content = request.website._get_llms_txt_content()
         token_count = estimate_tokens(content)
         content_signal = build_content_signal(
@@ -58,7 +58,7 @@ class LlmsTxtController(http.Controller):
     def llms_full_txt(self, **kwargs) -> Response:
         """Return the llms-full.txt dump of all published page content."""
         if not request.website.llms_full_txt_enabled:
-            return request.not_found()
+            raise request.not_found()
         content = request.website._get_llms_full_txt_content()
         token_count = estimate_tokens(content)
         content_signal = build_content_signal(
