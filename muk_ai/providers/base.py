@@ -36,13 +36,13 @@ class ProviderBase:
 
     def __init__(
         self,
-        env: Environment | None = None,
+        env: Environment,
         api_key: str = '',
         request_timeout: int = 60,
         idle_timeout: int = 45,
         max_tokens: int = 4096,
     ) -> None:
-        """Store the API key, timeouts, and the environment used to translate errors."""
+        """Store the environment, API key, and request/streaming timeouts."""
         self.env = env
         self._api_key = api_key or ''
         self.request_timeout = request_timeout
