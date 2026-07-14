@@ -62,7 +62,6 @@ class TestReloadViews(TransactionCase):
                 eval_context=self._make_eval_context(),
             )
             channel = mock_sendone.call_args[0][0]
-            self.assertNotEqual(channel, 'broadcast')
             self.assertEqual(channel, self.env.ref('base.group_user'))
 
     def test_refresh_notifies_all_internal_users(self):
