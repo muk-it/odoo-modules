@@ -34,7 +34,7 @@ class TestHoot(odoo.tests.HttpCase):
     @odoo.tests.no_retry
     def test_hoot_muk_product(self):
         self.browser_js(
-            '/web/tests?headless&loglevel=2&preset=desktop&timeout=15000&tag=muk_product',
+            '/web/tests?headless&loglevel=2&preset=desktop&timeout=15000&tag=muk_product_views',
             '',
             '',
             login=self.hoot_user.login,

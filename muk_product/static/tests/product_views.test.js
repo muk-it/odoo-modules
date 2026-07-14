@@ -24,7 +24,7 @@ class ProductTemplate extends models.Model {
 defineModels([ProductTemplate]);
 defineMailModels();
 
-test.tags('muk_product');
+test.tags('muk_product_views');
 test('product_search_list: Search button triggers action', async () => {
     let lastAction = null;
     mockService('action', {
@@ -45,7 +45,7 @@ test('product_search_list: Search button triggers action', async () => {
     expect(lastAction).toBe('muk_product.action_product_search');
 });
 
-test.tags('muk_product');
+test.tags('muk_product_views');
 test('product_search_kanban: Search button triggers action', async () => {
     let lastAction = null;
     mockService('action', {
