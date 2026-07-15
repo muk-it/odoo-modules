@@ -262,7 +262,7 @@
             </button>
             <div class="mk_tokens ms-auto d-flex align-items-center gap-2" t-if="session.state.sessionId">
                 <button
-                    class="btn btn-link btn-sm mk_search_toggle p-1"
+                    class="btn btn-link btn-sm mk_search_toggle"
                     t-att-class="{ active: state.searchOpen }"
                     t-on-click="() => this.toggleSearch()"
                     title="Search this chat"
@@ -270,12 +270,27 @@
                     <i class="fa fa-search"/>
                 </button>
                 <button
-                    class="btn btn-link btn-sm mk_artifacts_toggle p-1"
+                    class="btn btn-link btn-sm mk_artifacts_toggle"
                     t-att-class="{ active: !state.artifactsHidden }"
                     t-on-click="() => this.toggleArtifacts()"
                     title="Toggle artifacts panel"
                 >
                     <i class="fa fa-paperclip"/>
+                </button>
+                <button
+                    t-if="isOwner"
+                    class="btn btn-link btn-sm mk_handover"
+                    title="Hand over this chat to another user"
+                    t-on-click="() => this.session.openHandoverPicker()"
+                >
+                    <i class="fa fa-share-square-o"/>
+                </button>
+                <button
+                    class="btn btn-link btn-sm mk_popout"
+                    title="Pop out chat to a floating window"
+                    t-on-click="() => this.onPopout()"
+                >
+                    <i class="fa fa-external-link"/>
                 </button>
                 <span
                     class="mk_chip mk_ctx_chip rounded-pill d-inline-flex align-items-center"
@@ -296,9 +311,6 @@
                         <i class="fa fa-times"/>
                     </button>
                 </span>
-                <span class="mk_chip rounded-pill" title="Iterations">
-                    <i class="fa fa-repeat"/><t t-esc="session.state.iterationCount"/>
-                </span>
                 <span
                     class="mk_chip mk_context_chip rounded-pill"
                     t-att-class="contextClass"
@@ -306,6 +318,9 @@
                     t-if="session.state.contextWindow"
                 >
                     <span class="mk_context_ring" t-att-style="`--pct:${contextPercent}`"/><t t-esc="contextPercent"/>%
+                </span>
+                <span class="mk_chip rounded-pill" title="Iterations">
+                    <i class="fa fa-repeat"/><t t-esc="session.state.iterationCount"/>
                 </span>
                 <span class="mk_chip rounded-pill" title="Input tokens">
                     <i class="fa fa-sign-in"/><t t-esc="session.state.inputTokens"/>
@@ -316,21 +331,6 @@
                 <span class="mk_chip mk_cost_chip rounded-pill" t-att-title="costPill.tooltip">
                     <i class="fa fa-dollar"/><t t-esc="costPill.label"/>
                 </span>
-                <button
-                    t-if="isOwner"
-                    class="btn btn-link btn-sm mk_handover"
-                    title="Hand over this chat to another user"
-                    t-on-click="() => this.session.openHandoverPicker()"
-                >
-                    <i class="fa fa-share-square-o"/>
-                </button>
-                <button
-                    class="btn btn-link btn-sm mk_popout"
-                    title="Pop out chat to a floating window"
-                    t-on-click="() => this.onPopout()"
-                >
-                    <i class="fa fa-external-link"/>
-                </button>
             </div>
         </div>
     </t>

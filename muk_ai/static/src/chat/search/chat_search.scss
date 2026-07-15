@@ -6,15 +6,23 @@
         background: var(--mk-bg-soft);
         gap: 0.4rem;
     }
-    .mk_search_bar_icon {
-        color: var(--mk-text-muted);
-        font-size: 0.8rem;
-    }
-    .mk_search_input {
+    .mk_search_field {
         flex: 1 1 auto;
         max-width: 360px;
-        font-size: 0.85rem;
+        width: auto;
         background: var(--mk-bg);
+    }
+    .mk_search_bar_icon {
+        color: var(--mk-text-muted);
+        flex: 0 0 auto;
+    }
+    .mk_search_input {
+        background: transparent;
+        padding: 1px 0;
+        &:focus {
+            outline: 0;
+            box-shadow: none;
+        }
     }
     .mk_search_counter {
         font-variant-numeric: tabular-nums;
@@ -33,18 +41,6 @@
         &[disabled] {
             opacity: 0.45;
             cursor: not-allowed;
-        }
-    }
-    .mk_search_toggle {
-        color: var(--mk-text-muted);
-        padding: 3px 6px;
-        border-radius: 6px;
-        &:hover {
-            color: var(--mk-primary);
-        }
-        &.active {
-            color: var(--mk-primary);
-            background: rgba(var(--mk-primary-rgb), 0.1);
         }
     }
     mark.mk_search_hit {

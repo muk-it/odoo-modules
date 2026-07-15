@@ -5,7 +5,7 @@ import json
 import random
 import re
 import time
-from collections.abc import Iterable
+from collections.abc import Container, Iterable
 from contextlib import suppress
 from datetime import timedelta
 
@@ -1208,7 +1208,8 @@ class AISession(models.Model):
     def _dispatch_tool_call(self, name: str, arguments: dict, call_id: str) -> tuple:
         """Execute a tool call and return its output and success flag."""
         if name == 'tool_load':
-            return self._dispatch_tool_load(arguments, parent_call_id=call_id), True
+            output = self._dispatch_tool_load(arguments, parent_call_id=call_id)
+            return output, 'error' not in output
         enforce_scope = 'read' if self.agent_id and self.agent_id.read_only else None
         arguments, resolved_refs = self._resolve_value_refs(arguments)
         try:
@@ -1229,6 +1230,15 @@ class AISession(models.Model):
             elif isinstance(text, dict):
                 text = {**text, 'image_previews': previews}
         return text, True
+
+    @staticmethod
+    def _resolve_tool_name(name: str, known: Container) -> str | None:
+        """Match a requested tool name against ``known``, tolerating a namespace prefix."""
+        if name in known:
+            return name
+        if '.' in name and (bare := name.rpartition('.')[2]) in known:
+            return bare
+        return None
 
     def _dispatch_tool_load(
         self, arguments: dict, parent_call_id: str | None = None
@@ -1253,8 +1263,9 @@ class AISession(models.Model):
         loaded = {}
         unknown = []
         for name in names:
-            if entry := catalog_by_name.get(name):
-                loaded[name] = {
+            if resolved := self._resolve_tool_name(name, catalog_by_name):
+                entry = catalog_by_name[resolved]
+                loaded[resolved] = {
                     'description': entry.get('description') or '',
                     'inputSchema': (
                         entry.get('inputSchema') or {'type': 'object', 'properties': {}}
@@ -1273,6 +1284,14 @@ class AISession(models.Model):
                 }
             )
         response = {'loaded': loaded, 'unknown': unknown}
+        if unknown and not loaded:
+            response['error'] = (
+                'No name resolved to a tool this session can call: '
+                f'{", ".join(unknown)}. Use the exact names from the '
+                '<available_tools> block, with no namespace prefix. Tools '
+                'already in your tools array are callable directly and must '
+                'not be loaded.'
+            )
         if call_spec := (
             arguments.get('call') if isinstance(arguments, dict) else None
         ):
@@ -1289,12 +1308,12 @@ class AISession(models.Model):
             return {
                 'error': '`call` must be an object with `name` and optional `arguments`.'
             }
-        if not (target := str(call_spec.get('name') or '').strip()):
+        if not (requested := str(call_spec.get('name') or '').strip()):
             return {'error': '`call.name` is required.'}
-        if target not in loaded:
+        if not (target := self._resolve_tool_name(requested, loaded)):
             return {
                 'error': (
-                    f'`call.name` {target!r} must be one of the just-loaded names; '
+                    f'`call.name` {requested!r} must be one of the just-loaded names; '
                     'include it in `names` and try again.'
                 )
             }

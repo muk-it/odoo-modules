@@ -1264,6 +1264,11 @@ export function useAiSession(options = {}) {
             domain,
             noCreate: true,
             multiSelect: false,
+            context: {
+                list_view_ref: 'muk_ai.view_res_users_list_handover',
+                kanban_view_ref: 'muk_ai.view_res_users_kanban_handover',
+                search_view_ref: 'muk_ai.view_res_users_search_handover',
+            },
             onSelected: (resIds) => {
                 if (resIds && resIds[0]) {
                     onHandover(resIds[0]);

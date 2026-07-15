@@ -151,10 +151,112 @@ class TestToolLazy(AITestCommon):
                 {'names': ['no_such_tool']},
                 'call_2',
             )
-        self.assertTrue(ok)
+        self.assertFalse(ok)
+        self.assertIn('error', result)
         self.assertEqual(result['loaded'], {})
         self.assertEqual(result['unknown'], ['no_such_tool'])
         self.assertNotIn('no_such_tool', list(self.session.expanded_tool_names or []))
+
+    def test_tool_load_partial_resolution_is_not_an_error(self):
+        with self._patch_catalog():
+            result, ok = self.session._dispatch_tool_call(
+                'tool_load',
+                {'names': ['rare_tool', 'no_such_tool']},
+                'call_partial',
+            )
+        self.assertTrue(ok)
+        self.assertNotIn('error', result)
+        self.assertIn('rare_tool', result['loaded'])
+        self.assertEqual(result['unknown'], ['no_such_tool'])
+
+    def test_tool_load_strips_namespace_prefix(self):
+        with self._patch_catalog():
+            result, ok = self.session._dispatch_tool_call(
+                'tool_load',
+                {'names': ['functions.rare_tool']},
+                'call_ns',
+            )
+        self.assertTrue(ok)
+        self.assertNotIn('error', result)
+        self.assertIn('rare_tool', result['loaded'])
+        self.assertEqual(result['unknown'], [])
+        self.assertIn('rare_tool', list(self.session.expanded_tool_names or []))
+
+    def test_tool_load_exact_match_wins_over_prefix_fallback(self):
+        dotted = [
+            {
+                'name': 'server.rare_tool',
+                'description': 'Namespaced tool',
+                'inputSchema': {'type': 'object'},
+            },
+            {
+                'name': 'rare_tool',
+                'description': 'Bare tool',
+                'inputSchema': {'type': 'object'},
+            },
+        ]
+        session = self.env['muk_ai.session'].create({'name': 'Dotted catalog'})
+        with patch.object(
+            type(self.env['muk_mcp.tool']),
+            'get_tools',
+            autospec=True,
+            return_value=dotted,
+        ):
+            result, _ok = session._dispatch_tool_call(
+                'tool_load',
+                {'names': ['server.rare_tool']},
+                'call_dotted',
+            )
+        self.assertIn('server.rare_tool', result['loaded'])
+        self.assertNotIn('rare_tool', result['loaded'])
+
+    def test_tool_load_namespaced_inline_call_executes(self):
+        with (
+            self._patch_catalog(),
+            patch.object(
+                type(self.session),
+                '_dispatch_tool_call',
+                autospec=True,
+                return_value=('called', True),
+            ) as dispatch,
+        ):
+            result = self.session._dispatch_tool_load(
+                {
+                    'names': ['functions.rare_tool'],
+                    'call': {'name': 'functions.rare_tool', 'arguments': {'x': '1'}},
+                },
+                parent_call_id='call_ns_inline',
+            )
+        self.assertNotIn('error', result['call'])
+        self.assertEqual(result['call']['name'], 'rare_tool')
+        self.assertTrue(result['call']['ok'])
+        self.assertEqual(dispatch.call_args[0][1], 'rare_tool')
+
+    def test_tool_load_inline_call_refuses_filtered_tool(self):
+        agent = self.env['muk_ai.agent'].create(
+            {
+                'name': 'Filtered inline call',
+                'tool_filter': ['another_rare'],
+                'approval_mode': 'off',
+            }
+        )
+        session = self.env['muk_ai.session'].create(
+            {
+                'name': 'Filtered inline call',
+                'agent_id': agent.id,
+            }
+        )
+        with self._patch_catalog():
+            result = session._dispatch_tool_load(
+                {
+                    'names': ['another_rare'],
+                    'call': {'name': 'read_records', 'arguments': {}},
+                },
+                parent_call_id='call_bypass',
+            )
+        self.assertIn('another_rare', result['loaded'])
+        self.assertIn('error', result['call'])
+        self.assertNotIn('output', result['call'])
 
     def test_tool_load_empty_names_errors(self):
         result, _ok = self.session._dispatch_tool_call(

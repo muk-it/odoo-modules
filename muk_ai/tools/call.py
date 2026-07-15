@@ -23,14 +23,17 @@ TOOL_LOAD_TOOL = {
     'name': 'tool_load',
     'description': (
         "Fetch full schemas for tool names listed in the system prompt's "
-        '<available_tools> block. Returns '
+        '<available_tools> block. ONLY for names in that block: a tool '
+        'already in your tools array is callable directly and must never '
+        'be passed to tool_load. Use exact names, with no namespace '
+        'prefix. Returns '
         '{loaded: {name: {description, inputSchema}}, unknown: [name, ...]} '
         'and, when `call` is provided, the inline result of executing '
-        'one of the loaded tools in the same round-trip — use this '
-        'ALWAYS for the common load-then-use pattern (skips an extra '
-        'agent loop iteration). Once a name is loaded its schema '
-        'stays in the tools array for the rest of the session — never '
-        'reload it.'
+        'one of the loaded tools in the same round-trip — always prefer '
+        'that one-round-trip shape when loading a tool you intend to '
+        'call (it skips an extra agent loop iteration). Once a name is '
+        'loaded its schema stays in the tools array for the rest of the '
+        'session — never reload it.'
     ),
     'inputSchema': {
         'type': 'object',
@@ -41,8 +44,9 @@ TOOL_LOAD_TOOL = {
                 'minItems': 1,
                 'description': (
                     'One or more tool names from the <available_tools> '
-                    'list. Load multiple at once when you may need any '
-                    'of them — saves round-trips.'
+                    'list, exactly as written there. Load multiple at '
+                    'once when you may need any of them — saves '
+                    'round-trips.'
                 ),
             },
             'call': {
