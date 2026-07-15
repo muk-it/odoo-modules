@@ -4,6 +4,8 @@ from datetime import timedelta
 from odoo import Command, fields
 from odoo.tests.common import TransactionCase, new_test_user, tagged
 
+from odoo.addons.muk_contacts_vcard import _restore_mobile_from_upgrade_notes
+
 
 @tagged('post_install', '-at_install')
 class TestResPartner(TransactionCase):
@@ -79,6 +81,87 @@ class TestResPartner(TransactionCase):
         self.assertIn(partner.vcard_uid, serialized)
         self.assertIn('EMAIL', serialized)
         self.assertIn('TYPE=HOME', serialized)
+
+    def test_build_vcard_includes_mobile_as_cell(self):
+        partner = self.env['res.partner'].create(
+            {
+                'name': 'Mobile Partner',
+                'mobile': '+43 664 1234567',
+            }
+        )
+        serialized = partner._build_vcard().serialize()
+        self.assertIn('TYPE=CELL', serialized)
+        self.assertIn('+43 664 1234567', serialized)
+
+    def test_restore_mobile_from_upgrade_notes(self):
+        partner = self.env['res.partner'].create(
+            {
+                'name': 'Restore Partner',
+                'phone': '+43 1 2345678',
+            }
+        )
+        message = self.env['mail.message'].create(
+            {
+                'model': 'res.partner',
+                'res_id': partner.id,
+                'message_type': 'notification',
+                'body': 'placeholder',
+            }
+        )
+        self.env.flush_all()
+        self.env.cr.execute(
+            'UPDATE mail_message SET body = %s WHERE id = %s',
+            ('Previous Mobile: +43 664 9876543', message.id),
+        )
+        count = _restore_mobile_from_upgrade_notes(self.env)
+        self.assertEqual(count, 1)
+        self.assertEqual(partner.mobile, '+43 664 9876543')
+
+    def test_restore_mobile_skips_numbers_already_on_partner(self):
+        partner = self.env['res.partner'].create(
+            {
+                'name': 'Merged Partner',
+                'phone': '+43 664 9876543',
+            }
+        )
+        message = self.env['mail.message'].create(
+            {
+                'model': 'res.partner',
+                'res_id': partner.id,
+                'message_type': 'notification',
+                'body': 'placeholder',
+            }
+        )
+        self.env.flush_all()
+        self.env.cr.execute(
+            'UPDATE mail_message SET body = %s WHERE id = %s',
+            ('Previous Mobile: +43 664 9876543', message.id),
+        )
+        _restore_mobile_from_upgrade_notes(self.env)
+        self.assertFalse(partner.mobile)
+
+    def test_restore_mobile_keeps_existing_mobile(self):
+        partner = self.env['res.partner'].create(
+            {
+                'name': 'Current Partner',
+                'mobile': '+43 664 1111111',
+            }
+        )
+        message = self.env['mail.message'].create(
+            {
+                'model': 'res.partner',
+                'res_id': partner.id,
+                'message_type': 'notification',
+                'body': 'placeholder',
+            }
+        )
+        self.env.flush_all()
+        self.env.cr.execute(
+            'UPDATE mail_message SET body = %s WHERE id = %s',
+            ('Previous Mobile: +43 664 9876543', message.id),
+        )
+        _restore_mobile_from_upgrade_notes(self.env)
+        self.assertEqual(partner.mobile, '+43 664 1111111')
 
     def test_vcard_export_does_not_require_partner_write_access(self):
         user = new_test_user(self.env, login='vcard_ro', groups='base.group_user')

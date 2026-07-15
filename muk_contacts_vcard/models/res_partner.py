@@ -129,6 +129,10 @@ class Partner(models.Model):
         string='Nickname',
     )
 
+    mobile = fields.Char(
+        string='Phone (Mobile)',
+    )
+
     email2 = fields.Char(
         string='Email (Private)',
     )
@@ -240,6 +244,10 @@ class Partner(models.Model):
             email = vcard.add('email')
             email.value = self.email2
             email.type_param = 'HOME'
+        if self.mobile:
+            tel = vcard.add('tel')
+            tel.value = self.mobile
+            tel.type_param = 'CELL'
         if self.phone2:
             tel = vcard.add('tel')
             tel.value = self.phone2
@@ -413,6 +421,7 @@ class Partner(models.Model):
         'child_ids.country_id',
         'phone',
         'phone2',
+        'mobile',
         'role',
         'state_id.name',
         'street',

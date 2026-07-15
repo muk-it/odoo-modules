@@ -45,6 +45,12 @@
 					</div>
 				</div>
             </xpath>
+            <xpath expr="//field[@name='phone']/.." position="after">
+				<div class="d-flex align-items-baseline w-md-50">
+					<i class="fa fa-fw me-1 fa-mobile text-primary" title="Mobile"/>
+					<field name="mobile" class="w-100" widget="phone" placeholder="Mobile"/>
+				</div>
+            </xpath>
             <xpath expr="//label[@for='vat']" position="attributes">
 				<attribute name="invisible">parent_id</attribute>
             </xpath>
@@ -106,6 +112,9 @@
             </xpath>
             <xpath expr="//field[@name='ref']" position="after">
 				<field name="tz" />
+            </xpath>
+            <xpath expr="//field[@name='child_ids']//list//field[@name='phone']" position="after">
+				<field name="mobile" optional="hide"/>
             </xpath>
             <xpath expr="//field[@name='child_ids']/form//field[@name='email']/.." position="before">
 				<div class="d-flex align-items-baseline" invisible="type != 'contact'">
