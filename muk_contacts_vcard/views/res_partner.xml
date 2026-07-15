@@ -1,6 +1,25 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
 
+    <record id="view_partner_search" model="ir.ui.view">
+	    <field name="name">res.partner.search</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="muk_contacts.view_partner_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='phone_mobile_search']" position="replace">
+				<field
+					name="phone"
+					string="Phone/Mobile"
+					filter_domain="[
+						'|',
+						('phone', 'ilike', self),
+						('mobile', 'ilike', self),
+					]"
+				/>
+            </xpath>
+        </field>
+    </record>
+
     <record id="view_partner_list" model="ir.ui.view">
 	    <field name="name">res.partner.list</field>
         <field name="model">res.partner</field>
@@ -12,6 +31,9 @@
 			<xpath expr="//field[@name='name']" position="after">
 				<field name="firstname" optional="show" invisible="is_company"/>
 				<field name="lastname" optional="show" invisible="is_company"/>
+			</xpath>
+			<xpath expr="//field[@name='phone']" position="after">
+				<field name="mobile" optional="hide"/>
 			</xpath>
         </field>
     </record>

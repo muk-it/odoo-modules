@@ -226,6 +226,11 @@ msgid "Middlename"
 msgstr "Zweiter Vorname"
 
 #. module: muk_contacts_vcard
+#: model_terms:ir.ui.view,arch_db:muk_contacts_vcard.view_partner_form
+msgid "Mobile"
+msgstr "Mobil"
+
+#. module: muk_contacts_vcard
 #: model:ir.model.fields,field_description:muk_contacts_vcard.field_res_partner__name
 #: model:ir.model.fields,field_description:muk_contacts_vcard.field_res_users__name
 msgid "Name"
@@ -253,10 +258,21 @@ msgid "Personal Information"
 msgstr "Persönliche Informationen"
 
 #. module: muk_contacts_vcard
+#: model:ir.model.fields,field_description:muk_contacts_vcard.field_res_partner__mobile
+#: model:ir.model.fields,field_description:muk_contacts_vcard.field_res_users__mobile
+msgid "Phone (Mobile)"
+msgstr "Telefon (Mobil)"
+
+#. module: muk_contacts_vcard
 #: model:ir.model.fields,field_description:muk_contacts_vcard.field_res_partner__phone2
 #: model:ir.model.fields,field_description:muk_contacts_vcard.field_res_users__phone2
 msgid "Phone (Private)"
 msgstr "Telefon (Privat)"
+
+#. module: muk_contacts_vcard
+#: model_terms:ir.ui.view,arch_db:muk_contacts_vcard.view_partner_search
+msgid "Phone/Mobile"
+msgstr "Telefon/Mobil"
 
 #. module: muk_contacts_vcard
 #: model:ir.model.fields,field_description:muk_contacts_vcard.field_muk_contacts_vcard_honorific__position
