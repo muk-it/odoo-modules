@@ -1,10 +1,7 @@
 `1.9.0`
 -------
 
-- Client Tool Kinds (breaking: ``execute: 'client'`` tools must declare a
-  ``client`` kind in their meta; bare client tools are no longer exposed)
 - Adjust Search Tool
-- Agent Switch Markers
 
 `1.8.0`
 -------
