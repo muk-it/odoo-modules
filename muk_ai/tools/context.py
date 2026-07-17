@@ -19,12 +19,19 @@ def _format_ctx_tag(payload, tag_name: str) -> str | None:
 
 
 def _render_ctx(payload, tag_name: str) -> dict | None:
-    """Wrap a rendered context tag into a user input message, if any."""
+    """Wrap a rendered context tag into a user input message, if any.
+
+    The message is marked ``_cache_volatile`` because it is re-appended at
+    the conversation tail every round with the current UI or record context:
+    cache-aware providers anchor their breakpoint before it and strip the
+    marker before it reaches the wire.
+    """
     if not (tag := _format_ctx_tag(payload, tag_name)):
         return None
     return {
         'role': 'user',
         'content': [{'type': 'input_text', 'text': tag}],
+        '_cache_volatile': True,
     }
 
 

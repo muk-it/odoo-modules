@@ -154,13 +154,20 @@ class AIProvider(models.Model):
             or REGISTRY[self.name].default_model
         )
 
-    def _build_request_extra(self) -> dict:
-        """Return provider-agnostic request metadata."""
-        return {
+    def _build_request_extra(self, cache_key: str | None = None) -> dict:
+        """Return provider-agnostic request metadata.
+
+        :param cache_key: stable identifier a provider may use to route
+            prompt-cache lookups (e.g. OpenAI ``prompt_cache_key``).
+        """
+        extra = {
             'metadata': {
                 'odoo_user_id': self.env.uid,
             },
         }
+        if cache_key:
+            extra['cache_key'] = cache_key
+        return extra
 
     def _materialize_block(self, block: dict) -> dict:
         """Resolve an unmaterialized attachment block to its content."""
@@ -197,6 +204,7 @@ class AIProvider(models.Model):
         enable_web_search: bool = False,
         enable_image_generation: bool = False,
         enable_code_interpreter: bool = False,
+        cache_key: str | None = None,
     ) -> dict:
         """Send a streaming responses request through the provider client."""
         return self._get_client().request(
@@ -208,7 +216,7 @@ class AIProvider(models.Model):
             enable_web_search=enable_web_search,
             enable_image_generation=enable_image_generation,
             enable_code_interpreter=enable_code_interpreter,
-            extra=self._build_request_extra(),
+            extra=self._build_request_extra(cache_key=cache_key),
         )
 
     # ----------------------------------------------------------

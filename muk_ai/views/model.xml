@@ -39,7 +39,8 @@
 				<field name="context_window"/>
 				<field name="input_rate"/>
 				<field name="output_rate"/>
-				<field name="cached_rate"/>
+				<field name="cache_read_rate"/>
+				<field name="cache_write_rate"/>
 				<field name="currency"/>
 				<field name="active" widget="boolean_toggle"/>
 			</list>
@@ -73,7 +74,8 @@
 						<group string="Pricing">
 							<field name="input_rate"/>
 							<field name="output_rate"/>
-							<field name="cached_rate"/>
+							<field name="cache_read_rate"/>
+							<field name="cache_write_rate"/>
 							<field name="currency"/>
 						</group>
 					</group>

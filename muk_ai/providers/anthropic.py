@@ -24,6 +24,8 @@ LEGACY_THINKING_MODEL_TOKENS = (
 THINKING_BUDGET_TOKENS = 1024
 ADAPTIVE_THINKING_EFFORT = 'medium'
 
+CACHE_CONTROL = {'type': 'ephemeral'}
+
 
 class AnthropicProvider(ProviderBase):
     """Anthropic Messages API adapter with thinking and streaming support."""
@@ -63,7 +65,8 @@ class AnthropicProvider(ProviderBase):
     ) -> dict:
         """Build and run a Messages request, retrying once without thinking on error."""
         model = self.model_for(model)
-        system_text, messages = self._inputs_to_messages(inputs)
+        caching = self._supports_caching(model)
+        system_text, messages, anchor = self._inputs_to_messages(inputs)
         max_tokens = self.max_tokens or 4096
         body = {
             'model': model,
@@ -82,7 +85,11 @@ class AnthropicProvider(ProviderBase):
                     'budget_tokens': THINKING_BUDGET_TOKENS,
                 }
         if system_text:
-            body['system'] = system_text
+            body['system'] = (
+                [{'type': 'text', 'text': system_text, 'cache_control': CACHE_CONTROL}]
+                if caching
+                else system_text
+            )
         tools = self._tools_to_anthropic(tools_schema)
         if enable_web_search:
             tools.append(
@@ -99,7 +106,12 @@ class AnthropicProvider(ProviderBase):
                 }
             )
         if tools:
+            if caching:
+                tools[-1] = {**tools[-1], 'cache_control': CACHE_CONTROL}
             body['tools'] = tools
+        if caching and anchor is not None:
+            msg_index, block_index = anchor
+            messages[msg_index]['content'][block_index]['cache_control'] = CACHE_CONTROL
         try:
             return self._invoke(body, on_delta)
         except UserError as exc:
@@ -125,6 +137,11 @@ class AnthropicProvider(ProviderBase):
         return any(token in model for token in THINKING_MODEL_TOKENS)
 
     @staticmethod
+    def _supports_caching(model: str) -> bool:
+        """Return whether the model supports prompt caching via cache_control."""
+        return model.startswith('claude')
+
+    @staticmethod
     def _uses_adaptive_thinking(model: str) -> bool:
         """Return whether the model uses adaptive (vs budgeted) thinking."""
         return not any(token in model for token in LEGACY_THINKING_MODEL_TOKENS)
@@ -146,20 +163,31 @@ class AnthropicProvider(ProviderBase):
         return ''.join(parts)
 
     @classmethod
-    def _inputs_to_messages(cls, inputs) -> tuple[str, list[dict]]:
-        """Convert canonical inputs into Anthropic system text and messages."""
+    def _inputs_to_messages(
+        cls, inputs
+    ) -> tuple[str, list[dict], tuple[int, int] | None]:
+        """Convert canonical inputs into Anthropic system text, messages, and anchor.
+
+        The anchor is the ``(message, block)`` index of the last content block
+        built from a non-volatile input — the safe spot for a conversation
+        cache breakpoint, sitting before per-round trailers that would
+        otherwise re-write the cache every round.
+        """
         system_parts = []
         messages = []
+        anchor = None
 
         def append(role, block):
             if messages and messages[-1]['role'] == role:
                 messages[-1]['content'].append(block)
             else:
                 messages.append({'role': role, 'content': [block]})
+            return len(messages) - 1, len(messages[-1]['content']) - 1
 
         for item in inputs or []:
             item_type = item.get('type')
             role = item.get('role')
+            volatile = bool(item.get('_cache_volatile'))
             if role == 'system':
                 text = cls._text_from_content(item.get('content'))
                 if text:
@@ -170,7 +198,7 @@ class AnthropicProvider(ProviderBase):
                     arguments = json.loads(item.get('arguments') or '{}')
                 except ValueError:
                     arguments = {}
-                append(
+                position = append(
                     'assistant',
                     {
                         'type': 'tool_use',
@@ -179,12 +207,14 @@ class AnthropicProvider(ProviderBase):
                         'input': arguments,
                     },
                 )
+                if not volatile:
+                    anchor = position
                 continue
             if item_type == 'function_call_output':
                 output = item.get('output')
                 if not isinstance(output, str):
                     output = json.dumps(output, default=str)
-                append(
+                position = append(
                     'user',
                     {
                         'type': 'tool_result',
@@ -192,12 +222,16 @@ class AnthropicProvider(ProviderBase):
                         'content': output,
                     },
                 )
+                if not volatile:
+                    anchor = position
                 continue
             if role in ('user', 'assistant'):
                 for block in cls._content_to_anthropic(item.get('content')):
-                    append(role, block)
+                    position = append(role, block)
+                    if not volatile:
+                        anchor = position
 
-        return '\n\n'.join(system_parts), messages
+        return '\n\n'.join(system_parts), messages, anchor
 
     @classmethod
     def _content_to_anthropic(cls, content) -> list[dict]:
@@ -342,17 +376,30 @@ class AnthropicProvider(ProviderBase):
                 }
             )
         carry_inputs.extend(function_call_carries)
-        usage = payload.get('usage') or {}
         return {
             'text': '\n'.join(text_parts).strip(),
             'tool_calls': tool_calls,
             'carry_inputs': carry_inputs,
-            'usage': self._usage(
-                input_tokens=usage.get('input_tokens'),
-                output_tokens=usage.get('output_tokens'),
-                cached_tokens=usage.get('cache_read_input_tokens'),
-            ),
+            'usage': self._usage_from_anthropic(payload.get('usage') or {}),
         }
+
+    @classmethod
+    def _usage_from_anthropic(cls, usage: dict) -> dict:
+        """Normalize Anthropic usage, folding cache tokens back into the total.
+
+        Anthropic's ``input_tokens`` counts only the freshly-read (uncached)
+        prompt, so cache reads and writes must be added back to recover the
+        full prompt size the cost model and auto-compaction rely on.
+        """
+        uncached = usage.get('input_tokens') or 0
+        cache_read = usage.get('cache_read_input_tokens') or 0
+        cache_write = usage.get('cache_creation_input_tokens') or 0
+        return cls._usage(
+            input_tokens=uncached + cache_read + cache_write,
+            output_tokens=usage.get('output_tokens'),
+            cache_read_tokens=cache_read,
+            cache_write_tokens=cache_write,
+        )
 
     # ----------------------------------------------------------
     # Streaming
@@ -362,9 +409,9 @@ class AnthropicProvider(ProviderBase):
         """Stream a Messages request, emitting deltas and assembling the final result."""
         body = {**body, 'stream': True}
         blocks_by_index = {}
-        usage = self._usage()
+        raw_usage = {}
         for event in self._post_stream('/messages', body):
-            self._handle_stream_event(event, on_delta, blocks_by_index, usage)
+            self._handle_stream_event(event, on_delta, blocks_by_index, raw_usage)
 
         text_parts = []
         tool_calls = []
@@ -425,18 +472,31 @@ class AnthropicProvider(ProviderBase):
             'text': ''.join(text_parts).strip(),
             'tool_calls': tool_calls,
             'carry_inputs': carry_inputs,
-            'usage': usage,
+            'usage': self._usage_from_anthropic(raw_usage),
         }
 
     def _handle_stream_event(
-        self, event: dict, on_delta, blocks_by_index: dict, usage: dict
+        self, event: dict, on_delta, blocks_by_index: dict, raw_usage: dict
     ) -> None:
-        """Apply one streaming event to the accumulators and forward deltas."""
+        """Apply one streaming event to the accumulators and forward deltas.
+
+        Token counts are collected as raw Anthropic fields in ``raw_usage``
+        and normalized once by :meth:`_usage_from_anthropic` after the stream.
+        """
         event_type = event.get('type') or ''
         if event_type == 'message_start':
             start_usage = (event.get('message') or {}).get('usage') or {}
-            usage['input_tokens'] = start_usage.get('input_tokens', 0)
-            usage['cached_tokens'] = start_usage.get('cache_read_input_tokens', 0)
+            raw_usage.update(
+                {
+                    'input_tokens': start_usage.get('input_tokens', 0),
+                    'cache_read_input_tokens': start_usage.get(
+                        'cache_read_input_tokens', 0
+                    ),
+                    'cache_creation_input_tokens': start_usage.get(
+                        'cache_creation_input_tokens', 0
+                    ),
+                }
+            )
         elif event_type == 'content_block_start':
             index = event.get('index', 0)
             block = event.get('content_block') or {}
@@ -504,7 +564,7 @@ class AnthropicProvider(ProviderBase):
         elif event_type == 'message_delta':
             delta_usage = event.get('usage') or {}
             if 'output_tokens' in delta_usage:
-                usage['output_tokens'] = delta_usage['output_tokens']
+                raw_usage['output_tokens'] = delta_usage['output_tokens']
         elif event_type == 'error':
             error = event.get('error') or {}
             self._raise(error.get('message') or 'Unknown streaming error')

@@ -48,7 +48,7 @@ class TestAiAnthropicProvider(AITestCommon):
     # ----------------------------------------------------------
 
     def test_inputs_to_anthropic_splits_system_and_merges_runs(self):
-        system, messages = AnthropicProvider._inputs_to_messages(
+        system, messages, _anchor = AnthropicProvider._inputs_to_messages(
             [
                 {'role': 'system', 'content': [{'type': 'input_text', 'text': 'sys1'}]},
                 {'role': 'system', 'content': [{'type': 'input_text', 'text': 'sys2'}]},
@@ -102,9 +102,21 @@ class TestAiAnthropicProvider(AITestCommon):
                 ],
             )
         self.assertTrue(captured['url'].endswith('/messages'))
-        self.assertEqual(captured['body']['system'], 'be brief')
+        self.assertEqual(
+            captured['body']['system'],
+            [
+                {
+                    'type': 'text',
+                    'text': 'be brief',
+                    'cache_control': {'type': 'ephemeral'},
+                }
+            ],
+        )
         self.assertEqual(captured['body']['messages'][0]['role'], 'user')
         self.assertEqual(captured['body']['tools'][0]['name'], 'x')
+        self.assertEqual(
+            captured['body']['tools'][-1]['cache_control'], {'type': 'ephemeral'}
+        )
         self.assertIn('max_tokens', captured['body'])
         self.assertEqual(captured['headers']['anthropic-version'], '2023-06-01')
         self.assertEqual(result['text'], 'hello')
@@ -223,6 +235,85 @@ class TestAiAnthropicProvider(AITestCommon):
                 enable_image_generation=True,
             )
         self.assertNotIn('tools', captured['body'])
+
+    def test_anthropic_usage_remaps_cache_tokens(self):
+        body = self._anthropic_body('ok')
+        body['usage'] = {
+            'input_tokens': 100,
+            'output_tokens': 20,
+            'cache_read_input_tokens': 300,
+            'cache_creation_input_tokens': 50,
+        }
+
+        def fake_post(url, **kwargs):
+            return self._mock_http_response(body)
+
+        with patch.object(requests, 'post', side_effect=fake_post):
+            result = self.provider._request_responses(inputs=[])
+        usage = result['usage']
+        self.assertEqual(usage['input_tokens'], 450)
+        self.assertEqual(usage['cache_read_tokens'], 300)
+        self.assertEqual(usage['cache_write_tokens'], 50)
+
+    def test_anthropic_anchors_cache_before_volatile_trailer(self):
+        _system, messages, anchor = AnthropicProvider._inputs_to_messages(
+            [
+                {
+                    'role': 'system',
+                    'content': [{'type': 'input_text', 'text': 'sys'}],
+                },
+                {'role': 'user', 'content': [{'type': 'input_text', 'text': 'stable'}]},
+                {
+                    'role': 'user',
+                    'content': [{'type': 'input_text', 'text': '<ui_ctx>x</ui_ctx>'}],
+                    '_cache_volatile': True,
+                },
+            ]
+        )
+        self.assertEqual(anchor, (0, 0))
+        self.assertEqual(messages[0]['content'][0]['text'], 'stable')
+        self.assertEqual(messages[0]['content'][1]['text'], '<ui_ctx>x</ui_ctx>')
+
+    def test_anthropic_places_conversation_cache_control_before_trailer(self):
+        captured = {}
+
+        def fake_post(url, **kwargs):
+            captured['body'] = kwargs.get('json')
+            return self._mock_http_response(self._anthropic_body('ok'))
+
+        with patch.object(requests, 'post', side_effect=fake_post):
+            self.provider._request_responses(
+                inputs=[
+                    {'role': 'user', 'content': [{'type': 'input_text', 'text': 'q'}]},
+                    {
+                        'role': 'user',
+                        'content': [{'type': 'input_text', 'text': '<ui_ctx/>'}],
+                        '_cache_volatile': True,
+                    },
+                ]
+            )
+        content = captured['body']['messages'][0]['content']
+        self.assertEqual(content[0]['cache_control'], {'type': 'ephemeral'})
+        self.assertNotIn('cache_control', content[1])
+
+    def test_anthropic_skips_cache_control_for_non_claude_model(self):
+        captured = {}
+
+        def fake_post(url, **kwargs):
+            captured['body'] = kwargs.get('json')
+            return self._mock_http_response(self._anthropic_body('ok'))
+
+        with patch.object(requests, 'post', side_effect=fake_post):
+            self.provider._request_responses(
+                inputs=[
+                    {
+                        'role': 'system',
+                        'content': [{'type': 'input_text', 'text': 's'}],
+                    },
+                ],
+                model='some-open-model',
+            )
+        self.assertEqual(captured['body']['system'], 's')
 
     def test_anthropic_connection_test_ok(self):
         def fake_post(url, **kwargs):

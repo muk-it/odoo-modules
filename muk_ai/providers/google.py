@@ -273,7 +273,7 @@ class GoogleProvider(ProviderBase):
             'usage': self._usage(
                 input_tokens=usage.get('promptTokenCount'),
                 output_tokens=usage.get('candidatesTokenCount'),
-                cached_tokens=usage.get('cachedContentTokenCount'),
+                cache_read_tokens=usage.get('cachedContentTokenCount'),
             ),
         }
 
@@ -429,7 +429,7 @@ class GoogleProvider(ProviderBase):
             if 'candidatesTokenCount' in meta:
                 usage['output_tokens'] = meta['candidatesTokenCount']
             if 'cachedContentTokenCount' in meta:
-                usage['cached_tokens'] = meta['cachedContentTokenCount']
+                usage['cache_read_tokens'] = meta['cachedContentTokenCount']
 
     def _stream_part(
         self,

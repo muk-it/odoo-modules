@@ -28,7 +28,7 @@ class TestAiModel(AITestCommon):
                 'context_window': context_window,
                 'input_rate': in_rate,
                 'output_rate': out_rate,
-                'cached_rate': cache_rate,
+                'cache_read_rate': cache_rate,
             }
         )
 
@@ -44,7 +44,7 @@ class TestAiModel(AITestCommon):
         self.assertAlmostEqual(cost['output_cost'], 1.0)
         self.assertAlmostEqual(cost['total_cost'], 2.0)
 
-    def test_compute_usage_cost_with_cached_tokens(self):
+    def test_compute_usage_cost_with_cache_read_tokens(self):
         record = self._make_model(
             'cached',
             in_rate=1.0,
@@ -53,13 +53,28 @@ class TestAiModel(AITestCommon):
         )
         usage = {
             'input_tokens': 1_000_000,
-            'cached_tokens': 800_000,
+            'cache_read_tokens': 800_000,
             'output_tokens': 100_000,
         }
         cost = record._compute_usage_cost(usage)
         self.assertAlmostEqual(cost['input_cost'], 0.28)
         self.assertAlmostEqual(cost['output_cost'], 0.2)
         self.assertAlmostEqual(cost['total_cost'], 0.48)
+
+    def test_compute_usage_cost_with_cache_write_tokens(self):
+        record = self._make_model('writer', in_rate=1.0, out_rate=2.0)
+        record.cache_read_rate = 0.1
+        record.cache_write_rate = 1.25
+        usage = {
+            'input_tokens': 1_000_000,
+            'cache_read_tokens': 600_000,
+            'cache_write_tokens': 200_000,
+            'output_tokens': 100_000,
+        }
+        cost = record._compute_usage_cost(usage)
+        self.assertAlmostEqual(cost['input_cost'], 0.2 + 0.06 + 0.25)
+        self.assertAlmostEqual(cost['output_cost'], 0.2)
+        self.assertAlmostEqual(cost['total_cost'], 0.71)
 
     def test_compute_usage_cost_zero_on_empty(self):
         empty = self.env['muk_ai.model'].browse([])

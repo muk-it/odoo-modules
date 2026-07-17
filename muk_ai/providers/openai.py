@@ -47,6 +47,8 @@ class OpenAIProvider(ProviderBase):
             'input': self._rewrite_attachments(inputs),
             'store': False,
         }
+        if extra and (cache_key := extra.get('cache_key')):
+            body['prompt_cache_key'] = cache_key
         if self.max_tokens:
             body['max_output_tokens'] = self.max_tokens
         if self._supports_reasoning(model):
@@ -97,7 +99,7 @@ class OpenAIProvider(ProviderBase):
     def _rewrite_attachments(cls, inputs) -> list:
         """Rewrite attachment blocks to OpenAI form and drop thinking blocks."""
         rewritten = []
-        for item in inputs or []:
+        for item in cls._strip_cache_markers(inputs):
             content = item.get('content') if isinstance(item, dict) else None
             if not isinstance(content, list):
                 rewritten.append(item)
@@ -225,7 +227,7 @@ class OpenAIProvider(ProviderBase):
             'usage': self._usage(
                 input_tokens=usage.get('input_tokens'),
                 output_tokens=usage.get('output_tokens'),
-                cached_tokens=(usage.get('input_tokens_details') or {}).get(
+                cache_read_tokens=(usage.get('input_tokens_details') or {}).get(
                     'cached_tokens'
                 ),
             ),
@@ -395,7 +397,7 @@ class OpenAIProvider(ProviderBase):
             'usage': self._usage(
                 input_tokens=usage.get('input_tokens'),
                 output_tokens=usage.get('output_tokens'),
-                cached_tokens=(usage.get('input_tokens_details') or {}).get(
+                cache_read_tokens=(usage.get('input_tokens_details') or {}).get(
                     'cached_tokens'
                 ),
             ),

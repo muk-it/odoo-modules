@@ -58,9 +58,23 @@ class TestAiOpenAIProvider(AITestCommon):
                 ],
             )
         self.assertTrue(captured['url'].endswith('/responses'))
+        self.assertNotIn('prompt_cache_key', captured['body'])
         self.assertEqual(result['text'], 'ok')
         self.assertEqual(result['tool_calls'], [])
         self.assertEqual(result['usage']['input_tokens'], 5)
+
+    def test_request_responses_sends_prompt_cache_key(self):
+        captured = {}
+
+        def fake_post(url, **kwargs):
+            captured['body'] = kwargs.get('json')
+            return self._mock_http_response(
+                {'output': [], 'usage': {'input_tokens': 1, 'output_tokens': 1}}
+            )
+
+        with patch.object(requests, 'post', side_effect=fake_post):
+            self.provider._request_responses(inputs=[], cache_key='muk_ai.session:42')
+        self.assertEqual(captured['body']['prompt_cache_key'], 'muk_ai.session:42')
 
     def test_request_responses_parses_tool_calls(self):
         response = self._mock_http_response(
@@ -337,7 +351,7 @@ class TestAiOpenAIProvider(AITestCommon):
         self.assertEqual(result['tool_calls'][0]['arguments'], {'a': 1})
         self.assertEqual(result['carry_inputs'][0]['type'], 'function_call')
         self.assertEqual(result['usage']['input_tokens'], 11)
-        self.assertEqual(result['usage']['cached_tokens'], 3)
+        self.assertEqual(result['usage']['cache_read_tokens'], 3)
 
     def test_stream_renders_image_partial_and_done(self):
         response = self._mock_stream_response(

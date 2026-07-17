@@ -21,7 +21,7 @@
 		<field name="context_window">1000000</field>
 		<field name="input_rate">5.0</field>
 		<field name="output_rate">30.0</field>
-		<field name="cached_rate">0.5</field>
+		<field name="cache_read_rate">0.5</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -42,7 +42,7 @@
 		<field name="context_window">400000</field>
 		<field name="input_rate">2.5</field>
 		<field name="output_rate">15.0</field>
-		<field name="cached_rate">0.25</field>
+		<field name="cache_read_rate">0.25</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -53,7 +53,7 @@
 		<field name="context_window">400000</field>
 		<field name="input_rate">0.75</field>
 		<field name="output_rate">4.5</field>
-		<field name="cached_rate">0.075</field>
+		<field name="cache_read_rate">0.075</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -64,7 +64,7 @@
 		<field name="context_window">400000</field>
 		<field name="input_rate">0.2</field>
 		<field name="output_rate">1.25</field>
-		<field name="cached_rate">0.02</field>
+		<field name="cache_read_rate">0.02</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -75,7 +75,7 @@
 		<field name="context_window">400000</field>
 		<field name="input_rate">1.75</field>
 		<field name="output_rate">14.0</field>
-		<field name="cached_rate">0.175</field>
+		<field name="cache_read_rate">0.175</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -86,7 +86,7 @@
 		<field name="context_window">400000</field>
 		<field name="input_rate">1.25</field>
 		<field name="output_rate">10.0</field>
-		<field name="cached_rate">0.125</field>
+		<field name="cache_read_rate">0.125</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -97,7 +97,7 @@
 		<field name="context_window">400000</field>
 		<field name="input_rate">1.25</field>
 		<field name="output_rate">10.0</field>
-		<field name="cached_rate">0.125</field>
+		<field name="cache_read_rate">0.125</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -108,7 +108,7 @@
 		<field name="context_window">400000</field>
 		<field name="input_rate">0.25</field>
 		<field name="output_rate">2.0</field>
-		<field name="cached_rate">0.025</field>
+		<field name="cache_read_rate">0.025</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -119,7 +119,7 @@
 		<field name="context_window">400000</field>
 		<field name="input_rate">0.05</field>
 		<field name="output_rate">0.4</field>
-		<field name="cached_rate">0.005</field>
+		<field name="cache_read_rate">0.005</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -130,7 +130,7 @@
 		<field name="context_window">1000000</field>
 		<field name="input_rate">2.0</field>
 		<field name="output_rate">8.0</field>
-		<field name="cached_rate">0.5</field>
+		<field name="cache_read_rate">0.5</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -141,7 +141,7 @@
 		<field name="context_window">1000000</field>
 		<field name="input_rate">0.4</field>
 		<field name="output_rate">1.6</field>
-		<field name="cached_rate">0.1</field>
+		<field name="cache_read_rate">0.1</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -152,7 +152,7 @@
 		<field name="context_window">1000000</field>
 		<field name="input_rate">0.1</field>
 		<field name="output_rate">0.4</field>
-		<field name="cached_rate">0.025</field>
+		<field name="cache_read_rate">0.025</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -163,7 +163,7 @@
 		<field name="context_window">128000</field>
 		<field name="input_rate">2.5</field>
 		<field name="output_rate">10.0</field>
-		<field name="cached_rate">1.25</field>
+		<field name="cache_read_rate">1.25</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -174,7 +174,7 @@
 		<field name="context_window">128000</field>
 		<field name="input_rate">0.15</field>
 		<field name="output_rate">0.6</field>
-		<field name="cached_rate">0.075</field>
+		<field name="cache_read_rate">0.075</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -185,7 +185,7 @@
 		<field name="context_window">200000</field>
 		<field name="input_rate">15.0</field>
 		<field name="output_rate">60.0</field>
-		<field name="cached_rate">7.5</field>
+		<field name="cache_read_rate">7.5</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -196,7 +196,7 @@
 		<field name="context_window">128000</field>
 		<field name="input_rate">3.0</field>
 		<field name="output_rate">12.0</field>
-		<field name="cached_rate">1.5</field>
+		<field name="cache_read_rate">1.5</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -207,7 +207,7 @@
 		<field name="context_window">200000</field>
 		<field name="input_rate">2.0</field>
 		<field name="output_rate">8.0</field>
-		<field name="cached_rate">0.5</field>
+		<field name="cache_read_rate">0.5</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -218,7 +218,7 @@
 		<field name="context_window">200000</field>
 		<field name="input_rate">1.1</field>
 		<field name="output_rate">4.4</field>
-		<field name="cached_rate">0.55</field>
+		<field name="cache_read_rate">0.55</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -229,7 +229,7 @@
 		<field name="context_window">200000</field>
 		<field name="input_rate">1.1</field>
 		<field name="output_rate">4.4</field>
-		<field name="cached_rate">0.275</field>
+		<field name="cache_read_rate">0.275</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -246,7 +246,8 @@
 		<field name="context_window">1000000</field>
 		<field name="input_rate">10.0</field>
 		<field name="output_rate">50.0</field>
-		<field name="cached_rate">1.0</field>
+		<field name="cache_read_rate">1.0</field>
+		<field name="cache_write_rate">12.5</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -257,7 +258,8 @@
 		<field name="context_window">1000000</field>
 		<field name="input_rate">5.0</field>
 		<field name="output_rate">25.0</field>
-		<field name="cached_rate">0.5</field>
+		<field name="cache_read_rate">0.5</field>
+		<field name="cache_write_rate">6.25</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -268,7 +270,8 @@
 		<field name="context_window">1000000</field>
 		<field name="input_rate">5.0</field>
 		<field name="output_rate">25.0</field>
-		<field name="cached_rate">0.5</field>
+		<field name="cache_read_rate">0.5</field>
+		<field name="cache_write_rate">6.25</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -279,7 +282,8 @@
 		<field name="context_window">1000000</field>
 		<field name="input_rate">5.0</field>
 		<field name="output_rate">25.0</field>
-		<field name="cached_rate">0.5</field>
+		<field name="cache_read_rate">0.5</field>
+		<field name="cache_write_rate">6.25</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -290,7 +294,8 @@
 		<field name="context_window">200000</field>
 		<field name="input_rate">5.0</field>
 		<field name="output_rate">25.0</field>
-		<field name="cached_rate">0.5</field>
+		<field name="cache_read_rate">0.5</field>
+		<field name="cache_write_rate">6.25</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -301,7 +306,8 @@
 		<field name="context_window">200000</field>
 		<field name="input_rate">15.0</field>
 		<field name="output_rate">75.0</field>
-		<field name="cached_rate">1.5</field>
+		<field name="cache_read_rate">1.5</field>
+		<field name="cache_write_rate">18.75</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -312,7 +318,8 @@
 		<field name="context_window">200000</field>
 		<field name="input_rate">15.0</field>
 		<field name="output_rate">75.0</field>
-		<field name="cached_rate">1.5</field>
+		<field name="cache_read_rate">1.5</field>
+		<field name="cache_write_rate">18.75</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -323,7 +330,8 @@
 		<field name="context_window">1000000</field>
 		<field name="input_rate">3.0</field>
 		<field name="output_rate">15.0</field>
-		<field name="cached_rate">0.3</field>
+		<field name="cache_read_rate">0.3</field>
+		<field name="cache_write_rate">3.75</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -334,7 +342,8 @@
 		<field name="context_window">200000</field>
 		<field name="input_rate">3.0</field>
 		<field name="output_rate">15.0</field>
-		<field name="cached_rate">0.3</field>
+		<field name="cache_read_rate">0.3</field>
+		<field name="cache_write_rate">3.75</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -345,7 +354,8 @@
 		<field name="context_window">200000</field>
 		<field name="input_rate">3.0</field>
 		<field name="output_rate">15.0</field>
-		<field name="cached_rate">0.3</field>
+		<field name="cache_read_rate">0.3</field>
+		<field name="cache_write_rate">3.75</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -356,7 +366,8 @@
 		<field name="context_window">200000</field>
 		<field name="input_rate">1.0</field>
 		<field name="output_rate">5.0</field>
-		<field name="cached_rate">0.1</field>
+		<field name="cache_read_rate">0.1</field>
+		<field name="cache_write_rate">1.25</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -367,7 +378,8 @@
 		<field name="context_window">200000</field>
 		<field name="input_rate">0.8</field>
 		<field name="output_rate">4.0</field>
-		<field name="cached_rate">0.08</field>
+		<field name="cache_read_rate">0.08</field>
+		<field name="cache_write_rate">1.0</field>
 		<field name="currency">USD</field>
 		<field name="active" eval="False"/>
 	</record>
@@ -379,7 +391,8 @@
 		<field name="context_window">200000</field>
 		<field name="input_rate">3.0</field>
 		<field name="output_rate">15.0</field>
-		<field name="cached_rate">0.3</field>
+		<field name="cache_read_rate">0.3</field>
+		<field name="cache_write_rate">3.75</field>
 		<field name="currency">USD</field>
 		<field name="active" eval="False"/>
 	</record>
@@ -397,7 +410,7 @@
 		<field name="context_window">1000000</field>
 		<field name="input_rate">2.0</field>
 		<field name="output_rate">12.0</field>
-		<field name="cached_rate">0.2</field>
+		<field name="cache_read_rate">0.2</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -408,7 +421,7 @@
 		<field name="context_window">1000000</field>
 		<field name="input_rate">1.5</field>
 		<field name="output_rate">9.0</field>
-		<field name="cached_rate">0.15</field>
+		<field name="cache_read_rate">0.15</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -419,7 +432,7 @@
 		<field name="context_window">1000000</field>
 		<field name="input_rate">0.25</field>
 		<field name="output_rate">1.5</field>
-		<field name="cached_rate">0.025</field>
+		<field name="cache_read_rate">0.025</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -440,7 +453,7 @@
 		<field name="context_window">2000000</field>
 		<field name="input_rate">1.25</field>
 		<field name="output_rate">10.0</field>
-		<field name="cached_rate">0.31</field>
+		<field name="cache_read_rate">0.31</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -451,7 +464,7 @@
 		<field name="context_window">1000000</field>
 		<field name="input_rate">0.30</field>
 		<field name="output_rate">2.50</field>
-		<field name="cached_rate">0.075</field>
+		<field name="cache_read_rate">0.075</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -462,7 +475,7 @@
 		<field name="context_window">1000000</field>
 		<field name="input_rate">0.10</field>
 		<field name="output_rate">0.40</field>
-		<field name="cached_rate">0.025</field>
+		<field name="cache_read_rate">0.025</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -473,7 +486,7 @@
 		<field name="context_window">1000000</field>
 		<field name="input_rate">0.30</field>
 		<field name="output_rate">2.50</field>
-		<field name="cached_rate">0.075</field>
+		<field name="cache_read_rate">0.075</field>
 		<field name="currency">USD</field>
 	</record>
 

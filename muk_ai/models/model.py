@@ -65,11 +65,23 @@ class AIModel(models.Model):
         digits=(12, 6),
     )
 
-    cached_rate = fields.Float(
-        string='Cached $/M tokens',
+    cache_read_rate = fields.Float(
+        string='Cache Read $/M tokens',
         help=(
-            'Cost in USD per 1,000,000 cached input tokens. '
+            'Cost in USD per 1,000,000 cache-read input tokens. '
             'Leave at 0 when the provider does not bill cached tokens '
+            'separately — the input rate is then used as the fallback.'
+        ),
+        readonly=True,
+        default=0.0,
+        digits=(12, 6),
+    )
+
+    cache_write_rate = fields.Float(
+        string='Cache Write $/M tokens',
+        help=(
+            'Cost in USD per 1,000,000 cache-write input tokens. '
+            'Leave at 0 when the provider does not bill cache writes '
             'separately — the input rate is then used as the fallback.'
         ),
         readonly=True,
@@ -99,14 +111,24 @@ class AIModel(models.Model):
     # ----------------------------------------------------------
 
     def _compute_usage_cost(self, usage: dict | None) -> dict:
-        """Return input, output, and total cost for a token usage payload."""
-        input_tokens = int((usage or {}).get('input_tokens') or 0)
-        output_tokens = int((usage or {}).get('output_tokens') or 0)
-        cached_tokens = int((usage or {}).get('cached_tokens') or 0)
-        cached_rate = self.cached_rate if self.cached_rate > 0 else self.input_rate
+        """Return input, output, and total cost for a token usage payload.
+
+        ``input_tokens`` is the full prompt; cache-read and cache-write
+        tokens are subsets of it billed at their own rates, with the fresh
+        input rate as the fallback when a cache rate is unset.
+        """
+        usage = usage or {}
+        input_tokens = int(usage.get('input_tokens') or 0)
+        output_tokens = int(usage.get('output_tokens') or 0)
+        cache_read_tokens = int(usage.get('cache_read_tokens') or 0)
+        cache_write_tokens = int(usage.get('cache_write_tokens') or 0)
+        cache_read_rate = self.cache_read_rate or self.input_rate
+        cache_write_rate = self.cache_write_rate or self.input_rate
+        fresh_tokens = max(0, input_tokens - cache_read_tokens - cache_write_tokens)
         input_cost = (
-            max(0, input_tokens - cached_tokens) * self.input_rate
-            + cached_tokens * cached_rate
+            fresh_tokens * self.input_rate
+            + cache_read_tokens * cache_read_rate
+            + cache_write_tokens * cache_write_rate
         )
         output_cost = output_tokens * self.output_rate
         return {

@@ -192,6 +192,26 @@ class ProviderBase:
                 response.close()
 
     # ----------------------------------------------------------
+    # Caching
+    # ----------------------------------------------------------
+
+    @staticmethod
+    def _strip_cache_markers(inputs) -> list:
+        """Return inputs with the internal ``_cache_volatile`` marker removed.
+
+        The session layer marks per-round trailer items (view context,
+        budget notices) so cache-aware providers can anchor a breakpoint
+        before them; the marker itself must never reach a provider wire
+        format, so providers that spread input items strip it here.
+        """
+        return [
+            {key: value for key, value in item.items() if key != '_cache_volatile'}
+            if isinstance(item, dict)
+            else item
+            for item in inputs or []
+        ]
+
+    # ----------------------------------------------------------
     # Error
     # ----------------------------------------------------------
 
@@ -230,13 +250,21 @@ class ProviderBase:
     def _usage(
         input_tokens: int = 0,
         output_tokens: int = 0,
-        cached_tokens: int = 0,
+        cache_read_tokens: int = 0,
+        cache_write_tokens: int = 0,
     ) -> dict:
-        """Build a normalized token usage dict, defaulting falsy values to zero."""
+        """Build a normalized token usage dict, defaulting falsy values to zero.
+
+        ``input_tokens`` is always the FULL prompt size including cache-read
+        and cache-written tokens; ``cache_read_tokens`` and
+        ``cache_write_tokens`` are the subsets billed at the cache read and
+        write rates.
+        """
         return {
             'input_tokens': input_tokens or 0,
             'output_tokens': output_tokens or 0,
-            'cached_tokens': cached_tokens or 0,
+            'cache_read_tokens': cache_read_tokens or 0,
+            'cache_write_tokens': cache_write_tokens or 0,
         }
 
     def _raise(self, error) -> None:

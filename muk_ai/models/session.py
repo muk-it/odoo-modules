@@ -1658,6 +1658,7 @@ class AISession(models.Model):
                 enable_web_search=bool(agent and agent.enable_web_search),
                 enable_image_generation=bool(agent and agent.enable_image_generation),
                 enable_code_interpreter=bool(agent and agent.enable_code_interpreter),
+                cache_key=f'muk_ai.session:{self.id}',
             )
             self._flush_stream_buffer(buffer_state)
             return payload
@@ -2424,6 +2425,7 @@ class AISession(models.Model):
                     'text': f'<turn_limits>{" ".join(parts)}</turn_limits>',
                 }
             ],
+            '_cache_volatile': True,
         }
 
     def _yield_slice(self) -> None:

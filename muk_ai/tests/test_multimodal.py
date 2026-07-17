@@ -405,7 +405,7 @@ class TestMultimodalAttachments(AITestCommon):
                 ],
             }
         ]
-        _, messages = AnthropicProvider._inputs_to_messages(inputs)
+        _, messages, _anchor = AnthropicProvider._inputs_to_messages(inputs)
         block = messages[0]['content'][0]
         self.assertEqual(block['type'], 'image')
         self.assertEqual(block['source']['type'], 'base64')
@@ -426,7 +426,7 @@ class TestMultimodalAttachments(AITestCommon):
                 ],
             }
         ]
-        _, messages = AnthropicProvider._inputs_to_messages(inputs)
+        _, messages, _anchor = AnthropicProvider._inputs_to_messages(inputs)
         block = messages[0]['content'][0]
         self.assertEqual(block['type'], 'document')
         self.assertEqual(block['source']['media_type'], 'application/pdf')
@@ -447,7 +447,7 @@ class TestMultimodalAttachments(AITestCommon):
                 ],
             }
         ]
-        _, messages = AnthropicProvider._inputs_to_messages(inputs)
+        _, messages, _anchor = AnthropicProvider._inputs_to_messages(inputs)
         block = messages[0]['content'][0]
         self.assertEqual(block['type'], 'text')
         self.assertIn('note.md', block['text'])

@@ -21,7 +21,7 @@ class TestSessionCostAccrual(AITestCommon):
                 'context_window': 10_000_000,
                 'input_rate': 1.0,
                 'output_rate': 2.0,
-                'cached_rate': 0.0,
+                'cache_read_rate': 0.0,
             }
         )
         cls.provider.default_model_id = cls.model.id
@@ -43,7 +43,7 @@ class TestSessionCostAccrual(AITestCommon):
             'usage': {
                 'input_tokens': input_tokens,
                 'output_tokens': output_tokens,
-                'cached_tokens': 0,
+                'cache_read_tokens': 0,
             },
         }
 

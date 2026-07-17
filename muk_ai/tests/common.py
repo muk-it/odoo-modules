@@ -69,5 +69,5 @@ class AITestCommon(TransactionCase):
             'text': text,
             'tool_calls': [],
             'carry_inputs': [],
-            'usage': {'input_tokens': 10, 'output_tokens': 5, 'cached_tokens': 0},
+            'usage': {'input_tokens': 10, 'output_tokens': 5, 'cache_read_tokens': 0},
         }
