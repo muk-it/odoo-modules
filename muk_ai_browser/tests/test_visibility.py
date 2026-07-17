@@ -57,3 +57,36 @@ class TestVisibility(BrowserTestCommon):
     def test_client_tools_not_essential_without_browser_session(self):
         session = self._new_ai_session('not-essential')
         self.assertNotIn('click', session._get_essential_tool_names())
+
+    def test_webclient_tools_survive_browser_gating(self):
+        session = self._new_ai_session('webclient-kind')
+        names = {entry['name'] for entry in session._get_filtered_catalog()}
+        self.assertIn('adjust_search', names)
+        self.assertTrue(session._is_client_tool('adjust_search'))
+
+    def test_webclient_action_not_mirrored_to_extension(self):
+        session = self._new_ai_session('routing-webclient')
+        browser_session = self._browser_session(ai_session=session)
+        session._register_client_action(
+            {'call_id': 'c-adj', 'name': 'adjust_search', 'arguments': {}}
+        )
+        requests = [
+            payload
+            for event_type, payload in self._browser_events(browser_session)
+            if event_type == 'action_request'
+        ]
+        self.assertEqual(requests, [])
+
+    def test_browser_action_mirrored_to_extension(self):
+        session = self._new_ai_session('routing-browser')
+        browser_session = self._browser_session(ai_session=session)
+        session._register_client_action(
+            {'call_id': 'c-read', 'name': 'read_page', 'arguments': {}}
+        )
+        requests = [
+            payload
+            for event_type, payload in self._browser_events(browser_session)
+            if event_type == 'action_request'
+        ]
+        self.assertEqual(len(requests), 1)
+        self.assertEqual(requests[0]['name'], 'read_page')

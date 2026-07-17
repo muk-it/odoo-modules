@@ -71,37 +71,12 @@ class AISession(models.Model):
     # Catalog
     # ----------------------------------------------------------
 
-    def _get_filtered_catalog(self) -> list[dict]:
-        """Drop client-executed tools when no browser session is attached.
-
-        Visibility gating: ``execute == 'client'`` tools are only exposed to the
-        model (and treated as client tools) while an active browser session backs
-        this AI session.
-        """
-        catalog = super()._get_filtered_catalog()
-        if self.id and self._has_active_browser_session():
-            return catalog
-        return [
-            entry
-            for entry in catalog
-            if (entry.get('_meta') or {}).get('execute') != 'client'
-        ]
-
-    def _get_essential_tool_names(self) -> list[str]:
-        """Promote client-executed tools to essential while a browser is attached.
-
-        Loading their full schemas upfront lets the model call browser tools
-        directly, so they hit the client-action pause in the tool round instead
-        of being loaded and inline-called through ``tool_load`` (which would
-        execute them without pausing for the client).
-        """
-        names = list(super()._get_essential_tool_names())
-        if self.id and self._has_active_browser_session():
-            for entry in self._get_filtered_catalog():
-                if (entry.get('_meta') or {}).get('execute') == 'client':
-                    if entry['name'] not in names:
-                        names.append(entry['name'])
-        return names
+    def _available_client_kinds(self) -> set[str]:
+        """Add the browser kind while an owned extension session is attached."""
+        kinds = super()._available_client_kinds()
+        if self._has_active_browser_session():
+            kinds.add('browser')
+        return kinds
 
     # ----------------------------------------------------------
     # Prompt
@@ -259,9 +234,14 @@ class AISession(models.Model):
         self._browser_register_action(call)
 
     def _browser_register_action(self, call: dict) -> None:
-        """Register the client action and enqueue its browser ``action_request``."""
+        """Register the client action and enqueue its browser ``action_request``.
+
+        Only browser-kind tools are mirrored to the extension queue; client
+        actions of other kinds (editor, webclient) are answered by their own
+        executor in the webclient tab.
+        """
         super()._register_client_action(call)
-        if not self.id:
+        if not self.id or self._tool_client_kind(call['name']) != 'browser':
             return
         for session in self._active_browser_sessions():
             session._enqueue_event(

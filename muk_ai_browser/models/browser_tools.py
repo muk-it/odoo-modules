@@ -7,16 +7,17 @@ from odoo.exceptions import UserError
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
 
-CLIENT_META = {'execute': 'client'}
+CLIENT_META = {'execute': 'client', 'client': 'browser'}
 
 
 class BrowserTools(models.AbstractModel):
     """Client-executed browser perception and action tools.
 
-    Every tool here is registered with ``meta={'execute': 'client'}`` so the
-    MuK AI session loop pauses and delegates execution to the paired browser
-    extension. The server-side bodies must never run; they raise to make a stray
-    server dispatch loud rather than silent.
+    Every tool here is registered with ``meta={'execute': 'client',
+    'client': 'browser'}`` so the MuK AI session loop pauses and delegates
+    execution to the paired browser extension. The server-side bodies must
+    never run; they raise to make a stray server dispatch loud rather than
+    silent.
     """
 
     _inherit = 'muk_mcp.mixin'
