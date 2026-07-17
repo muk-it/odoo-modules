@@ -624,6 +624,45 @@ test('onSetAgent writes agent_id and updates state', async () => {
     expect(session.state.agentName).toBe('Alpha');
 });
 
+test('/agent <name> resolves the name and switches the agent', async () => {
+    onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
+    onRpc('muk_ai.agent', 'search_read', () => AGENTS);
+    let written = null;
+    onRpc('muk_ai.session', 'write', ({ args }) => {
+        written = args;
+        return true;
+    });
+    makeBusMock();
+    const harness = makeHarness();
+    const session = await mountAndLoad(harness);
+    await session.loadAgents();
+    session.onInputChange('/agent Helper');
+    await session.onSend();
+    expect(written).toEqual([[7], { agent_id: 3 }]);
+});
+
+test('/agent <unknown> warns and does not switch', async () => {
+    onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
+    onRpc('muk_ai.agent', 'search_read', () => AGENTS);
+    let written = null;
+    onRpc('muk_ai.session', 'write', ({ args }) => {
+        written = args;
+        return true;
+    });
+    const notifications = [];
+    mockService('notification', {
+        add: (msg, opts) => notifications.push({ msg: String(msg), type: opts?.type }),
+    });
+    makeBusMock();
+    const harness = makeHarness();
+    const session = await mountAndLoad(harness);
+    await session.loadAgents();
+    session.onInputChange('/agent nope');
+    await session.onSend();
+    expect(written).toBe(null);
+    expect(notifications.some((n) => /No agent matches/.test(n.msg))).toBe(true);
+});
+
 test('onSend surfaces backend errors into state.error and status', async () => {
     onRpc('muk_ai.session', 'read', () => [
         { ...SESSION_RECORD, events: [], iteration_count: 0 },
@@ -742,7 +781,7 @@ test('setApprovalMode calls set_approval_mode on the session', async () => {
     expect(captured).toEqual([7, 'off']);
 });
 
-test('cycleApprovalMode walks false -> ask -> off -> false', async () => {
+test('cycleApprovalMode toggles the effective mode off <-> ask', async () => {
     onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
     const captured = [];
     onRpc('muk_ai.session', 'set_approval_mode', ({ args }) => {
@@ -752,13 +791,11 @@ test('cycleApprovalMode walks false -> ask -> off -> false', async () => {
     makeBusMock();
     const harness = makeHarness();
     const session = await mountAndLoad(harness);
-    session.state.approvalMode = false;
+    session.state.effectiveApprovalMode = 'ask';
     await session.cycleApprovalMode();
-    session.state.approvalMode = 'ask';
+    session.state.effectiveApprovalMode = 'off';
     await session.cycleApprovalMode();
-    session.state.approvalMode = 'off';
-    await session.cycleApprovalMode();
-    expect(captured).toEqual(['ask', 'off', false]);
+    expect(captured).toEqual(['off', 'ask']);
 });
 
 test('runUnpin warns when no view context is pinned', async () => {
@@ -1603,7 +1640,7 @@ test('onAttachFiles surfaces upload errors via notification', async () => {
     expect(notifications.some((m) => /upload failed/i.test(m))).toBe(true);
 });
 
-test('/clear dispatches dialog then calls clear on confirm', async () => {
+test('/clear calls clear immediately without a confirmation dialog', async () => {
     onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
     let cleared = false;
     onRpc('muk_ai.session', 'clear', () => {
@@ -1614,7 +1651,6 @@ test('/clear dispatches dialog then calls clear on confirm', async () => {
     mockService('dialog', {
         add: (Component, props) => {
             dialogs.push(props);
-            props.confirm();
             return () => {};
         },
     });
@@ -1624,29 +1660,8 @@ test('/clear dispatches dialog then calls clear on confirm', async () => {
     const session = await mountAndLoad(harness);
     session.onInputChange('/clear');
     await session.onSend();
-    expect(dialogs).toHaveLength(1);
+    expect(dialogs).toHaveLength(0);
     expect(cleared).toBe(true);
-});
-
-test('/clear without confirmation skips the RPC', async () => {
-    onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
-    let cleared = false;
-    onRpc('muk_ai.session', 'clear', () => {
-        cleared = true;
-        return SNAPSHOT_RUNNING;
-    });
-    mockService('dialog', {
-        add: (Component, props) => {
-            props.cancel();
-            return () => {};
-        },
-    });
-    makeBusMock();
-    const harness = makeHarness();
-    const session = await mountAndLoad(harness);
-    session.onInputChange('/clear');
-    await session.onSend();
-    expect(cleared).toBe(false);
 });
 
 test('loadMoreEvents prepends older window and updates oldestSequence', async () => {

@@ -117,6 +117,17 @@ const STATUS_BADGE_CLASSES = {
     stopped: 'mk_state_stopped',
 };
 
+const STATUS_ICONS = {
+    new: 'fa-comment-o',
+    running: 'fa-spinner fa-spin',
+    compacting: 'fa-spinner fa-spin',
+    waiting: 'fa-hourglass-half',
+    waiting_schedule: 'fa-clock-o',
+    done: 'fa-check',
+    error: 'fa-exclamation',
+    stopped: 'fa-stop',
+};
+
 /**
  * Map a session status code to its translated label.
  * @param {string} status session status code
@@ -144,6 +155,15 @@ export function statusLabel(status) {
  */
 export function statusBadgeClass(status) {
     return STATUS_BADGE_CLASSES[status] || 'mk_state_new';
+}
+
+/**
+ * Map a session status code to its FontAwesome icon class(es).
+ * @param {string} status session status code
+ * @returns {string} FontAwesome icon class(es)
+ */
+export function statusIcon(status) {
+    return STATUS_ICONS[status] || 'fa-comment-o';
 }
 
 /**

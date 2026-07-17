@@ -153,10 +153,13 @@ function makeInteractiveParent({
     canSend = true,
     canStop = false,
     canAttach = true,
+    agents = [],
+    activeAgentId = null,
     onSend,
     onStop,
     onInput,
     onAttachFiles,
+    onSelectAgent,
 } = {}) {
     class Parent extends Component {
         static components = { ChatComposer };
@@ -169,10 +172,13 @@ function makeInteractiveParent({
                 canStop="props.canStop"
                 canAttach="props.canAttach"
                 attachments="[]"
+                agents="props.agents"
+                activeAgentId="props.activeAgentId"
                 onInput="props.onInput or (() => {})"
                 onSend="props.onSend or (() => {})"
                 onStop="props.onStop or (() => {})"
                 onAttachFiles="props.onAttachFiles or (() => {})"
+                onSelectAgent="props.onSelectAgent or (() => {})"
             />
         `;
     }
@@ -181,10 +187,13 @@ function makeInteractiveParent({
         canSend: { type: Boolean },
         canStop: { type: Boolean },
         canAttach: { type: Boolean },
+        agents: { type: Array },
+        activeAgentId: { optional: true },
         onInput: { type: Function, optional: true },
         onSend: { type: Function, optional: true },
         onStop: { type: Function, optional: true },
         onAttachFiles: { type: Function, optional: true },
+        onSelectAgent: { type: Function, optional: true },
     };
     return {
         Parent,
@@ -193,10 +202,13 @@ function makeInteractiveParent({
             canSend,
             canStop,
             canAttach,
+            agents,
+            activeAgentId,
             onInput,
             onSend,
             onStop,
             onAttachFiles,
+            onSelectAgent,
         },
     };
 }
@@ -257,6 +269,66 @@ test('typing /co filters slash menu to /compact', async () => {
     const items = queryAll('.mk_slash_item');
     expect(items.length).toBe(1);
     expect(items[0].textContent).toMatch(/\/compact/);
+});
+
+const AGENTS = [
+    { id: 1, name: 'General Assistant', description: 'Default agent.' },
+    { id: 2, name: 'Read-only Analyst', description: 'Read only.' },
+    { id: 3, name: 'Website Designer', description: 'Builds pages.' },
+];
+
+test('typing /agent shows the agent picker with the active agent flagged', async () => {
+    const { Parent, props } = makeInteractiveParent({
+        value: '/agent',
+        agents: AGENTS,
+        activeAgentId: 1,
+    });
+    await mountWithCleanup(Parent, { props });
+    const items = queryAll('.mk_slash_item');
+    expect(items.length).toBe(3);
+    expect(items[0].textContent).toMatch(/General Assistant/);
+    expect(items[0].textContent).toMatch(/active/);
+});
+
+test('typing /agent read filters the picker to matching agents', async () => {
+    const { Parent, props } = makeInteractiveParent({
+        value: '/agent read',
+        agents: AGENTS,
+    });
+    await mountWithCleanup(Parent, { props });
+    const items = queryAll('.mk_slash_item');
+    expect(items.length).toBe(1);
+    expect(items[0].textContent).toMatch(/Read-only Analyst/);
+});
+
+test('Enter in agent mode selects the active match via onSelectAgent', async () => {
+    let selected = null;
+    const { Parent, props } = makeInteractiveParent({
+        value: '/agent read',
+        agents: AGENTS,
+        onSelectAgent: (id) => {
+            selected = id;
+        },
+    });
+    await mountWithCleanup(Parent, { props });
+    queryFirst('.mk_composer textarea').dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
+    );
+    expect(selected).toBe(2);
+});
+
+test('clicking an agent item calls onSelectAgent', async () => {
+    let selected = null;
+    const { Parent, props } = makeInteractiveParent({
+        value: '/agent',
+        agents: AGENTS,
+        onSelectAgent: (id) => {
+            selected = id;
+        },
+    });
+    await mountWithCleanup(Parent, { props });
+    await click(queryAll('.mk_slash_item')[2]);
+    expect(selected).toBe(3);
 });
 
 test('slash menu ArrowDown cycles active entry', async () => {
@@ -425,6 +497,74 @@ test('Enter in slash menu picks command then sends', async () => {
     });
     expect(picked).toBe('/compact');
     expect(sent).toBe(1);
+});
+
+function enter(composer) {
+    composer.onKeydown({
+        key: 'Enter',
+        isComposing: false,
+        shiftKey: false,
+        preventDefault: () => {},
+    });
+}
+
+function mountedComposer(cmp) {
+    return cmp.__owl__.children[Object.keys(cmp.__owl__.children)[0]]?.component;
+}
+
+test('typing /c lists /compact before /clear', async () => {
+    const { Parent, props } = makeInteractiveParent({ value: '/c' });
+    await mountWithCleanup(Parent, { props });
+    const items = queryAll('.mk_slash_name');
+    expect(items[0].textContent).toMatch(/\/compact/);
+    expect(items[1].textContent).toMatch(/\/clear/);
+});
+
+test('Enter on a partial /clear prefix completes but does not auto-send', async () => {
+    let picked = null;
+    let sent = 0;
+    const { Parent, props } = makeInteractiveParent({
+        value: '/cl',
+        canSend: true,
+        onInput: (v) => {
+            picked = v;
+        },
+        onSend: () => sent++,
+    });
+    const cmp = await mountWithCleanup(Parent, { props });
+    enter(mountedComposer(cmp));
+    expect(picked).toBe('/clear');
+    expect(sent).toBe(0);
+});
+
+test('Enter on the full /clear command sends it', async () => {
+    let sent = 0;
+    const { Parent, props } = makeInteractiveParent({
+        value: '/clear',
+        canSend: true,
+        onSend: () => sent++,
+    });
+    const cmp = await mountWithCleanup(Parent, { props });
+    enter(mountedComposer(cmp));
+    expect(sent).toBe(1);
+});
+
+test('Enter on a partial /agent prefix opens the picker instead of sending', async () => {
+    let picked = null;
+    let sent = 0;
+    const { Parent, props } = makeInteractiveParent({
+        value: '/ag',
+        agents: AGENTS,
+        canSend: true,
+        onInput: (v) => {
+            picked = v;
+        },
+        onSend: () => sent++,
+    });
+    const cmp = await mountWithCleanup(Parent, { props });
+    enter(mountedComposer(cmp));
+    expect(picked).toBe('/agent');
+    expect(sent).toBe(0);
 });
 
 test('Enter while composing (IME) is ignored', async () => {

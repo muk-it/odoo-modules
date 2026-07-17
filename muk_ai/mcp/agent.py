@@ -132,7 +132,4 @@ class AIAgentHandoffTools(models.AbstractModel):
                 'note': 'already active',
             }
         session.write({'agent_id': target.id, 'expanded_tool_names': []})
-        session._publish_event(
-            'agent_switched', {'agent_id': target.id, 'agent_name': target.name}
-        )
         return {'switched_to': target.name, 'agent_id': target.id}

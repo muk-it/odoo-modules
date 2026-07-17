@@ -157,6 +157,8 @@
                             canAttach="canAttach"
                             isQueueing="isQueueing"
                             attachments="session.state.pendingAttachments"
+                            agents="session.state.agents"
+                            activeAgentId="session.state.agentId"
                             focusToken="session.state.focusToken"
                             onInput.bind="onInputChange"
                             onSend.bind="onSend"
@@ -164,6 +166,7 @@
                             onAttachFiles.bind="onAttachFiles"
                             onRemoveAttachment.bind="onRemoveAttachment"
                             onOpenAttachment.bind="onOpenAttachment"
+                            onSelectAgent="(agentId) => session.onSetAgent(agentId)"
                         />
                         <div class="mk_composer_hint d-flex gap-3 mt-1 ps-1">
                             <span><kbd>Enter</kbd> to send</span>
@@ -191,8 +194,13 @@
             >
                 <i class="fa" t-att-class="state.sidebarHidden ? 'fa-chevron-right' : 'fa-chevron-left'"/>
             </button>
-            <span class="mk_avatar rounded-circle" t-if="session.state.sessionId">
-                <i class="fa fa-comment-o"/>
+            <span
+                class="mk_avatar rounded-circle"
+                t-if="session.state.sessionId"
+                t-att-class="statusBadgeClass(session.state.status)"
+                t-att-title="statusLabel(session.state.status)"
+            >
+                <i class="fa" t-att-class="statusIcon(session.state.status)"/>
             </span>
             <span class="mk_main_title" t-esc="session.state.name || 'MuK AI Chat'"/>
             <Dropdown t-if="session.state.sessionId and session.state.agents.length">
@@ -229,12 +237,6 @@
                 <i class="fa fa-spinner fa-spin"/>
             </span>
             <span
-                t-elif="session.state.sessionId"
-                class="mk_status_pill rounded-pill"
-                t-att-class="statusBadgeClass(session.state.status)"
-                t-esc="statusLabel(session.state.status)"
-            />
-            <span
                 t-if="session.state.status === 'waiting_schedule' and session.state.resumeAt"
                 class="mk_chat_header_resume text-muted small"
                 t-att-title="formatTimestamp(session.state.resumeAt)"
@@ -250,15 +252,6 @@
             >
                 <i class="fa" t-att-class="approvalPill.icon"/>
                 <span t-esc="approvalPill.label"/>
-            </button>
-            <button
-                t-if="session.canRegenerate()"
-                class="btn btn-sm btn-outline-secondary rounded-pill d-inline-flex align-items-center gap-1"
-                title="Regenerate last answer"
-                t-on-click="() => this.session.onRegenerate()"
-            >
-                <i class="fa fa-refresh"/>
-                <span>Regenerate</span>
             </button>
             <div class="mk_tokens ms-auto d-flex align-items-center gap-2" t-if="session.state.sessionId">
                 <button
@@ -370,7 +363,7 @@
                     <span class="mk_context_divider_line"/>
                     <span class="mk_context_divider_label">
                         <code t-esc="turn.name"/>
-                        <t t-if="turn.summary">
+                        <t t-if="turn.originalMessages or turn.originalTokens">
                             <span class="mk_context_divider_sep">·</span>
                             <span class="mk_context_divider_meta">compacted <t t-esc="turn.originalMessages"/> msgs / <t t-esc="turn.originalTokens"/> tokens</span>
                         </t>
@@ -465,6 +458,7 @@
                                 <t t-set="meta_event_id" t-value="block.eventId || turn.eventId"/>
                                 <t t-set="meta_side" t-value="''"/>
                                 <t t-set="meta_in_history" t-value="turn.inHistory"/>
+                                <t t-set="meta_can_regenerate" t-value="block_index === turn.regenerateAt and session.canRegenerate and session.canRegenerate()"/>
                             </t>
                             <div class="mk_bubble_body" t-out="renderAssistantMarkdown(block.text)"/>
                         </div>
@@ -499,23 +493,31 @@
     <t t-name="muk_ai.ChatMsgMeta">
         <div class="mk_msg_meta" t-att-class="meta_side">
             <span class="mk_msg_time" t-if="meta_at" t-esc="formatTimestamp(meta_at)"/>
-            <button class="mk_msg_btn mk_msg_copy" type="button"
-                    title="Copy message"
-                    t-on-click="() => session.copyText(meta_text)">
-                <i class="fa fa-copy"/>
-            </button>
-            <button class="mk_msg_btn mk_msg_fork" type="button"
-                    t-if="meta_event_id and !meta_in_history"
-                    title="Branch — open a new session with the history up to this message"
-                    t-on-click="() => session.runForkAtEvent(meta_event_id)">
-                <i class="fa fa-code-fork"/>
-            </button>
-            <button class="mk_msg_btn mk_msg_undo" type="button"
-                    t-if="meta_event_id and !meta_in_history"
-                    title="Rewind — remove this message and everything after"
-                    t-on-click="() => session.runUndoToEvent(meta_event_id)">
-                <i class="fa fa-undo"/>
-            </button>
+            <div class="mk_msg_actions">
+                <button class="mk_msg_btn mk_msg_copy" type="button"
+                        title="Copy message"
+                        t-on-click="() => session.copyText(meta_text)">
+                    <i class="fa fa-copy"/>
+                </button>
+                <button class="mk_msg_btn mk_msg_fork" type="button"
+                        t-if="meta_event_id and !meta_in_history"
+                        title="Branch — open a new session with the history up to this message"
+                        t-on-click="() => session.runForkAtEvent(meta_event_id)">
+                    <i class="fa fa-code-fork"/>
+                </button>
+                <button class="mk_msg_btn mk_msg_undo" type="button"
+                        t-if="meta_event_id and !meta_in_history"
+                        title="Rewind — remove this message and everything after"
+                        t-on-click="() => session.runUndoToEvent(meta_event_id)">
+                    <i class="fa fa-undo"/>
+                </button>
+                <button class="mk_msg_btn mk_msg_regenerate" type="button"
+                        t-if="meta_can_regenerate"
+                        title="Regenerate this answer"
+                        t-on-click="() => session.onRegenerate()">
+                    <i class="fa fa-refresh"/>
+                </button>
+            </div>
         </div>
     </t>
 

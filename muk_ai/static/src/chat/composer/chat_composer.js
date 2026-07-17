@@ -30,12 +30,15 @@ export class ChatComposer extends Component {
         isQueueing: { type: Boolean, optional: true },
         attachments: { type: Array, optional: true },
         canAttach: { type: Boolean, optional: true },
+        agents: { type: Array, optional: true },
+        activeAgentId: { optional: true },
         onInput: { type: Function },
         onSend: { type: Function },
         onStop: { type: Function, optional: true },
         onAttachFiles: { type: Function, optional: true },
         onRemoveAttachment: { type: Function, optional: true },
         onOpenAttachment: { type: Function, optional: true },
+        onSelectAgent: { type: Function, optional: true },
         focusToken: { type: [Number, String], optional: true },
     };
     static defaultProps = {
@@ -45,6 +48,7 @@ export class ChatComposer extends Component {
         isQueueing: false,
         attachments: [],
         canAttach: false,
+        agents: [],
     };
     accept = ACCEPT;
     setup() {
@@ -90,7 +94,7 @@ export class ChatComposer extends Component {
             () => {
                 this.localState.slashActive = 0;
             },
-            () => [this.slashCommands.length],
+            () => [this.menuItems.length],
         );
     }
     get slashCommands() {
@@ -101,12 +105,30 @@ export class ChatComposer extends Component {
         const prefix = value.split(/\s+/)[0].toLowerCase();
         return SLASH_COMMANDS.filter((c) => c.name.startsWith(prefix));
     }
+    get isAgentMode() {
+        return /^\/agent(\s|$)/.test((this.props.value || '').trimStart());
+    }
+    get agentMatches() {
+        if (!this.isAgentMode) {
+            return [];
+        }
+        const query = (this.props.value || '')
+            .trimStart()
+            .replace(/^\/agent\s*/, '')
+            .toLowerCase();
+        return (this.props.agents || []).filter((a) =>
+            (a.name || '').toLowerCase().includes(query),
+        );
+    }
+    get menuItems() {
+        return this.isAgentMode ? this.agentMatches : this.slashCommands;
+    }
     get showSlashMenu() {
-        return !this.props.disabled && this.slashCommands.length > 0;
+        return !this.props.disabled && this.menuItems.length > 0;
     }
     onKeydown(event) {
         if (this.showSlashMenu) {
-            const count = this.slashCommands.length;
+            const count = this.menuItems.length;
             if (event.key === 'ArrowDown') {
                 event.preventDefault();
                 this.localState.slashActive = (this.localState.slashActive + 1) % count;
@@ -120,13 +142,24 @@ export class ChatComposer extends Component {
             }
             if (event.key === 'Tab' && !event.shiftKey) {
                 event.preventDefault();
-                this.pickSlashCommand(this.localState.slashActive);
+                this.pickActive(this.localState.slashActive);
                 return;
             }
             if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
                 event.preventDefault();
+                if (this.isAgentMode) {
+                    this.pickAgent(this.localState.slashActive);
+                    return;
+                }
+                const cmd = this.slashCommands[this.localState.slashActive];
+                const typed = (this.props.value || '').trim().toLowerCase();
+                const wasAutocomplete = cmd && typed !== cmd.name;
                 this.pickSlashCommand(this.localState.slashActive);
-                this.onSendOrStop();
+                const holdSend =
+                    cmd && (cmd.opensPicker || (cmd.destructive && wasAutocomplete));
+                if (cmd && !holdSend) {
+                    this.onSendOrStop();
+                }
                 return;
             }
             if (event.key === 'Escape') {
@@ -141,6 +174,13 @@ export class ChatComposer extends Component {
         event.preventDefault();
         this.onSendOrStop();
     }
+    pickActive(index) {
+        if (this.isAgentMode) {
+            this.pickAgent(index);
+        } else {
+            this.pickSlashCommand(index);
+        }
+    }
     pickSlashCommand(index) {
         const cmd = this.slashCommands[index];
         if (!cmd) {
@@ -150,6 +190,17 @@ export class ChatComposer extends Component {
         const tailMatch = value.match(/^\/\S*(\s.*)?$/);
         const tail = tailMatch?.[1] || '';
         this.props.onInput(cmd.name + tail);
+        this.localState.slashActive = 0;
+    }
+    pickAgent(index) {
+        const agent = this.agentMatches[index];
+        if (!agent) {
+            return;
+        }
+        if (this.props.onSelectAgent) {
+            this.props.onSelectAgent(agent.id);
+        }
+        this.props.onInput('');
         this.localState.slashActive = 0;
     }
     hoverSlashCommand(index) {

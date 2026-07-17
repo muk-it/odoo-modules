@@ -23,6 +23,7 @@ import {
     formatTimestamp,
     inputPlaceholder,
     statusBadgeClass,
+    statusIcon,
     statusLabel,
 } from '@muk_ai/chat/utils';
 
@@ -100,7 +101,12 @@ export class ChatWindow extends Component {
             },
             () => [this.props.minimized],
         );
-        onWillStart(() => this.session.load(this.props.sessionId));
+        onWillStart(() =>
+            Promise.all([
+                this.session.load(this.props.sessionId),
+                this.session.loadAgents(),
+            ]),
+        );
         onMounted(() => {
             this._installRootPasteHandler();
             this._resumeTickInterval = window.setInterval(() => {
@@ -218,6 +224,9 @@ export class ChatWindow extends Component {
     }
     statusBadgeClass(status) {
         return statusBadgeClass(status);
+    }
+    statusIcon(status) {
+        return statusIcon(status);
     }
     statusLabel(status) {
         return statusLabel(status);

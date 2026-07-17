@@ -7,7 +7,7 @@ import { standardFieldProps } from '@web/views/fields/standard_field_props';
 
 import { AttachmentCard } from '@muk_ai/core/attachment/attachment_card';
 import { ToolCard } from '@muk_ai/chat/tools/tool_card';
-import { buildTurnItems } from '@muk_ai/chat/tools/tool_group';
+import { ToolGroup, buildTurnItems } from '@muk_ai/chat/tools/tool_group';
 import { renderMarkdown as renderMarkdownToHtml } from '@muk_ai/core/markdown/markdown';
 import { buildRenderedTurns } from '@muk_ai/chat/session/turns';
 import { formatTimestamp } from '@muk_ai/chat/utils';
@@ -20,7 +20,7 @@ import {
 /** Read-only field rendering a session's events as a chat-style transcript. */
 export class SessionEventsField extends Component {
     static template = 'muk_ai.SessionEventsField';
-    static components = { AttachmentCard, ToolCard };
+    static components = { AttachmentCard, ToolCard, ToolGroup };
     static props = { ...standardFieldProps };
     setup() {
         this.notification = useService('notification');

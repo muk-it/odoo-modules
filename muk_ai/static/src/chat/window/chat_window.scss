@@ -45,6 +45,12 @@
     height: auto;
 }
 
+.mk_window.mk_chat .mk_avatar[class*='mk_state_'] {
+    background: rgba(255, 255, 255, 0.18);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+    color: #fff;
+}
+
 .mk_window_header {
     display: flex;
     align-items: center;
@@ -58,7 +64,6 @@
     .mk_avatar {
         width: 26px;
         height: 26px;
-        background: rgba(255, 255, 255, 0.2);
         color: #fff;
         display: inline-flex;
         align-items: center;
@@ -66,6 +71,9 @@
         font-size: 0.75rem;
         line-height: 1;
         flex: 0 0 auto;
+        transition:
+            background-color 0.15s ease,
+            color 0.15s ease;
         i.fa {
             display: block;
             line-height: 1;
@@ -79,29 +87,6 @@
         white-space: nowrap;
         flex: 1 1 auto;
         min-width: 0;
-    }
-    .mk_status_pill {
-        flex: 0 0 auto;
-        display: inline-block;
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.4);
-        border: 0;
-        padding: 0;
-        &.mk_state_running {
-            background: #ffd666;
-            animation: mk-blink 1s steps(2, end) infinite;
-        }
-        &.mk_state_waiting {
-            background: #ffd666;
-        }
-        &.mk_state_done {
-            background: #6df49a;
-        }
-        &.mk_state_error {
-            background: #ff9aa3;
-        }
     }
     .mk_window_actions {
         display: inline-flex;

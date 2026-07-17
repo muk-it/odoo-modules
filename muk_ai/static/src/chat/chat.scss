@@ -257,6 +257,30 @@
             text-align: center;
             width: auto;
         }
+        transition:
+            background-color 0.15s ease,
+            color 0.15s ease;
+        &.mk_state_new,
+        &.mk_state_stopped {
+            background: rgba(107, 114, 128, 0.14);
+            color: #6b7280;
+        }
+        &.mk_state_running {
+            background: rgba(43, 111, 184, 0.13);
+            color: #2b6fb8;
+        }
+        &.mk_state_waiting {
+            background: rgba(184, 128, 31, 0.15);
+            color: #b0791d;
+        }
+        &.mk_state_done {
+            background: rgba(31, 146, 84, 0.15);
+            color: #1f9254;
+        }
+        &.mk_state_error {
+            background: rgba(204, 59, 69, 0.13);
+            color: #cc3b45;
+        }
     }
     .mk_main_title {
         font-weight: 500;
@@ -285,50 +309,6 @@
         }
         &:hover {
             border-color: var(--mk-primary);
-        }
-    }
-    .mk_status_pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.35rem;
-        font-size: 0.72rem;
-        font-weight: 500;
-        padding: 3px 10px;
-        line-height: 1.2;
-        border-radius: 20px;
-        &::before {
-            content: '';
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: currentColor;
-        }
-        &.mk_state_new {
-            color: var(--mk-text-muted);
-            background: var(--mk-bg-soft);
-        }
-        &.mk_state_running {
-            color: #0c7cd5;
-            background: rgba(12, 124, 213, 0.1);
-        }
-        &.mk_state_waiting {
-            color: #b88300;
-            background: rgba(224, 168, 0, 0.12);
-        }
-        &.mk_state_done {
-            color: var(--mk-success);
-            background: rgba(40, 167, 69, 0.1);
-        }
-        &.mk_state_error {
-            color: var(--mk-danger);
-            background: rgba(220, 53, 69, 0.1);
-        }
-        &.mk_state_stopped {
-            color: var(--mk-text-muted);
-            background: var(--mk-bg-soft);
-        }
-        &.mk_state_running::before {
-            animation: mk-pulse 1.2s ease-in-out infinite;
         }
     }
     .mk_chat_header_resume {
@@ -909,18 +889,23 @@
         .mk_msg_meta {
             position: absolute;
             top: 100%;
-            right: -0.1rem;
-            left: auto;
+            right: 0;
+            left: 0;
             margin-top: 0.15rem;
             display: flex;
             flex-wrap: nowrap;
             white-space: nowrap;
-            width: max-content;
             align-items: center;
             gap: 0.25rem;
             opacity: 0;
             z-index: 2;
             transition: opacity 0.12s ease;
+        }
+        .mk_msg_actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            margin-left: auto;
         }
         .mk_msg_btn,
         .mk_msg_copy {
@@ -954,6 +939,9 @@
         }
         .mk_msg_undo:hover {
             color: var(--mk-warning, #b08800);
+        }
+        .mk_msg_regenerate:hover {
+            color: var(--mk-primary);
         }
         .mk_msg_time {
             color: var(--mk-text-muted, #6e7781);
@@ -1021,17 +1009,23 @@
         .mk_msg_meta {
             position: absolute;
             top: 100%;
-            left: -0.1rem;
+            left: 0;
+            right: 0;
             margin-top: 0.15rem;
             display: flex;
             flex-wrap: nowrap;
             white-space: nowrap;
-            width: max-content;
             align-items: center;
             gap: 0.25rem;
             opacity: 0;
             z-index: 2;
             transition: opacity 0.12s ease;
+        }
+        .mk_msg_actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            margin-left: auto;
         }
         .mk_msg_btn,
         .mk_msg_copy {
@@ -1065,6 +1059,9 @@
         }
         .mk_msg_undo:hover {
             color: var(--mk-warning, #b08800);
+        }
+        .mk_msg_regenerate:hover {
+            color: var(--mk-primary);
         }
         .mk_msg_time {
             color: var(--mk-text-muted, #6e7781);
@@ -1836,11 +1833,11 @@
             border: 0;
             outline: none;
             background: transparent;
-            padding: 0.4rem 0;
+            padding: 0.375rem 0;
             font-size: 0.92rem;
             color: var(--mk-text);
             line-height: 1.5;
-            min-height: 38px;
+            min-height: 34px;
             max-height: 220px;
             box-shadow: none !important;
             &[disabled] {
@@ -2006,7 +2003,7 @@
             min-width: 0;
             font-size: 0.88rem;
         }
-        .mk_tokens .mk_chip:not(.mk_context_chip):not(.mk_status_pill) {
+        .mk_tokens .mk_chip:not(.mk_context_chip) {
             display: none;
         }
     }
@@ -2047,7 +2044,9 @@
             overflow: hidden;
         }
         .mk_avatar {
-            display: none;
+            width: 26px;
+            height: 26px;
+            font-size: 0.75rem;
         }
         .mk_agent_pill {
             padding: 2px 6px;
@@ -2057,15 +2056,6 @@
             }
             > i.fa {
                 display: inline-block;
-            }
-        }
-        .mk_status_pill {
-            padding: 2px 6px;
-            font-size: 0;
-            gap: 0;
-            &::before {
-                width: 8px;
-                height: 8px;
             }
         }
         .mk_tokens {

@@ -90,9 +90,7 @@ test('images carry the mk_md_image class the click-to-preview handler targets', 
     expect(renderMarkdown('![alt](https://example.com/p.png)')).toMatch(
         /class="mk_md_image"/,
     );
-    expect(renderMarkdown('![g](/web/image/1032)')).toMatch(
-        /class="mk_md_image"/,
-    );
+    expect(renderMarkdown('![g](/web/image/1032)')).toMatch(/class="mk_md_image"/);
 });
 
 test('image with data:image base64 src renders', () => {

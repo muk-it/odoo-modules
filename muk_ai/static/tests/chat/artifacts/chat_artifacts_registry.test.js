@@ -149,7 +149,10 @@ test('assistant inline images dedupe against repeated references', () => {
     const items = collect({
         pendingAttachments: [],
         events: [
-            { kind: 'text', content: '![a](/web/image/7) and again ![a](/web/image/7)' },
+            {
+                kind: 'text',
+                content: '![a](/web/image/7) and again ![a](/web/image/7)',
+            },
             { kind: 'text', content: '![b](/web/image/8)' },
         ],
     });

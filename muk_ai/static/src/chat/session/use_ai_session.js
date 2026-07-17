@@ -38,16 +38,22 @@ export const SLASH_COMMANDS = [
         hint: 'Show available slash commands',
     },
     {
-        name: '/clear',
-        hint: 'Start a fresh conversation in this session',
-    },
-    {
         name: '/compact',
         hint: 'Summarize and collapse older turns to free context',
     },
     {
+        name: '/clear',
+        hint: 'Start a fresh conversation in this session',
+        destructive: true,
+    },
+    {
         name: '/unpin',
         hint: 'Clear the view context pinned to this session',
+    },
+    {
+        name: '/agent',
+        hint: 'Switch the active agent',
+        opensPicker: true,
     },
     {
         name: '/handover',
@@ -311,6 +317,9 @@ export function useAiSession(options = {}) {
             const payload = event.payload || {};
             state.agentId = payload.agent_id || null;
             state.agentName = payload.agent_name || '';
+            if (payload.effective_approval_mode) {
+                state.effectiveApprovalMode = payload.effective_approval_mode;
+            }
         } else if (event.type === 'ui_action') {
             handleUiAction(event.payload);
         } else if (event.type === 'view_context') {
@@ -903,10 +912,39 @@ export function useAiSession(options = {}) {
             await runUnpin();
             return;
         }
+        if (slash.name === '/agent') {
+            await runSwitchAgent(slash.args);
+            return;
+        }
         if (slash.name === '/handover') {
             openHandoverPicker(slash.args);
             return;
         }
+    }
+    async function runSwitchAgent(query) {
+        const agents = state.agents || [];
+        if (!agents.length) {
+            notification.add(_t('No agents available to switch to.'), {
+                type: 'warning',
+            });
+            return;
+        }
+        const q = (query || '').trim().toLowerCase();
+        let target = agents.find((a) => (a.name || '').toLowerCase() === q);
+        if (!target && q) {
+            target = agents.find((a) => (a.name || '').toLowerCase().includes(q));
+        }
+        if (!target) {
+            notification.add(
+                _t(
+                    'No agent matches "%s". Type /agent to pick from the list.',
+                    query || '',
+                ),
+                { type: 'warning' },
+            );
+            return;
+        }
+        await onSetAgent(target.id);
     }
     async function runUnpin() {
         if (!state.sessionId) {
@@ -951,15 +989,7 @@ export function useAiSession(options = {}) {
         );
     }
     function cycleApprovalMode() {
-        const current = state.approvalMode;
-        let next;
-        if (!current) {
-            next = 'ask';
-        } else if (current === 'ask') {
-            next = 'off';
-        } else {
-            next = false;
-        }
+        const next = state.effectiveApprovalMode === 'off' ? 'ask' : 'off';
         return setApprovalMode(next);
     }
     async function answerWithOption(option) {
@@ -1067,23 +1097,6 @@ export function useAiSession(options = {}) {
             notification.add(_t('Stop the running session before clearing.'), {
                 type: 'warning',
             });
-            return;
-        }
-        const confirmed = await new Promise((resolve) => {
-            dialog.add(ConfirmationDialog, {
-                title: _t('Clear context'),
-                body: _t(
-                    "Reset the LLM's context for this session? " +
-                        'The visible chat history stays on screen above a divider; ' +
-                        'only the model loses memory of prior turns.',
-                ),
-                confirmLabel: _t('Clear'),
-                cancelLabel: _t('Cancel'),
-                confirm: () => resolve(true),
-                cancel: () => resolve(false),
-            });
-        });
-        if (!confirmed) {
             return;
         }
         try {

@@ -10,6 +10,7 @@ from . import test_agent
 from . import test_prompt_history
 from . import test_flow
 from . import test_approval
+from . import test_ask_preview
 from . import test_model
 from . import test_security
 from . import test_window

@@ -124,6 +124,7 @@ test('user_message resets the assistant accumulator (next text starts a new turn
     expect(turns[2]).toEqual({
         role: 'assistant',
         blocks: [{ type: 'text', text: 'b' }],
+        regenerateAt: 0,
     });
 });
 
@@ -190,6 +191,6 @@ test('unknown kinds are ignored without breaking the rest', () => {
         { kind: 'text', content: 'a' },
     ]);
     expect(turns).toEqual([
-        { role: 'assistant', blocks: [{ type: 'text', text: 'a' }] },
+        { role: 'assistant', blocks: [{ type: 'text', text: 'a' }], regenerateAt: 0 },
     ]);
 });

@@ -149,6 +149,36 @@ ASK_USER_TOOL = {
 }
 
 
+_PREVIEW_LIST_FIELDS = {
+    'update': ('targets', 'changes'),
+    'delete': ('targets',),
+    'call': ('targets',),
+    'create': ('properties',),
+}
+
+
+def clean_ask_preview(preview) -> dict | None:
+    """Coerce a model-supplied ask_user preview into the renderable shape."""
+    if not isinstance(preview, dict):
+        return None
+    kind = preview.get('kind')
+    if kind not in _PREVIEW_LIST_FIELDS:
+        return None
+    cleaned = {
+        key: value
+        for key, value in preview.items()
+        if isinstance(key, str) and isinstance(value, (str, int, float, bool))
+    }
+    for field in _PREVIEW_LIST_FIELDS[kind]:
+        value = preview.get(field)
+        cleaned[field] = (
+            [item for item in value if isinstance(item, dict)]
+            if isinstance(value, list)
+            else []
+        )
+    return cleaned
+
+
 def build_tool_call_output(call_id: str, output) -> dict:
     """Build a ``function_call_output`` item, serializing non-string output as JSON."""
     serialized = output if isinstance(output, str) else json.dumps(output, default=str)

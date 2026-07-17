@@ -10,7 +10,7 @@
         muk_mcp tool registry your external AI clients use — one source
         of truth, one permission model, one audit trail.
     """,
-    'version': '19.0.1.8.27',
+    'version': '19.0.1.9.2',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -56,6 +56,7 @@
             'muk_ai/static/src/chat/**/*',
             'muk_ai/static/src/components/**/*',
             'muk_ai/static/src/core/**/*',
+            'muk_ai/static/src/views/adjust.js',
             'muk_ai/static/src/views/context.js',
             'muk_ai/static/src/views/fields/**/*',
             'muk_ai/static/src/views/form/**/*',

@@ -138,3 +138,42 @@ class TestAgentHandoff(AITestCommon):
             session.start('route me')
         self.assertEqual(session.agent_id, self.specialist)
         self.assertEqual(session.state, 'done')
+
+    # ----------------------------------------------------------
+    # Agent-switch transcript marker (write() chokepoint)
+    # ----------------------------------------------------------
+
+    def _switch_events(self, session: models.Model) -> models.Model:
+        """Return the persisted ``agent_switched`` events for the session."""
+        return self.env['muk_ai.session.event'].search(
+            [('session_id', '=', session.id), ('kind', '=', 'agent_switched')]
+        )
+
+    def test_write_agent_change_persists_one_marker(self):
+        session = self._session(self.router)
+        session.write({'agent_id': self.specialist.id})
+        events = self._switch_events(session)
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events.payload.get('agent_name'), 'Test Specialist')
+        self.assertEqual(events.payload.get('from_agent_name'), 'Test Router')
+
+    def test_create_with_agent_persists_no_marker(self):
+        session = self._session(self.specialist)
+        self.assertFalse(self._switch_events(session))
+
+    def test_write_same_agent_persists_no_marker(self):
+        session = self._session(self.router)
+        session.write({'agent_id': self.router.id})
+        self.assertFalse(self._switch_events(session))
+
+    def test_write_without_agent_id_persists_no_marker(self):
+        session = self._session(self.router)
+        session.write({'name': 'renamed'})
+        self.assertFalse(self._switch_events(session))
+
+    def test_mcp_switch_agent_persists_one_marker(self):
+        session = self._session(self.router)
+        self._mixin(session)._mcp_switch_agent(self.specialist.id)
+        events = self._switch_events(session)
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events.payload.get('agent_name'), 'Test Specialist')

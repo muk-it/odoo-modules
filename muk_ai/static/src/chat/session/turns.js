@@ -1,3 +1,4 @@
+import { _t } from '@web/core/l10n/translation';
 import { registry } from '@web/core/registry';
 
 export const toolBlockDecorators = registry.category('muk_ai.tool_block_decorators');
@@ -166,6 +167,21 @@ export function buildRenderedTurns(log) {
                 ),
             );
             current = null;
+        } else if (entry.kind === 'agent_switched') {
+            const toAgent = entry.agent_name || _t('default agent');
+            turns.push(
+                withAt(
+                    {
+                        role: 'command',
+                        name: 'agent',
+                        message: entry.from_agent_name
+                            ? _t('%s → %s', entry.from_agent_name, toAgent)
+                            : _t('Switched to %s', toAgent),
+                    },
+                    at,
+                ),
+            );
+            current = null;
         } else if (entry.kind === 'compact_progress') {
             turns.push(
                 withAt(
@@ -206,6 +222,18 @@ export function buildRenderedTurns(log) {
     if (lastBoundary > 0) {
         for (let i = 0; i < lastBoundary; i++) {
             turns[i].inHistory = true;
+        }
+    }
+    for (let i = turns.length - 1; i >= 0; i--) {
+        if (turns[i].role === 'assistant') {
+            let lastText = -1;
+            (turns[i].blocks || []).forEach((block, blockIndex) => {
+                if (block.type === 'text') {
+                    lastText = blockIndex;
+                }
+            });
+            turns[i].regenerateAt = lastText;
+            break;
         }
     }
     return turns;

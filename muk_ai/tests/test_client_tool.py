@@ -171,6 +171,69 @@ class TestClientToolSeam(AITestCommon):
             self.assertFalse(session._is_client_tool('unknown'))
 
     # ----------------------------------------------------------
+    # Client kinds
+    # ----------------------------------------------------------
+
+    def _kind_catalog(self):
+        """Patch the registry catalog with tools of every client kind."""
+        catalog = [
+            {
+                'name': 'browser_click',
+                '_meta': {'execute': 'client', 'client': 'browser'},
+            },
+            {
+                'name': 'adjust_search',
+                '_meta': {'execute': 'client', 'client': 'webclient'},
+            },
+            {'name': 'bare_client', '_meta': {'execute': 'client'}},
+            {'name': 'search_count', '_meta': {'execute': 'server'}},
+        ]
+        return patch.object(
+            type(self.env['muk_mcp.tool']),
+            'get_tools',
+            autospec=True,
+            return_value=catalog,
+        )
+
+    def test_catalog_drops_unavailable_client_kinds(self):
+        session = self._new_session('kinds')
+        with self._kind_catalog():
+            names = {e['name'] for e in session._get_filtered_catalog()}
+        self.assertEqual(names, {'adjust_search', 'search_count'})
+
+    def test_tool_client_kind_lookup(self):
+        session = self._new_session('kind-lookup')
+        with self._kind_catalog():
+            self.assertEqual(session._tool_client_kind('adjust_search'), 'webclient')
+            # the kind is a static registration property: it resolves even for
+            # tools whose kind is currently unavailable (routing must not
+            # depend on visibility, e.g. on the approval-resume path)
+            self.assertEqual(session._tool_client_kind('browser_click'), 'browser')
+            self.assertIsNone(session._tool_client_kind('search_count'))
+            self.assertIsNone(session._tool_client_kind('bare_client'))
+            self.assertIsNone(session._tool_client_kind('unknown'))
+
+    def test_visible_client_tools_promoted_to_essential(self):
+        session = self._new_session('kind-essential')
+        with self._kind_catalog():
+            essential = session._get_essential_tool_names()
+        self.assertIn('adjust_search', essential)
+        self.assertNotIn('browser_click', essential)
+        self.assertNotIn('bare_client', essential)
+
+    def test_adjust_search_registered_as_webclient_tool(self):
+        session = self._new_session('adjust-search')
+        names = {e['name'] for e in session._get_filtered_catalog()}
+        self.assertIn('adjust_search', names)
+        self.assertTrue(session._is_client_tool('adjust_search'))
+        self.assertEqual(session._tool_client_kind('adjust_search'), 'webclient')
+        self.assertIn('adjust_search', session._get_essential_tool_names())
+
+    def test_adjust_search_server_body_raises(self):
+        with self.assertRaises(UserError):
+            self.env['muk_mcp.mixin']._mcp_adjust_search()
+
+    # ----------------------------------------------------------
     # Pause
     # ----------------------------------------------------------
 

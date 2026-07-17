@@ -4,17 +4,34 @@
     <t t-name="muk_ai.ChatComposer">
         <div class="mk_composer_host position-relative">
         <div class="mk_slash_popover" t-if="showSlashMenu">
-            <t t-foreach="slashCommands" t-as="cmd" t-key="cmd.name">
-                <button
-                    type="button"
-                    class="mk_slash_item"
-                    t-att-class="{ active: cmd_index === localState.slashActive }"
-                    t-on-click="() => this.pickSlashCommand(cmd_index)"
-                    t-on-mouseenter="() => this.hoverSlashCommand(cmd_index)"
-                >
-                    <code class="mk_slash_name" t-esc="cmd.name"/>
-                    <span class="mk_slash_hint" t-esc="cmd.hint"/>
-                </button>
+            <t t-if="isAgentMode">
+                <t t-foreach="agentMatches" t-as="agent" t-key="agent.id">
+                    <button
+                        type="button"
+                        class="mk_slash_item"
+                        t-att-class="{ active: agent_index === localState.slashActive }"
+                        t-on-click="() => this.pickAgent(agent_index)"
+                        t-on-mouseenter="() => this.hoverSlashCommand(agent_index)"
+                    >
+                        <span class="mk_slash_name" t-esc="agent.name"/>
+                        <span class="mk_slash_hint" t-if="agent.id === props.activeAgentId">active</span>
+                        <span class="mk_slash_hint" t-elif="agent.description" t-esc="agent.description"/>
+                    </button>
+                </t>
+            </t>
+            <t t-else="">
+                <t t-foreach="slashCommands" t-as="cmd" t-key="cmd.name">
+                    <button
+                        type="button"
+                        class="mk_slash_item"
+                        t-att-class="{ active: cmd_index === localState.slashActive }"
+                        t-on-click="() => this.pickSlashCommand(cmd_index)"
+                        t-on-mouseenter="() => this.hoverSlashCommand(cmd_index)"
+                    >
+                        <code class="mk_slash_name" t-esc="cmd.name"/>
+                        <span class="mk_slash_hint" t-esc="cmd.hint"/>
+                    </button>
+                </t>
             </t>
         </div>
         <div class="mk_composer d-flex flex-column gap-2">

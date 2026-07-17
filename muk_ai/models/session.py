@@ -48,6 +48,7 @@ from odoo.addons.muk_ai.tools import (
     WORKER_STALE_THRESHOLD,
     StreamCancelled,
     build_tool_call_output,
+    clean_ask_preview,
     clean_view_context_payload,
     fetch_url,
     is_unmaterialized_attachment,
@@ -644,21 +645,72 @@ class AISession(models.Model):
             'attachments': [a._ai_describe() for a in attachments],
         }
 
+    def _available_client_kinds(self) -> set[str]:
+        """Return the client kinds whose executor can currently answer.
+
+        Overridable hook: every module contributing ``execute == 'client'``
+        tools adds its kind while the matching executor is reachable. Core
+        ships the ``webclient`` kind, answered by the chat client running
+        in the user's browser tab.
+        """
+        return {'webclient'}
+
     def _get_filtered_catalog(self) -> list[dict]:
-        """Return the tool catalog filtered by the session's agent."""
+        """Return the tool catalog filtered by agent and client availability.
+
+        Client-executed tools (``_meta.execute == 'client'``) are dropped
+        unless their declared ``_meta.client`` kind is currently available
+        (see ``_available_client_kinds``).
+        """
         tool_env = self.env(
             context={**self.env.context, **self._tool_dispatch_context()}
         )
         catalog = list(tool_env['muk_mcp.tool'].sudo().get_tools(registry='odoo'))
         if self.agent_id:
             catalog = self.agent_id.apply_tool_filter(catalog)
-        return catalog
+        kinds = self._available_client_kinds()
+        return [
+            entry
+            for entry in catalog
+            if (meta := entry.get('_meta') or {}).get('execute') != 'client'
+            or meta.get('client') in kinds
+        ]
+
+    def _tool_client_kind(self, name: str) -> str | None:
+        """Return the declared client kind of a registered tool, or ``None``.
+
+        Reads the raw registry: the kind is a static registration property,
+        so routing decisions (e.g. mirroring an approved browser action to
+        the extension) must not depend on the tool's current visibility —
+        the agent filter can change between a gate pause and its resume.
+        """
+        for entry in self.env['muk_mcp.tool'].sudo().get_tools(registry='odoo'):
+            if entry.get('name') == name:
+                meta = entry.get('_meta') or {}
+                if meta.get('execute') == 'client':
+                    return meta.get('client')
+                return None
+        return None
 
     def _get_essential_tool_names(self) -> list[str]:
-        """Return the essential tool names from the agent or the default set."""
+        """Return the essential tool names plus every visible client tool.
+
+        Client tools load their full schemas upfront so a call pauses on the
+        client-action seam instead of being loaded and inline-called through
+        ``tool_load`` (which would execute it without pausing for the client).
+        """
         if self.agent_id:
-            return self.agent_id._get_essential_tool_names()
-        return self.env['muk_ai.agent']._get_default_essential_tool_names()
+            names = list(self.agent_id._get_essential_tool_names())
+        else:
+            names = list(self.env['muk_ai.agent']._get_default_essential_tool_names())
+        names.extend(
+            entry['name']
+            for entry in self._get_filtered_catalog()
+            if entry.get('name')
+            and entry['name'] not in names
+            and (entry.get('_meta') or {}).get('execute') == 'client'
+        )
+        return names
 
     def _loaded_tool_names(self) -> list[str]:
         """Return the de-duplicated essential and expanded tool names."""
@@ -2124,7 +2176,7 @@ class AISession(models.Model):
             'text': args.get('question'),
             'options': args.get('options'),
             'resolution': args.get('resolution') or 'text',
-            'preview': args.get('preview') or None,
+            'preview': clean_ask_preview(args.get('preview')),
         }
         self.pending_ask = {'kind': 'question', **ask}
         self._append_event({'kind': 'ask_user', **ask})
@@ -3902,6 +3954,38 @@ class AISession(models.Model):
                     },
                 )
         return records
+
+    def write(self, vals: dict) -> bool:
+        """Emit an in-transcript marker whenever the active agent changes.
+
+        Captures the previous agent per record, then for every session whose
+        ``agent_id`` actually changes emits a persisted ``agent_switched`` event
+        (rendered as a divider) plus the live pill update. As the single ORM
+        chokepoint it covers the UI dropdown, the ``/agent`` command and the
+        ``switch_agent`` MCP tool with one consistent marker.
+        """
+        if 'agent_id' not in vals:
+            return super().write(vals)
+        previous = {record.id: record.agent_id for record in self}
+        result = super().write(vals)
+        for record in self:
+            if (old_agent := previous.get(record.id)) != record.agent_id:
+                record._append_event(
+                    {
+                        'kind': 'agent_switched',
+                        'agent_name': record.agent_id.name if record.agent_id else '',
+                        'from_agent_name': old_agent.name if old_agent else '',
+                    }
+                )
+                record._publish_event(
+                    'agent_switched',
+                    {
+                        'agent_id': record.agent_id.id if record.agent_id else False,
+                        'agent_name': record.agent_id.name if record.agent_id else '',
+                        'effective_approval_mode': record._effective_approval_mode(),
+                    },
+                )
+        return result
 
     def unlink(self) -> bool:
         """Broadcast deletions so open chat surfaces drop the session live."""

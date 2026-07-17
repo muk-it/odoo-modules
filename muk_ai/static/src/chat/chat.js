@@ -31,6 +31,7 @@ import {
     formatTimestamp,
     inputPlaceholder,
     statusBadgeClass,
+    statusIcon,
     statusLabel,
 } from '@muk_ai/chat/utils';
 
@@ -817,6 +818,9 @@ export class AIChat extends Component {
     }
     statusBadgeClass(status) {
         return statusBadgeClass(status);
+    }
+    statusIcon(status) {
+        return statusIcon(status);
     }
     get resumeRelativeText() {
         void this.state.resumeTick;
