@@ -6,6 +6,7 @@ from . import test_dispatch_helper
 from . import test_base_automation_path
 from . import test_cron_path
 from . import test_caps
+from . import test_client_kinds
 from . import test_chatter_mirror_access
 from . import test_session_transcript_access
 from . import test_dispatch_modes

@@ -77,6 +77,18 @@ class AISession(models.Model):
         record = self.env[self.res_model].sudo().browse(self.res_id)
         return record if record.exists() else None
 
+    def _available_client_kinds(self) -> set[str]:
+        """Drop the webclient kind for action-spawned sessions.
+
+        A session fired by a server action or automation rule runs headless
+        — no tab hosts its chat window, so webclient-served tools would only
+        pend until the stale-action sweep.
+        """
+        kinds = super()._available_client_kinds()
+        if self.id and self.action_server_id:
+            kinds.discard('webclient')
+        return kinds
+
     def _owner_can_read(self, record: models.BaseModel) -> bool:
         """Return whether the session owner may read the linked record."""
         owner = self.user_id or self.env.user
