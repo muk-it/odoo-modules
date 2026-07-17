@@ -126,6 +126,17 @@ class AISession(models.Model):
         """Add the schedule tools to the set that ends an agent turn."""
         return super()._get_terminating_tools() | SCHEDULE_TERMINATING_TOOLS
 
+    def _available_client_kinds(self) -> set[str]:
+        """Drop the webclient kind for schedule-spawned sessions.
+
+        A scheduled session runs headless — no tab hosts its chat window, so
+        webclient-served tools would only pend until the stale-action sweep.
+        """
+        kinds = super()._available_client_kinds()
+        if self.id and self.schedule_id:
+            kinds.discard('webclient')
+        return kinds
+
     def _run_to_completion(self, has_terminating: bool = False) -> None:
         """Run to completion, then re-defer any recurring sessions."""
         super()._run_to_completion(has_terminating=has_terminating)

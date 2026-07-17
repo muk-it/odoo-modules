@@ -6,6 +6,7 @@ from . import test_cron_sweep
 from . import test_schedule_tools
 from . import test_prompt_injection
 from . import test_chain
+from . import test_client_kinds
 from . import test_acl_user
 from . import test_migration
 from . import test_tour
