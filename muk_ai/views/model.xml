@@ -71,12 +71,18 @@
 							<field name="provider_id"/>
 							<field name="technical_name"/>
 							<field name="context_window"/>
+							<field name="reasoning_efforts" invisible="1"/>
 							<field
                                 name="reasoning_efforts"
                                 widget="json_code"
                                 groups="base.group_no_one"
                             />
-							<field name="reasoning_effort_default"/>
+							<field
+                                name="reasoning_effort_default"
+                                widget="effort_picker"
+                                options="{'options_field': 'reasoning_efforts'}"
+                                invisible="not reasoning_efforts"
+                            />
 						</group>
 						<group string="Pricing">
 							<field name="input_rate"/>
