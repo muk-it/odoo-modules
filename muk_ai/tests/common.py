@@ -3,7 +3,10 @@ from __future__ import annotations
 from contextlib import contextmanager
 from unittest.mock import MagicMock, patch
 
+from odoo import models
 from odoo.tests.common import TransactionCase, tagged
+
+from odoo.addons.muk_ai.providers.base import _REJECTED_REASONING_MODELS
 
 
 @tagged('post_install', '-at_install')
@@ -25,9 +28,27 @@ class AITestCommon(TransactionCase):
         cls.provider_google.sudo().api_key = 'test-key'
         cls.env.company.default_ai_provider_id = cls.provider
 
+    def setUp(self):
+        super().setUp()
+        _REJECTED_REASONING_MODELS.clear()
+
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
+
+    def _create_model(self, technical_name: str, **values) -> models.BaseModel:
+        """Create a catalog model record for ``technical_name`` on the provider."""
+        return self.env['muk_ai.model'].create(
+            {
+                'name': technical_name,
+                'provider_id': self.provider.id,
+                'technical_name': technical_name,
+                'context_window': 400000,
+                'input_rate': 1.0,
+                'output_rate': 1.0,
+                **values,
+            }
+        )
 
     @classmethod
     def _mark_sensitive(cls, *model_names: str) -> None:

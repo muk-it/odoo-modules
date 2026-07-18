@@ -55,6 +55,121 @@ class TestAiGoogleProvider(AITestCommon):
     # Tests
     # ----------------------------------------------------------
 
+    def test_thinking_level_sent_for_low_effort_on_gemini_3(self):
+        captured = {}
+
+        def fake_post(url, **kwargs):
+            captured['body'] = kwargs.get('json')
+            return self._mock_http_response(self._google_body('ok'))
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            self.provider._request_responses(
+                inputs=[
+                    {'role': 'user', 'content': [{'type': 'input_text', 'text': 'hi'}]}
+                ],
+                model='gemini-3-flash-preview',
+                reasoning_effort='low',
+            )
+        self.assertEqual(
+            captured['body']['generationConfig']['thinkingConfig'],
+            {'thinkingLevel': 'low'},
+        )
+
+    def test_unset_effort_keeps_model_default_thinking(self):
+        captured = {}
+
+        def fake_post(url, **kwargs):
+            captured['body'] = kwargs.get('json')
+            return self._mock_http_response(self._google_body('ok'))
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            self.provider._request_responses(
+                inputs=[
+                    {'role': 'user', 'content': [{'type': 'input_text', 'text': 'hi'}]}
+                ],
+                model='gemini-3-flash-preview',
+            )
+        config = captured['body'].get('generationConfig') or {}
+        self.assertNotIn('thinkingConfig', config)
+
+    def test_extreme_efforts_map_to_supported_levels(self):
+        captured = {}
+
+        def fake_post(url, **kwargs):
+            captured['body'] = kwargs.get('json')
+            return self._mock_http_response(self._google_body('ok'))
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            self.provider._request_responses(
+                inputs=[
+                    {'role': 'user', 'content': [{'type': 'input_text', 'text': 'hi'}]}
+                ],
+                model='gemini-3-flash-preview',
+                reasoning_effort='max',
+            )
+        self.assertEqual(
+            captured['body']['generationConfig']['thinkingConfig'],
+            {'thinkingLevel': 'high'},
+        )
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            self.provider._request_responses(
+                inputs=[
+                    {'role': 'user', 'content': [{'type': 'input_text', 'text': 'hi'}]}
+                ],
+                model='gemini-3-flash-preview',
+                reasoning_effort='minimal',
+            )
+        self.assertEqual(
+            captured['body']['generationConfig']['thinkingConfig'],
+            {'thinkingLevel': 'low'},
+        )
+
+    def test_thinking_level_not_sent_for_gemini_2_5(self):
+        captured = {}
+
+        def fake_post(url, **kwargs):
+            captured['body'] = kwargs.get('json')
+            return self._mock_http_response(self._google_body('ok'))
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            self.provider._request_responses(
+                inputs=[
+                    {'role': 'user', 'content': [{'type': 'input_text', 'text': 'hi'}]}
+                ],
+                model='gemini-2.5-flash',
+                reasoning_effort='low',
+            )
+        config = captured['body'].get('generationConfig') or {}
+        self.assertNotIn('thinkingConfig', config)
+
+    def test_thinking_error_retries_once_without_thinking_config(self):
+        bodies = []
+
+        def fake_post(url, **kwargs):
+            bodies.append(json.loads(json.dumps(kwargs.get('json'))))
+            if len(bodies) == 1:
+                response = self._mock_http_response({})
+                response.status_code = 400
+                response.text = "Unknown field 'thinkingLevel' for this model."
+                response.raise_for_status.side_effect = requests.HTTPError(
+                    'bad request', response=response
+                )
+                return response
+            return self._mock_http_response(self._google_body('ok'))
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            result = self.provider._request_responses(
+                inputs=[
+                    {'role': 'user', 'content': [{'type': 'input_text', 'text': 'hi'}]}
+                ],
+                model='gemini-3-flash-preview',
+                reasoning_effort='low',
+            )
+        self.assertEqual(len(bodies), 2)
+        self.assertIn('thinkingConfig', bodies[0]['generationConfig'])
+        self.assertNotIn('thinkingConfig', bodies[1].get('generationConfig', {}))
+        self.assertEqual(result['text'], 'ok')
+
     def test_inputs_to_contents_splits_system_and_merges_runs(self):
         system, contents = GoogleProvider._inputs_to_contents(
             [

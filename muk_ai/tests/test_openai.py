@@ -76,6 +76,231 @@ class TestAiOpenAIProvider(AITestCommon):
             self.provider._request_responses(inputs=[], cache_key='muk_ai.session:42')
         self.assertEqual(captured['body']['prompt_cache_key'], 'muk_ai.session:42')
 
+    def test_request_responses_sends_reasoning_effort(self):
+        captured = {}
+
+        def fake_post(url, **kwargs):
+            captured['body'] = kwargs.get('json')
+            return self._mock_http_response(
+                {'output': [], 'usage': {'input_tokens': 1, 'output_tokens': 1}}
+            )
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            self.provider._request_responses(
+                inputs=[], model='gpt-5-mini', reasoning_effort='low'
+            )
+        self.assertEqual(captured['body']['reasoning']['effort'], 'low')
+
+    def test_request_responses_defaults_reasoning_effort_to_medium(self):
+        captured = {}
+
+        def fake_post(url, **kwargs):
+            captured['body'] = kwargs.get('json')
+            return self._mock_http_response(
+                {'output': [], 'usage': {'input_tokens': 1, 'output_tokens': 1}}
+            )
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            self.provider._request_responses(inputs=[], model='gpt-5-mini')
+        self.assertEqual(captured['body']['reasoning']['effort'], 'medium')
+
+    def test_reasoning_effort_clamped_to_model_floor(self):
+        self._create_model(
+            'gpt-5.2-pro-test', reasoning_efforts=['medium', 'high', 'xhigh']
+        )
+        captured = {}
+
+        def fake_post(url, **kwargs):
+            captured['body'] = kwargs.get('json')
+            return self._mock_http_response(
+                {'output': [], 'usage': {'input_tokens': 1, 'output_tokens': 1}}
+            )
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            self.provider._request_responses(
+                inputs=[], model='gpt-5.2-pro-test', reasoning_effort='low'
+            )
+        self.assertEqual(captured['body']['reasoning']['effort'], 'medium')
+
+    def test_reasoning_effort_above_floor_is_not_clamped(self):
+        self._create_model(
+            'gpt-5.2-pro-test', reasoning_efforts=['medium', 'high', 'xhigh']
+        )
+        captured = {}
+
+        def fake_post(url, **kwargs):
+            captured['body'] = kwargs.get('json')
+            return self._mock_http_response(
+                {'output': [], 'usage': {'input_tokens': 1, 'output_tokens': 1}}
+            )
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            self.provider._request_responses(
+                inputs=[], model='gpt-5.2-pro-test', reasoning_effort='high'
+            )
+        self.assertEqual(captured['body']['reasoning']['effort'], 'high')
+
+    def test_reasoning_effort_clamped_to_model_ceiling(self):
+        self._create_model(
+            'gpt-5-test', reasoning_efforts=['minimal', 'low', 'medium', 'high']
+        )
+        captured = {}
+
+        def fake_post(url, **kwargs):
+            captured['body'] = kwargs.get('json')
+            return self._mock_http_response(
+                {'output': [], 'usage': {'input_tokens': 1, 'output_tokens': 1}}
+            )
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            self.provider._request_responses(
+                inputs=[], model='gpt-5-test', reasoning_effort='max'
+            )
+        self.assertEqual(captured['body']['reasoning']['effort'], 'high')
+
+    def test_minimal_effort_clamped_up_by_model_floor(self):
+        self._create_model('o3-test', reasoning_efforts=['low', 'medium', 'high'])
+        captured = {}
+
+        def fake_post(url, **kwargs):
+            captured['body'] = kwargs.get('json')
+            return self._mock_http_response(
+                {'output': [], 'usage': {'input_tokens': 1, 'output_tokens': 1}}
+            )
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            self.provider._request_responses(
+                inputs=[], model='o3-test', reasoning_effort='minimal'
+            )
+        self.assertEqual(captured['body']['reasoning']['effort'], 'low')
+
+    def test_xhigh_effort_passes_within_model_range(self):
+        self._create_model(
+            'gpt-5.2-test', reasoning_efforts=['low', 'medium', 'high', 'xhigh']
+        )
+        captured = {}
+
+        def fake_post(url, **kwargs):
+            captured['body'] = kwargs.get('json')
+            return self._mock_http_response(
+                {'output': [], 'usage': {'input_tokens': 1, 'output_tokens': 1}}
+            )
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            self.provider._request_responses(
+                inputs=[], model='gpt-5.2-test', reasoning_effort='xhigh'
+            )
+        self.assertEqual(captured['body']['reasoning']['effort'], 'xhigh')
+
+    def test_unset_effort_uses_model_default(self):
+        self._create_model(
+            'gpt-5-default-test',
+            reasoning_efforts=['low', 'medium', 'high'],
+            reasoning_effort_default='high',
+        )
+        captured = {}
+
+        def fake_post(url, **kwargs):
+            captured['body'] = kwargs.get('json')
+            return self._mock_http_response(
+                {'output': [], 'usage': {'input_tokens': 1, 'output_tokens': 1}}
+            )
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            self.provider._request_responses(inputs=[], model='gpt-5-default-test')
+        self.assertEqual(captured['body']['reasoning']['effort'], 'high')
+
+    def test_max_effort_maps_to_xhigh_without_catalog_entry(self):
+        captured = {}
+
+        def fake_post(url, **kwargs):
+            captured['body'] = kwargs.get('json')
+            return self._mock_http_response(
+                {'output': [], 'usage': {'input_tokens': 1, 'output_tokens': 1}}
+            )
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            self.provider._request_responses(
+                inputs=[], model='gpt-5.9-experimental', reasoning_effort='max'
+            )
+        self.assertEqual(captured['body']['reasoning']['effort'], 'xhigh')
+
+    def test_reasoning_error_retries_once_without_reasoning(self):
+        bodies = []
+
+        def fake_post(url, **kwargs):
+            bodies.append(dict(kwargs.get('json')))
+            if len(bodies) == 1:
+                response = self._mock_http_response({}, status_code=400)
+                response.text = "Invalid value 'low' for 'reasoning.effort'."
+                response.raise_for_status.side_effect = requests.HTTPError(
+                    'bad request', response=response
+                )
+                return response
+            return self._mock_http_response(
+                {
+                    'output': [{'type': 'message', 'content': [{'text': 'ok'}]}],
+                    'usage': {'input_tokens': 1, 'output_tokens': 1},
+                }
+            )
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            result = self.provider._request_responses(
+                inputs=[], model='gpt-5-mini', reasoning_effort='low'
+            )
+        self.assertEqual(len(bodies), 2)
+        self.assertIn('reasoning', bodies[0])
+        self.assertNotIn('reasoning', bodies[1])
+        self.assertNotIn('include', bodies[1])
+        self.assertEqual(result['text'], 'ok')
+
+    def test_confirmed_rejection_is_remembered_across_rounds(self):
+        bodies = []
+
+        def fake_post(url, **kwargs):
+            bodies.append(dict(kwargs.get('json')))
+            if len(bodies) == 1:
+                response = self._mock_http_response({}, status_code=400)
+                response.text = "Unsupported parameter: 'reasoning.effort'."
+                response.raise_for_status.side_effect = requests.HTTPError(
+                    'bad request', response=response
+                )
+                return response
+            return self._mock_http_response(
+                {'output': [], 'usage': {'input_tokens': 1, 'output_tokens': 1}}
+            )
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            self.provider._request_responses(
+                inputs=[], model='gpt-5-reject-test', reasoning_effort='low'
+            )
+            self.provider._request_responses(
+                inputs=[], model='gpt-5-reject-test', reasoning_effort='low'
+            )
+        self.assertEqual(len(bodies), 3)
+        self.assertIn('reasoning', bodies[0])
+        self.assertNotIn('reasoning', bodies[1])
+        self.assertNotIn('reasoning', bodies[2])
+
+    def test_unrelated_error_is_not_retried(self):
+        bodies = []
+
+        def fake_post(url, **kwargs):
+            bodies.append(kwargs.get('json'))
+            response = self._mock_http_response({}, status_code=500)
+            response.text = 'server exploded'
+            response.raise_for_status.side_effect = requests.HTTPError(
+                'boom', response=response
+            )
+            return response
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            with self.assertRaises(UserError):
+                self.provider._request_responses(
+                    inputs=[], model='gpt-5-mini', reasoning_effort='low'
+                )
+        self.assertEqual(len(bodies), 1)
+
     def test_request_responses_parses_tool_calls(self):
         response = self._mock_http_response(
             {
@@ -495,6 +720,33 @@ class TestAiOpenAIProvider(AITestCommon):
                 on_delta=lambda k, p: None,
             )
         self.assertIn('x = 1', result['text'])
+
+    def test_reasoning_error_after_streamed_content_is_not_retried(self):
+        posts = []
+        deltas = []
+
+        def fake_post(url, **kwargs):
+            posts.append(kwargs.get('json'))
+            return self._mock_stream_response(
+                [
+                    {'type': 'response.output_text.delta', 'delta': 'partial'},
+                    {
+                        'type': 'response.error',
+                        'error': {'message': "invalid 'reasoning.effort' value"},
+                    },
+                ]
+            )
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            with self.assertRaises(UserError):
+                self.provider._request_responses(
+                    inputs=[],
+                    model='gpt-5-mini',
+                    reasoning_effort='low',
+                    on_delta=lambda kind, data: deltas.append((kind, data)),
+                )
+        self.assertEqual(len(posts), 1)
+        self.assertTrue(deltas)
 
     def test_stream_error_event_raises_user_error(self):
         response = self._mock_stream_response(

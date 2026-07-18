@@ -37,6 +37,7 @@
 				<field name="name"/>
 				<field name="technical_name"/>
 				<field name="context_window"/>
+				<field name="reasoning_effort_default" optional="hide"/>
 				<field name="input_rate"/>
 				<field name="output_rate"/>
 				<field name="cache_read_rate"/>
@@ -70,6 +71,12 @@
 							<field name="provider_id"/>
 							<field name="technical_name"/>
 							<field name="context_window"/>
+							<field
+                                name="reasoning_efforts"
+                                widget="json_code"
+                                groups="base.group_no_one"
+                            />
+							<field name="reasoning_effort_default"/>
 						</group>
 						<group string="Pricing">
 							<field name="input_rate"/>

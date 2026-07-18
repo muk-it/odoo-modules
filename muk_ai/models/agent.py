@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from odoo import _, api, fields, models, release
 
-from odoo.addons.muk_ai.tools import DEFAULT_CONTEXT_WINDOW
+from odoo.addons.muk_ai.tools import (
+    DEFAULT_CONTEXT_WINDOW,
+    REASONING_EFFORT_SELECTION,
+)
 from odoo.addons.muk_mcp.core.tool import get_tool_index
 
 
@@ -183,6 +186,26 @@ class AIAgent(models.Model):
         tracking=True,
     )
 
+    reasoning_effort = fields.Selection(
+        compute='_compute_reasoning_effort',
+        selection=REASONING_EFFORT_SELECTION,
+        string='Reasoning Effort',
+        help=(
+            'How much the model thinks before answering. Lower tiers respond '
+            'fastest and suit quick assistants and voice; higher tiers reason '
+            'deepest for hard analytical work. Empty applies the default of '
+            'the selected model.'
+        ),
+        readonly=False,
+        store=True,
+        tracking=True,
+    )
+
+    reasoning_effort_options = fields.Json(
+        compute='_compute_reasoning_effort_options',
+        string='Available Effort Options',
+    )
+
     session_count = fields.Integer(
         compute='_compute_session_count',
         string='Sessions',
@@ -338,6 +361,25 @@ class AIAgent(models.Model):
                 and record.enable_code_interpreter
             ):
                 record.enable_code_interpreter = False
+
+    @api.depends('model_id.reasoning_efforts')
+    def _compute_reasoning_effort_options(self) -> None:
+        """Expose the selected model's supported effort tiers to the picker."""
+        tiers = dict(REASONING_EFFORT_SELECTION)
+        for record in self:
+            record.reasoning_effort_options = [
+                tier
+                for tier in record.model_id.reasoning_efforts or []
+                if tier in tiers
+            ]
+
+    @api.depends('model_id', 'reasoning_effort_options')
+    def _compute_reasoning_effort(self) -> None:
+        """Drop the stored effort when the resolved model cannot support it."""
+        for record in self:
+            supported = record.reasoning_effort_options or []
+            if record.reasoning_effort and record.reasoning_effort not in supported:
+                record.reasoning_effort = False
 
     @api.depends(
         'suggestion_ids.label', 'suggestion_ids.prompt', 'suggestion_ids.sequence'

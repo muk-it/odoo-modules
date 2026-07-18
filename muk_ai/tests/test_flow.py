@@ -299,3 +299,32 @@ class TestSessionFlow(AITestCommon):
             snapshot = session.start('count partners forever')
         self.assertEqual(snapshot['state'], 'error')
         self.assertIn('Maximum iterations', snapshot['error_message'] or '')
+
+    # ----------------------------------------------------------
+    # Effort
+    # ----------------------------------------------------------
+
+    def test_round_passes_agent_reasoning_effort(self):
+        model = self._create_model(
+            'gpt-5-flow-effort-test', reasoning_efforts=['low', 'medium', 'high']
+        )
+        agent = self.env.ref('muk_ai.agent_general')
+        agent.model_id = model.id
+        agent.reasoning_effort = 'low'
+        session = self.env['muk_ai.session'].create(
+            {'name': 'effort', 'agent_id': agent.id}
+        )
+        captured = {}
+
+        def fake(self_arg, *args, **kwargs):
+            captured.update(kwargs)
+            return self._text_payload('ok')
+
+        with patch.object(
+            type(self.provider),
+            '_request_responses',
+            autospec=True,
+            side_effect=fake,
+        ):
+            session.start('hi')
+        self.assertEqual(captured.get('reasoning_effort'), 'low')

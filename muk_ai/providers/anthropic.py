@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 
-from odoo.exceptions import UserError
-
-from .base import ProviderBase
+from odoo.addons.muk_ai.providers.base import ProviderBase
 
 ANTHROPIC_VERSION = '2023-06-01'
 WEB_SEARCH_TOOL_TYPE = 'web_search_20250305'
@@ -21,8 +20,12 @@ LEGACY_THINKING_MODEL_TOKENS = (
     'sonnet-4-5',
     'sonnet-4-6',
 )
-THINKING_BUDGET_TOKENS = 1024
-ADAPTIVE_THINKING_EFFORT = 'medium'
+LEGACY_THINKING_BUDGETS = {
+    'medium': 1024,
+    'high': 4096,
+    'xhigh': 8192,
+    'max': 16384,
+}
 
 CACHE_CONTROL = {'type': 'ephemeral'}
 
@@ -73,16 +76,20 @@ class AnthropicProvider(ProviderBase):
             'messages': messages,
             'max_tokens': max_tokens,
         }
+        effort = (extra or {}).get('reasoning_effort')
         if self._supports_thinking(model):
             if self._uses_adaptive_thinking(model):
                 body['thinking'] = {'type': 'adaptive'}
-                body['output_config'] = {'effort': ADAPTIVE_THINKING_EFFORT}
-            else:
-                if max_tokens <= THINKING_BUDGET_TOKENS:
-                    body['max_tokens'] = THINKING_BUDGET_TOKENS + 1024
+                if effort:
+                    body['output_config'] = {
+                        'effort': 'low' if effort == 'minimal' else effort,
+                    }
+            elif budget := LEGACY_THINKING_BUDGETS.get(effort):
+                if max_tokens <= budget:
+                    body['max_tokens'] = budget + 1024
                 body['thinking'] = {
                     'type': 'enabled',
-                    'budget_tokens': THINKING_BUDGET_TOKENS,
+                    'budget_tokens': budget,
                 }
         if system_text:
             body['system'] = (
@@ -112,20 +119,20 @@ class AnthropicProvider(ProviderBase):
         if caching and anchor is not None:
             msg_index, block_index = anchor
             messages[msg_index]['content'][block_index]['cache_control'] = CACHE_CONTROL
-        try:
-            return self._invoke(body, on_delta)
-        except UserError as exc:
-            if 'thinking' not in body or 'thinking' not in str(exc).lower():
-                raise
-            body.pop('thinking', None)
-            body.pop('output_config', None)
-            return self._invoke(body, on_delta)
+        return self._invoke_with_reasoning_retry(
+            model,
+            lambda callback: self._invoke(body, callback),
+            on_delta,
+            body,
+            ('thinking', 'output_config'),
+            ('thinking', 'effort', 'output_config'),
+        )
 
     # ----------------------------------------------------------
     # Thinking
     # ----------------------------------------------------------
 
-    def _invoke(self, body: dict, on_delta) -> dict:
+    def _invoke(self, body: dict, on_delta: Callable | None) -> dict:
         """Dispatch the request to the streaming or non-streaming path."""
         if callable(on_delta):
             return self._stream(body, on_delta)

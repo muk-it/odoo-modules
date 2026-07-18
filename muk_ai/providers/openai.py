@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from .base import ProviderBase
+from collections.abc import Callable
+
+from odoo.addons.muk_ai.providers.base import ProviderBase
 
 REASONING_MODEL_PREFIXES = ('o1', 'o3', 'o4', 'gpt-5')
 
@@ -51,8 +53,11 @@ class OpenAIProvider(ProviderBase):
             body['prompt_cache_key'] = cache_key
         if self.max_tokens:
             body['max_output_tokens'] = self.max_tokens
-        if self._supports_reasoning(model):
-            body['reasoning'] = {'effort': 'medium', 'summary': 'detailed'}
+        effort = (extra or {}).get('reasoning_effort')
+        if effort or self._supports_reasoning(model):
+            body['reasoning'] = {'summary': 'detailed'}
+            if effort:
+                body['reasoning']['effort'] = 'xhigh' if effort == 'max' else effort
             body['include'] = ['reasoning.encrypted_content']
         if text_schema:
             body['text'] = {
@@ -78,13 +83,24 @@ class OpenAIProvider(ProviderBase):
         if tools:
             body['tools'] = tools
             body['parallel_tool_calls'] = True
-        if callable(on_delta):
-            return self._stream(body, on_delta)
-        return self._parse_response(self._post_json('/responses', body))
+        return self._invoke_with_reasoning_retry(
+            model,
+            lambda callback: self._invoke(body, callback),
+            on_delta,
+            body,
+            ('reasoning', 'include'),
+            ('reasoning', 'effort'),
+        )
 
     # ----------------------------------------------------------
     # Reasoning
     # ----------------------------------------------------------
+
+    def _invoke(self, body: dict, on_delta: Callable | None) -> dict:
+        """Dispatch the request to the streaming or non-streaming path."""
+        if callable(on_delta):
+            return self._stream(body, on_delta)
+        return self._parse_response(self._post_json('/responses', body))
 
     @staticmethod
     def _supports_reasoning(model: str) -> bool:

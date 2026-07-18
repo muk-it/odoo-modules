@@ -144,6 +144,14 @@
 					<group>
 						<group string="Model">
 							<field name="model_id" options="{'no_create': True}"/>
+							<field name="reasoning_effort_options" invisible="1"/>
+							<field
+                                name="reasoning_effort"
+                                widget="effort_picker"
+                                options="{'options_field': 'reasoning_effort_options'}"
+                                placeholder="Model Default"
+                                invisible="not reasoning_effort_options"
+                            />
 							<field name="supports_web_search" invisible="1"/>
 							<field name="supports_image_generation" invisible="1"/>
 							<field name="supports_code_interpreter" invisible="1"/>
@@ -240,10 +248,7 @@
                                 options="{'mode': 'qweb'}"
                                 placeholder="You are an Odoo assistant. ..."
                             />
-						</page>
-						<page string="Help" name="prompt_help">
-							<div class="oe_form_box_info">
-								<h3>System Prompt — Placeholders</h3>
+							<div class="oe_form_box_info mt-2">
 								<p>
 									The prompt is rendered with Odoo's inline-template engine (same as mail templates) when the conversation starts
 									and again on <code>/compact</code>. Each <code>{{ expr }}</code> is evaluated against the session's render context.

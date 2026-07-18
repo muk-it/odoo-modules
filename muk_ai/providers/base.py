@@ -4,7 +4,7 @@ import contextlib
 import functools
 import json
 import logging
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 
 import psycopg2
 import requests
@@ -13,9 +13,13 @@ from odoo import _
 from odoo.api import Environment
 from odoo.exceptions import UserError
 
-from odoo.addons.muk_ai.tools import StreamCancelled
+from odoo.addons.muk_ai.tools import REASONING_EFFORT_SELECTION, StreamCancelled
 
 _logger = logging.getLogger(__name__)
+
+REASONING_EFFORT_ORDER = tuple(key for key, _label in REASONING_EFFORT_SELECTION)
+
+_REJECTED_REASONING_MODELS: set = set()
 
 
 class ProviderBase:
@@ -224,6 +228,80 @@ class ProviderBase:
         finally:
             with contextlib.suppress(Exception):
                 response.close()
+
+    # ----------------------------------------------------------
+    # Reasoning
+    # ----------------------------------------------------------
+
+    @staticmethod
+    def _nearest_effort(effort: str, supported: list) -> str:
+        """Return the supported tier closest to ``effort``, rounding down on ties."""
+        candidates = [tier for tier in REASONING_EFFORT_ORDER if tier in supported]
+        if (
+            not candidates
+            or effort in candidates
+            or effort not in REASONING_EFFORT_ORDER
+        ):
+            return effort
+        index = REASONING_EFFORT_ORDER.index(effort)
+        return min(
+            candidates,
+            key=lambda tier: (
+                abs(REASONING_EFFORT_ORDER.index(tier) - index),
+                REASONING_EFFORT_ORDER.index(tier),
+            ),
+        )
+
+    def _invoke_with_reasoning_retry(
+        self,
+        model: str,
+        invoke: Callable,
+        on_delta: Callable | None,
+        config: dict,
+        config_keys: tuple,
+        error_tokens: tuple,
+    ) -> dict:
+        """Run ``invoke``, retrying once without reasoning config on rejection.
+
+        The retry fires only when a reasoning key is present in ``config``,
+        the error message names the config, and nothing has been streamed
+        yet — a replay after delivered deltas would duplicate visible
+        output and re-run server-side tools. A confirmed rejection is
+        remembered process-wide so later rounds skip the config outright
+        instead of paying a failed request every round.
+        """
+        rejection = (self.name, model)
+        if rejection in _REJECTED_REASONING_MODELS:
+            for key in config_keys:
+                config.pop(key, None)
+        delivered = False
+
+        def guarded(kind, data):
+            nonlocal delivered
+            delivered = True
+            return on_delta(kind, data)
+
+        try:
+            return invoke(guarded if callable(on_delta) else on_delta)
+        except UserError as exc:
+            message = str(exc).lower()
+            if (
+                delivered
+                or not any(key in config for key in config_keys)
+                or not any(token in message for token in error_tokens)
+            ):
+                raise
+            for key in config_keys:
+                config.pop(key, None)
+            result = invoke(on_delta)
+            _REJECTED_REASONING_MODELS.add(rejection)
+            _logger.warning(
+                'Model %s (%s) rejected its reasoning configuration; sending '
+                'without it from now on. Update the model catalog entry.',
+                model,
+                self.name,
+            )
+            return result
 
     # ----------------------------------------------------------
     # Caching

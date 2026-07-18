@@ -1655,6 +1655,7 @@ class AISession(models.Model):
                 on_delta=lambda kind, data: self._on_stream_delta(
                     kind, data, buffer_state
                 ),
+                reasoning_effort=agent.reasoning_effort if agent else None,
                 enable_web_search=bool(agent and agent.enable_web_search),
                 enable_image_generation=bool(agent and agent.enable_image_generation),
                 enable_code_interpreter=bool(agent and agent.enable_code_interpreter),

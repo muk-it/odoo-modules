@@ -43,9 +43,86 @@ class TestAiAnthropicProvider(AITestCommon):
             'usage': {'input_tokens': 3, 'output_tokens': 2},
         }
 
+    def _capture_request_body(
+        self, model: str, reasoning_effort: str | None = None
+    ) -> dict:
+        """Run a minimal request against ``model`` and return the wire body."""
+        captured = {}
+
+        def fake_post(url, **kwargs):
+            captured['body'] = kwargs.get('json')
+            return self._mock_http_response(self._anthropic_body('ok'))
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            self.provider._request_responses(
+                inputs=[
+                    {'role': 'user', 'content': [{'type': 'input_text', 'text': 'hi'}]}
+                ],
+                model=model,
+                reasoning_effort=reasoning_effort,
+            )
+        return captured['body']
+
     # ----------------------------------------------------------
     # Tests
     # ----------------------------------------------------------
+
+    def test_adaptive_thinking_uses_reasoning_effort(self):
+        body = self._capture_request_body('claude-opus-4-8', 'low')
+        self.assertEqual(body['thinking'], {'type': 'adaptive'})
+        self.assertEqual(body['output_config'], {'effort': 'low'})
+
+    def test_adaptive_thinking_defaults_to_medium(self):
+        body = self._capture_request_body('claude-opus-4-8')
+        self.assertEqual(body['output_config'], {'effort': 'medium'})
+
+    def test_legacy_thinking_low_effort_disables_thinking(self):
+        body = self._capture_request_body('claude-sonnet-4-6', 'low')
+        self.assertNotIn('thinking', body)
+
+    def test_legacy_thinking_budget_scales_with_effort(self):
+        default = self._capture_request_body('claude-sonnet-4-6')
+        self.assertEqual(default['thinking']['budget_tokens'], 1024)
+        high = self._capture_request_body('claude-sonnet-4-6', 'high')
+        self.assertEqual(high['thinking']['budget_tokens'], 4096)
+        maximum = self._capture_request_body('claude-sonnet-4-6', 'max')
+        self.assertEqual(maximum['thinking']['budget_tokens'], 16384)
+
+    def test_adaptive_thinking_maps_minimal_to_low(self):
+        body = self._capture_request_body('claude-opus-4-8', 'minimal')
+        self.assertEqual(body['output_config'], {'effort': 'low'})
+
+    def test_adaptive_thinking_passes_xhigh_natively(self):
+        body = self._capture_request_body('claude-opus-4-8', 'xhigh')
+        self.assertEqual(body['output_config'], {'effort': 'xhigh'})
+
+    def test_effort_error_retries_once_without_thinking(self):
+        bodies = []
+
+        def fake_post(url, **kwargs):
+            bodies.append(dict(kwargs.get('json')))
+            if len(bodies) == 1:
+                response = self._mock_http_response({}, status_code=400)
+                response.text = "Unexpected value for 'output_config.effort'."
+                response.raise_for_status.side_effect = requests.HTTPError(
+                    'bad request', response=response
+                )
+                return response
+            return self._mock_http_response(self._anthropic_body('ok'))
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            result = self.provider._request_responses(
+                inputs=[
+                    {'role': 'user', 'content': [{'type': 'input_text', 'text': 'hi'}]}
+                ],
+                model='claude-opus-4-8',
+                reasoning_effort='low',
+            )
+        self.assertEqual(len(bodies), 2)
+        self.assertIn('thinking', bodies[0])
+        self.assertNotIn('thinking', bodies[1])
+        self.assertNotIn('output_config', bodies[1])
+        self.assertEqual(result['text'], 'ok')
 
     def test_inputs_to_anthropic_splits_system_and_merges_runs(self):
         system, messages, _anchor = AnthropicProvider._inputs_to_messages(

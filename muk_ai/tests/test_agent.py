@@ -29,6 +29,24 @@ class TestAiAgent(AITestCommon):
     # Tests
     # ----------------------------------------------------------
 
+    def test_agent_reasoning_effort_follows_model_support(self):
+        capable = self._create_model(
+            'gpt-5-agent-effort-test', reasoning_efforts=['low', 'high']
+        )
+        plain = self._create_model('gpt-agent-plain-test')
+        agent = self.env['muk_ai.agent'].create(
+            {
+                'name': 'Effort Agent',
+                'model_id': capable.id,
+                'reasoning_effort': 'high',
+            }
+        )
+        self.assertEqual(agent.reasoning_effort_options, ['low', 'high'])
+        self.assertEqual(agent.reasoning_effort, 'high')
+        agent.model_id = plain.id
+        self.assertFalse(agent.reasoning_effort_options)
+        self.assertFalse(agent.reasoning_effort)
+
     def test_apply_tool_filter_empty_allows_all(self):
         agent = self.env['muk_ai.agent'].create(
             {

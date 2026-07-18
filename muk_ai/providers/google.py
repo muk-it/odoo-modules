@@ -2,13 +2,23 @@ from __future__ import annotations
 
 import json
 import uuid
+from collections.abc import Callable
 
-from .base import ProviderBase
+from odoo.addons.muk_ai.providers.base import ProviderBase
 from odoo.addons.muk_mcp.tools.schema import to_strict_schema
 
 GROUNDING_TOOL_KEY = 'googleSearch'
 CODE_EXECUTION_TOOL_KEY = 'codeExecution'
 IMAGE_OUTPUT_MODEL = 'gemini-2.5-flash-image'
+
+THINKING_LEVELS = {
+    'minimal': 'low',
+    'low': 'low',
+    'medium': 'medium',
+    'high': 'high',
+    'xhigh': 'high',
+    'max': 'high',
+}
 
 
 class GoogleProvider(ProviderBase):
@@ -61,6 +71,9 @@ class GoogleProvider(ProviderBase):
         if text_schema:
             gen_cfg['responseMimeType'] = 'application/json'
             gen_cfg['responseSchema'] = text_schema['schema']
+        effort = (extra or {}).get('reasoning_effort')
+        if level := THINKING_LEVELS.get(effort):
+            gen_cfg['thinkingConfig'] = {'thinkingLevel': level}
         if gen_cfg:
             body['generationConfig'] = gen_cfg
         tools = self._tools_to_google(tools_schema)
@@ -70,6 +83,17 @@ class GoogleProvider(ProviderBase):
             tools.append({CODE_EXECUTION_TOOL_KEY: {}})
         if tools:
             body['tools'] = tools
+        return self._invoke_with_reasoning_retry(
+            model,
+            lambda callback: self._invoke(model, body, callback),
+            on_delta,
+            body.get('generationConfig') or {},
+            ('thinkingConfig',),
+            ('thinking',),
+        )
+
+    def _invoke(self, model: str, body: dict, on_delta: Callable | None) -> dict:
+        """Dispatch the request to the streaming or non-streaming path."""
         if callable(on_delta):
             path = f'/models/{model}:streamGenerateContent?alt=sse'
             return self._stream(path, body, on_delta)

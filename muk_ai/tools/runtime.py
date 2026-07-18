@@ -7,6 +7,19 @@ from __future__ import annotations
 DEFAULT_CONTEXT_WINDOW = 128000
 
 # ----------------------------------------------------------
+# Reasoning Effort
+# ----------------------------------------------------------
+
+REASONING_EFFORT_SELECTION = [
+    ('minimal', 'Minimal'),
+    ('low', 'Low'),
+    ('medium', 'Medium'),
+    ('high', 'High'),
+    ('xhigh', 'Extra High'),
+    ('max', 'Maximum'),
+]
+
+# ----------------------------------------------------------
 # Turn Budgets
 # ----------------------------------------------------------
 

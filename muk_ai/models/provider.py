@@ -154,11 +154,45 @@ class AIProvider(models.Model):
             or REGISTRY[self.name].default_model
         )
 
-    def _build_request_extra(self, cache_key: str | None = None) -> dict:
+    def _effective_reasoning_effort(
+        self,
+        technical_name: str,
+        effort: str | None,
+    ) -> str | None:
+        """Resolve the effort tier for the model, honoring its supported set.
+
+        An uncatalogued model passes the requested tier through unchanged; a
+        catalogued model without supported tiers has no effort knob at all
+        and resolves to ``None``.
+        """
+        record = self.env['muk_ai.model'].search(
+            [
+                ('provider_id', '=', self.id),
+                ('technical_name', '=', technical_name),
+            ],
+            limit=1,
+        )
+        if not record:
+            return effort or None
+        supported = record.reasoning_efforts or []
+        if not supported:
+            return None
+        effort = effort or record.reasoning_effort_default
+        if not effort:
+            return None
+        return ProviderBase._nearest_effort(effort, supported)
+
+    def _build_request_extra(
+        self,
+        cache_key: str | None = None,
+        reasoning_effort: str | None = None,
+    ) -> dict:
         """Return provider-agnostic request metadata.
 
         :param cache_key: stable identifier a provider may use to route
             prompt-cache lookups (e.g. OpenAI ``prompt_cache_key``).
+        :param reasoning_effort: thinking tier (``low``/``medium``/``high``)
+            applied by providers on reasoning-capable models.
         """
         extra = {
             'metadata': {
@@ -167,6 +201,8 @@ class AIProvider(models.Model):
         }
         if cache_key:
             extra['cache_key'] = cache_key
+        if reasoning_effort:
+            extra['reasoning_effort'] = reasoning_effort
         return extra
 
     def _materialize_block(self, block: dict) -> dict:
@@ -205,18 +241,26 @@ class AIProvider(models.Model):
         enable_image_generation: bool = False,
         enable_code_interpreter: bool = False,
         cache_key: str | None = None,
+        reasoning_effort: str | None = None,
     ) -> dict:
         """Send a streaming responses request through the provider client."""
+        technical_name = self._resolve_model_name(model)
         return self._get_client().request(
             inputs=self._materialize_inputs(inputs),
             tools_schema=tools_schema,
             text_schema=text_schema,
             on_delta=on_delta,
-            model=self._resolve_model_name(model),
+            model=technical_name,
             enable_web_search=enable_web_search,
             enable_image_generation=enable_image_generation,
             enable_code_interpreter=enable_code_interpreter,
-            extra=self._build_request_extra(cache_key=cache_key),
+            extra=self._build_request_extra(
+                cache_key=cache_key,
+                reasoning_effort=self._effective_reasoning_effort(
+                    technical_name,
+                    reasoning_effort,
+                ),
+            ),
         )
 
     # ----------------------------------------------------------

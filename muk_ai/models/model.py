@@ -3,6 +3,8 @@ from __future__ import annotations
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
 
+from odoo.addons.muk_ai.tools import REASONING_EFFORT_SELECTION
+
 
 class AIModel(models.Model):
     """LLM model catalogue entry with context window and pricing."""
@@ -47,6 +49,25 @@ class AIModel(models.Model):
         help='Maximum input tokens the provider accepts for this model.',
         readonly=True,
         required=True,
+    )
+
+    reasoning_efforts = fields.Json(
+        string='Supported Reasoning Efforts',
+        help=(
+            'List of reasoning effort tiers this model accepts, e.g. '
+            '["low", "medium", "high"]. Leave empty when the model has no '
+            'effort control — agents then hide the setting entirely.'
+        ),
+    )
+
+    reasoning_effort_default = fields.Selection(
+        selection=REASONING_EFFORT_SELECTION,
+        string='Default Reasoning Effort',
+        help=(
+            'Tier applied when an agent leaves its reasoning effort on '
+            '"Model Default". Empty sends no effort and lets the provider '
+            'pick its own default.'
+        ),
     )
 
     input_rate = fields.Float(
