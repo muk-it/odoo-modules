@@ -98,7 +98,7 @@ class TestAiMistralProvider(MistralTestCommon):
             captured['headers'] = kwargs.get('headers')
             return self._mock_http_response(self._text_response('hello'))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             result = self.provider._request_responses(
                 inputs=[
                     {
@@ -135,7 +135,7 @@ class TestAiMistralProvider(MistralTestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response(self._text_response('ok'))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(inputs=[], model='mistral-large-latest')
         self.assertEqual(captured['body']['model'], 'mistral-large-latest')
 
@@ -147,7 +147,7 @@ class TestAiMistralProvider(MistralTestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response(self._text_response('ok'))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(inputs=[])
         self.assertNotIn('completion_args', captured['body'])
 
@@ -158,7 +158,7 @@ class TestAiMistralProvider(MistralTestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response(self._text_response('ok'))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
                 inputs=[],
                 text_schema={'name': 'plan', 'schema': {'type': 'object'}},
@@ -180,7 +180,7 @@ class TestAiMistralProvider(MistralTestCommon):
                 )
             )
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             result = self.provider._request_responses(inputs=[])
         self.assertEqual(len(result['tool_calls']), 1)
         self.assertEqual(result['tool_calls'][0]['name'], 'list_modules')
@@ -202,7 +202,7 @@ class TestAiMistralProvider(MistralTestCommon):
                 )
             )
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             result = self.provider._request_responses(inputs=[])
         self.assertEqual(result['usage']['input_tokens'], 11)
         self.assertEqual(result['usage']['output_tokens'], 7)
@@ -236,7 +236,7 @@ class TestAiMistralProvider(MistralTestCommon):
                 )
             )
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             result = self.provider._request_responses(inputs=[], enable_web_search=True)
         self.assertIn({'type': 'web_search'}, captured['body']['tools'])
         self.assertIn('Spain won', result['text'])
@@ -260,7 +260,7 @@ class TestAiMistralProvider(MistralTestCommon):
                 )
             )
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             result = self.provider._request_responses(
                 inputs=[], enable_code_interpreter=True
             )
@@ -296,7 +296,7 @@ class TestAiMistralProvider(MistralTestCommon):
             captured['file_url'] = url
             return self._mock_http_response(content=b'\x89PNG')
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             with patch.object(requests, 'get', side_effect=fake_get):
                 result = self.provider._request_responses(
                     inputs=[],
@@ -330,7 +330,7 @@ class TestAiMistralProvider(MistralTestCommon):
             msg = 'boom'
             raise requests.ConnectionError(msg)
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             with patch.object(requests, 'get', side_effect=fake_get):
                 result = self.provider._request_responses(
                     inputs=[],
@@ -349,7 +349,7 @@ class TestAiMistralProvider(MistralTestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response(self._text_response('ok'))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
                 inputs=[
                     {
@@ -377,7 +377,7 @@ class TestAiMistralProvider(MistralTestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response(self._text_response('ok'))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
                 inputs=[
                     {
@@ -421,7 +421,7 @@ class TestAiMistralProvider(MistralTestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response(self._text_response('ok'))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
                 inputs=[
                     {
@@ -478,7 +478,7 @@ class TestAiMistralProvider(MistralTestCommon):
 
         deltas = []
 
-        with patch.object(requests, 'post', return_value=response):
+        with patch.object(requests.Session, 'post', return_value=response):
             result = self.provider._request_responses(
                 inputs=[],
                 on_delta=lambda k, p: deltas.append((k, p)),
@@ -511,7 +511,7 @@ class TestAiMistralProvider(MistralTestCommon):
             return self._mock_http_response(self._text_response('fallback answer'))
 
         deltas = []
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             result = self.provider._request_responses(
                 inputs=[],
                 on_delta=lambda k, p: deltas.append((k, p)),
@@ -531,7 +531,7 @@ class TestAiMistralProvider(MistralTestCommon):
             return self._mock_http_response(self._text_response('web answer'))
 
         deltas = []
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             result = self.provider._request_responses(
                 inputs=[],
                 enable_web_search=True,
@@ -559,7 +559,7 @@ class TestAiMistralProvider(MistralTestCommon):
                 return resp
             return self._mock_http_response(self._text_response('ok'))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             result = self.provider._request_responses(inputs=[], enable_web_search=True)
         self.assertEqual(result['text'], 'ok')
         self.assertEqual(seq, [])
@@ -580,7 +580,7 @@ class TestAiMistralProvider(MistralTestCommon):
         response.iter_lines.return_value = iter(sse)
         response.raise_for_status.return_value = None
 
-        with patch.object(requests, 'post', return_value=response):
+        with patch.object(requests.Session, 'post', return_value=response):
             result = self.provider._request_responses(
                 inputs=[],
                 on_delta=lambda k, p: None,
@@ -597,7 +597,7 @@ class TestAiMistralProvider(MistralTestCommon):
         def fake_post(url, **kwargs):
             return self._mock_http_response(self._text_response('ok'))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.assertTrue(self.provider._get_client().test_connection())
 
     def test_request_raises_on_http_error(self):
@@ -606,7 +606,7 @@ class TestAiMistralProvider(MistralTestCommon):
         response.raise_for_status.side_effect = requests.HTTPError(
             '400', response=response
         )
-        with patch.object(requests, 'post', return_value=response):
+        with patch.object(requests.Session, 'post', return_value=response):
             with self.assertRaises(UserError):
                 self.provider._request_responses(inputs=[])
 
@@ -619,7 +619,7 @@ class TestAiMistralProvider(MistralTestCommon):
         def fake_post(url, **kwargs):
             return self._mock_http_response(self._conv_response([]))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             result = self.provider._request_responses(inputs=[])
         self.assertEqual(result['text'], '')
         self.assertEqual(result['tool_calls'], [])
