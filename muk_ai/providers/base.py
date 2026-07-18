@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import functools
 import json
 import logging
 from collections.abc import Iterator
@@ -129,13 +130,46 @@ class ProviderBase:
     # HTTP
     # ----------------------------------------------------------
 
+    @staticmethod
+    @functools.lru_cache(maxsize=1)
+    def _http_session() -> requests.Session:
+        """Return the process-wide HTTP session pooling keep-alive connections.
+
+        Provider clients are rebuilt on every round, so the connection pool
+        must outlive them: one shared session reuses the TLS connection to
+        each API host across rounds — its urllib3 pool is thread-safe and
+        auth stays per-request — instead of handshaking anew every round.
+
+        The pool is built lazily on first use (inside a worker, after any
+        fork) so no socket ever crosses ``fork()``. Retries are connect-only:
+        a dead pooled socket is re-established transparently, but a request
+        that already reached the server is never replayed, so a tool-calling
+        POST cannot execute twice.
+        """
+        session = requests.Session()
+        adapter = requests.adapters.HTTPAdapter(
+            pool_maxsize=32,
+            max_retries=requests.adapters.Retry(
+                total=2,
+                connect=2,
+                read=False,
+                status=0,
+                redirect=False,
+                other=0,
+                allowed_methods=None,
+            ),
+        )
+        session.mount('https://', adapter)
+        session.mount('http://', adapter)
+        return session
+
     def _post_json(self, path: str, body: dict) -> dict:
         """POST a JSON body and return the decoded response.
 
         :raise UserError: on HTTP or transport errors.
         """
         try:
-            response = requests.post(
+            response = self._http_session().post(
                 f'{self.api_url}{path}',
                 headers=self.headers(),
                 json=body,
@@ -155,7 +189,7 @@ class ProviderBase:
         """
         read_timeout = self.idle_timeout
         try:
-            response = requests.post(
+            response = self._http_session().post(
                 f'{self.api_url}{path}',
                 headers=self.headers(),
                 json=body,

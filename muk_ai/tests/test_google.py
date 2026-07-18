@@ -116,7 +116,7 @@ class TestAiGoogleProvider(AITestCommon):
             captured['headers'] = kwargs.get('headers')
             return self._mock_http_response(self._google_body('hello'))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             result = self.provider._request_responses(
                 inputs=[
                     {
@@ -159,7 +159,7 @@ class TestAiGoogleProvider(AITestCommon):
                 )
             )
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             result = self.provider._request_responses(inputs=[])
         self.assertEqual(len(result['tool_calls']), 1)
         self.assertEqual(result['tool_calls'][0]['name'], 'list_modules')
@@ -212,7 +212,7 @@ class TestAiGoogleProvider(AITestCommon):
         def on_delta(kind, payload):
             deltas.append((kind, payload))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             result = self.provider._request_responses(inputs=[], on_delta=on_delta)
         text_deltas = [p['delta'] for (k, p) in deltas if k == 'text']
         tool_starts = [p for (k, p) in deltas if k == 'tool_start']
@@ -233,7 +233,7 @@ class TestAiGoogleProvider(AITestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response(self._google_body('ok'))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
                 inputs=[
                     {
@@ -261,7 +261,7 @@ class TestAiGoogleProvider(AITestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response(self._google_body('ok'))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
                 inputs=[
                     {
@@ -289,7 +289,7 @@ class TestAiGoogleProvider(AITestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response(self._google_body('ok'))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
                 inputs=[
                     {
@@ -319,7 +319,7 @@ class TestAiGoogleProvider(AITestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response(self._google_body('ok'))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
                 inputs=[],
                 enable_web_search=True,
@@ -334,7 +334,7 @@ class TestAiGoogleProvider(AITestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response(self._google_body('ok'))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
                 inputs=[],
                 enable_code_interpreter=True,
@@ -349,7 +349,7 @@ class TestAiGoogleProvider(AITestCommon):
             captured['url'] = url
             return self._mock_http_response(self._google_body('ok'))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
                 inputs=[],
                 enable_image_generation=True,
@@ -363,7 +363,7 @@ class TestAiGoogleProvider(AITestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response(self._google_body('ok'))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
                 inputs=[],
                 text_schema={'name': 'plan', 'schema': {'type': 'object'}},
@@ -379,7 +379,7 @@ class TestAiGoogleProvider(AITestCommon):
             captured['url'] = url
             return self._mock_http_response(self._google_body('ok'))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(inputs=[], model='gemini-2.5-pro')
         self.assertIn('/models/gemini-2.5-pro', captured['url'])
 
@@ -391,7 +391,7 @@ class TestAiGoogleProvider(AITestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response(self._google_body('ok'))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(inputs=[])
         self.assertNotIn('generationConfig', captured['body'])
 
@@ -399,7 +399,7 @@ class TestAiGoogleProvider(AITestCommon):
         def fake_post(url, **kwargs):
             return self._mock_http_response(self._google_body('ok'))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.assertTrue(self.provider._get_client().test_connection())
 
     def test_request_raises_on_http_error(self):
@@ -408,7 +408,7 @@ class TestAiGoogleProvider(AITestCommon):
         response.raise_for_status.side_effect = requests.HTTPError(
             '400', response=response
         )
-        with patch.object(requests, 'post', return_value=response):
+        with patch.object(requests.Session, 'post', return_value=response):
             with self.assertRaises(UserError):
                 self.provider._request_responses(inputs=[])
 
@@ -432,7 +432,7 @@ class TestAiGoogleProvider(AITestCommon):
             'usageMetadata': {},
         }
         with patch.object(
-            requests, 'post', return_value=self._mock_http_response(body)
+            requests.Session, 'post', return_value=self._mock_http_response(body)
         ):
             result = self.provider._request_responses(inputs=[])
         self.assertIn('data:image/png;base64,AAA=', result['text'])
@@ -463,7 +463,7 @@ class TestAiGoogleProvider(AITestCommon):
             'usageMetadata': {},
         }
         with patch.object(
-            requests, 'post', return_value=self._mock_http_response(body)
+            requests.Session, 'post', return_value=self._mock_http_response(body)
         ):
             result = self.provider._request_responses(inputs=[])
         self.assertIn('```python', result['text'])

@@ -51,7 +51,7 @@ class TestAiOpenAIProvider(AITestCommon):
                 }
             )
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             result = self.provider._request_responses(
                 inputs=[
                     {'role': 'user', 'content': [{'type': 'input_text', 'text': 'hi'}]}
@@ -72,7 +72,7 @@ class TestAiOpenAIProvider(AITestCommon):
                 {'output': [], 'usage': {'input_tokens': 1, 'output_tokens': 1}}
             )
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(inputs=[], cache_key='muk_ai.session:42')
         self.assertEqual(captured['body']['prompt_cache_key'], 'muk_ai.session:42')
 
@@ -90,7 +90,7 @@ class TestAiOpenAIProvider(AITestCommon):
                 'usage': {},
             }
         )
-        with patch.object(requests, 'post', return_value=response):
+        with patch.object(requests.Session, 'post', return_value=response):
             result = self.provider._request_responses(inputs=[])
         self.assertEqual(len(result['tool_calls']), 1)
         self.assertEqual(result['tool_calls'][0]['name'], 'list_modules')
@@ -104,7 +104,7 @@ class TestAiOpenAIProvider(AITestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response({'output': [], 'usage': {}})
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
                 inputs=[],
                 tools_schema=[{'type': 'function', 'name': 'x', 'parameters': {}}],
@@ -119,7 +119,7 @@ class TestAiOpenAIProvider(AITestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response({'output': [], 'usage': {}})
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
                 inputs=[],
                 text_schema={'name': 'plan', 'schema': {'type': 'object'}},
@@ -132,7 +132,7 @@ class TestAiOpenAIProvider(AITestCommon):
         response.raise_for_status.side_effect = requests.HTTPError(
             'boom', response=response
         )
-        with patch.object(requests, 'post', return_value=response):
+        with patch.object(requests.Session, 'post', return_value=response):
             with self.assertRaises(UserError):
                 self.provider._request_responses(inputs=[])
 
@@ -154,12 +154,12 @@ class TestAiOpenAIProvider(AITestCommon):
                 'usage': {},
             }
         )
-        with patch.object(requests, 'post', return_value=response):
+        with patch.object(requests.Session, 'post', return_value=response):
             self.assertTrue(self.provider._get_client().test_connection())
 
     def test_test_connection_raises_on_empty_text(self):
         response = self._mock_http_response({'output': [], 'usage': {}})
-        with patch.object(requests, 'post', return_value=response):
+        with patch.object(requests.Session, 'post', return_value=response):
             with self.assertRaises(UserError):
                 self.provider._get_client().test_connection()
 
@@ -171,7 +171,7 @@ class TestAiOpenAIProvider(AITestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response({'output': [], 'usage': {}})
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(inputs=[])
         self.assertEqual(captured['body']['max_output_tokens'], 2048)
 
@@ -183,7 +183,7 @@ class TestAiOpenAIProvider(AITestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response({'output': [], 'usage': {}})
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(inputs=[])
         self.assertNotIn('max_output_tokens', captured['body'])
 
@@ -194,7 +194,7 @@ class TestAiOpenAIProvider(AITestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response({'output': [], 'usage': {}})
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(inputs=[], model='gpt-4o')
         self.assertEqual(captured['body']['model'], 'gpt-4o')
 
@@ -205,7 +205,7 @@ class TestAiOpenAIProvider(AITestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response({'output': [], 'usage': {}})
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
                 inputs=[],
                 enable_web_search=True,
@@ -220,7 +220,7 @@ class TestAiOpenAIProvider(AITestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response({'output': [], 'usage': {}})
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
                 inputs=[],
                 enable_image_generation=True,
@@ -235,7 +235,7 @@ class TestAiOpenAIProvider(AITestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response({'output': [], 'usage': {}})
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
                 inputs=[],
                 enable_code_interpreter=True,
@@ -252,7 +252,7 @@ class TestAiOpenAIProvider(AITestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response({'output': [], 'usage': {}})
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(inputs=[])
         self.assertNotIn('tools', captured['body'])
 
@@ -277,7 +277,7 @@ class TestAiOpenAIProvider(AITestCommon):
             return response
 
         deltas = []
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             result = self.provider._request_responses(
                 inputs=[],
                 on_delta=lambda k, p: deltas.append((k, p)),
@@ -335,7 +335,7 @@ class TestAiOpenAIProvider(AITestCommon):
             ]
         )
         deltas = []
-        with patch.object(requests, 'post', return_value=response):
+        with patch.object(requests.Session, 'post', return_value=response):
             result = self.provider._request_responses(
                 inputs=[],
                 on_delta=lambda k, p: deltas.append((k, p)),
@@ -378,7 +378,7 @@ class TestAiOpenAIProvider(AITestCommon):
             ]
         )
         deltas = []
-        with patch.object(requests, 'post', return_value=response):
+        with patch.object(requests.Session, 'post', return_value=response):
             result = self.provider._request_responses(
                 inputs=[],
                 enable_image_generation=True,
@@ -412,7 +412,7 @@ class TestAiOpenAIProvider(AITestCommon):
                 },
             ]
         )
-        with patch.object(requests, 'post', return_value=response):
+        with patch.object(requests.Session, 'post', return_value=response):
             result = self.provider._request_responses(
                 inputs=[], on_delta=lambda k, p: None
             )
@@ -438,7 +438,7 @@ class TestAiOpenAIProvider(AITestCommon):
                 },
             ]
         )
-        with patch.object(requests, 'post', return_value=response):
+        with patch.object(requests.Session, 'post', return_value=response):
             result = self.provider._request_responses(
                 inputs=[],
                 on_delta=lambda k, p: None,
@@ -463,7 +463,7 @@ class TestAiOpenAIProvider(AITestCommon):
                 },
             ]
         )
-        with patch.object(requests, 'post', return_value=response):
+        with patch.object(requests.Session, 'post', return_value=response):
             result = self.provider._request_responses(
                 inputs=[],
                 on_delta=lambda k, p: None,
@@ -489,7 +489,7 @@ class TestAiOpenAIProvider(AITestCommon):
                 },
             ]
         )
-        with patch.object(requests, 'post', return_value=response):
+        with patch.object(requests.Session, 'post', return_value=response):
             result = self.provider._request_responses(
                 inputs=[],
                 on_delta=lambda k, p: None,
@@ -502,7 +502,7 @@ class TestAiOpenAIProvider(AITestCommon):
                 {'type': 'response.error', 'error': {'message': 'bad stream'}},
             ]
         )
-        with patch.object(requests, 'post', return_value=response):
+        with patch.object(requests.Session, 'post', return_value=response):
             with self.assertRaises(UserError):
                 self.provider._request_responses(
                     inputs=[],
@@ -520,7 +520,7 @@ class TestAiOpenAIProvider(AITestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response({'output': [], 'usage': {}})
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
                 inputs=[
                     {
@@ -548,7 +548,7 @@ class TestAiOpenAIProvider(AITestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response({'output': [], 'usage': {}})
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
                 inputs=[
                     {
@@ -577,7 +577,7 @@ class TestAiOpenAIProvider(AITestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response({'output': [], 'usage': {}})
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
                 inputs=[
                     {
@@ -606,7 +606,7 @@ class TestAiOpenAIProvider(AITestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response({'output': [], 'usage': {}})
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
                 inputs=[
                     {
@@ -632,7 +632,7 @@ class TestAiOpenAIProvider(AITestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response({'output': [], 'usage': {}})
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
                 inputs=[
                     {'role': 'user', 'content': 'plain string'},
@@ -657,7 +657,7 @@ class TestAiOpenAIProvider(AITestCommon):
                 'usage': {},
             }
         )
-        with patch.object(requests, 'post', return_value=response):
+        with patch.object(requests.Session, 'post', return_value=response):
             result = self.provider._request_responses(inputs=[])
         self.assertIn('data:image/png;base64,BASE64IMG', result['text'])
 
@@ -674,7 +674,7 @@ class TestAiOpenAIProvider(AITestCommon):
                 'usage': {},
             }
         )
-        with patch.object(requests, 'post', return_value=response):
+        with patch.object(requests.Session, 'post', return_value=response):
             result = self.provider._request_responses(inputs=[])
         self.assertEqual(result['text'], '')
 
@@ -691,7 +691,7 @@ class TestAiOpenAIProvider(AITestCommon):
                 'usage': {},
             }
         )
-        with patch.object(requests, 'post', return_value=response):
+        with patch.object(requests.Session, 'post', return_value=response):
             result = self.provider._request_responses(inputs=[])
         self.assertIn('```python', result['text'])
         self.assertIn('print("hi")', result['text'])
@@ -704,6 +704,6 @@ class TestAiOpenAIProvider(AITestCommon):
                 'usage': {},
             }
         )
-        with patch.object(requests, 'post', return_value=response):
+        with patch.object(requests.Session, 'post', return_value=response):
             result = self.provider._request_responses(inputs=[])
         self.assertEqual(result['text'], 'stray piece')

@@ -83,7 +83,7 @@ class TestAiAnthropicProvider(AITestCommon):
             captured['headers'] = kwargs.get('headers')
             return self._mock_http_response(self._anthropic_body('hello'))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             result = self.provider._request_responses(
                 inputs=[
                     {
@@ -131,7 +131,7 @@ class TestAiAnthropicProvider(AITestCommon):
                 )
             )
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             result = self.provider._request_responses(inputs=[])
         self.assertEqual(len(result['tool_calls']), 1)
         self.assertEqual(result['tool_calls'][0]['name'], 'list_modules')
@@ -175,7 +175,7 @@ class TestAiAnthropicProvider(AITestCommon):
         def on_delta(kind, payload):
             deltas.append((kind, payload))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             result = self.provider._request_responses(inputs=[], on_delta=on_delta)
         text_deltas = [p['delta'] for (k, p) in deltas if k == 'text']
         tool_starts = [p for (k, p) in deltas if k == 'tool_start']
@@ -197,7 +197,7 @@ class TestAiAnthropicProvider(AITestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response(self._anthropic_body('ok'))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
                 inputs=[],
                 enable_web_search=True,
@@ -213,7 +213,7 @@ class TestAiAnthropicProvider(AITestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response(self._anthropic_body('ok'))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
                 inputs=[],
                 enable_code_interpreter=True,
@@ -229,7 +229,7 @@ class TestAiAnthropicProvider(AITestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response(self._anthropic_body('ok'))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
                 inputs=[],
                 enable_image_generation=True,
@@ -248,7 +248,7 @@ class TestAiAnthropicProvider(AITestCommon):
         def fake_post(url, **kwargs):
             return self._mock_http_response(body)
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             result = self.provider._request_responses(inputs=[])
         usage = result['usage']
         self.assertEqual(usage['input_tokens'], 450)
@@ -281,7 +281,7 @@ class TestAiAnthropicProvider(AITestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response(self._anthropic_body('ok'))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
                 inputs=[
                     {'role': 'user', 'content': [{'type': 'input_text', 'text': 'q'}]},
@@ -303,7 +303,7 @@ class TestAiAnthropicProvider(AITestCommon):
             captured['body'] = kwargs.get('json')
             return self._mock_http_response(self._anthropic_body('ok'))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
                 inputs=[
                     {
@@ -319,5 +319,5 @@ class TestAiAnthropicProvider(AITestCommon):
         def fake_post(url, **kwargs):
             return self._mock_http_response(self._anthropic_body('ok'))
 
-        with patch.object(requests, 'post', side_effect=fake_post):
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.assertTrue(self.provider._get_client().test_connection())
