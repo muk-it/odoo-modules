@@ -14,6 +14,7 @@ class MCPSession(models.Model):
     _name = 'muk_mcp.session'
     _description = 'MCP Session'
     _order = 'create_date desc'
+    _allow_sudo_commands = False
 
     # ----------------------------------------------------------
     # Fields

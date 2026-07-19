@@ -1,5 +1,7 @@
 import secrets
 
+from odoo import Command
+from odoo.exceptions import AccessError
 from odoo.tests import common, tagged
 from odoo.tests.common import new_test_user
 
@@ -72,3 +74,20 @@ class TestMcpKey(common.TransactionCase):
         self.assertTrue(self.key_model.authenticate(raw_token))
         user.with_user(self.env.ref('base.user_admin')).write({'active': False})
         self.assertFalse(self.key_model.authenticate(raw_token))
+
+    def test_self_write_cannot_hijack_foreign_key(self):
+        attacker = new_test_user(
+            self.env,
+            login='mcp_attacker',
+            groups='base.group_user',
+        )
+        self.uid = attacker.id
+        with self.assertRaises(AccessError):
+            self.env.user.write(
+                {
+                    'mcp_key_ids': [
+                        Command.update(self.key.id, {'user_id': self.env.uid}),
+                    ],
+                },
+            )
+        self.assertEqual(self.key.sudo().user_id, self.key_user)

@@ -18,6 +18,7 @@ class MCPKey(models.Model):
 
     _name = 'muk_mcp.key'
     _description = 'MCP API Key'
+    _allow_sudo_commands = False
     _auto = False
 
     # ----------------------------------------------------------
