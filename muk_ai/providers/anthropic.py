@@ -9,7 +9,7 @@ ANTHROPIC_VERSION = '2023-06-01'
 WEB_SEARCH_TOOL_TYPE = 'web_search_20250305'
 CODE_EXECUTION_TOOL_TYPE = 'code_execution_20250825'
 
-THINKING_MODEL_TOKENS = ('opus-4', 'sonnet-4', '3-7-sonnet')
+THINKING_MODEL_TOKENS = ('fable-5', 'opus-4', 'sonnet-5', 'sonnet-4', '3-7-sonnet')
 LEGACY_THINKING_MODEL_TOKENS = (
     'opus-4-0',
     'opus-4-1',
@@ -41,6 +41,8 @@ class AnthropicProvider(ProviderBase):
     supports_web_search = True
     supports_image_generation = False
     supports_code_interpreter = True
+
+    reasoning_error_tokens = ('thinking', 'effort', 'output_config')
 
     # ----------------------------------------------------------
     # Contract
@@ -77,8 +79,9 @@ class AnthropicProvider(ProviderBase):
             'max_tokens': max_tokens,
         }
         effort = (extra or {}).get('reasoning_effort')
+        adaptive = self._uses_adaptive_thinking(model)
         if self._supports_thinking(model):
-            if self._uses_adaptive_thinking(model):
+            if adaptive:
                 body['thinking'] = {'type': 'adaptive'}
                 if effort:
                     body['output_config'] = {
@@ -123,9 +126,7 @@ class AnthropicProvider(ProviderBase):
             model,
             lambda callback: self._invoke(body, callback),
             on_delta,
-            body,
-            ('thinking', 'output_config'),
-            ('thinking', 'effort', 'output_config'),
+            ((body, ('output_config',) if adaptive else ('thinking',)),),
         )
 
     # ----------------------------------------------------------

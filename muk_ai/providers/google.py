@@ -33,6 +33,8 @@ class GoogleProvider(ProviderBase):
     supports_image_generation = True
     supports_code_interpreter = True
 
+    reasoning_error_tokens = ('thinking',)
+
     # ----------------------------------------------------------
     # Contract
     # ----------------------------------------------------------
@@ -87,9 +89,7 @@ class GoogleProvider(ProviderBase):
             model,
             lambda callback: self._invoke(model, body, callback),
             on_delta,
-            body.get('generationConfig') or {},
-            ('thinkingConfig',),
-            ('thinking',),
+            ((body.get('generationConfig') or {}, ('thinkingConfig',)),),
         )
 
     def _invoke(self, model: str, body: dict, on_delta: Callable | None) -> dict:

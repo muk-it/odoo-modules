@@ -7,7 +7,10 @@ from odoo.exceptions import UserError
 
 from odoo.addons.muk_ai.providers import REGISTRY
 from odoo.addons.muk_ai.providers.base import ProviderBase
-from odoo.addons.muk_ai.tools import is_unmaterialized_attachment
+from odoo.addons.muk_ai.tools import (
+    is_unmaterialized_attachment,
+    nearest_reasoning_effort,
+)
 
 
 class AIProvider(models.Model):
@@ -138,13 +141,7 @@ class AIProvider(models.Model):
                     provider=self.name,
                 )
             )
-        return impl_cls(
-            env=self.env,
-            api_key=self.sudo().api_key or '',
-            request_timeout=self.request_timeout,
-            idle_timeout=self.idle_timeout,
-            max_tokens=self.max_tokens,
-        )
+        return impl_cls(provider=self)
 
     def _resolve_model_name(self, override: str | None = None) -> str:
         """Return the technical model name, honoring an explicit override."""
@@ -180,7 +177,7 @@ class AIProvider(models.Model):
         effort = effort or record.reasoning_effort_default
         if not effort:
             return None
-        return ProviderBase._nearest_effort(effort, supported)
+        return nearest_reasoning_effort(effort, supported)
 
     def _build_request_extra(
         self,

@@ -28,6 +28,7 @@ from .runtime import (
     MAX_ITERATIONS,
     MAX_TOOL_CALLS_PER_ROUND,
     MAX_WALLCLOCK_SECONDS,
+    REASONING_EFFORT_ORDER,
     REASONING_EFFORT_SELECTION,
     TURN_WALLCLOCK_SECONDS,
     WALLCLOCK_MIN_SECONDS,
@@ -36,6 +37,7 @@ from .runtime import (
     WORKER_STALE_THRESHOLD,
     StreamCancelled,
     coerce_ids,
+    nearest_reasoning_effort,
     sanitize_json_schema,
 )
 from .attachment import (

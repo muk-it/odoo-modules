@@ -19,6 +19,8 @@ class OpenAIProvider(ProviderBase):
     supports_image_generation = True
     supports_code_interpreter = True
 
+    reasoning_error_tokens = ('reasoning', 'effort')
+
     # ----------------------------------------------------------
     # Contract
     # ----------------------------------------------------------
@@ -57,7 +59,7 @@ class OpenAIProvider(ProviderBase):
         if effort or self._supports_reasoning(model):
             body['reasoning'] = {'summary': 'detailed'}
             if effort:
-                body['reasoning']['effort'] = 'xhigh' if effort == 'max' else effort
+                body['reasoning']['effort'] = effort
             body['include'] = ['reasoning.encrypted_content']
         if text_schema:
             body['text'] = {
@@ -87,9 +89,10 @@ class OpenAIProvider(ProviderBase):
             model,
             lambda callback: self._invoke(body, callback),
             on_delta,
-            body,
-            ('reasoning', 'include'),
-            ('reasoning', 'effort'),
+            (
+                (body.get('reasoning', {}), ('effort',)),
+                (body, ('reasoning', 'include')),
+            ),
         )
 
     # ----------------------------------------------------------

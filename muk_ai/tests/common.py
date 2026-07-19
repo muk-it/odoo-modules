@@ -6,8 +6,6 @@ from unittest.mock import MagicMock, patch
 from odoo import models
 from odoo.tests.common import TransactionCase, tagged
 
-from odoo.addons.muk_ai.providers.base import _REJECTED_REASONING_MODELS
-
 
 @tagged('post_install', '-at_install')
 class AITestCommon(TransactionCase):
@@ -27,10 +25,6 @@ class AITestCommon(TransactionCase):
         cls.provider_google = cls.env.ref('muk_ai.provider_google')
         cls.provider_google.sudo().api_key = 'test-key'
         cls.env.company.default_ai_provider_id = cls.provider
-
-    def setUp(self):
-        super().setUp()
-        _REJECTED_REASONING_MODELS.clear()
 
     # ----------------------------------------------------------
     # Helper

@@ -1,6 +1,9 @@
+import copy
 from unittest.mock import MagicMock, patch
 
 import requests
+
+from odoo.exceptions import UserError
 
 from odoo.addons.muk_ai.providers.anthropic import AnthropicProvider
 from odoo.addons.muk_ai.tests.common import AITestCommon
@@ -96,11 +99,18 @@ class TestAiAnthropicProvider(AITestCommon):
         body = self._capture_request_body('claude-opus-4-8', 'xhigh')
         self.assertEqual(body['output_config'], {'effort': 'xhigh'})
 
-    def test_effort_error_retries_once_without_thinking(self):
+    def test_fable_and_sonnet_5_use_adaptive_thinking(self):
+        for model in ('claude-fable-5', 'claude-sonnet-5'):
+            body = self._capture_request_body(model, 'low')
+            self.assertEqual(body['thinking'], {'type': 'adaptive'})
+            self.assertEqual(body['output_config'], {'effort': 'low'})
+
+    def test_rejected_effort_keeps_thinking(self):
+        record = self.env.ref('muk_ai.model_claude_opus_4_8')
         bodies = []
 
         def fake_post(url, **kwargs):
-            bodies.append(dict(kwargs.get('json')))
+            bodies.append(copy.deepcopy(kwargs.get('json')))
             if len(bodies) == 1:
                 response = self._mock_http_response({}, status_code=400)
                 response.text = "Unexpected value for 'output_config.effort'."
@@ -119,10 +129,41 @@ class TestAiAnthropicProvider(AITestCommon):
                 reasoning_effort='low',
             )
         self.assertEqual(len(bodies), 2)
-        self.assertIn('thinking', bodies[0])
-        self.assertNotIn('thinking', bodies[1])
+        self.assertEqual(bodies[0]['output_config'], {'effort': 'low'})
+        self.assertIn('thinking', bodies[1])
         self.assertNotIn('output_config', bodies[1])
         self.assertEqual(result['text'], 'ok')
+        self.assertIn('low', record.reasoning_efforts)
+
+    def test_unresolved_rejection_raises_and_learns_nothing(self):
+        record = self.env.ref('muk_ai.model_claude_opus_4_8')
+        bodies = []
+
+        def fake_post(url, **kwargs):
+            bodies.append(copy.deepcopy(kwargs.get('json')))
+            response = self._mock_http_response({}, status_code=400)
+            response.text = 'This model does not support thinking.'
+            response.raise_for_status.side_effect = requests.HTTPError(
+                'bad request', response=response
+            )
+            return response
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            with self.assertRaises(UserError):
+                self.provider._request_responses(
+                    inputs=[
+                        {
+                            'role': 'user',
+                            'content': [{'type': 'input_text', 'text': 'hi'}],
+                        }
+                    ],
+                    model='claude-opus-4-8',
+                    reasoning_effort='low',
+                )
+        self.assertEqual(len(bodies), 2)
+        self.assertIn('thinking', bodies[1])
+        self.assertNotIn('output_config', bodies[1])
+        self.assertIn('low', record.reasoning_efforts)
 
     def test_inputs_to_anthropic_splits_system_and_merges_runs(self):
         system, messages, _anchor = AnthropicProvider._inputs_to_messages(

@@ -19,9 +19,28 @@ REASONING_EFFORT_SELECTION = [
     ('max', 'Maximum'),
 ]
 
+REASONING_EFFORT_ORDER = tuple(key for key, _label in REASONING_EFFORT_SELECTION)
+
+
+def nearest_reasoning_effort(effort: str, supported: list) -> str:
+    """Return the supported tier closest to ``effort``, rounding down on ties."""
+    candidates = [tier for tier in REASONING_EFFORT_ORDER if tier in supported]
+    if not candidates or effort in candidates or effort not in REASONING_EFFORT_ORDER:
+        return effort
+    index = REASONING_EFFORT_ORDER.index(effort)
+    return min(
+        candidates,
+        key=lambda tier: (
+            abs(REASONING_EFFORT_ORDER.index(tier) - index),
+            REASONING_EFFORT_ORDER.index(tier),
+        ),
+    )
+
+
 # ----------------------------------------------------------
 # Turn Budgets
 # ----------------------------------------------------------
+
 
 MAX_ITERATIONS = 20
 MAX_TOOL_CALLS_PER_ROUND = 10

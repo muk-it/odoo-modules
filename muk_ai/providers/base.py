@@ -9,17 +9,13 @@ from collections.abc import Callable, Iterator
 import psycopg2
 import requests
 
-from odoo import _
+from odoo import _, models
 from odoo.api import Environment
 from odoo.exceptions import UserError
 
-from odoo.addons.muk_ai.tools import REASONING_EFFORT_SELECTION, StreamCancelled
+from odoo.addons.muk_ai.tools import StreamCancelled
 
 _logger = logging.getLogger(__name__)
-
-REASONING_EFFORT_ORDER = tuple(key for key, _label in REASONING_EFFORT_SELECTION)
-
-_REJECTED_REASONING_MODELS: set = set()
 
 
 class ProviderBase:
@@ -35,33 +31,34 @@ class ProviderBase:
     supports_code_interpreter = False
     supports_vision = True
 
+    reasoning_error_tokens = ()
+
     # ----------------------------------------------------------
     # Setup
     # ----------------------------------------------------------
 
-    def __init__(
-        self,
-        env: Environment,
-        api_key: str = '',
-        request_timeout: int = 60,
-        idle_timeout: int = 45,
-        max_tokens: int = 4096,
-    ) -> None:
-        """Store the environment, API key, and request/streaming timeouts."""
-        self.env = env
-        self._api_key = api_key or ''
-        self.request_timeout = request_timeout
-        self.idle_timeout = idle_timeout
-        self.max_tokens = max_tokens
+    def __init__(self, provider: models.BaseModel) -> None:
+        """Store the owning ``muk_ai.provider`` record supplying all config."""
+        self.provider = provider
 
     # ----------------------------------------------------------
     # Config
     # ----------------------------------------------------------
 
     @property
+    def env(self) -> Environment:
+        """Return the environment of the owning provider record."""
+        return self.provider.env
+
+    @property
     def api_url(self) -> str:
         """Return the base API URL for this provider."""
         return self.default_url
+
+    @property
+    def _api_key(self) -> str:
+        """Return the configured API key, empty when unset."""
+        return self.provider.sudo().api_key or ''
 
     @property
     def api_key(self) -> str:
@@ -78,9 +75,28 @@ class ProviderBase:
             )
         return self._api_key
 
+    @property
+    def request_timeout(self) -> int:
+        """Return the provider request timeout in seconds."""
+        return self.provider.request_timeout
+
+    @property
+    def idle_timeout(self) -> int:
+        """Return the streaming idle timeout in seconds."""
+        return self.provider.idle_timeout
+
+    @property
+    def max_tokens(self) -> int:
+        """Return the completion token limit per request."""
+        return self.provider.max_tokens
+
     def model_for(self, override: str | None = None) -> str:
-        """Return the override model when given, else the provider default."""
-        return override or self.default_model
+        """Return the override, the record default model, or the class default."""
+        return (
+            override
+            or self.provider.default_model_id.technical_name
+            or self.default_model
+        )
 
     # ----------------------------------------------------------
     # Contract
@@ -233,47 +249,26 @@ class ProviderBase:
     # Reasoning
     # ----------------------------------------------------------
 
-    @staticmethod
-    def _nearest_effort(effort: str, supported: list) -> str:
-        """Return the supported tier closest to ``effort``, rounding down on ties."""
-        candidates = [tier for tier in REASONING_EFFORT_ORDER if tier in supported]
-        if (
-            not candidates
-            or effort in candidates
-            or effort not in REASONING_EFFORT_ORDER
-        ):
-            return effort
-        index = REASONING_EFFORT_ORDER.index(effort)
-        return min(
-            candidates,
-            key=lambda tier: (
-                abs(REASONING_EFFORT_ORDER.index(tier) - index),
-                REASONING_EFFORT_ORDER.index(tier),
-            ),
-        )
-
     def _invoke_with_reasoning_retry(
         self,
         model: str,
         invoke: Callable,
         on_delta: Callable | None,
-        config: dict,
-        config_keys: tuple,
-        error_tokens: tuple,
+        stages: tuple,
     ) -> dict:
-        """Run ``invoke``, retrying once without reasoning config on rejection.
+        """Run ``invoke``, retrying without rejected reasoning config.
 
-        The retry fires only when a reasoning key is present in ``config``,
-        the error message names the config, and nothing has been streamed
-        yet — a replay after delivered deltas would duplicate visible
-        output and re-run server-side tools. A confirmed rejection is
-        remembered process-wide so later rounds skip the config outright
-        instead of paying a failed request every round.
+        When the provider rejects the request with a message naming the
+        reasoning config (any word in :attr:`reasoning_error_tokens`,
+        the wire vocabulary each adapter declares — without declared
+        tokens no retry fires), the ``(config, keys)`` stages apply in
+        order — pop ``keys`` from ``config`` and retry — so the answer
+        is still served. The logged warning tells the admin what to
+        correct in the model catalog; requests keep paying one rejected
+        attempt until it is. No retry fires after streamed deltas — a
+        replay would duplicate visible output and re-run server-side
+        tools.
         """
-        rejection = (self.name, model)
-        if rejection in _REJECTED_REASONING_MODELS:
-            for key in config_keys:
-                config.pop(key, None)
         delivered = False
 
         def guarded(kind, data):
@@ -281,27 +276,38 @@ class ProviderBase:
             delivered = True
             return on_delta(kind, data)
 
+        callback = guarded if callable(on_delta) else on_delta
         try:
-            return invoke(guarded if callable(on_delta) else on_delta)
+            return invoke(callback)
         except UserError as exc:
             message = str(exc).lower()
-            if (
-                delivered
-                or not any(key in config for key in config_keys)
-                or not any(token in message for token in error_tokens)
+            if delivered or not any(
+                token in message for token in self.reasoning_error_tokens
             ):
                 raise
-            for key in config_keys:
-                config.pop(key, None)
-            result = invoke(on_delta)
-            _REJECTED_REASONING_MODELS.add(rejection)
-            _logger.warning(
-                'Model %s (%s) rejected its reasoning configuration; sending '
-                'without it from now on. Update the model catalog entry.',
-                model,
-                self.name,
-            )
-            return result
+            error = exc
+            for config, keys in stages:
+                if not any(key in config for key in keys):
+                    continue
+                for key in keys:
+                    config.pop(key, None)
+                try:
+                    result = invoke(callback)
+                except UserError as retry_error:
+                    if delivered:
+                        raise
+                    error = retry_error
+                    continue
+                _logger.warning(
+                    'Model %s (%s) rejected its reasoning configuration (%s); '
+                    'the request was served without it. Correct the model '
+                    'catalog entry or the agent effort.',
+                    model,
+                    self.name,
+                    ', '.join(keys),
+                )
+                return result
+            raise error
 
     # ----------------------------------------------------------
     # Caching

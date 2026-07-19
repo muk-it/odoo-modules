@@ -1,3 +1,4 @@
+import copy
 import json
 from unittest.mock import MagicMock, patch
 
@@ -123,6 +124,38 @@ class TestAiGoogleProvider(AITestCommon):
             captured['body']['generationConfig']['thinkingConfig'],
             {'thinkingLevel': 'low'},
         )
+
+    def test_rejected_thinking_level_is_stripped_and_served(self):
+        record = self.env.ref('muk_ai.model_gemini_3_flash_preview')
+        bodies = []
+
+        def fake_post(url, **kwargs):
+            bodies.append(copy.deepcopy(kwargs.get('json')))
+            if len(bodies) == 1:
+                response = self._mock_http_response({}, status_code=400)
+                response.text = 'Invalid thinking level for this model.'
+                response.raise_for_status.side_effect = requests.HTTPError(
+                    'bad request', response=response
+                )
+                return response
+            return self._mock_http_response(self._google_body('ok'))
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            result = self.provider._request_responses(
+                inputs=[
+                    {'role': 'user', 'content': [{'type': 'input_text', 'text': 'hi'}]}
+                ],
+                model='gemini-3-flash-preview',
+                reasoning_effort='low',
+            )
+        self.assertEqual(len(bodies), 2)
+        self.assertEqual(
+            bodies[0]['generationConfig']['thinkingConfig'],
+            {'thinkingLevel': 'low'},
+        )
+        self.assertNotIn('thinkingConfig', bodies[1]['generationConfig'])
+        self.assertEqual(result['text'], 'ok')
+        self.assertEqual(record.reasoning_efforts, ['low', 'high'])
 
     def test_thinking_level_not_sent_for_gemini_2_5(self):
         captured = {}

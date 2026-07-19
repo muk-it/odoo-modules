@@ -1,3 +1,4 @@
+import copy
 import json
 from unittest.mock import MagicMock, patch
 
@@ -210,7 +211,7 @@ class TestAiOpenAIProvider(AITestCommon):
             self.provider._request_responses(inputs=[], model='gpt-5-default-test')
         self.assertEqual(captured['body']['reasoning']['effort'], 'high')
 
-    def test_max_effort_maps_to_xhigh_without_catalog_entry(self):
+    def test_max_effort_passes_through_on_gpt_5_6(self):
         captured = {}
 
         def fake_post(url, **kwargs):
@@ -221,15 +222,31 @@ class TestAiOpenAIProvider(AITestCommon):
 
         with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
-                inputs=[], model='gpt-5.9-experimental', reasoning_effort='max'
+                inputs=[], model='gpt-5.6-sol', reasoning_effort='max'
+            )
+        self.assertEqual(captured['body']['reasoning']['effort'], 'max')
+
+    def test_max_effort_clamped_to_xhigh_on_gpt_5_5(self):
+        captured = {}
+
+        def fake_post(url, **kwargs):
+            captured['body'] = kwargs.get('json')
+            return self._mock_http_response(
+                {'output': [], 'usage': {'input_tokens': 1, 'output_tokens': 1}}
+            )
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            self.provider._request_responses(
+                inputs=[], model='gpt-5.5', reasoning_effort='max'
             )
         self.assertEqual(captured['body']['reasoning']['effort'], 'xhigh')
 
-    def test_reasoning_error_retries_once_without_reasoning(self):
+    def test_rejected_effort_is_stripped_and_served(self):
+        record = self.env.ref('muk_ai.model_gpt_5_mini')
         bodies = []
 
         def fake_post(url, **kwargs):
-            bodies.append(dict(kwargs.get('json')))
+            bodies.append(copy.deepcopy(kwargs.get('json')))
             if len(bodies) == 1:
                 response = self._mock_http_response({}, status_code=400)
                 response.text = "Invalid value 'low' for 'reasoning.effort'."
@@ -249,19 +266,26 @@ class TestAiOpenAIProvider(AITestCommon):
                 inputs=[], model='gpt-5-mini', reasoning_effort='low'
             )
         self.assertEqual(len(bodies), 2)
-        self.assertIn('reasoning', bodies[0])
-        self.assertNotIn('reasoning', bodies[1])
-        self.assertNotIn('include', bodies[1])
+        self.assertEqual(bodies[0]['reasoning']['effort'], 'low')
+        self.assertEqual(bodies[1]['reasoning'], {'summary': 'detailed'})
+        self.assertIn('include', bodies[1])
         self.assertEqual(result['text'], 'ok')
+        self.assertIn('low', record.reasoning_efforts)
+        self.assertFalse(record.notes)
 
-    def test_confirmed_rejection_is_remembered_across_rounds(self):
+    def test_summary_rejection_spares_the_tier_catalog(self):
+        record = self.env.ref('muk_ai.model_gpt_5_mini')
         bodies = []
 
         def fake_post(url, **kwargs):
-            bodies.append(dict(kwargs.get('json')))
-            if len(bodies) == 1:
+            bodies.append(copy.deepcopy(kwargs.get('json')))
+            reasoning = (kwargs.get('json') or {}).get('reasoning') or {}
+            if 'summary' in reasoning:
                 response = self._mock_http_response({}, status_code=400)
-                response.text = "Unsupported parameter: 'reasoning.effort'."
+                response.text = (
+                    'Your organization must be verified to generate '
+                    'reasoning summaries.'
+                )
                 response.raise_for_status.side_effect = requests.HTTPError(
                     'bad request', response=response
                 )
@@ -271,16 +295,15 @@ class TestAiOpenAIProvider(AITestCommon):
             )
 
         with patch.object(requests.Session, 'post', side_effect=fake_post):
-            self.provider._request_responses(
-                inputs=[], model='gpt-5-reject-test', reasoning_effort='low'
-            )
-            self.provider._request_responses(
-                inputs=[], model='gpt-5-reject-test', reasoning_effort='low'
+            result = self.provider._request_responses(
+                inputs=[], model='gpt-5-mini', reasoning_effort='low'
             )
         self.assertEqual(len(bodies), 3)
-        self.assertIn('reasoning', bodies[0])
-        self.assertNotIn('reasoning', bodies[1])
+        self.assertEqual(bodies[1]['reasoning'], {'summary': 'detailed'})
         self.assertNotIn('reasoning', bodies[2])
+        self.assertNotIn('include', bodies[2])
+        self.assertIn('low', record.reasoning_efforts)
+        self.assertFalse(result['tool_calls'])
 
     def test_unrelated_error_is_not_retried(self):
         bodies = []
