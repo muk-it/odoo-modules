@@ -5,8 +5,6 @@ from unittest.mock import MagicMock
 
 from odoo.tests.common import TransactionCase
 
-from odoo.addons.muk_ai_mistral.providers.mistral import MistralProvider
-
 
 class MistralTestCommon(TransactionCase):
     """Shared setup and payload builders for the Mistral provider tests."""
@@ -25,15 +23,6 @@ class MistralTestCommon(TransactionCase):
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
-
-    def _make_client(self, **overrides) -> MistralProvider:
-        """Build a standalone provider client with optional overrides."""
-        return MistralProvider(
-            env=self.env,
-            api_key=overrides.pop('api_key', 'test-key'),
-            max_tokens=overrides.pop('max_tokens', 4096),
-            request_timeout=overrides.pop('request_timeout', 60),
-        )
 
     def _mock_http_response(
         self,
