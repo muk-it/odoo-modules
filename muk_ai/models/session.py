@@ -755,6 +755,7 @@ class AISession(models.Model):
         Any system item persisted by an older version is dropped so the system
         message always reflects the current agent.
         """
+        self._close_orphan_tool_calls('tool result missing')
         history = [
             item
             for item in self._strip_internal_keys(self.conversation)

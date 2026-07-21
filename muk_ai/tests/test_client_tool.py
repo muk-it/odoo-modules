@@ -650,3 +650,46 @@ class TestClientToolSeam(AITestCommon):
             self._backdate_client_action(session)
             self.env['muk_ai.session']._sweep_stale_client_actions()
         self.assertEqual(session.state, 'waiting')
+
+    def test_build_request_inputs_closes_orphan_client_call(self):
+        # Regression: a client action (e.g. open_view with target="current")
+        # navigates the tab away before submit_client_result runs, leaving its
+        # function_call without a function_call_output. Rebuilding the request
+        # must close the orphan, else the provider rejects the input with
+        # "No tool output found for function call ...".
+        session = self._new_session()
+        call_id = 'call_orphan_open_view'
+        session.conversation = [
+            {
+                'type': 'message',
+                'role': 'user',
+                'content': [{'type': 'input_text', 'text': 'open contact olsen'}],
+            },
+            {
+                'type': 'function_call',
+                'name': 'open_view',
+                'arguments': json.dumps({'model': 'res.partner', 'view_type': 'list'}),
+                'call_id': call_id,
+            },
+        ]
+        self.assertEqual(self._outputs_for(session, call_id), [])
+
+        inputs = session._build_request_inputs()
+
+        # The orphan gained an interrupted output, persisted on the session...
+        self.assertEqual(len(self._outputs_for(session, call_id)), 1)
+        # ...and no function_call in the built request is left unanswered.
+        pending = {
+            item['call_id']
+            for item in inputs
+            if isinstance(item, dict) and item.get('type') == 'function_call'
+        }
+        answered = {
+            item['call_id']
+            for item in inputs
+            if isinstance(item, dict) and item.get('type') == 'function_call_output'
+        }
+        self.assertFalse(
+            pending - answered,
+            'every function_call must be paired with a function_call_output',
+        )
