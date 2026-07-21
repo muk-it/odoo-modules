@@ -1,0 +1,8 @@
+.mk_systray_menu {
+    --mk-primary: #c9a2c3;
+    --mk-primary-rgb: 201, 162, 195;
+
+    .mk_systray_item .mk_systray_hotkey {
+        background: rgba(255, 255, 255, 0.08);
+    }
+}

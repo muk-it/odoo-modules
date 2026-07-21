@@ -10,7 +10,7 @@
         muk_mcp tool registry your external AI clients use — one source
         of truth, one permission model, one audit trail.
     """,
-    'version': '19.0.1.12.3',
+    'version': '19.0.1.12.5',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -63,10 +63,14 @@
             'muk_ai/static/src/views/kanban/**/*',
             'muk_ai/static/src/views/list/**/*',
             'muk_ai/static/src/webclient/**/*',
+            ('remove', 'muk_ai/static/src/**/*.dark.scss'),
         ],
         'web.assets_backend_lazy': [
             'muk_ai/static/src/views/graph/**/*',
             'muk_ai/static/src/views/pivot/**/*',
+        ],
+        'web.assets_web_dark': [
+            'muk_ai/static/src/**/*.dark.scss',
         ],
         'web.assets_unit_tests': [
             'muk_ai/static/tests/**/*.test.js',

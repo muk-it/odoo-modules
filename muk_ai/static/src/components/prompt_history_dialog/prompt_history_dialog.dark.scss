@@ -1,0 +1,18 @@
+.mk_prompt_history {
+    .mk_prompt_history_sidebar {
+        border-right-color: var(--border-color, #3c3e4b);
+    }
+    .mk_prompt_history_added {
+        color: #3fb950;
+    }
+    .mk_prompt_history_removed {
+        color: #f85149;
+    }
+    .mk_prompt_history_hunk {
+        color: #a5b4fc;
+    }
+    .mk_prompt_history_meta,
+    .mk_prompt_history_empty {
+        color: #8b949e;
+    }
+}
