@@ -66,7 +66,7 @@ class AISchedule(models.Model):
         help=(
             'Initial prompt sent to the agent on each fire. '
             "Rendered as an inline template with the schedule's "
-            'evaluation context.'
+            'evaluation context (record, records, env, user, now).'
         ),
         required=True,
         translate=True,
