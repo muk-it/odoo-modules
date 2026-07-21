@@ -57,7 +57,7 @@ class AISession(models.Model):
         lines = [
             '<available_skills>',
             (
-                'Named workflows you can invoke with the `invoke_skill` '
+                'Named procedures you can invoke with the `invoke_skill` '
                 'tool (`{"skill_name": "<skill>"}`). Each returns a body '
                 'of instructions plus a resource manifest with `uri` '
                 'entries (e.g. `odoo://attachment/42`); fetch any listed '
@@ -101,7 +101,7 @@ class AISession(models.Model):
         paragraphs = super()._available_tools_extra_paragraphs()
         if self and self.id and self._visible_skills():
             paragraphs.append(
-                '`invoke_skill` is ONLY for the named workflows listed '
+                '`invoke_skill` is ONLY for the named procedures listed '
                 'in the <available_skills> addendum, never for tool '
                 'discovery. Pick from this list instead.'
             )
