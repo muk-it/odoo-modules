@@ -226,7 +226,9 @@ class MCPMixin(models.AbstractModel):
                 'order': {
                     'type': 'string',
                     'description': (
-                        'Sort order for groups, e.g. "amount_total:sum desc".'
+                        'Sort order for groups. Must reference a groupby field '
+                        'or a computed aggregate spec — never an invented name '
+                        '(e.g. "amount_total:sum desc", "partner_id asc").'
                     ),
                 },
                 'context': context_field(),

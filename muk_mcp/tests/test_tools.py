@@ -127,6 +127,21 @@ class TestMcpTool(common.TransactionCase):
         self.assertIn('company_id', result)
         self.assertIn('groups', result)
 
+    def test_system_info_handler(self):
+        result = self._call('system_info', {})
+        self.assertEqual(result['product'], 'Odoo')
+        self.assertIn(result['edition'], ('community', 'enterprise'))
+        self.assertEqual(result['database'], self.env.cr.dbname)
+        self.assertIn('version', result)
+        self.assertNotIn('languages', result)
+        self.assertNotIn('modules', result)
+
+    def test_list_languages_handler(self):
+        result = self._call('list_languages', {})
+        self.assertIsInstance(result, list)
+        self.assertTrue(any(lang['code'] == 'en_US' for lang in result))
+        self.assertTrue(all('code' in lang and 'name' in lang for lang in result))
+
     def test_get_access_rights_handler(self):
         result = self._call('get_access_rights', {'model': 'res.partner'})
         self.assertEqual(result['model'], 'res.partner')

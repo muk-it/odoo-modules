@@ -40,9 +40,16 @@ def domain_field(extra_note: str = '') -> dict[str, Any]:
     """Return the JSON schema for an Odoo domain parameter, with optional note appended."""
     description = textwrap.dedent(
         """\
-        JSON-encoded Odoo domain array. Conditions are [field, operator, value];
-        AND-ed by default; use '|' for OR. Operators: =, !=, >, >=, <, <=, like,
-        ilike, in, not in, child_of, parent_of. Examples (passed as JSON string):
+        JSON-encoded Odoo domain array. A condition is [field, operator, value];
+        conditions are AND-ed by default. Combine with prefix logic operators
+        placed BEFORE their operands: '|' (OR), '&' (AND, implicit), '!' (NOT) —
+        never two logic operators in a row. Operators: =, !=, >, >=, <, <=, =?,
+        like, ilike, =like, =ilike, not like, not ilike, in, not in, child_of,
+        parent_of, any, not any. `field` may traverse relations with dotted paths
+        (e.g. 'partner_id.country_id.code'); every field/relation must exist —
+        verify with describe_model, never guess singular vs plural (_id vs _ids).
+        `value` is a literal (string, number, list, bool), never another field.
+        Examples (passed as JSON string):
         {examples}
         Pass [] or omit for no filter.
         """,

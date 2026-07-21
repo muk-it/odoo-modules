@@ -7,7 +7,6 @@ from odoo import _, api, models
 from odoo.exceptions import AccessError, UserError
 from odoo.tools.mimetypes import guess_mimetype
 
-from odoo.addons.muk_mcp.core.tool import mcp_tool
 from odoo.addons.muk_mcp.tools.content import (
     is_textual_mimetype,
     normalize_mimetype,
@@ -16,7 +15,7 @@ from odoo.addons.muk_mcp.tools.uri import parse_uri
 
 
 class MCPMixin(models.AbstractModel):
-    """Base mixin carrying the shared helpers and tools for MCP endpoints."""
+    """Base mixin carrying the shared helpers for MCP endpoints."""
 
     _name = 'muk_mcp.mixin'
     _description = 'MCP Tool Mixin'
@@ -190,70 +189,3 @@ class MCPMixin(models.AbstractModel):
                 raw = value
             mimetype, name = None, field
         return (mimetype or guess_mimetype(raw), raw, name)
-
-    # ----------------------------------------------------------
-    # Functions
-    # ----------------------------------------------------------
-
-    @api.model
-    @mcp_tool(
-        name='list_modules',
-        description=(
-            'List installed Odoo modules with their names, versions, and '
-            'descriptions. Use "search" to filter. This helps understand '
-            'which apps and features are active in the system (e.g. is '
-            '"sale" installed? is "stock" installed?).'
-        ),
-        input_schema={
-            'type': 'object',
-            'properties': {
-                'search': {
-                    'type': 'string',
-                    'description': 'Filter module names by substring.',
-                },
-                'state': {
-                    'type': 'string',
-                    'description': "Filter by state. Default: 'installed'.",
-                    'enum': [
-                        'installed',
-                        'uninstalled',
-                        'to upgrade',
-                        'to install',
-                    ],
-                    'default': 'installed',
-                },
-            },
-        },
-        category='read',
-    )
-    def _mcp_list_modules(
-        self,
-        search: str = '',
-        state: str = 'installed',
-    ) -> list[dict[str, Any]]:
-        """List modules in a given state, optionally filtered by name.
-
-        Returns name, label, installed version and state for each matching
-        ``ir.module.module`` record, ordered by name.
-        """
-        domain = [('state', '=', state)]
-        if search:
-            domain.append(('name', 'ilike', search))
-        modules = (
-            self.env['ir.module.module']
-            .sudo()
-            .search_read(
-                domain,
-                fields=['name', 'shortdesc', 'state', 'installed_version'],
-                order='name asc',
-            )
-        )
-        return [
-            {
-                'name': m['name'],
-                'label': m['shortdesc'],
-                'version': m['installed_version'] or '',
-                'state': m['state'],
-            }
-            for m in modules
-        ]
