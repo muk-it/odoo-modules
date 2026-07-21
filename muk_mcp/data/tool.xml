@@ -80,7 +80,7 @@ else:
                 subtype = 'mail.mt_comment'
             record = env[model_name].browse(record_id)
             msg = record.message_post(
-                body=body,
+                body=Markup(body),
                 message_type=msg_type,
                 subtype_xmlid=subtype,
             )

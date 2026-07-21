@@ -6,6 +6,8 @@ import json
 import time
 from typing import Any
 
+from markupsafe import Markup
+
 from odoo import _, api, fields, models
 from odoo.api import Environment
 from odoo.exceptions import UserError, ValidationError
@@ -295,6 +297,7 @@ class MCPTool(models.Model):
             'env': env,
             'arguments': arguments,
             'json': safe_json,
+            'Markup': Markup,
             'callable': callable,
             'getattr': getattr,
             'hasattr': hasattr,

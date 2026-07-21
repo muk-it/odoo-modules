@@ -380,3 +380,21 @@ class TestMcpTool(common.TransactionCase):
             ],
         )
         self.assertEqual(len(db_records), 2)
+
+    def test_post_message_keeps_html_unescaped(self):
+        partner = self.env['res.partner'].create(
+            {
+                'name': 'MCP HTML Body',
+            },
+        )
+        result = self._call(
+            'post_message',
+            {
+                'model': 'res.partner',
+                'id': partner.id,
+                'body': '<p>Hello <br/>world</p>',
+            },
+        )
+        msg = self.env['mail.message'].browse(result['id'])
+        self.assertIn('<p>', msg.body)
+        self.assertNotIn('&lt;p&gt;', msg.body)
