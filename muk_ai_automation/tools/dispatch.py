@@ -198,7 +198,10 @@ def _build_prompt(
         previous_session=PreviousProxy(previous_session or None),
     )
     if prompt and len(prompt) > MAX_PROMPT_CHARS:
-        prompt = prompt[:MAX_PROMPT_CHARS] + ' …[truncated]'
+        prompt = (
+            prompt[:MAX_PROMPT_CHARS]
+            + f' …[prompt truncated at {MAX_PROMPT_CHARS} chars — shorten the template]'
+        )
     return prompt, render_err
 
 

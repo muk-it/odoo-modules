@@ -36,7 +36,9 @@ class IrActionsServer(models.Model):
         help=(
             'Initial prompt sent to the agent on each fire. '
             'Rendered as an inline template with the evaluation context of '
-            'the action (record, records, env, user).'
+            'the action (record, records, env, user), plus previous_session '
+            '(previous_session.last_text and previous_session.tool_log) when '
+            'the action chains after an earlier agent run.'
         ),
         translate=True,
     )
