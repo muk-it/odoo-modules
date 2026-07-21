@@ -46,8 +46,9 @@
 				(images, PDFs, text files), lazy tool loading with a per-agent
 				essentials list, agent suggestion prompts, field history
 				versioning, and a prebuilt catalog of current GPT-5.x /
-				Claude 4.x / Gemini 2.5/3.x models with input/output/cache
-				pricing.
+				Claude 4.x&ndash;5 / Gemini 2.5&ndash;3.x models with input,
+				output and cache (read + write) pricing and per-model
+				reasoning-effort tiers.
 			</p>
 			<p>
 				MuK AI is also the foundation for the rest of the MuK AI suite:
@@ -116,6 +117,55 @@
 <section class="oe_container">
 	<div class="oe_row oe_spaced">
 		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Source Citations</h3>
+			<p>
+				Answers stay grounded in your data. Whenever the assistant
+				reads records to build a reply, the records it relied on are
+				collected as <strong>sources</strong> and surfaced as a
+				compact chip under the message &mdash; expand it to see each
+				cited record with its model and a one-click link that opens
+				the record in Odoo. The same list is mirrored in the
+				<em>Artifacts</em> side rail alongside the turn's
+				attachments, so it is always clear <em>where</em> a number or
+				a claim came from &mdash; no more guessing whether the model
+				invented a figure or pulled it from an actual
+				<code>sale.order</code>.
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_sources.png">
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Reasoning Effort</h3>
+			<p>
+				Dial how hard a model thinks before it answers. Each agent
+				carries a <strong>Reasoning Effort</strong> setting &mdash;
+				<code>Minimal</code>, <code>Low</code>, <code>Medium</code>,
+				<code>High</code>, <code>Extra High</code> or
+				<code>Maximum</code> &mdash; and only the tiers the chosen
+				model actually supports are offered; the field disappears
+				entirely for models with no thinking knob. The catalog stores
+				each model's supported efforts, so a request above what a model
+				allows is clamped to the nearest tier, and a provider that
+				still refuses is retried without the effort so the answer is
+				always served. Leave it on <em>Model Default</em> to let the
+				model decide.
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_effort.png">
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
 			<h3 class="oe_slogan">Multi-Provider Architecture</h3>
 			<p>
 				The provider layer is a thin Python registry plus stored
@@ -163,9 +213,9 @@
 			</table>
 			<p class="mt16">
 				The shipped catalog includes the current GPT-5.x family
-				(5, 5.1, 5.2, 5.4 incl. Pro variants, 5.5 + Pro), GPT-4.1
+				(5, 5.1, 5.2, 5.4 incl. Pro variants, 5.5 + Pro, 5.6), GPT-4.1
 				family, GPT-4o, the o-series; Claude Opus 4 / 4.1 / 4.5 / 4.6 /
-				4.7, Sonnet 4 / 4.5 / 4.6, Haiku 3.5 / 4.5; Gemini 2.5
+				4.7 / 4.8, Sonnet 4.x / 5, Haiku, Fable 5; Gemini 2.5
 				Pro/Flash/Flash-Lite/Flash-Image and the 3.x previews &mdash;
 				each with context window and per-1M-token pricing for live cost
 				display.
@@ -205,6 +255,34 @@
 			</p>
 			<div class="oe_demo oe_screenshot mt16">
 				<img src="screenshot_agent.png">
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Multiple Agents &amp; Handoff</h3>
+			<p>
+				One chat can be served by several agents. Flip on
+				<strong>Allow Handoff</strong> to make an agent a delegation
+				target, and the built-in <strong>Router</strong> reads the
+				opening request, calls <code>list_agents</code>, and hands the
+				conversation to the best specialist with
+				<code>switch_agent</code> &mdash; from the next turn that
+				agent's prompt, tools and model take over the <em>same</em>
+				session (the switch is logged inline as an
+				<code>A &rarr; B</code> marker). Ship a &ldquo;Sales
+				Assistant&rdquo; with write access alongside a
+				&ldquo;Read-only Analyst&rdquo;, and let the Router pick.
+				Type <code>/agent</code> to switch yourself, or hand the whole
+				live chat to a colleague with the share button (or
+				<code>/handover</code>) &mdash; they get the session, an inbox
+				notification and an unread badge.
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_agents.png">
 			</div>
 		</div>
 	</div>
@@ -266,6 +344,79 @@
 <section class="oe_container">
 	<div class="oe_row oe_spaced">
 		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Reshape Views from Chat</h3>
+			<p>
+				Ask the assistant to change the list, kanban, pivot or graph
+				you are looking at &mdash; <em>&ldquo;group these orders by
+				salesperson&rdquo;</em>, <em>&ldquo;only show drafts&rdquo;</em>,
+				<em>&ldquo;switch to a bar chart&rdquo;</em> &mdash; and it
+				reshapes <strong>that</strong> view in place instead of opening
+				a new one. The <code>adjust_search</code> tool is a
+				<em>client tool</em>: rather than running on the server it runs
+				in your browser tab and drives the live search view &mdash;
+				activating filters and group-bys (with
+				<code>date_order:month</code>-style intervals), applying field
+				searches and custom-domain facets, removing facets, switching
+				view type, and setting pivot/graph measures, chart mode,
+				ordering and stacking. It reports back exactly what it changed,
+				and &mdash; as in the shot below &mdash; will pause to check
+				with you first when a change would hide data.
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_reshape.png">
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Conversation Controls</h3>
+			<p>
+				The transcript is fully in your hands:
+			</p>
+			<ul>
+				<li>
+					<strong>Tool groups</strong> &mdash; when a turn fires
+					several tool calls they collapse into one
+					<em>Used N tools</em> card with the tool chips and a green
+					&check; / red &times; success-and-error badge; expand it for
+					the individual calls. Each card fills its arguments live and
+					then drops in its result in place.
+				</li>
+				<li>
+					<strong>Rewind, branch &amp; regenerate</strong> &mdash;
+					hover any message to rewind (remove it and everything after),
+					branch (fork the history into a brand-new session), or
+					regenerate the last answer.
+				</li>
+				<li>
+					<strong>Artifacts panel</strong> &mdash; a side rail that
+					gathers every uploaded file, every AI-generated image (open
+					full-size in the file viewer) and every cited source under
+					<em>Attachments</em> and <em>Sources</em> tabs.
+				</li>
+				<li>
+					<strong>Find in conversation</strong> &mdash; a search bar
+					highlights matches with a current/total counter and jumps
+					between them.
+				</li>
+				<li>
+					<strong>Attention &amp; notifications</strong> &mdash; the
+					systray icon carries a live running dot and a red count of
+					sessions awaiting you; unread sessions are marked and sorted
+					to the top, and completion notices can arrive as web and
+					Enterprise mobile push.
+				</li>
+			</ul>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
 			<h3 class="oe_slogan">Tool Dispatch via muk_mcp</h3>
 			<p>
 				Agents call exactly the same tool surface as your external MCP
@@ -274,7 +425,8 @@
 				filtered by registry, and a handful of UI-specific tools
 				(<code>open_record</code>, <code>open_view</code>,
 				<code>open_action</code>, <code>show_notification</code>,
-				<code>ask_user</code>) are scoped to the in-Odoo agent. The
+				<code>ask_user</code>, the view-reshaping
+					<code>adjust_search</code>) are scoped to the in-Odoo agent. The
 				chat UI auto-dispatches any returned <code>ir.actions.*</code>
 				descriptor, so the model can navigate the user through the UI
 				as part of a reply.
@@ -284,7 +436,11 @@
 				<em>waiting</em> state and surfaces the question in the chat.
 				The user's answer is fed back as a
 				<code>function_call_output</code> so the model resumes the
-				turn exactly where it left off.
+				turn exactly where it left off. Beyond the UI tools, a built-in
+					<code>web_fetch</code> tool reads a public web page as clean
+					Markdown (boilerplate stripped, links kept) behind an SSRF
+					guard that re-validates every redirect, and the fetched page
+					joins the reply's Sources as a citable web link.
 			</p>
 		</div>
 	</div>
@@ -395,7 +551,9 @@
 				available commands: <code>/help</code>,
 				<code>/clear</code> (wipe conversation, keep agent),
 				<code>/compact</code> (manual compaction),
-				<code>/unpin</code> (clear view-context pin).
+				<code>/unpin</code> (clear view-context pin),
+                <code>/agent</code> (switch the active agent), and
+                <code>/handover</code> (transfer the chat to another user).
 			</p>
 			<div class="oe_demo oe_screenshot mt16">
 				<img src="screenshot_slash.png">
@@ -469,7 +627,14 @@
 				configured per-record on the provider, model, and agent
 				forms. A <strong>Test Connection</strong> button on the
 				provider form sends a tiny probe and reports success or
-				failure without leaving the page.
+				failure without leaving the page. The same page holds the runtime
+					guard-rails &mdash; <strong>Iteration Limit</strong> (rounds
+					per slice), <strong>Turn Runtime</strong> and
+					<strong>Slice Runtime</strong> wall-clock budgets, and a
+					per-turn <strong>Cost Limit</strong> &mdash; and lists the
+					installable MuK AI extensions (MCP, Compatible Providers,
+					Mistral, Schedule, Skills, Voice, Workflows) as one-click
+					toggles.
 			</p>
 			<div class="oe_demo oe_screenshot mt16">
 				<img src="screenshot_settings.png">

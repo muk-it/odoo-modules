@@ -15,6 +15,7 @@ import { useService } from '@web/core/utils/hooks';
 
 import { toFileModel } from '@muk_ai/core/attachment/attachment';
 import { AttachmentCard } from '@muk_ai/core/attachment/attachment_card';
+import { SourceIcon, SourceList } from '@muk_ai/chat/artifacts/types/sources_tab';
 import {
     approvalPill,
     costTooltip,
@@ -49,7 +50,14 @@ import {
 /** Floating chat window hosting one AI session with composer and turns. */
 export class ChatWindow extends Component {
     static template = 'muk_ai.ChatWindow';
-    static components = { ChatComposer, ToolCard, ToolGroup, AttachmentCard };
+    static components = {
+        ChatComposer,
+        ToolCard,
+        ToolGroup,
+        AttachmentCard,
+        SourceIcon,
+        SourceList,
+    };
     static props = {
         sessionId: { type: Number },
         minimized: { type: Boolean, optional: true },
@@ -77,7 +85,11 @@ export class ChatWindow extends Component {
         this.scrollToBottom = scrollToBottom;
         this.scrollState = scrollState;
         this.session.setScrollCallback(scrollToBottom);
-        this.windowState = useState({ askViews: {}, resumeTick: 0 });
+        this.windowState = useState({
+            askViews: {},
+            resumeTick: 0,
+            sourcesExpanded: {},
+        });
         this._resumeTickInterval = null;
         onScrollUpNearTop(scrollRef, () =>
             preserveAnchor(scrollRef, () => this.session.loadMoreEvents()),
@@ -157,6 +169,19 @@ export class ChatWindow extends Component {
     onOpenAttachment(attachment) {
         const file = toFileModel(attachment);
         this.fileViewer.open(file);
+    }
+    turnSourcesKey(turn, index) {
+        return turn.eventId ? `e${turn.eventId}` : `t${index}`;
+    }
+    isTurnSourcesExpanded(turn, index) {
+        return !!this.windowState.sourcesExpanded[this.turnSourcesKey(turn, index)];
+    }
+    toggleTurnSources(turn, index) {
+        const key = this.turnSourcesKey(turn, index);
+        this.windowState.sourcesExpanded = {
+            ...this.windowState.sourcesExpanded,
+            [key]: !this.windowState.sourcesExpanded[key],
+        };
     }
     get renderedTurns() {
         return this.session.renderedTurns();
