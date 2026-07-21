@@ -2,8 +2,17 @@ import base64
 import socket
 from unittest.mock import MagicMock, patch
 
+import urllib3
+
+from odoo.exceptions import UserError
+
 from odoo.addons.muk_ai.tests.common import AITestCommon
-from odoo.addons.muk_ai.tools.url_fetch import _validate_url
+from odoo.addons.muk_ai.tools.url_fetch import (
+    CONNECT_TIMEOUT,
+    READ_TIMEOUT,
+    _validate_url,
+    fetch_url,
+)
 
 PNG_1x1_RED = base64.b64encode(
     bytes.fromhex(
@@ -42,9 +51,10 @@ class TestUrlFetchHardening(AITestCommon):
     def _addrinfo(ip):
         return [(0, 0, 0, '', (ip, 0))]
 
-    def _mock_response(self, chunks, status=200):
+    def _mock_response(self, chunks, status=200, headers=None):
         response = MagicMock()
         response.status = status
+        response.headers = headers if headers is not None else {}
         response.stream.return_value = iter(chunks)
         response.release_conn.return_value = None
         return response
@@ -235,7 +245,86 @@ class TestUrlFetchHardening(AITestCommon):
         kwargs = mock_pool_cls.call_args.kwargs
         self.assertEqual(kwargs.get('host'), '8.8.8.8')
         self.assertEqual(kwargs.get('assert_hostname'), 'rebind.example')
-        self.assertEqual(
-            kwargs.get('conn_kw', {}).get('server_hostname'),
-            'rebind.example',
+        self.assertEqual(kwargs.get('server_hostname'), 'rebind.example')
+
+    def test_follows_redirect_and_revalidates_each_hop(self):
+        png = base64.b64decode(PNG_1x1_RED)
+        resp1 = self._mock_response(
+            [], status=302, headers={'Location': 'https://final.example/page'}
         )
+        resp2 = self._mock_response([png], headers={'Content-Type': 'image/png'})
+        with (
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
+                return_value=self._addrinfo('8.8.8.8'),
+            ),
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
+                side_effect=[self._mock_pool(resp1), self._mock_pool(resp2)],
+            ) as mock_pool_cls,
+        ):
+            result = fetch_url('https://start.example/go')
+        self.assertEqual(result.url, 'https://final.example/page')
+        self.assertEqual(result.body, png)
+        self.assertEqual(result.content_type, 'image/png')
+        self.assertEqual(mock_pool_cls.call_count, 2)
+
+    def test_redirect_to_private_ip_blocked(self):
+        resp1 = self._mock_response(
+            [], status=302, headers={'Location': 'https://internal.example/secret'}
+        )
+
+        def _gai(host, *args, **kwargs):
+            return self._addrinfo(
+                '10.0.0.1' if host == 'internal.example' else '8.8.8.8'
+            )
+
+        with (
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
+                side_effect=_gai,
+            ),
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
+                side_effect=[self._mock_pool(resp1)],
+            ),
+            self.assertRaises(UserError),
+        ):
+            fetch_url('https://start.example/go')
+
+    def test_github_blob_rewritten_to_raw(self):
+        resp = self._mock_response([b'code'], headers={'Content-Type': 'text/plain'})
+        with (
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
+                return_value=self._addrinfo('8.8.8.8'),
+            ),
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
+                return_value=self._mock_pool(resp),
+            ) as mock_pool_cls,
+        ):
+            result = fetch_url('https://github.com/muk-it/muk_web/blob/19.0/README.md')
+        self.assertEqual(
+            result.url,
+            'https://raw.githubusercontent.com/muk-it/muk_web/19.0/README.md',
+        )
+        self.assertEqual(
+            mock_pool_cls.call_args.kwargs['assert_hostname'],
+            'raw.githubusercontent.com',
+        )
+
+    def test_pool_kwargs_accepted_by_real_urllib3(self):
+        pool = urllib3.HTTPSConnectionPool(
+            host='127.0.0.1',
+            port=443,
+            assert_hostname='example.com',
+            server_hostname='example.com',
+            timeout=urllib3.Timeout(connect=CONNECT_TIMEOUT, read=READ_TIMEOUT),
+            retries=False,
+        )
+        try:
+            conn = pool._new_conn()
+            conn.close()
+        finally:
+            pool.close()

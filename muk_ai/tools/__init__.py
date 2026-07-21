@@ -55,8 +55,12 @@ from .attachment import (
     URL_REF_RE,
     is_unmaterialized_attachment,
 )
+from .sources import SOURCE_EXTRACTORS, extract_sources, source_extractor
 from .url_fetch import (
     CONNECT_TIMEOUT,
     READ_TIMEOUT,
+    WEB_FETCH_MAX_CHARS,
+    FetchResult,
     fetch_url,
+    render_content,
 )

@@ -21,6 +21,17 @@ function decorateToolBlock(block, entry) {
     }
 }
 
+function addTurnSources(turn, sources) {
+    const list = turn.sources || (turn.sources = []);
+    const seen = turn._sourceIds || (turn._sourceIds = new Set());
+    for (const source of sources) {
+        if (source && source.id && !seen.has(source.id)) {
+            seen.add(source.id);
+            list.push(source);
+        }
+    }
+}
+
 /**
  * Fold a flat session event log into grouped, renderable conversation turns.
  * Merges consecutive assistant blocks, attaches tool results to their calls,
@@ -111,6 +122,9 @@ export function buildRenderedTurns(log) {
                         at,
                     ),
                 );
+            }
+            if (current && Array.isArray(entry.sources) && entry.sources.length) {
+                addTurnSources(current, entry.sources);
             }
         } else if (entry.kind === 'text') {
             if (!current) {

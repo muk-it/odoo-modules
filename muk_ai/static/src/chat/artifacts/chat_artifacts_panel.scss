@@ -60,6 +60,91 @@
             width: 100%;
         }
     }
+    .mk_source_list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 0.4rem;
+    }
+    .mk_sources_more_btn {
+        margin-top: 0.45rem;
+        padding: 0.25rem 0.65rem;
+        border: 1px dashed var(--mk-border);
+        border-radius: 8px;
+        background: transparent;
+        color: var(--mk-text-muted);
+        font-size: 0.74rem;
+        cursor: pointer;
+        transition:
+            color 0.12s ease,
+            border-color 0.12s ease;
+        &:hover {
+            color: var(--mk-text);
+            border-color: var(--mk-primary);
+        }
+    }
+    .mk_source_card {
+        gap: 0.55rem;
+        padding: 0.5rem 0.6rem;
+        border: 1px solid var(--mk-border);
+        border-radius: 10px;
+        background: var(--mk-bg);
+        text-decoration: none;
+        color: var(--mk-text);
+        min-width: 0;
+        transition:
+            border-color 0.12s ease,
+            box-shadow 0.12s ease,
+            transform 0.12s ease;
+        &:hover {
+            border-color: var(--mk-primary);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transform: translateY(-1px);
+            color: var(--mk-text);
+            .mk_source_go {
+                opacity: 1;
+            }
+        }
+    }
+    .mk_source_ico {
+        flex: 0 0 auto;
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        background: var(--mk-bg-muted);
+        color: var(--mk-text-muted);
+        overflow: hidden;
+        font-size: 0.8rem;
+        .mk_source_favicon {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    }
+    .mk_source_ico_web {
+        color: var(--mk-primary);
+    }
+    .mk_source_body {
+        min-width: 0;
+        gap: 0.05rem;
+    }
+    .mk_source_title {
+        font-size: 0.8rem;
+        font-weight: 500;
+        line-height: 1.25;
+    }
+    .mk_source_origin {
+        font-size: 0.7rem;
+        line-height: 1.2;
+        color: var(--mk-text-muted);
+    }
+    .mk_source_go {
+        flex: 0 0 auto;
+        margin-left: auto;
+        color: var(--mk-text-muted);
+        font-size: 0.72rem;
+        opacity: 0;
+        transition: opacity 0.12s ease;
+    }
     .mk_artifacts_empty {
         text-align: center;
     }

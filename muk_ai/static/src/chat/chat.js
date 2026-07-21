@@ -44,7 +44,9 @@ import {
 } from '@muk_ai/chat/session/use_scroll_anchor';
 import { ChatSidebar } from '@muk_ai/chat/sidebar/chat_sidebar';
 import { ChatArtifactsPanel } from '@muk_ai/chat/artifacts/chat_artifacts_panel';
+import { SourceIcon, SourceList } from '@muk_ai/chat/artifacts/types/sources_tab';
 import '@muk_ai/chat/artifacts/types/attachments_type';
+import '@muk_ai/chat/artifacts/types/sources_type';
 import { ChatSearch } from '@muk_ai/chat/search/chat_search';
 import {
     buildIndex,
@@ -93,6 +95,8 @@ export class AIChat extends Component {
         ToolGroup,
         ChatComposer,
         AttachmentCard,
+        SourceIcon,
+        SourceList,
         Dropdown,
         DropdownItem,
     };
@@ -145,6 +149,7 @@ export class AIChat extends Component {
             activeMatchIdx: 0,
             scrollTarget: null,
             askViews: {},
+            sourcesExpanded: {},
             resumeTick: 0,
         });
         this._sessionsSearchSeq = 0;
@@ -611,6 +616,19 @@ export class AIChat extends Component {
     }
     toggleToolBlock(callId) {
         this.session.toggleToolBlock(callId);
+    }
+    turnSourcesKey(turn, index) {
+        return turn.eventId ? `e${turn.eventId}` : `t${index}`;
+    }
+    isTurnSourcesExpanded(turn, index) {
+        return !!this.state.sourcesExpanded[this.turnSourcesKey(turn, index)];
+    }
+    toggleTurnSources(turn, index) {
+        const key = this.turnSourcesKey(turn, index);
+        this.state.sourcesExpanded = {
+            ...this.state.sourcesExpanded,
+            [key]: !this.state.sourcesExpanded[key],
+        };
     }
     onOpenAttachment(attachment) {
         const file = toFileModel(attachment);

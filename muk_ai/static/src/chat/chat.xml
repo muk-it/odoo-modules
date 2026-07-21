@@ -486,6 +486,36 @@
                         </t>
                     </t>
                 </t>
+                <t t-if="turn.sources and turn.sources.length">
+                    <div class="mk_turn_sources">
+                        <button
+                            class="mk_sources_chip"
+                            type="button"
+                            t-att-aria-label="turn.sources.length + ' sources'"
+                            t-att-title="turn.sources.length + (turn.sources.length === 1 ? ' source' : ' sources')"
+                            t-att-aria-expanded="isTurnSourcesExpanded(turn, turn_index)"
+                            t-on-click="() => this.toggleTurnSources(turn, turn_index)"
+                        >
+                            <span class="mk_sources_avatars d-inline-flex">
+                                <t t-foreach="turn.sources.slice(0, 4)" t-as="src" t-key="src.id">
+                                    <SourceIcon source="src"/>
+                                </t>
+                                <span
+                                    t-if="turn.sources.length > 4"
+                                    class="mk_sources_more d-inline-flex align-items-center justify-content-center"
+                                    t-esc="'+' + (turn.sources.length - 4)"
+                                />
+                            </span>
+                            <i class="fa" t-att-class="isTurnSourcesExpanded(turn, turn_index) ? 'fa-caret-up' : 'fa-caret-down'"/>
+                        </button>
+                        <div
+                            t-if="isTurnSourcesExpanded(turn, turn_index)"
+                            class="mk_turn_sources_list"
+                        >
+                            <SourceList sources="turn.sources"/>
+                        </div>
+                    </div>
+                </t>
             </div>
         </t>
     </t>

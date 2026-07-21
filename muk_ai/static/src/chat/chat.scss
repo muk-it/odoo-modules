@@ -575,6 +575,70 @@
     .mk_turn_assistant {
         align-items: flex-start;
     }
+    .mk_turn_sources {
+        margin-top: 0.4rem;
+        max-width: 100%;
+    }
+    .mk_sources_chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.25rem 0.6rem 0.25rem 0.3rem;
+        border: 1px solid var(--mk-border);
+        border-radius: 999px;
+        background: var(--mk-bg);
+        color: var(--mk-text-muted);
+        line-height: 1.2;
+        cursor: pointer;
+        transition:
+            border-color 0.12s ease,
+            background 0.12s ease;
+        &:hover {
+            border-color: var(--mk-primary);
+            background: var(--mk-bg-muted);
+        }
+        &[aria-expanded='true'] {
+            border-color: var(--mk-primary);
+        }
+        .fa-caret-down,
+        .fa-caret-up {
+            font-size: 0.72rem;
+            opacity: 0.6;
+        }
+    }
+    .mk_sources_avatars {
+        align-items: center;
+        .mk_source_ico,
+        .mk_sources_more {
+            height: 26px;
+            border-radius: 999px;
+            border: 2px solid var(--mk-bg);
+            line-height: 1;
+        }
+        .mk_source_ico {
+            width: 26px;
+            font-size: 0.8rem;
+        }
+        > :not(:first-child) {
+            margin-left: -8px;
+        }
+        .mk_sources_more {
+            min-width: 26px;
+            padding: 0 0.32rem;
+            background: var(--mk-bg-muted);
+            color: var(--mk-text-muted);
+            font-size: 0.66rem;
+            font-weight: 600;
+        }
+    }
+    .mk_sources_chip:hover .mk_sources_avatars .mk_source_ico,
+    .mk_sources_chip:hover .mk_sources_avatars .mk_sources_more {
+        border-color: var(--mk-bg-muted);
+    }
+    .mk_turn_sources_list {
+        margin-top: 0.45rem;
+        max-width: 720px;
+    }
     .mk_turn_command {
         align-items: stretch;
         margin: 1rem 0 1.25rem;

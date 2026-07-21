@@ -50,6 +50,7 @@ from odoo.addons.muk_ai.tools import (
     build_tool_call_output,
     clean_ask_preview,
     clean_view_context_payload,
+    extract_sources,
     fetch_url,
     is_unmaterialized_attachment,
     sanitize_json_schema,
@@ -1089,22 +1090,26 @@ class AISession(models.Model):
         name: str,
         output_result,
         log_result=None,
+        arguments: dict | None = None,
     ) -> None:
         """Append a tool output and record the matching result event.
 
         Image-bearing results are split: the text-only payload becomes the
         ``function_call_output`` and any images are persisted and appended as a
-        follow-up user entry so the vision model can see them.
+        follow-up user entry so the vision model can see them. Any citable
+        sources the call surfaced (a fetched page, a read record) are attached
+        to the event so the client can render them in the sources rail.
         """
         cleaned = self._append_tool_output_with_vision(outputs, call_id, output_result)
-        self._append_event(
-            {
-                'kind': 'tool_result',
-                'name': name,
-                'result': cleaned if log_result is None else log_result,
-                'call_id': call_id,
-            }
-        )
+        event = {
+            'kind': 'tool_result',
+            'name': name,
+            'result': cleaned if log_result is None else log_result,
+            'call_id': call_id,
+        }
+        if sources := extract_sources(name, arguments, output_result):
+            event['sources'] = sources
+        self._append_event(event)
 
     def _persist_synthetic_event(self, call: dict, result, status: str) -> None:
         """Persist an MCP log entry for a synthetic (non-provider) tool call."""
@@ -1388,14 +1393,15 @@ class AISession(models.Model):
                     decision='auto_approved', call=call, risk=gate['risk']
                 )
             result, ok = self._dispatch_tool_call(target, target_args, inline_call_id)
-        self._append_event(
-            {
-                'kind': 'tool_result',
-                'name': target,
-                'result': result,
-                'call_id': inline_call_id,
-            }
-        )
+        event = {
+            'kind': 'tool_result',
+            'name': target,
+            'result': result,
+            'call_id': inline_call_id,
+        }
+        if sources := extract_sources(target, target_args, result):
+            event['sources'] = sources
+        self._append_event(event)
         return {'name': target, 'output': result, 'ok': ok}
 
     def _maybe_publish_ui_action(self, text, name: str, call_id: str) -> None:
@@ -1984,11 +1990,11 @@ class AISession(models.Model):
                     if m := URL_REF_RE.match(value):
                         url = m.group(1)
                         try:
-                            content = fetch_url(url)
+                            result = fetch_url(url)
                         except (UserError, urllib3.exceptions.HTTPError):
                             return value
                         refs.append({'kind': 'url', 'preview_url': url})
-                        return base64.b64encode(content).decode()
+                        return base64.b64encode(result.body).decode()
                     return value
                 if isinstance(value, dict):
                     return {k: _resolve(v) for k, v in value.items()}
@@ -2277,7 +2283,9 @@ class AISession(models.Model):
             call['name'], call['arguments'], call['call_id']
         )
         self._heartbeat_claim()
-        self._record_tool_result(outputs, call['call_id'], call['name'], result)
+        self._record_tool_result(
+            outputs, call['call_id'], call['name'], result, arguments=call['arguments']
+        )
         return ok and call['name'] in self._get_terminating_tools()
 
     def _process_tool_round(
@@ -2744,7 +2752,13 @@ class AISession(models.Model):
                     'reason': reject_reason or '',
                 }
                 self._persist_synthetic_event(call, result, 'denied')
-            self._record_tool_result(outputs, call['call_id'], call['name'], result)
+            self._record_tool_result(
+                outputs,
+                call['call_id'],
+                call['name'],
+                result,
+                arguments=call['arguments'],
+            )
             self.write({'pending_ask': False, 'claimed_at': False})
             self._transition_state('running')
             self._process_tool_round(
