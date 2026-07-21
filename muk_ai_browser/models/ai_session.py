@@ -98,11 +98,14 @@ class AISession(models.Model):
             'through the MuK AI Browser extension. The user is currently on '
             '%(origin)s. When the user says "this page", "this product", "here" '
             'or similar, they mean the page open in the browser right now. Read '
-            'it yourself with the read_page tool. Do not ask the user to paste '
-            'page content or a URL, and do not ask which page they mean. Use '
-            'click, fill, select_option, scroll, navigate and the other browser '
-            'tools to act on that page directly. Ask a clarifying question only '
-            'when the task is genuinely ambiguous after you have read the page.',
+            'it yourself with the read_page tool first: click, fill, hover and '
+            'select_option act on an element by the ref that read_page (or a '
+            'marked screenshot) returns, so always read the page before acting '
+            'on it. Do not ask the user to paste page content or a URL, and do '
+            'not ask which page they mean. Use the browser tools (click, fill, '
+            'select_option, scroll, navigate, and the others) to act on that '
+            'page directly. Ask a clarifying question only when the task is '
+            'genuinely ambiguous after you have read the page.',
             origin=origin,
         )
         addenda.append(note)
