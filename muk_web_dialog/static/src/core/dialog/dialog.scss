@@ -1,7 +1,18 @@
 .mk_btn_dialog_size {
-	color: $btn-close-color;
-	opacity: $btn-close-opacity;
-	&:hover {
-	    opacity: $btn-close-hover-opacity;
-	}
+    color: $btn-close-color;
+    opacity: $btn-close-opacity;
+    &:hover {
+        opacity: $btn-close-hover-opacity;
+    }
+}
+
+// The fullscreen size relies on the width web declares in its own dialog.scss.
+// Bundles that drop that file - the Point of Sale removes it because one of its
+// rules would hide the buttons of the PoS popups - would otherwise expand the
+// dialog without widening it.
+@include media-breakpoint-up(sm) {
+    .modal-fs {
+        width: calc(100% - #{2 * $modal-dialog-margin-y-sm-up});
+        max-width: none;
+    }
 }
