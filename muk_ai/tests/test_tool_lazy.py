@@ -232,6 +232,26 @@ class TestToolLazy(AITestCommon):
         self.assertTrue(result['call']['ok'])
         self.assertEqual(dispatch.call_args[0][1], 'rare_tool')
 
+    def test_tool_load_inline_call_accepts_flat_arguments(self):
+        with (
+            self._patch_catalog(),
+            patch.object(
+                type(self.session),
+                '_dispatch_tool_call',
+                autospec=True,
+                return_value=('called', True),
+            ) as dispatch,
+        ):
+            result = self.session._dispatch_tool_load(
+                {
+                    'names': ['rare_tool'],
+                    'call': {'name': 'rare_tool', 'x': '1'},
+                },
+                parent_call_id='call_flat',
+            )
+        self.assertTrue(result['call']['ok'])
+        self.assertEqual(dispatch.call_args[0][2], {'x': '1'})
+
     def test_tool_load_inline_call_refuses_filtered_tool(self):
         agent = self.env['muk_ai.agent'].create(
             {

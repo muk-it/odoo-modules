@@ -1375,7 +1375,13 @@ class AISession(models.Model):
                     'include it in `names` and try again.'
                 )
             }
-        target_args = call_spec.get('arguments') or {}
+        target_args = call_spec.get('arguments')
+        if target_args is None:
+            target_args = {
+                key: value
+                for key, value in call_spec.items()
+                if key not in ('name', 'arguments')
+            }
         if not isinstance(target_args, dict):
             return {'error': '`call.arguments` must be an object.'}
         inline_call_id = f'{parent_call_id or "tool_load"}__{target}'
