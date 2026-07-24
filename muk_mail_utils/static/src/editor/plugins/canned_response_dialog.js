@@ -3,6 +3,7 @@ import { Component, onWillStart, useState } from '@odoo/owl';
 import { _t } from '@web/core/l10n/translation';
 import { useHotkey } from '@web/core/hotkeys/hotkey_hook';
 import { useAutofocus } from '@web/core/utils/hooks';
+import { KeepLast } from '@web/core/utils/concurrency';
 import { debounce } from '@web/core/utils/timing';
 
 import { Dialog } from '@web/core/dialog/dialog';
@@ -27,6 +28,7 @@ export class CannedResponseDialog extends Component {
             selectedIndex: 0,
         });
         this.searchInput = useAutofocus();
+        this.keepLast = new KeepLast();
         this.debouncedSearch = debounce((searchValue) => this.search(searchValue), 250);
         useHotkey('ArrowDown', () => this.navigate(1), {
             allowRepeat: true,
@@ -47,11 +49,13 @@ export class CannedResponseDialog extends Component {
     }
 
     /**
-     * Fetches the canned responses matching the given term.
+     * Fetches the canned responses matching the given term. Results of a
+     * superseded search are dropped, so a slow response cannot overwrite
+     * the list of a newer one.
      * @param {string} searchValue
      */
     async search(searchValue) {
-        this.state.records = await this.props.search(searchValue);
+        this.state.records = await this.keepLast.add(this.props.search(searchValue));
         this.state.selectedIndex = 0;
     }
 
