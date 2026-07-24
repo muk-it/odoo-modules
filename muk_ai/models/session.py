@@ -1899,6 +1899,33 @@ class AISession(models.Model):
             return {**cleaned, 'text': f'{text}\n{note}' if text else note}
         return cleaned
 
+    def _bound_tool_output(self, entry: dict) -> dict:
+        """Cap an oversized tool output so one result can't exhaust the window.
+
+        The character budget is the raw context-window size, i.e. roughly a
+        quarter of it in tokens (~4 chars per token). Only the model-facing
+        copy is bounded; the full result is still logged to the event for the
+        client. The marker tells the model the data was truncated so it can
+        narrow the query or aggregate instead of failing the whole request
+        with a provider ``input too large`` error.
+        """
+        text = entry.get('output')
+        if not isinstance(text, str):
+            return entry
+        max_chars = self._resolve_context_window()
+        if len(text) <= max_chars:
+            return entry
+        dropped = len(text) - max_chars
+        return {
+            **entry,
+            'output': (
+                f'{text[:max_chars]}\n\n[... tool result truncated: {dropped} of '
+                f'{len(text)} characters dropped to fit the context window. '
+                'Narrow the query with filters or a limit, or use aggregation '
+                'to retrieve the rest.]'
+            ),
+        }
+
     def _append_tool_output_with_vision(
         self, outputs: list, call_id: str, result
     ) -> object:
@@ -1914,7 +1941,9 @@ class AISession(models.Model):
         :return: the cleaned, text-only result for event logging
         """
         attachments, cleaned = self._extract_tool_vision(result)
-        outputs.append(build_tool_call_output(call_id, cleaned))
+        outputs.append(
+            self._bound_tool_output(build_tool_call_output(call_id, cleaned))
+        )
         if attachments:
             deferred = list(self.deferred_vision_attachment_ids or [])
             deferred += [a.id for a in attachments if a.id not in deferred]
@@ -2509,6 +2538,9 @@ class AISession(models.Model):
                 return
             if time.monotonic() > deadline:
                 return
+            self._maybe_auto_compact()
+            if self.state != 'running':
+                return
             if (cost_limit := self._turn_cost_limit()) and (
                 (self.turn_cost_spent or 0.0) >= cost_limit
             ):
@@ -2925,16 +2957,39 @@ class AISession(models.Model):
             },
         ]
 
+    def _estimate_conversation_tokens(self) -> int:
+        """Roughly estimate the pending request size from the conversation."""
+        return sum(
+            self._estimate_entry_tokens(entry) for entry in (self.conversation or [])
+        )
+
     def _maybe_auto_compact(self) -> bool:
-        """Auto-compact when input tokens approach the context window."""
+        """Auto-compact when the pending request approaches the context window.
+
+        Sizing uses the larger of the last reported input tokens and a fresh
+        estimate of the current conversation, so a turn that has since appended
+        large tool results is caught pre-flight instead of only reacting to the
+        previous round's reported count.
+
+        Compaction only summarizes the prefix and keeps the recent tail
+        verbatim, so it is skipped when the tail alone already fills the ratio:
+        summarizing then cannot bring the request under the window, and firing
+        every iteration would only burn provider calls (e.g. a single pasted
+        message larger than the window, which is always kept as the tail).
+        """
         if self.state == 'compacting':
             return False
         window = self._resolve_context_window()
-        if not window or not self.last_input_tokens:
+        if not window:
             return False
-        if (self.last_input_tokens / window) < COMPACT_AUTO_RATIO:
+        pending = max(self.last_input_tokens or 0, self._estimate_conversation_tokens())
+        if not pending or (pending / window) < COMPACT_AUTO_RATIO:
             return False
         if not (self.conversation or []):
+            return False
+        _prefix, tail = self._split_conversation_for_compact()
+        tail_tokens = sum(self._estimate_entry_tokens(entry) for entry in tail)
+        if (tail_tokens / window) >= COMPACT_AUTO_RATIO:
             return False
         resume_state = self.state if self.state == 'running' else None
         self._begin_compact_progress(auto=True)

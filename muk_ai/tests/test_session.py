@@ -818,6 +818,36 @@ class TestAiSession(AITestCommon):
         self.assertFalse(last_entry.get('auto'))
         self.assertIn('summary', last_entry)
 
+    def test_auto_compact_skips_when_the_kept_tail_alone_fills_the_window(self):
+        model = self.env['muk_ai.model'].create(
+            {
+                'name': 'Tiny',
+                'provider_id': self.provider.id,
+                'technical_name': 'test-tiny-window',
+                'context_window': 50000,
+                'input_rate': 1.0,
+                'output_rate': 2.0,
+            }
+        )
+        agent = self.env['muk_ai.agent'].create({'name': 'Tiny', 'model_id': model.id})
+        session = self.env['muk_ai.session'].create(
+            {'name': 'huge-paste', 'agent_id': agent.id}
+        )
+        session.conversation = [
+            {'role': 'user', 'content': [{'type': 'input_text', 'text': 'hi'}]},
+            {
+                'type': 'message',
+                'role': 'assistant',
+                'content': [{'type': 'output_text', 'text': 'hello'}],
+            },
+            {'role': 'user', 'content': [{'type': 'input_text', 'text': 'x' * 250000}]},
+        ]
+        calls = []
+        with self._patch_provider([self._text_payload('summary')], captured=calls):
+            self.assertFalse(session._maybe_auto_compact())
+        self.assertEqual(calls, [], 'a window-filling tail must not trigger a summary')
+        self.assertEqual(session.state, 'new')
+
     def test_compact_refuses_empty(self):
         session = self.env['muk_ai.session'].create({'name': 'empty'})
         with self.assertRaises(UserError):

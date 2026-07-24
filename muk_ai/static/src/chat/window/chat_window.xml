@@ -156,9 +156,18 @@
                                 </div>
                             </t>
                             <t t-if="session.state.error">
-                                <div class="alert alert-danger rounded-3 mt-2 small">
-                                    <strong><i class="fa fa-exclamation-circle me-1"/>Error:</strong>
-                                    <span t-esc="session.state.error"/>
+                                <div class="alert alert-danger rounded-3 mt-2 small d-flex flex-column align-items-stretch gap-2">
+                                    <div class="text-break">
+                                        <strong><i class="fa fa-exclamation-circle me-1"/>Error:</strong>
+                                        <span t-esc="session.state.error"/>
+                                    </div>
+                                    <button t-if="session.canRegenerate and session.canRegenerate()"
+                                            class="btn btn-sm btn-outline-danger flex-shrink-0 align-self-end"
+                                            type="button"
+                                            title="Regenerate this answer"
+                                            t-on-click="() => session.onRegenerate()">
+                                        <i class="fa fa-refresh me-1"/>Regenerate
+                                    </button>
                                 </div>
                             </t>
                         </t>

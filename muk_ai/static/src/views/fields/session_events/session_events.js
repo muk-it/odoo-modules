@@ -48,6 +48,9 @@ export class SessionEventsField extends Component {
     get isCompact() {
         return true;
     }
+    get hideSources() {
+        return true;
+    }
     renderMarkdown(source) {
         return markup(renderMarkdownToHtml(source));
     }
