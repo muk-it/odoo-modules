@@ -74,6 +74,26 @@
 		<field name="currency">USD</field>
 	</record>
 
+	<record id="model_magistral_medium" model="muk_ai.model">
+		<field name="name">Magistral Medium</field>
+		<field name="provider_id" ref="provider_mistral"/>
+		<field name="technical_name">magistral-medium-latest</field>
+		<field name="context_window">128000</field>
+		<field name="input_rate">2.0</field>
+		<field name="output_rate">5.0</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_magistral_small" model="muk_ai.model">
+		<field name="name">Magistral Small</field>
+		<field name="provider_id" ref="provider_mistral"/>
+		<field name="technical_name">magistral-small-latest</field>
+		<field name="context_window">128000</field>
+		<field name="input_rate">0.5</field>
+		<field name="output_rate">1.5</field>
+		<field name="currency">USD</field>
+	</record>
+
 	<record id="provider_mistral" model="muk_ai.provider">
 		<field name="default_model_id" ref="model_mistral_medium"/>
 	</record>

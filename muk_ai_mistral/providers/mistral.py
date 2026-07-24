@@ -55,8 +55,9 @@ class MistralProvider(ProviderBase):
     ) -> dict:
         """Build the Conversations request body and dispatch it to Mistral.
 
-        :param on_delta: optional streaming callback; ignored together with
-            the built-in connectors, which force a buffered request
+        :param on_delta: optional streaming callback; when set the request is
+            streamed (built-in connectors included), falling back to a
+            buffered request only if the stream fails
         :return: the parsed response payload (text, tool calls, usage)
         """
         instructions, entries = self._inputs_to_entries(inputs)
@@ -90,15 +91,9 @@ class MistralProvider(ProviderBase):
             tools.append({'type': IMAGE_GENERATION_TOOL})
         if tools:
             body['tools'] = tools
-        connectors = (
-            enable_web_search or enable_image_generation or enable_code_interpreter
-        )
-        if callable(on_delta) and not connectors:
-            return self._stream_request(body, on_delta)
-        result = self._buffered_request(body)
         if callable(on_delta):
-            self._emit_text(on_delta, result)
-        return result
+            return self._stream_request(body, on_delta)
+        return self._buffered_request(body)
 
     # ----------------------------------------------------------
     # Inputs
@@ -329,11 +324,32 @@ class MistralProvider(ProviderBase):
                 text_parts.append(snippet)
                 message_text_parts.append(snippet)
 
+    @staticmethod
+    def _thinking_text(chunk: dict) -> str:
+        """Extract the plain text of a Mistral ``thinking`` content chunk.
+
+        Reasoning models stream their chain of thought as ``thinking`` chunks
+        whose ``thinking`` field is a list of ``{'type': 'text', ...}`` parts
+        (or, defensively, a bare string).
+        """
+        parts = chunk.get('thinking')
+        if isinstance(parts, str):
+            return parts
+        if not isinstance(parts, list):
+            return ''
+        return ''.join(
+            part.get('text') or ''
+            for part in parts
+            if isinstance(part, dict) and part.get('type') == 'text'
+        )
+
     def _render_chunk(self, chunk: dict) -> str:
         """Render a single message content chunk to a markdown snippet."""
         chunk_type = chunk.get('type')
         if chunk_type == 'text':
             return chunk.get('text') or ''
+        if chunk_type == 'thinking':
+            return ''
         if chunk_type == 'tool_reference':
             title = chunk.get('title') or chunk.get('url') or 'source'
             url = chunk.get('url') or ''
@@ -550,7 +566,10 @@ class MistralProvider(ProviderBase):
                     state['text'].append(content)
                     self._call_on_delta(on_delta, 'text', {'delta': content})
             elif isinstance(content, dict):
-                if content.get('type') == 'tool_file':
+                if content.get('type') == 'thinking':
+                    if delta := self._thinking_text(content):
+                        self._call_on_delta(on_delta, 'reasoning', {'delta': delta})
+                elif content.get('type') == 'tool_file':
                     state['tool_files'].append(content)
                 else:
                     snippet = self._render_chunk(content)

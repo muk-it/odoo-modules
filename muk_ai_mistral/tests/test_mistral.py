@@ -494,6 +494,51 @@ class TestAiMistralProvider(MistralTestCommon):
         self.assertEqual(result['usage']['input_tokens'], 7)
         self.assertEqual(result['usage']['output_tokens'], 4)
 
+    def test_stream_emits_reasoning_deltas(self):
+        sse = self._sse_lines(
+            [
+                {
+                    'type': 'message.output.delta',
+                    'output_index': 0,
+                    'content': {
+                        'type': 'thinking',
+                        'thinking': [{'type': 'text', 'text': 'Let me '}],
+                    },
+                },
+                {
+                    'type': 'message.output.delta',
+                    'output_index': 0,
+                    'content': {
+                        'type': 'thinking',
+                        'thinking': [{'type': 'text', 'text': 'think.'}],
+                    },
+                },
+                {
+                    'type': 'message.output.delta',
+                    'output_index': 0,
+                    'content': 'Answer',
+                },
+                {
+                    'type': 'conversation.response.done',
+                    'usage': {'prompt_tokens': 5, 'completion_tokens': 3},
+                },
+            ]
+        )
+        response = MagicMock()
+        response.iter_lines.return_value = iter(sse)
+        response.raise_for_status.return_value = None
+        deltas = []
+        with patch.object(requests.Session, 'post', return_value=response):
+            result = self.provider._request_responses(
+                inputs=[],
+                on_delta=lambda k, p: deltas.append((k, p)),
+            )
+        reasoning = [p['delta'] for (k, p) in deltas if k == 'reasoning']
+        text = [p['delta'] for (k, p) in deltas if k == 'text']
+        self.assertEqual(reasoning, ['Let me ', 'think.'])
+        self.assertEqual(text, ['Answer'])
+        self.assertEqual(result['text'], 'Answer')
+
     def test_streaming_failure_falls_back_to_non_stream(self):
         calls = {'stream': 0, 'plain': 0}
 
@@ -523,12 +568,29 @@ class TestAiMistralProvider(MistralTestCommon):
             'fallback answer', [p.get('delta') for (k, p) in deltas if k == 'text']
         )
 
-    def test_connector_request_skips_streaming_and_emits(self):
+    def test_connector_request_streams(self):
+        sse = self._sse_lines(
+            [
+                {'type': 'message.output.delta', 'output_index': 0, 'content': 'web '},
+                {
+                    'type': 'message.output.delta',
+                    'output_index': 0,
+                    'content': 'answer',
+                },
+                {
+                    'type': 'conversation.response.done',
+                    'usage': {'prompt_tokens': 5, 'completion_tokens': 2},
+                },
+            ]
+        )
+        response = MagicMock()
+        response.iter_lines.return_value = iter(sse)
+        response.raise_for_status.return_value = None
         posts = []
 
         def fake_post(url, **kwargs):
             posts.append(kwargs.get('json') or {})
-            return self._mock_http_response(self._text_response('web answer'))
+            return response
 
         deltas = []
         with patch.object(requests.Session, 'post', side_effect=fake_post):
@@ -538,11 +600,12 @@ class TestAiMistralProvider(MistralTestCommon):
                 on_delta=lambda k, p: deltas.append((k, p)),
             )
         self.assertEqual(len(posts), 1)
-        self.assertNotIn('stream', posts[0])
+        self.assertTrue(posts[0].get('stream'))
         self.assertIn({'type': 'web_search'}, posts[0]['tools'])
         self.assertEqual(result['text'], 'web answer')
-        self.assertIn(
-            'web answer', [p.get('delta') for (k, p) in deltas if k == 'text']
+        self.assertEqual(
+            [p['delta'] for (k, p) in deltas if k == 'text'],
+            ['web ', 'answer'],
         )
 
     def test_buffered_request_retries_transient_server_error(self):

@@ -39,7 +39,7 @@ class TestMistralRegistry(MistralTestCommon):
                 ('provider_id', '=', self.provider.id),
             ]
         )
-        self.assertEqual(len(models), 11)
+        self.assertEqual(len(models), 9)
         technical_names = set(models.mapped('technical_name'))
         self.assertIn('mistral-large-latest', technical_names)
         self.assertIn('ministral-14b-latest', technical_names)
