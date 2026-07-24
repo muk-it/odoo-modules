@@ -70,8 +70,7 @@ export class MessageListController extends ListController {
         return this.ui.size >= SIZES.XXL;
     }
     /**
-     * Load the given record into the preview pane, inserting its attachments as
-     * non-deletable store records.
+     * Load the given record into the preview pane.
      * @param {object} record the selected list record
      */
     setSelectedRecord(record) {
@@ -83,7 +82,6 @@ export class MessageListController extends ListController {
                     id: att.resId,
                     name: att.data.name,
                     mimetype: att.data.mimetype,
-                    disableDeletable: true,
                 });
             },
         );
