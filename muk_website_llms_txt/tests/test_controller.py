@@ -24,10 +24,19 @@ class TestLlmsTxtController(HttpCase):
                 'llms_link_headers_enabled': True,
             }
         )
+        cls.website._generate_llms_document('llms.txt')
+        cls.website._generate_llms_document('llms-full.txt')
 
     # ----------------------------------------------------------
     # Tests
     # ----------------------------------------------------------
+
+    def test_llms_txt_is_conditional(self):
+        response = self.url_open('/llms.txt')
+        etag = response.headers.get('ETag')
+        self.assertTrue(etag)
+        cached = self.url_open('/llms.txt', headers={'If-None-Match': etag})
+        self.assertEqual(cached.status_code, 304)
 
     def test_llms_txt_returns_200(self):
         response = self.url_open('/llms.txt')

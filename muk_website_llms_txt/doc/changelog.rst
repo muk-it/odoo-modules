@@ -1,3 +1,8 @@
+`1.3.0`
+-------
+
+- Scheduled Document Generation
+
 `1.2.0`
 -------
 

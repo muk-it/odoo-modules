@@ -48,6 +48,8 @@ class TestLlmsTxtVisibility(HttpCase):
             visibility='restricted_group',
             group_ids=[(6, 0, [cls.env.ref('base.group_system').id])],
         )
+        cls.website._generate_llms_document('llms.txt')
+        cls.website._generate_llms_document('llms-full.txt')
 
     @classmethod
     def _create_page(

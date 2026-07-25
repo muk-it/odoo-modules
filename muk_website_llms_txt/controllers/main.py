@@ -5,16 +5,38 @@ import logging
 from odoo import http
 from odoo.http import Response, request
 
-from odoo.addons.muk_website_llms_txt.tools.converter import (
-    build_content_signal,
-    estimate_tokens,
-)
+from odoo.addons.muk_website_llms_txt.tools.converter import build_content_signal
 
 _logger = logging.getLogger(__name__)
 
 
 class LlmsTxtController(http.Controller):
     """Serve the ``/llms.txt`` and ``/llms-full.txt`` discovery files."""
+
+    # ----------------------------------------------------------
+    # Helper
+    # ----------------------------------------------------------
+
+    def _serve_llms_document(self, document: str) -> Response:
+        """Stream the stored document of the current website.
+
+        The document is served straight from its attachment, so a request
+        never renders the catalog and repeat crawlers are answered with a
+        conditional ``304`` instead of the whole body.
+
+        :param document: the name of the route the document is served on
+        :return: the streamed document response
+        """
+        attachment = request.website._get_llms_document(document)
+        response = attachment._to_http_stream().get_response(
+            as_attachment=False, max_age=3600
+        )
+        response.headers['Content-Type'] = 'text/plain; charset=utf-8'
+        response.headers['x-markdown-tokens'] = attachment.description or '0'
+        response.headers['Content-Signal'] = build_content_signal(
+            request.website.llms_content_signal or 'all'
+        )
+        return response
 
     # ----------------------------------------------------------
     # Routes
@@ -32,20 +54,7 @@ class LlmsTxtController(http.Controller):
         """Return the llms.txt index of published website content."""
         if not request.website.llms_txt_enabled:
             raise request.not_found()
-        content = request.website._get_llms_txt_content()
-        token_count = estimate_tokens(content)
-        content_signal = build_content_signal(
-            request.website.llms_content_signal or 'all'
-        )
-        return request.make_response(
-            content,
-            [
-                ('Content-Type', 'text/plain; charset=utf-8'),
-                ('Cache-Control', 'public, max-age=3600'),
-                ('x-markdown-tokens', str(token_count)),
-                ('Content-Signal', content_signal),
-            ],
-        )
+        return self._serve_llms_document('llms.txt')
 
     @http.route(
         '/llms-full.txt',
@@ -59,17 +68,4 @@ class LlmsTxtController(http.Controller):
         """Return the llms-full.txt dump of all published page content."""
         if not request.website.llms_full_txt_enabled:
             raise request.not_found()
-        content = request.website._get_llms_full_txt_content()
-        token_count = estimate_tokens(content)
-        content_signal = build_content_signal(
-            request.website.llms_content_signal or 'all'
-        )
-        return request.make_response(
-            content,
-            [
-                ('Content-Type', 'text/plain; charset=utf-8'),
-                ('Cache-Control', 'public, max-age=3600'),
-                ('x-markdown-tokens', str(token_count)),
-                ('Content-Signal', content_signal),
-            ],
-        )
+        return self._serve_llms_document('llms-full.txt')

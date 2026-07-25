@@ -8,6 +8,8 @@ from lxml.html.clean import Cleaner
 
 from odoo.tools.mail import html2plaintext
 
+_WORD_RE = re.compile(r'\S+')
+
 _cleaner = Cleaner(
     scripts=True,
     style=True,
@@ -221,10 +223,15 @@ def page_to_agent_markdown(html_content: str | bytes | None, base_url: str = '')
 
 
 def estimate_tokens(text: str | None) -> int:
-    """Estimate the number of LLM tokens in ``text`` from its word count."""
+    """Estimate the number of LLM tokens in ``text`` from its word count.
+
+    The words are counted lazily: a full llms-full.txt document is tens of
+    megabytes, and splitting one into a list would cost more memory than
+    rendering it.
+    """
     if not text:
         return 0
-    words = len(text.split())
+    words = sum(1 for _ in _WORD_RE.finditer(text))
     return int(words * 1.3)
 
 
