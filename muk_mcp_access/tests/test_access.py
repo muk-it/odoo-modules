@@ -233,6 +233,33 @@ class TestMCPAccessModel(common.TransactionCase):
             self.access_model._get_model_domain('res.partner'),
         )
 
+    # ----------------------------------------------------------
+    # Tests: archived entries stay disabled under caller active_test
+    # ----------------------------------------------------------
+
+    def test_archived_entry_not_resurrected_by_active_test(self):
+        self.access_model.create(
+            {
+                'model_id': self.partner_model.id,
+                'allow_read': True,
+            }
+        )
+        disabled = self.access_model.create(
+            {
+                'model_id': self.user_model.id,
+                'allow_read': True,
+                'domain': "[('id', '=', 1)]",
+            }
+        )
+        disabled.active = False
+        poisoned = self.access_model.with_context(active_test=False)
+        self.assertFalse(poisoned._is_model_allowed('res.users'))
+        self.assertNotIn(
+            'res.users',
+            poisoned._get_allowed_model_names('read') or set(),
+        )
+        self.assertIsNone(poisoned._get_model_domain('res.users'))
+
     def test_invalid_domain_rejected(self):
         with self.assertRaises(Exception):
             self.access_model.create(

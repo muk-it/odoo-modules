@@ -72,17 +72,26 @@ class MCPAccessModel(models.Model):
             'company_id': self.env.company.id,
         }
 
+    def _entries(self) -> MCPAccessModel:
+        """Return allowlist entries as superuser, ignoring caller ``active_test``.
+
+        Access-control lookups must never honour a caller-supplied
+        ``active_test=False`` context, which would otherwise resurrect
+        archived (disabled) entries and bypass the allowlist.
+        """
+        return self.sudo().with_context(active_test=True)
+
     @api.model
     def _is_active(self) -> bool:
         """Return whether any allowlist entry exists (whitelisting is enabled)."""
-        return bool(self.sudo().search_count([]))
+        return bool(self._entries().search_count([]))
 
     @api.model
     def _is_model_allowed(self, model_name: str, category: str = 'read') -> bool:
         """Return whether a model is reachable via MCP for the given tool category."""
         if not self._is_active():
             return True
-        entry = self.sudo().search(
+        entry = self._entries().search(
             [('model_name', '=', model_name)],
             limit=1,
         )
@@ -97,7 +106,7 @@ class MCPAccessModel(models.Model):
         """Return the evaluated record domain for a model, or ``None`` when unrestricted."""
         if not self._is_active():
             return None
-        entry = self.sudo().search(
+        entry = self._entries().search(
             [('model_name', '=', model_name)],
             limit=1,
         )
@@ -115,7 +124,7 @@ class MCPAccessModel(models.Model):
             domain.append(('allow_read', '=', True))
         elif category == 'write':
             domain.append(('allow_write', '=', True))
-        return set(self.sudo().search(domain).mapped('model_name'))
+        return set(self._entries().search(domain).mapped('model_name'))
 
     def _eval_domain(self) -> list:
         """Safe-evaluate this entry's record domain text into a domain list."""
