@@ -104,6 +104,57 @@ class AISession(models.Model):
         """
         return ('conversation', 'display_events', 'last_text')
 
+    @api.model
+    def _blank_transcript_value(self, name: str) -> list | bool:
+        """Return the empty placeholder substituted for a hidden field."""
+        return False if name == 'last_text' else []
+
+    def _blank_non_owner_transcript(self, rows: list[dict]) -> list[dict]:
+        """Empty transcript fields in ``rows`` for non-owner, non-admin readers."""
+        if not rows or self.env.su or self.env.is_admin():
+            return rows
+        sensitive = self._non_owner_sensitive_fields()
+        if not any(name in row for row in rows for name in sensitive):
+            return rows
+        uid = self.env.uid
+        owner_by_id = {
+            session.id: session.user_id.id
+            for session in self.sudo().browse([row['id'] for row in rows])
+        }
+        for row in rows:
+            if owner_by_id.get(row['id']) == uid:
+                continue
+            for name in sensitive:
+                if name in row:
+                    row[name] = self._blank_transcript_value(name)
+        return rows
+
+    def _blank_non_owner_transcript_cache(self) -> None:
+        """Seed blanked stored transcript values into cache for non-owner readers.
+
+        Exports read stored values straight from cache via ``_export_rows``,
+        never routing through :meth:`_read_format`. Pre-seeding the cache with
+        blanks (not marked dirty, so never flushed to the database) closes that
+        path for non-owner, non-admin readers; the computed ``display_events``
+        blanks itself through the ``fetch_events`` guard.
+        """
+        if not self or self.env.su or self.env.is_admin():
+            return
+        uid = self.env.uid
+        non_owner = self.sudo().filtered(lambda session: session.user_id.id != uid)
+        if not non_owner:
+            return
+        cache = self.env.cache
+        for name in self._non_owner_sensitive_fields():
+            field = self._fields[name]
+            if not field.store:
+                continue
+            blank = field.convert_to_cache(
+                self._blank_transcript_value(name), self, validate=False
+            )
+            for record in self.browse(non_owner._ids):
+                cache.set(record, field, blank)
+
     def _hides_transcript_from_current_user(self) -> bool:
         """Return whether the caller must be denied this session's transcript."""
         if self.env.su or self.env.is_admin():
@@ -247,34 +298,24 @@ class AISession(models.Model):
             return self.browse(forbidden_ids), error_func
         return None
 
-    def read(
-        self, fields: list[str] | None = None, load: str = '_classic_read'
+    def _read_format(
+        self, fnames: list[str], load: str = '_classic_read'
     ) -> list[dict]:
-        """Blank transcript fields when a non-owner reads a granted session.
+        """Blank transcript fields for non-owner readers on every read path.
 
-        The record-level grant added by :meth:`_check_access` lets a non-owner
-        see a session and its metadata, but the transcript fields hold data
-        gathered under the owner's privileges. Empty them for non-owner,
-        non-admin readers while preserving owner and admin behavior.
+        Both :meth:`read` and :meth:`search_read` funnel their value formatting
+        through this method, so blanking here covers the direct read and the
+        ``search_read`` bypass alike. The record-level grant from
+        :meth:`_check_access` still exposes a session's metadata to a non-owner,
+        but the transcript fields hold data gathered under the owner's
+        privileges and must stay hidden.
         """
-        result = super().read(fields, load)
-        if not result or self.env.su or self.env.is_admin():
-            return result
-        sensitive = self._non_owner_sensitive_fields()
-        if fields is not None and not any(name in fields for name in sensitive):
-            return result
-        uid = self.env.uid
-        owner_by_id = {
-            session.id: session.user_id.id
-            for session in self.sudo().browse([row['id'] for row in result])
-        }
-        for row in result:
-            if owner_by_id.get(row['id']) == uid:
-                continue
-            for name in sensitive:
-                if name in row:
-                    row[name] = False if name == 'last_text' else []
-        return result
+        return self._blank_non_owner_transcript(super()._read_format(fnames, load))
+
+    def export_data(self, fields_to_export: list[str]) -> dict:
+        """Hide stored transcript fields from non-owner exporters."""
+        self._blank_non_owner_transcript_cache()
+        return super().export_data(fields_to_export)
 
     def fetch_events(
         self, limit: int = 100, before_sequence: int | None = None

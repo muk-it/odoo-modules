@@ -74,6 +74,40 @@ class TestSessionTranscriptAccess(TransactionCase):
         session = self.session.with_user(self.reader)
         self.assertFalse(session.read(['last_text'])[0]['last_text'])
 
+    def test_reader_search_read_blanks_transcript(self):
+        model = self.env['muk_ai.session'].with_user(self.reader)
+        rows = model.search_read(
+            [('id', '=', self.session.id)], ['name', 'conversation', 'last_text']
+        )
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]['name'], 'Linked Session')
+        self.assertEqual(rows[0]['conversation'], [])
+        self.assertFalse(rows[0]['last_text'])
+
+    def test_reader_export_blanks_transcript(self):
+        self.reader.sudo().group_ids |= self.env.ref('base.group_allow_export')
+        session = self.session.with_user(self.reader)
+        datas = session.export_data(['name', 'conversation', 'last_text'])['datas']
+        self.assertEqual(len(datas), 1)
+        self.assertEqual(datas[0][0], 'Linked Session')
+        self.assertNotIn('secret tool output', str(datas[0][1]))
+        self.assertNotIn('secret tool output', str(datas[0][2]))
+
+    def test_owner_search_read_keeps_transcript(self):
+        model = self.env['muk_ai.session'].with_user(self.owner)
+        rows = model.search_read(
+            [('id', '=', self.session.id)], ['conversation', 'last_text']
+        )
+        self.assertEqual(rows[0]['conversation'], self.transcript)
+        self.assertEqual(rows[0]['last_text'], 'secret tool output')
+
+    def test_owner_export_keeps_transcript(self):
+        self.owner.sudo().group_ids |= self.env.ref('base.group_allow_export')
+        session = self.session.with_user(self.owner)
+        datas = session.export_data(['conversation', 'last_text'])['datas']
+        self.assertIn('secret tool output', str(datas[0][0]))
+        self.assertEqual(datas[0][1], 'secret tool output')
+
     def test_owner_keeps_conversation(self):
         session = self.session.with_user(self.owner)
         self.assertEqual(
