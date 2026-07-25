@@ -2,7 +2,12 @@ import { patch } from '@web/core/utils/patch';
 
 import { ChatComposer } from '@muk_ai/chat/composer/chat_composer';
 
-import { getActiveSkills } from '@muk_ai_skills/chat/skill_cache';
+import { getSkills } from '@muk_ai_skills/chat/skill_cache';
+
+ChatComposer.props = {
+    ...ChatComposer.props,
+    sessionId: { type: [Number, String], optional: true },
+};
 
 /** Merge visible skills into the composer's slash-command suggestions. */
 patch(ChatComposer.prototype, {
@@ -13,7 +18,7 @@ patch(ChatComposer.prototype, {
             return builtIn;
         }
         const prefix = value.split(/\s+/)[0].toLowerCase();
-        const skillEntries = getActiveSkills().map((skill) => ({
+        const skillEntries = getSkills(this.props.sessionId).map((skill) => ({
             name: `/${skill.name}`,
             hint: skill.description
                 ? `Skill: ${skill.description}`

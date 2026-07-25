@@ -1,5 +1,4 @@
 const cache = new Map();
-let activeSessionId = null;
 
 /**
  * Store the visible skills for a session, coercing a non-array to an empty list.
@@ -19,22 +18,15 @@ export function clearSkills(sessionId) {
 }
 
 /**
- * Return the cached skills for the currently active session.
- * @returns {Array} the active session's skills, or an empty list
+ * Return the cached skills for a specific session.
+ * @param {number} sessionId the session id to look up
+ * @returns {Array} the session's skills, or an empty list
  */
-export function getActiveSkills() {
-    if (activeSessionId === null) {
+export function getSkills(sessionId) {
+    if (!sessionId) {
         return [];
     }
-    return cache.get(activeSessionId) || [];
-}
-
-/**
- * Mark a session as active for `getActiveSkills`, or clear it when falsy.
- * @param {number} sessionId the session id to activate
- */
-export function setActiveSessionId(sessionId) {
-    activeSessionId = sessionId || null;
+    return cache.get(sessionId) || [];
 }
 
 /**

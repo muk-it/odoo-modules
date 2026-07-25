@@ -4,8 +4,8 @@ from psycopg2 import IntegrityError
 
 from odoo import models
 from odoo.exceptions import AccessError
-from odoo.tests.common import TransactionCase, new_test_user, tagged
 from odoo.tests import Form
+from odoo.tests.common import TransactionCase, new_test_user, tagged
 from odoo.tools import mute_logger
 from odoo.tools.safe_eval import safe_eval
 
@@ -198,3 +198,51 @@ class TestSkillSharing(TransactionCase):
         visible = session._visible_skills().filtered(lambda s: s.name == 'dup_skill')
         self.assertEqual(visible, own)
         self.assertNotIn(shared, visible)
+
+    # ----------------------------------------------------------
+    # Tests resources
+    # ----------------------------------------------------------
+
+    def _pending_attachment(self, user: models.BaseModel) -> models.BaseModel:
+        """Create a skill resource uploaded before the skill was saved (res_id=0)."""
+        return (
+            self.env['ir.attachment']
+            .with_user(user)
+            .create(
+                {
+                    'name': 'resource.txt',
+                    'res_model': 'muk_ai.skill',
+                    'res_id': 0,
+                    'raw': b'hello',
+                }
+            )
+        )
+
+    def test_create_relinks_pending_attachment_to_skill(self):
+        attachment = self._pending_attachment(self.user_owner)
+        skill = self._make_skill(
+            self.user_owner,
+            attachment_ids=[(6, 0, attachment.ids)],
+        )
+        self.assertEqual(attachment.res_id, skill.id)
+        self.assertEqual(attachment.res_model, 'muk_ai.skill')
+
+    def test_write_relinks_pending_attachment_to_skill(self):
+        skill = self._make_skill(self.user_owner)
+        attachment = self._pending_attachment(self.user_owner)
+        skill.with_user(self.user_owner).write({'attachment_ids': [(4, attachment.id)]})
+        self.assertEqual(attachment.res_id, skill.id)
+
+    def test_unlinked_pending_resource_unreadable_by_shared_user(self):
+        attachment = self._pending_attachment(self.user_owner)
+        with self.assertRaises(AccessError):
+            attachment.with_user(self.user_other).check_access('read')
+
+    def test_shared_user_can_read_relinked_resource(self):
+        attachment = self._pending_attachment(self.user_owner)
+        self._make_skill(
+            self.user_owner,
+            user_ids=[(6, 0, (self.user_owner | self.user_other).ids)],
+            attachment_ids=[(6, 0, attachment.ids)],
+        )
+        attachment.with_user(self.user_other).check_access('read')

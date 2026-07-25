@@ -7,13 +7,28 @@ import { useService } from '@web/core/utils/hooks';
 import { AIChat } from '@muk_ai/chat/chat';
 import { ChatWindow } from '@muk_ai/chat/window/chat_window';
 import { formatError } from '@muk_ai/chat/utils';
+import { SLASH_COMMANDS } from '@muk_ai/chat/session/use_ai_session';
 
-import {
-    clearSkills,
-    findSkill,
-    setActiveSessionId,
-    setSkills,
-} from '@muk_ai_skills/chat/skill_cache';
+import { clearSkills, findSkill, setSkills } from '@muk_ai_skills/chat/skill_cache';
+
+const BUILTIN_COMMAND_NAMES = new Set(
+    SLASH_COMMANDS.map((c) => c.name.replace(/^\//, '').toLowerCase()),
+);
+
+/**
+ * Resolve the skill a slash command head routes to, or null when a built-in
+ * command of the same name exists. Built-in commands always take precedence so
+ * a skill named like `help`/`clear`/`compact` cannot hijack the built-in.
+ * @param {number} sessionId the session whose skills to search
+ * @param {string} head the slash command head, without the leading slash
+ * @returns {object|null} the matching skill, or null when a built-in wins
+ */
+export function resolveChatSkill(sessionId, head) {
+    if (BUILTIN_COMMAND_NAMES.has((head || '').toLowerCase())) {
+        return null;
+    }
+    return findSkill(sessionId, head);
+}
 
 /**
  * Wrap a chat component's send handler to dispatch `/skill` slash commands
@@ -30,7 +45,7 @@ function installSkillRouting(component) {
             const match = trimmed.match(/^\/(\S+)\s*(.*)$/);
             const head = (match?.[1] || '').toLowerCase();
             const rest = (match?.[2] || '').trim();
-            const skill = findSkill(session.state.sessionId, head);
+            const skill = resolveChatSkill(session.state.sessionId, head);
             if (skill) {
                 session.state.input = '';
                 try {
@@ -56,10 +71,8 @@ function installSkillRouting(component) {
     useEffect(
         (sessionId) => {
             if (!sessionId) {
-                setActiveSessionId(null);
-                return () => setActiveSessionId(null);
+                return;
             }
-            setActiveSessionId(sessionId);
             let cancelled = false;
             (async () => {
                 try {
@@ -81,7 +94,6 @@ function installSkillRouting(component) {
             return () => {
                 cancelled = true;
                 clearSkills(sessionId);
-                setActiveSessionId(null);
             };
         },
         () => [component.session.state.sessionId],

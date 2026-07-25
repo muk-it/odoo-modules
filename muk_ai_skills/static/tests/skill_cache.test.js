@@ -3,8 +3,7 @@ import { describe, expect, test } from '@odoo/hoot';
 import {
     clearSkills,
     findSkill,
-    getActiveSkills,
-    setActiveSessionId,
+    getSkills,
     setSkills,
 } from '@muk_ai_skills/chat/skill_cache';
 
@@ -13,50 +12,36 @@ describe.current.tags('muk_ai_skills');
 function reset() {
     clearSkills(1);
     clearSkills(2);
-    setActiveSessionId(null);
 }
 
-test('getActiveSkills returns empty when no active session set', () => {
+test('getSkills returns empty for an unknown or falsy session', () => {
     reset();
-    expect(getActiveSkills()).toEqual([]);
+    expect(getSkills(1)).toEqual([]);
+    expect(getSkills(null)).toEqual([]);
 });
 
-test('getActiveSkills returns skills for the active session only', () => {
+test('getSkills returns skills for that session only', () => {
     reset();
     setSkills(1, [{ name: 'alpha', description: 'A' }]);
     setSkills(2, [{ name: 'beta', description: 'B' }]);
-    setActiveSessionId(1);
-    const active = getActiveSkills();
-    expect(active.map((s) => s.name)).toEqual(['alpha']);
-    setActiveSessionId(2);
-    expect(getActiveSkills().map((s) => s.name)).toEqual(['beta']);
+    expect(getSkills(1).map((s) => s.name)).toEqual(['alpha']);
+    expect(getSkills(2).map((s) => s.name)).toEqual(['beta']);
 });
 
 test('setSkills coerces non-array to empty array', () => {
     reset();
     setSkills(1, null);
-    setActiveSessionId(1);
-    expect(getActiveSkills()).toEqual([]);
+    expect(getSkills(1)).toEqual([]);
     setSkills(1, 'oops');
-    expect(getActiveSkills()).toEqual([]);
+    expect(getSkills(1)).toEqual([]);
 });
 
 test('clearSkills drops the entry for that session', () => {
     reset();
     setSkills(1, [{ name: 'alpha' }]);
-    setActiveSessionId(1);
-    expect(getActiveSkills()).toHaveLength(1);
+    expect(getSkills(1)).toHaveLength(1);
     clearSkills(1);
-    expect(getActiveSkills()).toEqual([]);
-});
-
-test('setActiveSessionId(null) yields empty active list', () => {
-    reset();
-    setSkills(1, [{ name: 'alpha' }]);
-    setActiveSessionId(1);
-    expect(getActiveSkills()).toHaveLength(1);
-    setActiveSessionId(null);
-    expect(getActiveSkills()).toEqual([]);
+    expect(getSkills(1)).toEqual([]);
 });
 
 test('findSkill matches case-insensitively', () => {

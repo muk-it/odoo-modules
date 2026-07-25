@@ -194,6 +194,24 @@ class Skill(models.Model):
             for attachment in self.attachment_ids
         ]
 
+    def _relink_attachments(self) -> None:
+        """Bind resources uploaded before the skill was saved to the skill.
+
+        The web ``FileInput`` creates ``ir.attachment`` rows with ``res_id=0``
+        while the skill is still unsaved. Without relinking, shared users
+        cannot read those resources through ``read_resource`` because
+        attachment access resolves through the owning skill record. Mirrors
+        ``muk_ai.session._resolve_attachments``.
+        """
+        for record in self:
+            pending = record.attachment_ids.filtered(
+                lambda attachment: (
+                    attachment.res_model == 'muk_ai.skill' and not attachment.res_id
+                )
+            )
+            if pending:
+                pending.sudo().write({'res_id': record.id})
+
     # ----------------------------------------------------------
     # Actions
     # ----------------------------------------------------------
@@ -287,4 +305,13 @@ class Skill(models.Model):
             if 'user_ids' not in vals:
                 owner_id = vals.get('owner_id') or self.env.uid
                 vals['user_ids'] = [(6, 0, [owner_id])]
-        return super().create(vals_list)
+        records = super().create(vals_list)
+        records._relink_attachments()
+        return records
+
+    def write(self, vals: dict) -> bool:
+        """Write skills and relink resources uploaded before the skill existed."""
+        result = super().write(vals)
+        if 'attachment_ids' in vals:
+            self._relink_attachments()
+        return result

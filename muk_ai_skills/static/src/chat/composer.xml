@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-inherit="muk_ai.Chat" t-inherit-mode="extension">
+        <xpath expr="//ChatComposer" position="attributes">
+            <attribute name="sessionId">session.state.sessionId</attribute>
+        </xpath>
+    </t>
+
+    <t t-inherit="muk_ai.ChatWindow" t-inherit-mode="extension">
+        <xpath expr="//ChatComposer" position="attributes">
+            <attribute name="sessionId">session.state.sessionId</attribute>
+        </xpath>
+    </t>
+
+</templates>
