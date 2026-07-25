@@ -4381,13 +4381,18 @@ class AISession(models.Model):
 
     @api.model
     def _dispatch_inline(self) -> bool:
-        """Return whether a queued turn may run in the current request."""
+        """Return whether a queued turn may run in the current request.
+
+        Cron dispatch is only prompt when a worker is woken by the trigger
+        notification, which a pooled connection swallows, so the request
+        path is preferred wherever it cannot block a scarce worker.
+        """
         if modules.module.current_test or config['workers']:
             return False
         mode = self.env['ir.config_parameter'].sudo().get_param('muk_ai.dispatch_mode')
         if mode in ('inline', 'cron'):
             return mode == 'inline'
-        return not config['max_cron_threads']
+        return True
 
     def _trigger_worker(self) -> None:
         """Persist the user context and dispatch the turn to a worker."""

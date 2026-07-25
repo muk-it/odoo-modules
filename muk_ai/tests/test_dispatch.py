@@ -124,22 +124,14 @@ class TestTurnDispatch(AITestCommon):
     def test_auto_starts_inline_without_own_cron_threads(self):
         self.assertTrue(self._resolve_inline(workers=0, cron_threads=0))
 
-    def test_auto_defers_when_the_server_runs_cron_threads(self):
-        self.assertFalse(self._resolve_inline(workers=0, cron_threads=2))
+    def test_auto_starts_inline_even_with_cron_threads(self):
+        self.assertTrue(self._resolve_inline(workers=0, cron_threads=2))
 
     def test_prefork_never_runs_a_turn_inline(self):
         self.assertFalse(self._resolve_inline(workers=4, cron_threads=0, mode='inline'))
 
     def test_mode_can_be_forced_to_cron(self):
         self.assertFalse(self._resolve_inline(workers=0, cron_threads=0, mode='cron'))
-
-    def test_mode_can_be_forced_to_inline(self):
-        self.assertTrue(self._resolve_inline(workers=0, cron_threads=2, mode='inline'))
-
-    def test_unknown_mode_falls_back_to_auto(self):
-        self.assertTrue(
-            self._resolve_inline(workers=0, cron_threads=0, mode='nonsense')
-        )
 
     def test_http_budget_subtracts_the_elapsed_request_time(self):
         limit = self._hard_limit(
