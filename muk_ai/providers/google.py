@@ -290,7 +290,7 @@ class GoogleProvider(ProviderBase):
                 0, self._assistant_text_carry(''.join(message_text_parts))
             )
         usage = payload.get('usageMetadata') or {}
-        return {
+        result = {
             'text': '\n'.join(text_parts).strip(),
             'tool_calls': tool_calls,
             'carry_inputs': carry_inputs,
@@ -300,6 +300,9 @@ class GoogleProvider(ProviderBase):
                 cache_read_tokens=usage.get('cachedContentTokenCount'),
             ),
         }
+        if candidates and candidates[0].get('finishReason') == 'MAX_TOKENS':
+            self._apply_truncation(result, limit=self.max_tokens)
+        return result
 
     @classmethod
     def _consume_part(
@@ -384,6 +387,7 @@ class GoogleProvider(ProviderBase):
         tool_calls = []
         carry_inputs = []
         usage = self._usage()
+        meta = {}
         for event in self._post_stream(path, body):
             self._handle_stream_event(
                 event,
@@ -393,17 +397,21 @@ class GoogleProvider(ProviderBase):
                 tool_calls,
                 carry_inputs,
                 usage,
+                meta,
             )
         if message_text_parts:
             carry_inputs.insert(
                 0, self._assistant_text_carry(''.join(message_text_parts))
             )
-        return {
+        result = {
             'text': ''.join(text_parts).strip(),
             'tool_calls': tool_calls,
             'carry_inputs': carry_inputs,
             'usage': usage,
         }
+        if meta.get('truncated'):
+            self._apply_truncation(result, on_delta, self.max_tokens)
+        return result
 
     def _handle_stream_event(
         self,
@@ -414,8 +422,11 @@ class GoogleProvider(ProviderBase):
         tool_calls: list,
         carry_inputs: list,
         usage: dict,
+        meta: dict,
     ) -> None:
         """Apply one streaming event to the accumulators and forward deltas.
+
+        A ``MAX_TOKENS`` finish is flagged in ``meta`` as truncation.
 
         :raise UserError: when the event signals an error or safety block.
         """
@@ -430,11 +441,9 @@ class GoogleProvider(ProviderBase):
         if candidates:
             first = candidates[0]
             finish = first.get('finishReason')
-            if finish and finish not in (
-                'STOP',
-                'MAX_TOKENS',
-                'FINISH_REASON_UNSPECIFIED',
-            ):
+            if finish == 'MAX_TOKENS':
+                meta['truncated'] = True
+            elif finish and finish not in ('STOP', 'FINISH_REASON_UNSPECIFIED'):
                 self._raise(f'Response blocked by Google (finishReason: {finish})')
             content = first.get('content') or {}
             for part in content.get('parts') or []:

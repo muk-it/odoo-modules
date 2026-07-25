@@ -389,6 +389,40 @@ class ProviderBase:
             'cache_write_tokens': cache_write_tokens or 0,
         }
 
+    def _apply_truncation(
+        self,
+        result: dict,
+        on_delta: Callable | None = None,
+        limit: int | None = None,
+    ) -> dict:
+        """Append a truncation notice to a token-capped result and forward it.
+
+        Truncation is an honest outcome, not a failure: the partial text and
+        the captured usage are kept so cost still accrues, and the notice
+        names the output-token cap to raise instead of surfacing a generic
+        empty-output error.
+
+        :param limit: the output-token cap that was hit, when known.
+        """
+        if limit:
+            notice = self.env._(
+                'Response truncated: the output hit the configured Max Tokens '
+                'limit of %(limit)s tokens (including any reasoning). Raise '
+                'the Max Tokens setting on the %(provider)s provider to allow '
+                'longer responses.',
+                limit=limit,
+                provider=self.label,
+            )
+        else:
+            notice = self.env._(
+                'Response truncated: the model reached its maximum output '
+                'token limit before finishing.'
+            )
+        notice = f'_{notice}_'
+        self._call_on_delta(on_delta, 'text', {'delta': f'\n\n{notice}'})
+        result['text'] = f'{result["text"]}\n\n{notice}'.strip()
+        return result
+
     def _raise(self, error) -> None:
         """Wrap a provider error into a user-facing :class:`UserError`.
 

@@ -774,6 +774,57 @@ class TestAiOpenAIProvider(AITestCommon):
         self.assertEqual(len(posts), 1)
         self.assertTrue(deltas)
 
+    def test_stream_incomplete_captures_usage_and_appends_notice(self):
+        response = self._mock_stream_response(
+            [
+                {'type': 'response.output_text.delta', 'delta': 'partial'},
+                {
+                    'type': 'response.incomplete',
+                    'response': {
+                        'output': [],
+                        'incomplete_details': {'reason': 'max_output_tokens'},
+                        'usage': {'input_tokens': 20, 'output_tokens': 4096},
+                    },
+                },
+            ]
+        )
+        deltas = []
+        with patch.object(requests.Session, 'post', return_value=response):
+            result = self.provider._request_responses(
+                inputs=[],
+                on_delta=lambda k, p: deltas.append((k, p)),
+            )
+        self.assertEqual(result['usage']['input_tokens'], 20)
+        self.assertEqual(result['usage']['output_tokens'], 4096)
+        self.assertIn('partial', result['text'])
+        self.assertIn('Max Tokens', result['text'])
+        self.assertIn('4096', result['text'])
+        text_deltas = [p['delta'] for (k, p) in deltas if k == 'text']
+        self.assertTrue(any('Max Tokens' in d for d in text_deltas))
+
+    def test_stream_incomplete_without_text_still_yields_notice(self):
+        response = self._mock_stream_response(
+            [
+                {
+                    'type': 'response.incomplete',
+                    'response': {
+                        'output': [{'type': 'reasoning', 'id': 'rs_1', 'summary': []}],
+                        'incomplete_details': {'reason': 'max_output_tokens'},
+                        'usage': {'input_tokens': 15, 'output_tokens': 4096},
+                    },
+                },
+            ]
+        )
+        with patch.object(requests.Session, 'post', return_value=response):
+            result = self.provider._request_responses(
+                inputs=[],
+                on_delta=lambda k, p: None,
+            )
+        self.assertTrue(result['text'])
+        self.assertIn('Max Tokens', result['text'])
+        self.assertEqual(result['usage']['output_tokens'], 4096)
+        self.assertEqual(result['carry_inputs'][0]['type'], 'reasoning')
+
     def test_stream_error_event_raises_user_error(self):
         response = self._mock_stream_response(
             [
@@ -974,6 +1025,21 @@ class TestAiOpenAIProvider(AITestCommon):
         self.assertIn('```python', result['text'])
         self.assertIn('print("hi")', result['text'])
         self.assertIn('hi', result['text'])
+
+    def test_parse_incomplete_status_appends_truncation_notice(self):
+        response = self._mock_http_response(
+            {
+                'status': 'incomplete',
+                'incomplete_details': {'reason': 'max_output_tokens'},
+                'output': [{'type': 'message', 'content': [{'text': 'partial'}]}],
+                'usage': {'input_tokens': 9, 'output_tokens': 4096},
+            }
+        )
+        with patch.object(requests.Session, 'post', return_value=response):
+            result = self.provider._request_responses(inputs=[])
+        self.assertIn('partial', result['text'])
+        self.assertIn('Max Tokens', result['text'])
+        self.assertEqual(result['usage']['output_tokens'], 4096)
 
     def test_parse_captures_bare_text_on_line(self):
         response = self._mock_http_response(

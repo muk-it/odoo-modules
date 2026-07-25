@@ -384,12 +384,15 @@ class AnthropicProvider(ProviderBase):
                 }
             )
         carry_inputs.extend(function_call_carries)
-        return {
+        result = {
             'text': '\n'.join(text_parts).strip(),
             'tool_calls': tool_calls,
             'carry_inputs': carry_inputs,
             'usage': self._usage_from_anthropic(payload.get('usage') or {}),
         }
+        if payload.get('stop_reason') == 'max_tokens':
+            self._apply_truncation(result, limit=self.max_tokens or 4096)
+        return result
 
     @classmethod
     def _usage_from_anthropic(cls, usage: dict) -> dict:
@@ -418,8 +421,9 @@ class AnthropicProvider(ProviderBase):
         body = {**body, 'stream': True}
         blocks_by_index = {}
         raw_usage = {}
+        meta = {}
         for event in self._post_stream('/messages', body):
-            self._handle_stream_event(event, on_delta, blocks_by_index, raw_usage)
+            self._handle_stream_event(event, on_delta, blocks_by_index, raw_usage, meta)
 
         text_parts = []
         tool_calls = []
@@ -476,20 +480,24 @@ class AnthropicProvider(ProviderBase):
                 }
             )
         carry_inputs.extend(function_call_carries)
-        return {
+        result = {
             'text': ''.join(text_parts).strip(),
             'tool_calls': tool_calls,
             'carry_inputs': carry_inputs,
             'usage': self._usage_from_anthropic(raw_usage),
         }
+        if meta.get('stop_reason') == 'max_tokens':
+            self._apply_truncation(result, on_delta, self.max_tokens or 4096)
+        return result
 
     def _handle_stream_event(
-        self, event: dict, on_delta, blocks_by_index: dict, raw_usage: dict
+        self, event: dict, on_delta, blocks_by_index: dict, raw_usage: dict, meta: dict
     ) -> None:
         """Apply one streaming event to the accumulators and forward deltas.
 
         Token counts are collected as raw Anthropic fields in ``raw_usage``
-        and normalized once by :meth:`_usage_from_anthropic` after the stream.
+        and normalized once by :meth:`_usage_from_anthropic` after the
+        stream; the final ``stop_reason`` is collected in ``meta``.
         """
         event_type = event.get('type') or ''
         if event_type == 'message_start':
@@ -570,6 +578,8 @@ class AnthropicProvider(ProviderBase):
                     },
                 )
         elif event_type == 'message_delta':
+            if stop_reason := (event.get('delta') or {}).get('stop_reason'):
+                meta['stop_reason'] = stop_reason
             delta_usage = event.get('usage') or {}
             if 'output_tokens' in delta_usage:
                 raw_usage['output_tokens'] = delta_usage['output_tokens']

@@ -377,6 +377,54 @@ class TestAiGoogleProvider(AITestCommon):
         self.assertEqual(result['usage']['input_tokens'], 7)
         self.assertEqual(result['usage']['output_tokens'], 4)
 
+    def test_google_max_tokens_finish_appends_truncation_notice(self):
+        body = self._google_body('partial')
+        body['candidates'][0]['finishReason'] = 'MAX_TOKENS'
+        with patch.object(
+            requests.Session, 'post', return_value=self._mock_http_response(body)
+        ):
+            result = self.provider._request_responses(inputs=[])
+        self.assertIn('partial', result['text'])
+        self.assertIn('Max Tokens', result['text'])
+        self.assertEqual(result['usage']['output_tokens'], 2)
+
+    def test_google_stream_max_tokens_finish_appends_truncation_notice(self):
+        sse = self._sse_lines(
+            [
+                {
+                    'candidates': [
+                        {'content': {'role': 'model', 'parts': [{'text': 'partial'}]}}
+                    ]
+                },
+                {
+                    'candidates': [
+                        {
+                            'finishReason': 'MAX_TOKENS',
+                            'content': {'role': 'model', 'parts': []},
+                        }
+                    ],
+                    'usageMetadata': {
+                        'promptTokenCount': 7,
+                        'candidatesTokenCount': 4096,
+                    },
+                },
+            ]
+        )
+        response = MagicMock()
+        response.iter_lines.return_value = iter(sse)
+        response.raise_for_status.return_value = None
+        deltas = []
+        with patch.object(requests.Session, 'post', return_value=response):
+            result = self.provider._request_responses(
+                inputs=[],
+                on_delta=lambda k, p: deltas.append((k, p)),
+            )
+        self.assertIn('partial', result['text'])
+        self.assertIn('Max Tokens', result['text'])
+        self.assertEqual(result['usage']['output_tokens'], 4096)
+        text_deltas = [p['delta'] for (k, p) in deltas if k == 'text']
+        self.assertTrue(any('Max Tokens' in d for d in text_deltas))
+
     def test_attachment_image_becomes_inline_data(self):
         captured = {}
 

@@ -310,6 +310,46 @@ class TestAiAnthropicProvider(AITestCommon):
         self.assertEqual(result['usage']['input_tokens'], 7)
         self.assertEqual(result['usage']['output_tokens'], 4)
 
+    def test_anthropic_max_tokens_stop_appends_truncation_notice(self):
+        body = self._anthropic_body('partial answer')
+        body['stop_reason'] = 'max_tokens'
+        with patch.object(
+            requests.Session, 'post', return_value=self._mock_http_response(body)
+        ):
+            result = self.provider._request_responses(inputs=[])
+        self.assertIn('partial answer', result['text'])
+        self.assertIn('Max Tokens', result['text'])
+        self.assertEqual(result['usage']['output_tokens'], 2)
+
+    def test_anthropic_stream_max_tokens_stop_appends_truncation_notice(self):
+        sse = [
+            'data: {"type":"message_start","message":{"usage":{"input_tokens":7}}}',
+            '',
+            'data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}',
+            '',
+            'data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"partial"}}',
+            '',
+            'data: {"type":"message_delta","delta":{"stop_reason":"max_tokens"},"usage":{"output_tokens":4096}}',
+            '',
+            'data: {"type":"message_stop"}',
+            '',
+        ]
+        response = MagicMock()
+        response.iter_lines.return_value = iter(sse)
+        response.raise_for_status.return_value = None
+        deltas = []
+        with patch.object(requests.Session, 'post', return_value=response):
+            result = self.provider._request_responses(
+                inputs=[],
+                on_delta=lambda k, p: deltas.append((k, p)),
+            )
+        self.assertIn('partial', result['text'])
+        self.assertIn('Max Tokens', result['text'])
+        self.assertEqual(result['usage']['input_tokens'], 7)
+        self.assertEqual(result['usage']['output_tokens'], 4096)
+        text_deltas = [p['delta'] for (k, p) in deltas if k == 'text']
+        self.assertTrue(any('Max Tokens' in d for d in text_deltas))
+
     def test_anthropic_injects_web_search_tool(self):
         captured = {}
 

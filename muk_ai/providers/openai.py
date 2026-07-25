@@ -239,7 +239,7 @@ class OpenAIProvider(ProviderBase):
             elif text := line.get('text'):
                 text_parts.append(text)
         usage = payload.get('usage') or {}
-        return {
+        result = {
             'text': '\n'.join(text_parts).strip(),
             'tool_calls': tool_calls,
             'carry_inputs': carry_inputs,
@@ -251,6 +251,13 @@ class OpenAIProvider(ProviderBase):
                 ),
             ),
         }
+        if payload.get('status') == 'incomplete':
+            reason = (payload.get('incomplete_details') or {}).get('reason')
+            self._apply_truncation(
+                result,
+                limit=self.max_tokens if reason == 'max_output_tokens' else None,
+            )
+        return result
 
     # ----------------------------------------------------------
     # Streaming
@@ -263,6 +270,7 @@ class OpenAIProvider(ProviderBase):
         tool_calls_by_index = {}
         carry_inputs = []
         usage = {}
+        truncation = None
         rendered_item_ids = set()
         image_b64_by_item = {}
         for event in self._post_stream('/responses', body):
@@ -355,9 +363,11 @@ class OpenAIProvider(ProviderBase):
                         rendered_item_ids.add(item.get('id'))
                         text_parts.append(snippet)
                         self._call_on_delta(on_delta, 'text', {'delta': snippet})
-            elif event_type == 'response.completed':
+            elif event_type in ('response.completed', 'response.incomplete'):
                 resp = event.get('response') or {}
                 usage = resp.get('usage') or {}
+                if event_type == 'response.incomplete':
+                    truncation = resp.get('incomplete_details') or {}
                 for item in resp.get('output') or []:
                     item_type = item.get('type')
                     if (
@@ -409,7 +419,7 @@ class OpenAIProvider(ProviderBase):
                     '_parse_error': parse_error,
                 }
             )
-        return {
+        result = {
             'text': ''.join(text_parts).strip(),
             'tool_calls': tool_calls,
             'carry_inputs': carry_inputs,
@@ -421,3 +431,12 @@ class OpenAIProvider(ProviderBase):
                 ),
             ),
         }
+        if truncation is not None:
+            self._apply_truncation(
+                result,
+                on_delta,
+                self.max_tokens
+                if truncation.get('reason') == 'max_output_tokens'
+                else None,
+            )
+        return result
