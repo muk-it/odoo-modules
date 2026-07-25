@@ -839,6 +839,7 @@ export function useAiSession(options = {}) {
         if (
             !state.sessionId ||
             state.status === 'running' ||
+            state.status === 'compacting' ||
             state.status === 'waiting'
         ) {
             return;
@@ -856,7 +857,12 @@ export function useAiSession(options = {}) {
     }
     function canRegenerate() {
         if (!state.sessionId) return false;
-        if (state.status === 'running' || state.status === 'waiting') return false;
+        if (
+            state.status === 'running' ||
+            state.status === 'compacting' ||
+            state.status === 'waiting'
+        )
+            return false;
         return (state.events || []).some(
             (e) => e.kind === 'user_message' || e.kind === 'answer',
         );

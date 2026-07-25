@@ -1196,6 +1196,12 @@ class TestAiSession(AITestCommon):
         with self.assertRaises(UserError):
             session.regenerate_last_turn()
 
+    def test_regenerate_refuses_while_compacting(self):
+        session = self.env['muk_ai.session'].create({'name': 'compacting'})
+        session.write({'state': 'compacting'})
+        with self.assertRaises(UserError):
+            session.regenerate_last_turn()
+
     def test_regenerate_without_user_turn_raises(self):
         session = self.env['muk_ai.session'].create({'name': 'empty'})
         with self.assertRaises(UserError):

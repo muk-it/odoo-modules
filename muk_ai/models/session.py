@@ -3537,11 +3537,13 @@ class AISession(models.Model):
     def regenerate_last_turn(self) -> dict:
         """Rewind to the last user turn and re-run it.
 
-        :raise UserError: when running, waiting, or no user turn exists
+        :raise UserError: when running, compacting, waiting, or no user turn exists
         """
-        if self.state in ('running', 'waiting'):
+        if self.state in ('running', 'compacting', 'waiting'):
             raise UserError(
-                _('Cannot regenerate while the session is running or waiting.')
+                _(
+                    'Cannot regenerate while the session is running, compacting, or waiting.'
+                )
             )
         conv = list(self.conversation or [])
         last_user = next(
