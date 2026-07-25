@@ -9,7 +9,7 @@ from collections.abc import Callable, Iterator
 import psycopg2
 import requests
 
-from odoo import _, models
+from odoo import models
 from odoo.api import Environment
 from odoo.exceptions import UserError
 
@@ -68,7 +68,7 @@ class ProviderBase:
         """
         if not self._api_key:
             raise UserError(
-                _(
+                self.env._(
                     '%(provider)s API key is not configured.',
                     provider=self.label,
                 )
@@ -142,7 +142,9 @@ class ProviderBase:
         )
         if not payload.get('text'):
             raise UserError(
-                _('AI provider returned an empty response during the connection test.')
+                self.env._(
+                    'AI provider returned an empty response during the connection test.'
+                )
             )
         return True
 
@@ -229,7 +231,9 @@ class ProviderBase:
                 except StopIteration:
                     break
                 except requests.exceptions.ReadTimeout:
-                    self._raise(_('Stream idle for %ss — aborted', read_timeout))
+                    self._raise(
+                        self.env._('Stream idle for %ss — aborted', read_timeout)
+                    )
                 except requests.RequestException as error:
                     self._raise(error)
                 if not raw_line or not raw_line.startswith('data:'):
@@ -391,7 +395,7 @@ class ProviderBase:
         :raise UserError: always.
         """
         raise UserError(
-            _(
+            self.env._(
                 'AI provider %(provider)s request failed: %(error)s',
                 provider=self.name,
                 error=str(error)[:500],

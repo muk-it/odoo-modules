@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import requests
 
 from odoo.exceptions import UserError
+from odoo.tools import mute_logger
 
 from odoo.addons.muk_ai.tests.common import AITestCommon
 from odoo.addons.muk_ai.tools import build_tool_call_output
@@ -241,6 +242,7 @@ class TestAiOpenAIProvider(AITestCommon):
             )
         self.assertEqual(captured['body']['reasoning']['effort'], 'xhigh')
 
+    @mute_logger('odoo.addons.muk_ai.providers.base')
     def test_rejected_effort_is_stripped_and_served(self):
         record = self.env.ref('muk_ai.model_gpt_5_mini')
         bodies = []
@@ -273,6 +275,7 @@ class TestAiOpenAIProvider(AITestCommon):
         self.assertIn('low', record.reasoning_efforts)
         self.assertFalse(record.notes)
 
+    @mute_logger('odoo.addons.muk_ai.providers.base')
     def test_summary_rejection_spares_the_tier_catalog(self):
         record = self.env.ref('muk_ai.model_gpt_5_mini')
         bodies = []

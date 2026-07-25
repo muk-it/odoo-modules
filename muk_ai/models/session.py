@@ -4,6 +4,7 @@ import base64
 import json
 import random
 import re
+import threading
 import time
 from collections.abc import Container, Iterable
 from contextlib import suppress
@@ -15,6 +16,7 @@ from markupsafe import Markup, escape
 
 from odoo import SUPERUSER_ID, _, api, fields, models, modules, release
 from odoo.exceptions import AccessError, UserError
+from odoo.http import request
 from odoo.service.model import PG_CONCURRENCY_EXCEPTIONS_TO_RETRY
 from odoo.tools import SQL, config
 
@@ -30,6 +32,7 @@ from odoo.addons.muk_ai.tools import (
     COMPACT_SUMMARY_SYSTEM,
     COMPACT_SUMMARY_TEMPLATE,
     DEFAULT_CONTEXT_WINDOW,
+    DISPATCH_MAX_TURNS,
     IMAGE_MIMETYPES,
     INLINE_IMAGE_RE,
     ITERATION_WARNING_ROUNDS,
@@ -537,8 +540,19 @@ class AISession(models.Model):
         return self._int_config_param('muk_ai.max_iterations', MAX_ITERATIONS)
 
     @api.model
-    def _cron_hard_limit_seconds(self) -> int:
-        """Return the cron real-time hard limit in seconds, or ``0``."""
+    def _worker_hard_limit_seconds(self) -> int:
+        """Return the real-time budget of the current worker context.
+
+        :return: seconds left in a request thread, the configured cron limit
+            outside one, or ``0`` when no limit applies
+        """
+        thread = threading.current_thread()
+        if getattr(thread, 'type', None) == 'http':
+            limit = config['limit_time_real'] or 0
+            if limit <= 0:
+                return 0
+            started = getattr(thread, 'start_time', None) or time.time()
+            return max(1, int(limit - (time.time() - started)))
         limit = config['limit_time_real_cron']
         if not limit or limit < 0:
             limit = config['limit_time_real'] or 0
@@ -546,13 +560,13 @@ class AISession(models.Model):
 
     @api.model
     def _slice_wallclock_seconds(self) -> int:
-        """Return the per-slice wallclock budget capped by the cron limit."""
+        """Return the per-slice wallclock budget capped by the worker limit."""
         configured = self._int_config_param(
             'muk_ai.slice_wallclock_seconds', MAX_WALLCLOCK_SECONDS
         )
-        if hard := self._cron_hard_limit_seconds():
+        if hard := self._worker_hard_limit_seconds():
             budget = max(WALLCLOCK_MIN_SECONDS, hard - WALLCLOCK_SAFETY_MARGIN)
-            return min(configured, budget)
+            return min(configured, budget, hard)
         return configured
 
     @api.model
@@ -1217,6 +1231,61 @@ class AISession(models.Model):
             with suppress(Exception):
                 self.env.cr.execute(statement)
                 self.env.cr.fetchone()
+
+    @api.model
+    def _claim_dispatch_slot(self) -> int | None:
+        """Take one of the shared inline dispatch slots on this cursor.
+
+        Slots are keyed negatively so they can never collide with the
+        per-session locks, which share the namespace keyed by session id.
+
+        :return: the claimed slot, or ``None`` when they are all busy
+        """
+        for slot in range(-1, -DISPATCH_MAX_TURNS - 1, -1):
+            self.env.cr.execute(
+                SQL(
+                    'SELECT pg_try_advisory_lock(%s, %s)',
+                    ADVISORY_LOCK_NAMESPACE,
+                    slot,
+                )
+            )
+            if self.env.cr.fetchone()[0]:
+                return slot
+        return None
+
+    @api.model
+    def _release_dispatch_slot(self, slot: int) -> None:
+        """Give a claimed dispatch slot back, retrying once after rollback.
+
+        :param slot: slot returned by :meth:`_claim_dispatch_slot`
+        """
+        statement = SQL(
+            'SELECT pg_advisory_unlock(%s, %s)',
+            ADVISORY_LOCK_NAMESPACE,
+            slot,
+        )
+        try:
+            self.env.cr.execute(statement)
+            self.env.cr.fetchone()
+        except Exception:  # noqa: BLE001 — unlock is best-effort across cursor state
+            self.env.cr.rollback()
+            with suppress(Exception):
+                self.env.cr.execute(statement)
+                self.env.cr.fetchone()
+
+    @api.model
+    def _dispatch_in_slot(self, session_ids: tuple[int, ...]) -> None:
+        """Run the queued turns while holding one of the dispatch slots.
+
+        :param session_ids: sessions to hand to the worker, in queue order
+        """
+        slot = self._claim_dispatch_slot()
+        if slot is None:
+            return
+        try:
+            self._dispatch_queued_turns(session_ids)
+        finally:
+            self._release_dispatch_slot(slot)
 
     def _heartbeat_claim(self) -> None:
         """Refresh the worker claim timestamp and commit safely."""
@@ -4209,6 +4278,21 @@ class AISession(models.Model):
         return [row[0] for row in self.env.cr.fetchall()]
 
     @api.model
+    def _dispatch_queued_turns(self, session_ids: tuple[int, ...]) -> None:
+        """Run queued turns in order while the worker budget still allows it.
+
+        :param session_ids: sessions to process, in queue order
+        """
+        for session_id in session_ids:
+            remaining = self._worker_hard_limit_seconds()
+            if (
+                remaining
+                and remaining < WALLCLOCK_MIN_SECONDS + WALLCLOCK_SAFETY_MARGIN
+            ):
+                break
+            self._process_session_in_worker(session_id)
+
+    @api.model
     def _process_session_in_worker(self, session_id: int) -> bool:
         """Process one session under an advisory lock in a fresh cursor."""
         processed = False
@@ -4295,8 +4379,18 @@ class AISession(models.Model):
             safe[key] = value
         return safe
 
+    @api.model
+    def _dispatch_inline(self) -> bool:
+        """Return whether a queued turn may run in the current request."""
+        if modules.module.current_test or config['workers']:
+            return False
+        mode = self.env['ir.config_parameter'].sudo().get_param('muk_ai.dispatch_mode')
+        if mode in ('inline', 'cron'):
+            return mode == 'inline'
+        return not config['max_cron_threads']
+
     def _trigger_worker(self) -> None:
-        """Persist the user context and trigger a worker (or run inline in tests)."""
+        """Persist the user context and dispatch the turn to a worker."""
         self.sudo().write(
             {
                 'user_context': self._capture_user_context(),
@@ -4311,3 +4405,6 @@ class AISession(models.Model):
             return
         if crons := self._session_worker_crons():
             random.choice(crons)._trigger()
+        if request and self._dispatch_inline():
+            queued = getattr(request, 'muk_ai_dispatch_ids', ())
+            request.muk_ai_dispatch_ids = tuple(dict.fromkeys(queued + tuple(self.ids)))

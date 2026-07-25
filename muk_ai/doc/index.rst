@@ -563,6 +563,15 @@ Runtime, Slice Runtime, Cost Limit) and stored as the
 ``muk_ai.slice_wallclock_seconds`` and ``muk_ai.turn_cost_limit``
 system parameters.
 
+Turn dispatch is automatic: a turn queued during a web request starts as
+soon as that request's response is sent, instead of waiting for the next
+AI session worker cron. It falls back to the cron whenever the server runs
+its own cron threads (they pick the turn up immediately anyway) and never
+runs in-request on multi-worker (prefork) servers. The
+``muk_ai.dispatch_mode`` system parameter overrides that detection:
+``inline`` forces in-request dispatch, ``cron`` forces the worker crons.
+Leave it unset unless you are diagnosing a dispatch problem.
+
 Sessions inherit ``bus.listener.mixin`` and route streaming events
 through the owner's partner channel — not a guessable string — so one
 user cannot eavesdrop on another.

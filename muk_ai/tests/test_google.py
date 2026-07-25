@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import requests
 
 from odoo.exceptions import UserError
+from odoo.tools import mute_logger
 
 from odoo.addons.muk_ai.providers.google import GoogleProvider
 from odoo.addons.muk_ai.tests.common import AITestCommon
@@ -125,6 +126,7 @@ class TestAiGoogleProvider(AITestCommon):
             {'thinkingLevel': 'low'},
         )
 
+    @mute_logger('odoo.addons.muk_ai.providers.base')
     def test_rejected_thinking_level_is_stripped_and_served(self):
         record = self.env.ref('muk_ai.model_gemini_3_flash_preview')
         bodies = []
@@ -175,6 +177,7 @@ class TestAiGoogleProvider(AITestCommon):
         config = captured['body'].get('generationConfig') or {}
         self.assertNotIn('thinkingConfig', config)
 
+    @mute_logger('odoo.addons.muk_ai.providers.base')
     def test_thinking_error_retries_once_without_thinking_config(self):
         bodies = []
 

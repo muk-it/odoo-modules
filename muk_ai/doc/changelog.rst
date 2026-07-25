@@ -1,8 +1,3 @@
-`1.12.3`
--------
-
-- Fix floating chat window crash when a turn has sources
-
 `1.12.0`
 -------
 

@@ -7,6 +7,7 @@ from . import test_http_pool
 from . import test_session
 from . import test_image
 from . import test_cost
+from . import test_dispatch
 from . import test_agent
 from . import test_prompt_history
 from . import test_flow

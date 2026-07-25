@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 import requests
 
 from odoo.exceptions import UserError
+from odoo.tools import mute_logger
 
 from odoo.addons.muk_ai.providers.anthropic import AnthropicProvider
 from odoo.addons.muk_ai.tests.common import AITestCommon
@@ -105,6 +106,7 @@ class TestAiAnthropicProvider(AITestCommon):
             self.assertEqual(body['thinking'], {'type': 'adaptive'})
             self.assertEqual(body['output_config'], {'effort': 'low'})
 
+    @mute_logger('odoo.addons.muk_ai.providers.base')
     def test_rejected_effort_keeps_thinking(self):
         record = self.env.ref('muk_ai.model_claude_opus_4_8')
         bodies = []
