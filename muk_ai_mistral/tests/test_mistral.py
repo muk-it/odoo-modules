@@ -207,6 +207,43 @@ class TestAiMistralProvider(MistralTestCommon):
         self.assertEqual(result['usage']['input_tokens'], 11)
         self.assertEqual(result['usage']['output_tokens'], 7)
 
+    def test_token_cap_hit_appends_truncation_notice(self):
+        def fake_post(url, **kwargs):
+            return self._mock_http_response(
+                self._conv_response(
+                    [self._message_output('partial')],
+                    usage={
+                        'prompt_tokens': 11,
+                        'completion_tokens': 4096,
+                        'total_tokens': 4107,
+                    },
+                )
+            )
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            result = self.provider._request_responses(inputs=[])
+        self.assertIn('partial', result['text'])
+        self.assertIn('Max Tokens', result['text'])
+        self.assertEqual(result['usage']['output_tokens'], 4096)
+
+    def test_token_cap_hit_without_text_still_yields_notice(self):
+        def fake_post(url, **kwargs):
+            return self._mock_http_response(
+                self._conv_response(
+                    [],
+                    usage={
+                        'prompt_tokens': 11,
+                        'completion_tokens': 4096,
+                        'total_tokens': 4107,
+                    },
+                )
+            )
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            result = self.provider._request_responses(inputs=[])
+        self.assertIn('Max Tokens', result['text'])
+        self.assertEqual(result['usage']['output_tokens'], 4096)
+
     # ----------------------------------------------------------
     # Connectors
     # ----------------------------------------------------------
@@ -538,6 +575,39 @@ class TestAiMistralProvider(MistralTestCommon):
         self.assertEqual(reasoning, ['Let me ', 'think.'])
         self.assertEqual(text, ['Answer'])
         self.assertEqual(result['text'], 'Answer')
+
+    def test_stream_token_cap_hit_appends_truncation_notice(self):
+        sse = self._sse_lines(
+            [
+                {
+                    'type': 'message.output.delta',
+                    'output_index': 0,
+                    'content': 'partial',
+                },
+                {
+                    'type': 'conversation.response.done',
+                    'usage': {
+                        'prompt_tokens': 7,
+                        'completion_tokens': 4096,
+                        'total_tokens': 4103,
+                    },
+                },
+            ]
+        )
+        response = MagicMock()
+        response.iter_lines.return_value = iter(sse)
+        response.raise_for_status.return_value = None
+        deltas = []
+        with patch.object(requests.Session, 'post', return_value=response):
+            result = self.provider._request_responses(
+                inputs=[],
+                on_delta=lambda k, p: deltas.append((k, p)),
+            )
+        self.assertIn('partial', result['text'])
+        self.assertIn('Max Tokens', result['text'])
+        self.assertEqual(result['usage']['output_tokens'], 4096)
+        text_deltas = [p['delta'] for (k, p) in deltas if k == 'text']
+        self.assertTrue(any('Max Tokens' in d for d in text_deltas))
 
     def test_streaming_failure_falls_back_to_non_stream(self):
         calls = {'stream': 0, 'plain': 0}

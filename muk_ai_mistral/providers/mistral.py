@@ -294,7 +294,7 @@ class MistralProvider(ProviderBase):
             carry_inputs.append(self._assistant_text_carry(''.join(message_text_parts)))
         carry_inputs.extend(function_call_carries)
         usage = payload.get('usage') or {}
-        return {
+        result = {
             'text': ''.join(text_parts).strip(),
             'tool_calls': tool_calls,
             'carry_inputs': carry_inputs,
@@ -303,6 +303,18 @@ class MistralProvider(ProviderBase):
                 output_tokens=usage.get('completion_tokens'),
             ),
         }
+        if self._hit_token_cap(result['usage']):
+            self._apply_truncation(result, limit=self.max_tokens)
+        return result
+
+    def _hit_token_cap(self, usage: dict) -> bool:
+        """Report whether the response consumed the whole output-token budget.
+
+        The Conversations API exposes no finish reason, so a response whose
+        reported completion tokens reach the requested ``max_tokens`` cap is
+        the only available truncation signal.
+        """
+        return bool(self.max_tokens) and usage['output_tokens'] >= self.max_tokens
 
     def _consume_message_content(
         self,
@@ -541,12 +553,15 @@ class MistralProvider(ProviderBase):
         if text.strip():
             carry_inputs.append(self._assistant_text_carry(text))
         carry_inputs.extend(function_call_carries)
-        return {
+        result = {
             'text': text.strip(),
             'tool_calls': tool_calls,
             'carry_inputs': carry_inputs,
             'usage': state['usage'],
         }
+        if self._hit_token_cap(result['usage']):
+            self._apply_truncation(result, tracked, self.max_tokens)
+        return result
 
     def _handle_stream_event(
         self,
