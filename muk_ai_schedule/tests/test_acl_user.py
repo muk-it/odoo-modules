@@ -76,3 +76,37 @@ class TestACLUser(TransactionCase):
         self.Schedule.with_user(self.user_a).create(self._vals())
         admin_count = self.Schedule.sudo().search_count([])
         self.assertGreaterEqual(admin_count, 1)
+
+    def test_user_cannot_author_record_code(self):
+        vals = self._vals()
+        vals.update(
+            record_source='code',
+            record_code="records = env['res.partner'].search([])",
+        )
+        with self.assertRaises(AccessError):
+            self.Schedule.with_user(self.user_a).create(vals)
+
+    def test_user_cannot_switch_existing_schedule_to_code(self):
+        sched = self.Schedule.with_user(self.user_a).create(self._vals())
+        with self.assertRaises(AccessError):
+            sched.write(
+                {
+                    'record_source': 'code',
+                    'record_code': "records = env['res.partner'].search([])",
+                }
+            )
+
+    def test_admin_can_author_record_code(self):
+        admin = new_test_user(
+            self.env,
+            login='ai_sched_admin',
+            groups='base.group_user,base.group_system',
+        )
+        vals = self._vals()
+        vals.update(
+            record_source='code',
+            record_code="records = env['res.partner'].search([])",
+        )
+        sched = self.Schedule.with_user(admin).create(vals)
+        self.assertTrue(sched.exists())
+        self.assertEqual(sched.record_source, 'code')

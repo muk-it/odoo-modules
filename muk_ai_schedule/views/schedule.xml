@@ -228,6 +228,7 @@
                                 options="{'mode': 'python'}"
                                 placeholder="records = env['res.partner'].search([], limit=10)"
                                 invisible="not model_id or record_source != 'code'"
+                                groups="base.group_system"
                                 colspan="2"
                                 nolabel="1"
                             />

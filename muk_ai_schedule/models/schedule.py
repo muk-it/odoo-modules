@@ -4,7 +4,7 @@ import contextlib
 from datetime import datetime
 
 from odoo import _, api, fields, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import AccessError, ValidationError
 
 from odoo.addons.muk_ai_schedule.tools.constants import (
     DEFAULT_MAX_COST_EUR,
@@ -394,6 +394,28 @@ class AISchedule(models.Model):
             nc = False
         self.cron_id.sudo().write({'nextcall': nc or fields.Datetime.now()})
 
+    def _assert_record_code_access(self, vals: dict) -> None:
+        """Restrict safe-eval record code authoring to administrators.
+
+        Record code is copied verbatim onto the sudo-provisioned server
+        action and executed by the superuser action runner, so letting
+        non-admins author it would escalate them to superuser. This mirrors
+        the admin-only gate ``muk_ai_automation`` enforces on direct agent
+        action creation. Evaluated against the caller before any internal
+        sudo provisioning runs.
+
+        :raise AccessError: when a non-admin sets code as the record source.
+        """
+        if self.env.su or self.env.user.has_group('base.group_system'):
+            return
+        if vals.get('record_source') == 'code' or vals.get('record_code'):
+            raise AccessError(
+                _(
+                    'Only administrators may author Python record code on a '
+                    'schedule. Use a domain to select records instead.'
+                )
+            )
+
     # ----------------------------------------------------------
     # Actions
     # ----------------------------------------------------------
@@ -456,6 +478,8 @@ class AISchedule(models.Model):
     @api.model_create_multi
     def create(self, vals_list: list[dict]) -> AISchedule:
         """Create schedules and provision their owned action and cron."""
+        for vals in vals_list:
+            self._assert_record_code_access(vals)
         records = super().create(vals_list)
         for record in records:
             record._provision_owned_action()
@@ -463,6 +487,7 @@ class AISchedule(models.Model):
 
     def write(self, vals: dict) -> bool:
         """Write schedules and sync mutated cadence/config onto the owned cron."""
+        self._assert_record_code_access(vals)
         result = super().write(vals)
         sync_keys = {
             'name',
