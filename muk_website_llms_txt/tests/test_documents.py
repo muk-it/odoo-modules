@@ -6,13 +6,14 @@ from odoo import models
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
 
+from .common import LlmsTxtCommon
 from odoo.addons.muk_website_llms_txt.models import website as website_model
 from odoo.addons.muk_website_llms_txt.tools.constants import LLMS_DOCUMENT_PREFIX
 
 
 @tagged('post_install', '-at_install')
-class TestLlmsTxtDocuments(TransactionCase):
-    """Test the stored documents backing the llms.txt routes."""
+class TestLlmsTxtDocuments(LlmsTxtCommon, TransactionCase):
+    """Test the stored attachments backing the llms.txt routes."""
 
     # ----------------------------------------------------------
     # Setup
@@ -21,42 +22,11 @@ class TestLlmsTxtDocuments(TransactionCase):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        cls.website = cls.env['website'].search([], limit=1)
-        cls.website.write(
-            {
-                'llms_txt_enabled': True,
-                'llms_full_txt_enabled': True,
-                'llms_include_pages': True,
-            }
-        )
-        cls.cron = cls.env.ref('muk_website_llms_txt.ir_cron_generate_llms_documents')
+        cls.website = cls._setup_llms_website()
 
-    @classmethod
-    def _create_page(cls, name: str, url: str, marker: str) -> models.Model:
-        """Create a published website page carrying a unique text marker.
-
-        :param name: the display name of the page
-        :param url: the page URL, used as the view key suffix as well
-        :param marker: a unique text marker embedded in the page content
-        :return: the created ``website.page`` record
-        """
-        key = f'muk_website_llms_txt.test{url.replace("-", "_").replace("/", "_")}'
-        return cls.env['website.page'].create(
-            {
-                'name': name,
-                'url': url,
-                'type': 'qweb',
-                'key': key,
-                'arch': f'<t t-name="{key}"><div>{marker}</div></t>',
-                'website_id': cls.website.id,
-                'is_published': True,
-            }
-        )
-
-    def _run_cron(self) -> None:
-        """Run the document cron with its per-document commit neutralized."""
-        with patch.object(self.env.cr, 'commit', lambda: None):
-            self.env['website']._cron_generate_llms_documents()
+    # ----------------------------------------------------------
+    # Helper
+    # ----------------------------------------------------------
 
     def _stored_documents(self) -> models.Model:
         """Return the attachments storing this website's documents."""
@@ -72,10 +42,13 @@ class TestLlmsTxtDocuments(TransactionCase):
     # Tests
     # ----------------------------------------------------------
 
-    def test_document_is_stored_in_an_attachment(self):
+    def test_document_is_stored_as_a_public_text_attachment(self):
         attachment = self.website._get_llms_document('llms.txt')
         self.assertEqual(attachment.name, f'{LLMS_DOCUMENT_PREFIX}llms.txt')
         self.assertEqual(attachment.mimetype, 'text/plain')
+        self.assertEqual(attachment.res_model, 'website')
+        self.assertEqual(attachment.res_id, self.website.id)
+        self.assertTrue(attachment.public)
         self.assertTrue(attachment.raw.decode().startswith('#'))
         self.assertGreater(int(attachment.description), 0)
 
@@ -91,37 +64,34 @@ class TestLlmsTxtDocuments(TransactionCase):
         self.website._get_llms_document('llms-full.txt')
         self.assertEqual(len(self._stored_documents()), 2)
 
-    def test_cron_rebuilds_the_documents_in_place(self):
-        attachment = self.website._get_llms_document('llms.txt')
-        self._create_page('Llms Cron Page', '/llms-doc-cron', 'LLMS_CRON_MARKER')
-        self._run_cron()
-        self.assertEqual(self.website._search_llms_document('llms.txt'), attachment)
-        self.assertIn('/llms-doc-cron', attachment.raw.decode())
+    def test_regenerating_replaces_the_stored_copy_in_place(self):
+        first = self.website._generate_llms_document('llms.txt')
+        self._create_page('Llms Again Page', '/llms-doc-again', 'LLMS_AGAIN_MARKER')
+        second = self.website._generate_llms_document('llms.txt')
+        self.assertEqual(first, second)
+        self.assertEqual(len(self._stored_documents()), 1)
+        self.assertIn('/llms-doc-again', second.raw.decode())
 
-    def test_cron_drops_the_documents_of_disabled_routes(self):
-        self.website._get_llms_document('llms.txt')
-        self.website._get_llms_document('llms-full.txt')
-        self.website.llms_full_txt_enabled = False
-        self._run_cron()
-        stored = self._stored_documents()
-        self.assertEqual(len(stored), 1)
-        self.assertEqual(stored.name, f'{LLMS_DOCUMENT_PREFIX}llms.txt')
+    def test_index_lists_the_page_url_and_name(self):
+        self._create_page('Llms Index Page', '/llms-doc-index', 'LLMS_INDEX_MARKER')
+        content = self.website._generate_llms_document('llms.txt').raw.decode()
+        base_url = self.website._get_llms_base_url()
+        self.assertIn('## Pages', content)
+        self.assertIn(f'- [Llms Index Page]({base_url}/llms-doc-index)', content)
+        self.assertNotIn('LLMS_INDEX_MARKER', content)
 
-    def test_configuration_change_schedules_a_rebuild(self):
-        attachment = self.website._get_llms_document('llms.txt')
-        self.env['ir.cron.trigger'].search([('cron_id', '=', self.cron.id)]).unlink()
+    def test_full_document_carries_the_page_markdown(self):
+        self._create_page('Llms Body Page', '/llms-doc-body', 'LLMS_BODY_MARKER')
+        content = self.website._generate_llms_document('llms-full.txt').raw.decode()
+        self.assertIn('## Llms Body Page', content)
+        self.assertIn('LLMS_BODY_MARKER', content)
+
+    def test_disabling_pages_empties_the_page_section(self):
+        self._create_page('Llms Off Page', '/llms-doc-off', 'LLMS_OFF_MARKER')
         self.website.llms_include_pages = False
-        self.assertTrue(
-            self.env['ir.cron.trigger'].search_count([('cron_id', '=', self.cron.id)])
-        )
-        self.assertTrue(attachment.exists())
-
-    def test_unrelated_change_schedules_nothing(self):
-        self.env['ir.cron.trigger'].search([('cron_id', '=', self.cron.id)]).unlink()
-        self.website.llms_content_signal = 'none'
-        self.assertFalse(
-            self.env['ir.cron.trigger'].search_count([('cron_id', '=', self.cron.id)])
-        )
+        content = self.website._generate_llms_document('llms.txt').raw.decode()
+        self.assertNotIn('## Pages', content)
+        self.assertNotIn('/llms-doc-off', content)
 
     def test_every_record_is_listed_across_batches(self):
         urls = [f'/llms-doc-batch-{index}' for index in range(5)]
@@ -131,3 +101,12 @@ class TestLlmsTxtDocuments(TransactionCase):
             content = self.website._generate_llms_document('llms.txt').raw.decode()
         for url in urls:
             self.assertIn(url, content)
+
+    def test_base_url_falls_back_to_the_system_parameter(self):
+        self.website.domain = False
+        expected = (
+            self.env['ir.config_parameter'].sudo().get_param('web.base.url', '')
+        ).rstrip('/')
+        self.assertEqual(self.website._get_llms_base_url(), expected)
+        self.website.domain = 'https://llms.example.test/'
+        self.assertEqual(self.website._get_llms_base_url(), 'https://llms.example.test')
