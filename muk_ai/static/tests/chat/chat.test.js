@@ -293,13 +293,16 @@ test('_onUserBusEvent for the active session mirrors fields on session state', a
         state: 'running',
         iteration_count: 3,
         total_input_tokens: 42,
+        total_output_tokens: 17,
         last_input_tokens: 10,
         context_window: 8000,
     });
     expect(chat.session.state.status).toBe('running');
     expect(chat.session.state.iterationCount).toBe(3);
     expect(chat.session.state.inputTokens).toBe(42);
+    expect(chat.session.state.outputTokens).toBe(17);
     expect(chat.session.state.lastInputTokens).toBe(10);
+    expect(chat.session.state.contextWindow).toBe(8000);
 });
 
 test('_onUserBusEvent with empty sidebar leaves state idle', async () => {

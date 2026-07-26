@@ -82,7 +82,12 @@ export class SessionEventsField extends Component {
         return askViewMode(block, this.state.askViews);
     }
     toggleAskView(callId) {
-        const block = { callId };
+        if (!callId) {
+            return;
+        }
+        const block = this.turns
+            .flatMap((turn) => turn.blocks || [])
+            .find((b) => b.callId === callId);
         this.state.askViews[callId] = toggleAskViewMode(block, this.state.askViews);
     }
     askArgsText(block) {

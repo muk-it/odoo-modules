@@ -696,10 +696,12 @@ export function useAiSession(options = {}) {
         state.input = '';
         state.pendingAttachments = [];
         if (isQueueing()) {
+            const optimisticKey = 'ck' + ++clientKeySeq;
             const optimisticEntry = {
                 content: message,
                 attachment_ids: attachmentIds,
                 queued_at: new Date().toISOString(),
+                _clientKey: optimisticKey,
             };
             state.pendingMessages = [...state.pendingMessages, optimisticEntry];
             state.focusToken += 1;
@@ -713,7 +715,7 @@ export function useAiSession(options = {}) {
                 );
                 if (snapshot && snapshot.queue_rejected_state) {
                     state.pendingMessages = state.pendingMessages.filter(
-                        (m) => m !== optimisticEntry,
+                        (m) => m?._clientKey !== optimisticKey,
                     );
                     await redispatchRejected(snapshot, message, attachments);
                     return;
@@ -725,7 +727,7 @@ export function useAiSession(options = {}) {
                     { type: 'danger' },
                 );
                 state.pendingMessages = state.pendingMessages.filter(
-                    (m) => m !== optimisticEntry,
+                    (m) => m?._clientKey !== optimisticKey,
                 );
             }
             return;
@@ -774,7 +776,9 @@ export function useAiSession(options = {}) {
                 { attachment_ids: attachmentIds },
             );
             if (snapshot && snapshot.queue_rejected_state) {
-                state.events = state.events.filter((entry) => entry !== optimistic);
+                state.events = state.events.filter(
+                    (entry) => entry?._clientKey !== clientKey,
+                );
                 eventKeys.delete(eventKey(optimistic));
                 await redispatchRejected(snapshot, message, attachments);
                 return;
@@ -782,7 +786,9 @@ export function useAiSession(options = {}) {
             applySnapshot(snapshot);
         } catch (error) {
             if (wasWaitingQuestion) {
-                state.events = state.events.filter((entry) => entry !== optimistic);
+                state.events = state.events.filter(
+                    (entry) => entry?._clientKey !== clientKey,
+                );
                 eventKeys.delete(eventKey(optimistic));
                 state.pendingAsk = previousAsk;
                 state.status = previousStatus;
