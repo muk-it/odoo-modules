@@ -7,6 +7,7 @@ from odoo.exceptions import UserError
 
 from .common import MistralTestCommon
 from odoo.addons.muk_ai_mistral.providers.mistral import (
+    REQUEST_ATTEMPTS,
     STREAM_ATTEMPTS,
     MistralProvider,
 )
@@ -756,3 +757,462 @@ class TestAiMistralProvider(MistralTestCommon):
             result = self.provider._request_responses(inputs=[])
         self.assertEqual(result['text'], '')
         self.assertEqual(result['tool_calls'], [])
+
+    def test_buffered_request_gives_up_after_every_attempt(self):
+        attempts = []
+
+        def fake_post(url, **kwargs):
+            attempts.append(url)
+            resp = self._mock_http_response({}, status_code=503)
+            resp.text = 'upstream down'
+            resp.raise_for_status.side_effect = requests.HTTPError('503', response=resp)
+            return resp
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            with self.assertRaises(UserError) as capture:
+                self.provider._request_responses(inputs=[])
+        self.assertEqual(len(attempts), REQUEST_ATTEMPTS)
+        self.assertIn('upstream down', str(capture.exception))
+
+    def test_transport_failure_is_wrapped_in_a_user_error(self):
+        with patch.object(
+            requests.Session,
+            'post',
+            side_effect=requests.ConnectionError('name resolution failed'),
+        ):
+            with self.assertRaises(UserError) as capture:
+                self.provider._request_responses(inputs=[])
+        self.assertIn('name resolution failed', str(capture.exception))
+
+    # ----------------------------------------------------------
+    # Tool schema
+    # ----------------------------------------------------------
+
+    def test_tool_schema_dedupes_and_skips_unnamed_tools(self):
+        tools = MistralProvider._tools_to_mistral(
+            [
+                {'name': 'alpha', 'description': 'first'},
+                {'name': 'alpha', 'description': 'duplicate'},
+                {'description': 'no name'},
+                {'name': '', 'description': 'empty name'},
+                {
+                    'name': 'beta',
+                    'parameters': {'type': 'object', 'properties': {'x': {}}},
+                },
+            ]
+        )
+        self.assertEqual(
+            [tool['function']['name'] for tool in tools],
+            ['alpha', 'beta'],
+        )
+        self.assertEqual(tools[0]['function']['description'], 'first')
+        self.assertEqual(
+            tools[0]['function']['parameters'],
+            {'type': 'object', 'properties': {}},
+        )
+        self.assertIn('x', tools[1]['function']['parameters']['properties'])
+
+    def test_no_tools_key_when_nothing_is_declared(self):
+        captured = {}
+
+        def fake_post(url, **kwargs):
+            captured['body'] = kwargs.get('json')
+            return self._mock_http_response(self._text_response('ok'))
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            self.provider._request_responses(inputs=[], tools_schema=[])
+        self.assertNotIn('tools', captured['body'])
+
+    # ----------------------------------------------------------
+    # Tool call parsing
+    # ----------------------------------------------------------
+
+    def test_malformed_tool_arguments_are_reported_not_raised(self):
+        def fake_post(url, **kwargs):
+            return self._mock_http_response(
+                self._conv_response(
+                    [
+                        {
+                            'object': 'entry',
+                            'type': 'function.call',
+                            'tool_call_id': 'c1',
+                            'name': 'do_x',
+                            'arguments': '{"a": ',
+                        },
+                    ]
+                )
+            )
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            result = self.provider._request_responses(inputs=[])
+        call = result['tool_calls'][0]
+        self.assertEqual(call['arguments'], {})
+        self.assertIn('Malformed JSON arguments', call['_parse_error'])
+        self.assertEqual(result['carry_inputs'][0]['arguments'], '{"a": ')
+
+    def test_a_function_call_without_arguments_defaults_to_an_empty_object(self):
+        def fake_post(url, **kwargs):
+            return self._mock_http_response(
+                self._conv_response(
+                    [
+                        {
+                            'object': 'entry',
+                            'type': 'function.call',
+                            'id': 'fallback_id',
+                            'name': 'do_x',
+                        },
+                    ]
+                )
+            )
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            result = self.provider._request_responses(inputs=[])
+        call = result['tool_calls'][0]
+        self.assertEqual(call['arguments'], {})
+        self.assertEqual(call['call_id'], 'fallback_id')
+        self.assertIsNone(call['_parse_error'])
+
+    def test_assistant_text_carries_before_the_function_calls(self):
+        def fake_post(url, **kwargs):
+            return self._mock_http_response(
+                self._conv_response(
+                    [
+                        self._message_output('Let me check.'),
+                        self._function_call('c1', 'do_x', {}),
+                    ]
+                )
+            )
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            result = self.provider._request_responses(inputs=[])
+        self.assertEqual(result['carry_inputs'][0]['role'], 'assistant')
+        self.assertEqual(
+            result['carry_inputs'][0]['content'][0]['text'],
+            'Let me check.',
+        )
+        self.assertEqual(result['carry_inputs'][1]['type'], 'function_call')
+
+    def test_thinking_chunks_are_not_rendered_into_the_answer(self):
+        def fake_post(url, **kwargs):
+            return self._mock_http_response(
+                self._conv_response(
+                    [
+                        self._message_output(
+                            [
+                                {
+                                    'type': 'thinking',
+                                    'thinking': [{'type': 'text', 'text': 'hmm'}],
+                                },
+                                {'type': 'text', 'text': 'Answer'},
+                            ]
+                        ),
+                    ]
+                )
+            )
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            result = self.provider._request_responses(inputs=[])
+        self.assertEqual(result['text'], 'Answer')
+
+    def test_thinking_text_accepts_a_bare_string(self):
+        self.assertEqual(
+            MistralProvider._thinking_text({'thinking': 'plain'}),
+            'plain',
+        )
+        self.assertEqual(MistralProvider._thinking_text({'thinking': 7}), '')
+
+    def test_a_tool_execution_without_code_renders_nothing(self):
+        self.assertEqual(MistralProvider._render_tool_execution({'info': {}}), '')
+        self.assertEqual(MistralProvider._render_tool_execution({}), '')
+
+    # ----------------------------------------------------------
+    # Attachments
+    # ----------------------------------------------------------
+
+    def test_multiple_images_keep_the_text_part_first(self):
+        content = MistralProvider._user_content_to_mistral(
+            [
+                {'type': 'input_text', 'text': 'compare these'},
+                {
+                    'type': 'muk_ai_attachment',
+                    'strategy': 'image',
+                    'mimetype': 'image/png',
+                    'data_b64': 'AAA=',
+                },
+                {
+                    'type': 'muk_ai_attachment',
+                    'strategy': 'image',
+                    'mimetype': 'image/jpeg',
+                    'data_b64': 'BBB=',
+                },
+            ]
+        )
+        self.assertEqual(
+            [part['type'] for part in content],
+            ['text', 'image_url', 'image_url'],
+        )
+        self.assertEqual(content[0]['text'], 'compare these')
+
+    def test_an_attachment_without_any_payload_is_dropped(self):
+        self.assertIsNone(
+            MistralProvider._attachment_to_part(
+                {'strategy': 'image', 'filename': 'empty.png'},
+            )
+        )
+        self.assertEqual(
+            MistralProvider._user_content_to_mistral(
+                [
+                    {'type': 'muk_ai_attachment', 'strategy': 'file'},
+                    {'type': 'input_text', 'text': 'still here'},
+                ]
+            ),
+            'still here',
+        )
+
+    def test_empty_user_content_maps_to_an_empty_string(self):
+        self.assertEqual(MistralProvider._user_content_to_mistral([]), '')
+        self.assertEqual(MistralProvider._user_content_to_mistral(None), '')
+        self.assertEqual(MistralProvider._user_content_to_mistral('plain'), 'plain')
+
+    def test_a_string_system_message_is_taken_verbatim(self):
+        instructions, entries = MistralProvider._inputs_to_entries(
+            [
+                {'role': 'system', 'content': 'be terse'},
+                {'role': 'system', 'content': [{'type': 'input_text', 'text': 'and'}]},
+            ]
+        )
+        self.assertEqual(instructions, 'be terse\n\nand')
+        self.assertEqual(entries, [])
+
+    # ----------------------------------------------------------
+    # Streaming failures
+    # ----------------------------------------------------------
+
+    def test_a_stream_error_event_aborts_the_request(self):
+        sse = self._sse_lines(
+            [
+                {
+                    'type': 'conversation.response.error',
+                    'error': {'message': 'context length exceeded'},
+                },
+            ]
+        )
+
+        def fake_post(url, **kwargs):
+            response = MagicMock()
+            response.iter_lines.return_value = iter(sse)
+            response.raise_for_status.return_value = None
+            if (kwargs.get('json') or {}).get('stream'):
+                return response
+            return self._mock_http_response(self._text_response('buffered'))
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            result = self.provider._request_responses(
+                inputs=[],
+                on_delta=lambda k, p: None,
+            )
+        self.assertEqual(
+            result['text'],
+            'buffered',
+            'a stream that failed before emitting falls back to buffered',
+        )
+
+    def test_a_stream_that_fails_after_emitting_never_replays_the_output(self):
+        sse = self._sse_lines(
+            [
+                {'type': 'message.output.delta', 'output_index': 0, 'content': 'Par'},
+                {'type': 'error', 'message': 'upstream died'},
+            ]
+        )
+        posts = []
+
+        def fake_post(url, **kwargs):
+            posts.append(kwargs.get('json') or {})
+            response = MagicMock()
+            response.iter_lines.return_value = iter(list(sse))
+            response.raise_for_status.return_value = None
+            return response
+
+        deltas = []
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            with self.assertRaises(UserError) as capture:
+                self.provider._request_responses(
+                    inputs=[],
+                    on_delta=lambda k, p: deltas.append((k, p)),
+                )
+        self.assertIn('upstream died', str(capture.exception))
+        self.assertEqual(len(posts), 1, 'no retry after visible output')
+        self.assertEqual([p['delta'] for (k, p) in deltas if k == 'text'], ['Par'])
+
+    def test_a_bare_string_stream_error_is_surfaced(self):
+        sse = self._sse_lines([{'type': 'error', 'error': 'rate limited'}])
+
+        def fake_post(url, **kwargs):
+            if (kwargs.get('json') or {}).get('stream'):
+                response = MagicMock()
+                response.iter_lines.return_value = iter(list(sse))
+                response.raise_for_status.return_value = None
+                return response
+            return self._mock_http_response(self._text_response('buffered'))
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            result = self.provider._request_responses(
+                inputs=[],
+                on_delta=lambda k, p: None,
+            )
+        self.assertEqual(result['text'], 'buffered')
+
+    # ----------------------------------------------------------
+    # Streaming shapes
+    # ----------------------------------------------------------
+
+    def test_a_complete_function_call_event_replaces_the_accumulated_arguments(self):
+        sse = self._sse_lines(
+            [
+                {
+                    'type': 'function.call.delta',
+                    'output_index': 0,
+                    'tool_call_id': 'c1',
+                    'name': 'do_x',
+                    'arguments': '{"partial"',
+                },
+                {
+                    'type': 'function.call',
+                    'output_index': 0,
+                    'tool_call_id': 'c1',
+                    'name': 'do_x',
+                    'arguments': '{"a": 1}',
+                },
+                {'type': 'conversation.response.done', 'usage': {}},
+            ]
+        )
+        response = MagicMock()
+        response.iter_lines.return_value = iter(sse)
+        response.raise_for_status.return_value = None
+        with patch.object(requests.Session, 'post', return_value=response):
+            result = self.provider._request_responses(
+                inputs=[],
+                on_delta=lambda k, p: None,
+            )
+        self.assertEqual(result['tool_calls'][0]['arguments'], {'a': 1})
+        self.assertEqual(result['carry_inputs'][0]['call_id'], 'c1')
+
+    def test_a_function_call_without_an_output_index_still_lands(self):
+        sse = self._sse_lines(
+            [
+                {
+                    'type': 'function.call',
+                    'tool_call_id': 'c1',
+                    'name': 'do_x',
+                    'arguments': {'a': 1},
+                },
+                {'type': 'conversation.response.done', 'usage': {}},
+            ]
+        )
+        response = MagicMock()
+        response.iter_lines.return_value = iter(sse)
+        response.raise_for_status.return_value = None
+        with patch.object(requests.Session, 'post', return_value=response):
+            result = self.provider._request_responses(
+                inputs=[],
+                on_delta=lambda k, p: None,
+            )
+        self.assertEqual(result['tool_calls'][0]['arguments'], {'a': 1})
+        self.assertEqual(result['tool_calls'][0]['name'], 'do_x')
+
+    def test_a_streamed_tool_reference_is_appended_to_the_text(self):
+        sse = self._sse_lines(
+            [
+                {'type': 'message.output.delta', 'content': 'Spain won'},
+                {
+                    'type': 'message.output.delta',
+                    'content': {
+                        'type': 'tool_reference',
+                        'title': 'Euro',
+                        'url': 'https://marca.com',
+                    },
+                },
+                {'type': 'conversation.response.done', 'usage': {}},
+            ]
+        )
+        response = MagicMock()
+        response.iter_lines.return_value = iter(sse)
+        response.raise_for_status.return_value = None
+        with patch.object(requests.Session, 'post', return_value=response):
+            result = self.provider._request_responses(
+                inputs=[],
+                on_delta=lambda k, p: None,
+            )
+        self.assertIn('[Euro](https://marca.com)', result['text'])
+
+    def test_a_streamed_generated_file_is_downloaded_after_the_stream(self):
+        sse = self._sse_lines(
+            [
+                {'type': 'message.output.delta', 'content': 'Here it is:'},
+                {
+                    'type': 'message.output.delta',
+                    'content': {
+                        'type': 'tool_file',
+                        'file_id': 'file_9',
+                        'file_name': 'chart',
+                        'file_type': 'png',
+                    },
+                },
+                {'type': 'conversation.response.done', 'usage': {}},
+            ]
+        )
+        response = MagicMock()
+        response.iter_lines.return_value = iter(sse)
+        response.raise_for_status.return_value = None
+        captured = {}
+
+        def fake_get(url, **kwargs):
+            captured['url'] = url
+            return self._mock_http_response(content=b'\x89PNG')
+
+        deltas = []
+        with (
+            patch.object(requests.Session, 'post', return_value=response),
+            patch.object(requests, 'get', side_effect=fake_get),
+        ):
+            result = self.provider._request_responses(
+                inputs=[],
+                on_delta=lambda k, p: deltas.append((k, p)),
+            )
+        self.assertTrue(captured['url'].endswith('/files/file_9/content'))
+        self.assertIn('data:image/png;base64,', result['text'])
+        self.assertTrue(
+            any('data:image/png' in p.get('delta', '') for (k, p) in deltas)
+        )
+
+    def test_a_tool_file_without_an_id_renders_nothing(self):
+        self.assertEqual(self.provider._get_client()._render_tool_file({}), '')
+
+    def test_stream_ignores_non_data_and_undecodable_lines(self):
+        lines = [
+            ': keepalive',
+            'event: message',
+            'data: not json',
+            '',
+            'data: [DONE]',
+            '',
+            'data: '
+            + json.dumps(
+                {'type': 'message.output.delta', 'content': 'ok'},
+            ),
+            '',
+            'data: '
+            + json.dumps(
+                {'type': 'conversation.response.done', 'usage': {}},
+            ),
+            '',
+        ]
+        response = MagicMock()
+        response.iter_lines.return_value = iter(lines)
+        response.raise_for_status.return_value = None
+        with patch.object(requests.Session, 'post', return_value=response):
+            result = self.provider._request_responses(
+                inputs=[],
+                on_delta=lambda k, p: None,
+            )
+        self.assertEqual(result['text'], 'ok')

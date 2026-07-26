@@ -38,7 +38,7 @@ class MistralTestCommon(TransactionCase):
         response.raise_for_status.return_value = None
         return response
 
-    def _message_output(self, content) -> dict:
+    def _message_output(self, content: str | list) -> dict:
         """Build an assistant ``message.output`` conversation entry."""
         return {
             'object': 'entry',
