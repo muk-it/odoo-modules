@@ -81,6 +81,15 @@ class ProductSearch(models.TransientModel):
     )
 
     # ----------------------------------------------------------
+    # Helper
+    # ----------------------------------------------------------
+
+    def _get_search_values(self) -> list[str]:
+        """Return the non-blank search values split by the configured separator."""
+        parts = (self.search_value or '').split(self.value_split_operator)
+        return [value for value in (part.strip() for part in parts) if value]
+
+    # ----------------------------------------------------------
     # Compute
     # ----------------------------------------------------------
 
@@ -94,12 +103,10 @@ class ProductSearch(models.TransientModel):
         """Build the search domain from the split values and operator."""
         for record in self:
             search_domain = []
-            search_parts = (record.search_value or '').split(
-                record.value_split_operator
-            )
+            search_parts = record._get_search_values()
             if search_parts and record.search_operator == '=':
                 search_domain = [(record.search_field, 'in', search_parts)]
-            elif search_parts and record.search_operator == 'ilike':
+            elif search_parts:
                 search_domain = Domain.OR(
                     [
                         [(record.search_field, record.search_operator, part)]

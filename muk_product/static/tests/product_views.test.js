@@ -24,48 +24,78 @@ class ProductTemplate extends models.Model {
 defineModels([ProductTemplate]);
 defineMailModels();
 
-test.tags('muk_product_views');
-test('product_search_list: Search button triggers action', async () => {
-    let lastAction = null;
+const listArch = `
+    <list js_class="product_search_list">
+        <field name="name"/>
+    </list>
+`;
+
+const kanbanArch = `
+    <kanban js_class="product_search_kanban">
+        <templates>
+            <t t-name="card">
+                <field name="name"/>
+            </t>
+        </templates>
+    </kanban>
+`;
+
+function trackDoAction() {
+    const calls = [];
     mockService('action', {
         doAction(action) {
-            lastAction = action;
+            calls.push(action);
         },
     });
+    return calls;
+}
+
+test.tags('muk_product_views');
+test('product list exposes a search button opening the wizard', async () => {
+    const calls = trackDoAction();
     await mountView({
         type: 'list',
         resModel: 'product.template',
-        arch: `
-            <list js_class="product_search_list">
-                <field name="name"/>
-            </list>`,
+        arch: listArch,
     });
     expect('.mk_button_product_search').toHaveCount(1);
+    expect('.mk_button_product_search').toHaveText('Search');
     await click('.mk_button_product_search');
-    expect(lastAction).toBe('muk_product.action_product_search');
+    expect(calls).toEqual(['muk_product.action_product_search']);
 });
 
 test.tags('muk_product_views');
-test('product_search_kanban: Search button triggers action', async () => {
-    let lastAction = null;
-    mockService('action', {
-        doAction(action) {
-            lastAction = action;
-        },
+test('product list keeps its records and its standard create button', async () => {
+    await mountView({
+        type: 'list',
+        resModel: 'product.template',
+        arch: listArch,
     });
+    expect('.o_list_table tbody tr.o_data_row').toHaveCount(2);
+    expect('.o_list_button_add').toHaveCount(1);
+});
+
+test.tags('muk_product_views');
+test('product kanban exposes a search button opening the wizard', async () => {
+    const calls = trackDoAction();
     await mountView({
         type: 'kanban',
         resModel: 'product.template',
-        arch: `
-            <kanban js_class="product_search_kanban">
-                <templates>
-                    <t t-name="card">
-                        <field name="name"/>
-                    </t>
-                </templates>
-            </kanban>`,
+        arch: kanbanArch,
     });
     expect('.mk_button_product_search').toHaveCount(1);
+    expect('.mk_button_product_search').toHaveText('Search');
     await click('.mk_button_product_search');
-    expect(lastAction).toBe('muk_product.action_product_search');
+    expect(calls).toEqual(['muk_product.action_product_search']);
+});
+
+test.tags('muk_product_views');
+test('product kanban keeps its records and its standard create button', async () => {
+    await mountView({
+        type: 'kanban',
+        resModel: 'product.template',
+        arch: kanbanArch,
+    });
+    expect('.o_kanban_record:not(.o_kanban_ghost)').toHaveCount(2);
+    expect('.o-kanban-button-new').toHaveCount(1);
 });

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from functools import reduce
-
 from odoo import api, fields, models
 from odoo.fields import Domain
 from odoo.tools import format_amount
@@ -67,8 +65,8 @@ class ProductProduct(models.Model):
         """Return the next barcode from its sequence with a checksum digit."""
         code = self.env['ir.sequence'].next_by_code('product.product.barcode')
         if code:
-            evensum = reduce(lambda x, y: int(x) + int(y), code[-2::-2])
-            oddsum = reduce(lambda x, y: int(x) + int(y), code[-1::-2])
+            evensum = sum(int(digit) for digit in code[-2::-2])
+            oddsum = sum(int(digit) for digit in code[-1::-2])
             checksum = (10 - ((evensum + oddsum * 3) % 10)) % 10
             return f'{code}{checksum}'
         return code
