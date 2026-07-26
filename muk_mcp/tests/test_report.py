@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import base64
 import json
+from typing import Any
 
 from odoo.exceptions import UserError
 from odoo.tests import common, tagged
@@ -14,7 +17,7 @@ class TestMcpPrintReport(common.TransactionCase):
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.tool_model = cls.env['muk_mcp.tool']
         cls.env['ir.ui.view'].create(
@@ -49,7 +52,8 @@ class TestMcpPrintReport(common.TransactionCase):
     # Helper
     # ----------------------------------------------------------
 
-    def _call(self, name, arguments):
+    def _call(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+        """Run the ``name`` tool in-process and return its decoded JSON result."""
         text, _info = self.tool_model._call(name, arguments, self.env)
         return json.loads(text)
 
@@ -103,7 +107,9 @@ class TestMcpPrintReport(common.TransactionCase):
                 'ids': [self.partner.id],
             },
         )
-        self.assertIn('content_base64', result)
+        decoded = base64.b64decode(result['content_base64']).decode()
+        self.assertIn('MCP Print Target|', decoded)
+        self.assertEqual(result['mimetype'], 'text/plain')
 
     def test_print_unknown_xmlid_raises(self):
         with self.assertRaises(UserError):

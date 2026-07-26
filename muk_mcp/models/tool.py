@@ -119,6 +119,21 @@ class MCPTool(models.Model):
             raise MCPScopeDenied(_('Access denied: key scope is read-only'))
 
     @api.model
+    def _coerce_arguments(self, arguments) -> dict[str, Any]:
+        """Return a mutable copy of the tool arguments, rejecting non-object payloads.
+
+        :raise UserError: if ``arguments`` is neither ``None`` nor a JSON object.
+        """
+        if arguments is not None and not isinstance(arguments, dict):
+            raise UserError(
+                _(
+                    'Tool arguments must be a JSON object, got %(kind)s',
+                    kind=type(arguments).__name__,
+                ),
+            )
+        return dict(arguments or {})
+
+    @api.model
     def _call(
         self,
         name: str,
@@ -128,15 +143,19 @@ class MCPTool(models.Model):
     ) -> tuple[Any, dict[str, Any]]:
         """Execute a tool, timing it and logging the outcome in a finally block.
 
-        Re-raises any execution error after recording the audit log entry.
+        Re-raises any execution error after recording the audit log entry. The
+        ``arguments`` payload is validated inside the logged path so a caller
+        sending a non-object value is audited like any other denial.
 
         :return: the tool's text result and the extracted record info.
+        :raise UserError: if ``arguments`` is neither ``None`` nor a JSON object.
         """
         status, text, info, error = 'ok', None, {}, None
-        arguments = dict(arguments or {})
-        model_name = arguments.get('model')
+        model_name = None
         start = time.monotonic()
         try:
+            arguments = self._coerce_arguments(arguments)
+            model_name = arguments.get('model')
             text, info, model_name = self._execute(
                 name,
                 arguments,

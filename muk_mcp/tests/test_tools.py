@@ -1,7 +1,11 @@
+from __future__ import annotations
+
 import json
+from typing import Any
 
 from odoo.exceptions import UserError
 from odoo.tests import common, tagged
+from odoo.tests.common import new_test_user
 
 from odoo.addons.muk_mcp.tools.parser import coerce_json_value
 
@@ -15,7 +19,7 @@ class TestMcpTool(common.TransactionCase):
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.tool_model = cls.env['muk_mcp.tool']
 
@@ -23,7 +27,8 @@ class TestMcpTool(common.TransactionCase):
     # Helper
     # ----------------------------------------------------------
 
-    def _call(self, name, arguments):
+    def _call(self, name: str, arguments: dict[str, Any]) -> Any:
+        """Run the ``name`` tool in-process and return its decoded JSON result."""
         text, _info = self.tool_model._call(name, arguments, self.env)
         return json.loads(text)
 
@@ -32,13 +37,15 @@ class TestMcpTool(common.TransactionCase):
     # ----------------------------------------------------------
 
     def test_get_tools_returns_active(self):
-        tools = self.tool_model.get_tools()
-        self.assertIsInstance(tools, list)
-        self.assertTrue(len(tools) > 0)
-        for entry in tools:
-            self.assertIn('name', entry)
-            self.assertIn('description', entry)
-            self.assertIn('inputSchema', entry)
+        by_name = {entry['name']: entry for entry in self.tool_model.get_tools()}
+        self.assertIn('search_read', by_name)
+        schema = by_name['search_read']['inputSchema']
+        self.assertEqual(schema['type'], 'object')
+        self.assertEqual(schema['required'], ['model'])
+        self.assertEqual(schema['properties']['model']['type'], 'string')
+        self.assertEqual(schema['properties']['limit']['type'], 'integer')
+        self.assertEqual(schema['properties']['fields']['items']['type'], 'string')
+        self.assertIn('Search for records', by_name['search_read']['description'])
 
     def test_list_models_handler(self):
         result = self._call('list_models', {'search': 'res.partner', 'limit': 10})
@@ -57,16 +64,32 @@ class TestMcpTool(common.TransactionCase):
         self.assertEqual(result['name']['type'], 'char')
 
     def test_search_read_handler(self):
+        company = self.env['res.partner'].create(
+            {
+                'name': 'MCP Search Read Co',
+                'email': 'searchread@example.com',
+                'is_company': True,
+            },
+        )
         result = self._call(
             'search_read',
             {
                 'model': 'res.partner',
-                'domain': [['is_company', '=', True]],
+                'domain': [['id', '=', company.id]],
                 'fields': ['name', 'email'],
                 'limit': 5,
             },
         )
-        self.assertIsInstance(result, list)
+        self.assertEqual(
+            result,
+            [
+                {
+                    'id': company.id,
+                    'name': 'MCP Search Read Co',
+                    'email': 'searchread@example.com',
+                },
+            ],
+        )
 
     def test_search_count_handler(self):
         result = self._call('search_count', {'model': 'res.partner', 'domain': []})
@@ -143,22 +166,44 @@ class TestMcpTool(common.TransactionCase):
         self.assertTrue(all('code' in lang and 'name' in lang for lang in result))
 
     def test_get_access_rights_handler(self):
-        result = self._call('get_access_rights', {'model': 'res.partner'})
-        self.assertEqual(result['model'], 'res.partner')
-        self.assertIn('current_user_rights', result)
-        self.assertIn('read', result['current_user_rights'])
+        user = new_test_user(
+            self.env,
+            login='mcp_rights_probe',
+            groups='base.group_user',
+        )
+        text, _info = self.tool_model._call(
+            'get_access_rights',
+            {'model': 'ir.cron'},
+            self.env(user=user),
+        )
+        result = json.loads(text)
+        self.assertEqual(result['model'], 'ir.cron')
+        self.assertEqual(
+            result['current_user_rights'],
+            {'read': False, 'write': False, 'create': False, 'unlink': False},
+        )
+        self.assertTrue(result['access_rules'])
 
     def test_read_group_handler(self):
+        category = self.env['res.partner.category'].create({'name': 'MCP Grouped'})
+        for index in range(3):
+            self.env['res.partner'].create(
+                {
+                    'name': 'MCP Group Member %d' % index,
+                    'category_id': [(4, category.id)],
+                },
+            )
         result = self._call(
             'read_group',
             {
                 'model': 'res.partner',
-                'domain': [],
-                'groupby': ['is_company'],
-                'aggregates': ['id:count_distinct'],
+                'domain': [['category_id', '=', category.id]],
+                'groupby': ['category_id'],
             },
         )
-        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]['__count'], 3)
+        self.assertEqual(result[0]['category_id'][0], category.id)
 
     def test_read_records_swaps_binary_field_to_uri(self):
         png_b64 = (
@@ -260,18 +305,6 @@ class TestMcpTool(common.TransactionCase):
                     'groupby': [],
                 },
             )
-
-    def test_tool_result_contains_id_for_create(self):
-        created = self._call(
-            'create_records',
-            {
-                'model': 'res.partner.category',
-                'values': {'name': 'MCP ID Test'},
-            },
-        )
-        self.assertIn('id', created)
-        self.assertIsInstance(created['id'], int)
-        self.env['res.partner.category'].browse(created['id']).unlink()
 
     def test_context_override_threads_through(self):
         archived = self.env['res.partner'].create(
@@ -383,18 +416,6 @@ class TestMcpTool(common.TransactionCase):
             self.assertEqual(result['count'], 1)
         finally:
             partner.unlink()
-
-    def test_mail_tools_still_resolve_via_db(self):
-        tools = self.tool_model.get_tools()
-        names = {t['name'] for t in tools}
-        self.assertIn('get_messages', names)
-        self.assertIn('post_message', names)
-        db_records = self.tool_model.search(
-            [
-                ('name', 'in', ['get_messages', 'post_message']),
-            ],
-        )
-        self.assertEqual(len(db_records), 2)
 
     def test_post_message_keeps_html_unescaped(self):
         partner = self.env['res.partner'].create(

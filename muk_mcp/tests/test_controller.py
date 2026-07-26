@@ -1,4 +1,9 @@
+from __future__ import annotations
+
 import json
+from typing import Any
+
+from requests import Response
 
 from odoo.tests import HttpCase, tagged
 
@@ -11,7 +16,12 @@ class TestMcpController(HttpCase):
     # Helper
     # ----------------------------------------------------------
 
-    def _mcp_request(self, data, headers=None):
+    def _mcp_request(
+        self,
+        data: dict[str, Any],
+        headers: dict[str, str] | None = None,
+    ) -> Response:
+        """POST ``data`` as JSON to ``/mcp``, merging ``headers`` over the defaults."""
         all_headers = {
             'Content-Type': 'application/json',
         }

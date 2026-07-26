@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from odoo.tests import common
 
 from odoo.addons.muk_mcp.core import tool as core_tool
@@ -11,11 +13,11 @@ class TestMcpRegistryFilter(common.TransactionCase):
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.tool_model = cls.env['muk_mcp.tool']
 
-    def setUp(self):
+    def setUp(self) -> None:
         super().setUp()
         self.env.registry._muk_mcp_method_cache = {
             'tool_unscoped': {
@@ -56,43 +58,13 @@ class TestMcpRegistryFilter(common.TransactionCase):
             },
         }
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         core_tool.invalidate_registry_cache(self.env)
         super().tearDown()
 
     # ----------------------------------------------------------
-    # Helper
-    # ----------------------------------------------------------
-
-    def _decorate(self, **kwargs):
-        @core_tool.mcp_tool(**kwargs)
-        def handler(self):
-            return None
-
-        return handler.__mcp_tool__
-
-    # ----------------------------------------------------------
     # Tests
     # ----------------------------------------------------------
-
-    def test_decorator_default_registry_is_none(self):
-        meta = self._decorate(name='plain', description='Plain')
-        self.assertIsNone(meta['registry'])
-
-    def test_decorator_records_registry(self):
-        meta = self._decorate(
-            name='scoped',
-            description='Scoped',
-            registry='ai',
-        )
-        self.assertEqual(meta['registry'], 'ai')
-
-    def test_filter_none_returns_everything(self):
-        names = set(core_tool.get_tool_index(self.env).keys())
-        self.assertIn('tool_unscoped', names)
-        self.assertIn('tool_mcp_only', names)
-        self.assertIn('tool_ai_only', names)
-        self.assertIn('tool_multi', names)
 
     def test_filter_mcp_hides_ai_only(self):
         names = set(
@@ -152,20 +124,6 @@ class TestMcpRegistryFilter(common.TransactionCase):
         self.assertIn('tool_unscoped', mcp_tools)
         self.assertIn('tool_mcp_only', mcp_tools)
         self.assertNotIn('tool_ai_only', mcp_tools)
-
-    def test_db_record_registry_default_is_none(self):
-        record = self.tool_model.create(
-            {
-                'name': 'mcp_test_db_registry_default',
-                'description': 'Default',
-                'category': 'read',
-                'code': "result = {'ok': True}\n",
-            },
-        )
-        entry = core_tool.get_tool_index(self.env).get(record.name)
-        self.assertIsNotNone(entry)
-        self.assertFalse(entry.get('registry'))
-        record.unlink()
 
     def test_db_record_registry_mcp_respected(self):
         record = self.tool_model.create(

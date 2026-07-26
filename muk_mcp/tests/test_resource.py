@@ -1,9 +1,13 @@
+from __future__ import annotations
+
 import base64
 import io
+from typing import Any
 
 from openpyxl import Workbook
 from reportlab.pdfgen import canvas
 
+from odoo import models
 from odoo.exceptions import AccessError, UserError
 from odoo.tests import common, tagged
 from odoo.tests.common import new_test_user
@@ -20,7 +24,7 @@ class TestReadResource(common.TransactionCase):
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.tool_model = cls.env['muk_mcp.tool']
         cls.mixin = cls.env['muk_mcp.mixin']
@@ -45,7 +49,8 @@ class TestReadResource(common.TransactionCase):
     # Helper
     # ----------------------------------------------------------
 
-    def _call(self, uri):
+    def _call(self, uri: str) -> dict[str, Any]:
+        """Read ``uri`` and return the single content block it resolves to."""
         result, _info = self.tool_model._call(
             'read_resource',
             {'uri': uri},
@@ -55,7 +60,8 @@ class TestReadResource(common.TransactionCase):
         self.assertEqual(len(result), 1)
         return result[0]
 
-    def _call_raw(self, uri, **kwargs):
+    def _call_raw(self, uri: str, **kwargs: Any) -> ToolContent:
+        """Read ``uri`` with extra tool arguments and return every content block."""
         payload = {'uri': uri, **kwargs}
         result, _info = self.tool_model._call(
             'read_resource',
@@ -65,7 +71,13 @@ class TestReadResource(common.TransactionCase):
         self.assertIsInstance(result, ToolContent)
         return result
 
-    def _make_attachment(self, name, mimetype, raw_bytes):
+    def _make_attachment(
+        self,
+        name: str,
+        mimetype: str,
+        raw_bytes: bytes,
+    ) -> models.BaseModel:
+        """Attach ``raw_bytes`` to the test partner under ``name``."""
         return self.env['ir.attachment'].create(
             {
                 'name': name,
@@ -76,17 +88,20 @@ class TestReadResource(common.TransactionCase):
             },
         )
 
-    def _attachment_uri(self, attachment):
+    def _attachment_uri(self, attachment: models.BaseModel) -> str:
+        """Return the ``odoo://`` URI addressing ``attachment``."""
         return 'odoo://attachment/%d' % attachment.id
 
-    def _build_pdf(self, text='Hello PDF World'):
+    def _build_pdf(self, text: str = 'Hello PDF World') -> bytes:
+        """Render a one-page PDF containing ``text``."""
         buf = io.BytesIO()
         c = canvas.Canvas(buf)
         c.drawString(72, 720, text)
         c.save()
         return buf.getvalue()
 
-    def _build_xlsx(self, text='Hello XLSX World'):
+    def _build_xlsx(self, text: str = 'Hello XLSX World') -> bytes:
+        """Build a single-sheet XLSX workbook whose ``A1`` cell holds ``text``."""
         buf = io.BytesIO()
         wb = Workbook()
         ws = wb.active

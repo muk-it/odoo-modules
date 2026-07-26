@@ -128,9 +128,14 @@ class MCPKey(models.Model):
         return hashlib.sha256(key.encode()).hexdigest()
 
     def _check_rate_limit(self, count: int = 1) -> bool:
-        """Return whether this key is within its per-minute request budget."""
+        """Return whether this key is within its per-minute request budget.
+
+        The bucket is keyed by database as well as key id: the rate limiter is a
+        process-global singleton, so two databases served by the same Odoo
+        process would otherwise share one window for the same key id.
+        """
         return rate_limiter.check(
-            self.id,
+            (self.env.cr.dbname, self.id),
             self.rate_limit,
             60,
             count=count,

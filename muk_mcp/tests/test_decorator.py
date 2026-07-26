@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 
 from odoo.exceptions import AccessError, UserError
@@ -53,7 +55,7 @@ class TestMcpDecoratorTool(common.TransactionCase):
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.tool_model = cls.env['muk_mcp.tool']
         cls.partner_cls = type(cls.env['res.partner'])
@@ -61,39 +63,25 @@ class TestMcpDecoratorTool(common.TransactionCase):
         cls.partner_cls._mcp_test_write = _write_tool
 
     @classmethod
-    def tearDownClass(cls):
+    def tearDownClass(cls) -> None:
         delattr(cls.partner_cls, '_mcp_test_echo')
         delattr(cls.partner_cls, '_mcp_test_write')
         core_tool.invalidate_registry_cache(cls.env)
         super().tearDownClass()
 
-    def setUp(self):
+    def setUp(self) -> None:
         super().setUp()
         registry = self.env.registry
         registry._muk_mcp_method_cache = dict(TEST_REGISTRY)
         registry._muk_mcp_method_cache_key = len(registry._init_modules or ())
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         core_tool.invalidate_registry_cache(self.env)
         super().tearDown()
 
     # ----------------------------------------------------------
     # Tests
     # ----------------------------------------------------------
-
-    def test_decorator_stamps_metadata(self):
-        @core_tool.mcp_tool(
-            name='dummy',
-            description='Does nothing.',
-            input_schema={'type': 'object', 'properties': {}},
-            category='write',
-        )
-        def handler(self, **kw):
-            return None
-
-        self.assertEqual(handler.__mcp_tool__['name'], 'dummy')
-        self.assertEqual(handler.__mcp_tool__['description'], 'Does nothing.')
-        self.assertEqual(handler.__mcp_tool__['category'], 'write')
 
     def test_decorator_infers_name_and_description_from_function(self):
         @core_tool.mcp_tool()

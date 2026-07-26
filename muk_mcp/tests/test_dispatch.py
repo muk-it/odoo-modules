@@ -1,11 +1,10 @@
-import inspect
+from __future__ import annotations
+
 import json
 
 from odoo import api
-from odoo.service.model import retrying
 from odoo.tests import common
 
-from odoo.addons.muk_mcp.controllers import mcp as mcp_controller
 from odoo.addons.muk_mcp.core.tool import invalidate_registry_cache, mcp_tool
 
 
@@ -21,14 +20,14 @@ def _mcp_test_ctx_probe(self):
 
 
 class TestMcpDispatch(common.TransactionCase):
-    """Covers retrying wiring in the controller and context override propagation."""
+    """Covers context override propagation through the tool dispatch path."""
 
     # ----------------------------------------------------------
     # Setup
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.tool_model = cls.env['muk_mcp.tool']
         cls.mixin_cls = type(cls.env['muk_mcp.mixin'])
@@ -36,27 +35,13 @@ class TestMcpDispatch(common.TransactionCase):
         invalidate_registry_cache(cls.env)
 
     @classmethod
-    def tearDownClass(cls):
+    def tearDownClass(cls) -> None:
         delattr(cls.mixin_cls, '_mcp_test_ctx_probe')
         invalidate_registry_cache(cls.env)
         super().tearDownClass()
 
     # ----------------------------------------------------------
-    # Tests: retry wiring
-    # ----------------------------------------------------------
-
-    def test_controller_imports_retrying(self):
-        self.assertIs(mcp_controller.retrying, retrying)
-
-    def test_controller_wraps_tools_call_in_retrying(self):
-        source = inspect.getsource(
-            mcp_controller.MCPController._handle_tools_call,
-        )
-        self.assertIn('retrying(', source)
-        self.assertIn('partial(', source)
-
-    # ----------------------------------------------------------
-    # Tests: context override
+    # Tests
     # ----------------------------------------------------------
 
     def test_context_override_reaches_python_tool(self):

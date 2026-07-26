@@ -1,16 +1,13 @@
+from __future__ import annotations
+
 import base64
 import csv
 import io
 import json
+from typing import Any
 
 from odoo.exceptions import UserError
-from odoo.http import request
 from odoo.tests import common, tagged
-
-try:
-    import xlsxwriter
-except ImportError:
-    xlsxwriter = None
 
 
 @tagged('post_install', '-at_install')
@@ -22,7 +19,7 @@ class TestMcpExportRecords(common.TransactionCase):
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.tool_model = cls.env['muk_mcp.tool']
         cls.partner_a = cls.env['res.partner'].create(
@@ -44,11 +41,13 @@ class TestMcpExportRecords(common.TransactionCase):
     # Helper
     # ----------------------------------------------------------
 
-    def _call(self, name, arguments):
+    def _call(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+        """Run the ``name`` tool in-process and return its decoded JSON result."""
         text, _info = self.tool_model._call(name, arguments, self.env)
         return json.loads(text)
 
-    def _decode_csv(self, result):
+    def _decode_csv(self, result: dict[str, Any]) -> list[list[str]]:
+        """Decode the base64 CSV payload of ``result`` into a list of rows."""
         content = base64.b64decode(result['content_base64']).decode('utf-8-sig')
         reader = csv.reader(io.StringIO(content))
         return list(reader)
@@ -118,30 +117,15 @@ class TestMcpExportRecords(common.TransactionCase):
         )
         self.assertEqual(result['row_count'], 2)
 
-    def test_export_xlsx_produces_zip_header(self):
-        if xlsxwriter is None:
-            self.skipTest('xlsxwriter not installed')
-        try:
-            request.env
-        except (ImportError, RuntimeError):
-            self.skipTest(
-                'xlsx export requires a bound HTTP request '
-                '(odoo.addons.web.controllers.export.ExcelExport '
-                'accesses request.env); covered by HttpCase tests.',
-            )
-        result = self._call(
-            'export_records',
-            {
-                'model': 'res.partner',
-                'fields': ['name'],
-                'ids': [self.partner_a.id],
-                'format': 'xlsx',
-            },
-        )
-        self.assertTrue(result['filename'].endswith('.xlsx'))
-        self.assertIn('spreadsheetml', result['mimetype'])
-        content = base64.b64decode(result['content_base64'])
-        self.assertEqual(content[:2], b'PK')
+    def test_build_exporter_selects_the_format_handler(self):
+        mixin = self.env['muk_mcp.mixin']
+        xlsx = mixin._build_exporter('xlsx')
+        self.assertEqual(xlsx.extension, '.xlsx')
+        self.assertIn('spreadsheetml', xlsx.content_type)
+        for fmt in ('csv', '', 'bogus'):
+            csv_exporter = mixin._build_exporter(fmt)
+            self.assertEqual(csv_exporter.extension, '.csv', fmt)
+            self.assertIn('csv', csv_exporter.content_type, fmt)
 
     def test_export_no_fields_raises(self):
         with self.assertRaises(UserError):

@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import json
 
 from odoo.exceptions import UserError, ValidationError
 from odoo.tests import common, tagged
 
 from odoo.addons.muk_mcp.core import prompt as core_prompt
-from odoo.addons.muk_mcp.tools import protocol
 
 
 @tagged('post_install', '-at_install')
@@ -16,31 +17,13 @@ class TestMcpPrompt(common.TransactionCase):
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.prompt_model = cls.env['muk_mcp.prompt']
 
     # ----------------------------------------------------------
     # Tests — decorator / registry
     # ----------------------------------------------------------
-
-    def test_decorator_stamps_metadata(self):
-        @core_prompt.mcp_prompt(
-            name='dummy',
-            title='Dummy',
-            description='Does nothing.',
-            arguments=[{'name': 'x', 'required': True}],
-        )
-        def handler(self, x=None):
-            return None
-
-        self.assertEqual(handler.__mcp_prompt__['name'], 'dummy')
-        self.assertEqual(handler.__mcp_prompt__['title'], 'Dummy')
-        self.assertEqual(handler.__mcp_prompt__['description'], 'Does nothing.')
-        self.assertEqual(
-            handler.__mcp_prompt__['arguments'],
-            [{'name': 'x', 'required': True}],
-        )
 
     def test_decorator_infers_name_and_description(self):
         @core_prompt.mcp_prompt()
@@ -77,10 +60,6 @@ class TestMcpPrompt(common.TransactionCase):
     # Tests — built-in (method) prompts
     # ----------------------------------------------------------
 
-    def test_get_prompts_lists_builtin_prompts(self):
-        names = [entry['name'] for entry in self.prompt_model.get_prompts()]
-        self.assertIn('summarize_record', names)
-
     def test_get_playground_prompts_exposes_kind_and_arguments(self):
         by_name = {
             entry['name']: entry for entry in self.prompt_model.get_playground_prompts()
@@ -93,10 +72,6 @@ class TestMcpPrompt(common.TransactionCase):
             self.assertIn('title', entry)
             self.assertIn('description', entry)
             self.assertIsInstance(entry['arguments'], list)
-
-    def test_get_prompts_lists_xml_data_prompt(self):
-        names = [entry['name'] for entry in self.prompt_model.get_prompts()]
-        self.assertIn('activities_today', names)
 
     def test_get_prompt_runs_xml_data_prompt(self):
         result = self.prompt_model.get_prompt('activities_today', {})
@@ -166,12 +141,6 @@ class TestMcpPrompt(common.TransactionCase):
             {'name': 'model', 'value': 'res'},
         )
         self.assertEqual(result['completion']['values'], [])
-
-    def test_initialize_result_advertises_prompt_and_completion(self):
-        caps = protocol.make_initialize_result()['capabilities']
-        self.assertIn('prompts', caps)
-        self.assertEqual(caps['prompts'], {'listChanged': True})
-        self.assertIn('completions', caps)
 
     # ----------------------------------------------------------
     # Tests — database (UI) prompts

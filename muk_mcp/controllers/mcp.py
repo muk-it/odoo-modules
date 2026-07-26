@@ -172,7 +172,7 @@ class MCPController(http.Controller):
         """
         method, params, request_id = (
             data.get('method'),
-            data.get('params', {}),
+            data.get('params') or {},
             data.get('id'),
         )
         handlers = {
@@ -245,7 +245,16 @@ class MCPController(http.Controller):
         """Dispatch a JSON-RPC batch, enforcing size and rate limits.
 
         Collects only non-null results (notifications are dropped) into a single response.
+        An empty batch is rejected with a single error, as required by JSON-RPC 2.0 §6.
         """
+        if not items:
+            return request.make_json_response(
+                protocol.make_jsonrpc_error(
+                    common.JSONRPC_INVALID_REQUEST,
+                    'Invalid Request: batch must not be empty',
+                ),
+                status=400,
+            )
         if len(items) > common.MAX_BATCH_SIZE:
             return request.make_json_response(
                 protocol.make_jsonrpc_error(
@@ -370,7 +379,7 @@ class MCPController(http.Controller):
 
     def _handle_resources_read(self, params: dict[str, Any]) -> dict[str, Any]:
         """Handle ``resources/read``: resolve the URI to content, empty on access denial."""
-        if not (uri := (params or {}).get('uri')):
+        if not (uri := params.get('uri')):
             return {'contents': []}
         try:
             entry = request.env['muk_mcp.mixin']._dispatch_resources_read(
@@ -438,9 +447,14 @@ class MCPController(http.Controller):
     def mcp_post(self, **kw: Any) -> Response:
         """Serve JSON-RPC requests: dispatch single or batch calls and return the reply.
 
+        A batch is charged against the rate limit once, for its item count, by
+        :meth:`_handle_batch`; only single requests are charged here.
+
         :return: a JSON response, a 202 for notifications, or a 429 when rate limited;
             a freshly created session id is echoed in the ``Mcp-Session-Id`` header.
         """
+        if (batch := request.params.get('jsonrpc_batch')) is not None:
+            return self._handle_batch(batch)
         if not self._check_rate_limit():
             return request.make_json_response(
                 protocol.make_jsonrpc_error(
@@ -449,8 +463,6 @@ class MCPController(http.Controller):
                 ),
                 status=429,
             )
-        if (batch := request.params.get('jsonrpc_batch')) is not None:
-            return self._handle_batch(batch)
         if (data := request.params.get('jsonrpc_data')) is None:
             return request.make_json_response(
                 protocol.make_jsonrpc_error(
@@ -483,7 +495,10 @@ class MCPController(http.Controller):
         after_id = 0
         if last_event_id := request.httprequest.headers.get('Last-Event-ID'):
             if resume := request.env['muk_mcp.notification'].search(
-                [('event_id', '=', last_event_id)],
+                [
+                    ('event_id', '=', last_event_id),
+                    ('session_id', '=', session.id),
+                ],
                 limit=1,
             ):
                 after_id = resume.id

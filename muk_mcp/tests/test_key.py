@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import secrets
 
 from odoo import Command
@@ -15,7 +17,7 @@ class TestMcpKey(common.TransactionCase):
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.key_model = cls.env['muk_mcp.key']
         cls.key_user = cls.env.ref('base.user_admin')
@@ -47,9 +49,6 @@ class TestMcpKey(common.TransactionCase):
         self.key_model.authenticate(self.raw_token)
         self.key.invalidate_recordset()
         self.assertTrue(self.key.last_used)
-
-    def test_scope_default_is_write(self):
-        self.assertEqual(self.key.scope, 'write')
 
     def test_rate_limit(self):
         for _i in range(10):

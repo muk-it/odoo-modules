@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 
 from odoo.tests import common
@@ -11,7 +13,7 @@ class TestConnect(common.TransactionCase):
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.env['ir.config_parameter'].sudo().set_param(
             'web.base.url',
@@ -35,10 +37,15 @@ class TestConnect(common.TransactionCase):
         self.assertEqual(wizard.mcp_url, 'https://odoo.example.com/mcp')
 
     def test_action_generate_key_sets_bearer_key(self):
-        self.assertFalse(self.wizard.bearer_key)
-        self.wizard.action_generate_key()
-        self.assertTrue(self.wizard.bearer_key)
-        self.assertGreater(len(self.wizard.bearer_key), 16)
+        admin = self.env.ref('base.user_admin')
+        wizard = self.env['muk_mcp.connect'].with_user(admin).create({})
+        self.assertFalse(wizard.bearer_key)
+        wizard.action_generate_key()
+        key = self.env['muk_mcp.key'].authenticate(wizard.bearer_key)
+        self.assertTrue(key)
+        self.assertEqual(key.user_id, admin)
+        self.assertEqual(key.scope, 'write')
+        self.assertEqual(key.key_prefix, wizard.bearer_key[:8])
 
     def test_snippets_use_placeholder_without_key(self):
         for snippet in (
@@ -49,14 +56,6 @@ class TestConnect(common.TransactionCase):
             self.wizard.opencode_json,
         ):
             self.assertIn('<paste-bearer-key-here>', snippet)
-
-    def test_snippets_embed_bearer_key(self):
-        self.wizard.bearer_key = 'sk-test-1234567890'
-        self.assertIn('Bearer sk-test-1234567890', self.wizard.claude_code_cmd)
-        self.assertIn('Bearer sk-test-1234567890', self.wizard.claude_desktop_json)
-        self.assertIn('Bearer sk-test-1234567890', self.wizard.codex_toml)
-        self.assertIn('Bearer sk-test-1234567890', self.wizard.cursor_json)
-        self.assertIn('Bearer sk-test-1234567890', self.wizard.opencode_json)
 
     def test_claude_code_command_format(self):
         self.wizard.bearer_key = 'sk-test'

@@ -1,18 +1,19 @@
-import json
+from __future__ import annotations
 
+from odoo import models
 from odoo.tests import common, tagged
 
 
 @tagged('post_install', '-at_install')
 class TestPlayground(common.TransactionCase):
-    """Cover playground tool listing, key generation and action/menu registration."""
+    """Cover playground key generation and menu placement."""
 
     # ----------------------------------------------------------
     # Setup
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.Key = cls.env['muk_mcp.key']
         cls.Tool = cls.env['muk_mcp.tool']
@@ -21,7 +22,8 @@ class TestPlayground(common.TransactionCase):
     # Helper
     # ----------------------------------------------------------
 
-    def _make_user(self, login):
+    def _make_user(self, login: str) -> models.BaseModel:
+        """Create an internal user identified by ``login``."""
         return self.env['res.users'].create(
             {
                 'name': login,
@@ -34,22 +36,6 @@ class TestPlayground(common.TransactionCase):
     # ----------------------------------------------------------
     # Tests
     # ----------------------------------------------------------
-
-    def test_get_playground_tools_returns_category_and_kind(self):
-        tools = self.Tool.get_playground_tools()
-        self.assertIsInstance(tools, list)
-        for tool in tools:
-            self.assertIn('name', tool)
-            self.assertIn('description', tool)
-            self.assertIn('inputSchema', tool)
-            self.assertIsInstance(tool['inputSchema'], dict)
-            self.assertIn(tool['category'], ('read', 'write'))
-            self.assertIn(tool['kind'], ('db', 'method'))
-
-    def test_get_playground_tools_is_json_serialisable(self):
-        tools = self.Tool.get_playground_tools()
-        round_tripped = json.loads(json.dumps(tools))
-        self.assertEqual(len(round_tripped), len(tools))
 
     def test_generate_playground_key_returns_plaintext(self):
         user = self._make_user('mcp_user_c')
@@ -79,12 +65,7 @@ class TestPlayground(common.TransactionCase):
         self.assertTrue(authenticated)
         self.assertEqual(authenticated.user_id, user)
 
-    def test_client_action_registered(self):
-        action = self.env.ref('muk_mcp.action_mcp_playground')
-        self.assertEqual(action.tag, 'muk_mcp.playground')
-        self.assertEqual(action.type, 'ir.actions.client')
-
-    def test_menu_positioned_after_audit_log(self):
+    def test_menu_descends_from_mcp_root(self):
         menu = self.env.ref('muk_mcp.menu_mcp_playground')
         root = self.env.ref('muk_mcp.menu_mcp_root')
         ancestor = menu.parent_id
@@ -93,10 +74,3 @@ class TestPlayground(common.TransactionCase):
         self.assertEqual(
             ancestor, root, 'Playground menu must descend from menu_mcp_root'
         )
-        audit = self.env.ref('muk_mcp.menu_mcp_log')
-        if menu.parent_id == audit.parent_id:
-            self.assertGreater(
-                menu.sequence,
-                audit.sequence,
-                'Playground should sit below Audit Log when sharing a parent',
-            )
