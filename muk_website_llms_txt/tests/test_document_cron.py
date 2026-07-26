@@ -22,11 +22,24 @@ class TestLlmsTxtDocumentCron(LlmsTxtCommon, TransactionCase):
     def setUpClass(cls) -> None:
         super().setUpClass()
         cls.website = cls._setup_llms_website()
-        cls.cron = cls.env.ref('muk_website_llms_txt.ir_cron_generate_llms_documents')
+        cls.cron = cls._setup_llms_cron()
 
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
+
+    @classmethod
+    def _setup_llms_cron(cls) -> models.Model:
+        """Return the document cron, activated for the scheduling tests.
+
+        ``_trigger`` silently drops the run it should queue when the cron is
+        inactive, and neutralized databases deactivate every cron. The
+        fixture owns the flag so the tests assert what the code schedules
+        instead of what the database was restored with.
+        """
+        cron = cls.env.ref('muk_website_llms_txt.ir_cron_generate_llms_documents')
+        cron.active = True
+        return cron
 
     def _run_cron(self) -> int:
         """Run the document cron and return how often it committed.
