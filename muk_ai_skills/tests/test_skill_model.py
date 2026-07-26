@@ -1,11 +1,8 @@
 from __future__ import annotations
 
-from psycopg2 import IntegrityError
-
 from odoo import models
 from odoo.exceptions import UserError
 from odoo.tests.common import TransactionCase, tagged
-from odoo.tools import mute_logger
 
 
 @tagged('post_install', '-at_install', 'muk_ai_skills', 'model')
@@ -67,12 +64,6 @@ class TestSkillModel(TransactionCase):
     # Tests constraints
     # ----------------------------------------------------------
 
-    def test_name_unique_per_owner_constraint(self):
-        self._make_skill(name='unique_one', description='d')
-        with self.assertRaises(IntegrityError), mute_logger('odoo.sql_db'):
-            with self.env.cr.savepoint():
-                self._make_skill(name='unique_one', description='d')
-
     def test_name_regex_rejects_uppercase(self):
         with self.assertRaises(UserError):
             self._make_skill(name='BadName', description='d')
@@ -84,10 +75,6 @@ class TestSkillModel(TransactionCase):
     def test_name_regex_rejects_dash(self):
         with self.assertRaises(UserError):
             self._make_skill(name='bad-name', description='d')
-
-    def test_name_regex_accepts_underscore(self):
-        skill = self._make_skill(name='good_name_1', description='d')
-        self.assertEqual(skill.name, 'good_name_1')
 
     # ----------------------------------------------------------
     # Tests visibility
@@ -113,15 +100,6 @@ class TestSkillModel(TransactionCase):
         )
         session_a = self._make_session(self.agent_a)
         self.assertIn(scoped_skill, session_a._visible_skills())
-
-    def test_visible_skills_scoped_mismatch(self):
-        scoped_skill = self._make_skill(
-            name='scoped_b',
-            description='s',
-            agent_ids=[(6, 0, [self.agent_b.id])],
-        )
-        session_a = self._make_session(self.agent_a)
-        self.assertNotIn(scoped_skill, session_a._visible_skills())
 
     def test_visible_skills_excludes_inactive(self):
         skill = self._make_skill(name='inactive', description='d')

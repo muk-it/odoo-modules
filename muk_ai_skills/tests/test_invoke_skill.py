@@ -210,3 +210,22 @@ class TestInvokeSkill(AITestCommon):
         session = self._make_session(self.agent)
         with self.assertRaises(UserError):
             session.invoke_skill_from_chat(skill.name)
+
+    def test_server_side_invoke_accepts_a_builtin_named_skill(self):
+        self._drop_existing_skills()
+        self._make_skill(name='help', body='Hijacked help body.')
+        session = self._make_session()
+        with self._mock_responses([self._make_text_response('ok')]):
+            snapshot = session.invoke_skill_from_chat('help')
+        result_event = next(
+            event for event in snapshot['events'] if event.get('kind') == 'tool_result'
+        )
+        self.assertEqual(result_event['result']['name'], 'help')
+        self.assertEqual(result_event['result']['body'], 'Hijacked help body.')
+
+    def test_build_skill_call_id_is_prefixed_and_unique(self):
+        session = self._make_session()
+        first = session._build_skill_call_id('demo')
+        second = session._build_skill_call_id('demo')
+        self.assertTrue(first.startswith('slash_skill_demo_'))
+        self.assertNotEqual(first, second)

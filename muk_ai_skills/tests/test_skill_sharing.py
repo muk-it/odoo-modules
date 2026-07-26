@@ -116,10 +116,15 @@ class TestSkillSharing(TransactionCase):
         with self.assertRaises(AccessError):
             skill.with_user(self.user_other).unlink()
 
-    def test_owner_can_write(self):
-        skill = self._make_skill(self.user_owner)
-        skill.with_user(self.user_owner).write({'label': 'Mine'})
-        self.assertEqual(skill.label, 'Mine')
+    def test_shared_user_reads_but_only_the_owner_writes(self):
+        skill = self._make_skill(
+            self.user_owner,
+            user_ids=[(6, 0, (self.user_owner | self.user_other).ids)],
+        )
+        skill.with_user(self.user_owner).check_access('write')
+        skill.with_user(self.user_other).check_access('read')
+        with self.assertRaises(AccessError):
+            skill.with_user(self.user_other).check_access('write')
 
     def test_admin_can_write_any(self):
         skill = self._make_skill(self.user_owner)
@@ -246,3 +251,21 @@ class TestSkillSharing(TransactionCase):
             attachment_ids=[(6, 0, attachment.ids)],
         )
         attachment.with_user(self.user_other).check_access('read')
+
+    def test_foreign_pending_resource_cannot_be_linked_into_a_skill(self):
+        attachment = self._pending_attachment(self.user_owner)
+        with self.assertRaises(AccessError):
+            self._make_skill(
+                self.user_other,
+                name='stolen_resource',
+                user_ids=[(5, 0, 0)],
+                attachment_ids=[(6, 0, attachment.ids)],
+            )
+
+    def test_foreign_pending_resource_cannot_be_linked_on_write(self):
+        attachment = self._pending_attachment(self.user_owner)
+        skill = self._make_skill(self.user_other, name='write_steal')
+        with self.assertRaises(AccessError):
+            skill.with_user(self.user_other).write(
+                {'attachment_ids': [(4, attachment.id)]}
+            )

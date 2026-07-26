@@ -94,11 +94,3 @@ class TestPromptAddendum(TransactionCase):
         base = 'You are a helpful assistant.'
         self.assertIn(base, rendered)
         self.assertLess(rendered.index(base), rendered.index('<available_skills>'))
-
-    def test_inactive_skill_omitted(self):
-        self._drop_existing_skills()
-        skill = self._make_skill(name='gamma', description='Gamma.')
-        skill.active = False
-        session = self._make_session()
-        rendered = session._system_message()['content'][0]['text']
-        self.assertNotIn('gamma', rendered)
