@@ -6,8 +6,10 @@ import re
 from collections.abc import Iterable
 from typing import Any
 
-from odoo import _
 from odoo.exceptions import UserError
+from odoo.tools.translate import LazyTranslate
+
+_lt = LazyTranslate(__name__)
 
 _PY_LITERAL_PATTERN = re.compile(r'\b(true|false|null)\b')
 _PY_LITERAL_MAP = {'true': 'True', 'false': 'False', 'null': 'None'}
@@ -29,7 +31,7 @@ def normalize_ids(ids: int | str | Iterable[int] | None) -> list[int]:
         try:
             return [int(ids.strip())]
         except ValueError:
-            raise UserError(_('Invalid record ID: %r', ids)) from None
+            raise UserError(_lt('Invalid record ID: %r', ids)) from None
     return list(ids)
 
 
