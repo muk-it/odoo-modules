@@ -28,7 +28,6 @@ patch(x2ManyField, {
         const res = super.extractProps(...arguments);
         if ('no_open' in options) {
             res.canOpen = !options.no_open;
-            delete options.no_open;
         }
         return res;
     },
