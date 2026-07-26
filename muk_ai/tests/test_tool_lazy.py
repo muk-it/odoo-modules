@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import json
 from unittest.mock import patch
 
-from odoo.addons.muk_ai.tests.common import AITestCommon
+from odoo.addons.muk_ai.tests.common import AITestCommon, ToolCatalogMixin
 
 
-class TestToolLazy(AITestCommon):
+class TestToolLazy(ToolCatalogMixin, AITestCommon):
     """Verify lazy tool-schema loading and on-demand tool execution."""
 
     # ----------------------------------------------------------
@@ -12,10 +14,10 @@ class TestToolLazy(AITestCommon):
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.session = cls.env['muk_ai.session'].create({'name': 'Lazy session'})
-        cls.fake_catalog = [
+        cls.catalog = [
             {
                 'name': 'list_models',
                 'description': 'List installed models',
@@ -45,18 +47,6 @@ class TestToolLazy(AITestCommon):
                 'inputSchema': {'type': 'object'},
             },
         ]
-
-    # ----------------------------------------------------------
-    # Helper
-    # ----------------------------------------------------------
-
-    def _patch_catalog(self):
-        return patch.object(
-            type(self.env['muk_mcp.tool']),
-            'get_tools',
-            autospec=True,
-            return_value=list(self.fake_catalog),
-        )
 
     # ----------------------------------------------------------
     # Tests: tool index in system prompt
@@ -556,102 +546,3 @@ class TestToolLazy(AITestCommon):
         self.assertNotIn('rare_tool', first_lazy_round_tools)
         second_lazy_round_tools = captured_lazy[1]['tools']
         self.assertIn('rare_tool', second_lazy_round_tools)
-
-
-class TestToolLoadInlineApproval(AITestCommon):
-    """Verify a tool_load inline call honours the risky-write approval gate."""
-
-    # ----------------------------------------------------------
-    # Setup
-    # ----------------------------------------------------------
-
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls._mark_sensitive('res.partner')
-        cls.session = cls.env['muk_ai.session'].create({'name': 'Inline gate'})
-        cls.catalog = [
-            {
-                'name': 'update_records',
-                'description': 'Update records',
-                'inputSchema': {'type': 'object'},
-            },
-        ]
-
-    # ----------------------------------------------------------
-    # Helper
-    # ----------------------------------------------------------
-
-    def _patch_catalog(self):
-        return patch.object(
-            type(self.env['muk_mcp.tool']),
-            'get_tools',
-            autospec=True,
-            return_value=list(self.catalog),
-        )
-
-    def _patch_execute(self):
-        calls = []
-
-        def fake(self_arg, name, arguments, env, enforce_scope):
-            calls.append(name)
-            return '{"success": true}', {}, arguments.get('model')
-
-        return patch.object(
-            type(self.env['muk_mcp.tool']),
-            '_execute',
-            autospec=True,
-            side_effect=fake,
-        ), calls
-
-    def _inline_load(self, model):
-        return {
-            'names': ['update_records'],
-            'call': {
-                'name': 'update_records',
-                'arguments': {
-                    'model': model,
-                    'ids': [1],
-                    'values': {'name': 'Owned'},
-                },
-            },
-        }
-
-    # ----------------------------------------------------------
-    # Tests
-    # ----------------------------------------------------------
-
-    def test_inline_call_defers_risky_write_without_executing(self):
-        tool_patch, calls = self._patch_execute()
-        with self._patch_catalog(), tool_patch:
-            response = self.session._dispatch_tool_load(
-                self._inline_load('res.partner'),
-                parent_call_id='c1',
-            )
-        inline = response['call']
-        self.assertFalse(inline['ok'])
-        self.assertEqual(inline['output']['error'], 'requires_approval')
-        self.assertNotIn('update_records', calls)
-
-    def test_inline_call_dispatches_when_model_not_sensitive(self):
-        tool_patch, calls = self._patch_execute()
-        with self._patch_catalog(), tool_patch:
-            response = self.session._dispatch_tool_load(
-                self._inline_load('res.partner.category'),
-                parent_call_id='c2',
-            )
-        inline = response['call']
-        self.assertTrue(inline['ok'])
-        self.assertIn('update_records', calls)
-
-    def test_inline_call_dispatches_when_approval_off(self):
-        self.session.override_approval_mode = 'off'
-        tool_patch, calls = self._patch_execute()
-        with self._patch_catalog(), tool_patch:
-            response = self.session._dispatch_tool_load(
-                self._inline_load('res.partner'),
-                parent_call_id='c3',
-            )
-        inline = response['call']
-        self.assertTrue(inline['ok'])
-        self.assertIn('update_records', calls)

@@ -1,4 +1,7 @@
-from unittest.mock import patch
+from __future__ import annotations
+
+from contextlib import AbstractContextManager
+from unittest.mock import MagicMock, patch
 
 from odoo.tools import config as odoo_config
 
@@ -13,7 +16,7 @@ class TestLogUnification(AITestCommon):
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.session = cls.env['muk_ai.session'].create({'name': 'log-unification'})
 
@@ -21,7 +24,14 @@ class TestLogUnification(AITestCommon):
     # Helper
     # ----------------------------------------------------------
 
-    def _patch_execute(self, results):
+    def _patch_execute(
+        self, results: dict[str, str]
+    ) -> AbstractContextManager[MagicMock]:
+        """Patch tool execution to return a canned result per tool name.
+
+        :param results: result per tool name; unlisted tools return ``{}``.
+        """
+
         def fake(self_arg, name, arguments, env, enforce_scope):
             return results.get(name, '{}'), {}, arguments.get('model')
 

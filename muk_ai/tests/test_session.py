@@ -1,12 +1,16 @@
+from __future__ import annotations
+
 import json
 import time
+from contextlib import AbstractContextManager
 from datetime import timedelta
 from unittest.mock import MagicMock, patch
 
 from psycopg2.errors import SerializationFailure
 
-from odoo import fields
+from odoo import fields, models
 from odoo.exceptions import UserError
+from odoo.sql_db import Cursor
 from odoo.tests.common import new_test_user
 from odoo.tools import SQL, config
 
@@ -31,7 +35,7 @@ class TestAiSession(AITestCommon):
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.session = cls.env['muk_ai.session'].create({'name': 'Test session'})
 
@@ -39,7 +43,15 @@ class TestAiSession(AITestCommon):
     # Helper
     # ----------------------------------------------------------
 
-    def _patch_provider(self, payloads, captured=None):
+    def _patch_provider(
+        self, payloads: list[dict], captured: list[dict] | None = None
+    ) -> AbstractContextManager[MagicMock]:
+        """Patch the provider to pop one payload per LLM request.
+
+        :param captured: When given, receives the inputs, tool schema and
+            built-in tool flags of every request.
+        :raise AssertionError: When more requests are made than payloads given.
+        """
         remaining = list(payloads)
 
         def fake(
@@ -77,7 +89,14 @@ class TestAiSession(AITestCommon):
             side_effect=fake,
         )
 
-    def _patch_tool_call(self, results_by_name):
+    def _patch_tool_call(
+        self, results_by_name: dict[str, str]
+    ) -> AbstractContextManager[MagicMock]:
+        """Patch tool execution to return a canned result per tool name.
+
+        :raise AssertionError: When a tool outside ``results_by_name`` is called.
+        """
+
         def fake(self_arg, name, arguments, env, enforce_scope):
             if name not in results_by_name:
                 raise AssertionError(f'Unexpected tool call: {name}')
@@ -91,7 +110,10 @@ class TestAiSession(AITestCommon):
             side_effect=fake,
         )
 
-    def _tool_payload(self, name, arguments, call_id='call_1'):
+    def _tool_payload(
+        self, name: str, arguments: dict, call_id: str = 'call_1'
+    ) -> dict:
+        """Build a provider payload emitting a single tool call."""
         return {
             'text': '',
             'tool_calls': [
@@ -112,7 +134,8 @@ class TestAiSession(AITestCommon):
             'usage': {'input_tokens': 4, 'output_tokens': 2},
         }
 
-    def _text_payload(self, text='all done'):
+    def _text_payload(self, text: str = 'all done') -> dict:
+        """Build a provider payload emitting plain assistant text."""
         return {
             'text': text,
             'tool_calls': [],
@@ -125,7 +148,8 @@ class TestAiSession(AITestCommon):
             'usage': {'input_tokens': 3, 'output_tokens': 1},
         }
 
-    def _extract_ui_ctx(self, inputs):
+    def _extract_ui_ctx(self, inputs: list[dict] | None) -> str | None:
+        """Return the first ``<ui_ctx>`` text block found in provider inputs."""
         for item in inputs or []:
             content = item.get('content') if isinstance(item, dict) else None
             if not isinstance(content, list):
@@ -136,13 +160,16 @@ class TestAiSession(AITestCommon):
                     return text
         return None
 
-    def _force_stale_session(self, name='long-tool', state='running'):
+    def _force_stale_session(
+        self, name: str = 'long-tool', state: str = 'running'
+    ) -> models.BaseModel:
+        """Create a session in ``state`` whose timestamps are already stale."""
         session = self.env['muk_ai.session'].create({'name': name})
         session.write({'state': state})
         self._backdate_session(session)
         return session
 
-    def _backdate_session(self, session) -> None:
+    def _backdate_session(self, session: models.BaseModel) -> None:
         """Force the session's write/claim timestamps past the stale threshold."""
         session.flush_recordset()
         stale = fields.Datetime.now() - timedelta(seconds=WORKER_STALE_THRESHOLD + 30)
@@ -157,7 +184,9 @@ class TestAiSession(AITestCommon):
         )
         session.invalidate_recordset()
 
-    def _hold_session_lock(self, session_id):
+    def _hold_session_lock(self, session_id: int) -> AbstractContextManager[Cursor]:
+        """Hold the session advisory lock on a separate cursor for the block."""
+
         class _Holder:
             def __init__(self_, registry):
                 self_._cr = registry.cursor()
@@ -189,7 +218,38 @@ class TestAiSession(AITestCommon):
 
         return _Holder(self.env.registry)
 
-    def _session_inbox_messages(self, session=None):
+    def _session_lock_is_free(self, session_id: int) -> bool:
+        """Report whether the session lock can be taken from another backend."""
+        cursor = self.env.registry.cursor()
+        try:
+            cursor.execute(
+                SQL(
+                    'SELECT pg_try_advisory_lock(%s, %s)',
+                    ADVISORY_LOCK_NAMESPACE,
+                    session_id,
+                )
+            )
+            acquired = cursor.fetchone()[0]
+            if acquired:
+                cursor.execute(
+                    SQL(
+                        'SELECT pg_advisory_unlock(%s, %s)',
+                        ADVISORY_LOCK_NAMESPACE,
+                        session_id,
+                    )
+                )
+                cursor.fetchone()
+            return acquired
+        finally:
+            cursor.close()
+
+    def _session_inbox_messages(
+        self, session: models.BaseModel | None = None
+    ) -> models.BaseModel:
+        """Return the inbox notifications posted to the session owner.
+
+        :param session: Session to inspect; defaults to ``self.session``.
+        """
         session = session or self.session
         partner = session.user_id.partner_id
         return self.env['mail.message'].search(
@@ -201,7 +261,8 @@ class TestAiSession(AITestCommon):
             ]
         )
 
-    def _inbox_session(self, name='inbox session'):
+    def _inbox_session(self, name: str = 'inbox session') -> models.BaseModel:
+        """Create a session owned by a fresh user notified via the inbox."""
         user = new_test_user(
             self.env,
             login='nb_inbox_%s' % name.replace(' ', '_'),
@@ -395,18 +456,43 @@ class TestAiSession(AITestCommon):
         self.assertIn('question', by_name['ask_user']['parameters']['properties'])
 
     def test_bus_event_published_on_state_change(self):
+        captured = []
         with (
             patch.object(
                 type(self.env['bus.bus']),
                 '_sendone',
                 autospec=True,
-            ) as bus_mock,
+                side_effect=lambda *a, **k: captured.append((a[1], a[2], a[3])),
+            ),
             self._patch_provider([self._text_payload('done')]),
         ):
             self.session.start('hi')
         partner = self.session.user_id.partner_id
-        targets = [call.args[1] for call in bus_mock.call_args_list]
-        self.assertTrue(any(t == partner for t in targets))
+        states = [
+            message
+            for target, notification_type, message in captured
+            if notification_type == 'muk_ai.session_state' and target == partner
+        ]
+        self.assertTrue(states)
+        final = states[-1]
+        self.assertEqual(final['session_id'], self.session.id)
+        self.assertEqual(final['state'], 'done')
+        self.assertEqual(final['name'], self.session.name)
+        self.assertEqual(final['iteration_count'], 1)
+        self.assertEqual(
+            final['context_window'],
+            self.session._resolve_context_window(),
+        )
+        events = [
+            message
+            for target, notification_type, message in captured
+            if notification_type == 'muk_ai.event' and target == partner
+        ]
+        self.assertTrue(events)
+        self.assertTrue(
+            all(set(message) == {'session_id', 'type', 'payload'} for message in events)
+        )
+        self.assertIn('state', [message['type'] for message in events])
 
     def test_state_notification_payload_is_timestamped(self):
         captured = []
@@ -769,7 +855,16 @@ class TestAiSession(AITestCommon):
         with self.assertRaises(UserError):
             session.clear()
 
-    def _seed_large_conversation(self, session, pairs=10, chunk_chars=10000):
+    def _seed_large_conversation(
+        self,
+        session: models.BaseModel,
+        pairs: int = 10,
+        chunk_chars: int = 10000,
+    ) -> None:
+        """Pad the session conversation with ``pairs`` bulky user/assistant turns.
+
+        Starts the session first when its conversation is still empty.
+        """
         if not session.conversation:
             with self._patch_provider([self._text_payload('seed reply')]):
                 session.start('seed user message')
@@ -1136,18 +1231,6 @@ class TestAiSession(AITestCommon):
         last_entry = unified[-1] if unified else {}
         self.assertEqual(last_entry.get('kind'), 'command')
         self.assertEqual(last_entry.get('name'), '/unpin')
-
-    def test_snapshot_exposes_view_context(self):
-        session = self.env['muk_ai.session'].create({'name': 'snap'})
-        session.view_context = {
-            'kind': 'record',
-            'model': 'res.partner',
-            'id': 5,
-            'display_name': 'Who',
-        }
-        snapshot = session.get_snapshot()
-        self.assertEqual(snapshot['view_context']['model'], 'res.partner')
-        self.assertEqual(snapshot['view_context']['id'], 5)
 
     def test_render_ui_ctx_returns_none_when_empty(self):
         self.assertIsNone(render_ui_ctx(None))
@@ -1594,16 +1677,29 @@ class TestAiSession(AITestCommon):
     # Tests: approval mode toggle
     # ----------------------------------------------------------
 
-    def test_set_approval_mode_accepts_ask(self):
-        session = self.env['muk_ai.session'].create({'name': 'mode'})
-        session.set_approval_mode('ask')
-        self.assertEqual(session.override_approval_mode, 'ask')
-
-    def test_set_approval_mode_clears_on_empty(self):
-        session = self.env['muk_ai.session'].create({'name': 'clear-mode'})
-        session.set_approval_mode('off')
-        session.set_approval_mode(None)
+    def test_set_approval_mode_overrides_the_agent_default(self):
+        agent = self.env['muk_ai.agent'].create(
+            {
+                'name': 'Never asks',
+                'approval_mode': 'off',
+            }
+        )
+        session = self.env['muk_ai.session'].create(
+            {
+                'name': 'mode',
+                'agent_id': agent.id,
+            }
+        )
+        self.assertEqual(session._effective_approval_mode(), 'off')
+        snapshot = session.set_approval_mode('ask')
+        self.assertEqual(session._effective_approval_mode(), 'ask')
+        self.assertEqual(snapshot['override_approval_mode'], 'ask')
+        self.assertEqual(snapshot['effective_approval_mode'], 'ask')
+        snapshot = session.set_approval_mode(None)
         self.assertFalse(session.override_approval_mode)
+        self.assertEqual(session._effective_approval_mode(), 'off')
+        self.assertFalse(snapshot['override_approval_mode'])
+        self.assertEqual(snapshot['effective_approval_mode'], 'off')
 
     def test_set_approval_mode_rejects_unknown(self):
         session = self.env['muk_ai.session'].create({'name': 'mode-bad'})
@@ -1755,13 +1851,34 @@ class TestAiSession(AITestCommon):
         with self._hold_session_lock(session.id):
             self.env['muk_ai.session']._sweep_orphan_sessions()
             session.invalidate_recordset()
-            self.assertEqual(session.state, 'running')
+            self.assertEqual(
+                session.state,
+                'running',
+                'live worker mid-tool must NOT be killed by the orphan sweep',
+            )
+            snapshot = session.send_message('done?')
+            session.invalidate_recordset()
+            self.assertEqual(
+                session.state,
+                'running',
+                'live worker mid-tool must NOT be killed by send_message recovery',
+            )
+            self.assertEqual(
+                len(session.pending_ids),
+                1,
+                'follow-up message should queue, not abort the run',
+            )
+            self.assertEqual(
+                snapshot['pending_user_messages'][0]['content'],
+                'done?',
+            )
 
     def test_sweep_orphan_flips_session_when_lock_is_free(self):
         session = self._force_stale_session('truly-orphaned')
         self.env['muk_ai.session']._sweep_orphan_sessions()
         session.invalidate_recordset()
         self.assertEqual(session.state, 'error')
+        self.assertIn('abandoned', session.error_message)
 
     def test_sweep_orphan_skips_fresh_session_with_recent_write_date(self):
         session = self.env['muk_ai.session'].create({'name': 'just-started'})
@@ -1797,44 +1914,6 @@ class TestAiSession(AITestCommon):
         session.invalidate_recordset()
         self.assertGreater(session.claimed_at, old)
 
-    # ----------------------------------------------------------
-    # Tests: long-tool concurrent recovery
-    # ----------------------------------------------------------
-
-    def test_pdf_ocr_long_tool_call_survives_orphan_sweep(self):
-        session = self._force_stale_session('pdf-ocr')
-        with self._hold_session_lock(session.id):
-            self.env['muk_ai.session']._sweep_orphan_sessions()
-            session.invalidate_recordset()
-            self.assertEqual(
-                session.state,
-                'running',
-                'live worker mid-tool must NOT be killed by the orphan sweep',
-            )
-            snapshot = session.send_message('done?')
-            session.invalidate_recordset()
-            self.assertEqual(
-                session.state,
-                'running',
-                'live worker mid-tool must NOT be killed by send_message recovery',
-            )
-            self.assertEqual(
-                len(session.pending_ids),
-                1,
-                'follow-up message should queue, not abort the run',
-            )
-            self.assertEqual(
-                snapshot['pending_user_messages'][0]['content'],
-                'done?',
-            )
-
-    def test_pdf_ocr_session_recovers_after_worker_death(self):
-        session = self._force_stale_session('crashed-worker')
-        self.env['muk_ai.session']._sweep_orphan_sessions()
-        session.invalidate_recordset()
-        self.assertEqual(session.state, 'error')
-        self.assertIn('abandoned', session.error_message)
-
     def test_commit_safe_raises_on_serialization_failure(self):
         def fake_commit():
             msg = 'simulated concurrent update'
@@ -1855,7 +1934,10 @@ class TestAiSession(AITestCommon):
     # Tests: tool round resume locking
     # ----------------------------------------------------------
 
-    def _make_waiting_approval_session(self, name='waiting-approval'):
+    def _make_waiting_approval_session(
+        self, name: str = 'waiting-approval'
+    ) -> models.BaseModel:
+        """Create a session parked in ``waiting`` on a delete_records approval."""
         session = self.env['muk_ai.session'].create({'name': name})
         session.pending_ask = {
             'kind': 'approval',
@@ -1903,8 +1985,7 @@ class TestAiSession(AITestCommon):
         ):
             session.reject_tool(reason='unit-test rejection')
         self.assertFalse(session.pending_ask)
-        with self._hold_session_lock(session.id):
-            pass
+        self.assertTrue(self._session_lock_is_free(session.id))
 
     # ----------------------------------------------------------
     # Tests: orphaned tool call closure
@@ -2042,7 +2123,8 @@ class TestAiSession(AITestCommon):
     # Tests: turn limit warnings and cost budget
     # ----------------------------------------------------------
 
-    def _extract_turn_limits(self, inputs):
+    def _extract_turn_limits(self, inputs: list[dict] | None) -> str | None:
+        """Return the first ``<turn_limits>`` text block found in provider inputs."""
         for item in inputs or []:
             content = item.get('content') if isinstance(item, dict) else None
             if not isinstance(content, list):

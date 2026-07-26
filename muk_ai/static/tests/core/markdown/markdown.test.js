@@ -103,6 +103,59 @@ test('image with non-safe src is stripped', () => {
     expect(out.includes('<img')).toBe(false);
 });
 
+/**
+ * Collect the href of every anchor in a rendered HTML string, in document order.
+ * @param {string} html rendered markdown
+ * @returns {string[]} the href values
+ */
+function hrefsOf(html) {
+    return [...html.matchAll(/href="([^"]+)"/g)].map((match) => match[1]);
+}
+
+test('a bare model,id reference becomes a backend record link', () => {
+    const out = renderMarkdown('Check res.partner,5 for details');
+    expect(
+        out.includes(
+            '<a href="/odoo/res.partner/5" class="mk_record_link" ' +
+                'target="_blank" rel="noopener noreferrer">res.partner,5</a>',
+        ),
+    ).toBe(true);
+});
+
+test('every reference in a sentence is linked and the surrounding text kept', () => {
+    const out = renderMarkdown('A res.partner,5 and sale.order,12 B');
+    expect(hrefsOf(out)).toEqual(['/odoo/res.partner/5', '/odoo/sale.order/12']);
+    expect(out).toMatch(/A <a/);
+    expect(out).toMatch(/<\/a> and <a/);
+    expect(out).toMatch(/<\/a> B/);
+});
+
+test('a dotted model with several segments is linked too', () => {
+    const out = renderMarkdown('see mail.activity.type,3');
+    expect(hrefsOf(out)).toEqual(['/odoo/mail.activity.type/3']);
+});
+
+test('a reference already inside a link is not linked twice', () => {
+    const out = renderMarkdown('[res.partner,5](https://example.com)');
+    expect(hrefsOf(out)).toEqual(['https://example.com']);
+    expect(out.includes('mk_record_link')).toBe(false);
+});
+
+test('a reference inside code is left verbatim', () => {
+    expect(renderMarkdown('use `res.partner,5` here').includes('mk_record_link')).toBe(
+        false,
+    );
+    expect(renderMarkdown('```\nres.partner,5\n```').includes('mk_record_link')).toBe(
+        false,
+    );
+});
+
+test('text that only looks like a reference stays plain', () => {
+    const out = renderMarkdown('partner,5 and res.partner,x and Res.Partner,5');
+    expect(out.includes('mk_record_link')).toBe(false);
+    expect(hrefsOf(out)).toEqual([]);
+});
+
 test('clicking mk_code_copy button invokes navigator.clipboard.writeText', async () => {
     const original = navigator.clipboard;
     const writes = [];

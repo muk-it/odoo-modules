@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from unittest.mock import patch
 
-from odoo import release
+from odoo import models, release
 
 from odoo.addons.muk_ai.tests.common import AITestCommon
 from odoo.addons.muk_ai.tools import DEFAULT_CONTEXT_WINDOW
@@ -13,7 +15,17 @@ class TestAiAgent(AITestCommon):
     # Helper
     # ----------------------------------------------------------
 
-    def _make_model(self, model_name, context_window=128000, provider=None):
+    def _make_model(
+        self,
+        model_name: str,
+        context_window: int = 128000,
+        provider: models.BaseModel | None = None,
+    ) -> models.BaseModel:
+        """Create a catalog model record with the given context window.
+
+        :param provider: Provider to attach the model to; defaults to
+            ``self.provider``.
+        """
         return self.env['muk_ai.model'].create(
             {
                 'name': model_name,
@@ -231,12 +243,6 @@ class TestAiAgent(AITestCommon):
         prompt = session._effective_system_prompt()
         self.assertNotIn('<runtime>', prompt)
 
-    def test_provider_capability_flags_default_false(self):
-        agent = self.env['muk_ai.agent'].create({'name': 'Plain'})
-        self.assertFalse(agent.enable_web_search)
-        self.assertFalse(agent.enable_image_generation)
-        self.assertFalse(agent.enable_code_interpreter)
-
     def test_agent_resolve_model_uses_override(self):
         model = self._make_model('test-custom', context_window=128000)
         agent = self.env['muk_ai.agent'].create(
@@ -323,10 +329,17 @@ class TestAiAgent(AITestCommon):
     # Compute + onchange
     # ----------------------------------------------------------
 
-    def test_compute_tool_filter_options_includes_ask_user(self):
+    def test_compute_tool_filter_options_lists_the_catalog_sorted_by_name(self):
         agent = self.env['muk_ai.agent'].create({'name': 'Options'})
-        names = {o['name'] for o in agent.tool_filter_options or []}
-        self.assertIn('ask_user', names)
+        options = agent.tool_filter_options or []
+        names = [option['name'] for option in options]
+        self.assertTrue(names)
+        self.assertEqual(names, sorted(names))
+        by_name = {option['name']: option for option in options}
+        self.assertIn('ask_user', by_name)
+        self.assertEqual(set(by_name['ask_user']), {'name', 'category', 'description'})
+        self.assertEqual(by_name['ask_user']['category'], 'read')
+        self.assertTrue(by_name['ask_user']['description'])
 
     def test_compute_session_count_matches_created_sessions(self):
         agent = self.env['muk_ai.agent'].create({'name': 'Counter'})
@@ -347,23 +360,32 @@ class TestAiAgent(AITestCommon):
         agent.invalidate_recordset()
         self.assertEqual(agent.prompt_history_count, 2)
 
-    def test_compute_provider_capabilities_mirrors_provider(self):
-        model = self._make_model('cap-m', provider=self.provider)
+    def test_provider_capabilities_force_off_the_unsupported_enable_flags(self):
+        openai_model = self._make_model('cap-openai', provider=self.provider)
+        anthropic_model = self._make_model(
+            'cap-anthropic',
+            provider=self.provider_anthropic,
+        )
         agent = self.env['muk_ai.agent'].create(
             {
                 'name': 'Mirror',
-                'model_id': model.id,
+                'model_id': openai_model.id,
+                'enable_web_search': True,
+                'enable_image_generation': True,
+                'enable_code_interpreter': True,
             }
         )
-        self.assertEqual(agent.supports_web_search, self.provider.supports_web_search)
-        self.assertEqual(
-            agent.supports_image_generation,
-            self.provider.supports_image_generation,
-        )
-        self.assertEqual(
-            agent.supports_code_interpreter,
-            self.provider.supports_code_interpreter,
-        )
+        self.assertTrue(agent.supports_web_search)
+        self.assertTrue(agent.supports_image_generation)
+        self.assertTrue(agent.supports_code_interpreter)
+        self.assertTrue(agent.enable_image_generation)
+        agent.model_id = anthropic_model.id
+        self.assertTrue(agent.supports_web_search)
+        self.assertFalse(agent.supports_image_generation)
+        self.assertTrue(agent.supports_code_interpreter)
+        self.assertFalse(agent.enable_image_generation)
+        self.assertTrue(agent.enable_web_search)
+        self.assertTrue(agent.enable_code_interpreter)
 
     def test_compute_suggestions_reflects_suggestion_records(self):
         agent = self.env['muk_ai.agent'].create(
@@ -378,14 +400,18 @@ class TestAiAgent(AITestCommon):
         labels = [s['label'] for s in agent.suggestions or []]
         self.assertEqual(labels, ['A', 'B'])
 
-    def test_get_placeholder_filename_returns_icon_for_image_field(self):
+    def test_get_placeholder_filename_returns_icon_for_image_fields_only(self):
         agent = self.env['muk_ai.agent'].create({'name': 'Img'})
-        self.assertEqual(
-            agent._get_placeholder_filename('image_1920'),
-            'muk_ai/static/description/icon.png',
+        image_fields = (
+            'image_1920',
+            'image_1024',
+            'image_512',
+            'image_256',
+            'image_128',
         )
-
-    def test_get_placeholder_filename_delegates_for_other_fields(self):
-        agent = self.env['muk_ai.agent'].create({'name': 'Img2'})
-        result = agent._get_placeholder_filename('some_other_field')
-        self.assertNotEqual(result, 'muk_ai/static/description/icon.png')
+        for field in image_fields:
+            self.assertEqual(
+                agent._get_placeholder_filename(field),
+                'muk_ai/static/description/icon.png',
+            )
+        self.assertIs(agent._get_placeholder_filename('some_other_field'), False)

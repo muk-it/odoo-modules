@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from odoo import models
 from odoo.exceptions import AccessError, UserError
 from odoo.tests.common import TransactionCase, new_test_user, tagged
 
@@ -11,7 +14,7 @@ class TestAiSecurity(TransactionCase):
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.user_a = new_test_user(
             cls.env,
@@ -78,18 +81,40 @@ class TestAiSecurity(TransactionCase):
     # Tests: cross-user method access
     # ----------------------------------------------------------
 
-    def _owned_session(self):
+    def _owned_session(self) -> models.Model:
+        """Create a session owned by ``user_a``."""
         return (
             self.env['muk_ai.session'].with_user(self.user_a).create({'name': 'Owned'})
         )
 
+    def _seed_events(self, session: models.Model, kinds: list[str]) -> None:
+        """Append one replay event per given kind to the session log."""
+        events = self.env['muk_ai.session.event'].sudo()
+        for sequence, kind in enumerate(kinds):
+            events.create(
+                {
+                    'session_id': session.id,
+                    'sequence': sequence,
+                    'kind': kind,
+                    'payload': {'kind': kind, 'content': f'{kind}-{sequence}'},
+                }
+            )
+
     def test_fetch_events_allowed_for_owner(self):
         session = self._owned_session()
+        self._seed_events(session, ['user_message', 'text'])
         result = session.with_user(self.user_a).fetch_events()
-        self.assertEqual(result['events'], [])
+        self.assertEqual(
+            [event['kind'] for event in result['events']],
+            ['user_message', 'text'],
+        )
+        self.assertEqual(result['events'][0]['content'], 'user_message-0')
+        self.assertFalse(result['has_more_older'])
+        self.assertEqual(result['oldest_sequence'], 0)
 
     def test_fetch_events_denied_cross_user(self):
         session = self._owned_session()
+        self._seed_events(session, ['user_message'])
         with self.assertRaises(AccessError):
             session.with_user(self.user_b).fetch_events()
 

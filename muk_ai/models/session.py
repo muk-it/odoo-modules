@@ -2718,10 +2718,10 @@ class AISession(models.Model):
             contents = [p.content or '' for p in pending]
             attachment_ids = [aid for p in pending for aid in (p.attachment_ids or [])]
             combined = '\n\n'.join(c for c in contents if c.strip())
+            attachments = self._resolve_attachments(attachment_ids)
             pending.unlink()
             self.invalidate_recordset(['pending_ids'])
             self._publish_event('queue', {'pending': []})
-            attachments = self._resolve_attachments(attachment_ids)
             self._enqueue_user_turn(combined, attachments)
             return True
         return False

@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import copy
 import json
+from collections.abc import Sequence
 from unittest.mock import MagicMock, patch
 
 import requests
@@ -18,14 +21,16 @@ class TestAiOpenAIProvider(AITestCommon):
     # Helper
     # ----------------------------------------------------------
 
-    def _sse_lines(self, events):
+    def _sse_lines(self, events: Sequence[dict]) -> list[str]:
+        """Render the events as the ``data:`` lines of an SSE stream."""
         lines = []
         for event in events:
             lines.append('data: ' + json.dumps(event))
             lines.append('')
         return lines
 
-    def _mock_stream_response(self, events):
+    def _mock_stream_response(self, events: Sequence[dict]) -> MagicMock:
+        """Build a mocked streaming HTTP response replaying the given events."""
         response = MagicMock()
         response.iter_lines.return_value = iter(self._sse_lines(events))
         response.raise_for_status.return_value = None

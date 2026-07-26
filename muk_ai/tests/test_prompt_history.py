@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from odoo.addons.muk_ai.tests.common import AITestCommon
 
 
@@ -9,7 +11,7 @@ class TestAiPromptHistory(AITestCommon):
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.agent = cls.env['muk_ai.agent'].create(
             {

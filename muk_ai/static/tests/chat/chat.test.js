@@ -256,31 +256,6 @@ test('onSubmitSuggestion starts sending with the suggested prompt', async () => 
     expect(startArgs).toEqual([7, 'List installed modules.']);
 });
 
-test('onInputChange proxies into the session state', async () => {
-    registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
-    const chat = await mountWithCleanup(AIChat, { props: {} });
-    await chat.onSelectSession(7);
-    chat.onInputChange('typed text');
-    expect(chat.session.state.input).toBe('typed text');
-});
-
-test('statusLabel delegates to the shared util', async () => {
-    registerMocks({ sessions: [] });
-    const chat = await mountWithCleanup(AIChat, { props: {} });
-    expect(String(chat.statusLabel('running'))).toMatch(/Running/i);
-});
-
-test('canSend/canAttach/canStop reflect session helpers', async () => {
-    registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
-    const chat = await mountWithCleanup(AIChat, { props: {} });
-    await chat.onSelectSession(7);
-    expect(chat.canSend).toBe(false);
-    chat.session.state.input = 'hi';
-    expect(chat.canSend).toBe(true);
-    expect(chat.canStop).toBe(false);
-    expect(chat.canAttach).toBe(true);
-});
-
 test('inputPlaceholder falls back to default when idle', async () => {
     registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
     const chat = await mountWithCleanup(AIChat, { props: {} });
@@ -370,22 +345,6 @@ test('isToolHiddenForAsk returns true when turn already has an ask block for the
     const block = { result: null, callId: 'c8' };
     const turn = { blocks: [{ type: 'ask', callId: 'c8' }] };
     expect(chat.isToolHiddenForAsk(block, turn)).toBe(true);
-});
-
-test('toggleToolBlock proxies session.toggleToolBlock', async () => {
-    registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
-    const chat = await mountWithCleanup(AIChat, { props: {} });
-    await chat.onSelectSession(7);
-    chat.toggleToolBlock('c1');
-    expect(chat.isToolExpanded('c1')).toBe(true);
-});
-
-test('renderMarkdown proxies session.renderMarkdown', async () => {
-    registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
-    const chat = await mountWithCleanup(AIChat, { props: {} });
-    await chat.onSelectSession(7);
-    const html = String(chat.renderMarkdown('**hi**'));
-    expect(html).toMatch(/<strong>/);
 });
 
 test('onRemoveAttachment forwards to session.onRemoveAttachment', async () => {

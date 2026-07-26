@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import copy
 import json
+from collections.abc import Sequence
 from unittest.mock import MagicMock, patch
 
 import requests
@@ -18,7 +21,7 @@ class TestAiGoogleProvider(AITestCommon):
     # Setup
     # ----------------------------------------------------------
 
-    def setUp(self):
+    def setUp(self) -> None:
         super().setUp()
         self.provider = self.provider_google
 
@@ -26,7 +29,16 @@ class TestAiGoogleProvider(AITestCommon):
     # Helper
     # ----------------------------------------------------------
 
-    def _google_body(self, text='ok', function_calls=()):
+    def _google_body(
+        self,
+        text: str = 'ok',
+        function_calls: Sequence[tuple[str, dict]] = (),
+    ) -> dict:
+        """Build a Gemini ``generateContent`` response body.
+
+        :param function_calls: ``(tool name, arguments)`` pairs emitted as
+            ``functionCall`` parts next to the text part.
+        """
         parts = []
         if text:
             parts.append({'text': text})
@@ -46,7 +58,8 @@ class TestAiGoogleProvider(AITestCommon):
             },
         }
 
-    def _sse_lines(self, payloads):
+    def _sse_lines(self, payloads: Sequence[dict]) -> list[str]:
+        """Render the payloads as the ``data:`` lines of an SSE stream."""
         lines = []
         for payload in payloads:
             lines.append('data: ' + json.dumps(payload))

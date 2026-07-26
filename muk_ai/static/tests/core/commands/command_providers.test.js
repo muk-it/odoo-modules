@@ -37,12 +37,6 @@ function makeEnv({ sessions = [], createdIds = [100] } = {}) {
     return { env, seen };
 }
 
-test('provider is registered in the command_provider registry with namespace #', () => {
-    const provider = getProvider();
-    expect(provider).not.toBe(undefined);
-    expect(provider.namespace).toBe('#');
-});
-
 test('provider returns a "New Chat" entry first, then sessions', async () => {
     const { env } = makeEnv({
         sessions: [

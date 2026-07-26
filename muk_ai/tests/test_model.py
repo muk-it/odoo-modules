@@ -1,5 +1,9 @@
+from __future__ import annotations
+
+from odoo import models
 from odoo.exceptions import ValidationError
 from odoo.tools import mute_logger
+from odoo.tools.safe_eval import safe_eval
 
 from odoo.addons.muk_ai.tests.common import AITestCommon
 
@@ -13,13 +17,18 @@ class TestAiModel(AITestCommon):
 
     def _make_model(
         self,
-        model_name,
-        provider=None,
-        in_rate=1.0,
-        out_rate=2.0,
-        cache_rate=0.1,
-        context_window=128000,
-    ):
+        model_name: str,
+        provider: models.BaseModel | None = None,
+        in_rate: float = 1.0,
+        out_rate: float = 2.0,
+        cache_rate: float = 0.1,
+        context_window: int = 128000,
+    ) -> models.BaseModel:
+        """Create a catalog model record with the given rates and window.
+
+        :param provider: Provider to attach the model to; defaults to
+            ``self.provider``.
+        """
         return self.env['muk_ai.model'].create(
             {
                 'name': model_name,
@@ -81,30 +90,34 @@ class TestAiModel(AITestCommon):
         cost = empty._compute_usage_cost({'input_tokens': 999, 'output_tokens': 999})
         self.assertEqual(cost['total_cost'], 0.0)
 
-    def test_provider_default_scoped(self):
-        openai_default = self._make_model('test-oai-def')
-        anthropic_default = self._make_model(
+    def test_provider_default_model_domain_scopes_to_own_models(self):
+        mine = self._make_model('test-oai-def')
+        theirs = self._make_model(
             'test-anth-def',
             provider=self.provider_anthropic,
         )
-        self.provider.default_model_id = openai_default.id
-        self.provider_anthropic.default_model_id = anthropic_default.id
-        self.assertEqual(self.provider.default_model_id, openai_default)
-        self.assertEqual(
-            self.provider_anthropic.default_model_id,
-            anthropic_default,
+        domain = safe_eval(
+            self.env['muk_ai.provider']._fields['default_model_id'].domain,
+            {'id': self.provider.id},
         )
+        selectable = self.env['muk_ai.model'].search(domain)
+        self.assertIn(mine, selectable)
+        self.assertNotIn(theirs, selectable)
 
     def test_positive_context_window_required(self):
         with self.assertRaises(ValidationError):
             self._make_model('zero-ctx', context_window=0)
 
-    def test_unique_provider_model(self):
-        self._make_model('dup', provider=self.provider)
+    def test_unique_provider_model_is_scoped_to_the_provider(self):
+        mine = self._make_model('shared', provider=self.provider)
+        theirs = self._make_model('shared', provider=self.provider_anthropic)
+        self.assertEqual(mine.technical_name, theirs.technical_name)
+        self.assertEqual(
+            self.env['muk_ai.model'].search_count(
+                [('technical_name', '=', 'shared')],
+            ),
+            2,
+        )
         with mute_logger('odoo.sql_db'), self.assertRaises(Exception):
-            self._make_model('dup', provider=self.provider)
-
-    def test_same_model_name_allowed_across_providers(self):
-        a = self._make_model('shared', provider=self.provider)
-        b = self._make_model('shared', provider=self.provider_anthropic)
-        self.assertNotEqual(a.id, b.id)
+            with self.env.cr.savepoint():
+                self._make_model('shared', provider=self.provider)

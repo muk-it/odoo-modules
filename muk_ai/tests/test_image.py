@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import base64
 import re
 from unittest.mock import MagicMock, patch
@@ -23,7 +25,7 @@ class TestImageRefPersistence(AITestCommon):
     # Setup
     # ----------------------------------------------------------
 
-    def setUp(self):
+    def setUp(self) -> None:
         super().setUp()
         self.session = (
             self.env['muk_ai.session']
@@ -41,11 +43,13 @@ class TestImageRefPersistence(AITestCommon):
     # ----------------------------------------------------------
 
     @staticmethod
-    def _extract_attachment_id(text):
+    def _extract_attachment_id(text: str) -> int | None:
+        """Return the id of the first ``@attachment:`` reference in ``text``."""
         match = re.search(r'@attachment:(\d+)', text)
         return int(match.group(1)) if match else None
 
-    def _count_session_attachments(self):
+    def _count_session_attachments(self) -> int:
+        """Count the attachments linked to the session under test."""
         return (
             self.env['ir.attachment']
             .sudo()

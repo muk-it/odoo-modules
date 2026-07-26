@@ -18,7 +18,7 @@ class TestAgentHandoff(AITestCommon):
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         agents = cls.env['muk_ai.agent']
         cls.router = agents.create(

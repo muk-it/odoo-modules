@@ -17,7 +17,7 @@ class TestHandover(TransactionCase):
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.user_a = new_test_user(cls.env, login='ho_a', groups='base.group_user')
         cls.user_b = new_test_user(cls.env, login='ho_b', groups='base.group_user')
@@ -65,20 +65,35 @@ class TestHandover(TransactionCase):
 
     def test_handover_pushes_badges_to_both(self):
         session = self._owned_session(self.user_a)
-        seen = []
+        captured = []
 
-        def fake(self_arg, user):
-            seen.append(user.id)
+        def fake(self_arg, target, notification_type, message):
+            captured.append((target, notification_type, message))
 
         with patch.object(
-            type(self.env['muk_ai.session']),
-            '_push_notification_badge',
+            type(self.env['bus.bus']),
+            '_sendone',
             autospec=True,
             side_effect=fake,
         ):
             session.with_user(self.user_a).action_handover(self.user_b.id)
-        self.assertIn(self.user_a.id, seen)
-        self.assertIn(self.user_b.id, seen)
+        badges = {
+            target.id: message
+            for target, notification_type, message in captured
+            if notification_type == 'muk_ai.notification_badge'
+        }
+        self.assertEqual(
+            set(badges),
+            {self.user_a.partner_id.id, self.user_b.partner_id.id},
+        )
+        self.assertEqual(
+            badges[self.user_b.partner_id.id],
+            {'count': 1, 'session_ids': [session.id]},
+        )
+        self.assertEqual(
+            badges[self.user_a.partner_id.id],
+            {'count': 0, 'session_ids': []},
+        )
 
     def test_manager_can_hand_over_any_session(self):
         session = self._owned_session(self.user_a)

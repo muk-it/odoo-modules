@@ -3,7 +3,8 @@ from __future__ import annotations
 import base64
 import io
 import json
-from unittest.mock import patch
+from contextlib import AbstractContextManager
+from unittest.mock import MagicMock, patch
 
 from PIL import Image
 
@@ -66,7 +67,9 @@ class TestToolVision(AITestCommon):
             'usage': {'input_tokens': 3, 'output_tokens': 1},
         }
 
-    def _script_provider(self, payloads: list):
+    def _script_provider(
+        self, payloads: list[dict]
+    ) -> AbstractContextManager[MagicMock]:
         """Patch the provider to pop one scripted payload per LLM round."""
         queue = list(payloads)
 
@@ -83,7 +86,7 @@ class TestToolVision(AITestCommon):
             side_effect=fake,
         )
 
-    def _mock_call(self, result):
+    def _mock_call(self, result: dict) -> AbstractContextManager[MagicMock]:
         """Patch server tool execution to return the given result payload."""
 
         def fake(self_arg, name, arguments, env, enforce_scope=None):
@@ -96,7 +99,7 @@ class TestToolVision(AITestCommon):
             side_effect=fake,
         )
 
-    def _as_client_tool(self, *client_names: str):
+    def _as_client_tool(self, *client_names: str) -> AbstractContextManager[MagicMock]:
         """Patch the catalog hook so the given tools are client-executed."""
         names = set(client_names)
         return patch.object(
@@ -106,7 +109,7 @@ class TestToolVision(AITestCommon):
             side_effect=lambda self_arg: names,
         )
 
-    def _no_vision(self, session: models.Model):
+    def _no_vision(self, session: models.Model) -> AbstractContextManager[MagicMock]:
         """Patch the session to report the provider lacks vision support."""
         return patch.object(
             type(session),

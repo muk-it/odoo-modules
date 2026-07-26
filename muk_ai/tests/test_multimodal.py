@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import base64
 import io
 
 from PIL import Image
 
+from odoo import models
 from odoo.exceptions import UserError
 
 from odoo.addons.muk_ai.models import ir_attachment as ir_att
@@ -11,7 +14,8 @@ from odoo.addons.muk_ai.providers.openai import OpenAIProvider
 from odoo.addons.muk_ai.tests.common import AITestCommon
 
 
-def _tiny_png():
+def _tiny_png() -> bytes:
+    """Return the raw bytes of a 1x1 red PNG image."""
     buffer = io.BytesIO()
     Image.new('RGB', (1, 1), (255, 0, 0)).save(buffer, format='PNG')
     return buffer.getvalue()
@@ -35,7 +39,7 @@ class TestMultimodalAttachments(AITestCommon):
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.session = cls.env['muk_ai.session'].create({'name': 'Multimodal'})
 
@@ -43,7 +47,10 @@ class TestMultimodalAttachments(AITestCommon):
     # Helper
     # ----------------------------------------------------------
 
-    def _make_attachment(self, filename, mimetype, raw):
+    def _make_attachment(
+        self, filename: str, mimetype: str, raw: bytes
+    ) -> models.BaseModel:
+        """Attach the raw bytes to the session under test."""
         return self.env['ir.attachment'].create(
             {
                 'name': filename,

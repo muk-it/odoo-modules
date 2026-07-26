@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import copy
+from collections.abc import Sequence
 from unittest.mock import MagicMock, patch
 
 import requests
@@ -17,7 +20,7 @@ class TestAiAnthropicProvider(AITestCommon):
     # Setup
     # ----------------------------------------------------------
 
-    def setUp(self):
+    def setUp(self) -> None:
         super().setUp()
         self.provider = self.provider_anthropic
 
@@ -25,7 +28,16 @@ class TestAiAnthropicProvider(AITestCommon):
     # Helper
     # ----------------------------------------------------------
 
-    def _anthropic_body(self, text='ok', tool_uses=()):
+    def _anthropic_body(
+        self,
+        text: str = 'ok',
+        tool_uses: Sequence[tuple[str, str, dict]] = (),
+    ) -> dict:
+        """Build an Anthropic messages response body.
+
+        :param tool_uses: ``(call id, tool name, input)`` triples emitted as
+            ``tool_use`` blocks next to the text block.
+        """
         content = []
         if text:
             content.append({'type': 'text', 'text': text})

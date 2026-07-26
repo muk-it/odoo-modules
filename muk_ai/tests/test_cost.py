@@ -1,4 +1,7 @@
-from unittest.mock import patch
+from __future__ import annotations
+
+from contextlib import AbstractContextManager
+from unittest.mock import MagicMock, patch
 
 from odoo.addons.muk_ai.tests.common import AITestCommon
 
@@ -11,7 +14,7 @@ class TestSessionCostAccrual(AITestCommon):
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.model = cls.env['muk_ai.model'].create(
             {
@@ -30,7 +33,13 @@ class TestSessionCostAccrual(AITestCommon):
     # Helper
     # ----------------------------------------------------------
 
-    def _payload(self, text='ok', input_tokens=10_000, output_tokens=5_000):
+    def _payload(
+        self,
+        text: str = 'ok',
+        input_tokens: int = 10_000,
+        output_tokens: int = 5_000,
+    ) -> dict:
+        """Build a provider payload carrying assistant text and token usage."""
         return {
             'text': text,
             'tool_calls': [],
@@ -47,7 +56,13 @@ class TestSessionCostAccrual(AITestCommon):
             },
         }
 
-    def _patch_provider(self, payloads):
+    def _patch_provider(
+        self, payloads: list[dict]
+    ) -> AbstractContextManager[MagicMock]:
+        """Patch the provider to pop one payload per LLM request.
+
+        :raise AssertionError: When more requests are made than payloads given.
+        """
         remaining = list(payloads)
 
         def fake(
@@ -87,10 +102,13 @@ class TestSessionCostAccrual(AITestCommon):
                 )
             ]
         ):
-            session.start('hi')
+            snapshot = session.start('hi')
         self.assertAlmostEqual(session.total_input_cost, 1.0)
         self.assertAlmostEqual(session.total_output_cost, 1.0)
         self.assertAlmostEqual(session.total_cost, 2.0)
+        self.assertAlmostEqual(snapshot['total_input_cost'], 1.0)
+        self.assertAlmostEqual(snapshot['total_output_cost'], 1.0)
+        self.assertAlmostEqual(snapshot['total_cost'], 2.0)
 
     def test_cost_accumulates_across_rounds(self):
         session = self.env['muk_ai.session'].create(
@@ -127,13 +145,3 @@ class TestSessionCostAccrual(AITestCommon):
         with self._patch_provider([self._payload()]):
             session.start('hi')
         self.assertEqual(session.total_cost, 0.0)
-
-    def test_snapshot_exposes_cost(self):
-        session = self.env['muk_ai.session'].create({'name': 'snap'})
-        session.total_cost = 1.23
-        session.total_input_cost = 0.80
-        session.total_output_cost = 0.43
-        snapshot = session.get_snapshot()
-        self.assertAlmostEqual(snapshot['total_cost'], 1.23)
-        self.assertAlmostEqual(snapshot['total_input_cost'], 0.80)
-        self.assertAlmostEqual(snapshot['total_output_cost'], 0.43)

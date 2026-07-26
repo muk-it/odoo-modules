@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import base64
 import socket
 from unittest.mock import MagicMock, patch
@@ -30,7 +32,7 @@ class TestUrlFetchHardening(AITestCommon):
     # Setup
     # ----------------------------------------------------------
 
-    def setUp(self):
+    def setUp(self) -> None:
         super().setUp()
         self.session = (
             self.env['muk_ai.session']
@@ -48,10 +50,17 @@ class TestUrlFetchHardening(AITestCommon):
     # ----------------------------------------------------------
 
     @staticmethod
-    def _addrinfo(ip):
+    def _addrinfo(ip: str) -> list[tuple]:
+        """Build a ``socket.getaddrinfo`` result resolving to a single IP."""
         return [(0, 0, 0, '', (ip, 0))]
 
-    def _mock_response(self, chunks, status=200, headers=None):
+    def _mock_response(
+        self,
+        chunks: list[bytes],
+        status: int = 200,
+        headers: dict | None = None,
+    ) -> MagicMock:
+        """Build a mocked urllib3 response streaming the given body chunks."""
         response = MagicMock()
         response.status = status
         response.headers = headers if headers is not None else {}
@@ -59,7 +68,8 @@ class TestUrlFetchHardening(AITestCommon):
         response.release_conn.return_value = None
         return response
 
-    def _mock_pool(self, response):
+    def _mock_pool(self, response: MagicMock) -> MagicMock:
+        """Build a mocked connection pool whose ``urlopen`` returns ``response``."""
         pool = MagicMock()
         pool.urlopen.return_value = response
         pool.close.return_value = None

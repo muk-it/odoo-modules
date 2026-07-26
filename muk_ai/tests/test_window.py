@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 
 from odoo.exceptions import UserError
@@ -12,7 +14,8 @@ class TestAiWindow(AITestCommon):
     # Helper
     # ----------------------------------------------------------
 
-    def _call(self, name, arguments):
+    def _call(self, name: str, arguments: dict) -> dict:
+        """Run the named tool and return its JSON-decoded result."""
         text, _info = self.env['muk_mcp.tool']._call(name, arguments, self.env)
         return json.loads(text)
 

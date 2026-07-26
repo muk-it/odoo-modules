@@ -1,6 +1,11 @@
-import json
-from unittest.mock import patch
+from __future__ import annotations
 
+import json
+from collections.abc import Callable
+from contextlib import AbstractContextManager
+from unittest.mock import MagicMock, patch
+
+from odoo import models
 from odoo.exceptions import UserError
 
 from odoo.addons.muk_ai.tests.common import AITestCommon
@@ -13,7 +18,8 @@ class TestSessionFlow(AITestCommon):
     # Helper
     # ----------------------------------------------------------
 
-    def _tool_payload(self, name, arguments, call_id):
+    def _tool_payload(self, name: str, arguments: dict, call_id: str) -> dict:
+        """Build a provider payload requesting a single tool call."""
         return {
             'text': '',
             'tool_calls': [
@@ -34,7 +40,8 @@ class TestSessionFlow(AITestCommon):
             'usage': {'input_tokens': 4, 'output_tokens': 2},
         }
 
-    def _text_payload(self, text):
+    def _text_payload(self, text: str) -> dict:
+        """Build a provider payload emitting a final assistant message."""
         return {
             'text': text,
             'tool_calls': [],
@@ -48,7 +55,14 @@ class TestSessionFlow(AITestCommon):
             'usage': {'input_tokens': 3, 'output_tokens': 1},
         }
 
-    def _script_provider(self, payloads, repeat_last=False):
+    def _script_provider(
+        self, payloads: list[dict], repeat_last: bool = False
+    ) -> AbstractContextManager[MagicMock]:
+        """Patch the provider to return one scripted payload per LLM round.
+
+        :param repeat_last: keep replaying the last payload once the queue is
+            empty instead of failing the test.
+        """
         queue = list(payloads)
 
         def fake(self_arg, *args, **kwargs):
@@ -66,7 +80,16 @@ class TestSessionFlow(AITestCommon):
             side_effect=fake,
         )
 
-    def _script_tool_results(self, results):
+    def _script_tool_results(
+        self, results: dict[str, str | Callable[[], str]]
+    ) -> AbstractContextManager[MagicMock]:
+        """Patch tool execution to return a canned result per tool name.
+
+        :param results: result per tool name, either a value or a callable
+            evaluated at call time.
+        :raise AssertionError: when the session calls a tool with no script.
+        """
+
         def fake(self_arg, name, arguments, env, enforce_scope):
             if name not in results:
                 raise AssertionError(f'unscripted tool {name!r}')
@@ -80,7 +103,9 @@ class TestSessionFlow(AITestCommon):
             side_effect=fake,
         )
 
-    def _script_tool_raises(self, exc):
+    def _script_tool_raises(self, exc: Exception) -> AbstractContextManager[MagicMock]:
+        """Patch tool execution to raise the given exception on every call."""
+
         def fake(self_arg, name, arguments, env, enforce_scope):
             raise exc
 
@@ -91,17 +116,20 @@ class TestSessionFlow(AITestCommon):
             side_effect=fake,
         )
 
-    def _new_session(self, name='flow'):
+    def _new_session(self, name: str = 'flow') -> models.BaseModel:
+        """Create an empty agent session record."""
         return self.env['muk_ai.session'].create({'name': name})
 
-    def _called_tool_names(self, session):
+    def _called_tool_names(self, session: models.BaseModel) -> list[str]:
+        """Return the tool names of the session's ``tool_call`` events."""
         return [
             entry.get('name')
             for entry in session.fetch_events(limit=500)['events']
             if entry.get('kind') == 'tool_call'
         ]
 
-    def _last_tool_result(self, session):
+    def _last_tool_result(self, session: models.BaseModel) -> dict:
+        """Return the most recent ``tool_result`` event of the session."""
         return next(
             entry
             for entry in reversed(session.fetch_events(limit=500)['events'])

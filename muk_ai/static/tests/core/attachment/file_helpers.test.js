@@ -38,3 +38,24 @@ test('fileToBase64 returns empty mimetype when filename has no extension', async
     const result = await fileToBase64(file);
     expect(result.mimetype).toBe('');
 });
+
+test('fileToBase64 rejects with the reader error when the read fails', async () => {
+    const OriginalFileReader = window.FileReader;
+    class FailingFileReader {
+        readAsDataURL() {
+            this.error = new Error('the file went away mid-read');
+            Promise.resolve().then(() => this.onerror());
+        }
+    }
+    window.FileReader = FailingFileReader;
+    let caught = null;
+    try {
+        await fileToBase64(new File(['x'], 'gone.txt', { type: 'text/plain' }));
+    } catch (error) {
+        caught = error;
+    } finally {
+        window.FileReader = OriginalFileReader;
+    }
+    expect(caught).not.toBe(null);
+    expect(caught.message).toBe('the file went away mid-read');
+});

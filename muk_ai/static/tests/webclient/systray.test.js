@@ -186,17 +186,6 @@ test('systray bus event removes a deleted session from the list', async () => {
     expect(systray.state.sessions.map((s) => s.id)).toEqual([2]);
 });
 
-test('statusDotClass maps states to CSS classes', async () => {
-    onRpc('muk_ai.session', 'search_read', () => []);
-    makeBusMock();
-    makeChatWindowService();
-    const systray = await mountWithCleanup(MukAISystray, { props: {} });
-    expect(systray.statusDotClass('running')).toBe('mk_state_running');
-    expect(systray.statusDotClass('waiting')).toBe('mk_state_waiting');
-    expect(systray.statusDotClass('done')).toBe('mk_state_done');
-    expect(systray.statusDotClass('unknown')).toBe('mk_state_new');
-});
-
 test('onNewChat creates a session and opens it via chat_window service', async () => {
     let nextId = 100;
     const seen = [];

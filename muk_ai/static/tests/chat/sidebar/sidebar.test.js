@@ -51,6 +51,45 @@ function isoDaysAgo(days) {
     return d.toISOString().slice(0, 19).replace('T', ' ');
 }
 
+/**
+ * Build a naive-UTC ``create_date`` for a given local wall-clock day and time.
+ * @param {number} daysOffset days to add to today (negative for the past)
+ * @param {number} hour local hour of day
+ * @param {number} minute local minute of hour
+ * @returns {string} server-style datetime string
+ */
+function dateAtLocal(daysOffset, hour, minute) {
+    const now = new Date();
+    const local = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() + daysOffset,
+        hour,
+        minute,
+        0,
+    );
+    return local.toISOString().slice(0, 19).replace('T', ' ');
+}
+
+/**
+ * Read the rendered sidebar back as a ``{ group label: [session names] }`` map.
+ * @returns {object} session names bucketed by their rendered group label
+ */
+function bucketsFromDom() {
+    const buckets = {};
+    let current = null;
+    for (const node of queryAll('.mk_sidebar_group_label, .mk_sidebar_item')) {
+        if (node.classList.contains('mk_sidebar_group_label')) {
+            current = node.textContent.trim();
+            buckets[current] = [];
+        } else if (current) {
+            const name = node.querySelector('.mk_sidebar_name');
+            buckets[current].push(name ? name.textContent : '');
+        }
+    }
+    return buckets;
+}
+
 test('shows empty-state when no sessions', async () => {
     const { Parent, props } = makeParent();
     await mountWithCleanup(Parent, { props });
@@ -62,11 +101,36 @@ test('shows empty-state when no sessions', async () => {
 test('groups sessions into Today / Yesterday / Previous 7 days / Previous 30 days / Older', async () => {
     const { Parent, props } = makeParent({
         sessions: [
-            { id: 1, name: 'Today A', state: 'done', create_date: isoDaysAgo(0) },
-            { id: 2, name: 'Yesterday A', state: 'done', create_date: isoDaysAgo(1) },
-            { id: 3, name: 'Week A', state: 'done', create_date: isoDaysAgo(4) },
-            { id: 4, name: 'Month A', state: 'done', create_date: isoDaysAgo(15) },
-            { id: 5, name: 'Older A', state: 'done', create_date: isoDaysAgo(60) },
+            {
+                id: 1,
+                name: 'Today A',
+                state: 'done',
+                create_date: dateAtLocal(0, 9, 0),
+            },
+            {
+                id: 2,
+                name: 'Yesterday evening',
+                state: 'done',
+                create_date: dateAtLocal(-1, 22, 30),
+            },
+            {
+                id: 3,
+                name: 'Week A',
+                state: 'done',
+                create_date: dateAtLocal(-4, 12, 0),
+            },
+            {
+                id: 4,
+                name: 'Month A',
+                state: 'done',
+                create_date: dateAtLocal(-15, 12, 0),
+            },
+            {
+                id: 5,
+                name: 'Older A',
+                state: 'done',
+                create_date: dateAtLocal(-60, 12, 0),
+            },
         ],
     });
     await mountWithCleanup(Parent, { props });
@@ -80,6 +144,12 @@ test('groups sessions into Today / Yesterday / Previous 7 days / Previous 30 day
         'Previous 30 days',
         'Older',
     ]);
+    const buckets = bucketsFromDom();
+    expect(buckets['Today']).toEqual(['Today A']);
+    expect(buckets['Yesterday']).toEqual(['Yesterday evening']);
+    expect(buckets['Previous 7 days']).toEqual(['Week A']);
+    expect(buckets['Previous 30 days']).toEqual(['Month A']);
+    expect(buckets['Older']).toEqual(['Older A']);
 });
 
 test('omits empty groups', async () => {
@@ -199,4 +269,5 @@ test('does not crash on missing or malformed create_date', async () => {
     });
     await mountWithCleanup(Parent, { props });
     expect('.mk_sidebar_item').toHaveCount(2);
+    expect(bucketsFromDom()['Older']).toEqual(['No date', 'Bogus']);
 });

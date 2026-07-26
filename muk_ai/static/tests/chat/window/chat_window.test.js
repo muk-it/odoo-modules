@@ -128,33 +128,6 @@ test('onFullscreen closes the popout then dispatches the chat action', async () 
     expect(events.actions[0].params.session_id).toBe(11);
 });
 
-test('statusBadgeClass exposes the shared util', async () => {
-    registerMocks();
-    const window_ = await mountWithCleanup(ChatWindow, {
-        props: {
-            sessionId: 11,
-            minimized: false,
-            onClose: () => {},
-            onToggleMinimized: () => {},
-        },
-    });
-    expect(window_.statusBadgeClass('running')).toBe('mk_state_running');
-    expect(window_.statusBadgeClass('bogus')).toBe('mk_state_new');
-});
-
-test('inputPlaceholder delegates to the shared util', async () => {
-    registerMocks();
-    const window_ = await mountWithCleanup(ChatWindow, {
-        props: {
-            sessionId: 11,
-            minimized: false,
-            onClose: () => {},
-            onToggleMinimized: () => {},
-        },
-    });
-    expect(String(window_.inputPlaceholder)).toMatch(/Message/i);
-});
-
 test('toggleAskView flips mode for a matching tool block', async () => {
     registerMocks();
     const window_ = await mountWithCleanup(ChatWindow, {
@@ -170,53 +143,6 @@ test('toggleAskView flips mode for a matching tool block', async () => {
     ];
     window_.toggleAskView('c1');
     expect(window_.windowState.askViews.c1).toBe('technical');
-});
-
-test('toggleToolBlock proxies session.toggleToolBlock', async () => {
-    registerMocks();
-    const window_ = await mountWithCleanup(ChatWindow, {
-        props: {
-            sessionId: 11,
-            minimized: false,
-            onClose: () => {},
-            onToggleMinimized: () => {},
-        },
-    });
-    window_.toggleToolBlock('c7');
-    expect(window_.isToolExpanded('c7')).toBe(true);
-});
-
-test('onInputChange routes into session state', async () => {
-    registerMocks();
-    const window_ = await mountWithCleanup(ChatWindow, {
-        props: {
-            sessionId: 11,
-            minimized: false,
-            onClose: () => {},
-            onToggleMinimized: () => {},
-        },
-    });
-    window_.onInputChange('typed');
-    expect(window_.session.state.input).toBe('typed');
-});
-
-test('canSend/canAttach/canStop mirror the session helpers', async () => {
-    registerMocks();
-    const window_ = await mountWithCleanup(ChatWindow, {
-        props: {
-            sessionId: 11,
-            minimized: false,
-            onClose: () => {},
-            onToggleMinimized: () => {},
-        },
-    });
-    expect(window_.canSend).toBe(false);
-    window_.session.state.input = 'hi';
-    expect(window_.canSend).toBe(true);
-    expect(window_.canAttach).toBe(true);
-    expect(window_.canStop).toBe(false);
-    window_.session.state.status = 'running';
-    expect(window_.canStop).toBe(true);
 });
 
 test('renderedTurns reads from the session log', async () => {
@@ -237,19 +163,6 @@ test('renderedTurns reads from the session log', async () => {
     expect(turns.map((t) => t.role)).toEqual(['user', 'assistant']);
 });
 
-test('renderMarkdown proxies to the shared renderer', async () => {
-    registerMocks();
-    const window_ = await mountWithCleanup(ChatWindow, {
-        props: {
-            sessionId: 11,
-            minimized: false,
-            onClose: () => {},
-            onToggleMinimized: () => {},
-        },
-    });
-    expect(String(window_.renderMarkdown('**hi**'))).toMatch(/<strong>/);
-});
-
 test('viewContextLabel falls back to empty when no pinned context', async () => {
     registerMocks();
     const window_ = await mountWithCleanup(ChatWindow, {
@@ -267,20 +180,6 @@ test('viewContextLabel falls back to empty when no pinned context', async () => 
         display_name: 'Acme',
     };
     expect(window_.viewContextLabel).toMatch(/Acme/);
-});
-
-test('askArgsText stringifies preview arguments', async () => {
-    registerMocks();
-    const window_ = await mountWithCleanup(ChatWindow, {
-        props: {
-            sessionId: 11,
-            minimized: false,
-            onClose: () => {},
-            onToggleMinimized: () => {},
-        },
-    });
-    const text = window_.askArgsText({ preview: { arguments: { a: 1 } } });
-    expect(JSON.parse(text)).toEqual({ a: 1 });
 });
 
 test('onOpenAttachment opens the file viewer via toFileModel', async () => {

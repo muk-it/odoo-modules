@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import json
+from contextlib import AbstractContextManager
 from datetime import timedelta
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from odoo import fields, models
 from odoo.exceptions import UserError
@@ -89,7 +90,9 @@ class TestClientToolSeam(AITestCommon):
             'usage': {'input_tokens': 3, 'output_tokens': 1},
         }
 
-    def _script_provider(self, payloads: list):
+    def _script_provider(
+        self, payloads: list[dict]
+    ) -> AbstractContextManager[MagicMock]:
         """Patch the provider to pop one scripted payload per LLM round."""
         queue = list(payloads)
 
@@ -106,8 +109,8 @@ class TestClientToolSeam(AITestCommon):
             side_effect=fake,
         )
 
-    def _track_execute(self, calls: list):
-        """Patch server tool execution to record the executed tool names."""
+    def _track_execute(self, calls: list[str]) -> AbstractContextManager[MagicMock]:
+        """Patch server tool execution to append each executed name to ``calls``."""
 
         def fake(self_arg, name, arguments, env, enforce_scope):
             calls.append(name)
@@ -120,7 +123,7 @@ class TestClientToolSeam(AITestCommon):
             side_effect=fake,
         )
 
-    def _as_client_tool(self, *client_names: str):
+    def _as_client_tool(self, *client_names: str) -> AbstractContextManager[MagicMock]:
         """Patch the catalog hook so the given tools are client-executed."""
         names = set(client_names)
         return patch.object(
@@ -174,7 +177,7 @@ class TestClientToolSeam(AITestCommon):
     # Client kinds
     # ----------------------------------------------------------
 
-    def _kind_catalog(self):
+    def _kind_catalog(self) -> AbstractContextManager[MagicMock]:
         """Patch the registry catalog with tools of every client kind."""
         catalog = [
             {
