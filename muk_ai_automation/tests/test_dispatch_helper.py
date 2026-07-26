@@ -1,81 +1,36 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
-from contextlib import contextmanager
-from unittest.mock import MagicMock, patch
+from odoo.tests.common import new_test_user, tagged
 
-from odoo import models
-from odoo.tests.common import TransactionCase, tagged
-
+from .common import AutomationTestCommon
+from odoo.addons.muk_ai_automation.tools.constants import MAX_PROMPT_CHARS
 from odoo.addons.muk_ai_automation.tools.dispatch import (
     PreviousProxy,
+    _build_prompt,
     _create_session,
     _resolve_records,
+    _resolve_target_model,
+    _spawn_user,
 )
 
 
 @tagged('post_install', '-at_install', 'muk_ai_automation')
-class TestDispatchHelper(TransactionCase):
+class TestDispatchHelper(AutomationTestCommon):
     """Test the dispatch helper functions in isolation."""
 
     @classmethod
     def setUpClass(cls) -> None:
-        """Set up the provider, agent, and partner fixtures."""
+        """Add the partners the record resolvers select from."""
         super().setUpClass()
-        cls.provider = cls.env.ref('muk_ai.provider_openai')
-        cls.provider.sudo().api_key = 'test-key'
-        cls.env.company.default_ai_provider_id = cls.provider
-        cls.agent = cls.env['muk_ai.agent'].create(
-            {
-                'name': 'Dispatch Helper Agent',
-            }
-        )
-        cls.partner_model = cls.env['ir.model']._get('res.partner')
-        cls.partners = cls.env['res.partner'].create(
-            [{'name': 'Helper Partner %d' % i} for i in range(4)]
-        )
+        cls.partners = cls._make_partners(4, prefix='Helper Partner')
 
-    @contextmanager
-    def _mock_provider(self, text: str = 'ok') -> Iterator[MagicMock]:
-        """Patch the provider request to return a canned response payload."""
-        payload = {
-            'text': text,
-            'tool_calls': [],
-            'carry_inputs': [],
-            'usage': {'input_tokens': 1, 'output_tokens': 1, 'cached_tokens': 0},
-        }
-
-        def fake(self_arg, *args, **kwargs):
-            return payload
-
-        with patch.object(
-            type(self.provider),
-            '_request_responses',
-            autospec=True,
-            side_effect=fake,
-        ) as mock:
-            yield mock
-
-    def _make_action(self, **vals) -> models.BaseModel:
-        """Create an ``ai_agent`` server action with overridable defaults."""
-        defaults = {
-            'name': 'Helper Action',
-            'state': 'ai_agent',
-            'model_id': self.partner_model.id,
-            'agent_id': self.agent.id,
-            'agent_prompt': 'Hello.',
-            'agent_dispatch_mode': 'single',
-            'agent_record_source': 'domain',
-            'agent_record_domain': '[]',
-        }
-        defaults.update(vals)
-        return self.env['ir.actions.server'].create(defaults)
+    # ----------------------------------------------------------
+    # Tests Record Resolution
+    # ----------------------------------------------------------
 
     def test_resolve_records_via_domain(self):
         target = self.partners[:2]
-        action = self._make_action(
-            agent_record_domain="[('id', 'in', %s)]" % str(target.ids),
-        )
+        action = self._make_action(agent_record_domain=self._domain_for(target))
         records = _resolve_records(action, {})
         self.assertEqual(sorted(records.ids), sorted(target.ids))
 
@@ -96,6 +51,21 @@ class TestDispatchHelper(TransactionCase):
         records = _resolve_records(action, {})
         self.assertEqual(len(records), 0)
         self.assertEqual(records._name, 'res.partner')
+
+    def test_resolve_records_invalid_domain_returns_empty(self):
+        action = self._make_action(agent_record_domain="[('id', '=',")
+        records = _resolve_records(action, {})
+        self.assertEqual(len(records), 0)
+        self.assertEqual(records._name, 'res.partner')
+
+    def test_resolve_records_without_target_model_is_empty(self):
+        action = self.env['ir.actions.server'].new(self._action_vals(model_id=False))
+        self.assertIsNone(_resolve_target_model(action, {}))
+        self.assertEqual(len(_resolve_records(action, {})), 0)
+
+    # ----------------------------------------------------------
+    # Tests Previous Session Proxy
+    # ----------------------------------------------------------
 
     def test_previous_proxy_with_no_session(self):
         proxy = PreviousProxy(None)
@@ -119,9 +89,50 @@ class TestDispatchHelper(TransactionCase):
         self.assertEqual(log[0]['arguments'], {'model': 'res.partner'})
         self.assertEqual(log[0]['output'], {'ids': [1]})
 
+    # ----------------------------------------------------------
+    # Tests Prompt Building
+    # ----------------------------------------------------------
+
+    def test_build_prompt_truncates_an_oversized_render(self):
+        action = self._make_action(agent_prompt='{{ "x" * 5000 }}')
+        empty = self.env['base'].browse([])
+        prompt, render_err = _build_prompt(
+            action,
+            record=empty,
+            records=empty,
+            previous_session=None,
+        )
+        self.assertIsNone(render_err)
+        self.assertTrue(prompt.startswith('x' * MAX_PROMPT_CHARS))
+        self.assertEqual(prompt.count('x'), MAX_PROMPT_CHARS)
+        self.assertIn('prompt truncated', prompt)
+
+    # ----------------------------------------------------------
+    # Tests Session Creation
+    # ----------------------------------------------------------
+
     def test_create_session_writes_action_server_id(self):
         action = self._make_action()
         with self._mock_provider():
             session = _create_session(action, 'Hello.', None)
         self.assertEqual(session.action_server_id, action)
         self.assertEqual(session.agent_id, self.agent)
+
+    def test_spawn_user_falls_back_to_admin_for_an_archived_author(self):
+        author = new_test_user(
+            self.env,
+            login='dispatch_author',
+            groups='base.group_user,base.group_system',
+        )
+        authored = (
+            self.env['ir.actions.server']
+            .with_user(author)
+            .create(self._action_vals(name='Authored Action'))
+        )
+        author.sudo().active = False
+        action = self.env['ir.actions.server'].browse(authored.id)
+        admin = self.env.ref('base.user_admin')
+        self.assertEqual(_spawn_user(action), admin)
+        with self._mock_provider():
+            session = _create_session(action, 'Hello.', None)
+        self.assertEqual(session.user_id, admin)

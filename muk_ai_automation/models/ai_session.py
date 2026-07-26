@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from contextlib import suppress
 
 from markupsafe import Markup
 
 from odoo import _, api, fields, models
-from odoo.exceptions import MissingError
+from odoo.exceptions import AccessError, MissingError
 from odoo.tools import OrderedSet
 from odoo.tools.query import Query
 
@@ -155,6 +155,34 @@ class AISession(models.Model):
             for record in self.browse(non_owner._ids):
                 cache.set(record, field, blank)
 
+    def _check_transcript_group_specs(
+        self,
+        groupby: Sequence[str],
+        aggregates: Sequence[str],
+        having: Sequence,
+    ) -> None:
+        """Reject a grouping specification that targets a transcript field.
+
+        :raise AccessError: when a transcript field is used as a groupby,
+            aggregate, or having target
+        """
+        sensitive = set(self._non_owner_sensitive_fields())
+        specs = [*groupby, *aggregates]
+        specs.extend(
+            leaf[0]
+            for leaf in having
+            if isinstance(leaf, list | tuple) and len(leaf) == 3
+        )
+        for spec in specs:
+            name = spec.split(':')[0] if isinstance(spec, str) else ''
+            if name in sensitive:
+                raise AccessError(
+                    _(
+                        'Grouping AI sessions on %(field)s is not allowed.',
+                        field=name,
+                    )
+                )
+
     def _hides_transcript_from_current_user(self) -> bool:
         """Return whether the caller must be denied this session's transcript."""
         if self.env.su or self.env.is_admin():
@@ -297,6 +325,34 @@ class AISession(models.Model):
         if forbidden_ids:
             return self.browse(forbidden_ids), error_func
         return None
+
+    def _read_group(
+        self,
+        domain: list,
+        groupby: Sequence[str] = (),
+        aggregates: Sequence[str] = (),
+        having: Sequence = (),
+        offset: int = 0,
+        limit: int | None = None,
+        order: str | None = None,
+    ) -> list[tuple]:
+        """Refuse to group or aggregate transcript fields for non-owner readers.
+
+        Grouping runs as raw SQL and never routes its values through
+        :meth:`_read_format`, so the per-row blanking that covers every other
+        read path cannot reach it: a reader who only sees a foreign session
+        through the linked-record grant of :meth:`_check_access` would read the
+        transcript straight out of the group keys. A group spans several
+        records, so there is no per-row answer to give — the query is refused.
+
+        :raise AccessError: when a transcript field is used as a groupby,
+            aggregate, or having target
+        """
+        if not self.env.su and not self.env.is_admin():
+            self._check_transcript_group_specs(groupby, aggregates, having)
+        return super()._read_group(
+            domain, groupby, aggregates, having, offset, limit, order
+        )
 
     def _read_format(
         self, fnames: list[str], load: str = '_classic_read'

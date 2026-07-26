@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from unittest.mock import patch
+
 from odoo.tests.common import TransactionCase, new_test_user, tagged
 
 
-@tagged('post_install', '-at_install')
+@tagged('post_install', '-at_install', 'muk_ai_automation')
 class TestChatterMirrorAccess(TransactionCase):
     """Test the owner access gate on the linked-record chatter mirror."""
 
@@ -56,3 +58,27 @@ class TestChatterMirrorAccess(TransactionCase):
             }
         )
         self.assertEqual(self._count_messages(partner.id), before + 1)
+
+    def test_session_survives_a_failing_mirror_post(self):
+        partner = self.env['res.partner'].create({'name': 'Unpostable Target'})
+        before = self._count_messages(partner.id)
+        message = 'chatter is down'
+
+        def fake(self_arg, *args, **kwargs):
+            raise RuntimeError(message)
+
+        with patch.object(
+            type(partner),
+            'message_post',
+            autospec=True,
+            side_effect=fake,
+        ):
+            session = self.env['muk_ai.session'].create(
+                {
+                    'name': 'Resilient Session',
+                    'res_model': 'res.partner',
+                    'res_id': partner.id,
+                }
+            )
+        self.assertTrue(session.exists())
+        self.assertEqual(self._count_messages(partner.id), before)

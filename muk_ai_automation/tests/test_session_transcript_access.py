@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from odoo.exceptions import AccessError
 from odoo.tests.common import TransactionCase, new_test_user, tagged
 
 
-@tagged('post_install', '-at_install')
+@tagged('post_install', '-at_install', 'muk_ai_automation')
 class TestSessionTranscriptAccess(TransactionCase):
     """Test that granted non-owner readers never see the session transcript."""
 
@@ -92,6 +93,52 @@ class TestSessionTranscriptAccess(TransactionCase):
         self.assertEqual(datas[0][0], 'Linked Session')
         self.assertNotIn('secret tool output', str(datas[0][1]))
         self.assertNotIn('secret tool output', str(datas[0][2]))
+
+    def test_reader_cannot_group_by_a_transcript_field(self):
+        model = self.env['muk_ai.session'].with_user(self.reader)
+        with self.assertRaises(AccessError):
+            model._read_group(
+                [('id', '=', self.session.id)],
+                groupby=['last_text'],
+                aggregates=['__count'],
+            )
+
+    def test_reader_cannot_aggregate_a_transcript_field(self):
+        model = self.env['muk_ai.session'].with_user(self.reader)
+        with self.assertRaises(AccessError):
+            model._read_group(
+                [('id', '=', self.session.id)],
+                aggregates=['last_text:array_agg'],
+            )
+
+    def test_reader_can_still_group_by_a_metadata_field(self):
+        model = self.env['muk_ai.session'].with_user(self.reader)
+        groups = model._read_group(
+            [('id', '=', self.session.id)],
+            groupby=['state'],
+            aggregates=['__count'],
+        )
+        self.assertEqual([count for _state, count in groups], [1])
+
+    def test_reader_export_does_not_persist_the_blanks(self):
+        self.reader.sudo().group_ids |= self.env.ref('base.group_allow_export')
+        self.session.with_user(self.reader).export_data(['conversation', 'last_text'])
+        self.env.flush_all()
+        self.env.invalidate_all()
+        stored = self.session.sudo().read(['conversation', 'last_text'])[0]
+        self.assertEqual(stored['conversation'], self.transcript)
+        self.assertEqual(stored['last_text'], 'secret tool output')
+
+    def test_chatter_summary_can_never_carry_a_transcript_field(self):
+        Session = self.env['muk_ai.session']
+        self.assertFalse(
+            set(self.env['mail.thread']._ai_session_chatter_fields())
+            & set(Session._non_owner_sensitive_fields())
+        )
+        summary = self.record.with_user(self.reader).get_ai_sessions_summary()
+        entries = summary[self.record.id]['entries']
+        self.assertEqual([entry['id'] for entry in entries], [self.session.id])
+        self.assertNotIn('secret tool output', str(entries))
 
     def test_owner_search_read_keeps_transcript(self):
         model = self.env['muk_ai.session'].with_user(self.owner)
