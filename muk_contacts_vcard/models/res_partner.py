@@ -192,11 +192,21 @@ class Partner(models.Model):
         """Decorate the complete name with honorific shortcuts on request."""
         complete_name = super()._get_complete_name()
         if self.name and self.env.context.get('partner_display_name_show_honorific'):
-            prefix = ' '.join(self.mapped('honorific_prefix_ids.shortcut'))
-            suffix = ' '.join(self.mapped('honorific_suffix_ids.shortcut'))
+            prefix = ' '.join(self._honorific_shortcuts('honorific_prefix_ids'))
+            suffix = ' '.join(self._honorific_shortcuts('honorific_suffix_ids'))
             decorated = ' '.join(filter(None, [prefix, self.name, suffix]))
             complete_name = complete_name.replace(self.name, decorated, 1)
         return complete_name.strip()
+
+    def _honorific_shortcuts(self, fname: str) -> list[str]:
+        """Return the shortcuts of an honorific field in their configured order.
+
+        The many2many keeps whatever order the commands were written in
+        until the value is re-read from the database, so sorting here is
+        what makes the stored ``formatted_name`` and the exported vCard
+        honour the sequence of the honorifics instead of their id order.
+        """
+        return self[fname].sorted('sequence').mapped('shortcut')
 
     def _ensure_vcard_uid(self) -> str:
         """Assign and return a stable vCard UID, generating one if missing."""
@@ -219,8 +229,8 @@ class Partner(models.Model):
             family=self.lastname or '',
             given=self.firstname or '',
             additional=self.middlename or '',
-            prefix=' '.join(self.mapped('honorific_prefix_ids.shortcut')),
-            suffix=' '.join(self.mapped('honorific_suffix_ids.shortcut')),
+            prefix=' '.join(self._honorific_shortcuts('honorific_prefix_ids')),
+            suffix=' '.join(self._honorific_shortcuts('honorific_suffix_ids')),
         )
         if self.street2:
             adr = get_vcard_content_element('adr')

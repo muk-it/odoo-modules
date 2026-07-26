@@ -1,10 +1,26 @@
+from __future__ import annotations
+
+import base64
+import os
 import re
-from datetime import timedelta
+from datetime import date, timedelta
+from io import BytesIO
+
+import vobject
+from PIL import Image
 
 from odoo import Command, fields
 from odoo.tests.common import TransactionCase, new_test_user, tagged
 
 from odoo.addons.muk_contacts_vcard import _restore_mobile_from_upgrade_notes
+
+
+def _noise_png(size: int = 256) -> bytes:
+    """Return an incompressible PNG image of ``size`` pixels for binary tests."""
+    buffer = BytesIO()
+    image = Image.frombytes('RGB', (size, size), os.urandom(size * size * 3))
+    image.save(buffer, format='PNG')
+    return buffer.getvalue()
 
 
 @tagged('post_install', '-at_install')
@@ -442,3 +458,113 @@ class TestResPartner(TransactionCase):
         )
         serialized = person._build_vcard().serialize()
         self.assertNotIn('X-ABLABEL', serialized)
+
+    def test_build_name_joins_only_the_filled_parts(self):
+        model = self.env['res.partner']
+        self.assertEqual(model._build_name('John', 'M', 'Doe'), 'John M Doe')
+        self.assertEqual(model._build_name('John', False, 'Doe'), 'John Doe')
+        self.assertEqual(model._build_name(False, False, 'Doe'), 'Doe')
+        self.assertEqual(model._build_name(False, False, False), '')
+
+    def test_split_name_keeps_compound_last_names_together(self):
+        model = self.env['res.partner']
+        self.assertEqual(model._split_name('Jane Smith'), ('Smith', 'Jane'))
+        self.assertEqual(model._split_name('Jane de la Cruz'), ('de la Cruz', 'Jane'))
+        self.assertEqual(model._split_name('Cher'), ('Cher', False))
+        self.assertEqual(model._split_name(''), (False, False))
+        self.assertEqual(
+            model._split_name('Acme Holding Inc', is_company=True),
+            ('Acme Holding Inc', False),
+        )
+
+    def test_renaming_a_company_never_splits_off_a_first_name(self):
+        company = self.env['res.partner'].create(
+            {'name': 'Acme Inc', 'is_company': True}
+        )
+        company.write({'name': 'Acme Holding Inc'})
+        self.assertEqual(company.lastname, 'Acme Holding Inc')
+        self.assertFalse(company.firstname)
+        self.assertEqual(company.name, 'Acme Holding Inc')
+
+    def test_unicode_name_parts_round_trip_through_the_vcard(self):
+        partner = self.env['res.partner'].create(
+            {
+                'firstname': 'Ægir',
+                'middlename': '日本',
+                'lastname': 'Müller-Łukasz',
+            }
+        )
+        reparsed = vobject.readOne(partner._build_vcard().serialize())
+        self.assertEqual(reparsed.n.value.family, 'Müller-Łukasz')
+        self.assertEqual(reparsed.n.value.given, 'Ægir')
+        self.assertEqual(reparsed.n.value.additional, '日本')
+        self.assertEqual(reparsed.fn.value, 'Ægir 日本 Müller-Łukasz')
+
+    def test_build_vcard_exports_the_extended_contact_details(self):
+        partner = self.env['res.partner'].create(
+            {
+                'firstname': 'Detail',
+                'lastname': 'Partner',
+                'street': 'Main 1',
+                'street2': 'Floor 3',
+                'city': 'Vienna',
+                'zip': '1010',
+                'lang': 'en_US',
+                'tz': 'Europe/Vienna',
+                'gender': 'f',
+                'birthdate': date(1990, 5, 1),
+                'nickname': 'Dee',
+                'role': 'Maintainer',
+                'comment': '<p>Line one<br/>Line two</p>',
+            }
+        )
+        serialized = partner._build_vcard().serialize()
+        self.assertIn('LANG:en-US', serialized)
+        self.assertIn('TZ:Europe/Vienna', serialized)
+        self.assertIn('GENDER:F', serialized)
+        self.assertIn('BDAY:19900501', serialized)
+        self.assertIn('NICKNAME:Dee', serialized)
+        self.assertIn('ROLE:Maintainer', serialized)
+        self.assertIn('NOTE:', serialized)
+        self.assertIn('Floor 3', serialized)
+
+    def test_build_vcard_org_carries_the_department(self):
+        company = self.env['res.partner'].create(
+            {'name': 'Acme Inc', 'company_type': 'company'}
+        )
+        employee = self.env['res.partner'].create(
+            {
+                'firstname': 'Dep',
+                'lastname': 'Member',
+                'parent_id': company.id,
+                'type': 'contact',
+                'department': 'Research',
+            }
+        )
+        self.assertIn('ORG:Acme Inc;Research', employee._build_vcard().serialize())
+
+    def test_build_vcard_embeds_a_large_photo_without_corrupting_it(self):
+        raw = _noise_png()
+        partner = self.env['res.partner'].create(
+            {
+                'firstname': 'Photo',
+                'lastname': 'Partner',
+                'image_1920': base64.b64encode(raw),
+            }
+        )
+        reparsed = vobject.readOne(partner._build_vcard().serialize())
+        self.assertEqual(reparsed.photo.value, base64.b64decode(partner.avatar_512))
+        self.assertGreater(len(reparsed.photo.value), 1024)
+
+    def test_birthdate_derives_the_day_month_and_label(self):
+        partner = self.env['res.partner'].create(
+            {'name': 'Birthday Partner', 'birthdate': date(1990, 5, 1)}
+        )
+        self.assertEqual(partner.birthdate_day, 1)
+        self.assertEqual(partner.birthdate_month, 5)
+        self.assertTrue(partner.birthday)
+        self.assertTrue(partner.birthdate_placeholder)
+        partner.birthdate = False
+        self.assertFalse(partner.birthdate_day)
+        self.assertFalse(partner.birthdate_month)
+        self.assertFalse(partner.birthday)
