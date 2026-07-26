@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 
 from odoo import fields
@@ -9,7 +11,7 @@ from odoo.tests.common import HttpCase
 class TestPairing(HttpCase):
     """Verify pairing-code minting/consumption and device-key lifecycle."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         super().setUp()
         self.pairing = self.env['muk_mcp.pairing']
         self.key_model = self.env['muk_mcp.key']

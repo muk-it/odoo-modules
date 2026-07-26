@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from odoo import models
+
 from odoo.addons.muk_ai_browser.tests.common import BrowserTestCommon
 
 BROWSER_CLIENT_TOOLS = frozenset(
@@ -20,7 +24,8 @@ BROWSER_CLIENT_TOOLS = frozenset(
 class TestVisibility(BrowserTestCommon):
     """Verify client tools are gated on an active browser session."""
 
-    def _client_tool_names(self, session):
+    def _client_tool_names(self, session: models.BaseModel) -> set[str]:
+        """Return the browser client tools visible in the catalog."""
         return {
             entry['name']
             for entry in session._get_filtered_catalog()

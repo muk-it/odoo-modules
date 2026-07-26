@@ -1,17 +1,26 @@
+from __future__ import annotations
+
+from odoo import models
+
 from odoo.addons.muk_ai_browser.tests.common import BrowserTestCommon
 
 
 class TestRoundtrip(BrowserTestCommon):
     """Verify the full pause/action-request/result/resume round-trip."""
 
-    def _action_request_events(self, browser_session):
+    def _action_request_events(
+        self,
+        browser_session: models.BaseModel,
+    ) -> list:
+        """Return the action requests queued for the extension."""
         return [
             payload
             for event_type, payload in self._browser_events(browser_session)
             if event_type == 'action_request'
         ]
 
-    def _has_result_event(self, browser_session):
+    def _has_result_event(self, browser_session: models.BaseModel) -> bool:
+        """Report whether a client-action result was mirrored back."""
         for _event_type, payload in self._browser_events(browser_session):
             inner = (payload or {}).get('payload') or {}
             if inner.get('kind') == 'client_action_result':

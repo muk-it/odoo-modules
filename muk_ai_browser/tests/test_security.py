@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from odoo import models
 from odoo.exceptions import AccessError
 from odoo.tests.common import new_test_user
 
@@ -7,10 +10,12 @@ from odoo.addons.muk_ai_browser.tests.common import BrowserTestCommon
 class TestRecordRules(BrowserTestCommon):
     """Verify browser records are scoped to their owning user by record rules."""
 
-    def _user(self, login):
+    def _user(self, login: str) -> models.BaseModel:
+        """Create a plain internal user."""
         return new_test_user(self.env, login=login, groups='base.group_user')
 
-    def _owned_browser_session(self, user):
+    def _owned_browser_session(self, user: models.BaseModel) -> models.BaseModel:
+        """Attach a browser session to a chat session owned by ``user``."""
         ai_session = self.env['muk_ai.session'].with_user(user).create({'name': 'sec'})
         return self._browser_session(ai_session=ai_session)
 

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from odoo.tests import TransactionCase, tagged
 
 
@@ -5,7 +7,7 @@ from odoo.tests import TransactionCase, tagged
 class TestBrowserDevice(TransactionCase):
     """Verify device minting, the backing key and revocation."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         super().setUp()
         self.device_model = self.env['muk_ai_browser.device']
         self.key_model = self.env['muk_mcp.key']
