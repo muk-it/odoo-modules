@@ -9,7 +9,12 @@ import {
     contains,
     serverState,
 } from '@web/../tests/web_test_helpers';
-import { defineMailModels, patchUiSize, SIZES } from '@mail/../tests/mail_test_helpers';
+import {
+    defineMailModels,
+    patchUiSize,
+    startServer,
+    SIZES,
+} from '@mail/../tests/mail_test_helpers';
 
 import '@muk_mail_utils/views/message_list/message_list_view';
 class TestMessage extends models.Model {
@@ -124,4 +129,37 @@ test('preview shows the recipients of the selected message', async () => {
     ).click();
     expect('.mk_message_preview').toHaveText(/Recipients:/);
     expect('.mk_message_preview [name="notified_partner_ids"]').toHaveCount(1);
+});
+
+test.tags('muk_mail_utils');
+test('preview lists the attachments without a delete button', async () => {
+    patchUiSize({ size: SIZES.XXL });
+    const pyEnv = await startServer();
+    const attachmentId = pyEnv['ir.attachment'].create({
+        name: 'invoice.txt',
+        mimetype: 'text/plain',
+    });
+    pyEnv['x_test_message'].create({
+        body: '<p>Hello from third</p>',
+        attachment_ids: [attachmentId],
+    });
+    await mountView({
+        type: 'list',
+        resModel: 'x_test_message',
+        arch: `
+            <list js_class="message_list">
+                <field name="author_id"/>
+                <field name="body"/>
+            </list>
+        `,
+    });
+    await contains(
+        '.o_list_table tbody tr.o_data_row:eq(2) td.o_data_cell:eq(0)',
+    ).click();
+    expect('.mk_message_preview .o-mail-AttachmentList').toHaveCount(1);
+    expect('.mk_message_preview .o-mail-AttachmentContainer:first').toHaveAttribute(
+        'title',
+        'invoice.txt',
+    );
+    expect('.o-mail-Attachment-unlink').toHaveCount(0);
 });
