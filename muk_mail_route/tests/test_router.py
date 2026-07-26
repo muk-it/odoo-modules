@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-from odoo import fields
-from odoo.tests.common import tagged
+from odoo import fields, models
+from odoo.tests.common import new_test_user, tagged
 
 from odoo.addons.mail.tests.common import MailCommon
 
@@ -35,7 +35,12 @@ class TestRouter(MailCommon):
     # Helper
     # ----------------------------------------------------------
 
-    def _post_message(self, *, subject: str, attachment: bool = False):
+    def _post_message(
+        self,
+        *,
+        subject: str,
+        attachment: bool = False,
+    ) -> models.BaseModel:
         """Post a message on the container, optionally with an attachment."""
         msg = self.container.message_post(
             subject=subject,
@@ -161,3 +166,131 @@ class TestRouter(MailCommon):
         self.assertEqual(msg.res_id, self.partner_target.id)
         self.assertTrue(msg.is_internal)
         self.assertTrue(notify_mock.called)
+
+    def test_route_existing_without_notify_keeps_the_message_public(self):
+        config = self.env['muk_mail_route.configuration'].create(
+            {
+                'name': 'Attach Silently',
+                'model_id': self.model_res_partner.id,
+                'route_type': 'search',
+                'notify': False,
+                'set_is_internal': True,
+            }
+        )
+
+        msg = self._post_message(subject='Silent')
+        wizard = self.env['muk_mail_route.router'].create(
+            {
+                'configuration_id': config.id,
+                'reference': f'{self.partner_target._name},{self.partner_target.id}',
+                'message_ids': [fields.Command.set([msg.id])],
+            }
+        )
+
+        with patch.object(
+            type(self.partner_target),
+            '_notify_thread',
+            autospec=True,
+        ) as notify_mock:
+            wizard.action_route()
+
+        msg.invalidate_model(['model', 'res_id', 'is_internal'])
+        self.assertEqual(msg.res_id, self.partner_target.id)
+        self.assertFalse(msg.is_internal)
+        self.assertFalse(notify_mock.called)
+
+    def test_route_new_uses_the_configured_action(self):
+        action = self.env['ir.actions.act_window'].create(
+            {
+                'name': 'Routed Partners',
+                'res_model': 'res.partner',
+                'view_mode': 'kanban,form',
+            }
+        )
+        config = self.env['muk_mail_route.configuration'].create(
+            {
+                'name': 'Create With Action',
+                'model_id': self.model_res_partner.id,
+                'route_type': 'new',
+                'action_id': action.id,
+                'code': "values = {'name': message.subject}",
+            }
+        )
+
+        msg = self._post_message(subject='Action Partner')
+        wizard = self.env['muk_mail_route.router'].create(
+            {
+                'configuration_id': config.id,
+                'message_ids': [fields.Command.set([msg.id])],
+            }
+        )
+        result = wizard.action_route()
+
+        self.assertEqual(result['name'], 'Routed Partners')
+        self.assertEqual(result['view_mode'], 'kanban,form')
+        partner = self.env['res.partner'].search(result['domain'])
+        self.assertEqual(partner.name, 'Action Partner')
+
+    def test_route_new_propagates_a_failing_snippet(self):
+        config = self.env['muk_mail_route.configuration'].create(
+            {
+                'name': 'Failing Code',
+                'model_id': self.model_res_partner.id,
+                'route_type': 'new',
+                'code': "values = {'name': 1 / 0}",
+            }
+        )
+
+        msg = self._post_message(subject='Boom')
+        wizard = self.env['muk_mail_route.router'].create(
+            {
+                'configuration_id': config.id,
+                'message_ids': [fields.Command.set([msg.id])],
+            }
+        )
+        with self.assertRaises(ZeroDivisionError):
+            wizard.action_route()
+
+    def test_configuration_flags_reset_without_a_configuration(self):
+        config = self.env['muk_mail_route.configuration'].create(
+            {
+                'name': 'Flagged',
+                'model_id': self.model_res_partner.id,
+                'route_type': 'search',
+                'notify': True,
+                'set_is_internal': True,
+            }
+        )
+        wizard = self.env['muk_mail_route.router'].create(
+            {
+                'configuration_id': config.id,
+            }
+        )
+        self.assertTrue(wizard.notify)
+        self.assertTrue(wizard.set_is_internal)
+
+        wizard.write({'configuration_id': False})
+        self.assertFalse(wizard.notify)
+        self.assertFalse(wizard.set_is_internal)
+
+    def test_reference_selection_follows_model_access(self):
+        plain_user = new_test_user(
+            self.env,
+            'router_plain_user',
+            groups='base.group_user',
+        )
+        manager_user = new_test_user(
+            self.env,
+            'router_manager_user',
+            groups='base.group_user,base.group_erp_manager',
+        )
+        wizard_model = self.env['muk_mail_route.router']
+
+        plain_models = dict(wizard_model.with_user(plain_user)._selection_reference())
+        manager_models = dict(
+            wizard_model.with_user(manager_user)._selection_reference()
+        )
+
+        self.assertIn('res.partner', plain_models)
+        self.assertNotIn('muk_mail_route.container', plain_models)
+        self.assertIn('muk_mail_route.container', manager_models)

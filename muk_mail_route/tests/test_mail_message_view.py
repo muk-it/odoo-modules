@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from unittest.mock import patch
+
+from lxml import etree
+
 from odoo.tests.common import TransactionCase, new_test_user, tagged
 
 
@@ -47,3 +51,62 @@ class TestFailedListViewCache(TransactionCase):
             .get_view(self.view.id, 'list')['arch']
         )
         self.assertIn('default_configuration_id', arch)
+
+    def test_non_manager_gets_no_routing_buttons(self):
+        arch = (
+            self.env['mail.message']
+            .with_user(self.user_plain)
+            .get_view(self.view.id, 'list')['arch']
+        )
+        self.assertNotIn('default_configuration_id', arch)
+        self.assertNotIn('Cache Partner', arch)
+
+    def test_one_button_is_injected_per_configuration(self):
+        second = self.env['muk_mail_route.configuration'].create(
+            {
+                'name': 'Cache Partner Two',
+                'model_id': self.model_res_partner.id,
+                'route_type': 'search',
+            }
+        )
+        arch = etree.fromstring(
+            self.env['mail.message']
+            .with_user(self.user_manager)
+            .get_view(self.view.id, 'list')['arch']
+        )
+        contexts = [
+            node.get('context')
+            for node in arch.xpath(".//button[@name='action_route_message']")
+            if node.get('context')
+        ]
+        for configuration in self.configuration + second:
+            self.assertEqual(
+                sum(str(configuration.id) in context for context in contexts),
+                2,
+            )
+
+    def test_configurations_of_unreachable_models_are_skipped(self):
+        self.env['muk_mail_route.configuration'].create(
+            {
+                'name': 'Container Rule',
+                'model_id': self.env.ref(
+                    'muk_mail_route.model_muk_mail_route_container'
+                ).id,
+                'route_type': 'search',
+            }
+        )
+        reachable = self.env['ir.model.access']._get_allowed_models() - {
+            'muk_mail_route.container'
+        }
+        with patch.object(
+            type(self.env['ir.model.access']),
+            '_get_allowed_models',
+            return_value=reachable,
+        ):
+            arch = (
+                self.env['mail.message']
+                .with_user(self.user_manager)
+                .get_view(self.view.id, 'list')['arch']
+            )
+        self.assertIn('Cache Partner', arch)
+        self.assertNotIn('Container Rule', arch)
