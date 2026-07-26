@@ -2,25 +2,17 @@ from __future__ import annotations
 
 import threading
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager, suppress
 from unittest.mock import patch
 
 from odoo import models, modules
+from odoo.tools import SQL
 
 from odoo.addons.muk_ai.models import ir_http as ir_http_module
 from odoo.addons.muk_ai.models import session as session_module
-from odoo.addons.muk_ai.tests.common import AITestCommon
-
-
-class FakeRequest:
-    """Stand-in for the werkzeug request proxy used by the dispatch hook."""
-
-    def __init__(self, dbname: str = 'testdb', bound: bool = True) -> None:
-        self.db = dbname
-        self.bound = bound
-
-    def __bool__(self) -> bool:
-        """Report whether a request is bound, as the werkzeug proxy does."""
-        return self.bound
+from odoo.addons.muk_ai.tests.common import AITestCommon, FakeRequest
+from odoo.addons.muk_ai.tools import ADVISORY_LOCK_NAMESPACE, DISPATCH_MAX_TURNS
 
 
 class TestTurnDispatch(AITestCommon):
@@ -85,6 +77,38 @@ class TestTurnDispatch(AITestCommon):
     def _slice_budget(self, thread_type: str | None, elapsed: int, **limits) -> int:
         """Resolve the per-slice wallclock budget for a simulated thread context."""
         return self._budget('_slice_wallclock_seconds', thread_type, elapsed, **limits)
+
+    @contextmanager
+    def _hold_every_dispatch_slot(self) -> Iterator[None]:
+        """Claim every inline dispatch slot from a separate database backend."""
+        cursor = self.env.registry.cursor()
+        claimed = []
+        try:
+            for slot in range(-1, -DISPATCH_MAX_TURNS - 1, -1):
+                cursor.execute(
+                    SQL(
+                        'SELECT pg_try_advisory_lock(%s, %s)',
+                        ADVISORY_LOCK_NAMESPACE,
+                        slot,
+                    )
+                )
+                if not cursor.fetchone()[0]:
+                    msg = f'failed to claim dispatch slot {slot}'
+                    raise AssertionError(msg)
+                claimed.append(slot)
+            yield
+        finally:
+            for slot in claimed:
+                with suppress(Exception):
+                    cursor.execute(
+                        SQL(
+                            'SELECT pg_advisory_unlock(%s, %s)',
+                            ADVISORY_LOCK_NAMESPACE,
+                            slot,
+                        )
+                    )
+                    cursor.fetchone()
+            cursor.close()
 
     def _trigger(
         self,
@@ -195,18 +219,16 @@ class TestTurnDispatch(AITestCommon):
         session_model._release_dispatch_slot(-1)
 
     def test_dispatch_is_skipped_when_every_slot_is_taken(self):
-        with (
-            patch.object(
-                type(self.env['muk_ai.session']),
-                '_claim_dispatch_slot',
-                lambda records: None,
-            ),
-            patch.object(
-                type(self.env['muk_ai.session']), '_dispatch_queued_turns'
-            ) as dispatched,
-        ):
-            self.env['muk_ai.session']._dispatch_in_slot((1,))
-        dispatched.assert_not_called()
+        session_model = self.env['muk_ai.session']
+        with self._hold_every_dispatch_slot():
+            self.assertIsNone(session_model._claim_dispatch_slot())
+            with patch.object(
+                type(session_model), '_dispatch_queued_turns'
+            ) as dispatched:
+                session_model._dispatch_in_slot((1,))
+            dispatched.assert_not_called()
+        self.assertEqual(session_model._claim_dispatch_slot(), -1)
+        session_model._release_dispatch_slot(-1)
 
     def test_slot_is_released_even_when_the_turn_raises(self):
         with (
@@ -256,5 +278,11 @@ class TestTurnDispatch(AITestCommon):
             del thread.type, thread.start_time
 
     def test_dispatch_failures_never_escape_the_callback(self):
-        with patch.object(ir_http_module, 'Registry', side_effect=ValueError('boom')):
-            ir_http_module.IrHttp._run_queued_turns('testdb', (1,))
+        with self.assertLogs(ir_http_module.__name__, level='ERROR') as logs:
+            with patch.object(
+                ir_http_module, 'Registry', side_effect=ValueError('boom')
+            ):
+                ir_http_module.IrHttp._run_queued_turns('testdb', (1,))
+        self.assertEqual(len(logs.output), 1)
+        self.assertIn('Inline AI dispatch failed for sessions (1,)', logs.output[0])
+        self.assertIn('ValueError: boom', logs.output[0])
