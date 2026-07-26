@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from unittest.mock import patch
 
 from odoo import models
@@ -68,11 +70,25 @@ class TestLlmsTxtDocumentCron(LlmsTxtCommon, TransactionCase):
             ]
         )
 
-    def _pending_triggers(self) -> int:
-        """Return the number of queued triggers for the document cron."""
-        return self.env['ir.cron.trigger'].search_count(
-            [('cron_id', '=', self.cron.id)]
-        )
+    @contextmanager
+    def _captured_triggers(self) -> Iterator[list[models.Model]]:
+        """Record the crons ``_trigger`` is called on inside the block.
+
+        Asserting on ``ir.cron.trigger`` rows instead couples the test to
+        ``_trigger_list``, which silently queues nothing while the cron is
+        inactive — and a neutralized database deactivates every cron. What
+        this module owes its caller is the ``_trigger()`` call, so that is
+        what gets asserted.
+        """
+        triggered = []
+        original = type(self.env['ir.cron'])._trigger
+
+        def _record(cron_self, *args, **kwargs):
+            triggered.append(cron_self)
+            return original(cron_self, *args, **kwargs)
+
+        with patch.object(type(self.env['ir.cron']), '_trigger', _record):
+            yield triggered
 
     # ----------------------------------------------------------
     # Tests
@@ -142,23 +158,26 @@ class TestLlmsTxtDocumentCron(LlmsTxtCommon, TransactionCase):
         self.assertNotIn('/llms-cron-fail', previous.decode())
 
     def test_saving_the_settings_schedules_a_rebuild(self):
-        self.env['ir.cron.trigger'].search([('cron_id', '=', self.cron.id)]).unlink()
-        settings = self.env['res.config.settings'].create(
-            {'website_id': self.website.id, 'llms_include_pages': False}
-        )
-        settings.execute()
+        self.website.llms_include_pages = True
+        with self._captured_triggers() as triggered:
+            settings = self.env['res.config.settings'].create(
+                {'website_id': self.website.id, 'llms_include_pages': False}
+            )
+            settings.execute()
         self.assertFalse(self.website.llms_include_pages)
-        self.assertTrue(self._pending_triggers())
+        self.assertTrue(triggered)
+        self.assertEqual({cron.id for cron in triggered}, {self.cron.id})
 
     def test_a_configuration_change_schedules_a_rebuild(self):
+        self.website.llms_include_pages = True
         attachment = self.website._get_llms_document('llms.txt')
-        self.env['ir.cron.trigger'].search([('cron_id', '=', self.cron.id)]).unlink()
-        self.website.llms_include_pages = False
-        self.assertTrue(self._pending_triggers())
+        with self._captured_triggers() as triggered:
+            self.website.llms_include_pages = False
+        self.assertEqual([cron.id for cron in triggered], [self.cron.id])
         self.assertTrue(attachment.exists())
 
     def test_an_unrelated_change_schedules_nothing(self):
-        self.env['ir.cron.trigger'].search([('cron_id', '=', self.cron.id)]).unlink()
-        self.website.llms_content_signal = 'none'
-        self.website.llms_link_headers_enabled = False
-        self.assertFalse(self._pending_triggers())
+        with self._captured_triggers() as triggered:
+            self.website.llms_content_signal = 'none'
+            self.website.llms_link_headers_enabled = False
+        self.assertFalse(triggered)
