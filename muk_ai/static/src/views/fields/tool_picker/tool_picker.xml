@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.ToolPickerField">
+        <div class="o_field_tags d-inline-flex flex-wrap gap-1 mw-100"
+             t-att-class="{'o_tags_input o_input': !props.readonly}">
+            <TagsList tags="tagListItems"/>
+            <div t-if="!props.readonly"
+                 class="o_field_many2many_selection d-inline-flex w-100">
+                <AutoComplete
+                    value="''"
+                    sources="autocompleteSources"
+                    onSelect.bind="onSelectTool"
+                    placeholder="state.selected.length ? '' : (props.placeholder || 'Add a tool...')"
+                    resetOnSelect="true"
+                    class="'o_input'"/>
+            </div>
+        </div>
+    </t>
+
+</templates>

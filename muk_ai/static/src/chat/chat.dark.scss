@@ -1,0 +1,192 @@
+.mk_chat,
+.mk_window {
+    --mk-primary-fill: var(--o-cc1-btn-primary, #6b3e66);
+    --mk-primary: #c9a2c3;
+    --mk-primary-rgb: 201, 162, 195;
+
+    .mk_avatar,
+    .mk_empty_badge,
+    .mk_sidebar_dot.mk_state_running,
+    .mk_tool_streaming .mk_tool_icon {
+        background: var(--mk-primary-fill);
+    }
+    .mk_running::before,
+    .mk_dots span {
+        background: var(--mk-primary-fill);
+    }
+    .mk_send {
+        background: var(--mk-primary-fill);
+    }
+    .mk_bubble_user {
+        background: var(--mk-primary-fill) !important;
+    }
+
+    .mk_tool.mk_tool_read {
+        border-left-color: #3fb950;
+    }
+    .mk_tool.mk_tool_write {
+        border-left-color: #d29922;
+    }
+    .mk_tool.mk_tool_nav,
+    .mk_tool.mk_tool_schedule_resume {
+        border-left-color: #58a6ff;
+    }
+    .mk_tool.mk_tool_error {
+        border-left-color: #f85149;
+    }
+    .mk_tool.mk_tool_schedule_recur {
+        border-left-color: #3fb950;
+    }
+    .mk_tool.mk_tool_schedule_resume .mk_tool_schedule_icon {
+        background: rgba(88, 166, 255, 0.16);
+        color: #58a6ff;
+    }
+    .mk_tool.mk_tool_schedule_recur .mk_tool_schedule_icon {
+        background: rgba(63, 185, 80, 0.16);
+        color: #3fb950;
+    }
+    .mk_tool_group.mk_tool_group_has_error {
+        border-color: rgba(248, 81, 73, 0.45);
+    }
+
+    .mk_markdown pre,
+    .mk_tool_body pre {
+        background: #0d1117;
+        color: #c9d1d9;
+        border-color: var(--mk-border);
+        box-shadow: none;
+        .token.comment,
+        .token.prolog,
+        .token.cdata {
+            color: #8b949e;
+        }
+        .token.punctuation {
+            color: #c9d1d9;
+        }
+        .token.property,
+        .token.tag,
+        .token.constant,
+        .token.symbol,
+        .token.deleted {
+            color: #7ee787;
+        }
+        .token.boolean,
+        .token.number {
+            color: #79c0ff;
+        }
+        .token.selector,
+        .token.attr-name,
+        .token.char,
+        .token.builtin,
+        .token.inserted,
+        .token.string,
+        .token.attr-value {
+            color: #a5d6ff;
+        }
+        .token.operator,
+        .token.entity,
+        .token.url,
+        .token.atrule,
+        .token.keyword,
+        .language-css .token.string,
+        .style .token.string {
+            color: #ff7b72;
+        }
+        .token.function,
+        .token.class-name {
+            color: #d2a8ff;
+        }
+        .token.regex,
+        .token.important,
+        .token.variable {
+            color: #ffa657;
+        }
+    }
+    .mk_markdown pre .mk_code_copy {
+        &:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--mk-text);
+        }
+        &.mk_code_copy_done {
+            color: #3fb950;
+            border-color: #3fb950;
+        }
+        &.mk_code_copy_fail {
+            color: #f85149;
+            border-color: #f85149;
+        }
+    }
+    .mk_markdown tbody tr:nth-child(even) td {
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    .mk_msg_btn:hover,
+    .mk_msg_copy:hover,
+    .mk_bubble_queued .mk_queue_cancel:hover {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .mk_att_card_info {
+        background: var(--mk-bg-soft);
+    }
+
+    mark.mk_search_hit,
+    mark.mk_search_hit_active {
+        color: #14151a;
+    }
+
+    .mk_context_chip.mk_context_amber {
+        color: #e3b341;
+    }
+    .mk_approval_pill.mk_approval_bypass {
+        color: #f0b968;
+    }
+    .mk_ask_card {
+        .mk_ask_head,
+        .mk_ask_toggle,
+        table.mk_ask_changes th {
+            color: #e3b341;
+        }
+        .mk_ask_toggle:hover {
+            color: #f2cc60;
+        }
+        .mk_ask_body code,
+        .mk_ask_preview .mk_ask_call code {
+            color: #f0c674;
+        }
+    }
+    .mk_tool_group_head {
+        .mk_tg_ok {
+            color: #3fb950;
+        }
+        .mk_tg_err {
+            color: #f85149;
+        }
+    }
+
+    .mk_avatar.mk_state_new,
+    .mk_avatar.mk_state_stopped {
+        background: rgba(139, 148, 158, 0.18);
+        color: #8b949e;
+    }
+    .mk_avatar.mk_state_running {
+        background: rgba(88, 166, 255, 0.18);
+        color: #58a6ff;
+    }
+    .mk_avatar.mk_state_waiting {
+        background: rgba(210, 153, 34, 0.2);
+        color: #d29922;
+    }
+    .mk_avatar.mk_state_done {
+        background: rgba(63, 185, 80, 0.2);
+        color: #3fb950;
+    }
+    .mk_avatar.mk_state_error {
+        background: rgba(248, 81, 73, 0.18);
+        color: #f85149;
+    }
+}
+
+.mk_window_header {
+    background: var(--mk-primary-fill);
+}

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.ChatComposer">
+        <div class="mk_composer_host position-relative">
+        <div class="mk_slash_popover" t-if="showSlashMenu">
+            <t t-if="isAgentMode">
+                <t t-foreach="agentMatches" t-as="agent" t-key="agent.id">
+                    <button
+                        type="button"
+                        class="mk_slash_item"
+                        t-att-class="{ active: agent_index === localState.slashActive }"
+                        t-on-click="() => this.pickAgent(agent_index)"
+                        t-on-mouseenter="() => this.hoverSlashCommand(agent_index)"
+                    >
+                        <span class="mk_slash_name" t-esc="agent.name"/>
+                        <span class="mk_slash_hint" t-if="agent.id === props.activeAgentId">active</span>
+                        <span class="mk_slash_hint" t-elif="agent.description" t-esc="agent.description"/>
+                    </button>
+                </t>
+            </t>
+            <t t-else="">
+                <t t-foreach="slashCommands" t-as="cmd" t-key="cmd.name">
+                    <button
+                        type="button"
+                        class="mk_slash_item"
+                        t-att-class="{ active: cmd_index === localState.slashActive }"
+                        t-on-click="() => this.pickSlashCommand(cmd_index)"
+                        t-on-mouseenter="() => this.hoverSlashCommand(cmd_index)"
+                    >
+                        <code class="mk_slash_name" t-esc="cmd.name"/>
+                        <span class="mk_slash_hint" t-esc="cmd.hint"/>
+                    </button>
+                </t>
+            </t>
+        </div>
+        <div class="mk_composer d-flex flex-column gap-2">
+            <div class="mk_attachments d-flex flex-wrap gap-2" t-if="props.attachments.length">
+                <t t-foreach="props.attachments" t-as="attachment" t-key="attachment.id">
+                    <AttachmentCard
+                        attachment="attachment"
+                        removable="true"
+                        compact="true"
+                        onOpen.bind="onOpenAttachment"
+                        onRemove.bind="onRemoveAttachment"
+                    />
+                </t>
+            </div>
+            <div class="mk_composer_row d-flex align-items-end gap-2">
+                <label
+                    class="btn mk_attach rounded-circle mb-0"
+                    t-att-class="{ 'mk_attach_disabled': !props.canAttach }"
+                    t-att-for="fileInputId"
+                    t-on-click="(ev) => this.onLabelClick(ev)"
+                    title="Attach file"
+                >
+                    <i class="fa fa-paperclip"/>
+                </label>
+                <input
+                    type="file"
+                    class="mk_file_input"
+                    t-ref="fileInput"
+                    t-att-id="fileInputId"
+                    multiple="multiple"
+                    t-att-accept="accept"
+                    t-att-disabled="!props.canAttach ? 'disabled' : null"
+                    t-on-change="(ev) => this.onFileInputChange(ev)"
+                />
+                <textarea
+                    class="form-control border-0 shadow-none"
+                    rows="1"
+                    t-ref="input"
+                    t-on-input="(ev) => this.onInputChange(ev)"
+                    t-on-keydown="(ev) => this.onKeydown(ev)"
+                    t-on-paste="(ev) => this.onPaste(ev)"
+                    t-att-placeholder="props.placeholder"
+                    t-att-disabled="props.disabled ? 'disabled' : null"
+                />
+                <button
+                    class="btn mk_send rounded-circle"
+                    t-att-class="(props.canSend and props.isQueueing) ? 'mk_queue' : (props.canStop and !props.canSend) ? 'mk_stop' : ''"
+                    t-on-click="() => this.onSendOrStop()"
+                    t-att-disabled="(!props.canStop and !props.canSend) ? 'disabled' : null"
+                    t-att-title="(props.canSend and props.isQueueing) ? 'Queue (sends after current turn)' : (props.canStop and !props.canSend) ? 'Stop' : 'Send'"
+                >
+                    <i class="fa" t-att-class="(props.canSend and props.isQueueing) ? 'fa-clock-o' : (props.canStop and !props.canSend) ? 'fa-stop' : 'fa-arrow-up'"/>
+                </button>
+            </div>
+        </div>
+        </div>
+    </t>
+
+</templates>

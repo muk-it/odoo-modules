@@ -1,0 +1,606 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo noupdate="1">
+
+	<!-- OpenAI -->
+
+	<record id="model_gpt_5_6_sol" model="muk_ai.model">
+		<field name="name">GPT-5.6 Sol</field>
+		<field name="provider_id" ref="provider_openai"/>
+		<field name="technical_name">gpt-5.6-sol</field>
+		<field name="context_window">1000000</field>
+		<field name="reasoning_efforts" eval="['low', 'medium', 'high', 'xhigh', 'max']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">5.0</field>
+		<field name="output_rate">30.0</field>
+		<field name="cache_read_rate">0.5</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_gpt_5_6_terra" model="muk_ai.model">
+		<field name="name">GPT-5.6 Terra</field>
+		<field name="provider_id" ref="provider_openai"/>
+		<field name="technical_name">gpt-5.6-terra</field>
+		<field name="context_window">1000000</field>
+		<field name="reasoning_efforts" eval="['low', 'medium', 'high', 'xhigh', 'max']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">2.5</field>
+		<field name="output_rate">15.0</field>
+		<field name="cache_read_rate">0.25</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_gpt_5_6_luna" model="muk_ai.model">
+		<field name="name">GPT-5.6 Luna</field>
+		<field name="provider_id" ref="provider_openai"/>
+		<field name="technical_name">gpt-5.6-luna</field>
+		<field name="context_window">1000000</field>
+		<field name="reasoning_efforts" eval="['low', 'medium', 'high', 'xhigh', 'max']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">1.0</field>
+		<field name="output_rate">6.0</field>
+		<field name="cache_read_rate">0.1</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_gpt_5_5_pro" model="muk_ai.model">
+		<field name="name">GPT-5.5 Pro</field>
+		<field name="provider_id" ref="provider_openai"/>
+		<field name="technical_name">gpt-5.5-pro</field>
+		<field name="context_window">1000000</field>
+		<field name="reasoning_efforts" eval="['medium', 'high', 'xhigh']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">30.0</field>
+		<field name="output_rate">180.0</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_gpt_5_5" model="muk_ai.model">
+		<field name="name">GPT-5.5</field>
+		<field name="provider_id" ref="provider_openai"/>
+		<field name="technical_name">gpt-5.5</field>
+		<field name="context_window">1000000</field>
+		<field name="reasoning_efforts" eval="['low', 'medium', 'high', 'xhigh']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">5.0</field>
+		<field name="output_rate">30.0</field>
+		<field name="cache_read_rate">0.5</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_gpt_5_4_pro" model="muk_ai.model">
+		<field name="name">GPT-5.4 Pro</field>
+		<field name="provider_id" ref="provider_openai"/>
+		<field name="technical_name">gpt-5.4-pro</field>
+		<field name="context_window">400000</field>
+		<field name="reasoning_efforts" eval="['medium', 'high', 'xhigh']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">30.0</field>
+		<field name="output_rate">180.0</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_gpt_5_4" model="muk_ai.model">
+		<field name="name">GPT-5.4</field>
+		<field name="provider_id" ref="provider_openai"/>
+		<field name="technical_name">gpt-5.4</field>
+		<field name="context_window">400000</field>
+		<field name="reasoning_efforts" eval="['low', 'medium', 'high', 'xhigh']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">2.5</field>
+		<field name="output_rate">15.0</field>
+		<field name="cache_read_rate">0.25</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_gpt_5_4_mini" model="muk_ai.model">
+		<field name="name">GPT-5.4 Mini</field>
+		<field name="provider_id" ref="provider_openai"/>
+		<field name="technical_name">gpt-5.4-mini</field>
+		<field name="context_window">400000</field>
+		<field name="reasoning_efforts" eval="['low', 'medium', 'high', 'xhigh']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">0.75</field>
+		<field name="output_rate">4.5</field>
+		<field name="cache_read_rate">0.075</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_gpt_5_4_nano" model="muk_ai.model">
+		<field name="name">GPT-5.4 Nano</field>
+		<field name="provider_id" ref="provider_openai"/>
+		<field name="technical_name">gpt-5.4-nano</field>
+		<field name="context_window">400000</field>
+		<field name="reasoning_efforts" eval="['low', 'medium', 'high', 'xhigh']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">0.2</field>
+		<field name="output_rate">1.25</field>
+		<field name="cache_read_rate">0.02</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_gpt_5_2" model="muk_ai.model">
+		<field name="name">GPT-5.2</field>
+		<field name="provider_id" ref="provider_openai"/>
+		<field name="technical_name">gpt-5.2</field>
+		<field name="context_window">400000</field>
+		<field name="reasoning_efforts" eval="['low', 'medium', 'high', 'xhigh']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">1.75</field>
+		<field name="output_rate">14.0</field>
+		<field name="cache_read_rate">0.175</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_gpt_5_1" model="muk_ai.model">
+		<field name="name">GPT-5.1</field>
+		<field name="provider_id" ref="provider_openai"/>
+		<field name="technical_name">gpt-5.1</field>
+		<field name="context_window">400000</field>
+		<field name="reasoning_efforts" eval="['low', 'medium', 'high']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">1.25</field>
+		<field name="output_rate">10.0</field>
+		<field name="cache_read_rate">0.125</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_gpt_5" model="muk_ai.model">
+		<field name="name">GPT-5</field>
+		<field name="provider_id" ref="provider_openai"/>
+		<field name="technical_name">gpt-5</field>
+		<field name="context_window">400000</field>
+		<field name="reasoning_efforts" eval="['minimal', 'low', 'medium', 'high']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">1.25</field>
+		<field name="output_rate">10.0</field>
+		<field name="cache_read_rate">0.125</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_gpt_5_mini" model="muk_ai.model">
+		<field name="name">GPT-5 Mini</field>
+		<field name="provider_id" ref="provider_openai"/>
+		<field name="technical_name">gpt-5-mini</field>
+		<field name="context_window">400000</field>
+		<field name="reasoning_efforts" eval="['minimal', 'low', 'medium', 'high']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">0.25</field>
+		<field name="output_rate">2.0</field>
+		<field name="cache_read_rate">0.025</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_gpt_5_nano" model="muk_ai.model">
+		<field name="name">GPT-5 Nano</field>
+		<field name="provider_id" ref="provider_openai"/>
+		<field name="technical_name">gpt-5-nano</field>
+		<field name="context_window">400000</field>
+		<field name="reasoning_efforts" eval="['minimal', 'low', 'medium', 'high']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">0.05</field>
+		<field name="output_rate">0.4</field>
+		<field name="cache_read_rate">0.005</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_gpt_4_1" model="muk_ai.model">
+		<field name="name">GPT-4.1</field>
+		<field name="provider_id" ref="provider_openai"/>
+		<field name="technical_name">gpt-4.1</field>
+		<field name="context_window">1000000</field>
+		<field name="input_rate">2.0</field>
+		<field name="output_rate">8.0</field>
+		<field name="cache_read_rate">0.5</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_gpt_4_1_mini" model="muk_ai.model">
+		<field name="name">GPT-4.1 Mini</field>
+		<field name="provider_id" ref="provider_openai"/>
+		<field name="technical_name">gpt-4.1-mini</field>
+		<field name="context_window">1000000</field>
+		<field name="input_rate">0.4</field>
+		<field name="output_rate">1.6</field>
+		<field name="cache_read_rate">0.1</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_gpt_4_1_nano" model="muk_ai.model">
+		<field name="name">GPT-4.1 Nano</field>
+		<field name="provider_id" ref="provider_openai"/>
+		<field name="technical_name">gpt-4.1-nano</field>
+		<field name="context_window">1000000</field>
+		<field name="input_rate">0.1</field>
+		<field name="output_rate">0.4</field>
+		<field name="cache_read_rate">0.025</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_gpt_4o" model="muk_ai.model">
+		<field name="name">GPT-4o</field>
+		<field name="provider_id" ref="provider_openai"/>
+		<field name="technical_name">gpt-4o</field>
+		<field name="context_window">128000</field>
+		<field name="input_rate">2.5</field>
+		<field name="output_rate">10.0</field>
+		<field name="cache_read_rate">1.25</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_gpt_4o_mini" model="muk_ai.model">
+		<field name="name">GPT-4o Mini</field>
+		<field name="provider_id" ref="provider_openai"/>
+		<field name="technical_name">gpt-4o-mini</field>
+		<field name="context_window">128000</field>
+		<field name="input_rate">0.15</field>
+		<field name="output_rate">0.6</field>
+		<field name="cache_read_rate">0.075</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_o1" model="muk_ai.model">
+		<field name="name">o1</field>
+		<field name="provider_id" ref="provider_openai"/>
+		<field name="technical_name">o1</field>
+		<field name="context_window">200000</field>
+		<field name="reasoning_efforts" eval="['low', 'medium', 'high']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">15.0</field>
+		<field name="output_rate">60.0</field>
+		<field name="cache_read_rate">7.5</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_o1_mini" model="muk_ai.model">
+		<field name="name">o1 Mini</field>
+		<field name="provider_id" ref="provider_openai"/>
+		<field name="technical_name">o1-mini</field>
+		<field name="context_window">128000</field>
+		<field name="input_rate">3.0</field>
+		<field name="output_rate">12.0</field>
+		<field name="cache_read_rate">1.5</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_o3" model="muk_ai.model">
+		<field name="name">o3</field>
+		<field name="provider_id" ref="provider_openai"/>
+		<field name="technical_name">o3</field>
+		<field name="context_window">200000</field>
+		<field name="reasoning_efforts" eval="['low', 'medium', 'high']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">2.0</field>
+		<field name="output_rate">8.0</field>
+		<field name="cache_read_rate">0.5</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_o3_mini" model="muk_ai.model">
+		<field name="name">o3 Mini</field>
+		<field name="provider_id" ref="provider_openai"/>
+		<field name="technical_name">o3-mini</field>
+		<field name="context_window">200000</field>
+		<field name="reasoning_efforts" eval="['low', 'medium', 'high']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">1.1</field>
+		<field name="output_rate">4.4</field>
+		<field name="cache_read_rate">0.55</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_o4_mini" model="muk_ai.model">
+		<field name="name">o4 Mini</field>
+		<field name="provider_id" ref="provider_openai"/>
+		<field name="technical_name">o4-mini</field>
+		<field name="context_window">200000</field>
+		<field name="reasoning_efforts" eval="['low', 'medium', 'high']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">1.1</field>
+		<field name="output_rate">4.4</field>
+		<field name="cache_read_rate">0.275</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="provider_openai" model="muk_ai.provider">
+		<field name="default_model_id" ref="model_gpt_5_4"/>
+	</record>
+
+	<!-- Anthropic -->
+
+	<record id="model_claude_fable_5" model="muk_ai.model">
+		<field name="name">Claude Fable 5</field>
+		<field name="provider_id" ref="provider_anthropic"/>
+		<field name="technical_name">claude-fable-5</field>
+		<field name="context_window">1000000</field>
+		<field name="reasoning_efforts" eval="['low', 'medium', 'high', 'xhigh', 'max']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">10.0</field>
+		<field name="output_rate">50.0</field>
+		<field name="cache_read_rate">1.0</field>
+		<field name="cache_write_rate">12.5</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_claude_opus_4_8" model="muk_ai.model">
+		<field name="name">Claude Opus 4.8</field>
+		<field name="provider_id" ref="provider_anthropic"/>
+		<field name="technical_name">claude-opus-4-8</field>
+		<field name="context_window">1000000</field>
+		<field name="reasoning_efforts" eval="['low', 'medium', 'high', 'xhigh', 'max']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">5.0</field>
+		<field name="output_rate">25.0</field>
+		<field name="cache_read_rate">0.5</field>
+		<field name="cache_write_rate">6.25</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_claude_opus_4_7" model="muk_ai.model">
+		<field name="name">Claude Opus 4.7</field>
+		<field name="provider_id" ref="provider_anthropic"/>
+		<field name="technical_name">claude-opus-4-7</field>
+		<field name="context_window">1000000</field>
+		<field name="reasoning_efforts" eval="['low', 'medium', 'high', 'xhigh', 'max']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">5.0</field>
+		<field name="output_rate">25.0</field>
+		<field name="cache_read_rate">0.5</field>
+		<field name="cache_write_rate">6.25</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_claude_opus_4_6" model="muk_ai.model">
+		<field name="name">Claude Opus 4.6</field>
+		<field name="provider_id" ref="provider_anthropic"/>
+		<field name="technical_name">claude-opus-4-6</field>
+		<field name="context_window">1000000</field>
+		<field name="reasoning_efforts" eval="['minimal', 'low', 'medium', 'high', 'xhigh', 'max']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">5.0</field>
+		<field name="output_rate">25.0</field>
+		<field name="cache_read_rate">0.5</field>
+		<field name="cache_write_rate">6.25</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_claude_opus_4_5" model="muk_ai.model">
+		<field name="name">Claude Opus 4.5</field>
+		<field name="provider_id" ref="provider_anthropic"/>
+		<field name="technical_name">claude-opus-4-5</field>
+		<field name="context_window">200000</field>
+		<field name="reasoning_efforts" eval="['minimal', 'low', 'medium', 'high', 'xhigh', 'max']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">5.0</field>
+		<field name="output_rate">25.0</field>
+		<field name="cache_read_rate">0.5</field>
+		<field name="cache_write_rate">6.25</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_claude_opus_4_1" model="muk_ai.model">
+		<field name="name">Claude Opus 4.1</field>
+		<field name="provider_id" ref="provider_anthropic"/>
+		<field name="technical_name">claude-opus-4-1</field>
+		<field name="context_window">200000</field>
+		<field name="notes">Deprecated by Anthropic; retires 2026-08-05. Migrate to Claude Opus 4.8.</field>
+		<field name="reasoning_efforts" eval="['minimal', 'low', 'medium', 'high', 'xhigh', 'max']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">15.0</field>
+		<field name="output_rate">75.0</field>
+		<field name="cache_read_rate">1.5</field>
+		<field name="cache_write_rate">18.75</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_claude_opus_4" model="muk_ai.model">
+		<field name="name">Claude Opus 4</field>
+		<field name="provider_id" ref="provider_anthropic"/>
+		<field name="technical_name">claude-opus-4</field>
+		<field name="context_window">200000</field>
+		<field name="input_rate">15.0</field>
+		<field name="output_rate">75.0</field>
+		<field name="cache_read_rate">1.5</field>
+		<field name="cache_write_rate">18.75</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_claude_sonnet_5" model="muk_ai.model">
+		<field name="name">Claude Sonnet 5</field>
+		<field name="provider_id" ref="provider_anthropic"/>
+		<field name="technical_name">claude-sonnet-5</field>
+		<field name="context_window">1000000</field>
+		<field name="reasoning_efforts" eval="['low', 'medium', 'high', 'xhigh', 'max']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">3.0</field>
+		<field name="output_rate">15.0</field>
+		<field name="cache_read_rate">0.3</field>
+		<field name="cache_write_rate">3.75</field>
+		<field name="currency">USD</field>
+		<field name="notes">Introductory pricing of $2 / $10 per MTok applies through 2026-08-31.</field>
+	</record>
+
+	<record id="model_claude_sonnet_4_6" model="muk_ai.model">
+		<field name="name">Claude Sonnet 4.6</field>
+		<field name="provider_id" ref="provider_anthropic"/>
+		<field name="technical_name">claude-sonnet-4-6</field>
+		<field name="context_window">1000000</field>
+		<field name="reasoning_efforts" eval="['minimal', 'low', 'medium', 'high', 'xhigh', 'max']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">3.0</field>
+		<field name="output_rate">15.0</field>
+		<field name="cache_read_rate">0.3</field>
+		<field name="cache_write_rate">3.75</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_claude_sonnet_4_5" model="muk_ai.model">
+		<field name="name">Claude Sonnet 4.5</field>
+		<field name="provider_id" ref="provider_anthropic"/>
+		<field name="technical_name">claude-sonnet-4-5</field>
+		<field name="context_window">200000</field>
+		<field name="reasoning_efforts" eval="['minimal', 'low', 'medium', 'high', 'xhigh', 'max']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">3.0</field>
+		<field name="output_rate">15.0</field>
+		<field name="cache_read_rate">0.3</field>
+		<field name="cache_write_rate">3.75</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_claude_sonnet_4" model="muk_ai.model">
+		<field name="name">Claude Sonnet 4</field>
+		<field name="provider_id" ref="provider_anthropic"/>
+		<field name="technical_name">claude-sonnet-4</field>
+		<field name="context_window">200000</field>
+		<field name="reasoning_efforts" eval="['minimal', 'low', 'medium', 'high', 'xhigh', 'max']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">3.0</field>
+		<field name="output_rate">15.0</field>
+		<field name="cache_read_rate">0.3</field>
+		<field name="cache_write_rate">3.75</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_claude_haiku_4_5" model="muk_ai.model">
+		<field name="name">Claude Haiku 4.5</field>
+		<field name="provider_id" ref="provider_anthropic"/>
+		<field name="technical_name">claude-haiku-4-5</field>
+		<field name="context_window">200000</field>
+		<field name="input_rate">1.0</field>
+		<field name="output_rate">5.0</field>
+		<field name="cache_read_rate">0.1</field>
+		<field name="cache_write_rate">1.25</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_claude_haiku_3_5" model="muk_ai.model">
+		<field name="name">Claude Haiku 3.5 (retired)</field>
+		<field name="provider_id" ref="provider_anthropic"/>
+		<field name="technical_name">claude-haiku-3-5</field>
+		<field name="context_window">200000</field>
+		<field name="input_rate">0.8</field>
+		<field name="output_rate">4.0</field>
+		<field name="cache_read_rate">0.08</field>
+		<field name="cache_write_rate">1.0</field>
+		<field name="currency">USD</field>
+		<field name="active" eval="False"/>
+	</record>
+
+	<record id="model_claude_3_7_sonnet" model="muk_ai.model">
+		<field name="name">Claude Sonnet 3.7 (deprecated)</field>
+		<field name="provider_id" ref="provider_anthropic"/>
+		<field name="technical_name">claude-3-7-sonnet</field>
+		<field name="context_window">200000</field>
+		<field name="reasoning_efforts" eval="['minimal', 'low', 'medium', 'high', 'xhigh', 'max']"/>
+		<field name="reasoning_effort_default">medium</field>
+		<field name="input_rate">3.0</field>
+		<field name="output_rate">15.0</field>
+		<field name="cache_read_rate">0.3</field>
+		<field name="cache_write_rate">3.75</field>
+		<field name="currency">USD</field>
+		<field name="active" eval="False"/>
+	</record>
+
+	<record id="provider_anthropic" model="muk_ai.provider">
+		<field name="default_model_id" ref="model_claude_sonnet_4_6"/>
+	</record>
+
+	<!-- Google -->
+
+	<record id="model_gemini_3_1_pro_preview" model="muk_ai.model">
+		<field name="name">Gemini 3.1 Pro Preview</field>
+		<field name="provider_id" ref="provider_google"/>
+		<field name="technical_name">gemini-3.1-pro-preview</field>
+		<field name="context_window">1000000</field>
+		<field name="reasoning_efforts" eval="['low', 'medium', 'high']"/>
+		<field name="input_rate">2.0</field>
+		<field name="output_rate">12.0</field>
+		<field name="cache_read_rate">0.2</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_gemini_3_5_flash" model="muk_ai.model">
+		<field name="name">Gemini 3.5 Flash</field>
+		<field name="provider_id" ref="provider_google"/>
+		<field name="technical_name">gemini-3.5-flash</field>
+		<field name="context_window">1000000</field>
+		<field name="reasoning_efforts" eval="['low', 'high']"/>
+		<field name="input_rate">1.5</field>
+		<field name="output_rate">9.0</field>
+		<field name="cache_read_rate">0.15</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_gemini_3_1_flash_lite" model="muk_ai.model">
+		<field name="name">Gemini 3.1 Flash Lite</field>
+		<field name="provider_id" ref="provider_google"/>
+		<field name="technical_name">gemini-3.1-flash-lite</field>
+		<field name="context_window">1000000</field>
+		<field name="reasoning_efforts" eval="['low', 'high']"/>
+		<field name="input_rate">0.25</field>
+		<field name="output_rate">1.5</field>
+		<field name="cache_read_rate">0.025</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_gemini_3_flash_preview" model="muk_ai.model">
+		<field name="name">Gemini 3 Flash Preview</field>
+		<field name="provider_id" ref="provider_google"/>
+		<field name="technical_name">gemini-3-flash-preview</field>
+		<field name="context_window">1000000</field>
+		<field name="reasoning_efforts" eval="['low', 'high']"/>
+		<field name="input_rate">0.5</field>
+		<field name="output_rate">3.0</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_gemini_2_5_pro" model="muk_ai.model">
+		<field name="name">Gemini 2.5 Pro</field>
+		<field name="provider_id" ref="provider_google"/>
+		<field name="technical_name">gemini-2.5-pro</field>
+		<field name="context_window">2000000</field>
+		<field name="input_rate">1.25</field>
+		<field name="output_rate">10.0</field>
+		<field name="cache_read_rate">0.31</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_gemini_2_5_flash" model="muk_ai.model">
+		<field name="name">Gemini 2.5 Flash</field>
+		<field name="provider_id" ref="provider_google"/>
+		<field name="technical_name">gemini-2.5-flash</field>
+		<field name="context_window">1000000</field>
+		<field name="input_rate">0.30</field>
+		<field name="output_rate">2.50</field>
+		<field name="cache_read_rate">0.075</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_gemini_2_5_flash_lite" model="muk_ai.model">
+		<field name="name">Gemini 2.5 Flash Lite</field>
+		<field name="provider_id" ref="provider_google"/>
+		<field name="technical_name">gemini-2.5-flash-lite</field>
+		<field name="context_window">1000000</field>
+		<field name="input_rate">0.10</field>
+		<field name="output_rate">0.40</field>
+		<field name="cache_read_rate">0.025</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_gemini_2_5_flash_image" model="muk_ai.model">
+		<field name="name">Gemini 2.5 Flash Image</field>
+		<field name="provider_id" ref="provider_google"/>
+		<field name="technical_name">gemini-2.5-flash-image</field>
+		<field name="context_window">1000000</field>
+		<field name="input_rate">0.30</field>
+		<field name="output_rate">2.50</field>
+		<field name="cache_read_rate">0.075</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="provider_google" model="muk_ai.provider">
+		<field name="default_model_id" ref="model_gemini_3_5_flash"/>
+	</record>
+
+</odoo>

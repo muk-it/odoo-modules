@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.ToolCard">
+        <div class="mk_tool"
+             t-att-class="(props.streaming ? 'mk_tool_streaming ' : '') + 'mk_tool_' + kind + (scheduleModifierClass ? ' ' + scheduleModifierClass : '')"
+             t-att-data-expanded="props.expanded ? 1 : 0">
+            <button type="button" class="mk_tool_head" t-on-click="() => this.onHeadClick()">
+                <t t-if="props.streaming">
+                    <span class="mk_tool_icon d-inline-flex align-items-center justify-content-center">
+                        <i class="fa fa-circle-o-notch fa-spin" />
+                    </span>
+                </t>
+                <t t-elif="scheduleSummary">
+                    <i class="fa fa-chevron-right mk_chevron" />
+                    <span class="mk_tool_icon mk_tool_schedule_icon d-inline-flex align-items-center justify-content-center">
+                        <i class="fa" t-att-class="scheduleSummary.icon" />
+                    </span>
+                </t>
+                <t t-else="">
+                    <i class="fa fa-chevron-right mk_chevron" />
+                    <span class="mk_tool_icon d-inline-flex align-items-center justify-content-center">
+                        <i class="fa fa-wrench" />
+                    </span>
+                </t>
+                <span class="mk_tool_name" t-esc="props.block.name" />
+                <t t-if="scheduleSummary">
+                    <t t-if="!scheduleSummary.ok">
+                        <span class="mk_tool_schedule_band mk_tool_schedule_error text-danger small ms-2">
+                            <t t-esc="scheduleSummary.error"/>
+                            <t t-if="scheduleSummary.cap">: <t t-esc="scheduleSummary.cap"/></t>
+                        </span>
+                    </t>
+                    <t t-elif="scheduleSummary.name === 'schedule_resume'">
+                        <span class="mk_tool_schedule_band small ms-2">
+                            <span class="text-muted">Paused — resumes </span>
+                            <span t-if="scheduleSummary.resumeAbsolute" t-esc="scheduleSummary.resumeAbsolute"/>
+                            <span t-if="scheduleSummary.resumeRelative" class="text-muted ms-1">
+                                (<t t-esc="scheduleSummary.resumeRelative"/>)
+                            </span>
+                            <span t-if="scheduleSummary.promptPreview"
+                                  class="mk_tool_schedule_prompt d-block text-muted small mt-1"
+                                  t-att-title="scheduleSummary.promptFull">
+                                <span class="text-muted">Will ask: </span>
+                                <span>"<t t-esc="scheduleSummary.promptPreview"/>"</span>
+                            </span>
+                        </span>
+                    </t>
+                    <t t-elif="scheduleSummary.name === 'schedule_recur'">
+                        <span class="mk_tool_schedule_band small ms-2">
+                            <span class="text-muted">Every </span>
+                            <span t-esc="scheduleSummary.everyText"/>
+                            <span class="text-muted"> · run </span>
+                            <span t-esc="scheduleSummary.runsDone"/>
+                            <span class="text-muted">/</span>
+                            <span t-if="scheduleSummary.maxRuns" t-esc="scheduleSummary.maxRuns"/>
+                            <span t-else="">∞</span>
+                            <t t-if="scheduleSummary.resumeAbsolute">
+                                <span class="text-muted"> · next </span>
+                                <span t-esc="scheduleSummary.resumeAbsolute"/>
+                                <span t-if="scheduleSummary.resumeRelative" class="text-muted ms-1">
+                                    (<t t-esc="scheduleSummary.resumeRelative"/>)
+                                </span>
+                            </t>
+                            <span t-if="scheduleSummary.promptPreview"
+                                  class="mk_tool_schedule_prompt d-block text-muted small mt-1"
+                                  t-att-title="scheduleSummary.promptFull">
+                                <span class="text-muted">Each fire asks: </span>
+                                <span>"<t t-esc="scheduleSummary.promptPreview"/>"</span>
+                            </span>
+                        </span>
+                    </t>
+                </t>
+                <t t-else="">
+                    <span class="mk_tool_preview" t-esc="summary" />
+                </t>
+                <span class="mk_tool_status" t-if="props.streaming">running…</span>
+            </button>
+            <t t-if="props.expanded and !props.streaming">
+                <div class="mk_tool_body">
+                    <div class="mk_tool_section" t-if="props.block.arguments">
+                        <div class="mk_tool_section_label mb-1">Arguments</div>
+                        <pre class="language-json"><code class="language-json" t-out="renderedArgs"/></pre>
+                    </div>
+                    <div class="mk_tool_section" t-if="props.block.result">
+                        <div class="mk_tool_section_label mb-1">Result</div>
+                        <pre t-att-class="'language-' + resultLang"><code t-att-class="'language-' + resultLang" t-out="renderedResult"/></pre>
+                    </div>
+                    <div class="mk_tool_section text-muted small" t-if="!props.block.result">
+                        <i class="fa fa-spinner fa-spin me-1" />Running…
+                    </div>
+                </div>
+            </t>
+        </div>
+    </t>
+
+</templates>

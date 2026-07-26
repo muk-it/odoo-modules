@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.RenameDialog">
+        <Dialog size="'sm'" title="props.title">
+            <div class="mb-2 text-muted small">Give this chat a descriptive name.</div>
+            <input
+                type="text"
+                class="form-control"
+                t-ref="input"
+                t-att-value="state.value"
+                t-att-placeholder="props.placeholder"
+                t-on-input="(ev) => this.onInput(ev)"
+                t-on-keydown="(ev) => this.onKeydown(ev)"
+            />
+            <t t-set-slot="footer">
+                <button class="btn btn-primary" t-att-disabled="!canConfirm" t-on-click="() => this.confirm()">
+                    Rename
+                </button>
+                <button class="btn btn-secondary" t-on-click="() => this.cancel()">
+                    Cancel
+                </button>
+            </t>
+        </Dialog>
+    </t>
+
+</templates>

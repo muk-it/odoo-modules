@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.AttachmentCard">
+        <div
+            class="mk_att_card rounded-3 border bg-white position-relative overflow-hidden"
+            t-att-class="{ 'mk_att_card_compact': props.compact, 'mk_att_card_image': file.isImage }"
+            t-att-title="props.attachment.filename"
+            t-on-click="() => this.onClick()"
+            role="button"
+            tabindex="0"
+        >
+            <t t-if="file.isImage">
+                <img
+                    class="mk_att_card_thumb"
+                    t-att-src="file.defaultSource"
+                    t-att-alt="props.attachment.filename"
+                />
+            </t>
+            <t t-else="">
+                <div class="mk_att_card_preview d-flex align-items-center justify-content-center">
+                    <div class="o_image" t-att-data-mimetype="props.attachment.mimetype"/>
+                </div>
+                <div class="mk_att_card_info px-2 py-1">
+                    <div class="mk_att_card_name text-truncate fw-semibold" t-esc="props.attachment.filename"/>
+                    <div class="mk_att_card_meta text-muted small text-uppercase" t-if="humanSize" t-esc="humanSize"/>
+                </div>
+            </t>
+            <button
+                t-if="props.removable"
+                class="mk_att_card_remove btn btn-sm rounded-circle"
+                t-on-click="(ev) => this.onRemove(ev)"
+                title="Remove"
+            >
+                <i class="fa fa-times"/>
+            </button>
+        </div>
+    </t>
+
+</templates>

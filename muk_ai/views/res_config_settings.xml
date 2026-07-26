@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_res_config_settings_form" model="ir.ui.view">
+		<field name="name">res.config.settings.form.muk_ai</field>
+		<field name="model">res.config.settings</field>
+		<field name="inherit_id" ref="base.res_config_settings_view_form"/>
+		<field name="arch" type="xml">
+			<xpath expr="//form" position="inside">
+				<app data-string="MuK AI" string="MuK AI" name="muk_ai">
+					<block title="MuK AI" name="muk_ai_settings">
+						<setting
+							id="muk_ai_default_provider"
+							string="Default Provider"
+							help="Provider used when an agent does not specify one."
+						>
+							<field name="ai_provider_id" options="{'no_create': True}"/>
+						</setting>
+						<setting
+							id="muk_ai_default_agent"
+							string="Default Agent"
+							help="Agent used for new chat sessions when none is specified."
+						>
+							<field name="ai_agent_id" options="{'no_create': True}"/>
+						</setting>
+						<setting id="muk_ai_max_iterations">
+							<label string="Iteration Limit" for="ai_max_iterations"/>
+							<div class="text-muted">
+								The model is warned shortly before the limit so it can wrap up.							</div>
+							<div class="content-group mt16">
+								<div class="row">
+									<div class="o_light_label">
+										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Max rounds" for="ai_max_iterations"/>
+										<field name="ai_max_iterations" class="w-25 text-center" nolabel="1"/>
+										<span class="col-auto ms-2">per Slice</span>
+									</div>
+								</div>
+							</div>
+						</setting>
+						<setting id="muk_ai_turn_wallclock">
+							<label string="Turn Runtime" for="ai_turn_wallclock_seconds"/>
+							<div class="text-muted">
+								A user turn exceeding this across all slices stops with an error.							</div>
+							<div class="content-group mt16">
+								<div class="row">
+									<div class="o_light_label">
+										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Timeout" for="ai_turn_wallclock_seconds"/>
+										<field name="ai_turn_wallclock_seconds" class="w-25 text-center" nolabel="1"/>
+										<span class="col-auto ms-2">in Seconds</span>
+									</div>
+								</div>
+							</div>
+						</setting>
+						<setting id="muk_ai_slice_wallclock">
+							<label string="Slice Runtime" for="ai_slice_wallclock_seconds"/>
+							<div class="text-muted">
+								A worker slice exceeding this is checkpointed and resumed by a fresh worker.							</div>
+							<div class="content-group mt16">
+								<div class="row">
+									<div class="o_light_label">
+										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Timeout" for="ai_slice_wallclock_seconds"/>
+										<field name="ai_slice_wallclock_seconds" class="w-25 text-center" nolabel="1"/>
+										<span class="col-auto ms-2">in Seconds</span>
+									</div>
+								</div>
+							</div>
+						</setting>
+						<setting id="muk_ai_turn_cost_limit">
+							<label string="Cost Limit" for="ai_turn_cost_limit"/>
+							<div class="text-muted">
+								Maximum spend per user turn in the model's price currency. Set to 0 to disable.
+							</div>
+							<div class="content-group mt16">
+								<div class="row">
+									<div class="o_light_label">
+										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Max spend" for="ai_turn_cost_limit"/>
+										<field name="ai_turn_cost_limit" class="w-25 text-center" nolabel="1"/>
+										<span class="col-auto ms-2">per Turn</span>
+									</div>
+								</div>
+							</div>
+						</setting>
+					</block>
+					<block title="MCP Server" name="muk_ai_mcp_settings">
+						<setting id="muk_ai_mcp_session_timeout">
+							<label string="Session Timeout" for="mcp_session_timeout"/>
+							<div class="text-muted">
+								Inactive sessions are cleaned up after this period.
+							</div>
+							<div class="content-group mt16">
+								<div class="row">
+									<div class="o_light_label">
+										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Timeout" for="mcp_session_timeout"/>
+										<field name="mcp_session_timeout" class="w-25 text-center" nolabel="1"/>
+										<span class="col-auto ms-2">in Hours</span>
+									</div>
+								</div>
+							</div>
+						</setting>
+						<setting id="muk_ai_mcp_log_retention">
+							<label string="Log Retention" for="mcp_log_retention"/>
+							<div class="text-muted">
+								Audit logs older than this period are automatically deleted.
+							</div>
+							<div class="content-group mt16">
+								<div class="row">
+									<div class="o_light_label">
+										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Retention" for="mcp_log_retention"/>
+										<field name="mcp_log_retention" class="w-25 text-center" nolabel="1"/>
+										<span class="col-auto ms-2">in Days</span>
+									</div>
+								</div>
+							</div>
+						</setting>
+						<setting id="muk_ai_mcp_rate_limit">
+							<label string="Rate Limiting" for="mcp_rate_limit_requests"/>
+							<div class="text-muted">
+								Default rate limit for new API keys. Set to 0 to disable.
+							</div>
+							<div class="content-group mt16">
+								<div class="row">
+									<div class="o_light_label">
+										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Max requests" for="mcp_rate_limit_requests"/>
+										<field name="mcp_rate_limit_requests" class="w-25 text-center" nolabel="1"/>
+										<span class="col-auto ms-2">per Minute</span>
+									</div>
+								</div>
+							</div>
+						</setting>
+						<setting
+							id="muk_ai_mcp_annotate_messages"
+							string="Annotate Messages"
+							help="Mark chatter messages originating from MCP."
+						>
+							<field name="mcp_annotate_messages"/>
+							<button
+								name="%(muk_mcp.action_connect)d"
+								type="action"
+								string="Connect AI"
+								icon="oi-arrow-right"
+								class="btn-link mt-3"
+							/>
+						</setting>
+					</block>
+				</app>
+			</xpath>
+		</field>
+	</record>
+
+</odoo>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.ChatWindowContainer">
+        <div class="mk_window_dock">
+            <t t-foreach="state.windows" t-as="w" t-key="w.sessionId">
+                <ChatWindow
+                    sessionId="w.sessionId"
+                    minimized="w.minimized"
+                    onClose="() => cw.close(w.sessionId)"
+                    onToggleMinimized="() => cw.toggleMinimized(w.sessionId)"
+                />
+            </t>
+        </div>
+    </t>
+
+</templates>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.SourceIcon">
+        <span
+            class="mk_source_ico d-inline-flex align-items-center justify-content-center"
+            t-att-class="'mk_source_ico_' + props.source.type"
+        >
+            <img
+                t-if="faviconUrl"
+                class="mk_source_favicon"
+                t-att-src="faviconUrl"
+                alt=""
+                t-on-error="onFaviconError"
+            />
+            <i t-elif="props.source.type === 'web'" class="fa fa-globe"/>
+            <i t-else="" class="fa fa-file-text-o"/>
+        </span>
+    </t>
+
+    <t t-name="muk_ai.SourceCard">
+        <a
+            class="mk_source_card d-flex align-items-center"
+            t-att-class="'mk_source_' + props.source.type"
+            t-att-href="href"
+            target="_blank"
+            rel="noopener noreferrer"
+            t-att-title="label"
+        >
+            <SourceIcon source="props.source"/>
+            <span class="mk_source_body d-flex flex-column">
+                <span class="mk_source_title text-truncate" t-esc="label"/>
+                <span class="mk_source_origin text-truncate" t-esc="origin"/>
+            </span>
+            <i class="fa fa-external-link mk_source_go"/>
+        </a>
+    </t>
+
+    <t t-name="muk_ai.SourceList">
+        <div class="mk_source_list">
+            <t t-foreach="visible" t-as="src" t-key="src.id">
+                <SourceCard source="src"/>
+            </t>
+        </div>
+        <button
+            t-if="hiddenCount and !state.showAll"
+            class="mk_sources_more_btn"
+            type="button"
+            t-on-click="toggle"
+        >+<t t-esc="hiddenCount"/> more</button>
+        <button
+            t-elif="state.showAll and props.sources.length > cap"
+            class="mk_sources_more_btn"
+            type="button"
+            t-on-click="toggle"
+        >Show less</button>
+    </t>
+
+    <t t-name="muk_ai.SourcesTab">
+        <t t-if="props.items.length">
+            <SourceList sources="props.items"/>
+        </t>
+        <t t-else="">
+            <div class="mk_artifacts_empty text-muted small">
+                No sources in this conversation yet.
+            </div>
+        </t>
+    </t>
+
+</templates>

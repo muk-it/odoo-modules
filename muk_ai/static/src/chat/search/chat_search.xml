@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.ChatSearch">
+        <div class="mk_search_bar d-flex align-items-center gap-2">
+            <div class="mk_search_field form-control form-control-sm d-flex align-items-center py-1">
+                <i class="oi oi-search mk_search_bar_icon me-2"/>
+                <input
+                    t-ref="input"
+                    type="text"
+                    class="o_input mk_search_input flex-grow-1 w-auto border-0"
+                    placeholder="Search this chat…"
+                    t-att-value="props.query"
+                    t-on-input="(ev) => this.onInput(ev)"
+                    t-on-keydown="(ev) => this.onKeyDown(ev)"
+                />
+            </div>
+            <span class="mk_search_counter small text-muted ms-auto" t-esc="counterLabel"/>
+            <button
+                class="btn btn-link btn-sm mk_search_prev p-1"
+                t-att-disabled="!props.total"
+                t-on-click="() => this.props.onPrev()"
+                title="Previous match (Shift+Enter)"
+            >
+                <i class="fa fa-chevron-up"/>
+            </button>
+            <button
+                class="btn btn-link btn-sm mk_search_next p-1"
+                t-att-disabled="!props.total"
+                t-on-click="() => this.props.onNext()"
+                title="Next match (Enter)"
+            >
+                <i class="fa fa-chevron-down"/>
+            </button>
+            <button
+                class="btn btn-link btn-sm mk_search_close p-1"
+                t-on-click="() => this.props.onClose()"
+                title="Close search (Esc)"
+            >
+                <i class="fa fa-times"/>
+            </button>
+        </div>
+    </t>
+
+</templates>
