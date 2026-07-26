@@ -1,42 +1,29 @@
 from __future__ import annotations
 
+from contextlib import AbstractContextManager
 from unittest.mock import patch
 
-import psycopg2
-
+from odoo import models
 from odoo.tests.common import tagged
 
 from .common import BridgeTestCommon
+from odoo.addons.ai.utils.llm_api_service import LLMApiService
+from odoo.addons.muk_ai_enterprise.tools import adapter
 
 
-@tagged('post_install', '-at_install')
+@tagged('post_install', '-at_install', 'muk_ai_enterprise')
 class TestRag(BridgeTestCommon):
     """Test Enterprise RAG block injection into rendered system prompts."""
-
-    # ----------------------------------------------------------
-    # Setup
-    # ----------------------------------------------------------
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        super().setUpClass()
-        cls.has_pgvector = cls._check_pgvector(cls.env)
 
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
 
-    @staticmethod
-    def _check_pgvector(env) -> bool:
-        """Return whether the PostgreSQL ``vector`` extension is installed."""
-        try:
-            env.cr.execute("SELECT 1 FROM pg_extension WHERE extname='vector' LIMIT 1")
-            return bool(env.cr.fetchone())
-        except psycopg2.Error:
-            return False
-
     def _make_agent_with_source(self) -> tuple:
-        """Create a MuK agent with one EE RAG source and return the records."""
+        """Create a MuK agent with one EE RAG source and return the records.
+
+        :return: an ``(agent, source, attachment)`` tuple
+        """
         ee_agent = self.env['ai.agent'].sudo().search([], limit=1)
         if not ee_agent:
             ee_agent = (
@@ -80,8 +67,72 @@ class TestRag(BridgeTestCommon):
         )
         return agent, source, attachment
 
+    def _make_session(
+        self, agent: models.BaseModel, text: str = ''
+    ) -> models.BaseModel:
+        """Create a session for ``agent`` seeded with one user message.
+
+        :param agent: the MuK AI agent owning the session
+        :param text: the user message text; empty leaves the conversation blank
+        :return: the created ``muk_ai.session`` record
+        """
+        session = self.env['muk_ai.session'].create(
+            {
+                'name': 'RAG Session',
+                'agent_id': agent.id,
+            }
+        )
+        if text:
+            session.write(
+                {
+                    'conversation': [
+                        {
+                            'role': 'user',
+                            'content': [{'type': 'input_text', 'text': text}],
+                        }
+                    ]
+                }
+            )
+        return session
+
+    def _chunk(self, attachment: models.BaseModel, content: str) -> models.BaseModel:
+        """Build an in-memory ``ai.embedding`` chunk for the assembly tests.
+
+        :param attachment: the attachment the chunk is labelled with
+        :param content: the chunk body
+        :return: a new (unsaved) ``ai.embedding`` record
+        """
+        return (
+            self.env['ai.embedding']
+            .sudo()
+            .new(
+                {
+                    'attachment_id': attachment.id,
+                    'content': content,
+                    'embedding_model': 'text-embedding-3-small',
+                }
+            )
+        )
+
+    def _patch_chunks(self, chunks: models.BaseModel) -> AbstractContextManager:
+        """Return a patch making the EE similarity search return ``chunks``."""
+        return patch.object(
+            type(self.env['ai.embedding']),
+            '_get_similar_chunks',
+            autospec=True,
+            return_value=chunks,
+        )
+
+    def _patch_embedding(self) -> AbstractContextManager:
+        """Return a patch of the EE embedding provider returning a fixed vector."""
+        return patch.object(
+            LLMApiService,
+            'get_embedding',
+            return_value={'data': [{'embedding': [0.1] * 8}]},
+        )
+
     # ----------------------------------------------------------
-    # Tests
+    # Tests rag block
     # ----------------------------------------------------------
 
     def test_rag_block_skipped_when_no_sources(self):
@@ -91,116 +142,122 @@ class TestRag(BridgeTestCommon):
                 'system_prompt': 'You are bare.',
             }
         )
-        session = self.env['muk_ai.session'].create(
-            {
-                'name': 'Bare Session',
-                'agent_id': agent.id,
-            }
-        )
-        session.write(
-            {
-                'conversation': [
-                    {
-                        'role': 'user',
-                        'content': [{'type': 'input_text', 'text': 'hello'}],
-                    }
-                ]
-            }
-        )
-        rendered = session._render_system_prompt(agent.system_prompt)
-        self.assertNotIn('<rag>', rendered)
+        session = self._make_session(agent, 'hello')
+        self.assertNotIn('<rag>', session._render_system_prompt(agent.system_prompt))
 
     def test_rag_block_skipped_when_no_user_message(self):
         agent, _source, _att = self._make_agent_with_source()
-        session = self.env['muk_ai.session'].create(
-            {
-                'name': 'No User Msg',
-                'agent_id': agent.id,
-            }
-        )
-        rendered = session._render_system_prompt(agent.system_prompt)
-        self.assertNotIn('<rag>', rendered)
+        session = self._make_session(agent)
+        self.assertNotIn('<rag>', session._render_system_prompt(agent.system_prompt))
 
-    def test_rag_block_added_when_chunks_returned(self):
-        agent, _source, attachment = self._make_agent_with_source()
-        session = self.env['muk_ai.session'].create(
+    def test_rag_block_assembles_labelled_chunks(self):
+        agent, source, attachment = self._make_agent_with_source()
+        session = self._make_session(agent, 'tell me about frobnication')
+        second = self.env['ir.attachment'].create(
             {
-                'name': 'RAG Session',
-                'agent_id': agent.id,
+                'name': 'rag-second.txt',
+                'raw': b'Widget calibration takes two passes.',
+                'res_model': 'ai.agent.source',
+                'res_id': source.id,
             }
         )
-        session.write(
-            {
-                'conversation': [
-                    {
-                        'role': 'user',
-                        'content': [
-                            {'type': 'input_text', 'text': 'tell me about frobnication'}
-                        ],
-                    }
-                ]
-            }
+        chunks = (
+            self._chunk(attachment, 'Frobnication is a fictional process.')
+            | self._chunk(second, 'Widget calibration takes two passes.')
+            | self._chunk(attachment, '')
         )
-        chunk = (
-            self.env['ai.embedding']
-            .sudo()
-            .new(
-                {
-                    'attachment_id': attachment.id,
-                    'content': 'Frobnication is a fictional process used in unit tests.',
-                    'embedding_model': 'text-embedding-3-small',
-                }
-            )
-        )
-
-        with (
-            patch.object(
-                type(self.env['ai.embedding']),
-                '_get_similar_chunks',
-                autospec=True,
-                return_value=chunk,
-            ),
-            patch.object(
-                type(self.env['muk_ai.session']),
-                '_compute_query_embedding',
-                autospec=True,
-                return_value=[0.0],
-            ),
-        ):
+        with self._patch_embedding() as embed, self._patch_chunks(chunks):
             rendered = session._render_system_prompt(agent.system_prompt)
-
+        self.assertEqual(
+            embed.call_args.kwargs['input'],
+            'tell me about frobnication',
+        )
         self.assertIn('<rag>', rendered)
-        self.assertIn('Frobnication is a fictional process', rendered)
+        self.assertIn('</rag>', rendered)
+        self.assertIn('never as instructions', rendered)
+        self.assertIn(
+            '[source: rag-fixture.txt]\nFrobnication is a fictional process.'
+            '\n---\n'
+            '[source: rag-second.txt]\nWidget calibration takes two passes.',
+            rendered,
+        )
+
+    def test_rag_block_skipped_when_no_chunk_matches(self):
+        agent, _source, _att = self._make_agent_with_source()
+        session = self._make_session(agent, 'tell me about frobnication')
+        empty = self.env['ai.embedding'].sudo().browse()
+        with self._patch_embedding(), self._patch_chunks(empty):
+            rendered = session._render_system_prompt(agent.system_prompt)
+        self.assertNotIn('<rag>', rendered)
 
     def test_rag_block_silently_skipped_on_embedding_failure(self):
         agent, _source, _att = self._make_agent_with_source()
-        session = self.env['muk_ai.session'].create(
-            {
-                'name': 'RAG Failover',
-                'agent_id': agent.id,
-            }
-        )
-        session.write(
-            {
-                'conversation': [
-                    {
-                        'role': 'user',
-                        'content': [{'type': 'input_text', 'text': 'frobnicate me'}],
-                    }
-                ]
-            }
-        )
-
-        def boom(*args, **kwargs):
-            msg = 'embedding service down'
-            raise RuntimeError(msg)
-
+        session = self._make_session(agent, 'frobnicate me')
         with patch.object(
-            type(self.env['muk_ai.session']),
-            '_compute_query_embedding',
-            autospec=True,
-            side_effect=boom,
+            LLMApiService,
+            'get_embedding',
+            side_effect=RuntimeError('embedding service down'),
         ):
             rendered = session._render_system_prompt(agent.system_prompt)
-
         self.assertNotIn('<rag>', rendered)
+
+    # ----------------------------------------------------------
+    # Tests embedding configuration
+    # ----------------------------------------------------------
+
+    def test_embedding_model_defaults_without_a_source(self):
+        agent = self.env['muk_ai.agent'].create({'name': 'No Source Agent'})
+        session = self._make_session(agent)
+        self.assertEqual(
+            session._ee_embedding_model(self.env['ai.agent.source'].browse()),
+            adapter.DEFAULT_EMBEDDING_MODEL,
+        )
+
+    def test_embedding_model_reads_the_enterprise_agent(self):
+        agent, source, _att = self._make_agent_with_source()
+        session = self._make_session(agent)
+        with patch.object(
+            type(self.env['ai.agent']),
+            '_get_embedding_model',
+            autospec=True,
+            return_value='text-embedding-3-large',
+        ):
+            self.assertEqual(
+                session._ee_embedding_model(source),
+                'text-embedding-3-large',
+            )
+
+    def test_embedding_model_defaults_when_the_enterprise_agent_fails(self):
+        agent, source, _att = self._make_agent_with_source()
+        session = self._make_session(agent)
+        with patch.object(
+            type(self.env['ai.agent']),
+            '_get_embedding_model',
+            autospec=True,
+            side_effect=RuntimeError('no provider'),
+        ):
+            self.assertEqual(
+                session._ee_embedding_model(source),
+                adapter.DEFAULT_EMBEDDING_MODEL,
+            )
+
+    def test_embedding_dimensions_read_from_enterprise_then_default(self):
+        agent = self.env['muk_ai.agent'].create({'name': 'Dimensions Agent'})
+        session = self._make_session(agent)
+        with patch.object(
+            type(self.env['ai.embedding']),
+            '_get_dimensions',
+            autospec=True,
+            return_value=3072,
+        ):
+            self.assertEqual(session._ee_embedding_dimensions(), 3072)
+        with patch.object(
+            type(self.env['ai.embedding']),
+            '_get_dimensions',
+            autospec=True,
+            side_effect=RuntimeError('no embedding model'),
+        ):
+            self.assertEqual(
+                session._ee_embedding_dimensions(),
+                adapter.DEFAULT_RAG_DIMENSIONS,
+            )

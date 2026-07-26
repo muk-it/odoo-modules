@@ -8,7 +8,7 @@
         AI dropdown as 'Open Odoo AI' — one icon, not two. Everything
         else keeps its existing behaviour.
     """,
-    'version': '19.0.1.0.12',
+    'version': '19.0.1.0.13',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',

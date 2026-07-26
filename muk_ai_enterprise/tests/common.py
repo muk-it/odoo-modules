@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from contextlib import AbstractContextManager
 from unittest.mock import patch
 
 from odoo.tests.common import TransactionCase
@@ -23,8 +24,14 @@ class BridgeTestCommon(TransactionCase):
     # Provider
     # ----------------------------------------------------------
 
-    def _patch_provider(self, payloads: list[dict], captured: list | None = None):
-        """Return a patch of the provider request returning queued payloads."""
+    def _patch_provider(
+        self, payloads: list[dict], captured: list | None = None
+    ) -> AbstractContextManager:
+        """Return a patch of the provider request returning queued payloads.
+
+        :param payloads: the provider responses handed out in order
+        :param captured: an optional list collecting the recorded call inputs
+        """
         remaining = list(payloads)
 
         def fake(

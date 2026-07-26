@@ -1,4 +1,6 @@
-import { describe, expect, test } from '@odoo/hoot';
+import { describe, expect, mockUserAgent, test } from '@odoo/hoot';
+import { press, queryOne, waitFor } from '@odoo/hoot-dom';
+import { animationFrame } from '@odoo/hoot-mock';
 import {
     contains,
     mockService,
@@ -90,6 +92,37 @@ test('Open Odoo AI on a form view defers to the chatter bus instead', async () =
     expect(calls).toEqual([]);
 });
 
+test('the alt+shift+r hotkey launches the Enterprise chat', async () => {
+    stubLoads();
+    makeBusMock();
+    makeChatWindowService();
+    const calls = makeLauncherMock();
+    mockService('action', {
+        currentController: null,
+        doAction: () => Promise.resolve(),
+    });
+    await mountWithCleanup(MukAISystray, { props: {} });
+    await animationFrame();
+    await press(['alt', 'shift', 'r']);
+    await animationFrame();
+    expect(calls).toEqual([{ callerComponentName: 'systray_ai_button' }]);
+});
+
+test('the Odoo AI hotkey label follows the platform', async () => {
+    stubLoads();
+    makeBusMock();
+    makeChatWindowService();
+    makeLauncherMock();
+    mockService('action', {
+        currentController: null,
+        doAction: () => Promise.resolve(),
+    });
+    const systray = await mountWithCleanup(MukAISystray, { props: {} });
+    expect(systray.odooAIHotkeyLabel).toBe('Alt+Shift+R');
+    mockUserAgent('mac');
+    expect(systray.odooAIHotkeyLabel).toBe('Ctrl+Shift+R');
+});
+
 test('the Open Odoo AI dropdown item is rendered when the menu opens', async () => {
     stubLoads();
     makeBusMock();
@@ -101,5 +134,8 @@ test('the Open Odoo AI dropdown item is rendered when the menu opens', async () 
     });
     await mountWithCleanup(MukAISystray, { props: {} });
     await contains('.mk_ai_systray_btn').click();
-    await contains('.mk_systray_odoo_ai_icon');
+    const item = await waitFor('.mk_systray_action:has(.mk_systray_odoo_ai_icon)');
+    expect(item).toHaveText(/Open Odoo AI/);
+    expect(queryOne('.mk_systray_odoo_ai_icon')).toHaveAttribute('alt', 'Odoo AI');
+    expect(item.querySelector('.mk_systray_hotkey').textContent).toBe('Alt+Shift+R');
 });

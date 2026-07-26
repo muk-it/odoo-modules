@@ -3,7 +3,7 @@ from __future__ import annotations
 from odoo.tests.common import TransactionCase, new_test_user, tagged
 
 
-@tagged('post_install', '-at_install')
+@tagged('post_install', '-at_install', 'muk_ai_enterprise')
 class TestEeInitContextAccess(TransactionCase):
     """Test access enforcement of the EE init context enrichment."""
 

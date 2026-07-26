@@ -1,22 +1,26 @@
 from __future__ import annotations
 
+from odoo import models
 from odoo.tests.common import tagged
 
 from .common import BridgeTestCommon
 
 
-@tagged('post_install', '-at_install')
+@tagged('post_install', '-at_install', 'muk_ai_enterprise')
 class TestContext(BridgeTestCommon):
     """Test EE record context injection into MuK AI sessions."""
 
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
+
     def _make_session_with_record(self, model: str = 'res.users') -> tuple:
-        """Create a record-bound session and return ``(session, record)``."""
+        """Create a record-bound session.
+
+        :param model: the technical name of the model to bind to
+        :return: a ``(session, record)`` tuple
+        """
         record = self.env[model].search([], limit=1)
-        if not record:
-            self.skipTest(f'No {model} record available.')
         agent = self.env['muk_ai.agent'].create(
             {
                 'name': 'Record Context Agent',
@@ -38,6 +42,20 @@ class TestContext(BridgeTestCommon):
         )
         return session, record
 
+    def _make_session(self, name: str) -> models.BaseModel:
+        """Create a bare session bound to a throwaway agent.
+
+        :param name: the name used for both the agent and the session
+        :return: the created ``muk_ai.session`` record
+        """
+        agent = self.env['muk_ai.agent'].create({'name': name})
+        return self.env['muk_ai.session'].create(
+            {
+                'name': name,
+                'agent_id': agent.id,
+            }
+        )
+
     # ----------------------------------------------------------
     # Tests
     # ----------------------------------------------------------
@@ -57,13 +75,7 @@ class TestContext(BridgeTestCommon):
         self.assertTrue(vc['ee_init_context'])
 
     def test_non_record_view_context_unchanged(self):
-        agent = self.env['muk_ai.agent'].create({'name': 'List Agent'})
-        session = self.env['muk_ai.session'].create(
-            {
-                'name': 'List Session',
-                'agent_id': agent.id,
-            }
-        )
+        session = self._make_session('List Agent')
         session.set_view_context(
             {
                 'kind': 'list',
@@ -74,32 +86,26 @@ class TestContext(BridgeTestCommon):
         self.assertEqual(vc.get('kind'), 'list')
         self.assertNotIn('ee_init_context', vc)
 
-    def test_model_without_ai_init_context(self):
-        agent = self.env['muk_ai.agent'].create({'name': 'Bare Model Agent'})
-        session = self.env['muk_ai.session'].create(
-            {
-                'name': 'Bare Model Session',
-                'agent_id': agent.id,
-            }
-        )
-        users = self.env.ref('base.user_admin')
+    def test_unknown_model_view_context_gets_no_ee_block(self):
+        session = self._make_session('Bare Model Agent')
         session.set_view_context(
             {
                 'kind': 'record',
-                'model': users._name,
-                'id': users.id,
+                'model': 'no.such.model',
+                'id': 1,
             }
         )
-        self.assertEqual(
-            (session.view_context or {}).get('model'),
-            users._name,
+        vc = session.view_context or {}
+        self.assertNotIn('ee_init_context', vc)
+        self.assertNotIn(
+            '<ee_ctx>',
+            session._render_system_prompt(session.agent_id.system_prompt or ''),
         )
 
     def test_rendered_prompt_contains_ee_context(self):
         session, _record = self._make_session_with_record()
         rendered = session._render_system_prompt(session.agent_id.system_prompt)
-        vc = session.view_context or {}
-        ee = vc.get('ee_init_context') or []
-        if not ee:
-            self.skipTest('No ee_init_context available for this record.')
+        ee = (session.view_context or {}).get('ee_init_context') or []
+        self.assertTrue(ee)
+        self.assertIn('<ee_ctx>', rendered)
         self.assertIn(ee[0][:30], rendered)
