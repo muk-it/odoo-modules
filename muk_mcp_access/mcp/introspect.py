@@ -20,7 +20,7 @@ class MCPMixin(models.AbstractModel):
     ) -> list[dict[str, Any]]:
         """Drop models absent from the access allowlist when one is active."""
         result = super()._mcp_list_models(search=search, limit=limit)
-        allowed = self.env['muk_mcp_access.model']._get_allowed_model_names()
+        allowed = self.env['muk_mcp_access.model']._get_allowed_model_names('read')
         if allowed is not None:
             result = [m for m in result if m['model'] in allowed]
         return result

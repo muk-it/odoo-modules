@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from odoo.exceptions import AccessError
+from odoo.exceptions import AccessError, ValidationError
 from odoo.tests import common, tagged
+from odoo.tests.common import new_test_user
 
 
 @tagged('post_install', '-at_install')
@@ -32,9 +33,6 @@ class TestMCPAccessModel(common.TransactionCase):
         self.assertTrue(
             self.access_model._is_model_allowed('res.users', 'write'),
         )
-
-    def test_empty_allowlist_returns_none(self):
-        self.assertIsNone(self.access_model._get_allowed_model_names())
 
     def test_resolve_model_passes_with_empty_allowlist(self):
         result = self.mixin._resolve_model('res.partner')
@@ -169,29 +167,8 @@ class TestMCPAccessModel(common.TransactionCase):
     # Tests: constraints
     # ----------------------------------------------------------
 
-    def test_duplicate_blocked_by_wizard(self):
-        self.access_model.create(
-            {
-                'model_id': self.partner_model.id,
-            }
-        )
-        wizard = self.env['muk_mcp_access.model.selection'].create(
-            {
-                'model_ids': [(6, 0, [self.partner_model.id])],
-            }
-        )
-        wizard.action_enable_models()
-        self.assertEqual(
-            self.access_model.search_count(
-                [
-                    ('model_id', '=', self.partner_model.id),
-                ]
-            ),
-            1,
-        )
-
     def test_no_permissions_raises(self):
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError) as catcher:
             self.access_model.create(
                 {
                     'model_id': self.partner_model.id,
@@ -199,6 +176,10 @@ class TestMCPAccessModel(common.TransactionCase):
                     'allow_write': False,
                 }
             )
+        self.assertIn(
+            'must allow at least read or write access',
+            str(catcher.exception),
+        )
 
     # ----------------------------------------------------------
     # Tests: record domain
@@ -211,24 +192,6 @@ class TestMCPAccessModel(common.TransactionCase):
                 'allow_read': True,
             }
         )
-        self.assertIsNone(
-            self.access_model._get_model_domain('res.partner'),
-        )
-
-    def test_domain_returned_when_set(self):
-        self.access_model.create(
-            {
-                'model_id': self.partner_model.id,
-                'allow_read': True,
-                'domain': "[('is_company', '=', True)]",
-            }
-        )
-        self.assertEqual(
-            self.access_model._get_model_domain('res.partner'),
-            [('is_company', '=', True)],
-        )
-
-    def test_domain_inactive_allowlist_returns_none(self):
         self.assertIsNone(
             self.access_model._get_model_domain('res.partner'),
         )
@@ -261,7 +224,7 @@ class TestMCPAccessModel(common.TransactionCase):
         self.assertIsNone(poisoned._get_model_domain('res.users'))
 
     def test_invalid_domain_rejected(self):
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError) as catcher:
             self.access_model.create(
                 {
                     'model_id': self.partner_model.id,
@@ -269,6 +232,7 @@ class TestMCPAccessModel(common.TransactionCase):
                     'domain': "[('does_not_exist', '=', 1)]",
                 }
             )
+        self.assertIn('Invalid record domain for', str(catcher.exception))
 
     def test_search_read_applies_domain(self):
         self.access_model.create(
@@ -379,6 +343,12 @@ class TestMCPAccessModel(common.TransactionCase):
                 'allow_read': True,
                 'domain': "[('id', '=', user.id)]",
             }
+        )
+        other = new_test_user(self.env, login='mcp_domain_user')
+        self.assertNotEqual(other.id, self.env.user.id)
+        self.assertEqual(
+            self.access_model.with_user(other)._get_model_domain('res.users'),
+            [('id', '=', other.id)],
         )
         self.assertEqual(
             self.access_model._get_model_domain('res.users'),

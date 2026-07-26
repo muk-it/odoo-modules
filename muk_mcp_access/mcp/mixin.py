@@ -3,7 +3,6 @@ from __future__ import annotations
 from odoo import _, api, models
 from odoo.exceptions import AccessError
 from odoo.fields import Domain
-from odoo.http import request
 
 from odoo.addons.muk_mcp.tools.parser import coerce_json_value, normalize_ids
 
@@ -22,12 +21,10 @@ class MCPMixin(models.AbstractModel):
         """Resolve a model after asserting it is reachable for the current tool category.
 
         :raise AccessError: when the model is not exposed via MCP for the
-            request's tool category.
+            tool category carried in the context.
         """
         result = super()._resolve_model(model)
-        category = (
-            getattr(request, '_mcp_tool_category', None) if request else None
-        ) or 'read'
+        category = self.env.context.get('mcp_tool_category') or 'read'
         if not self.env['muk_mcp_access.model']._is_model_allowed(
             model,
             category,
