@@ -2,6 +2,7 @@ import { session } from '@web/session';
 import { patch } from '@web/core/utils/patch';
 import { _t } from '@web/core/l10n/translation';
 import { browser } from '@web/core/browser/browser';
+import { user } from '@web/core/user';
 
 import { ListController } from '@web/views/list/list_controller';
 
@@ -26,7 +27,7 @@ patch(ListController.prototype, {
         }
     },
     getModeStorageKey() {
-        const uid = this.env.services?.user?.userId;
+        const uid = user.userId;
         const actionId = this.env.config.actionId;
         const model = this.props.resModel;
         return `mk_list_mode,${session.db},${uid},${actionId},${model}`;
@@ -34,7 +35,7 @@ patch(ListController.prototype, {
     get display() {
         const res = super.display;
         if (!this.props.readonly && this.activeActions.edit && res.controlPanel) {
-            const initialEditable = this.editable || 'bottom';
+            const initialEditable = this.archInfo.editable || 'bottom';
             const initialMultiEdit = this.archInfo.multiEdit || false;
             const modeEntries = [
                 {
