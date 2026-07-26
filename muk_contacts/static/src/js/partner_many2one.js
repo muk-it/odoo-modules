@@ -37,7 +37,9 @@ patch(Many2XAutocomplete.prototype, {
     buildRecordSuggestion(request, record) {
         const suggestion = super.buildRecordSuggestion(request, record);
         if (this.props.resModel === 'res.partner') {
-            suggestion.label = markup`<i class="fa fa-fw me-1 text-muted ${partnerIcon(record)}"></i>${suggestion.label}`;
+            suggestion.label = markup`<i class="fa fa-fw me-1 text-muted ${partnerIcon(
+                record,
+            )}"></i>${suggestion.label}`;
         }
         return suggestion;
     },
