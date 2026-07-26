@@ -20,6 +20,8 @@ def migrate(cr: Cursor, version: str) -> None:
     for schedule in rows:
         schedule._provision_owned_action()
 
+    env.flush_all()
+
     cr.execute("""
         SELECT s.cron_id, snap.next_call, snap.last_call
         FROM muk_ai_schedule s

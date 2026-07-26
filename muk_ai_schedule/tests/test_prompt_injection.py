@@ -4,45 +4,18 @@ from datetime import timedelta
 
 from odoo import fields, models
 from odoo.exceptions import UserError
-from odoo.tests.common import TransactionCase, tagged
+from odoo.tests.common import tagged
+
+from .common import ScheduleTestCommon
 
 
 @tagged('post_install', '-at_install', 'muk_ai_schedule', 'test_prompt_injection')
-class TestPromptInjection(TransactionCase):
+class TestPromptInjection(ScheduleTestCommon):
     """Covers resume-prompt validation, persistence, and reactivation injection."""
-
-    # ----------------------------------------------------------
-    # Setup
-    # ----------------------------------------------------------
-
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.agent = cls.env['muk_ai.agent'].create(
-            {
-                'name': 'Prompt Injection Agent',
-            }
-        )
-        cls.Session = cls.env['muk_ai.session']
-        cls.Mixin = cls.env['muk_mcp.mixin']
-        cls.Event = cls.env['muk_ai.session.event']
 
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
-
-    def _make_session(self, **vals) -> models.BaseModel:
-        """Create a session from the default values overridden by ``vals``."""
-        defaults = {
-            'name': 'Prompt Test Session',
-            'agent_id': self.agent.id,
-        }
-        defaults.update(vals)
-        return self.Session.create(defaults)
-
-    def _mixin_for(self, session: models.BaseModel) -> models.BaseModel:
-        """Return the MCP mixin bound to ``session`` via context."""
-        return self.Mixin.with_context(muk_mcp_session_id=session.id)
 
     def _user_messages(self, session: models.BaseModel) -> models.BaseModel:
         """Return the ordered user-message events of ``session``."""

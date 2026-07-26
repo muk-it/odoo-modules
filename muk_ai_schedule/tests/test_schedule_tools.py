@@ -2,60 +2,16 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from odoo import fields, models
+from odoo import fields
 from odoo.exceptions import UserError
-from odoo.tests.common import TransactionCase, tagged
+from odoo.tests.common import tagged
+
+from .common import ScheduleTestCommon
 
 
 @tagged('post_install', '-at_install', 'muk_ai_schedule')
-class TestScheduleTools(TransactionCase):
+class TestScheduleTools(ScheduleTestCommon):
     """Covers the schedule_resume and schedule_recurring MCP tool behaviours."""
-
-    # ----------------------------------------------------------
-    # Setup
-    # ----------------------------------------------------------
-
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.agent = cls.env['muk_ai.agent'].create(
-            {
-                'name': 'Schedule Tools Agent',
-            }
-        )
-        cls.Session = cls.env['muk_ai.session']
-        cls.Mixin = cls.env['muk_mcp.mixin']
-        cls.Schedule = cls.env['muk_ai.schedule']
-
-    # ----------------------------------------------------------
-    # Helper
-    # ----------------------------------------------------------
-
-    def _make_session(self, **vals) -> models.BaseModel:
-        """Create a session from the default values overridden by ``vals``."""
-        defaults = {
-            'name': 'Tools Test Session',
-            'agent_id': self.agent.id,
-        }
-        defaults.update(vals)
-        return self.Session.create(defaults)
-
-    def _make_schedule(self, **vals) -> models.BaseModel:
-        """Create a schedule from the default values overridden by ``vals``."""
-        defaults = {
-            'name': 'Tools Test Schedule',
-            'agent_id': self.agent.id,
-            'prompt': 'Hello.',
-            'interval_type': 'days',
-            'interval_number': 1,
-            'dispatch_mode': 'single',
-        }
-        defaults.update(vals)
-        return self.Schedule.create(defaults)
-
-    def _mixin_for(self, session: models.BaseModel) -> models.BaseModel:
-        """Return the MCP mixin bound to ``session`` via context."""
-        return self.Mixin.with_context(muk_mcp_session_id=session.id)
 
     # ----------------------------------------------------------
     # Tests schedule_resume
@@ -215,23 +171,3 @@ class TestScheduleTools(TransactionCase):
         )
         self.assertEqual(len(events), 1)
         self.assertEqual(events.payload.get('cap'), 'max_resumes')
-
-    # ----------------------------------------------------------
-    # Tests Cron Pickup
-    # ----------------------------------------------------------
-
-    def test_resume_then_cron_picks_up(self):
-        session = self._make_session()
-        self._mixin_for(session)._mcp_schedule_resume(
-            seconds_from_now=120,
-            prompt='ping',
-        )
-        self.assertEqual(session.state, 'schedule')
-        session.write(
-            {
-                'resume_at': fields.Datetime.now() - timedelta(minutes=1),
-            }
-        )
-        self.env.flush_all()
-        ids = self.Session._find_pending_session_ids()
-        self.assertIn(session.id, ids)

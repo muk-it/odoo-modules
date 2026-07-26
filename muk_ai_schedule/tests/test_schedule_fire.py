@@ -1,17 +1,14 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
-from contextlib import contextmanager
-from unittest.mock import MagicMock, patch
-
 from odoo import models
-from odoo.tests.common import TransactionCase, tagged
+from odoo.tests.common import tagged
 
+from .common import ScheduleTestCommon
 from odoo.addons.muk_ai_automation.tools.dispatch import _resolve_records
 
 
 @tagged('post_install', '-at_install', 'muk_ai_schedule')
-class TestScheduleFire(TransactionCase):
+class TestScheduleFire(ScheduleTestCommon):
     """Covers single and per-record dispatch, record sources, and fire actions."""
 
     # ----------------------------------------------------------
@@ -19,62 +16,13 @@ class TestScheduleFire(TransactionCase):
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
-        cls.provider = cls.env.ref('muk_ai.provider_openai')
-        cls.provider.sudo().api_key = 'test-key'
-        cls.env.company.default_ai_provider_id = cls.provider
-        cls.partner_model = cls.env['ir.model']._get('res.partner')
-        cls.agent = cls.env['muk_ai.agent'].create(
-            {
-                'name': 'Schedule Dispatch Agent',
-            }
-        )
-        cls.partners = cls.env['res.partner'].create(
-            [{'name': 'Dispatch Partner %d' % i} for i in range(6)]
-        )
+        cls.partners = cls._make_partners(6, prefix='Dispatch Partner')
 
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
-
-    @contextmanager
-    def _mock_provider(self, text: str = 'ok') -> Iterator[MagicMock]:
-        """Patch the provider response request to yield a fixed ``text`` payload."""
-        payload = {
-            'text': text,
-            'tool_calls': [],
-            'carry_inputs': [],
-            'usage': {'input_tokens': 1, 'output_tokens': 1, 'cached_tokens': 0},
-        }
-
-        def fake(self_arg, *args, **kwargs):
-            return payload
-
-        with patch.object(
-            type(self.provider),
-            '_request_responses',
-            autospec=True,
-            side_effect=fake,
-        ) as mock:
-            yield mock
-
-    def _make_schedule(self, **vals) -> models.BaseModel:
-        """Create a schedule from the default values overridden by ``vals``."""
-        defaults = {
-            'name': 'Dispatch Schedule',
-            'agent_id': self.agent.id,
-            'prompt': 'Hello.',
-            'interval_type': 'days',
-            'interval_number': 1,
-            'dispatch_mode': 'single',
-        }
-        defaults.update(vals)
-        return self.env['muk_ai.schedule'].create(defaults)
-
-    def _domain_for(self, partners: models.BaseModel) -> str:
-        """Return a domain string matching the ids of ``partners``."""
-        return "[('id', 'in', %s)]" % str(partners.ids)
 
     def _fire(self, schedule: models.BaseModel) -> models.BaseModel:
         """Fire ``schedule`` and return the sessions newly spawned by it."""

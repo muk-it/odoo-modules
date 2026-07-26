@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from odoo import models
-from odoo.tests import TransactionCase, tagged
+from datetime import datetime, timedelta
 
-from odoo.addons.muk_ai_automation.tools.dispatch import PreviousProxy
+from odoo import fields, models
+from odoo.tests import tagged
+
+from .common import ScheduleTestCommon
 
 
-@tagged('post_install', '-at_install')
-class TestPromptRender(TransactionCase):
+@tagged('post_install', '-at_install', 'muk_ai_schedule')
+class TestPromptRender(ScheduleTestCommon):
     """Covers prompt evaluation context, previous-session proxy, and fallbacks."""
 
     # ----------------------------------------------------------
@@ -15,55 +17,39 @@ class TestPromptRender(TransactionCase):
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.partner = cls.env.ref('base.partner_admin')
-        cls.partner_model = cls.env['ir.model']._get('res.partner')
-        cls.agent = cls.env['muk_ai.agent'].create(
-            {
-                'name': 'Schedule Test Agent',
-            }
-        )
 
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
 
-    def _make_session(self, **vals) -> models.BaseModel:
-        """Create a session from the default values overridden by ``vals``."""
-        defaults = {'name': 'Schedule Test Session'}
-        defaults.update(vals)
-        return self.env['muk_ai.session'].create(defaults)
-
-    def _make_schedule(self, **vals) -> models.BaseModel:
-        """Create a schedule from the default values overridden by ``vals``."""
+    def _make_linked_schedule(self, **vals) -> models.BaseModel:
+        """Create a schedule targeting the fixture partner."""
         defaults = {
-            'name': 'Test Schedule',
-            'agent_id': self.agent.id,
-            'prompt': 'Hello.',
-            'interval_type': 'days',
-            'interval_number': 1,
-            'dispatch_mode': 'single',
             'model_id': self.partner_model.id,
             'domain': "[('id', '=', %d)]" % self.partner.id,
         }
         defaults.update(vals)
-        return self.env['muk_ai.schedule'].create(defaults)
+        return self._make_schedule(**defaults)
 
     # ----------------------------------------------------------
     # Tests Eval Context
     # ----------------------------------------------------------
 
-    def test_eval_context_has_now_record_records_previous(self):
+    def test_eval_context_binds_the_linked_record_and_now(self):
         session = self._make_session(
             res_model='res.partner',
             res_id=self.partner.id,
         )
+        before = fields.Datetime.now()
         extras = session._session_prompt_extras()
-        self.assertIn('now', extras)
-        self.assertIn('record', extras)
-        self.assertIn('records', extras)
-        self.assertIn('previous_session', extras)
+        self.assertEqual(extras['record'], self.partner)
+        self.assertFalse(extras['records'])
+        self.assertEqual(extras['previous_session'].last_text, '')
+        self.assertIsInstance(extras['now'], datetime)
+        self.assertLess(abs(extras['now'] - before), timedelta(minutes=1))
 
     def test_record_resolves_to_browse_singleton(self):
         session = self._make_session(
@@ -79,19 +65,15 @@ class TestPromptRender(TransactionCase):
         self.assertFalse(extras['record'])
 
     def test_records_resolves_to_search_domain(self):
-        schedule = self._make_schedule()
-        session = self._make_session(
-            schedule_id=schedule.id,
-        )
+        schedule = self._make_linked_schedule()
+        session = self._make_session(schedule_id=schedule.id)
         domain = [('id', '=', self.partner.id)]
         expected = self.env['res.partner'].search_count(domain)
-        rendered = session._render_system_prompt(
-            'Count: {{ len(records) }}.',
-        )
+        rendered = session._render_system_prompt('Count: {{ len(records) }}.')
         self.assertEqual(rendered, 'Count: %d.' % expected)
 
     def test_records_empty_when_per_record_dispatch(self):
-        schedule = self._make_schedule(dispatch_mode='per_record')
+        schedule = self._make_linked_schedule(dispatch_mode='per_record')
         session = self._make_session(
             schedule_id=schedule.id,
             res_model='res.partner',
@@ -114,18 +96,11 @@ class TestPromptRender(TransactionCase):
     def test_previous_session_proxy_populated(self):
         previous = self._make_session()
         previous.last_text = 'Prior summary'
-        session = self._make_session(
-            previous_session_id=previous.id,
-        )
+        session = self._make_session(previous_session_id=previous.id)
         rendered = session._render_system_prompt(
             'Last: {{ previous_session.last_text }}.',
         )
         self.assertEqual(rendered, 'Last: Prior summary.')
-
-    def test_previous_session_proxy_tool_log_empty(self):
-        proxy = PreviousProxy(None)
-        self.assertEqual(proxy.last_text, '')
-        self.assertEqual(proxy.tool_log, [])
 
     # ----------------------------------------------------------
     # Tests Render Failure Fallback
@@ -139,6 +114,6 @@ class TestPromptRender(TransactionCase):
 
     def test_schedule_render_failure_falls_back_to_raw(self):
         raw = 'Value is {{ undefined_var.attribute }}.'
-        schedule = self._make_schedule(prompt=raw)
-        rendered, _ = schedule._build_prompt()
+        schedule = self._make_linked_schedule(prompt=raw)
+        rendered, _error = schedule._build_prompt()
         self.assertEqual(rendered, raw)

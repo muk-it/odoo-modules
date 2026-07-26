@@ -1,26 +1,14 @@
 from __future__ import annotations
 
 from odoo import models
-from odoo.tests.common import TransactionCase, tagged
+from odoo.tests.common import tagged
+
+from .common import ScheduleTestCommon
 
 
 @tagged('post_install', '-at_install', 'muk_ai_schedule', 'test_chain')
-class TestSessionChain(TransactionCase):
+class TestSessionChain(ScheduleTestCommon):
     """Covers session-chain traversal and the chain navigation action."""
-
-    # ----------------------------------------------------------
-    # Setup
-    # ----------------------------------------------------------
-
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.agent = cls.env['muk_ai.agent'].create(
-            {
-                'name': 'Chain Test Agent',
-            }
-        )
-        cls.Session = cls.env['muk_ai.session']
 
     # ----------------------------------------------------------
     # Helper
@@ -31,12 +19,9 @@ class TestSessionChain(TransactionCase):
         chain = self.Session.browse([])
         previous = self.Session.browse([])
         for index in range(length):
-            session = self.Session.create(
-                {
-                    'name': f'Chain Link {index}',
-                    'agent_id': self.agent.id,
-                    'previous_session_id': previous.id if previous else False,
-                }
+            session = self._make_session(
+                name=f'Chain Link {index}',
+                previous_session_id=previous.id if previous else False,
             )
             chain |= session
             previous = session
@@ -47,12 +32,7 @@ class TestSessionChain(TransactionCase):
     # ----------------------------------------------------------
 
     def test_singleton_chain_count_one(self):
-        session = self.Session.create(
-            {
-                'name': 'Lonely',
-                'agent_id': self.agent.id,
-            }
-        )
+        session = self._make_session(name='Lonely')
         self.assertEqual(session.chain_session_count, 1)
 
     def test_chain_count_walks_both_directions(self):
@@ -78,26 +58,9 @@ class TestSessionChain(TransactionCase):
         self.assertEqual(set(domain_ids), set(chain.ids))
 
     def test_chain_with_branching_descendants(self):
-        root = self.Session.create(
-            {
-                'name': 'Root',
-                'agent_id': self.agent.id,
-            }
-        )
-        child_a = self.Session.create(
-            {
-                'name': 'A',
-                'agent_id': self.agent.id,
-                'previous_session_id': root.id,
-            }
-        )
-        child_b = self.Session.create(
-            {
-                'name': 'B',
-                'agent_id': self.agent.id,
-                'previous_session_id': root.id,
-            }
-        )
+        root = self._make_session(name='Root')
+        child_a = self._make_session(name='A', previous_session_id=root.id)
+        child_b = self._make_session(name='B', previous_session_id=root.id)
         self.assertEqual(root.chain_session_count, 3)
         self.assertEqual(child_a.chain_session_count, 3)
         self.assertEqual(child_b.chain_session_count, 3)

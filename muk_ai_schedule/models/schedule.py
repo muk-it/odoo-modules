@@ -4,7 +4,7 @@ import contextlib
 from datetime import datetime
 
 from odoo import _, api, fields, models
-from odoo.exceptions import AccessError, ValidationError
+from odoo.exceptions import AccessError
 
 from odoo.addons.muk_ai_schedule.tools.constants import (
     DEFAULT_MAX_COST_EUR,
@@ -316,20 +316,19 @@ class AISchedule(models.Model):
             ),
         }
 
-    def _compute_initial_nextcall(self) -> datetime:
-        """Compute the first cron fire time, falling back to now on error."""
-        self.ensure_one()
-        try:
-            nc = compute_next_call(
-                self.interval_type,
-                self.interval_number,
-                weekday=self.weekday,
-                monthday=self.monthday or None,
-                cron_expression=self.cron_expression,
-            )
-        except ValidationError:
-            nc = False
-        return nc or fields.Datetime.now()
+    def _next_call(self, base: datetime | None = None) -> datetime:
+        """Return the next fire time of this schedule's recurrence.
+
+        :raise ValidationError: when the recurrence definition is invalid
+        """
+        return compute_next_call(
+            self.interval_type,
+            self.interval_number,
+            weekday=self.weekday or None,
+            monthday=self.monthday or None,
+            cron_expression=self.cron_expression,
+            base=base,
+        )
 
     def _build_cron_vals(self, action: models.BaseModel) -> dict:
         """Build the create values for the owned cron tied to ``action``."""
@@ -343,7 +342,7 @@ class AISchedule(models.Model):
             ),
             'interval_number': self.interval_number,
             'user_id': self.user_id.id,
-            'nextcall': self._compute_initial_nextcall(),
+            'nextcall': self._next_call(),
         }
 
     def _provision_owned_action(self) -> None:
@@ -374,25 +373,11 @@ class AISchedule(models.Model):
                 'user_id': self.user_id.id,
             }
         )
-        self._recompute_next_call_on_cron()
 
     def _recompute_next_call_on_cron(self, base: datetime | None = None) -> None:
         """Recompute and write the owned cron's next fire time."""
-        self.ensure_one()
-        if not self.cron_id:
-            return
-        try:
-            nc = compute_next_call(
-                self.interval_type,
-                self.interval_number,
-                weekday=self.weekday,
-                monthday=self.monthday or None,
-                cron_expression=self.cron_expression,
-                base=base,
-            )
-        except ValidationError:
-            nc = False
-        self.cron_id.sudo().write({'nextcall': nc or fields.Datetime.now()})
+        if self.cron_id:
+            self.cron_id.sudo().write({'nextcall': self._next_call(base)})
 
     def _assert_record_code_access(self, vals: dict) -> None:
         """Restrict safe-eval record code authoring to administrators.
@@ -472,6 +457,24 @@ class AISchedule(models.Model):
             record.session_count = counts.get(record.id, 0)
 
     # ----------------------------------------------------------
+    # Constraints
+    # ----------------------------------------------------------
+
+    @api.constrains(*RECURRENCE_KEYS)
+    def _check_recurrence(self) -> None:
+        """Reject a recurrence definition that yields no future occurrence.
+
+        The owned cron is provisioned from ``_next_call``; an undefined
+        cadence would otherwise be stored as a ``nextcall`` in the past and
+        fire the agent on every carrier tick.
+
+        :raise ValidationError: when the cadence fields are incomplete or
+            unparseable
+        """
+        for record in self:
+            record._next_call()
+
+    # ----------------------------------------------------------
     # ORM
     # ----------------------------------------------------------
 
@@ -507,8 +510,11 @@ class AISchedule(models.Model):
             'model_id',
         } | self.RECURRENCE_KEYS
         if sync_keys & set(vals):
+            recompute = bool(self.RECURRENCE_KEYS & set(vals))
             for record in self:
                 record._sync_to_owned()
+                if recompute:
+                    record._recompute_next_call_on_cron()
         return result
 
     def unlink(self) -> bool:
