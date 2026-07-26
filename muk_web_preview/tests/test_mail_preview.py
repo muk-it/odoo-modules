@@ -4,9 +4,12 @@ import email.mime.image
 import email.mime.multipart
 import email.mime.text
 
+from requests import Response
+
 import odoo.tests
 from odoo import models
 from odoo.tests.common import new_test_user, tagged
+from odoo.tools import mute_logger
 
 
 @tagged('post_install', '-at_install')
@@ -36,6 +39,11 @@ class TestMailPreview(odoo.tests.HttpCase):
         cls.eml_cid = cls._create_cid_eml()
         cls.eml_attachment = cls._create_attachment_eml()
         cls.eml_bad_charset = cls._create_bad_charset_eml()
+        cls.eml_unnamed_attachment = cls._create_unnamed_attachment_eml()
+        cls.eml_unknown_cid = cls._create_unknown_cid_eml()
+        cls.eml_script_body = cls._create_script_body_eml()
+        cls.eml_headerless = cls._create_headerless_eml()
+        cls.eml_empty = cls._store_eml('empty_email.eml', b'')
         cls.env['ir.model.data'].create(
             {
                 'name': 'test_mail_preview_html_eml',
@@ -48,6 +56,62 @@ class TestMailPreview(odoo.tests.HttpCase):
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
+
+    @classmethod
+    def _store_eml(cls, name: str, raw: bytes) -> models.BaseModel:
+        """Store raw email bytes as a public attachment."""
+        return cls.env['ir.attachment'].create(
+            {
+                'name': name,
+                'raw': raw,
+                'mimetype': 'message/rfc822',
+                'public': True,
+            }
+        )
+
+    @classmethod
+    def _create_unnamed_attachment_eml(cls) -> models.BaseModel:
+        """Create an email whose attached part carries no filename."""
+        msg = email.mime.multipart.MIMEMultipart('mixed')
+        msg['Subject'] = 'Unnamed Attachment'
+        msg['From'] = 'unnamed@example.com'
+        msg.attach(
+            email.mime.text.MIMEText('<html><body><p>Body</p></body></html>', 'html')
+        )
+        part = email.mime.text.MIMEText('payload', 'plain')
+        part.add_header('Content-Disposition', 'attachment')
+        msg.attach(part)
+        return cls._store_eml('unnamed_attachment.eml', msg.as_bytes())
+
+    @classmethod
+    def _create_unknown_cid_eml(cls) -> models.BaseModel:
+        """Create an email referencing an inline image that is not attached."""
+        msg = email.mime.multipart.MIMEMultipart('related')
+        msg['Subject'] = 'Unknown CID'
+        msg['From'] = 'unknown@example.com'
+        msg.attach(
+            email.mime.text.MIMEText(
+                '<html><body><img src="cid:missing123"/></body></html>',
+                'html',
+            )
+        )
+        return cls._store_eml('unknown_cid.eml', msg.as_bytes())
+
+    @classmethod
+    def _create_script_body_eml(cls) -> models.BaseModel:
+        """Create an email whose HTML body carries a script tag."""
+        msg = email.mime.text.MIMEText(
+            '<html><body><script>alert(1)</script><p>Safe Text</p></body></html>',
+            'html',
+        )
+        msg['Subject'] = 'Script Body'
+        msg['From'] = 'script@example.com'
+        return cls._store_eml('script_body.eml', msg.as_bytes())
+
+    @classmethod
+    def _create_headerless_eml(cls) -> models.BaseModel:
+        """Create an email carrying no renderable headers."""
+        return cls._store_eml('headerless.eml', b'\r\nBody without headers\r\n')
 
     @classmethod
     def _create_html_eml(cls) -> models.BaseModel:
@@ -177,7 +241,7 @@ class TestMailPreview(odoo.tests.HttpCase):
     # Tests
     # ----------------------------------------------------------
 
-    def _preview(self, attachment: models.BaseModel):
+    def _preview(self, attachment: models.BaseModel) -> Response:
         """Authenticate and request the mail preview for an attachment."""
         self.authenticate(self.test_user.login, 'preview_test_user')
         return self.url_open(
@@ -195,12 +259,12 @@ class TestMailPreview(odoo.tests.HttpCase):
         self.assertIn('recipient@example.com', response.text)
         self.assertIn('cc@example.com', response.text)
         self.assertIn('Test HTML Email', response.text)
-        self.assertIn('muk_mail_header', response.text)
+        self.assertIn('class="muk_mail_header"', response.text)
 
     def test_html_structure(self):
         response = self._preview(self.eml_html)
         self.assertIn('<!DOCTYPE html>', response.text)
-        self.assertIn('muk_mail_body', response.text)
+        self.assertIn('class="muk_mail_body"', response.text)
 
     def test_plain_text_body(self):
         response = self._preview(self.eml_plain)
@@ -228,7 +292,7 @@ class TestMailPreview(odoo.tests.HttpCase):
         response = self._preview(self.eml_attachment)
         self.assertEqual(response.status_code, 200)
         self.assertIn('data.csv', response.text)
-        self.assertIn('muk_mail_attachments', response.text)
+        self.assertIn('class="muk_mail_attachments"', response.text)
         self.assertIn('Attachments:', response.text)
 
     def test_file_attachment_body(self):
@@ -238,7 +302,7 @@ class TestMailPreview(odoo.tests.HttpCase):
     def test_bad_charset_body_does_not_crash(self):
         response = self._preview(self.eml_bad_charset)
         self.assertEqual(response.status_code, 200)
-        self.assertIn('muk_mail_body', response.text)
+        self.assertIn('class="muk_mail_body"', response.text)
         self.assertIn('hello bad charset', response.text)
 
     def test_xmlid_route(self):
@@ -248,7 +312,7 @@ class TestMailPreview(odoo.tests.HttpCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn('Hello World', response.text)
-        self.assertIn('muk_mail_body', response.text)
+        self.assertIn('class="muk_mail_body"', response.text)
 
     def test_unauthenticated(self):
         response = self.url_open(
@@ -256,3 +320,48 @@ class TestMailPreview(odoo.tests.HttpCase):
             allow_redirects=False,
         )
         self.assertIn(response.status_code, (303, 403))
+
+    def test_attachment_without_filename_is_listed_generically(self):
+        response = self._preview(self.eml_unnamed_attachment)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('class="muk_mail_attachments"', response.text)
+        self.assertIn('<li>attachment (1 KB)</li>', response.text)
+
+    def test_an_unresolvable_cid_is_left_untouched(self):
+        response = self._preview(self.eml_unknown_cid)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('cid:missing123', response.text)
+        self.assertNotIn('data:image/png;base64,', response.text)
+
+    def test_the_html_body_is_sanitized(self):
+        response = self._preview(self.eml_script_body)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('<script>', response.text)
+        self.assertNotIn('alert(1)', response.text)
+        self.assertIn('Safe Text', response.text)
+
+    def test_a_message_without_headers_renders_no_header_block(self):
+        response = self._preview(self.eml_headerless)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('class="muk_mail_header"', response.text)
+        self.assertIn('Body without headers', response.text)
+
+    def test_an_empty_payload_still_renders_the_shell(self):
+        response = self._preview(self.eml_empty)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('class="muk_mail_body"', response.text)
+        self.assertNotIn('class="muk_mail_attachments"', response.text)
+
+    def test_the_inline_image_is_not_listed_as_an_attachment(self):
+        response = self._preview(self.eml_cid)
+        self.assertNotIn('class="muk_mail_attachments"', response.text)
+
+    @mute_logger('odoo.http')
+    def test_a_missing_attachment_is_reported_as_not_found(self):
+        self.authenticate(self.test_user.login, 'preview_test_user')
+        missing_id = self.env['ir.attachment'].search([], order='id desc', limit=1).id
+        response = self.url_open(
+            f'/muk_web_preview/preview/mail/{missing_id + 1000}',
+            allow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 404)

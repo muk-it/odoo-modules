@@ -8,7 +8,7 @@
         text-based mimetypes to the viewer so they can be previewed
         directly without downloading.
     """,
-    'version': '19.0.1.0.7',
+    'version': '19.0.1.0.9',
     'category': 'Tools/Utils',
     'license': 'LGPL-3',
     'author': 'MuK IT',
