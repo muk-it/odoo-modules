@@ -55,6 +55,7 @@ class TestProductCodeUniqueness(TransactionCase):
         message = self._duplicate_error_message('barcode', 'UNIQ-BARCODE-1')
         self.assertEqual(message, 'Another entry with the same barcode already exists.')
 
+    @mute_logger('odoo.sql_db')
     def test_importing_a_duplicate_code_reports_a_usable_row_error(self):
         result = self.Product.load(
             ['name', 'default_code'],
