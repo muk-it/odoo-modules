@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import odoo.tests
 from odoo.tests.common import new_test_user, tagged
 
@@ -11,7 +13,7 @@ class TestHoot(odoo.tests.HttpCase):
     # ----------------------------------------------------------
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.hoot_user = new_test_user(
             cls.env,
