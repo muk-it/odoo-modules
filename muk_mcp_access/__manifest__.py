@@ -10,7 +10,7 @@
         first model is added only whitelisted models are exposed — the AI
         agent cannot discover or query anything else.
     """,
-    'version': '19.0.1.1.9',
+    'version': '19.0.1.1.10',
     'category': 'Tools/API',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -33,6 +33,9 @@
     'assets': {
         'web.assets_backend': [
             'muk_mcp_access/static/src/views/**/*',
+        ],
+        'web.assets_unit_tests': [
+            'muk_mcp_access/static/tests/**/*',
         ],
     },
     'images': [

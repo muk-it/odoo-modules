@@ -4,3 +4,4 @@ from . import test_enforcement
 from . import test_list_models
 from . import test_multi_company
 from . import test_wizard
+from . import test_js
