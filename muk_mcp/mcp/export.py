@@ -15,7 +15,8 @@ from odoo.addons.muk_mcp.tools.descriptions import (
     model_field,
 )
 from odoo.addons.muk_mcp.tools.parser import coerce_json_value, normalize_ids
-from odoo.addons.web.controllers.export import CSVExport, ExcelExport
+from odoo.addons.muk_mcp.tools.xlsx import XlsxExport
+from odoo.addons.web.controllers.export import CSVExport
 
 
 class MCPMixin(models.AbstractModel):
@@ -54,9 +55,9 @@ class MCPMixin(models.AbstractModel):
         )
 
     @api.model
-    def _build_exporter(self, format: str) -> ExcelExport | CSVExport:
+    def _build_exporter(self, format: str) -> XlsxExport | CSVExport:
         """Return the export handler for the requested format (xlsx or csv)."""
-        return ExcelExport() if format == 'xlsx' else CSVExport()
+        return XlsxExport() if format == 'xlsx' else CSVExport()
 
     # ----------------------------------------------------------
     # Functions
