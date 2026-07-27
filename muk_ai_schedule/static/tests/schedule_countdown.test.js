@@ -1,6 +1,5 @@
-import { advanceTime, describe, expect, test } from '@odoo/hoot';
+import { advanceTime, describe, expect, freezeTime, mockDate, test } from '@odoo/hoot';
 import { animationFrame, queryAllTexts, queryText } from '@odoo/hoot-dom';
-import { mockDate } from '@odoo/hoot-mock';
 import {
     defineModels,
     fields,
@@ -50,12 +49,27 @@ function mockBus() {
 }
 
 /**
+ * Stop the clock dead at the fixture time.
+ *
+ * `mockDate` alone only pins the origin: hoot keeps adding the elapsed real
+ * time on every read, so a target set an exact number of minutes away is
+ * already a millisecond short when the widget floors it, and `2h 20m` renders
+ * as `2h 19m`. Freezing makes the remaining distance exact.
+ *
+ * Only call this once the component is mounted -- a frozen clock turns
+ * `setTimeout`, `setInterval` and `requestAnimationFrame` into no-ops, so a
+ * mount awaiting an animation frame would never resolve.
+ */
+function freezeClock() {
+    mockDate(NOW, 0);
+    freezeTime();
+}
+
+/**
  * Pin the clock at the fixture time and render the widget for one record.
  *
- * The zone is pinned along with the date: `mockDate` leaves the time zone
- * untouched when none is given, so the countdown would otherwise be measured
- * against whatever zone the runner happens to carry. Every expectation below
- * is plain UTC arithmetic against the fixture targets.
+ * The zone is pinned along with the date so that the absolute datetime the
+ * widget renders does not depend on the zone the runner happens to carry.
  * @param {number} resId the session record to open
  * @returns {Promise<object>} the mounted form view
  */
@@ -131,25 +145,25 @@ test('the rendered countdown flips to the due label once the target passes', asy
 
 test('countdownText renders seconds under a minute', async () => {
     const { field } = await mountBareField('muk_ai.session', '2026-03-01T12:00:30');
-    mockDate(NOW);
+    freezeClock();
     expect(field.countdownText).toBe('30s');
 });
 
 test('countdownText renders minutes and seconds under an hour', async () => {
     const { field } = await mountBareField('muk_ai.session', '2026-03-01T12:05:30');
-    mockDate(NOW);
+    freezeClock();
     expect(field.countdownText).toBe('5m 30s');
 });
 
 test('countdownText renders hours and minutes under a day', async () => {
     const { field } = await mountBareField('muk_ai.session', '2026-03-01T14:20:00');
-    mockDate(NOW);
+    freezeClock();
     expect(field.countdownText).toBe('2h 20m');
 });
 
 test('countdownText renders days and hours beyond a day', async () => {
     const { field } = await mountBareField('muk_ai.session', '2026-03-04T15:00:00');
-    mockDate(NOW);
+    freezeClock();
     expect(field.countdownText).toBe('3d 3h');
 });
 
@@ -161,7 +175,7 @@ test('countdownText is empty for an empty target', async () => {
 
 test('countdownText is empty for an elapsed target', async () => {
     const { field } = await mountBareField('muk_ai.session', '2026-03-01T11:00:00');
-    mockDate(NOW);
+    freezeClock();
     expect(field.isPast).toBe(true);
     expect(field.countdownText).toBe('');
 });
