@@ -211,6 +211,56 @@ class TestMcpDecoratorTool(common.TransactionCase):
         )
         self.assertEqual(json.loads(text), {'pong': 'pong'})
 
+    def test_decorator_stamps_meta_and_visibility(self):
+        @core_tool.mcp_tool(
+            name='meta_probe',
+            meta={'execute': 'client', 'client': 'webclient'},
+            visibility=['chat'],
+        )
+        def handler(self, **kw):
+            return None
+
+        self.assertEqual(handler.__mcp_tool__['meta'], {
+            'execute': 'client',
+            'client': 'webclient',
+            'ui': {'visibility': ['chat']},
+        })
+
+    def test_meta_flows_from_registry_to_get_tools(self):
+        @core_tool.mcp_tool(
+            name='mcp_meta_probe',
+            description='Client-executed probe.',
+            category='read',
+            meta={'execute': 'client', 'client': 'webclient'},
+        )
+        def _mcp_meta_probe(self):
+            return {'ok': True}
+
+        mixin_cls = type(self.env['muk_mcp.mixin'])
+        self.startPatcher(patch.object(
+            mixin_cls, '_mcp_meta_probe', _mcp_meta_probe, create=True,
+        ))
+        core_tool.invalidate_registry_cache(self.env)
+        self.addCleanup(core_tool.invalidate_registry_cache, self.env)
+        index = core_tool.get_tool_index(self.env)
+        self.assertEqual(index['mcp_meta_probe']['meta'], {
+            'execute': 'client', 'client': 'webclient',
+        })
+        entry = next(
+            t for t in self.tool_model.get_tools()
+            if t['name'] == 'mcp_meta_probe'
+        )
+        self.assertEqual(entry['_meta'], {
+            'execute': 'client', 'client': 'webclient',
+        })
+
+    def test_get_tools_omits_meta_key_when_tool_declares_none(self):
+        entry = next(
+            t for t in self.tool_model.get_tools()
+            if t['name'] == 'mcp_test_echo'
+        )
+        self.assertNotIn('_meta', entry)
+
     def test_recordset_result_serialized_via_record_encoder(self):
         partner = self.env['res.partner'].create({'name': 'MCP Encoder Test'})
         self.addCleanup(partner.unlink)
