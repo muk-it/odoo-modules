@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import re
 
+from odoo.addons.muk_mcp.tools.content import normalize_mimetype
+
 # ----------------------------------------------------------
 # Size Limits
 # ----------------------------------------------------------
@@ -49,6 +51,29 @@ INLINE_IMAGE_RE = re.compile(
 )
 ATTACHMENT_REF_RE = re.compile(r'^@attachment:(\d+)$')
 URL_REF_RE = re.compile(r'^@url:(https://\S+)$')
+
+
+def tool_file_payload(result) -> dict | None:
+    """Return the file payload a tool result carries, or ``None``.
+
+    File-producing tools (``export_records``, ``print_report``) answer with
+    ``content_base64`` plus its filename and mimetype, the shape MCP clients
+    consume. The chat client cannot, so the payload is stored instead.
+
+    The mimetype is normalized because tools report a transport content type
+    (``text/csv;charset=utf8``); stored verbatim it would fail the ingest
+    allow-list and make the file unreadable to the model afterwards.
+    """
+    if not isinstance(result, dict):
+        return None
+    if not (data := result.get('content_base64')) or not isinstance(data, str):
+        return None
+    return {
+        'filename': str(result.get('filename') or 'download'),
+        'mimetype': normalize_mimetype(result.get('mimetype'))
+        or 'application/octet-stream',
+        'data_b64': data,
+    }
 
 
 def is_unmaterialized_attachment(block) -> bool:

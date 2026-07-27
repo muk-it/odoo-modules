@@ -1957,7 +1957,8 @@
         &:hover {
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
             transform: translateY(-1px);
-            .mk_att_card_remove {
+            .mk_att_card_remove,
+            .mk_att_card_download {
                 opacity: 1;
             }
         }
@@ -2006,6 +2007,32 @@
         .mk_att_card_meta {
             font-size: 0.62rem;
             line-height: 1.2;
+        }
+        .mk_att_card_remove ~ .mk_att_card_download {
+            right: 30px;
+        }
+        .mk_att_card_download {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 22px;
+            height: 22px;
+            padding: 0;
+            border: 0;
+            background: rgba(0, 0, 0, 0.55);
+            color: #fff;
+            font-size: 0.7rem;
+            opacity: 0;
+            transition:
+                opacity 0.1s ease,
+                background 0.1s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            &:hover {
+                background: var(--mk-primary, #714b67);
+                color: #fff;
+            }
         }
         .mk_att_card_remove {
             position: absolute;

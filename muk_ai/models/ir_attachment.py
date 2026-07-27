@@ -79,18 +79,21 @@ class IrAttachment(models.Model):
             )
 
     @api.model
-    def _ai_create_from_upload(
+    def _ai_store_binary(
         self,
         filename: str,
         mimetype: str,
         data_b64: str,
         res_id: int | None = None,
     ) -> IrAttachment:
-        """Create a session attachment from an uploaded base64 payload.
+        """Create a session attachment from a base64 payload, checking only its size.
+
+        The mimetype allow-list guards what the *model* may ingest, which is a
+        narrower question than what may be stored: an XLSX export has no
+        ingest strategy, yet the user must still be able to download it.
 
         :raise UserError: when the payload is not valid base64
         """
-        self._ai_check_mimetype(mimetype)
         try:
             raw = base64.b64decode(data_b64 or '', validate=True)
         except ValueError as error:
@@ -107,6 +110,21 @@ class IrAttachment(models.Model):
                 'res_id': res_id or 0,
             }
         )
+
+    @api.model
+    def _ai_create_from_upload(
+        self,
+        filename: str,
+        mimetype: str,
+        data_b64: str,
+        res_id: int | None = None,
+    ) -> IrAttachment:
+        """Create a session attachment from an uploaded base64 payload.
+
+        :raise UserError: when the mimetype is not one the model can ingest
+        """
+        self._ai_check_mimetype(mimetype)
+        return self._ai_store_binary(filename, mimetype, data_b64, res_id=res_id)
 
     def _ai_validate(self) -> None:
         """Check read access, mimetype, and size on each record."""
