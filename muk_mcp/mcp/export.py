@@ -5,7 +5,8 @@ from odoo.exceptions import UserError
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
 from odoo.addons.muk_mcp.tools.common import coerce_json_value
-from odoo.addons.web.controllers.export import CSVExport, ExcelExport
+from odoo.addons.muk_mcp.tools.xlsx import XlsxExport
+from odoo.addons.web.controllers.export import CSVExport
 
 
 class MCPMixin(models.AbstractModel):
@@ -35,7 +36,7 @@ class MCPMixin(models.AbstractModel):
 
     @api.model
     def _build_exporter(self, format):
-        return ExcelExport() if format == 'xlsx' else CSVExport()
+        return XlsxExport() if format == 'xlsx' else CSVExport()
 
     # ----------------------------------------------------------
     # Functions
@@ -118,9 +119,8 @@ class MCPMixin(models.AbstractModel):
         )
         exporter = self._build_exporter(format)
         rows = records.export_data(list(fields)).get('datas') or []
-        # 17's web.export.CSVExport/ExcelExport.from_data only takes
-        # ``(fields, rows)``. 18+ added a leading ``descriptors`` argument
-        # for header metadata.
+        # ≤17's export handlers take ``(fields, rows)``; 18+ added a
+        # leading ``descriptors`` argument for header metadata.
         content = exporter.from_data(list(fields), rows)
         if isinstance(content, str):
             content = content.encode('utf-8-sig')

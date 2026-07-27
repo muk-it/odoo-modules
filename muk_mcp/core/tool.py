@@ -98,12 +98,22 @@ def mcp_tool(
 
 
 def get_tool_index(env, registry=None):
+    # The index is cached on the registry, so it must be rebuilt whenever
+    # more modules have loaded: an index built while only muk_mcp was
+    # initialised holds none of the tools its dependents contribute.
+    cache_key = len(getattr(env.registry, '_init_modules', None) or ())
     method_index = getattr(
         env.registry, '_muk_mcp_method_cache', None
     )
-    if method_index is None:
+    cached_key = getattr(env.registry, '_muk_mcp_method_cache_key', None)
+    stale = (
+        method_index is None
+        or (cached_key is not None and cached_key != cache_key)
+    )
+    if stale:
         method_index = _build_method_index(env)
         env.registry._muk_mcp_method_cache = method_index
+        env.registry._muk_mcp_method_cache_key = cache_key
     db_index = _fetch_db_index(env)
     combined = (
         {**method_index, **db_index}
@@ -129,3 +139,5 @@ def get_tool_index(env, registry=None):
 def invalidate_registry_cache(env):
     if hasattr(env.registry, '_muk_mcp_method_cache'):
         del env.registry._muk_mcp_method_cache
+    if hasattr(env.registry, '_muk_mcp_method_cache_key'):
+        del env.registry._muk_mcp_method_cache_key
