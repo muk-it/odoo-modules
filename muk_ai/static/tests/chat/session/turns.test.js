@@ -194,3 +194,47 @@ test('unknown kinds are ignored without breaking the rest', () => {
         { role: 'assistant', blocks: [{ type: 'text', text: 'a' }], regenerateAt: 0 },
     ]);
 });
+
+test('a file a tool produced is attached to the assistant turn', () => {
+    const turns = buildRenderedTurns([
+        { kind: 'text', content: 'here you go' },
+        {
+            kind: 'tool_result',
+            name: 'print_report',
+            call_id: 'c1',
+            result: '{"filename": "quote.pdf", "mimetype": "application/pdf", "attachment_id": 12}',
+        },
+    ]);
+    expect(turns).toHaveLength(1);
+    expect(turns[0].attachments).toEqual([
+        { id: 12, filename: 'quote.pdf', mimetype: 'application/pdf' },
+    ]);
+});
+
+test('the same produced file is attached to the turn only once', () => {
+    const payload = '{"filename": "a.csv", "mimetype": "text/csv", "attachment_id": 4}';
+    const turns = buildRenderedTurns([
+        { kind: 'text', content: 'x' },
+        { kind: 'tool_result', name: 'export_records', call_id: 'c1', result: payload },
+        {
+            kind: 'tool_result',
+            name: 'tool_load',
+            call_id: 'c2',
+            result: { call: { output: payload } },
+        },
+    ]);
+    expect(turns[0].attachments).toHaveLength(1);
+});
+
+test('a tool result without a file leaves the turn unattached', () => {
+    const turns = buildRenderedTurns([
+        { kind: 'text', content: 'x' },
+        {
+            kind: 'tool_result',
+            name: 'search_read',
+            call_id: 'c1',
+            result: '{"records": []}',
+        },
+    ]);
+    expect(turns[0].attachments).toBe(undefined);
+});

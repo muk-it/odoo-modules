@@ -67,6 +67,11 @@ class TestToolFile(AITestCommon):
         attachment = self.env['ir.attachment'].browse(stored['attachment_id'])
         self.assertEqual(attachment.mimetype, 'text/csv')
 
+    def test_the_result_reports_the_stored_mimetype_not_the_transport_one(self):
+        session = self._new_session()
+        stored = session._persist_tool_file(_export_result())
+        self.assertEqual(stored['mimetype'], 'text/csv')
+
     def test_the_stored_export_can_be_attached_to_a_later_message(self):
         session = self._new_session()
         stored = session._persist_tool_file(_export_result())

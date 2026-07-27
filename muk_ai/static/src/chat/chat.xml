@@ -495,6 +495,14 @@
                         </t>
                     </t>
                 </t>
+                <div
+                    class="mk_bubble_attachments d-flex flex-wrap gap-2 mt-2"
+                    t-if="turn.attachments and turn.attachments.length"
+                >
+                    <t t-foreach="turn.attachments" t-as="attachment" t-key="attachment.id">
+                        <AttachmentCard attachment="attachment" onOpen.bind="onOpenAttachment"/>
+                    </t>
+                </div>
                 <t t-if="turn.sources and turn.sources.length and !hideSources">
                     <div class="mk_turn_sources">
                         <button

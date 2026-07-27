@@ -55,6 +55,7 @@ from odoo.addons.muk_ai.tools import (
     clean_view_context_payload,
     extract_sources,
     fetch_url,
+    format_tool_signature,
     is_unmaterialized_attachment,
     sanitize_json_schema,
     summarize_tool_description,
@@ -430,7 +431,10 @@ class AISession(models.Model):
     def _build_available_tools_block(self) -> str:
         """Build the prompt block summarizing the deferred tools."""
         catalog = {
-            entry['name']: summarize_tool_description(entry.get('description'))
+            entry['name']: (
+                format_tool_signature(entry['name'], entry.get('inputSchema')),
+                summarize_tool_description(entry.get('description')),
+            )
             for entry in self._get_filtered_catalog()
             if entry.get('name')
         }
@@ -457,14 +461,16 @@ class AISession(models.Model):
                     'two separate rounds when one will do.'
                 ),
                 (
-                    'Each line below is `name: summary`. The summary is '
-                    'abbreviated — tool_load returns the full description and '
-                    'input schema.'
+                    'Each line below is `name(arguments): summary`, where `*` '
+                    'marks a required argument. Pass ONLY the arguments listed '
+                    'for that tool — anything else is rejected. The summary is '
+                    'abbreviated; tool_load returns the full schema.'
                 ),
                 *self._available_tools_extra_paragraphs(),
                 *(
-                    f'{name}: {summary}' if (summary := catalog[name]) else name
+                    f'{signature}: {summary}' if summary else signature
                     for name in deferred
+                    for signature, summary in (catalog[name],)
                 ),
                 '</available_tools>',
             ]
@@ -482,8 +488,9 @@ class AISession(models.Model):
             'To give the user a file, call the tool that produces it (see '
             '<available_tools> for the exporting and reporting tools). Such a '
             'tool returns a `url`; link that URL directly, e.g. '
-            '[Download](/web/content/42?download=1). That link is the only way '
-            'the user reaches the file, so never omit it.\n'
+            '[Download](/web/content/42?download=1). Always include that link: '
+            'it is how the user opens the file, and the file also appears in '
+            'the Attachments panel of the chat.\n'
             'To read a stored file back yourself, pass its `attachment_id` to '
             'read_resource as `odoo://attachment/<id>`.\n'
             '</files>'
@@ -2016,7 +2023,9 @@ class AISession(models.Model):
         ``/web/content`` URL the chat renderer accepts.
 
         The registry JSON-encodes a tool's dict result, so the payload usually
-        arrives as text and is decoded before the swap.
+        arrives as text and is decoded before the swap. The reported mimetype
+        is the stored one, not the transport content type the tool sent, so
+        the chat resolves the same preview the attachment itself would.
         """
         if isinstance(result, str):
             if 'content_base64' not in result:
@@ -2045,6 +2054,7 @@ class AISession(models.Model):
             return {**rest, 'error': str(error)}
         return {
             **rest,
+            'mimetype': attachment.mimetype,
             'attachment_id': attachment.id,
             'url': f'/web/content/{attachment.id}?download=1',
         }

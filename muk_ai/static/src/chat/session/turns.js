@@ -1,6 +1,8 @@
 import { _t } from '@web/core/l10n/translation';
 import { registry } from '@web/core/registry';
 
+import { toolResultFiles } from '@muk_ai/core/attachment/tool_files';
+
 export const toolBlockDecorators = registry.category('muk_ai.tool_block_decorators');
 
 function withAt(obj, at) {
@@ -28,6 +30,25 @@ function addTurnSources(turn, sources) {
         if (source && source.id && !seen.has(source.id)) {
             seen.add(source.id);
             list.push(source);
+        }
+    }
+}
+
+/**
+ * Append the files a tool produced to an assistant turn, without duplicates.
+ * @param {object} turn assistant turn being built
+ * @param {Array} files attachment descriptors
+ */
+function addTurnAttachments(turn, files) {
+    if (!files.length) {
+        return;
+    }
+    const list = turn.attachments || (turn.attachments = []);
+    const seen = turn._attachmentIds || (turn._attachmentIds = new Set());
+    for (const file of files) {
+        if (!seen.has(file.id)) {
+            seen.add(file.id);
+            list.push(file);
         }
     }
 }
@@ -125,6 +146,9 @@ export function buildRenderedTurns(log) {
             }
             if (current && Array.isArray(entry.sources) && entry.sources.length) {
                 addTurnSources(current, entry.sources);
+            }
+            if (current) {
+                addTurnAttachments(current, toolResultFiles(entry.result));
             }
         } else if (entry.kind === 'text') {
             if (!current) {

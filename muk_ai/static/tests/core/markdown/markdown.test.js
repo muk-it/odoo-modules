@@ -211,3 +211,30 @@ test('clicking outside mk_code_copy does not trigger clipboard', async () => {
         });
     }
 });
+
+test('a bare download url a tool returned becomes a clickable link', () => {
+    const out = renderMarkdown('Download: /web/content/45604?download=1');
+    expect(
+        out.includes(
+            '<a href="/web/content/45604?download=1" class="mk_file_link" ' +
+                'target="_blank" rel="noopener noreferrer">/web/content/45604?download=1</a>',
+        ),
+    ).toBe(true);
+});
+
+test('a download url already inside a markdown link is not linked twice', () => {
+    const out = renderMarkdown('[Download](/web/content/42?download=1)');
+    expect(hrefsOf(out)).toEqual(['/web/content/42?download=1']);
+    expect(out.includes('mk_file_link')).toBe(false);
+});
+
+test('a download url inside code stays verbatim', () => {
+    const out = renderMarkdown('`/web/content/42?download=1`');
+    expect(out.includes('mk_file_link')).toBe(false);
+});
+
+test('text after a download url is preserved', () => {
+    const out = renderMarkdown('Get /web/content/7 now');
+    expect(out.includes('mk_file_link')).toBe(true);
+    expect(out.includes(' now')).toBe(true);
+});

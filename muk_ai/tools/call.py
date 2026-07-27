@@ -197,6 +197,24 @@ def summarize_tool_description(description) -> str:
     return text
 
 
+def format_tool_signature(name: str, schema) -> str:
+    """Return ``name(arg, required_arg*)`` for a tool's input schema.
+
+    The deferred-tool list is the only thing a model sees before composing a
+    one-round-trip ``tool_load`` call, so it has to carry the argument names:
+    without them the arguments of that first call are guesswork. A schema
+    stored on a ``muk_mcp.tool`` record is user-authored and validated as JSON
+    only, so its shape is checked here as ``sanitize_json_schema`` does.
+    """
+    properties = schema.get('properties') if isinstance(schema, dict) else None
+    if not isinstance(properties, dict) or not properties:
+        return name
+    required = schema.get('required')
+    required = set(required) if isinstance(required, list) else set()
+    args = ', '.join(f'{arg}*' if arg in required else arg for arg in properties)
+    return f'{name}({args})'
+
+
 def build_tool_call_output(call_id: str, output) -> dict:
     """Build a ``function_call_output`` item, serializing non-string output as JSON."""
     serialized = output if isinstance(output, str) else json.dumps(output, default=str)

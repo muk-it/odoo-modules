@@ -6,6 +6,7 @@ from unittest.mock import patch
 from odoo.addons.muk_ai.tests.common import AITestCommon, ToolCatalogMixin
 from odoo.addons.muk_ai.tools.call import (
     TOOL_SUMMARY_MAX_CHARS,
+    format_tool_signature,
     summarize_tool_description,
 )
 
@@ -86,11 +87,45 @@ class TestToolLazy(ToolCatalogMixin, AITestCommon):
         self.assertLessEqual(len(summary), TOOL_SUMMARY_MAX_CHARS)
         self.assertTrue(summary.endswith('…'))
 
-    def test_deferred_tools_are_listed_with_their_summary(self):
+    def test_deferred_tools_are_listed_with_signature_and_summary(self):
         with self._patch_catalog():
             block = self.session._build_available_tools_block()
-        self.assertIn('rare_tool: Rarely used', block)
+        self.assertIn('rare_tool(x): Rarely used', block)
         self.assertIn('another_rare: Also rare', block)
+
+    def test_a_signature_stars_the_required_arguments(self):
+        self.assertEqual(
+            format_tool_signature(
+                'export_records',
+                {
+                    'properties': {'model': {}, 'fields': {}, 'limit': {}},
+                    'required': ['model', 'fields'],
+                },
+            ),
+            'export_records(model*, fields*, limit)',
+        )
+
+    def test_a_tool_without_arguments_keeps_a_bare_name(self):
+        self.assertEqual(format_tool_signature('whoami', {'type': 'object'}), 'whoami')
+        self.assertEqual(format_tool_signature('whoami', None), 'whoami')
+
+    def test_a_malformed_user_authored_schema_falls_back_to_the_name(self):
+        for schema in (
+            {'properties': 5},
+            {'properties': True},
+            {'properties': 'xy'},
+            'garbage',
+            [],
+        ):
+            self.assertEqual(format_tool_signature('rare_tool', schema), 'rare_tool')
+
+    def test_a_non_list_required_marks_nothing_as_required(self):
+        self.assertEqual(
+            format_tool_signature(
+                'rare_tool', {'properties': {'model': {}}, 'required': 'model'}
+            ),
+            'rare_tool(model)',
+        )
 
     def test_a_long_description_is_truncated_on_a_word_boundary(self):
         long_tool = {

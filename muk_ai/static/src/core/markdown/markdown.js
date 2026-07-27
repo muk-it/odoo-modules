@@ -74,8 +74,9 @@ function buildRenderer() {
             tokens[i - 2].attrJoin('class', 'mk_md_task');
         }
     });
-    const RECORD_RE = /\b([a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+),(\d+)\b/g;
-    md.core.ruler.after('inline', 'muk_ai_record_links', (state) => {
+    const LINKABLE_RE =
+        /(\/web\/content\/\d+(?:\?[A-Za-z0-9_=&%.-]*)?)|\b([a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+),(\d+)\b/g;
+    md.core.ruler.after('inline', 'muk_ai_links', (state) => {
         const tokens = state.tokens;
         for (const tok of tokens) {
             if (tok.type !== 'inline' || !tok.children) {
@@ -99,11 +100,11 @@ function buildRenderer() {
                     continue;
                 }
                 const text = child.content;
-                RECORD_RE.lastIndex = 0;
+                LINKABLE_RE.lastIndex = 0;
                 let lastIndex = 0;
                 let matched = false;
                 let match;
-                while ((match = RECORD_RE.exec(text)) !== null) {
+                while ((match = LINKABLE_RE.exec(text)) !== null) {
                     matched = true;
                     const before = text.slice(lastIndex, match.index);
                     if (before) {
@@ -111,10 +112,10 @@ function buildRenderer() {
                         t.content = before;
                         newChildren.push(t);
                     }
-                    const [whole, model, id] = match;
+                    const [whole, fileUrl, model, id] = match;
                     const lo = new state.Token('link_open', 'a', 1);
-                    lo.attrSet('href', `/odoo/${model}/${id}`);
-                    lo.attrSet('class', 'mk_record_link');
+                    lo.attrSet('href', fileUrl || `/odoo/${model}/${id}`);
+                    lo.attrSet('class', fileUrl ? 'mk_file_link' : 'mk_record_link');
                     newChildren.push(lo);
                     const lt = new state.Token('text', '', 0);
                     lt.content = whole;

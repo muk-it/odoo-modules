@@ -2,9 +2,9 @@ import { _t } from '@web/core/l10n/translation';
 import { registry } from '@web/core/registry';
 
 import { AttachmentsTab } from '@muk_ai/chat/artifacts/types/attachments_tab';
+import { collectToolFiles } from '@muk_ai/core/attachment/tool_files';
 
 const INLINE_IMAGE_MD = /!\[([^\]]*)\]\(\/web\/image\/(\d+)\)/g;
-
 function collectAttachments(sessionState) {
     if (!sessionState) {
         return [];
@@ -37,6 +37,8 @@ function collectAttachments(sessionState) {
                 seen.add(key);
                 out.push(att);
             }
+        } else if (event.kind === 'tool_result') {
+            collectToolFiles(event.result, out, seen);
         } else if (event.kind === 'text' && event.content) {
             for (const match of String(event.content).matchAll(INLINE_IMAGE_MD)) {
                 const key = `id:${Number(match[2])}`;
