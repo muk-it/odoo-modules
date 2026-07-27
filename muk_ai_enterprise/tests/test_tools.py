@@ -167,16 +167,15 @@ class TestTools(BridgeTestCommon):
 
     def test_ee_tools_absent_when_no_context_marker(self):
         Tool = self.env['muk_mcp.tool']
-        tools = Tool.get_tools(registry='odoo')
-        names = {t['name'] for t in tools}
-        self.assertNotIn(self._ee_tool_name(), names)
+        ee_name = self._ee_tool_name()
+        for registry in ('odoo', 'mcp'):
+            names = {t['name'] for t in Tool.get_tools(registry=registry)}
+            self.assertNotIn(ee_name, names, f'leaked into the {registry} registry')
 
-    def test_ee_tools_never_leak_into_the_mcp_registry(self):
+    def test_ee_tools_reach_the_catalog_only_through_the_odoo_registry(self):
         Tool = self._tool_env()['muk_mcp.tool']
         odoo_names = {t['name'] for t in Tool.get_tools(registry='odoo')}
         self.assertIn(self._ee_tool_name(), odoo_names)
-        mcp_names = {t['name'] for t in Tool.get_tools(registry='mcp')}
-        self.assertNotIn(self._ee_tool_name(), mcp_names)
 
     def test_name_collision_does_not_clobber(self):
         muk_tools = self.env['muk_mcp.tool'].get_tools(registry='odoo')
