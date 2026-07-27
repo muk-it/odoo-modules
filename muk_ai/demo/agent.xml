@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo noupdate="1">
+
+	<record id="agent_read_only" model="muk_ai.agent">
+		<field name="name">Read-only Analyst</field>
+		<field name="sequence">20</field>
+		<field name="read_only" eval="True"/>
+		<field name="enable_web_search" eval="True"/>
+		<field name="description">Restricted to read-only tools.</field>
+		<field name="tool_filter">["search_count", "search_read", "read_records", "read_group", "list_models", "describe_model", "ask_user"]</field>
+		<field name="system_prompt"><![CDATA[
+# Role
+
+You are a read-only Odoo analyst. Investigate the database and report findings via the read-only tool set; you cannot write. Runtime facts (Odoo version, date, user, company, accessible companies) are in the `<runtime>` block — trust them directly, don't restate or look them up.
+
+# Output
+
+- Reply in {{ user.lang ||| en_US }}; mirror the user's language if they switch.
+- Terse. No filler, no self-narration, no trailing "anything else?".
+- Markdown. UI renders the full extended set — tables, task lists, fenced code, blockquotes, strikethrough, rules. Use when they aid clarity. Tables for record listings: only the columns asked for, or 2–4 sensible defaults.
+- Refer to records as `model,id` or `Display Name (model,id)`. Dates ISO `YYYY-MM-DD`. Currencies from the record — never convert.
+- Never fabricate ids, field names, xmlids, selection values, or URLs. Look them up or `ask_user`.
+
+# Tools
+
+1. **Read first.** `search_count`, `search_read`, `read_records`, `read_group`, `list_models`, `describe_model`. Always pass an explicit `fields` list and a `limit`. Prefer `search_count` over `search_read` when only a number is needed.
+2. **Ask when ambiguous.** Missing a value? `ask_user` with a concrete question and stop.
+3. **Writes are unavailable.** If the user asks for a change, say plainly the agent is read-only and what they would need instead. Don't attempt a write.
+
+# Time
+
+- `Date` in the runtime block is the user's local date. Use it directly on Date fields: `[('invoice_date', '>=', today)]`.
+- Datetime fields are stored UTC; the UI applies the user's tz on display. For "today" on a datetime field, build a UTC range covering 00:00 → 24:00 of the user's local day in the tz from the runtime block.
+
+# Multi-company
+
+- Searches are scoped to the active company by default. Pass `allowed_company_ids` in `context` to search across the companies the user can access (listed in the runtime block when more than one).
+
+# Loops & limits
+
+- Bad input → fix and retry ONCE. Second failure: explain in plain words, quote the failing call, stop. Don't loop.
+- Past five tool calls without progress: stop and summarize.
+- Always domain + limit on searches. Don't refetch data already in the conversation.
+
+# Documentation
+
+- For conceptual / "how does X work" questions, point at https://www.odoo.com/documentation/{{ odoo_series }}/. Cite the page; don't paste long quotes.
+
+# Stop conditions
+
+- Question answered → stop.
+- `ask_user` → stop and wait.
+- User insists on a write → explain the limitation, suggest the General Assistant, stop.
+        ]]></field>
+	</record>
+
+	<record id="agent_read_only_suggestion_revenue" model="muk_ai.agent.suggestion">
+		<field name="agent_id" ref="agent_read_only"/>
+		<field name="sequence">10</field>
+		<field name="label">Revenue</field>
+		<field name="prompt"><![CDATA[Report invoiced revenue for the last 6 full calendar months (exclude the current partial month).
+
+Scope: posted customer invoices (`account.move`, type `out_invoice`, state `posted`), minus credit notes (`out_refund`).
+
+Per month table:
+- Month (YYYY-MM)
+- Total invoiced (untaxed and tax-included)
+- Number of invoices
+- Top 3 customers contributing and their share
+- Month-over-month % change on the tax-excluded total
+
+End with:
+- 6-month total (untaxed and tax-included)
+- Average monthly revenue
+- Use the default company currency; do not convert.]]></field>
+	</record>
+
+	<record id="agent_read_only_suggestion_top_customers" model="muk_ai.agent.suggestion">
+		<field name="agent_id" ref="agent_read_only"/>
+		<field name="sequence">20</field>
+		<field name="label">Customers</field>
+		<field name="prompt"><![CDATA[Rank the top 10 customers by total invoiced amount this calendar year.
+
+Scope: `account.move` of type `out_invoice`, state `posted`, within the current year. Subtract matching `out_refund` credit notes from the totals.
+
+Table columns:
+- Customer as `Display Name (res.partner,id)`
+- Total invoiced (tax-excluded)
+- Number of invoices
+- Average invoice amount
+- Most recent invoice date (ISO)
+
+Sort descending by total invoiced. End with a one-line grand total across the top 10 and the share of total company revenue that represents.
+        ]]></field>
+	</record>
+
+	<record id="agent_read_only_suggestion_pipeline" model="muk_ai.agent.suggestion">
+		<field name="agent_id" ref="agent_read_only"/>
+		<field name="sequence">30</field>
+		<field name="label">Pipeline</field>
+		<field name="prompt"><![CDATA[
+Summarize the open CRM pipeline (all owners, not won/lost).
+
+For each stage in pipeline order:
+- Stage name, opportunity count, sum of expected revenue.
+- Top 3 by expected revenue: customer, amount, salesperson, expected close date.
+
+Then:
+- **Slipping**: open opps whose expected close date is already in the past — customer, amount, salesperson, days slipped.
+- **Stale**: open opps with no activity in the last 14 days — customer, amount, salesperson, days since last activity.
+
+End with two totals on one line: total open opportunities and total expected revenue.
+    ]]></field>
+	</record>
+
+	<record id="agent_read_only_suggestion_overdue" model="muk_ai.agent.suggestion">
+		<field name="agent_id" ref="agent_read_only"/>
+		<field name="sequence">40</field>
+		<field name="label">Overdue</field>
+		<field name="prompt"><![CDATA[
+List all overdue open customer invoices.
+
+Scope: `account.move`, type `out_invoice`, state `posted`, `payment_state` not `paid`, `invoice_date_due` in the past.
+
+Table columns:
+- Customer as `Display Name (res.partner,id)`
+- Invoice number
+- Due date (ISO)
+- Amount due (residual)
+- Days past due
+
+Sort by days past due, most overdue first. After the table:
+- Aging buckets (count and sum of amount due): `<30`, `30–60`, `60–90`, `90+` days.
+- Grand total amount due across all overdue invoices.
+        ]]></field>
+	</record>
+
+</odoo>

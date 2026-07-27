@@ -1,0 +1,20 @@
+.o_field_json_code {
+    display: block !important;
+    width: 100%;
+    .mk_json_code_wrapper {
+        width: 100%;
+    }
+    .mk_json_code_editor {
+        width: 100% !important;
+        border: 1px solid var(--border-color, #dee2e6);
+        border-radius: 4px;
+    }
+    &:not(.o_readonly_modifier) .mk_json_code_editor {
+        min-height: 12em;
+    }
+    &.o_readonly_modifier .mk_json_code_editor {
+        height: var(--mk-json-code-height, auto);
+        min-height: 3em;
+        max-height: 30em;
+    }
+}

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo noupdate="1">
+
+	<record id="demo_session_sales_briefing" model="muk_ai.session">
+		<field name="name">Today’s sales briefing</field>
+		<field name="state">done</field>
+		<field name="user_id" ref="base.user_admin"/>
+		<field name="agent_id" ref="agent_general"/>
+		<field name="iteration_count" eval="2"/>
+		<field name="total_input_tokens" eval="2840"/>
+		<field name="total_output_tokens" eval="412"/>
+		<field name="last_input_tokens" eval="1620"/>
+		<field name="last_text"><![CDATA[
+**Pipeline status** — 18 open opportunities, €312k expected, weighted €148k (down 6% vs the same day last month).
+
+**Top 3 to call today**
+| Customer | Amount | Stage | Why now |
+|---|---:|---|---|
+| Wood Corner (crm.lead,12) | €42,000 | Proposition | Customer reply 3 days old, no follow-up logged |
+| Azure Interior (crm.lead,8) | €28,500 | Negotiation | Expected close in 4 days, still open |
+| Deco Addict (crm.lead,15) | €19,800 | Qualified | In top 20%, no activity in 9 days |
+
+**Risk watch** — 1 deal slipping (Gemini Furniture, expected close 11 days past, no activity in 14+ days).
+        ]]></field>
+		<field name="conversation" eval="[
+			{'role': 'system', 'content': [{'type': 'input_text', 'text': 'You are the General Assistant.'}]},
+			{'role': 'user', 'content': [{'type': 'input_text', 'text': 'Give me a sales briefing for today.'}]},
+			{'type': 'function_call', 'name': 'search_read', 'arguments': '{&quot;model&quot;: &quot;crm.lead&quot;, &quot;domain&quot;: [[&quot;type&quot;, &quot;=&quot;, &quot;opportunity&quot;], [&quot;active&quot;, &quot;=&quot;, true]], &quot;fields&quot;: [&quot;name&quot;, &quot;partner_id&quot;, &quot;expected_revenue&quot;, &quot;probability&quot;, &quot;stage_id&quot;, &quot;date_deadline&quot;]}', 'call_id': 'call_demo_a1'},
+			{'type': 'function_call_output', 'call_id': 'call_demo_a1', 'output': '[{&quot;id&quot;: 12, &quot;name&quot;: &quot;Wood Corner office redesign&quot;, &quot;expected_revenue&quot;: 42000.0}, {&quot;id&quot;: 8, &quot;name&quot;: &quot;Azure Interior expansion&quot;, &quot;expected_revenue&quot;: 28500.0}]'},
+			{'type': 'message', 'role': 'assistant', 'content': [{'type': 'output_text', 'text': '**Pipeline status** — 18 open opportunities, €312k expected.'}]},
+		]"/>
+		<field name="event_ids" eval="[
+			(0, 0, {'sequence': 0, 'kind': 'state', 'payload': {'state': 'running'}}),
+			(0, 0, {'sequence': 1, 'kind': 'user_message', 'payload': {'content': 'Give me a sales briefing for today.', 'attachments': []}}),
+			(0, 0, {'sequence': 2, 'kind': 'tool_call', 'payload': {'name': 'search_read', 'call_id': 'call_demo_a1', 'arguments': {'model': 'crm.lead', 'domain': [['type', '=', 'opportunity'], ['active', '=', True]], 'fields': ['name', 'partner_id', 'expected_revenue', 'probability', 'stage_id', 'date_deadline']}}}),
+			(0, 0, {'sequence': 3, 'kind': 'tool_result', 'payload': {'name': 'search_read', 'call_id': 'call_demo_a1', 'result': '[18 opportunities returned]'}}),
+			(0, 0, {'sequence': 4, 'kind': 'text', 'payload': {'content': '**Pipeline status** — 18 open opportunities, €312k expected, weighted €148k (down 6% vs the same day last month).\n\n**Top 3 to call today**\n| Customer | Amount | Stage | Why now |\n|---|---:|---|---|\n| Wood Corner (crm.lead,12) | €42,000 | Proposition | Customer reply 3 days old, no follow-up logged |\n| Azure Interior (crm.lead,8) | €28,500 | Negotiation | Expected close in 4 days, still open |\n| Deco Addict (crm.lead,15) | €19,800 | Qualified | In top 20%, no activity in 9 days |\n\n**Risk watch** — 1 deal slipping (Gemini Furniture, expected close 11 days past, no activity in 14+ days).'}}),
+			(0, 0, {'sequence': 5, 'kind': 'state', 'payload': {'state': 'done'}}),
+		]"/>
+	</record>
+
+	<record id="demo_session_open_partner" model="muk_ai.session">
+		<field name="name">Open a customer</field>
+		<field name="state">done</field>
+		<field name="user_id" ref="base.user_admin"/>
+		<field name="agent_id" ref="agent_general"/>
+		<field name="iteration_count" eval="2"/>
+		<field name="total_input_tokens" eval="980"/>
+		<field name="total_output_tokens" eval="48"/>
+		<field name="last_input_tokens" eval="540"/>
+		<field name="last_text">Opened Wood Corner (res.partner,9).</field>
+		<field name="conversation" eval="[
+			{'role': 'system', 'content': [{'type': 'input_text', 'text': 'You are the General Assistant.'}]},
+			{'role': 'user', 'content': [{'type': 'input_text', 'text': 'Open the customer record for Wood Corner.'}]},
+			{'type': 'function_call', 'name': 'search_read', 'arguments': '{&quot;model&quot;: &quot;res.partner&quot;, &quot;domain&quot;: [[&quot;name&quot;, &quot;ilike&quot;, &quot;Wood Corner&quot;]], &quot;fields&quot;: [&quot;id&quot;, &quot;name&quot;]}', 'call_id': 'call_demo_b1'},
+			{'type': 'function_call_output', 'call_id': 'call_demo_b1', 'output': '[{&quot;id&quot;: 9, &quot;name&quot;: &quot;Wood Corner&quot;}]'},
+			{'type': 'function_call', 'name': 'open_record', 'arguments': '{&quot;model&quot;: &quot;res.partner&quot;, &quot;id&quot;: 9}', 'call_id': 'call_demo_b2'},
+			{'type': 'function_call_output', 'call_id': 'call_demo_b2', 'output': '{&quot;type&quot;: &quot;ir.actions.act_window&quot;, &quot;res_model&quot;: &quot;res.partner&quot;, &quot;res_id&quot;: 9, &quot;view_mode&quot;: &quot;form&quot;}'},
+			{'type': 'message', 'role': 'assistant', 'content': [{'type': 'output_text', 'text': 'Opened Wood Corner (res.partner,9).'}]},
+		]"/>
+		<field name="event_ids" eval="[
+			(0, 0, {'sequence': 0, 'kind': 'state', 'payload': {'state': 'running'}}),
+			(0, 0, {'sequence': 1, 'kind': 'user_message', 'payload': {'content': 'Open the customer record for Wood Corner.', 'attachments': []}}),
+			(0, 0, {'sequence': 2, 'kind': 'tool_call', 'payload': {'name': 'search_read', 'call_id': 'call_demo_b1', 'arguments': {'model': 'res.partner', 'domain': [['name', 'ilike', 'Wood Corner']], 'fields': ['id', 'name']}}}),
+			(0, 0, {'sequence': 3, 'kind': 'tool_result', 'payload': {'name': 'search_read', 'call_id': 'call_demo_b1', 'result': [{'id': 9, 'name': 'Wood Corner'}]}}),
+			(0, 0, {'sequence': 4, 'kind': 'tool_call', 'payload': {'name': 'open_record', 'call_id': 'call_demo_b2', 'arguments': {'model': 'res.partner', 'id': 9}}}),
+			(0, 0, {'sequence': 5, 'kind': 'tool_result', 'payload': {'name': 'open_record', 'call_id': 'call_demo_b2', 'result': {'type': 'ir.actions.act_window', 'res_model': 'res.partner', 'res_id': 9, 'view_mode': 'form'}}}),
+			(0, 0, {'sequence': 6, 'kind': 'text', 'payload': {'content': 'Opened Wood Corner (res.partner,9).'}}),
+			(0, 0, {'sequence': 7, 'kind': 'state', 'payload': {'state': 'done'}}),
+		]"/>
+	</record>
+
+	<record id="demo_session_overdue_invoices" model="muk_ai.session">
+		<field name="name">Overdue invoices report</field>
+		<field name="state">done</field>
+		<field name="user_id" ref="base.user_admin"/>
+		<field name="agent_id" ref="agent_read_only"/>
+		<field name="iteration_count" eval="3"/>
+		<field name="total_input_tokens" eval="3240"/>
+		<field name="total_output_tokens" eval="386"/>
+		<field name="last_input_tokens" eval="1820"/>
+		<field name="last_text"><![CDATA[
+**Overdue customer invoices — 7 invoices, €18,420 total**
+
+| Customer | Invoice | Due | Days late | Amount due |
+|---|---|---|---:|---:|
+| Deco Addict (res.partner,14) | INV/2026/0118 | 2026-04-14 | 18 | €4,200 |
+| Gemini Furniture (res.partner,21) | INV/2026/0124 | 2026-04-19 | 13 | €3,850 |
+| Azure Interior (res.partner,11) | INV/2026/0136 | 2026-04-22 | 10 | €3,170 |
+| Wood Corner (res.partner,9) | INV/2026/0141 | 2026-04-25 | 7 | €2,800 |
+| Ready Mat (res.partner,17) | INV/2026/0149 | 2026-04-28 | 4 | €1,950 |
+| The Jackson Group (res.partner,8) | INV/2026/0153 | 2026-04-30 | 2 | €1,250 |
+| Lumber Inc (res.partner,23) | INV/2026/0156 | 2026-05-01 | 1 | €1,200 |
+
+**Aging buckets** — `<30`: 7 (€18,420). `30–60`: 0. `60–90`: 0. `90+`: 0.
+        ]]></field>
+		<field name="conversation" eval="[
+			{'role': 'system', 'content': [{'type': 'input_text', 'text': 'You are the Read-only Analyst.'}]},
+			{'role': 'user', 'content': [{'type': 'input_text', 'text': 'List all overdue customer invoices grouped by aging bucket.'}]},
+			{'type': 'function_call', 'name': 'search_count', 'arguments': '{&quot;model&quot;: &quot;account.move&quot;, &quot;domain&quot;: [[&quot;move_type&quot;, &quot;=&quot;, &quot;out_invoice&quot;], [&quot;state&quot;, &quot;=&quot;, &quot;posted&quot;], [&quot;payment_state&quot;, &quot;!=&quot;, &quot;paid&quot;], [&quot;invoice_date_due&quot;, &quot;&lt;&quot;, &quot;2026-05-02&quot;]]}', 'call_id': 'call_demo_c1'},
+			{'type': 'function_call_output', 'call_id': 'call_demo_c1', 'output': '7'},
+			{'type': 'function_call', 'name': 'search_read', 'arguments': '{&quot;model&quot;: &quot;account.move&quot;, &quot;domain&quot;: [[&quot;move_type&quot;, &quot;=&quot;, &quot;out_invoice&quot;], [&quot;state&quot;, &quot;=&quot;, &quot;posted&quot;], [&quot;payment_state&quot;, &quot;!=&quot;, &quot;paid&quot;], [&quot;invoice_date_due&quot;, &quot;&lt;&quot;, &quot;2026-05-02&quot;]], &quot;fields&quot;: [&quot;name&quot;, &quot;partner_id&quot;, &quot;invoice_date_due&quot;, &quot;amount_residual&quot;], &quot;limit&quot;: 50}', 'call_id': 'call_demo_c2'},
+			{'type': 'function_call_output', 'call_id': 'call_demo_c2', 'output': '[7 invoices returned]'},
+			{'type': 'message', 'role': 'assistant', 'content': [{'type': 'output_text', 'text': '**Overdue customer invoices — 7 invoices, €18,420 total**'}]},
+		]"/>
+		<field name="event_ids" eval="[
+			(0, 0, {'sequence': 0, 'kind': 'state', 'payload': {'state': 'running'}}),
+			(0, 0, {'sequence': 1, 'kind': 'user_message', 'payload': {'content': 'List all overdue customer invoices grouped by aging bucket.', 'attachments': []}}),
+			(0, 0, {'sequence': 2, 'kind': 'tool_call', 'payload': {'name': 'search_count', 'call_id': 'call_demo_c1', 'arguments': {'model': 'account.move', 'domain': [['move_type', '=', 'out_invoice'], ['state', '=', 'posted'], ['payment_state', '!=', 'paid'], ['invoice_date_due', '&lt;', '2026-05-02']]}}}),
+			(0, 0, {'sequence': 3, 'kind': 'tool_result', 'payload': {'name': 'search_count', 'call_id': 'call_demo_c1', 'result': 7}}),
+			(0, 0, {'sequence': 4, 'kind': 'tool_call', 'payload': {'name': 'search_read', 'call_id': 'call_demo_c2', 'arguments': {'model': 'account.move', 'domain': [['move_type', '=', 'out_invoice'], ['state', '=', 'posted'], ['payment_state', '!=', 'paid'], ['invoice_date_due', '&lt;', '2026-05-02']], 'fields': ['name', 'partner_id', 'invoice_date_due', 'amount_residual'], 'limit': 50}}}),
+			(0, 0, {'sequence': 5, 'kind': 'tool_result', 'payload': {'name': 'search_read', 'call_id': 'call_demo_c2', 'result': '[7 invoices returned]'}}),
+			(0, 0, {'sequence': 6, 'kind': 'text', 'payload': {'content': '**Overdue customer invoices — 7 invoices, €18,420 total**\n\n| Customer | Invoice | Due | Days late | Amount due |\n|---|---|---|---:|---:|\n| Deco Addict (res.partner,14) | INV/2026/0118 | 2026-04-14 | 18 | €4,200 |\n| Gemini Furniture (res.partner,21) | INV/2026/0124 | 2026-04-19 | 13 | €3,850 |\n| Azure Interior (res.partner,11) | INV/2026/0136 | 2026-04-22 | 10 | €3,170 |\n\n**Aging buckets** — `&lt;30`: 7 (€18,420). `30–60`: 0. `60–90`: 0. `90+`: 0.'}}),
+			(0, 0, {'sequence': 7, 'kind': 'state', 'payload': {'state': 'done'}}),
+		]"/>
+	</record>
+
+</odoo>

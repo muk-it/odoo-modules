@@ -1,0 +1,25 @@
+.o_field_ai_session_events {
+    display: block;
+    width: 100%;
+}
+
+.mk_chat.mk_session_events {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    max-height: 70vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background: var(--mk-bg-muted, var(--bs-body-bg));
+    font-size: 14px;
+    .mk_turn {
+        max-width: 100%;
+    }
+    .mk_session_events_empty {
+        padding: 1.5rem;
+        text-align: center;
+        border: 1px dashed var(--bs-border-color);
+        border-radius: 0.5rem;
+    }
+}

@@ -1,0 +1,19 @@
+# prettier does not read .gitignore, so mirror the generated/vendored paths here.
+
+# JS tooling
+node_modules/
+package-lock.json
+
+# Vendored third-party libraries
+static/lib/
+
+# Lint / type-check caches
+.ruff_cache/
+.mypy_cache/
+
+# Local virtualenvs
+.venv/
+venv/
+
+# Test / coverage
+htmlcov/
