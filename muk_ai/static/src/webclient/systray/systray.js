@@ -11,6 +11,7 @@ import { debounce } from '@web/core/utils/timing';
 import { Dropdown } from '@web/core/dropdown/dropdown';
 import { DropdownItem } from '@web/core/dropdown/dropdown_item';
 
+import { busSubscribe, busUnsubscribe } from '@muk_ai/core/compat/bus';
 import { useNotificationBadge } from '@muk_ai/core/notification_badge';
 
 const SYSTRAY_LIMIT = 8;
@@ -101,11 +102,11 @@ export class MukAISystray extends Component {
     }
     _connectBus() {
         this._busHandler = (payload) => this._onBusEvent(payload);
-        this.bus.subscribe('muk_ai.session_state', this._busHandler);
+        busSubscribe(this.bus, 'muk_ai.session_state', this._busHandler);
     }
     _disconnectBus() {
         if (this._busHandler) {
-            this.bus.unsubscribe('muk_ai.session_state', this._busHandler);
+            busUnsubscribe(this.bus, 'muk_ai.session_state', this._busHandler);
             this._busHandler = null;
         }
     }

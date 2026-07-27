@@ -21,7 +21,7 @@ export class JsonCodeField extends Component {
         mode: { type: String, optional: true },
     };
     static defaultProps = {
-        mode: 'javascript',
+        mode: 'js',
     };
     static components = { CodeEditor };
     setup() {
@@ -111,7 +111,7 @@ export const jsonCodeField = {
     ],
     supportedTypes: ['json'],
     extractProps: ({ options }) => ({
-        mode: options.mode || 'javascript',
+        mode: options.mode || 'js',
     }),
 };
 

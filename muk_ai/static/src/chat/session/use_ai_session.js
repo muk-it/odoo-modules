@@ -9,6 +9,7 @@ import { SelectCreateDialog } from '@web/views/view_dialogs/select_create_dialog
 
 import { fileToBase64 } from '@muk_ai/core/attachment/file_helpers';
 import { renderMarkdown as renderMarkdownToHtml } from '@muk_ai/core/markdown/markdown';
+import { busSubscribe, busUnsubscribe } from '@muk_ai/core/compat/bus';
 import { formatError } from '@muk_ai/chat/utils';
 
 import { buildRenderedTurns } from '@muk_ai/chat/session/turns';
@@ -127,7 +128,7 @@ export function useAiSession(options = {}) {
     let pendingLoad = null;
     let requeueRerouting = false;
     const busHandler = (payload) => onBusEvent(payload);
-    bus.subscribe('muk_ai.event', busHandler);
+    busSubscribe(bus, 'muk_ai.event', busHandler);
     function clearStreamIdleTimer() {
         if (streamIdleTimer) {
             clearTimeout(streamIdleTimer);
@@ -1454,7 +1455,7 @@ export function useAiSession(options = {}) {
     }
     onWillUnmount(() => {
         sessionNotification.markInactive(state.sessionId);
-        bus.unsubscribe('muk_ai.event', busHandler);
+        busUnsubscribe(bus, 'muk_ai.event', busHandler);
         clearStreamIdleTimer();
     });
     return {

@@ -2,6 +2,8 @@
 
 import { registry } from '@web/core/registry';
 
+import { busSubscribe } from '@muk_ai/core/compat/bus';
+
 import { makeClientToolListener } from './executor';
 import { webclientClientTools } from './registry';
 
@@ -31,7 +33,7 @@ export const webclientClientToolsService = {
             contains: (name) => webclientClientTools.contains(name),
             execute: (name, args) => webclientClientTools.get(name)(args, env),
         });
-        bus.subscribe('muk_ai.event', onEvent);
+        busSubscribe(bus, 'muk_ai.event', onEvent);
         return {};
     },
 };

@@ -4,6 +4,8 @@ import { _t } from '@web/core/l10n/translation';
 import { deserializeDateTime } from '@web/core/l10n/dates';
 import { registry } from '@web/core/registry';
 
+import { busSubscribe } from '@muk_ai/core/compat/bus';
+
 /** Drop replayed notifications older than this; the inbox keeps the durable copy. */
 export const NOTIFICATION_FRESHNESS_MS = 2 * 60 * 1000;
 
@@ -149,7 +151,8 @@ export const sessionNotificationService = {
                 set.add(close);
             }
         }
-        env.services.bus_service.subscribe(
+        busSubscribe(
+            env.services.bus_service,
             'muk_ai.session_notification',
             onNotification,
         );

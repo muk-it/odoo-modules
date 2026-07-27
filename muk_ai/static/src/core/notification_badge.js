@@ -4,6 +4,8 @@ import { onWillStart, onWillUnmount, useEnv, useState } from '@odoo/owl';
 
 import { useService } from '@web/core/utils/hooks';
 
+import { busSubscribe, busUnsubscribe } from '@muk_ai/core/compat/bus';
+
 /**
  * Track the current user's unread AI sessions.
  *
@@ -46,7 +48,7 @@ export function useNotificationBadge() {
             apply(initial);
         }
     });
-    bus.subscribe('muk_ai.notification_badge', applyPush);
-    onWillUnmount(() => bus.unsubscribe('muk_ai.notification_badge', applyPush));
+    busSubscribe(bus, 'muk_ai.notification_badge', applyPush);
+    onWillUnmount(() => busUnsubscribe(bus, 'muk_ai.notification_badge', applyPush));
     return badge;
 }

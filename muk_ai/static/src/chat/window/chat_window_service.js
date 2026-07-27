@@ -3,6 +3,7 @@
 import { reactive } from '@odoo/owl';
 import { registry } from '@web/core/registry';
 
+import { busSubscribe } from '@muk_ai/core/compat/bus';
 import { seedSessionContext } from '@muk_ai/views/context';
 
 export const chatWindowService = {
@@ -27,7 +28,7 @@ export const chatWindowService = {
             const idx = state.windows.findIndex((w) => w.sessionId === sessionId);
             if (idx >= 0) state.windows.splice(idx, 1);
         }
-        env.services.bus_service.subscribe('muk_ai.session_state', (payload) => {
+        busSubscribe(env.services.bus_service, 'muk_ai.session_state', (payload) => {
             if (payload && payload.deleted && payload.session_id) {
                 close(payload.session_id);
             }

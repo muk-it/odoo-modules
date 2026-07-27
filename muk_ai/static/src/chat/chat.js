@@ -22,6 +22,7 @@ import { DropdownItem } from '@web/core/dropdown/dropdown_item';
 
 import { toFileModel, toInlineImageFile } from '@muk_ai/core/attachment/attachment';
 import { AttachmentCard } from '@muk_ai/core/attachment/attachment_card';
+import { busSubscribe, busUnsubscribe } from '@muk_ai/core/compat/bus';
 import { useNotificationBadge } from '@muk_ai/core/notification_badge';
 import {
     approvalPill,
@@ -679,11 +680,11 @@ export class AIChat extends Component {
     _connectUserBus() {
         this._disconnectUserBus();
         this._userBusHandler = (payload) => this._onUserBusEvent(payload);
-        this.bus.subscribe('muk_ai.session_state', this._userBusHandler);
+        busSubscribe(this.bus, 'muk_ai.session_state', this._userBusHandler);
     }
     _disconnectUserBus() {
         if (this._userBusHandler) {
-            this.bus.unsubscribe('muk_ai.session_state', this._userBusHandler);
+            busUnsubscribe(this.bus, 'muk_ai.session_state', this._userBusHandler);
             this._userBusHandler = null;
         }
     }
