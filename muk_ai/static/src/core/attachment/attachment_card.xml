@@ -34,6 +34,16 @@
             >
                 <i class="fa fa-times"/>
             </button>
+            <a
+                t-if="props.attachment.id &gt; 0"
+                class="mk_att_card_download btn btn-sm rounded-circle"
+                t-att-href="file.downloadUrl"
+                t-on-click="(ev) => ev.stopPropagation()"
+                title="Download"
+                download=""
+            >
+                <i class="fa fa-download"/>
+            </a>
         </div>
     </t>
 

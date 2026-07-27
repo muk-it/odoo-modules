@@ -6,6 +6,8 @@ import json
 # Tool Round Behavior
 # ----------------------------------------------------------
 
+TOOL_SUMMARY_MAX_CHARS = 120
+
 TERMINATING_TOOLS = frozenset(
     {
         'open_record',
@@ -177,6 +179,40 @@ def clean_ask_preview(preview) -> dict | None:
             else []
         )
     return cleaned
+
+
+def summarize_tool_description(description) -> str:
+    """Return a one-line tool summary bounded to ``TOOL_SUMMARY_MAX_CHARS``.
+
+    Prefers the first sentence, then hard-truncates on a word boundary: some
+    descriptions run for paragraphs with no early full stop, and tools defined
+    as ``muk_mcp.tool`` records carry user-authored text of any length.
+    """
+    text = ' '.join(str(description or '').split())
+    stop = text.find('. ')
+    if 0 < stop < TOOL_SUMMARY_MAX_CHARS:
+        return text[: stop + 1]
+    if len(text) > TOOL_SUMMARY_MAX_CHARS:
+        return text[: TOOL_SUMMARY_MAX_CHARS - 1].rsplit(' ', 1)[0] + '…'
+    return text
+
+
+def format_tool_signature(name: str, schema) -> str:
+    """Return ``name(arg, required_arg*)`` for a tool's input schema.
+
+    The deferred-tool list is the only thing a model sees before composing a
+    one-round-trip ``tool_load`` call, so it has to carry the argument names:
+    without them the arguments of that first call are guesswork. A schema
+    stored on a ``muk_mcp.tool`` record is user-authored and validated as JSON
+    only, so its shape is checked here as ``sanitize_json_schema`` does.
+    """
+    properties = schema.get('properties') if isinstance(schema, dict) else None
+    if not isinstance(properties, dict) or not properties:
+        return name
+    required = schema.get('required')
+    required = set(required) if isinstance(required, list) else set()
+    args = ', '.join(f'{arg}*' if arg in required else arg for arg in properties)
+    return f'{name}({args})'
 
 
 def build_tool_call_output(call_id: str, output) -> dict:
