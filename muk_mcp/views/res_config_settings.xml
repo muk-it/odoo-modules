@@ -75,7 +75,7 @@
 									name="%(muk_mcp.action_connect)d"
 									type="action"
 									string="Connect AI"
-									icon="oi-arrow-right"
+									icon="fa-arrow-right"
 									class="btn-link mt-3"
 								/>
 							</div>
