@@ -12,6 +12,7 @@ from odoo.addons.muk_ai.tests.common import AITestCommon, ToolCatalogMixin
 CSV_BYTES = b'Customer,Revenue\nHarri Stojka,1538.48\n'
 CSV_MIMETYPE = 'text/csv;charset=utf8'
 XLSX_MIMETYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+PDF_MIMETYPE = 'application/pdf'
 
 
 def _export_result(
@@ -59,7 +60,40 @@ class TestToolFile(AITestCommon):
         attachment = self.env['ir.attachment'].browse(stored['attachment_id'])
         self.assertEqual(attachment.raw, CSV_BYTES)
         self.assertEqual(attachment.name, 'res_partner.csv')
-        self.assertEqual(attachment.mimetype, CSV_MIMETYPE)
+
+    def test_the_transport_charset_is_stripped_from_the_stored_mimetype(self):
+        session = self._new_session()
+        stored = session._persist_tool_file(_export_result())
+        attachment = self.env['ir.attachment'].browse(stored['attachment_id'])
+        self.assertEqual(attachment.mimetype, 'text/csv')
+
+    def test_the_stored_export_can_be_attached_to_a_later_message(self):
+        session = self._new_session()
+        stored = session._persist_tool_file(_export_result())
+        resolved = session._resolve_attachments([stored['attachment_id']])
+        self.assertEqual(resolved.ids, [stored['attachment_id']])
+
+    def test_a_stored_export_materializes_as_inline_text_for_the_model(self):
+        session = self._new_session()
+        stored = session._persist_tool_file(_export_result())
+        block = (
+            self.env['ir.attachment'].browse(stored['attachment_id'])._ai_materialize()
+        )
+        self.assertEqual(block['strategy'], 'inline_text')
+        self.assertIn('Harri Stojka', block['inline_text'])
+
+    def test_a_rendered_report_is_stored_as_a_pdf(self):
+        session = self._new_session()
+        stored = session._persist_tool_file(
+            _export_result(
+                content=b'%PDF-1.4 fake',
+                mimetype=PDF_MIMETYPE,
+                filename='sale_order.pdf',
+            )
+        )
+        attachment = self.env['ir.attachment'].browse(stored['attachment_id'])
+        self.assertEqual(attachment.mimetype, PDF_MIMETYPE)
+        self.assertEqual(attachment.raw, b'%PDF-1.4 fake')
 
     def test_the_file_is_reachable_from_the_session_attachments(self):
         session = self._new_session()
@@ -131,12 +165,19 @@ class TestToolFile(AITestCommon):
     # Tests: prompt contract
     # ----------------------------------------------------------
 
-    def test_the_system_prompt_forbids_hand_written_file_contents(self):
+    def test_the_files_block_forbids_hand_written_file_contents(self):
+        block = self._new_session()._build_files_block()
+        self.assertIn('`data:` URIs', block)
+        self.assertIn('/web/content/', block)
+
+    def test_the_files_block_names_the_way_back_to_a_stored_file(self):
+        block = self._new_session()._build_files_block()
+        self.assertIn('odoo://attachment/', block)
+
+    def test_the_files_block_reaches_the_system_prompt(self):
         session = self._new_session()
         prompt = session._system_message()['content'][0]['text']
-        self.assertIn('<files>', prompt)
-        self.assertIn('data:', prompt)
-        self.assertIn('export_records', prompt)
+        self.assertIn(session._build_files_block(), prompt)
 
 
 @tagged('post_install', '-at_install', 'muk_ai')

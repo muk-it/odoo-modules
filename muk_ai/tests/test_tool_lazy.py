@@ -4,6 +4,10 @@ import json
 from unittest.mock import patch
 
 from odoo.addons.muk_ai.tests.common import AITestCommon, ToolCatalogMixin
+from odoo.addons.muk_ai.tools.call import (
+    TOOL_SUMMARY_MAX_CHARS,
+    summarize_tool_description,
+)
 
 
 class TestToolLazy(ToolCatalogMixin, AITestCommon):
@@ -64,6 +68,56 @@ class TestToolLazy(ToolCatalogMixin, AITestCommon):
         with self._patch_catalog():
             prompt = self.session._effective_system_prompt()
         self.assertNotIn('<available_tools>', prompt)
+
+    def test_a_summary_stops_at_the_first_sentence(self):
+        self.assertEqual(
+            summarize_tool_description('Export records. Field paths use "/".'),
+            'Export records.',
+        )
+
+    def test_a_summary_collapses_whitespace_and_newlines(self):
+        self.assertEqual(
+            summarize_tool_description('Fetch a\n  resource\tby uri'),
+            'Fetch a resource by uri',
+        )
+
+    def test_a_paragraph_without_an_early_full_stop_is_capped(self):
+        summary = summarize_tool_description('x' * 40 + ' ' + 'y' * 300 + '. Tail.')
+        self.assertLessEqual(len(summary), TOOL_SUMMARY_MAX_CHARS)
+        self.assertTrue(summary.endswith('…'))
+
+    def test_deferred_tools_are_listed_with_their_summary(self):
+        with self._patch_catalog():
+            block = self.session._build_available_tools_block()
+        self.assertIn('rare_tool: Rarely used', block)
+        self.assertIn('another_rare: Also rare', block)
+
+    def test_a_long_description_is_truncated_on_a_word_boundary(self):
+        long_tool = {
+            'name': 'rare_tool',
+            'description': 'word ' * 200,
+            'inputSchema': {'type': 'object'},
+        }
+        with patch.object(
+            type(self.env['muk_mcp.tool']),
+            'get_tools',
+            autospec=True,
+            return_value=[long_tool],
+        ):
+            block = self.session._build_available_tools_block()
+        line = next(li for li in block.splitlines() if li.startswith('rare_tool:'))
+        self.assertLess(len(line), TOOL_SUMMARY_MAX_CHARS + 20)
+        self.assertTrue(line.endswith('…'))
+
+    def test_a_tool_without_a_description_is_listed_by_name_alone(self):
+        with patch.object(
+            type(self.env['muk_mcp.tool']),
+            'get_tools',
+            autospec=True,
+            return_value=[{'name': 'rare_tool', 'inputSchema': {'type': 'object'}}],
+        ):
+            block = self.session._build_available_tools_block()
+        self.assertIn('\nrare_tool\n', block)
 
     def test_available_tools_block_omitted_when_catalog_empty(self):
         with patch.object(

@@ -6,6 +6,8 @@ import json
 # Tool Round Behavior
 # ----------------------------------------------------------
 
+TOOL_SUMMARY_MAX_CHARS = 120
+
 TERMINATING_TOOLS = frozenset(
     {
         'open_record',
@@ -177,6 +179,22 @@ def clean_ask_preview(preview) -> dict | None:
             else []
         )
     return cleaned
+
+
+def summarize_tool_description(description) -> str:
+    """Return a one-line tool summary bounded to ``TOOL_SUMMARY_MAX_CHARS``.
+
+    Prefers the first sentence, then hard-truncates on a word boundary: some
+    descriptions run for paragraphs with no early full stop, and tools defined
+    as ``muk_mcp.tool`` records carry user-authored text of any length.
+    """
+    text = ' '.join(str(description or '').split())
+    stop = text.find('. ')
+    if 0 < stop < TOOL_SUMMARY_MAX_CHARS:
+        return text[: stop + 1]
+    if len(text) > TOOL_SUMMARY_MAX_CHARS:
+        return text[: TOOL_SUMMARY_MAX_CHARS - 1].rsplit(' ', 1)[0] + '…'
+    return text
 
 
 def build_tool_call_output(call_id: str, output) -> dict:

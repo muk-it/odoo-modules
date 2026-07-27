@@ -57,6 +57,7 @@ from odoo.addons.muk_ai.tools import (
     fetch_url,
     is_unmaterialized_attachment,
     sanitize_json_schema,
+    summarize_tool_description,
     tool_file_payload,
     with_ui_ctx,
 )
@@ -427,18 +428,20 @@ class AISession(models.Model):
         return []
 
     def _build_available_tools_block(self) -> str:
-        """Build the prompt block listing deferred, name-only tools."""
-        catalog_names = {
-            entry['name'] for entry in self._get_filtered_catalog() if entry.get('name')
+        """Build the prompt block summarizing the deferred tools."""
+        catalog = {
+            entry['name']: summarize_tool_description(entry.get('description'))
+            for entry in self._get_filtered_catalog()
+            if entry.get('name')
         }
-        loaded = set(self._loaded_tool_names()) & catalog_names
-        if deferred := sorted(catalog_names - loaded):
+        loaded = set(self._loaded_tool_names()) & set(catalog)
+        if deferred := sorted(set(catalog) - loaded):
             lines = [
                 '<available_tools>',
                 (
                     'This list is COMPLETE: every tool the session can call '
                     'is either in your `tools` array (immediately callable) '
-                    'or listed below by name. Do NOT call list_models or any '
+                    'or listed below. Do NOT call list_models or any '
                     'other tool to look for tools — every name is here.'
                 ),
                 (
@@ -453,8 +456,16 @@ class AISession(models.Model):
                     'for any deferred tool — never load and then call in '
                     'two separate rounds when one will do.'
                 ),
+                (
+                    'Each line below is `name: summary`. The summary is '
+                    'abbreviated — tool_load returns the full description and '
+                    'input schema.'
+                ),
                 *self._available_tools_extra_paragraphs(),
-                ', '.join(deferred),
+                *(
+                    f'{name}: {summary}' if (summary := catalog[name]) else name
+                    for name in deferred
+                ),
                 '</available_tools>',
             ]
             return '\n'.join(lines)
@@ -468,11 +479,13 @@ class AISession(models.Model):
             'hand-written base64. Base64 you compose is always corrupt, and '
             'the chat strips `data:` links, so the user gets a dead link and '
             'a broken file.\n'
-            'To give the user a file, call the tool that produces it — '
-            'export_records for CSV/XLSX data, print_report for a rendered '
-            'report. Each returns a `url`; link that URL directly, e.g. '
+            'To give the user a file, call the tool that produces it (see '
+            '<available_tools> for the exporting and reporting tools). Such a '
+            'tool returns a `url`; link that URL directly, e.g. '
             '[Download](/web/content/42?download=1). That link is the only way '
             'the user reaches the file, so never omit it.\n'
+            'To read a stored file back yourself, pass its `attachment_id` to '
+            'read_resource as `odoo://attachment/<id>`.\n'
             '</files>'
         )
 

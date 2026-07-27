@@ -88,9 +88,9 @@ class IrAttachment(models.Model):
     ) -> IrAttachment:
         """Create a session attachment from a base64 payload, checking only its size.
 
-        The mimetype allow-list guards what the *model* may ingest, so it does
-        not apply here: server-produced artifacts (a CSV export, a rendered
-        report) are only ever downloaded by the user.
+        The mimetype allow-list guards what the *model* may ingest, which is a
+        narrower question than what may be stored: an XLSX export has no
+        ingest strategy, yet the user must still be able to download it.
 
         :raise UserError: when the payload is not valid base64
         """
