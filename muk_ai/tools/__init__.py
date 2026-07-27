@@ -55,6 +55,7 @@ from .attachment import (
     TOOL_VISION_MAX_IMAGES,
     URL_REF_RE,
     is_unmaterialized_attachment,
+    tool_file_payload,
 )
 from .sources import SOURCE_EXTRACTORS, extract_sources, source_extractor
 from .url_fetch import (

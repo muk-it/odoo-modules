@@ -39,5 +39,6 @@ from . import test_session_autoname
 from . import test_session_rename
 from . import test_client_tool
 from . import test_tool_vision
+from . import test_tool_file
 from . import test_agent_handoff
 from . import test_handover

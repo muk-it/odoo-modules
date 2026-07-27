@@ -51,6 +51,24 @@ ATTACHMENT_REF_RE = re.compile(r'^@attachment:(\d+)$')
 URL_REF_RE = re.compile(r'^@url:(https://\S+)$')
 
 
+def tool_file_payload(result) -> dict | None:
+    """Return the file payload a tool result carries, or ``None``.
+
+    File-producing tools (``export_records``, ``print_report``) answer with
+    ``content_base64`` plus its filename and mimetype, the shape MCP clients
+    consume. The chat client cannot, so the payload is stored instead.
+    """
+    if not isinstance(result, dict):
+        return None
+    if not (data := result.get('content_base64')) or not isinstance(data, str):
+        return None
+    return {
+        'filename': str(result.get('filename') or 'download'),
+        'mimetype': str(result.get('mimetype') or 'application/octet-stream'),
+        'data_b64': data,
+    }
+
+
 def is_unmaterialized_attachment(block) -> bool:
     """Return whether a content block is an attachment placeholder lacking its data."""
     return (

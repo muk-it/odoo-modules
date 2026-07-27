@@ -57,6 +57,7 @@ from odoo.addons.muk_ai.tools import (
     fetch_url,
     is_unmaterialized_attachment,
     sanitize_json_schema,
+    tool_file_payload,
     with_ui_ctx,
 )
 
@@ -459,6 +460,22 @@ class AISession(models.Model):
             return '\n'.join(lines)
         return ''
 
+    def _build_files_block(self) -> str:
+        """Build the prompt block stating how to hand a file to the user."""
+        return (
+            '<files>\n'
+            'NEVER write file contents yourself: no `data:` URIs, no '
+            'hand-written base64. Base64 you compose is always corrupt, and '
+            'the chat strips `data:` links, so the user gets a dead link and '
+            'a broken file.\n'
+            'To give the user a file, call the tool that produces it — '
+            'export_records for CSV/XLSX data, print_report for a rendered '
+            'report. Each returns a `url`; link that URL directly, e.g. '
+            '[Download](/web/content/42?download=1). That link is the only way '
+            'the user reaches the file, so never omit it.\n'
+            '</files>'
+        )
+
     def _available_tools_extra_paragraphs(self) -> list[str]:
         """Return extra paragraphs appended to the available-tools block."""
         return []
@@ -628,6 +645,7 @@ class AISession(models.Model):
             self._effective_system_prompt(),
             *self._system_prompt_addenda(),
             self._build_runtime_block(),
+            self._build_files_block(),
             self._build_available_tools_block(),
         ]
         return {
@@ -1430,7 +1448,13 @@ class AISession(models.Model):
     def _dispatch_tool_load_inline_call(
         self, call_spec, loaded: dict, parent_call_id: str | None
     ) -> dict:
-        """Execute a tool call bundled into a ``tool_load`` request."""
+        """Execute a tool call bundled into a ``tool_load`` request.
+
+        The file payload is stored here rather than in
+        :meth:`_append_tool_output_with_vision`, which only sees the wrapping
+        ``tool_load`` response: a nested result would otherwise reach the model
+        as raw base64 and be logged to the event stream in full.
+        """
         if not isinstance(call_spec, dict):
             return {
                 'error': '`call` must be an object with `name` and optional `arguments`.'
@@ -1469,6 +1493,7 @@ class AISession(models.Model):
                     decision='auto_approved', call=call, risk=gate['risk']
                 )
             result, ok = self._dispatch_tool_call(target, target_args, inline_call_id)
+            result = self._persist_tool_file(result)
         event = {
             'kind': 'tool_result',
             'name': target,
@@ -1968,6 +1993,49 @@ class AISession(models.Model):
             return {**cleaned, 'text': f'{text}\n{note}' if text else note}
         return cleaned
 
+    def _persist_tool_file(self, result) -> object:
+        """Store a tool's file payload and swap its base64 for a download URL.
+
+        A file-producing tool answers with ``content_base64``. Left in place it
+        floods the context window and still leaves the model no way to hand the
+        file over, which is why models resort to inventing ``data:`` links. The
+        bytes become a session attachment instead, and the result carries the
+        ``/web/content`` URL the chat renderer accepts.
+
+        The registry JSON-encodes a tool's dict result, so the payload usually
+        arrives as text and is decoded before the swap.
+        """
+        if isinstance(result, str):
+            if 'content_base64' not in result:
+                return result
+            try:
+                parsed = json.loads(result)
+            except ValueError:
+                return result
+            stored = self._persist_tool_file(parsed)
+            return result if stored is parsed else json.dumps(stored, indent=2)
+        if not (payload := tool_file_payload(result)):
+            return result
+        rest = {key: value for key, value in result.items() if key != 'content_base64'}
+        try:
+            attachment = (
+                self.env['ir.attachment']
+                .sudo()
+                ._ai_store_binary(
+                    payload['filename'],
+                    payload['mimetype'],
+                    payload['data_b64'],
+                    res_id=self.id,
+                )
+            )
+        except UserError as error:
+            return {**rest, 'error': str(error)}
+        return {
+            **rest,
+            'attachment_id': attachment.id,
+            'url': f'/web/content/{attachment.id}?download=1',
+        }
+
     def _bound_tool_output(self, entry: dict) -> dict:
         """Cap an oversized tool output so one result can't exhaust the window.
 
@@ -2000,7 +2068,9 @@ class AISession(models.Model):
     ) -> object:
         """Append a tool output and defer any image payload for the round.
 
-        The text-only result becomes the ``function_call_output`` immediately.
+        Any file payload is stored first, so the ``function_call_output`` never
+        carries raw base64. The text-only result becomes the
+        ``function_call_output`` immediately.
         Image attachments are held on the session (not appended inline) and
         flushed by ``_flush_deferred_vision`` once every function_call_output of
         the round is emitted, so images always follow all tool results across a
@@ -2009,7 +2079,9 @@ class AISession(models.Model):
 
         :return: the cleaned, text-only result for event logging
         """
-        attachments, cleaned = self._extract_tool_vision(result)
+        attachments, cleaned = self._extract_tool_vision(
+            self._persist_tool_file(result)
+        )
         outputs.append(
             self._bound_tool_output(build_tool_call_output(call_id, cleaned))
         )
