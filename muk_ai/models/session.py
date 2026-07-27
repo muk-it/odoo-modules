@@ -192,6 +192,16 @@ class AISession(models.Model):
         copy=False,
     )
 
+    is_owner = fields.Boolean(
+        compute='_compute_is_owner',
+        string='Is Owner',
+        help=(
+            'Whether the current user owns this session. Odoo 16 evaluates '
+            '``attrs`` with ``literal_eval``, so a view cannot compare against '
+            '``uid`` directly.'
+        ),
+    )
+
     notification_unread = fields.Boolean(
         string='Notification Unread',
         help=(
@@ -4091,6 +4101,13 @@ class AISession(models.Model):
     # ----------------------------------------------------------
     # Compute
     # ----------------------------------------------------------
+
+    @api.depends('user_id')
+    @api.depends_context('uid')
+    def _compute_is_owner(self) -> None:
+        """Flag the sessions owned by the current user."""
+        for record in self:
+            record.is_owner = record.user_id.id == self.env.uid
 
     @api.depends('agent_id', 'agent_id.model_id', 'agent_id.model_id.context_window')
     def _compute_context_window(self) -> None:

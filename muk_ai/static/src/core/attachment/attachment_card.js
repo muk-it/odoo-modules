@@ -2,7 +2,7 @@
 
 import { Component } from '@odoo/owl';
 
-import { humanSize } from '@web/core/utils/binary';
+import { humanSize } from '@muk_ai/core/compat/binary';
 
 import { toFileModel } from '@muk_ai/core/attachment/attachment';
 

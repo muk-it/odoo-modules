@@ -110,15 +110,9 @@ export class SessionEventsField extends Component {
     onOpenAttachment() {}
 }
 
-export const sessionEventsField = {
-    component: SessionEventsField,
-    displayName: _t('AI Session Events'),
-    supportedTypes: ['json'],
-};
-
-SessionEventsField.extractProps = sessionEventsField.extractProps;
-SessionEventsField.supportedTypes = sessionEventsField.supportedTypes;
-SessionEventsField.displayName = sessionEventsField.displayName;
-SessionEventsField.fieldDependencies = sessionEventsField.fieldDependencies;
+// Odoo 16 reads these as statics on the component; the field descriptor object
+// arrived in 17.0. This widget takes no options, so no extractProps hook.
+SessionEventsField.supportedTypes = ['json'];
+SessionEventsField.displayName = _t('AI Session Events');
 
 registry.category('fields').add('ai_session_events', SessionEventsField);

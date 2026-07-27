@@ -27,20 +27,20 @@
 				<field name="name"/>
 				<field name="email"/>
 				<templates>
-					<t t-name="card">
-						<div class="d-flex align-items-center gap-2">
-							<aside>
+					<t t-name="kanban-box">
+						<div class="oe_kanban_global_click d-flex align-items-center gap-2 p-2">
+							<div>
 								<img
                                     t-attf-src="/web/image/res.users/{{record.id.raw_value}}/avatar_128"
                                     alt="User"
                                     class="o_avatar rounded"
                                     style="width: 40px; height: 40px; object-fit: cover;"
                                 />
-							</aside>
-							<main class="overflow-hidden">
+							</div>
+							<div class="overflow-hidden">
 								<field name="name" class="fw-bold text-truncate d-block"/>
 								<field name="email" class="text-muted small text-truncate d-block"/>
-							</main>
+							</div>
 						</div>
 					</t>
 				</templates>

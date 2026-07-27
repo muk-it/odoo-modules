@@ -85,13 +85,13 @@
                         string="Open"
                         class="btn-primary"
                         icon="fa-comments"
-                        attrs="{'invisible': [('user_id', '!=', uid)]}"
+                        attrs="{'invisible': [('is_owner', '=', False)]}"
                     />
 					<button
                         name="action_stop"
                         type="object"
                         string="Stop"
-                        attrs="{'invisible': ['|', ('state', 'not in', ['running', 'waiting']), ('user_id', '!=', uid)]}"
+                        attrs="{'invisible': ['|', ('state', 'not in', ['running', 'waiting']), ('is_owner', '=', False)]}"
                         groups="!base.group_system"
                     />
 					<button
@@ -108,6 +108,7 @@
                     />
 				</header>
 				<sheet>
+					<field name="is_owner" invisible="1"/>
 					<div class="oe_title">
 						<label for="name"/>
 						<h1>

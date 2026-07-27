@@ -103,28 +103,15 @@ export class ToolPickerField extends Component {
     }
 }
 
-export const toolPickerField = {
-    component: ToolPickerField,
-    displayName: _t('Tool Picker'),
-    supportedOptions: [
-        {
-            label: _t('Options field'),
-            name: 'options_field',
-            type: 'string',
-        },
-    ],
-    supportedTypes: ['json'],
-    extractProps: ({ attrs, options, placeholder }) => ({
-        optionsField: options.options_field || '',
-        placeholder: placeholder || attrs?.placeholder || '',
-    }),
-    fieldDependencies: ({ options }) =>
-        options.options_field ? [{ name: options.options_field, type: 'json' }] : [],
-};
-
-ToolPickerField.extractProps = toolPickerField.extractProps;
-ToolPickerField.supportedTypes = toolPickerField.supportedTypes;
-ToolPickerField.displayName = toolPickerField.displayName;
-ToolPickerField.fieldDependencies = toolPickerField.fieldDependencies;
+// Odoo 16 reads these as statics on the component and calls extractProps with a
+// single ``{field, attrs}`` argument; the field descriptor object and the
+// ``(staticInfo, dynamicInfo)`` signature both arrived in 17.0. The options
+// field is declared explicitly in the views, so no fieldDependencies hook.
+ToolPickerField.extractProps = ({ attrs }) => ({
+    optionsField: attrs.options.options_field || '',
+    placeholder: attrs.placeholder || '',
+});
+ToolPickerField.supportedTypes = ['json'];
+ToolPickerField.displayName = _t('Tool Picker');
 
 registry.category('fields').add('tool_picker', ToolPickerField);

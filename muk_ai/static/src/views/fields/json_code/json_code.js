@@ -21,7 +21,7 @@ export class JsonCodeField extends Component {
         mode: { type: String, optional: true },
     };
     static defaultProps = {
-        mode: 'javascript',
+        mode: 'js',
     };
     static components = { CodeEditor };
     setup() {
@@ -39,9 +39,12 @@ export class JsonCodeField extends Component {
                 (stringified.match(/\n/g) || []).length + 1,
             );
         });
-        const { model } = this.props.record;
-        useBus(model.bus, 'WILL_SAVE_URGENTLY', () => this.commitChanges());
-        useBus(model.bus, 'NEED_LOCAL_CHANGES', ({ detail }) =>
+        // Odoo 16 fires these on the env bus under a RELATIONAL_MODEL: prefix;
+        // the per-model bus arrived with the new relational model in 17.0.
+        useBus(this.env.bus, 'RELATIONAL_MODEL:WILL_SAVE_URGENTLY', () =>
+            this.commitChanges(),
+        );
+        useBus(this.env.bus, 'RELATIONAL_MODEL:NEED_LOCAL_CHANGES', ({ detail }) =>
             detail.proms.push(this.commitChanges()),
         );
     }
@@ -97,25 +100,13 @@ export class JsonCodeField extends Component {
     }
 }
 
-export const jsonCodeField = {
-    component: JsonCodeField,
-    displayName: _t('JSON Code Editor'),
-    supportedOptions: [
-        {
-            label: _t('Mode'),
-            name: 'mode',
-            type: 'string',
-        },
-    ],
-    supportedTypes: ['json'],
-    extractProps: ({ options }) => ({
-        mode: options.mode || 'javascript',
-    }),
-};
-
-JsonCodeField.extractProps = jsonCodeField.extractProps;
-JsonCodeField.supportedTypes = jsonCodeField.supportedTypes;
-JsonCodeField.displayName = jsonCodeField.displayName;
-JsonCodeField.fieldDependencies = jsonCodeField.fieldDependencies;
+// Odoo 16 reads these as statics on the component and calls extractProps with a
+// single ``{field, attrs}`` argument; the field descriptor object and the
+// ``(staticInfo, dynamicInfo)`` signature both arrived in 17.0.
+JsonCodeField.extractProps = ({ attrs }) => ({
+    mode: attrs.options.mode || 'js',
+});
+JsonCodeField.supportedTypes = ['json'];
+JsonCodeField.displayName = _t('JSON Code Editor');
 
 registry.category('fields').add('json_code', JsonCodeField);

@@ -2,10 +2,7 @@
 
 import { _t } from '@muk_ai/core/compat/translation';
 import { registry } from '@web/core/registry';
-import {
-    SelectionField,
-    selectionField,
-} from '@web/views/fields/selection/selection_field';
+import { SelectionField } from '@web/views/fields/selection/selection_field';
 
 /** Selection field limited to the tiers listed in a JSON options field. */
 export class EffortPickerField extends SelectionField {
@@ -31,29 +28,15 @@ export class EffortPickerField extends SelectionField {
     }
 }
 
-export const effortPickerField = {
-    ...selectionField,
-    component: EffortPickerField,
-    displayName: _t('Effort Picker'),
-    supportedOptions: [
-        {
-            label: _t('Options field'),
-            name: 'options_field',
-            type: 'string',
-        },
-    ],
-    supportedTypes: ['selection'],
-    extractProps: (staticInfo, dynamicInfo) => ({
-        ...selectionField.extractProps(staticInfo, dynamicInfo),
-        optionsField: staticInfo.options.options_field || '',
-    }),
-    fieldDependencies: ({ options }) =>
-        options.options_field ? [{ name: options.options_field, type: 'json' }] : [],
-};
-
-EffortPickerField.extractProps = effortPickerField.extractProps;
-EffortPickerField.supportedTypes = effortPickerField.supportedTypes;
-EffortPickerField.displayName = effortPickerField.displayName;
-EffortPickerField.fieldDependencies = effortPickerField.fieldDependencies;
+// Odoo 16 reads these as statics on the component and calls extractProps with a
+// single ``{field, attrs}`` argument; the field descriptor object and the
+// ``(staticInfo, dynamicInfo)`` signature both arrived in 17.0. The options
+// field is declared explicitly in the views, so no fieldDependencies hook.
+EffortPickerField.extractProps = ({ attrs }) => ({
+    ...SelectionField.extractProps({ attrs }),
+    optionsField: attrs.options.options_field || '',
+});
+EffortPickerField.supportedTypes = ['selection'];
+EffortPickerField.displayName = _t('Effort Picker');
 
 registry.category('fields').add('effort_picker', EffortPickerField);

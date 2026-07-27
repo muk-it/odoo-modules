@@ -23,7 +23,7 @@ export class CodeEditor extends Component {
     };
     static defaultProps = {
         value: '',
-        mode: 'javascript',
+        mode: 'js',
         readonly: false,
         class: '',
     };
@@ -32,8 +32,17 @@ export class CodeEditor extends Component {
         this.editorRef = useRef('editor');
         this.editor = null;
         onWillStart(async () => {
+            // ``ace/mode/js`` needs three modules that ace.js does not carry:
+            // the doc-comment rules from javascript_highlight_rules.js, and
+            // matching_brace_outdent plus folding/cstyle, which Odoo happens to
+            // ship inside mode-scss.js. Later versions get all of these from the
+            // web.ace_lib bundle, which Odoo 16 does not define.
             await loadJS('/web/static/lib/ace/ace.js');
-            await loadJS('/web/static/lib/ace/mode-javascript.js');
+            await Promise.all([
+                loadJS('/web/static/lib/ace/javascript_highlight_rules.js'),
+                loadJS('/web/static/lib/ace/mode-scss.js'),
+            ]);
+            await loadJS('/web/static/lib/ace/mode-js.js');
         });
         useEffect(
             () => {
@@ -57,7 +66,7 @@ export class CodeEditor extends Component {
             highlightActiveLine: false,
             useWorker: false,
         });
-        this.editor.session.setMode(`ace/mode/${this.props.mode || 'javascript'}`);
+        this.editor.session.setMode(`ace/mode/${this.props.mode || 'js'}`);
         this.editor.setReadOnly(!!this.props.readonly);
         this.editor.renderer.setShowGutter(false);
         if (this.props.onChange) {

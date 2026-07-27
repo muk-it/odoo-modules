@@ -43,7 +43,7 @@
 				<field name="enable_code_interpreter"/>
 				<field name="active"/>
 				<templates>
-					<t t-name="menu">
+					<t t-name="kanban-menu">
 						<div class="container o_kanban_card_manage_pane">
 							<div class="o_kanban_card_manage_section">
 								<a type="open" class="dropdown-item" role="menuitem">Open</a>
@@ -52,42 +52,44 @@
 							</div>
 						</div>
 					</t>
-					<t t-name="card">
-						<widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" attrs="{'invisible': [('active', '=', True)]}"/>
-						<div class="d-flex">
-							<aside>
-								<img
-                                    t-attf-src="/web/image/muk_ai.agent/{{record.id.raw_value}}/image_128"
-                                    alt="Agent"
-                                    class="rounded"
-                                    style="width: 64px; height: 64px; object-fit: cover;"
-                                />
-							</aside>
-							<main class="ms-2 flex-grow-1 overflow-hidden">
-								<h4 class="mb-0 text-truncate">
-									<field name="name"/>
-								</h4>
-								<field
-                                    t-if="record.model_id.raw_value"
-                                    name="model_id"
-                                    class="small px-1 text-bg-primary rounded"
-                                />
-							</main>
-						</div>
-						<div class="mt-2">
-							<field name="description" class="text-muted"/>
-						</div>
-						<div class="mt-2 d-flex flex-wrap gap-1">
-							<span t-if="record.read_only.raw_value" class="badge text-bg-secondary">Read-only</span>
-							<span t-if="record.enable_web_search.raw_value" class="badge text-bg-info">
-								<i class="fa fa-globe me-1" title="Web Search" role="img"/>Web
-							</span>
-							<span t-if="record.enable_image_generation.raw_value" class="badge text-bg-info">
-								<i class="fa fa-image me-1" title="Image Generation" role="img"/>Image
-							</span>
-							<span t-if="record.enable_code_interpreter.raw_value" class="badge text-bg-info">
-								<i class="fa fa-code me-1" title="Code Interpreter" role="img"/>Code
-							</span>
+					<t t-name="kanban-box">
+						<div class="oe_kanban_global_click p-2">
+							<widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" attrs="{'invisible': [('active', '=', True)]}"/>
+							<div class="d-flex">
+								<div>
+									<img
+                                        t-attf-src="/web/image/muk_ai.agent/{{record.id.raw_value}}/image_128"
+                                        alt="Agent"
+                                        class="rounded"
+                                        style="width: 64px; height: 64px; object-fit: cover;"
+                                    />
+								</div>
+								<div class="ms-2 flex-grow-1 overflow-hidden">
+									<h4 class="mb-0 text-truncate">
+										<field name="name"/>
+									</h4>
+									<field
+                                        t-if="record.model_id.raw_value"
+                                        name="model_id"
+                                        class="small px-1 text-bg-primary rounded"
+                                    />
+								</div>
+							</div>
+							<div class="mt-2">
+								<field name="description" class="text-muted"/>
+							</div>
+							<div class="mt-2 d-flex flex-wrap gap-1">
+								<span t-if="record.read_only.raw_value" class="badge text-bg-secondary">Read-only</span>
+								<span t-if="record.enable_web_search.raw_value" class="badge text-bg-info">
+									<i class="fa fa-globe me-1" title="Web Search" role="img"/>Web
+								</span>
+								<span t-if="record.enable_image_generation.raw_value" class="badge text-bg-info">
+									<i class="fa fa-image me-1" title="Image Generation" role="img"/>Image
+								</span>
+								<span t-if="record.enable_code_interpreter.raw_value" class="badge text-bg-info">
+									<i class="fa fa-code me-1" title="Code Interpreter" role="img"/>Code
+								</span>
+							</div>
 						</div>
 					</t>
 				</templates>
@@ -208,15 +210,15 @@
 									<field name="label"/>
 									<field name="prompt"/>
 									<templates>
-										<t t-name="card" class="flex-row">
-											<main class="flex-grow-1 overflow-hidden">
+										<t t-name="kanban-box">
+											<div class="oe_kanban_global_click p-2 overflow-hidden">
 												<div class="fw-semibold text-truncate">
 													<field name="label"/>
 												</div>
 												<div class="small text-muted text-truncate">
 													<field name="prompt"/>
 												</div>
-											</main>
+											</div>
 										</t>
 									</templates>
 								</kanban>
@@ -273,7 +275,11 @@
 						</page>
 					</notebook>
 				</sheet>
-				<chatter/>
+				<div class="oe_chatter">
+					<field name="message_follower_ids"/>
+					<field name="activity_ids"/>
+					<field name="message_ids"/>
+				</div>
 			</form>
 		</field>
 	</record>
