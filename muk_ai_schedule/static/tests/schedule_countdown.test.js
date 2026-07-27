@@ -51,11 +51,16 @@ function mockBus() {
 
 /**
  * Pin the clock at the fixture time and render the widget for one record.
+ *
+ * The zone is pinned along with the date: `mockDate` leaves the time zone
+ * untouched when none is given, so the countdown would otherwise be measured
+ * against whatever zone the runner happens to carry. Every expectation below
+ * is plain UTC arithmetic against the fixture targets.
  * @param {number} resId the session record to open
  * @returns {Promise<object>} the mounted form view
  */
 async function mountCountdown(resId) {
-    mockDate(NOW);
+    mockDate(NOW, 0);
     mockBus();
     return mountView({
         resModel: 'muk_ai.session',
@@ -88,7 +93,7 @@ function makeRecord(resModel, isoUtc) {
  * @returns {Promise<object>} the mounted component
  */
 async function mountBareField(resModel, isoUtc) {
-    mockDate(NOW);
+    mockDate(NOW, 0);
     mockBus();
     const field = await mountWithCleanup(ScheduleCountdownField, {
         props: { name: 'resume_at', record: makeRecord(resModel, isoUtc) },
