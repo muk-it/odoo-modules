@@ -223,6 +223,7 @@ class ProviderBase:
             self._raise(getattr(error.response, 'text', '') or str(error))
         except requests.RequestException as error:
             self._raise(error)
+        response.encoding = 'utf-8'
         line_iter = response.iter_lines(decode_unicode=True)
         try:
             while True:
