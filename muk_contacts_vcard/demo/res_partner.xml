@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo noupdate="1">
+
+	<record id="base.res_partner_address_1" model="res.partner">
+		<field name="firstname">Willie</field>
+		<field name="lastname">Burke</field>
+		<field name="gender">m</field>
+		<field name="birthdate">1985-03-15</field>
+		<field name="nickname">Will</field>
+		<field name="honorific_prefix_ids" eval="[(4, ref('demo_honorific_ing'))]"/>
+	</record>
+
+	<record id="base.res_partner_address_3" model="res.partner">
+		<field name="firstname">Douglas</field>
+		<field name="lastname">Fletcher</field>
+		<field name="gender">m</field>
+		<field name="birthdate">1978-07-22</field>
+		<field name="phone2">+1 555-0142</field>
+		<field name="email2">douglas.private@example.com</field>
+		<field name="honorific_prefix_ids" eval="[(4, ref('demo_honorific_dr'))]"/>
+		<field name="honorific_suffix_ids" eval="[(4, ref('demo_honorific_mba'))]"/>
+	</record>
+
+	<record id="base.res_partner_address_15" model="res.partner">
+		<field name="firstname">Brandon</field>
+		<field name="lastname">Freeman</field>
+		<field name="gender">m</field>
+		<field name="birthdate">1990-11-08</field>
+		<field name="department">Engineering</field>
+		<field name="role">Lead Developer</field>
+		<field name="honorific_suffix_ids" eval="[(4, ref('demo_honorific_msc'))]"/>
+	</record>
+
+	<record id="base.res_partner_address_16" model="res.partner">
+		<field name="firstname">Nicole</field>
+		<field name="lastname">Ford</field>
+		<field name="gender">f</field>
+		<field name="birthdate">1992-05-30</field>
+		<field name="nickname">Nicky</field>
+		<field name="department">Marketing</field>
+		<field name="role">Brand Manager</field>
+		<field name="honorific_prefix_ids" eval="[(4, ref('demo_honorific_mag'))]"/>
+	</record>
+
+	<record id="base.res_partner_address_17" model="res.partner">
+		<field name="firstname">Toni</field>
+		<field name="lastname">Rhodes</field>
+		<field name="gender">f</field>
+		<field name="birthdate">1988-01-14</field>
+		<field name="phone2">+1 555-0198</field>
+		<field name="email2">toni.personal@example.com</field>
+		<field name="honorific_prefix_ids" eval="[
+			(4, ref('demo_honorific_prof')),
+			(4, ref('demo_honorific_dr')),
+		]"/>
+	</record>
+
+</odoo>

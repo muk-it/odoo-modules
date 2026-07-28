@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+
+    <record id="view_partner_list" model="ir.ui.view">
+	    <field name="name">res.partner.list</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="muk_contacts.view_partner_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="attributes">
+            	<attribute name="optional">hide</attribute>
+            </xpath>
+			<xpath expr="//field[@name='name']" position="after">
+				<field name="firstname" optional="show" invisible="is_company"/>
+				<field name="lastname" optional="show" invisible="is_company"/>
+			</xpath>
+        </field>
+    </record>
+
+    <record id="view_partner_form" model="ir.ui.view">
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="muk_contacts.view_partner_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name' and @invisible='is_company']" position="attributes">
+				<attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='function']" position="before">
+				<label for="firstname" string="Name" invisible="is_company"/>
+				<div class="o_row" invisible="is_company">
+					<field name="firstname" placeholder="Firstname"/>
+					<field name="middlename" placeholder="Middlename"/>
+					<field name="lastname" placeholder="Lastname"/>
+				</div>
+				<field name="department" placeholder="e.g. IT"/>
+            </xpath>
+            <xpath expr="//field[@name='function']" position="after">
+				<field
+					name="role"
+					placeholder="e.g. Compliance Oversight"
+					invisible="is_company or not parent_id"
+				/>
+            </xpath>
+            <xpath expr="//label[@for='vat']" position="attributes">
+				<attribute name="invisible">parent_id</attribute>
+            </xpath>
+            <xpath expr="//div[@name='vat_vies_container']" position="attributes">
+				<attribute name="invisible">parent_id</attribute>
+            </xpath>
+            <xpath expr="//field[@name='partner_properties']" position="before">
+				<separator string="Personal Information" invisible="is_company"/>
+				<group invisible="is_company">
+					<group>
+						<field name="gender" widget="radio" options="{'horizontal': true}"/>
+						<field
+							name="honorific_prefix_ids"
+							widget="many2many_tags"
+							context="{'default_position': 'preceding'}"
+							placeholder="e.g. Dr."
+							string="Prefix"
+						/>
+						<field
+							name="honorific_suffix_ids"
+							widget="many2many_tags"
+							context="{'default_position': 'following'}"
+							placeholder="e.g. B.Sc."
+							string="Suffix"
+						/>
+					</group>
+					<group>
+						<field name="nickname" placeholder="e.g. Mike"/>
+						<field name="birthdate_placeholder" invisible="1"/>
+						<field
+							name="birthdate"
+							options="{'placeholder_field': 'birthdate_placeholder'}"
+						/>
+						<field
+							name="email2"
+							widget="email"
+							placeholder="e.g. home@example.com"
+						/>
+						<field
+							name="phone2"
+							widget="phone"
+							placeholder="e.g. +1 111 222 3333"
+						/>
+					</group>
+				</group>
+				<separator
+					string="Additional Information"
+					invisible="not partner_properties"
+				/>
+            </xpath>
+            <xpath expr="//field[@name='ref']" position="after">
+				<field name="tz" />
+            </xpath>
+            <xpath expr="//field[@name='child_ids']//tree//field[@name='phone']" position="after">
+				<field name="mobile" optional="hide"/>
+            </xpath>
+            <xpath expr="//field[@name='child_ids']/form//field[@name='name']" position="after">
+				<label for="firstname" string="Name" invisible="type != 'contact'"/>
+				<div class="o_row" invisible="type != 'contact'">
+					<field name="firstname" placeholder="Firstname"/>
+					<field name="middlename" placeholder="Middlename"/>
+					<field name="lastname" placeholder="Lastname"/>
+				</div>
+            </xpath>
+            <xpath expr="//field[@name='child_ids']/form//field[@name='function']" position="replace"/>
+            <xpath expr="//field[@name='child_ids']/form//field[@name='comment']/.." position="before">
+				<group invisible="type != 'contact'">
+					<group string="Job Information">
+						<field name="department" placeholder="e.g. IT"/>
+						<field name="function" placeholder="e.g. Sales Director"/>
+						<field name="role" placeholder="e.g. Compliance Oversight"/>
+					</group>
+					<group string="Personal Information">
+						<field name="gender" widget="radio" options="{'horizontal': true}"/>
+						<field
+							name="honorific_prefix_ids"
+							widget="many2many_tags"
+							context="{'default_position': 'preceding'}"
+							placeholder="e.g. Dr."
+							string="Prefix"
+						/>
+						<field
+							name="honorific_suffix_ids"
+							widget="many2many_tags"
+							context="{'default_position': 'following'}"
+							placeholder="e.g. B.Sc."
+							string="Suffix"
+						/>
+					</group>
+				</group>
+            </xpath>
+            <xpath expr="//field[@name='child_ids']/form//field[@name='comment']/.." position="attributes">
+				<attribute name="string">Notes</attribute>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

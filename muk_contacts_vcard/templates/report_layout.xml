@@ -1,0 +1,21 @@
+<odoo>
+
+    <template id="contact_name" inherit_id="muk_contacts.contact_name">
+        <xpath expr="//div" position="replace">
+            <div t-if="'name' in fields">
+		        <t t-if="object.parent_id and object.parent_name or object.company_name">
+		            <div itemprop="company" t-esc="object.parent_name or object.company_name"/>
+                    <div 
+                        itemprop="department" 
+                        t-if="object.parent_id and object.parent_id.department"
+                        t-esc="object.parent_id.department"
+                    />
+                </t>
+                 <t t-if="object.name">
+			     	<div itemprop="name" t-esc="object.formatted_name"/>
+                 </t>
+            </div>
+        </xpath>
+    </template>
+
+</odoo>

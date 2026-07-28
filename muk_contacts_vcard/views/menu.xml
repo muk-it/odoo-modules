@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    
+    <menuitem 
+    	id="menu_honorific_contact"
+        name="Contact Honorifics" 
+        action="action_honorific_contact"
+        parent="contacts.res_partner_menu_config"
+        sequence="3"
+    />
+
+</odoo>
