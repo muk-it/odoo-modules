@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import io
 import json
 import time
 from collections.abc import Callable, Iterator
@@ -7,6 +8,7 @@ from contextlib import contextmanager
 from unittest.mock import MagicMock, patch
 
 import requests
+import urllib3
 from psycopg2.errors import InFailedSqlTransaction, SerializationFailure
 
 from odoo import models
@@ -129,6 +131,23 @@ class TestAiStreaming(AITestCommon):
         response = MagicMock()
         response.iter_lines.return_value = lines
         response.raise_for_status.return_value = None
+        return response
+
+    def _byte_sse_response(self, body: bytes) -> requests.Response:
+        """Build a real streaming response over raw bytes, as requests would.
+
+        The content type carries no ``charset``, which is what OpenRouter
+        sends and what makes requests fall back to ISO-8859-1.
+        """
+        response = requests.Response()
+        response.status_code = 200
+        response.headers['Content-Type'] = 'text/event-stream'
+        response.encoding = requests.utils.get_encoding_from_headers(response.headers)
+        response.raw = urllib3.HTTPResponse(
+            body=io.BytesIO(body),
+            status=200,
+            preload_content=False,
+        )
         return response
 
     # ----------------------------------------------------------
@@ -316,3 +335,13 @@ class TestAiStreaming(AITestCommon):
         with patch.object(requests.Session, 'post', return_value=response):
             payloads = list(client._post_stream('/responses', {}))
         self.assertEqual(payloads, [{'type': 'ok', 'index': 1}])
+
+    def test_post_stream_decodes_utf8_without_a_charset_header(self):
+        client = self.provider._get_client()
+        text = 'überfällige Rechnungen „Grüße“'
+        payload = json.dumps({'type': 'ok', 'text': text}, ensure_ascii=False)
+        body = f'data: {payload}\n\n'
+        response = self._byte_sse_response(body.encode())
+        with patch.object(requests.Session, 'post', return_value=response):
+            payloads = list(client._post_stream('/responses', {}))
+        self.assertEqual(payloads, [{'type': 'ok', 'text': text}])
