@@ -1,6 +1,6 @@
 import json
 
-from . import common
+from . import common, version
 
 
 def make_jsonrpc_response(result, request_id=None):
@@ -33,8 +33,8 @@ def make_jsonrpc_error(
 def parse_jsonrpc_request(raw_body):
     try:
         data = (
-            json.loads(raw_body) 
-            if isinstance(raw_body, (str, bytes)) 
+            json.loads(raw_body)
+            if isinstance(raw_body, (str, bytes))
             else raw_body
         )
     except (json.JSONDecodeError, TypeError, ValueError):
@@ -60,21 +60,56 @@ def parse_jsonrpc_request(raw_body):
             'Invalid Request: method is required',
             request_id=data.get('id'),
         )
+    params = data.get('params')
+    if params is not None and not isinstance(params, dict):
+        return None, make_jsonrpc_error(
+            common.JSONRPC_INVALID_REQUEST,
+            'Invalid Request: params must be an object',
+            request_id=data.get('id'),
+        )
     return data, None
 
 
-def make_initialize_result(capabilities=None):
+def make_server_capabilities(capabilities=None):
     caps = {'tools': {'listChanged': True}}
     if capabilities:
         caps.update(capabilities)
+    return caps
+
+
+def make_server_info():
     return {
-        'protocolVersion': common.MCP_PROTOCOL_VERSION,
-        'capabilities': caps,
-        'serverInfo': {
-            'name': common.MCP_SERVER_NAME,
-            'version': common.MCP_SERVER_VERSION,
-        },
+        'name': common.MCP_SERVER_NAME,
+        'version': common.MCP_SERVER_VERSION,
     }
+
+
+def make_initialize_result(negotiated_version, capabilities=None):
+    return {
+        'protocolVersion': negotiated_version,
+        'capabilities': make_server_capabilities(capabilities),
+        'serverInfo': make_server_info(),
+    }
+
+
+def make_discover_result(capabilities=None):
+    return {
+        'supportedVersions': list(version.MCP_SUPPORTED_VERSIONS),
+        'capabilities': make_server_capabilities(capabilities),
+        'serverInfo': make_server_info(),
+    }
+
+
+def make_unsupported_version_error(requested, request_id=None):
+    return make_jsonrpc_error(
+        common.MCP_UNSUPPORTED_PROTOCOL_VERSION,
+        f'Unsupported protocol version: {requested}',
+        data={
+            'supported': list(version.MCP_SUPPORTED_VERSIONS),
+            'requested': requested,
+        },
+        request_id=request_id,
+    )
 
 
 def make_tool_result(content, is_error=False):

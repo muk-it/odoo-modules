@@ -6,7 +6,7 @@ from odoo.tests import common, tagged
 from odoo.tools import config
 
 from odoo.addons.muk_mcp.core.tool import get_tool_index
-from odoo.addons.muk_mcp.tools import protocol
+from odoo.addons.muk_mcp.tools import protocol, version
 from odoo.addons.muk_mcp.tools.encoder import encode_request, encode_response
 from odoo.addons.muk_mcp.tools.exception import MCPScopeDenied
 
@@ -247,7 +247,7 @@ class TestMcpIntegration(common.TransactionCase):
     # ----------------------------------------------------------
 
     def test_initialize_result_has_list_changed(self):
-        result = protocol.make_initialize_result()
+        result = protocol.make_initialize_result(version.MCP_DEFAULT_VERSION)
         self.assertTrue(result['capabilities']['tools']['listChanged'])
 
     def test_rate_limit_enforcement(self):
