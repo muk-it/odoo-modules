@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <template id="contact_name" inherit_id="base.contact_name">
+        <xpath expr="//span[@t-esc='name']" position="replace">
+			<t t-if="object.parent_id.is_company and object.parent_name">
+				<span itemprop="name" t-esc="object.parent_name"/>
+				<br/>
+			</t>
+			<span itemprop="name" t-esc="object.name"/>
+        </xpath>
+    </template>
+
+    <template id="contact" inherit_id="base.contact">
+        <xpath expr="//span[@t-esc='vat']/.." position="before">
+			<div t-if="object.contact_number and 'contact_number' in fields" class="py-1">
+				<span>Ref:</span> 
+				<span itemprop="contactNumber" t-esc="object.contact_number"/>
+			</div>
+        </xpath>
+    </template>
+
+</odoo>

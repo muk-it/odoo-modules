@@ -1,0 +1,175 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* muk_contacts
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 17.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-02-23 16:35+0000\n"
+"PO-Revision-Date: 2026-02-23 16:35+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: muk_contacts
+#: model_terms:ir.ui.view,arch_db:muk_contacts.contact
+msgid "<span>Ref:</span>"
+msgstr "<span>Ref:</span>"
+
+#. module: muk_contacts
+#: model_terms:ir.ui.view,arch_db:muk_contacts.view_res_config_settings_form
+msgid "Activate to automatically generate contact numbers"
+msgstr "Activar para generar automáticamente números de contacto"
+
+#. module: muk_contacts
+#: model:ir.model.fields,field_description:muk_contacts.field_res_config_settings__active_contact_number_automation
+msgid "Active Contact Number Automation"
+msgstr "Automatización de número de contacto activa"
+
+#. module: muk_contacts
+#: model_terms:ir.ui.view,arch_db:muk_contacts.view_partner_search
+msgid "All Contacts"
+msgstr "Todos los contactos"
+
+#. module: muk_contacts
+#: model:ir.model.constraint,message:muk_contacts.constraint_res_partner_unique_contact_number
+msgid "Another entry with the same contact number already exists."
+msgstr "Ya existe otra entrada con el mismo número de contacto."
+
+#. module: muk_contacts
+#: model_terms:ir.ui.view,arch_db:muk_contacts.view_partner_list
+msgid "Company"
+msgstr "Compañía"
+
+#. module: muk_contacts
+#: model_terms:ir.ui.view,arch_db:muk_contacts.view_partner_list
+msgid "Complete Name"
+msgstr "Nombre completo"
+
+#. module: muk_contacts
+#: model:ir.model,name:muk_contacts.model_res_config_settings
+msgid "Config Settings"
+msgstr "Ajustes de configuración"
+
+#. module: muk_contacts
+#: model:ir.model,name:muk_contacts.model_res_partner
+msgid "Contact"
+msgstr "Contacto"
+
+#. module: muk_contacts
+#: model:ir.model.fields,field_description:muk_contacts.field_res_partner__contact_number
+#: model:ir.model.fields,field_description:muk_contacts.field_res_users__contact_number
+msgid "Contact Number"
+msgstr "Número de contacto"
+
+#. module: muk_contacts
+#: model_terms:ir.ui.view,arch_db:muk_contacts.view_res_config_settings_form
+msgid "Contact Number Automation"
+msgstr "Automatización de número de contacto"
+
+#. module: muk_contacts
+#: model_terms:ir.ui.view,arch_db:muk_contacts.view_partner_form
+msgid "Default Address"
+msgstr "Dirección predeterminada"
+
+#. module: muk_contacts
+#: model:ir.model.fields,field_description:muk_contacts.field_res_partner__default_delivery_partner_id
+#: model:ir.model.fields,field_description:muk_contacts.field_res_users__default_delivery_partner_id
+msgid "Default Delivery Address"
+msgstr "Dirección de entrega predeterminada"
+
+#. module: muk_contacts
+#: model:ir.model.fields,field_description:muk_contacts.field_res_partner__default_invoice_partner_id
+#: model:ir.model.fields,field_description:muk_contacts.field_res_users__default_invoice_partner_id
+msgid "Default Invoice Address"
+msgstr "Dirección de facturación predeterminada"
+
+#. module: muk_contacts
+#: model_terms:ir.ui.view,arch_db:muk_contacts.view_partner_form
+msgid "Delivery"
+msgstr "Entrega"
+
+#. module: muk_contacts
+#: model:ir.model.fields,field_description:muk_contacts.field_res_config_settings__display_name
+#: model:ir.model.fields,field_description:muk_contacts.field_res_partner__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: muk_contacts
+#: model_terms:ir.ui.view,arch_db:muk_contacts.view_partner_form
+msgid "Generate Contact Number"
+msgstr "Generar número de contacto"
+
+#. module: muk_contacts
+#: model:ir.model.fields,field_description:muk_contacts.field_res_config_settings__id
+#: model:ir.model.fields,field_description:muk_contacts.field_res_partner__id
+msgid "ID"
+msgstr "ID"
+
+#. module: muk_contacts
+#: model:ir.model.fields.selection,name:muk_contacts.selection__res_partner__linked_user_state__internal
+msgid "Internal"
+msgstr "Interno"
+
+#. module: muk_contacts
+#: model_terms:ir.ui.view,arch_db:muk_contacts.view_partner_search
+msgid "Internal Users"
+msgstr "Usuarios internos"
+
+#. module: muk_contacts
+#: model_terms:ir.ui.view,arch_db:muk_contacts.view_partner_form
+msgid "Invoice"
+msgstr "Factura"
+
+#. module: muk_contacts
+#: model:ir.model.fields,field_description:muk_contacts.field_res_partner__linked_user_id
+#: model:ir.model.fields,field_description:muk_contacts.field_res_users__linked_user_id
+msgid "Linked User"
+msgstr "Usuario vinculado"
+
+#. module: muk_contacts
+#: model:ir.model.fields,field_description:muk_contacts.field_res_partner__linked_user_state
+#: model:ir.model.fields,field_description:muk_contacts.field_res_users__linked_user_state
+msgid "Linked User State"
+msgstr "Estado del usuario vinculado"
+
+#. module: muk_contacts
+#: model_terms:ir.ui.view,arch_db:muk_contacts.view_partner_search
+msgid "Main Contacts"
+msgstr "Contactos principales"
+
+#. module: muk_contacts
+#: model_terms:ir.ui.view,arch_db:muk_contacts.view_partner_form
+msgid "Open View"
+msgstr "Abrir vista"
+
+#. module: muk_contacts
+#: model:ir.model.fields.selection,name:muk_contacts.selection__res_partner__linked_user_state__portal
+msgid "Portal"
+msgstr "Portal"
+
+#. module: muk_contacts
+#: model_terms:ir.ui.view,arch_db:muk_contacts.view_partner_search
+msgid "Portal Users"
+msgstr "Usuarios del portal"
+
+#. module: muk_contacts
+#: model_terms:ir.ui.view,arch_db:muk_contacts.view_partner_search
+msgid "Tags"
+msgstr "Etiquetas"
+
+#. module: muk_contacts
+#. odoo-python
+#: code:addons/muk_contacts/models/res_config_settings.py:0
+#: code:addons/muk_contacts/models/res_partner.py:0
+msgid "The contact number sequence couldn't be found."
+msgstr "No se pudo encontrar la secuencia de número de contacto."
+
+#. module: muk_contacts
+#: model_terms:ir.ui.view,arch_db:muk_contacts.view_partner_form
+msgid "is filled in automatically"
+msgstr "se rellena automáticamente"
