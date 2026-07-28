@@ -38,6 +38,11 @@ class MCPSession(models.Model):
         default=False,
     )
 
+    protocol_version = fields.Char(
+        string="Protocol Version",
+        readonly=True,
+    )
+
     last_activity = fields.Datetime(
         string="Last Activity",
         default=fields.Datetime.now,

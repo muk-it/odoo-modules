@@ -1,36 +1,53 @@
-import json
+from odoo.tests import tagged
 
-from odoo.tests import common
-
-from odoo.addons.muk_mcp.tools import protocol
+from odoo.addons.muk_mcp.tests.common import MCPHttpCase
 
 
-class TestBatch(common.TransactionCase):
+@tagged('post_install', '-at_install')
+class TestBatch(MCPHttpCase):
+    """Verify JSON-RPC batching is refused on every served revision."""
+
+    # ----------------------------------------------------------
+    # Setup
+    # ----------------------------------------------------------
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.session_model = cls.env['muk_mcp.session']
 
     # ----------------------------------------------------------
     # Tests
     # ----------------------------------------------------------
 
-    def test_parse_batch_request(self):
-        items = [
-            {'jsonrpc': '2.0', 'id': 1, 'method': 'ping', 'params': {}},
-            {'jsonrpc': '2.0', 'id': 2, 'method': 'ping', 'params': {}},
-        ]
-        for item in items:
-            data, error = protocol.parse_jsonrpc_request(item)
-            self.assertIsNone(error)
-            self.assertEqual(data['method'], 'ping')
+    def test_batch_is_rejected(self):
+        response = self.mcp_post([self.mcp_ping(1), self.mcp_ping(2)])
+        self.assertEqual(response.status_code, 400)
+        body = response.json()
+        self.assertIsInstance(body, dict)
+        self.assertEqual(body['error']['code'], -32600)
+        self.assertIn('batching is not supported', body['error']['message'])
 
-    def test_parse_batch_with_invalid_item(self):
-        items = [
-            {'jsonrpc': '2.0', 'id': 1, 'method': 'ping', 'params': {}},
-            {'id': 2, 'method': 'ping'},
-        ]
-        data1, error1 = protocol.parse_jsonrpc_request(items[0])
-        self.assertIsNone(error1)
-        data2, error2 = protocol.parse_jsonrpc_request(items[1])
-        self.assertIsNotNone(error2)
+    def test_empty_batch_is_rejected(self):
+        response = self.mcp_post([])
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()['error']['code'], -32600)
 
-    def test_parse_empty_batch(self):
-        items = []
-        self.assertEqual(len(items), 0)
+    def test_batch_never_creates_a_session(self):
+        before = self.session_model.search_count([])
+        self.mcp_post(
+            [{'jsonrpc': '2.0', 'id': 1, 'method': 'initialize',
+              'params': {}}],
+        )
+        self.assertEqual(self.session_model.search_count([]), before)
+
+    def test_array_params_are_a_clean_invalid_request(self):
+        response = self.mcp_post(
+            {'jsonrpc': '2.0', 'id': 1, 'method': 'tools/list',
+             'params': [1]},
+        )
+        self.assertEqual(response.status_code, 400)
+        error = response.json()['error']
+        self.assertEqual(error['code'], -32600)
+        self.assertIn('params', error['message'])
+        self.assertNotIn('Traceback', response.text)
