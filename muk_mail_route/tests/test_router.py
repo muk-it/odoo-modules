@@ -21,13 +21,14 @@ class TestRouter(MailCommon):
         super().setUpClass()
 
         cls.model_res_partner = cls.env.ref('base.model_res_partner')
+        cls.model_container = cls.env.ref(
+            'muk_mail_route.model_muk_mail_route_container'
+        )
 
         cls.container = cls.env['mail.thread']._get_failed_route_container()
         cls.partner_target = cls.env['res.partner'].create(
             {
                 'name': 'Mail Route Target',
-                'group_rfq': 'default',
-                'group_on': 'default',
             }
         )
 
@@ -110,13 +111,13 @@ class TestRouter(MailCommon):
         config = self.env['muk_mail_route.configuration'].create(
             {
                 'name': 'Empty Code',
-                'model_id': self.model_res_partner.id,
+                'model_id': self.model_container.id,
                 'route_type': 'new',
             }
         )
         config.write({'code': False})
 
-        msg = self._post_message(subject='Empty Code Partner')
+        msg = self._post_message(subject='Empty Code Container')
         wizard = self.env['muk_mail_route.router'].create(
             {
                 'configuration_id': config.id,
@@ -125,10 +126,10 @@ class TestRouter(MailCommon):
         )
         action = wizard.action_route()
 
-        self.assertEqual(action.get('res_model'), 'res.partner')
+        self.assertEqual(action.get('res_model'), 'muk_mail_route.container')
 
         msg.invalidate_model(['model', 'res_id'])
-        self.assertEqual(msg.model, 'res.partner')
+        self.assertEqual(msg.model, 'muk_mail_route.container')
 
     def test_route_existing_attaches_messages_and_can_notify_internal(self):
         config = self.env['muk_mail_route.configuration'].create(
