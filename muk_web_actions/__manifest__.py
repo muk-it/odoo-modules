@@ -5,7 +5,7 @@
         Technical module to provide the possibility to execute
         server actions and reports in batches on a client side.
     """,
-    'version': '17.0.1.1.7',
+    'version': '17.0.1.1.8',
     'category': 'Tools/Utils',
     'license': 'LGPL-3',
     'author': 'MuK IT',
