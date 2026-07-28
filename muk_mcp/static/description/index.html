@@ -55,12 +55,14 @@
 			<p>
 				The <code>/mcp</code> endpoint speaks the full MCP Streamable HTTP
 				protocol natively, handling JSON-RPC 2.0 messages for
-				<code>initialize</code>, <code>tools/list</code>, and
-				<code>tools/call</code>. Supports stateful sessions, Server-Sent
-				Events for real-time notifications, and batch requests. Authentication
-				uses Bearer tokens &mdash; either dedicated MCP keys scoped to
-				<em>Read Only</em> or <em>Read &amp; Write</em>, or standard Odoo
-				API keys.
+				<code>server/discover</code>, <code>tools/list</code>, and
+				<code>tools/call</code>. Three protocol revisions are served and
+				negotiated per request &mdash; <code>2026-07-28</code>,
+				<code>2025-11-25</code> and <code>2025-06-18</code> &mdash; so the
+				stateless revision and the older session-based ones work side by
+				side against the same endpoint. Authentication uses Bearer tokens
+				&mdash; either dedicated MCP keys scoped to <em>Read Only</em> or
+				<em>Read &amp; Write</em>, or standard Odoo API keys.
 			</p>
 		</div>
 	</div>
@@ -369,7 +371,11 @@
 		<div class="text-justify" style="max-width:84%; margin:16px 8%">
 			<h3 class="oe_slogan">Session Management</h3>
 			<p>
-				The server maintains stateful sessions per the MCP specification.
+				Sessions belong to the session-based protocol revisions, which open
+				one through the <code>initialize</code> handshake; the stateless
+				<code>2026-07-28</code> revision has none and identifies each
+				request by its bearer key alone. Each session records the revision
+				it negotiated.
 				Sessions track the last activity timestamp and are automatically
 				cleaned up after the configured timeout (default: 24 hours). Users
 				can view and revoke their active MCP sessions from their user

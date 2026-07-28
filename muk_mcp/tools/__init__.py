@@ -7,3 +7,4 @@ from . import parser
 from . import protocol
 from . import rate_limit
 from . import schema
+from . import version

@@ -9,6 +9,23 @@ Compatible clients include Claude Desktop, Claude Code, OpenCode,
 Cursor, Windsurf, Codex CLI, and any tool that supports the MCP
 Streamable HTTP transport.
 
+**Protocol revisions**
+
+The server serves `2026-07-28`, `2025-11-25` and `2025-06-18`, resolved
+per request from the `_meta` block, the `MCP-Protocol-Version` header,
+or the revision the session negotiated -- in that order.
+
+`2026-07-28` is stateless: it has no `initialize` handshake and no
+session, identifies every request by its bearer key, replaces
+capability discovery with `server/discover`, and drops `ping`,
+`logging/setLevel` and the `GET /mcp` notification stream. Requests on
+that revision must carry `protocolVersion`, `clientInfo` and
+`clientCapabilities` in `_meta`.
+
+`2025-03-26` is no longer served. A client asking for it is answered
+`2025-06-18` rather than refused. JSON-RPC batching, removed from the
+specification in `2025-06-18`, is no longer accepted on any revision.
+
 ## Configuration
 
 **Creating an MCP Key**
@@ -381,7 +398,24 @@ cleaned up based on the configured retention period.
 
 **Sessions**
 
-The server maintains stateful sessions per the MCP specification.
+Sessions belong to the `2025-06-18` and `2025-11-25` revisions, which
+open one through the `initialize` handshake; the stateless
+`2026-07-28` revision has none and identifies each request by its
+bearer key alone. Each session records the revision it negotiated, so
+a client that sends no `MCP-Protocol-Version` header is still served
+under the right one.
+
 Active sessions are visible at **Settings > MCP Server > Sessions** (in
 debug mode) and can be revoked from user preferences. Sessions are
 automatically cleaned up after the configured timeout.
+
+**Allowed Origins**
+
+Browser-originated requests are checked against an allow-list to guard
+against DNS rebinding, as the Streamable HTTP transport requires. A
+request without an `Origin` header is not browser-initiated and passes
+untouched; a request whose origin is not allowed is answered `403`.
+
+The instance's own base URL is always allowed. Add more with the
+`muk_mcp.allowed_origins` system parameter (comma-separated), or set
+`muk_mcp.allow_any_origin` to `True` to disable the check entirely.
