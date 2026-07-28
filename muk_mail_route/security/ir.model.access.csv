@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_container,access_container,model_muk_mail_route_container,base.group_erp_manager,1,1,1,1
+access_configuration,access_configuration,model_muk_mail_route_configuration,base.group_erp_manager,1,1,1,1
+access_router,access_router,model_muk_mail_route_router,base.group_erp_manager,1,1,1,1

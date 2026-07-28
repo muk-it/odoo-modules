@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<templates xml:space="preserve">
+
+    <t t-name="muk_mail_route.MessageListView" t-inherit="web.ListView">
+        <xpath expr="//div[@t-ref='root']" position="attributes" type="add">
+            <attribute name="class" add="mk_message_list_view" separator=" "/>
+        </xpath>
+        <xpath expr="//t[@t-component='props.Renderer']" position="attributes">
+            <attribute name="setSelectedRecord.bind">this.setSelectedRecord</attribute>
+        </xpath>
+        <xpath expr="//Layout" position="inside">
+            <t t-call="muk_mail_route.MessagePreview"/>
+        </xpath>
+    </t>
+
+    <t t-name="muk_mail_route.MessagePreview">
+        <div t-if="previewEnabled" class="mk_message_preview d-print-none px-3 py-2">
+            <div t-if="previewState.attachments.length > 0" class="pb-1">
+                <AttachmentList
+                    attachments="previewState.attachments"
+                    unlinkAttachment.bind="() => {}"
+                    imagesHeight="75"
+                    readonly="true"
+                />
+            </div>
+            <div
+                t-if="previewState.selectedRecord"
+                t-att-class="previewState.attachments.length > 0 ? 'py-1 border-top' : 'pb-1'"
+            >
+                <div>
+                    <div class="text-muted">
+                        <small>Author:</small>
+                    </div>
+                    <Field
+                        name="'author_id'"
+                        record="previewState.selectedRecord"
+                        type="'many2one_avatar'"
+                        canOpen="false"
+                        readonly="true"
+                    />
+                </div>
+                <div t-if="previewState.selectedRecord.data.notified_partner_ids.count > 0" class="pt-1">
+                    <div class="text-muted">
+                        <small>Recipients:</small>
+                    </div>
+                    <Field
+                        name="'notified_partner_ids'"
+                        record="previewState.selectedRecord"
+                        type="'many2many_tags_avatar'"
+                        readonly="true"
+                    />
+                </div>
+            </div>
+            <div t-att-class="previewState.selectedRecord ? 'pt-1 border-top' : ''">
+                <t t-if="previewState.messageBody" class="pt-1" t-out="previewState.messageBody"/>
+                <p t-else="" class="text-center">No Preview! Please select a message.</p>
+            </div>
+        </div>
+    </t>
+</templates>

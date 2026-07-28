@@ -1,0 +1,49 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<odoo>
+
+    <record id="view_mail_message_failed_list" model="ir.ui.view">
+        <field name="name">mail.message.list</field>
+        <field name="model">mail.message</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <tree default_order="date DESC" js_class="muk_mail_route.message_list">
+                <header>
+                    <button 
+                        class="btn-primary"
+                        string="Route"
+                        name="action_route_message"
+                        type="object"
+                        groups="base.group_erp_manager"
+                    />
+                </header>
+                <field name="date"/>
+                <field name="email_from" optional="show"/>
+                <field name="author_id" optional="hide"/>
+                <field 
+                    name="display_content" 
+                    string="Content"
+                    optional="show"
+                />
+                <field name="message_id" optional="hide"/>
+                    <button 
+                        class="btn-primary"
+                        string="Route"
+                        name="action_route_message"
+                        type="object"
+                        groups="base.group_erp_manager"
+                    />
+            </tree>
+        </field>
+    </record>
+    
+    <record id="action_failed_route" model="ir.actions.act_window">
+        <field name="name">Lost Emails</field>
+        <field name="res_model">mail.message</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="view_mail_message_failed_list" />
+        <field name="domain">[('model', '=', 'muk_mail_route.container')]</field>
+        <field name="context">{'create': False, 'edit': False, 'bin_size': False}</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,43 @@
+{
+    'name': 'MuK Mail Routing',
+    'summary': 'Collects unrouted and failed emails',
+    'description': """
+        This module collects mails that could not be routed
+        and allows them to be assigned subsequently.
+    """,
+    'version': '17.0.1.1.9',
+    'category': 'Productivity/Mail',
+    'license': 'LGPL-3',
+    'author': 'MuK IT',
+    'website': 'http://www.mukit.at',
+    'live_test_url': 'https://youtu.be/bG-65TUdz-Q',
+    'contributors': [
+        'Mathias Markl <mathias.markl@mukit.at>',
+    ],
+    'depends': [
+        'mail',
+    ],
+    'data': [
+        'security/ir.model.access.csv',
+        'views/mail_mail.xml',
+        'views/mail_message.xml',
+        'views/configuration.xml',
+        'views/container.xml',
+        'views/router.xml',
+        'views/menu.xml',
+    ],
+    'demo': [
+        'demo/configuration.xml',
+    ],
+    'assets': {
+        'web.assets_backend': [
+            'muk_mail_route/static/src/**/*',
+        ],
+    },
+    'images': [
+        'static/description/banner.png',
+    ],
+    'installable': True,
+    'application': False,
+    'auto_install': False,
+}

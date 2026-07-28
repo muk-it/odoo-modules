@@ -1,0 +1,90 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<odoo>
+
+	<record id="view_configuration_list" model="ir.ui.view">
+        <field name="name">muk_mail_route.configuration.list</field>
+        <field name="model">muk_mail_route.configuration</field>
+        <field name="arch" type="xml">
+            <tree sample="1">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="model_id"/>
+                <field name="route_type"/>
+                <field 
+                    name="action_id" 
+                    invisible="route_type != 'new'"
+                    optional="hide"
+                />
+                <field 
+                    name="notify" 
+                    widget="boolean_toggle"
+                    invisible="route_type != 'search'"
+                    optional="hide"
+                />
+                <field 
+                    name="set_is_internal" 
+                    widget="boolean_toggle"
+                    invisible="route_type != 'search' or not notify"
+                    optional="hide"
+                />
+            </tree>
+        </field>
+    </record>
+
+	<record id="view_configuration_form" model="ir.ui.view">
+        <field name="name">muk_mail_route.configuration.form</field>
+        <field name="model">muk_mail_route.configuration</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" placeholder="e.g. Ticket"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="model_id"/>
+                            <field name="model" invisible="1"/>
+                            <field name="route_type"/>
+                        </group>
+                        <group>
+                            <field 
+                                name="action_id" 
+                                invisible="route_type != 'new'"
+                            />
+                            <field 
+                                name="notify" 
+                                widget="boolean_toggle"
+                                invisible="route_type != 'search'"
+                            />
+                            <field 
+                                name="set_is_internal" 
+                                widget="boolean_toggle"
+                                invisible="route_type != 'search' or not notify"
+                            />
+                        </group>
+                    </group>
+                    <group string="Evaluation Code" invisible="route_type != 'new'">
+                        <field 
+                            name="code" 
+                            widget="code" 
+                            nolabel="1" 
+                            colspan="2"
+                            options="{'mode': 'python'}"
+                        />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_configuration" model="ir.actions.act_window">
+        <field name="name">Routers</field>
+        <field name="res_model">muk_mail_route.configuration</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <menuitem
+		id="menu_failed_route"
+		name="Lost Emails"
+		parent="mail.menu_root_discuss"
+		action="action_failed_route"
+		groups="base.group_erp_manager"
+		sequence="10"
+	/>
+	
+    <menuitem
+		id="menu_mail_failed"
+		name="Failed Emails"
+		parent="mail.menu_root_discuss"
+		action="action_mail_failed"
+		groups="base.group_erp_manager"
+		sequence="20"
+	/>
+	
+	<menuitem
+		id="menu_configuration_root"
+		name="Configuration"
+		parent="mail.menu_root_discuss"
+		groups="base.group_erp_manager"
+		sequence="25"
+	/>
+
+	<menuitem
+		id="menu_mail_templates"
+		name="Mail Templates"
+		parent="menu_configuration_root"
+		action="mail.action_email_template_tree_all"
+		groups="base.group_erp_manager"
+		sequence="30"
+	/>
+
+	<menuitem
+		id="menu_mail_activity"
+		name="Activity Types"
+		parent="menu_configuration_root"
+		action="mail.mail_activity_type_action"
+		groups="base.group_erp_manager"
+		sequence="32"
+	/>
+
+	<menuitem
+		id="menu_configuration"
+		name="Routers"
+		parent="menu_configuration_root"
+		action="action_configuration"
+		groups="base.group_erp_manager"
+		sequence="35"
+	/>
+
+</odoo>
