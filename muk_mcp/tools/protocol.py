@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from odoo.addons.muk_mcp.tools import common
+from odoo.addons.muk_mcp.tools import common, version
 
 
 class ToolContent(list):
@@ -51,6 +51,9 @@ def parse_jsonrpc_request(
 ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
     """Validate a raw JSON-RPC request body.
 
+    Rejects array ``params``: JSON-RPC 2.0 permits them, but every MCP method
+    takes an object, and validating here lets each handler assume a mapping.
+
     :return: a ``(request, None)`` pair on success, or ``(None, error)`` with a
         ready-to-send JSON-RPC error response on failure.
     """
@@ -79,13 +82,20 @@ def parse_jsonrpc_request(
             'Invalid Request: method is required',
             request_id=data.get('id'),
         )
+    params = data.get('params')
+    if params is not None and not isinstance(params, dict):
+        return None, make_jsonrpc_error(
+            common.JSONRPC_INVALID_REQUEST,
+            'Invalid Request: params must be an object',
+            request_id=data.get('id'),
+        )
     return data, None
 
 
-def make_initialize_result(
+def make_server_capabilities(
     capabilities: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Build the MCP ``initialize`` result, merging in any extra capabilities."""
+    """Build the advertised server capabilities, merging in any extra entries."""
     caps = {
         'tools': {'listChanged': True},
         'prompts': {'listChanged': True},
@@ -94,14 +104,54 @@ def make_initialize_result(
     }
     if capabilities:
         caps.update(capabilities)
+    return caps
+
+
+def make_server_info() -> dict[str, Any]:
+    """Build the server identity block shared by initialize and discover."""
     return {
-        'protocolVersion': common.MCP_PROTOCOL_VERSION,
-        'capabilities': caps,
-        'serverInfo': {
-            'name': common.MCP_SERVER_NAME,
-            'version': common.MCP_SERVER_VERSION,
-        },
+        'name': common.MCP_SERVER_NAME,
+        'version': common.MCP_SERVER_VERSION,
     }
+
+
+def make_initialize_result(
+    negotiated_version: str,
+    capabilities: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Build the MCP ``initialize`` result for the negotiated revision."""
+    return {
+        'protocolVersion': negotiated_version,
+        'capabilities': make_server_capabilities(capabilities),
+        'serverInfo': make_server_info(),
+    }
+
+
+def make_discover_result(
+    capabilities: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Build the MCP ``server/discover`` result advertising every served revision."""
+    return {
+        'supportedVersions': list(version.MCP_SUPPORTED_VERSIONS),
+        'capabilities': make_server_capabilities(capabilities),
+        'serverInfo': make_server_info(),
+    }
+
+
+def make_unsupported_version_error(
+    requested: Any,
+    request_id: Any = None,
+) -> dict[str, Any]:
+    """Build the JSON-RPC error returned for a protocol revision we do not serve."""
+    return make_jsonrpc_error(
+        common.MCP_UNSUPPORTED_PROTOCOL_VERSION,
+        f'Unsupported protocol version: {requested}',
+        data={
+            'supported': list(version.MCP_SUPPORTED_VERSIONS),
+            'requested': requested,
+        },
+        request_id=request_id,
+    )
 
 
 def make_tool_result(

@@ -1,5 +1,5 @@
 const MCP_ENDPOINT = '/mcp';
-const PROTOCOL_VERSION = '2025-03-26';
+const PREFERRED_PROTOCOL_VERSION = '2025-11-25';
 export const STORAGE_KEY = 'muk_mcp.playground.key';
 
 /**
@@ -10,6 +10,7 @@ export class MCPClient {
     constructor() {
         this.sessionId = null;
         this.initialized = false;
+        this.protocolVersion = null;
         this._nextId = 1;
     }
     get key() {
@@ -23,9 +24,10 @@ export class MCPClient {
         }
         this.sessionId = null;
         this.initialized = false;
+        this.protocolVersion = null;
     }
     /**
-     * Assemble request headers, adding auth and session headers when available.
+     * Assemble request headers, adding auth, session and version headers when available.
      * @param {object} extra additional headers to merge in
      * @returns {object} the complete header map
      */
@@ -40,6 +42,9 @@ export class MCPClient {
         }
         if (this.sessionId) {
             headers['Mcp-Session-Id'] = this.sessionId;
+        }
+        if (this.protocolVersion) {
+            headers['MCP-Protocol-Version'] = this.protocolVersion;
         }
         return headers;
     }
@@ -81,7 +86,7 @@ export class MCPClient {
             id: this._nextId++,
             method: 'initialize',
             params: {
-                protocolVersion: PROTOCOL_VERSION,
+                protocolVersion: PREFERRED_PROTOCOL_VERSION,
                 capabilities: {},
                 clientInfo: { name: 'muk_mcp.playground', version: '1.0' },
             },
@@ -91,6 +96,7 @@ export class MCPClient {
                 init.body?.error?.message || `Initialize failed (HTTP ${init.status})`,
             );
         }
+        this.protocolVersion = init.body.result?.protocolVersion || null;
         await this._post({
             jsonrpc: '2.0',
             method: 'notifications/initialized',

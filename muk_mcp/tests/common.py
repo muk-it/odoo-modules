@@ -10,6 +10,8 @@ from odoo import models
 from odoo.tests import HttpCase
 from odoo.tests.common import new_test_user
 
+from odoo.addons.muk_mcp.tools import version
+
 
 class MCPHttpCase(HttpCase):
     """Base HTTP case issuing authenticated JSON-RPC calls against ``/mcp``."""
@@ -66,11 +68,13 @@ class MCPHttpCase(HttpCase):
         session_id: str | None = None,
         headers: dict[str, str] | None = None,
         content_type: str | None = 'application/json',
+        protocol_version: str | None = None,
     ) -> dict[str, str]:
         """Build the headers for an ``/mcp`` call.
 
         :param token: bearer token to send; ``None`` uses the default test key
             and ``False`` omits the ``Authorization`` header entirely.
+        :param protocol_version: value for the ``MCP-Protocol-Version`` header.
         :param headers: extra headers merged last, so they win over the defaults.
         """
         result = {}
@@ -80,8 +84,64 @@ class MCPHttpCase(HttpCase):
             result['Authorization'] = 'Bearer %s' % (token or self.mcp_token)
         if session_id:
             result['Mcp-Session-Id'] = session_id
+        if protocol_version:
+            result[version.MCP_PROTOCOL_VERSION_HEADER] = protocol_version
         result.update(headers or {})
         return result
+
+    def mcp_meta(
+        self,
+        protocol_version: str = version.MCP_VERSION_2026_07_28,
+        client_info: dict[str, Any] | None = None,
+        capabilities: dict[str, Any] | None = None,
+        full: bool = True,
+    ) -> dict[str, Any]:
+        """Build the ``_meta`` block a stateless request carries.
+
+        :param full: when ``False`` only the protocol version is included, which is
+            all ``server/discover`` requires.
+        """
+        meta = {version.META_PROTOCOL_VERSION: protocol_version}
+        if full:
+            meta[version.META_CLIENT_INFO] = client_info or {
+                'name': 'muk_mcp.tests',
+                'version': '1.0',
+            }
+            meta[version.META_CLIENT_CAPABILITIES] = (
+                capabilities if capabilities is not None else {}
+            )
+        return meta
+
+    def mcp_stateless_post(
+        self,
+        method: str,
+        params: dict[str, Any] | None = None,
+        request_id: int = 1,
+        protocol_version: str = version.MCP_VERSION_2026_07_28,
+        send_header: bool = True,
+        meta: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> Response:
+        """POST a stateless JSON-RPC request carrying the required ``_meta`` block."""
+        body_params = dict(params or {})
+        body_params['_meta'] = (
+            meta
+            if meta is not None
+            else self.mcp_meta(protocol_version=protocol_version)
+        )
+        kwargs.setdefault(
+            'protocol_version',
+            protocol_version if send_header else None,
+        )
+        return self.mcp_post(
+            {
+                'jsonrpc': '2.0',
+                'id': request_id,
+                'method': method,
+                'params': body_params,
+            },
+            **kwargs,
+        )
 
     def mcp_ping(self, request_id: int = 1) -> dict[str, Any]:
         """Return a minimal ``ping`` JSON-RPC request body."""
@@ -122,10 +182,19 @@ class MCPHttpCase(HttpCase):
             method='DELETE',
         )
 
-    def mcp_handshake(self, token: str | bool | None = None) -> str:
-        """Run ``initialize`` plus ``notifications/initialized`` and return the session id."""
+    def mcp_handshake(
+        self,
+        token: str | bool | None = None,
+        protocol_version: str | None = None,
+    ) -> str:
+        """Run ``initialize`` plus ``notifications/initialized`` and return the session id.
+
+        :param protocol_version: revision to request; omitted leaves the server on
+            its default.
+        """
+        params = {'protocolVersion': protocol_version} if protocol_version else {}
         response = self.mcp_post(
-            {'jsonrpc': '2.0', 'id': 1, 'method': 'initialize', 'params': {}},
+            {'jsonrpc': '2.0', 'id': 1, 'method': 'initialize', 'params': params},
             token=token,
         )
         session_id = response.headers['Mcp-Session-Id']

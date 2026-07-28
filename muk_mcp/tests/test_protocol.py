@@ -3,7 +3,7 @@ import json
 from odoo.tests import common
 
 from odoo.addons.muk_mcp.tools import common as mcp_common
-from odoo.addons.muk_mcp.tools import protocol
+from odoo.addons.muk_mcp.tools import protocol, version
 
 
 class TestProtocol(common.TransactionCase):
@@ -70,11 +70,42 @@ class TestProtocol(common.TransactionCase):
         )
         self.assertEqual(error['id'], 3)
 
+    def test_parse_jsonrpc_request_rejects_array_params(self):
+        raw = json.dumps(
+            {'jsonrpc': '2.0', 'id': 4, 'method': 'tools/list', 'params': [1]},
+        )
+        data, error = protocol.parse_jsonrpc_request(raw)
+        self.assertIsNone(data)
+        self.assertEqual(
+            error['error']['code'],
+            mcp_common.JSONRPC_INVALID_REQUEST,
+        )
+        self.assertEqual(error['id'], 4)
+
+    def test_parse_jsonrpc_request_rejects_scalar_params(self):
+        for value in ('x', 5, True):
+            raw = json.dumps(
+                {'jsonrpc': '2.0', 'id': 5, 'method': 'ping', 'params': value},
+            )
+            data, error = protocol.parse_jsonrpc_request(raw)
+            self.assertIsNone(data, value)
+            self.assertEqual(
+                error['error']['code'],
+                mcp_common.JSONRPC_INVALID_REQUEST,
+                value,
+            )
+
+    def test_parse_jsonrpc_request_allows_absent_params(self):
+        raw = json.dumps({'jsonrpc': '2.0', 'id': 6, 'method': 'ping'})
+        data, error = protocol.parse_jsonrpc_request(raw)
+        self.assertIsNone(error)
+        self.assertEqual(data['method'], 'ping')
+
     def test_make_initialize_result(self):
-        result = protocol.make_initialize_result()
+        result = protocol.make_initialize_result(version.MCP_DEFAULT_VERSION)
         self.assertEqual(
             result['protocolVersion'],
-            mcp_common.MCP_PROTOCOL_VERSION,
+            version.MCP_DEFAULT_VERSION,
         )
         self.assertIn('tools', result['capabilities'])
         self.assertTrue(result['capabilities']['tools']['listChanged'])

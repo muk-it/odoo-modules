@@ -28,3 +28,4 @@ from . import test_schema
 from . import test_tools
 from . import test_tour
 from . import test_uri
+from . import test_version

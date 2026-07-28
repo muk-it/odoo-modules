@@ -10,6 +10,7 @@ from odoo.tests.common import new_test_user
 
 from odoo.addons.muk_mcp.core.tool import invalidate_registry_cache, mcp_tool
 from odoo.addons.muk_mcp.tests.common import MCPHttpCase
+from odoo.addons.muk_mcp.tools import version
 
 
 @api.model
@@ -115,6 +116,16 @@ class TestMcpHttpTransport(MCPHttpCase):
         self.assertEqual(error['code'], -32601)
         self.assertIn('does/not/exist', error['message'])
 
+    def test_array_params_are_a_clean_invalid_request(self):
+        response = self.mcp_post(
+            {'jsonrpc': '2.0', 'id': 1, 'method': 'tools/list', 'params': [1]},
+        )
+        self.assertEqual(response.status_code, 400)
+        error = response.json()['error']
+        self.assertEqual(error['code'], -32600)
+        self.assertIn('params', error['message'])
+        self.assertNotIn('Traceback', response.text)
+
     def test_notification_returns_an_empty_accepted_response(self):
         session_id = self.mcp_handshake()
         response = self.mcp_post(
@@ -187,44 +198,25 @@ class TestMcpHttpTransport(MCPHttpCase):
     # Tests: batches
     # ----------------------------------------------------------
 
-    def test_batch_returns_one_result_per_item_in_order(self):
-        body = self.mcp_json([self.mcp_ping(1), self.mcp_ping(2)])
-        self.assertEqual([entry['id'] for entry in body], [1, 2])
-        self.assertEqual([entry['result'] for entry in body], [{}, {}])
-
-    def test_empty_batch_is_a_single_invalid_request(self):
-        response = self.mcp_post([])
+    def test_batch_is_rejected(self):
+        response = self.mcp_post([self.mcp_ping(1), self.mcp_ping(2)])
         self.assertEqual(response.status_code, 400)
         body = response.json()
         self.assertIsInstance(body, dict)
         self.assertEqual(body['error']['code'], -32600)
+        self.assertIn('batching is not supported', body['error']['message'])
 
-    def test_oversized_batch_is_rejected(self):
-        response = self.mcp_post([self.mcp_ping(i) for i in range(21)])
+    def test_empty_batch_is_rejected(self):
+        response = self.mcp_post([])
         self.assertEqual(response.status_code, 400)
-        error = response.json()['error']
-        self.assertEqual(error['code'], -32600)
-        self.assertIn('Batch too large', error['message'])
+        self.assertEqual(response.json()['error']['code'], -32600)
 
-    def test_batch_drops_notification_results(self):
-        session_id = self.mcp_handshake()
-        body = self.mcp_json(
-            [
-                {'jsonrpc': '2.0', 'method': 'notifications/cancelled'},
-                self.mcp_ping(7),
-            ],
-            session_id=session_id,
-        )
-        self.assertEqual(len(body), 1)
-        self.assertEqual(body[0]['id'], 7)
-
-    def test_batch_initialize_does_not_emit_the_session_header(self):
-        response = self.mcp_post(
+    def test_batch_never_creates_a_session(self):
+        before = self.session_model.search_count([])
+        self.mcp_post(
             [{'jsonrpc': '2.0', 'id': 1, 'method': 'initialize', 'params': {}}],
         )
-        body = response.json()
-        self.assertIn('protocolVersion', body[0]['result'])
-        self.assertNotIn('Mcp-Session-Id', response.headers)
+        self.assertEqual(self.session_model.search_count([]), before)
 
     # ----------------------------------------------------------
     # Tests: rate limiting
@@ -244,18 +236,6 @@ class TestMcpHttpTransport(MCPHttpCase):
         self.assertEqual(body['jsonrpc'], '2.0')
         self.assertEqual(body['error']['code'], -32603)
         self.assertEqual(body['error']['message'], 'Rate limit exceeded')
-
-    def test_batch_is_charged_exactly_its_item_count(self):
-        token, _key = self.make_mcp_key(
-            self.mcp_user,
-            name='Batch Limited',
-            rate_limit=2,
-        )
-        response = self.mcp_post([self.mcp_ping(1), self.mcp_ping(2)], token=token)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json()), 2)
-        follow_up = self.mcp_post(self.mcp_ping(3), token=token)
-        self.assertEqual(follow_up.status_code, 429)
 
     def test_rate_limited_request_is_audited(self):
         token, key = self.make_mcp_key(
@@ -280,7 +260,10 @@ class TestMcpHttpTransport(MCPHttpCase):
         session_id = response.headers['Mcp-Session-Id']
         self.assertTrue(session_id)
         result = response.json()['result']
-        self.assertEqual(result['protocolVersion'], '2025-03-26')
+        self.assertEqual(
+            result['protocolVersion'],
+            version.MCP_LATEST_HANDSHAKE_VERSION,
+        )
         self.assertTrue(result['capabilities']['tools']['listChanged'])
         session = self.session_model.search([('session_id', '=', session_id)])
         self.assertEqual(session.user_id, self.mcp_user)
@@ -316,12 +299,14 @@ class TestMcpHttpTransport(MCPHttpCase):
         session = self.session_model.create(
             {'user_id': other.id, 'initialized': True},
         )
-        body = self.mcp_json(
+        response = self.mcp_post(
             {'jsonrpc': '2.0', 'id': 1, 'method': 'tools/list'},
             session_id=session.session_id,
         )
+        self.assertEqual(response.status_code, 404)
+        body = response.json()
         self.assertEqual(body['error']['code'], -32600)
-        self.assertIn('not initialized', body['error']['message'])
+        self.assertIn('not found', body['error']['message'])
 
     def test_tools_list_returns_the_mcp_registry(self):
         session_id = self.mcp_handshake()

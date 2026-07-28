@@ -127,7 +127,7 @@ class MCPKey(models.Model):
         """Return the SHA-256 hex digest used to store and look up an API key."""
         return hashlib.sha256(key.encode()).hexdigest()
 
-    def _check_rate_limit(self, count: int = 1) -> bool:
+    def _check_rate_limit(self) -> bool:
         """Return whether this key is within its per-minute request budget.
 
         The bucket is keyed by database as well as key id: the rate limiter is a
@@ -138,7 +138,6 @@ class MCPKey(models.Model):
             (self.env.cr.dbname, self.id),
             self.rate_limit,
             60,
-            count=count,
         )
 
     @api.model
