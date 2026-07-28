@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_web_utils.BinaryField" t-inherit="web.BinaryField" t-inherit-mode="extension">
+        <xpath expr="//t[@name='download']" position="before">
+            <t name="download" t-if="isViewable and props.record.resId and !props.record.dirty">
+                <button
+                    class="btn btn-link btn-sm lh-1 fa fa-search"
+                    data-tooltip="Preview"
+                    aria-label="Preview"
+                    t-on-click="onFilePreview"
+                >
+                </button>
+            </t>
+        </xpath>
+        <xpath expr="//a[@t-on-click.prevent='onFileDownload']" position="before">
+            <a t-if="isViewable" class="o_form_uri" href="#" t-on-click.stop.prevent="onFilePreview">
+                <span class="fa fa-search me-2" />
+            </a>
+        </xpath>
+    </t>
+
+    <t t-name="muk_web_utils.ListBinaryField" t-inherit="web.ListBinaryField" t-inherit-mode="extension">
+        <xpath expr="//t[@name='download']" position="before">
+            <t name="download" t-if="isViewable and props.record.resId and !props.record.dirty">
+                <button
+                    class="btn btn-link btn-sm lh-1 fa fa-search"
+                    data-tooltip="Preview"
+                    aria-label="Preview"
+                    t-on-click="onFilePreview"
+                >
+                </button>
+            </t>
+        </xpath>
+        <xpath expr="//a[@t-on-click.prevent='onFileDownload']" position="before">
+            <a t-if="isViewable" class="o_form_uri" href="#" t-on-click.stop.prevent="onFilePreview">
+                <span class="fa fa-search me-2" />
+            </a>
+        </xpath>  
+        <xpath expr="//input[@t-att-value='fileName']" position="attributes">
+            <attribute name="t-att-type">props.noLabel ? 'hidden' : 'text'</attribute>
+        </xpath>
+        <xpath expr="//t[@t-esc='fileName']" position="attributes">
+            <attribute name="t-if">fileName and !props.noLabel</attribute>
+        </xpath>
+    </t>
+
+</templates>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_web_utils.TextIconField">
+        <div 
+            t-if="hasValue" 
+            class="text-center" 
+            t-on-click.prevent.stop="showTooltip"
+        >
+            <a
+                t-ref="icon"
+                t-attf-class="fa fa-{{ props.icon }}" 
+                t-att-title="props.record.fields[props.name].string"
+            />
+        </div>
+    </t>    
+    
+    <t t-name="muk_web_utils.TextValueTooltip">
+        <div t-out="value"/>
+    </t>
+
+</templates>

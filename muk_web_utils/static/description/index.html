@@ -1,0 +1,245 @@
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<h2 class="oe_slogan">MuK Web Utils</h2>
+		<h3 class="oe_slogan mb-0">Adds utility features for the web client</h3>
+		<img src="logo.png" style="width: 150px;" class="mx-auto center-block">
+		<h4 class="oe_slogan mt-0" style="font-size: 23px">MuK IT GmbH - www.mukit.at</h4>
+		<div class="mb-4" style="text-align: center;">
+			<span 
+				class="btn btn-sm mb-2" 
+				style="font-size:14px; font-weight:500; background-color:#243742; color:#fff; cursor:default;"
+			>
+				<i class="fa fa-check"></i> Community
+			</span>
+			<span 
+				class="btn btn-sm mb-2" 
+				style="font-size:14px; font-weight:500; background-color:#5D8DA8; color:#fff; cursor:default;"
+			>
+				<i class="fa fa-check me-1"></i> Enterprise
+			</span>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width: 84%; margin: 16px 8%;">
+			<h3 class="oe_slogan">Overview</h3>
+			<p class="oe_mt32">
+				Technical module for providing some utilities and libraries that can be used 
+				in other applications can be used in other applications. This module has no 
+				direct influence on the running system, but can be used as a dependency in 
+				other modules in order to utilise the corresponding functions.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Icon Selection Field</h3>
+            <p>
+				A selection field which offers the option of assigning a corresponding 
+				icon to the various options. If the field is used in the list view with the 
+				<code style="background-color:transparent; padding:0">noLabel</code>
+				attribute, only one icon is displayed, otherwise the icon is displayed to 
+				the left of the selected text
+			</p>
+			<pre style="line-height:1; background-color:#fdfdfd; padding:8px">
+&lt;field 
+	name="company_type" 
+	widget="selection_icons" 
+	options="{'icons': {'person': 'user', 'company': 'building'}}"
+/&gt;
+			</pre>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_selection.png">
+            </div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Icon Text Field</h3>
+            <p>
+				A text widget which can be used for char, text and html fields. Instead of 
+				displaying the content of the field, an icon is displayed which shows a popover 
+				with the content when clicked. This widget has only a readonly mode and is ideal 
+				for displaying text fields as information in the list view.
+			</p>
+			<pre style="line-height:1; background-color:#fdfdfd; padding:8px">
+&lt;field 
+	name="comment" 
+	widget="text_icon" 
+/&gt;
+			</pre>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_text.png">
+            </div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Binary Field Preview</h3>
+            <p>
+				A preview icon has been added to the binary widget. It uses the existing file 
+				viewer to display the binary content. Because the file viewer is used, the 
+				same file types are also supported. Furthermore, the attribute 
+				<code style="background-color:transparent; padding:0">noLabel</code> 
+				is now supported.
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_preview.png">
+            </div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Quick Create</h3>
+            <p>
+				If the quick create feature for many2one and many2many tags is to be 
+				deactivated by default, the system parameter 
+				<code style="background-color:transparent; padding:0">muk_web_utils.disable_quick_create</code> 
+				can be set. It is then still possible to activate the quick create 
+				feature for certain fields by explicitly passing 
+				<code style="background-color:transparent; padding:0">option="{'no_quick_create': False}"</code> 
+				to the field.
+			</p>
+			<pre style="line-height:1; background-color:#fdfdfd; padding:8px">
+&lt;field 
+	name="tag_ids" 
+	widget="many2many_tags" 
+	option="{'no_quick_create': False}"
+/&gt;
+			</pre>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">X2Many Fields</h3>
+            <p>
+				For one2many and many2many there is now a new option 
+				<code style="background-color:transparent; padding:0">no_open</code> 
+				which prevents the form view from opening even if it is a kanban view 
+				or a non-editable list view.
+			</p>
+			<pre style="line-height:1; background-color:#fdfdfd; padding:8px">
+&lt;field 
+	name="child_ids" 
+	widget="one2many" 
+	option="{'no_open': True}"
+/&gt;
+			</pre>
+		</div>
+	</div>
+</section>
+
+<section
+	class="oe_container oe_dark d-flex justify-content-around align-items-lg-center flex-column flex-lg-row">
+	<div class="d-flex flex-column m-3 ms-lg-4">
+		<h3 class="oe_slogan mb-3 mt-3 text-left">
+			<i class="fa fa-comments mr8"></i>Want more?
+		</h3>
+		<p>
+			Are you having troubles with your Odoo integration? Or do you feel
+			your system lacks of essential features? <br>If your answer is <b>YES</b>
+			to one of the above questions, feel free to contact us at anytime
+			with your inquiry. <br>We are looking forward to discuss your
+			needs and plan the next steps with you. <br>
+		</p>
+	</div>
+	<div
+		class="oe_slogan d-flex flex-column ms-1 me-1 ms-lg-4 me-lg-4 flex-grow-1">
+		<a class="btn btn-primary btn-lg m-3"
+			href="mailto:sale@mukit.at?subject=Request%20Quote%3A%20MuK%20Web%20Utils"
+			style="font-size: 1.2rem; position: relative; overflow: hidden;">
+			<i class="fa fa-envelope me-1"></i>REQUEST QUOTE
+		</a>
+
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<h3 class="oe_slogan">Our Services</h3>
+		<div class="d-flex justify-content-between">
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="/service_development.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3 
+						class="oe_slogan" 
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Development
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="/service_integration.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3 
+						class="oe_slogan" 
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Integration
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="/service_infrastructure.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3 
+						class="oe_slogan" 
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Infrastructure
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="/service_training.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3 
+						class="oe_slogan" 
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Training
+					</h3>
+				</div>
+			</div>
+			<div>
+				<div>
+					<div style="width: 75px; height: 75px; border-radius: 100%; margin: auto">
+						<img src="/service_support.png" style="width: 100%; border-radius: 100%">
+					</div>
+					<h3 
+						class="oe_slogan" 
+						style="text-align: center; font-size: 14px; width: 100%; margin: 0; margin-top: 5px; color: #000 !important; opacity: 1 !important; line-height: 17px"
+					>
+						Odoo <br>Support
+					</h3>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>

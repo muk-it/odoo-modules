@@ -1,0 +1,34 @@
+<templates xml:space="preserve">
+
+    <t t-name="BlockUIProgress">
+        <div class="mk_block_progress_overlay fixed-top d-flex justify-content-center align-items-center vh-100">
+            <div class="mk_block_progress_card card shadow-lg p-4 text-center rounded-4">
+                <div class="mb-3">
+                    Batch  <span t-esc="props.progressData.step"/> out of <span t-esc="props.totalSteps"/>
+                    <div t-if="props.progressData.value and state.timeLeft" class="mt-2">
+                        <span>Estimated time left:</span>
+                        <t t-if="state.timeLeft >= 1">
+                            <span class="mx-1" t-esc="minutesLeft"/> minutes
+                        </t>
+                        <t t-else="">
+                            <span class="mx-1" t-esc="secondsLeft"/> seconds
+                        </t>
+                    </div>
+                </div>
+                <div class="progress rounded-pill">
+                    <div 
+                        class="progress-bar progress-bar-striped progress-bar-animated" 
+                        role="progressbar"
+                        aria-valuenow="props.progressData.value" 
+                        aria-valuemin="0" 
+                        aria-valuemax="100"
+                        t-att-style="'width: ' + props.progressData.value + '%'"
+                    >
+                        <span class="fw-bold"><t t-esc="props.progressData.value" />%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </t>
+
+</templates>
