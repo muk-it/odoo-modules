@@ -16,10 +16,17 @@ export class Product extends models.Model {
         ],
     });
     description = fields.Char();
+    note = fields.Html();
 
     _records = [
-        { id: 1, name: 'Alpha', state: 'ready', description: 'Has value' },
-        { id: 2, name: 'Beta', state: 'unknown', description: '' },
+        {
+            id: 1,
+            name: 'Alpha',
+            state: 'ready',
+            description: 'Has value',
+            note: '<p>Has note</p>',
+        },
+        { id: 2, name: 'Beta', state: 'unknown', description: '', note: '' },
     ];
 }
 

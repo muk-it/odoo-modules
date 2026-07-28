@@ -26,3 +26,23 @@ test('text icon widget hides icon when value empty', async () => {
     expect('.o_list_table tbody tr:nth-child(1) .fa-book').toHaveCount(1);
     expect('.o_list_table tbody tr:nth-child(2) .fa-book').toHaveCount(0);
 });
+
+test.tags('muk_web_utils');
+test('text icon widget hides icon when an html value is empty', async () => {
+    await mountView({
+        type: 'list',
+        resModel: 'product',
+        arch: listArch({
+            body: `
+                <field
+                    name="note"
+                    widget="text_icon"
+                    nolabel="1"
+                    options="{'icon': 'book'}"
+                />
+            `,
+        }),
+    });
+    expect('.o_list_table tbody tr:nth-child(1) .fa-book').toHaveCount(1);
+    expect('.o_list_table tbody tr:nth-child(2) .fa-book').toHaveCount(0);
+});

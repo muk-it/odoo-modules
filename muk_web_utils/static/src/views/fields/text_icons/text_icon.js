@@ -1,4 +1,5 @@
 import { registry } from '@web/core/registry';
+import { isHtmlEmpty } from '@web/core/utils/html';
 import { usePopover } from '@web/core/popover/popover_hook';
 import { standardFieldProps } from '@web/views/fields/standard_field_props';
 
@@ -21,8 +22,7 @@ export class TextIconField extends Component {
         this.popover = usePopover(Tooltip);
     }
     get hasValue() {
-        const value = this.props.record.data[this.props.name];
-        return !(value === undefined || value === false || value === '');
+        return !isHtmlEmpty(this.props.record.data[this.props.name] || '');
     }
     showTooltip() {
         this.popover.open(this.iconRef.el, {
