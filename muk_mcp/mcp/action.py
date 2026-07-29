@@ -131,5 +131,8 @@ class MCPMixin(models.AbstractModel):
                 if target_ids else target
             )
         positional = self._coerce_json_value(args) or []
-        keyword = self._coerce_json_value(kwargs) or {}
+        keyword = dict(self._coerce_json_value(kwargs) or {})
+        context_override = keyword.pop('context', None)
+        if isinstance(context_override, dict) and context_override:
+            recordset = recordset.with_context(**context_override)
         return unbound(recordset, *positional, **keyword)

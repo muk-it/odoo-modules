@@ -41,6 +41,10 @@ class MCPMixin(models.AbstractModel):
         return self.env[model]
 
     @api.model
+    def _mcp_assert_records_allowed(self, model, ids):
+        """Hook to assert the records may be exposed via MCP."""
+
+    @api.model
     def _resolve_resource_uri(self, uri):
         handlers = {
             'attachment': self._resolve_resource_attachment,
