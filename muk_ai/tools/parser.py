@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 from lxml import etree, html
 
@@ -48,6 +48,12 @@ _HEADINGS = {
 _SKIP_TAGS = frozenset(_DROP_TAGS)
 _WS_RE = re.compile(r'[ \t\r\f\v]+')
 _BLANK_RE = re.compile(r'\n{3,}')
+_DIGITS_RE = re.compile(r'\d+')
+
+# ``rel`` tokens that mark a link as the page's icon. A scalable icon
+# (sizes="any") outranks every pixel size a page can advertise.
+_ICON_RELS = frozenset({'icon', 'apple-touch-icon', 'apple-touch-icon-precomposed'})
+_ICON_SIZE_ANY = 10_000
 
 
 # ----------------------------------------------------------
@@ -64,6 +70,40 @@ def extract_title(doc: str) -> str | None:
     if not values:
         return None
     return _WS_RE.sub(' ', values[0]).strip() or None
+
+
+def extract_icon(doc: str, base_url: str = '') -> str | None:
+    """Return the favicon an HTML document declares, absolutised, or ``None``.
+
+    Reads the page's own ``<link rel="icon">`` family rather than assuming
+    ``/favicon.ico``, which many sites do not serve. The largest declared
+    ``sizes`` wins so a crisp icon is preferred over the legacy 16px one.
+    Only ``https`` survives: a page may inline its icon as a ``data:`` URI,
+    which would carry tens of kilobytes of base64 into the model's context and
+    every stored event, and ``javascript:`` has no business in an ``img`` tag.
+
+    :param doc: the decoded HTML source
+    :param base_url: URL the document was fetched from, for relative hrefs
+    :return: the icon URL, or ``None`` when the page declares no usable one
+    """
+    tree = _parse(doc)
+    if tree is None:
+        return None
+    best, best_size = None, -1
+    for link in tree.xpath('//link[@rel][@href]'):
+        rels = (link.get('rel') or '').lower().split()
+        if not any(rel in _ICON_RELS for rel in rels):
+            continue
+        href = (link.get('href') or '').strip()
+        if not href:
+            continue
+        size = _icon_size(link.get('sizes'))
+        if size > best_size:
+            best, best_size = href, size
+    if not best:
+        return None
+    url = urljoin(base_url, best)
+    return url if urlparse(url).scheme == 'https' else None
 
 
 def html_to_markdown(doc: str, base_url: str = '') -> str:
@@ -98,6 +138,14 @@ def clean_main_html(doc: str) -> str:
 # ----------------------------------------------------------
 # Parsing helpers
 # ----------------------------------------------------------
+
+
+def _icon_size(sizes: str | None) -> int:
+    """Return the pixel edge a ``sizes`` attribute advertises, 0 when absent."""
+    value = (sizes or '').strip().lower()
+    if value == 'any':
+        return _ICON_SIZE_ANY
+    return max((int(edge) for edge in _DIGITS_RE.findall(value)), default=0)
 
 
 def _parse(doc: str) -> html.HtmlElement | None:

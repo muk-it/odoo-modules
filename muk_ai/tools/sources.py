@@ -11,6 +11,8 @@ SourceExtractor = Callable[[dict, object], list[dict]]
 # sources per call so one call cannot flood the sources rail.
 MAX_RECORD_SOURCES_PER_CALL = 20
 
+UNSET_MODULE_ICON = '/base/static/description/icon.png'
+
 # ----------------------------------------------------------
 # Registry
 # ----------------------------------------------------------
@@ -70,15 +72,16 @@ def _web_fetch_sources(arguments: dict, result: object) -> list[dict]:
         return []
     domain = urlparse(url).hostname or ''
     domain = domain[4:] if domain.startswith('www.') else domain
-    return [
-        {
-            'id': f'web:{url}',
-            'type': 'web',
-            'url': url,
-            'title': result.get('title') or domain or url,
-            'domain': domain,
-        }
-    ]
+    source = {
+        'id': f'web:{url}',
+        'type': 'web',
+        'url': url,
+        'title': result.get('title') or domain or url,
+        'domain': domain,
+    }
+    if icon := result.get('icon'):
+        source['icon'] = icon
+    return [source]
 
 
 def _record_source(model: str, row: object) -> dict | None:
@@ -116,3 +119,24 @@ def _record_read_sources(arguments: dict, result: object) -> list[dict]:
     if not model or not isinstance(result, list):
         return []
     return _rows_to_record_sources(model, result, limit=MAX_RECORD_SOURCES_PER_CALL)
+
+
+# ----------------------------------------------------------
+# App icons
+# ----------------------------------------------------------
+
+
+def web_icon_url(web_icon: str) -> str:
+    """Turn a menu ``web_icon`` ("module,path") into a served URL, '' if unusable.
+
+    Only the two-segment form names a file; Studio's built icons use the same
+    attribute for a ``class,colour,background`` triplet, which addresses no
+    image. ``UNSET_MODULE_ICON`` is refused too: Odoo serves that one file for
+    every module shipping no icon of its own, so it means "none" rather than
+    the Base app.
+    """
+    segments = (web_icon or '').split(',')
+    if len(segments) != 2 or not all(segment.strip() for segment in segments):
+        return ''
+    url = f'/{segments[0].strip()}/{segments[1].strip()}'
+    return '' if url == UNSET_MODULE_ICON else url

@@ -5,7 +5,7 @@ import urllib3
 from odoo import api, models
 from odoo.exceptions import UserError
 
-from ..tools import WEB_FETCH_MAX_CHARS, fetch_url, render_content
+from ..tools import WEB_FETCH_MAX_CHARS, fetch_url, page_icon, render_content
 from odoo.addons.muk_mcp.core.tool import mcp_tool
 
 
@@ -84,8 +84,9 @@ class AIWeb(models.AbstractModel):
     ) -> dict:
         """Fetch ``url`` and return a paginated web source descriptor.
 
-        :return: on success a ``{type, url, title, content, content_type,
-            bytes, total_chars, offset, next_offset, truncated}`` descriptor;
+        :return: on success a ``{type, url, title, icon, content,
+            content_type, bytes, total_chars, offset, next_offset,
+            truncated}`` descriptor;
             on failure ``{url, error}`` so the model can react without the
             round aborting
         """
@@ -96,6 +97,7 @@ class AIWeb(models.AbstractModel):
         except (UserError, urllib3.exceptions.HTTPError) as exc:
             return {'url': url, 'error': str(exc)}
         title, content = render_content(result, mode=mode)
+        icon = page_icon(result)
         total = len(content)
         offset = max(0, offset)
         max_chars = max(1, min(max_chars, WEB_FETCH_MAX_CHARS))
@@ -113,6 +115,7 @@ class AIWeb(models.AbstractModel):
             'type': 'web',
             'url': result.url,
             'title': title,
+            'icon': icon,
             'content': window,
             'content_type': result.content_type,
             'bytes': len(result.body),

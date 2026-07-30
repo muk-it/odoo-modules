@@ -1169,6 +1169,22 @@ class AISession(models.Model):
         )
         self._publish_event('state', {'state': 'running'})
 
+    def _tool_result_sources(
+        self, name: str, arguments: dict | None, result
+    ) -> list[dict]:
+        """Return the citable sources a tool call produced, tagged with icons.
+
+        The icon is resolved here rather than in the browser because only the
+        server can say which app a model belongs to; the client would have to
+        guess from the model name and probe for the file.
+        """
+        sources = extract_sources(name, arguments, result)
+        icons = self.env['ir.model']._ai_source_icons()
+        for source in sources:
+            if icon := icons.get(source.get('res_model')):
+                source['icon'] = icon
+        return sources
+
     def _record_tool_result(
         self,
         outputs: list,
@@ -1193,7 +1209,7 @@ class AISession(models.Model):
             'result': cleaned if log_result is None else log_result,
             'call_id': call_id,
         }
-        if sources := extract_sources(name, arguments, output_result):
+        if sources := self._tool_result_sources(name, arguments, output_result):
             event['sources'] = sources
         self._append_event(event)
 
@@ -1553,7 +1569,7 @@ class AISession(models.Model):
             'result': result,
             'call_id': inline_call_id,
         }
-        if sources := extract_sources(target, target_args, result):
+        if sources := self._tool_result_sources(target, target_args, result):
             event['sources'] = sources
         self._append_event(event)
         return {'name': target, 'output': result, 'ok': ok}

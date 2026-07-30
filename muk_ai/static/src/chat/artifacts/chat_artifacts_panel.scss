@@ -114,10 +114,11 @@
         color: var(--mk-text-muted);
         overflow: hidden;
         font-size: 0.8rem;
-        .mk_source_favicon {
+        .mk_source_icon {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            padding: 2px;
+            object-fit: contain;
         }
     }
     .mk_source_ico_web {

@@ -67,5 +67,6 @@ from .url_fetch import (
     WEB_FETCH_MAX_CHARS,
     FetchResult,
     fetch_url,
+    page_icon,
     render_content,
 )

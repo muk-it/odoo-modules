@@ -3,7 +3,7 @@
 
     <t t-name="muk_ai.AttachmentCard">
         <div
-            class="mk_att_card rounded-3 border bg-white position-relative overflow-hidden"
+            class="mk_att_card position-relative overflow-hidden"
             t-att-class="{ 'mk_att_card_compact': props.compact, 'mk_att_card_image': file.isImage }"
             t-att-title="props.attachment.filename"
             t-on-click="() => this.onClick()"
@@ -18,7 +18,7 @@
                 />
             </t>
             <t t-else="">
-                <div class="mk_att_card_preview d-flex align-items-center justify-content-center">
+                <div class="mk_att_card_preview">
                     <div class="o_image" t-att-data-mimetype="props.attachment.mimetype"/>
                 </div>
                 <div class="mk_att_card_info px-2 py-1">
