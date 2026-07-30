@@ -4,6 +4,21 @@ import { registry } from '@web/core/registry';
 
 import { seedSessionContext } from '@muk_ai/views/context';
 
+export const DOCK_RIGHT = 16;
+export const DOCK_WINDOW = 380;
+export const DOCK_GAP = 10;
+
+/**
+ * Width the dock occupies with `count` windows open, excluding its own right
+ * offset. Mirrors the geometry in chat_window.scss, and is shared with the
+ * Discuss hub patch so both sides measure the dock the same way.
+ * @param {number} count open chat windows
+ * @returns {number} width in pixels, 0 when the dock is empty
+ */
+export function dockWidth(count) {
+    return count ? count * DOCK_WINDOW + (count - 1) * DOCK_GAP : 0;
+}
+
 let prismPromise = null;
 function ensurePrism() {
     if (!prismPromise) {

@@ -11,7 +11,7 @@ const SCROLL_NEAR_TOP_DEFAULT = 200;
 export function useChatScrollAnchor(refName = 'scroll') {
     const scrollRef = useRef(refName);
     const state = useState({ atBottom: true });
-    const anchor = { auto: true };
+    const anchor = { auto: true, forcing: false };
     function distanceFromBottom() {
         const el = scrollRef.el;
         if (!el) {
@@ -19,20 +19,29 @@ export function useChatScrollAnchor(refName = 'scroll') {
         }
         return el.scrollHeight - el.scrollTop - el.clientHeight;
     }
+    /**
+     * Scroll to the bottom, re-arming auto-follow unless the user scrolled up.
+     * A forced scroll stays pending until its frame lands, so a render in
+     * between cannot measure the grown scrollHeight against an unmoved
+     * scrollTop and disarm auto-follow before the scroll ran.
+     * @param {boolean} force scroll even when the user is far from the bottom
+     */
     function scrollToBottom(force) {
         const el = scrollRef.el;
         if (!el) {
             return;
         }
-        if (!force && distanceFromBottom() > SCROLL_NEAR_BOTTOM) {
+        if (!force && !anchor.forcing && distanceFromBottom() > SCROLL_NEAR_BOTTOM) {
             anchor.auto = false;
             state.atBottom = false;
             return;
         }
         anchor.auto = true;
         state.atBottom = true;
+        anchor.forcing = anchor.forcing || !!force;
         requestAnimationFrame(() => {
             el.scrollTop = el.scrollHeight;
+            anchor.forcing = false;
         });
     }
     function onScroll() {

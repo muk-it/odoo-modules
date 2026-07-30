@@ -7,11 +7,11 @@
             t-att-class="'mk_source_ico_' + props.source.type"
         >
             <img
-                t-if="faviconUrl"
-                class="mk_source_favicon"
-                t-att-src="faviconUrl"
+                t-if="iconUrl"
+                class="mk_source_icon"
+                t-att-src="iconUrl"
                 alt=""
-                t-on-error="onFaviconError"
+                t-on-error="onIconError"
             />
             <i t-elif="props.source.type === 'web'" class="fa fa-globe"/>
             <i t-else="" class="fa fa-file-text-o"/>
@@ -26,6 +26,7 @@
             target="_blank"
             rel="noopener noreferrer"
             t-att-title="label"
+            t-on-click="onSourceClick"
         >
             <SourceIcon source="props.source"/>
             <span class="mk_source_body d-flex flex-column">
@@ -39,7 +40,7 @@
     <t t-name="muk_ai.SourceList">
         <div class="mk_source_list">
             <t t-foreach="visible" t-as="src" t-key="src.id">
-                <SourceCard source="src"/>
+                <SourceCard source="src" sessionId="props.sessionId"/>
             </t>
         </div>
         <button
@@ -58,7 +59,10 @@
 
     <t t-name="muk_ai.SourcesTab">
         <t t-if="props.items.length">
-            <SourceList sources="props.items"/>
+            <SourceList
+                sources="props.items"
+                sessionId="props.session and props.session.state.sessionId"
+            />
         </t>
         <t t-else="">
             <div class="mk_artifacts_empty text-muted small">

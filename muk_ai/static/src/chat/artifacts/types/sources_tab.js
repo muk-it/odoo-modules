@@ -1,23 +1,26 @@
 import { Component, useState } from '@odoo/owl';
 
-/** A source's favicon (web) or type glyph, in a small circle, with a fallback. */
+import { useService } from '@web/core/utils/hooks';
+
+/**
+ * A source's icon: the site's favicon for a web page, the owning app's icon
+ * for a record. Both are resolved server-side and arrive on the descriptor;
+ * anything the server could not resolve, or that fails to load, falls back to
+ * the type's glyph.
+ */
 export class SourceIcon extends Component {
     static template = 'muk_ai.SourceIcon';
     static props = {
         source: { type: Object },
     };
     setup() {
-        this.state = useState({ faviconFailed: false });
+        this.state = useState({ iconFailed: false });
     }
-    get faviconUrl() {
-        const source = this.props.source;
-        if (source.type !== 'web' || this.state.faviconFailed || !source.domain) {
-            return '';
-        }
-        return `https://${source.domain}/favicon.ico`;
+    get iconUrl() {
+        return this.state.iconFailed ? '' : this.props.source.icon || '';
     }
-    onFaviconError() {
-        this.state.faviconFailed = true;
+    onIconError() {
+        this.state.iconFailed = true;
     }
 }
 
@@ -27,7 +30,39 @@ export class SourceCard extends Component {
     static components = { SourceIcon };
     static props = {
         source: { type: Object },
+        sessionId: { type: [Number, String], optional: true },
     };
+    setup() {
+        this.action = useService('action');
+        this.chatWindow = useService('muk_ai.chat_window');
+    }
+    /**
+     * Open a cited record beside the chat, docking the conversation first so
+     * the record does not replace it. Web sources fall through to the anchor.
+     * Breadcrumbs are cleared because citations are lateral, not a drill-down:
+     * stacking them would grow an unbounded trail of unrelated records.
+     * @param {MouseEvent} ev click on the card
+     * @returns {Promise<void>}
+     */
+    async onSourceClick(ev) {
+        if (this.props.source.type !== 'record') {
+            return;
+        }
+        ev.preventDefault();
+        if (this.props.sessionId) {
+            this.chatWindow.open(this.props.sessionId);
+        }
+        await this.action.doAction(
+            {
+                type: 'ir.actions.act_window',
+                res_model: this.props.source.res_model,
+                res_id: this.props.source.res_id,
+                views: [[false, 'form']],
+                target: 'current',
+            },
+            { clearBreadcrumbs: true },
+        );
+    }
     get href() {
         const source = this.props.source;
         return source.type === 'web' ? source.url : source.href || '#';
@@ -53,6 +88,7 @@ export class SourceList extends Component {
     static props = {
         sources: { type: Array },
         cap: { type: Number, optional: true },
+        sessionId: { type: [Number, String], optional: true },
     };
     setup() {
         this.state = useState({ showAll: false });

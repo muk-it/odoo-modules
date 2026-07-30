@@ -2,7 +2,10 @@
 <templates xml:space="preserve">
 
     <t t-name="muk_ai.ChatWindowContainer">
-        <div class="mk_window_dock">
+        <div
+            class="mk_window_dock"
+            t-attf-style="--mk-discuss-reserved: {{ discussReservedWidth }}px; --mk-dock-width: {{ dockWidth }}px"
+        >
             <t t-foreach="state.windows" t-as="w" t-key="w.sessionId">
                 <ChatWindow
                     sessionId="w.sessionId"

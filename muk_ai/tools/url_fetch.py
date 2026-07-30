@@ -13,7 +13,7 @@ from odoo.exceptions import UserError
 from odoo.tools import html2plaintext
 from odoo.tools.translate import LazyTranslate
 
-from .parser import clean_main_html, extract_title, html_to_markdown
+from .parser import clean_main_html, extract_icon, extract_title, html_to_markdown
 
 _lt = LazyTranslate('muk_ai')
 
@@ -213,6 +213,27 @@ def fetch_url(url: str) -> FetchResult:
     raise UserError(_lt('@url: too many redirects for %s.', url))
 
 
+def _is_html(result: FetchResult) -> bool:
+    """Return whether a fetched payload should be rendered as HTML."""
+    mime = result.content_type
+    return 'html' in mime or (
+        not mime and bool(_HTML_SNIFF_RE.search(result.body[:1024]))
+    )
+
+
+def page_icon(result: FetchResult) -> str | None:
+    """Return the favicon a fetched HTML page declares, or ``None``.
+
+    Resolved from the markup the fetch already retrieved, so a cited page
+    carries its real icon instead of the client guessing ``/favicon.ico``
+    and falling back to a glyph whenever that guess misses.
+    """
+    if not _is_html(result):
+        return None
+    text = result.body.decode(result.charset or 'utf-8', errors='replace')
+    return extract_icon(text, result.url)
+
+
 def render_content(
     result: FetchResult, mode: str = 'markdown'
 ) -> tuple[str | None, str]:
@@ -228,9 +249,7 @@ def render_content(
     """
     text = result.body.decode(result.charset or 'utf-8', errors='replace')
     mime = result.content_type
-    html_like = 'html' in mime or (
-        not mime and bool(_HTML_SNIFF_RE.search(result.body[:1024]))
-    )
+    html_like = _is_html(result)
     if mode == 'html':
         return (extract_title(text) if html_like else None), text
     if html_like:

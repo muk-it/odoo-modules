@@ -1,6 +1,6 @@
 .mk_window_dock {
     position: fixed;
-    right: 16px;
+    right: #{'min(calc(16px + var(--mk-discuss-reserved, 0px)), max(16px, calc(100vw - var(--mk-dock-width, 0px) - 16px)))'};
     bottom: 0;
     z-index: 1040;
     display: flex;
