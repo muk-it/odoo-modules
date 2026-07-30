@@ -529,7 +529,10 @@
                             t-if="isTurnSourcesExpanded(turn, turn_index)"
                             class="mk_turn_sources_list"
                         >
-                            <SourceList sources="turn.sources"/>
+                            <SourceList
+                                sources="turn.sources"
+                                sessionId="session.state.sessionId"
+                            />
                         </div>
                     </div>
                 </t>
@@ -547,13 +550,13 @@
                     <i class="fa fa-copy"/>
                 </button>
                 <button class="mk_msg_btn mk_msg_fork" type="button"
-                        t-if="meta_event_id and !meta_in_history"
+                        t-if="meta_event_id and !meta_in_history and session.runForkAtEvent"
                         title="Branch — open a new session with the history up to this message"
                         t-on-click="() => session.runForkAtEvent(meta_event_id)">
                     <i class="fa fa-code-fork"/>
                 </button>
                 <button class="mk_msg_btn mk_msg_undo" type="button"
-                        t-if="meta_event_id and !meta_in_history"
+                        t-if="meta_event_id and !meta_in_history and session.runUndoToEvent"
                         title="Rewind — remove this message and everything after"
                         t-on-click="() => session.runUndoToEvent(meta_event_id)">
                     <i class="fa fa-undo"/>
@@ -635,6 +638,13 @@
                         />
                     </t>
                 </div>
+                <t t-call="muk_ai.ChatMsgMeta">
+                    <t t-set="meta_at" t-value="block.at || turn.at"/>
+                    <t t-set="meta_text" t-value="block.text"/>
+                    <t t-set="meta_event_id" t-value="block.eventId || turn.eventId"/>
+                    <t t-set="meta_side" t-value="''"/>
+                    <t t-set="meta_in_history" t-value="turn.inHistory"/>
+                </t>
             </div>
         </t>
     </t>

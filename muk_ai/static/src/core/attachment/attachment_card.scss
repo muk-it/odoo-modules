@@ -1,0 +1,11 @@
+.mk_att_card {
+    border: 1px solid var(--mk-border, #e7e9ed);
+    border-radius: 6px;
+    background: #ffffff;
+}
+
+.mk_att_card_preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
