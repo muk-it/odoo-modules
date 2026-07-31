@@ -8,12 +8,30 @@
             <ChatSidebar
                 t-if="!state.sidebarHidden"
                 sessions="state.sessions"
+                spaces="state.spaces"
+                spaceSessions="state.spaceSessions"
+                spaceUnread="badge.spaceUnread"
+                agents="session.state.agents"
                 unreadIds="badge.unreadIds"
                 activeSessionId="session.state.sessionId"
-                onNew.bind="onNewSession"
+                hasMore="state.sessionsHasMore"
+                loadingMore="state.sessionsLoadingMore"
+                searching="state.sessionsSearching"
+                searchMode="state.sessionsSearchMode"
+                onNew="() => this.onNewSession()"
                 onSelect.bind="onSelectSession"
                 onRename.bind="onRenameSession"
                 onDelete.bind="onDeleteSession"
+                onQuery.bind="onSidebarQuery"
+                onLoadMore.bind="onSidebarLoadMore"
+                onSpaceOpen.bind="onSpaceOpen"
+                onSpaceCreate.bind="onSpaceCreate"
+                onSpaceEdit.bind="onSpaceEdit"
+                onSpaceDelete.bind="onSpaceDelete"
+                onSpaceReorder.bind="onSpaceReorder"
+                onSpaceNew.bind="onSpaceNew"
+                onSpaceLoadMore.bind="onSpaceLoadMore"
+                onSessionFile.bind="onSessionFile"
             />
             <div
                 class="mk_sidebar_backdrop"
@@ -177,7 +195,7 @@
                             onOpenAttachment.bind="onOpenAttachment"
                             onSelectAgent="(agentId) => session.onSetAgent(agentId)"
                         />
-                        <div class="mk_composer_hint d-flex gap-3 mt-1 ps-1">
+                        <div class="mk_composer_hint mt-1 ps-1">
                             <span><kbd>Enter</kbd> to send</span>
                             <span><kbd>Shift</kbd>+<kbd>Enter</kbd> for newline</span>
                         </div>
@@ -295,7 +313,7 @@
                     <i class="fa fa-external-link"/>
                 </button>
                 <span
-                    class="mk_chip mk_ctx_chip rounded-pill d-inline-flex align-items-center"
+                    class="mk_chip mk_ctx_chip rounded-pill"
                     t-if="session.state.viewContext"
                 >
                     <button

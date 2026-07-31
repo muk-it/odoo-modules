@@ -1,0 +1,69 @@
+// Base look of the compat SelectMenu. Odoo 16 ships no select menu, so the
+// core rules the later component relies on are provided here under the same
+// class names the ported stylesheets target.
+
+.o_select_menu {
+    .o_select_menu_toggler {
+        position: relative;
+        align-items: center;
+        text-align: start;
+
+        &:after {
+            display: none;
+        }
+    }
+
+    .o_select_menu_toggler_slot {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .o_select_menu_toggler_clear:hover i {
+        color: $danger;
+    }
+
+    .o_select_menu_caret {
+        margin-left: auto;
+        padding-left: 0.5rem;
+        visibility: hidden;
+
+        &:after {
+            display: inline-block;
+            content: '';
+            border-top: $caret-width solid;
+            border-right: $caret-width solid transparent;
+            border-left: $caret-width solid transparent;
+        }
+    }
+
+    &:hover,
+    &:focus-within {
+        .o_select_menu_caret {
+            visibility: visible;
+        }
+    }
+}
+
+.o_select_menu_menu {
+    max-height: 300px;
+    overflow-y: auto;
+    background-color: $dropdown-bg;
+
+    .o_select_menu_searchbox {
+        top: -$dropdown-padding-y;
+        padding: 5px;
+        background-color: $dropdown-bg;
+        z-index: 1;
+
+        input {
+            width: 100%;
+            height: $input-height;
+            cursor: text;
+        }
+    }
+
+    .o_select_menu_item.selected {
+        background-color: var(--bs-primary);
+        color: var(--bs-white);
+    }
+}

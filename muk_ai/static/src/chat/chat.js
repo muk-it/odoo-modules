@@ -69,7 +69,8 @@ import {
 import { seedSessionContext } from '@muk_ai/views/context';
 import { busSubscribe, busUnsubscribe } from '@muk_ai/core/compat/bus';
 
-const SESSION_PAGE_SIZE = 40;
+export const SESSION_PAGE_SIZE = 20;
+export const SPACE_PAGE_SIZE = 10;
 const SESSION_SEARCH_LIMIT = 100;
 const SESSION_SEARCH_DEBOUNCE_MS = 250;
 
@@ -139,6 +140,8 @@ export class AIChat extends Component {
         this.state = useState({
             loading: true,
             sessions: [],
+            spaces: [],
+            spaceSessions: {},
             sessionsOffset: 0,
             sessionsHasMore: false,
             sessionsLoadingMore: false,
@@ -173,6 +176,7 @@ export class AIChat extends Component {
         );
         this._userBusHandler = null;
         this._loadSeq = 0;
+        this._spaceLoadSeq = {};
         this._sessionFetchIds = new Set();
         useDropzone(
             this.rootRef,
@@ -186,7 +190,11 @@ export class AIChat extends Component {
             () => this.session.canAttach(),
         );
         onWillStart(async () => {
-            await Promise.all([this._loadSessions(), this.session.loadAgents()]);
+            await Promise.all([
+                this._loadSessions(),
+                this._loadSpaces(),
+                this.session.loadAgents(),
+            ]);
             this._connectUserBus();
             const requested = this._getRequestedSessionId();
             const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
@@ -285,6 +293,55 @@ export class AIChat extends Component {
     _openInlineImage(src) {
         this.fileViewer.open(toInlineImageFile(src));
     }
+    /**
+     * Load the spaces shown in the sidebar tree.
+     */
+    async _loadSpaces() {
+        this.state.spaces = await this.orm.call('muk_ai.space', 'fetch_spaces', []);
+    }
+    /**
+     * Load a page of the chats of one space into its branch of the tree.
+     * The cursor counts the rows the server returned rather than the ones
+     * kept after removing duplicates, so an all-duplicate page still
+     * advances it instead of asking for the same slice forever.
+     * @param {number} spaceId
+     * @param {boolean} [more] append the next page instead of reloading
+     * @param {boolean|null} [unreadOnly] narrow to unread, null to keep as is
+     */
+    async _loadSpaceSessions(spaceId, more = false, unreadOnly = null) {
+        const space = this.state.spaces.find((entry) => entry.id === spaceId);
+        if (!space) {
+            return;
+        }
+        const branch = this.state.spaceSessions[spaceId];
+        const filtered =
+            unreadOnly === null ? !!(branch && branch.unreadOnly) : unreadOnly;
+        const domain = [
+            ['user_id', '=', this.user.userId],
+            ...space.session_domain,
+            ...(filtered ? [['notification_unread', '=', true]] : []),
+        ];
+        const offset = more && branch ? branch.offset : 0;
+        const seq = (this._spaceLoadSeq[spaceId] || 0) + 1;
+        this._spaceLoadSeq[spaceId] = seq;
+        const page = await this.orm.searchRead(
+            'muk_ai.session',
+            domain,
+            ['id', 'name', 'state', 'create_date', 'space_id'],
+            { limit: SPACE_PAGE_SIZE, offset, order: 'create_date DESC' },
+        );
+        if (this._spaceLoadSeq[spaceId] !== seq) {
+            return;
+        }
+        const known = offset && branch ? branch.sessions : [];
+        const seen = new Set(known.map((session) => session.id));
+        this.state.spaceSessions[spaceId] = {
+            sessions: [...known, ...page.filter((session) => !seen.has(session.id))],
+            offset: offset + page.length,
+            hasMore: page.length === SPACE_PAGE_SIZE,
+            unreadOnly: filtered,
+        };
+    }
     async _loadSessions() {
         if (this.state.sessionsSearchMode) {
             await this._searchSessions(this.state.sessionsQuery);
@@ -293,8 +350,11 @@ export class AIChat extends Component {
         const seq = ++this._loadSeq;
         const sessions = await this.orm.searchRead(
             'muk_ai.session',
-            [['user_id', '=', this.user.userId]],
-            ['id', 'name', 'state', 'create_date'],
+            [
+                ['user_id', '=', this.user.userId],
+                ['space_id', '=', false],
+            ],
+            ['id', 'name', 'state', 'create_date', 'space_id'],
             { limit: SESSION_PAGE_SIZE, offset: 0, order: 'create_date DESC' },
         );
         if (seq === this._loadSeq) {
@@ -316,8 +376,11 @@ export class AIChat extends Component {
             const seq = this._loadSeq;
             const next = await this.orm.searchRead(
                 'muk_ai.session',
-                [['user_id', '=', this.user.userId]],
-                ['id', 'name', 'state', 'create_date'],
+                [
+                    ['user_id', '=', this.user.userId],
+                    ['space_id', '=', false],
+                ],
+                ['id', 'name', 'state', 'create_date', 'space_id'],
                 {
                     limit: SESSION_PAGE_SIZE,
                     offset: this.state.sessionsOffset,
@@ -346,7 +409,7 @@ export class AIChat extends Component {
                     ['user_id', '=', this.user.userId],
                     ['name', 'ilike', query],
                 ],
-                ['id', 'name', 'state', 'create_date'],
+                ['id', 'name', 'state', 'create_date', 'space_id'],
                 { limit: SESSION_SEARCH_LIMIT, order: 'create_date DESC' },
             );
             if (seq !== this._sessionsSearchSeq) {
@@ -399,14 +462,18 @@ export class AIChat extends Component {
      * first RPC so the composer (canSend gates on it) stays closed for the
      * whole switch — a send in that window would run in the outgoing
      * session and paint nothing in the new one.
+     * @param {object} [values] extra values written on the created session
+     * @returns {Promise<number>} the created session id
      */
-    async onNewSession() {
+    async onNewSession(values = {}) {
         const name = _t('Chat %s', new Date().toLocaleString());
         const carryOver = this.session.state.viewContext;
         this.session.state.loading = true;
         let id;
         try {
-            const sessionId = await this.orm.create('muk_ai.session', [{ name }]);
+            const sessionId = await this.orm.create('muk_ai.session', [
+                { name, ...values },
+            ]);
             id = Array.isArray(sessionId) ? sessionId[0] : sessionId;
             if (carryOver && carryOver.model) {
                 await seedSessionContext(this.env, id, carryOver);
@@ -417,6 +484,7 @@ export class AIChat extends Component {
         }
         await this._selectSession(id);
         await this._loadSessions();
+        return id;
     }
     async onStartWithPrompt(prompt) {
         await this.onNewSession();
@@ -449,6 +517,82 @@ export class AIChat extends Component {
             await this._selectSession(next);
         }
         await this._loadSessions();
+    }
+    onSpaceOpen(spaceId, unreadOnly = null) {
+        return this._loadSpaceSessions(spaceId, false, unreadOnly);
+    }
+    onSpaceLoadMore(spaceId) {
+        return this._loadSpaceSessions(spaceId, true);
+    }
+    async onSpaceCreate(name) {
+        await this.orm.create('muk_ai.space', [{ name }]);
+        await this._loadSpaces();
+    }
+    async onSpaceEdit(spaceId, values) {
+        await this.orm.write('muk_ai.space', [spaceId], values);
+        await this._loadSpaces();
+    }
+    async onSpaceDelete(spaceId) {
+        await this.orm.unlink('muk_ai.space', [spaceId]);
+        delete this.state.spaceSessions[spaceId];
+        await Promise.all([this._loadSpaces(), this._loadSessions()]);
+    }
+    /**
+     * Persist the new order of the personal spaces after a drag.
+     * @param {number} spaceId the space that moved
+     * @param {number|null} afterId the space it now follows, null when first
+     */
+    async onSpaceReorder(spaceId, afterId) {
+        const ids = this.state.spaces
+            .filter((space) => !space.system)
+            .map((space) => space.id)
+            .filter((id) => id !== spaceId);
+        const after = afterId === null ? -1 : ids.indexOf(afterId);
+        if (afterId !== null && after === -1) {
+            return;
+        }
+        ids.splice(after + 1, 0, spaceId);
+        const byId = new Map(this.state.spaces.map((space) => [space.id, space]));
+        this.state.spaces = [
+            ...this.state.spaces.filter((space) => space.system),
+            ...ids.map((id) => byId.get(id)),
+        ];
+        try {
+            await this.orm.call('muk_ai.space', 'reorder', [ids]);
+        } catch (error) {
+            await this._loadSpaces();
+            throw error;
+        }
+    }
+    /** Start a chat inside a space, preselecting the agent it defaults to. */
+    async onSpaceNew(spaceId) {
+        const space = this.state.spaces.find((entry) => entry.id === spaceId);
+        const values = { space_id: spaceId };
+        if (space && space.agent_id) {
+            values.agent_id = space.agent_id;
+        }
+        await this.onNewSession(values);
+        await this._loadSpaceSessions(spaceId);
+    }
+    /**
+     * File a chat into a space, or loosen it again when spaceId is false.
+     * @param {number} sessionId
+     * @param {number|false} spaceId
+     */
+    async onSessionFile(sessionId, spaceId) {
+        const previous = Object.keys(this.state.spaceSessions)
+            .map(Number)
+            .filter((id) =>
+                this.state.spaceSessions[id].sessions.some((s) => s.id === sessionId),
+            );
+        await this.orm.write('muk_ai.session', [sessionId], {
+            space_id: spaceId || false,
+        });
+        const branches = [...new Set([...previous, ...(spaceId ? [spaceId] : [])])];
+        await Promise.all([
+            this._loadSessions(),
+            ...branches.map((id) => this._loadSpaceSessions(id)),
+        ]);
     }
     toggleSidebar() {
         this.state.sidebarHidden = !this.state.sidebarHidden;
@@ -650,7 +794,7 @@ export class AIChat extends Component {
                     ['id', '=', sessionId],
                     ['user_id', '=', this.user.userId],
                 ],
-                ['id', 'name', 'state', 'create_date'],
+                ['id', 'name', 'state', 'create_date', 'space_id'],
                 { limit: 1 },
             );
             if (
@@ -825,13 +969,21 @@ export class AIChat extends Component {
     get isQueueing() {
         return this.session.isQueueing();
     }
+    /**
+     * Placeholder for the composer.
+     * The keyboard hint is dropped on narrow screens, where it wraps and a
+     * touch keyboard has no Shift+Enter to offer.
+     */
     get inputPlaceholder() {
         if (!this.isOwner) {
             return _t('Read only — you are not the owner of this session.');
         }
+        const narrow = typeof window !== 'undefined' && window.innerWidth < 768;
         return inputPlaceholder(
             this.session.state,
-            _t('Message the assistant… (Enter to send, Shift+Enter for newline)'),
+            narrow
+                ? _t('Message the assistant…')
+                : _t('Message the assistant… (Enter to send, Shift+Enter for newline)'),
         );
     }
     statusLabel(status) {

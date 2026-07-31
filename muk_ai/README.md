@@ -32,7 +32,7 @@ Everything lives under **MuK AI** in the app menu:
 - **Reports** *(system)* — Sessions, Tool Logs, Approval Log
 - **MCP** *(system)* — the underlying tool Registry and Playground
   from `muk_mcp`
-- **Configuration** *(system)* — Providers, Models
+- **Configuration** *(system)* — Providers, Models, Spaces
 - **Settings** *(system)* — one-line defaults under the standard
   General Settings page
 
@@ -124,6 +124,27 @@ single Send/Stop toggle cancels an in-flight stream.
 A systray icon in the top bar surfaces running sessions and lets you
 pop out a floating chat window so the assistant stays reachable while
 you navigate other views.
+
+**Spaces**
+
+Chats pile up fast, so the sidebar groups them into **spaces**. Create
+one with the `+` next to *Spaces*, drag chats into it to file them and
+drag them out to loosen them again, and drag a space by its grip to
+reorder the list. The pencil opens an editor for the space name, its
+Font Awesome icon (searchable grid) and an optional **default agent**
+preselected for every chat started inside it — the `+` on a space row
+starts such a chat. Unread chats are counted per space; click the badge
+to narrow that space to its unread conversations. Every branch
+paginates on its own, so opening a space with hundreds of chats costs
+one page.
+
+Modules can ship **system spaces** whose membership comes from a stored
+domain instead of manual filing — `muk_ai_schedule` ships a *Scheduled*
+space collecting every chat a schedule started. They belong to nobody,
+are visible to everyone, and cannot be renamed, reordered or dropped
+into; one record serves the whole database, so nothing is duplicated
+per user and matching chats appear retroactively. Administrators manage
+every space under **MuK AI > Configuration > Spaces**.
 
 **Source citations**
 

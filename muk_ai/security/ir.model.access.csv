@@ -7,6 +7,7 @@ access_ai_agent_user,muk_ai.agent.user,model_muk_ai_agent,base.group_user,1,0,0,
 access_ai_agent_admin,muk_ai.agent.admin,model_muk_ai_agent,base.group_system,1,1,1,1
 access_ai_agent_suggestion_user,muk_ai.agent.suggestion.user,model_muk_ai_agent_suggestion,base.group_user,1,0,0,0
 access_ai_agent_suggestion_admin,muk_ai.agent.suggestion.admin,model_muk_ai_agent_suggestion,base.group_system,1,1,1,1
+access_ai_space_user,muk_ai.space.user,model_muk_ai_space,base.group_user,1,1,1,1
 access_ai_session_user,muk_ai.session.user,model_muk_ai_session,base.group_user,1,1,1,1
 access_ai_session_pending_user,muk_ai.session.pending.user,model_muk_ai_session_pending,base.group_user,1,1,1,1
 access_ai_session_event_user,muk_ai.session.event.user,model_muk_ai_session_event,base.group_user,1,1,1,1

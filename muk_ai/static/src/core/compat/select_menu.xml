@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.CompatSelectMenu" owl="1">
+        <div
+            class="o_select_menu w-auto position-relative"
+            t-att-class="props.class"
+            t-ref="root"
+        >
+            <Dropdown
+                menuClass="'o_select_menu_menu ' + props.menuClass"
+                togglerClass="'o_select_menu_toggler d-flex border btn btn-light w-100 bg-light ' + props.togglerClass"
+                beforeOpen.bind="onBeforeOpen"
+            >
+                <t t-set-slot="toggler">
+                    <span class="o_select_menu_toggler_slot text-start text-truncate">
+                        <span
+                            t-if="props.placeholder and !props.value"
+                            class="text-muted"
+                            t-out="props.placeholder"
+                        />
+                        <t t-slot="default"/>
+                    </span>
+                    <span
+                        t-if="canDeselect"
+                        class="o_select_menu_toggler_clear position-absolute top-50 end-0 me-3"
+                        t-on-click.stop="() => this.onClear()"
+                    >
+                        <i class="fa fa-times"/>
+                    </span>
+                    <span class="o_select_menu_caret align-self-center"/>
+                </t>
+                <div class="o_select_menu_searchbox position-sticky start-0">
+                    <input
+                        type="text"
+                        class="o_input o_select_menu_input"
+                        t-ref="search"
+                        t-att-placeholder="props.searchPlaceholder"
+                        t-att-value="state.search"
+                        t-on-input="onSearchInput"
+                        t-on-click.stop=""
+                        autocomplete="off"
+                        spellcheck="false"
+                    />
+                </div>
+                <p t-if="!displayedChoices.length" class="text-muted fst-italic mx-4 my-1">
+                    No results
+                </p>
+                <t t-foreach="displayedChoices" t-as="choice" t-key="choice.value">
+                    <DropdownItem
+                        class="itemClass(choice)"
+                        onSelected="() => this.onItemSelected(choice.value)"
+                    >
+                        <t t-if="props.slots and props.slots.choice" t-slot="choice" data="choice"/>
+                        <div t-else="" t-esc="choice.label || choice.value"/>
+                    </DropdownItem>
+                </t>
+            </Dropdown>
+        </div>
+    </t>
+
+</templates>
