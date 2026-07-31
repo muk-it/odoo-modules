@@ -79,12 +79,18 @@
 				id="menu_ai_provider"
 				name="Providers"
 				action="action_muk_ai_provider"
-				sequence="20"
+				sequence="10"
 			/>
 			<menuitem
 				id="menu_ai_model"
 				name="Models"
 				action="action_muk_ai_model"
+				sequence="20"
+			/>
+			<menuitem
+				id="menu_ai_space"
+				name="Spaces"
+				action="action_ai_space"
 				sequence="30"
 			/>
 		</menuitem>

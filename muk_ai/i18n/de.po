@@ -805,6 +805,11 @@ msgid "AI Session Worker"
 msgstr "KI-Session-Worker"
 
 #. module: muk_ai
+#: model:ir.model,name:muk_ai.model_muk_ai_space
+msgid "AI Space"
+msgstr "KI-Space"
+
+#. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/provider.py:0
 msgid ""
@@ -913,6 +918,11 @@ msgstr "Aktivitätstyp-Symbol"
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_search
 msgid "Agent"
 msgstr "Agent"
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_space__agent_id
+msgid "Agent preselected for chats started inside this space."
+msgstr "Agent, der für Chats in diesem Space vorausgewählt wird."
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
@@ -1280,6 +1290,17 @@ msgstr "Chat-Sitzung"
 #: code:addons/muk_ai/static/src/chat/sidebar/rename_dialog.js:0
 msgid "Chat name"
 msgstr "Chat-Name"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_space__session_count
+msgid "Chats"
+msgstr "Chats"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+msgid "Chats cannot be filed into the system space \"%s\"."
+msgstr "Chats können nicht im System-Space \"%s\" abgelegt werden."
 
 #. module: muk_ai
 #. odoo-javascript
@@ -1668,6 +1689,12 @@ msgid "Default Provider"
 msgstr "Standard-Anbieter"
 
 #. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/sidebar/space_dialog.xml:0
+msgid "Default agent"
+msgstr "Standard-Agent"
+
+#. module: muk_ai
 #: model:muk_ai.agent,description:muk_ai.agent_general
 msgid "Default agent with full tool access."
 msgstr "Standardvoreinstellung mit vollem Tool-Zugriff."
@@ -1688,6 +1715,14 @@ msgstr "Löschen"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
+msgid "Delete \"%s\"? Its chats are kept and become loose."
+msgstr ""
+"\"%s\" löschen? Die Chats bleiben erhalten und sind danach keinem Space "
+"zugeordnet."
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
 msgid "Delete \"%s\"? This cannot be undone."
 msgstr "\"%s\" löschen? Dies kann nicht rückgängig gemacht werden."
 
@@ -1696,6 +1731,12 @@ msgstr "\"%s\" löschen? Dies kann nicht rückgängig gemacht werden."
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
 msgid "Delete chat"
 msgstr "Chat löschen"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
+msgid "Delete space"
+msgstr "Space löschen"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__description
@@ -1726,6 +1767,11 @@ msgid "Display Name"
 msgstr "Anzeigename"
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_space__domain
+msgid "Domain"
+msgstr "Domain"
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
 #: code:addons/muk_ai/static/src/chat/utils.js:0
@@ -1736,9 +1782,27 @@ msgstr "Fertig"
 
 #. module: muk_ai
 #. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+msgid "Drag to resize"
+msgstr "Zum Ändern der Breite ziehen"
+
+#. module: muk_ai
+#. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/tools/tool_card.xml:0
 msgid "Each fire asks:"
 msgstr "Bei jedem Auslösen wird gefragt:"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+msgid "Edit"
+msgstr "Bearbeiten"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/sidebar/space_dialog.js:0
+msgid "Edit space"
+msgstr "Space bearbeiten"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__effective_approval_mode
@@ -1953,6 +2017,12 @@ msgid "Followers (Partners)"
 msgstr "Abonnenten (Partner)"
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_space__icon
+msgid "Font Awesome class the sidebar draws next to the space name."
+msgstr ""
+"Font-Awesome-Klasse, die die Seitenleiste neben dem Space-Namen zeichnet."
+
+#. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_agent__activity_type_icon
 msgid "Font awesome icon e.g. fa-tasks"
 msgstr "Font-Awesome-Symbol, z. B. fa-tasks"
@@ -2045,6 +2115,12 @@ msgstr "ISO-Code der Preiswährung."
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__activity_exception_icon
 msgid "Icon"
 msgstr "Symbol"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/views/fields/icon_selector/icon_selector.js:0
+msgid "Icon Selector"
+msgstr "Symbolauswahl"
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_agent__activity_exception_icon
@@ -2429,6 +2505,12 @@ msgstr "Nachrichtenzustellfehler"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.js:0
+msgid "Message the assistant…"
+msgstr "Nachricht an den Assistenten…"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.js:0
 msgid "Message the assistant… (Enter to send, Shift+Enter for newline)"
 msgstr ""
 "Nachricht an den Assistenten… (Enter zum Senden, Shift+Enter für "
@@ -2622,6 +2704,18 @@ msgid "New Chat"
 msgstr "Neuer Chat"
 
 #. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+msgid "New chat here"
+msgstr "Neuer Chat hier"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+msgid "New space"
+msgstr "Neuer Space"
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__activity_calendar_event_id
 msgid "Next Activity Calendar Event"
 msgstr "Nächster Aktivitätskalender-Eintrag"
@@ -2674,6 +2768,12 @@ msgstr "Noch keine Anhänge in dieser Konversation."
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+msgid "No chats here yet."
+msgstr "Noch keine Chats hier."
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
 msgid "No chats match"
 msgstr "Keine passenden Chats"
 
@@ -2683,6 +2783,12 @@ msgstr "Keine passenden Chats"
 #: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
 msgid "No chats yet."
 msgstr "Noch keine Chats."
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/sidebar/space_dialog.xml:0
+msgid "No default agent"
+msgstr "Kein Standard-Agent"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -2713,6 +2819,12 @@ msgstr "Kein passendes Tool"
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
 msgid "No records resolved."
 msgstr "Keine Datensätze aufgelöst."
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+msgid "No space yet. Create a new space."
+msgstr "Noch kein Space. Erstellen Sie einen neuen Space."
 
 #. module: muk_ai
 #. odoo-python
@@ -2748,6 +2860,12 @@ msgstr "Nichts zu komprimieren — die Konversation ist leer."
 #: code:addons/muk_ai/models/session.py:0
 msgid "Nothing to compact — conversation too short."
 msgstr "Nichts zu komprimieren — Unterhaltung zu kurz."
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+msgid "Nothing unread here."
+msgstr "Hier ist nichts ungelesen."
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__notification_unread
@@ -2874,6 +2992,15 @@ msgid "Owner"
 msgstr "Eigentümer"
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_space__user_id
+msgid ""
+"Owner of a personal space. Leave empty for a system space, which every user "
+"sees and which collects its chats through its domain."
+msgstr ""
+"Besitzer eines persönlichen Space. Für einen System-Space leer lassen: "
+"Diesen sehen alle Benutzer, und er sammelt seine Chats über seine Domain."
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/tools/tool_card.xml:0
 msgid "Paused — resumes"
@@ -2903,6 +3030,21 @@ msgid ""
 msgstr ""
 "Pro-Sitzung-Override für die Freigabe-Richtlinie des Agenten. Leer lassen, "
 "um vom Agenten zu erben."
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_space_search
+msgid "Personal"
+msgstr "Persönlich"
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_session__space_id
+msgid ""
+"Personal space this chat is filed into. Leave empty to keep the chat loose; "
+"system spaces collect their chats through a domain and cannot be filed into."
+msgstr ""
+"Persönlicher Space, in dem dieser Chat abgelegt ist. Leer lassen, um den "
+"Chat keinem Space zuzuordnen; System-Spaces sammeln ihre Chats über eine "
+"Domain, und es kann nichts in sie abgelegt werden."
 
 #. module: muk_ai
 #: model:muk_ai.agent.suggestion,label:muk_ai.agent_general_suggestion_summarize
@@ -3386,6 +3528,12 @@ msgstr "Vertrieb"
 
 #. module: muk_ai
 #. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/sidebar/space_dialog.xml:0
+msgid "Save"
+msgstr "Speichern"
+
+#. module: muk_ai
+#. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
 msgid "Scheduled"
 msgstr "Geplant"
@@ -3408,6 +3556,13 @@ msgstr "Zum Neuesten scrollen"
 #: code:addons/muk_ai/static/src/core/commands/command_setup.js:0
 msgid "Search MuK AI chats and agents…"
 msgstr "MuK AI Chats und Agenten durchsuchen…"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/sidebar/space_dialog.js:0
+#: code:addons/muk_ai/static/src/views/fields/icon_selector/icon_selector.js:0
+msgid "Search an icon..."
+msgstr "Symbol suchen..."
 
 #. module: muk_ai
 #. odoo-javascript
@@ -3485,6 +3640,15 @@ msgstr "Sitzungs-Timeout"
 #: code:addons/muk_ai/static/src/chat/utils.js:0
 msgid "Session cost so far: $%s (USD)"
 msgstr "Bisherige Sitzungskosten: $%s (USD)"
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_space__domain
+msgid ""
+"Session domain collecting the chats of a system space. Leave empty for a "
+"personal space, whose chats are filed by hand."
+msgstr ""
+"Sitzungs-Domain, die die Chats eines System-Space sammelt. Für einen "
+"persönlichen Space leer lassen, dessen Chats von Hand abgelegt werden."
 
 #. module: muk_ai
 #: model:ir.model.constraint,message:muk_ai.constraint_muk_ai_session_event_unique_session_sequence
@@ -3585,6 +3749,19 @@ msgstr ""
 
 #. module: muk_ai
 #. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
+#: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+msgid "Show all chats"
+msgstr "Alle Chats anzeigen"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
+msgid "Show only unread"
+msgstr "Nur ungelesene anzeigen"
+
+#. module: muk_ai
+#. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
 msgid "Show summary"
 msgstr "Zusammenfassung anzeigen"
@@ -3621,6 +3798,28 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_mcp_log_search_inherit_muk_ai
 msgid "Source"
 msgstr "Quelle"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__space_id
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_space_search
+msgid "Space"
+msgstr "Space"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+#: code:addons/muk_ai/static/src/chat/sidebar/space_dialog.xml:0
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_space_form
+msgid "Space name"
+msgstr "Space-Name"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+#: model:ir.actions.act_window,name:muk_ai.action_ai_space
+#: model:ir.ui.menu,name:muk_ai.menu_ai_space
+msgid "Spaces"
+msgstr "Spaces"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -3775,6 +3974,11 @@ msgid "Switch agent"
 msgstr "Agent wechseln"
 
 #. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_space_search
+msgid "System"
+msgstr "System"
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__system_prompt
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
 msgid "System Prompt"
@@ -3784,6 +3988,11 @@ msgstr "System-Prompt"
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
 msgid "System Prompt — Placeholders"
 msgstr "System-Prompt — Platzhalter"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_space_form
+msgid "System Space"
+msgstr "System-Space"
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_voice
@@ -3829,6 +4038,12 @@ msgid "That AI session no longer exists."
 msgstr "Diese KI-Sitzung existiert nicht mehr."
 
 #. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/space.py:0
+msgid "The domain of \"%(name)s\" is not a valid session domain: %(error)s"
+msgstr "Die Domain von \"%(name)s\" ist keine gültige Sitzungs-Domain: %(error)s"
+
+#. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "The model is warned shortly before the limit so it can wrap up."
 msgstr ""
@@ -3851,6 +4066,32 @@ msgstr ""
 #: code:addons/muk_ai/models/session.py:0
 msgid "The session is currently busy. Please try again."
 msgstr "Die Sitzung ist derzeit beschäftigt. Bitte versuchen Sie es erneut."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+msgid "The space \"%s\" belongs to another user."
+msgstr "Der Space \"%s\" gehört einem anderen Benutzer."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/space.py:0
+msgid ""
+"The space \"%s\" must belong to you and cannot collect chats through a "
+"domain."
+msgstr ""
+"Der Space \"%s\" muss Ihnen gehören und darf keine Chats über eine Domain "
+"sammeln."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/space.py:0
+msgid ""
+"The space \"%s\" must either belong to a user or collect its chats through a"
+" domain."
+msgstr ""
+"Der Space \"%s\" muss entweder einem Benutzer gehören oder seine Chats über "
+"eine Domain sammeln."
 
 #. module: muk_ai
 #. odoo-python
@@ -4086,6 +4327,12 @@ msgstr "View-Kontext lösen"
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
 msgid "Unread"
 msgstr "Ungelesen"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+msgid "Unread only"
+msgstr "Nur ungelesene"
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_session_form

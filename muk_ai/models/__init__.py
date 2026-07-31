@@ -11,6 +11,7 @@ from . import prompt_mixin
 from . import agent
 from . import agent_suggestion
 from . import approval
+from . import space
 from . import session
 from . import session_event
 from . import session_pending

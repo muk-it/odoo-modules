@@ -12,7 +12,7 @@ import { busSubscribe, busUnsubscribe } from '@muk_ai/core/compat/bus';
  * Loads the badge once before mount and keeps it live via the
  * "muk_ai.notification_badge" bus channel.
  *
- * @returns {{count: number, unreadIds: number[], isUnread: (sessionId: number) => boolean}}
+ * @returns {{count: number, unreadIds: number[], spaceUnread: object, isUnread: (sessionId: number) => boolean}}
  */
 export function useNotificationBadge() {
     const orm = useService('orm');
@@ -20,6 +20,7 @@ export function useNotificationBadge() {
     const badge = useState({
         count: 0,
         unreadIds: [],
+        spaceUnread: {},
         isUnread: (sessionId) => badge.unreadIds.includes(sessionId),
     });
     let pushed = false;
@@ -28,6 +29,7 @@ export function useNotificationBadge() {
             return;
         }
         badge.unreadIds = payload.session_ids;
+        badge.spaceUnread = payload.space_unread || {};
         badge.count =
             typeof payload.count === 'number'
                 ? payload.count
