@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_connect_form" model="ir.ui.view">
+		<field name="name">muk_mcp.connect.form.oauth</field>
+		<field name="model">muk_mcp.connect</field>
+		<field name="inherit_id" ref="muk_mcp.view_connect_form"/>
+		<field name="arch" type="xml">
+			<page name="claude_code" position="before">
+				<page string="Claude Online" name="claude_online">
+					<group>
+						<field name="mcp_url" readonly="1"/>
+					</group>
+					<div>
+						<p>
+							claude.ai (web and mobile) connects through OAuth,
+							so no bearer key is needed.
+						</p>
+						<ol>
+							<li>Open claude.ai and go to Settings, Connectors.</li>
+							<li>Click "Add custom connector" and paste the MCP URL shown above.</li>
+							<li>Log in to Odoo and authorize the requested access.</li>
+						</ol>
+						<p class="text-muted">
+							The connection runs as your Odoo user and can be
+							revoked anytime from your user preferences
+							(Account Security, OAuth Connections).
+						</p>
+					</div>
+				</page>
+			</page>
+		</field>
+	</record>
+
+</odoo>

@@ -1,0 +1,340 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* muk_mcp_oauth
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 17.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-31 17:39+0000\n"
+"PO-Revision-Date: 2026-07-31 17:39+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_token__absolute_expiration
+msgid "Absolute Expiration"
+msgstr "Expiración absoluta"
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_token__access_expiration
+msgid "Access Expiration"
+msgstr "Expiración del acceso"
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_token__access_token_hash
+msgid "Access Token Hash"
+msgstr "Hash del token de acceso"
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_client__active
+msgid "Active"
+msgstr "Activo"
+
+#. module: muk_mcp_oauth
+#: model_terms:ir.ui.view,arch_db:muk_mcp_oauth.view_users_form_simple
+msgid ""
+"Applications connected through OAuth (claude.ai web and mobile).\n"
+"                        Revoking a connection forces the application to re-authenticate."
+msgstr ""
+"Aplicaciones conectadas mediante OAuth (claude.ai web y móvil).\n"
+"                        Revocar una conexión obliga a la aplicación a autenticarse de nuevo."
+
+#. module: muk_mcp_oauth
+#: model_terms:ir.ui.view,arch_db:muk_mcp_oauth.consent
+msgid "Authorize"
+msgstr "Autorizar"
+
+#. module: muk_mcp_oauth
+#: model_terms:ir.ui.view,arch_db:muk_mcp_oauth.consent
+msgid "Authorize access"
+msgstr "Autorizar acceso"
+
+#. module: muk_mcp_oauth
+#: model_terms:ir.ui.view,arch_db:muk_mcp_oauth.view_connect_form
+msgid "Claude Online"
+msgstr "Claude Online"
+
+#. module: muk_mcp_oauth
+#: model_terms:ir.ui.view,arch_db:muk_mcp_oauth.view_connect_form
+msgid "Click \"Add custom connector\" and paste the MCP URL shown above."
+msgstr "Haz clic en \"Agregar conector personalizado\" y pega la URL del MCP mostrada arriba."
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_client__client_id
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_code__client_id
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_token__client_id
+msgid "Client"
+msgstr "Cliente"
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_client__client_name
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_token__client_name
+msgid "Client Name"
+msgstr "Nombre del cliente"
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_code__code_challenge
+msgid "Code Challenge"
+msgstr "Code challenge (PKCE)"
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_code__code_hash
+msgid "Code Hash"
+msgstr "Hash del código"
+
+#. module: muk_mcp_oauth
+#: model_terms:ir.ui.view,arch_db:muk_mcp_oauth.view_users_form_simple
+msgid "Connected"
+msgstr "Conectado"
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_client__create_uid
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_code__create_uid
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_token__create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_client__create_date
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_code__create_date
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_token__create_date
+msgid "Created on"
+msgstr "Creado el"
+
+#. module: muk_mcp_oauth
+#: model_terms:ir.ui.view,arch_db:muk_mcp_oauth.consent
+msgid "Deny"
+msgstr "Denegar"
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_client__display_name
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_code__display_name
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_token__display_name
+msgid "Display Name"
+msgstr "Nombre mostrado"
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_code__expiration
+msgid "Expiration"
+msgstr "Expiración"
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,help:muk_mcp_oauth.field_muk_mcp_oauth_token__absolute_expiration
+msgid ""
+"Hard cap of the whole refresh chain (180 days). Enforced by the "
+"refresh_token grant."
+msgstr ""
+"Tope máximo de toda la cadena de refresh (180 días). Lo aplica el grant "
+"refresh_token."
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_client__id
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_code__id
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_token__id
+msgid "ID"
+msgstr "ID"
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_token__last_ip
+msgid "Last Ip"
+msgstr "Última IP"
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_client__write_uid
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_code__write_uid
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_token__write_uid
+msgid "Last Updated by"
+msgstr "Última actualización por"
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_client__write_date
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_code__write_date
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_token__write_date
+msgid "Last Updated on"
+msgstr "Última actualización el"
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_client__last_used
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_token__last_used
+msgid "Last Used"
+msgstr "Último uso"
+
+#. module: muk_mcp_oauth
+#: model_terms:ir.ui.view,arch_db:muk_mcp_oauth.view_connect_form
+msgid "Log in to Odoo and authorize the requested access."
+msgstr "Inicia sesión en Odoo y autoriza el acceso solicitado."
+
+#. module: muk_mcp_oauth
+#: model:ir.model,name:muk_mcp_oauth.model_muk_mcp_key
+msgid "MCP API Key"
+msgstr "Clave API MCP"
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,help:muk_mcp_oauth.field_muk_mcp_oauth_token__mcp_key_id
+msgid ""
+"MCP key materializing the access token: the /mcp Bearer resolver, scope "
+"gating, rate limiting and audit logging of muk_mcp operate on this key "
+"without any patch."
+msgstr ""
+"Clave MCP que materializa el token de acceso: el resolutor Bearer de /mcp, "
+"el control de ámbito, el rate limiting y la auditoría de muk_mcp operan "
+"sobre esta clave sin ningún parche."
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_token__mcp_key_id
+msgid "Mcp Key"
+msgstr "Clave MCP"
+
+#. module: muk_mcp_oauth
+#: model:ir.model,name:muk_mcp_oauth.model_muk_mcp_oauth_token
+msgid "OAuth 2.1 Access/Refresh Token"
+msgstr "Token de acceso/refresh OAuth 2.1"
+
+#. module: muk_mcp_oauth
+#: model:ir.model,name:muk_mcp_oauth.model_muk_mcp_oauth_code
+msgid "OAuth 2.1 Authorization Code"
+msgstr "Código de autorización OAuth 2.1"
+
+#. module: muk_mcp_oauth
+#: model:ir.model,name:muk_mcp_oauth.model_muk_mcp_oauth_client
+msgid "OAuth 2.1 Client (RFC 7591 Dynamic Client Registration)"
+msgstr "Cliente OAuth 2.1 (registro dinámico de clientes, RFC 7591)"
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_res_users__oauth_token_ids
+#: model_terms:ir.ui.view,arch_db:muk_mcp_oauth.view_users_form_simple
+msgid "OAuth Connections"
+msgstr "Conexiones OAuth"
+
+#. module: muk_mcp_oauth
+#: model:ir.actions.server,name:muk_mcp_oauth.cron_gc_oauth_clients_ir_actions_server
+msgid "OAuth: archive idle DCR clients"
+msgstr "OAuth: archivar clientes DCR inactivos"
+
+#. module: muk_mcp_oauth
+#: model:ir.actions.server,name:muk_mcp_oauth.cron_gc_oauth_codes_ir_actions_server
+msgid "OAuth: purge authorization codes"
+msgstr "OAuth: purgar códigos de autorización"
+
+#. module: muk_mcp_oauth
+#: model:ir.actions.server,name:muk_mcp_oauth.cron_gc_oauth_tokens_ir_actions_server
+msgid "OAuth: purge expired/revoked tokens"
+msgstr "OAuth: purgar tokens expirados/revocados"
+
+#. module: muk_mcp_oauth
+#: model_terms:ir.ui.view,arch_db:muk_mcp_oauth.view_connect_form
+msgid "Open claude.ai and go to Settings, Connectors."
+msgstr "Abre claude.ai y ve a Configuración, Conectores."
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_code__redirect_uri
+msgid "Redirect Uri"
+msgstr "URI de redirección"
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_client__redirect_uris
+msgid "Redirect Uris"
+msgstr "URIs de redirección"
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_token__refresh_expiration
+msgid "Refresh Expiration"
+msgstr "Expiración del refresh"
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_token__refresh_token_hash
+msgid "Refresh Token Hash"
+msgstr "Hash del token de refresh"
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,help:muk_mcp_oauth.field_muk_mcp_oauth_client__redirect_uris
+msgid "Registered redirect URIs, one per line."
+msgstr "URIs de redirección registradas, una por línea."
+
+#. module: muk_mcp_oauth
+#: model_terms:ir.ui.view,arch_db:muk_mcp_oauth.view_users_form_simple
+msgid "Revoke"
+msgstr "Revocar"
+
+#. module: muk_mcp_oauth
+#: model_terms:ir.ui.view,arch_db:muk_mcp_oauth.view_users_form_simple
+msgid ""
+"Revoke this OAuth connection? The application will need to re-authenticate."
+msgstr ""
+"¿Revocar esta conexión OAuth? La aplicación tendrá que autenticarse de nuevo."
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_token__revoked
+msgid "Revoked"
+msgstr "Revocado"
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_code__scope
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_token__scope
+msgid "Scope"
+msgstr "Ámbito"
+
+#. module: muk_mcp_oauth
+#: model_terms:ir.ui.view,arch_db:muk_mcp_oauth.consent
+msgid "Signed in as"
+msgstr "Sesión iniciada como"
+
+#. module: muk_mcp_oauth
+#: model:ir.model.constraint,message:muk_mcp_oauth.constraint_muk_mcp_oauth_client_client_id_uniq
+msgid "The client_id must be unique."
+msgstr "El client_id debe ser único."
+
+#. module: muk_mcp_oauth
+#: model_terms:ir.ui.view,arch_db:muk_mcp_oauth.view_connect_form
+msgid ""
+"The connection runs as your Odoo user and can be\n"
+"\t\t\t\t\t\t\trevoked anytime from your user preferences\n"
+"\t\t\t\t\t\t\t(Account Security, OAuth Connections)."
+msgstr ""
+"La conexión se ejecuta como tu usuario de Odoo y puede revocarse en "
+"cualquier momento desde tus preferencias de usuario (Seguridad de la "
+"cuenta, Conexiones OAuth)."
+
+#. module: muk_mcp_oauth
+#: model_terms:ir.ui.view,arch_db:muk_mcp_oauth.consent
+msgid "This application will be able to:"
+msgstr "Esta aplicación podrá:"
+
+#. module: muk_mcp_oauth
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_code__used
+msgid "Used"
+msgstr "Usado"
+
+#. module: muk_mcp_oauth
+#: model:ir.model,name:muk_mcp_oauth.model_res_users
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_code__user_id
+#: model:ir.model.fields,field_description:muk_mcp_oauth.field_muk_mcp_oauth_token__user_id
+msgid "User"
+msgstr "Usuario"
+
+#. module: muk_mcp_oauth
+#. odoo-python
+#: code:addons/muk_mcp_oauth/models/oauth_token.py:0
+#, python-format
+msgid "You can only revoke your own OAuth connections."
+msgstr "Solo puedes revocar tus propias conexiones OAuth."
+
+#. module: muk_mcp_oauth
+#: model_terms:ir.ui.view,arch_db:muk_mcp_oauth.view_connect_form
+msgid ""
+"claude.ai (web and mobile) connects through OAuth,\n"
+"\t\t\t\t\t\t\tso no bearer key is needed."
+msgstr ""
+"claude.ai (web y móvil) se conecta mediante OAuth, así que no se necesita "
+"ninguna bearer key."
+
+#. module: muk_mcp_oauth
+#: model_terms:ir.ui.view,arch_db:muk_mcp_oauth.consent
+msgid "wants to access your Odoo account"
+msgstr "quiere acceder a tu cuenta de Odoo"
