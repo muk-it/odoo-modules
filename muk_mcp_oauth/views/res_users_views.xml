@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026, Jarsa
+     License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl.html). -->
+<odoo>
+    <record id="view_users_form_simple" model="ir.ui.view">
+        <field name="name">res.users.form.simple.oauth</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form_simple_modif" />
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='page_account_security']" position="inside">
+                <group string="OAuth Connections">
+                    <div class="text-muted" colspan="2">
+                        Applications connected through OAuth (claude.ai web and mobile).
+                        Revoking a connection forces the application to re-authenticate.
+                    </div>
+                    <div colspan="2" invisible="not oauth_token_ids">
+                        <field name="oauth_token_ids" nolabel="1" colspan="4" readonly="0">
+                            <tree create="0" delete="0" edit="0">
+                                <field name="client_name" />
+                                <field name="scope" />
+                                <field name="create_date" string="Connected" />
+                                <field name="last_used" />
+                                <field name="last_ip" />
+                                <button
+                                    name="action_revoke"
+                                    type="object"
+                                    string="Revoke"
+                                    icon="fa-ban"
+                                    confirm="Revoke this OAuth connection? The application will need to re-authenticate."
+                                />
+                            </tree>
+                        </field>
+                    </div>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

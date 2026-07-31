@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026, Jarsa
+     License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl.html). -->
+<odoo>
+    <template id="consent" name="OAuth Consent Screen">
+        <t t-call="web.layout">
+            <t t-set="title">Authorize access</t>
+            <t t-set="head">
+                <style>
+                    .o_oauth_consent {
+                        max-width: 28rem;
+                        margin: 8vh auto;
+                        padding: 2rem;
+                        border: 1px solid #dee2e6;
+                        border-radius: .5rem;
+                        font-family: system-ui, sans-serif;
+                    }
+                    .o_oauth_consent h1 { font-size: 1.25rem; }
+                    .o_oauth_consent ul { padding-left: 1.25rem; }
+                    .o_oauth_consent .o_buttons { display: flex; gap: .75rem; margin-top: 1.5rem; }
+                    .o_oauth_consent button {
+                        flex: 1;
+                        padding: .5rem 1rem;
+                        border-radius: .375rem;
+                        border: 1px solid #dee2e6;
+                        background: #fff;
+                        cursor: pointer;
+                    }
+                    .o_oauth_consent button.o_accept {
+                        background: #714b67;
+                        border-color: #714b67;
+                        color: #fff;
+                    }
+                </style>
+            </t>
+            <div class="o_oauth_consent">
+                <h1>
+                    <t t-esc="client.client_name" /> wants to access your Odoo account
+                </h1>
+                <p>
+                    Signed in as <strong t-esc="user.name" /> (<t t-esc="user.login" />).
+                </p>
+                <p>This application will be able to:</p>
+                <ul>
+                    <li t-foreach="scopes" t-as="scope">
+                        <t t-esc="scope[1]" /> (<code t-esc="scope[0]" />)
+                    </li>
+                </ul>
+                <form method="post" action="/oauth2/authorize">
+                    <input type="hidden" name="csrf_token" t-att-value="csrf_token" />
+                    <t t-foreach="form_params" t-as="param">
+                        <input type="hidden" t-att-name="param" t-att-value="form_params[param]" />
+                    </t>
+                    <div class="o_buttons">
+                        <button type="submit" name="decision" value="deny">Deny</button>
+                        <button type="submit" name="decision" value="accept" class="o_accept">
+                            Authorize
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </t>
+    </template>
+</odoo>

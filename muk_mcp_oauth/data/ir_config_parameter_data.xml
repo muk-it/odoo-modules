@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026, Jarsa
+     License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl.html). -->
+<odoo noupdate="1">
+    <record id="param_endpoint_rate_limit" model="ir.config_parameter">
+        <field name="key">muk_mcp_oauth.endpoint_rate_limit</field>
+        <field name="value">60</field>
+    </record>
+</odoo>
