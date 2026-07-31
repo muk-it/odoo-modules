@@ -67,7 +67,7 @@ test('shows Load more button when hasMore is true and no search active', async (
         hasMore: true,
     });
     await mountWithCleanup(Host);
-    expect(queryFirst('.mk_sidebar_load_more_btn')).not.toBe(null);
+    expect(queryFirst('.mk_load_more')).not.toBe(null);
 });
 
 test('Load more button clicks emit onLoadMore', async () => {
@@ -76,7 +76,7 @@ test('Load more button clicks emit onLoadMore', async () => {
         hasMore: true,
     });
     const host = await mountWithCleanup(Host);
-    await click(queryFirst('.mk_sidebar_load_more_btn'));
+    await click(queryFirst('.mk_load_more'));
     expect(host.loadMoreCalls).toBe(1);
 });
 
@@ -86,10 +86,10 @@ test('Load more hidden during server search mode', async () => {
         hasMore: true,
     });
     const host = await mountWithCleanup(Host);
-    expect(queryFirst('.mk_sidebar_load_more_btn')).not.toBe(null);
+    expect(queryFirst('.mk_load_more')).not.toBe(null);
     host.state.searchMode = true;
     await animationFrame();
-    expect(queryFirst('.mk_sidebar_load_more_btn')).toBe(null);
+    expect(queryFirst('.mk_load_more')).toBe(null);
 });
 
 test('typing in the search input emits onQuery (server search)', async () => {

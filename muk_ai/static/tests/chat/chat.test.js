@@ -60,6 +60,7 @@ function registerMocks({ sessions = [], agents = [] } = {}) {
         { ...SESSION_RECORD, id: args[0][0] },
     ]);
     onRpc('muk_ai.agent', 'search_read', () => agents);
+    onRpc('muk_ai.space', 'fetch_spaces', () => []);
     const events = { opened: [], actions: [] };
     mockService('muk_ai.chat_window', {
         state: { windows: [] },

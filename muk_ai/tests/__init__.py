@@ -31,6 +31,7 @@ from . import test_web_fetch
 from . import test_html_markdown
 from . import test_render_content
 from . import test_sources
+from . import test_space
 from . import test_session_sources
 from . import test_log_unification
 from . import test_tool_lazy

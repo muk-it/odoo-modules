@@ -3,7 +3,7 @@ import { advanceTime, animationFrame, Deferred } from '@odoo/hoot-mock';
 import { mockService, mountWithCleanup, onRpc } from '@web/../tests/web_test_helpers';
 import { defineMailModels } from '@mail/../tests/mail_test_helpers';
 
-import { AIChat } from '@muk_ai/chat/chat';
+import { AIChat, SESSION_PAGE_SIZE } from '@muk_ai/chat/chat';
 
 describe.current.tags('muk_ai');
 defineMailModels();
@@ -66,6 +66,7 @@ function baseMocks() {
     ]);
     onRpc('muk_ai.session', 'get_snapshot', () => SNAPSHOT);
     onRpc('muk_ai.agent', 'search_read', () => []);
+    onRpc('muk_ai.space', 'fetch_spaces', () => []);
     mockService('muk_ai.chat_window', {
         state: { windows: [] },
         open: () => {},
@@ -191,15 +192,17 @@ test('loading more sessions appends the next page and skips known ids', async ()
     const offsets = [];
     onRpc('muk_ai.session', 'search_read', ({ kwargs }) => {
         offsets.push(kwargs.offset);
-        return kwargs.offset ? makePage(40, 39) : makePage(40);
+        return kwargs.offset
+            ? makePage(SESSION_PAGE_SIZE, SESSION_PAGE_SIZE - 1)
+            : makePage(SESSION_PAGE_SIZE);
     });
     const chat = await mountWithCleanup(AIChat, { props: {} });
     expect(chat.state.sessionsHasMore).toBe(true);
-    expect(chat.state.sessionsOffset).toBe(40);
+    expect(chat.state.sessionsOffset).toBe(SESSION_PAGE_SIZE);
     await chat.onSidebarLoadMore();
-    expect(offsets.at(-1)).toBe(40);
-    expect(chat.state.sessions).toHaveLength(79);
-    expect(chat.state.sessionsOffset).toBe(80);
+    expect(offsets.at(-1)).toBe(SESSION_PAGE_SIZE);
+    expect(chat.state.sessions).toHaveLength(SESSION_PAGE_SIZE * 2 - 1);
+    expect(chat.state.sessionsOffset).toBe(SESSION_PAGE_SIZE * 2);
     expect(chat.state.sessionsHasMore).toBe(true);
     expect(chat.state.sessionsLoadingMore).toBe(false);
 });
@@ -207,14 +210,14 @@ test('loading more sessions appends the next page and skips known ids', async ()
 test('a short page ends the sidebar pagination', async () => {
     baseMocks();
     onRpc('muk_ai.session', 'search_read', ({ kwargs }) =>
-        kwargs.offset ? makePage(3, 40) : makePage(40),
+        kwargs.offset ? makePage(3, SESSION_PAGE_SIZE) : makePage(SESSION_PAGE_SIZE),
     );
     const chat = await mountWithCleanup(AIChat, { props: {} });
     await chat.onSidebarLoadMore();
-    expect(chat.state.sessions).toHaveLength(43);
+    expect(chat.state.sessions).toHaveLength(SESSION_PAGE_SIZE + 3);
     expect(chat.state.sessionsHasMore).toBe(false);
     await chat.onSidebarLoadMore();
-    expect(chat.state.sessions).toHaveLength(43);
+    expect(chat.state.sessions).toHaveLength(SESSION_PAGE_SIZE + 3);
 });
 
 test('pagination is disabled while the sidebar shows search results', async () => {
@@ -224,7 +227,9 @@ test('pagination is disabled while the sidebar shows search results', async () =
         if (kwargs.offset) {
             paged++;
         }
-        return kwargs.domain.some((d) => d[1] === 'ilike') ? [] : makePage(40);
+        return kwargs.domain.some((d) => d[1] === 'ilike')
+            ? []
+            : makePage(SESSION_PAGE_SIZE);
     });
     const chat = await mountWithCleanup(AIChat, { props: {} });
     chat.onSidebarQuery('bud');

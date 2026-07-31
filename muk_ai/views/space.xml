@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_ai_space_search" model="ir.ui.view">
+		<field name="name">muk_ai.space.search</field>
+		<field name="model">muk_ai.space</field>
+		<field name="arch" type="xml">
+			<search>
+				<field name="name" string="Space"/>
+				<field name="user_id"/>
+				<filter name="system" string="System" domain="[('domain', '!=', False)]"/>
+				<filter name="personal" string="Personal" domain="[('domain', '=', False)]"/>
+				<group>
+					<filter name="group_user" string="Owner" context="{'group_by': 'user_id'}"/>
+				</group>
+			</search>
+		</field>
+	</record>
+
+	<record id="view_ai_space_list" model="ir.ui.view">
+		<field name="name">muk_ai.space.list</field>
+		<field name="model">muk_ai.space</field>
+		<field name="arch" type="xml">
+			<list>
+				<field name="sequence" widget="handle"/>
+				<field name="name"/>
+				<field name="icon" widget="icon_selector"/>
+				<field name="agent_id"/>
+				<field name="user_id" widget="many2one_avatar_user"/>
+				<field
+                    name="domain"
+                    widget="domain"
+                    options="{'model': 'muk_ai.session', 'foldable': True}"
+                    invisible="user_id"
+                />
+			</list>
+		</field>
+	</record>
+
+	<record id="view_ai_space_form" model="ir.ui.view">
+		<field name="name">muk_ai.space.form</field>
+		<field name="model">muk_ai.space</field>
+		<field name="arch" type="xml">
+			<form>
+				<sheet>
+					<div class="oe_button_box" name="button_box">
+						<button
+							name="action_open_sessions"
+							type="object"
+							class="oe_stat_button"
+							icon="fa-comments-o"
+						>
+							<field name="session_count" widget="statinfo"/>
+						</button>
+					</div>
+					<div class="oe_title">
+						<h1>
+							<field name="name" placeholder="Space name"/>
+						</h1>
+					</div>
+					<group>
+						<group>
+							<field name="agent_id"/>
+							<field name="user_id" widget="many2one_avatar_user"/>
+						</group>
+						<group>
+							<field name="sequence"/>
+							<field name="icon" widget="icon_selector"/>
+						</group>
+					</group>
+					<group string="System Space" invisible="user_id">
+						<field
+							name="domain"
+							widget="domain"
+							options="{'model': 'muk_ai.session', 'foldable': False}"
+							nolabel="1"
+							colspan="2"
+						/>
+					</group>
+				</sheet>
+			</form>
+		</field>
+	</record>
+
+	<record id="action_ai_space" model="ir.actions.act_window">
+		<field name="name">Spaces</field>
+		<field name="res_model">muk_ai.space</field>
+		<field name="view_mode">list,form</field>
+		<field name="search_view_id" ref="view_ai_space_search"/>
+		<field name="context">{'search_default_system': 1}</field>
+	</record>
+
+</odoo>

@@ -1,0 +1,11 @@
+.mk_space_dialog {
+    .form-control,
+    .form-select {
+        min-height: $input-height;
+        border-radius: $input-border-radius;
+    }
+
+    .form-label {
+        margin-bottom: 0.25rem;
+    }
+}

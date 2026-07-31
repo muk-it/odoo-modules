@@ -64,6 +64,7 @@ function baseMocks() {
         pending_user_messages: [],
     }));
     onRpc('muk_ai.agent', 'search_read', () => []);
+    onRpc('muk_ai.space', 'fetch_spaces', () => []);
     mockService('muk_ai.chat_window', {
         state: { windows: [] },
         open: () => {},

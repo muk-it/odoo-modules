@@ -15,7 +15,7 @@ import urllib3
 from markupsafe import Markup, escape
 
 from odoo import SUPERUSER_ID, _, api, fields, models, modules, release
-from odoo.exceptions import AccessError, UserError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.http import request
 from odoo.service.model import PG_CONCURRENCY_EXCEPTIONS_TO_RETRY
 from odoo.tools import SQL, config
@@ -141,6 +141,19 @@ class AISession(models.Model):
         comodel_name='muk_ai.agent',
         string='Agent',
         default=lambda self: self.env['muk_ai.agent']._get_default(),
+        ondelete='set null',
+    )
+
+    space_id = fields.Many2one(
+        comodel_name='muk_ai.space',
+        string='Space',
+        help=(
+            'Personal space this chat is filed into. Leave empty to keep '
+            'the chat loose; system spaces collect their chats through a '
+            'domain and cannot be filed into.'
+        ),
+        index=True,
+        copy=False,
         ondelete='set null',
     )
 
@@ -3613,9 +3626,19 @@ class AISession(models.Model):
 
     @api.model
     def _notification_badge_payload(self, user: models.BaseModel) -> dict:
-        """Return the badge count and unread session ids for a user."""
+        """Return the badge count, unread session ids and per-space totals.
+
+        The space totals travel with the badge so the sidebar never holds a
+        second, staler copy.
+        """
         ids = self._notification_unread_session_ids(user)
-        return {'count': len(ids), 'session_ids': ids}
+        return {
+            'count': len(ids),
+            'session_ids': ids,
+            'space_unread': self.env['muk_ai.space']
+            .with_user(user)
+            .count_sessions(ids),
+        }
 
     @api.model
     def notification_badge(self) -> dict:
@@ -4129,6 +4152,9 @@ class AISession(models.Model):
     def action_handover(self, new_user_id: int) -> bool:
         """Transfer ownership of this session to another internal user.
 
+        The chat leaves the space it was filed into, as a space belongs to
+        one user.
+
         :param new_user_id: the target ``res.users`` id
         :raise AccessError: when the caller is not the owner or an admin
         :raise UserError: when the session is busy or the target is invalid
@@ -4146,7 +4172,13 @@ class AISession(models.Model):
         if target.id == self.user_id.id:
             return True
         old_owner, session = self.user_id, self.sudo()
-        session.write({'user_id': target.id, 'notification_unread': True})
+        session.write(
+            {
+                'user_id': target.id,
+                'space_id': False,
+                'notification_unread': True,
+            }
+        )
         session._publish_event('state', {'state': session.state})
         session._post_inbox_notification(
             _('Chat handed over to you'),
@@ -4196,6 +4228,24 @@ class AISession(models.Model):
             )
 
     # ----------------------------------------------------------
+    # Constraints
+    # ----------------------------------------------------------
+
+    @api.constrains('space_id', 'user_id')
+    def _check_space_owner(self) -> None:
+        """Allow filing a chat only into a personal space of its owner."""
+        for record in self.filtered('space_id'):
+            space = record.space_id.sudo()
+            if space.domain:
+                raise ValidationError(
+                    _('Chats cannot be filed into the system space "%s".', space.name)
+                )
+            if space.user_id != record.user_id:
+                raise ValidationError(
+                    _('The space "%s" belongs to another user.', space.name)
+                )
+
+    # ----------------------------------------------------------
     # ORM
     # ----------------------------------------------------------
 
@@ -4224,11 +4274,25 @@ class AISession(models.Model):
         (rendered as a divider) plus the live pill update. As the single ORM
         chokepoint it covers the UI dropdown, the ``/agent`` command and the
         ``switch_agent`` MCP tool with one consistent marker.
+
+        Filing an unread chat also refreshes the badge, which carries the
+        per-space unread counts.
         """
-        if 'agent_id' not in vals:
-            return super().write(vals)
-        previous = {record.id: record.agent_id for record in self}
+        previous = (
+            {record.id: record.agent_id for record in self}
+            if 'agent_id' in vals
+            else None
+        )
+        owners = (
+            self.filtered('notification_unread').user_id
+            if 'space_id' in vals
+            else self.env['res.users']
+        )
         result = super().write(vals)
+        for owner in owners:
+            self._push_notification_badge(owner)
+        if previous is None:
+            return result
         for record in self:
             if (old_agent := previous.get(record.id)) != record.agent_id:
                 record._append_event(

@@ -1,5 +1,5 @@
 import { describe, expect, test } from '@odoo/hoot';
-import { click, queryFirst, resize } from '@odoo/hoot-dom';
+import { click, queryFirst, resize, waitUntil } from '@odoo/hoot-dom';
 import { animationFrame } from '@odoo/hoot-mock';
 import { mockService, mountWithCleanup, onRpc } from '@web/../tests/web_test_helpers';
 import { defineMailModels } from '@mail/../tests/mail_test_helpers';
@@ -60,6 +60,7 @@ function baseMocks({ events = [], record = {} } = {}) {
     ]);
     onRpc('muk_ai.session', 'get_snapshot', () => snapshotWith(events));
     onRpc('muk_ai.agent', 'search_read', () => []);
+    onRpc('muk_ai.space', 'fetch_spaces', () => []);
     const opened = [];
     mockService('muk_ai.chat_window', {
         state: { windows: [] },
@@ -194,6 +195,7 @@ test('pasting into the composer attaches the file exactly once', async () => {
     const textarea = queryFirst('.mk_composer textarea');
     expect(textarea).not.toBe(null);
     pasteFiles(textarea, [pngFile('shot.png')]);
+    await waitUntil(() => calls > 0);
     await animationFrame();
     expect(calls).toBe(1);
     expect(chat.session.state.pendingAttachments).toHaveLength(1);

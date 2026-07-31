@@ -93,6 +93,39 @@
 <section class="oe_container">
 	<div class="oe_row oe_spaced">
 		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Spaces</h3>
+			<p>
+				Chats pile up fast. <strong>Spaces</strong> are folders in the
+				sidebar: create one with the <code>+</code> next to
+				<em>Spaces</em>, then drag chats into it to file them and drag
+				them back out to loosen them again. Drag a space by its grip to
+				reorder the list. Each space carries a name, a Font Awesome
+				icon picked from a searchable grid, and an optional
+				<strong>default agent</strong> that is preselected for every
+				chat started inside it &mdash; so a &ldquo;Finance&rdquo; space
+				can always open with your read-only analyst. Everything is
+				editable from the chat itself, no backend menu required.
+			</p>
+			<p>
+				Unread chats are counted per space; click the badge to narrow a
+				space to just its unread conversations. Modules can also ship
+				<strong>system spaces</strong> whose membership is derived from
+				a stored domain instead of manual filing &mdash;
+				<code>muk_ai_schedule</code> ships a <em>Scheduled</em> space
+				that collects every chat started by a schedule. One record
+				serves the whole database: nothing is duplicated per user, and
+				new matching chats appear in it retroactively.
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_spaces.png">
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
 			<h3 class="oe_slogan">Live Reasoning Stream</h3>
 			<p>
 				When the underlying model exposes a reasoning channel

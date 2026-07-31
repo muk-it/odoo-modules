@@ -1,8 +1,161 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
 
+    <t t-name="muk_ai.ChatSidebarItem">
+        <div
+            class="mk_sidebar_item"
+            t-att-class="{ active: session.id === props.activeSessionId, mk_running: session.state === 'running' || session.state === 'waiting', mk_unread: isUnread(session.id), mk_sidebar_item_nested: nested }"
+            t-att-data-session-id="session.id"
+            t-att-data-space-id="session.space_id and session.space_id[0]"
+            t-on-click="() => props.onSelect(session.id)"
+            t-att-title="statusLabel(session.state)"
+        >
+            <span class="mk_sidebar_dot" t-att-class="'mk_state_' + session.state">
+                <t t-if="session.state === 'running'">
+                    <i class="fa fa-circle-o-notch fa-spin" />
+                </t>
+                <t t-elif="session.state === 'waiting'">
+                    <i class="fa fa-question" />
+                </t>
+                <t t-elif="session.state === 'error'">
+                    <i class="fa fa-exclamation" />
+                </t>
+            </span>
+            <span class="mk_sidebar_name" t-esc="session.name" />
+            <span class="mk_sidebar_unread" t-if="isUnread(session.id)" title="Unread" />
+            <div class="mk_sidebar_meta">
+                <span
+                    class="mk_space_chip"
+                    t-if="isServerSearch and session.space_id"
+                    t-esc="session.space_id[1]"
+                />
+                <small class="mk_sidebar_sub text-muted" t-if="session.state === 'running'">thinking…</small>
+                <small class="mk_sidebar_sub text-muted" t-elif="session.state === 'waiting'">awaiting you</small>
+            </div>
+            <div class="mk_sidebar_actions">
+                <button
+                    class="btn btn-link btn-sm"
+                    title="Rename"
+                    t-on-click="(ev) => this.onRenameClick(session, ev)"
+                >
+                    <i class="fa fa-pencil" />
+                </button>
+                <button
+                    class="btn btn-link btn-sm text-danger"
+                    title="Delete"
+                    t-on-click="(ev) => this.onDeleteClick(session, ev)"
+                >
+                    <i class="fa fa-trash" />
+                </button>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="muk_ai.ChatSidebarSpace">
+        <div
+            t-att-class="{
+                mk_space_group: !space.system,
+                mk_space_personal: !space.system,
+                mk_space_fixed: space.system,
+            }"
+            t-att-data-space-id="space.id"
+        >
+        <div
+            class="mk_space_row"
+            t-att-class="{ mk_space_system: space.system, mk_space_target: isDropTarget(space.id), mk_space_open: isExpanded(space.id) }"
+            t-on-click="() => this.toggleSpace(space.id)"
+        >
+            <i class="fa mk_space_grip fa-bars" t-if="!space.system" />
+            <i
+                class="fa mk_space_caret"
+                t-att-class="isExpanded(space.id) ? 'fa-caret-down' : 'fa-caret-right'"
+            />
+            <i class="fa mk_space_icon" t-att-class="space.icon"/>
+            <span class="mk_space_name" t-esc="space.name" />
+            <button
+                class="mk_space_badge"
+                t-if="spaceUnread(space.id)"
+                t-att-class="{ mk_space_badge_on: isUnreadOnly(space.id) }"
+                t-att-title="unreadFilterTitle(space.id)"
+                t-on-click="(ev) => this.toggleUnreadFilter(space.id, ev)"
+            >
+                <t t-esc="spaceUnread(space.id)"/>
+            </button>
+            <div class="mk_space_actions" t-if="!space.system">
+                <button
+                    class="btn btn-link btn-sm"
+                    title="New chat here"
+                    t-on-click="(ev) => this.onSpaceNewClick(space, ev)"
+                >
+                    <i class="fa fa-plus" />
+                </button>
+                <button
+                    class="btn btn-link btn-sm"
+                    title="Edit"
+                    t-on-click="(ev) => this.onSpaceEditClick(space, ev)"
+                >
+                    <i class="fa fa-pencil" />
+                </button>
+                <button
+                    class="btn btn-link btn-sm text-danger"
+                    title="Delete"
+                    t-on-click="(ev) => this.onSpaceDeleteClick(space, ev)"
+                >
+                    <i class="fa fa-trash" />
+                </button>
+            </div>
+        </div>
+        <t t-if="isExpanded(space.id)">
+            <div class="mk_space_branch">
+                <div class="mk_space_filter" t-if="isUnreadOnly(space.id)">
+                    <i class="fa fa-filter"/>
+                    <span>Unread only</span>
+                    <button
+                        class="btn btn-link btn-sm mk_space_filter_clear"
+                        title="Show all chats"
+                        t-on-click="(ev) => this.toggleUnreadFilter(space.id, ev)"
+                    >
+                        <i class="fa fa-times"/>
+                    </button>
+                </div>
+                <t t-foreach="sessionsInSpace(space.id)" t-as="session" t-key="session.id">
+                    <t t-call="muk_ai.ChatSidebarItem">
+                        <t t-set="nested" t-value="true"/>
+                    </t>
+                </t>
+                <div
+                    class="mk_space_empty text-muted"
+                    t-if="!sessionsInSpace(space.id).length"
+                >
+                    <t t-if="isUnreadOnly(space.id)">Nothing unread here.</t>
+                    <t t-else="">No chats here yet.</t>
+                </div>
+                <button
+                    class="mk_load_more"
+                    t-if="spaceHasMore(space.id)"
+                    t-on-click="(ev) => this.onSpaceLoadMoreClick(space.id, ev)"
+                >
+                    <i class="fa fa-angle-down"/>
+                    <span>Load more</span>
+                </button>
+            </div>
+        </t>
+        </div>
+    </t>
+
     <t t-name="muk_ai.ChatSidebar">
-        <aside class="mk_sidebar d-flex flex-column">
+        <aside
+            class="mk_sidebar d-flex flex-column"
+            t-ref="aside"
+            t-att-style="widthStyle"
+        >
+            <div
+                class="mk_sidebar_resizer"
+                t-att-class="{ mk_sidebar_resizing: state.resizing }"
+                title="Drag to resize"
+                t-on-pointerdown="onResizeStart"
+                t-on-dblclick="onResizeReset"
+            />
             <div class="mk_sidebar_header p-3 border-bottom">
                 <button class="btn btn-primary btn-sm w-100 fw-semibold" t-on-click="() => props.onNew()">
                     <i class="fa fa-plus me-1" />
@@ -27,7 +180,46 @@
                     </button>
                 </div>
             </div>
-            <div class="mk_sidebar_list flex-grow-1">
+            <div class="mk_sidebar_list flex-grow-1" t-ref="list">
+                <t t-if="!isServerSearch">
+                    <t t-foreach="systemSpaces" t-as="space" t-key="space.id">
+                        <t t-call="muk_ai.ChatSidebarSpace"/>
+                    </t>
+                    <div class="mk_space_head" t-if="props.onSpaceCreate">
+                        <span>Spaces</span>
+                        <button
+                            class="btn btn-link btn-sm mk_space_head_add"
+                            title="New space"
+                            t-on-click="startCreate"
+                        >
+                            <i class="fa fa-plus"/>
+                        </button>
+                    </div>
+                    <div class="mk_space_new" t-if="state.creating">
+                        <i class="fa fa-folder-o mk_space_icon"/>
+                        <input
+                            type="text"
+                            class="form-control form-control-sm mk_space_new_input"
+                            placeholder="Space name"
+                            t-ref="newSpace"
+                            t-att-value="state.newName"
+                            t-on-input="onCreateInput"
+                            t-on-keydown="onCreateKeydown"
+                            t-on-blur="submitCreate"
+                        />
+                    </div>
+                    <div t-ref="spaces">
+                        <t t-foreach="personalSpaces" t-as="space" t-key="space.id">
+                            <t t-call="muk_ai.ChatSidebarSpace"/>
+                        </t>
+                    </div>
+                    <div
+                        class="mk_space_empty text-muted ms-2"
+                        t-if="props.onSpaceCreate and !personalSpaces.length and !state.creating"
+                    >
+                        No space yet. Create a new space.
+                    </div>
+                </t>
                 <t t-if="!hasAnySession">
                     <div class="text-center text-muted small py-4 px-3">
                         <i class="fa fa-comments-o fa-2x d-block mb-2 opacity-50" />
@@ -40,7 +232,7 @@
                         Searching…
                     </div>
                 </t>
-                <t t-elif="!groups.length">
+                <t t-elif="!groups.length and (hasQuery or !!props.searchMode)">
                     <div class="text-center text-muted small py-4 px-3">
                         <i class="fa fa-search fa-2x d-block mb-2 opacity-50" />
                         No chats match
@@ -48,63 +240,30 @@
                     </div>
                 </t>
                 <t t-else="">
-                    <t t-foreach="groups" t-as="group" t-key="group.key">
-                        <div class="mk_sidebar_group_label" t-esc="group.label"/>
-                        <t t-foreach="group.sessions" t-as="session" t-key="session.id">
-                            <div
-                                class="mk_sidebar_item"
-                                t-att-class="{ active: session.id === props.activeSessionId, mk_running: session.state === 'running' || session.state === 'waiting', mk_unread: isUnread(session.id) }"
-                                t-on-click="() => props.onSelect(session.id)"
-                                t-att-title="statusLabel(session.state)"
-                            >
-                                <span class="mk_sidebar_dot" t-att-class="'mk_state_' + session.state">
-                                    <t t-if="session.state === 'running'">
-                                        <i class="fa fa-circle-o-notch fa-spin" />
-                                    </t>
-                                    <t t-elif="session.state === 'waiting'">
-                                        <i class="fa fa-question" />
-                                    </t>
-                                    <t t-elif="session.state === 'error'">
-                                        <i class="fa fa-exclamation" />
-                                    </t>
-                                </span>
-                                <span class="mk_sidebar_name" t-esc="session.name" />
-                                <span class="mk_sidebar_unread" t-if="isUnread(session.id)" title="Unread" />
-                                <small class="mk_sidebar_sub text-muted" t-if="session.state === 'running'">thinking…</small>
-                                <small class="mk_sidebar_sub text-muted" t-elif="session.state === 'waiting'">awaiting you</small>
-                                <div class="mk_sidebar_actions">
-                                    <button
-                                        class="btn btn-link btn-sm"
-                                        title="Rename"
-                                        t-on-click="(ev) => this.onRenameClick(session, ev)"
-                                    >
-                                        <i class="fa fa-pencil" />
-                                    </button>
-                                    <button
-                                        class="btn btn-link btn-sm text-danger"
-                                        title="Delete"
-                                        t-on-click="(ev) => this.onDeleteClick(session, ev)"
-                                    >
-                                        <i class="fa fa-trash" />
-                                    </button>
-                                </div>
-                            </div>
+                    <div
+                        class="mk_space_group mk_loose_group"
+                        t-att-class="{ mk_space_target: state.dropTargetId === 'loose' }"
+                    >
+                        <t t-foreach="groups" t-as="group" t-key="group.key">
+                            <div class="mk_sidebar_group_label" t-esc="group.label"/>
+                            <t t-foreach="group.sessions" t-as="session" t-key="session.id">
+                                <t t-call="muk_ai.ChatSidebarItem"/>
+                            </t>
                         </t>
-                    </t>
-                    <div class="mk_sidebar_load_more text-center py-2" t-if="showLoadMore">
-                        <button
-                            class="btn btn-link btn-sm mk_sidebar_load_more_btn"
-                            t-att-disabled="props.loadingMore"
-                            t-on-click="onLoadMoreClick"
-                        >
-                            <t t-if="props.loadingMore">
-                                <i class="fa fa-spinner fa-spin me-1"/>Loading…
-                            </t>
-                            <t t-else="">
-                                Load more
-                            </t>
-                        </button>
                     </div>
+                    <button
+                        class="mk_load_more"
+                        t-if="showLoadMore"
+                        t-att-disabled="props.loadingMore"
+                        t-on-click="onLoadMoreClick"
+                    >
+                        <t t-if="props.loadingMore">
+                            <i class="fa fa-spinner fa-spin"/><span>Loading…</span>
+                        </t>
+                        <t t-else="">
+                            <i class="fa fa-angle-down"/><span>Load more</span>
+                        </t>
+                    </button>
                 </t>
             </div>
         </aside>

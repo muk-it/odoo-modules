@@ -88,11 +88,11 @@ class TestHandover(TransactionCase):
         )
         self.assertEqual(
             badges[self.user_b.partner_id.id],
-            {'count': 1, 'session_ids': [session.id]},
+            {'count': 1, 'session_ids': [session.id], 'space_unread': {}},
         )
         self.assertEqual(
             badges[self.user_a.partner_id.id],
-            {'count': 0, 'session_ids': []},
+            {'count': 0, 'session_ids': [], 'space_unread': {}},
         )
 
     def test_manager_can_hand_over_any_session(self):

@@ -56,6 +56,7 @@ function baseMocks({ sessions = [], knownIds = [7] } = {}) {
     );
     onRpc('muk_ai.session', 'get_snapshot', () => SNAPSHOT);
     onRpc('muk_ai.agent', 'search_read', () => []);
+    onRpc('muk_ai.space', 'fetch_spaces', () => []);
     mockService('muk_ai.chat_window', {
         state: { windows: [] },
         open: () => {},

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.IconSelectorField">
+        <div t-if="props.readonly" class="mk_icon_selector_value">
+            <i class="fa fa-fw" t-att-class="icon"/>
+            <span class="ms-2" t-esc="icon"/>
+        </div>
+        <SelectMenu t-else=""
+            choices="choices"
+            value="icon"
+            required="props.required"
+            placeholder="props.placeholder"
+            searchPlaceholder="searchPlaceholder"
+            onSelect.bind="onSelect"
+            class="'mk_icon_selector_field'"
+            togglerClass="'o_input'"
+            menuClass="'mk_icon_selector_menu'">
+            <span t-if="icon" class="mk_icon_selector_value">
+                <i class="fa fa-fw" t-att-class="icon"/>
+                <span class="ms-2 text-truncate" t-esc="icon"/>
+            </span>
+            <t t-set-slot="choice" t-slot-scope="scope">
+                <i class="fa fa-fw" t-att-class="scope.data.value" t-att-title="scope.data.label"/>
+            </t>
+        </SelectMenu>
+    </t>
+
+</templates>
