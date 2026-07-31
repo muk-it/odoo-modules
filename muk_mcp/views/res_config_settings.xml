@@ -19,9 +19,9 @@
 							<div class="content-group">
 								<div class="o_row mt16">
 									<div class="o_light_label">
-										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Timeout" for="mcp_session_timeout"/>
+										<label class="font-weight-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Timeout" for="mcp_session_timeout"/>
 										<field name="mcp_session_timeout" class="w-25 text-center" nolabel="1"/>
-										<span class="col-auto ms-2">in Hours</span>
+										<span class="col-auto ml-2">in Hours</span>
 									</div>
 								</div>
 							</div>
@@ -36,9 +36,9 @@
 							<div class="content-group">
 								<div class="o_row mt16">
 									<div class="o_light_label">
-										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Retention" for="mcp_log_retention"/>
+										<label class="font-weight-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Retention" for="mcp_log_retention"/>
 										<field name="mcp_log_retention" class="w-25 text-center" nolabel="1"/>
-										<span class="col-auto ms-2">in Days</span>
+										<span class="col-auto ml-2">in Days</span>
 									</div>
 								</div>
 							</div>
@@ -53,9 +53,9 @@
 							<div class="content-group">
 								<div class="o_row mt16">
 									<div class="o_light_label">
-										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Max requests" for="mcp_rate_limit_requests"/>
+										<label class="font-weight-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Max requests" for="mcp_rate_limit_requests"/>
 										<field name="mcp_rate_limit_requests" class="w-25 text-center" nolabel="1"/>
-										<span class="col-auto ms-2">per Minute</span>
+										<span class="col-auto ml-2">per Minute</span>
 									</div>
 								</div>
 							</div>
@@ -75,7 +75,7 @@
 									name="%(muk_mcp.action_connect)d"
 									type="action"
 									string="Connect AI"
-									icon="oi-arrow-right"
+									icon="fa-arrow-right"
 									class="btn-link mt-3"
 								/>
 							</div>

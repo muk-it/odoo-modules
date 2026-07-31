@@ -12,12 +12,12 @@
 						<div class="oe_kanban_global_click flex-row">
 							<div>
 								<div>
-									<span class="fw-bold fs-5">MCP Session</span>
-									<field name="create_date" class="ms-2 text-muted"/>
+									<span class="font-weight-bold">MCP Session</span>
+									<field name="create_date" class="ml-2 text-muted"/>
 								</div>
 								<small>Last activity: <field name="last_activity"/></small>
 							</div>
-							<button name="action_revoke" type="object" string="Revoke" class="btn btn-secondary ms-auto my-auto"/>
+							<button name="action_revoke" type="object" string="Revoke" class="btn btn-secondary ml-auto my-auto"/>
 						</div>
 					</t>
 				</templates>

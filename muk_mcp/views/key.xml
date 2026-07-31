@@ -12,12 +12,12 @@
 						<div class="oe_kanban_global_click flex-row">
 							<div>
 								<div>
-									<field name="name" class="fw-bold fs-5"/>
-									<field name="create_date" class="ms-2 text-muted"/>
+									<field name="name" class="font-weight-bold"/>
+									<field name="create_date" class="ml-2 text-muted"/>
 								</div>
 								<small>Scope: <field name="scope"/></small>
 							</div>
-							<button name="unlink" type="object" string="Delete" class="btn btn-secondary ms-auto my-auto"/>
+							<button name="unlink" type="object" string="Delete" class="btn btn-secondary ml-auto my-auto"/>
 						</div>
 					</t>
 				</templates>

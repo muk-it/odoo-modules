@@ -6,7 +6,7 @@
         <xpath expr="//div[hasclass('o_Message_authorName')][1]" position="after">
             <span
                 t-if="messageView and messageView.message and messageView.message.mcp_name"
-                class="badge text-bg-info me-1"
+                class="badge badge-info mr-1"
                 style="font-size: 0.5rem;"
                 t-attf-title="MCP: {{ messageView.message.mcp_name }}"
             >
