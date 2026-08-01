@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo noupdate="1">
+
+	<record id="space_scheduled" model="muk_ai.space">
+		<field name="name">Scheduled</field>
+		<field name="sequence">1</field>
+		<field name="icon">fa-clock-o</field>
+		<field name="user_id" eval="False"/>
+		<field name="domain">[('schedule_id', '!=', False)]</field>
+	</record>
+
+</odoo>
