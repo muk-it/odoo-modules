@@ -13,8 +13,9 @@ class Connect(models.TransientModel):
     # ----------------------------------------------------------
 
     mcp_url = fields.Char(
-        compute='_compute_mcp_url',
         string="MCP URL",
+        readonly=True,
+        default=lambda self: (self.get_base_url() or '').rstrip('/') + '/mcp',
     )
 
     claude_code_cmd = fields.Text(
@@ -59,6 +60,7 @@ class Connect(models.TransientModel):
         self.bearer_key = result['plaintext']
         return {
             'type': 'ir.actions.act_window',
+            'name': _('Connect AI'),
             'res_model': self._name,
             'res_id': self.id,
             'views': [(False, 'form')],
@@ -68,11 +70,6 @@ class Connect(models.TransientModel):
     # ----------------------------------------------------------
     # Compute
     # ----------------------------------------------------------
-
-    @api.depends_context('uid')
-    def _compute_mcp_url(self):
-        for record in self:
-            record.mcp_url = (record.get_base_url() or '').rstrip('/') + '/mcp'
 
     @api.depends('mcp_url', 'bearer_key')
     def _compute_snippets(self):
