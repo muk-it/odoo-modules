@@ -36,11 +36,18 @@ class TestConnect(common.TransactionCase):
         wizard = self.env['muk_mcp.connect'].create({})
         self.assertEqual(wizard.mcp_url, 'https://odoo.example.com/mcp')
 
+    def test_mcp_url_is_set_on_the_unsaved_wizard(self):
+        spec = {'mcp_url': {}, 'bearer_key': {}, 'claude_code_cmd': {}}
+        values = self.env['muk_mcp.connect'].onchange({}, [], spec)['value']
+        self.assertEqual(values['mcp_url'], 'https://odoo.example.com/mcp')
+        self.assertIn('https://odoo.example.com/mcp', values['claude_code_cmd'])
+
     def test_action_generate_key_sets_bearer_key(self):
         admin = self.env.ref('base.user_admin')
         wizard = self.env['muk_mcp.connect'].with_user(admin).create({})
         self.assertFalse(wizard.bearer_key)
-        wizard.action_generate_key()
+        action = wizard.action_generate_key()
+        self.assertEqual(action['name'], 'Connect AI')
         key = self.env['muk_mcp.key'].authenticate(wizard.bearer_key)
         self.assertTrue(key)
         self.assertEqual(key.user_id, admin)
