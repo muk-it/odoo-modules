@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_muk_ai_skill_search" model="ir.ui.view">
+		<field name="name">muk_ai.skill.search</field>
+		<field name="model">muk_ai.skill</field>
+		<field name="arch" type="xml">
+			<search>
+				<field name="name"/>
+				<field name="label"/>
+				<field name="description"/>
+				<field name="owner_id"/>
+				<field name="agent_ids"/>
+				<filter
+                    name="my_skills"
+                    string="My Skills"
+                    domain="[('owner_id', '=', uid)]"
+                />
+				<filter
+                    name="shared_with_me"
+                    string="Shared with Me"
+                    domain="[('owner_id', '!=', uid), ('user_ids', 'in', uid)]"
+                />
+				<filter
+                    name="shared_everyone"
+                    string="Shared with Everyone"
+                    domain="[('user_ids', '=', False)]"
+                />
+				<separator/>
+				<filter
+                    name="active"
+                    string="Active"
+                    domain="[('active', '=', True)]"
+                />
+				<filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active', '=', False)]"
+                />
+				<separator/>
+				<filter
+                    name="global"
+                    string="Global"
+                    domain="[('agent_ids', '=', False)]"
+                />
+				<filter
+                    name="scoped"
+                    string="Scoped"
+                    domain="[('agent_ids', '!=', False)]"
+                />
+				<group>
+					<filter
+                        name="group_owner"
+                        string="Owner"
+                        context="{'group_by': 'owner_id'}"
+                    />
+					<filter
+                        name="group_agent"
+                        string="Agent"
+                        context="{'group_by': 'agent_ids'}"
+                    />
+				</group>
+			</search>
+		</field>
+	</record>
+
+	<record id="view_muk_ai_skill_kanban" model="ir.ui.view">
+		<field name="name">muk_ai.skill.kanban</field>
+		<field name="model">muk_ai.skill</field>
+		<field name="arch" type="xml">
+			<kanban sample="1" default_order="sequence, name">
+				<field name="id"/>
+				<field name="name"/>
+				<field name="label"/>
+				<field name="description"/>
+				<field name="agent_count"/>
+				<field name="attachment_count"/>
+				<field name="user_count"/>
+				<field name="user_ids"/>
+				<field name="owner_id"/>
+				<field name="active"/>
+				<templates>
+					<t t-name="kanban-menu">
+						<div class="container o_kanban_card_manage_pane">
+							<div class="o_kanban_card_manage_section">
+								<a type="open" class="dropdown-item" role="menuitem">Open</a>
+								<a t-if="record.active.raw_value" type="archive" class="dropdown-item" role="menuitem">Archive</a>
+								<a t-if="!record.active.raw_value" type="unarchive" class="dropdown-item" role="menuitem">Unarchive</a>
+							</div>
+						</div>
+					</t>
+					<t t-name="kanban-box">
+						<div class="oe_kanban_global_click p-2">
+							<widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" attrs="{'invisible': [('active', '=', True)]}"/>
+							<div class="flex-grow-1 overflow-hidden">
+								<h4 class="mb-0 text-truncate">
+									<field name="display_name"/>
+								</h4>
+								<code class="small text-muted">
+									<field name="name"/>
+								</code>
+							</div>
+							<div class="mt-2">
+								<field name="description" class="text-muted"/>
+							</div>
+							<div class="mt-2 d-flex flex-wrap gap-1">
+								<span t-if="!record.user_ids.raw_value.length" class="badge text-bg-success">
+									<i class="fa fa-users me-1" title="Shared with everyone" role="img"/>Everyone
+								</span>
+								<span t-if="record.user_ids.raw_value.length and !record.user_count.raw_value" class="badge text-bg-secondary">
+									<i class="fa fa-lock me-1" title="Private to the owner" role="img"/>Private
+								</span>
+								<span t-if="record.user_count.raw_value" class="badge text-bg-warning">
+									<i class="fa fa-lock me-1" title="Shared with selected users" role="img"/>
+									<field name="user_count"/> Users
+								</span>
+								<span t-if="!record.agent_count.raw_value" class="badge text-bg-secondary">
+									<i class="fa fa-globe me-1" title="Global" role="img"/>Global
+								</span>
+								<span t-if="record.agent_count.raw_value" class="badge text-bg-info">
+									<i class="fa fa-user me-1" title="Agents" role="img"/>
+									<field name="agent_count"/> Agents
+								</span>
+								<span t-if="record.attachment_count.raw_value" class="badge text-bg-info">
+									<i class="fa fa-paperclip me-1" title="Resources" role="img"/>
+									<field name="attachment_count"/> Resources
+								</span>
+							</div>
+						</div>
+					</t>
+				</templates>
+			</kanban>
+		</field>
+	</record>
+
+	<record id="view_muk_ai_skill_list" model="ir.ui.view">
+		<field name="name">muk_ai.skill.list</field>
+		<field name="model">muk_ai.skill</field>
+		<field name="arch" type="xml">
+			<tree>
+				<field name="sequence" widget="handle"/>
+				<field name="name"/>
+				<field name="label"/>
+				<field name="owner_id" optional="show"/>
+				<field name="user_ids" widget="many2many_tags" optional="hide"/>
+				<field name="description" optional="show"/>
+				<field name="agent_count" string="Agents" optional="show"/>
+				<field name="attachment_count" string="Resources" optional="show"/>
+				<field name="active" widget="boolean_toggle" optional="show"/>
+			</tree>
+		</field>
+	</record>
+
+	<record id="view_muk_ai_skill_form" model="ir.ui.view">
+		<field name="name">muk_ai.skill.form</field>
+		<field name="model">muk_ai.skill</field>
+		<field name="arch" type="xml">
+			<form>
+				<sheet>
+					<field name="is_editable" invisible="1"/>
+					<div class="oe_button_box" name="button_box">
+						<button
+                            name="action_open_prompt_history"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-history"
+                        >
+							<field name="prompt_history_count" widget="statinfo" string="Body History"/>
+						</button>
+					</div>
+					<widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" attrs="{'invisible': [('active', '=', True)]}"/>
+					<div class="oe_title">
+						<label for="label"/>
+						<h1>
+							<field
+                                name="label"
+                                placeholder="e.g. Quote Follow-up"
+                                attrs="{'readonly': [('is_editable', '=', False)]}"
+                            />
+						</h1>
+					</div>
+					<group>
+						<group>
+							<field
+                                name="name"
+                                placeholder="e.g. quote_followup"
+                                attrs="{'readonly': [('is_editable', '=', False)]}"
+                            />
+							<field
+                                name="agent_ids"
+                                widget="many2many_tags"
+                                options="{'no_create': True}"
+                                attrs="{'readonly': [('is_editable', '=', False)]}"
+                            />
+						</group>
+						<group>
+							<field
+                                name="icon"
+                                widget="icon_selector"
+                                attrs="{'readonly': [('is_editable', '=', False)]}"
+                            />
+							<field name="sequence" attrs="{'readonly': [('is_editable', '=', False)]}"/>
+							<field
+                                name="active"
+                                widget="boolean_toggle"
+                                attrs="{'readonly': [('is_editable', '=', False)]}"
+                            />
+						</group>
+					</group>
+					<group string="Sharing">
+						<group>
+							<field
+                                name="owner_id"
+                                groups="base.group_system"
+                                options="{'no_create': True, 'no_open': True}"
+                            />
+							<field
+                                name="owner_id"
+                                groups="!base.group_system"
+                                readonly="1"
+                            />
+							<field
+                                name="visibility"
+                                widget="radio"
+                                options="{'horizontal': True}"
+                                attrs="{'readonly': [('is_editable', '=', False)]}"
+                            />
+						</group>
+						<group>
+							<field
+                                name="user_ids"
+                                widget="many2many_avatar_user"
+                                string="Shared With"
+                                options="{'no_create': True}"
+                                attrs="{'invisible': [('visibility', '!=', 'users')], 'readonly': [('is_editable', '=', False)]}"
+                            />
+						</group>
+					</group>
+					<group string="Description">
+						<field
+                            name="description"
+                            nolabel="1"
+                            colspan="2"
+                            placeholder="One-line description shown to the LLM in the system prompt."
+                            attrs="{'readonly': [('is_editable', '=', False)]}"
+                        />
+					</group>
+					<notebook>
+						<page string="Body" name="body">
+							<field
+                                name="body"
+                                nolabel="1"
+                                colspan="2"
+                                widget="code"
+                                placeholder="Markdown body returned when the skill is invoked."
+                                attrs="{'readonly': [('is_editable', '=', False)]}"
+                            />
+						</page>
+						<page string="Resources" name="resources">
+							<field
+                                name="attachment_ids"
+                                widget="many2many_binary"
+                                attrs="{'readonly': [('is_editable', '=', False)]}"
+                            />
+						</page>
+					</notebook>
+				</sheet>
+			</form>
+		</field>
+	</record>
+
+	<record id="action_muk_ai_skill" model="ir.actions.act_window">
+		<field name="name">AI Skills</field>
+		<field name="res_model">muk_ai.skill</field>
+		<field name="view_mode">kanban,tree,form</field>
+		<field name="search_view_id" ref="view_muk_ai_skill_search"/>
+		<field name="context">{'search_default_active': 1}</field>
+	</record>
+
+</odoo>

@@ -1,0 +1,138 @@
+.mk_chat {
+    .mk_skill_btn {
+        border: 0;
+        padding: 0;
+        background: transparent;
+        color: var(--mk-text-muted);
+        width: 34px;
+        height: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        align-self: flex-end;
+        transition:
+            background 0.1s ease,
+            color 0.1s ease;
+        &:hover {
+            background: var(--mk-bg-soft);
+            color: var(--mk-text);
+        }
+        &.active {
+            background: rgba(var(--mk-primary-rgb), 0.12);
+            color: var(--mk-primary);
+        }
+    }
+    .mk_skills_panel {
+        position: absolute;
+        bottom: calc(100% + 6px);
+        left: 0;
+        right: 0;
+        max-width: 520px;
+        max-height: var(--mk-popover-max-height, 60vh);
+        overflow-y: auto;
+        background: var(--mk-bg);
+        border: 1px solid var(--mk-border);
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+        padding: 0.5rem;
+        z-index: 10;
+        outline: none;
+        .mk_skills_group {
+            color: var(--mk-primary);
+            font-weight: 600;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 0.35rem 0.35rem 0.3rem;
+            opacity: 0.75;
+        }
+        .mk_skills_empty {
+            color: var(--mk-text-muted);
+            font-size: 0.7rem;
+            padding: 0.35rem 0.4rem 0.15rem;
+        }
+        .mk_skills_search {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid var(--mk-border);
+            border-radius: 9px;
+            padding: 0 0.6rem;
+            margin: 0.15rem 0.15rem 0.5rem;
+            color: var(--mk-text-muted);
+            transition: border-color 0.12s ease;
+            &:focus-within {
+                border-color: var(--mk-primary);
+            }
+            input {
+                background: transparent;
+                border: 0;
+                padding: 0.45rem 0;
+                font-size: 0.85rem;
+                color: var(--mk-text);
+                &:focus {
+                    background: transparent;
+                    color: var(--mk-text);
+                }
+            }
+        }
+        .mk_skill {
+            display: flex;
+            gap: 0.7rem;
+            align-items: flex-start;
+            width: 100%;
+            text-align: left;
+            background: var(--mk-bg);
+            border: 1px solid var(--mk-border);
+            border-radius: 10px;
+            padding: 0.6rem 0.75rem;
+            margin-bottom: 0.4rem;
+            cursor: pointer;
+            color: var(--mk-text);
+            font-size: 0.82rem;
+            line-height: 1.4;
+            transition:
+                border-color 0.12s ease,
+                box-shadow 0.12s ease;
+            &:hover,
+            &.active {
+                border-color: var(--mk-primary);
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+            }
+            .mk_skill_badge {
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                flex: 0 0 auto;
+                background: rgba(var(--mk-primary-rgb), 0.12);
+                color: var(--mk-primary);
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.85rem;
+            }
+            .mk_skill_text {
+                min-width: 0;
+            }
+            .mk_skill_label {
+                display: block;
+                color: var(--mk-primary);
+                font-weight: 600;
+                font-size: 0.7rem;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+                margin-bottom: 3px;
+            }
+            .mk_skill_preview {
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                line-clamp: 2;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                color: var(--mk-text-muted);
+            }
+        }
+    }
+}
