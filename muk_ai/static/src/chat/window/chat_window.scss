@@ -11,11 +11,12 @@
 }
 
 .mk_window {
+    --mk-window-height: #{'min(560px, calc(100vh - 80px))'};
+    --mk-popover-max-height: calc(var(--mk-window-height) * 0.55);
     pointer-events: auto;
     width: 380px;
     max-width: calc(100vw - 32px);
-    height: 560px;
-    max-height: calc(100vh - 80px);
+    height: var(--mk-window-height);
     background: var(--body-bg, #ffffff);
     border: 1px solid var(--o-input-border-color, #e7e9ed);
     border-bottom: 0;
@@ -201,9 +202,11 @@
     }
     .mk_composer textarea {
         font-size: 0.88rem;
-        min-height: 32px;
         max-height: 140px;
         padding: 0.3rem 0;
+    }
+    .mk_composer_row {
+        @include mk-composer-row-stacked;
     }
     .mk_send {
         width: 30px;
