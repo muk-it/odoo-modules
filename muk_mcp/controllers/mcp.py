@@ -44,6 +44,11 @@ class MCPController(http.Controller):
                 **kwargs,
             )
 
+    def _get_tool_enforce_scope(self) -> str | None:
+        """Return the scope to enforce on tool calls, derived from the API key."""
+        key = getattr(request, '_mcp_key', None)
+        return key.scope if key else None
+
     def _get_allowed_origins(self) -> set[str]:
         """Return the origins accepted on MCP requests.
 
@@ -474,8 +479,7 @@ class MCPController(http.Controller):
                 [protocol.make_text_content('Tool name is required')],
                 is_error=True,
             )
-        key = getattr(request, '_mcp_key', None)
-        enforce_scope = key.scope if key else None
+        enforce_scope = self._get_tool_enforce_scope()
         try:
             text, _record_info = retrying(
                 partial(
