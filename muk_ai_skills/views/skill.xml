@@ -193,6 +193,11 @@
                             />
 						</group>
 						<group>
+							<field
+                                name="icon"
+                                widget="icon_selector"
+                                readonly="not is_editable"
+                            />
 							<field name="sequence" readonly="not is_editable"/>
 							<field
                                 name="active"
@@ -206,7 +211,7 @@
 							<field
                                 name="owner_id"
                                 groups="base.group_system"
-                                options="{'no_create': True}"
+                                options="{'no_create': True, 'no_open': True}"
                             />
 							<field
                                 name="owner_id"
@@ -214,33 +219,20 @@
                                 readonly="1"
                             />
 							<field
-                                name="user_ids"
-                                widget="many2many_tags"
-                                options="{'no_create': True}"
+                                name="visibility"
+                                widget="radio"
+                                options="{'horizontal': True}"
                                 readonly="not is_editable"
                             />
 						</group>
 						<group>
-							<div class="text-muted" colspan="2">
-								An empty share list makes the skill visible
-								to everyone. New skills start private to
-								their owner.
-							</div>
-							<button
-                                name="action_share_everyone"
-                                type="object"
-                                string="Share with Everyone"
-                                class="btn btn-secondary"
-                                invisible="not user_ids or not is_editable"
-                                colspan="2"
-                            />
-							<button
-                                name="action_make_private"
-                                type="object"
-                                string="Make Private"
-                                class="btn btn-secondary"
-                                invisible="user_ids or not is_editable"
-                                colspan="2"
+							<field
+                                name="user_ids"
+                                widget="many2many_avatar_user"
+                                string="Shared With"
+                                options="{'no_create': True}"
+                                invisible="visibility != 'users'"
+                                readonly="not is_editable"
                             />
 						</group>
 					</group>

@@ -6,7 +6,7 @@ import { defineMailModels } from '@mail/../tests/mail_test_helpers';
 
 import { ChatComposer } from '@muk_ai/chat/composer/chat_composer';
 
-import { clearSkills, setSkills } from '@muk_ai_skills/chat/skill_cache';
+import { setSkills } from '@muk_ai_skills/chat/skill_cache';
 
 describe.current.tags('muk_ai_skills');
 defineMailModels();
@@ -35,8 +35,8 @@ function makeParent({ value = '', sessionId = 42 } = {}) {
 }
 
 function reset() {
-    clearSkills(42);
-    clearSkills(99);
+    setSkills(42, []);
+    setSkills(99, []);
 }
 
 test("another session's skills do not leak into this composer", async () => {

@@ -1,17 +1,12 @@
 import { describe, expect, test } from '@odoo/hoot';
 
-import {
-    clearSkills,
-    findSkill,
-    getSkills,
-    setSkills,
-} from '@muk_ai_skills/chat/skill_cache';
+import { findSkill, getSkills, setSkills } from '@muk_ai_skills/chat/skill_cache';
 
 describe.current.tags('muk_ai_skills');
 
 function reset() {
-    clearSkills(1);
-    clearSkills(2);
+    setSkills(1, []);
+    setSkills(2, []);
 }
 
 test('getSkills returns empty for an unknown or falsy session', () => {
@@ -36,12 +31,12 @@ test('setSkills coerces non-array to empty array', () => {
     expect(getSkills(1)).toEqual([]);
 });
 
-test('clearSkills drops the entry for that session', () => {
+test('a refreshed session replaces its previous skills', () => {
     reset();
     setSkills(1, [{ name: 'alpha' }]);
     expect(getSkills(1)).toHaveLength(1);
-    clearSkills(1);
-    expect(getSkills(1)).toEqual([]);
+    setSkills(1, [{ name: 'beta' }]);
+    expect(getSkills(1).map((s) => s.name)).toEqual(['beta']);
 });
 
 test('findSkill matches case-insensitively', () => {

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai_skills.SkillsPanel">
+        <div
+            class="mk_skills_panel"
+            t-ref="root"
+            tabindex="-1"
+            t-on-keydown="(ev) => this.onKeydown(ev)"
+        >
+            <div class="mk_skills_search">
+                <i class="fa fa-search"/>
+                <input
+                    type="text"
+                    t-ref="search"
+                    class="form-control border-0 shadow-none"
+                    placeholder="Search skills…"
+                    t-att-value="state.filter"
+                    t-on-input="(ev) => this.onFilterInput(ev)"
+                />
+            </div>
+            <div class="mk_skills_empty" t-if="!entries.length">
+                No skill matches.
+            </div>
+            <t t-foreach="entries" t-as="entry" t-key="entry.skill.name">
+                <div class="mk_skills_group" t-if="entry.first" t-esc="entry.group"/>
+                <button
+                    type="button"
+                    class="mk_skill"
+                    t-att-class="{ active: entry_index === state.activeIndex }"
+                    t-on-click="() => this.pickSkill(entry_index)"
+                    t-on-mouseenter="() => this.hoverSkill(entry_index)"
+                >
+                    <span class="mk_skill_badge">
+                        <i class="fa" t-att-class="entry.skill.icon"/>
+                    </span>
+                    <span class="mk_skill_text">
+                        <span class="mk_skill_label" t-esc="entry.skill.label"/>
+                        <span class="mk_skill_preview" t-esc="entry.skill.description"/>
+                    </span>
+                </button>
+            </t>
+        </div>
+    </t>
+
+</templates>

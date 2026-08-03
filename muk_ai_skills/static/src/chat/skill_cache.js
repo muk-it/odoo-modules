@@ -1,4 +1,10 @@
-const cache = new Map();
+import { reactive } from '@odoo/owl';
+
+/**
+ * Skills of the open sessions, keyed by session id. Reactive so a component
+ * that reads it through `useState` re-renders once the fetch resolves.
+ */
+export const skillStore = reactive({});
 
 /**
  * Store the visible skills for a session, coercing a non-array to an empty list.
@@ -6,15 +12,7 @@ const cache = new Map();
  * @param {Array} skills the skill descriptors to cache
  */
 export function setSkills(sessionId, skills) {
-    cache.set(sessionId, Array.isArray(skills) ? skills : []);
-}
-
-/**
- * Drop the cached skills for a session.
- * @param {number} sessionId the session id to evict
- */
-export function clearSkills(sessionId) {
-    cache.delete(sessionId);
+    skillStore[sessionId] = Array.isArray(skills) ? skills : [];
 }
 
 /**
@@ -26,7 +24,7 @@ export function getSkills(sessionId) {
     if (!sessionId) {
         return [];
     }
-    return cache.get(sessionId) || [];
+    return skillStore[sessionId] || [];
 }
 
 /**
@@ -36,7 +34,7 @@ export function getSkills(sessionId) {
  * @returns {object|null} the matching skill, or null when none matches
  */
 export function findSkill(sessionId, name) {
-    const skills = cache.get(sessionId) || [];
+    const skills = getSkills(sessionId);
     const lowered = (name || '').toLowerCase();
     return skills.find((s) => (s.name || '').toLowerCase() === lowered) || null;
 }

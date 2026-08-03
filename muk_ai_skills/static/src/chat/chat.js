@@ -9,7 +9,8 @@ import { ChatWindow } from '@muk_ai/chat/window/chat_window';
 import { formatError } from '@muk_ai/chat/utils';
 import { SLASH_COMMANDS } from '@muk_ai/chat/session/use_ai_session';
 
-import { clearSkills, findSkill, setSkills } from '@muk_ai_skills/chat/skill_cache';
+import { recordSkillUse } from '@muk_ai_skills/chat/recent_skills';
+import { findSkill, setSkills } from '@muk_ai_skills/chat/skill_cache';
 
 const BUILTIN_COMMAND_NAMES = new Set(
     SLASH_COMMANDS.map((c) => c.name.replace(/^\//, '').toLowerCase()),
@@ -33,11 +34,31 @@ export function resolveChatSkill(sessionId, head) {
 /**
  * Wrap a chat component's send handler to dispatch `/skill` slash commands
  * server-side, and keep the per-session skill cache in sync with the session id.
+ * The shared runner is exposed as ``component.runSkill`` so the composer's
+ * skills panel invokes a skill through the very same path.
  * @param {object} component the chat component whose session is patched
  */
 function installSkillRouting(component) {
     const orm = useService('orm');
     const session = component.session;
+    component.runSkill = async (name, userInput) => {
+        try {
+            const snapshot = await orm.call(
+                'muk_ai.session',
+                'invoke_skill_from_chat',
+                [session.state.sessionId, name],
+                { user_input: userInput || false },
+            );
+            recordSkillUse(name);
+            session.applySnapshot(snapshot);
+        } catch (error) {
+            component.env.services.notification.add(
+                _t('Failed to invoke skill: %s', formatError(error)),
+                { type: 'danger' },
+            );
+        }
+        session.state.focusToken += 1;
+    };
     const originalOnSend = session.onSend.bind(session);
     session.onSend = async () => {
         const trimmed = (session.state.input || '').trim();
@@ -48,21 +69,7 @@ function installSkillRouting(component) {
             const skill = resolveChatSkill(session.state.sessionId, head);
             if (skill) {
                 session.state.input = '';
-                try {
-                    const snapshot = await orm.call(
-                        'muk_ai.session',
-                        'invoke_skill_from_chat',
-                        [session.state.sessionId, skill.name],
-                        { user_input: rest || false },
-                    );
-                    session.applySnapshot(snapshot);
-                } catch (error) {
-                    component.env.services.notification.add(
-                        _t('Failed to invoke skill: %s', formatError(error)),
-                        { type: 'danger' },
-                    );
-                }
-                session.state.focusToken += 1;
+                await component.runSkill(skill.name, rest);
                 return;
             }
         }
@@ -93,7 +100,6 @@ function installSkillRouting(component) {
             })();
             return () => {
                 cancelled = true;
-                clearSkills(sessionId);
             };
         },
         () => [component.session.state.sessionId],

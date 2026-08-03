@@ -5,7 +5,8 @@ A **skill** is a DB-backed record bundling a name, a one-line
 description for LLM discovery, a markdown body of instructions, and
 optional file attachments. Visible skills are listed in a
 system-prompt addendum so the agent can pick one autonomously, and
-users can invoke them directly in chat with a `/<name>` slash command.
+users can invoke them from the skills panel in the chat composer or
+with a `/<name>` slash command.
 
 This addon plugs into `muk_ai`'s session runtime via `_inherit` only —
 no fork of `muk_ai` or `muk_mcp` source.
@@ -22,6 +23,10 @@ no fork of `muk_ai` or `muk_mcp` source.
 - **System-prompt addendum** — every visible skill is listed by
   technical name + one-line description inside an
   `<available_skills>` block appended to the agent's system prompt.
+- **Skills panel in the composer** — the bolt button next to the
+  paperclip lists every skill the session can reach as a card with
+  icon, label and description, with its own search field, a
+  *Recently used* group and full keyboard navigation.
 - **Slash command in chat** — typing `/<skill_name>` in the composer
   fires the skill directly, mirroring the same `invoke_skill` flow
   the LLM uses but without an LLM round-trip.
@@ -101,6 +106,14 @@ listed resources via `read_resource(uri='odoo://attachment/42')` — no
 new tool needed for that, the URI handler is in `muk_mcp`.
 
 ## How a user invokes a skill
+
+Click the bolt next to the paperclip to open the skills panel. It
+lists the skills visible to the session as cards, groups the ones you
+ran last under *Recently used*, and carries its own search field —
+the composer keeps whatever you were writing. Arrow keys move the
+selection, Enter runs it, Escape closes the panel and hands the caret
+back to the composer. On a touch device nothing is auto-focused, so
+the on-screen keyboard stays down until you tap the search field.
 
 Type `/` in the composer to open the slash-command popover. Built-in
 commands (`/help`, `/clear`, `/compact`, `/unpin`) are merged with

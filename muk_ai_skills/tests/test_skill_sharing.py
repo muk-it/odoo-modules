@@ -103,6 +103,57 @@ class TestSkillSharing(TransactionCase):
         self.assertEqual(skill.user_ids, self.user_owner)
 
     # ----------------------------------------------------------
+    # Tests visibility field
+    # ----------------------------------------------------------
+
+    def test_visibility_reads_the_share_list(self):
+        everyone = self._make_skill(
+            self.user_owner, name='vis_all', user_ids=[(5, 0, 0)]
+        )
+        private = self._make_skill(
+            self.user_owner,
+            name='vis_own',
+            user_ids=[(6, 0, self.user_owner.ids)],
+        )
+        shared = self._make_skill(
+            self.user_owner,
+            name='vis_some',
+            user_ids=[(6, 0, (self.user_owner | self.user_other).ids)],
+        )
+        self.assertEqual(everyone.visibility, 'everyone')
+        self.assertEqual(private.visibility, 'owner')
+        self.assertEqual(shared.visibility, 'users')
+
+    def test_visibility_everyone_clears_the_share_list(self):
+        skill = self._make_skill(
+            self.user_owner, user_ids=[(6, 0, self.user_owner.ids)]
+        )
+        skill.visibility = 'everyone'
+        self.assertFalse(skill.user_ids)
+        self.assertEqual(skill.visibility, 'everyone')
+
+    def test_visibility_owner_keeps_only_the_owner(self):
+        skill = self._make_skill(
+            self.user_owner,
+            user_ids=[(6, 0, (self.user_owner | self.user_other).ids)],
+        )
+        skill.visibility = 'owner'
+        self.assertEqual(skill.user_ids, self.user_owner)
+        self.assertEqual(skill.visibility, 'owner')
+
+    def test_visibility_users_seeds_the_owner_instead_of_sharing_with_all(self):
+        skill = self._make_skill(self.user_owner, user_ids=[(5, 0, 0)])
+        skill.visibility = 'users'
+        self.assertEqual(skill.user_ids, self.user_owner)
+        self.assertNotEqual(skill.visibility, 'everyone')
+
+    def test_visibility_users_keeps_an_existing_share_list(self):
+        listed = self.user_owner | self.user_other
+        skill = self._make_skill(self.user_owner, user_ids=[(6, 0, listed.ids)])
+        skill.visibility = 'users'
+        self.assertEqual(skill.user_ids, listed)
+
+    # ----------------------------------------------------------
     # Tests record rules
     # ----------------------------------------------------------
 

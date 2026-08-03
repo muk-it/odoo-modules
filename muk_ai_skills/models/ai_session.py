@@ -113,7 +113,7 @@ class AISession(models.Model):
 
     @api.model
     def available_skill_names(self, session_id: int | None = None) -> list[dict]:
-        """Return the name, label and description of the visible skills.
+        """Return the descriptors of the visible skills for the chat panel.
 
         :param session_id: session to scope visibility to, or a falsy value
             to list every globally visible skill
@@ -128,6 +128,7 @@ class AISession(models.Model):
                 'name': skill.name,
                 'label': skill.label or skill.display_name or skill.name,
                 'description': (skill.description or '').strip(),
+                'icon': skill.icon or 'fa-bolt',
             }
             for skill in skills
         ]

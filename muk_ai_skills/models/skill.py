@@ -41,6 +41,15 @@ class Skill(models.Model):
         translate=True,
     )
 
+    icon = fields.Char(
+        string='Icon',
+        help=(
+            'Font Awesome class shown next to the skill in the chat '
+            'skills panel, e.g. "fa-calendar-plus-o".'
+        ),
+        default='fa-bolt',
+    )
+
     active = fields.Boolean(
         string='Active',
         default=True,
@@ -139,6 +148,21 @@ class Skill(models.Model):
     user_count = fields.Integer(
         compute='_compute_user_count',
         string='User Count',
+    )
+
+    visibility = fields.Selection(
+        compute='_compute_visibility',
+        inverse='_inverse_visibility',
+        selection=[
+            ('owner', 'Only Me'),
+            ('users', 'Selected Users'),
+            ('everyone', 'Everyone'),
+        ],
+        string='Visibility',
+        help=(
+            'Who can pick the skill in chat. The share list stays empty '
+            'when the skill is visible to everyone.'
+        ),
     )
 
     is_editable = fields.Boolean(
@@ -251,6 +275,29 @@ class Skill(models.Model):
     def _compute_user_count(self) -> None:
         for record in self:
             record.user_count = len(record.user_ids - record.owner_id)
+
+    @api.depends('user_ids', 'owner_id')
+    def _compute_visibility(self) -> None:
+        for record in self:
+            if not record.user_ids:
+                record.visibility = 'everyone'
+            elif record.user_ids <= record.owner_id:
+                record.visibility = 'owner'
+            else:
+                record.visibility = 'users'
+
+    def _inverse_visibility(self) -> None:
+        """Rewrite the share list to match the picked visibility.
+
+        Picking ``users`` keeps whoever is already listed and seeds the
+        owner, so the skill never falls back to being visible to everyone
+        while the list is still being filled in.
+        """
+        for record in self:
+            if record.visibility == 'everyone':
+                record.user_ids = [(5, 0, 0)]
+            elif record.visibility == 'owner' or not record.user_ids:
+                record.user_ids = [(6, 0, record.owner_id.ids)]
 
     @api.depends('owner_id')
     @api.depends_context('uid')

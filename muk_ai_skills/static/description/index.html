@@ -1,7 +1,7 @@
 <section class="oe_container">
 	<div class="oe_row oe_spaced">
 		<h2 class="oe_slogan">MuK AI Skills</h2>
-		<h3 class="oe_slogan mb-0">Pre-built Agent Skills, One Slash Command Away</h3>
+		<h3 class="oe_slogan mb-0">Pre-built Agent Skills, One Click Away</h3>
 		<img src="logo.png" style="width: 150px;" class="mx-auto center-block">
 		<h4 class="oe_slogan mt-0" style="font-size: 23px">MuK IT GmbH - www.mukit.at</h4>
 		<div class="mb-4" style="text-align: center;">
@@ -29,9 +29,10 @@
 				instructions, and optional file attachments. Visible
 				skills show up in a system-prompt addendum so the
 				agent can pick one autonomously, and users can fire
-				them directly with <code>/&lt;name&gt;</code> in chat.
-				Plugs into <code>muk_ai</code> via <code>_inherit</code>
-				only &mdash; no fork.
+				them from the skills panel in the composer or with
+				<code>/&lt;name&gt;</code> in chat. Plugs into
+				<code>muk_ai</code> via <code>_inherit</code> only
+				&mdash; no fork.
 			</p>
 		</div>
 	</div>
@@ -42,16 +43,35 @@
 		<div class="text-justify" style="max-width:84%; margin:16px 8%">
 			<h3 class="oe_slogan">Manage Skills</h3>
 			<p>
-				Each skill carries a technical name, label,
+				Each skill carries a technical name, label, icon,
 				description, markdown body and an attachment list.
-				Body edits are versioned via the reusable
-				<code>muk_ai.revision.mixin</code> from
-				<code>muk_ai</code>; the History stat button rolls
-				back to any prior revision.
+				Visibility is a single three-way choice &mdash; only
+				me, selected users, everyone. Body edits are versioned
+				via the reusable <code>muk_ai.revision.mixin</code>
+				from <code>muk_ai</code>; the History stat button
+				rolls back to any prior revision.
 			</p>
 			<div class="oe_demo oe_screenshot mt16">
 				<img src="screenshot_skill_form.png">
 			</div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Skills Panel in the Composer</h3>
+			<p>
+				The bolt next to the paperclip opens every skill the
+				session can reach, as cards with icon, label and
+				description. Its own search field filters them, the
+				ones you ran last sit on top under
+				<em>Recently used</em>, and arrow keys plus
+				<kbd>Enter</kbd> run one without touching the mouse.
+				Nothing is auto-focused on a touch device, so the
+				on-screen keyboard never covers the list.
+			</p>
 		</div>
 	</div>
 </section>

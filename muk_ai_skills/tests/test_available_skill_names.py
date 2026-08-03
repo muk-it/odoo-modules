@@ -98,6 +98,21 @@ class TestAvailableSkillNames(TransactionCase):
         )
         self.assertNotIn('b_scoped', self._names_for(self.user_b, None))
 
+    def test_entry_carries_the_icon(self):
+        self._make_skill(self.user_b, name='b_iconed', icon='fa-cogs')
+        session = self._make_session(self.user_b)
+        entries = self.Session.with_user(self.user_b).available_skill_names(
+            session_id=session.id
+        )
+        entry = next(e for e in entries if e['name'] == 'b_iconed')
+        self.assertEqual(entry['icon'], 'fa-cogs')
+
+    def test_entry_falls_back_to_the_default_icon(self):
+        self._make_skill(self.user_b, name='b_no_icon', icon=False)
+        entries = self.Session.with_user(self.user_b).available_skill_names()
+        entry = next(e for e in entries if e['name'] == 'b_no_icon')
+        self.assertEqual(entry['icon'], 'fa-bolt')
+
     def test_entry_carries_label_and_stripped_description(self):
         self._make_skill(
             self.user_b,

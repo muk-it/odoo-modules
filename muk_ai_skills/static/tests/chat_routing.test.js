@@ -1,4 +1,5 @@
 import { describe, expect, test } from '@odoo/hoot';
+import { click } from '@odoo/hoot-dom';
 import { animationFrame } from '@odoo/hoot-mock';
 import {
     mockService,
@@ -123,6 +124,19 @@ async function mountRoutedWindow(sessionId = 31) {
     return window_;
 }
 
+test('a skill picked in the panel is dispatched through the same server call', async () => {
+    const captured = registerMocks({ skills: [{ name: 'alpha', label: 'Alpha' }] });
+    await mountRoutedWindow();
+    await click('.mk_skill_btn');
+    await animationFrame();
+    await click('.mk_skill');
+    await animationFrame();
+    expect(captured.invocations.length).toBe(1);
+    expect(captured.invocations[0].args).toEqual([31, 'alpha']);
+    expect(captured.invocations[0].kwargs.user_input).toBe(false);
+    expect('.mk_skills_panel').toHaveCount(0);
+});
+
 test('a cached skill head is dispatched server-side with its parsed arguments', async () => {
     const captured = registerMocks();
     const window_ = await mountRoutedWindow();
@@ -187,13 +201,13 @@ test('a failing invocation raises a danger notification and keeps the input clea
     expect(window_.session.state.status).toBe('done');
 });
 
-test('switching session clears the previous session skill cache', async () => {
+test('switching session loads the new skills and keeps the previous ones cached', async () => {
     registerMocks();
     const window_ = await mountRoutedWindow(31);
     expect(getSkills(31).length).toBe(1);
     await window_.session.load(32);
     await animationFrame();
     await animationFrame();
-    expect(getSkills(31)).toEqual([]);
     expect(getSkills(32).length).toBe(1);
+    expect(getSkills(31).length).toBe(1);
 });
