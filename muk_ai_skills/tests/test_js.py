@@ -19,7 +19,7 @@ class TestHoot(odoo.tests.HttpCase):
             cls.env,
             login='hoot_muk_ai_skills',
             password='hoot_muk_ai_skills',
-            groups='base.group_user',
+            groups='base.group_user,base.group_system',
             context={
                 'mail_create_nosubscribe': True,
                 'mail_notrack': True,
