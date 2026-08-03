@@ -1,3 +1,16 @@
+@mixin mk-composer-row-stacked {
+    flex-wrap: wrap;
+    row-gap: 0.4rem;
+    > .form-control {
+        flex: 1 0 100%;
+        order: -1;
+        min-height: 2.5rem;
+    }
+    .mk_send {
+        margin-left: auto;
+    }
+}
+
 .mk_chat {
     --mk-primary: var(--o-cc1-btn-primary, #714b67);
     --mk-primary-rgb: var(--primary-rgb, 113, 75, 103);
@@ -2047,6 +2060,8 @@
         left: 0;
         right: 0;
         max-width: 420px;
+        max-height: var(--mk-popover-max-height, 60vh);
+        overflow-y: auto;
         background: var(--mk-bg);
         border: 1px solid var(--mk-border);
         border-radius: 10px;
@@ -2466,16 +2481,7 @@
             display: none;
         }
         .mk_composer_row {
-            flex-wrap: wrap;
-            row-gap: 0.4rem;
-            > .form-control {
-                flex: 1 0 100%;
-                order: -1;
-                min-height: 2.5rem;
-            }
-            .mk_send {
-                margin-left: auto;
-            }
+            @include mk-composer-row-stacked;
         }
         .mk_bubble,
         .mk_tool,
