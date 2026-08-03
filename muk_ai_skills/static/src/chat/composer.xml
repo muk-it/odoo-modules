@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-inherit="muk_ai.Chat" t-inherit-mode="extension">
+        <xpath expr="//ChatComposer" position="attributes">
+            <attribute name="sessionId">session.state.sessionId</attribute>
+            <attribute name="onInvokeSkill.bind">runSkill</attribute>
+        </xpath>
+    </t>
+
+    <t t-inherit="muk_ai.ChatWindow" t-inherit-mode="extension">
+        <xpath expr="//ChatComposer" position="attributes">
+            <attribute name="sessionId">session.state.sessionId</attribute>
+            <attribute name="onInvokeSkill.bind">runSkill</attribute>
+        </xpath>
+    </t>
+
+    <t t-inherit="muk_ai.ChatComposer" t-inherit-mode="extension">
+        <xpath expr="//div[hasclass('mk_composer_host')]" position="attributes">
+            <attribute name="t-ref">composerHost</attribute>
+        </xpath>
+        <xpath expr="//div[hasclass('mk_composer')]" position="before">
+            <SkillsPanel
+                t-if="showSkillsPanel"
+                skills="sessionSkills"
+                autofocus="skillsAutofocus"
+                onSelect.bind="invokeSkill"
+                onClose.bind="closeSkillsPanel"
+            />
+        </xpath>
+        <xpath expr="//textarea" position="before">
+            <button
+                type="button"
+                class="btn mk_skill_btn rounded-circle"
+                t-if="hasSkills"
+                t-att-class="{ active: localState.skillsOpen }"
+                t-on-mousedown.prevent="() => {}"
+                t-on-click="() => this.toggleSkillsPanel()"
+                title="Skills"
+            >
+                <i class="fa fa-bolt"/>
+            </button>
+        </xpath>
+    </t>
+
+</templates>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="rule_muk_ai_skill_user_read" model="ir.rule">
+		<field name="name">AI Skill: users see own and shared skills</field>
+		<field name="model_id" ref="model_muk_ai_skill"/>
+		<field name="groups" eval="[(4, ref('base.group_user'))]"/>
+		<field name="domain_force">[
+			'|', '|',
+			('owner_id', '=', user.id),
+			('user_ids', '=', False),
+			('user_ids', 'in', [user.id]),
+		]</field>
+		<field name="perm_read" eval="True"/>
+		<field name="perm_write" eval="False"/>
+		<field name="perm_create" eval="False"/>
+		<field name="perm_unlink" eval="False"/>
+	</record>
+
+	<record id="rule_muk_ai_skill_user_modify" model="ir.rule">
+		<field name="name">AI Skill: only the owner modifies a skill</field>
+		<field name="model_id" ref="model_muk_ai_skill"/>
+		<field name="groups" eval="[(4, ref('base.group_user'))]"/>
+		<field name="domain_force">[('owner_id', '=', user.id)]</field>
+		<field name="perm_read" eval="False"/>
+		<field name="perm_write" eval="True"/>
+		<field name="perm_create" eval="True"/>
+		<field name="perm_unlink" eval="True"/>
+	</record>
+
+	<record id="rule_muk_ai_skill_system_all" model="ir.rule">
+		<field name="name">AI Skill: administrators manage all skills</field>
+		<field name="model_id" ref="model_muk_ai_skill"/>
+		<field name="groups" eval="[(4, ref('base.group_system'))]"/>
+		<field name="domain_force">[(1, '=', 1)]</field>
+		<field name="perm_read" eval="True"/>
+		<field name="perm_write" eval="True"/>
+		<field name="perm_create" eval="True"/>
+		<field name="perm_unlink" eval="True"/>
+	</record>
+
+</odoo>
