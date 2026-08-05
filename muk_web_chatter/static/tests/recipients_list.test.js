@@ -29,7 +29,13 @@ function makeRecipient(id, { name, email, share = false, hasUser = true } = {}) 
 
 async function mountRecipientsList(recipients, internalOnly) {
     await mountWithCleanup(RecipientsList, {
-        props: { thread: { recipients }, internalOnly },
+        props: { thread: { followers: [], recipients }, internalOnly },
+    });
+}
+
+async function mountInternalRecipientsList(followers, recipients = []) {
+    await mountWithCleanup(RecipientsList, {
+        props: { thread: { followers, recipients }, internalOnly: true },
     });
 }
 
@@ -106,16 +112,24 @@ test('recipients summary drops entries without a partner', async () => {
 
 test.tags('muk_web_chatter');
 test('recipients summary keeps only internal users when internalOnly is set', async () => {
-    await mountRecipientsList(
-        [
-            makeRecipient(1, { email: 'internal@example.com' }),
-            makeRecipient(2, { email: 'portal@example.com', share: true }),
-            makeRecipient(3, { email: 'nouser@example.com', hasUser: false }),
-        ],
-        true,
-    );
+    await mountInternalRecipientsList([
+        makeRecipient(1, { email: 'internal@example.com' }),
+        makeRecipient(2, { email: 'portal@example.com', share: true }),
+        makeRecipient(3, { email: 'nouser@example.com', hasUser: false }),
+    ]);
     expect(getSummaryEntries()).toEqual([
         { text: 'internal', title: 'internal@example.com' },
+    ]);
+});
+
+test.tags('muk_web_chatter');
+test('internal summary reads the followers instead of the message recipients', async () => {
+    await mountInternalRecipientsList(
+        [makeRecipient(1, { email: 'follower@example.com' })],
+        [makeRecipient(2, { email: 'recipient@example.com' })],
+    );
+    expect(getSummaryEntries()).toEqual([
+        { text: 'follower', title: 'follower@example.com' },
     ]);
 });
 

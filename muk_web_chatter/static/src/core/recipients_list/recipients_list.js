@@ -8,8 +8,9 @@ import { usePopover } from '@web/core/popover/popover_hook';
 import { RecipientsListPopover } from '@muk_web_chatter/core/recipients_popover/recipients_popover';
 
 /**
- * Inline summary of a thread's recipients with a popover for the full list,
- * optionally restricted to internal (non-shared) users.
+ * Inline summary with a popover for the full list, showing either the message
+ * recipients of a thread or, when restricted to internal users, the followers
+ * notified by an internal note.
  */
 export class RecipientsList extends Component {
     static template = 'muk_web_chatter.BaseRecipientsList';
@@ -23,15 +24,16 @@ export class RecipientsList extends Component {
         });
     }
     get recipients() {
-        let result = [...this.props.thread.recipients].filter((r) => r.partner_id);
         if (this.props.internalOnly === true) {
-            result = result.filter(
-                (r) =>
-                    r.partner_id.main_user_id &&
-                    r.partner_id.main_user_id.share === false,
+            return [...this.props.thread.followers].filter(
+                (follower) =>
+                    follower.partner_id?.main_user_id &&
+                    follower.partner_id.main_user_id.share === false,
             );
         }
-        return result;
+        return [...this.props.thread.recipients].filter(
+            (recipient) => recipient.partner_id,
+        );
     }
     get hasMore() {
         return this.recipients.length > 3;

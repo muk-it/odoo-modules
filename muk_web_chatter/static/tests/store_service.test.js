@@ -15,26 +15,6 @@ function makeStore() {
     });
 }
 
-function makeRecipient(id, { share = false, hasUser = true } = {}) {
-    return {
-        id: `recipient-${id}`,
-        partner_id: {
-            id,
-            main_user_id: hasUser ? { share } : undefined,
-        },
-    };
-}
-
-function makeThread(recipients) {
-    return {
-        id: 42,
-        model: 'res.partner',
-        recipients,
-        suggestedRecipients: [],
-        additionalRecipients: [],
-    };
-}
-
 function makePostData(extra) {
     return {
         attachments: [],
@@ -48,86 +28,30 @@ function makePostData(extra) {
     };
 }
 
-async function getParams({ notifyInternalFollowers, recipients }) {
+async function getParams(notifyInternalFollowers) {
     return makeStore().getMessagePostParams({
         body: 'hello',
         postData: makePostData({ notifyInternalFollowers }),
-        thread: makeThread(recipients),
+        thread: {
+            id: 42,
+            model: 'res.partner',
+            suggestedRecipients: [],
+            additionalRecipients: [],
+        },
     });
 }
 
 test.tags('muk_web_chatter');
-test('internal note post adds non-shared follower partners as recipients', async () => {
-    const params = await getParams({
-        notifyInternalFollowers: true,
-        recipients: [makeRecipient(11), makeRecipient(12)],
-    });
-    expect(params.post_data.partner_ids).toEqual([11, 12]);
+test('internal note post asks the server to notify the internal followers', async () => {
+    const params = await getParams(true);
+    expect(params.context.mail_notify_internal_followers).toBe(true);
     expect(params.post_data.subtype_xmlid).toBe('mail.mt_note');
+    expect(params.post_data.partner_ids).toBe(undefined);
     expect(params.thread_id).toBe(42);
 });
 
 test.tags('muk_web_chatter');
-test('internal note post skips shared portal followers', async () => {
-    const params = await getParams({
-        notifyInternalFollowers: true,
-        recipients: [
-            makeRecipient(11, { share: true }),
-            makeRecipient(12, { share: false }),
-        ],
-    });
-    expect(params.post_data.partner_ids).toEqual([12]);
-});
-
-test.tags('muk_web_chatter');
-test('internal note post skips followers without a user account', async () => {
-    const params = await getParams({
-        notifyInternalFollowers: true,
-        recipients: [makeRecipient(11, { hasUser: false }), makeRecipient(12)],
-    });
-    expect(params.post_data.partner_ids).toEqual([12]);
-});
-
-test.tags('muk_web_chatter');
-test('internal note post leaves the payload untouched without any internal follower', async () => {
-    const params = await getParams({
-        notifyInternalFollowers: true,
-        recipients: [makeRecipient(11, { share: true })],
-    });
-    expect(params.post_data.partner_ids).toBe(undefined);
-});
-
-test.tags('muk_web_chatter');
-test('internal note post handles a thread without recipients', async () => {
-    const params = await getParams({
-        notifyInternalFollowers: true,
-        recipients: undefined,
-    });
-    expect(params.post_data.partner_ids).toBe(undefined);
-});
-
-test.tags('muk_web_chatter');
-test('plain note post does not add any follower as recipient', async () => {
-    const params = await getParams({
-        notifyInternalFollowers: false,
-        recipients: [makeRecipient(11), makeRecipient(12)],
-    });
-    expect(params.post_data.partner_ids).toBe(undefined);
-});
-
-test.tags('muk_web_chatter');
-test('internal note post merges with mentioned partners without duplicating', async () => {
-    const store = Object.assign(makeStore(), {
-        getMentionsFromText: () => ({
-            partners: [{ id: 11 }],
-            roles: [],
-            specialMentions: [],
-        }),
-    });
-    const params = await store.getMessagePostParams({
-        body: 'hello @Internal',
-        postData: makePostData({ notifyInternalFollowers: true }),
-        thread: makeThread([makeRecipient(11), makeRecipient(12)]),
-    });
-    expect(params.post_data.partner_ids).toEqual([11, 12]);
+test('plain note post leaves the context untouched', async () => {
+    const params = await getParams(false);
+    expect(params.context).toBe(undefined);
 });

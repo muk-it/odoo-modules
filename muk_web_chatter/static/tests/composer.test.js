@@ -73,3 +73,23 @@ test('composer defaults the internal followers flag to false when unset', async 
     const plain = makeComposer({ type: 'note', notifyInternalFollowers: undefined });
     expect(plain.postData.notifyInternalFollowers).toBe(false);
 });
+
+test.tags('muk_web_chatter');
+test('composer drops the internal followers flag for a message', async () => {
+    const message = makeComposer({ type: 'message', notifyInternalFollowers: true });
+    expect(message.postData.notifyInternalFollowers).toBe(false);
+});
+
+test.tags('muk_web_chatter');
+test('internal note carries the notification flag to the full composer', async () => {
+    const internal = makeComposer({ type: 'note', notifyInternalFollowers: true });
+    expect(internal.fullComposerAdditionalContext).toEqual({
+        mail_notify_internal_followers: true,
+    });
+});
+
+test.tags('muk_web_chatter');
+test('plain note keeps the core context of the full composer', async () => {
+    const note = makeComposer({ type: 'note', notifyInternalFollowers: false });
+    expect(note.fullComposerAdditionalContext).toEqual({});
+});
