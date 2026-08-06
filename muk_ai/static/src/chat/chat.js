@@ -339,6 +339,27 @@ export class AIChat extends Component {
             unreadOnly: filtered,
         };
     }
+    /**
+     * The chats of the current user that belong to no space.
+     * @returns {Array} a search domain on `muk_ai.session`
+     */
+    get ownSessionsDomain() {
+        return [
+            ['user_id', '=', user.userId],
+            ['space_id', '=', false],
+        ];
+    }
+    /**
+     * The chats of the current user matching a search.
+     * @param {string} query what was typed in the sidebar search
+     * @returns {Array} a search domain on `muk_ai.session`
+     */
+    sessionSearchDomain(query) {
+        return [
+            ['user_id', '=', user.userId],
+            ['name', 'ilike', query],
+        ];
+    }
     async _loadSessions() {
         if (this.state.sessionsSearchMode) {
             await this._searchSessions(this.state.sessionsQuery);
@@ -347,10 +368,7 @@ export class AIChat extends Component {
         const seq = ++this._loadSeq;
         const sessions = await this.orm.searchRead(
             'muk_ai.session',
-            [
-                ['user_id', '=', user.userId],
-                ['space_id', '=', false],
-            ],
+            this.ownSessionsDomain,
             ['id', 'name', 'state', 'create_date', 'space_id'],
             { limit: SESSION_PAGE_SIZE, offset: 0, order: 'create_date DESC' },
         );
@@ -373,10 +391,7 @@ export class AIChat extends Component {
             const seq = this._loadSeq;
             const next = await this.orm.searchRead(
                 'muk_ai.session',
-                [
-                    ['user_id', '=', user.userId],
-                    ['space_id', '=', false],
-                ],
+                this.ownSessionsDomain,
                 ['id', 'name', 'state', 'create_date', 'space_id'],
                 {
                     limit: SESSION_PAGE_SIZE,
@@ -402,10 +417,7 @@ export class AIChat extends Component {
         try {
             const sessions = await this.orm.searchRead(
                 'muk_ai.session',
-                [
-                    ['user_id', '=', user.userId],
-                    ['name', 'ilike', query],
-                ],
+                this.sessionSearchDomain(query),
                 ['id', 'name', 'state', 'create_date', 'space_id'],
                 { limit: SESSION_SEARCH_LIMIT, order: 'create_date DESC' },
             );

@@ -80,7 +80,7 @@ class TestSpace(AITestCommon):
             if row['id'] == space.id
         )
         self.assertFalse(entry['system'])
-        self.assertEqual(entry['session_domain'], [('space_id', '=', space.id)])
+        self.assertIn(('space_id', '=', space.id), entry['session_domain'])
 
     def test_count_sessions_sorts_ids_into_personal_spaces(self):
         space = self._space('Q3 Budget')

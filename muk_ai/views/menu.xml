@@ -98,7 +98,7 @@
 		<menuitem
 			id="menu_ai_settings"
 			name="Settings"
-			action="base_setup.action_general_configuration"
+			action="action_muk_ai_config_settings"
 			sequence="100"
 			groups="base.group_system"
 		/>

@@ -5,6 +5,7 @@ from . import test_openai
 from . import test_anthropic
 from . import test_google
 from . import test_http_pool
+from . import test_retention
 from . import test_session
 from . import test_streaming
 from . import test_queue

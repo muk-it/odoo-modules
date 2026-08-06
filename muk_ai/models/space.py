@@ -69,6 +69,29 @@ class AISpace(models.Model):
         ),
     )
 
+    retention_mode = fields.Selection(
+        selection=[
+            ('default', 'Follow the Default'),
+            ('days', 'Keep for a While'),
+            ('forever', 'Keep Forever'),
+        ],
+        string='Retention',
+        help=(
+            'What becomes of the finished chats in this space. They follow '
+            'the general setting unless this space says otherwise.'
+        ),
+        required=True,
+        default='default',
+    )
+
+    retention_days = fields.Integer(
+        string='Retention Days',
+        help=(
+            'Days a finished chat in this space is kept before the scheduled '
+            'cleanup deletes it.'
+        ),
+    )
+
     session_count = fields.Integer(
         compute='_compute_session_count',
         string='Chats',
@@ -240,6 +263,21 @@ class AISpace(models.Model):
                         error=error,
                     )
                 ) from error
+
+    @api.constrains('retention_mode', 'retention_days')
+    def _check_retention_days(self) -> None:
+        """Require a length from a space that keeps its chats for a while.
+
+        :raise ValidationError: when the mode asks for days and none are given
+        """
+        for record in self:
+            if record.retention_mode == 'days' and record.retention_days <= 0:
+                raise ValidationError(
+                    _(
+                        'Say how many days "%(name)s" keeps its chats for.',
+                        name=record.name,
+                    )
+                )
 
     # ----------------------------------------------------------
     # ORM

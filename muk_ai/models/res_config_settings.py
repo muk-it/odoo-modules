@@ -64,6 +64,33 @@ class ResConfigSettings(models.TransientModel):
         config_parameter='muk_ai.turn_cost_limit',
     )
 
+    ai_session_retention_enabled = fields.Boolean(
+        string='Chat Retention',
+        help=(
+            'Let the scheduled cleanup delete finished chats once they are '
+            'old enough. A chat that is still running is never touched.'
+        ),
+        config_parameter='muk_ai.session_retention_enabled',
+    )
+
+    ai_session_retention_days = fields.Integer(
+        string='Retention Days',
+        help='Days a finished chat is kept before the cleanup deletes it.',
+        config_parameter='muk_ai.session_retention_days',
+        default=90,
+    )
+
+    ai_client_action_timeout = fields.Integer(
+        string='Client Action Timeout (s)',
+        help=(
+            'Seconds a chat waits for the browser to carry out an action it '
+            'asked for before the cleanup answers for it and lets the turn '
+            'go on. Zero waits for good.'
+        ),
+        config_parameter='muk_ai.client_action_timeout',
+        default=600,
+    )
+
     module_muk_ai_compat = fields.Boolean(
         string='MuK AI Compatible Providers',
         help='Ollama, vLLM, OpenRouter and every OpenAI-compatible LLM.',
