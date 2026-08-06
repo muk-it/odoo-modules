@@ -1,3 +1,19 @@
 .o_main_navbar {
     border-bottom: none !important;
+
+    > .o_menu_sections {
+        margin-right: 1rem;
+    }
+    @include media-breakpoint-down(md) {
+        > .o_menu_systray {
+            flex-shrink: 1 !important;
+            min-width: 0;
+            overflow-x: auto;
+            scrollbar-width: none;
+
+            &::-webkit-scrollbar {
+                display: none;
+            }
+        }
+    }
 }
