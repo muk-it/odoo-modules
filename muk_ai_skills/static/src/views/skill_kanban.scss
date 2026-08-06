@@ -1,0 +1,10 @@
+.o_kanban_record {
+    .mk_skill_icon {
+        width: 30px;
+        height: 30px;
+        flex: 0 0 auto;
+        font-size: 0.8125rem;
+        color: $primary;
+        border: 1px solid rgba($primary, 0.35);
+    }
+}

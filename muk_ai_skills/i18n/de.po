@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-05 16:51+0000\n"
-"PO-Revision-Date: 2026-05-05 16:51+0000\n"
+"POT-Creation-Date: 2026-08-06 19:35+0000\n"
+"PO-Revision-Date: 2026-08-06 19:35+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -16,109 +16,118 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: muk_ai_skills
-#: model:muk_ai.skill,body:muk_ai_skills.demo_skill_draft_followup
+#: model:muk_ai.skill,body:muk_ai_skills.skill_reply
 msgid ""
-"# Draft Follow-up\n"
 "\n"
-"Draft a tactful follow-up message to a partner. Do not send anything;\n"
-"return the draft for the user to review:\n"
+"Draft a chatter message and open the mail composer wizard pre-filled with the draft. Do NOT post\n"
+"the message — leave it for the user to review and send from the wizard.\n"
 "\n"
-"1. Resolve the target partner (model `res.partner` + id or pinned\n"
-"   record). If missing, `ask_user` once.\n"
-"2. Use `search_read` on `mail.message` with domain\n"
-"   `[('model','=','res.partner'),('res_id','=',<id>),\n"
-"   ('message_type','in',['comment','email'])]`, order\n"
-"   `date desc`, limit 3, fields `date,subject,body,author_id`.\n"
-"   This grounds the follow-up in real prior context.\n"
-"3. Compose a draft:\n"
-"   - Tone: warm, professional, plain prose.\n"
-"   - Length cap: 90 words.\n"
-"   - Reference the most recent prior interaction concretely (date\n"
-"     + topic). If there is none, open with a soft re-introduction.\n"
-"   - End with a single, low-friction next step (a question or a\n"
-"     proposed slot), not a hard ask.\n"
-"4. Output the draft as a plain message, no preamble. After the draft,\n"
-"   one short line listing the prior messages you used. Stop.\n"
+"1. Resolve the target record from the pinned record in `<ui_ctx>` (model + id). If still missing,\n"
+"   call `ask_user` once for a record reference.\n"
+"2. Decide what the reply should say:\n"
+"   - If the user already wrote the message text in their request (the prompt after `/reply ...`\n"
+"     reads like a finished sentence to a recipient), use that text almost verbatim and just rewrap\n"
+"     it as short HTML paragraphs.\n"
+"   - If the user only gave a directive (e.g. \"thank them for the quick turnaround\", \"ask when\n"
+"     shipping\"), ground the draft: `search_read` on `mail.message` with domain\n"
+"     `[('model','=',<model>),('res_id','=',<id>),('message_type','in',['comment','email'])]`,\n"
+"     order `date desc`, limit 3, fields `date,subject,body,author_id`. Then write a tactful 60–90\n"
+"     word reply that follows the directive and references the most recent prior message\n"
+"     concretely. If there is no prior message, open with a short re-introduction.\n"
+"3. Wrap the draft as minimal HTML — `<p>…</p>` paragraphs only. No inline styles, no signature\n"
+"   (Odoo appends one).\n"
+"4. Call `open_action`:\n"
+"   - `action_ref`: `mail.action_email_compose_message_wizard`\n"
+"   - `additional_context`:\n"
+"     - `default_model`: target model\n"
+"     - `default_res_ids`: `[<id>]`\n"
+"     - `default_composition_mode`: `comment`\n"
+"     - `default_subtype_xmlid`: `mail.mt_comment`\n"
+"     - `default_body`: the HTML draft\n"
+"5. Reply with one short confirmation line, e.g. `Drafted reply to <display_name>; review and send\n"
+"   it from the composer.` Stop. Do not post the message yourself.\n"
+"        "
 msgstr ""
 
 #. module: muk_ai_skills
-#: model:muk_ai.skill,body:muk_ai_skills.demo_skill_explain_record
+#: model:muk_ai.skill,body:muk_ai_skills.demo_skill_log
 msgid ""
-"# Explain a Record\n"
 "\n"
-"Given a model + id (or the currently pinned record from the view\n"
-"context), produce a short briefing the user can read in 30 seconds:\n"
+"Post a quick internal log note on the pinned record's chatter. Fast complement to `/reply` —\n"
+"no composer, no recipients, no review. Use this when the user just wants to capture a short\n"
+"note for the team.\n"
 "\n"
-"1. If model + id is missing, use the pinned record from `<ui_ctx>`.\n"
-"   If still missing, call `ask_user` for the record reference.\n"
-"2. Use `read_records` to fetch the record. Pass an explicit `fields`\n"
-"   list scoped to the user-meaningful fields (skip technical or\n"
-"   internal fields unless asked).\n"
-"3. Output:\n"
-"   - Header line: `Display Name (model,id)`\n"
-"   - Up to 8 key/value bullets (label · value).\n"
-"   - One-line state/lifecycle note (\"draft\", \"in progress\",\n"
-"     \"blocked by X\").\n"
-"   - Top 3 most recent log notes from `mail.message` (skip\n"
-"     auto/system) with author and date.\n"
-"4. Stop. Do not propose actions unless asked.\n"
+"1. Resolve the target record from the pinned record in `<ui_ctx>` (model + id). If still\n"
+"   missing, call `ask_user` once for a record reference.\n"
+"2. Take the user's text after `/log ...` as the note body. Do NOT rephrase, expand, or polish it;\n"
+"   that is what `/reply` is for. If the user gave no text after the slash command, call\n"
+"   `ask_user` once asking what to log.\n"
+"3. Wrap the text as minimal HTML — `<p>…</p>` paragraphs only. No styles, no signature.\n"
+"4. Call `call_method`:\n"
+"   - `model`: target model\n"
+"   - `method`: `message_post`\n"
+"   - `ids`: `[<id>]`\n"
+"   - `kwargs`:\n"
+"     - `body`: the HTML\n"
+"     - `subtype_xmlid`: `mail.mt_note`\n"
+"     - `message_type`: `comment`\n"
+"5. Reply with one short confirmation line, e.g. `Logged on <display_name>.` Stop. Do not open\n"
+"   the record or call any other tool.\n"
 msgstr ""
 
 #. module: muk_ai_skills
-#: model:muk_ai.skill,body:muk_ai_skills.demo_skill_partner_brief
+#: model:muk_ai.skill,body:muk_ai_skills.demo_skill_escalate
 msgid ""
-"# Partner Brief\n"
 "\n"
-"Produce a short business briefing the user can read in 30 seconds for\n"
-"a single partner record:\n"
+"Schedule a `mail.activity` on the pinned record. Use when the user wants to create a follow-up\n"
+"todo, call, meeting, or email reminder tied to a record.\n"
 "\n"
-"1. Resolve the target partner: model `res.partner` + id (or pinned\n"
-"   record from `<ui_ctx>`). If still missing, call `ask_user` once.\n"
-"2. Use `read_records` to fetch the partner. Limit `fields` to the\n"
-"   user-meaningful set: `name`, `is_company`, `email`, `phone`,\n"
-"   `country_id`, `city`, `industry_id`, `customer_rank`,\n"
-"   `supplier_rank`, `category_id`, `user_id`, `parent_id`.\n"
-"3. Use `search_read` on `mail.message` with domain\n"
-"   `[('model','=','res.partner'),('res_id','=',<id>),\n"
-"   ('message_type','in',['comment','email'])]`, order\n"
-"   `date desc`, limit 5, fields `author_id,date,subject,body`.\n"
-"4. Output:\n"
-"   - Header: `Display Name (res.partner,<id>) — Company / Contact`\n"
-"   - 5-7 key/value bullets (label · value), skipping empties.\n"
-"   - \"Recent activity\" line listing the 3 most recent log dates +\n"
-"     short subject.\n"
-"   - One-line relationship summary: customer / supplier / both /\n"
-"     prospect, plus the salesperson if set.\n"
-"5. Stop. Do not propose actions unless asked.\n"
-msgstr ""
-
-#. module: muk_ai_skills
-#: model:muk_ai.skill,body:muk_ai_skills.demo_skill_safe_archive
-msgid ""
-"# Safe Archive\n"
-"\n"
-"Archive records (`active = False`) only after explicit user\n"
-"confirmation, with a structured preview:\n"
-"\n"
-"1. Resolve the target set: model + domain (or model + ids). If\n"
-"   ambiguous, call `ask_user` once.\n"
-"2. Use `search_count` to count the target set. If `> 50`, summarise\n"
-"   that count and ask the user to confirm before listing.\n"
-"3. Use `search_read` (limit 25) to fetch `id`, `display_name`, and\n"
-"   any obviously linked counts (e.g. `sale_order_count`,\n"
-"   `invoice_ids`). Show in a small table.\n"
-"4. Call `ask_user` with `resolution='yesno'` and a structured\n"
-"   `preview` of kind `update`, listing the targets and the\n"
-"   `active: True → False` change. Stop.\n"
-"5. On the user's \"yes\" answer (the next turn), call\n"
-"   `update_records` to archive in one batch. Reply with one line:\n"
-"   N records archived.\n"
+"1. Resolve the target record from the pinned record in `<ui_ctx>` (model + id). If still\n"
+"   missing, call `ask_user` once for a record reference.\n"
+"2. Collect the activity details. If the user already gave them in their request, use those; for\n"
+"   anything still missing, call `ask_user` ONCE with a single combined question covering the\n"
+"   missing pieces (type, deadline, assignee, summary). Acceptable activity types:\n"
+"   - To-Do    → `mail.mail_activity_data_todo`\n"
+"   - Call     → `mail.mail_activity_data_call`\n"
+"   - Meeting  → `mail.mail_activity_data_meeting`\n"
+"   - Email    → `mail.mail_activity_data_email`\n"
+"   Defaults if unspecified after asking once: type = To-Do, deadline = today + 3 days, assignee\n"
+"   = current user (omit `user_id`), summary = short echo of the user's request.\n"
+"3. Resolve the assignee: if a name was given, `search_read` `res.users` with\n"
+"   `[('name','ilike',<name>)]` (fall back to `login`), limit 5. Pick the unique match; if more\n"
+"   than one, call `ask_user` once with the candidate list.\n"
+"4. Call `call_method`:\n"
+"   - `model`: target model\n"
+"   - `method`: `activity_schedule`\n"
+"   - `ids`: `[<id>]`\n"
+"   - `kwargs`:\n"
+"     - `act_type_xmlid`: chosen xmlid\n"
+"     - `date_deadline`: ISO date string `YYYY-MM-DD`\n"
+"     - `summary`: short title\n"
+"     - `user_id`: assignee id (omit to default to current user)\n"
+"     - `note`: optional HTML, only if the user provided extra context\n"
+"5. Reply with one short confirmation: `Scheduled <type> on <display_name> for <date>, assigned\n"
+"   to <assignee>.` Stop. Do not open the record afterwards.\n"
 msgstr ""
 
 #. module: muk_ai_skills
 #: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_kanban
 msgid "<i class=\"fa fa-globe me-1\" title=\"Global\" role=\"img\"/>Global"
 msgstr "<i class=\"fa fa-globe me-1\" title=\"Global\" role=\"img\"/>Global"
+
+#. module: muk_ai_skills
+#: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_kanban
+msgid "<i class=\"fa fa-lock me-1\" title=\"Private to the owner\" role=\"img\"/>Private"
+msgstr ""
+"<i class=\"fa fa-lock me-1\" title=\"Privat für den Eigentümer\" "
+"role=\"img\"/>Privat"
+
+#. module: muk_ai_skills
+#: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_kanban
+msgid "<i class=\"fa fa-lock me-1\" title=\"Shared with selected users\" role=\"img\"/>"
+msgstr ""
+"<i class=\"fa fa-lock me-1\" title=\"Mit ausgewählten Benutzern geteilt\" "
+"role=\"img\"/>"
 
 #. module: muk_ai_skills
 #: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_kanban
@@ -131,9 +140,11 @@ msgid "<i class=\"fa fa-user me-1\" title=\"Agents\" role=\"img\"/>"
 msgstr "<i class=\"fa fa-user me-1\" title=\"Agenten\" role=\"img\"/>"
 
 #. module: muk_ai_skills
-#: model:ir.model.constraint,message:muk_ai_skills.constraint_muk_ai_skill_unique_name
-msgid "A skill with this technical name already exists."
-msgstr "Eine Fähigkeit mit diesem technischen Namen existiert bereits."
+#: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_kanban
+msgid ""
+"<i class=\"fa fa-users me-1\" title=\"Shared with everyone\" "
+"role=\"img\"/>Everyone"
+msgstr "<i class=\"fa fa-users me-1\" title=\"Mit allen geteilt\" role=\"img\"/>Alle"
 
 #. module: muk_ai_skills
 #: model:ir.model,name:muk_ai_skills.model_muk_ai_agent
@@ -149,11 +160,6 @@ msgstr "KI-Sitzung"
 #: model:ir.model,name:muk_ai_skills.model_muk_ai_skill
 msgid "AI Skill"
 msgstr "KI-Fähigkeit"
-
-#. module: muk_ai_skills
-#: model:ir.actions.act_window,name:muk_ai_skills.action_muk_ai_skill
-msgid "AI Skills"
-msgstr "KI-Fähigkeiten"
 
 #. module: muk_ai_skills
 #: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__active
@@ -188,16 +194,15 @@ msgstr ""
 " jeden Agenten sichtbar zu machen."
 
 #. module: muk_ai_skills
+#. odoo-javascript
+#: code:addons/muk_ai_skills/static/src/chat/skills_panel.js:0
+msgid "All skills"
+msgstr "Alle Fähigkeiten"
+
+#. module: muk_ai_skills
 #: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_kanban
 msgid "Archive"
 msgstr "Archivieren"
-
-#. module: muk_ai_skills
-#: model:muk_ai.skill,description:muk_ai_skills.demo_skill_safe_archive
-msgid "Archive records after pre-confirming the impact with the user."
-msgstr ""
-"Datensätze archivieren, nachdem die Auswirkung mit dem Benutzer vorab "
-"bestätigt wurde."
 
 #. module: muk_ai_skills
 #: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_form
@@ -232,20 +237,16 @@ msgid "Body History"
 msgstr "Körper-Verlauf"
 
 #. module: muk_ai_skills
-#: model:muk_ai.skill,description:muk_ai_skills.demo_skill_partner_brief
-msgid ""
-"Build a 30-second business briefing for a partner from their record and "
-"recent chatter."
-msgstr ""
-"Erstellen Sie ein 30-Sekunden-Geschäfts-Briefing für einen Partner aus "
-"seinem Datensatz und dem aktuellen Chatter."
-
-#. module: muk_ai_skills
 #. odoo-python
 #: code:addons/muk_ai_skills/models/ai_session.py:0
 msgid "Cannot invoke a skill while the session is %s."
 msgstr ""
 "Eine Fähigkeit kann nicht aufgerufen werden, während die Sitzung %s ist."
+
+#. module: muk_ai_skills
+#: model:ir.model.fields.selection,name:muk_ai_skills.selection__muk_ai_skill__skill_type__chat
+msgid "Chat"
+msgstr "Chat"
 
 #. module: muk_ai_skills
 #: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__create_uid
@@ -272,29 +273,38 @@ msgid "Display Name"
 msgstr "Anzeigename"
 
 #. module: muk_ai_skills
-#: model:muk_ai.skill,label:muk_ai_skills.demo_skill_draft_followup
-msgid "Draft Follow-up"
-msgstr "Folge-Nachricht entwerfen"
-
-#. module: muk_ai_skills
-#: model:muk_ai.skill,description:muk_ai_skills.demo_skill_draft_followup
+#: model:muk_ai.skill,description:muk_ai_skills.skill_reply
 msgid ""
-"Draft a short follow-up message to a partner using their last interactions "
-"for context."
+"Draft a chatter reply for the pinned record and open the mail composer "
+"wizard pre-filled with the draft."
 msgstr ""
-"Verfassen Sie eine kurze Folge-Nachricht an einen Partner, wobei seine "
-"letzten Interaktionen als Kontext verwendet werden."
+"Entwirft eine Chatter-Antwort für den angehefteten Datensatz und öffnet den "
+"E-Mail-Assistenten, vorausgefüllt mit dem Entwurf."
 
 #. module: muk_ai_skills
-#: model:muk_ai.skill,label:muk_ai_skills.demo_skill_explain_record
-msgid "Explain a Record"
-msgstr "Datensatz erklären"
+#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__is_editable
+msgid "Editable"
+msgstr "Bearbeitbar"
+
+#. module: muk_ai_skills
+#: model:ir.model.fields.selection,name:muk_ai_skills.selection__muk_ai_skill__visibility__everyone
+msgid "Everyone"
+msgstr "Alle"
 
 #. module: muk_ai_skills
 #. odoo-javascript
 #: code:addons/muk_ai_skills/static/src/chat/chat.js:0
 msgid "Failed to invoke skill: %s"
 msgstr "Aufruf der Fähigkeit fehlgeschlagen: %s"
+
+#. module: muk_ai_skills
+#: model:ir.model.fields,help:muk_ai_skills.field_muk_ai_skill__icon
+msgid ""
+"Font Awesome class shown next to the skill in the chat skills panel, e.g. "
+"\"fa-calendar-plus-o\"."
+msgstr ""
+"Font-Awesome-Klasse, die im Fähigkeiten-Panel des Chats neben der Fähigkeit "
+"angezeigt wird, z. B. \"fa-calendar-plus-o\"."
 
 #. module: muk_ai_skills
 #: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_search
@@ -316,6 +326,11 @@ msgid "ID"
 msgstr "ID"
 
 #. module: muk_ai_skills
+#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__icon
+msgid "Icon"
+msgstr "Symbol"
+
+#. module: muk_ai_skills
 #: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__label
 msgid "Label"
 msgstr "Beschriftung"
@@ -331,6 +346,11 @@ msgid "Last Updated on"
 msgstr "Zuletzt aktualisiert am"
 
 #. module: muk_ai_skills
+#: model:muk_ai.skill,label:muk_ai_skills.demo_skill_log
+msgid "Log Note"
+msgstr "Notiz hinterlassen"
+
+#. module: muk_ai_skills
 #: model:ir.model.fields,help:muk_ai_skills.field_muk_ai_skill__name
 msgid ""
 "Lowercase technical identifier used in the slash command and in the LLM-"
@@ -342,7 +362,7 @@ msgstr ""
 #. module: muk_ai_skills
 #: model:ir.model,name:muk_ai_skills.model_muk_mcp_mixin
 msgid "MCP Tool Mixin"
-msgstr "MCP-Tool-Mixin"
+msgstr "MCP-Werkzeug-Mixin"
 
 #. module: muk_ai_skills
 #: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_res_config_settings_form
@@ -365,6 +385,17 @@ msgstr ""
 " Ressourcen verlassen."
 
 #. module: muk_ai_skills
+#: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_search
+msgid "My Skills"
+msgstr "Meine Fähigkeiten"
+
+#. module: muk_ai_skills
+#. odoo-javascript
+#: code:addons/muk_ai_skills/static/src/chat/skills_panel.xml:0
+msgid "No skill matches."
+msgstr "Keine Fähigkeit gefunden."
+
+#. module: muk_ai_skills
 #: model:ir.model.fields,help:muk_ai_skills.field_muk_ai_skill__description
 msgid ""
 "One-line description shown to the LLM in the system prompt addendum so it "
@@ -379,14 +410,29 @@ msgid "One-line description shown to the LLM in the system prompt."
 msgstr "Einzeilige Beschreibung, die dem LLM im System-Prompt angezeigt wird."
 
 #. module: muk_ai_skills
+#: model:ir.model.fields.selection,name:muk_ai_skills.selection__muk_ai_skill__visibility__owner
+msgid "Only Me"
+msgstr "Nur ich"
+
+#. module: muk_ai_skills
 #: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_kanban
 msgid "Open"
 msgstr "Öffnen"
 
 #. module: muk_ai_skills
-#: model:muk_ai.skill,label:muk_ai_skills.demo_skill_partner_brief
-msgid "Partner Brief"
-msgstr "Partner-Briefing"
+#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__owner_id
+#: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_search
+msgid "Owner"
+msgstr "Eigentümer"
+
+#. module: muk_ai_skills
+#: model:muk_ai.skill,description:muk_ai_skills.demo_skill_log
+msgid ""
+"Post a one-line internal log note on the pinned record's chatter — no "
+"composer, no review."
+msgstr ""
+"Hinterlässt eine einzeilige interne Notiz im Chatter des angehefteten "
+"Datensatzes – ohne Editor, ohne Prüfung."
 
 #. module: muk_ai_skills
 #: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__prompt_history
@@ -397,6 +443,17 @@ msgstr "Prompt-Verlauf"
 #: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__prompt_history_metadata
 msgid "Prompt History Metadata"
 msgstr "Prompt-Verlauf-Metadaten"
+
+#. module: muk_ai_skills
+#. odoo-javascript
+#: code:addons/muk_ai_skills/static/src/chat/skills_panel.js:0
+msgid "Recently used"
+msgstr "Zuletzt verwendet"
+
+#. module: muk_ai_skills
+#: model:muk_ai.skill,label:muk_ai_skills.skill_reply
+msgid "Reply"
+msgstr "Antworten"
 
 #. module: muk_ai_skills
 #: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__attachment_ids
@@ -412,14 +469,34 @@ msgid "Revisions"
 msgstr "Revisionen"
 
 #. module: muk_ai_skills
-#: model:muk_ai.skill,label:muk_ai_skills.demo_skill_safe_archive
-msgid "Safe Archive"
-msgstr "Sicheres Archivieren"
+#: model:muk_ai.skill,label:muk_ai_skills.demo_skill_escalate
+msgid "Schedule Activity"
+msgstr "Aktivität planen"
+
+#. module: muk_ai_skills
+#: model:muk_ai.skill,description:muk_ai_skills.demo_skill_escalate
+msgid ""
+"Schedule a follow-up activity (to-do, call, meeting, email) on the pinned "
+"record."
+msgstr ""
+"Plant eine Folgeaktivität (To-do, Anruf, Meeting, E-Mail) für den "
+"angehefteten Datensatz."
 
 #. module: muk_ai_skills
 #: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_search
 msgid "Scoped"
 msgstr "Eingeschränkt"
+
+#. module: muk_ai_skills
+#. odoo-javascript
+#: code:addons/muk_ai_skills/static/src/chat/skills_panel.xml:0
+msgid "Search skills…"
+msgstr "Fähigkeiten durchsuchen…"
+
+#. module: muk_ai_skills
+#: model:ir.model.fields.selection,name:muk_ai_skills.selection__muk_ai_skill__visibility__users
+msgid "Selected Users"
+msgstr "Ausgewählte Benutzer"
 
 #. module: muk_ai_skills
 #: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__sequence
@@ -428,13 +505,39 @@ msgstr "Sequenz"
 
 #. module: muk_ai_skills
 #. odoo-python
-#: code:addons/muk_ai_skills/mcp/skill_tools.py:0
+#: code:addons/muk_ai_skills/mcp/skill.py:0
 msgid "Session %(sid)s no longer exists."
 msgstr "Sitzung %(sid)s existiert nicht mehr."
 
 #. module: muk_ai_skills
+#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__user_ids
+#: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_form
+msgid "Shared With"
+msgstr "Geteilt mit"
+
+#. module: muk_ai_skills
+#: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_search
+msgid "Shared with Everyone"
+msgstr "Mit allen geteilt"
+
+#. module: muk_ai_skills
+#: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_search
+msgid "Shared with Me"
+msgstr "Mit mir geteilt"
+
+#. module: muk_ai_skills
+#: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_form
+msgid "Sharing"
+msgstr "Freigabe"
+
+#. module: muk_ai_skills
+#: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_search
+msgid "Skill"
+msgstr "Fähigkeit"
+
+#. module: muk_ai_skills
 #. odoo-python
-#: code:addons/muk_ai_skills/mcp/skill_tools.py:0
+#: code:addons/muk_ai_skills/mcp/skill.py:0
 msgid "Skill %(name)r is invalid."
 msgstr "Fähigkeit %(name)r ist ungültig."
 
@@ -452,15 +555,18 @@ msgstr "Fähigkeitsname %(name)r muss [a-z][a-z0-9_]* entsprechen."
 
 #. module: muk_ai_skills
 #. odoo-python
-#: code:addons/muk_ai_skills/mcp/skill_tools.py:0
+#: code:addons/muk_ai_skills/mcp/skill.py:0
 msgid "Skill tools can only be invoked from inside an AI session."
 msgstr ""
 "Fähigkeits-Tools können nur innerhalb einer KI-Sitzung aufgerufen werden."
 
 #. module: muk_ai_skills
+#. odoo-javascript
+#: code:addons/muk_ai_skills/static/src/chat/composer.xml:0
+#: model:ir.actions.act_window,name:muk_ai_skills.action_muk_ai_skill
 #: model:ir.ui.menu,name:muk_ai_skills.menu_muk_ai_skill
 msgid "Skills"
-msgstr "Fähigkeiten"
+msgstr "KI-Fähigkeiten"
 
 #. module: muk_ai_skills
 #: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__name
@@ -468,15 +574,78 @@ msgid "Technical Name"
 msgstr "Technischer Name"
 
 #. module: muk_ai_skills
+#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__skill_type
+#: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_search
+msgid "Type"
+msgstr "Typ"
+
+#. module: muk_ai_skills
 #: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_kanban
 msgid "Unarchive"
 msgstr "Wiederherstellen"
 
 #. module: muk_ai_skills
-#: model:muk_ai.skill,description:muk_ai_skills.demo_skill_explain_record
-msgid "Walk a single record's important fields in plain language."
+#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__user_count
+msgid "User Count"
+msgstr "Anzahl Benutzer"
+
+#. module: muk_ai_skills
+#: model:ir.model.fields,help:muk_ai_skills.field_muk_ai_skill__owner_id
+msgid ""
+"User who owns the skill. Only the owner or an administrator can edit or "
+"delete it."
 msgstr ""
-"Wichtige Felder eines einzelnen Datensatzes in einfacher Sprache durchgehen."
+"Benutzer, dem die Fähigkeit gehört. Nur der Eigentümer oder ein "
+"Administrator kann sie bearbeiten oder löschen."
+
+#. module: muk_ai_skills
+#: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_kanban
+msgid "Users"
+msgstr "Benutzer"
+
+#. module: muk_ai_skills
+#: model:ir.model.fields,help:muk_ai_skills.field_muk_ai_skill__user_ids
+msgid ""
+"Users the skill is shared with. If empty, the skill is shared with all "
+"users. New skills default to being private to their owner. Scheduled and "
+"automated agent sessions run as their configured user and only see the "
+"skills visible to that user."
+msgstr ""
+"Benutzer, mit denen die Fähigkeit geteilt wird. Bleibt das Feld leer, ist "
+"die Fähigkeit für alle Benutzer freigegeben. Neue Fähigkeiten sind "
+"standardmäßig privat für ihren Eigentümer. Geplante und automatisierte "
+"Agentensitzungen laufen unter ihrem konfigurierten Benutzer und sehen nur "
+"die für diesen Benutzer sichtbaren Fähigkeiten."
+
+#. module: muk_ai_skills
+#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__visibility
+msgid "Visibility"
+msgstr "Sichtbarkeit"
+
+#. module: muk_ai_skills
+#: model:ir.model.fields,help:muk_ai_skills.field_muk_ai_skill__skill_type
+msgid ""
+"Where the skill is offered. Only chat skills are listed to the language "
+"model and invoked by name; every other surface adds its own type and offers "
+"them for the user to pick."
+msgstr ""
+"Wo die Fähigkeit angeboten wird. Nur Chat-Fähigkeiten werden dem "
+"Sprachmodell aufgelistet und über ihren Namen aufgerufen; jede andere "
+"Oberfläche ergänzt ihren eigenen Typ und bietet sie zur Auswahl an."
+
+#. module: muk_ai_skills
+#: model:ir.model.fields,help:muk_ai_skills.field_muk_ai_skill__visibility
+msgid ""
+"Who can pick the skill in chat. The share list stays empty when the skill is"
+" visible to everyone."
+msgstr ""
+"Wer die Fähigkeit im Chat auswählen kann. Die Freigabeliste bleibt leer, "
+"wenn die Fähigkeit für alle sichtbar ist."
+
+#. module: muk_ai_skills
+#: model:ir.model.constraint,message:muk_ai_skills.constraint_muk_ai_skill_unique_name_owner
+msgid "You already own a skill with this technical name."
+msgstr "Sie besitzen bereits eine Fähigkeit mit diesem technischen Namen."
 
 #. module: muk_ai_skills
 #: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_form

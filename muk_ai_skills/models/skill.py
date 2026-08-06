@@ -50,6 +50,21 @@ class Skill(models.Model):
         default='fa-bolt',
     )
 
+    skill_type = fields.Selection(
+        selection=[
+            ('chat', 'Chat'),
+        ],
+        string='Type',
+        help=(
+            'Where the skill is offered. Only chat skills are listed to the '
+            'language model and invoked by name; every other surface adds its '
+            'own type and offers them for the user to pick.'
+        ),
+        required=True,
+        default='chat',
+        index=True,
+    )
+
     active = fields.Boolean(
         string='Active',
         default=True,
@@ -236,6 +251,21 @@ class Skill(models.Model):
             if pending:
                 pending.sudo().write({'res_id': record.id})
 
+    def _skill_descriptor(self) -> dict:
+        """Return what a surface needs to offer this skill.
+
+        The seam a surface extends to carry what only it understands: the
+        writing helper adds the group it arranges its offers by, and nothing
+        here has to know that such a grouping exists.
+        """
+        return {
+            'name': self.name,
+            'label': self.label or self.display_name or self.name,
+            'description': (self.description or '').strip(),
+            'icon': self.icon or 'fa-bolt',
+            'body': self.body or '',
+        }
+
     # ----------------------------------------------------------
     # Actions
     # ----------------------------------------------------------
@@ -248,6 +278,28 @@ class Skill(models.Model):
         """Reset the share list so only the owner can see the skill."""
         for record in self:
             record.user_ids = [(6, 0, record.owner_id.ids)]
+
+    # ----------------------------------------------------------
+    # Functions
+    # ----------------------------------------------------------
+
+    @api.model
+    def fetch_skills(self, skill_type: str) -> list[dict]:
+        """Return the skills a surface offers, in the order they appear.
+
+        Scoped to the user rather than to a session: a surface asks for its
+        offers before it has one, and what it offers is picked by the user
+        rather than discovered by an agent.
+
+        :param skill_type: the surface asking, see the ``skill_type`` field
+        :return: descriptors carrying what a surface needs to offer a skill
+        """
+        domain = [('active', '=', True), ('skill_type', '=', skill_type)]
+        domain += self._user_visibility_domain(self.env.user)
+        skills = self.env['muk_ai.session']._dedupe_visible_skills(
+            self.sudo().search(domain), self.env.user
+        )
+        return [skill._skill_descriptor() for skill in skills]
 
     # ----------------------------------------------------------
     # Compute

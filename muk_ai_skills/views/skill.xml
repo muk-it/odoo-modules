@@ -7,11 +7,14 @@
 		<field name="model">muk_ai.skill</field>
 		<field name="arch" type="xml">
 			<search>
-				<field name="name"/>
-				<field name="label"/>
-				<field name="description"/>
+				<field
+                    name="label"
+                    string="Skill"
+                    filter_domain="['|', '|', ('label', 'ilike', self), ('name', 'ilike', self), ('description', 'ilike', self)]"
+                />
 				<field name="owner_id"/>
 				<field name="agent_ids"/>
+				<field name="skill_type"/>
 				<filter
                     name="my_skills"
                     string="My Skills"
@@ -51,6 +54,11 @@
                 />
 				<group>
 					<filter
+                        name="group_type"
+                        string="Type"
+                        context="{'group_by': 'skill_type'}"
+                    />
+					<filter
                         name="group_owner"
                         string="Owner"
                         context="{'group_by': 'owner_id'}"
@@ -74,6 +82,7 @@
 				<field name="name"/>
 				<field name="label"/>
 				<field name="description"/>
+				<field name="icon"/>
 				<field name="agent_count"/>
 				<field name="attachment_count"/>
 				<field name="user_count"/>
@@ -93,12 +102,19 @@
 					<t t-name="card">
 						<widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
 						<main class="flex-grow-1 overflow-hidden">
-							<h4 class="mb-0 text-truncate">
-								<field name="display_name"/>
-							</h4>
-							<code class="small text-muted">
-								<field name="name"/>
-							</code>
+							<div class="d-flex align-items-center gap-2">
+								<span class="mk_skill_icon d-inline-flex align-items-center justify-content-center rounded-circle">
+									<i class="fa" t-att-class="record.icon.raw_value" role="img"/>
+								</span>
+								<div class="overflow-hidden">
+									<h4 class="mb-0 text-truncate">
+										<field name="display_name"/>
+									</h4>
+									<code class="small text-muted">
+										<field name="name"/>
+									</code>
+								</div>
+							</div>
 						</main>
 						<div class="mt-2">
 							<field name="description" class="text-muted"/>
@@ -140,6 +156,7 @@
 				<field name="sequence" widget="handle"/>
 				<field name="name"/>
 				<field name="label"/>
+				<field name="skill_type" optional="show"/>
 				<field name="owner_id" optional="show"/>
 				<field name="user_ids" widget="many2many_tags" optional="hide"/>
 				<field name="description" optional="show"/>
@@ -191,17 +208,17 @@
                                 options="{'no_create': True}"
                                 readonly="not is_editable"
                             />
-						</group>
-						<group>
-							<field
-                                name="icon"
-                                widget="icon_selector"
-                                readonly="not is_editable"
-                            />
-							<field name="sequence" readonly="not is_editable"/>
 							<field
                                 name="active"
                                 widget="boolean_toggle"
+                                readonly="not is_editable"
+                            />
+						</group>
+						<group>
+							<field name="skill_type" readonly="not is_editable"/>
+							<field
+                                name="icon"
+                                widget="icon_selector"
                                 readonly="not is_editable"
                             />
 						</group>
@@ -270,7 +287,7 @@
 	</record>
 
 	<record id="action_muk_ai_skill" model="ir.actions.act_window">
-		<field name="name">AI Skills</field>
+		<field name="name">Skills</field>
 		<field name="res_model">muk_ai.skill</field>
 		<field name="view_mode">kanban,list,form</field>
 		<field name="search_view_id" ref="view_muk_ai_skill_search"/>

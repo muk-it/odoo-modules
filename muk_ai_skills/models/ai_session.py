@@ -18,11 +18,19 @@ class AISession(models.Model):
     # Helper
     # ----------------------------------------------------------
 
-    def _visible_skills(self) -> models.BaseModel:
-        """Return the active skills visible to this session's agent and user."""
+    def _visible_skills(self, skill_type: str = 'chat') -> models.BaseModel:
+        """Return the active skills visible to this session's agent and user.
+
+        Only chat skills answer by default. A skill a surface offers as a
+        button is picked by the user in that surface, so listing it to the
+        language model as well would grow the discovery list of every
+        conversation with entries nobody can reach from one.
+
+        :param skill_type: the surface the skills are wanted for
+        """
         skill_model = self.env['muk_ai.skill'].sudo()
         user = self.user_id or self.env.user
-        domain = [('active', '=', True)]
+        domain = [('active', '=', True), ('skill_type', '=', skill_type)]
         domain += skill_model._user_visibility_domain(user)
         agent_ids = self.agent_id.ids if self.agent_id else []
         if agent_ids:
@@ -200,7 +208,7 @@ class AISession(models.Model):
                 }
             )
         self._extend_conversation(conversation_entries)
-        self.write({'state': 'running', 'error_message': False})
+        self.write(self._turn_start_values())
         self._publish_event('state', {'state': 'running'})
         self._trigger_worker()
         return self.get_snapshot()
