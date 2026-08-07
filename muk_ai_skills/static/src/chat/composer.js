@@ -71,7 +71,7 @@ patch(ChatComposer.prototype, {
         return this.sessionSkills.length > 0;
     },
     get showSkillsPanel() {
-        return this.localState.skillsOpen && !this.props.disabled;
+        return this.localState.skillsOpen;
     },
     /** Focus the panel search only where a keyboard will not cover the list. */
     get skillsAutofocus() {
