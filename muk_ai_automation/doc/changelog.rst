@@ -1,3 +1,9 @@
+`1.1.0`
+-------
+
+- Move record-linked sessions, the chatter mirror and the AI Sessions box
+  to the new **MuK AI Chatter**, which this module now depends on
+
 `1.0.2`
 -------
 

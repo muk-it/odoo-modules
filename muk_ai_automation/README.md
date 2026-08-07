@@ -6,17 +6,20 @@ scheduled action. **MuK AI Automation** extends `muk_ai` with a new
 under a chosen agent and prompt whenever the action runs — with no
 user in the loop. A per-record dispatch mode fans a single action
 into one session per record matching a domain (or arbitrary Python),
-chained sessions expose the prior run so the agent can recall what it
-did last time, and every spawned session can be mirrored to the
-record's chatter and surfaced in an "AI Sessions" box right inside
-that record's discussion thread.
+and chained sessions expose the prior run so the agent can recall what
+it did last time.
 
 Because the agent is just another server-action state, it plugs into
 everything that already drives server actions: contextual actions on a
 list/form, `base.automation` rules reacting to create/write/unlink
 events, and `ir.cron` scheduled actions firing on a cadence — no new
-trigger engine, no fork of `muk_ai`. The module is `_inherit`
-overrides plus one OWL chatter component.
+trigger engine, no fork of `muk_ai`. The module is `_inherit` overrides
+and a dispatch helper, nothing more.
+
+Linking a session to the record it ran for — the `res_model` / `res_id`
+fields, the chatter note back-linking to it, the *AI Sessions* box in
+that record's chatter and the per-record access rules — belongs to
+**MuK AI Chatter**, which this module depends on.
 
 ## What's in the box
 
@@ -33,19 +36,11 @@ overrides plus one OWL chatter component.
   `agent_max_records_per_fire` (default `100`), the four per-action
   caps, and `agent_chain_strategy` (none / per_record).
 - **`muk_ai.session` extension** — `action_server_id`,
-  `base_automation_id` (related), `previous_session_id`, and
-  `res_model` / `res_id` linking each session to the record it was
-  spawned for. A `_search` / `_check_access` override grants a
-  non-admin read access to a linked session whenever they can read the
-  underlying business record.
-- **Chatter mirror** — every spawned session linked to a record posts
-  an internal note (`mail.mt_note`) on that record back-linking to the
-  session form. Records without a chatter are skipped silently.
-- **AI Sessions chatter box** — an OWL component injected into the
-  Discuss chatter listing the AI sessions linked to the current
-  record, live-updated over the bus, with a count badge, expand /
-  collapse, click-to-open (live chat for your own sessions, form view
-  for others'), and a *View all* link.
+  `base_automation_id` (related) and `previous_session_id`, plus the
+  prompt scope (`record`, `records`, `previous_session`, `now`) and the
+  headless client-kind handling for a session nobody is watching. The
+  `res_model` / `res_id` link itself, the chatter mirror and the
+  per-record access rules come from **MuK AI Chatter**.
 - **Manage menus** — *MuK AI > AI Automation Rules* (base automation
   rules whose server action is `ai_agent`) and *MuK AI > AI Scheduled
   Actions* (crons pointing at an `ai_agent` server action), both
@@ -156,8 +151,8 @@ action, each falling back to a module-wide default when left at `0`:
 | `agent_max_cost_eur`       | `5.00`      | accumulated session cost in EUR              |
 
 `_agent_effective_caps()` resolves the per-action value or the
-default, and the caps propagate to the spawned session so a runaway
-agent can never bill unbounded.
+default. The caps are read back when a session resumes through
+**MuK AI Schedule**; install it alongside if you need them enforced.
 
 ## Firing from automation rules and crons
 
@@ -176,35 +171,21 @@ paths come for free:
    `ai_agent` server action to fire an agent on a cadence. *MuK AI >
    AI Scheduled Actions* lists every cron wired this way.
 
-## The AI Sessions chatter box
+## Seeing the sessions on the record
 
-Any model that inherits `mail.thread` gains an **AI Sessions** section
-in its chatter, listing the sessions spawned for that record. The OWL
-component:
-
-- loads the linked sessions through `get_ai_sessions_summary` (most
-  recent first, capped at 10) together with a total count;
-- shows a collapsible header with a count badge and a per-session row
-  carrying a state badge, name and timestamp;
-- updates live over the bus whenever a listed session changes state or
-  emits an event;
-- opens the live chat client for sessions you own, or the session form
-  for sessions owned by someone else;
-- offers a *View all* link to the full filtered session list when more
-  than the listed sessions exist.
-
-Visibility respects record access: the session `_search` /
-`_check_access` overrides let a non-admin read a linked session only
-when they can read the underlying business record (or own the
-session), so the box never leaks sessions across records a user cannot
-see.
+Per-record dispatch writes `res_model` / `res_id` on every session it
+spawns, which is what **MuK AI Chatter** builds on: it posts the note
+back-linking to the session, lists the runs in an *AI Sessions* box in
+that record's chatter, collects them in the *Records* space, and grants
+a non-admin read access to a linked session only when they can read the
+underlying business record. See that module's documentation.
 
 ## Installation
 
 Download the module and add it to your Odoo addons folder. Log into
 your Odoo server, open the Apps menu, enable developer mode, click
 **Update Apps List**, and install **MuK AI Automation**. Requires
-`muk_ai`, `mail`, and `base_automation`.
+`base_automation` and `muk_ai_chatter` (which brings in `muk_ai`).
 
 ## Upgrade
 

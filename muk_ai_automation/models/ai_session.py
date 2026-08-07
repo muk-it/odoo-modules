@@ -1,17 +1,7 @@
 from __future__ import annotations
 
-from collections import defaultdict
-from collections.abc import Callable, Sequence
-from contextlib import suppress
+from odoo import fields, models
 
-from markupsafe import Markup
-
-from odoo import _, api, fields, models
-from odoo.exceptions import AccessError, MissingError
-from odoo.tools import OrderedSet
-from odoo.tools.query import Query
-
-from odoo.addons.muk_ai.tools import with_record_ctx
 from odoo.addons.muk_ai_automation.tools.dispatch import (
     PreviousProxy,
     _resolve_records,
@@ -19,7 +9,7 @@ from odoo.addons.muk_ai_automation.tools.dispatch import (
 
 
 class AISession(models.Model):
-    """Link AI sessions to business records, server actions, and chains."""
+    """Link AI sessions to the server action that spawned them."""
 
     _inherit = 'muk_ai.session'
 
@@ -52,30 +42,9 @@ class AISession(models.Model):
         ondelete='set null',
     )
 
-    res_model = fields.Char(
-        string='Linked Model',
-        help='Model of the business record this session is linked to.',
-        index=True,
-        copy=False,
-    )
-
-    res_id = fields.Many2oneReference(
-        model_field='res_model',
-        string='Linked Record',
-        help='Identifier of the linked business record.',
-        copy=False,
-    )
-
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
-
-    def _linked_record(self) -> models.BaseModel | None:
-        """Return the linked business record, or ``None`` when unresolved."""
-        if not self.res_model or not self.res_id or self.res_model not in self.env:
-            return None
-        record = self.env[self.res_model].sudo().browse(self.res_id)
-        return record if record.exists() else None
 
     def _available_client_kinds(self) -> set[str]:
         """Drop the webclient kind for action-spawned sessions.
@@ -88,122 +57,6 @@ class AISession(models.Model):
         if self.id and self.action_server_id:
             kinds.discard('webclient')
         return kinds
-
-    def _owner_can_read(self, record: models.BaseModel) -> bool:
-        """Return whether the session owner may read the linked record."""
-        owner = self.user_id or self.env.user
-        return record.with_user(owner).has_access('read')
-
-    @api.model
-    def _non_owner_sensitive_fields(self) -> tuple[str, ...]:
-        """Return transcript fields hidden from non-owner, non-admin readers.
-
-        These carry tool and RAG output produced under the owner's (or
-        ``sudo``) privileges, so they must be blanked for a reader who only
-        gained record-level access through the linked business record.
-        """
-        return ('conversation', 'display_events', 'last_text')
-
-    @api.model
-    def _blank_transcript_value(self, name: str) -> list | bool:
-        """Return the empty placeholder substituted for a hidden field."""
-        return False if name == 'last_text' else []
-
-    def _blank_non_owner_transcript(self, rows: list[dict]) -> list[dict]:
-        """Empty transcript fields in ``rows`` for non-owner, non-admin readers."""
-        if not rows or self.env.su or self.env.is_admin():
-            return rows
-        sensitive = self._non_owner_sensitive_fields()
-        if not any(name in row for row in rows for name in sensitive):
-            return rows
-        uid = self.env.uid
-        owner_by_id = {
-            session.id: session.user_id.id
-            for session in self.sudo().browse([row['id'] for row in rows])
-        }
-        for row in rows:
-            if owner_by_id.get(row['id']) == uid:
-                continue
-            for name in sensitive:
-                if name in row:
-                    row[name] = self._blank_transcript_value(name)
-        return rows
-
-    def _blank_non_owner_transcript_cache(self) -> None:
-        """Seed blanked stored transcript values into cache for non-owner readers.
-
-        Exports read stored values straight from cache via ``_export_rows``,
-        never routing through :meth:`_read_format`. Pre-seeding the cache with
-        blanks (not marked dirty, so never flushed to the database) closes that
-        path for non-owner, non-admin readers; the computed ``display_events``
-        blanks itself through the ``fetch_events`` guard.
-        """
-        if not self or self.env.su or self.env.is_admin():
-            return
-        uid = self.env.uid
-        non_owner = self.sudo().filtered(lambda session: session.user_id.id != uid)
-        if not non_owner:
-            return
-        cache = self.env.cache
-        for name in self._non_owner_sensitive_fields():
-            field = self._fields[name]
-            if not field.store:
-                continue
-            blank = field.convert_to_cache(
-                self._blank_transcript_value(name), self, validate=False
-            )
-            for record in self.browse(non_owner._ids):
-                cache.set(record, field, blank)
-
-    def _check_transcript_group_specs(
-        self,
-        groupby: Sequence[str],
-        aggregates: Sequence[str],
-        having: Sequence,
-    ) -> None:
-        """Reject a grouping specification that targets a transcript field.
-
-        :raise AccessError: when a transcript field is used as a groupby,
-            aggregate, or having target
-        """
-        sensitive = set(self._non_owner_sensitive_fields())
-        specs = [*groupby, *aggregates]
-        specs.extend(
-            leaf[0]
-            for leaf in having
-            if isinstance(leaf, list | tuple) and len(leaf) == 3
-        )
-        for spec in specs:
-            name = spec.split(':')[0] if isinstance(spec, str) else ''
-            if name in sensitive:
-                raise AccessError(
-                    _(
-                        'Grouping AI sessions on %(field)s is not allowed.',
-                        field=name,
-                    )
-                )
-
-    def _hides_transcript_from_current_user(self) -> bool:
-        """Return whether the caller must be denied this session's transcript."""
-        if self.env.su or self.env.is_admin():
-            return False
-        return self.user_id.id != self.env.uid
-
-    def _build_request_inputs(self) -> list[dict]:
-        """Extend request inputs with the linked record context when present."""
-        inputs = super()._build_request_inputs()
-        record = self._linked_record()
-        if record is not None and self._owner_can_read(record):
-            inputs = with_record_ctx(
-                inputs,
-                {
-                    'kind': 'record',
-                    'model': record._name,
-                    'id': record.id,
-                    'display_name': record.display_name,
-                },
-            )
-        return inputs
 
     def _session_prompt_extras(self) -> dict:
         """Add record, records, previous-session, and now to the prompt scope."""
@@ -227,174 +80,3 @@ class AISession(models.Model):
             }
         )
         return extras
-
-    def _post_chatter_mirror(self) -> None:
-        """Post a chatter note on the linked record pointing at this session."""
-        record = self._linked_record()
-        if record is None or not hasattr(record, 'message_post'):
-            return
-        if not self._owner_can_read(record):
-            return
-        link = Markup(
-            '<a href="/odoo/action-muk_ai.action_ai_session/{sid}">{label}</a>'
-        ).format(sid=self.id, label=self.display_name or _('AI Session'))
-        body = Markup('<p>%s</p>') % _(
-            'AI session %(link)s started for this record.',
-            link=link,
-        )
-        with suppress(Exception):
-            record.message_post(body=body, subtype_xmlid='mail.mt_note')
-
-    # ----------------------------------------------------------
-    # ORM methods
-    # ----------------------------------------------------------
-
-    @api.model
-    def _search(
-        self,
-        domain: list,
-        offset: int = 0,
-        limit: int | None = None,
-        order: str | None = None,
-        *,
-        active_test: bool = True,
-        bypass_access: bool = False,
-    ) -> Query:
-        """Filter sessions by per-linked-record access for non-admin users."""
-        if self.env.su or self.env.is_admin() or bypass_access:
-            return super()._search(
-                domain,
-                offset=offset,
-                limit=limit,
-                order=order,
-                active_test=active_test,
-                bypass_access=bypass_access,
-            )
-        candidate_query = super()._search(
-            domain,
-            order=order,
-            active_test=active_test,
-            bypass_access=True,
-        )
-        candidate_ids = list(candidate_query)
-        if not candidate_ids:
-            return candidate_query
-        accessible = self.browse(candidate_ids)._filtered_access('read')
-        return super()._search(
-            [('id', 'in', list(accessible._ids))],
-            offset=offset,
-            limit=limit,
-            order=order,
-            active_test=active_test,
-            bypass_access=True,
-        )
-
-    def _check_access(self, operation: str) -> tuple[AISession, Callable] | None:
-        """Grant read access to sessions linked to records the user may read."""
-        res = super()._check_access(operation)
-        if operation != 'read' or self.env.su or self.env.is_admin() or not self:
-            return res
-        if not res:
-            return res
-        forbidden, error_func = res
-        forbidden_ids = OrderedSet(forbidden._ids)
-        sudo_self = self.sudo().browse(forbidden_ids)
-        sudo_self.fetch(['user_id', 'res_model', 'res_id'])
-        uid = self.env.uid
-        by_model = defaultdict(set)
-        session_links = {}
-        for session in sudo_self:
-            if session.user_id.id == uid:
-                forbidden_ids.discard(session.id)
-                continue
-            if session.res_model and session.res_id and session.res_model in self.env:
-                by_model[session.res_model].add(session.res_id)
-                session_links[session.id] = (session.res_model, session.res_id)
-        granted_pairs = set()
-        for res_model, res_ids in by_model.items():
-            records = self.env[res_model].browse(list(res_ids))
-            try:
-                allowed = records._filtered_access('read')
-            except MissingError:
-                allowed = records.exists()._filtered_access('read')
-            for rec_id in allowed._ids:
-                granted_pairs.add((res_model, rec_id))
-        for sid, key in session_links.items():
-            if key in granted_pairs:
-                forbidden_ids.discard(sid)
-        if forbidden_ids:
-            return self.browse(forbidden_ids), error_func
-        return None
-
-    def _read_group(
-        self,
-        domain: list,
-        groupby: Sequence[str] = (),
-        aggregates: Sequence[str] = (),
-        having: Sequence = (),
-        offset: int = 0,
-        limit: int | None = None,
-        order: str | None = None,
-    ) -> list[tuple]:
-        """Refuse to group or aggregate transcript fields for non-owner readers.
-
-        Grouping runs as raw SQL and never routes its values through
-        :meth:`_read_format`, so the per-row blanking that covers every other
-        read path cannot reach it: a reader who only sees a foreign session
-        through the linked-record grant of :meth:`_check_access` would read the
-        transcript straight out of the group keys. A group spans several
-        records, so there is no per-row answer to give — the query is refused.
-
-        :raise AccessError: when a transcript field is used as a groupby,
-            aggregate, or having target
-        """
-        if not self.env.su and not self.env.is_admin():
-            self._check_transcript_group_specs(groupby, aggregates, having)
-        return super()._read_group(
-            domain, groupby, aggregates, having, offset, limit, order
-        )
-
-    def _read_format(
-        self, fnames: list[str], load: str = '_classic_read'
-    ) -> list[dict]:
-        """Blank transcript fields for non-owner readers on every read path.
-
-        Both :meth:`read` and :meth:`search_read` funnel their value formatting
-        through this method, so blanking here covers the direct read and the
-        ``search_read`` bypass alike. The record-level grant from
-        :meth:`_check_access` still exposes a session's metadata to a non-owner,
-        but the transcript fields hold data gathered under the owner's
-        privileges and must stay hidden.
-        """
-        return self._blank_non_owner_transcript(super()._read_format(fnames, load))
-
-    def export_data(self, fields_to_export: list[str]) -> dict:
-        """Hide stored transcript fields from non-owner exporters."""
-        self._blank_non_owner_transcript_cache()
-        return super().export_data(fields_to_export)
-
-    def fetch_events(
-        self, limit: int = 100, before_sequence: int | None = None
-    ) -> dict:
-        """Return an empty event window for non-owner, non-admin readers."""
-        if self and self._hides_transcript_from_current_user():
-            return {'events': [], 'has_more_older': False, 'oldest_sequence': None}
-        return super().fetch_events(limit=limit, before_sequence=before_sequence)
-
-    def get_snapshot(self, include_conversation: bool = False) -> dict:
-        """Drop the transcript from snapshots taken by non-owner readers."""
-        snapshot = super().get_snapshot(include_conversation=include_conversation)
-        if self and self._hides_transcript_from_current_user():
-            snapshot['last_text'] = False
-            if include_conversation:
-                snapshot['conversation'] = []
-        return snapshot
-
-    @api.model_create_multi
-    def create(self, vals_list: list[dict]) -> AISession:
-        """Create sessions, mirroring a note onto linked business records."""
-        records = super().create(vals_list)
-        for record in records:
-            if record.res_model and record.res_id:
-                record._post_chatter_mirror()
-        return records

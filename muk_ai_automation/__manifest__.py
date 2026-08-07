@@ -9,7 +9,7 @@
         per record so the agent can recall the previous run, and exposes
         per-action caps for resumes, lifetime, tokens, and cost.
     """,
-    'version': '19.0.1.0.17',
+    'version': '19.0.1.1.0',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -19,7 +19,7 @@
     ],
     'depends': [
         'base_automation',
-        'muk_ai',
+        'muk_ai_chatter',
     ],
     'data': [
         'security/ir.model.access.csv',
@@ -33,17 +33,6 @@
         'demo/ir_actions_server.xml',
         'demo/base_automation.xml',
     ],
-    'assets': {
-        'web.assets_backend': [
-            'muk_ai_automation/static/src/chatter/**/*',
-        ],
-        'web.assets_tests': [
-            'muk_ai_automation/static/tests/tours/automation_tour.js',
-        ],
-        'web.assets_unit_tests': [
-            'muk_ai_automation/static/tests/**/*.test.js',
-        ],
-    },
     'images': [
         'static/description/banner.png',
     ],
