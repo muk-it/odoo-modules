@@ -1,0 +1,856 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* muk_ai_chatter
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-06 20:05+0000\n"
+"PO-Revision-Date: 2026-08-06 20:05+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: muk_ai_chatter
+#. odoo-python
+#: code:addons/muk_ai_chatter/models/mail_thread.py:0
+msgid "%(agent)s on %(record)s"
+msgstr "%(agent)s sur %(record)s"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.js:0
+msgid "%s selected words"
+msgstr "%s mots sélectionnés"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.js:0
+msgid "%s words in your draft"
+msgstr "%s mots dans votre brouillon"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.js:0
+msgid "%s…"
+msgstr "%s…"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_plugin.js:0
+msgid "AI"
+msgstr "IA"
+
+#. module: muk_ai_chatter
+#: model:ir.model,name:muk_ai_chatter.model_muk_ai_agent
+msgid "AI Agent"
+msgstr "Agent IA"
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_res_partner__ai_agent_ids
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_res_users__ai_agent_ids
+msgid "AI Agents"
+msgstr "Agents IA"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/chatter/ai_session_box.js:0
+msgid "AI Chat"
+msgstr "Chat IA"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#. odoo-python
+#: code:addons/muk_ai_chatter/models/ai_session.py:0
+#: code:addons/muk_ai_chatter/static/src/chatter/ai_session_box.js:0
+#: model:ir.model,name:muk_ai_chatter.model_muk_ai_session
+msgid "AI Session"
+msgstr "Session IA"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/chatter/ai_session_box.js:0
+#: code:addons/muk_ai_chatter/static/src/chatter/ai_session_box.xml:0
+#: code:addons/muk_ai_chatter/static/src/chatter/chatter_inherit.xml:0
+msgid "AI Sessions"
+msgstr "Sessions IA"
+
+#. module: muk_ai_chatter
+#: model:ir.model,name:muk_ai_chatter.model_muk_ai_skill
+msgid "AI Skill"
+msgstr "Compétence IA"
+
+#. module: muk_ai_chatter
+#: model:ir.model,name:muk_ai_chatter.model_muk_ai_space
+msgid "AI Space"
+msgstr "Espace IA"
+
+#. module: muk_ai_chatter
+#. odoo-python
+#: code:addons/muk_ai_chatter/models/ai_session.py:0
+msgid "AI session %(link)s started for this record."
+msgstr "Session IA %(link)s démarrée pour cet enregistrement."
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_muk_ai_agent__partner_id
+msgid "Agent Contact"
+msgstr "Contact de l'agent"
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,help:muk_ai_chatter.field_res_partner__ai_agent_ids
+#: model:ir.model.fields,help:muk_ai_chatter.field_res_users__ai_agent_ids
+msgid "Agents this contact stands in for in the chatter."
+msgstr "Agents que ce contact représente dans le chatter."
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_muk_ai_session__answer_message_id
+msgid "Answer"
+msgstr "Réponse"
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_muk_ai_agent__mention_enabled
+#: model_terms:ir.ui.view,arch_db:muk_ai_chatter.view_ai_agent_form
+msgid "Answer Mentions"
+msgstr "Répondre aux mentions"
+
+#. module: muk_ai_chatter
+#: model:muk_ai.skill,description:muk_ai_chatter.skill_compose_reply
+msgid "Answer the most recent message in the conversation."
+msgstr "Répond au dernier message de la conversation."
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.js:0
+msgid "As is"
+msgstr "Tel quel"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.xml:0
+msgid "Ask"
+msgstr "Demander"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.xml:0
+msgid "Ask again for a different wording"
+msgstr "Redemander une autre formulation"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.xml:0
+msgid "Ask for something else…"
+msgstr "Demander autre chose…"
+
+#. module: muk_ai_chatter
+#: model:muk_ai.skill,description:muk_ai_chatter.skill_compose_follow_up
+msgid "Ask for what is still missing on this record."
+msgstr "Demande ce qui manque encore sur cet enregistrement."
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.xml:0
+msgid "Cancel"
+msgstr "Annuler"
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_muk_ai_skill__category
+#: model_terms:ir.ui.view,arch_db:muk_ai_chatter.view_muk_ai_skill_search
+msgid "Category"
+msgstr "Catégorie"
+
+#. module: muk_ai_chatter
+#: model_terms:ir.ui.view,arch_db:muk_ai_chatter.view_ai_agent_form
+msgid "Chatter"
+msgstr "Chatter"
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,help:muk_ai_chatter.field_muk_ai_session__mention_message_id
+msgid "Chatter message whose agent mention started this session."
+msgstr "Message du chatter dont la mention d'agent a démarré cette session."
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,help:muk_ai_chatter.field_muk_ai_session__answer_message_id
+msgid "Chatter note carrying the answer to the mention."
+msgstr "Note du chatter portant la réponse à la mention."
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.xml:0
+msgid "Close (Esc)"
+msgstr "Fermer (Échap)"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/chatter/ai_session_box.js:0
+msgid "Compacting"
+msgstr "Compactage"
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_muk_ai_session__compose_interface
+#: model:ir.model.fields.selection,name:muk_ai_chatter.selection__muk_ai_skill__skill_type__composer
+msgid "Composer"
+msgstr "Éditeur"
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,help:muk_ai_chatter.field_muk_ai_session__compose_interface
+msgid "Composer this session is helping to write in."
+msgstr "Éditeur dans lequel cette session aide à écrire."
+
+#. module: muk_ai_chatter
+#: model:ir.model,name:muk_ai_chatter.model_res_partner
+msgid "Contact"
+msgstr "Contact"
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,help:muk_ai_chatter.field_muk_ai_agent__partner_id
+msgid ""
+"Contact standing in for this agent in the chatter. It carries no email "
+"address, so mentioning the agent never mails anybody."
+msgstr ""
+"Contact représentant cet agent dans le chatter. Il ne porte aucune adresse "
+"e-mail, si bien qu'une mention n'envoie jamais de message."
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.xml:0
+msgid "Continue in the AI chat, where you can talk it through"
+msgstr "Continuer dans le chat IA, où vous pouvez en discuter"
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,help:muk_ai_chatter.field_muk_ai_session__mention_context
+msgid ""
+"Conversation recorded on the record when the mention arrived. Frozen on "
+"purpose: chatter messages can be edited afterwards."
+msgstr ""
+"Conversation enregistrée sur l'enregistrement à l'arrivée de la mention. "
+"Figée volontairement : les messages du chatter restent modifiables."
+
+#. module: muk_ai_chatter
+#: model:muk_ai.skill,description:muk_ai_chatter.skill_compose_grammar
+msgid "Correct spelling, grammar and punctuation, changing nothing else."
+msgstr ""
+"Corrige l'orthographe, la grammaire et la ponctuation, sans rien changer "
+"d'autre."
+
+#. module: muk_ai_chatter
+#: model:muk_ai.skill,body:muk_ai_chatter.skill_compose_grammar
+msgid ""
+"Correct the spelling, grammar and punctuation of the selected text. Change "
+"nothing else: keep the wording, the tone and the language it is written in."
+msgstr ""
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.xml:0
+msgid "Discard"
+msgstr "Abandonner"
+
+#. module: muk_ai_chatter
+#: model:ir.model,name:muk_ai_chatter.model_discuss_channel
+msgid "Discussion Channel"
+msgstr "Canal de discussion"
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_discuss_channel__display_name
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_mail_thread__display_name
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_muk_ai_agent__display_name
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_muk_ai_session__display_name
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_muk_ai_skill__display_name
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_muk_ai_space__display_name
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_res_partner__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/chatter/ai_session_box.js:0
+msgid "Done"
+msgstr "Terminé"
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_muk_ai_session__compose_draft
+msgid "Draft"
+msgstr "Brouillon"
+
+#. module: muk_ai_chatter
+#: model:ir.model,name:muk_ai_chatter.model_mail_thread
+msgid "Email Thread"
+msgstr "Discussion par email"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/chatter/ai_session_box.js:0
+msgid "Error"
+msgstr "Erreur"
+
+#. module: muk_ai_chatter
+#: model:muk_ai.skill,label:muk_ai_chatter.skill_compose_expand
+msgid "Expand"
+msgstr "Développer"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.js:0
+#: model:ir.model.fields.selection,name:muk_ai_chatter.selection__muk_ai_skill__category__fix
+msgid "Fix"
+msgstr "Corriger"
+
+#. module: muk_ai_chatter
+#: model:muk_ai.skill,label:muk_ai_chatter.skill_compose_grammar
+msgid "Fix grammar"
+msgstr "Corriger la grammaire"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.js:0
+msgid "Formal"
+msgstr "Formel"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.js:0
+msgid "Friendly"
+msgstr "Amical"
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields.selection,name:muk_ai_chatter.selection__muk_ai_skill__category__generate
+msgid "Generate"
+msgstr "Générer"
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,help:muk_ai_chatter.field_muk_ai_skill__category
+msgid ""
+"How the writing helper groups the skill in a composer. Fix, rewrite and "
+"transform act on what is already written; generate writes something new. "
+"Left empty for every other kind of skill."
+msgstr ""
+"Comment l'assistant de rédaction classe la compétence dans l'éditeur. "
+"Corriger, réécrire et transformer agissent sur le texte existant ; écrire "
+"produit un nouveau texte à partir de l'enregistrement."
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_discuss_channel__id
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_mail_thread__id
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_muk_ai_agent__id
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_muk_ai_session__id
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_muk_ai_skill__id
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_muk_ai_space__id
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_res_partner__id
+msgid "ID"
+msgstr "ID"
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,help:muk_ai_chatter.field_muk_ai_session__res_id
+msgid "Identifier of the linked business record."
+msgstr "Identifiant de l'enregistrement métier lié."
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.xml:0
+msgid "Insert"
+msgstr "Insérer"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.xml:0
+msgid "Length"
+msgstr "Longueur"
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,help:muk_ai_chatter.field_muk_ai_agent__mention_enabled
+msgid ""
+"Let users summon this agent from the chatter of a record by mentioning it, "
+"and post its answer back as a log note."
+msgstr ""
+"Permet aux utilisateurs d'appeler cet agent depuis le chatter d'un "
+"enregistrement en le mentionnant, et d'y publier sa réponse en note."
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_muk_ai_session__res_model
+msgid "Linked Model"
+msgstr "Modèle lié"
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_muk_ai_session__res_id
+msgid "Linked Record"
+msgstr "Enregistrement lié"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.js:0
+msgid "Longer"
+msgstr "Plus long"
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_muk_ai_session__mention_message_id
+msgid "Mention"
+msgstr "Mention"
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,help:muk_ai_chatter.field_muk_ai_session__compose_draft
+msgid "Message the user had written when the writing helper was opened."
+msgstr ""
+"Message que l'utilisateur avait rédigé à l'ouverture de l'assistant de "
+"rédaction."
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,help:muk_ai_chatter.field_muk_ai_session__res_model
+msgid "Model of the business record this session is linked to."
+msgstr "Modèle de l'enregistrement métier auquel cette session est liée."
+
+#. module: muk_ai_chatter
+#: model:muk_ai.skill,label:muk_ai_chatter.skill_compose_formal
+msgid "More formal"
+msgstr "Plus formel"
+
+#. module: muk_ai_chatter
+#: model:muk_ai.skill,label:muk_ai_chatter.skill_compose_friendly
+msgid "More friendly"
+msgstr "Plus amical"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.js:0
+msgid "Neutral"
+msgstr "Neutre"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/chatter/ai_session_box.js:0
+msgid "New"
+msgstr "Nouveau"
+
+#. module: muk_ai_chatter
+#. odoo-python
+#: code:addons/muk_ai_chatter/models/ai_session.py:0
+msgid "No AI agent is available to help you write."
+msgstr "Aucun agent IA n'est disponible pour vous aider à écrire."
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.js:0
+msgid "Nothing is inserted until you say so"
+msgstr "Rien n'est inséré tant que vous ne le demandez pas"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.js:0
+msgid "Nothing is replaced until you say so"
+msgstr "Rien n'est remplacé tant que vous ne le demandez pas"
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,help:muk_ai_chatter.field_muk_ai_session__compose_selection
+msgid "Part of the draft the user asked to have rewritten."
+msgstr "Partie du brouillon que l'utilisateur a demandé de réécrire."
+
+#. module: muk_ai_chatter
+#: model:muk_ai.skill,description:muk_ai_chatter.skill_compose_translate
+msgid "Put it into the language the conversation is written in."
+msgstr "Le traduit dans la langue de la conversation."
+
+#. module: muk_ai_chatter
+#: model:muk_ai.space,name:muk_ai_chatter.space_records
+msgid "Records"
+msgstr "Enregistrements"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.xml:0
+msgid "Replace message"
+msgstr "Remplacer le message"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.xml:0
+msgid "Replace selection"
+msgstr "Remplacer la sélection"
+
+#. module: muk_ai_chatter
+#: model:muk_ai.skill,label:muk_ai_chatter.skill_compose_reply
+msgid "Reply to the last message"
+msgstr "Répondre au dernier message"
+
+#. module: muk_ai_chatter
+#: model:muk_ai.skill,description:muk_ai_chatter.skill_compose_summary
+msgid "Retell the conversation as a message that reads on its own."
+msgstr "Reprend la conversation sous forme d'un message qui se lit seul."
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.js:0
+#: model:ir.model.fields.selection,name:muk_ai_chatter.selection__muk_ai_skill__category__rewrite
+msgid "Rewrite"
+msgstr "Réécrire"
+
+#. module: muk_ai_chatter
+#: model:muk_ai.skill,body:muk_ai_chatter.skill_compose_formal
+msgid ""
+"Rewrite the selected text in a more formal register, as a professional would"
+" write to a customer. Keep the content unchanged."
+msgstr ""
+
+#. module: muk_ai_chatter
+#: model:muk_ai.skill,body:muk_ai_chatter.skill_compose_friendly
+msgid ""
+"Rewrite the selected text in a warmer, more personal tone, without becoming "
+"casual or padding it with pleasantries."
+msgstr ""
+
+#. module: muk_ai_chatter
+#: model:muk_ai.skill,body:muk_ai_chatter.skill_compose_shorten
+msgid ""
+"Rewrite the selected text so it says the same thing in fewer words. Keep "
+"every fact and the tone it was written in."
+msgstr ""
+
+#. module: muk_ai_chatter
+#: model:muk_ai.skill,body:muk_ai_chatter.skill_compose_expand
+msgid ""
+"Rewrite the selected text with more detail, staying on the same subject. Add"
+" nothing that is not already implied by it or by the record."
+msgstr ""
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.js:0
+msgid "Rewrite the selection"
+msgstr "Réécrire la sélection"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_plugin.js:0
+msgid "Rewrite the selection, or write from the record"
+msgstr "Réécrire la sélection, ou écrire à partir de l'enregistrement"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.js:0
+msgid "Rewrite your message"
+msgstr "Réécrire votre message"
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields.selection,name:muk_ai_chatter.selection__muk_ai_session__compose_interface__text_select
+msgid "Rewriting a Selection"
+msgstr "Réécriture d'une sélection"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/chatter/ai_session_box.js:0
+msgid "Running"
+msgstr "En cours"
+
+#. module: muk_ai_chatter
+#: model:muk_ai.skill,description:muk_ai_chatter.skill_compose_formal
+msgid "Say it in a more formal register."
+msgstr "Le formule dans un registre plus formel."
+
+#. module: muk_ai_chatter
+#: model:muk_ai.skill,description:muk_ai_chatter.skill_compose_friendly
+msgid "Say it in a warmer, more personal tone."
+msgstr "Le formule sur un ton plus chaleureux et personnel."
+
+#. module: muk_ai_chatter
+#: model:muk_ai.skill,description:muk_ai_chatter.skill_compose_expand
+msgid "Say it with more detail, on the same subject."
+msgstr "Le développe davantage, sur le même sujet."
+
+#. module: muk_ai_chatter
+#: model:muk_ai.skill,description:muk_ai_chatter.skill_compose_shorten
+msgid "Say the same thing in fewer words."
+msgstr "Dit la même chose en moins de mots."
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/chatter/ai_session_box.js:0
+msgid "Scheduled"
+msgstr "Planifié"
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_muk_ai_session__compose_selection
+msgid "Selected Text"
+msgstr "Texte sélectionné"
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,help:muk_ai_chatter.field_muk_ai_session__is_mention
+msgid ""
+"Set when a chatter mention started this session. It decides the guard rails,"
+" so it is stored in its own right rather than read off the mention, which "
+"the author is free to delete."
+msgstr ""
+"Défini lorsqu'une mention dans le chatter a démarré cette session. Elle "
+"détermine les garde-fous, elle est donc stockée."
+
+#. module: muk_ai_chatter
+#: model:muk_ai.skill,label:muk_ai_chatter.skill_compose_shorten
+msgid "Shorten"
+msgstr "Raccourcir"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.js:0
+msgid "Shorter"
+msgstr "Plus court"
+
+#. module: muk_ai_chatter
+#. odoo-python
+#: code:addons/muk_ai_chatter/models/ai_skill.py:0
+msgid "Skill %(name)r needs a category to be offered in a composer."
+msgstr ""
+"La compétence %(name)r a besoin d'une catégorie pour être proposée dans un "
+"éditeur."
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_muk_ai_session__is_mention
+msgid "Started by a Mention"
+msgstr "Démarrée par une mention"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/chatter/ai_session_box.js:0
+msgid "Stopped"
+msgstr "Arrêté"
+
+#. module: muk_ai_chatter
+#: model:muk_ai.skill,label:muk_ai_chatter.skill_compose_summary
+msgid "Summarize the thread"
+msgstr "Résumer le fil"
+
+#. module: muk_ai_chatter
+#: model:muk_ai.skill,body:muk_ai_chatter.skill_compose_summary
+msgid ""
+"Summarize this conversation as a message a colleague can read on its own: "
+"what was asked, what was decided, and what is still open."
+msgstr ""
+
+#. module: muk_ai_chatter
+#. odoo-python
+#: code:addons/muk_ai_chatter/models/mail_thread.py:0
+msgid "System"
+msgstr "Système"
+
+#. module: muk_ai_chatter
+#. odoo-python
+#: code:addons/muk_ai_chatter/models/ai_session.py:0
+msgid "The agent could not answer: %(reason)s"
+msgstr "L'agent n'a pas pu répondre : %(reason)s"
+
+#. module: muk_ai_chatter
+#. odoo-python
+#: code:addons/muk_ai_chatter/models/ai_session.py:0
+msgid "The agent had nothing to add."
+msgstr "L'agent n'avait rien à ajouter."
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.js:0
+msgid "The agent returned nothing."
+msgstr "L'agent n'a rien renvoyé."
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.js:0
+msgid "The message you were writing is no longer open."
+msgstr "Le message que vous rédigiez n'est plus ouvert."
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.js:0
+msgid "The run failed."
+msgstr "L'exécution a échoué."
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_muk_ai_session__mention_context
+msgid "Thread Snapshot"
+msgstr "Instantané du fil"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.xml:0
+msgid "Tone"
+msgstr "Ton"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.js:0
+#: model:ir.model.fields.selection,name:muk_ai_chatter.selection__muk_ai_skill__category__transform
+msgid "Transform"
+msgstr "Transformer"
+
+#. module: muk_ai_chatter
+#: model:muk_ai.skill,label:muk_ai_chatter.skill_compose_translate
+msgid "Translate"
+msgstr "Traduire"
+
+#. module: muk_ai_chatter
+#: model:muk_ai.skill,body:muk_ai_chatter.skill_compose_translate
+msgid ""
+"Translate the selected text into the language the rest of the conversation "
+"is written in. If that is the language it is already in, translate it into "
+"English instead. Return the translation only."
+msgstr ""
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.xml:0
+msgid "Try again"
+msgstr "Réessayer"
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,field_description:muk_ai_chatter.field_muk_ai_skill__skill_type
+msgid "Type"
+msgstr "Type"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/chat_insert.xml:0
+msgid "Use this — put it back where you were writing"
+msgstr "Utiliser ceci – le replacer là où vous écriviez"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/chatter/ai_session_box.xml:0
+msgid "View all"
+msgstr "Tout afficher"
+
+#. module: muk_ai_chatter
+#. odoo-python
+#: code:addons/muk_ai_chatter/models/ai_session.py:0
+msgid "View the run"
+msgstr "Voir l'exécution"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/chatter/ai_session_box.js:0
+msgid "Waiting"
+msgstr "En attente"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.xml:0
+msgid "What changes"
+msgstr "Ce qui change"
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields,help:muk_ai_chatter.field_muk_ai_skill__skill_type
+msgid ""
+"Where the skill is offered. Only chat skills are listed to the language "
+"model and invoked by name; every other surface adds its own type and offers "
+"them for the user to pick."
+msgstr ""
+"Où la compétence est proposée. Seules les compétences de type chat sont "
+"listées au modèle de langage et invoquées par leur nom ; chaque autre "
+"surface ajoute son propre type et les propose à l'utilisateur."
+
+#. module: muk_ai_chatter
+#. odoo-python
+#: code:addons/muk_ai_chatter/models/ai_session.py:0
+msgid "Working on it…"
+msgstr "En cours…"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.js:0
+msgid "Write"
+msgstr "Écrire"
+
+#. module: muk_ai_chatter
+#: model:muk_ai.skill,label:muk_ai_chatter.skill_compose_follow_up
+msgid "Write a follow-up"
+msgstr "Rédiger une relance"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.js:0
+msgid "Write a message"
+msgstr "Rédiger un message"
+
+#. module: muk_ai_chatter
+#: model:muk_ai.skill,body:muk_ai_chatter.skill_compose_reply
+msgid ""
+"Write a reply to the most recent message in this conversation. Answer what "
+"was actually asked, in the language it was written in, and leave open "
+"anything you cannot know."
+msgstr ""
+
+#. module: muk_ai_chatter
+#: model:muk_ai.skill,body:muk_ai_chatter.skill_compose_follow_up
+msgid ""
+"Write a short follow-up message about this record, referring to what was "
+"last said and asking for what is still missing."
+msgstr ""
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_plugin.js:0
+#: code:addons/muk_ai_chatter/static/src/composer/composer_action.js:0
+#: code:addons/muk_ai_chatter/static/src/composer/composer_field.xml:0
+msgid "Write with AI"
+msgstr "Rédiger avec l'IA"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.js:0
+msgid "Writing"
+msgstr "Rédaction"
+
+#. module: muk_ai_chatter
+#: model:muk_ai.space,name:muk_ai_chatter.space_writing
+msgid "Writing Helper"
+msgstr "Assistant de rédaction"
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields.selection,name:muk_ai_chatter.selection__muk_ai_session__compose_interface__mail_composer
+msgid "Writing a Message"
+msgstr "Rédaction d'un message"
+
+#. module: muk_ai_chatter
+#. odoo-python
+#: code:addons/muk_ai_chatter/models/ai_session.py:0
+msgid "Writing helper"
+msgstr "Assistant de rédaction"
+
+#. module: muk_ai_chatter
+#: model:ir.model.fields.selection,name:muk_ai_chatter.selection__muk_ai_session__compose_interface__html_field
+msgid "Writing in a Field"
+msgstr "Rédaction dans un champ"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.js:0
+msgid "Writing…"
+msgstr "Rédaction"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.js:0
+msgid "Written from this record"
+msgstr "Rédigé à partir de cet enregistrement"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.xml:0
+msgid "added"
+msgstr "ajouté"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel.xml:0
+msgid "removed"
+msgstr "supprimé"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/chatter/ai_session_box.xml:0
+msgid "sessions"
+msgstr "sessions"
+
+#. module: muk_ai_chatter
+#. odoo-python
+#: code:addons/muk_ai_chatter/models/ai_session.py:0
+msgid "unknown error"
+msgstr "erreur inconnue"

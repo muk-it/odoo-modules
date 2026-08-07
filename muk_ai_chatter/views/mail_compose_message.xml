@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_mail_compose_message_form" model="ir.ui.view">
+        <field name="name">mail.compose.message.form.muk.ai</field>
+        <field name="model">mail.compose.message</field>
+        <field name="inherit_id" ref="mail.email_compose_message_wizard_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//footer/field[@name='template_id']" position="after">
+                <field
+                    name="body"
+                    widget="mail_composer_muk_ai"
+                    invisible="not can_edit_body"
+                />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

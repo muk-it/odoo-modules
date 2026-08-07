@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai_chatter.ComposerFieldAI">
+        <button
+            class="btn btn-light w-auto"
+            t-ref="button"
+            title="Write with AI"
+            t-on-click="onClick"
+        >
+            <span class="mk_icon_ai"/>
+        </button>
+    </t>
+
+</templates>

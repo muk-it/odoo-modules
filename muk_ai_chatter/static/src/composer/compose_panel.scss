@@ -1,0 +1,167 @@
+.o-mail-ComposePanel-popover {
+    border: 0;
+    box-shadow: none;
+    background-color: transparent;
+}
+
+.o-mail-ComposePanel {
+    width: 27rem;
+    max-width: 90vw;
+    max-height: 70vh;
+    overflow: hidden;
+    border: 1px solid var(--border-color, #{$border-color});
+    border-radius: 0.5rem;
+    background-color: var(--o-view-background-color, #{$o-view-background-color});
+    box-shadow: 0 0.5rem 1.5rem rgba($black, 0.18);
+
+    .o-mail-ComposePanel-head {
+        border-bottom: 1px solid var(--border-color, #{$border-color});
+    }
+
+    .o-mail-ComposePanel-markIcon {
+        width: 1.15rem;
+        height: 1.15rem;
+        flex: 0 0 auto;
+    }
+
+    .o-mail-ComposePanel-body {
+        overflow-y: auto;
+    }
+
+    .o-mail-ComposePanel-label {
+        font-size: 0.68rem;
+        letter-spacing: 0.04em;
+    }
+
+    .o-mail-ComposePanel-quote {
+        border-left: 3px solid rgba($primary, 0.45);
+        background-color: rgba($primary, 0.05);
+        max-height: 4.5rem;
+        overflow: hidden;
+        font-style: italic;
+    }
+
+    .o-mail-ComposePanel-headBtn {
+        width: 1.5rem;
+        height: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+    }
+
+    .o-mail-ComposePanel-actions {
+        border: 1px solid var(--border-color, #{$border-color});
+    }
+
+    .o-mail-ComposePanel-action {
+        border: 0;
+        border-radius: 0;
+        border-right: 1px solid var(--border-color, #{$border-color});
+        background-color: var(--o-view-background-color, #{$o-view-background-color});
+        color: var(--o-main-text-color, #{$body-color});
+        transition:
+            color 0.12s ease,
+            background-color 0.12s ease;
+        &:last-child {
+            border-right: 0;
+        }
+        &:hover {
+            background-color: rgba($primary, 0.07);
+        }
+        &.o-active {
+            background-color: $primary;
+            color: $white;
+        }
+    }
+
+    .o-mail-ComposePanel-chip {
+        border: 1px solid var(--border-color, #{$border-color});
+        background-color: var(--o-view-background-color, #{$o-view-background-color});
+        transition:
+            border-color 0.12s ease,
+            background-color 0.12s ease;
+
+        &:hover {
+            border-color: rgba($primary, 0.6);
+            background-color: rgba($primary, 0.07);
+        }
+
+        .fa {
+            color: $primary;
+        }
+    }
+
+    .o-mail-ComposePanel-error {
+        max-width: 100%;
+        color: shade-color($danger, 25%);
+        background-color: rgba($danger, 0.1);
+        font-size: 0.78rem;
+    }
+
+    .o-mail-ComposePanel-stream,
+    .o-mail-ComposePanel-result,
+    .o-mail-ComposePanel-diff {
+        max-height: 13rem;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        font-size: 0.85rem;
+        line-height: 1.45;
+        border: 1px solid var(--border-color, #{$border-color});
+        background-color: var(--o-view-background-color, #{$o-view-background-color});
+    }
+
+    .o-mail-ComposePanel-stream::after {
+        content: '';
+        display: inline-block;
+        width: 0.45rem;
+        height: 0.95rem;
+        margin-left: 1px;
+        vertical-align: text-bottom;
+        background-color: $primary;
+        animation: o-mail-ComposePanel-caret 1s steps(2, start) infinite;
+    }
+
+    .o-mail-ComposePanel-pulse {
+        width: 0.6rem;
+        height: 0.6rem;
+        border-radius: 50%;
+        background-color: $primary;
+        animation: o-mail-ComposePanel-pulse 1.1s ease-in-out infinite;
+    }
+
+    .o-mail-ComposePanel-removed {
+        color: shade-color($danger, 30%);
+        background-color: rgba($danger, 0.12);
+        border-radius: 2px;
+    }
+
+    .o-mail-ComposePanel-added {
+        color: shade-color($success, 45%);
+        background-color: rgba($success, 0.16);
+        border-radius: 2px;
+        text-decoration: none;
+    }
+
+    .o-mail-ComposePanel-legend {
+        font-size: 0.68rem;
+    }
+}
+
+@keyframes o-mail-ComposePanel-caret {
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes o-mail-ComposePanel-pulse {
+    0%,
+    100% {
+        transform: scale(0.7);
+        opacity: 0.55;
+    }
+    50% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}

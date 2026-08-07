@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai_chatter.ChatMsgInsert" t-inherit="muk_ai.ChatMsgMeta" t-inherit-mode="extension">
+        <xpath expr="//button[hasclass('mk_msg_copy')]" position="after">
+            <button class="mk_msg_btn mk_msg_insert" type="button"
+                    t-if="session.insertText and !meta_side"
+                    title="Use this — put it back where you were writing"
+                    t-on-click="() => session.insertText(meta_text)">
+                <i class="fa fa-arrow-circle-o-left"/>
+            </button>
+        </xpath>
+    </t>
+
+</templates>

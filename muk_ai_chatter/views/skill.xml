@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_muk_ai_skill_search" model="ir.ui.view">
+        <field name="name">muk.ai.skill.search.category</field>
+        <field name="model">muk_ai.skill</field>
+        <field name="inherit_id" ref="muk_ai_skills.view_muk_ai_skill_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='skill_type']" position="after">
+                <field name="category"/>
+            </xpath>
+            <xpath expr="//filter[@name='group_type']" position="after">
+                <filter
+                    name="group_category"
+                    string="Category"
+                    context="{'group_by': 'category'}"
+                />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_muk_ai_skill_list" model="ir.ui.view">
+        <field name="name">muk.ai.skill.list.category</field>
+        <field name="model">muk_ai.skill</field>
+        <field name="inherit_id" ref="muk_ai_skills.view_muk_ai_skill_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='skill_type']" position="after">
+                <field name="category" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_muk_ai_skill_form" model="ir.ui.view">
+        <field name="name">muk.ai.skill.form.category</field>
+        <field name="model">muk_ai.skill</field>
+        <field name="inherit_id" ref="muk_ai_skills.view_muk_ai_skill_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='skill_type']" position="after">
+                <field
+                    name="category"
+                    readonly="not is_editable"
+                    invisible="skill_type != 'composer'"
+                />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

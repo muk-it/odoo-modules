@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai_chatter.AISessionBox">
+        <div class="o-mail-AISessionBox" t-if="props.open and state.loaded and state.total">
+            <div class="d-flex align-items-center">
+                <hr class="flex-grow-1"/>
+                <span class="p-3 fw-bold">
+                    AI Sessions
+                </span>
+                <hr class="flex-grow-1"/>
+            </div>
+            <div class="d-flex flex-column">
+                <div
+                    t-foreach="state.sessions"
+                    t-as="session"
+                    t-key="session.id"
+                    class="o-mail-AISessionBox-item d-flex align-items-center gap-2 px-2 py-1 cursor-pointer"
+                    t-att-title="tooltip(session)"
+                    t-on-click="() => this.openSession(session)"
+                >
+                    <span
+                        class="o-mail-AISessionBox-state d-flex align-items-center flex-shrink-0"
+                        t-att-class="stateBadge(session.state)"
+                    >
+                        <span class="o-mail-AISessionBox-dot"/>
+                    </span>
+                    <span class="o-mail-AISessionBox-name text-truncate flex-grow-1">
+                        <t t-esc="session.name"/>
+                    </span>
+                    <span
+                        class="o-mail-AISessionBox-date flex-shrink-0"
+                        t-att-title="session.create_date"
+                    >
+                        <t t-esc="relativeName(session.create_date)"/>
+                    </span>
+                </div>
+                <button
+                    t-if="hasMore"
+                    type="button"
+                    class="o-mail-AISessionBox-more btn btn-link btn-sm align-self-center"
+                    t-on-click="openAll"
+                >
+                    View all <t t-esc="state.total"/> sessions
+                </button>
+            </div>
+        </div>
+    </t>
+
+</templates>

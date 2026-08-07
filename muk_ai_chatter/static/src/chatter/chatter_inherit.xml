@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai_chatter.AISessionBoxList" t-inherit="mail.Chatter" t-inherit-mode="extension">
+        <xpath expr="//FileUploader[1]" position="before">
+            <button
+                t-if="aiSessions.total"
+                class="o-mail-Chatter-aiSessions btn btn-link text-action px-1 d-flex align-items-center"
+                t-att-class="{ 'my-2': !props.compactHeight, 'active': aiSessions.open }"
+                aria-label="AI Sessions"
+                title="AI Sessions"
+                t-on-click="toggleAISessions"
+            >
+                <span class="mk_icon_ai o-mail-Chatter-aiSessionsIcon me-1"/>
+                <sup t-esc="aiSessions.total"/>
+            </button>
+        </xpath>
+        <xpath expr="//SearchMessageResult" position="before">
+            <AISessionBox
+                t-if="state.thread and state.thread.model and state.thread.id"
+                threadModel="state.thread.model"
+                threadId="state.thread.id"
+                open="aiSessions.open"
+                onLoaded="(total) => this.aiSessions.total = total"
+            />
+        </xpath>
+    </t>
+
+</templates>

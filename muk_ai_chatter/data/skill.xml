@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="skill_compose_grammar" model="muk_ai.skill">
+        <field name="name">compose_fix_grammar</field>
+        <field name="label">Fix grammar</field>
+        <field name="skill_type">composer</field>
+        <field name="category">fix</field>
+        <field name="sequence">10</field>
+        <field name="icon">fa-check</field>
+        <field name="description">Correct spelling, grammar and punctuation, changing nothing else.</field>
+        <field name="user_ids" eval="[(5, 0, 0)]"/>
+        <field name="body">Correct the spelling, grammar and punctuation of the selected text. Change nothing else: keep the wording, the tone and the language it is written in.</field>
+    </record>
+
+    <record id="skill_compose_shorten" model="muk_ai.skill">
+        <field name="name">compose_shorten</field>
+        <field name="label">Shorten</field>
+        <field name="skill_type">composer</field>
+        <field name="category">rewrite</field>
+        <field name="sequence">20</field>
+        <field name="icon">fa-compress</field>
+        <field name="description">Say the same thing in fewer words.</field>
+        <field name="user_ids" eval="[(5, 0, 0)]"/>
+        <field name="body">Rewrite the selected text so it says the same thing in fewer words. Keep every fact and the tone it was written in.</field>
+    </record>
+
+    <record id="skill_compose_expand" model="muk_ai.skill">
+        <field name="name">compose_expand</field>
+        <field name="label">Expand</field>
+        <field name="skill_type">composer</field>
+        <field name="category">rewrite</field>
+        <field name="sequence">30</field>
+        <field name="icon">fa-expand</field>
+        <field name="description">Say it with more detail, on the same subject.</field>
+        <field name="user_ids" eval="[(5, 0, 0)]"/>
+        <field name="body">Rewrite the selected text with more detail, staying on the same subject. Add nothing that is not already implied by it or by the record.</field>
+    </record>
+
+    <record id="skill_compose_formal" model="muk_ai.skill">
+        <field name="name">compose_formal</field>
+        <field name="label">More formal</field>
+        <field name="skill_type">composer</field>
+        <field name="category">rewrite</field>
+        <field name="sequence">40</field>
+        <field name="icon">fa-black-tie</field>
+        <field name="description">Say it in a more formal register.</field>
+        <field name="user_ids" eval="[(5, 0, 0)]"/>
+        <field name="body">Rewrite the selected text in a more formal register, as a professional would write to a customer. Keep the content unchanged.</field>
+    </record>
+
+    <record id="skill_compose_friendly" model="muk_ai.skill">
+        <field name="name">compose_friendly</field>
+        <field name="label">More friendly</field>
+        <field name="skill_type">composer</field>
+        <field name="category">rewrite</field>
+        <field name="sequence">50</field>
+        <field name="icon">fa-smile-o</field>
+        <field name="description">Say it in a warmer, more personal tone.</field>
+        <field name="user_ids" eval="[(5, 0, 0)]"/>
+        <field name="body">Rewrite the selected text in a warmer, more personal tone, without becoming casual or padding it with pleasantries.</field>
+    </record>
+
+    <record id="skill_compose_translate" model="muk_ai.skill">
+        <field name="name">compose_translate</field>
+        <field name="label">Translate</field>
+        <field name="skill_type">composer</field>
+        <field name="category">transform</field>
+        <field name="sequence">60</field>
+        <field name="icon">fa-language</field>
+        <field name="description">Put it into the language the conversation is written in.</field>
+        <field name="user_ids" eval="[(5, 0, 0)]"/>
+        <field name="body">Translate the selected text into the language the rest of the conversation is written in. If that is the language it is already in, translate it into English instead. Return the translation only.</field>
+    </record>
+
+    <record id="skill_compose_reply" model="muk_ai.skill">
+        <field name="name">compose_reply</field>
+        <field name="label">Reply to the last message</field>
+        <field name="skill_type">composer</field>
+        <field name="category">generate</field>
+        <field name="sequence">70</field>
+        <field name="icon">fa-reply</field>
+        <field name="description">Answer the most recent message in the conversation.</field>
+        <field name="user_ids" eval="[(5, 0, 0)]"/>
+        <field name="body">Write a reply to the most recent message in this conversation. Answer what was actually asked, in the language it was written in, and leave open anything you cannot know.</field>
+    </record>
+
+    <record id="skill_compose_follow_up" model="muk_ai.skill">
+        <field name="name">compose_follow_up</field>
+        <field name="label">Write a follow-up</field>
+        <field name="skill_type">composer</field>
+        <field name="category">generate</field>
+        <field name="sequence">80</field>
+        <field name="icon">fa-clock-o</field>
+        <field name="description">Ask for what is still missing on this record.</field>
+        <field name="user_ids" eval="[(5, 0, 0)]"/>
+        <field name="body">Write a short follow-up message about this record, referring to what was last said and asking for what is still missing.</field>
+    </record>
+
+    <record id="skill_compose_summary" model="muk_ai.skill">
+        <field name="name">compose_summary</field>
+        <field name="label">Summarize the thread</field>
+        <field name="skill_type">composer</field>
+        <field name="category">generate</field>
+        <field name="sequence">90</field>
+        <field name="icon">fa-list-ul</field>
+        <field name="description">Retell the conversation as a message that reads on its own.</field>
+        <field name="user_ids" eval="[(5, 0, 0)]"/>
+        <field name="body">Summarize this conversation as a message a colleague can read on its own: what was asked, what was decided, and what is still open.</field>
+    </record>
+</odoo>

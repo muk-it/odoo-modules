@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai_chatter.ComposePanel">
+        <div class="o-mail-ComposePanel d-flex flex-column">
+
+            <div class="o-mail-ComposePanel-head d-flex align-items-center gap-2 px-3 py-2">
+                <span class="mk_icon_ai o-mail-ComposePanel-markIcon"/>
+                <div class="d-flex flex-column lh-sm me-auto o-min-width-0">
+                    <span class="fw-bolder text-truncate" t-esc="title"/>
+                    <small class="text-muted text-truncate" t-esc="subtitle"/>
+                </div>
+                <button class="btn btn-sm btn-link text-muted p-0 o-mail-ComposePanel-headBtn o-mail-ComposePanel-chat"
+                        t-on-click="onOpenInChat" title="Continue in the AI chat, where you can talk it through">
+                    <i class="fa fa-fw fa-external-link"/>
+                </button>
+                <button class="btn btn-sm btn-link text-muted p-0 o-mail-ComposePanel-headBtn o-mail-ComposePanel-close"
+                        t-on-click="() => this.props.close?.()" title="Close (Esc)">
+                    <i class="fa fa-fw fa-times"/>
+                </button>
+            </div>
+
+            <div class="o-mail-ComposePanel-body px-3 pb-3 pt-1">
+
+                <div t-if="state.phase === 'error'"
+                     class="o-mail-ComposePanel-error d-inline-flex align-items-center gap-1 mb-2 px-2 py-1 rounded-pill"
+                     t-att-title="state.error">
+                    <i class="fa fa-exclamation-circle"/>
+                    <span class="text-truncate" t-esc="errorLabel"/>
+                </div>
+
+                <t t-if="state.phase === 'idle' or state.phase === 'error'">
+                    <div t-if="isRewrite" class="o-mail-ComposePanel-quote mb-3 px-2 py-1 rounded small text-muted">
+                        <span t-esc="quoted"/>
+                    </div>
+                    <div class="o-mail-ComposePanel-actions d-flex rounded-pill overflow-hidden">
+                        <button t-foreach="groups" t-as="group" t-key="group.category"
+                                class="btn btn-sm o-mail-ComposePanel-action flex-fill text-truncate"
+                                t-att-class="state.opened === group.category ? 'o-active' : ''"
+                                t-att-title="group.label"
+                                t-on-click="() => this.onGroupClick(group)"
+                                t-esc="group.label"/>
+                    </div>
+
+                    <t t-if="openGroup">
+                        <div class="o-mail-ComposePanel-chips d-flex flex-wrap gap-1 mt-2">
+                            <button t-foreach="openGroup.skills" t-as="skill" t-key="skill.name"
+                                    class="btn btn-sm o-mail-ComposePanel-chip rounded-pill d-flex align-items-center gap-1"
+                                    t-att-title="skill.description"
+                                    t-on-click="() => this.onSkillClick(skill)">
+                                <i class="fa fa-fw" t-att-class="skill.icon"/>
+                                <span t-esc="skill.label"/>
+                            </button>
+                        </div>
+                        <t t-if="openGroup.modifiers">
+                            <div class="o-mail-ComposePanel-label text-uppercase text-muted mt-2 mb-1">Length</div>
+                            <div class="btn-group btn-group-sm w-100 mb-2" role="group">
+                                <button t-foreach="lengths" t-as="entry" t-key="entry.id"
+                                        class="btn o-mail-ComposePanel-length"
+                                        t-att-class="state.length === entry.id ? 'btn-primary' : 'btn-outline-secondary'"
+                                        t-on-click="() => this.setLength(entry.id)"
+                                        t-esc="entry.label"/>
+                            </div>
+                            <div class="o-mail-ComposePanel-label text-uppercase text-muted mb-1">Tone</div>
+                            <div class="btn-group btn-group-sm w-100" role="group">
+                                <button t-foreach="tones" t-as="entry" t-key="entry.id"
+                                        class="btn o-mail-ComposePanel-tone"
+                                        t-att-class="state.tone === entry.id ? 'btn-primary' : 'btn-outline-secondary'"
+                                        t-on-click="() => this.setTone(entry.id)"
+                                        t-esc="entry.label"/>
+                            </div>
+                        </t>
+                    </t>
+
+                    <div class="o-mail-ComposePanel-ask input-group input-group-sm mt-3">
+                        <input type="text" class="form-control o-mail-ComposePanel-custom"
+                               placeholder="Ask for something else…"
+                               t-model="state.custom"
+                               t-on-keydown="onCustomKeydown"/>
+                        <button class="btn btn-primary o-mail-ComposePanel-send"
+                                t-on-click="onCustomSubmit" t-att-disabled="!state.custom.trim()"
+                                title="Ask">
+                            <i class="fa fa-level-down fa-rotate-90"/>
+                        </button>
+                    </div>
+                </t>
+
+                <t t-if="isRunning">
+                    <div class="o-mail-ComposePanel-busy d-flex align-items-center gap-2 mb-2">
+                        <span class="o-mail-ComposePanel-pulse"/>
+                        <span class="fw-medium" t-esc="busyLabel"/>
+                        <button class="btn btn-sm btn-link text-muted ms-auto p-0 o-mail-ComposePanel-cancel"
+                                t-on-click="onCancel">Cancel</button>
+                    </div>
+                    <div t-if="state.streaming" class="o-mail-ComposePanel-stream rounded p-2" t-esc="state.streaming"/>
+                </t>
+
+                <t t-if="state.phase === 'preview'">
+                    <div t-if="diff" class="d-flex align-items-center gap-2 mb-1">
+                        <small class="text-uppercase text-muted">What changes</small>
+                        <small class="o-mail-ComposePanel-legend text-muted ms-auto">
+                            <del class="o-mail-ComposePanel-removed px-1">removed</del>
+                            <ins class="o-mail-ComposePanel-added px-1 ms-1">added</ins>
+                        </small>
+                    </div>
+                    <div t-if="diff" class="o-mail-ComposePanel-diff rounded p-2 mb-3">
+                        <t t-foreach="diff" t-as="part" t-key="part_index">
+                            <span t-if="part.type === 'same'" t-esc="part.value"/>
+                            <del t-if="part.type === 'removed'" class="o-mail-ComposePanel-removed" t-esc="part.value"/>
+                            <ins t-if="part.type === 'added'" class="o-mail-ComposePanel-added" t-esc="part.value"/>
+                        </t>
+                    </div>
+                    <div t-else="" class="o-mail-ComposePanel-result rounded p-2 mb-3" t-esc="state.result"/>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm btn-primary o-mail-ComposePanel-accept d-flex align-items-center gap-1"
+                                t-on-click="onAccept">
+                            <i class="fa fa-check"/>
+                            <span t-if="hasSelection">Replace selection</span>
+                            <span t-elif="isRewrite">Replace message</span>
+                            <span t-else="">Insert</span>
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary o-mail-ComposePanel-retry d-flex align-items-center gap-1"
+                                t-on-click="onRetry" title="Ask again for a different wording">
+                            <i class="fa fa-repeat"/>
+                            <span>Try again</span>
+                        </button>
+                        <button class="btn btn-sm btn-link text-muted ms-auto o-mail-ComposePanel-discard"
+                                t-on-click="onDiscard">Discard</button>
+                    </div>
+                </t>
+            </div>
+        </div>
+    </t>
+
+</templates>

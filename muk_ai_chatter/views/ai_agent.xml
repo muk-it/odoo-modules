@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_ai_agent_form" model="ir.ui.view">
+		<field name="name">muk_ai.agent.form.chatter</field>
+		<field name="model">muk_ai.agent</field>
+		<field name="inherit_id" ref="muk_ai.view_ai_agent_form"/>
+		<field name="arch" type="xml">
+			<xpath expr="//field[@name='approval_mode']/ancestor::group[1]" position="after">
+				<group string="Chatter">
+					<field
+                        name="mention_enabled"
+                        string="Answer Mentions"
+                        widget="boolean_toggle"
+                    />
+					<field name="partner_id" readonly="1"/>
+				</group>
+			</xpath>
+		</field>
+	</record>
+
+</odoo>
