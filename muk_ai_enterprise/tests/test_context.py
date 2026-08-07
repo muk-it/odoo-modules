@@ -102,6 +102,42 @@ class TestContext(BridgeTestCommon):
             session._render_system_prompt(session.agent_id.system_prompt or ''),
         )
 
+    def test_a_chat_linked_to_a_record_stands_in_for_a_view(self):
+        session = self._make_session('Mentioned Agent')
+        record = self.env['res.partner'].create({'name': 'Linked Partner'})
+        session.write({'res_model': record._name, 'res_id': record.id})
+        payload = session._record_context_payload()
+        self.assertEqual(payload.get('kind'), 'record')
+        self.assertEqual(payload.get('model'), record._name)
+        self.assertEqual(payload.get('id'), record.id)
+
+    def test_a_writing_helper_is_told_the_record_not_the_whole_of_it(self):
+        record = self.env['res.partner'].create({'name': 'Written About'})
+        snapshot = self.env['muk_ai.session'].open_for_composer(
+            interface_key='mail_composer',
+            res_model=record._name,
+            res_id=record.id,
+        )
+        session = self.env['muk_ai.session'].browse(snapshot['id'])
+        payload = session._record_context_payload()
+        self.assertEqual(payload.get('id'), record.id)
+        self.assertNotIn('ee_init_context', payload)
+        self.assertNotIn(
+            '<ee_ctx>',
+            session._render_system_prompt(session.agent_id.system_prompt or ''),
+        )
+
+    def test_a_chat_linked_to_nothing_stands_in_for_nothing(self):
+        session = self._make_session('Free Agent')
+        self.assertIsNone(session._record_context_payload())
+
+    def test_an_open_view_still_wins_over_the_linked_record(self):
+        session, record = self._make_session_with_record()
+        session.write({'res_model': 'res.users', 'res_id': self.env.user.id})
+        payload = session._record_context_payload()
+        self.assertEqual(payload.get('model'), record._name)
+        self.assertEqual(payload.get('id'), record.id)
+
     def test_rendered_prompt_contains_ee_context(self):
         session, _record = self._make_session_with_record()
         rendered = session._render_system_prompt(session.agent_id.system_prompt)

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_mail_compose_message_form" model="ir.ui.view">
+        <field name="name">mail.compose.message.form.muk.ai.enterprise</field>
+        <field name="model">mail.compose.message</field>
+        <field name="inherit_id" ref="ai.email_compose_message_wizard_form"/>
+        <field name="arch" type="xml">
+            <xpath
+                expr="//footer/field[@widget='mail_composer_chatgpt']"
+                position="replace"
+            />
+        </field>
+    </record>
+
+</odoo>

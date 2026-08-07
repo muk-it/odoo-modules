@@ -8,7 +8,7 @@
         AI dropdown as 'Open Odoo AI' — one icon, not two. Everything
         else keeps its existing behaviour.
     """,
-    'version': '19.0.1.0.14',
+    'version': '19.0.1.1.0',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -20,9 +20,12 @@
     'depends': [
         'ai',
         'muk_ai',
+        'muk_ai_chatter',
+        'muk_ai_skills',
     ],
     'data': [
         'views/ai_agent.xml',
+        'views/mail_compose_message.xml',
     ],
     'assets': {
         'web.assets_backend': [

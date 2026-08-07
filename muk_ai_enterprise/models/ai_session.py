@@ -122,9 +122,25 @@ class AiSession(models.Model):
                     return [str(item) for item in (ctx or []) if item]
         return []
 
+    def _record_context_payload(self) -> dict | None:
+        """Return the view context the Enterprise context is gathered from.
+
+        A chat started from a record — an agent mentioned in a chatter, a run
+        fired by an automation — never had a view on screen, so the record it
+        is linked to stands in for one. The same agent asked the same question
+        then knows the same things wherever it was asked.
+        """
+        if self.view_context:
+            return self.view_context
+        if not self.res_model or not self.res_id:
+            return None
+        return self._enrich_view_context(
+            {'kind': 'record', 'model': self.res_model, 'id': self.res_id}
+        )
+
     def _append_ee_record_context(self, rendered: str) -> str:
         """Append the rendered EE record context block to a system prompt."""
-        snippet = adapter.render_init_context(self.view_context)
+        snippet = adapter.render_init_context(self._record_context_payload())
         return f'{rendered}\n\n{snippet}' if snippet else rendered
 
     def _append_ee_rag(self, rendered: str) -> str:
