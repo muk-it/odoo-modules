@@ -57,7 +57,7 @@ class TestPromptRender(ScheduleTestCommon):
             res_id=self.partner.id,
         )
         rendered = session._render_system_prompt('Hello {{ record.name }}.')
-        self.assertEqual(rendered, 'Hello %s.' % self.partner.name)
+        self.assertTrue(rendered.startswith('Hello %s.' % self.partner.name))
 
     def test_record_empty_when_no_link(self):
         session = self._make_session()

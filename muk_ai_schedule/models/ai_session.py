@@ -257,7 +257,7 @@ class AISession(models.Model):
             if prompt:
                 session._enqueue_user_turn(prompt, [])
             else:
-                session.write({'state': 'running'})
+                session.write(session._turn_start_values())
                 session._publish_event('state', {'state': 'running'})
         if due and not config['test_enable']:
             self.env.cr.commit()

@@ -37,15 +37,22 @@ class MukAiSession extends models.Model {
 defineModels([MukAiSession]);
 
 /**
- * Install an inert bus mock so the widget can subscribe without a real bus.
+ * Install an inert bus mock that records the channels the widget follows.
+ * @returns {object} the channels added and deleted so far, in order
  */
 function mockBus() {
+    const channels = { added: [], deleted: [] };
     mockService('bus_service', {
         subscribe() {},
         unsubscribe() {},
-        addChannel() {},
-        deleteChannel() {},
+        addChannel(channel) {
+            channels.added.push(channel);
+        },
+        deleteChannel(channel) {
+            channels.deleted.push(channel);
+        },
     });
+    return channels;
 }
 
 /**
@@ -71,17 +78,18 @@ function freezeClock() {
  * The zone is pinned along with the date so that the absolute datetime the
  * widget renders does not depend on the zone the runner happens to carry.
  * @param {number} resId the session record to open
- * @returns {Promise<object>} the mounted form view
+ * @returns {Promise<object>} the mounted form view and the recorded channels
  */
 async function mountCountdown(resId) {
     mockDate(NOW, 0);
-    mockBus();
-    return mountView({
+    const channels = mockBus();
+    const view = await mountView({
         resModel: 'muk_ai.session',
         resId,
         type: 'form',
         arch: ARCH,
     });
+    return { view, channels };
 }
 
 /**
@@ -104,15 +112,15 @@ function makeRecord(resModel, isoUtc) {
  * Mount the field on a record stub over a mocked bus.
  * @param {string} resModel the model the field is bound to
  * @param {string|false} isoUtc the UTC target time, or false for an empty value
- * @returns {Promise<object>} the mounted component
+ * @returns {Promise<object>} the mounted component and the recorded channels
  */
 async function mountBareField(resModel, isoUtc) {
     mockDate(NOW, 0);
-    mockBus();
+    const channels = mockBus();
     const field = await mountWithCleanup(ScheduleCountdownField, {
         props: { name: 'resume_at', record: makeRecord(resModel, isoUtc) },
     });
-    return { field };
+    return { field, channels };
 }
 
 test('an empty target renders the em dash', async () => {
@@ -215,4 +223,15 @@ test('the field only listens to the bus on the session model', async () => {
     expect(typeof field.busHandler).toBe('function');
     const other = await mountBareField('res.partner', '2026-03-01T13:00:00');
     expect(other.field.busHandler).toBe(null);
+    expect(other.channels.added).not.toInclude('muk_ai.session_42');
+});
+
+test('the field subscribes to the bound session channel', async () => {
+    const { channels } = await mountBareField('muk_ai.session', '2026-03-01T13:00:00');
+    expect(channels.added).toInclude('muk_ai.session_42');
+});
+
+test('the form view subscribes to the channel of the session it opens', async () => {
+    const { channels } = await mountCountdown(4);
+    expect(channels.added).toInclude('muk_ai.session_4');
 });

@@ -6,6 +6,7 @@ import { registry } from '@web/core/registry';
 import { useService } from '@web/core/utils/hooks';
 import { standardFieldProps } from '@web/views/fields/standard_field_props';
 
+import { useSessionChannel } from '@muk_ai/chat/session/session_channel';
 import { formatTimestamp } from '@muk_ai/chat/utils';
 
 const { DateTime } = luxon;
@@ -18,6 +19,11 @@ const DAY = 24 * HOUR;
 /**
  * Datetime field that renders a live ticking countdown to the target time,
  * refreshing when the bound session transitions back to running.
+ *
+ * A session publishes on its own bus channel, so the field follows whichever
+ * session the form shows and still filters the events it receives: the bus
+ * hands every notification of a type to every subscriber of that type, no
+ * matter which channel delivered it.
  */
 export class ScheduleCountdownField extends Component {
     static template = 'muk_ai_schedule.ScheduleCountdownField';
@@ -27,6 +33,7 @@ export class ScheduleCountdownField extends Component {
         this.intervalId = null;
         this.busHandler = null;
         this.bus = useService('bus_service');
+        useSessionChannel(() => this.sessionId);
         onMounted(() => {
             this.intervalId = window.setInterval(() => {
                 this.state.tick += 1;
@@ -46,6 +53,11 @@ export class ScheduleCountdownField extends Component {
                 this.busHandler = null;
             }
         });
+    }
+    /** Id of the session the field is bound to, or null on any other record. */
+    get sessionId() {
+        const record = this.props.record;
+        return record.resModel === 'muk_ai.session' ? record.resId || null : null;
     }
     get value() {
         const raw = this.props.record.data[this.props.name];
@@ -117,7 +129,7 @@ export class ScheduleCountdownField extends Component {
         return formatTimestamp(target.toUTC().toISO());
     }
     _onBusEvent(event) {
-        if (!event || event.session_id !== this.props.record.resId) {
+        if (!event || event.session_id !== this.sessionId) {
             return;
         }
         if (event.type !== 'state') {
