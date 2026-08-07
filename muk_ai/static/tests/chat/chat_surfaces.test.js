@@ -61,6 +61,7 @@ function baseMocks({ events = [], record = {} } = {}) {
     onRpc('muk_ai.session', 'get_snapshot', () => snapshotWith(events));
     onRpc('muk_ai.agent', 'search_read', () => []);
     onRpc('muk_ai.space', 'fetch_spaces', () => []);
+    onRpc('muk_ai.space', 'fetch_general_domain', () => [['space_id', '=', false]]);
     const opened = [];
     mockService('muk_ai.chat_window', {
         state: { windows: [] },
@@ -261,12 +262,36 @@ test('an ask block switches between the human and technical view', async () => {
 
 test('a session owned by somebody else is read only', async () => {
     const { chat } = await mountChat({ record: { user_id: [4242, 'Someone'] } });
-    expect(chat.isOwner).toBe(false);
-    expect(chat.canSend).toBe(false);
-    expect(chat.canAttach).toBe(false);
-    expect(chat.canStop).toBe(false);
-    expect(chat.composerDisabled).toBe(true);
-    expect(String(chat.inputPlaceholder)).toMatch(/Read only/);
+    const session = chat.session;
+    expect(session.state.readonly).toBe(true);
+    expect(session.canWrite()).toBe(false);
+    expect(session.canSend()).toBe(false);
+    expect(session.canAttach()).toBe(false);
+    expect(session.canStop()).toBe(false);
+    expect(session.canRegenerate()).toBe(false);
+    expect(queryFirst('.mk_composer_readonly')).not.toBe(null);
+    expect(queryFirst('.mk_composer_row')).toBe(null);
+});
+
+test('every write action of a read-only session is a no-op', async () => {
+    const { chat } = await mountChat({ record: { user_id: [4242, 'Someone'] } });
+    let calls = 0;
+    onRpc('muk_ai.session', 'set_approval_mode', () => {
+        calls++;
+        return snapshotWith([]);
+    });
+    onRpc('muk_ai.session', 'write', () => {
+        calls++;
+        return true;
+    });
+    chat.session.state.input = 'take over';
+    await chat.session.onSend();
+    await chat.session.cycleApprovalMode();
+    await chat.session.onSetAgent(3);
+    await chat.session.onRegenerate();
+    await animationFrame();
+    expect(calls).toBe(0);
+    expect(chat.session.state.events).toHaveLength(0);
 });
 
 test('popping out on a small screen opens the full-page action instead', async () => {

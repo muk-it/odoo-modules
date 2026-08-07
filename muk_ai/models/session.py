@@ -14,7 +14,7 @@ import psycopg2
 import urllib3
 from markupsafe import Markup, escape
 
-from odoo import SUPERUSER_ID, _, api, fields, models, modules, release
+from odoo import SUPERUSER_ID, Command, _, api, fields, models, modules, release
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.fields import Domain
 from odoo.http import request
@@ -134,6 +134,20 @@ class AISession(models.Model):
         required=True,
         default=lambda self: self.env.user,
         index=True,
+    )
+
+    share_user_ids = fields.Many2many(
+        comodel_name='res.users',
+        relation='muk_ai_session_share_user_rel',
+        column1='session_id',
+        column2='user_id',
+        string='Shared With',
+        help=(
+            'Users who may read this chat. They see the whole transcript, '
+            'including the tool output it gathered under the owner rights, '
+            'and cannot write to it or carry it on.'
+        ),
+        copy=False,
     )
 
     # ----------------------------------------------------------
@@ -426,6 +440,12 @@ class AISession(models.Model):
         string='Context Window',
         help="Effective context window size for the session's active model.",
     )
+
+    # ----------------------------------------------------------
+    # Index
+    # ----------------------------------------------------------
+
+    _owner_recent_idx = models.Index('(user_id, create_date DESC)')
 
     # ----------------------------------------------------------
     # Helper Resolvers
@@ -854,9 +874,45 @@ class AISession(models.Model):
     # Helper Bus
     # ----------------------------------------------------------
 
-    def _bus_channel(self) -> models.BaseModel:
-        """Return the partner used as the session's bus channel."""
-        return self.user_id.partner_id
+    def _audience_partners(self) -> models.BaseModel:
+        """Return the partners whose chat list shows this session."""
+        return (self.user_id | self.share_user_ids).partner_id
+
+    def _notify_share_change(self, previous: models.BaseModel) -> None:
+        """Tell the people a chat was just given to, or taken from.
+
+        A reader who lost it holds a live subscription until something makes
+        their surface let go, so they are told the way a deletion is told:
+        the chat leaves their list, and with it the channel it streamed on.
+        Someone handed the chat itself is still in the audience, so they are
+        not told it went away.
+        """
+        for partner in previous.partner_id - self._audience_partners():
+            self.env['bus.bus']._sendone(
+                partner,
+                'muk_ai.session_state',
+                {'session_id': self.id, 'deleted': True},
+            )
+        for partner in (self.share_user_ids - previous).partner_id:
+            self.env['bus.bus']._sendone(
+                partner,
+                'muk_ai.session_state',
+                {
+                    'session_id': self.id,
+                    'name': self.name,
+                    'state': self.state,
+                },
+            )
+
+    def _bus_send_audience(self, notification_type: str, message: dict) -> None:
+        """Notify everyone whose chat list shows this session.
+
+        The transcript rides the session's own channel, which only whoever
+        opened it subscribes to; what belongs in a sidebar that is not open
+        has to reach its people directly instead.
+        """
+        for partner in self._audience_partners():
+            self.env['bus.bus']._sendone(partner, notification_type, message)
 
     def _public_pending_ask(self, pending: dict | None = None) -> dict | None:
         """Return the pending ask payload stripped of internal keys."""
@@ -915,7 +971,7 @@ class AISession(models.Model):
             },
         )
         if event_type == 'state':
-            self._bus_send(
+            self._bus_send_audience(
                 'muk_ai.session_state',
                 {
                     'session_id': self.id,
@@ -925,7 +981,7 @@ class AISession(models.Model):
             )
             self._notify_state_transition(payload)
         elif event_type == 'rename':
-            self._bus_send(
+            self._bus_send_audience(
                 'muk_ai.session_state',
                 {
                     'session_id': self.id,
@@ -979,7 +1035,8 @@ class AISession(models.Model):
             title, message = self._notification_summary(new_state, payload, ask_kind)
             self.notification_unread = True
             with suppress(Exception):
-                self._bus_send(
+                self.env['bus.bus']._sendone(
+                    self.user_id.partner_id,
                     'muk_ai.session_notification',
                     {
                         'session_id': self.id,
@@ -3688,7 +3745,11 @@ class AISession(models.Model):
         return snapshot
 
     def dismiss_notifications(self) -> bool:
-        """Clear the attention flag and mark inbox notifications read."""
+        """Clear the attention flag and mark inbox notifications read.
+
+        The flag belongs to the owner, so reading a chat somebody shared with
+        you leaves theirs alone rather than attempting a write you may not make.
+        """
         if partner := self.env.user.partner_id:
             messages = (
                 self.env['mail.message']
@@ -3703,7 +3764,12 @@ class AISession(models.Model):
             )
             if messages:
                 messages.with_user(self.env.user).set_message_done()
-            self.filtered('notification_unread').notification_unread = False
+            owned = self.filtered(
+                lambda session: (
+                    session.user_id == self.env.user and session.notification_unread
+                )
+            )
+            owned.notification_unread = False
             self._push_notification_badge(self.env.user)
             return True
         return False
@@ -4001,8 +4067,10 @@ class AISession(models.Model):
     def fork_at_event(self, event_id: int) -> int:
         """Fork a new session copied up to the given event; return its id.
 
+        :raise AccessError: when the caller may only read the session
         :raise UserError: when the session is running or compacting
         """
+        self.check_access('write')
         if self.state in ('running', 'compacting'):
             raise UserError(_('Cannot fork while the session is running.'))
         target = self._resolve_event(event_id)
@@ -4246,7 +4314,8 @@ class AISession(models.Model):
         """Transfer ownership of this session to another internal user.
 
         The chat leaves the space it was filed into, as a space belongs to
-        one user.
+        one user. Whoever gives it away stays on as a reader, or they would
+        lose sight of the chat the moment they handed it over.
 
         :param new_user_id: the target ``res.users`` id
         :raise AccessError: when the caller is not the owner or an admin
@@ -4270,6 +4339,10 @@ class AISession(models.Model):
                 'user_id': target.id,
                 'space_id': False,
                 'notification_unread': True,
+                'share_user_ids': [
+                    Command.link(old_owner.id),
+                    Command.unlink(target.id),
+                ],
             }
         )
         session._publish_event('state', {'state': session.state})
@@ -4349,7 +4422,7 @@ class AISession(models.Model):
         records = super().create(vals_list)
         for record in records:
             with suppress(Exception):
-                record._bus_send(
+                record._bus_send_audience(
                     'muk_ai.session_state',
                     {
                         'session_id': record.id,
@@ -4369,11 +4442,17 @@ class AISession(models.Model):
         ``switch_agent`` MCP tool with one consistent marker.
 
         Filing an unread chat also refreshes the badge, which carries the
-        per-space unread counts.
+        per-space unread counts, and changing who a chat is shared with tells
+        the people it was given to or taken from.
         """
         previous = (
             {record.id: record.agent_id for record in self}
             if 'agent_id' in vals
+            else None
+        )
+        shared = (
+            {record.id: record.share_user_ids for record in self}
+            if 'share_user_ids' in vals
             else None
         )
         owners = (
@@ -4384,6 +4463,9 @@ class AISession(models.Model):
         result = super().write(vals)
         for owner in owners:
             self._push_notification_badge(owner)
+        if shared is not None:
+            for record in self:
+                record._notify_share_change(shared.get(record.id))
         if previous is None:
             return result
         for record in self:
@@ -4410,7 +4492,7 @@ class AISession(models.Model):
         users = self.user_id
         for record in self:
             with suppress(Exception):
-                record._bus_send(
+                record._bus_send_audience(
                     'muk_ai.session_state',
                     {'session_id': record.id, 'deleted': True},
                 )

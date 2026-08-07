@@ -229,18 +229,6 @@ export class ChatWindow extends Component {
     get isCompact() {
         return true;
     }
-    get canSend() {
-        return this.session.canSend();
-    }
-    get canAttach() {
-        return this.session.canAttach();
-    }
-    get canStop() {
-        return this.session.canStop();
-    }
-    get composerDisabled() {
-        return this.session.composerDisabled();
-    }
     get isQueueing() {
         return this.session.isQueueing();
     }

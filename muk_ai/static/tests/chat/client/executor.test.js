@@ -1,23 +1,34 @@
-import { describe, expect, test } from '@odoo/hoot';
+import { afterEach, describe, expect, test } from '@odoo/hoot';
 import { waitUntil } from '@odoo/hoot-dom';
 
 import { makeClientToolListener, parseArguments } from '@muk_ai/chat/client/executor';
+import {
+    registerOpenSession,
+    unregisterOpenSession,
+} from '@muk_ai/chat/session/open_sessions';
 
 describe.current.tags('muk_ai');
+
+let opened = [];
+afterEach(() => {
+    opened.forEach(unregisterOpenSession);
+    opened = [];
+});
+
+function openChats(sessionIds) {
+    sessionIds.forEach(registerOpenSession);
+    opened = [...opened, ...sessionIds];
+}
 
 function makeHarness({ sessionIds = [11], execute } = {}) {
     const calls = [];
     const executed = [];
+    openChats(sessionIds);
     const listener = makeClientToolListener({
         orm: {
             call: async (model, method, args, kwargs) => {
                 calls.push({ model, method, args, kwargs });
                 return {};
-            },
-        },
-        chatWindow: {
-            get sessionIds() {
-                return sessionIds;
             },
         },
         contains: (name) => name === 'adjust_search',
@@ -117,4 +128,21 @@ test('rejects corrupt arguments without executing the handler', async () => {
     expect(executed).toHaveLength(0);
     expect(calls[0].method).toBe('reject_client_action');
     expect(calls[0].kwargs.reason).toMatch(/corrupt or truncated/);
+});
+
+test('any chat surface showing the session may answer, not just the dock', async () => {
+    const { listener, executed } = makeHarness({ sessionIds: [] });
+    registerOpenSession(11);
+    opened.push(11);
+    listener(actionEvent(undefined, { call_id: 'c-fullscreen' }));
+    await waitUntil(() => executed.length === 1);
+    expect(executed[0].name).toBe('adjust_search');
+});
+
+test('a tab showing no chat for the session stays out of it', async () => {
+    const { listener, calls, executed } = makeHarness({ sessionIds: [] });
+    listener(actionEvent(undefined, { call_id: 'c-elsewhere' }));
+    await waitUntil(() => true);
+    expect(executed).toHaveLength(0);
+    expect(calls).toHaveLength(0);
 });

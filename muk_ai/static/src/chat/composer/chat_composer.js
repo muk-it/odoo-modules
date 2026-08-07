@@ -1,5 +1,7 @@
 import { Component, useEffect, useRef, useState } from '@odoo/owl';
 
+import { _t } from '@web/core/l10n/translation';
+
 import { AttachmentCard } from '@muk_ai/core/attachment/attachment_card';
 import { SLASH_COMMANDS } from '@muk_ai/chat/session/use_ai_session';
 
@@ -17,14 +19,20 @@ const ACCEPT = [
     '.md',
 ].join(',');
 
-/** Message composer: text input, attachments, slash commands, and send/stop. */
+/**
+ * Message composer: text input, attachments, slash commands, and send/stop.
+ *
+ * Read only, it states so instead of drawing its input row, so every control
+ * an extension contributes to that row goes with it.
+ */
 export class ChatComposer extends Component {
     static template = 'muk_ai.ChatComposer';
     static components = { AttachmentCard };
     static props = {
         value: { type: String },
         placeholder: { type: String },
-        disabled: { type: Boolean, optional: true },
+        readonly: { type: Boolean, optional: true },
+        readonlyOwner: { type: String, optional: true },
         canSend: { type: Boolean, optional: true },
         canStop: { type: Boolean, optional: true },
         isQueueing: { type: Boolean, optional: true },
@@ -42,7 +50,8 @@ export class ChatComposer extends Component {
         focusToken: { type: [Number, String], optional: true },
     };
     static defaultProps = {
-        disabled: false,
+        readonly: false,
+        readonlyOwner: '',
         canSend: false,
         canStop: false,
         isQueueing: false,
@@ -120,11 +129,20 @@ export class ChatComposer extends Component {
             (a.name || '').toLowerCase().includes(query),
         );
     }
+    /**
+     * State the chat is somebody else's, naming them when they are known.
+     * @returns {string} the notice shown in place of the input row
+     */
+    get readonlyNotice() {
+        return this.props.readonlyOwner
+            ? _t('Read only — %s shared this chat with you.', this.props.readonlyOwner)
+            : _t('Read only — this chat was shared with you.');
+    }
     get menuItems() {
         return this.isAgentMode ? this.agentMatches : this.slashCommands;
     }
     get showSlashMenu() {
-        return !this.props.disabled && this.menuItems.length > 0;
+        return this.menuItems.length > 0;
     }
     onKeydown(event) {
         if (this.showSlashMenu) {

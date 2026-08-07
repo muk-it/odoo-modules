@@ -11,21 +11,19 @@ import './adjust_search';
  * Subscribes to the AI session event bus and, whenever a session pauses on
  * a client action whose tool is registered in `muk_ai.client_tools`, runs
  * the handler against this tab's webclient and posts the result back via
- * `submit_client_result` (or `reject_client_action` on failure). Only the
- * tab holding the session's chat window answers - that tab owns the view
- * the user is talking about.
+ * `submit_client_result` (or `reject_client_action` on failure). Only a tab
+ * showing that chat answers - it owns the view the user is talking about.
  */
 export const webclientClientToolsService = {
-    dependencies: ['bus_service', 'orm', 'muk_ai.chat_window'],
+    dependencies: ['bus_service', 'orm'],
     /**
      * @param {object} env the service environment
-     * @param {object} deps resolved dependencies ({bus_service, orm, chat window})
+     * @param {object} deps resolved dependencies ({bus_service, orm})
      * @returns {object} the (empty) public service API
      */
-    start(env, { bus_service: bus, orm, 'muk_ai.chat_window': chatWindow }) {
+    start(env, { bus_service: bus, orm }) {
         const onEvent = makeClientToolListener({
             orm,
-            chatWindow,
             contains: (name) => webclientClientTools.contains(name),
             execute: (name, args) => webclientClientTools.get(name)(args, env),
         });

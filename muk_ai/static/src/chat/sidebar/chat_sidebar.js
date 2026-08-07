@@ -3,6 +3,7 @@ import { Component, useRef, useState } from '@odoo/owl';
 import { _t } from '@web/core/l10n/translation';
 import { browser } from '@web/core/browser/browser';
 import { ConfirmationDialog } from '@web/core/confirmation_dialog/confirmation_dialog';
+import { user } from '@web/core/user';
 import { useService } from '@web/core/utils/hooks';
 import { useSortable } from '@web/core/utils/sortable_owl';
 
@@ -86,7 +87,7 @@ export class ChatSidebar extends Component {
         });
         useSortable({
             ref: this.listRef,
-            elements: '.mk_sidebar_item',
+            elements: '.mk_sidebar_item:not(.mk_sidebar_shared)',
             groups: '.mk_space_group',
             connectGroups: true,
             cursor: 'grabbing',
@@ -306,8 +307,35 @@ export class ChatSidebar extends Component {
         this.props.onSessionFile(sessionId, spaceId);
     }
 
+    /**
+     * Whether the chat is the caller's own, and so theirs to rename or drop.
+     * @param {object} session the sidebar entry
+     * @returns {boolean}
+     */
+    isOwn(session) {
+        const owner = Array.isArray(session.user_id)
+            ? session.user_id[0]
+            : session.user_id;
+        return !owner || owner === user.userId;
+    }
     isUnread(sessionId) {
         return (this.props.unreadIds || []).includes(sessionId);
+    }
+    /**
+     * The users a chat is shared with, capped to what the row can carry.
+     * @param {object} session the sidebar entry
+     * @returns {number[]} user ids, at most three
+     */
+    sharedWith(session) {
+        return (session.share_user_ids || []).slice(0, 3);
+    }
+    /**
+     * @param {object} session the sidebar entry
+     * @returns {string} the tooltip naming how many may read the chat
+     */
+    sharedTitle(session) {
+        const count = (session.share_user_ids || []).length;
+        return _t('Shared with %s person(s) — they can read it', count);
     }
     statusLabel(state) {
         return (

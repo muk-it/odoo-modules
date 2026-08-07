@@ -1,7 +1,12 @@
 import { describe, expect, test } from '@odoo/hoot';
 import { animationFrame } from '@odoo/hoot-mock';
 import { Component, xml } from '@odoo/owl';
-import { mockService, mountWithCleanup, onRpc } from '@web/../tests/web_test_helpers';
+import {
+    mockService,
+    mountWithCleanup,
+    onRpc,
+    serverState,
+} from '@web/../tests/web_test_helpers';
 import { defineMailModels } from '@mail/../tests/mail_test_helpers';
 
 import { useAiSession } from '@muk_ai/chat/session/use_ai_session';
@@ -29,7 +34,7 @@ const SESSION_RECORD = {
     last_input_tokens: 0,
     context_window: 8000,
     total_cost: 0,
-    user_id: [4, 'Owner'],
+    user_id: [serverState.userId, 'Owner'],
     agent_id: false,
     override_approval_mode: false,
     effective_approval_mode: 'ask',
@@ -242,7 +247,7 @@ test('/handover opens the user picker prefiltered by the typed name', async () =
     expect(dialogs[0].props.domain).toEqual([
         ['share', '=', false],
         ['active', '=', true],
-        ['id', '!=', 4],
+        ['id', '!=', serverState.userId],
         ['name', 'ilike', 'Alice'],
     ]);
     expect(session.state.input).toBe('');
@@ -258,7 +263,7 @@ test('bare /handover opens the picker without a name filter', async () => {
     expect(dialogs[0].props.domain).toEqual([
         ['share', '=', false],
         ['active', '=', true],
-        ['id', '!=', 4],
+        ['id', '!=', serverState.userId],
     ]);
 });
 

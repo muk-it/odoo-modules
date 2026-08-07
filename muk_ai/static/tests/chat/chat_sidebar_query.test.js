@@ -67,6 +67,7 @@ function baseMocks() {
     onRpc('muk_ai.session', 'get_snapshot', () => SNAPSHOT);
     onRpc('muk_ai.agent', 'search_read', () => []);
     onRpc('muk_ai.space', 'fetch_spaces', () => []);
+    onRpc('muk_ai.space', 'fetch_general_domain', () => [['space_id', '=', false]]);
     mockService('muk_ai.chat_window', {
         state: { windows: [] },
         open: () => {},
@@ -315,4 +316,39 @@ test('a deleted session is dropped from the sidebar and the next one opens', asy
     await animationFrame();
     expect(chat.state.sessions.map((s) => s.id)).toEqual([2]);
     expect(chat.session.state.sessionId).toBe(2);
+});
+
+test('a chat a space collects never lands in the loose list', async () => {
+    baseMocks();
+    // the shared space claims it, so the general domain excludes it
+    onRpc('muk_ai.session', 'search_read', ({ kwargs }) => {
+        const claimed = JSON.stringify(kwargs.domain).includes('"space_id"');
+        return claimed ? [] : makePage(2);
+    });
+    const chat = await mountWithCleanup(AIChat, { props: {} });
+    const before = chat.state.sessions.length;
+    await chat._fetchSidebarSession(99999);
+    expect(chat.state.sessions.length).toBe(before);
+    expect(chat.state.sessions.some((s) => s.id === 99999)).toBe(false);
+});
+
+test('a loose chat the sidebar has not seen is still taken in', async () => {
+    baseMocks();
+    onRpc('muk_ai.session', 'search_read', ({ kwargs }) => {
+        const byId = kwargs.domain.find((d) => d[0] === 'id' && d[1] === '=');
+        if (byId) {
+            return [
+                {
+                    id: 4242,
+                    name: 'Arrived live',
+                    state: 'done',
+                    create_date: '2026-04-28 10:00:00',
+                },
+            ];
+        }
+        return makePage(2);
+    });
+    const chat = await mountWithCleanup(AIChat, { props: {} });
+    await chat._fetchSidebarSession(4242);
+    expect(chat.state.sessions.some((s) => s.id === 4242)).toBe(true);
 });

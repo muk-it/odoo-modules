@@ -1,4 +1,5 @@
 import { describe, expect, test } from '@odoo/hoot';
+import { queryFirst } from '@odoo/hoot-dom';
 import { animationFrame } from '@odoo/hoot-mock';
 import {
     mockService,
@@ -120,6 +121,29 @@ async function mountWindow({ minimized = false, record = {} } = {}) {
     await animationFrame();
     return { win, events, closed };
 }
+
+test('the popout of a session owned by somebody else is read only', async () => {
+    const { win } = await mountWindow({ record: { user_id: [4242, 'Someone'] } });
+    expect(win.session.state.readonly).toBe(true);
+    expect(win.session.canSend()).toBe(false);
+    expect(win.session.canAttach()).toBe(false);
+    expect(win.session.canStop()).toBe(false);
+    expect(queryFirst('.mk_composer_readonly')).not.toBe(null);
+    expect(queryFirst('.mk_composer_row')).toBe(null);
+});
+
+test('a read-only popout ignores pasted files', async () => {
+    const { win } = await mountWindow({ record: { user_id: [4242, 'Someone'] } });
+    let calls = 0;
+    onRpc('muk_ai.session', 'upload_attachments', () => {
+        calls++;
+        return [];
+    });
+    pasteFiles(document.body, [new File(['x'], 'note.txt', { type: 'text/plain' })]);
+    await animationFrame();
+    expect(calls).toBe(0);
+    expect(win.session.state.pendingAttachments).toHaveLength(0);
+});
 
 test('pasting a file into the window uploads it as an attachment', async () => {
     const { win } = await mountWindow();

@@ -213,14 +213,16 @@ export function approvalPill(state) {
         icon: isOff ? 'fa-bolt' : 'fa-shield',
         className: `${isOff ? 'mk_approval_bypass' : 'mk_approval_ask'}${
             override ? ' mk_approval_override' : ''
-        }`,
-        tooltip: isOff
-            ? override
-                ? _t('Bypass (override). Click to cycle.')
-                : _t('Bypass (from agent). Click to cycle.')
-            : override
-              ? _t('Ask before risky writes (override). Click to cycle.')
-              : _t('Ask before risky writes (from agent). Click to cycle.'),
+        }${state.readonly ? ' disabled' : ''}`,
+        tooltip: state.readonly
+            ? _t('Approvals of a shared chat cannot be changed')
+            : isOff
+              ? override
+                  ? _t('Bypass (override). Click to cycle.')
+                  : _t('Bypass (from agent). Click to cycle.')
+              : override
+                ? _t('Ask before risky writes (override). Click to cycle.')
+                : _t('Ask before risky writes (from agent). Click to cycle.'),
     };
 }
 

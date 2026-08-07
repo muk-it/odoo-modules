@@ -486,7 +486,7 @@ class TestAiSession(AITestCommon):
         events = [
             message
             for target, notification_type, message in captured
-            if notification_type == 'muk_ai.event' and target == partner
+            if notification_type == 'muk_ai.event' and target == self.session
         ]
         self.assertTrue(events)
         self.assertTrue(

@@ -1,3 +1,5 @@
+import { isChatOpen } from '@muk_ai/chat/session/open_sessions';
+
 /**
  * Parse a client-action arguments payload into a plain object.
  * The bus carries arguments either as a JSON string or an object.
@@ -34,13 +36,12 @@ export function parseArguments(raw) {
  *
  * @param {object} spec the executor specification
  * @param {object} spec.orm the orm service
- * @param {object} spec.chatWindow the `muk_ai.chat_window` service
  * @param {Function} spec.contains `(name) => boolean` tool-name filter
  * @param {Function} spec.execute `async (name, args) => result` tool runner
  * @param {Function} [spec.defer] `() => ms` optional pre-run delay provider
  * @returns {Function} the bus event listener
  */
-export function makeClientToolListener({ orm, chatWindow, contains, execute, defer }) {
+export function makeClientToolListener({ orm, contains, execute, defer }) {
     const handled = new Set();
 
     async function dispatch(sessionId, callId, name, rawArgs) {
@@ -102,7 +103,7 @@ export function makeClientToolListener({ orm, chatWindow, contains, execute, def
         if (!contains(payload.name) || handled.has(payload.call_id)) {
             return;
         }
-        if (!(chatWindow.sessionIds || []).includes(event.session_id)) {
+        if (!isChatOpen(event.session_id)) {
             return;
         }
         handled.add(payload.call_id);

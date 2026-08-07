@@ -22,6 +22,7 @@ import { DropdownItem } from '@web/core/dropdown/dropdown_item';
 
 import { toFileModel, toInlineImageFile } from '@muk_ai/core/attachment/attachment';
 import { AttachmentCard } from '@muk_ai/core/attachment/attachment_card';
+import { AIChatShareUsers } from '@muk_ai/chat/share/share_users';
 import { useNotificationBadge } from '@muk_ai/core/notification_badge';
 import {
     approvalPill,
@@ -69,6 +70,18 @@ import {
 import { seedSessionContext } from '@muk_ai/views/context';
 
 export const SESSION_PAGE_SIZE = 20;
+
+/** Session fields every sidebar list reads. */
+const SIDEBAR_SESSION_FIELDS = [
+    'id',
+    'name',
+    'state',
+    'create_date',
+    'space_id',
+    'share_user_ids',
+    'user_id',
+];
+
 export const SPACE_PAGE_SIZE = 10;
 const SESSION_SEARCH_LIMIT = 100;
 const SESSION_SEARCH_DEBOUNCE_MS = 250;
@@ -100,6 +113,7 @@ export class AIChat extends Component {
         SourceList,
         Dropdown,
         DropdownItem,
+        AIChatShareUsers,
     };
     static props = ['*'];
     get suggestions() {
@@ -138,6 +152,7 @@ export class AIChat extends Component {
             loading: true,
             sessions: [],
             spaces: [],
+            generalDomain: null,
             spaceSessions: {},
             sessionsOffset: 0,
             sessionsHasMore: false,
@@ -187,11 +202,8 @@ export class AIChat extends Component {
             () => this.session.canAttach(),
         );
         onWillStart(async () => {
-            await Promise.all([
-                this._loadSessions(),
-                this._loadSpaces(),
-                this.session.loadAgents(),
-            ]);
+            await this._loadSpaces();
+            await Promise.all([this._loadSessions(), this.session.loadAgents()]);
             this._connectUserBus();
             const requested = this._getRequestedSessionId();
             const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
@@ -291,10 +303,15 @@ export class AIChat extends Component {
         this.fileViewer.open(toInlineImageFile(src));
     }
     /**
-     * Load the spaces shown in the sidebar tree.
+     * Load the spaces shown in the sidebar tree, and what falls outside them.
      */
     async _loadSpaces() {
-        this.state.spaces = await this.orm.call('muk_ai.space', 'fetch_spaces', []);
+        const [spaces, generalDomain] = await Promise.all([
+            this.orm.call('muk_ai.space', 'fetch_spaces', []),
+            this.orm.call('muk_ai.space', 'fetch_general_domain', []),
+        ]);
+        this.state.spaces = spaces;
+        this.state.generalDomain = generalDomain;
     }
     /**
      * Load a page of the chats of one space into its branch of the tree.
@@ -314,7 +331,9 @@ export class AIChat extends Component {
         const filtered =
             unreadOnly === null ? !!(branch && branch.unreadOnly) : unreadOnly;
         const domain = [
+            '|',
             ['user_id', '=', user.userId],
+            ['share_user_ids', 'in', [user.userId]],
             ...space.session_domain,
             ...(filtered ? [['notification_unread', '=', true]] : []),
         ];
@@ -324,7 +343,7 @@ export class AIChat extends Component {
         const page = await this.orm.searchRead(
             'muk_ai.session',
             domain,
-            ['id', 'name', 'state', 'create_date', 'space_id'],
+            SIDEBAR_SESSION_FIELDS,
             { limit: SPACE_PAGE_SIZE, offset, order: 'create_date DESC' },
         );
         if (this._spaceLoadSeq[spaceId] !== seq) {
@@ -340,13 +359,18 @@ export class AIChat extends Component {
         };
     }
     /**
-     * The chats of the current user that belong to no space.
+     * The chats of the current user that no space collects.
+     *
+     * The exclusions come from the server, which is the only side that knows
+     * which spaces exist: a space added by another module takes its chats out
+     * of this list without anything here having to hear about it.
+     *
      * @returns {Array} a search domain on `muk_ai.session`
      */
     get ownSessionsDomain() {
         return [
             ['user_id', '=', user.userId],
-            ['space_id', '=', false],
+            ...(this.state.generalDomain ?? [['space_id', '=', false]]),
         ];
     }
     /**
@@ -369,7 +393,7 @@ export class AIChat extends Component {
         const sessions = await this.orm.searchRead(
             'muk_ai.session',
             this.ownSessionsDomain,
-            ['id', 'name', 'state', 'create_date', 'space_id'],
+            SIDEBAR_SESSION_FIELDS,
             { limit: SESSION_PAGE_SIZE, offset: 0, order: 'create_date DESC' },
         );
         if (seq === this._loadSeq) {
@@ -392,7 +416,7 @@ export class AIChat extends Component {
             const next = await this.orm.searchRead(
                 'muk_ai.session',
                 this.ownSessionsDomain,
-                ['id', 'name', 'state', 'create_date', 'space_id'],
+                SIDEBAR_SESSION_FIELDS,
                 {
                     limit: SESSION_PAGE_SIZE,
                     offset: this.state.sessionsOffset,
@@ -418,7 +442,7 @@ export class AIChat extends Component {
             const sessions = await this.orm.searchRead(
                 'muk_ai.session',
                 this.sessionSearchDomain(query),
-                ['id', 'name', 'state', 'create_date', 'space_id'],
+                SIDEBAR_SESSION_FIELDS,
                 { limit: SESSION_SEARCH_LIMIT, order: 'create_date DESC' },
             );
             if (seq !== this._sessionsSearchSeq) {
@@ -510,6 +534,14 @@ export class AIChat extends Component {
     }
     async onSelectSession(sessionId) {
         await this._selectSession(sessionId);
+    }
+    /** Redraw the sidebar so a chat just shared shows its faces on the row. */
+    async onShareChanged() {
+        const sessionId = this.session.state.sessionId;
+        if (sessionId) {
+            await this.session.load(sessionId);
+        }
+        await this._loadSessions();
     }
     async onRenameSession(sessionId, name) {
         await this.orm.write('muk_ai.session', [sessionId], { name });
@@ -790,6 +822,20 @@ export class AIChat extends Component {
         const file = toFileModel(attachment);
         this.fileViewer.open(file);
     }
+    /**
+     * Reload the space branches already on screen.
+     *
+     * A chat a space collects belongs in that branch and nowhere else, so one
+     * that never reaches the loose list is looked for where it does belong.
+     */
+    async _refreshLoadedSpaces() {
+        await Promise.all(
+            Object.keys(this.state.spaceSessions).map((spaceId) =>
+                this._loadSpaceSessions(Number(spaceId)),
+            ),
+        );
+    }
+
     async _fetchSidebarSession(sessionId) {
         if (this.state.sessionsSearchMode || this._sessionFetchIds.has(sessionId)) {
             return;
@@ -801,17 +847,22 @@ export class AIChat extends Component {
                 'muk_ai.session',
                 [
                     ['id', '=', sessionId],
+                    ...(this.state.generalDomain ?? [['space_id', '=', false]]),
+                    '|',
                     ['user_id', '=', user.userId],
+                    ['share_user_ids', 'in', [user.userId]],
                 ],
-                ['id', 'name', 'state', 'create_date', 'space_id'],
+                SIDEBAR_SESSION_FIELDS,
                 { limit: 1 },
             );
-            if (
-                !session ||
-                seq !== this._loadSeq ||
-                this.state.sessionsSearchMode ||
-                this.state.sessions.some((s) => s.id === session.id)
-            ) {
+            if (seq !== this._loadSeq || this.state.sessionsSearchMode) {
+                return;
+            }
+            if (!session) {
+                await this._refreshLoadedSpaces();
+                return;
+            }
+            if (this.state.sessions.some((s) => s.id === session.id)) {
                 return;
             }
             const pos = this.state.sessions.findIndex(
@@ -959,22 +1010,6 @@ export class AIChat extends Component {
     get isCompact() {
         return false;
     }
-    get canSend() {
-        return this.isOwner && this.session.canSend();
-    }
-    get canAttach() {
-        return this.isOwner && this.session.canAttach();
-    }
-    get canStop() {
-        return this.isOwner && this.session.canStop();
-    }
-    get composerDisabled() {
-        return this.session.composerDisabled() || !this.isOwner;
-    }
-    get isOwner() {
-        const ownerId = this.session.state.ownerId;
-        return ownerId == null || ownerId === user.userId;
-    }
     get isQueueing() {
         return this.session.isQueueing();
     }
@@ -984,9 +1019,6 @@ export class AIChat extends Component {
      * touch keyboard has no Shift+Enter to offer.
      */
     get inputPlaceholder() {
-        if (!this.isOwner) {
-            return _t('Read only — you are not the owner of this session.');
-        }
         const narrow = typeof window !== 'undefined' && window.innerWidth < 768;
         return inputPlaceholder(
             this.session.state,

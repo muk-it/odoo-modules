@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import ast
-
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
 from odoo.fields import Domain
+from odoo.tools.safe_eval import safe_eval
 
 
 class AISpace(models.Model):
@@ -101,17 +100,44 @@ class AISpace(models.Model):
     # Helper
     # ----------------------------------------------------------
 
+    def _parsed_domain(self) -> list:
+        """Return the stored domain with ``uid`` resolved to the reader.
+
+        A space that collects what was shared with somebody has to name that
+        somebody, and the domain is stored once for everyone, so it is read
+        per user rather than taken literally.
+        """
+        return safe_eval(self.domain, {'uid': self.env.uid})
+
     def _session_domain(self) -> list:
-        """Return the domain selecting the sessions of this space."""
+        """Return the domain selecting the sessions of this space.
+
+        Filing a chat by hand overrules the domain that would collect it, but
+        only for whoever filed it: a chat somebody shared and then filed into
+        a space of their own stays listed for the people they shared it with,
+        who cannot see that space at all.
+        """
         if not self.domain:
             return [('space_id', '=', self.id)]
-        return [*ast.literal_eval(self.domain), ('space_id', '=', False)]
+        return [*self._parsed_domain(), '!', ('space_id.user_id', '=', self.env.uid)]
 
     def _sidebar_spaces(self) -> AISpace:
         """Return the spaces of the current user plus the system ones."""
         return self.search(
             ['|', ('user_id', '=', self.env.uid), ('user_id', '=', False)]
         )
+
+    @api.model
+    def _unclaimed_session_domain(self) -> Domain:
+        """Return the domain of the chats no space collects.
+
+        A space is a filter rather than a folder, so what one collects is
+        listed there instead of a second time among the loose chats.
+        """
+        domain = Domain([('space_id', '=', False)])
+        for space in self.search([('domain', '!=', False)]):
+            domain &= ~Domain(space._parsed_domain())
+        return domain
 
     def _count_by_space(self, session_ids: list[int] | None = None) -> dict[int, int]:
         """Count the sessions each space of this set collects.
@@ -169,6 +195,11 @@ class AISpace(models.Model):
             return {}
         counts = self._sidebar_spaces()._count_by_space(session_ids)
         return {str(space_id): count for space_id, count in counts.items()}
+
+    @api.model
+    def fetch_general_domain(self) -> list:
+        """Return the domain of the chats the sidebar lists outside any space."""
+        return list(self._unclaimed_session_domain())
 
     @api.model
     def fetch_spaces(self) -> list[dict]:
@@ -252,10 +283,8 @@ class AISpace(models.Model):
         """Reject a domain the session model cannot evaluate."""
         for record in self.filtered('domain'):
             try:
-                Domain(ast.literal_eval(record.domain)).validate(
-                    self.env['muk_ai.session']
-                )
-            except (SyntaxError, TypeError, ValueError, KeyError) as error:
+                Domain(record._parsed_domain()).validate(self.env['muk_ai.session'])
+            except (SyntaxError, TypeError, ValueError, KeyError, NameError) as error:
                 raise ValidationError(
                     _(
                         'The domain of "%(name)s" is not a valid session domain: %(error)s',

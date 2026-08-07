@@ -17,7 +17,12 @@ import {
     toggleAskViewMode,
 } from '@muk_ai/chat/session/ask_view';
 
-/** Read-only field rendering a session's events as a chat-style transcript. */
+/**
+ * Read-only field rendering a session's events as a chat-style transcript.
+ *
+ * The shared transcript templates ask a session what it allows, so the field
+ * hands them one that allows nothing beyond reading.
+ */
 export class SessionEventsField extends Component {
     static template = 'muk_ai.SessionEventsField';
     static components = { AttachmentCard, ToolCard, ToolGroup };
@@ -29,7 +34,9 @@ export class SessionEventsField extends Component {
             askViews: {},
         });
         this.session = {
-            state: { pendingAsk: null },
+            state: { pendingAsk: null, readonly: true },
+            canWrite: () => false,
+            canRegenerate: () => false,
             copyText: (text) => this.copyText(text),
         };
     }

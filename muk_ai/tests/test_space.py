@@ -170,7 +170,11 @@ class TestSpace(AITestCommon):
             if row['id'] == space.id
         )
         self.assertTrue(entry['system'])
-        self.assertIn(('space_id', '=', False), entry['session_domain'])
+        loose = self._session('Loose')
+        filed = self._session('Filed', space_id=self._space('Q3').id)
+        collected = self.env['muk_ai.session'].search(entry['session_domain'])
+        self.assertIn(loose.id, collected.ids)
+        self.assertNotIn(filed.id, collected.ids)
 
     def test_handing_over_a_filed_chat_releases_it(self):
         other = new_test_user(self.env, login='space_handover')

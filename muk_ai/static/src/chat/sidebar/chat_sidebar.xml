@@ -4,7 +4,7 @@
     <t t-name="muk_ai.ChatSidebarItem">
         <div
             class="mk_sidebar_item"
-            t-att-class="{ active: session.id === props.activeSessionId, mk_running: session.state === 'running' || session.state === 'waiting', mk_unread: isUnread(session.id), mk_sidebar_item_nested: nested }"
+            t-att-class="{ active: session.id === props.activeSessionId, mk_running: session.state === 'running' || session.state === 'waiting', mk_unread: isUnread(session.id), mk_sidebar_item_nested: nested, mk_sidebar_shared: !isOwn(session) }"
             t-att-data-session-id="session.id"
             t-att-data-space-id="session.space_id and session.space_id[0]"
             t-on-click="() => props.onSelect(session.id)"
@@ -21,7 +21,21 @@
                     <i class="fa fa-exclamation" />
                 </t>
             </span>
-            <span class="mk_sidebar_name" t-esc="session.name" />
+            <span class="mk_sidebar_name">
+                <span class="mk_sidebar_label" t-esc="session.name"/>
+                <span
+                    class="mk_sidebar_share"
+                    t-if="sharedWith(session).length"
+                    t-att-title="sharedTitle(session)"
+                >
+                    <img
+                        t-foreach="sharedWith(session)" t-as="uid" t-key="uid"
+                        class="mk_sidebar_share_avatar"
+                        t-att-src="'/web/image/res.users/' + uid + '/avatar_128'"
+                        alt=""
+                    />
+                </span>
+            </span>
             <span class="mk_sidebar_unread" t-if="isUnread(session.id)" title="Unread" />
             <div class="mk_sidebar_meta">
                 <span
@@ -32,7 +46,7 @@
                 <small class="mk_sidebar_sub text-muted" t-if="session.state === 'running'">thinking…</small>
                 <small class="mk_sidebar_sub text-muted" t-elif="session.state === 'waiting'">awaiting you</small>
             </div>
-            <div class="mk_sidebar_actions">
+            <div class="mk_sidebar_actions" t-if="isOwn(session)">
                 <button
                     class="btn btn-link btn-sm"
                     title="Rename"

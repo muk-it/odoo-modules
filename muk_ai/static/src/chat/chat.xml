@@ -148,6 +148,7 @@
                                         <button
                                             class="btn btn-sm mk_queue_cancel"
                                             type="button"
+                                            t-if="session.canWrite()"
                                             title="Cancel queued message"
                                             t-on-click="() => session.cancelQueued(queued_index)"
                                         >
@@ -162,7 +163,7 @@
                                         <strong><i class="fa fa-exclamation-circle me-1"/>Error:</strong>
                                         <span t-esc="session.state.error"/>
                                     </div>
-                                    <button t-if="session.canRegenerate and session.canRegenerate()"
+                                    <button t-if="session.canRegenerate()"
                                             class="btn btn-sm btn-outline-danger flex-shrink-0 align-self-end align-self-sm-auto"
                                             type="button"
                                             title="Regenerate this answer"
@@ -174,14 +175,22 @@
                         </div>
                         </div>
                     </div>
+                    <AIChatShareUsers
+                        t-if="session.state.sessionId"
+                        sessionId="session.state.sessionId"
+                        readonly="session.state.readonly"
+                        shareIds="session.state.shareIds"
+                        onChanged.bind="onShareChanged"
+                    />
                     <div class="mk_composer_wrap">
                         <ChatComposer
                             value="session.state.input"
                             placeholder="inputPlaceholder"
-                            disabled="composerDisabled"
-                            canSend="canSend"
-                            canStop="canStop"
-                            canAttach="canAttach"
+                            readonly="session.state.readonly"
+                            readonlyOwner="session.state.ownerName"
+                            canSend="session.canSend()"
+                            canStop="session.canStop()"
+                            canAttach="session.canAttach()"
                             isQueueing="isQueueing"
                             attachments="session.state.pendingAttachments"
                             agents="session.state.agents"
@@ -195,7 +204,10 @@
                             onOpenAttachment.bind="onOpenAttachment"
                             onSelectAgent="(agentId) => session.onSetAgent(agentId)"
                         />
-                        <div class="mk_composer_hint mt-1 ps-1">
+                        <div
+                            class="mk_composer_hint mt-1 ps-1"
+                            t-att-class="{ 'd-none': session.state.readonly }"
+                        >
                             <span><kbd>Enter</kbd> to send</span>
                             <span><kbd>Shift</kbd>+<kbd>Enter</kbd> for newline</span>
                         </div>
@@ -219,7 +231,21 @@
                 t-on-click="() => this.toggleSidebar()"
                 title="Toggle sidebar"
             >
-                <i class="fa" t-att-class="state.sidebarHidden ? 'fa-chevron-right' : 'fa-chevron-left'"/>
+                <svg
+                    class="mk_sidebar_icon"
+                    viewBox="0 0 15 15"
+                    fill="currentColor"
+                    fill-rule="evenodd"
+                    clip-rule="evenodd"
+                    aria-hidden="true"
+                >
+                    <path
+                        t-if="!state.sidebarHidden"
+                        class="mk_sidebar_icon_pane"
+                        d="M2 2h2v11h-2a1 1 0 0 1 -1 -1v-9a1 1 0 0 1 1 -1Z"
+                    />
+                    <path d="M2 1h11a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-11a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2ZM2 2h2v11h-2a1 1 0 0 1 -1 -1v-9a1 1 0 0 1 1 -1ZM5 2h8a1 1 0 0 1 1 1v9a1 1 0 0 1 -1 1h-8v-11Z"/>
+                </svg>
             </button>
             <span
                 class="mk_avatar rounded-circle"
@@ -230,7 +256,15 @@
                 <i class="fa" t-att-class="statusIcon(session.state.status)"/>
             </span>
             <span class="mk_main_title" t-esc="session.state.name || 'MuK AI Chat'"/>
-            <Dropdown t-if="session.state.sessionId and session.state.agents.length">
+            <span
+                t-if="session.state.sessionId and !session.canWrite()"
+                class="btn btn-sm mk_agent_pill rounded-pill d-inline-flex align-items-center gap-1 disabled"
+                title="The agent of a shared chat cannot be changed"
+            >
+                <i class="fa fa-user-circle-o"/>
+                <span t-esc="session.state.agentName || 'No agent'"/>
+            </span>
+            <Dropdown t-if="session.state.sessionId and session.state.agents.length and session.canWrite()">
                 <button class="btn btn-sm mk_agent_pill rounded-pill d-inline-flex align-items-center gap-1" title="Switch agent">
                     <i class="fa fa-user-circle-o"/>
                     <span t-esc="session.state.agentName || 'No agent'"/>
@@ -275,6 +309,7 @@
                 class="btn btn-sm mk_approval_pill rounded-pill border-0 d-inline-flex align-items-center gap-1"
                 t-att-class="approvalPill.className"
                 t-att-title="approvalPill.tooltip"
+                t-att-disabled="!session.canWrite()"
                 t-on-click="() => this.session.cycleApprovalMode()"
             >
                 <i class="fa" t-att-class="approvalPill.icon"/>
@@ -298,7 +333,7 @@
                     <i class="fa fa-paperclip"/>
                 </button>
                 <button
-                    t-if="isOwner"
+                    t-if="session.canWrite()"
                     class="btn btn-link btn-sm mk_handover"
                     title="Hand over this chat to another user"
                     t-on-click="() => this.session.openHandoverPicker()"
@@ -325,6 +360,7 @@
                     </button>
                     <button
                         class="btn btn-link p-0 border-0 text-reset ms-1 mk_ctx_unpin"
+                        t-if="session.canWrite()"
                         title="Unpin view context"
                         t-on-click="() => this.session.runUnpin()"
                     >
@@ -419,6 +455,7 @@
                             </span>
                             <button
                                 class="btn btn-sm btn-link mk_compact_stop"
+                                t-if="session.canWrite()"
                                 t-on-click="() => session.runStopCompact()"
                             >
                                 <i class="fa fa-stop me-1"/>Stop
@@ -485,7 +522,7 @@
                                 <t t-set="meta_event_id" t-value="block.eventId || turn.eventId"/>
                                 <t t-set="meta_side" t-value="''"/>
                                 <t t-set="meta_in_history" t-value="turn.inHistory"/>
-                                <t t-set="meta_can_regenerate" t-value="block_index === turn.regenerateAt and session.canRegenerate and session.canRegenerate()"/>
+                                <t t-set="meta_can_regenerate" t-value="block_index === turn.regenerateAt and session.canRegenerate()"/>
                             </t>
                             <div class="mk_bubble_body" t-out="renderAssistantMarkdown(block.text)"/>
                         </div>
@@ -568,13 +605,13 @@
                     <i class="fa fa-copy"/>
                 </button>
                 <button class="mk_msg_btn mk_msg_fork" type="button"
-                        t-if="meta_event_id and !meta_in_history and session.runForkAtEvent"
+                        t-if="meta_event_id and !meta_in_history and session.canWrite()"
                         title="Branch — open a new session with the history up to this message"
                         t-on-click="() => session.runForkAtEvent(meta_event_id)">
                     <i class="fa fa-code-fork"/>
                 </button>
                 <button class="mk_msg_btn mk_msg_undo" type="button"
-                        t-if="meta_event_id and !meta_in_history and session.runUndoToEvent"
+                        t-if="meta_event_id and !meta_in_history and session.canWrite()"
                         title="Rewind — remove this message and everything after"
                         t-on-click="() => session.runUndoToEvent(meta_event_id)">
                     <i class="fa fa-undo"/>
@@ -618,7 +655,8 @@
                     </t>
                 </div>
                 <t t-if="session.state.pendingAsk and session.state.pendingAsk.call_id === block.callId">
-                    <div class="mk_ask_actions d-flex flex-wrap gap-2">
+                    <div class="mk_ask_resolved small text-muted" t-if="!session.canWrite()">Waiting for the owner to answer.</div>
+                    <div class="mk_ask_actions d-flex flex-wrap gap-2" t-else="">
                         <button class="btn btn-sm btn-primary" t-on-click="() => this.session.respondYesno('approve')">
                             <i class="fa fa-check me-1"/>Approve
                         </button>
@@ -650,7 +688,7 @@
                     <t t-foreach="block.options" t-as="opt" t-key="opt_index">
                         <button
                             class="btn btn-sm btn-outline-primary mk_ask_option"
-                            t-att-disabled="session.state.status === 'running' or session.state.pendingAsk?.call_id !== block.callId"
+                            t-att-disabled="!session.canWrite() or session.state.status === 'running' or session.state.pendingAsk?.call_id !== block.callId"
                             t-on-click="() => this.session.answerWithOption(opt)"
                             t-esc="opt"
                         />

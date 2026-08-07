@@ -33,6 +33,7 @@
                     widget="domain"
                     options="{'model': 'muk_ai.session', 'foldable': True}"
                     invisible="user_id"
+                    readonly="1"
                 />
 			</list>
 		</field>
@@ -85,6 +86,7 @@
 							options="{'model': 'muk_ai.session', 'foldable': False}"
 							nolabel="1"
 							colspan="2"
+							readonly="1"
 						/>
 					</group>
 				</sheet>
