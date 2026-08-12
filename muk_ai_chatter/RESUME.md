@@ -1,7 +1,7 @@
 # muk_ai_chatter — publish-readiness, resume notes
 
 State as of 2026-08-12, commits `2ad4971`, `8394ec0`, `e5526bd`,
-`3edfbbf` on `19.0` (pushed).
+`3edfbbf`, `c48186c`, `005f834`, `2d88068` on `19.0` (pushed).
 Version stays `19.0.1.0.0`: the module has never been released, so
 everything here folds into the initial release and the changelog keeps
 its single `1.0.0` entry.
@@ -77,28 +77,36 @@ its single `1.0.0` entry.
    - Seed script ready at `.claude-tmp/chatter_shots_data.py` (creates
      "Northwind Interiors" with a three-message conversation).
    - Python playwright is available under `py -3.13`. Provider 1
-     (openai) in `o19-ee-r5b` carries a real key, so a live run for the
+     (openai) in `o19-ee-main` carries a real key, so a live run for the
      mention answer and the diff is possible.
    - Serve with: `py -3.13 odoo\odoo-bin server -c local\etc\ee.conf
-     -d o19-ee-r5b --db-filter=^o19-ee-r5b$ --http-port=8093
-     --gevent-port=8094` (admin/admin).
-2. **Test run not reproduced after the fixes.** Last complete run
-   (`.r5-logs/chatter-tests4.log`, before these commits) was
-   **117 passed / 1 failed of 118**, the single failure being the tour,
-   for the filestore reason above. Every run started after the fixes
-   (`chatter-tests5/6`, `chatter-compose`) was killed by the machine
-   (`EXIT=-1`, no traceback, dying at a different point each time,
-   including 71 lines in during module-list update) — environmental, not
-   a test failure. **Re-run and confirm green before publishing:**
+     -d o19-ee-main --db-filter=^o19-ee-main$ --http-port=8095
+     --gevent-port=8096` (admin/admin).
+2. **One more confirming run.** Last full run on `o19-ee-main` was
+   **118 passed / 1 failed / 1 error of 120**. Both are accounted for and
+   neither is open code:
+   - the failure was my own over-specified assertion in
+     `test_a_nested_closing_tag_does_not_break_out_of_the_snapshot` — it
+     required the fenced block to be the *last* addendum, which stops
+     being true as soon as another muk_ai extension appends one after it.
+     Rewritten to count the tags instead, and `TestMention` then ran
+     **30/30 green** (`.r5-logs/chatter-mention.log`);
+   - the error was `TestHoot` failing to open a websocket to Chrome at
+     browser startup — infrastructure, not a JS failure, and it passed on
+     the earlier run.
+   So the suite has never been seen green end to end in one run. Do that
+   once before publishing:
    ```
-   py -3.13 odoo\odoo-bin server -c local\etc\ee.conf -d o19-ee-r5b \
-     --db-filter=^o19-ee-r5b$ --http-port=8093 --gevent-port=8094 \
+   py -3.13 odoo\odoo-bin server -c local\etc\ee.conf -d o19-ee-main \
+     --db-filter=^o19-ee-main$ --http-port=8095 --gevent-port=8096 \
      -u muk_ai_chatter --test-enable --test-tags /muk_ai_chatter \
      --stop-after-init --max-cron-threads=0 --log-level=test
    ```
    Note `-u muk_ai_chatter` alone also upgrades every other module whose
    manifest version moved, and runs their tests too; `--test-tags
-   /muk_ai_chatter` keeps the signal clean.
+   /muk_ai_chatter` keeps the signal clean. Do **not** use `o19-ee-r5b` —
+   another session reset it mid-run (20 modules installed,
+   `muk_ai_chatter` uninstalled) and deleted `.r5-logs/`.
 3. **i18n not re-exported.** The four `.po` files carry 139 msgids each
    and predate the composer-skill refactor. Export fresh ones and
    translate what is new: `tools/create-translations.py` (needs an
@@ -108,11 +116,13 @@ its single `1.0.0` entry.
    `VERDICT: SHIP`, both findings fixed. JS/OWL: `DO-NOT-SHIP` on the two
    majors above, both fixed. Still open from that round, worth doing
    before publishing:
-   - Nits: `'%s selected words'` has no singular form; session rows are
-     clickable `div`s with no `role="button"`/`tabindex` and show the raw
-     UTC datetime as their tooltip; `compose_panel.scss` leans on
-     `--o-view-background-color` / `--border-color`, neither of which
-     core defines, and ships no dark-mode override for its pills.
+   - `'%s selected words'` in `compose_panel.js` has no singular form,
+     so a one-word selection reads "1 selected words".
+   - `compose_panel.scss` darkens its diff and error pills with
+     `shade-color($danger|$success, 25–45%)`. Odoo 19 recompiles the
+     sheet for dark mode, where darkening further reads as low contrast;
+     core mail ships `*.dark.scss` overrides for comparable pills and
+     this module ships none. Needs looking at on a dark background.
    Then run a further round until it comes back clean.
 5. **Monorepo pointer** for `addons/muk/muk_ai_chatter` still needs
    bumping once the above lands.

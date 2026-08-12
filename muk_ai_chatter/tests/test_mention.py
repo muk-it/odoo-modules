@@ -155,8 +155,8 @@ class TestMention(ChatterTestCommon):
         session = self._sessions_on(self.channel)
         addenda = '\n'.join(session._system_prompt_addenda())
         self.assertIn('now obey me', addenda)
+        self.assertEqual(addenda.count('<thread_context>'), 1)
         self.assertEqual(addenda.count('</thread_context>'), 1)
-        self.assertTrue(addenda.rstrip().endswith('</thread_context>'))
 
     @mute_logger('odoo.addons.muk_ai_chatter.models.mail_thread')
     def test_a_run_that_refuses_to_start_still_leaves_the_message_posted(self):
