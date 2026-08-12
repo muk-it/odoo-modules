@@ -25,16 +25,16 @@ defineMailModels();
 const THREAD_ID = 1;
 
 /**
- * Install a bus mock and return the captured `notification` listeners.
- * @returns {Array<{type: string, handler: Function}>} the registered listeners
+ * Install a bus mock and return the notification types subscribed to.
+ * @returns {Array<{type: string, handler: Function}>} the registered handlers
  */
 function mockBus() {
     const listeners = [];
     mockService('bus_service', {
-        addEventListener(type, handler) {
+        subscribe(type, handler) {
             listeners.push({ type, handler });
         },
-        removeEventListener() {},
+        unsubscribe() {},
     });
     return listeners;
 }
@@ -222,20 +222,24 @@ test('the view-all button appears only when the list is truncated', async () => 
     ]);
 });
 
-test('a bus event only refetches when it targets a listed session', async () => {
+test('a session push only refetches when it targets a listed session', async () => {
     const listeners = mockBus();
     mockActions();
     const calls = stubSummary([makeEntry({ id: 5 })]);
     await mountBox();
     expect(calls.count).toBe(1);
-    const { handler } = listeners.find((entry) => entry.type === 'notification');
-    handler({ detail: [{ type: 'muk_ai.event', payload: { session_id: 4 } }] });
+    expect(listeners.map((entry) => entry.type)).toEqual([
+        'muk_ai.session_state',
+        'muk_ai.event',
+    ]);
+    const { handler } = listeners[0];
+    handler({ session_id: 4 });
     await animationFrame();
     expect(calls.count).toBe(1);
-    handler({ detail: [{ type: 'mail.message/insert', payload: { session_id: 5 } }] });
+    handler({});
     await animationFrame();
     expect(calls.count).toBe(1);
-    handler({ detail: [{ type: 'muk_ai.session_state', payload: { session_id: 5 } }] });
+    handler({ session_id: 5 });
     await animationFrame();
     expect(calls.count).toBe(2);
 });

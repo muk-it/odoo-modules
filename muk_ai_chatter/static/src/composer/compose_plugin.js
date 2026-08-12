@@ -58,6 +58,10 @@ export class ComposeAIPlugin extends Plugin {
     setup() {
         this.panel = this.dependencies.overlay.createOverlay(ComposePanel, {
             positionOptions: { position: 'bottom-start' },
+            // Like the popover twin in the chatter: a draft the user is
+            // reading is thrown away by the stray click that puts the cursor
+            // back in the message. Escape and Discard close it.
+            closeOnPointerdown: false,
         });
         this.addDomListener(this.editable, OPEN_EVENT, () => this.openPanel());
     }

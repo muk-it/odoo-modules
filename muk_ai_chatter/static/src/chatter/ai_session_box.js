@@ -64,10 +64,16 @@ export class AISessionBox extends Component {
                 return this.loadSessions(nextProps);
             }
         });
-        this._busHandler = (event) => this._onBusNotification(event);
-        this.bus.addEventListener('notification', this._busHandler);
+        this._busHandler = (payload) => this._onSessionPush(payload);
+        this.bus.subscribe('muk_ai.session_state', this._busHandler);
+        this.bus.subscribe('muk_ai.event', this._busHandler);
         onWillUnmount(() => {
-            this.bus.removeEventListener('notification', this._busHandler);
+            this.bus.unsubscribe('muk_ai.session_state', this._busHandler);
+            this.bus.unsubscribe('muk_ai.event', this._busHandler);
+            // The count belongs to the topbar toggle, which outlives this
+            // component: a record whose chatter moves on would otherwise keep
+            // a button offering sessions there are none of.
+            this.props.onLoaded?.(0);
         });
     }
 
@@ -99,27 +105,13 @@ export class AISessionBox extends Component {
     }
 
     /**
-     * Reload sessions when a bus notification targets one of the listed sessions.
-     * @param {object} event the bus notification event
-     * @param {Array} event.detail the batch of notification messages
+     * Reload sessions when a push targets one of the listed sessions.
+     * @param {object} payload the pushed session payload
      */
-    _onBusNotification({ detail }) {
-        if (!Array.isArray(detail)) {
-            return;
-        }
-        for (const message of detail) {
-            const type = message?.type || '';
-            if (type !== 'muk_ai.session_state' && type !== 'muk_ai.event') {
-                continue;
-            }
-            const sessionId = message?.payload?.session_id;
-            if (!sessionId) {
-                continue;
-            }
-            if (this.state.sessions.some((entry) => entry.id === sessionId)) {
-                this.loadSessions();
-                return;
-            }
+    _onSessionPush(payload) {
+        const sessionId = payload?.session_id;
+        if (sessionId && this.state.sessions.some((row) => row.id === sessionId)) {
+            this.loadSessions();
         }
     }
 
