@@ -1,7 +1,7 @@
 # muk_ai_chatter — publish-readiness, resume notes
 
-State as of 2026-08-12, commits `2ad4971`, `8394ec0`, `e5526bd` on
-`19.0` (pushed).
+State as of 2026-08-12, commits `2ad4971`, `8394ec0`, `e5526bd`,
+`3edfbbf` on `19.0` (pushed).
 Version stays `19.0.1.0.0`: the module has never been released, so
 everything here folds into the initial release and the changelog keeps
 its single `1.0.0` entry.
@@ -50,6 +50,12 @@ its single `1.0.0` entry.
   into the message threw the generated draft away — while the popover
   twin in the chatter deliberately sets `closeOnClickAway: false`. Both
   surfaces behave the same now.
+- **A generated message lost its layout** (`adapters.js`). `asFragment`
+  only fenced off blank-line paragraphs, so a three-bullet answer arrived
+  in the editor as one run-on line; single newlines are breaks now. The
+  same file read and wrote `composer.text`, which does not exist in 19 —
+  the write was dead and the no-textarea fallback silently returned an
+  empty draft. It is `composerText`.
 - **`static/description/index.html` written** in the MuK house style
   (hero, overview, mentions, writing helper, skills, sessions box, guard
   rails, More Apps, Want more?).
@@ -102,13 +108,6 @@ its single `1.0.0` entry.
    `VERDICT: SHIP`, both findings fixed. JS/OWL: `DO-NOT-SHIP` on the two
    majors above, both fixed. Still open from that round, worth doing
    before publishing:
-   - `adapters.js` `asFragment` only preserves blank-line paragraphs, so
-     a single-newline answer ("- one\n- two") collapses to one run-on
-     line on the editor path. Split on single `\n` and join with `<br>`.
-   - `adapters.js` reads/writes `composer.text`, which does not exist in
-     19 (it is `composerText`); the write is dead and the fallback
-     silently returns `''`. Use `composerText` or drop the composer
-     writes and rely on the textarea + `input` event.
    - Nits: `'%s selected words'` has no singular form; session rows are
      clickable `div`s with no `role="button"`/`tabindex` and show the raw
      UTC datetime as their tooltip; `compose_panel.scss` leans on
