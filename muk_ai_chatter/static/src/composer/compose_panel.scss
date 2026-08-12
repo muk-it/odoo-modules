@@ -11,7 +11,7 @@
     overflow: hidden;
     border: 1px solid var(--border-color, #{$border-color});
     border-radius: 0.5rem;
-    background-color: var(--o-view-background-color, #{$o-view-background-color});
+    background-color: $o-view-background-color;
     box-shadow: 0 0.5rem 1.5rem rgba($black, 0.18);
 
     .o-mail-ComposePanel-head {
@@ -58,8 +58,8 @@
         border: 0;
         border-radius: 0;
         border-right: 1px solid var(--border-color, #{$border-color});
-        background-color: var(--o-view-background-color, #{$o-view-background-color});
-        color: var(--o-main-text-color, #{$body-color});
+        background-color: $o-view-background-color;
+        color: $body-color;
         transition:
             color 0.12s ease,
             background-color 0.12s ease;
@@ -77,7 +77,7 @@
 
     .o-mail-ComposePanel-chip {
         border: 1px solid var(--border-color, #{$border-color});
-        background-color: var(--o-view-background-color, #{$o-view-background-color});
+        background-color: $o-view-background-color;
         transition:
             border-color 0.12s ease,
             background-color 0.12s ease;
@@ -108,7 +108,7 @@
         font-size: 0.85rem;
         line-height: 1.45;
         border: 1px solid var(--border-color, #{$border-color});
-        background-color: var(--o-view-background-color, #{$o-view-background-color});
+        background-color: $o-view-background-color;
     }
 
     .o-mail-ComposePanel-stream::after {

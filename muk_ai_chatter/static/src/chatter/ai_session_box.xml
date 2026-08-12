@@ -16,8 +16,11 @@
                     t-as="session"
                     t-key="session.id"
                     class="o-mail-AISessionBox-item d-flex align-items-center gap-2 px-2 py-1 cursor-pointer"
+                    role="button"
+                    tabindex="0"
                     t-att-title="tooltip(session)"
                     t-on-click="() => this.openSession(session)"
+                    t-on-keydown="(ev) => this.onItemKeydown(ev, session)"
                 >
                     <span
                         class="o-mail-AISessionBox-state d-flex align-items-center flex-shrink-0"
@@ -30,7 +33,7 @@
                     </span>
                     <span
                         class="o-mail-AISessionBox-date flex-shrink-0"
-                        t-att-title="session.create_date"
+                        t-att-title="startedAt(session.create_date)"
                     >
                         <t t-esc="relativeName(session.create_date)"/>
                     </span>

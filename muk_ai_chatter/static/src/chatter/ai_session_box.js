@@ -6,7 +6,7 @@ import {
     useState,
 } from '@odoo/owl';
 
-import { deserializeDateTime } from '@web/core/l10n/dates';
+import { deserializeDateTime, formatDateTime } from '@web/core/l10n/dates';
 import { _t } from '@web/core/l10n/translation';
 import { user } from '@web/core/user';
 import { useService } from '@web/core/utils/hooks';
@@ -149,6 +149,27 @@ export class AISessionBox extends Component {
             return '';
         }
         return deserializeDateTime(value).toRelative();
+    }
+
+    /**
+     * Spell the relative date out, in the reader's timezone and format.
+     * @param {string} value the ISO datetime to spell out
+     * @returns {string} the datetime as the user writes it, empty when falsy
+     */
+    startedAt(value) {
+        return value ? formatDateTime(deserializeDateTime(value)) : '';
+    }
+
+    /**
+     * Open a session from the keyboard, the way the click does.
+     * @param {KeyboardEvent} ev the key pressed on a row
+     * @param {object} session the session entry the row stands for
+     */
+    onItemKeydown(ev, session) {
+        if (ev.key === 'Enter' || ev.key === ' ') {
+            ev.preventDefault();
+            this.openSession(session);
+        }
     }
 
     /**
