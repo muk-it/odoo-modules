@@ -13,8 +13,8 @@
 /**
  * Drive the plain-text composer of a chatter or a Discuss conversation.
  *
- * The composer is a textarea bound to `composer.text`, so the draft is read
- * and written through that field and the cursor is the textarea's own.
+ * The composer is a textarea bound to `composer.composerText`, so the draft is
+ * read and written through that field and the cursor is the textarea's own.
  *
  * @param {import("models").Composer} composer the composer record
  * @param {HTMLTextAreaElement} textarea the input the user types in
@@ -24,7 +24,7 @@ export function makeTextComposerAdapter(composer, textarea) {
     // The draft and the offsets into it are both read off the textarea:
     // taking the text from one place and the offsets from another is how a
     // selection ends up cut out of the wrong string.
-    const draftOf = () => (textarea ? textarea.value : composer.text || '');
+    const draftOf = () => (textarea ? textarea.value : composer.composerText || '');
     // Taken once, when the helper opens, the way the editor adapter does it:
     // the panel takes the focus, and a click back into the message collapses
     // the browser selection, so reading it again at accept time would replace
@@ -46,7 +46,7 @@ export function makeTextComposerAdapter(composer, textarea) {
             : draft.indexOf(picked.text);
     };
     const setText = (text, caret) => {
-        composer.text = text;
+        composer.composerText = text;
         if (textarea) {
             textarea.value = text;
             textarea.focus();
@@ -159,25 +159,33 @@ export function makeEditorAdapter(plugin, record) {
 }
 
 /**
- * Turn generated text into nodes, so its paragraphs survive the insertion.
+ * Turn generated text into nodes, so the way it is laid out survives insertion.
  *
- * The editor sets a string as `textContent`, where every blank line collapses
- * into one run of whitespace — a three-paragraph message would arrive as a
- * single one.
+ * The editor sets a string as `textContent`, where every newline collapses into
+ * one run of whitespace — a three-paragraph message arrives as a single one,
+ * and a list of three bullets as a single line. A blank line starts a
+ * paragraph, a single one a break inside it.
  *
  * @param {Document} document the editor's document
  * @param {string} text what the agent wrote
  * @returns {DocumentFragment|string} nodes to insert, or the text when it is one line
  */
 function asFragment(document, text) {
-    const blocks = text.split(/\n{2,}/).filter((block) => block.trim());
-    if (blocks.length < 2) {
+    if (!text.includes('\n')) {
         return text;
     }
     const fragment = document.createDocumentFragment();
-    for (const block of blocks) {
+    for (const block of text.split(/\n{2,}/).filter((block) => block.trim())) {
         const paragraph = document.createElement('p');
-        paragraph.textContent = block.trim();
+        block
+            .trim()
+            .split('\n')
+            .forEach((line, index) => {
+                if (index) {
+                    paragraph.append(document.createElement('br'));
+                }
+                paragraph.append(document.createTextNode(line));
+            });
         fragment.append(paragraph);
     }
     return fragment;

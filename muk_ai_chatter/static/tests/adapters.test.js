@@ -24,7 +24,10 @@ function makeFixture(range = null, text = DRAFT) {
     textarea.value = text;
     getFixture().append(textarea);
     textarea.setSelectionRange(...(range || [text.length, text.length]));
-    const composer = { text, targetThread: { model: 'res.partner', id: 7 } };
+    const composer = {
+        composerText: text,
+        targetThread: { model: 'res.partner', id: 7 },
+    };
     return { adapter: makeTextComposerAdapter(composer, textarea), textarea };
 }
 
