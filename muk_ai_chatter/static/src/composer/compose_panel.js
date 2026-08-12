@@ -236,6 +236,11 @@ export class ComposePanel extends Component {
         }
         if (this.isRewrite) {
             const words = this.target.trim().split(/\s+/).length;
+            if (words === 1) {
+                return this.hasSelection
+                    ? _t('1 selected word')
+                    : _t('1 word in your draft');
+            }
             return this.hasSelection
                 ? _t('%s selected words', words)
                 : _t('%s words in your draft', words);

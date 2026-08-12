@@ -1,7 +1,7 @@
 # muk_ai_chatter — publish-readiness, resume notes
 
 State as of 2026-08-12, commits `2ad4971`, `8394ec0`, `e5526bd`,
-`3edfbbf`, `c48186c`, `005f834`, `2d88068` on `19.0` (pushed).
+`3edfbbf`, `c48186c`, `005f834`, `2d88068`, `ed8bf5f`, `b69ab8a` on `19.0` (pushed).
 Version stays `19.0.1.0.0`: the module has never been released, so
 everything here folds into the initial release and the changelog keeps
 its single `1.0.0` entry.
@@ -116,8 +116,8 @@ its single `1.0.0` entry.
    `VERDICT: SHIP`, both findings fixed. JS/OWL: `DO-NOT-SHIP` on the two
    majors above, both fixed. Still open from that round, worth doing
    before publishing:
-   - `'%s selected words'` in `compose_panel.js` has no singular form,
-     so a one-word selection reads "1 selected words".
+   - (done, `b69ab8a`) singular word count.
+
    - `compose_panel.scss` darkens its diff and error pills with
      `shade-color($danger|$success, 25–45%)`. Odoo 19 recompiles the
      sheet for dark mode, where darkening further reads as low contrast;
