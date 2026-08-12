@@ -258,7 +258,14 @@ class AISession(models.Model):
         return session_link(self.id, label or self.display_name or _('AI Session'))
 
     def _post_chatter_mirror(self) -> None:
-        """Post a chatter note on the linked record pointing at this session."""
+        """Post a chatter note on the linked record pointing at this session.
+
+        A record that refuses the note — a model with its own posting rules, a
+        chatter that is unavailable — costs the session nothing. Contained in a
+        savepoint, not only in a ``suppress``: a statement that failed leaves
+        the transaction aborted, and swallowing the exception without undoing
+        the statement takes the caller down a moment later instead.
+        """
         record = self._linked_record()
         if record is None or not hasattr(record, 'message_post'):
             return
@@ -268,7 +275,7 @@ class AISession(models.Model):
             'AI session %(link)s started for this record.',
             link=self._session_link(),
         )
-        with suppress(Exception):
+        with suppress(Exception), self.env.cr.savepoint():
             record.message_post(body=body, subtype_xmlid='mail.mt_note')
 
     # ----------------------------------------------------------
@@ -304,6 +311,11 @@ class AISession(models.Model):
         the thread shows the mention was picked up, and the same note is
         rewritten in place as the run ends — one message, never a stream of
         partial ones.
+
+        A thread that refuses the acknowledgement still gets the answer, which
+        :meth:`_refresh_mention_answer` posts in its place. Contained in a
+        savepoint like the mirror note, so a refusal undoes itself rather than
+        leaving the transaction aborted under the run that goes on.
         """
         record = self._linked_record()
         if record is None or not hasattr(record, 'message_post'):
@@ -311,7 +323,7 @@ class AISession(models.Model):
         partner = self.agent_id.partner_id
         if not partner:
             return
-        with suppress(Exception):
+        with suppress(Exception), self.env.cr.savepoint():
             self.answer_message_id = record.with_context(
                 mail_post_autofollow=False,
                 mail_post_autofollow_author_skip=True,

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from odoo import _, api, models
 
 from odoo.addons.muk_ai_chatter.tools import (
@@ -9,6 +11,8 @@ from odoo.addons.muk_ai_chatter.tools import (
     format_thread_context,
     mention_plaintext,
 )
+
+_logger = logging.getLogger(__name__)
 
 
 class MailThread(models.AbstractModel):
@@ -149,10 +153,25 @@ class MailThread(models.AbstractModel):
     def message_post(
         self, *, partner_ids: list[int] | None = None, **kwargs
     ) -> models.BaseModel:
-        """Post the message, keeping any mentioned agent out of its recipients."""
+        """Post the message, keeping any mentioned agent out of its recipients.
+
+        Answering is a side effect of posting, never a condition of it: a rate
+        limit reached, an agent whose provider is half configured, anything a
+        run refuses to start over, would otherwise unwind through ``super()``
+        and take the message somebody wrote down with it. The savepoint drops
+        whatever the failed spawn had already written; the message stands, and
+        the mention simply goes unanswered.
+        """
         agents, recipients = self._ai_split_mentioned_agents(partner_ids)
         message = super().message_post(partner_ids=recipients, **kwargs)
-        self._ai_answer_mentions(message, agents)
+        if agents:
+            try:
+                with self.env.cr.savepoint():
+                    self._ai_answer_mentions(message, agents)
+            except Exception:
+                _logger.exception(
+                    'Could not answer the agents mentioned in message %s', message.id
+                )
         return message
 
     def _message_update_content(

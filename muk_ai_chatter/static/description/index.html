@@ -1,0 +1,240 @@
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<h2 class="oe_slogan">MuK AI Chatter</h2>
+		<h3 class="oe_slogan mb-0">Mention an Agent, Get an Answer</h3>
+		<img src="logo.png" style="width: 150px;" class="mx-auto center-block">
+		<h4 class="oe_slogan mt-0" style="font-size: 23px">MuK IT GmbH - www.mukit.at</h4>
+		<div class="mb-4" style="text-align: center;">
+			<span class="btn btn-sm mb-2" style="font-size:14px; font-weight:500; background-color:#243742; color:#fff; cursor:default;">
+				<i class="fa fa-check"></i> Community
+			</span>
+			<span class="btn btn-sm mb-2" style="font-size:14px; font-weight:500; background-color:#5D8DA8; color:#fff; cursor:default;">
+				<i class="fa fa-check me-1"></i> Enterprise
+			</span>
+		</div>
+		<div class="oe_demo oe_screenshot" style="max-width: 84%; margin: 16px 8%">
+			<img src="screenshot.png">
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width: 84%; margin: 16px 8%;">
+			<h3 class="oe_slogan">Overview</h3>
+			<p class="oe_mt32">
+				<strong>MuK AI Chatter</strong> puts the agents of
+				<code>muk_ai</code> where the work already happens. Type
+				<code>@</code> in a Discuss channel or a direct chat, pick
+				an agent the way you pick a colleague, and the answer comes
+				back in that same conversation. On a record, the
+				<em>Write with AI</em> panel drafts the message for you and
+				shows exactly what it would change before a word of it
+				reaches the composer. Every run stays attached to the record
+				it was started from, listed in its chatter. Plugs into
+				<code>muk_ai</code> via <code>_inherit</code> only
+				&mdash; no fork.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Mention an Agent in a Conversation</h3>
+			<p>
+				Every agent is given a stand-in contact with no email
+				address, so Odoo's own mention machinery carries it: the
+				chip, the paste rules and the recipient handling are all
+				stock. Discuss suggests members only and admits nobody else
+				as a recipient of a chat, so the agents are named back into
+				both lists &mdash; offered next to the members and carried
+				through the post, <strong>without ever joining the
+				conversation</strong>. A message from the agent appears
+				straight away and is rewritten in place with the answer as
+				the run finishes; everybody watching sees it swap over
+				without reloading.
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_mention.png">
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Write with AI</h3>
+			<p>
+				The chatter composer carries a <em>Write with AI</em>
+				button, and every rich-text editor the same command in its
+				toolbar and behind <code>/</code>. What the panel offers
+				depends on what is in the composer: with text selected, the
+				transforms that rewrite exactly that part &mdash; shorten,
+				expand, formal, friendly, fix grammar, translate &mdash;
+				shown as a <strong>diff</strong> against what was selected;
+				on an empty composer, what can be written from the record,
+				with a length and a tone chosen before generating. The
+				answer streams in as it is written, and nothing reaches the
+				message until <em>Insert</em> or <em>Replace</em> is
+				clicked. <code>Esc</code> dismisses at no cost.
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_compose.png">
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">The Chips Are Records, Not Code</h3>
+			<p>
+				Every offer in the panel is a <code>muk_ai.skill</code> of
+				type <em>Composer</em>, edited under <em>MuK AI &rarr;
+				Skills</em>. Each one carries its wording, its icon and the
+				category that decides where it is offered &mdash;
+				<em>fix</em>, <em>rewrite</em> and <em>transform</em> act on
+				what is already written, <em>generate</em> writes something
+				new. Retune the tone for a customer, add a chip in the
+				language your team writes in, or drop one you never use. A
+				composer skill is offered here and nowhere else: it never
+				joins the list of skills an agent discovers in a chat.
+			</p>
+			<p>
+				When a request outgrows a chip, <em>Open in AI chat</em>
+				hands the very same session &mdash; draft, selection and
+				conversation included &mdash; to the chat window, where the
+				agent can ask questions again.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Every Run Stays with Its Record</h3>
+			<p>
+				Sessions carry the business record they were started for, so
+				the <strong>AI Sessions</strong> box in the chatter lists
+				the runs held against it, live over the bus, and one click
+				opens the chat where it happened. Pinning a run to a record
+				grants nobody anything: a conversation gathers tool output
+				under one user's rights, so it stays with the user who ran
+				it &mdash; an administrator sees the lot. The same chats are
+				collected in the <strong>Records</strong> space of the AI
+				sidebar.
+			</p>
+			<div class="oe_demo oe_screenshot mt16">
+				<img src="screenshot_ai_sessions_box.png">
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container">
+	<div class="oe_row oe_spaced">
+		<div class="text-justify" style="max-width:84%; margin:16px 8%">
+			<h3 class="oe_slogan">Built for an Untrusted Thread</h3>
+			<p>
+				A mention points a language model at a thread largely
+				written by people outside the company &mdash; inbound
+				customer mail is the most attacker-controlled text an Odoo
+				database holds. So the conversation is passed as data inside
+				a <code>&lt;thread_context&gt;</code> block it cannot break
+				out of, the tool set is fixed before the agent reads any of
+				it, and the thread is snapshotted onto the session because
+				chatter messages can be edited after the fact. An agent's
+				own post summons nobody, so agents cannot answer each other
+				in a loop. Agent contacts are stripped from the recipients
+				of every message, so naming one never mails it, notifies it
+				or enrols it as a follower. A poster who may not run a
+				session &mdash; a portal customer on their own order &mdash;
+				summons nothing, and their message posts as usual. The
+				writing helper runs read-only whatever it is asked for.
+				<em>Answer Mentions</em> per agent is the off switch.
+			</p>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container" id="muk-other-apps-desc" style="background-color: #f9fafb; padding-top: 1px; margin-bottom: -20px;">
+	<div class="oe_row oe_spaced">
+		<h3 class="oe_slogan">More Apps from MuK IT</h3>
+		<div class="d-flex flex-wrap justify-content-center align-items-stretch gap-4" style="margin: 24px auto;">
+			<div class="d-flex flex-column align-items-center text-center" style="width: 150px;">
+				<a class="d-flex flex-column align-items-center flex-grow-1" href="https://apps.odoo.com/apps/modules/19.0/muk_ai_skills/" target="_blank" rel="noopener" style="text-decoration: none; color: inherit;">
+					<div class="d-flex align-items-center justify-content-center shadow-sm" style="width: 96px; height: 96px; border-radius: 20px; background-color: #fff;">
+						<img src="//apps.odoocdn.com/apps/assets/19.0/muk_ai_skills/icon.png" alt="MuK AI Skills" style="width: 72px; height: 72px; object-fit: contain; border-radius: 14px;">
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 15px; width: 100%; margin: 8px 0 2px; color: #000 !important; opacity: 1 !important; line-height: 18px;">MuK AI Skills</h3>
+					<div style="font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; color: #5D8DA8; margin-bottom: 6px;">Agent Skills</div>
+				</a>
+				<a class="d-inline-block mt-auto" href="https://apps.odoo.com/apps/modules/19.0/muk_ai_skills/" target="_blank" rel="noopener" style="padding: 6px 14px; border-radius: 999px; background-color: #243742; color: #fff; font-size: 12px; font-weight: 500; letter-spacing: 0.3px; text-decoration: none;">View Module &rsaquo;</a>
+			</div>
+			<div class="d-flex flex-column align-items-center text-center" style="width: 150px;">
+				<a class="d-flex flex-column align-items-center flex-grow-1" href="https://apps.odoo.com/apps/modules/19.0/muk_ai_schedule/" target="_blank" rel="noopener" style="text-decoration: none; color: inherit;">
+					<div class="d-flex align-items-center justify-content-center shadow-sm" style="width: 96px; height: 96px; border-radius: 20px; background-color: #fff;">
+						<img src="//apps.odoocdn.com/apps/assets/19.0/muk_ai_schedule/icon.png" alt="MuK AI Schedule" style="width: 72px; height: 72px; object-fit: contain; border-radius: 14px;">
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 15px; width: 100%; margin: 8px 0 2px; color: #000 !important; opacity: 1 !important; line-height: 18px;">MuK AI Schedule</h3>
+					<div style="font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; color: #5D8DA8; margin-bottom: 6px;">Cron Agents</div>
+				</a>
+				<a class="d-inline-block mt-auto" href="https://apps.odoo.com/apps/modules/19.0/muk_ai_schedule/" target="_blank" rel="noopener" style="padding: 6px 14px; border-radius: 999px; background-color: #243742; color: #fff; font-size: 12px; font-weight: 500; letter-spacing: 0.3px; text-decoration: none;">View Module &rsaquo;</a>
+			</div>
+			<div class="d-flex flex-column align-items-center text-center" style="width: 150px;">
+				<a class="d-flex flex-column align-items-center flex-grow-1" href="https://apps.odoo.com/apps/modules/19.0/muk_web_chatter/" target="_blank" rel="noopener" style="text-decoration: none; color: inherit;">
+					<div class="d-flex align-items-center justify-content-center shadow-sm" style="width: 96px; height: 96px; border-radius: 20px; background-color: #fff;">
+						<img src="//apps.odoocdn.com/apps/assets/19.0/muk_web_chatter/icon.png" alt="MuK Chatter" style="width: 72px; height: 72px; object-fit: contain; border-radius: 14px;">
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 15px; width: 100%; margin: 8px 0 2px; color: #000 !important; opacity: 1 !important; line-height: 18px;">MuK Chatter</h3>
+					<div style="font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; color: #5D8DA8; margin-bottom: 6px;">Side Panel</div>
+				</a>
+				<a class="d-inline-block mt-auto" href="https://apps.odoo.com/apps/modules/19.0/muk_web_chatter/" target="_blank" rel="noopener" style="padding: 6px 14px; border-radius: 999px; background-color: #243742; color: #fff; font-size: 12px; font-weight: 500; letter-spacing: 0.3px; text-decoration: none;">View Module &rsaquo;</a>
+			</div>
+			<div class="d-flex flex-column align-items-center text-center" style="width: 150px;">
+				<a class="d-flex flex-column align-items-center flex-grow-1" href="https://apps.odoo.com/apps/modules/19.0/muk_oidc/" target="_blank" rel="noopener" style="text-decoration: none; color: inherit;">
+					<div class="d-flex align-items-center justify-content-center shadow-sm" style="width: 96px; height: 96px; border-radius: 20px; background-color: #fff;">
+						<img src="//apps.odoocdn.com/apps/assets/19.0/muk_oidc/icon.png" alt="MuK OpenID Connect" style="width: 72px; height: 72px; object-fit: contain; border-radius: 14px;">
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 15px; width: 100%; margin: 8px 0 2px; color: #000 !important; opacity: 1 !important; line-height: 18px;">MuK OpenID Connect</h3>
+					<div style="font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; color: #5D8DA8; margin-bottom: 6px;">OpenID Connect</div>
+				</a>
+				<a class="d-inline-block mt-auto" href="https://apps.odoo.com/apps/modules/19.0/muk_oidc/" target="_blank" rel="noopener" style="padding: 6px 14px; border-radius: 999px; background-color: #243742; color: #fff; font-size: 12px; font-weight: 500; letter-spacing: 0.3px; text-decoration: none;">View Module &rsaquo;</a>
+			</div>
+			<div class="d-flex flex-column align-items-center text-center" style="width: 150px;">
+				<a class="d-flex flex-column align-items-center flex-grow-1" href="https://apps.odoo.com/apps/modules/browse?series=19.0&author=MuK+IT" target="_blank" rel="noopener" style="text-decoration: none; color: inherit;">
+					<div class="d-flex align-items-center justify-content-center shadow-sm" style="width: 96px; height: 96px; border-radius: 20px; background-color: #fff; color: #5D8DA8;">
+						<i class="fa fa-th" style="font-size: 55px;"></i>
+					</div>
+					<h3 class="oe_slogan" style="text-align: center; font-size: 15px; width: 100%; margin: 8px 0 2px; color: #000 !important; opacity: 1 !important; line-height: 18px;">All MuK Apps</h3>
+					<div style="font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; color: #5D8DA8; margin-bottom: 6px;">Browse</div>
+				</a>
+				<a class="d-inline-block mt-auto" href="https://apps.odoo.com/apps/modules/browse?series=19.0&author=MuK+IT" target="_blank" rel="noopener" style="padding: 6px 14px; border-radius: 999px; background-color: #243742; color: #fff; font-size: 12px; font-weight: 500; letter-spacing: 0.3px; text-decoration: none;">View All &rsaquo;</a>
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="oe_container oe_dark d-flex justify-content-around align-items-lg-center flex-column flex-lg-row">
+	<div class="d-flex flex-column m-3 ms-lg-4">
+		<h3 class="oe_slogan mb-3 mt-3 text-left">
+			<i class="fa fa-comments mr8"></i>Want more?
+		</h3>
+		<p>
+			Are you having troubles with your Odoo integration? Or do you feel
+			your system lacks of essential features? <br>If your answer is <b>YES</b>
+			to one of the above questions, feel free to contact us at anytime
+			with your inquiry.
+		</p>
+	</div>
+	<div class="oe_slogan d-flex flex-column ms-1 me-1 ms-lg-4 me-lg-4 flex-grow-1">
+		<a class="btn btn-primary btn-lg m-3" href="mailto:sale@mukit.at?subject=Request%20Quote" style="font-size:1.2rem">
+			<i class="fa fa-envelope me-1"></i>REQUEST QUOTE
+		</a>
+	</div>
+</section>

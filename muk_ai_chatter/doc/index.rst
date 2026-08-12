@@ -37,7 +37,7 @@ Every agent is given a stand-in contact the first time this module is
 installed, and whenever an agent is created afterwards. That contact
 carries no email address, so mentioning an agent can never mail anybody.
 
-Open *AI → Agents* and use the **Chatter** group on the agent form:
+Open *MuK AI → Agents* and use the **Chatter** group on the agent form:
 
 - **Answer Mentions** — whether the agent replies when it is mentioned.
   On by default. Turning it off takes the agent out of every suggestion
@@ -93,11 +93,15 @@ what is already written, *generate* writes something new. A skill of type
 skills the agent discovers in a chat.
 
 The **AI Sessions** box in the chatter lists the runs attached to the
-record. Its owner opens the live chat; everybody else who may read the
-record opens the session form, without access to the transcript.
+record — the ones you ran yourself, and, for an administrator, everybody
+else's as well. A session stays with whoever ran it: its transcript
+carries tool output gathered under that user's rights, so being able to
+read a record never opens the conversations held against it.
 
 Chats attached to a record are also collected in the **Records** space
-in the AI sidebar.
+in the AI sidebar, and the helpers themselves in a **Writing Helper**
+space that keeps them for a week: they are drafts of messages, and a
+message that was sent is the record of what was written.
 
 Design notes
 ============

@@ -78,10 +78,7 @@ def mark_selection(draft: str, selection: str) -> str:
     """
     if not selection or not draft or selection not in draft:
         return ''
-    marked = draft.replace(
-        selection, f'{SELECTION_OPEN}{selection}{SELECTION_CLOSE}', 1
-    )
-    return marked.replace('</draft_with_selection>', '')
+    return draft.replace(selection, f'{SELECTION_OPEN}{selection}{SELECTION_CLOSE}', 1)
 
 
 def compose_addenda(draft: str, selection: str) -> list[str]:

@@ -21,13 +21,15 @@ is the **writing helper** in the composer instead.
 ## What's in the box
 
 - **Record-linked sessions** — `res_model` / `res_id` on
-  `muk_ai.session`, the `<linked_record>` prompt context, and a
-  `_search` / `_check_access` override that grants a non-admin read
-  access to a linked session whenever they can read the underlying
-  record, while keeping the transcript itself owner-only.
+  `muk_ai.session`, the linked record as prompt context, and a mirror
+  note in the record's chatter announcing the run. Pinning a session to
+  a record grants nobody anything: muk_ai's own rule keeps a session to
+  the user who ran it, because a transcript carries tool output gathered
+  under that user's rights.
 - **AI Sessions chatter box** — an OWL component listing the sessions
-  linked to the record, kept live over the bus, opening the chat for
-  their owner and the session form for everybody else.
+  the reader ran against the record, kept live over the bus, opening the
+  chat window for them. An administrator sees every run held against the
+  record, and opens the ones they do not own as a form.
 - **`@` mentions in Discuss** — every agent gets a stand-in contact
   (`muk_ai.agent.partner_id`) with no email address, so Odoo's own
   mention machinery carries it: the chip, the paste rules and the
@@ -45,11 +47,16 @@ is the **writing helper** in the composer instead.
   and a tone picked before anything is generated. Nothing reaches the
   message until it is accepted, and `Open in AI chat ↗` hands the very
   same session to the chat window when a request outgrows a chip.
-- **Writing prompts** — the chips are records (`muk_ai.compose.prompt`),
-  not code, so an admin retunes the wording per customer or language
-  under *MuK AI → Configuration → Writing Prompts*.
-- **Records space** — a system `muk_ai.space` collecting every chat that
-  is attached to a record.
+- **Composer skills** — the chips are `muk_ai.skill` records of type
+  *Composer*, not code, so an admin retunes the wording, the icon and the
+  category per customer or language under *MuK AI → Skills*. The category
+  decides where a chip is offered — *fix*, *rewrite* and *transform* act
+  on a selection, *generate* writes from the record — and a composer
+  skill never joins the list an agent discovers in a chat.
+- **Spaces** — a system `muk_ai.space` collecting every chat attached to
+  a record, and a second one for the writing helpers, kept for a week:
+  they are drafts of messages, and a message that was sent is the record
+  of what was written.
 
 ## Guard rails
 
@@ -85,7 +92,7 @@ most attacker-controlled text an Odoo database holds. So:
 
 ## Usage
 
-1. Open an agent under *AI → Agents* and leave *Answer Mentions* on.
+1. Open an agent under *MuK AI → Agents* and leave *Answer Mentions* on.
 2. In a Discuss channel or a direct chat, type `@`, pick the agent, and
    write what you want.
 3. A message from the agent appears immediately and fills in with the

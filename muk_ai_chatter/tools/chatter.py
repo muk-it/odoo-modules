@@ -16,8 +16,16 @@ def fenced(tag: str, text: str) -> str:
     The text comes from a draft or a chatter message, so it can hold the very
     tag used to fence it and end the block early, leaving the rest to read as
     instructions rather than as data.
+
+    Cut until none is left rather than once: a single pass over
+    ``</thread_</thread_context>context>`` leaves a whole closing tag behind,
+    which is exactly what somebody writing into the thread would send.
     """
-    return '<%s>\n%s\n</%s>' % (tag, (text or '').replace('</%s>' % tag, ''), tag)
+    closing = '</%s>' % tag
+    body = text or ''
+    while closing in body:
+        body = body.replace(closing, '')
+    return '<%s>\n%s\n</%s>' % (tag, body, tag)
 
 
 def session_link(session_id: int, label: str) -> Markup:

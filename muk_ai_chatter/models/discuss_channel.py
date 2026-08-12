@@ -18,7 +18,7 @@ class DiscussChannel(models.Model):
         self, message: models.BaseModel, agents: models.BaseModel
     ) -> None:
         """Let the agents mentioned in a conversation answer it."""
-        if agents and not self._ai_mention_is_machine_made(message):
+        if not self._ai_mention_is_machine_made(message):
             self._ai_spawn_mention_sessions(message, agents)
 
     def _ai_mention_is_machine_made(self, message: models.BaseModel) -> bool:
