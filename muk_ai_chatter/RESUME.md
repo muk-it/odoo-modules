@@ -1,7 +1,7 @@
 # muk_ai_chatter — publish-readiness, resume notes
 
 State as of 2026-08-12, commits `2ad4971`, `8394ec0`, `e5526bd`,
-`3edfbbf`, `c48186c`, `005f834`, `2d88068`, `ed8bf5f`, `b69ab8a` on `19.0` (pushed).
+`3edfbbf`, `c48186c`, `005f834`, `2d88068`, `ed8bf5f`, `b69ab8a`, `e6e242c` on `19.0` (pushed).
 Version stays `19.0.1.0.0`: the module has never been released, so
 everything here folds into the initial release and the changelog keeps
 its single `1.0.0` entry.
@@ -59,6 +59,17 @@ its single `1.0.0` entry.
 - **`static/description/index.html` written** in the MuK house style
   (hero, overview, mentions, writing helper, skills, sessions box, guard
   rails, More Apps, Want more?).
+- **Screenshots shot** against `o19-ee-main` with a live LLM:
+  `screenshot.png` (the Write with AI panel over the chatter composer,
+  groups and chips open), `screenshot_compose.png` (a real Shorten run,
+  rendered as a diff with Replace / Try again / Discard),
+  `screenshot_mention.png` (a mention answered in a Discuss channel, with
+  the suggestion list offering the agent — cropped to the conversation
+  pane, since the shared database's sidebar is full of E2E channels), and
+  `screenshot_ai_sessions_box.png` retaken with the box expanded. The
+  seed script is `.claude-tmp/chatter_shots_data.py`; serve with
+  `py -3.13 odoo\odoo-bin server -c local\etc\ee.conf -d o19-ee-main
+  --db-filter=^o19-ee-main$ --http-port=8095 --gevent-port=8096`.
 - **Filestore repaired**: `o19-ee-r5b` had 1826 of 1852 attachments with
   no file on disk (cloned without its filestore), which is what made the
   tour fail with `isTourReady always falsy` and every image 500. Copied
@@ -67,21 +78,16 @@ its single `1.0.0` entry.
 
 ## Open
 
-1. **Screenshots.** `index.html` references three images that do not
-   exist yet: `screenshot.png` (hero — chatter composer with the Write
-   with AI panel open), `screenshot_mention.png` (Discuss channel: `@`
-   suggestion list with an agent, and its answer), `screenshot_compose.png`
-   (the diff preview). `screenshot_ai_sessions_box.png` exists but is
-   poor — the box is collapsed at the bottom of the frame; retake it
-   expanded. Until then the description page is incomplete.
-   - Seed script ready at `.claude-tmp/chatter_shots_data.py` (creates
-     "Northwind Interiors" with a three-message conversation).
-   - Python playwright is available under `py -3.13`. Provider 1
-     (openai) in `o19-ee-main` carries a real key, so a live run for the
-     mention answer and the diff is possible.
-   - Serve with: `py -3.13 odoo\odoo-bin server -c local\etc\ee.conf
-     -d o19-ee-main --db-filter=^o19-ee-main$ --http-port=8095
-     --gevent-port=8096` (admin/admin).
+1. **An agent writes the model and id back at the reader.** Caught while
+   shooting `screenshot_mention.png`: asked to summarise a thread, the
+   General Assistant opened with "Summary for the Northwind order (this
+   conversation — Sales Floor, `discuss.channel,264`)". `MENTION_RULES`
+   in `tools/mention.py` says in as many words never to do that, and
+   `linkify_records` then turns it into a link, so the wart is rendered
+   rather than buried. The rule is not holding — the id reaches the model
+   through the view context, and one sentence in the system prompt does
+   not beat it. Needs prompt work and a check across models before the
+   store screenshot shows it off. The committed screenshot has it.
 2. **One more confirming run.** Last full run on `o19-ee-main` was
    **118 passed / 1 failed / 1 error of 120**. Both are accounted for and
    neither is open code:
