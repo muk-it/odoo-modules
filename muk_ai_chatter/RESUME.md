@@ -113,22 +113,35 @@ its single `1.0.0` entry.
    /muk_ai_chatter` keeps the signal clean. Do **not** use `o19-ee-r5b` —
    another session reset it mid-run (20 modules installed,
    `muk_ai_chatter` uninstalled) and deleted `.r5-logs/`.
-3. **i18n not re-exported.** The four `.po` files carry 139 msgids each
+3. **The E2E harness posts HTML that Odoo 19 escapes.** Old E2E channels
+   on the dev databases show their messages as literal
+   `<p>Reply with exactly: PONG</p>`. In 19 `message_post(body=…)` only
+   treats a `Markup` as HTML and escapes a plain `str`, and RPC cannot
+   carry a `Markup` — so the 29 HTML bodies in
+   `tools/muk_ai_chatter_e2e/run_e2e.py` all render as text. Nothing in
+   the module does this (`_mention_answer_body` builds `Markup`, and the
+   shipped screenshots are clean), and the assertions read the agent's
+   answer rather than the rendering, so the suite still means what it
+   says — but the data it leaves behind looks broken to anyone who opens
+   those channels. Fix at the two choke points, `post_message` and
+   `post_mention_on`, rather than at 29 call sites; check the injection
+   and escaping scenarios still hold, since a couple of them lean on the
+   paragraph structure.
+4. **i18n not re-exported.** The four `.po` files carry 139 msgids each
    and predate the composer-skill refactor. Export fresh ones and
    translate what is new: `tools/create-translations.py` (needs an
    OpenAI key pasted into `OPEN_AI_KEY`; one is in
    `~/.claude/.credentials-openai.json`).
-4. **Fable review round 2.** Round 1 ran two lenses. Python:
+5. **Fable review round 2.** Round 1 ran two lenses. Python:
    `VERDICT: SHIP`, both findings fixed. JS/OWL: `DO-NOT-SHIP` on the two
    majors above, both fixed. Still open from that round, worth doing
    before publishing:
    - (done, `b69ab8a`) singular word count.
-
    - `compose_panel.scss` darkens its diff and error pills with
      `shade-color($danger|$success, 25–45%)`. Odoo 19 recompiles the
      sheet for dark mode, where darkening further reads as low contrast;
      core mail ships `*.dark.scss` overrides for comparable pills and
      this module ships none. Needs looking at on a dark background.
    Then run a further round until it comes back clean.
-5. **Monorepo pointer** for `addons/muk/muk_ai_chatter` still needs
+6. **Monorepo pointer** for `addons/muk/muk_ai_chatter` still needs
    bumping once the above lands.
