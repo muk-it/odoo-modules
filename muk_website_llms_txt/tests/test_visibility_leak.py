@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from datetime import timedelta
+
+from odoo import fields
 from odoo.tests import tagged
 from odoo.tests.common import HttpCase
 
@@ -48,6 +51,12 @@ class TestLlmsTxtVisibility(LlmsTxtCommon, HttpCase):
             'LLMS_SECRET_DRAFT_TEXT',
             is_published=False,
         )
+        cls.scheduled_page = cls._create_page(
+            'Llms Scheduled Page',
+            '/llms-visibility-scheduled',
+            'LLMS_SECRET_SCHEDULED_TEXT',
+            date_publish=fields.Datetime.now() + timedelta(days=7),
+        )
         cls.website._generate_llms_document('llms.txt')
         cls.website._generate_llms_document('llms-full.txt')
 
@@ -94,3 +103,15 @@ class TestLlmsTxtVisibility(LlmsTxtCommon, HttpCase):
             self.unpublished_page,
         ):
             self.assertNotIn(page, pages)
+
+    def test_scheduled_page_is_excluded_from_the_llms_documents(self):
+        self.assertFalse(self.scheduled_page.is_visible)
+        self.assertEqual(self.url_open('/llms-visibility-scheduled').status_code, 404)
+        self.assertNotIn('/llms-visibility-scheduled', self.url_open('/llms.txt').text)
+        content = self.url_open('/llms-full.txt').text
+        self.assertNotIn('/llms-visibility-scheduled', content)
+        self.assertNotIn('LLMS_SECRET_SCHEDULED_TEXT', content)
+
+    def test_scheduled_page_is_excluded_from_the_search_domain(self):
+        pages = self.env['website.page'].search(self.website._get_llms_page_domain())
+        self.assertNotIn(self.scheduled_page, pages)

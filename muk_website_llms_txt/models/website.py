@@ -4,6 +4,7 @@ import logging
 from collections.abc import Iterator
 
 from odoo import api, fields, models
+from odoo.fields import Domain
 
 from odoo.addons.muk_website_llms_txt.tools.constants import (
     LLMS_BATCH_SIZE,
@@ -158,27 +159,35 @@ class Website(models.Model):
         """Return whether the named Odoo module is installed."""
         return module_name in self.env['ir.module.module']._installed()
 
-    def _get_llms_published_domain(self) -> list[tuple[str, str, object]]:
+    def _get_llms_published_domain(self) -> Domain:
         """Return the domain matching the records published on this website."""
-        return [
-            ('website_published', '=', True),
-            ('website_id', 'in', [self.id, False]),
-        ]
+        return Domain(
+            [
+                ('website_published', '=', True),
+                ('website_id', 'in', [self.id, False]),
+            ]
+        )
 
-    def _get_llms_page_domain(self) -> list[tuple[str, str, object]]:
+    def _get_llms_page_domain(self) -> Domain:
         """Return the domain matching the publicly visible website pages.
 
-        Mirrors the visibility gate the framework enforces when serving a
-        page, so pages restricted to signed-in users, a password or a group
-        are never exposed to anonymous requesters through the sudo search.
+        Mirrors the gate the framework enforces when serving a page, so
+        pages restricted to signed-in users, a password or a group, and
+        pages still waiting for their publishing date, are never exposed to
+        anonymous requesters through the sudo search.
         """
-        return self._get_llms_published_domain() + [
-            ('visibility', 'in', (False, '')),
-            ('group_ids', '=', False),
-        ]
+        return self._get_llms_published_domain() & Domain(
+            [
+                ('visibility', 'in', (False, '')),
+                ('group_ids', '=', False),
+                '|',
+                ('date_publish', '=', False),
+                ('date_publish', '<=', fields.Datetime.now()),
+            ]
+        )
 
     def _iter_llms_records(
-        self, model: str, domain: list[tuple[str, str, object]], order: str
+        self, model: str, domain: Domain, order: str
     ) -> Iterator[models.Model]:
         """Yield every matching record, dropping the ORM cache per batch.
 
