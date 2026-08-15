@@ -706,13 +706,9 @@ class MCPController(http.Controller):
 
     def _handle_prompts_get(self, params: dict[str, Any]) -> dict[str, Any]:
         """Handle ``prompts/get``: render the named prompt with the supplied arguments."""
-        return (
-            request.env['muk_mcp.prompt']
-            .sudo()
-            .get_prompt(
-                params.get('name'),
-                params.get('arguments') or {},
-            )
+        return request.env['muk_mcp.prompt'].get_prompt(
+            params.get('name'),
+            params.get('arguments') or {},
         )
 
     def _handle_completion_complete(self, params: dict[str, Any]) -> dict[str, Any]:

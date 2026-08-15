@@ -145,7 +145,10 @@ class MCPTool(models.Model):
 
         Re-raises any execution error after recording the audit log entry. The
         ``arguments`` payload is validated inside the logged path so a caller
-        sending a non-object value is audited like any other denial.
+        sending a non-object value is audited like any other denial. Execution
+        runs inside a cursor savepoint, so a tool failing halfway leaves no
+        partial writes behind even when the caller turns the error into a
+        result instead of letting it abort the request.
 
         :return: the tool's text result and the extracted record info.
         :raise UserError: if ``arguments`` is neither ``None`` nor a JSON object.
@@ -156,12 +159,13 @@ class MCPTool(models.Model):
         try:
             arguments = self._coerce_arguments(arguments)
             model_name = arguments.get('model')
-            text, info, model_name = self._execute(
-                name,
-                arguments,
-                env,
-                enforce_scope,
-            )
+            with env.cr.savepoint():
+                text, info, model_name = self._execute(
+                    name,
+                    arguments,
+                    env,
+                    enforce_scope,
+                )
             return text, info
         except Exception as exc:
             status = 'denied' if isinstance(exc, MCPScopeDenied) else 'error'

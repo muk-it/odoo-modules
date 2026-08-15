@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+from collections.abc import Callable
 from typing import Any
 
 from odoo import _, api, models
@@ -39,6 +40,33 @@ class MCPMixin(models.AbstractModel):
     @api.model
     def _mcp_assert_records_allowed(self, model: str, ids) -> None:
         """Hook to assert the records may be exposed via MCP."""
+
+    @api.model
+    def _mcp_call_model_method(
+        self,
+        target: models.BaseModel,
+        method: str,
+        unbound: Callable,
+        args: list,
+        kwargs: dict,
+    ) -> Any:
+        """Hook invoking an ``@api.model`` method reached through MCP.
+
+        Such a method carries no record ids, so the record hook never fires
+        for it and any narrowing has to happen around the call itself.
+        """
+        return unbound(target, *args, **kwargs)
+
+    @api.model
+    def _mcp_attachment_exempt_models(self) -> frozenset[str]:
+        """Return the models whose attachments are MCP payloads, not business documents.
+
+        Empty here. A module that parks the files it hands to the agent on
+        its own records (a chat upload, a published resource) adds those
+        models, so that they stay readable when another module layers access
+        restrictions on top of MCP.
+        """
+        return frozenset()
 
     @api.model
     def _resolve_resource_uri(self, uri: str) -> tuple[str, bytes, str]:

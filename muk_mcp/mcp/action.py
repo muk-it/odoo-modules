@@ -91,7 +91,7 @@ class MCPMixin(models.AbstractModel):
             raise UserError(str(exc))
         target_ids = normalize_ids(ids)
         positional = coerce_json_value(args) or []
-        if not getattr(unbound, '_api_model', False):
+        if not (model_method := getattr(unbound, '_api_model', False)):
             if not target_ids and positional:
                 target_ids = normalize_ids(positional[0])
                 positional = positional[1:]
@@ -102,4 +102,12 @@ class MCPMixin(models.AbstractModel):
         context_override = keyword.pop('context', None)
         if isinstance(context_override, dict) and context_override:
             target = target.with_context(**context_override)
+        if model_method:
+            return self._mcp_call_model_method(
+                target,
+                method,
+                unbound,
+                positional,
+                keyword,
+            )
         return unbound(target, *positional, **keyword)

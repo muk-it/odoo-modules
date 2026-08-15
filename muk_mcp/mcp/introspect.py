@@ -14,6 +14,15 @@ class MCPMixin(models.AbstractModel):
     _inherit = 'muk_mcp.mixin'
 
     # ----------------------------------------------------------
+    # Helper
+    # ----------------------------------------------------------
+
+    @api.model
+    def _mcp_listable_model_names(self) -> set[str] | None:
+        """Hook returning the listable model names, or ``None`` when unrestricted."""
+        return None
+
+    # ----------------------------------------------------------
     # Functions
     # ----------------------------------------------------------
 
@@ -55,13 +64,17 @@ class MCPMixin(models.AbstractModel):
         """List registry models, optionally filtered by a name substring.
 
         Matches ``search`` case-insensitively against the technical name,
+        drops models excluded by :meth:`_mcp_listable_model_names`, then
         returns name + description pairs sorted by model name and capped at
         ``limit``.
         """
         needle = (search or '').lower()
+        listable = self._mcp_listable_model_names()
         models_data = []
         for model_name, model_cls in self.env.registry.items():
             if needle and needle not in model_name.lower():
+                continue
+            if listable is not None and model_name not in listable:
                 continue
             description = getattr(model_cls, '_description', None) or model_name
             models_data.append(
