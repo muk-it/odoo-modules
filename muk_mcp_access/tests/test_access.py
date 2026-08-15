@@ -434,6 +434,112 @@ class TestMCPAccessModel(common.TransactionCase):
         )
         self.assertEqual(partner.comment, '<p>ok</p>')
 
+    def test_call_method_search_read_applies_domain(self):
+        self.access_model.create(
+            {
+                'model_id': self.country_model.id,
+                'allow_read': True,
+                'allow_write': True,
+                'domain': "[('code', '=', 'BE')]",
+            }
+        )
+        rows = self.mixin._mcp_call_method(
+            'res.country',
+            'search_read',
+            kwargs={
+                'domain': [('code', 'in', ['BE', 'FR'])],
+                'fields': ['code'],
+            },
+        )
+        self.assertEqual({row['code'] for row in rows}, {'BE'})
+
+    def test_call_method_search_count_applies_domain_to_a_positional_domain(self):
+        self.access_model.create(
+            {
+                'model_id': self.country_model.id,
+                'allow_read': True,
+                'allow_write': True,
+                'domain': "[('code', '=', 'BE')]",
+            }
+        )
+        count = self.mixin._mcp_call_method(
+            'res.country',
+            'search_count',
+            args='[[]]',
+        )
+        self.assertEqual(count, 1)
+
+    def test_call_method_web_search_read_applies_domain(self):
+        self.access_model.create(
+            {
+                'model_id': self.country_model.id,
+                'allow_read': True,
+                'allow_write': True,
+                'domain': "[('code', '=', 'BE')]",
+            }
+        )
+        result = self.mixin._mcp_call_method(
+            'res.country',
+            'web_search_read',
+            kwargs={'domain': [], 'specification': {'code': {}}},
+        )
+        self.assertEqual({row['code'] for row in result['records']}, {'BE'})
+
+    def test_call_method_model_method_without_domain_argument_still_runs(self):
+        self.access_model.create(
+            {
+                'model_id': self.country_model.id,
+                'allow_read': True,
+                'allow_write': True,
+                'domain': "[('code', '=', 'BE')]",
+            }
+        )
+        values = self.mixin._mcp_call_method(
+            'res.country',
+            'default_get',
+            args='[["code"]]',
+        )
+        self.assertIsInstance(values, dict)
+
+    def test_call_method_create_respects_domain(self):
+        self.access_model.create(
+            {
+                'model_id': self.partner_model.id,
+                'allow_read': True,
+                'allow_write': True,
+                'domain': "[('is_company', '=', True)]",
+            }
+        )
+        with self.assertRaises(AccessError):
+            self.mixin._mcp_call_method(
+                'res.partner',
+                'create',
+                args='[{"name": "MCP_CM_CREATE", "is_company": false}]',
+            )
+        self.assertFalse(
+            self.env['res.partner'].search_count(
+                [('name', '=', 'MCP_CM_CREATE')],
+            )
+        )
+
+    def test_call_method_model_method_unrestricted_without_domain(self):
+        self.access_model.create(
+            {
+                'model_id': self.country_model.id,
+                'allow_read': True,
+                'allow_write': True,
+            }
+        )
+        rows = self.mixin._mcp_call_method(
+            'res.country',
+            'search_read',
+            kwargs={
+                'domain': [('code', 'in', ['BE', 'FR'])],
+                'fields': ['code'],
+            },
+        )
+        self.assertEqual({row['code'] for row in rows}, {'BE', 'FR'})
+
     # ----------------------------------------------------------
     # Tests: print_report allowlist and record domain
     # ----------------------------------------------------------

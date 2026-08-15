@@ -28,7 +28,7 @@ access list.
 ## Usage
 
 Once the whitelist contains at least one entry, the module enforces
-two restrictions:
+three restrictions:
 
 1. **Tool-level blocking** -- any tool that accepts a `model`
    argument (`search_read`, `create_records`, `describe_model`,
@@ -38,6 +38,19 @@ two restrictions:
 2. **Discovery filtering** -- `list_models` only returns models
    that appear in the whitelist, so the AI client cannot discover
    restricted models.
+
+3. **Resource blocking** -- `read_resource` resolves the record an
+   `odoo://attachment/<id>` uri belongs to and raises `AccessError`
+   when that model is not whitelisted or the record falls outside
+   the configured record domain. Attachments linked to no record,
+   and those on models a module declares as MCP payload carriers,
+   stay readable.
+
+`call_method` is covered too. A method called on record ids checks
+those ids against the record domain; a model-level method
+(`search_read`, `web_search_read`, `create`, ...) gets the record
+domain merged into its `domain` argument, and any record it returns
+is checked against the domain, the call being rolled back otherwise.
 
 The check respects the tool's category: read tools check
 `allow_read`, write tools check `allow_write`. This layering

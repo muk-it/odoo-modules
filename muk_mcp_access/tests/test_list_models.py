@@ -61,3 +61,14 @@ class TestMCPAccessListModels(common.TransactionCase):
         self._allow('res.partner', read=True, write=True)
         names = [m['model'] for m in self.mixin._mcp_list_models(search='res.partner')]
         self.assertEqual(names, ['res.partner'])
+
+    def test_allowlisted_model_survives_the_limit(self):
+        self._allow('res.partner', read=True, write=False)
+        names = [m['model'] for m in self.mixin._mcp_list_models(limit=5)]
+        self.assertEqual(names, ['res.partner'])
+
+    def test_default_tool_call_returns_the_allowlist(self):
+        self._allow('res.partner', read=True, write=False)
+        text, _info = self.tool_model._call('list_models', {}, self.env)
+        names = [m['model'] for m in json.loads(text)]
+        self.assertEqual(names, ['res.partner'])
