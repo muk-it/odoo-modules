@@ -249,6 +249,24 @@ class TestResPartner(TransactionCase):
         self.assertEqual(partner.linked_user_id, user)
         self.assertEqual(partner.linked_user_state, 'internal')
 
+    def test_merging_a_numbered_partner_into_an_unnumbered_one(self):
+        sequence = self.env.ref('muk_contacts.sequence_contact_number')
+        sequence.active = False
+        dst = self.env['res.partner'].create(
+            {'name': 'Legacy Partner', 'email': 'dup@example.com'}
+        )
+        self.assertFalse(dst.contact_number)
+        sequence.active = True
+        src = self.env['res.partner'].create(
+            {'name': 'New Duplicate', 'email': 'dup@example.com'}
+        )
+        number = src.contact_number
+        self.assertTrue(number)
+        wizard = self.env['base.partner.merge.automatic.wizard'].create({})
+        wizard._merge([src.id, dst.id], dst)
+        self.assertFalse(src.exists())
+        self.assertEqual(dst.contact_number, number)
+
     def test_a_partner_without_a_user_has_no_linked_user_state(self):
         partner = self.env['res.partner'].create({'name': 'Userless Partner'})
         self.assertFalse(partner.linked_user_id)
