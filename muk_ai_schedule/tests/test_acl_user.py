@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from odoo import models
-from odoo.exceptions import AccessError
+from odoo.exceptions import AccessError, UserError
 from odoo.tests.common import new_test_user, tagged
 
 from .common import ScheduleTestCommon
@@ -105,6 +105,15 @@ class TestACLUser(ScheduleTestCommon):
         self.assertTrue(sched.with_user(self.user_a).exists())
         with self.assertRaises(AccessError):
             sched.with_user(self.user_a).copy()
+
+    def test_archived_owner_schedule_does_not_escalate_to_admin(self):
+        schedule = self.Schedule.with_user(self.user_a).create(self._schedule_vals())
+        self.user_a.sudo().active = False
+        with self._mock_provider(), self.assertRaises(UserError):
+            schedule.sudo().action_fire_now()
+        self.assertFalse(
+            self.env['muk_ai.session'].search([('schedule_id', '=', schedule.id)]),
+        )
 
     def test_admin_can_author_record_code(self):
         admin = self._make_admin()

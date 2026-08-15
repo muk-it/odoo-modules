@@ -5,7 +5,12 @@ from datetime import timedelta
 from odoo import _, api, fields, models
 from odoo.tools import config
 
+from odoo.addons.muk_ai_automation.tools.dispatch import post_session_event
 from odoo.addons.muk_ai_schedule.tools.constants import (
+    DEFAULT_MAX_COST_EUR,
+    DEFAULT_MAX_LIFETIME_HOURS,
+    DEFAULT_MAX_RESUMES,
+    DEFAULT_MAX_TOTAL_TOKENS,
     SCHEDULE_PICKUP_LIMIT,
     SCHEDULE_TERMINATING_TOOLS,
 )
@@ -101,6 +106,80 @@ class AISession(models.Model):
             )
         return visited
 
+    def _schedule_effective_caps(self) -> dict:
+        """Return the per-session caps from the schedule, action, or defaults."""
+        self.ensure_one()
+        if self.schedule_id:
+            return self.schedule_id._effective_caps()
+        if action := self.action_server_id:
+            return action._agent_effective_caps()
+        return {
+            'max_resumes': DEFAULT_MAX_RESUMES,
+            'max_lifetime_hours': DEFAULT_MAX_LIFETIME_HOURS,
+            'max_total_tokens': DEFAULT_MAX_TOTAL_TOKENS,
+            'max_cost_eur': DEFAULT_MAX_COST_EUR,
+        }
+
+    def _schedule_abort_with_cap(self, cap: str, limit: float, observed: float) -> None:
+        """Move the session to error and record the exceeded cap as an event."""
+        self.ensure_one()
+        post_session_event(
+            self,
+            'cap_exceeded',
+            {
+                'cap': cap,
+                'limit': limit,
+                'observed': observed,
+            },
+        )
+        self.write(
+            {
+                'state': 'error',
+                'error_message': _(
+                    'Cap exceeded (%(cap)s: %(observed)s/%(limit)s).',
+                    cap=cap,
+                    observed=observed,
+                    limit=limit,
+                ),
+            }
+        )
+
+    def _schedule_check_caps(self, runs_done: int) -> bool:
+        """Return whether the session is still within all effective caps.
+
+        Enforced on every path that re-arms a session — the MCP tools when the
+        agent asks for a resume and the automatic recurrence redefer — since
+        the caps are cumulative over the whole session lifetime.
+
+        Aborts the session and returns ``False`` on the first cap breached.
+        """
+        self.ensure_one()
+        caps = self._schedule_effective_caps()
+        elapsed = (
+            (fields.Datetime.now() - self.create_date).total_seconds() / 3600.0
+            if self.create_date
+            else 0.0
+        )
+        used_tokens = (self.total_input_tokens or 0) + (self.total_output_tokens or 0)
+        used_cost = self.total_cost or 0.0
+        checks = [
+            ('max_resumes', DEFAULT_MAX_RESUMES, runs_done, runs_done),
+            (
+                'max_lifetime_hours',
+                DEFAULT_MAX_LIFETIME_HOURS,
+                elapsed,
+                round(elapsed, 2),
+            ),
+            ('max_total_tokens', DEFAULT_MAX_TOTAL_TOKENS, used_tokens, used_tokens),
+            ('max_cost_eur', DEFAULT_MAX_COST_EUR, used_cost, round(used_cost, 4)),
+        ]
+        for cap, default, observed, reported in checks:
+            limit = caps.get(cap) or default
+            if observed >= limit:
+                self._schedule_abort_with_cap(cap, limit, reported)
+                return False
+        return True
+
     # ----------------------------------------------------------
     # Actions
     # ----------------------------------------------------------
@@ -163,6 +242,8 @@ class AISession(models.Model):
         now = fields.Datetime.now()
         new_resume_at = now + timedelta(seconds=every_seconds)
         if until_dt and (now >= until_dt or new_resume_at > until_dt):
+            return
+        if not self._schedule_check_caps(runs_done):
             return
         next_runs = runs_done + 1
         self.write(

@@ -89,6 +89,15 @@ class TestMigration(ScheduleTestCommon):
         self.assertEqual(schedule.cron_id.nextcall, datetime(2026, 5, 4, 8, 0))
         self.assertEqual(schedule.cron_id.lastcall, datetime(2026, 5, 3, 8, 0))
 
+    def test_archived_legacy_schedule_gains_an_owned_cron(self):
+        schedule = self._make_schedule()
+        schedule.write({'active': False})
+        self._replay_provisioning(schedule)
+        self.assertTrue(schedule.action_server_id)
+        self.assertTrue(schedule.cron_id)
+        self.assertFalse(schedule.cron_id.active)
+        self.assertEqual(schedule.cron_id.nextcall, datetime(2026, 5, 4, 8, 0))
+
     def test_orphan_session_is_repointed_at_the_owned_action(self):
         schedule = self._make_schedule()
         session = self._make_session(schedule_id=schedule.id)

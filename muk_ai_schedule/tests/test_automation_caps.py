@@ -26,7 +26,7 @@ class TestAutomationCaps(ScheduleTestCommon):
         )
         session = self._make_session(action_server_id=action.id)
         self.assertFalse(session.schedule_id)
-        caps = self.Mixin._schedule_effective_caps(session)
+        caps = session._schedule_effective_caps()
         self.assertEqual(caps['max_resumes'], 2)
         self.assertEqual(caps['max_cost_eur'], 1.0)
 
@@ -34,13 +34,13 @@ class TestAutomationCaps(ScheduleTestCommon):
         session = self._make_session()
         self.assertFalse(session.schedule_id)
         self.assertFalse(session.action_server_id)
-        caps = self.Mixin._schedule_effective_caps(session)
+        caps = session._schedule_effective_caps()
         self.assertEqual(caps['max_resumes'], DEFAULT_MAX_RESUMES)
         self.assertEqual(caps['max_cost_eur'], DEFAULT_MAX_COST_EUR)
 
     def test_the_schedule_caps_win_over_the_action_caps(self):
         schedule = self._make_schedule(max_resumes=9, max_cost_eur=3.0)
         session = self._make_session(schedule_id=schedule.id)
-        caps = self.Mixin._schedule_effective_caps(session)
+        caps = session._schedule_effective_caps()
         self.assertEqual(caps['max_resumes'], 9)
         self.assertEqual(caps['max_cost_eur'], 3.0)

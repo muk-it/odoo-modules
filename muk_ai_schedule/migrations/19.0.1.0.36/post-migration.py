@@ -13,7 +13,9 @@ def migrate(cr: Cursor, version: str) -> None:
     env = api.Environment(cr, SUPERUSER_ID, {})
     Schedule = env['muk_ai.schedule'].sudo()
 
-    rows = Schedule.search([('action_server_id', '=', False)])
+    rows = Schedule.with_context(active_test=False).search(
+        [('action_server_id', '=', False)]
+    )
     if not rows:
         return
 

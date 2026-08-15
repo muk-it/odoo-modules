@@ -10,7 +10,7 @@
         matching a domain; chained sessions expose previous_session_id
         so an agent can recall last run's summary cheaply.
     """,
-    'version': '19.0.1.1.1',
+    'version': '19.0.1.1.3',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',

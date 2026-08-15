@@ -5,12 +5,7 @@ from datetime import datetime, timedelta
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
-from odoo.addons.muk_ai_automation.tools.dispatch import post_session_event
 from odoo.addons.muk_ai_schedule.tools.constants import (
-    DEFAULT_MAX_COST_EUR,
-    DEFAULT_MAX_LIFETIME_HOURS,
-    DEFAULT_MAX_RESUMES,
-    DEFAULT_MAX_TOTAL_TOKENS,
     MAX_DELAY_SECONDS,
     MAX_PROMPT_CHARS,
     MIN_DELAY_SECONDS,
@@ -41,85 +36,6 @@ class ScheduleToolsMixin(models.AbstractModel):
         if not session.exists():
             raise UserError(_('Session %(sid)s no longer exists.', sid=session_id))
         return session
-
-    def _schedule_effective_caps(self, session: models.BaseModel) -> dict:
-        """Return the per-session caps from the schedule, action, or defaults."""
-        if session.schedule_id:
-            return session.schedule_id._effective_caps()
-        if action := session.action_server_id:
-            return action._agent_effective_caps()
-        return {
-            'max_resumes': DEFAULT_MAX_RESUMES,
-            'max_lifetime_hours': DEFAULT_MAX_LIFETIME_HOURS,
-            'max_total_tokens': DEFAULT_MAX_TOTAL_TOKENS,
-            'max_cost_eur': DEFAULT_MAX_COST_EUR,
-        }
-
-    def _schedule_abort_with_cap(
-        self,
-        session: models.BaseModel,
-        cap: str,
-        limit: float,
-        observed: float,
-    ) -> None:
-        """Move the session to error and record the exceeded cap as an event."""
-        post_session_event(
-            session,
-            'cap_exceeded',
-            {
-                'cap': cap,
-                'limit': limit,
-                'observed': observed,
-            },
-        )
-        session.write(
-            {
-                'state': 'error',
-                'error_message': _(
-                    'Cap exceeded (%(cap)s: %(observed)s/%(limit)s).',
-                    cap=cap,
-                    observed=observed,
-                    limit=limit,
-                ),
-            }
-        )
-
-    def _schedule_check_resume_cap(
-        self,
-        session: models.BaseModel,
-        runs_done: int,
-    ) -> bool:
-        """Return whether the session is still within all effective caps.
-
-        Aborts the session and returns ``False`` on the first cap breached.
-        """
-        caps = self._schedule_effective_caps(session)
-        elapsed = (
-            (fields.Datetime.now() - session.create_date).total_seconds() / 3600.0
-            if session.create_date
-            else 0.0
-        )
-        used_tokens = (session.total_input_tokens or 0) + (
-            session.total_output_tokens or 0
-        )
-        used_cost = session.total_cost or 0.0
-        checks = [
-            ('max_resumes', DEFAULT_MAX_RESUMES, runs_done, runs_done),
-            (
-                'max_lifetime_hours',
-                DEFAULT_MAX_LIFETIME_HOURS,
-                elapsed,
-                round(elapsed, 2),
-            ),
-            ('max_total_tokens', DEFAULT_MAX_TOTAL_TOKENS, used_tokens, used_tokens),
-            ('max_cost_eur', DEFAULT_MAX_COST_EUR, used_cost, round(used_cost, 4)),
-        ]
-        for cap, default, observed, reported in checks:
-            limit = caps.get(cap) or default
-            if observed >= limit:
-                self._schedule_abort_with_cap(session, cap, limit, reported)
-                return False
-        return True
 
     def _schedule_validate_prompt(self, prompt: str) -> None:
         """Validate that the resume prompt is non-empty and within the limit.
@@ -241,7 +157,7 @@ class ScheduleToolsMixin(models.AbstractModel):
         session = self._resolve_schedule_session()
         self._schedule_validate_prompt(prompt)
         runs_done = (session.recur_runs_done or 0) + 1
-        if not self._schedule_check_resume_cap(session, runs_done - 1):
+        if not session._schedule_check_caps(runs_done - 1):
             return {'ok': False, 'error': 'cap_exceeded', 'cap': 'max_resumes'}
         resume_at = self._schedule_resolve_resume_at(at, seconds_from_now)
         session.write(
@@ -346,14 +262,13 @@ class ScheduleToolsMixin(models.AbstractModel):
         existing_max_runs = existing_config.get('max_runs')
         runs_done = (session.recur_runs_done or 0) + 1
         if existing_max_runs and runs_done > int(existing_max_runs):
-            self._schedule_abort_with_cap(
-                session,
+            session._schedule_abort_with_cap(
                 'recur_max_runs',
                 int(existing_max_runs),
                 runs_done - 1,
             )
             return {'ok': False, 'error': 'cap_exceeded', 'cap': 'recur_max_runs'}
-        if not self._schedule_check_resume_cap(session, runs_done - 1):
+        if not session._schedule_check_caps(runs_done - 1):
             return {'ok': False, 'error': 'cap_exceeded', 'cap': 'max_resumes'}
         resume_at = now + timedelta(seconds=every_seconds)
         session.write(
