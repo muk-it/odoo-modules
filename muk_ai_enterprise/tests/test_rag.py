@@ -202,6 +202,71 @@ class TestRag(BridgeTestCommon):
         self.assertNotIn('<rag>', rendered)
 
     # ----------------------------------------------------------
+    # Tests embedding reuse
+    # ----------------------------------------------------------
+
+    def test_identical_query_is_embedded_once_per_turn(self):
+        agent, _source, attachment = self._make_agent_with_source()
+        action = self.env['ir.actions.server'].create(
+            {
+                'name': 'RAG Echo Action',
+                'model_id': self.env['ir.model']._get_id('res.partner'),
+                'state': 'code',
+                'code': "ai['result'] = 'echoed'",
+                'use_in_ai': True,
+                'ai_tool_description': 'Echo a message back',
+            }
+        )
+        topic = self.env['ai.topic'].create(
+            {
+                'name': 'RAG Echo Topic',
+                'tool_ids': [(6, 0, [action.id])],
+            }
+        )
+        agent.ee_topic_ids = [(6, 0, [topic.id])]
+        session = self._make_session(agent)
+        chunk = self._chunk(attachment, 'Frobnication is a fictional process.')
+        with (
+            self._patch_embedding() as embed,
+            self._patch_chunks(chunk),
+            self._patch_provider(
+                [
+                    self._tool_payload(f'ee_action_action_{action.id}', {}, 'call_a'),
+                    self._text_payload('done'),
+                ]
+            ),
+        ):
+            session.start('tell me about frobnication')
+        self.assertEqual(session.iteration_count, 2)
+        self.assertEqual(
+            {call.kwargs['input'] for call in embed.call_args_list},
+            {'tell me about frobnication'},
+        )
+        self.assertEqual(
+            embed.call_count,
+            1,
+            'an identical query must be embedded once per turn',
+        )
+
+    def test_a_new_question_is_embedded_again(self):
+        agent, _source, attachment = self._make_agent_with_source()
+        session = self._make_session(agent)
+        chunk = self._chunk(attachment, 'Frobnication is a fictional process.')
+        with (
+            self._patch_embedding() as embed,
+            self._patch_chunks(chunk),
+            self._patch_provider(
+                [self._text_payload('one'), self._text_payload('two')]
+            ),
+        ):
+            session.start('tell me about frobnication')
+            session.send_message('and about widget calibration')
+        self.assertEqual(
+            [call.kwargs['input'] for call in embed.call_args_list],
+            ['tell me about frobnication', 'and about widget calibration'],
+        )
+
+    # ----------------------------------------------------------
     # Tests embedding configuration
     # ----------------------------------------------------------
 

@@ -8,6 +8,8 @@ from odoo.addons.ai.utils.llm_api_service import LLMApiService
 from odoo.addons.ai.utils.llm_providers import get_provider_for_embedding_model
 from odoo.addons.muk_ai_enterprise.tools import adapter
 
+RAG_SNIPPET_CACHE_KEY = 'muk_ai_enterprise.ee_rag_snippet'
+
 
 class AiSession(models.Model):
     """Enrich MuK AI sessions with Enterprise RAG and record context."""
@@ -102,6 +104,23 @@ class AiSession(models.Model):
             )
         return ''
 
+    def _cached_ee_rag_snippet(self, sources: models.BaseModel, query: str) -> str:
+        """Return the RAG snippet for a query, retrieved once per turn.
+
+        The system prompt is rebuilt for every provider round, but the
+        question being answered stays the same until the next turn starts.
+        Without this the very same text is embedded — a billed, synchronous
+        HTTP round-trip plus a similarity query, both in-band on the chat
+        latency — once more for every tool call the agent makes.
+        """
+        key = (self.id, self.turn_seq, tuple(sources.ids), query)
+        cached = self.env.cr.cache.get(RAG_SNIPPET_CACHE_KEY)
+        if cached is not None and cached[0] == key:
+            return cached[1]
+        snippet = self._build_ee_rag_snippet(sources, query)
+        self.env.cr.cache[RAG_SNIPPET_CACHE_KEY] = (key, snippet)
+        return snippet
+
     def _ee_init_context(
         self, model_name: str | None, record_id: int | None
     ) -> list[str]:
@@ -152,7 +171,7 @@ class AiSession(models.Model):
         ):
             return rendered
         with suppress(Exception):
-            snippet = self._build_ee_rag_snippet(sources, query)
+            snippet = self._cached_ee_rag_snippet(sources, query)
             if snippet:
                 preamble = (
                     'Snippets retrieved from the knowledge sources for the '
