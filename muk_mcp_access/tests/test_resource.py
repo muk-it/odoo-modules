@@ -69,9 +69,10 @@ class TestMCPAccessResource(common.TransactionCase):
 
     def test_attachment_of_listed_model_is_returned(self):
         self._allow('res.partner')
+        partner = self.env['res.partner'].create({'name': 'Resource Owner'})
         attachment = self._attach(
             'res.partner',
-            self.env.ref('base.res_partner_1').id,
+            partner.id,
             b'fine',
         )
         content = self.mixin._mcp_read_resource('odoo://attachment/%d' % attachment.id)
