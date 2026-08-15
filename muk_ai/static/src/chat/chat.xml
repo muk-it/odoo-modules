@@ -11,7 +11,6 @@
                 spaces="state.spaces"
                 spaceSessions="state.spaceSessions"
                 spaceUnread="badge.spaceUnread"
-                agents="session.state.agents"
                 unreadIds="badge.unreadIds"
                 activeSessionId="session.state.sessionId"
                 hasMore="state.sessionsHasMore"

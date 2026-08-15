@@ -2,7 +2,7 @@
 <templates xml:space="preserve">
 
     <t t-name="muk_ai.SpaceDialog">
-        <Dialog size="'sm'" title="props.title">
+        <Dialog size="'md'" title="props.title">
             <div class="mk_space_dialog">
                 <div class="mb-3">
                     <label class="form-label small text-muted">Name</label>
@@ -36,18 +36,19 @@
                         </t>
                     </SelectMenu>
                 </div>
-                <div>
+                <div class="mb-3">
                     <label class="form-label small text-muted">Default agent</label>
-                    <select class="form-select" t-on-change="(ev) => this.onAgentChange(ev)">
-                        <option value="">No default agent</option>
-                        <t t-foreach="props.agents" t-as="agent" t-key="agent.id">
-                            <option
-                                t-att-value="agent.id"
-                                t-att-selected="state.agentId === agent.id"
-                                t-esc="agent.name"
-                            />
-                        </t>
-                    </select>
+                    <Many2XAutocomplete t-props="agentAutocompleteProps"/>
+                </div>
+                <div>
+                    <label class="form-label small text-muted">Instructions</label>
+                    <textarea
+                        class="form-control"
+                        rows="6"
+                        t-att-value="state.instructions"
+                        placeholder="Context and preferences for every chat in this space..."
+                        t-on-input="(ev) => this.onInstructionsInput(ev)"
+                    />
                 </div>
             </div>
             <t t-set-slot="footer">

@@ -529,6 +529,35 @@ class AISession(models.Model):
             return '\n'.join(lines)
         return ''
 
+    def _build_space_block(self) -> str:
+        """Build the prompt block carrying the instructions of the session's space.
+
+        The text belongs to the user rather than to an administrator, so it is
+        handed over as written instead of rendered: the evaluation context of
+        :meth:`~odoo.addons.muk_ai.models.prompt_mixin.AIPromptMixin._render_prompt`
+        reaches ``env``. The space is read sudoed, as a chat shared with
+        somebody stays filed in a space of its owner, which the people it was
+        shared with cannot read.
+        """
+        space = self.space_id.sudo()
+        if instructions := (space.instructions or '').strip():
+            return '\n'.join(
+                [
+                    '<space_instructions>',
+                    (
+                        'How the user wants you to work in the space '
+                        '%(space)s. Follow them wherever they apply. They '
+                        'refine the instructions above rather than replace '
+                        'them, and they grant no access you do not already '
+                        'have.'
+                    )
+                    % {'space': space.display_name},
+                    instructions,
+                    '</space_instructions>',
+                ]
+            )
+        return ''
+
     def _build_files_block(self) -> str:
         """Build the prompt block stating how to hand a file to the user."""
         return (
@@ -715,6 +744,7 @@ class AISession(models.Model):
         """Return the system message rebuilt from the current agent and context."""
         parts = [
             self._effective_system_prompt(),
+            self._build_space_block(),
             *self._system_prompt_addenda(),
             self._build_runtime_block(),
             self._build_files_block(),
@@ -3623,63 +3653,47 @@ class AISession(models.Model):
             and not item.get('_vision_entry')
         )
 
-    def _conversation_cut_index(self, event: models.BaseModel) -> int:
-        """Return the conversation index to cut at when undoing to an event."""
-        earlier_user_msgs = (
-            self.env['muk_ai.session.event']
-            .sudo()
-            .search_count(
-                [
-                    ('session_id', '=', self.id),
-                    ('sequence', '<', event.sequence),
-                    ('kind', '=', 'user_message'),
-                ]
-            )
-        )
-        conv = list(self.conversation or [])
-        user_seen = 0
-        if event.kind == 'user_message':
-            for i, item in enumerate(conv):
-                if self._is_counted_user_entry(item):
-                    if user_seen == earlier_user_msgs:
-                        return i
-                    user_seen += 1
-            return len(conv)
-        for i, item in enumerate(conv):
-            if self._is_counted_user_entry(item):
-                user_seen += 1
-                if user_seen == earlier_user_msgs:
-                    return i + 1
-        return len(conv)
+    def _conversation_cut_index(
+        self, event: models.BaseModel, keep_turn: bool = False
+    ) -> int:
+        """Return the conversation index to cut at for an event.
 
-    def _conversation_cut_index_for_fork(self, event: models.BaseModel) -> int:
-        """Return the conversation index to cut at when forking at an event."""
-        earlier_user_msgs = (
+        The event log and the conversation are mapped from their common tail:
+        ``clear()`` and compaction drop the conversation head while keeping
+        every event, so counting from the start would mis-cut every turn made
+        after such a reset.
+
+        :param keep_turn: When set, the entries the event itself produced are
+            kept (fork); otherwise they are dropped as well (undo).
+        """
+        is_user = event.kind == 'user_message'
+        later_user_msgs = (
             self.env['muk_ai.session.event']
             .sudo()
             .search_count(
                 [
                     ('session_id', '=', self.id),
-                    ('sequence', '<', event.sequence),
+                    ('sequence', '>=' if is_user else '>', event.sequence),
                     ('kind', '=', 'user_message'),
                 ]
             )
         )
+        if is_user:
+            rank, offset = later_user_msgs, 1 if keep_turn else 0
+        else:
+            rank, offset = (
+                (later_user_msgs, 0) if keep_turn else (later_user_msgs + 1, 1)
+            )
         conv = list(self.conversation or [])
-        user_seen = 0
-        if event.kind == 'user_message':
-            for i, item in enumerate(conv):
-                if self._is_counted_user_entry(item):
-                    if user_seen == earlier_user_msgs:
-                        return i + 1
-                    user_seen += 1
+        if rank <= 0:
             return len(conv)
-        for i, item in enumerate(conv):
-            if self._is_counted_user_entry(item):
+        user_seen = 0
+        for i in range(len(conv) - 1, -1, -1):
+            if self._is_counted_user_entry(conv[i]):
                 user_seen += 1
-                if user_seen > earlier_user_msgs:
-                    return i
-        return len(conv)
+                if user_seen == rank:
+                    return i + offset
+        return 0
 
     # ----------------------------------------------------------
     # Functions
@@ -4074,7 +4088,7 @@ class AISession(models.Model):
         if self.state in ('running', 'compacting'):
             raise UserError(_('Cannot fork while the session is running.'))
         target = self._resolve_event(event_id)
-        cut_index = self._conversation_cut_index_for_fork(target)
+        cut_index = self._conversation_cut_index(target, keep_turn=True)
         new_conv = list(self.conversation or [])[:cut_index]
         fork = self.copy(
             {

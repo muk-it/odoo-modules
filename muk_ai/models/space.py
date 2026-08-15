@@ -47,6 +47,15 @@ class AISpace(models.Model):
         ondelete='set null',
     )
 
+    instructions = fields.Text(
+        string='Instructions',
+        help=(
+            'How the assistant should work in this space: context to keep in '
+            'mind, wording to prefer, steps to follow. The text is handed to '
+            'every chat the space holds.'
+        ),
+    )
+
     user_id = fields.Many2one(
         comodel_name='res.users',
         string='Owner',
@@ -214,6 +223,8 @@ class AISpace(models.Model):
                 'name': space.name,
                 'icon': space.icon,
                 'agent_id': space.agent_id.id,
+                'agent_name': space.agent_id.display_name or '',
+                'instructions': space.instructions or '',
                 'system': bool(space.domain),
                 'session_domain': space._session_domain(),
             }
@@ -274,6 +285,23 @@ class AISpace(models.Model):
                     _(
                         'The space "%s" must either belong to a user or collect '
                         'its chats through a domain.',
+                        record.name,
+                    )
+                )
+
+    @api.constrains('instructions', 'domain')
+    def _check_instructions(self) -> None:
+        """Keep instructions on personal spaces only.
+
+        A system space derives its chats from a domain, so it holds the chats
+        of everybody, filed there by nobody, and instructions stored on one
+        would reach chats their owners never handed them to.
+        """
+        for record in self:
+            if record.instructions and record.domain:
+                raise ValidationError(
+                    _(
+                        'The system space "%s" cannot carry instructions.',
                         record.name,
                     )
                 )

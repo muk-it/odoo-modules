@@ -5360,3 +5360,44 @@ msgstr "Esperando la respuesta del propietario."
 #: code:addons/muk_ai/static/src/chat/share/share_dialog.xml:0
 msgid "Who may read it"
 msgstr "Quién puede leerlo"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/sidebar/space_dialog.xml:0
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_space__instructions
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_space_form
+msgid "Instructions"
+msgstr "Instrucciones"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_space_form
+msgid "How the assistant should work in this space..."
+msgstr "Cómo debe trabajar el asistente en este espacio..."
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/sidebar/space_dialog.xml:0
+msgid "Context and preferences for every chat in this space..."
+msgstr "Contexto y preferencias para cada chat de este espacio..."
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_space__instructions
+msgid ""
+"How the assistant should work in this space: context to keep in mind, "
+"wording to prefer, steps to follow. The text is handed to every chat the "
+"space holds."
+msgstr ""
+"Cómo debe trabajar el asistente en este espacio: contexto que debe tener en "
+"cuenta, formulaciones preferidas, pasos que debe seguir. El texto se entrega"
+" a cada chat del espacio."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/space.py:0
+msgid "The system space \"%s\" cannot carry instructions."
+msgstr "El espacio de sistema \"%s\" no puede contener instrucciones."
+
+#. module: muk_ai
+#: model:ir.model,name:muk_ai.model_ir_websocket
+msgid "websocket message handling"
+msgstr "Gestión de mensajes WebSocket"

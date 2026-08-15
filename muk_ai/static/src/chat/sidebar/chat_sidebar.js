@@ -41,7 +41,6 @@ export class ChatSidebar extends Component {
         spaces: { type: Array, optional: true },
         spaceSessions: { type: Object, optional: true },
         spaceUnread: { type: Object, optional: true },
-        agents: { type: Array, optional: true },
         unreadIds: { type: Array, optional: true },
         activeSessionId: { type: [Number, { value: null }], optional: true },
         hasMore: { type: Boolean, optional: true },
@@ -253,7 +252,8 @@ export class ChatSidebar extends Component {
             name: space.name || '',
             icon: space.icon || 'fa-folder-o',
             agentId: space.agent_id || false,
-            agents: this.props.agents || [],
+            agentName: space.agent_name || '',
+            instructions: space.instructions || '',
             onConfirm: (values) =>
                 this.props.onSpaceEdit && this.props.onSpaceEdit(space.id, values),
         });

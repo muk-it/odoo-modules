@@ -79,6 +79,14 @@
 							</div>
 						</group>
 					</group>
+					<group string="Instructions" invisible="not user_id">
+						<field
+							name="instructions"
+							nolabel="1"
+							colspan="2"
+							placeholder="How the assistant should work in this space..."
+						/>
+					</group>
 					<group string="System Space" invisible="user_id">
 						<field
 							name="domain"
