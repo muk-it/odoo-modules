@@ -102,7 +102,7 @@ class Skill(models.Model):
             'sessions run as their configured user and only see the '
             'skills visible to that user.'
         ),
-        default=lambda self: self.env.user,
+        default=lambda self: self._default_user_ids(),
     )
 
     description = fields.Text(
@@ -189,6 +189,31 @@ class Skill(models.Model):
     # Helper
     # ----------------------------------------------------------
 
+    def _default_user_ids(self) -> models.BaseModel:
+        """Seed the share list with the author, unless the author is archived.
+
+        Shipped and demo records are authored by OdooBot, an archived
+        account, and a share row on it makes the skill private to a login
+        nobody uses.
+        """
+        return self.env.user if self.env.user.active else self.env['res.users']
+
+    def _unfiltered(self) -> models.BaseModel:
+        """Return the same records with archived share rows still readable.
+
+        Reading a many2many drops archived ids while the row stays in the
+        table, so the share list reads back empty while the visibility domain
+        still searches -- and finds -- the surviving row. Kept as a recordset
+        rather than a share list so a compute can walk it alongside ``self``
+        and read ``user_ids`` for the whole batch in one query.
+        """
+        return self.sudo().with_context(active_test=False)
+
+    def _shared_users(self) -> models.BaseModel:
+        """Return the share list of a single record, archived users included."""
+        self.ensure_one()
+        return self._unfiltered().user_ids
+
     @api.model
     def _user_visibility_domain(self, user: models.BaseModel) -> list:
         """Return the domain of skills visible to the given user.
@@ -271,13 +296,26 @@ class Skill(models.Model):
     # ----------------------------------------------------------
 
     def action_share_everyone(self) -> None:
-        """Clear the share list so the skill is visible to all users."""
-        self.write({'user_ids': [(5, 0, 0)]})
+        """Clear the share list so the skill is visible to all users.
+
+        Unlinked row by row rather than with ``(5, 0, 0)``: the ORM diffs a
+        many2many write against the value it can read, so clearing everything
+        clears nothing when the only sharee is archived.
+        """
+        for record, unfiltered in zip(self, self._unfiltered()):
+            shared = unfiltered.user_ids
+            if shared:
+                unfiltered.write({'user_ids': [(3, user.id) for user in shared]})
 
     def action_make_private(self) -> None:
         """Reset the share list so only the owner can see the skill."""
-        for record in self:
-            record.user_ids = [(6, 0, record.owner_id.ids)]
+        for record, unfiltered in zip(self, self._unfiltered()):
+            shared = unfiltered.user_ids
+            commands = [(3, user.id) for user in shared - record.owner_id]
+            if record.owner_id and record.owner_id not in shared:
+                commands.append((4, record.owner_id.id))
+            if commands:
+                unfiltered.write({'user_ids': commands})
 
     # ----------------------------------------------------------
     # Functions
@@ -325,15 +363,16 @@ class Skill(models.Model):
 
     @api.depends('user_ids', 'owner_id')
     def _compute_user_count(self) -> None:
-        for record in self:
-            record.user_count = len(record.user_ids - record.owner_id)
+        for record, unfiltered in zip(self, self._unfiltered()):
+            record.user_count = len(unfiltered.user_ids - record.owner_id)
 
     @api.depends('user_ids', 'owner_id')
     def _compute_visibility(self) -> None:
-        for record in self:
-            if not record.user_ids:
+        for record, unfiltered in zip(self, self._unfiltered()):
+            shared = unfiltered.user_ids
+            if not shared:
                 record.visibility = 'everyone'
-            elif record.user_ids <= record.owner_id:
+            elif shared <= record.owner_id:
                 record.visibility = 'owner'
             else:
                 record.visibility = 'users'
@@ -347,9 +386,9 @@ class Skill(models.Model):
         """
         for record in self:
             if record.visibility == 'everyone':
-                record.user_ids = [(5, 0, 0)]
-            elif record.visibility == 'owner' or not record.user_ids:
-                record.user_ids = [(6, 0, record.owner_id.ids)]
+                record.action_share_everyone()
+            elif record.visibility == 'owner' or not record._shared_users():
+                record.action_make_private()
 
     @api.depends('owner_id')
     @api.depends_context('uid')
@@ -399,11 +438,18 @@ class Skill(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list: list[dict]) -> models.BaseModel:
-        """Create skills, defaulting the share list to the skill owner."""
+        """Create skills, defaulting the share list to an active skill owner.
+
+        An archived owner is left to the field default, which falls back to
+        the creator: a share row on a login nobody uses would make the skill
+        private to nobody, unreachable for every human.
+        """
         for vals in vals_list:
             if 'user_ids' not in vals:
                 owner_id = vals.get('owner_id') or self.env.uid
-                vals['user_ids'] = [(6, 0, [owner_id])]
+                owner = self.env['res.users'].sudo().browse(owner_id).exists()
+                if owner and owner.active:
+                    vals['user_ids'] = [(6, 0, [owner_id])]
         records = super().create(vals_list)
         records._relink_attachments()
         return records

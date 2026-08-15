@@ -26,15 +26,15 @@ no fork of `muk_ai` or `muk_mcp` source.
 - **Skills panel in the composer** — the bolt button next to the
   paperclip lists every skill the session can reach as a card with
   icon, label and description, with its own search field, a
-  *Recently used* group and full keyboard navigation.
+  _Recently used_ group and full keyboard navigation.
 - **Slash command in chat** — typing `/<skill_name>` in the composer
   fires the skill directly, mirroring the same `invoke_skill` flow
   the LLM uses but without an LLM round-trip.
-- **Manage menu link** — *MuK AI > Skills* (and `/odoo/ai-skills`).
+- **Manage menu link** — _MuK AI > Skills_ (and `/odoo/ai-skills`).
 
 ## How a skill is built
 
-Open *MuK AI > Skills* and create a record:
+Open _MuK AI > Skills_ and create a record:
 
 - **Technical Name** — lowercase identifier matching `[a-z][a-z0-9_]*`,
   used for the `/name` slash command and in the LLM-facing addendum
@@ -43,7 +43,7 @@ Open *MuK AI > Skills* and create a record:
   the manage view. Optional; falls back to a title-cased version of
   the technical name.
 - **Description** — one-line description shown to the LLM in the
-  system-prompt addendum. The LLM uses this to decide *when* to invoke
+  system-prompt addendum. The LLM uses this to decide _when_ to invoke
   the skill autonomously.
 - **Body** — markdown instructions returned when the skill is invoked.
   Treated as additional system-prompt content the agent should follow
@@ -92,12 +92,16 @@ tool returns:
 
 ```json
 {
-  "name": "quote_followup",
-  "label": "Quote Follow-up",
-  "body": "## Steps\n1. Look up the sale.order by ref or domain…",
-  "resources": [
-    {"name": "tone_guide.md", "uri": "odoo://attachment/42", "mimetype": "text/markdown"}
-  ]
+    "name": "quote_followup",
+    "label": "Quote Follow-up",
+    "body": "## Steps\n1. Look up the sale.order by ref or domain…",
+    "resources": [
+        {
+            "name": "tone_guide.md",
+            "uri": "odoo://attachment/42",
+            "mimetype": "text/markdown"
+        }
+    ]
 }
 ```
 
@@ -109,7 +113,7 @@ new tool needed for that, the URI handler is in `muk_mcp`.
 
 Click the bolt next to the paperclip to open the skills panel. It
 lists the skills visible to the session as cards, groups the ones you
-ran last under *Recently used*, and carries its own search field —
+ran last under _Recently used_, and carries its own search field —
 the composer keeps whatever you were writing. Arrow keys move the
 selection, Enter runs it, Escape closes the panel and hands the caret
 back to the composer. On a touch device nothing is auto-focused, so
@@ -126,7 +130,7 @@ session, which:
    tool card with the skill body and manifest as the result).
 2. Extends the underlying conversation with a synthetic
    `function_call` + `function_call_output` pair, so on the next
-   model turn the agent sees the skill body as if *it* had called
+   model turn the agent sees the skill body as if _it_ had called
    `invoke_skill`. The model then proceeds with whatever the skill
    instructs.
 
