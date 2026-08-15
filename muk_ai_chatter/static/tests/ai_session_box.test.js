@@ -25,18 +25,20 @@ defineMailModels();
 const THREAD_ID = 1;
 
 /**
- * Install a bus mock and return the notification types subscribed to.
- * @returns {Array<{type: string, handler: Function}>} the registered handlers
+ * Install a bus mock and return the registered handlers keyed by notification
+ * type. Core services share the same bus, so callers must look their own
+ * notification up by type rather than by subscription order.
+ * @returns {Map<string, Function>} the registered handlers, by notification type
  */
 function mockBus() {
-    const listeners = [];
+    const handlers = new Map();
     mockService('bus_service', {
         subscribe(type, handler) {
-            listeners.push({ type, handler });
+            handlers.set(type, handler);
         },
         unsubscribe() {},
     });
-    return listeners;
+    return handlers;
 }
 
 /**
@@ -223,16 +225,15 @@ test('the view-all button appears only when the list is truncated', async () => 
 });
 
 test('a session push only refetches when it targets a listed session', async () => {
-    const listeners = mockBus();
+    const handlers = mockBus();
     mockActions();
     const calls = stubSummary([makeEntry({ id: 5 })]);
     await mountBox();
     expect(calls.count).toBe(1);
-    expect(listeners.map((entry) => entry.type)).toEqual([
-        'muk_ai.session_state',
-        'muk_ai.event',
-    ]);
-    const { handler } = listeners[0];
+    const types = [...handlers.keys()];
+    expect(types).toInclude('muk_ai.session_state');
+    expect(types).toInclude('muk_ai.event');
+    const handler = handlers.get('muk_ai.session_state');
     handler({ session_id: 4 });
     await animationFrame();
     expect(calls.count).toBe(1);
