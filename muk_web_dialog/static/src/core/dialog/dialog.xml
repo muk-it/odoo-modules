@@ -31,7 +31,7 @@
 				class="btn float-end me-1 mk_btn_dialog_size" 
 				t-on-click="() => this.onClickDialogSizeToggle()"
 			>
-				<i t-attf-class="fa fa-lg {{ this.data?.size === 'fs' ? 'fa-compress' : 'fa-expand' }}" />
+				<i t-attf-class="fa fa-lg {{ env.dialogData.size === 'fs' ? 'fa-compress' : 'fa-expand' }}" />
 			</button>
 	    </xpath>
 	</t>
