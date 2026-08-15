@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from odoo.exceptions import UserError
 from odoo.tests.common import new_test_user, tagged
 
 from .common import AutomationTestCommon
@@ -118,7 +119,7 @@ class TestDispatchHelper(AutomationTestCommon):
         self.assertEqual(session.action_server_id, action)
         self.assertEqual(session.agent_id, self.agent)
 
-    def test_spawn_user_falls_back_to_admin_for_an_archived_author(self):
+    def test_spawn_user_refuses_an_archived_author(self):
         author = new_test_user(
             self.env,
             login='dispatch_author',
@@ -131,8 +132,13 @@ class TestDispatchHelper(AutomationTestCommon):
         )
         author.sudo().active = False
         action = self.env['ir.actions.server'].browse(authored.id)
-        admin = self.env.ref('base.user_admin')
-        self.assertEqual(_spawn_user(action), admin)
-        with self._mock_provider():
-            session = _create_session(action, 'Hello.', None)
-        self.assertEqual(session.user_id, admin)
+        with self.assertRaises(UserError):
+            _spawn_user(action)
+        with self._mock_provider(), self.assertRaises(UserError):
+            _create_session(action, 'Hello.', None)
+        self.assertFalse(self._sessions_of(action))
+
+    def test_spawn_user_falls_back_to_admin_for_a_module_data_author(self):
+        action = self._make_action()
+        self.assertTrue(action.create_uid._is_superuser())
+        self.assertEqual(_spawn_user(action), self.env.ref('base.user_admin'))

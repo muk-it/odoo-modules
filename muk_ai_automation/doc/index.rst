@@ -114,10 +114,17 @@ contextual action or automation rule, or the ``active_ids`` /
 fall back to the configured domain or Python source. In single mode it
 spawns one session over the whole recordset; in per-record mode it
 spawns one session per record (capped by *Max Records Per Fire*). Each
-session is created and ``start()``-ed as the action's creator
-(``create_uid``, falling back to the admin user when that user is
-inactive); a failed ``start()`` lands the session in the ``error``
-state with the message rather than bubbling up.
+session is created and ``start()``-ed as the action's author
+(``create_uid``); a failed ``start()`` lands the session in the
+``error`` state with the message rather than bubbling up.
+
+When that author is archived the fire is refused with an error instead
+of running under another identity — archiving a user is how an
+administrator revokes their access, so their stored prompts must not
+keep running with rights they never had. Re-create the action under an
+active user to resume it. Actions shipped as module data are authored
+by the superuser, which denotes no person: those run as the
+administrator, never wider than the author's own rights.
 
 Prompt template placeholders
 ----------------------------

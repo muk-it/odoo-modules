@@ -206,10 +206,29 @@ def _build_prompt(
 
 
 def _spawn_user(action: models.BaseModel) -> models.BaseModel:
-    """Return the user the session runs as, falling back to the admin user."""
+    """Return the active user the spawned sessions run as.
+
+    Archiving a user is how an administrator revokes their access, so an
+    action authored by an archived user must not keep firing under another
+    identity: its stored prompt would run with rights its author never had
+    and the audit trail would name the wrong actor. The superuser is the
+    one author that denotes no person — it owns the actions shipped as
+    module data — and its sessions run as the administrator, which is
+    narrower than the rights the author already holds.
+
+    :raise UserError: when the author of the action is archived or gone
+    """
     user = action.create_uid
-    if not user or not user.active:
+    if user and user._is_superuser():
         return action.env.ref('base.user_admin')
+    if not user or not user.active:
+        raise UserError(
+            _lt(
+                'Server action %(name)s cannot run: the user who created it '
+                'is archived. Re-create it under an active user to resume it.',
+                name=action.display_name,
+            )
+        )
     return user
 
 
