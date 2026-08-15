@@ -1,5 +1,5 @@
 import { expect, test } from '@odoo/hoot';
-import { contains, mountView } from '@web/../tests/web_test_helpers';
+import { contains, mountView, onRpc } from '@web/../tests/web_test_helpers';
 
 import { expandAllItem } from '@muk_web_group/search/expand_all/expand_all';
 import '@muk_web_group/search/collapse_all/collapse_all';
@@ -73,6 +73,53 @@ test('expand all is a no-op when every group is already unfolded', async () => {
     await contains('.o_cp_action_menus .dropdown-toggle').click();
     await contains('.mk_expand_all_menu').click();
     expect('tbody tr.o_data_row').toHaveCount(3);
+});
+
+test.tags('muk_web_group');
+test('expand all loads every group in a single batched reload', async () => {
+    const calls = [];
+    onRpc('product', 'web_search_read', ({ method }) => {
+        calls.push(method);
+    });
+    onRpc('product', 'web_read_group', ({ method }) => {
+        calls.push(method);
+    });
+    await mountView({
+        type: 'list',
+        resModel: 'product',
+        groupBy: ['category_id'],
+        arch: LIST_ARCH,
+    });
+    calls.length = 0;
+    await contains('.o_cp_action_menus .dropdown-toggle').click();
+    await contains('.mk_expand_all_menu').click();
+    expect('tbody tr.o_data_row').toHaveCount(3);
+    expect(calls.filter((call) => call === 'web_search_read').length).toBe(0);
+    expect(calls.length).toBe(1);
+});
+
+test.tags('muk_web_group');
+test('expand all loads every nesting level in a single batched reload', async () => {
+    const calls = [];
+    onRpc('product', 'web_search_read', ({ method }) => {
+        calls.push(method);
+    });
+    onRpc('product', 'web_read_group', ({ method }) => {
+        calls.push(method);
+    });
+    await mountView({
+        type: 'list',
+        resModel: 'product',
+        groupBy: ['category_id', 'stage'],
+        arch: LIST_ARCH,
+    });
+    calls.length = 0;
+    await contains('.o_cp_action_menus .dropdown-toggle').click();
+    await contains('.mk_expand_all_menu').click();
+    expect('tbody tr.o_data_row').toHaveCount(3);
+    expect('.o_group_header').toHaveCount(5);
+    expect(calls.filter((call) => call === 'web_search_read').length).toBe(0);
+    expect(calls.length).toBe(2);
 });
 
 test.tags('muk_web_group');

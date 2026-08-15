@@ -5,6 +5,18 @@ import { DropdownItem } from '@web/core/dropdown/dropdown_item';
 const cogMenuRegistry = registry.category('cogMenu');
 
 /**
+ * Collect the folded group configs of a group config tree, at every depth.
+ * @param {Object} groups Group configs keyed by group value.
+ * @returns {Object[]} Configs of every folded group, deepest ones last.
+ */
+function collectFoldedConfigs(groups) {
+    return Object.values(groups).flatMap((config) => [
+        ...(config.isFolded ? [config] : []),
+        ...collectFoldedConfigs(config.list.groups || {}),
+    ]);
+}
+
+/**
  * Cog-menu entry that recursively unfolds every group of the current grouped
  * list or kanban view.
  */
@@ -14,24 +26,21 @@ export class ExpandAll extends Component {
     static props = {};
 
     /**
-     * Walk the group tree breadth-first, toggling every folded group open,
-     * then reload the root and notify the model.
+     * Unfold every group of the group tree, marking a whole nesting level as
+     * open before reloading, so each level costs a single batched request.
      * @returns {Promise<void>}
      */
     async onExpandButtonClicked() {
-        let groups = this.env.model.root.groups;
-        while (groups.length) {
-            const foldedGroups = groups.filter((group) => group._config.isFolded);
-            if (foldedGroups.length) {
-                for (const group of foldedGroups) {
-                    await group.toggle();
-                }
+        const model = this.env.model;
+        let foldedConfigs = collectFoldedConfigs(model.root.config.groups);
+        while (foldedConfigs.length) {
+            for (const config of foldedConfigs) {
+                model._updateConfig(config, { isFolded: false }, { reload: false });
             }
-            const subGroups = foldedGroups.map((group) => group.list.groups || []);
-            groups = subGroups.reduce((a, b) => a.concat(b), []);
+            await model.root.load();
+            foldedConfigs = collectFoldedConfigs(model.root.config.groups);
         }
-        await this.env.model.root.load();
-        this.env.model.notify();
+        model.notify();
     }
 }
 
