@@ -102,7 +102,7 @@ class ProductProduct(models.Model):
         combine = Domain.OR if operator not in Domain.NEGATIVE_OPERATORS else Domain.AND
         return combine([res, [('manufacturer_code', operator, value)]])
 
-    @api.depends('fixed_price')
+    @api.depends('fixed_price', 'list_price')
     def _compute_product_price_extra(self) -> None:
         """Derive the price extra from the fixed variant price when set."""
         super()._compute_product_price_extra()

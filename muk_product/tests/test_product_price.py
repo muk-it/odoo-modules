@@ -43,9 +43,10 @@ class TestProductPrice(ProductCommon):
             }
         )
         self.assertAlmostEqual(product.price_extra, 2.5)
+        self.assertAlmostEqual(product.lst_price, 12.5)
         product.product_tmpl_id.list_price = 20.0
-        product.invalidate_recordset(['price_extra'])
         self.assertAlmostEqual(product.price_extra, -7.5)
+        self.assertAlmostEqual(product.lst_price, 12.5)
 
     def test_without_a_fixed_price_the_attribute_extra_is_kept(self):
         template = self.create_variant_template('Table', ['Oak', 'Teak'])
