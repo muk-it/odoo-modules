@@ -63,6 +63,10 @@ class TestSessionBus(TransactionCase):
             if isinstance(channel, models.Model) and channel._name == 'muk_ai.session'
         ]
 
+    def _channel_names(self, channels: list) -> list:
+        """Return the plainly named channels among the granted channels."""
+        return [channel for channel in channels if isinstance(channel, str)]
+
     def _channels(self, user: models.Model, asked: list) -> list:
         """Return the channels the websocket grants the given user.
 
@@ -115,15 +119,16 @@ class TestSessionBus(TransactionCase):
 
     def test_a_reader_may_follow_the_chat_channel(self):
         channels = self._channels(self.reader, [f'muk_ai.session_{self.session.id}'])
-        self.assertIn(self.session, channels)
+        self.assertIn(self.session, self._session_channels(channels))
 
     def test_a_stranger_may_not_follow_the_chat_channel(self):
         channels = self._channels(self.stranger, [f'muk_ai.session_{self.session.id}'])
-        self.assertNotIn(self.session, channels)
+        self.assertNotIn(self.session, self._session_channels(channels))
 
     def test_the_name_a_stranger_asked_for_is_never_kept(self):
         asked = f'muk_ai.session_{self.session.id}'
-        self.assertNotIn(asked, self._channels(self.stranger, [asked]))
+        channels = self._channels(self.stranger, [asked])
+        self.assertNotIn(asked, self._channel_names(channels))
 
     def test_a_chat_that_does_not_exist_grants_nothing(self):
         channels = self._channels(self.owner, ['muk_ai.session_999999999'])
@@ -131,7 +136,7 @@ class TestSessionBus(TransactionCase):
 
     def test_an_unrelated_channel_is_left_alone(self):
         channels = self._channels(self.owner, ['some.other_channel'])
-        self.assertIn('some.other_channel', channels)
+        self.assertIn('some.other_channel', self._channel_names(channels))
 
     def test_dropping_a_reader_takes_the_chat_off_their_list(self):
         with self._captured() as captured:
