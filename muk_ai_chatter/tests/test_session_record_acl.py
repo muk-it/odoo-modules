@@ -64,6 +64,23 @@ class TestSessionRecordAcl(TransactionCase):
         )
         self.assertEqual(found.ids, [self.session.id])
 
+    def test_an_access_rights_admin_is_shown_no_foreign_session_either(self):
+        manager = new_test_user(
+            self.env,
+            login='acl_rights_manager',
+            groups='base.group_user,base.group_erp_manager',
+        )
+        self.assertFalse(manager.has_group('base.group_system'))
+        self.assertFalse(
+            self.env['muk_ai.session']
+            .with_user(manager)
+            .search([('id', '=', self.session.id)])
+        )
+        summary = self.partner.with_user(manager).get_ai_sessions_summary()
+        entry = summary[self.partner.id]
+        self.assertEqual(entry['entries'], [])
+        self.assertEqual(entry['total'], 0)
+
     def test_chatter_lists_only_the_sessions_the_caller_owns(self):
         summary = self.partner.with_user(self.reader).get_ai_sessions_summary()
         entry = summary[self.partner.id]

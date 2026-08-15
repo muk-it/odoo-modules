@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from odoo import models
 from odoo.tests.common import new_test_user, tagged
+from odoo.tools import mute_logger
 
 from .common import ChatterTestCommon
 
@@ -145,6 +146,25 @@ class TestMentionDiscuss(ChatterTestCommon):
             self.assertEqual(len(started), 1)
         self.assertEqual(len(self._sessions_on(self.channel)), 1)
         self.assertNotIn(self.agent.partner_id, message.partner_ids)
+
+    @mute_logger('odoo.addons.muk_ai_chatter.models.mail_thread')
+    def test_a_mention_over_the_session_quota_still_posts_the_message(self):
+        provider = self.env['muk_ai.provider']._get_default().sudo()
+        self.assertTrue(provider)
+        provider.rate_limit = 1
+        poster = new_test_user(self.env, login='mention_rate_limited')
+        self.channel.add_members(partner_ids=poster.partner_id.ids)
+        self.env['muk_ai.session'].with_user(poster).create({'name': 'Quota Filler'})
+        with self._mute_worker():
+            message = self.channel.with_user(poster).message_post(
+                body='Any update on the shipment?',
+                message_type='comment',
+                subtype_xmlid='mail.mt_comment',
+                partner_ids=[self.agent.partner_id.id],
+            )
+        self.assertTrue(message.exists())
+        self.assertIn('Any update on the shipment?', message.body)
+        self.assertFalse(self._sessions_on(self.channel))
 
     def test_an_outsider_is_still_no_recipient_of_a_direct_chat(self):
         outsider = self.env['res.partner'].create({'name': 'Not In This Chat'})

@@ -42,9 +42,13 @@ class MailThread(models.AbstractModel):
         A session belongs to whoever ran it: the transcript carries tool
         output gathered under that user's rights, so reading the record it is
         pinned to never opens the conversation held against it.
+
+        Only a settings administrator is let past that, the way ``muk_ai``
+        writes its record rule — rather than through ``env.is_admin()``, which
+        would answer yes for an access-rights manager the rule denies.
         """
         domain = [('res_model', '=', self._name), ('res_id', '=', self.id)]
-        if not self.env.is_admin():
+        if not self.env.user._is_system():
             domain.append(('user_id', '=', self.env.uid))
         return domain
 
