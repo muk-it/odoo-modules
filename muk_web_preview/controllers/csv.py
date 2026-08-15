@@ -49,7 +49,7 @@ class CSVPreviewController(http.Controller):
 
     def _decode_raw(self, raw: bytes) -> str:
         """Decode raw bytes trying a set of encodings, replacing on failure."""
-        for encoding in ('utf-8-sig', 'utf-8', 'latin-1'):
+        for encoding in ('utf-8-sig', 'utf-8', 'cp1252', 'latin-1'):
             try:
                 return raw.decode(encoding)
             except (UnicodeDecodeError, ValueError):

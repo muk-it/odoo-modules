@@ -124,6 +124,16 @@ class TestCSVPreview(odoo.tests.HttpCase):
         self.assertIn('René', response.text)
         self.assertIn('Zürich', response.text)
 
+    def test_cp1252_payload_is_decoded(self):
+        attachment = self._create_attachment(
+            'cp1252.csv',
+            'Name,Price\nAlice,12€\nBob,9–x\n'.encode('cp1252'),
+        )
+        response = self._preview(attachment)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('12€', response.text)
+        self.assertIn('9–x', response.text)
+
     def test_utf8_bom_is_stripped(self):
         attachment = self._create_attachment(
             'bom.csv',
