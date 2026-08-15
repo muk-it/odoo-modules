@@ -44,6 +44,34 @@ class TestHonorific(TransactionCase):
         )
         self.assertEqual(partner.formatted_name, 'Dr. Prof. Ordered Partner')
 
+    def test_formatted_name_recomputes_when_the_sequence_is_reordered(self):
+        model = self.env['muk_contacts_vcard.honorific']
+        earlier = model.create({'name': 'Dr.', 'position': 'preceding', 'sequence': 5})
+        later = model.create({'name': 'Prof.', 'position': 'preceding', 'sequence': 20})
+        partner = self.env['res.partner'].create(
+            {
+                'firstname': 'Ordered',
+                'lastname': 'Partner',
+                'honorific_prefix_ids': [Command.set((earlier | later).ids)],
+            }
+        )
+        self.assertEqual(partner.formatted_name, 'Dr. Prof. Ordered Partner')
+        self.env.flush_all()
+        later.sequence = 1
+        self.assertIn(
+            partner,
+            self.env.records_to_compute(partner._fields['formatted_name']),
+        )
+        self.assertIn(
+            partner,
+            self.env.records_to_compute(partner._fields['vcard_modified']),
+        )
+        partner.invalidate_recordset(['formatted_name'])
+        self.assertEqual(partner.formatted_name, 'Prof. Dr. Ordered Partner')
+        self.assertIn(
+            'FN:Prof. Dr. Ordered Partner', partner._build_vcard().serialize()
+        )
+
     def test_an_internal_user_cannot_create_a_honorific(self):
         user = new_test_user(
             self.env, login='vcard_internal_honorific', groups='base.group_user'

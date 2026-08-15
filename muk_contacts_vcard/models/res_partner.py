@@ -359,6 +359,8 @@ class Partner(models.Model):
         'honorific_suffix_ids.name',
         'honorific_prefix_ids.shortcut',
         'honorific_suffix_ids.shortcut',
+        'honorific_prefix_ids.sequence',
+        'honorific_suffix_ids.sequence',
     )
     def _compute_formatted_name(self) -> None:
         """Build the formatted name, optionally including honorifics."""
@@ -404,6 +406,7 @@ class Partner(models.Model):
         'commercial_company_name',
         'comment',
         'country_id.name',
+        'department',
         'email',
         'email2',
         'firstname',
@@ -413,6 +416,8 @@ class Partner(models.Model):
         'honorific_suffix_ids',
         'honorific_prefix_ids.shortcut',
         'honorific_suffix_ids.shortcut',
+        'honorific_prefix_ids.sequence',
+        'honorific_suffix_ids.sequence',
         'image_1920',
         'lang',
         'lastname',
@@ -435,6 +440,7 @@ class Partner(models.Model):
         'role',
         'state_id.name',
         'street',
+        'street2',
         'tz',
         'website',
         'zip',

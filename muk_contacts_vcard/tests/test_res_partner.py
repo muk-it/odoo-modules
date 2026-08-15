@@ -3,7 +3,7 @@ from __future__ import annotations
 import base64
 import os
 import re
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from io import BytesIO
 
 import vobject
@@ -215,6 +215,50 @@ class TestResPartner(TransactionCase):
         )
         partner.invalidate_recordset(['formatted_name'])
         self.assertEqual(partner.formatted_name, 'Dr John Doe')
+
+    def test_vcard_modified_bumps_on_street2(self):
+        stale = datetime(2020, 1, 1, 0, 0, 0)
+        partner = self.env['res.partner'].create(
+            {
+                'firstname': 'Rev',
+                'lastname': 'Partner',
+                'street': 'Main 1',
+            }
+        )
+        self.env.flush_all()
+        self.env.cr.execute(
+            'UPDATE res_partner SET vcard_modified = %s WHERE id = %s',
+            (stale, partner.id),
+        )
+        partner.invalidate_recordset(['vcard_modified'])
+        self.assertEqual(partner.vcard_modified, stale)
+        partner.write({'street2': 'Floor 3'})
+        self.env.flush_all()
+        partner.invalidate_recordset(['vcard_modified'])
+        self.assertNotEqual(partner.vcard_modified, stale)
+
+    def test_vcard_modified_bumps_on_department(self):
+        stale = datetime(2020, 1, 1, 0, 0, 0)
+        company = self.env['res.partner'].create({'name': 'RevCo', 'is_company': True})
+        employee = self.env['res.partner'].create(
+            {
+                'firstname': 'Emp',
+                'lastname': 'Loyee',
+                'parent_id': company.id,
+                'type': 'contact',
+            }
+        )
+        self.env.flush_all()
+        self.env.cr.execute(
+            'UPDATE res_partner SET vcard_modified = %s WHERE id = %s',
+            (stale, employee.id),
+        )
+        employee.invalidate_recordset(['vcard_modified'])
+        self.assertEqual(employee.vcard_modified, stale)
+        employee.write({'department': 'Research'})
+        self.env.flush_all()
+        employee.invalidate_recordset(['vcard_modified'])
+        self.assertNotEqual(employee.vcard_modified, stale)
 
     def test_formatted_name_recomputes_on_parent_rename(self):
         company = self.env['res.partner'].create(
