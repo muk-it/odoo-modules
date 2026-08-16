@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_cookie_geo_rule_search" model="ir.ui.view">
+		<field name="name">muk_website_cookies_consent.geo.rule.search</field>
+		<field name="model">muk_website_cookies_consent.geo.rule</field>
+		<field name="arch" type="xml">
+			<search string="Region Rules">
+				<field name="name"/>
+				<field name="country_ids"/>
+				<field name="country_group_ids"/>
+				<filter
+					name="filter_inactive"
+					string="Archived"
+					domain="[('active', '=', False)]"
+				/>
+			</search>
+		</field>
+	</record>
+
+	<record id="view_cookie_geo_rule_list" model="ir.ui.view">
+		<field name="name">muk_website_cookies_consent.geo.rule.list</field>
+		<field name="model">muk_website_cookies_consent.geo.rule</field>
+		<field name="arch" type="xml">
+			<list string="Region Rules">
+				<field name="sequence" widget="handle"/>
+				<field name="name"/>
+				<field name="lifetime_days"/>
+				<field name="country_ids" widget="many2many_tags" optional="show"/>
+				<field
+					name="country_group_ids"
+					widget="many2many_tags"
+					optional="hide"
+				/>
+				<field name="website_id" optional="hide"/>
+			</list>
+		</field>
+	</record>
+
+	<record id="view_cookie_geo_rule_form" model="ir.ui.view">
+		<field name="name">muk_website_cookies_consent.geo.rule.form</field>
+		<field name="model">muk_website_cookies_consent.geo.rule</field>
+		<field name="arch" type="xml">
+			<form string="Region Rule">
+				<sheet>
+					<widget
+						name="web_ribbon"
+						title="Archived"
+						bg_color="text-bg-danger"
+						invisible="active"
+					/>
+					<div class="oe_title">
+						<label for="name"/>
+						<h1><field name="name" placeholder="e.g. Austria"/></h1>
+					</div>
+					<group>
+						<group>
+							<field name="lifetime_days"/>
+							<field name="sequence"/>
+						</group>
+						<group>
+							<field name="country_ids" widget="many2many_tags"/>
+							<field name="country_group_ids" widget="many2many_tags"/>
+							<field name="website_id"/>
+							<field name="active" invisible="1"/>
+						</group>
+					</group>
+					<separator string="Where The Retention Figure Comes From"/>
+					<field
+						name="source_note"
+						nolabel="1"
+						placeholder="Name the authority and the guidance, so nobody mistakes a convention for a statutory rule."
+					/>
+				</sheet>
+			</form>
+		</field>
+	</record>
+
+	<record id="action_cookie_geo_rule" model="ir.actions.act_window">
+		<field name="name">Region Rules</field>
+		<field name="res_model">muk_website_cookies_consent.geo.rule</field>
+		<field name="view_mode">list,form</field>
+		<field name="path">cookie-regions</field>
+		<field name="help" type="html">
+			<p class="o_view_nocontent_smiling_face">Add a region rule</p>
+			<p>
+				The first matching rule decides how long a visitor's choice is relied on. Put specific countries above the regional catch-alls.
+			</p>
+		</field>
+	</record>
+
+</odoo>

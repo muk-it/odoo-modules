@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_cookie_category_search" model="ir.ui.view">
+		<field name="name">muk_website_cookies_consent.category.search</field>
+		<field name="model">muk_website_cookies_consent.category</field>
+		<field name="arch" type="xml">
+			<search string="Purposes">
+				<field name="name"/>
+				<field name="code"/>
+				<filter
+					name="filter_essential"
+					string="Strictly Necessary"
+					domain="[('essential', '=', True)]"
+				/>
+				<filter
+					name="filter_optional"
+					string="Requires Consent"
+					domain="[('essential', '=', False)]"
+				/>
+				<separator/>
+				<filter
+					name="filter_inactive"
+					string="Archived"
+					domain="[('active', '=', False)]"
+				/>
+				<group>
+					<filter
+						name="group_website"
+						string="Website"
+						context="{'group_by': 'website_id'}"
+					/>
+				</group>
+			</search>
+		</field>
+	</record>
+
+	<record id="view_cookie_category_list" model="ir.ui.view">
+		<field name="name">muk_website_cookies_consent.category.list</field>
+		<field name="model">muk_website_cookies_consent.category</field>
+		<field name="arch" type="xml">
+			<list string="Purposes">
+				<field name="sequence" widget="handle"/>
+				<field name="name"/>
+				<field name="code"/>
+				<field name="essential"/>
+				<field name="consent_mode_signals" optional="show"/>
+				<field name="website_id" optional="hide"/>
+			</list>
+		</field>
+	</record>
+
+	<record id="view_cookie_category_form" model="ir.ui.view">
+		<field name="name">muk_website_cookies_consent.category.form</field>
+		<field name="model">muk_website_cookies_consent.category</field>
+		<field name="arch" type="xml">
+			<form string="Purpose">
+				<sheet>
+					<widget
+						name="web_ribbon"
+						title="Archived"
+						bg_color="text-bg-danger"
+						invisible="active"
+					/>
+					<div class="oe_title">
+						<label for="name"/>
+						<h1><field name="name" placeholder="e.g. Statistics"/></h1>
+					</div>
+					<group>
+						<group>
+							<field name="code" placeholder="e.g. analytics"/>
+							<field name="essential"/>
+							<field name="default_enabled" invisible="not essential"/>
+							<field name="sequence"/>
+						</group>
+						<group>
+							<field
+								name="consent_mode_signals"
+								placeholder="e.g. analytics_storage"
+							/>
+							<field name="website_id"/>
+							<field name="active" invisible="1"/>
+						</group>
+					</group>
+					<separator string="Shown To Visitors"/>
+					<field
+						name="description"
+						nolabel="1"
+						placeholder="Explain in plain language what this purpose covers."
+					/>
+					<notebook>
+						<page string="Services" name="services">
+							<field name="service_ids">
+								<list>
+									<field name="name"/>
+									<field name="technical_name"/>
+									<field name="domains"/>
+									<field name="contextual_only"/>
+								</list>
+							</field>
+						</page>
+						<page string="Cookies" name="cookies">
+							<field name="cookie_ids">
+								<list>
+									<field name="name"/>
+									<field name="provider"/>
+									<field name="duration"/>
+									<field name="storage_type"/>
+								</list>
+							</field>
+						</page>
+					</notebook>
+				</sheet>
+			</form>
+		</field>
+	</record>
+
+	<record id="action_cookie_category" model="ir.actions.act_window">
+		<field name="name">Purposes</field>
+		<field name="res_model">muk_website_cookies_consent.category</field>
+		<field name="view_mode">list,form</field>
+		<field name="path">cookie-purposes</field>
+		<field name="help" type="html">
+			<p class="o_view_nocontent_smiling_face">Add a consent purpose</p>
+			<p>
+				Visitors decide per purpose. Only strictly necessary purposes may be on by default.
+			</p>
+		</field>
+	</record>
+
+</odoo>

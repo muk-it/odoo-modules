@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_cookie_service_search" model="ir.ui.view">
+		<field name="name">muk_website_cookies_consent.service.search</field>
+		<field name="model">muk_website_cookies_consent.service</field>
+		<field name="arch" type="xml">
+			<search string="Services">
+				<field name="name"/>
+				<field name="technical_name"/>
+				<field name="domains"/>
+				<field name="category_id"/>
+				<filter
+					name="filter_contextual"
+					string="Asked In Place"
+					domain="[('contextual_only', '=', True)]"
+				/>
+				<separator/>
+				<filter
+					name="filter_inactive"
+					string="Archived"
+					domain="[('active', '=', False)]"
+				/>
+				<group>
+					<filter
+						name="group_category"
+						string="Purpose"
+						context="{'group_by': 'category_id'}"
+					/>
+					<filter
+						name="group_website"
+						string="Website"
+						context="{'group_by': 'website_id'}"
+					/>
+				</group>
+			</search>
+		</field>
+	</record>
+
+	<record id="view_cookie_service_list" model="ir.ui.view">
+		<field name="name">muk_website_cookies_consent.service.list</field>
+		<field name="model">muk_website_cookies_consent.service</field>
+		<field name="arch" type="xml">
+			<list string="Services">
+				<field name="sequence" widget="handle"/>
+				<field name="name"/>
+				<field name="technical_name"/>
+				<field name="category_id"/>
+				<field name="provider" optional="show"/>
+				<field name="contextual_only"/>
+				<field name="website_id" optional="hide"/>
+			</list>
+		</field>
+	</record>
+
+	<record id="view_cookie_service_form" model="ir.ui.view">
+		<field name="name">muk_website_cookies_consent.service.form</field>
+		<field name="model">muk_website_cookies_consent.service</field>
+		<field name="arch" type="xml">
+			<form string="Service">
+				<sheet>
+					<widget
+						name="web_ribbon"
+						title="Archived"
+						bg_color="text-bg-danger"
+						invisible="active"
+					/>
+					<div class="oe_title">
+						<label for="name"/>
+						<h1><field name="name" placeholder="e.g. YouTube"/></h1>
+					</div>
+					<group>
+						<group>
+							<field name="technical_name" placeholder="e.g. youtube"/>
+							<field name="category_id"/>
+							<field
+								name="provider"
+								placeholder="e.g. Google Ireland Limited"
+							/>
+						</group>
+						<group>
+							<field name="contextual_only"/>
+							<field name="sequence"/>
+							<field name="website_id"/>
+							<field name="active" invisible="1"/>
+						</group>
+					</group>
+					<separator string="Hosts"/>
+					<field
+						name="domains"
+						nolabel="1"
+						placeholder="youtube.com&#10;youtu.be&#10;google.com/maps"
+					/>
+					<separator string="Placeholder" invisible="not contextual_only"/>
+					<field
+						name="placeholder_text"
+						nolabel="1"
+						invisible="not contextual_only"
+						placeholder="Shown in place of the blocked embed."
+					/>
+					<notebook>
+						<page string="Cookies" name="cookies">
+							<field name="cookie_ids">
+								<list editable="bottom">
+									<field name="name"/>
+									<field name="category_id" column_invisible="1"/>
+									<field name="provider"/>
+									<field name="duration"/>
+									<field name="storage_type"/>
+								</list>
+							</field>
+						</page>
+					</notebook>
+				</sheet>
+			</form>
+		</field>
+	</record>
+
+	<record id="action_cookie_service" model="ir.actions.act_window">
+		<field name="name">Services</field>
+		<field name="res_model">muk_website_cookies_consent.service</field>
+		<field name="view_mode">list,form</field>
+		<field name="path">cookie-services</field>
+		<field name="help" type="html">
+			<p class="o_view_nocontent_smiling_face">Register a service to gate</p>
+			<p>
+				Scripts and embeds loaded from a service's hosts are stripped until its purpose is granted.
+			</p>
+		</field>
+	</record>
+
+</odoo>

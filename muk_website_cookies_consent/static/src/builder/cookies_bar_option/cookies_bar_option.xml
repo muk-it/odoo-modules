@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+	<t t-inherit="website.CookiesBarOption" t-inherit-mode="extension">
+		<xpath expr="//BuilderSelect" position="replace">
+			<BuilderSelect action="'selectCookieLayout'">
+				<BuilderSelectItem actionValue="'bar_bottom'">
+					Bar at the bottom
+				</BuilderSelectItem>
+				<BuilderSelectItem actionValue="'bar_top'">
+					Bar at the top
+				</BuilderSelectItem>
+				<BuilderSelectItem actionValue="'box_left'">
+					Box, bottom left
+				</BuilderSelectItem>
+				<BuilderSelectItem actionValue="'box_right'">
+					Box, bottom right
+				</BuilderSelectItem>
+				<BuilderSelectItem actionValue="'center'">
+					Centred dialog
+				</BuilderSelectItem>
+			</BuilderSelect>
+		</xpath>
+		<xpath expr="//BuilderRow" position="after">
+			<BuilderRow label.translate="Density">
+				<BuilderSelect action="'selectCookieDensity'">
+					<BuilderSelectItem actionValue="'full'">Full</BuilderSelectItem>
+					<BuilderSelectItem actionValue="'compact'">
+						Compact
+					</BuilderSelectItem>
+				</BuilderSelect>
+			</BuilderRow>
+			<BuilderRow label.translate="Footer Link">
+				<BuilderCheckbox action="'toggleCookieFooter'"/>
+			</BuilderRow>
+			<BuilderRow label.translate="Floating Button">
+				<BuilderSelect action="'selectCookieFloat'">
+					<BuilderSelectItem actionValue="'none'">None</BuilderSelectItem>
+					<BuilderSelectItem actionValue="'left'">
+						Bottom left
+					</BuilderSelectItem>
+					<BuilderSelectItem actionValue="'right'">
+						Bottom right
+					</BuilderSelectItem>
+				</BuilderSelect>
+			</BuilderRow>
+		</xpath>
+	</t>
+</templates>

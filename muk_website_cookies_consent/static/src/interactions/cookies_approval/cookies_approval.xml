@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+	<t t-inherit="website.cookiesWarning" t-inherit-mode="extension">
+		<xpath expr="//button" position="replace">
+			<div
+				t-attf-class="o_no_optional_cookie mk_cookies_placeholder {{extraClasses}}"
+				t-att-style="extraStyle"
+				role="group"
+				t-attf-aria-label="Blocked content from #{serviceLabel or 'a third party'}"
+			>
+				<p class="mb-0 small">
+					<t t-if="placeholderText">
+						<t t-out="placeholderText"/>
+					</t>
+					<t t-else="">
+						This content is provided by
+						<strong t-out="serviceLabel or 'a third party'"/>
+						and is not loaded until you allow it.
+					</t>
+				</p>
+				<button
+					t-if="serviceName"
+					type="button"
+					class="btn btn-primary btn-sm mk_cookies_allow_embed"
+					t-att-data-muk-cookie-service="serviceName"
+					t-att-data-muk-cookie-category="categoryCode"
+				>
+					Allow <t t-out="serviceLabel or serviceName"/>
+				</button>
+				<button type="button" class="btn btn-link btn-sm mk_cookies_reopen">
+					Review all cookie choices
+				</button>
+			</div>
+		</xpath>
+	</t>
+</templates>

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_cookie_search" model="ir.ui.view">
+		<field name="name">muk_website_cookies_consent.cookie.search</field>
+		<field name="model">muk_website_cookies_consent.cookie</field>
+		<field name="arch" type="xml">
+			<search string="Cookies">
+				<field name="name"/>
+				<field name="provider"/>
+				<field name="category_id"/>
+				<field name="service_id"/>
+				<filter
+					name="filter_unjustified"
+					string="Necessary Without Justification"
+					domain="[('category_id.essential', '=', True), ('necessity_justification', '=', False)]"
+				/>
+				<separator/>
+				<filter
+					name="filter_inactive"
+					string="Archived"
+					domain="[('active', '=', False)]"
+				/>
+				<group>
+					<filter
+						name="group_category"
+						string="Purpose"
+						context="{'group_by': 'category_id'}"
+					/>
+					<filter
+						name="group_service"
+						string="Service"
+						context="{'group_by': 'service_id'}"
+					/>
+					<filter
+						name="group_type"
+						string="Type"
+						context="{'group_by': 'storage_type'}"
+					/>
+				</group>
+			</search>
+		</field>
+	</record>
+
+	<record id="view_cookie_list" model="ir.ui.view">
+		<field name="name">muk_website_cookies_consent.cookie.list</field>
+		<field name="model">muk_website_cookies_consent.cookie</field>
+		<field name="arch" type="xml">
+			<list string="Cookies">
+				<field name="name"/>
+				<field name="category_id"/>
+				<field name="service_id" optional="show"/>
+				<field name="provider" optional="show"/>
+				<field name="duration"/>
+				<field name="storage_type"/>
+				<field name="website_id" optional="hide"/>
+			</list>
+		</field>
+	</record>
+
+	<record id="view_cookie_form" model="ir.ui.view">
+		<field name="name">muk_website_cookies_consent.cookie.form</field>
+		<field name="model">muk_website_cookies_consent.cookie</field>
+		<field name="arch" type="xml">
+			<form string="Cookie">
+				<sheet>
+					<widget
+						name="web_ribbon"
+						title="Archived"
+						bg_color="text-bg-danger"
+						invisible="active"
+					/>
+					<div class="oe_title">
+						<label for="name"/>
+						<h1><field name="name" placeholder="e.g. _ga"/></h1>
+					</div>
+					<group>
+						<group>
+							<field name="pattern" placeholder="e.g. ^_ga"/>
+							<field name="category_id"/>
+							<field name="service_id"/>
+						</group>
+						<group>
+							<field name="provider"/>
+							<field name="duration" placeholder="e.g. 2 years"/>
+							<field name="storage_type"/>
+							<field name="website_id"/>
+							<field name="active" invisible="1"/>
+						</group>
+					</group>
+					<separator string="Description"/>
+					<field
+						name="description"
+						nolabel="1"
+						placeholder="Shown verbatim in the cookie policy."
+					/>
+					<separator
+						string="Why Is This Strictly Necessary?"
+						invisible="not category_id"
+					/>
+					<field
+						name="necessity_justification"
+						nolabel="1"
+						invisible="not category_id"
+						placeholder="Required only for strictly necessary cookies. The burden of proving each such classification is on the controller."
+					/>
+				</sheet>
+			</form>
+		</field>
+	</record>
+
+	<record id="action_cookie" model="ir.actions.act_window">
+		<field name="name">Declarations</field>
+		<field name="res_model">muk_website_cookies_consent.cookie</field>
+		<field name="view_mode">list,form</field>
+		<field name="path">cookie-declarations</field>
+		<field name="help" type="html">
+			<p class="o_view_nocontent_smiling_face">Declare a cookie</p>
+			<p>
+				Declarations build the table on your cookie policy page and the detail shown in the preference centre.
+			</p>
+		</field>
+	</record>
+
+</odoo>

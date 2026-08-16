@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+	<template
+		id="cookie_policy"
+		inherit_id="website.cookie_policy"
+		name="Cookie Policy Declaration"
+	>
+		<xpath expr="//div[hasclass('table-responsive')]" position="replace">
+			<t t-foreach="website._get_cookie_categories()" t-as="category">
+				<h2 class="h4 mt-4">
+					<t t-out="category.name"/>
+					<span
+						t-if="category.essential"
+						class="badge text-bg-secondary align-middle ms-2"
+					>
+						Always active
+					</span>
+				</h2>
+				<p t-field="category.description"/>
+				<t
+					t-set="muk_cookies_of"
+					t-value="website._get_cookie_declarations_of(category)"
+				/>
+				<div t-if="muk_cookies_of" class="table-responsive">
+					<table class="small table table-bordered">
+						<thead class="table-light">
+							<tr>
+								<th scope="col" style="width: 18%">Name</th>
+								<th scope="col" style="width: 20%">Provider</th>
+								<th scope="col" style="width: 34%">Purpose</th>
+								<th scope="col" style="width: 14%">Retention</th>
+								<th scope="col" style="width: 14%">Type</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr t-foreach="muk_cookies_of" t-as="cookie">
+								<td><code t-field="cookie.name"/></td>
+								<td><span t-field="cookie.provider"/></td>
+								<td>
+									<span t-field="cookie.description"/>
+									<em
+										t-if="cookie.necessity_justification"
+										class="d-block text-muted mt-1"
+										t-field="cookie.necessity_justification"
+									/>
+								</td>
+								<td><span t-field="cookie.duration"/></td>
+								<td><span t-field="cookie.storage_type"/></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<p t-else="" class="text-muted"><em>No cookies are currently declared for this purpose.</em></p>
+			</t>
+			<div
+				t-if="website._get_cookie_services().filtered('contextual_only')"
+				class="mt-4"
+			>
+				<h2 class="h4">Content we block until you allow it</h2>
+				<p>
+					Where a page embeds content from one of these services, we replace it with a notice instead of loading it. You can allow an individual embed at the point where it appears, without changing your other choices.
+				</p>
+				<ul>
+					<li
+						t-foreach="website._get_cookie_services().filtered('contextual_only')"
+						t-as="service"
+					>
+						<strong t-field="service.name"/>
+						<t t-if="service.provider"> &#8212; <span t-field="service.provider"/></t>
+					</li>
+				</ul>
+			</div>
+			<div class="alert alert-info mt-4" role="status">
+				<button type="button" class="btn btn-primary mk_cookies_reopen">
+					Change my cookie choices
+				</button>
+				<span class="ms-2 small">
+					This declaration reflects version <t t-out="website.cookie_policy_version"/>
+					of our cookie policy.
+				</span>
+			</div>
+		</xpath>
+		<xpath expr="//p[contains(text(), 'Do Not Track')]" position="replace">
+			<p t-if="website.cookie_respect_gpc">
+				We honour the Global Privacy Control signal. If your browser or an extension sends it, we treat that as a refusal of every optional purpose and load nothing that is not strictly necessary, whatever you may have chosen here before.
+			</p>
+			<p t-else="">
+				We do not currently act on Do Not Track or Global Privacy Control signals. Please use the choices above instead.
+			</p>
+		</xpath>
+	</template>
+
+</odoo>

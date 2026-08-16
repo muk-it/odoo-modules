@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_cookie_observation_search" model="ir.ui.view">
+		<field name="name">muk_website_cookies_consent.observation.search</field>
+		<field name="model">muk_website_cookies_consent.observation</field>
+		<field name="arch" type="xml">
+			<search string="Captured">
+				<field name="name"/>
+				<field name="sample_url"/>
+				<filter
+					name="filter_new"
+					string="To Review"
+					domain="[('state', '=', 'new')]"
+				/>
+				<filter
+					name="filter_declared"
+					string="Declared"
+					domain="[('state', '=', 'declared')]"
+				/>
+				<filter
+					name="filter_ignored"
+					string="Ignored"
+					domain="[('state', '=', 'ignored')]"
+				/>
+				<separator/>
+				<filter
+					name="filter_hosts"
+					string="Third-party Hosts"
+					domain="[('storage_type', '=', 'host')]"
+				/>
+				<group>
+					<filter
+						name="group_type"
+						string="Type"
+						context="{'group_by': 'storage_type'}"
+					/>
+					<filter
+						name="group_state"
+						string="Status"
+						context="{'group_by': 'state'}"
+					/>
+					<filter
+						name="group_website"
+						string="Website"
+						context="{'group_by': 'website_id'}"
+					/>
+				</group>
+			</search>
+		</field>
+	</record>
+
+	<record id="view_cookie_observation_list" model="ir.ui.view">
+		<field name="name">muk_website_cookies_consent.observation.list</field>
+		<field name="model">muk_website_cookies_consent.observation</field>
+		<field name="arch" type="xml">
+			<list string="Captured" create="0">
+				<header>
+					<button name="action_declare" type="object" string="Declare"/>
+					<button name="action_ignore" type="object" string="Ignore"/>
+				</header>
+				<field name="name"/>
+				<field name="storage_type"/>
+				<field name="sample_url" optional="show"/>
+				<field name="hit_count" optional="hide"/>
+				<field name="last_seen"/>
+				<field
+					name="state"
+					widget="badge"
+					decoration-info="state == 'new'"
+					decoration-success="state == 'declared'"
+				/>
+				<field name="website_id" optional="hide"/>
+			</list>
+		</field>
+	</record>
+
+	<record id="view_cookie_observation_form" model="ir.ui.view">
+		<field name="name">muk_website_cookies_consent.observation.form</field>
+		<field name="model">muk_website_cookies_consent.observation</field>
+		<field name="arch" type="xml">
+			<form string="Captured Cookie" create="false">
+				<header>
+					<button
+						name="action_declare"
+						type="object"
+						string="Declare"
+						class="btn-primary"
+						invisible="state != 'new'"
+					/>
+					<button
+						name="action_ignore"
+						type="object"
+						string="Ignore"
+						invisible="state != 'new'"
+					/>
+					<button
+						name="action_reopen"
+						type="object"
+						string="Review Again"
+						invisible="state != 'ignored'"
+					/>
+					<field
+						name="state"
+						widget="statusbar"
+						statusbar_visible="new,declared"
+					/>
+				</header>
+				<sheet>
+					<div class="oe_title">
+						<h1><field name="name" readonly="1"/></h1>
+					</div>
+					<group>
+						<group>
+							<field name="storage_type" readonly="1"/>
+							<field name="sample_url" readonly="1" widget="url"/>
+							<field name="website_id" readonly="1"/>
+						</group>
+						<group>
+							<field name="hit_count" readonly="1"/>
+							<field name="last_seen" readonly="1"/>
+							<field name="cookie_id" invisible="not cookie_id"/>
+							<field name="service_id" invisible="not service_id"/>
+						</group>
+					</group>
+					<div class="alert alert-info" role="status">
+						Captures come from browsing the site yourself while signed in as an editor: every page you open reports what it holds. Nothing is gated until you declare it into a purpose.
+					</div>
+				</sheet>
+			</form>
+		</field>
+	</record>
+
+	<record id="action_cookie_observation" model="ir.actions.act_window">
+		<field name="name">Captured</field>
+		<field name="res_model">muk_website_cookies_consent.observation</field>
+		<field name="view_mode">list,form</field>
+		<field name="path">cookie-captures</field>
+		<field name="context">{'search_default_filter_new': 1}</field>
+		<field name="help" type="html">
+			<p class="o_view_nocontent_smiling_face">Nothing captured yet</p>
+			<p>
+				Browse your site while signed in as an editor. Cookies, storage keys and third-party hosts that no declaration covers are collected here, ready to be classified.
+			</p>
+		</field>
+	</record>
+
+</odoo>

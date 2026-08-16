@@ -1,0 +1,158 @@
+$o-muk-cookies-shell-shadow:
+    0 0 0 $border-width rgba($body-color, 0.08),
+    0 0.5rem 2.5rem rgba(0, 0, 0, 0.18);
+#website_cookies_bar {
+    .mk_cookies_modal {
+        .modal-content {
+            border: 0;
+            border-radius: $border-radius-lg;
+            box-shadow: $o-muk-cookies-shell-shadow;
+        }
+        .mk_cookies_btn {
+            min-width: 9rem;
+            min-height: 2.75rem;
+        }
+        .mk_cookies_btn_link,
+        .mk_cookies_details summary {
+            min-height: 1.5rem;
+            padding-block: 0.25rem;
+        }
+        .mk_cookies_switch {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding-left: 0;
+            .form-check-input {
+                margin-left: 0;
+                width: 2.5rem;
+                height: 1.5rem;
+                cursor: pointer;
+                border-color: rgba($body-color, 0.45);
+                &:not(:checked) {
+                    background-color: rgba($body-color, 0.08);
+                }
+                &:disabled {
+                    cursor: not-allowed;
+                    opacity: 0.75;
+                }
+            }
+        }
+        .mk_cookies_purpose {
+            background-color: rgba($body-color, 0.02);
+        }
+        .mk_cookies_details {
+            summary {
+                cursor: pointer;
+            }
+            table {
+                th,
+                td {
+                    vertical-align: top;
+                }
+            }
+        }
+        .mk_cookies_body {
+            max-height: 55vh;
+            padding-top: 0.5rem;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+        .mk_cookies_head {
+            border-bottom: $border-width solid $border-color;
+        }
+        .mk_cookies_foot {
+            border-top: $border-width solid $border-color;
+        }
+        .mk_cookies_policy {
+            text-decoration: underline;
+        }
+    }
+    .s_popup_size_full > .modal-content {
+        border-radius: 0;
+        box-shadow: $o-muk-cookies-shell-shadow;
+    }
+    .mk_cookies_modal.mk_cookies_expanded {
+        background-color: rgba(0, 0, 0, 0.5);
+        pointer-events: auto;
+        .modal-dialog,
+        .modal-dialog.s_popup_size_full {
+            max-width: 46rem;
+            width: 100%;
+            margin: auto;
+            align-items: center;
+        }
+        .modal-content {
+            border-radius: $border-radius-lg;
+            box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.32);
+        }
+    }
+    .mk_cookies_density_compact {
+        .mk_cookies_title {
+            @include visually-hidden;
+        }
+        .mk_cookies_layer[data-layer='notice'] {
+            padding: 1rem !important;
+        }
+        .mk_cookies_text {
+            font-size: $font-size-sm;
+        }
+    }
+    .mk_cookies_bar_bottom .modal-dialog,
+    .mk_cookies_bar_top .modal-dialog {
+        max-width: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0 !important;
+    }
+    .mk_cookies_box_left .modal-dialog,
+    .mk_cookies_box_right .modal-dialog {
+        max-width: 28rem;
+        margin: 0;
+    }
+    .mk_cookies_box_left .modal-dialog {
+        margin-right: auto;
+    }
+    .mk_cookies_box_right .modal-dialog {
+        margin-left: auto;
+    }
+    .mk_cookies_center .modal-dialog {
+        max-width: 40rem;
+    }
+    .mk_cookies_box_left,
+    .mk_cookies_box_right {
+        .mk_cookies_layer[data-layer='notice'] .row > [class*='col-'] {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+    }
+}
+.mk_cookies_float {
+    position: fixed;
+    z-index: 1035;
+    bottom: 1rem;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    border-radius: 50%;
+    line-height: 1;
+    &.mk_cookies_float_left {
+        left: 1rem;
+    }
+    &.mk_cookies_float_right {
+        right: 1rem;
+    }
+}
+body:has(#website_cookies_bar .modal.show) .mk_cookies_float {
+    display: none;
+}
+body.mk_cookies_locked {
+    position: fixed;
+    width: 100%;
+    overflow: hidden;
+}
+.mk_cookies_footer {
+    .mk_cookies_reopen {
+        min-height: 1.5rem;
+        vertical-align: baseline;
+    }
+}

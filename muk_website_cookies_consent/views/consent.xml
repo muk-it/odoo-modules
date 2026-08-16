@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_cookie_consent_search" model="ir.ui.view">
+		<field name="name">muk_website_cookies_consent.consent.search</field>
+		<field name="model">muk_website_cookies_consent.consent</field>
+		<field name="arch" type="xml">
+			<search string="Consent Logs">
+				<field name="consent_uid"/>
+				<field name="ip_hash" string="IP Fingerprint"/>
+				<field name="jurisdiction"/>
+				<field name="registry_hash"/>
+				<filter
+					name="filter_accept_all"
+					string="Accepted All"
+					domain="[('action', '=', 'accept_all')]"
+				/>
+				<filter
+					name="filter_reject_all"
+					string="Refused All"
+					domain="[('action', '=', 'reject_all')]"
+				/>
+				<filter
+					name="filter_custom"
+					string="Custom"
+					domain="[('action', '=', 'custom')]"
+				/>
+				<filter
+					name="filter_withdraw"
+					string="Withdrawn"
+					domain="[('action', '=', 'withdraw')]"
+				/>
+				<separator/>
+				<filter
+					name="filter_today"
+					string="Today"
+					domain="[('create_date', '>=', datetime.datetime.combine(context_today(), datetime.time(0, 0, 0)))]"
+				/>
+				<group>
+					<filter
+						name="group_action"
+						string="Decision"
+						context="{'group_by': 'action'}"
+					/>
+					<filter
+						name="group_source"
+						string="Given Through"
+						context="{'group_by': 'source'}"
+					/>
+					<filter
+						name="group_country"
+						string="Country"
+						context="{'group_by': 'jurisdiction'}"
+					/>
+					<filter
+						name="group_date"
+						string="Date"
+						context="{'group_by': 'create_date:day'}"
+					/>
+				</group>
+			</search>
+		</field>
+	</record>
+
+	<record id="view_cookie_consent_list" model="ir.ui.view">
+		<field name="name">muk_website_cookies_consent.consent.list</field>
+		<field name="model">muk_website_cookies_consent.consent</field>
+		<field name="arch" type="xml">
+			<list string="Consent Logs" create="false" edit="false">
+				<field name="create_date"/>
+				<field name="consent_uid"/>
+				<field name="action"/>
+				<field name="granted_category_ids" widget="many2many_tags"/>
+				<field
+					name="denied_category_ids"
+					widget="many2many_tags"
+					optional="show"
+				/>
+				<field name="source" optional="show"/>
+				<field name="jurisdiction" optional="show"/>
+				<field name="policy_version" optional="hide"/>
+				<field name="registry_hash" optional="hide"/>
+				<field name="banner_version" optional="hide"/>
+				<field name="website_id" optional="hide"/>
+			</list>
+		</field>
+	</record>
+
+	<record id="view_cookie_consent_form" model="ir.ui.view">
+		<field name="name">muk_website_cookies_consent.consent.form</field>
+		<field name="model">muk_website_cookies_consent.consent</field>
+		<field name="arch" type="xml">
+			<form string="Consent Record" create="false" edit="false">
+				<sheet>
+					<div class="oe_title">
+						<h1><field name="consent_uid" readonly="1"/></h1>
+					</div>
+					<group>
+						<group string="Decision">
+							<field name="action" readonly="1"/>
+							<field name="source" readonly="1"/>
+							<field name="create_date" readonly="1"/>
+							<field name="lifetime_days" readonly="1"/>
+							<field name="consent_mode_pushed" readonly="1"/>
+						</group>
+						<group string="What Was Shown">
+							<field name="policy_version" readonly="1"/>
+							<field name="registry_hash" readonly="1"/>
+							<field name="banner_version" readonly="1"/>
+							<field name="lang_code" readonly="1"/>
+						</group>
+						<group string="Context">
+							<field name="website_id" readonly="1"/>
+							<field name="jurisdiction" readonly="1"/>
+							<field name="geo_rule_id" readonly="1"/>
+							<field name="visitor_id" readonly="1"/>
+						</group>
+						<group string="Request">
+							<field name="ip_hash" readonly="1"/>
+							<field name="user_agent" readonly="1"/>
+						</group>
+					</group>
+					<group>
+						<group string="Granted">
+							<field
+								name="granted_category_ids"
+								widget="many2many_tags"
+								nolabel="1"
+								readonly="1"
+							/>
+							<field
+								name="granted_service_ids"
+								widget="many2many_tags"
+								nolabel="1"
+								readonly="1"
+							/>
+						</group>
+						<group string="Refused">
+							<field
+								name="denied_category_ids"
+								widget="many2many_tags"
+								nolabel="1"
+								readonly="1"
+							/>
+						</group>
+					</group>
+				</sheet>
+			</form>
+		</field>
+	</record>
+
+	<record id="action_cookie_consent" model="ir.actions.act_window">
+		<field name="name">Consent Logs</field>
+		<field name="res_model">muk_website_cookies_consent.consent</field>
+		<field name="view_mode">list,form</field>
+		<field name="path">cookie-consents</field>
+		<field name="help" type="html">
+			<p class="o_view_nocontent_smiling_face">No consent recorded yet</p>
+			<p>
+				Each decision a visitor makes is recorded here, together with the disclosure they were shown, as proof of consent.
+			</p>
+		</field>
+	</record>
+
+</odoo>
