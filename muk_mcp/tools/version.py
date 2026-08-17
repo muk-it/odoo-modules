@@ -21,6 +21,16 @@ MCP_HEADER_BASE64_SUFFIX = '?='
 META_PROTOCOL_VERSION = 'io.modelcontextprotocol/protocolVersion'
 META_CLIENT_INFO = 'io.modelcontextprotocol/clientInfo'
 META_CLIENT_CAPABILITIES = 'io.modelcontextprotocol/clientCapabilities'
+META_SERVER_INFO = 'io.modelcontextprotocol/serverInfo'
+
+MCP_CACHE_HINTS = {
+    'server/discover': {'ttlMs': 300000, 'cacheScope': 'public'},
+    'resources/templates/list': {'ttlMs': 300000, 'cacheScope': 'public'},
+    'tools/list': {'ttlMs': 60000, 'cacheScope': 'private'},
+    'prompts/list': {'ttlMs': 60000, 'cacheScope': 'private'},
+    'resources/list': {'ttlMs': 60000, 'cacheScope': 'private'},
+    'resources/read': {'ttlMs': 0, 'cacheScope': 'private'},
+}
 
 
 @dataclass(frozen=True)

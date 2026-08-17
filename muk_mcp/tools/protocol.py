@@ -3,12 +3,32 @@ import json
 from . import common, version
 
 
-def make_jsonrpc_response(result, request_id=None, result_type=None):
+def make_jsonrpc_response(result, request_id=None):
     return {
         'jsonrpc': common.JSONRPC_VERSION,
         'id': request_id,
-        'result': {**result, 'resultType': result_type} if result_type else result,
+        'result': result,
     }
+
+
+def make_result_envelope(result, profile, method):
+    """Add the result fields the negotiated revision requires.
+
+    Revision 2026-07-28 names the outcome kind on every result, carries the server
+    identity in ``_meta``, and requires caching hints on the operations it defines
+    as cacheable. The revisions before it define none of these, so their results
+    pass through untouched. The values are the transport's to set and override
+    anything a handler put under those keys.
+    """
+    if not profile.result_type:
+        return result
+    envelope = {**result, 'resultType': profile.result_type}
+    envelope.update(version.MCP_CACHE_HINTS.get(method, {}))
+    envelope['_meta'] = {
+        **(result.get('_meta') or {}),
+        version.META_SERVER_INFO: make_server_info(),
+    }
+    return envelope
 
 
 def make_jsonrpc_error(
