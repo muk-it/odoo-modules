@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo noupdate="1">
+
+	<record id="geo_rule_at" model="muk_website_cookies_consent.geo.rule">
+		<field name="name">Austria</field>
+		<field name="country_ids" eval="[Command.set([ref('base.at')])]"/>
+		<field name="lifetime_days">180</field>
+		<field name="source_note">TKG 2021 §165. No re-ask interval is published by the DSB, so the conservative EU baseline of six months is used.</field>
+		<field name="sequence">10</field>
+	</record>
+
+	<record id="geo_rule_de" model="muk_website_cookies_consent.geo.rule">
+		<field name="name">Germany</field>
+		<field name="country_ids" eval="[Command.set([ref('base.de')])]"/>
+		<field name="lifetime_days">180</field>
+		<field name="source_note">TDDDG §25. No binding figure exists; 6 to 12 months is the accepted practitioner range, and the conservative end of it is used.</field>
+		<field name="sequence">11</field>
+	</record>
+
+	<record id="geo_rule_fr" model="muk_website_cookies_consent.geo.rule">
+		<field name="name">France</field>
+		<field name="country_ids" eval="[Command.set([ref('base.fr')])]"/>
+		<field name="lifetime_days">180</field>
+		<field name="source_note">CNIL good practice: keep the choice about six months. The often-quoted 13 months is the cookie's maximum lifetime, not the re-ask interval.</field>
+		<field name="sequence">12</field>
+	</record>
+
+	<record id="geo_rule_it" model="muk_website_cookies_consent.geo.rule">
+		<field name="name">Italy</field>
+		<field name="country_ids" eval="[Command.set([ref('base.it')])]"/>
+		<field name="lifetime_days">180</field>
+		<field name="source_note">Garante cookie guidelines, 10 June 2021: do not prompt again more often than every six months.</field>
+		<field name="sequence">13</field>
+	</record>
+
+	<record id="geo_rule_es" model="muk_website_cookies_consent.geo.rule">
+		<field name="name">Spain</field>
+		<field name="country_ids" eval="[Command.set([ref('base.es')])]"/>
+		<field name="lifetime_days">730</field>
+		<field name="source_note">AEPD cookie guide: consent should be refreshed at most every 24 months.</field>
+		<field name="sequence">14</field>
+	</record>
+
+	<record id="geo_rule_eu" model="muk_website_cookies_consent.geo.rule">
+		<field name="name">European Union / EEA</field>
+		<field name="country_group_ids" eval="[Command.set([ref('base.europe')])]"/>
+		<field name="lifetime_days">180</field>
+		<field name="source_note">ePrivacy Directive Art. 5(3) with the GDPR consent standard. Six months is the conservative baseline.</field>
+		<field name="sequence">20</field>
+	</record>
+
+	<record id="geo_rule_uk_ch" model="muk_website_cookies_consent.geo.rule">
+		<field name="name">United Kingdom / Switzerland</field>
+		<field
+			name="country_ids"
+			eval="[Command.set([ref('base.uk'), ref('base.ch')])]"
+		/>
+		<field name="lifetime_days">180</field>
+		<field name="source_note">UK PECR expects a prior, informed choice. Switzerland does not: Art. 45c TCA asks for notice and a way to refuse, so asking first is stricter than the law requires.</field>
+		<field name="sequence">21</field>
+	</record>
+
+	<record id="geo_rule_row" model="muk_website_cookies_consent.geo.rule">
+		<field name="name">Rest of the world</field>
+		<field name="lifetime_days">365</field>
+		<field name="source_note">Catch-all. Also covers visitors whose country cannot be resolved, which is why they are asked first rather than assumed to have consented.</field>
+		<field name="sequence">99</field>
+	</record>
+
+</odoo>

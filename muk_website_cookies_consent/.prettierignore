@@ -1,0 +1,23 @@
+# prettier does not read .gitignore, so mirror the generated/vendored paths here.
+
+# JS tooling
+node_modules/
+package-lock.json
+
+# Lint / type-check caches
+.ruff_cache/
+.mypy_cache/
+
+# Local virtualenvs
+.venv/
+venv/
+
+# Test / coverage
+htmlcov/
+
+# Vendored third-party bundles
+static/lib/
+
+# App-store description page: hand-authored in the house style, and prettier's
+# html formatter reflows the inline styles it is built around.
+static/description/

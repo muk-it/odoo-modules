@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo noupdate="1">
+
+	<record id="ir_cron_purge_consent_records" model="ir.cron">
+		<field name="name">Cookie Consent: Purge Expired Records</field>
+		<field name="model_id" ref="model_muk_website_cookies_consent_consent"/>
+		<field name="state">code</field>
+		<field name="code">model._cron_purge_records()</field>
+		<field name="interval_number">1</field>
+		<field name="interval_type">weeks</field>
+		<field name="active" eval="True"/>
+	</record>
+
+</odoo>

@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="res_config_settings_view_form" model="ir.ui.view">
+		<field name="name">res.config.settings.view.form.inherit.cookies.consent</field>
+		<field name="model">res.config.settings</field>
+		<field name="inherit_id" ref="website.res_config_settings_view_form"/>
+		<field name="arch" type="xml">
+			<xpath expr="//div[@id='website_settings']" position="after">
+				<h2>Cookie Consent</h2>
+				<div
+					class="row mt16 o_settings_container"
+					id="website_cookie_consent_settings"
+					attrs="{'invisible': ['|', ('website_id', '=', False), ('website_cookies_bar', '=', False)]}"
+				>
+					<div
+						class="col-12 col-lg-6 o_setting_box"
+						id="cookie_blocking_setting"
+					>
+						<div class="o_setting_left_pane">
+							<field name="cookie_blocking"/>
+						</div>
+						<div class="o_setting_right_pane">
+							<label for="cookie_blocking" string="Block Before Consent"/>
+							<div class="text-muted">
+								Strip scripts and embeds of a service until its purpose is granted, and show a placeholder in place of the embed.
+							</div>
+						</div>
+					</div>
+					<div
+						class="col-12 col-lg-6 o_setting_box"
+						id="muk_cookie_log_setting"
+					>
+						<div class="o_setting_left_pane">
+							<field name="cookie_log_consent"/>
+						</div>
+						<div class="o_setting_right_pane">
+							<label for="cookie_log_consent" string="Consent Proof"/>
+							<div class="text-muted">
+								Record every decision together with the disclosure shown, so consent can be demonstrated as GDPR Art. 7(1) requires.
+							</div>
+						</div>
+					</div>
+					<div
+						class="col-12 col-lg-6 o_setting_box"
+						id="muk_cookie_log_ip_setting"
+						attrs="{'invisible': [('cookie_log_consent', '=', False)]}"
+					>
+						<div class="o_setting_left_pane">
+							<field name="cookie_log_ip"/>
+						</div>
+						<div class="o_setting_right_pane">
+							<label for="cookie_log_ip" string="Record IP Fingerprint"/>
+							<div class="text-muted">
+								Stores a salted hash of the truncated address with each record. No readable IP is kept.
+							</div>
+						</div>
+					</div>
+					<div
+						class="col-12 col-lg-6 o_setting_box"
+						id="cookie_policy_version_setting"
+					>
+						<div class="o_setting_right_pane">
+							<label for="cookie_policy_version" string="Policy Version"/>
+							<div class="text-muted">
+								Raising this asks every visitor again. Adding a purpose, a service or a cookie already does that on its own.
+							</div>
+							<div class="mt8">
+								<field
+									name="cookie_policy_version"
+									class="o_light_label"
+								/>
+							</div>
+						</div>
+					</div>
+					<div
+						class="col-12 col-lg-6 o_setting_box"
+						id="muk_cookie_policy_url_setting"
+					>
+						<div class="o_setting_right_pane">
+							<label for="cookie_policy_url" string="Policy Link"/>
+							<div class="text-muted">
+								Where the banner sends visitors for the full policy. Leave it empty to use the page Odoo publishes at /cookie-policy, which lists your declarations on its own.
+							</div>
+							<div class="mt8">
+								<field
+									name="cookie_policy_url"
+									class="o_light_label"
+									placeholder="/cookie-policy"
+								/>
+							</div>
+						</div>
+					</div>
+					<div
+						class="col-12 col-lg-6 o_setting_box"
+						id="cookie_consent_mode_setting"
+					>
+						<div class="o_setting_right_pane">
+							<label
+								for="cookie_consent_mode"
+								string="Google Consent Mode"
+							/>
+							<div class="text-muted">
+								Basic withholds Google tags until a purpose they serve is granted, so a refusal keeps them unloaded. Advanced loads them immediately and allows cookieless pings, which recovers conversion modelling but sends data before consent.
+							</div>
+							<div class="mt8">
+								<field name="cookie_consent_mode" class="o_light_label"/>
+							</div>
+						</div>
+					</div>
+					<div
+						class="col-12 col-lg-6 o_setting_box"
+						id="muk_cookie_gpc_setting"
+					>
+						<div class="o_setting_left_pane">
+							<field name="cookie_respect_gpc"/>
+						</div>
+						<div class="o_setting_right_pane">
+							<label
+								for="cookie_respect_gpc"
+								string="Global Privacy Control"
+							/>
+							<div class="text-muted">
+								Treat a Sec-GPC request header as a refusal of everything optional. Its absence never counts as consent.
+							</div>
+						</div>
+					</div>
+					<div
+						class="col-12 col-lg-6 o_setting_box"
+						id="muk_cookie_gpc_json_setting"
+						attrs="{'invisible': [('cookie_respect_gpc', '=', False)]}"
+					>
+						<div class="o_setting_left_pane">
+							<field name="cookie_publish_gpc_json"/>
+						</div>
+						<div class="o_setting_right_pane">
+							<label
+								for="cookie_publish_gpc_json"
+								string="Publish /.well-known/gpc.json"
+							/>
+							<div class="text-muted">
+								Declares in public that the signal is honoured. Only publish it once you have verified that it is.
+							</div>
+						</div>
+					</div>
+				</div>
+			</xpath>
+		</field>
+	</record>
+
+</odoo>

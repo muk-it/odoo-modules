@@ -1,0 +1,391 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+	<template
+		id="cookies_bar"
+		inherit_id="website.cookies_bar"
+		name="Cookie Consent Bar"
+	>
+		<xpath expr="//div[@id='website_cookies_bar']" position="replace">
+			<t t-if="website.cookies_bar">
+				<t
+					t-set="muk_offered"
+					t-value="website._get_offered_cookie_categories()"
+				/>
+				<t t-set="muk_granted" t-value="website._get_granted_cookie_codes()"/>
+				<t t-set="muk_ask" t-value="not website._has_cookie_decision()"/>
+				<div
+					id="website_cookies_bar"
+					class="s_popup o_snippet_invisible o_no_save mk_cookies"
+					data-name="Cookies Bar"
+					data-vcss="001"
+					data-invisible="1"
+					t-attf-data-muk-cookie-ask="#{'1' if muk_ask else '0'}"
+					t-att-data-muk-cookie-pv="website.cookie_policy_version"
+					t-att-data-muk-cookie-rh="website._get_cookie_registry_hash()"
+					t-att-data-muk-cookie-days="website._get_cookie_lifetime_days()"
+					t-att-data-muk-cookie-lang="request.env.lang"
+					t-attf-data-muk-cookie-log="#{'1' if website.cookie_log_consent else '0'}"
+				>
+					<div
+						t-attf-class="modal s_popup_no_backdrop mk_cookies_modal mk_cookies_density_#{website.cookie_density} mk_cookies_#{website.cookie_layout} #{'s_popup_bottom' if website.cookie_layout in ('bar_bottom', 'box_left', 'box_right') else ''} #{'s_popup_top' if website.cookie_layout == 'bar_top' else ''} #{'s_popup_middle' if website.cookie_layout == 'center' else ''}"
+						data-show-after="0"
+						data-display="afterDelay"
+						data-consents-duration="365"
+						data-bs-focus="false"
+						data-bs-backdrop="false"
+						data-bs-keyboard="false"
+						role="dialog"
+						aria-labelledby="muk_cookies_title"
+						tabindex="-1"
+					>
+						<div
+							t-attf-class="modal-dialog d-flex #{'s_popup_size_full' if website.cookie_layout in ('bar_bottom', 'bar_top') else ''}"
+						>
+							<div class="modal-content">
+								<section
+									class="o_colored_level o_cc o_cc1 mk_cookies_layer p-4"
+									data-layer="notice"
+								>
+									<div class="container">
+										<div class="row align-items-center g-3">
+											<div
+												class="col-lg-7 oe_structure"
+												id="muk_cookies_notice_copy"
+											>
+												<t
+													t-call="muk_website_cookies_consent.notice_copy"
+												/>
+											</div>
+											<div
+												class="col-lg-5 o_not_editable"
+												data-oe-protected="true"
+											>
+												<t
+													t-call="muk_website_cookies_consent.notice_actions"
+												/>
+											</div>
+										</div>
+									</div>
+								</section>
+								<section
+									class="o_colored_level o_cc o_cc1 mk_cookies_layer mk_cookies_preferences d-none o_not_editable"
+									data-layer="preferences"
+									data-oe-protected="true"
+								>
+									<div class="mk_cookies_head px-4 pt-4 pb-3">
+										<h2
+											class="h5 mb-1"
+											id="muk_cookies_prefs_title"
+										>
+											Your cookie choices
+										</h2>
+										<p class="small text-muted mb-0">
+											Pick the purposes you agree to. Nothing optional runs until you save.
+										</p>
+									</div>
+									<div class="mk_cookies_body px-4">
+										<t t-foreach="muk_offered" t-as="category">
+											<t
+												t-set="muk_input_id"
+												t-value="'muk_cookie_cat_%s' % category.code"
+											/>
+											<div
+												class="mk_cookies_purpose border rounded p-3 mb-2"
+											>
+												<div
+													class="d-flex justify-content-between align-items-start gap-3"
+												>
+													<div class="flex-grow-1">
+														<label
+															class="form-check-label fw-bold mb-1"
+															t-att-for="muk_input_id"
+															t-field="category.name"
+														/>
+														<p
+															class="small text-muted mb-0"
+															t-field="category.description"
+														/>
+													</div>
+													<div
+														class="form-check form-switch flex-shrink-0 mk_cookies_switch"
+													>
+														<input
+															type="checkbox"
+															class="form-check-input"
+															role="switch"
+															name="muk_cookie_category"
+															t-att-id="muk_input_id"
+															t-att-value="category.code"
+															t-att-checked="'checked' if (category.essential or category.code in muk_granted) else None"
+															t-att-disabled="'disabled' if category.essential else None"
+														/>
+													</div>
+												</div>
+												<t
+													t-set="muk_cookies_of"
+													t-value="website._get_cookie_declarations_of(category)"
+												/>
+												<details
+													t-if="muk_cookies_of"
+													class="mt-2 mk_cookies_details"
+												>
+													<summary class="small">
+														Cookies used (<t t-out="len(muk_cookies_of)"/>)
+													</summary>
+													<div class="table-responsive mt-2">
+														<table
+															class="table table-sm small mb-0"
+														>
+															<thead>
+																<tr>
+																	<th scope="col">
+																		Name
+																	</th>
+																	<th scope="col">
+																		Provider
+																	</th>
+																	<th scope="col">
+																		Purpose
+																	</th>
+																	<th scope="col">
+																		Retention
+																	</th>
+																</tr>
+															</thead>
+															<tbody>
+																<tr
+																	t-foreach="muk_cookies_of"
+																	t-as="cookie"
+																>
+																	<td><code t-field="cookie.name"/></td>
+																	<td><span t-field="cookie.provider"/></td>
+																	<td><span t-field="cookie.description"/></td>
+																	<td><span t-field="cookie.duration"/></td>
+																</tr>
+															</tbody>
+														</table>
+													</div>
+												</details>
+											</div>
+										</t>
+										<t
+											t-foreach="website._get_cookie_declarations()"
+											t-as="declaration"
+										>
+											<span
+												class="d-none"
+												t-att-data-muk-cookie-name="declaration.name"
+												t-att-data-muk-cookie-pattern="declaration.pattern or ''"
+												t-att-data-muk-cookie-of="declaration.category_id.code"
+											/>
+										</t>
+										<t
+											t-foreach="website._get_cookie_services()"
+											t-as="service"
+										>
+											<span
+												class="d-none"
+												t-att-data-muk-service="service.technical_name"
+												t-att-data-muk-category="service.category_id.code"
+												t-attf-data-muk-contextual="#{'1' if service.contextual_only else '0'}"
+											/>
+										</t>
+									</div>
+									<div class="mk_cookies_foot px-4 py-3">
+										<div
+											class="d-flex flex-wrap gap-2 align-items-center"
+										>
+											<button
+												type="button"
+												id="muk_cookies_back"
+												class="btn btn-link px-0"
+											>
+												Back
+											</button>
+											<div class="ms-auto d-flex flex-wrap gap-2">
+												<button
+													type="button"
+													class="btn btn-primary mk_cookies_btn o_cookies_bar_text_button_essential mk_cookies_reject_all"
+												>
+													Refuse all
+												</button>
+												<button
+													type="button"
+													class="btn btn-primary mk_cookies_btn o_cookies_bar_text_button mk_cookies_accept_all"
+												>
+													Accept all
+												</button>
+												<button
+													type="button"
+													id="muk_cookies_save"
+													class="btn btn-outline-primary mk_cookies_btn"
+												>
+													Save my choices
+												</button>
+											</div>
+										</div>
+									</div>
+								</section>
+							</div>
+						</div>
+					</div>
+				</div>
+			</t>
+		</xpath>
+	</template>
+	<template id="layout" inherit_id="website.layout" name="Cookie Consent Layout">
+		<xpath expr="//head" position="inside">
+			<t
+				t-if="website and website.cookies_bar and website.cookie_blocking
+					and website._get_blocked_third_party_domains_list() and not editable and not translatable
+					and not request.env.user.has_group('website.group_website_restricted_editor')"
+			>
+				<script
+					src="/muk_website_cookies_consent/static/src/js/cookie_watcher.js"
+				/>
+				<script>
+					watch3rdPartyScripts(<t
+						t-out="json.dumps(website._get_blocked_third_party_domains_list())"
+					/>);
+				</script>
+			</t>
+		</xpath>
+		<xpath expr="//script[@id='tracking_code']" position="replace">
+			<script
+				t-if="website.cookie_consent_mode == 'advanced' or website._allConsentsGranted() or website._is_cookie_category_granted('analytics')"
+				id="tracking_code"
+				async="async"
+				t-attf-src="https://www.googletagmanager.com/gtag/js?id={{ website.google_analytics_key }}"
+			/>
+		</xpath>
+		<xpath expr="//script[@id='tracking_code_config']" position="replace">
+			<script id="tracking_code_config">
+				window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);}
+				<t
+					t-if="website._is_cookie_consent_active() and website.cookie_consent_mode != 'off'"
+				>
+					gtag('consent', 'default', <t t-out="website._get_consent_mode_default_json()"/>);
+					gtag('set', 'ads_data_redaction', <t t-out="website._get_ads_data_redaction_json()"/>);
+					gtag('set', 'url_passthrough', true);
+				</t>
+				gtag('js', new Date());
+				gtag('config', <t t-out="json.dumps(website.google_analytics_key)"/>);
+				<t
+					t-if="website._is_cookie_consent_active() and website.cookie_consent_mode != 'off' and website._has_cookie_decision()"
+				>
+					gtag('consent', 'update', <t t-out="website._get_consent_mode_state_json()"/>);
+				</t>
+			</script>
+		</xpath>
+		<xpath expr="//script[@id='plausible_script']" position="attributes">
+			<attribute name="t-if">
+				not website.cookies_bar or website._is_cookie_category_granted('analytics')
+			</attribute>
+		</xpath>
+		<xpath expr="//footer" position="inside">
+			<div
+				t-if="website.cookies_bar and website.cookie_reopen_footer"
+				class="container mk_cookies_footer small py-2 text-center o_not_editable"
+			>
+				<a
+					t-att-href="website._get_cookie_policy_url()"
+					class="mk_cookies_policy_link me-3"
+				>
+					Cookie Policy
+				</a>
+				<button
+					type="button"
+					class="btn btn-link btn-sm p-0 mk_cookies_reopen"
+				>
+					Cookie Preferences
+				</button>
+			</div>
+		</xpath>
+		<xpath expr="//footer" position="after">
+			<div
+				t-if="website.cookies_bar and request.env.user.has_group('website.group_website_restricted_editor')"
+				id="muk_cookies_observer"
+				class="d-none o_not_editable"
+			/>
+			<button
+				t-if="website.cookies_bar and website.cookie_reopen_float != 'none'"
+				type="button"
+				t-attf-class="btn btn-secondary mk_cookies_float mk_cookies_float_#{website.cookie_reopen_float} mk_cookies_reopen o_not_editable"
+				aria-label="Cookie preferences"
+				title="Cookie preferences"
+			>
+				<i class="fa fa-shield" role="img" aria-hidden="true"/>
+			</button>
+		</xpath>
+	</template>
+	<template
+		id="custom_code_layout"
+		inherit_id="website.custom_code_layout"
+		name="Cookie Consent Custom Code"
+	>
+		<xpath expr="//t[@t-out='website.custom_code_head']" position="replace">
+			<t
+				t-out="website._control_third_party_trackers_in_html(website.custom_code_head)"
+			/>
+		</xpath>
+		<xpath expr="//t[@t-out='website.custom_code_footer']" position="replace">
+			<t
+				t-out="website._control_third_party_trackers_in_html(website.custom_code_footer)"
+			/>
+		</xpath>
+	</template>
+	<template id="notice_copy" name="Cookie Notice Copy">
+		<h2
+			id="muk_cookies_title"
+			class="h5 mk_cookies_title o_cookies_bar_text_title"
+		>
+			We ask before we track you
+		</h2>
+		<p class="mb-0 mk_cookies_text o_cookies_bar_text_secondary">
+			Cookies that are strictly necessary keep this site working and are always on. For anything else we need your permission. You can change your mind at any time.
+			<a
+				t-att-href="website._get_cookie_policy_url()"
+				class="mk_cookies_policy o_cookies_bar_text_policy o_translate_inline"
+			>
+				Read our cookie policy
+			</a>
+		</p>
+	</template>
+	<template id="notice_actions" name="Cookie Notice Actions">
+		<div
+			class="d-flex flex-wrap gap-2 justify-content-lg-end mk_cookies_actions"
+		>
+			<button
+				type="button"
+				id="cookies-consent-essential"
+				class="btn btn-primary mk_cookies_btn o_cookies_bar_text_button_essential mk_cookies_reject_all"
+			>
+				Refuse all
+			</button>
+			<button
+				type="button"
+				id="cookies-consent-all"
+				class="btn btn-primary mk_cookies_btn o_cookies_bar_text_button mk_cookies_accept_all"
+			>
+				Accept all
+			</button>
+			<button
+				type="button"
+				id="muk_cookies_customize"
+				class="btn btn-link mk_cookies_btn_link"
+				aria-haspopup="dialog"
+			>
+				Manage choices
+			</button>
+			<button
+				type="button"
+				id="muk_cookies_dismiss"
+				class="btn btn-link mk_cookies_btn_link d-none"
+			>
+				Keep my choice
+			</button>
+		</div>
+	</template>
+
+</odoo>
