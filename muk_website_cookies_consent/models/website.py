@@ -4,6 +4,7 @@ import hashlib
 import json
 from urllib.parse import urlsplit
 
+from lxml import etree, html
 from markupsafe import Markup
 
 from odoo import api, fields, models, tools
@@ -680,6 +681,36 @@ class Website(models.Model):
             category.code in granted
             for category in self._get_optional_cookie_categories()
         )
+
+    def _control_third_party_trackers_in_html(self, html_content: str) -> Markup:
+        """Strip the blocked third-party tags out of a stored HTML value.
+
+        Core parses the value as a document, which only survives when it holds
+        exactly one root element. What an admin pastes into the custom head or
+        footer code is a snippet — typically a comment followed by a script —
+        and parsing that as a document wraps it in ``<html><head>`` and drops
+        the leading comment. Injected into the real head, that closes it early
+        and the rest of the page is left to the browser's error recovery.
+        Parsed as fragments instead, so what was pasted is what is served,
+        minus the tags whose purpose the visitor has not granted.
+        """
+        if not html_content or not self._should_remove_third_party_trackers():
+            return html_content
+        try:
+            fragments = html.fragments_fromstring(str(html_content))
+        except (etree.ParserError, etree.XMLSyntaxError):
+            return html_content
+        rendered = []
+        for fragment in fragments:
+            if isinstance(fragment, str):
+                rendered.append(fragment)
+                continue
+            for element in fragment.iter('script', 'iframe'):
+                self._remove_third_party_trackers(
+                    element.tag, element.attrib, ['domains']
+                )
+            rendered.append(html.tostring(fragment, encoding='unicode'))
+        return Markup(''.join(rendered))
 
     def _should_remove_third_party_trackers(self) -> bool:
         """Report whether anything still has to be stripped from the markup.

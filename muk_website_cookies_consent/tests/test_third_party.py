@@ -11,6 +11,11 @@ YOUTUBE_IFRAME = (
 LINKEDIN_SCRIPT = '<div><script src="https://snap.licdn.com/li.lms-analytics/insight.min.js"></script></div>'
 OWN_SCRIPT = '<div><script src="/web/static/src/legacy.js"></script></div>'
 UNCLAIMED_IFRAME = '<div><iframe src="https://www.youku.com/embed/x"></iframe></div>'
+PASTED_SNIPPET = (
+    '<!-- Meta Pixel -->\n'
+    '<script src="https://connect.facebook.net/en_US/fbevents.js"></script>\n'
+    '<meta name="pasted" content="1"/>'
+)
 
 
 @tagged('post_install', '-at_install')
@@ -47,6 +52,31 @@ class TestThirdParty(CookieConsentCommon):
         self.assertFalse(
             maps._matches_url('https://www.google.com/recaptcha/api.js'),
             'A path pattern must not gate everything else on the same host.',
+        )
+
+    def test_pasted_custom_code_is_scrubbed_without_being_rewritten(self):
+        self.patch_request()
+        controlled = self.as_visitor()._control_third_party_trackers_in_html(
+            PASTED_SNIPPET
+        )
+        self.assertIn('about:blank', controlled)
+        self.assertIn(
+            '<!-- Meta Pixel -->',
+            controlled,
+            'What an admin pastes is a fragment, and parsing it as a document '
+            'drops the comment in front of the tag.',
+        )
+        self.assertNotIn(
+            '<html>',
+            controlled,
+            'A wrapper closes the real head early, and the browser recovers '
+            'the rest of the page as body content.',
+        )
+        self.assertIn(
+            '<meta name="pasted"',
+            controlled,
+            'Everything the admin pasted has to survive, not just the first '
+            'element of it.',
         )
 
     def test_embed_is_stripped_without_consent(self):

@@ -25,7 +25,16 @@ class TestCookieTours(HttpCase):
     def setUpClass(cls) -> None:
         super().setUpClass()
         cls.website = cls.env['website'].search([], limit=1)
-        cls.website.write({'cookies_bar': True, 'block_third_party_domains': True})
+        cls.website.write(
+            {
+                'cookies_bar': True,
+                'block_third_party_domains': True,
+                'cookie_layout': 'bar_bottom',
+                'cookie_density': 'full',
+                'cookie_reopen_footer': True,
+                'cookie_reopen_float': 'right',
+            }
+        )
         cls.publish_embed_page()
 
     @classmethod
