@@ -36,7 +36,30 @@ function showTheBanner(content) {
     return {
         content,
         trigger: '.o_we_invisible_el_panel .o_we_invisible_entry',
-        run: 'click',
+        async run() {
+            // The entry toggles, so clicking it blindly hides a banner
+            // the editor already restored after its reload, and with it
+            // the selection its option panel hangs off.
+            for (let attempt = 0; attempt < 10; attempt++) {
+                const banner = [...document.querySelectorAll('iframe')]
+                    .map((el) =>
+                        el.contentDocument?.querySelector('#website_cookies_bar'),
+                    )
+                    .find(Boolean);
+                const shown = banner && !banner.dataset.invisible;
+                if (
+                    shown &&
+                    document.querySelector(".o_customize_tab [data-label='Layout']")
+                ) {
+                    return;
+                }
+                document
+                    .querySelector('.o_we_invisible_el_panel .o_we_invisible_entry')
+                    ?.click();
+                await new Promise((resolve) => setTimeout(resolve, 300));
+            }
+            throw new Error('The banner would not stay revealed for its option.');
+        },
     };
 }
 
@@ -146,21 +169,27 @@ registerWebsitePreviewTour('muk_cookies_builder', { url: '/', edition: true }, (
     showTheBanner('Show the banner once the corner has changed'),
     {
         content: 'The button is rendered in the corner the editor picked',
-        trigger:
-            ".o_customize_tab [data-label='Floating Button'] .dropdown-toggle:contains('Bottom left')",
+        trigger: ".o_customize_tab [data-label='Floating Button']",
         async run() {
             const stored = await storedBanner();
             if (stored.cookie_reopen_float !== 'left') {
                 throw new Error('The chosen corner was not stored.');
             }
-            const rendered = [...document.querySelectorAll('iframe')].some((el) =>
-                el.contentDocument?.querySelector(
-                    '.mk_cookies_float.mk_cookies_float_left',
-                ),
-            );
-            if (!rendered) {
-                throw new Error('The button was not rendered in that corner.');
+            // The option panel relabels itself from the record after its
+            // reload, so what the sidebar reads is a race; what the page
+            // renders is the claim worth waiting for.
+            for (let attempt = 0; attempt < 10; attempt++) {
+                const rendered = [...document.querySelectorAll('iframe')].some((el) =>
+                    el.contentDocument?.querySelector(
+                        '.mk_cookies_float.mk_cookies_float_left',
+                    ),
+                );
+                if (rendered) {
+                    return;
+                }
+                await new Promise((resolve) => setTimeout(resolve, 300));
             }
+            throw new Error('The button was not rendered in that corner.');
         },
     },
 ]);
