@@ -81,8 +81,9 @@ Two things it deliberately does not ship:
 
 -   **Your own third parties.** A payment provider's SDK, an advertising pixel
     or anything you paste into the page tracking code is yours to add as a
-    service, since only you know which you use. Browse your site as an editor
-    and anything undeclared turns up under Captured, ready to be declared.
+    service, since only you know which you use. A weekly scan walks your own
+    pages and lists what they set and load under Captured, so anything no
+    declaration covers is put up for review.
 -   **Stylesheets and fonts.** Blocking works on `script` and `iframe` sources,
     which is what Odoo's own gating covers. A `link` to Google Fonts is neither,
     so it cannot be held back: serve fonts from your own server if you need them

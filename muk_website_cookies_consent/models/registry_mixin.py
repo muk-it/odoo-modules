@@ -14,6 +14,15 @@ class CookieRegistryMixin(models.AbstractModel):
     _description = 'Cookie Registry Mixin'
 
     # ----------------------------------------------------------
+    # Functions
+    # ----------------------------------------------------------
+
+    def _invalidate_cookie_registry(self) -> None:
+        """Drop the memoised lookups and restate what the findings are."""
+        self.env['website']._clear_cookie_registry_cache()
+        self.env['muk_website_cookies_consent.observation']._resync_states()
+
+    # ----------------------------------------------------------
     # ORM
     # ----------------------------------------------------------
 
@@ -21,17 +30,17 @@ class CookieRegistryMixin(models.AbstractModel):
     def create(self, vals_list: list[dict]) -> models.Model:
         """Create the records and invalidate the registry fingerprint."""
         records = super().create(vals_list)
-        self.env['website']._clear_cookie_registry_cache()
+        self._invalidate_cookie_registry()
         return records
 
     def write(self, vals: dict) -> bool:
         """Write the records and invalidate the registry fingerprint."""
         result = super().write(vals)
-        self.env['website']._clear_cookie_registry_cache()
+        self._invalidate_cookie_registry()
         return result
 
     def unlink(self) -> bool:
         """Delete the records and invalidate the registry fingerprint."""
         result = super().unlink()
-        self.env['website']._clear_cookie_registry_cache()
+        self._invalidate_cookie_registry()
         return result

@@ -5,5 +5,6 @@ from . import test_frontend
 from . import test_gating
 from . import test_js
 from . import test_observation
+from . import test_scan
 from . import test_third_party
 from . import test_tour

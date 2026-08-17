@@ -244,8 +244,8 @@
 	</record>
 
 	<record id="cookie_odoo_multi_tab" model="muk_website_cookies_consent.cookie">
-		<field name="name">legacy_multi_tab</field>
-		<field name="pattern">^legacy_multi_tab\.</field>
+		<field name="name">multi_tab</field>
+		<field name="pattern">^multi_tab\.</field>
 		<field name="category_id" ref="category_essential"/>
 		<field name="provider">This website</field>
 		<field name="description">A shared scratchpad your open tabs read, holding things like the last notification each of them has seen.</field>

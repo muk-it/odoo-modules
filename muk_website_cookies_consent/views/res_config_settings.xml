@@ -71,6 +71,34 @@
 					>
 						<field name="cookie_publish_gpc_json"/>
 					</setting>
+					<setting
+						id="muk_cookie_scan_setting"
+						string="Website Scan"
+						help="Once a week the site fetches its own pages and lists the cookies they set, the storage keys their scripts write and the third-party hosts they load. Anything no declaration covers is put up for review."
+					>
+						<div class="content-group mt-2">
+							<div class="row">
+								<label
+									for="cookie_scan_pages"
+									class="col-lg-4 o_light_label"
+								/>
+								<field name="cookie_scan_pages" class="col-lg-2"/>
+							</div>
+						</div>
+						<div class="mt-2">
+							<button
+								name="action_cookie_scan"
+								type="object"
+								string="Scan Now"
+								class="btn-link ps-0"
+								icon="fa-refresh"
+							/>
+							<span class="text-muted" invisible="not cookie_scan_date">
+								Last scan
+								<field name="cookie_scan_date" readonly="1"/>
+							</span>
+						</div>
+					</setting>
 				</block>
 			</xpath>
 		</field>

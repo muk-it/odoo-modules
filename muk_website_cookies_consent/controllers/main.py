@@ -122,34 +122,6 @@ class CookieConsentController(http.Controller):
         return {'reference': record.consent_uid} if record else {}
 
     @http.route(
-        '/muk_website_cookies_consent/observe',
-        type='json',
-        auth='user',
-        website=True,
-        methods=['POST'],
-    )
-    def observe_keys(self, keys: list | None = None, **kwargs) -> dict:
-        """File the keys an editor's browser found but the registry misses.
-
-        Restricted to editors: this writes configuration records, and a public
-        visitor could otherwise fill the review list with anything.
-
-        :param keys: dicts of name, type and url
-        :return: how many keys are now waiting to be reviewed
-        """
-        if not request.env.user.has_group('website.group_website_restricted_editor'):
-            return {}
-        website = request.env['website'].get_current_website()
-        if not isinstance(keys, list) or not website._is_cookie_consent_active():
-            return {}
-        found = (
-            request.env['muk_website_cookies_consent.observation']
-            .sudo()
-            ._record_keys(website, keys)
-        )
-        return {'captured': len(found)}
-
-    @http.route(
         '/.well-known/gpc.json',
         type='http',
         auth='public',

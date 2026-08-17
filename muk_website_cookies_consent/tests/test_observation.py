@@ -8,14 +8,14 @@ from odoo.addons.muk_website_cookies_consent.tests.common import CookieConsentCo
 
 @tagged('post_install', '-at_install')
 class TestObservation(CookieConsentCommon):
-    """Capturing undeclared cookies, storage keys and third-party hosts."""
+    """Filing the cookies, storage keys and hosts a scan finds."""
 
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
 
     def capture(self, keys: list) -> models.Model:
-        """Return the captures filed for a batch of reported keys."""
+        """Return the findings filed for a batch of scanned keys."""
         return self.env['muk_website_cookies_consent.observation']._record_keys(
             self.website, keys
         )
@@ -24,15 +24,21 @@ class TestObservation(CookieConsentCommon):
     # Tests
     # ----------------------------------------------------------
 
-    def test_an_undeclared_cookie_is_captured(self):
+    def test_an_undeclared_cookie_waits_to_be_reviewed(self):
         found = self.capture([{'name': '_hjSession', 'type': 'http', 'url': '/shop'}])
         self.assertEqual(len(found), 1)
         self.assertEqual(found.state, 'new')
         self.assertEqual(found.sample_url, '/shop')
 
-    def test_a_declared_cookie_is_not_captured(self):
+    def test_a_declared_cookie_is_filed_as_declared(self):
         declared = self.website._get_cookie_declarations()[0]
-        self.assertFalse(self.capture([{'name': declared.name, 'type': 'http'}]))
+        found = self.capture([{'name': declared.name, 'type': 'http'}])
+        self.assertEqual(
+            found.state,
+            'declared',
+            'A scan records what the site does, so a covered key belongs on '
+            'the list as evidence that the declaration matches something.',
+        )
 
     def test_a_pattern_covers_the_family_it_declares(self):
         self.env['muk_website_cookies_consent.cookie'].create(
@@ -43,14 +49,17 @@ class TestObservation(CookieConsentCommon):
                 'storage_type': 'http',
             }
         )
-        self.assertFalse(self.capture([{'name': '_ga_ABC123', 'type': 'http'}]))
+        found = self.capture([{'name': '_ga_ABC123', 'type': 'http'}])
+        self.assertEqual(found.state, 'declared')
 
-    def test_a_claimed_host_is_not_captured(self):
-        self.assertFalse(self.capture([{'name': 'youtube.com', 'type': 'host'}]))
+    def test_a_claimed_host_is_filed_as_declared(self):
+        found = self.capture([{'name': 'youtube.com', 'type': 'host'}])
+        self.assertEqual(found.state, 'declared')
 
-    def test_an_unclaimed_host_is_captured(self):
+    def test_an_unclaimed_host_waits_to_be_reviewed(self):
         found = self.capture([{'name': 'cdn.example.org', 'type': 'host'}])
         self.assertEqual(found.storage_type, 'host')
+        self.assertEqual(found.state, 'new')
 
     def test_seeing_a_key_again_only_counts_it(self):
         first = self.capture([{'name': 'ajs_anonymous_id', 'type': 'local'}])
@@ -58,9 +67,8 @@ class TestObservation(CookieConsentCommon):
         self.assertEqual(first, again)
         self.assertEqual(again.hit_count, 2)
 
-    def test_a_capture_disappears_once_the_registry_covers_it(self):
+    def test_a_finding_turns_declared_when_the_registry_catches_up(self):
         found = self.capture([{'name': '_hjSession', 'type': 'http'}])
-        self.assertTrue(found.exists())
         self.env['muk_website_cookies_consent.cookie'].create(
             {
                 'name': '_hjSession',
@@ -68,13 +76,31 @@ class TestObservation(CookieConsentCommon):
                 'storage_type': 'http',
             }
         )
-        self.capture([{'name': '_hjSession', 'type': 'http'}])
-        self.assertFalse(
-            found.exists(),
-            'A row claiming nothing covers the key is false once something does.',
+        self.assertEqual(
+            found.state,
+            'declared',
+            'Declaring the key elsewhere answers the review, so the list must '
+            'not keep asking for it until the next scan.',
         )
 
-    def test_a_reviewed_capture_survives_the_registry_catching_up(self):
+    def test_a_finding_returns_to_review_when_its_declaration_goes(self):
+        declaration = self.env['muk_website_cookies_consent.cookie'].create(
+            {
+                'name': '_hjSession',
+                'category_id': self.category_analytics.id,
+                'storage_type': 'http',
+            }
+        )
+        found = self.capture([{'name': '_hjSession', 'type': 'http'}])
+        declaration.unlink()
+        self.assertEqual(
+            found.state,
+            'new',
+            'Withdrawing the declaration leaves the key uncovered again, and '
+            'the site still sets it.',
+        )
+
+    def test_an_ignored_key_stays_ignored_when_it_is_declared(self):
         found = self.capture([{'name': 'ignored_key', 'type': 'http'}])
         found.action_ignore()
         self.env['muk_website_cookies_consent.cookie'].create(
@@ -84,10 +110,10 @@ class TestObservation(CookieConsentCommon):
                 'storage_type': 'http',
             }
         )
-        self.capture([{'name': 'ignored_key', 'type': 'http'}])
-        self.assertTrue(
-            found.exists(),
-            'A decision somebody took is a record, not noise.',
+        self.assertEqual(
+            found.state,
+            'ignored',
+            'A decision somebody took is a record, not a state of the registry.',
         )
 
     def test_an_ignored_key_does_not_come_back_as_new(self):
@@ -95,6 +121,18 @@ class TestObservation(CookieConsentCommon):
         found.action_ignore()
         self.capture([{'name': 'ignored_key', 'type': 'http'}])
         self.assertEqual(found.state, 'ignored')
+
+    def test_reopening_reads_the_registry_rather_than_asking_again(self):
+        declared = self.website._get_cookie_declarations()[0]
+        found = self.capture([{'name': declared.name, 'type': 'http'}])
+        found.action_ignore()
+        found.action_reopen()
+        self.assertEqual(
+            found.state,
+            'declared',
+            'Taking an ignore back asks the registry what the state is; it '
+            'does not put a covered key up for review.',
+        )
 
     def test_rubbish_is_dropped(self):
         self.assertFalse(
@@ -168,7 +206,7 @@ class TestObservation(CookieConsentCommon):
         self.assertEqual(
             self.website._get_cookie_registry_hash(),
             before,
-            'A capture must never re-ask the whole audience for consent.',
+            'A scan must never re-ask the whole audience for consent.',
         )
 
     def test_declaring_does_invalidate_stored_consent(self):
