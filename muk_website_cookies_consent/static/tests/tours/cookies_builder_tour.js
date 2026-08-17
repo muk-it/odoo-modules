@@ -49,7 +49,27 @@ function showTheBanner(content) {
         content,
         trigger: '.o_we_invisible_el_panel .o_we_invisible_entry',
         in_modal: false,
-        run: 'click',
+        async run() {
+            // The entry toggles, so clicking it blindly hides a banner
+            // the editor already restored after its reload, and with it
+            // the selection its option panel hangs off.
+            for (let attempt = 0; attempt < 10; attempt++) {
+                const banner = [...document.querySelectorAll('iframe')]
+                    .map((el) =>
+                        el.contentDocument?.querySelector('#website_cookies_bar'),
+                    )
+                    .find(Boolean);
+                const shown = banner && !banner.dataset.invisible;
+                if (shown && document.querySelector('.snippet-option-MukCookiesBar')) {
+                    return;
+                }
+                document
+                    .querySelector('.o_we_invisible_el_panel .o_we_invisible_entry')
+                    ?.click();
+                await new Promise((resolve) => setTimeout(resolve, 300));
+            }
+            throw new Error('The banner would not stay revealed for its option.');
+        },
     };
 }
 
