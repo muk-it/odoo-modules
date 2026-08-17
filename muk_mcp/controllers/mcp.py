@@ -485,7 +485,9 @@ class MCPController(http.Controller):
             )
         if method.startswith('notifications/'):
             return None
-        return protocol.make_jsonrpc_response(result, request_id=request_id)
+        return protocol.make_jsonrpc_response(
+            result, request_id=request_id, result_type=profile.result_type
+        )
 
     def _handle_initialize(self, params: dict[str, Any]) -> dict[str, Any]:
         """Handle ``initialize``: create a session and return the server capabilities.

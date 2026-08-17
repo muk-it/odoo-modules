@@ -21,6 +21,7 @@ class ProtocolProfile:
 
     version: str
     stateless: bool
+    result_type: str | None = None
 
 
 _PROFILES = {
@@ -35,6 +36,7 @@ _PROFILES = {
     MCP_VERSION_2026_07_28: ProtocolProfile(
         version=MCP_VERSION_2026_07_28,
         stateless=True,
+        result_type='complete',
     ),
 }
 

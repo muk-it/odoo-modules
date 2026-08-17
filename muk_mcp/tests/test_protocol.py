@@ -101,6 +101,29 @@ class TestProtocol(common.TransactionCase):
         self.assertIsNone(error)
         self.assertEqual(data['method'], 'ping')
 
+    def test_make_jsonrpc_response_stamps_the_result_type(self):
+        result = protocol.make_jsonrpc_response(
+            {'foo': 'bar'},
+            request_id=1,
+            result_type='complete',
+        )
+        self.assertEqual(
+            result['result'],
+            {'foo': 'bar', 'resultType': 'complete'},
+        )
+
+    def test_make_jsonrpc_response_omits_an_unnamed_result_type(self):
+        result = protocol.make_jsonrpc_response({'foo': 'bar'}, request_id=1)
+        self.assertNotIn('resultType', result['result'])
+
+    def test_make_jsonrpc_response_overrides_a_handler_result_type(self):
+        result = protocol.make_jsonrpc_response(
+            {'resultType': 'input_required', 'foo': 'bar'},
+            request_id=1,
+            result_type='complete',
+        )
+        self.assertEqual(result['result']['resultType'], 'complete')
+
     def test_make_initialize_result(self):
         result = protocol.make_initialize_result(version.MCP_DEFAULT_VERSION)
         self.assertEqual(

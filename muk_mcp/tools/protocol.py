@@ -17,12 +17,17 @@ class ToolResult(dict):
 def make_jsonrpc_response(
     result: Any,
     request_id: Any = None,
+    result_type: str | None = None,
 ) -> dict[str, Any]:
-    """Build a JSON-RPC success response wrapping ``result``."""
+    """Build a JSON-RPC success response wrapping ``result``.
+
+    :param result_type: the ``resultType`` naming the kind of outcome, required
+        from revision 2026-07-28 on and absent from every revision before it.
+    """
     return {
         'jsonrpc': common.JSONRPC_VERSION,
         'id': request_id,
-        'result': result,
+        'result': {**result, 'resultType': result_type} if result_type else result,
     }
 
 
