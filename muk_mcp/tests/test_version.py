@@ -469,6 +469,38 @@ class TestVersionNegotiationHttp(MCPHttpCase):
                 body = self.mcp_stateless_post(method, params).json()
                 self.assertEqual(body['result']['resultType'], 'complete')
 
+    def test_every_cacheable_result_carries_its_caching_hints(self):
+        for method in (
+            'tools/list',
+            'prompts/list',
+            'resources/list',
+            'resources/templates/list',
+            'server/discover',
+        ):
+            with self.subTest(method=method):
+                result = self.mcp_stateless_post(method).json()['result']
+                self.assertGreaterEqual(result['ttlMs'], 0)
+                self.assertIn(result['cacheScope'], ('public', 'private'))
+
+    def test_a_listing_that_varies_by_caller_is_never_cached_publicly(self):
+        result = self.mcp_stateless_post('tools/list').json()['result']
+        self.assertEqual(result['cacheScope'], 'private')
+
+    def test_an_uncacheable_result_carries_no_caching_hints(self):
+        result = self.mcp_stateless_post(
+            'tools/call',
+            {'name': 'list_models', 'arguments': {}},
+        ).json()['result']
+        self.assertNotIn('ttlMs', result)
+        self.assertNotIn('cacheScope', result)
+
+    def test_every_stateless_result_carries_the_server_identity(self):
+        result = self.mcp_stateless_post('tools/list').json()['result']
+        self.assertEqual(
+            result['_meta'][version.META_SERVER_INFO]['name'],
+            mcp_common.MCP_SERVER_NAME,
+        )
+
     def test_a_stateful_result_names_no_result_type(self):
         session_id = self.mcp_handshake(
             protocol_version=version.MCP_VERSION_2025_11_25,
