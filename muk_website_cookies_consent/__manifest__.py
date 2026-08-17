@@ -1,6 +1,6 @@
 {
     'name': 'MuK Cookie Consent',
-    'summary': 'Granular cookie consent with per-service blocking and consent proof',
+    'summary': 'Granular cookie consent manager with per-service blocking and consent proof',
     'description': """
         Replaces the built-in cookies bar with a real consent manager.
         Visitors consent per purpose instead of all-or-nothing, every
