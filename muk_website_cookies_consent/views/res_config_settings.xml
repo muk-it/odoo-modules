@@ -13,14 +13,14 @@
 					id="website_cookie_consent_settings"
 					invisible="not website_id or not website_cookies_bar"
 				>
-					<setting
+                    <setting
 						id="cookie_blocking_setting"
 						string="Block Before Consent"
 						help="Strip scripts and embeds of a service until its purpose is granted, and show a placeholder in place of the embed."
 					>
 						<field name="cookie_blocking"/>
 					</setting>
-					<setting
+                    <setting
 						id="muk_cookie_log_setting"
 						string="Consent Proof"
 						help="Record every decision together with the disclosure shown, so consent can be demonstrated as GDPR Art. 7(1) requires."
@@ -35,27 +35,7 @@
 					>
 						<field name="cookie_log_ip"/>
 					</setting>
-					<setting
-						id="cookie_policy_version_setting"
-						string="Policy Version"
-						help="Raising this asks every visitor again. Adding a purpose, a service or a cookie already does that on its own."
-					>
-						<field name="cookie_policy_version"/>
-					</setting>
-					<setting
-						id="muk_cookie_policy_url_setting"
-						string="Policy Link"
-						help="Where the banner sends visitors for the full policy. Leave it empty to use the page Odoo publishes at /cookie-policy, which lists your declarations on its own."
-					>
-						<field name="cookie_policy_url" placeholder="/cookie-policy"/>
-					</setting>
-					<setting
-						id="cookie_consent_mode_setting"
-						string="Google Consent Mode"
-						help="Basic withholds Google tags until a purpose they serve is granted, so a refusal keeps them unloaded. Advanced loads them immediately and allows cookieless pings, which recovers conversion modelling but sends data before consent."
-					>
-						<field name="cookie_consent_mode"/>
-					</setting>
+					<div class="col-12 mt-3"/>
 					<setting
 						id="muk_cookie_gpc_setting"
 						string="Global Privacy Control"
@@ -72,6 +52,29 @@
 						<field name="cookie_publish_gpc_json"/>
 					</setting>
 					<setting
+						id="cookie_consent_mode_setting"
+						string="Google Consent Mode"
+						help="Basic withholds Google tags until a purpose they serve is granted, so a refusal keeps them unloaded. Advanced loads them immediately and allows cookieless pings, which recovers conversion modelling but sends data before consent."
+					>
+						<field name="cookie_consent_mode"/>
+					</setting>
+					<div class="col-12 mt-3"/>
+					<setting
+						id="cookie_policy_version_setting"
+						string="Policy Version"
+						help="Raising this asks every visitor again. Adding a purpose, a service or a cookie already does that on its own."
+					>
+						<field name="cookie_policy_version"/>
+					</setting>
+					<setting
+						id="muk_cookie_policy_url_setting"
+						string="Policy Link"
+						help="Where the banner sends visitors for the full policy. Leave it empty to use the page Odoo publishes at /cookie-policy, which lists your declarations on its own."
+					>
+						<field name="cookie_policy_url" placeholder="/cookie-policy"/>
+					</setting>
+					<div class="col-12 mt-3"/>
+					<setting
 						id="muk_cookie_scan_setting"
 						string="Website Scan"
 						help="Once a week the site fetches its own pages and lists the cookies they set, the storage keys their scripts write and the third-party hosts they load. Anything no declaration covers is put up for review."
@@ -85,18 +88,18 @@
 								<field name="cookie_scan_pages" class="col-lg-2"/>
 							</div>
 						</div>
-						<div class="mt-2">
+						<div class="text-muted mt-2" invisible="not cookie_scan_date">
+							Last scan
+							<field name="cookie_scan_date" readonly="1"/>
+						</div>
+						<div class="mt-1">
 							<button
 								name="action_cookie_scan"
 								type="object"
 								string="Scan Now"
-								class="btn-link ps-0"
+								class="btn-link p-0"
 								icon="fa-refresh"
 							/>
-							<span class="text-muted" invisible="not cookie_scan_date">
-								Last scan
-								<field name="cookie_scan_date" readonly="1"/>
-							</span>
 						</div>
 					</setting>
 				</block>
