@@ -3,11 +3,11 @@ import json
 from . import common, version
 
 
-def make_jsonrpc_response(result, request_id=None):
+def make_jsonrpc_response(result, request_id=None, result_type=None):
     return {
         'jsonrpc': common.JSONRPC_VERSION,
         'id': request_id,
-        'result': result,
+        'result': {**result, 'resultType': result_type} if result_type else result,
     }
 
 
