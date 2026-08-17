@@ -123,7 +123,7 @@ class MCPController(http.Controller):
         )
         if meta_version and header_version and meta_version != header_version:
             return None, protocol.make_jsonrpc_error(
-                common.JSONRPC_INVALID_PARAMS,
+                common.MCP_HEADER_MISMATCH,
                 (
                     'Protocol version mismatch between the '
                     f'{version.MCP_PROTOCOL_VERSION_HEADER} header '
@@ -139,7 +139,7 @@ class MCPController(http.Controller):
             profile = version.get_profile(requested)
             if profile.stateless and not header_version:
                 return None, protocol.make_jsonrpc_error(
-                    common.JSONRPC_INVALID_PARAMS,
+                    common.MCP_HEADER_MISMATCH,
                     (
                         f'The {version.MCP_PROTOCOL_VERSION_HEADER} header is '
                         f'required on protocol revision {requested}'
@@ -181,6 +181,39 @@ class MCPController(http.Controller):
             )
         return None
 
+    def _check_request_headers(self, method, params, request_id=None):
+        """Verify the mirrored request headers agree with the body.
+
+        The transport mirrors the method and the tool, prompt or resource name into
+        ``Mcp-Method`` and ``Mcp-Name`` so an intermediary can route without parsing
+        the body; a value that disagrees would let that intermediary and this server
+        act on different requests. A header the client did not send is not faulted:
+        the revision asks clients to send them, but rejecting the clients that do
+        not would break exchanges that work today.
+
+        :return: a JSON-RPC error when a header contradicts the body, else ``None``.
+        """
+        headers = request.httprequest.headers
+        mirrored = [(version.MCP_METHOD_HEADER, method)]
+        if method in version.MCP_NAME_METHODS:
+            mirrored.append(
+                (version.MCP_NAME_HEADER, params.get('name') or params.get('uri')),
+            )
+        for header, expected in mirrored:
+            sent = headers.get(header)
+            if sent is None or expected is None:
+                continue
+            if version.decode_header_value(sent) != expected:
+                return protocol.make_jsonrpc_error(
+                    common.MCP_HEADER_MISMATCH,
+                    (
+                        f'Header mismatch: the {header} header does not match '
+                        'the request body'
+                    ),
+                    request_id=request_id,
+                )
+        return None
+
     def _get_header_profile(self) -> ProtocolProfile:
         """Return the profile for a bodyless request, from its version header."""
         return version.get_profile(
@@ -206,6 +239,7 @@ class MCPController(http.Controller):
         code = error.get('code')
         if code in (
             common.MCP_UNSUPPORTED_PROTOCOL_VERSION,
+            common.MCP_HEADER_MISMATCH,
             common.JSONRPC_INVALID_PARAMS,
         ):
             return 400
@@ -395,6 +429,9 @@ class MCPController(http.Controller):
         error = self._check_required_meta(
             profile, method, params, request_id=request_id,
         )
+        if error is not None:
+            return error
+        error = self._check_request_headers(method, params, request_id=request_id)
         if error is not None:
             return error
         if method not in self._get_unauthenticated_methods(profile):
