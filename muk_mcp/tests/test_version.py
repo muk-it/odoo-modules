@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import dataclasses
 
 from odoo.tests import common, tagged
@@ -345,7 +346,7 @@ class TestVersionNegotiationHttp(MCPHttpCase):
         )
         self.assertEqual(response.status_code, 400)
         error = response.json()['error']
-        self.assertEqual(error['code'], mcp_common.JSONRPC_INVALID_PARAMS)
+        self.assertEqual(error['code'], mcp_common.MCP_HEADER_MISMATCH)
         self.assertIn('mismatch', error['message'])
 
     def test_a_terminated_session_is_answered_404(self):
@@ -378,8 +379,46 @@ class TestVersionNegotiationHttp(MCPHttpCase):
         response = self.mcp_stateless_post('tools/list', send_header=False)
         self.assertEqual(response.status_code, 400)
         error = response.json()['error']
-        self.assertEqual(error['code'], mcp_common.JSONRPC_INVALID_PARAMS)
+        self.assertEqual(error['code'], mcp_common.MCP_HEADER_MISMATCH)
         self.assertIn(version.MCP_PROTOCOL_VERSION_HEADER, error['message'])
+
+    def test_a_mirrored_method_header_contradicting_the_body_is_rejected(self):
+        response = self.mcp_stateless_post(
+            'tools/list',
+            headers={version.MCP_METHOD_HEADER: 'prompts/list'},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json()['error']['code'],
+            mcp_common.MCP_HEADER_MISMATCH,
+        )
+
+    def test_a_mirrored_name_header_contradicting_the_body_is_rejected(self):
+        response = self.mcp_stateless_post(
+            'tools/call',
+            {'name': 'list_models', 'arguments': {}},
+            headers={version.MCP_NAME_HEADER: 'other_tool'},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json()['error']['code'],
+            mcp_common.MCP_HEADER_MISMATCH,
+        )
+
+    def test_a_base64_encoded_name_header_matching_the_body_is_served(self):
+        encoded = base64.b64encode(b'list_models').decode('ascii')
+        response = self.mcp_stateless_post(
+            'tools/call',
+            {'name': 'list_models', 'arguments': {}},
+            headers={version.MCP_NAME_HEADER: f'=?base64?{encoded}?='},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('error', response.json())
+
+    def test_mirrored_headers_the_client_omits_are_not_faulted(self):
+        response = self.mcp_stateless_post('tools/list')
+        self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response.json()['result']['tools'], list)
 
     def test_a_headerless_request_falls_back_to_the_session_revision(self):
         session_id = self.mcp_handshake(
