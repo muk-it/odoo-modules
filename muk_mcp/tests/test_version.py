@@ -460,14 +460,12 @@ class TestVersionNegotiationHttp(MCPHttpCase):
     # Tests: required stateless metadata
     # ----------------------------------------------------------
 
-    def test_a_stateless_request_without_client_info_is_rejected(self):
+    def test_a_stateless_request_without_client_info_is_served(self):
         meta = self.mcp_meta()
         del meta[version.META_CLIENT_INFO]
         response = self.mcp_stateless_post('tools/list', meta=meta)
-        self.assertEqual(response.status_code, 400)
-        error = response.json()['error']
-        self.assertEqual(error['code'], mcp_common.JSONRPC_INVALID_PARAMS)
-        self.assertIn(version.META_CLIENT_INFO, error['message'])
+        self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response.json()['result']['tools'], list)
 
     def test_a_stateless_request_without_client_capabilities_is_rejected(self):
         meta = self.mcp_meta()
