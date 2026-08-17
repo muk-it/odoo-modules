@@ -125,7 +125,7 @@
 						</group>
 					</group>
 					<div class="alert alert-info" role="status">
-						Captures come from browsing the site yourself while signed in as an editor: every page you open reports what it holds. Nothing is gated until you declare it into a purpose.
+						Findings come from the weekly scan of your own pages. Nothing is gated until you declare it into a purpose, and the status follows your registry: it reads Declared as soon as something covers the key.
 					</div>
 				</sheet>
 			</form>
@@ -139,9 +139,9 @@
 		<field name="path">cookie-captures</field>
 		<field name="context">{'search_default_filter_new': 1}</field>
 		<field name="help" type="html">
-			<p class="o_view_nocontent_smiling_face">Nothing captured yet</p>
+			<p class="o_view_nocontent_smiling_face">Nothing scanned yet</p>
 			<p>
-				Browse your site while signed in as an editor. Cookies, storage keys and third-party hosts that no declaration covers are collected here, ready to be classified.
+				A scan walks your own pages and collects the cookies they set, the storage keys their scripts write and the third-party hosts they load. It runs weekly, or on demand from Website Settings.
 			</p>
 		</field>
 	</record>

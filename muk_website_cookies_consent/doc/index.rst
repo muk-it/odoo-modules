@@ -97,8 +97,10 @@ presence keys, the basket count, a live chat, a survey in progress, the UTM
 attribution cookies and the storage the Enterprise appointment and push
 notification features use. Everything Odoo can set is declared, whether or not
 the app that sets it is installed, so archive the rows you do not need. Your own
-third parties are yours to add as services, and anything undeclared turns up
-under Captured while you browse the site as an editor. Blocking works on
+third parties are yours to add as services, and a weekly scan of your own pages
+lists what they set and load under Captured, with anything no declaration covers
+put up for review. Storage keys are read from the scripts that write them, since
+a scan runs on the server and cannot open the browser's storage. Blocking works on
 ``script`` and ``iframe`` sources, so a ``link`` to a font service cannot be held
 back: serve those from your own server if they must not load before consent.
 

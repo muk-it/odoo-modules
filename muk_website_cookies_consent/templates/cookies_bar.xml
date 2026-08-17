@@ -295,11 +295,6 @@
 			</div>
 		</xpath>
 		<xpath expr="//footer" position="after">
-			<div
-				t-if="website.cookies_bar and request.env.user.has_group('website.group_website_restricted_editor')"
-				id="muk_cookies_observer"
-				class="d-none o_not_editable"
-			/>
 			<button
 				t-if="website.cookies_bar and website.cookie_reopen_float != 'none'"
 				type="button"

@@ -51,3 +51,21 @@ class ResConfigSettings(models.TransientModel):
         related='website_id.cookie_policy_url',
         readonly=False,
     )
+
+    cookie_scan_pages = fields.Integer(
+        related='website_id.cookie_scan_pages',
+        readonly=False,
+    )
+
+    cookie_scan_date = fields.Datetime(
+        related='website_id.cookie_scan_date',
+    )
+
+    # ----------------------------------------------------------
+    # Actions
+    # ----------------------------------------------------------
+
+    def action_cookie_scan(self) -> dict:
+        """Scan the website these settings belong to."""
+        self.ensure_one()
+        return self.website_id.action_cookie_scan()

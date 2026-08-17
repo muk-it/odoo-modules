@@ -78,6 +78,11 @@ class TestThirdParty(CookieConsentCommon):
             'Everything the admin pasted has to survive, not just the first '
             'element of it.',
         )
+        self.assertTrue(
+            controlled.startswith('<!-- Meta Pixel -->'),
+            'The single root core is handed has to come back off again, or the '
+            'wrapper reaches the head it was only meant to survive the parse.',
+        )
 
     def test_embed_is_stripped_without_consent(self):
         self.patch_request()
