@@ -179,10 +179,7 @@ class MCPController(http.Controller):
             return None
         required = [version.META_PROTOCOL_VERSION]
         if method != 'server/discover':
-            required += [
-                version.META_CLIENT_INFO,
-                version.META_CLIENT_CAPABILITIES,
-            ]
+            required.append(version.META_CLIENT_CAPABILITIES)
         meta = params.get('_meta')
         meta = meta if isinstance(meta, dict) else {}
         if missing := [key for key in required if meta.get(key) is None]:

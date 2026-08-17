@@ -91,7 +91,6 @@ class MCPHttpCase(HttpCase):
     def mcp_meta(
         self,
         protocol_version: str = version.MCP_VERSION_2026_07_28,
-        client_info: dict[str, Any] | None = None,
         capabilities: dict[str, Any] | None = None,
         full: bool = True,
     ) -> dict[str, Any]:
@@ -102,7 +101,7 @@ class MCPHttpCase(HttpCase):
         """
         meta = {version.META_PROTOCOL_VERSION: protocol_version}
         if full:
-            meta[version.META_CLIENT_INFO] = client_info or {
+            meta[version.META_CLIENT_INFO] = {
                 'name': 'muk_mcp.tests',
                 'version': '1.0',
             }
