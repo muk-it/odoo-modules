@@ -53,6 +53,17 @@ class TestProtocolVersionTable(common.TransactionCase):
             version.get_profile(version.MCP_VERSION_2025_06_18).stateless,
         )
 
+    def test_only_the_newest_revision_stamps_a_result_type(self):
+        self.assertTrue(
+            version.get_profile(version.MCP_VERSION_2026_07_28).result_type,
+        )
+        self.assertFalse(
+            version.get_profile(version.MCP_VERSION_2025_11_25).result_type,
+        )
+        self.assertFalse(
+            version.get_profile(version.MCP_VERSION_2025_06_18).result_type,
+        )
+
     def test_is_supported_rejects_unknown_and_empty_values(self):
         for candidate in (None, '', 'nonsense', '1999-01-01'):
             self.assertFalse(version.is_supported(candidate))
@@ -393,6 +404,34 @@ class TestVersionNegotiationHttp(MCPHttpCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertNotIn('error', response.json())
+
+    def test_every_stateless_result_carries_the_complete_result_type(self):
+        for method, params in (
+            ('tools/list', None),
+            ('prompts/list', None),
+            ('resources/list', None),
+            ('server/discover', None),
+            ('tools/call', {'name': 'list_models', 'arguments': {}}),
+        ):
+            with self.subTest(method=method):
+                body = self.mcp_stateless_post(method, params).json()
+                self.assertEqual(
+                    body['result'].get('resultType'),
+                    'complete',
+                    f'{method} must name its result type on the revision '
+                    'that requires it',
+                )
+
+    def test_the_stateful_revisions_stamp_no_result_type(self):
+        session_id = self.mcp_handshake(
+            protocol_version=version.MCP_VERSION_2025_11_25,
+        )
+        body = self.mcp_json(
+            {'jsonrpc': '2.0', 'id': 2, 'method': 'tools/list', 'params': {}},
+            session_id=session_id,
+        )
+        self.assertNotIn('resultType', body['result'])
+        self.assertIsInstance(body['result']['tools'], list)
 
     def test_discover_advertises_every_served_revision(self):
         response = self.mcp_stateless_post('server/discover')

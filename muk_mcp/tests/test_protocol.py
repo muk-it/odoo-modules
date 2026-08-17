@@ -18,6 +18,38 @@ class TestProtocol(common.TransactionCase):
         self.assertEqual(result['result'], {'foo': 'bar'})
         self.assertNotIn('error', result)
 
+    def test_make_jsonrpc_response_stamps_the_requested_result_type(self):
+        result = protocol.make_jsonrpc_response(
+            {'foo': 'bar'},
+            request_id=1,
+            result_type=mcp_common.MCP_RESULT_TYPE_COMPLETE,
+        )
+        self.assertEqual(
+            result['result'],
+            {'resultType': 'complete', 'foo': 'bar'},
+        )
+
+    def test_make_jsonrpc_response_omits_the_result_type_by_default(self):
+        result = protocol.make_jsonrpc_response({'foo': 'bar'}, request_id=1)
+        self.assertNotIn('resultType', result['result'])
+
+    def test_make_jsonrpc_response_overrides_a_handler_supplied_result_type(self):
+        """A tool must not be able to name the outcome kind of its envelope."""
+        result = protocol.make_jsonrpc_response(
+            {'resultType': 'input_required', 'foo': 'bar'},
+            request_id=1,
+            result_type=mcp_common.MCP_RESULT_TYPE_COMPLETE,
+        )
+        self.assertEqual(result['result']['resultType'], 'complete')
+
+    def test_make_jsonrpc_response_leaves_a_non_dict_result_alone(self):
+        result = protocol.make_jsonrpc_response(
+            None,
+            request_id=1,
+            result_type=mcp_common.MCP_RESULT_TYPE_COMPLETE,
+        )
+        self.assertIsNone(result['result'])
+
     def test_make_jsonrpc_error(self):
         result = protocol.make_jsonrpc_error(
             mcp_common.JSONRPC_METHOD_NOT_FOUND,

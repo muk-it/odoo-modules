@@ -21,20 +21,24 @@ class ProtocolProfile:
 
     version: str
     stateless: bool
+    result_type: bool
 
 
 _PROFILES = {
     MCP_VERSION_2025_06_18: ProtocolProfile(
         version=MCP_VERSION_2025_06_18,
         stateless=False,
+        result_type=False,
     ),
     MCP_VERSION_2025_11_25: ProtocolProfile(
         version=MCP_VERSION_2025_11_25,
         stateless=False,
+        result_type=False,
     ),
     MCP_VERSION_2026_07_28: ProtocolProfile(
         version=MCP_VERSION_2026_07_28,
         stateless=True,
+        result_type=True,
     ),
 }
 

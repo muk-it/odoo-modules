@@ -13,6 +13,8 @@ JSONRPC_INTERNAL_ERROR = -32603
 
 MCP_UNSUPPORTED_PROTOCOL_VERSION = -32022
 
+MCP_RESULT_TYPE_COMPLETE = 'complete'
+
 
 def coerce_json_value(value):
     if isinstance(value, str):

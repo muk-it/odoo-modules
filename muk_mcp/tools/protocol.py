@@ -7,7 +7,26 @@ from typing import Any
 from odoo.addons.muk_mcp.tools import common, version
 
 
-def make_jsonrpc_response(result, request_id=None):
+def make_jsonrpc_response(result, request_id=None, result_type=None):
+    """Wrap a handler outcome as a JSON-RPC response.
+
+    From revision 2026-07-28 on, every result carries a ``resultType`` naming the
+    kind of outcome it is -- ``complete`` for an ordinary one, ``input_required``
+    for a multi round-trip interim. Earlier revisions have no such field, and a
+    client reading them treats an absent one as ``complete``; that bridge does not
+    extend to the revisions that mandate it, so a server answering one of those
+    without the field has its result rejected outright. ``result_type`` is
+    therefore passed only for the revisions that require it.
+
+    The value is the caller's to set, and it overrides anything the handler put
+    under that key: a tool result is built partly from what the tool returned, so
+    letting it through would let a tool name the outcome kind of the envelope
+    carrying it and announce an interim round trip this server never offers. When
+    multi round-trip lands, the dispatcher has to drive it -- it is what holds the
+    request state -- so the decision belongs there rather than in a passthrough.
+    """
+    if result_type and isinstance(result, dict):
+        result = {**result, 'resultType': result_type}
     return {
         'jsonrpc': common.JSONRPC_VERSION,
         'id': request_id,
