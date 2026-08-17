@@ -1,0 +1,12 @@
+.mk_cookies_placeholder {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    text-align: center;
+    border: $border-width dashed $border-color;
+    border-radius: $border-radius;
+    background-color: rgba($body-color, 0.03);
+}

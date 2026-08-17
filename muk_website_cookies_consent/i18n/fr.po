@@ -1,0 +1,2459 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* muk_website_cookies_consent
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 17.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-16 17:35+0000\n"
+"PO-Revision-Date: 2026-08-16 17:35+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.res_config_settings_view_form
+msgid "/cookie-policy"
+msgstr "/cookie-policy"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_cids
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_frontend_lang
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_linkedin_bcookie
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_odoo_color_scheme
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_odoo_forum_welcome
+msgid "1 year"
+msgstr "1 an"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_ga
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_vimeo_player
+msgid "2 years"
+msgstr "2 ans"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_gid
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_odoo_survey_answer
+msgid "24 hours"
+msgstr "24 heures"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_facebook_fr
+msgid "3 months"
+msgstr "3 mois"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_utm_campaign
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_utm_medium
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_utm_source
+msgid "31 days"
+msgstr "31 jours"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_odoo_recaptcha
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_youtube_visitor_info
+msgid "6 months"
+msgstr "6 mois"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_muk_cookie_consent
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_website_cookies_bar
+msgid "6 to 24 months, depending on your region"
+msgstr "De 6 à 24 mois, selon votre région"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_session_id
+msgid "7 days of inactivity"
+msgstr "7 jours d'inactivité"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.cookie_policy
+msgid "<em>No cookies are currently declared for this purpose.</em>"
+msgstr "<em>Aucun cookie n'est actuellement déclaré pour cette finalité.</em>"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,necessity_justification:muk_website_cookies_consent.cookie_odoo_cart_quantity
+msgid ""
+"A count of what you put in your own basket, kept for the shop you are using."
+" It is dropped when the tab closes and never leaves the browser."
+msgstr "Un décompte de ce que vous avez vous-même mis dans le panier, pour la boutique que vous utilisez. Il est abandonné à la fermeture de l'onglet et ne quitte jamais le navigateur."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,necessity_justification:muk_website_cookies_consent.cookie_odoo_webclient_menus
+msgid ""
+"A local copy of the interface you asked for. It holds no identifier and is "
+"read by nothing else, so it neither tracks you nor serves any purpose beyond"
+" the service you requested."
+msgstr "Une copie locale de l'interface que vous avez demandée. Elle ne contient aucun identifiant et n'est lue par rien d'autre : elle ne vous suit pas et ne sert aucune finalité au-delà du service demandé."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_observation__sample_url
+msgid "A page it was found on, to help work out what sets it."
+msgstr "Une page où il a été trouvé, pour aider à déterminer ce qui le dépose."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.constraint,message:muk_website_cookies_consent.constraint_muk_website_cookies_consent_category_code_uniq
+msgid "A purpose with this code already exists for this website."
+msgstr "Une finalité portant ce code existe déjà pour ce site web."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,necessity_justification:muk_website_cookies_consent.cookie_odoo_pwa_state
+msgid ""
+"A record of one answer you gave to one prompt. Refusing it means the install"
+" offer may be shown again."
+msgstr "La trace d'une seule réponse à une seule question. La refuser signifie que la proposition d'installation peut réapparaître."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.constraint,message:muk_website_cookies_consent.constraint_muk_website_cookies_consent_service_technical_name_uniq
+msgid "A service with this technical name already exists for this website."
+msgstr "Un service portant ce nom technique existe déjà pour ce site web."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_odoo_multi_tab
+msgid ""
+"A shared scratchpad your open tabs read, holding things like the last "
+"notification each of them has seen."
+msgstr "Un bloc-notes partagé que lisent vos onglets ouverts, contenant par exemple la dernière notification vue par chacun."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.geo.rule,source_note:muk_website_cookies_consent.geo_rule_es
+msgid ""
+"AEPD cookie guide: consent should be refreshed at most every 24 months."
+msgstr "Guide cookies de l'AEPD : le consentement doit être renouvelé au plus tous les 24 mois."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__muk_website_cookies_consent_consent__action__accept_all
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.cookies_bar
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.notice_actions
+msgid "Accept all"
+msgstr "Tout accepter"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_consent_search
+msgid "Accepted All"
+msgstr "A tout accepté"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_category__active
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_cookie__active
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_geo_rule__active
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_service__active
+msgid "Active"
+msgstr "Actif"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.actions.act_window,help:muk_website_cookies_consent.action_cookie_category
+msgid "Add a consent purpose"
+msgstr "Ajouter une finalité de consentement"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_website__cookie_reopen_footer
+msgid "Add a link to the footer so consent can be changed at any time."
+msgstr "Ajouter un lien dans le pied de page afin que le consentement puisse être modifié à tout moment."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.actions.act_window,help:muk_website_cookies_consent.action_cookie_geo_rule
+msgid "Add a region rule"
+msgstr "Ajouter une règle régionale"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__website__cookie_consent_mode__advanced
+msgid "Advanced (cookieless pings before consent)"
+msgstr "Avancé (pings sans cookie avant le consentement)"
+
+#. module: muk_website_cookies_consent
+#. odoo-javascript
+#: code:addons/muk_website_cookies_consent/static/src/interactions/cookies_approval/cookies_approval.xml:0
+msgid "Allow"
+msgstr "Autoriser"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.cookie_policy
+msgid "Always active"
+msgstr "Toujours actif"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_category_form
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_category_search
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_form
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_geo_rule_form
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_geo_rule_search
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_search
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_service_form
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_service_search
+msgid "Archived"
+msgstr "Archivé"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_service__contextual_only
+msgid "Ask In Place Only"
+msgstr "Demander uniquement à l'emplacement"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_service_search
+msgid "Asked In Place"
+msgstr "Demandé à l'emplacement"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.geo.rule,name:muk_website_cookies_consent.geo_rule_at
+msgid "Austria"
+msgstr "Autriche"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.cookies_bar
+msgid "Back"
+msgstr "Retour"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_website__cookie_density
+msgid "Banner Density"
+msgstr "Densité de la bannière"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_website__cookie_layout
+msgid "Banner Layout"
+msgstr "Disposition de la bannière"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__banner_version
+msgid "Banner Version"
+msgstr "Version de la bannière"
+
+#. module: muk_website_cookies_consent
+#. odoo-javascript
+#: code:addons/muk_website_cookies_consent/static/src/builder/cookies_bar_option/cookies_bar_option.xml:0
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__website__cookie_layout__bar_bottom
+msgid "Bar at the bottom"
+msgstr "Barre en bas"
+
+#. module: muk_website_cookies_consent
+#. odoo-javascript
+#: code:addons/muk_website_cookies_consent/static/src/builder/cookies_bar_option/cookies_bar_option.xml:0
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__website__cookie_layout__bar_top
+msgid "Bar at the top"
+msgstr "Barre en haut"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__website__cookie_consent_mode__basic
+msgid "Basic (hold tags until consent)"
+msgstr "Basique (retenir les balises jusqu'au consentement)"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_res_config_settings__cookie_consent_mode
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_website__cookie_consent_mode
+msgid ""
+"Basic withholds Google tags entirely until a purpose they serve is granted, "
+"so a refusal keeps them unloaded. Advanced loads them immediately and lets "
+"them send cookieless pings, which recovers conversion modelling but sends "
+"data before any consent."
+msgstr "Le mode basique retient entièrement les balises Google jusqu'à ce qu'une finalité qu'elles servent soit accordée ; un refus les laisse donc non chargées. Le mode avancé les charge immédiatement et leur permet d'envoyer des pings sans cookie, ce qui préserve la modélisation des conversions mais transmet des données avant tout consentement."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.res_config_settings_view_form
+msgid ""
+"Basic withholds Google tags until a purpose they serve is granted, so a "
+"refusal keeps them unloaded. Advanced loads them immediately and allows "
+"cookieless pings, which recovers conversion modelling but sends data before "
+"consent."
+msgstr "Le mode basique retient les balises Google jusqu'à ce qu'une finalité qu'elles servent soit accordée ; un refus les laisse donc non chargées. Le mode avancé les charge immédiatement et autorise des pings sans cookie, ce qui préserve la modélisation des conversions mais transmet des données avant le consentement."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.res_config_settings_view_form
+msgid "Block Before Consent"
+msgstr "Bloquer avant le consentement"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_res_config_settings__cookie_blocking
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_website__cookie_blocking
+msgid "Block Services Before Consent"
+msgstr "Bloquer les services avant le consentement"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__muk_website_cookies_consent_consent__source__embed
+msgid "Blocked embed placeholder"
+msgstr "Espace réservé du contenu intégré bloqué"
+
+#. module: muk_website_cookies_consent
+#. odoo-javascript
+#: code:addons/muk_website_cookies_consent/static/src/builder/cookies_bar_option/cookies_bar_option.xml:0
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__website__cookie_reopen_float__left
+msgid "Bottom left"
+msgstr "En bas à gauche"
+
+#. module: muk_website_cookies_consent
+#. odoo-javascript
+#: code:addons/muk_website_cookies_consent/static/src/builder/cookies_bar_option/cookies_bar_option.xml:0
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__website__cookie_reopen_float__right
+msgid "Bottom right"
+msgstr "En bas à droite"
+
+#. module: muk_website_cookies_consent
+#. odoo-javascript
+#: code:addons/muk_website_cookies_consent/static/src/builder/cookies_bar_option/cookies_bar_option.xml:0
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__website__cookie_layout__box_left
+msgid "Box, bottom left"
+msgstr "Encadré, en bas à gauche"
+
+#. module: muk_website_cookies_consent
+#. odoo-javascript
+#: code:addons/muk_website_cookies_consent/static/src/builder/cookies_bar_option/cookies_bar_option.xml:0
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__website__cookie_layout__box_right
+msgid "Box, bottom right"
+msgstr "Encadré, en bas à droite"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.actions.act_window,help:muk_website_cookies_consent.action_cookie_observation
+msgid ""
+"Browse your site while signed in as an editor. Cookies, storage keys and "
+"third-party hosts that no declaration covers are collected here, ready to be"
+" classified."
+msgstr "Parcourez votre site en étant connecté en tant qu'éditeur. Les cookies, clés de stockage et hôtes tiers qu'aucune déclaration ne couvre sont regroupés ici, prêts à être classés."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.geo.rule,source_note:muk_website_cookies_consent.geo_rule_fr
+msgid ""
+"CNIL good practice: keep the choice about six months. The often-quoted 13 "
+"months is the cookie's maximum lifetime, not the re-ask interval."
+msgstr "Bonne pratique CNIL : conserver le choix environ six mois. Les 13 mois souvent cités correspondent à la durée de vie maximale du cookie, non à l'intervalle avant de redemander."
+
+#. module: muk_website_cookies_consent
+#: model:ir.actions.act_window,name:muk_website_cookies_consent.action_cookie_observation
+#: model:ir.ui.menu,name:muk_website_cookies_consent.menu_cookie_observation
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_observation_list
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_observation_search
+msgid "Captured"
+msgstr "Capturés"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model,name:muk_website_cookies_consent.model_muk_website_cookies_consent_observation
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_observation_form
+msgid "Captured Cookie"
+msgstr "Cookie capturé"
+
+#. module: muk_website_cookies_consent
+#. odoo-python
+#: code:addons/muk_website_cookies_consent/models/observation.py:0
+msgid "Captured automatically. Not yet reviewed."
+msgstr "Capturé automatiquement. Pas encore examiné."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_observation_form
+msgid ""
+"Captures come from browsing the site yourself while signed in as an editor: "
+"every page you open reports what it holds. Nothing is gated until you "
+"declare it into a purpose."
+msgstr "Les captures proviennent de votre propre navigation sur le site en tant\n\t\t\t\t\t\tqu'éditeur connecté : chaque page ouverte signale ce qu'elle contient.\n\t\t\t\t\t\tRien n'est bloqué tant que vous ne l'avez pas rattaché à une finalité."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.geo.rule,source_note:muk_website_cookies_consent.geo_rule_row
+msgid ""
+"Catch-all. Also covers visitors whose country cannot be resolved, which is "
+"why they are asked first rather than assumed to have consented."
+msgstr "Règle par défaut. Elle couvre aussi les visiteurs dont le pays ne peut être déterminé ; c'est pourquoi on leur demande d'abord au lieu de présumer leur consentement."
+
+#. module: muk_website_cookies_consent
+#. odoo-javascript
+#: code:addons/muk_website_cookies_consent/static/src/builder/cookies_bar_option/cookies_bar_option.xml:0
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__website__cookie_layout__center
+msgid "Centred dialog"
+msgstr "Boîte de dialogue centrée"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.cookie_policy
+msgid "Change my cookie choices"
+msgstr "Modifier mes choix de cookies"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_category__code
+msgid "Code"
+msgstr "Code"
+
+#. module: muk_website_cookies_consent
+#. odoo-javascript
+#: code:addons/muk_website_cookies_consent/static/src/builder/cookies_bar_option/cookies_bar_option.xml:0
+msgid "Compact"
+msgstr "Compact"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__website__cookie_density__compact
+msgid "Compact (one line)"
+msgstr "Compact (une ligne)"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model,name:muk_website_cookies_consent.model_res_config_settings
+msgid "Config Settings"
+msgstr "Paramètres de configuration"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_geo_rule__lifetime_days
+msgid "Consent Lifetime (days)"
+msgstr "Durée de validité du consentement (jours)"
+
+#. module: muk_website_cookies_consent
+#: model:ir.actions.act_window,name:muk_website_cookies_consent.action_cookie_consent
+#: model:ir.ui.menu,name:muk_website_cookies_consent.menu_cookie_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_consent_list
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_consent_search
+msgid "Consent Logs"
+msgstr "Journal des consentements"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__consent_mode_pushed
+msgid "Consent Mode Signalled"
+msgstr "Consent Mode signalé"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_category__consent_mode_signals
+msgid "Consent Mode Signals"
+msgstr "Signaux Consent Mode"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.res_config_settings_view_form
+msgid "Consent Proof"
+msgstr "Preuve du consentement"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_consent_form
+msgid "Consent Record"
+msgstr "Enregistrement de consentement"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__consent_uid
+msgid "Consent Reference"
+msgstr "Référence du consentement"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__muk_website_cookies_consent_consent__source__banner
+msgid "Consent banner"
+msgstr "Bannière de consentement"
+
+#. module: muk_website_cookies_consent
+#. odoo-python
+#: code:addons/muk_website_cookies_consent/models/consent.py:0
+msgid ""
+"Consent records cannot be changed. They are the evidence that a decision was"
+" taken, so a later decision is filed as its own record instead."
+msgstr "Les enregistrements de consentement ne peuvent pas être modifiés. Ils prouvent qu'une décision a été prise ; une décision ultérieure est donc consignée dans son propre enregistrement."
+
+#. module: muk_website_cookies_consent
+#. odoo-python
+#: code:addons/muk_website_cookies_consent/models/consent.py:0
+msgid ""
+"Consent records cannot be deleted here. They go when they pass the retention"
+" period, or with the website they belong to."
+msgstr "Les enregistrements de consentement ne peuvent pas être supprimés ici. Ils disparaissent à l'expiration de la durée de conservation, ou avec le site web auquel ils appartiennent."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.cookie_policy
+msgid "Content we block until you allow it"
+msgstr "Contenus que nous bloquons jusqu'à ce que vous les autorisiez"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_consent_form
+msgid "Context"
+msgstr "Contexte"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,necessity_justification:muk_website_cookies_consent.cookie_odoo_appointment
+msgid ""
+"Convenience for someone in the middle of booking: the details you entered "
+"and the notices you closed. Refusing it costs a repeated form, nothing else."
+msgstr "Un confort pour qui est en pleine réservation : les informations que vous avez saisies et les avis que vous avez fermés. La refuser ne coûte qu'un formulaire à ressaisir."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_form
+msgid "Cookie"
+msgstr "Cookie"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model,name:muk_website_cookies_consent.model_muk_website_cookies_consent_category
+msgid "Cookie Category"
+msgstr "Catégorie de cookie"
+
+#. module: muk_website_cookies_consent
+#: model:ir.ui.menu,name:muk_website_cookies_consent.main_menu_cookies
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.res_config_settings_view_form
+msgid "Cookie Consent"
+msgstr "Consentement aux cookies"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model,name:muk_website_cookies_consent.model_muk_website_cookies_consent_consent
+msgid "Cookie Consent Record"
+msgstr "Enregistrement de consentement aux cookies"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model,name:muk_website_cookies_consent.model_muk_website_cookies_consent_geo_rule
+msgid "Cookie Consent Region Rule"
+msgstr "Consentement aux cookies : règle régionale"
+
+#. module: muk_website_cookies_consent
+#: model:ir.actions.server,name:muk_website_cookies_consent.ir_cron_purge_consent_records_ir_actions_server
+msgid "Cookie Consent: Purge Expired Records"
+msgstr "Consentement aux cookies : purger les enregistrements expirés"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model,name:muk_website_cookies_consent.model_muk_website_cookies_consent_cookie
+msgid "Cookie Declaration"
+msgstr "Déclaration de cookie"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.layout
+msgid "Cookie Policy"
+msgstr "Politique en matière de cookies"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.layout
+msgid "Cookie Preferences"
+msgstr "Préférences de cookies"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model,name:muk_website_cookies_consent.model_muk_website_cookies_consent_registry_mixin
+msgid "Cookie Registry Mixin"
+msgstr "Mixin du registre des cookies"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model,name:muk_website_cookies_consent.model_muk_website_cookies_consent_service
+msgid "Cookie Service"
+msgstr "Service de cookies"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.layout
+msgid "Cookie preferences"
+msgstr "Préférences de cookies"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_category__cookie_ids
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_service__cookie_ids
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_category_form
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_list
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_search
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_service_form
+msgid "Cookies"
+msgstr "Cookies"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.notice_copy
+msgid ""
+"Cookies that are strictly necessary keep this site working and are always "
+"on. For anything else we need your permission. You can change your mind at "
+"any time."
+msgstr "Les cookies strictement nécessaires assurent le fonctionnement de ce site et sont toujours actifs. Pour tout le reste, nous avons besoin de votre accord. Vous pouvez changer d'avis à tout moment."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.cookies_bar
+msgid "Cookies used ("
+msgstr "Cookies utilisés ("
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_geo_rule__country_ids
+msgid "Countries"
+msgstr "Pays"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__jurisdiction
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_consent_search
+msgid "Country"
+msgstr "Pays"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model,name:muk_website_cookies_consent.model_res_country_group
+msgid "Country Group"
+msgstr "Groupe de pays"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_geo_rule__country_group_ids
+msgid "Country Groups"
+msgstr "Groupes de pays"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__jurisdiction
+msgid "Country resolved from the request when consent was given."
+msgstr "Pays déterminé à partir de la requête au moment du consentement."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_category__create_uid
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__create_uid
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_cookie__create_uid
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_geo_rule__create_uid
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_observation__create_uid
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_service__create_uid
+msgid "Created by"
+msgstr "Créé par"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_category__create_date
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__create_date
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_cookie__create_date
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_geo_rule__create_date
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_observation__create_date
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_service__create_date
+msgid "Created on"
+msgstr "Créé le"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_consent_search
+msgid "Custom"
+msgstr "Personnalisé"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__muk_website_cookies_consent_consent__action__custom
+msgid "Custom selection"
+msgstr "Sélection personnalisée"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.service,name:muk_website_cookies_consent.service_dailymotion
+msgid "Dailymotion"
+msgstr "Dailymotion"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.service,provider:muk_website_cookies_consent.service_dailymotion
+msgid "Dailymotion SA"
+msgstr "Dailymotion SA"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_consent_search
+msgid "Date"
+msgstr "Date"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__action
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_consent_form
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_consent_search
+msgid "Decision"
+msgstr "Décision"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_observation__cookie_id
+msgid "Declaration"
+msgstr "Déclaration"
+
+#. module: muk_website_cookies_consent
+#: model:ir.actions.act_window,name:muk_website_cookies_consent.action_cookie
+#: model:ir.ui.menu,name:muk_website_cookies_consent.menu_cookie
+msgid "Declarations"
+msgstr "Déclarations"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.actions.act_window,help:muk_website_cookies_consent.action_cookie
+msgid ""
+"Declarations build the table on your cookie policy page and the detail shown"
+" in the preference centre."
+msgstr "Les déclarations alimentent le tableau de votre page de politique cookies et le détail affiché dans le centre de préférences."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_observation_form
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_observation_list
+msgid "Declare"
+msgstr "Déclarer"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.actions.act_window,help:muk_website_cookies_consent.action_cookie
+msgid "Declare a cookie"
+msgstr "Déclarer un cookie"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_res_config_settings__cookie_publish_gpc_json
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_website__cookie_publish_gpc_json
+msgid ""
+"Declare publicly that this site honours Global Privacy Control. Only enable "
+"it once you have verified that it does."
+msgstr "Déclarer publiquement que ce site respecte Global Privacy Control. Ne l'activez qu'après avoir vérifié que c'est bien le cas."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__muk_website_cookies_consent_observation__state__declared
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_observation_search
+msgid "Declared"
+msgstr "Déclaré"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.res_config_settings_view_form
+msgid ""
+"Declares in public that the signal is honoured. Only publish it once you "
+"have verified that it is."
+msgstr "Déclare publiquement que le signal est respecté. Ne le publiez qu'après avoir vérifié que c'est le cas."
+
+#. module: muk_website_cookies_consent
+#. odoo-javascript
+#: code:addons/muk_website_cookies_consent/static/src/builder/cookies_bar_option/cookies_bar_option.xml:0
+msgid "Density"
+msgstr "Densité"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_category__description
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_cookie__description
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_form
+msgid "Description"
+msgstr "Description"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,necessity_justification:muk_website_cookies_consent.cookie_cids
+msgid ""
+"Determines the scope of the records served. Without it the site cannot show "
+"the correct company's content to a signed-in user."
+msgstr "Détermine le périmètre des enregistrements servis. Sans lui, le site ne peut pas présenter le contenu de la bonne société à un utilisateur connecté."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_ir_http__display_name
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_ir_qweb__display_name
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_category__display_name
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__display_name
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_cookie__display_name
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_geo_rule__display_name
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_observation__display_name
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_registry_mixin__display_name
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_service__display_name
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_res_config_settings__display_name
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_res_country_group__display_name
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_website__display_name
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_website_page__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_ga
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_gid
+msgid "Distinguishes visitors for Google Analytics reporting."
+msgstr "Distingue les visiteurs pour les rapports Google Analytics."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__website__cookie_consent_mode__off
+msgid "Do not signal"
+msgstr "Ne pas signaler"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_service__domains
+msgid "Domains"
+msgstr "Domaines"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.actions.act_window,help:muk_website_cookies_consent.action_cookie_consent
+msgid ""
+"Each decision a visitor makes is recorded here, together with the disclosure"
+" they were shown, as proof of consent."
+msgstr "Chaque décision prise par un visiteur est enregistrée ici, avec l'information qui lui a été présentée, comme preuve du consentement."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_odoo_multi_tab_service
+msgid ""
+"Elects one of your open tabs to hold the connection that delivers live "
+"updates, so the others do not each open one of their own."
+msgstr "Désigne l'un de vos onglets ouverts pour tenir la connexion qui apporte les mises à jour en direct, afin que les autres n'en ouvrent pas chacun une."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_youtube_visitor_info
+msgid ""
+"Estimates your bandwidth on pages with an embedded YouTube video, and is "
+"used for advertising."
+msgstr "Estime votre bande passante sur les pages comportant une vidéo YouTube intégrée et sert à la publicité."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.geo.rule,name:muk_website_cookies_consent.geo_rule_eu
+msgid "European Union / EEA"
+msgstr "Union européenne / EEE"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,necessity_justification:muk_website_cookies_consent.cookie_odoo_push
+msgid ""
+"Exists to send you messages after you leave, which is marketing rather than "
+"part of the page you asked for."
+msgstr "Sert à vous envoyer des messages après votre départ, ce qui relève du marketing et non de la page demandée."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_category_form
+msgid "Explain in plain language what this purpose covers."
+msgstr "Expliquez en langage clair ce que recouvre cette finalité."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.service,name:muk_website_cookies_consent.service_facebook
+msgid "Facebook"
+msgstr "Facebook"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__registry_hash
+msgid ""
+"Fingerprint of the purposes, services and cookies declared when consent was "
+"given, so the disclosure shown can be reconstructed."
+msgstr "Empreinte des finalités, services et cookies déclarés au moment du consentement, afin de pouvoir reconstituer l'information affichée."
+
+#. module: muk_website_cookies_consent
+#. odoo-javascript
+#: code:addons/muk_website_cookies_consent/static/src/builder/cookies_bar_option/cookies_bar_option.xml:0
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_website__cookie_reopen_float
+msgid "Floating Button"
+msgstr "Bouton flottant"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,necessity_justification:muk_website_cookies_consent.cookie_odoo_current_lang
+msgid ""
+"Follows the language you chose, so a reload does not switch it back. "
+"Discarded when the tab closes."
+msgstr "Suit la langue que vous avez choisie, afin qu'un rechargement ne la réinitialise pas. Supprimé à la fermeture de l'onglet."
+
+#. module: muk_website_cookies_consent
+#. odoo-javascript
+#: code:addons/muk_website_cookies_consent/static/src/builder/cookies_bar_option/cookies_bar_option.xml:0
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_website__cookie_reopen_footer
+msgid "Footer Link"
+msgstr "Lien dans le pied de page"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.geo.rule,name:muk_website_cookies_consent.geo_rule_fr
+msgid "France"
+msgstr "France"
+
+#. module: muk_website_cookies_consent
+#. odoo-javascript
+#: code:addons/muk_website_cookies_consent/static/src/builder/cookies_bar_option/cookies_bar_option.xml:0
+msgid "Full"
+msgstr "Complet"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__website__cookie_density__full
+msgid "Full (heading and explanation)"
+msgstr "Complet (titre et explication)"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.category,name:muk_website_cookies_consent.category_functional
+msgid "Functional"
+msgstr "Fonctionnel"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.geo.rule,source_note:muk_website_cookies_consent.geo_rule_it
+msgid ""
+"Garante cookie guidelines, 10 June 2021: do not prompt again more often than"
+" every six months."
+msgstr "Lignes directrices cookies du Garante, 10 juin 2021 : ne pas redemander plus souvent que tous les six mois."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.geo.rule,name:muk_website_cookies_consent.geo_rule_de
+msgid "Germany"
+msgstr "Allemagne"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__source
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_consent_search
+msgid "Given Through"
+msgstr "Donné via"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.res_config_settings_view_form
+msgid "Global Privacy Control"
+msgstr "Global Privacy Control"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_res_config_settings__cookie_consent_mode
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_website__cookie_consent_mode
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.res_config_settings_view_form
+msgid "Google Consent Mode"
+msgstr "Google Consent Mode"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_ga
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_gid
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_odoo_recaptcha
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_youtube_visitor_info
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_youtube_ysc
+#: model:muk_website_cookies_consent.service,provider:muk_website_cookies_consent.service_google_maps
+#: model:muk_website_cookies_consent.service,provider:muk_website_cookies_consent.service_recaptcha
+#: model:muk_website_cookies_consent.service,provider:muk_website_cookies_consent.service_youtube
+msgid "Google Ireland Limited"
+msgstr "Google Ireland Limited"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.service,name:muk_website_cookies_consent.service_google_maps
+msgid "Google Maps"
+msgstr "Google Maps"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.service,name:muk_website_cookies_consent.service_recaptcha
+msgid "Google reCAPTCHA"
+msgstr "Google reCAPTCHA"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_consent_form
+msgid "Granted"
+msgstr "Accordé"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__granted_category_ids
+msgid "Granted Purposes"
+msgstr "Finalités accordées"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__granted_service_ids
+msgid "Granted Services"
+msgstr "Services accordés"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__muk_website_cookies_consent_cookie__storage_type__http
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__muk_website_cookies_consent_observation__storage_type__http
+msgid "HTTP Cookie"
+msgstr "Cookie HTTP"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model,name:muk_website_cookies_consent.model_ir_http
+msgid "HTTP Routing"
+msgstr "Routage HTTP"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.category,description:muk_website_cookies_consent.category_analytics
+msgid ""
+"Help us understand how the site is used, by collecting visit and interaction"
+" data. This is used to improve the site, not to advertise to you."
+msgstr "Nous aident à comprendre comment le site est utilisé, en collectant des données de visite et d'interaction. Elles servent à améliorer le site, pas à vous adresser de la publicité."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.category,description:muk_website_cookies_consent.category_unclassified
+msgid ""
+"Holding area for cookies and services found on the site but not yet "
+"classified. Nothing here is put to visitors, because a purpose that cannot "
+"be described cannot be consented to: it stays refused until someone reviews "
+"it."
+msgstr "Zone d'attente pour les cookies et services trouvés sur le site mais pas encore classés. Rien n'est ici soumis aux visiteurs, car on ne peut consentir à une finalité qui ne peut être décrite : elle reste refusée jusqu'à examen."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_odoo_cart_quantity
+msgid ""
+"Holds how many items your basket contains, so the header count is right "
+"before the page has finished loading."
+msgstr "Retient le nombre d'articles que contient votre panier, pour que le compteur de l'en-tête soit juste avant la fin du chargement de la page."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,necessity_justification:muk_website_cookies_consent.cookie_odoo_current_action
+msgid ""
+"Holds the position of the interface you are using. Without it a reload would"
+" lose your place in the service you requested."
+msgstr "Conserve la position de l'interface que vous utilisez. Sans lui, un rechargement vous ferait perdre votre place dans le service demandé."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_odoo_push
+msgid ""
+"Holds the push-notification setup for this browser and when you were last "
+"asked to allow notifications."
+msgstr "Contient la configuration des notifications push de ce navigateur et la date à laquelle votre autorisation a été demandée pour la dernière fois."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_odoo_color_scheme
+msgid "Holds whether the interface is drawn light or dark."
+msgstr "Indique si l'interface est affichée en clair ou en sombre."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_tz
+msgid "Holds your time zone so dates and times are shown correctly."
+msgstr "Conserve votre fuseau horaire afin que les dates et heures soient affichées correctement."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_res_config_settings__cookie_respect_gpc
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_website__cookie_respect_gpc
+msgid "Honour Global Privacy Control"
+msgstr "Respecter Global Privacy Control"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_service_form
+msgid "Hosts"
+msgstr "Hôtes"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_geo_rule__lifetime_days
+msgid "How long a decision is relied on before the visitor is asked again."
+msgstr "Combien de temps une décision reste valable avant que le visiteur ne soit à nouveau sollicité."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_cookie__duration
+msgid "How long it persists, e.g. \"1 year\" or \"Session\"."
+msgstr "Sa durée de conservation, par ex. « 1 an » ou « Session »."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_website__cookie_density
+msgid ""
+"How much of the notice is shown. Compact hides the heading and tightens the "
+"spacing; what the visitor is told does not change, because the disclosure is"
+" not a matter of taste."
+msgstr "Quelle part de l'avis est affichée. Le mode compact masque le titre et resserre les espacements ; ce qui est communiqué au visiteur ne change pas, car l'information n'est pas affaire de goût."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_ir_http__id
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_ir_qweb__id
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_category__id
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__id
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_cookie__id
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_geo_rule__id
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_observation__id
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_registry_mixin__id
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_service__id
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_res_config_settings__id
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_res_country_group__id
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_website__id
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_website_page__id
+msgid "ID"
+msgstr "ID"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__ip_hash
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_consent_search
+msgid "IP Fingerprint"
+msgstr "Empreinte de l'IP"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_service__technical_name
+msgid "Identifier used in the consent cookie and in data-muk-cookie-service."
+msgstr "Identifiant utilisé dans le cookie de consentement et dans data-muk-cookie-service."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_linkedin_bcookie
+msgid "Identifies your browser for LinkedIn advertising and analytics."
+msgstr "Identifie votre navigateur pour la publicité et l'analyse de LinkedIn."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_session_id
+msgid ""
+"Identifies your browsing session so the server can keep you signed in and "
+"keep your basket."
+msgstr "Identifie votre session de navigation afin que le serveur puisse vous maintenir connecté et conserver votre panier."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_observation_form
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_observation_list
+msgid "Ignore"
+msgstr "Ignorer"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__muk_website_cookies_consent_observation__state__ignored
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_observation_search
+msgid "Ignored"
+msgstr "Ignoré"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__muk_website_cookies_consent_cookie__storage_type__indexeddb
+msgid "IndexedDB"
+msgstr "IndexedDB"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.service,name:muk_website_cookies_consent.service_instagram
+msgid "Instagram"
+msgstr "Instagram"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.geo.rule,name:muk_website_cookies_consent.geo_rule_it
+msgid "Italy"
+msgstr "Italie"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.notice_actions
+msgid "Keep my choice"
+msgstr "Conserver mon choix"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_service__contextual_only
+msgid ""
+"Keep this service out of the preference centre and ask for it where it is "
+"embedded instead, via a placeholder on the blocked element. Suited to video "
+"embeds and maps."
+msgstr "Ne pas proposer ce service dans le centre de préférences et le demander là où il est intégré, via un espace réservé sur l'élément bloqué. Adapté aux vidéos intégrées et aux cartes."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_odoo_livechat
+msgid ""
+"Keeps a live chat going: which conversation is yours, who you spoke to last "
+"and whether the window was already offered to you."
+msgstr "Maintient une discussion en direct : quelle conversation est la vôtre, à qui vous avez parlé en dernier et si la fenêtre vous a déjà été proposée."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_observation__name
+msgid "Key"
+msgstr "Clé"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__lang_code
+msgid "Language"
+msgstr "Langue"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_observation__last_seen
+msgid "Last Seen"
+msgstr "Vu pour la dernière fois"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_category__write_uid
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__write_uid
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_cookie__write_uid
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_geo_rule__write_uid
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_observation__write_uid
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_service__write_uid
+msgid "Last Updated by"
+msgstr "Dernière modification par"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_category__write_date
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__write_date
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_cookie__write_date
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_geo_rule__write_date
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_observation__write_date
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_service__write_date
+msgid "Last Updated on"
+msgstr "Dernière modification le"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_category__website_id
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_cookie__website_id
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_geo_rule__website_id
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_service__website_id
+msgid "Leave empty to apply to every website."
+msgstr "Laisser vide pour l'appliquer à tous les sites web."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_geo_rule__country_ids
+msgid "Leave empty together with country groups to match every visitor."
+msgstr "Laisser vide, ainsi que les groupes de pays, pour correspondre à tous les visiteurs."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,necessity_justification:muk_website_cookies_consent.cookie_odoo_multi_tab
+msgid ""
+"Lets several open tabs agree on what has already been delivered instead of "
+"each repeating it. The key carries the site address, so it is matched by "
+"pattern rather than by name."
+msgstr "Permet à plusieurs onglets ouverts de s'accorder sur ce qui a déjà été livré, plutôt que de le répéter chacun. La clé contient l'adresse du site : elle est donc identifiée par motif et non par nom."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__lifetime_days
+msgid "Lifetime (days)"
+msgstr "Durée de validité (jours)"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.service,name:muk_website_cookies_consent.service_linkedin
+msgid "LinkedIn"
+msgstr "LinkedIn"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_linkedin_bcookie
+#: model:muk_website_cookies_consent.service,provider:muk_website_cookies_consent.service_linkedin
+msgid "LinkedIn Ireland Unlimited Company"
+msgstr "LinkedIn Ireland Unlimited Company"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,necessity_justification:muk_website_cookies_consent.cookie_odoo_multi_tab_service
+msgid ""
+"Live updates are part of the pages you asked for, and a browser limits how "
+"many connections a site may hold. The keys carry a timestamp and a flag, no "
+"identifier, and are read by no one but your own tabs."
+msgstr "Les mises à jour en direct font partie des pages que vous avez demandées, et un navigateur limite le nombre de connexions qu'un site peut tenir. Les clés portent un horodatage et un indicateur, aucun identifiant, et ne sont lues que par vos propres onglets."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__muk_website_cookies_consent_cookie__storage_type__local
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__muk_website_cookies_consent_observation__storage_type__local
+msgid "Local Storage"
+msgstr "Local Storage"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.notice_actions
+msgid "Manage choices"
+msgstr "Gérer mes choix"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.category,name:muk_website_cookies_consent.category_marketing
+msgid "Marketing"
+msgstr "Marketing"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_facebook_fr
+#: model:muk_website_cookies_consent.service,provider:muk_website_cookies_consent.service_facebook
+#: model:muk_website_cookies_consent.service,provider:muk_website_cookies_consent.service_instagram
+msgid "Meta Platforms Ireland Limited"
+msgstr "Meta Platforms Ireland Limited"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_website_cookies_bar
+msgid ""
+"Mirrors your choice for parts of Odoo that read the built-in consent cookie."
+msgstr "Reflète votre choix pour les parties d'Odoo qui lisent le cookie de consentement intégré."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__banner_version
+msgid "Module version that rendered the banner."
+msgstr "Version du module ayant généré la bannière."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_category__name
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_cookie__name
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_geo_rule__name
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_service__name
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.cookie_policy
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.cookies_bar
+msgid "Name"
+msgstr "Nom"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_cookie__pattern
+msgid "Name Pattern"
+msgstr "Motif de nom"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_geo_rule_form
+msgid ""
+"Name the authority and the guidance, so nobody mistakes a convention for a "
+"statutory rule."
+msgstr "Nommez l'autorité et la recommandation, afin que nul ne prenne un usage pour une règle légale."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,necessity_justification:muk_website_cookies_consent.cookie_odoo_menu_id
+msgid ""
+"Navigation state for the interface you are using; discarded when the tab "
+"closes."
+msgstr "État de navigation de l'interface que vous utilisez ; supprimé à la fermeture de l'onglet."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_search
+msgid "Necessary Without Justification"
+msgstr "Nécessaire sans justification"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_cookie__necessity_justification
+msgid "Necessity Justification"
+msgstr "Justification de la nécessité"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.category,description:muk_website_cookies_consent.category_essential
+msgid ""
+"Needed for the site to work: signing in, keeping your cart, remembering your"
+" language and recording the cookie choice you make here. These cannot be "
+"switched off."
+msgstr "Nécessaires au fonctionnement du site : connexion, conservation du panier, mémorisation de votre langue et enregistrement du choix de cookies effectué ici. Ils ne peuvent pas être désactivés."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,necessity_justification:muk_website_cookies_consent.cookie_tz
+msgid ""
+"Needed to render times correctly in the service you requested. It holds a "
+"time zone name; where visitor statistics are switched on, that zone is also "
+"stamped on the visit record."
+msgstr "Nécessaire pour afficher correctement les heures dans le service demandé. Il contient un nom de fuseau horaire ; si les statistiques de visite sont activées, ce fuseau est également consigné dans l'enregistrement de visite."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.actions.act_window,help:muk_website_cookies_consent.action_cookie_consent
+msgid "No consent recorded yet"
+msgstr "Aucun consentement enregistré pour le moment"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__website__cookie_reopen_float__none
+msgid "No floating button"
+msgstr "Pas de bouton flottant"
+
+#. module: muk_website_cookies_consent
+#. odoo-javascript
+#: code:addons/muk_website_cookies_consent/static/src/builder/cookies_bar_option/cookies_bar_option.xml:0
+msgid "None"
+msgstr "Aucun"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.actions.act_window,help:muk_website_cookies_consent.action_cookie_observation
+msgid "Nothing captured yet"
+msgstr "Rien de capturé pour le moment"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,necessity_justification:muk_website_cookies_consent.cookie_odoo_forum_welcome
+msgid ""
+"Odoo itself writes this one as optional, so nothing is stored until the "
+"purpose that covers Odoo's optional cookies is granted. Refusing it means "
+"the welcome message can come back."
+msgstr "C'est Odoo lui-même qui l'écrit comme facultatif : rien n'est donc stocké tant que la finalité couvrant les cookies facultatifs d'Odoo n'est pas accordée. En la refusant, le message d'accueil peut revenir."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_service__domains
+msgid ""
+"One host per line. Scripts and embeds loaded from these hosts, or any of "
+"their subdomains, are blocked until this purpose is granted."
+msgstr "Un hôte par ligne. Les scripts et contenus intégrés chargés depuis ces hôtes, ou l'un de leurs sous-domaines, sont bloqués jusqu'à ce que cette finalité soit accordée."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,necessity_justification:muk_website_cookies_consent.cookie_odoo_recaptcha
+msgid ""
+"Only set where the site protects a form you chose to submit, and only to "
+"decide whether that submission is automated. Blocking it would stop the form"
+" being accepted at all, which is why it is not put to a choice."
+msgstr "Déposé uniquement là où le site protège un formulaire que vous avez choisi d'envoyer, et seulement pour déterminer si cet envoi est automatisé. Le bloquer empêcherait le formulaire d'être accepté, c'est pourquoi il n'est pas soumis à un choix."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model,name:muk_website_cookies_consent.model_website_page
+msgid "Page"
+msgstr "Page"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,necessity_justification:muk_website_cookies_consent.cookie_odoo_current_state
+msgid ""
+"Part of the same navigation state as the entry above; carries no identifier "
+"and is never read for any other purpose."
+msgstr "Fait partie du même état de navigation que l'entrée ci-dessus ; ne contient aucun identifiant et n'est jamais lu à une autre fin."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.cookies_bar
+msgid "Pick the purposes you agree to. Nothing optional runs until you save."
+msgstr "Choisissez les finalités que vous acceptez. Rien de facultatif ne s'exécute avant que vous n'enregistriez."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_service_form
+msgid "Placeholder"
+msgstr "Espace réservé"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_service__placeholder_text
+msgid "Placeholder Text"
+msgstr "Texte de l'espace réservé"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_res_config_settings__cookie_policy_url
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_website__cookie_policy_url
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.res_config_settings_view_form
+msgid "Policy Link"
+msgstr "Lien vers la politique"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__policy_version
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_res_config_settings__cookie_policy_version
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_website__cookie_policy_version
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.res_config_settings_view_form
+msgid "Policy Version"
+msgstr "Version de la politique"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_category__default_enabled
+msgid "Pre-selected"
+msgstr "Présélectionnée"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_category__default_enabled
+msgid ""
+"Pre-selecting a purpose that is not strictly necessary produces invalid "
+"consent under the GDPR and is refused on save."
+msgstr "Présélectionner une finalité qui n'est pas strictement nécessaire produit un consentement invalide au regard du RGPD et est refusé à l'enregistrement."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__muk_website_cookies_consent_consent__source__preferences
+msgid "Preference centre"
+msgstr "Centre de préférences"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_cookie__provider
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_service__provider
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.cookie_policy
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.cookies_bar
+msgid "Provider"
+msgstr "Fournisseur"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_res_config_settings__cookie_publish_gpc_json
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_website__cookie_publish_gpc_json
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.res_config_settings_view_form
+msgid "Publish /.well-known/gpc.json"
+msgstr "Publier /.well-known/gpc.json"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_cookie__category_id
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_service__category_id
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.cookie_policy
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.cookies_bar
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_category_form
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_search
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_service_search
+msgid "Purpose"
+msgstr "Finalité"
+
+#. module: muk_website_cookies_consent
+#: model:ir.actions.act_window,name:muk_website_cookies_consent.action_cookie_category
+#: model:ir.ui.menu,name:muk_website_cookies_consent.menu_cookie_category
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_category_list
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_category_search
+msgid "Purposes"
+msgstr "Finalités"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model,name:muk_website_cookies_consent.model_ir_qweb
+msgid "Qweb"
+msgstr "QWeb"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.res_config_settings_view_form
+msgid ""
+"Raising this asks every visitor again. Adding a purpose, a service or a "
+"cookie already does that on its own."
+msgstr "L'augmenter sollicite à nouveau tous les visiteurs. Ajouter une finalité, un service ou un cookie le fait déjà de lui-même."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_res_config_settings__cookie_policy_version
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_website__cookie_policy_version
+msgid ""
+"Raising this invalidates every stored decision and asks all visitors again. "
+"Use it when the disclosure itself changes."
+msgstr "L'augmenter invalide toutes les décisions enregistrées et sollicite à nouveau tous les visiteurs. À utiliser lorsque l'information elle-même change."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__consent_uid
+msgid ""
+"Random reference shared by every decision of one browser. Not derived from "
+"anything identifying the visitor."
+msgstr "Référence aléatoire partagée par toutes les décisions d'un même navigateur. Elle n'est dérivée d'aucun élément identifiant le visiteur."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.notice_copy
+msgid "Read our cookie policy"
+msgstr "Lire notre politique en matière de cookies"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_res_config_settings__cookie_log_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_website__cookie_log_consent
+msgid "Record Consent Proof"
+msgstr "Enregistrer la preuve du consentement"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_res_config_settings__cookie_log_ip
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_website__cookie_log_ip
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.res_config_settings_view_form
+msgid "Record IP Fingerprint"
+msgstr "Enregistrer l'empreinte de l'IP"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.res_config_settings_view_form
+msgid ""
+"Record every decision together with the disclosure shown, so consent can be "
+"demonstrated as GDPR Art. 7(1) requires."
+msgstr "Enregistrer chaque décision avec l'information affichée, afin de pouvoir démontrer le consentement comme l'exige l'art. 7, § 1 du RGPD."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__denied_category_ids
+msgid "Recorded explicitly: a refusal is as much evidence as a grant."
+msgstr "Enregistré explicitement : un refus constitue une preuve au même titre qu'un accord."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,necessity_justification:muk_website_cookies_consent.cookie_muk_cookie_consent
+msgid ""
+"Recording a consent decision is itself strictly necessary: without it the "
+"choice could not be honoured or demonstrated. Regulators treat the consent "
+"record as exempt for this reason."
+msgstr "Enregistrer une décision de consentement est en soi strictement nécessaire : sans cela, le choix ne pourrait être ni respecté ni démontré. C'est pourquoi les autorités considèrent l'enregistrement du consentement comme exempté."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_youtube_ysc
+msgid "Records a unique identifier for your session to count video views."
+msgstr "Enregistre un identifiant unique de votre session pour comptabiliser les lectures de vidéos."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_odoo_presence
+msgid ""
+"Records when this tab was last active, so messages reach a window you are "
+"actually using and an idle session can be timed out."
+msgstr "Enregistre la dernière activité de cet onglet, afin que les messages parviennent à une fenêtre réellement utilisée et qu'une session inactive puisse expirer."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_odoo_reveal_rules
+msgid ""
+"Records which lead-generation rules have already fired for you, so the same "
+"rule does not report your visit twice."
+msgstr "Note quelles règles de génération de contacts se sont déjà déclenchées pour vous, afin que la même règle ne signale pas deux fois votre visite."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_vimeo_player
+msgid "Records which videos you have watched, in Vimeo's analytics."
+msgstr "Enregistre les vidéos que vous avez regardées, dans les statistiques de Vimeo."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.cookies_bar
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.notice_actions
+msgid "Refuse all"
+msgstr "Tout refuser"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_consent_form
+msgid "Refused"
+msgstr "Refusée"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_consent_search
+msgid "Refused All"
+msgstr "A tout refusé"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__denied_category_ids
+msgid "Refused Purposes"
+msgstr "Finalités refusées"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__geo_rule_id
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_geo_rule_form
+msgid "Region Rule"
+msgstr "Règle régionale"
+
+#. module: muk_website_cookies_consent
+#: model:ir.actions.act_window,name:muk_website_cookies_consent.action_cookie_geo_rule
+#: model:ir.ui.menu,name:muk_website_cookies_consent.menu_cookie_geo_rule
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_geo_rule_list
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_geo_rule_search
+msgid "Region Rules"
+msgstr "Règles régionales"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.actions.act_window,help:muk_website_cookies_consent.action_cookie_service
+msgid "Register a service to gate"
+msgstr "Enregistrer un service à contrôler"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__registry_hash
+msgid "Registry Hash"
+msgstr "Empreinte du registre"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_cookie__pattern
+msgid ""
+"Regular expression matching a family of cookies, e.g. \"^_ga\" for every "
+"Google Analytics cookie. Cookies matching it are deleted when this purpose "
+"is refused, instead of only the exact name above."
+msgstr "Expression régulière couvrant une famille de cookies, par ex. « ^_ga » pour tous les cookies Google Analytics. Les cookies correspondants sont supprimés lorsque cette finalité est refusée, et non le seul nom exact ci-dessus."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__muk_website_cookies_consent_consent__action__reject_all
+msgid "Reject all"
+msgstr "Tout refuser"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.category,description:muk_website_cookies_consent.category_functional
+msgid ""
+"Remember choices you make so the site can behave the way you prefer, such as"
+" a chat widget or an embedded map. Refusing these keeps the site working, "
+"with fewer conveniences."
+msgstr "Mémorisent vos choix afin que le site se comporte comme vous le souhaitez, par exemple un module de discussion ou une carte intégrée. Les refuser laisse le site fonctionnel, avec moins de confort."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_odoo_forum_welcome
+msgid ""
+"Remembers that you closed the welcome message on the forum, so it is not "
+"shown to you again."
+msgstr "Retient que vous avez fermé le message d'accueil du forum, afin qu'il ne vous soit plus affiché."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_odoo_current_lang
+msgid "Remembers the language the screen you had open was shown in."
+msgstr "Mémorise la langue dans laquelle l'écran que vous aviez ouvert était affiché."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_frontend_lang
+msgid "Remembers the language you chose so pages are served in it."
+msgstr "Mémorise la langue que vous avez choisie afin que les pages soient servies dans celle-ci."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_odoo_current_state
+msgid "Remembers the state of the screen you had open, such as filters."
+msgstr "Mémorise l'état de l'écran que vous aviez ouvert, par exemple les filtres."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_odoo_survey_answer
+msgid ""
+"Remembers the survey you are part way through, so closing the tab does not "
+"lose your answers."
+msgstr "Retient l'enquête que vous avez commencée, afin que la fermeture de l'onglet ne perde pas vos réponses."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_odoo_appointment
+msgid ""
+"Remembers what you already typed into a booking form and which upcoming "
+"appointment notice you dismissed."
+msgstr "Retient ce que vous avez déjà saisi dans un formulaire de réservation et quel avis de rendez-vous à venir vous avez écarté."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_odoo_pwa_state
+msgid ""
+"Remembers whether you were already offered to install this site as an app, "
+"so the offer is not repeated once you have answered it."
+msgstr "Retient si l'installation de ce site en tant qu'application vous a déjà été proposée, afin de ne pas répéter la proposition une fois que vous y avez répondu."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_utm_campaign
+msgid ""
+"Remembers which campaign brought you here, so a later enquiry can be "
+"attributed to it."
+msgstr "Mémorise la campagne qui vous a amené ici, afin qu'une demande ultérieure puisse lui être attribuée."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_cids
+msgid ""
+"Remembers which company's data you are working in, on multi-company sites."
+msgstr "Mémorise les données de quelle société vous consultez, sur les sites multi-sociétés."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_utm_medium
+msgid "Remembers which medium brought you here, for campaign attribution."
+msgstr "Mémorise le support qui vous a amené ici, pour l'attribution des campagnes."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_odoo_menu_id
+msgid "Remembers which menu you were in."
+msgstr "Mémorise le menu dans lequel vous vous trouviez."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_odoo_current_action
+msgid ""
+"Remembers which screen you had open, so a reload puts you back where you "
+"were."
+msgstr "Mémorise l'écran que vous aviez ouvert, afin qu'un rechargement vous y ramène."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_utm_source
+msgid "Remembers which source brought you here, for campaign attribution."
+msgstr "Mémorise la source qui vous a amené ici, pour l'attribution des campagnes."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_odoo_last_connected_user
+msgid ""
+"Remembers who signed in last, so the sign-in screen can offer that account "
+"again instead of an empty form."
+msgstr "Retient qui s'est connecté en dernier, afin que l'écran de connexion puisse proposer ce compte plutôt qu'un formulaire vide."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_consent_form
+msgid "Request"
+msgstr "Requête"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_form
+msgid ""
+"Required only for strictly necessary cookies. The burden of proving each "
+"such classification is on the controller."
+msgstr "Obligatoire uniquement pour les cookies strictement nécessaires. La charge de prouver chacune de ces qualifications incombe au responsable du traitement."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_category_search
+msgid "Requires Consent"
+msgstr "Nécessite un consentement"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.geo.rule,name:muk_website_cookies_consent.geo_rule_row
+msgid "Rest of the world"
+msgstr "Reste du monde"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_cookie__duration
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.cookie_policy
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.cookies_bar
+msgid "Retention"
+msgstr "Conservation"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_observation_form
+msgid "Review Again"
+msgstr "Réexaminer"
+
+#. module: muk_website_cookies_consent
+#. odoo-javascript
+#: code:addons/muk_website_cookies_consent/static/src/interactions/cookies_approval/cookies_approval.xml:0
+msgid "Review all cookie choices"
+msgstr "Revoir tous les choix de cookies"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__ip_hash
+msgid ""
+"Salted SHA-256 of the truncated visitor IP. Enough to match a record to a "
+"claimant who knows their address and roughly when they consented, while "
+"storing no readable address."
+msgstr "SHA-256 salé de l'IP tronquée du visiteur. Suffisant pour rapprocher un enregistrement d'une personne qui connaît son adresse et le moment approximatif de son consentement, sans conserver d'adresse lisible."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.cookies_bar
+msgid "Save my choices"
+msgstr "Enregistrer mes choix"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.actions.act_window,help:muk_website_cookies_consent.action_cookie_service
+msgid ""
+"Scripts and embeds loaded from a service's hosts are stripped until its "
+"purpose is granted."
+msgstr "Les scripts et contenus intégrés chargés depuis les hôtes d'un service sont retirés jusqu'à ce que sa finalité soit accordée."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_observation__sample_url
+msgid "Seen On"
+msgstr "Vu sur"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_category__sequence
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_geo_rule__sequence
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_service__sequence
+msgid "Sequence"
+msgstr "Séquence"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,necessity_justification:muk_website_cookies_consent.cookie_odoo_reveal_rules
+msgid ""
+"Serves lead generation rather than the page you asked for, which is why Odoo"
+" itself classes it as optional and nothing writes it until marketing is "
+"granted."
+msgstr "Sert la génération de contacts plutôt que la page demandée ; c'est pourquoi Odoo le classe lui-même comme facultatif et rien ne l'écrit tant que le marketing n'est pas accordé."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_cookie__service_id
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_observation__service_id
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_search
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_service_form
+msgid "Service"
+msgstr "Service"
+
+#. module: muk_website_cookies_consent
+#: model:ir.actions.act_window,name:muk_website_cookies_consent.action_cookie_service
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_category__service_ids
+#: model:ir.ui.menu,name:muk_website_cookies_consent.menu_cookie_service
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_category_form
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_service_list
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_service_search
+msgid "Services"
+msgstr "Services"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_odoo_cart_quantity
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_odoo_current_action
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_odoo_current_lang
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_odoo_current_state
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_odoo_menu_id
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_odoo_reveal_rules
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_tz
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_youtube_ysc
+msgid "Session"
+msgstr "Session"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__muk_website_cookies_consent_cookie__storage_type__session
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__muk_website_cookies_consent_observation__storage_type__session
+msgid "Session Storage"
+msgstr "Session Storage"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_odoo_recaptcha
+msgid ""
+"Set by reCAPTCHA when a form is protected against automated abuse, to tell a"
+" person from a script."
+msgstr "Déposé par reCAPTCHA lorsqu'un formulaire est protégé contre les abus automatisés, pour distinguer une personne d'un script."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,necessity_justification:muk_website_cookies_consent.cookie_frontend_lang
+msgid ""
+"Set while the page is served, so the language you are reading is the one the"
+" next page arrives in. Required to serve the site at all, and it holds a "
+"language code and nothing else."
+msgstr "Défini lors de la remise de la page, afin que la page suivante arrive dans la langue que vous lisez. Nécessaire pour servir le site, il ne contient qu'un code de langue."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_category_form
+msgid "Shown To Visitors"
+msgstr "Présentée aux visiteurs"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_service_form
+msgid "Shown in place of the blocked embed."
+msgstr "Affiché à la place du contenu intégré bloqué."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_service__placeholder_text
+msgid "Shown on the blocked element in place of the embed."
+msgstr "Affiché sur l'élément bloqué à la place du contenu intégré."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_category__description
+msgid "Shown to the visitor in the preference centre."
+msgstr "Affiché au visiteur dans le centre de préférences."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_form
+msgid "Shown verbatim in the cookie policy."
+msgstr "Affiché tel quel dans la politique en matière de cookies."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_geo_rule__source_note
+msgid "Source"
+msgstr "Source"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_category__consent_mode_signals
+msgid ""
+"Space-separated Google Consent Mode v2 signals granted with this purpose, "
+"e.g. \"analytics_storage\"."
+msgstr "Signaux Google Consent Mode v2 accordés avec cette finalité, séparés par des espaces, par ex. « analytics_storage »."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.geo.rule,name:muk_website_cookies_consent.geo_rule_es
+msgid "Spain"
+msgstr "Espagne"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.category,name:muk_website_cookies_consent.category_analytics
+msgid "Statistics"
+msgstr "Statistiques"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_observation__state
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_observation_search
+msgid "Status"
+msgstr "Statut"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_res_config_settings__cookie_log_ip
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_website__cookie_log_ip
+msgid ""
+"Store a salted hash of the truncated visitor IP with each record. No "
+"readable address is kept."
+msgstr "Conserver avec chaque enregistrement une empreinte salée de l'IP tronquée du visiteur. Aucune adresse lisible n'est conservée."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_res_config_settings__cookie_log_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_website__cookie_log_consent
+msgid ""
+"Store every decision so consent can be demonstrated, as GDPR Art. 7(1) "
+"requires."
+msgstr "Conserver chaque décision afin de pouvoir démontrer le consentement, comme l'exige l'art. 7, § 1 du RGPD."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_odoo_webclient_menus
+msgid "Stores a copy of the menu so screens open without fetching it again."
+msgstr "Conserve une copie du menu afin que les écrans s'ouvrent sans le recharger."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.res_config_settings_view_form
+msgid ""
+"Stores a salted hash of the truncated address with each record. No readable "
+"IP is kept."
+msgstr "Conserve avec chaque enregistrement une empreinte salée de l'adresse tronquée. Aucune IP lisible n'est conservée."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_muk_cookie_consent
+msgid ""
+"Stores the cookie choice you made here, so you are not asked again on every "
+"page."
+msgstr "Conserve le choix de cookies effectué ici, afin de ne pas vous solliciter sur chaque page."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_category__essential
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_category_search
+msgid "Strictly Necessary"
+msgstr "Strictement nécessaires"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.category,name:muk_website_cookies_consent.category_essential
+msgid "Strictly necessary"
+msgstr "Strictement nécessaires"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_category__essential
+msgid ""
+"Strictly necessary purposes need no consent, so their toggle is locked on. "
+"Everything else must be granted by the visitor."
+msgstr "Les finalités strictement nécessaires ne requièrent pas de consentement : leur interrupteur reste verrouillé sur activé. Tout le reste doit être accordé par le visiteur."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_res_config_settings__cookie_blocking
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_website__cookie_blocking
+msgid ""
+"Strip scripts and embeds belonging to a service whose purpose the visitor "
+"has not granted, and replace embeds with a placeholder."
+msgstr "Retirer les scripts et contenus intégrés d'un service dont le visiteur n'a pas accordé la finalité, et remplacer les contenus intégrés par un espace réservé."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.res_config_settings_view_form
+msgid ""
+"Strip scripts and embeds of a service until its purpose is granted, and show"
+" a placeholder in place of the embed."
+msgstr "Retirer les scripts et contenus intégrés d'un service jusqu'à ce que sa finalité soit accordée, et afficher un espace réservé à la place du contenu intégré."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.geo.rule,source_note:muk_website_cookies_consent.geo_rule_de
+msgid ""
+"TDDDG §25. No binding figure exists; 6 to 12 months is the accepted "
+"practitioner range, and the conservative end of it is used."
+msgstr "TDDDG § 25. Aucune valeur contraignante n'existe ; 6 à 12 mois constituent la fourchette admise en pratique, et sa borne prudente est retenue."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.geo.rule,source_note:muk_website_cookies_consent.geo_rule_at
+msgid ""
+"TKG 2021 §165. No re-ask interval is published by the DSB, so the "
+"conservative EU baseline of six months is used."
+msgstr "TKG 2021 § 165. La DSB ne publie aucun intervalle avant de redemander ; la référence prudente de six mois retenue au niveau de l'UE est donc utilisée."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_service__technical_name
+msgid "Technical Name"
+msgstr "Nom technique"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_category__code
+msgid "Technical identifier used in the consent cookie and in markup."
+msgstr "Identifiant technique utilisé dans le cookie de consentement et dans le balisage."
+
+#. module: muk_website_cookies_consent
+#. odoo-python
+#: code:addons/muk_website_cookies_consent/models/category.py:0
+msgid ""
+"The code \"%(code)s\" is reserved for the strictly necessary purpose and "
+"cannot be used for another one."
+msgstr "Le code « %(code)s » est réservé à la finalité strictement nécessaire et ne peut pas être utilisé pour une autre."
+
+#. module: muk_website_cookies_consent
+#. odoo-python
+#: code:addons/muk_website_cookies_consent/models/category.py:0
+msgid ""
+"The code \"%(code)s\" may only contain lowercase letters, digits and "
+"underscores."
+msgstr "Le code « %(code)s » ne peut contenir que des lettres minuscules, des chiffres et des traits de soulignement."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_service__provider
+msgid "The company that receives the data, named in the cookie policy."
+msgstr "La société qui reçoit les données, nommée dans la politique en matière de cookies."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_observation__name
+msgid "The cookie name, storage key or host as the browser reported it."
+msgstr "Le nom du cookie, la clé de stockage ou l'hôte tels que le navigateur les a signalés."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.actions.act_window,help:muk_website_cookies_consent.action_cookie_geo_rule
+msgid ""
+"The first matching rule decides how long a visitor's choice is relied on. "
+"Put specific countries above the regional catch-alls."
+msgstr "La première règle correspondante détermine la durée de validité du choix du visiteur. Placez les pays précis au-dessus des règles régionales par défaut."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_geo_rule__sequence
+msgid ""
+"The first matching rule wins, so put specific regions above catch-alls."
+msgstr "C'est la première règle correspondante qui s'applique : placez les régions précises au-dessus des règles par défaut."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__lang_code
+msgid "The language the banner was shown in."
+msgstr "La langue dans laquelle la bannière a été affichée."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,necessity_justification:muk_website_cookies_consent.cookie_odoo_presence
+msgid ""
+"The messaging and session-timeout services need to know whether you are "
+"still there. It stores a timestamp of your last interaction, which is why it"
+" is disclosed rather than treated as invisible plumbing."
+msgstr "Les services de messagerie et d'expiration de session doivent savoir si vous êtes toujours présent. Un horodatage de votre dernière interaction est conservé : c'est pourquoi il est déclaré plutôt que traité comme une mécanique invisible."
+
+#. module: muk_website_cookies_consent
+#. odoo-python
+#: code:addons/muk_website_cookies_consent/models/category.py:0
+msgid ""
+"The purpose \"%(name)s\" cannot be pre-selected: consent given through a "
+"pre-ticked box is not valid consent. Only strictly necessary purposes may "
+"default to on."
+msgstr "La finalité « %(name)s » ne peut pas être présélectionnée : un consentement donné via une case pré-cochée n'est pas un consentement valable. Seules les finalités strictement nécessaires peuvent être activées par défaut."
+
+#. module: muk_website_cookies_consent
+#. odoo-python
+#: code:addons/muk_website_cookies_consent/models/service.py:0
+msgid ""
+"The technical name \"%(name)s\" may only contain lowercase letters, digits "
+"and underscores."
+msgstr "Le nom technique « %(name)s » ne peut contenir que des lettres minuscules, des chiffres et des traits de soulignement."
+
+#. module: muk_website_cookies_consent
+#. odoo-python
+#: code:addons/muk_website_cookies_consent/models/observation.py:0
+msgid ""
+"There is no \"Unclassified\" purpose to file \"%(name)s\" into. Recreate it,"
+" or classify the key by hand."
+msgstr "Il n'existe aucune finalité « Non classé » dans laquelle ranger « %(name)s ». Recréez-la ou classez la clé manuellement."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__muk_website_cookies_consent_observation__storage_type__host
+msgid "Third-party Host"
+msgstr "Hôte tiers"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_observation_search
+msgid "Third-party Hosts"
+msgstr "Hôtes tiers"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.service,placeholder_text:muk_website_cookies_consent.service_facebook
+msgid ""
+"This content is hosted by Facebook. Loading it lets Meta set cookies on your"
+" device."
+msgstr "Ce contenu est hébergé par Facebook. Son chargement permet à Meta de déposer des cookies sur votre appareil."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.service,placeholder_text:muk_website_cookies_consent.service_instagram
+msgid ""
+"This content is hosted by Instagram. Loading it lets Meta set cookies on "
+"your device."
+msgstr "Ce contenu est hébergé par Instagram. Son chargement permet à Meta de déposer des cookies sur votre appareil."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.service,placeholder_text:muk_website_cookies_consent.service_tiktok
+msgid ""
+"This content is hosted by TikTok. Loading it lets TikTok set cookies on your"
+" device."
+msgstr "Ce contenu est hébergé par TikTok. Son chargement permet à TikTok de déposer des cookies sur votre appareil."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.service,placeholder_text:muk_website_cookies_consent.service_x
+msgid ""
+"This content is hosted by X. Loading it lets X set cookies on your device."
+msgstr "Ce contenu est hébergé par X. Son chargement permet à X de déposer des cookies sur votre appareil."
+
+#. module: muk_website_cookies_consent
+#. odoo-javascript
+#: code:addons/muk_website_cookies_consent/static/src/interactions/cookies_approval/cookies_approval.xml:0
+msgid "This content is provided by"
+msgstr "Ce contenu est fourni par"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.cookie_policy
+msgid "This declaration reflects version"
+msgstr "Cette déclaration correspond à la version"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.constraint,message:muk_website_cookies_consent.constraint_muk_website_cookies_consent_observation_key_uniq
+msgid "This key has already been captured for this website."
+msgstr "Cette clé a déjà été capturée pour ce site web."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.service,placeholder_text:muk_website_cookies_consent.service_google_maps
+msgid ""
+"This map is served by Google Maps. Loading it lets Google set cookies on "
+"your device."
+msgstr "Cette carte est fournie par Google Maps. Son chargement permet à Google de déposer des cookies sur votre appareil."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.service,placeholder_text:muk_website_cookies_consent.service_dailymotion
+msgid ""
+"This video is hosted by Dailymotion. Playing it lets Dailymotion set cookies"
+" on your device."
+msgstr "Cette vidéo est hébergée par Dailymotion. Sa lecture permet à Dailymotion de déposer des cookies sur votre appareil."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.service,placeholder_text:muk_website_cookies_consent.service_vimeo
+msgid ""
+"This video is hosted by Vimeo. Playing it lets Vimeo set cookies on your "
+"device."
+msgstr "Cette vidéo est hébergée par Vimeo. Sa lecture permet à Vimeo de déposer des cookies sur votre appareil."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.service,placeholder_text:muk_website_cookies_consent.service_youtube
+msgid ""
+"This video is hosted by YouTube. Playing it lets Google set cookies on your "
+"device."
+msgstr "Cette vidéo est hébergée par YouTube. Sa lecture permet à Google de déposer des cookies sur votre appareil."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_cids
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_frontend_lang
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_muk_cookie_consent
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_odoo_appointment
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_odoo_cart_quantity
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_odoo_color_scheme
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_odoo_current_action
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_odoo_current_lang
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_odoo_current_state
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_odoo_forum_welcome
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_odoo_last_connected_user
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_odoo_livechat
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_odoo_menu_id
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_odoo_multi_tab
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_odoo_multi_tab_service
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_odoo_presence
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_odoo_push
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_odoo_pwa_state
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_odoo_reveal_rules
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_odoo_survey_answer
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_odoo_webclient_menus
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_session_id
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_tz
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_utm_campaign
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_utm_medium
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_utm_source
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_website_cookies_bar
+msgid "This website"
+msgstr "Ce site web"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.service,name:muk_website_cookies_consent.service_tiktok
+msgid "TikTok"
+msgstr "TikTok"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.service,provider:muk_website_cookies_consent.service_tiktok
+msgid "TikTok Technology Limited"
+msgstr "TikTok Technology Limited"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_observation__hit_count
+msgid "Times Seen"
+msgstr "Nombre de détections"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__muk_website_cookies_consent_observation__state__new
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_observation_search
+msgid "To Review"
+msgstr "À examiner"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_consent_search
+msgid "Today"
+msgstr "Aujourd'hui"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__muk_website_cookies_consent_cookie__storage_type__pixel
+msgid "Tracking Pixel"
+msgstr "Pixel de suivi"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_res_config_settings__cookie_respect_gpc
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_website__cookie_respect_gpc
+msgid ""
+"Treat a Sec-GPC request header as a refusal of every optional purpose. Its "
+"absence never counts as consent."
+msgstr "Traiter un en-tête de requête Sec-GPC comme un refus de toutes les finalités facultatives. Son absence ne vaut jamais consentement."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.res_config_settings_view_form
+msgid ""
+"Treat a Sec-GPC request header as a refusal of everything optional. Its "
+"absence never counts as consent."
+msgstr "Traiter un en-tête de requête Sec-GPC comme un refus de tout ce qui est facultatif. Son absence ne vaut jamais consentement."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.service,provider:muk_website_cookies_consent.service_x
+msgid "Twitter International Unlimited Company"
+msgstr "Twitter International Unlimited Company"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_cookie__storage_type
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_observation__storage_type
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.cookie_policy
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_observation_search
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_search
+msgid "Type"
+msgstr "Type"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.geo.rule,source_note:muk_website_cookies_consent.geo_rule_uk_ch
+msgid ""
+"UK PECR expects a prior, informed choice. Switzerland does not: Art. 45c TCA"
+" asks for notice and a way to refuse, so asking first is stricter than the "
+"law requires."
+msgstr "Le PECR britannique impose un choix préalable et éclairé. La Suisse non : l'art. 45c LTC exige une information et une possibilité de refus ; demander au préalable est donc plus strict que ce que la loi requiert."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.category,name:muk_website_cookies_consent.category_unclassified
+msgid "Unclassified"
+msgstr "Non classé"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.geo.rule,name:muk_website_cookies_consent.geo_rule_uk_ch
+msgid "United Kingdom / Switzerland"
+msgstr "Royaume-Uni / Suisse"
+
+#. module: muk_website_cookies_consent
+#. odoo-python
+#: code:addons/muk_website_cookies_consent/models/category.py:0
+msgid ""
+"Unknown Google Consent Mode signals: %(unknown)s.\n"
+"Valid signals are: %(valid)s."
+msgstr "Signaux Google Consent Mode inconnus : %(unknown)s.\nLes signaux valides sont : %(valid)s."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_odoo_appointment
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_odoo_last_connected_user
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_odoo_multi_tab
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_odoo_multi_tab_service
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_odoo_presence
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_odoo_push
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_odoo_pwa_state
+msgid "Until the browser storage is cleared"
+msgstr "Jusqu'à ce que le stockage du navigateur soit vidé"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_odoo_webclient_menus
+msgid "Until the menu changes"
+msgstr "Jusqu'à ce que le menu change"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,duration:muk_website_cookies_consent.cookie_odoo_livechat
+msgid "Up to 7 days"
+msgstr "Jusqu'à 7 jours"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,description:muk_website_cookies_consent.cookie_facebook_fr
+msgid "Used by Meta to deliver and measure advertising."
+msgstr "Utilisé par Meta pour diffuser et mesurer la publicité."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.category,description:muk_website_cookies_consent.category_marketing
+msgid ""
+"Used to measure advertising and to show you relevant adverts on this and "
+"other sites. This is the category that involves sharing data with "
+"advertising partners."
+msgstr "Servent à mesurer la publicité et à vous présenter des annonces pertinentes sur ce site et sur d'autres. C'est la catégorie qui implique un partage de données avec des partenaires publicitaires."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__user_agent
+msgid "User Agent"
+msgstr "Agent utilisateur"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.service,name:muk_website_cookies_consent.service_vimeo
+msgid "Vimeo"
+msgstr "Vimeo"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,provider:muk_website_cookies_consent.cookie_vimeo_player
+#: model:muk_website_cookies_consent.service,provider:muk_website_cookies_consent.service_vimeo
+msgid "Vimeo.com, Inc."
+msgstr "Vimeo.com, Inc."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__visitor_id
+msgid "Visitor"
+msgstr "Visiteur"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.actions.act_window,help:muk_website_cookies_consent.action_cookie_category
+msgid ""
+"Visitors decide per purpose. Only strictly necessary purposes may be on by "
+"default."
+msgstr "Les visiteurs décident finalité par finalité. Seules les finalités strictement nécessaires peuvent être activées par défaut."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.notice_copy
+msgid "We ask before we track you"
+msgstr "Nous vous demandons avant de vous suivre"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.cookie_policy
+msgid ""
+"We do not currently act on Do Not Track or Global Privacy Control signals. "
+"Please use the choices above instead."
+msgstr "Nous ne donnons pas suite pour l'instant aux signaux Do Not Track ou Global Privacy Control.\n\t\t\t\tVeuillez utiliser les choix ci-dessus à la place."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.cookie_policy
+msgid ""
+"We honour the Global Privacy Control signal. If your browser or an extension"
+" sends it, we treat that as a refusal of every optional purpose and load "
+"nothing that is not strictly necessary, whatever you may have chosen here "
+"before."
+msgstr "Nous respectons le signal Global Privacy Control. Si votre navigateur ou une\n\t\t\t\textension l'envoie, nous le traitons comme un refus de toutes les finalités facultatives\n\t\t\t\tet ne chargeons rien qui ne soit strictement nécessaire, quels qu'aient été vos choix ici auparavant."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model,name:muk_website_cookies_consent.model_website
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_category__website_id
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__website_id
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_cookie__website_id
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_geo_rule__website_id
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_observation__website_id
+#: model:ir.model.fields,field_description:muk_website_cookies_consent.field_muk_website_cookies_consent_service__website_id
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_category_search
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_observation_search
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_service_search
+msgid "Website"
+msgstr "Site web"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_consent_form
+msgid "What Was Shown"
+msgstr "Ce qui a été affiché"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_cookie__description
+msgid "What this cookie is for, shown verbatim in the cookie policy."
+msgstr "À quoi sert ce cookie, affiché tel quel dans la politique en matière de cookies."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_geo_rule_form
+msgid "Where The Retention Figure Comes From"
+msgstr "Origine de la durée de conservation"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.cookie_policy
+msgid ""
+"Where a page embeds content from one of these services, we replace it with a"
+" notice instead of loading it. You can allow an individual embed at the "
+"point where it appears, without changing your other choices."
+msgstr "Lorsqu'une page intègre du contenu de l'un de ces services, nous le remplaçons\n\t\t\t\t\tpar un avis au lieu de le charger. Vous pouvez autoriser un contenu précis là\n\t\t\t\t\toù il apparaît, sans modifier vos autres choix."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_res_config_settings__cookie_policy_url
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_website__cookie_policy_url
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.res_config_settings_view_form
+msgid ""
+"Where the banner sends visitors for the full policy. Leave it empty to use "
+"the page Odoo publishes at /cookie-policy, which lists your declarations on "
+"its own."
+msgstr "Où la bannière envoie les visiteurs pour la politique complète. Laissez vide pour utiliser la page qu'Odoo publie à l'adresse /cookie-policy, qui liste vos déclarations d'elle-même."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_geo_rule__source_note
+msgid ""
+"Where the retention figure comes from. Shown next to the setting so nobody "
+"mistakes a practitioner convention for a statutory rule."
+msgstr "Origine de la durée de conservation. Affichée à côté du réglage afin que nul ne prenne un usage professionnel pour une règle légale."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_consent__consent_mode_pushed
+msgid "Whether the decision was pushed to Google Consent Mode."
+msgstr "Indique si la décision a été transmise à Google Consent Mode."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_form
+msgid "Why Is This Strictly Necessary?"
+msgstr "Pourquoi est-ce strictement nécessaire ?"
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields,help:muk_website_cookies_consent.field_muk_website_cookies_consent_cookie__necessity_justification
+msgid ""
+"Why this is strictly necessary. The controller carries the burden of proving"
+" each such classification, so state the reason here."
+msgstr "Pourquoi ceci est strictement nécessaire. Le responsable du traitement supporte la charge de prouver chacune de ces qualifications : indiquez donc la raison ici."
+
+#. module: muk_website_cookies_consent
+#: model:ir.model.fields.selection,name:muk_website_cookies_consent.selection__muk_website_cookies_consent_consent__action__withdraw
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_consent_search
+msgid "Withdrawn"
+msgstr "Retiré"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,necessity_justification:muk_website_cookies_consent.cookie_session_id
+msgid ""
+"Without a session identifier the server cannot associate requests with each "
+"other, so signing in, checking out and any form submission become "
+"impossible. This is the classic example of a cookie strictly necessary for a"
+" service the user requested."
+msgstr "Sans identifiant de session, le serveur ne peut pas relier les requêtes entre elles : la connexion, le paiement et l'envoi de tout formulaire deviennent impossibles. C'est l'exemple type du cookie strictement nécessaire à un service demandé par l'utilisateur."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,necessity_justification:muk_website_cookies_consent.cookie_website_cookies_bar
+msgid ""
+"Written alongside the record above so that the rest of Odoo honours the same"
+" decision. Serves no purpose other than carrying the consent state."
+msgstr "Écrit à côté de l'enregistrement ci-dessus afin que le reste d'Odoo respecte la même décision. Il ne sert qu'à transporter l'état du consentement."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,necessity_justification:muk_website_cookies_consent.cookie_odoo_last_connected_user
+msgid ""
+"Written by the sign-in screen for the convenience of the person using this "
+"browser. It is read only when signing in and is never sent anywhere, so it "
+"serves the service asked for and nothing else."
+msgstr "Écrit par l'écran de connexion pour le confort de la personne qui utilise ce navigateur. Il n'est lu qu'à la connexion et n'est envoyé nulle part : il sert donc le service demandé et rien d'autre."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,necessity_justification:muk_website_cookies_consent.cookie_odoo_survey_answer
+msgid ""
+"Written only once you begin a survey, and only to return you to your own "
+"answers. The name carries the survey it belongs to, so it is matched by "
+"pattern rather than by name."
+msgstr "Écrit seulement lorsque vous commencez une enquête, et uniquement pour vous ramener à vos propres réponses. Le nom porte l'enquête à laquelle il appartient, il est donc reconnu par motif plutôt que par nom."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,necessity_justification:muk_website_cookies_consent.cookie_odoo_livechat
+msgid ""
+"Written when a chat starts, so a reload does not drop the conversation. It "
+"holds a conversation token rather than anything about you, and refusing it "
+"costs only the chat window."
+msgstr "Écrit au démarrage d'une discussion, afin qu'un rechargement n'interrompe pas la conversation. Il contient un jeton de conversation et rien qui vous concerne ; le refuser ne coûte que la fenêtre de discussion."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.cookie,necessity_justification:muk_website_cookies_consent.cookie_odoo_color_scheme
+msgid ""
+"Written while the interface loads, from your saved preference or, failing "
+"that, from the appearance your system asks for. It carries no identifier and"
+" decides only how the page you requested is drawn."
+msgstr "Écrit au chargement de l'interface, à partir de votre préférence enregistrée ou, à défaut, de l'apparence demandée par votre système. Il ne contient aucun identifiant et détermine seulement la façon dont la page demandée est affichée."
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.service,name:muk_website_cookies_consent.service_x
+msgid "X (Twitter)"
+msgstr "X (Twitter)"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.service,name:muk_website_cookies_consent.service_youtube
+msgid "YouTube"
+msgstr "YouTube"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.cookies_bar
+msgid "Your cookie choices"
+msgstr "Vos choix de cookies"
+
+#. module: muk_website_cookies_consent
+#. odoo-javascript
+#: code:addons/muk_website_cookies_consent/static/src/interactions/cookies_approval/cookies_approval.xml:0
+msgid "and is not loaded until you allow it."
+msgstr "et n'est pas chargé tant que vous ne l'autorisez pas."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_form
+msgid "e.g. 2 years"
+msgstr "par ex. 2 ans"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_geo_rule_form
+msgid "e.g. Austria"
+msgstr "par ex. Autriche"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_service_form
+msgid "e.g. Google Ireland Limited"
+msgstr "par ex. Google Ireland Limited"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_category_form
+msgid "e.g. Statistics"
+msgstr "par ex. Statistiques"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_service_form
+msgid "e.g. YouTube"
+msgstr "par ex. YouTube"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_form
+msgid "e.g. ^_ga"
+msgstr "par ex. ^_ga"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_form
+msgid "e.g. _ga"
+msgstr "par ex. _ga"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_category_form
+msgid "e.g. analytics"
+msgstr "par ex. analytics"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_category_form
+msgid "e.g. analytics_storage"
+msgstr "par ex. analytics_storage"
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_service_form
+msgid "e.g. youtube"
+msgstr "par ex. youtube"
+
+#. module: muk_website_cookies_consent
+#: model:muk_website_cookies_consent.geo.rule,source_note:muk_website_cookies_consent.geo_rule_eu
+msgid ""
+"ePrivacy Directive Art. 5(3) with the GDPR consent standard. Six months is "
+"the conservative baseline."
+msgstr "Art. 5, § 3 de la directive ePrivacy, combiné à la norme de consentement du RGPD. Six mois constituent la référence prudente."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.cookie_policy
+msgid "of our cookie policy."
+msgstr "de notre politique en matière de cookies."
+
+#. module: muk_website_cookies_consent
+#: model_terms:ir.ui.view,arch_db:muk_website_cookies_consent.view_cookie_service_form
+msgid ""
+"youtube.com\n"
+"youtu.be\n"
+"google.com/maps"
+msgstr "youtube.com\nyoutu.be\ngoogle.com/maps"

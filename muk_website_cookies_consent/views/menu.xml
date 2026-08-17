@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<menuitem
+		id="main_menu_cookies"
+		name="Cookie Consent"
+		parent="website.menu_website_global_configuration"
+		sequence="110"
+	/>
+
+	<menuitem
+		id="menu_cookie_category"
+		name="Purposes"
+		parent="main_menu_cookies"
+		action="action_cookie_category"
+		sequence="10"
+	/>
+
+	<menuitem
+		id="menu_cookie_service"
+		name="Services"
+		parent="main_menu_cookies"
+		action="action_cookie_service"
+		sequence="20"
+	/>
+
+	<menuitem
+		id="menu_cookie_observation"
+		name="Captured"
+		parent="main_menu_cookies"
+		action="action_cookie_observation"
+		sequence="30"
+	/>
+
+	<menuitem
+		id="menu_cookie"
+		name="Declarations"
+		parent="main_menu_cookies"
+		action="action_cookie"
+		sequence="40"
+	/>
+
+	<menuitem
+		id="menu_cookie_geo_rule"
+		name="Region Rules"
+		parent="main_menu_cookies"
+		action="action_cookie_geo_rule"
+		sequence="50"
+	/>
+
+	<menuitem
+		id="menu_cookie_consent"
+		name="Consent Logs"
+		parent="website.menu_reporting"
+		action="action_cookie_consent"
+		sequence="60"
+		groups="website.group_website_designer"
+	/>
+
+</odoo>

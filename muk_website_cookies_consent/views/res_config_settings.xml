@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="res_config_settings_view_form" model="ir.ui.view">
+		<field name="name">res.config.settings.view.form.inherit.cookies.consent</field>
+		<field name="model">res.config.settings</field>
+		<field name="inherit_id" ref="website.res_config_settings_view_form"/>
+		<field name="arch" type="xml">
+			<xpath expr="//block[@id='website_settings']" position="after">
+				<block
+					title="Cookie Consent"
+					id="website_cookie_consent_settings"
+					invisible="not website_id or not website_cookies_bar"
+				>
+					<setting
+						id="cookie_blocking_setting"
+						string="Block Before Consent"
+						help="Strip scripts and embeds of a service until its purpose is granted, and show a placeholder in place of the embed."
+					>
+						<field name="cookie_blocking"/>
+					</setting>
+					<setting
+						id="muk_cookie_log_setting"
+						string="Consent Proof"
+						help="Record every decision together with the disclosure shown, so consent can be demonstrated as GDPR Art. 7(1) requires."
+					>
+						<field name="cookie_log_consent"/>
+					</setting>
+					<setting
+						id="muk_cookie_log_ip_setting"
+						string="Record IP Fingerprint"
+						help="Stores a salted hash of the truncated address with each record. No readable IP is kept."
+						invisible="not cookie_log_consent"
+					>
+						<field name="cookie_log_ip"/>
+					</setting>
+					<setting
+						id="cookie_policy_version_setting"
+						string="Policy Version"
+						help="Raising this asks every visitor again. Adding a purpose, a service or a cookie already does that on its own."
+					>
+						<field name="cookie_policy_version"/>
+					</setting>
+					<setting
+						id="muk_cookie_policy_url_setting"
+						string="Policy Link"
+						help="Where the banner sends visitors for the full policy. Leave it empty to use the page Odoo publishes at /cookie-policy, which lists your declarations on its own."
+					>
+						<field name="cookie_policy_url" placeholder="/cookie-policy"/>
+					</setting>
+					<setting
+						id="cookie_consent_mode_setting"
+						string="Google Consent Mode"
+						help="Basic withholds Google tags until a purpose they serve is granted, so a refusal keeps them unloaded. Advanced loads them immediately and allows cookieless pings, which recovers conversion modelling but sends data before consent."
+					>
+						<field name="cookie_consent_mode"/>
+					</setting>
+					<setting
+						id="muk_cookie_gpc_setting"
+						string="Global Privacy Control"
+						help="Treat a Sec-GPC request header as a refusal of everything optional. Its absence never counts as consent."
+					>
+						<field name="cookie_respect_gpc"/>
+					</setting>
+					<setting
+						id="muk_cookie_gpc_json_setting"
+						string="Publish /.well-known/gpc.json"
+						help="Declares in public that the signal is honoured. Only publish it once you have verified that it is."
+						invisible="not cookie_respect_gpc"
+					>
+						<field name="cookie_publish_gpc_json"/>
+					</setting>
+				</block>
+			</xpath>
+		</field>
+	</record>
+
+</odoo>

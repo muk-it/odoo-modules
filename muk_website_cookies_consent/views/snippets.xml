@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<template
+		id="cookies_bar_option"
+		inherit_id="website.snippet_options"
+		name="Cookie Consent Bar Options"
+	>
+		<xpath expr="." position="inside">
+			<div
+				data-js="MukCookiesBar"
+				data-selector="#website_cookies_bar"
+				data-no-check="true"
+			>
+				<we-select string="Layout" data-no-preview="true">
+					<we-button data-select-cookie-layout="bar_bottom">Bar at the bottom</we-button>
+					<we-button data-select-cookie-layout="bar_top">Bar at the top</we-button>
+					<we-button data-select-cookie-layout="box_left">Box, bottom left</we-button>
+					<we-button data-select-cookie-layout="box_right">Box, bottom right</we-button>
+					<we-button data-select-cookie-layout="center">Centred dialog</we-button>
+				</we-select>
+				<we-select string="Density" data-no-preview="true">
+					<we-button data-select-cookie-density="full">Full</we-button>
+					<we-button data-select-cookie-density="compact">Compact</we-button>
+				</we-select>
+				<we-checkbox
+					string="Footer Link"
+					data-toggle-cookie-footer="true"
+					data-no-preview="true"
+				/>
+				<we-select string="Floating Button" data-no-preview="true">
+					<we-button data-select-cookie-float="none">None</we-button>
+					<we-button data-select-cookie-float="left">Bottom left</we-button>
+					<we-button data-select-cookie-float="right">Bottom right</we-button>
+				</we-select>
+			</div>
+		</xpath>
+	</template>
+
+</odoo>
