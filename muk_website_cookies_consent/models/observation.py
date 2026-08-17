@@ -12,11 +12,12 @@ from odoo.addons.muk_website_cookies_consent.tools.constants import (
 
 
 class CookieObservation(models.Model):
-    """A cookie, storage key or host seen on the site but never declared.
+    """A cookie, storage key or host a scan found on the site.
 
-    Outside the registry mixin on purpose: a capture must not change the
-    registry fingerprint, or an editor loading a page would re-ask the whole
-    audience for consent.
+    Everything found is filed, declared or not, so the list answers what the
+    site actually does and not merely what is still missing. Outside the
+    registry mixin on purpose: filing a finding must not change the registry
+    fingerprint, or a scan would re-ask the whole audience for consent.
     """
 
     _name = 'muk_website_cookies_consent.observation'
@@ -133,14 +134,15 @@ class CookieObservation(models.Model):
 
     @api.model
     def _record_keys(self, website: models.Model, keys: list) -> models.Model:
-        """File the reported keys the registry does not cover.
+        """File every reported key, declared or not.
 
-        A key that has since been declared drops any capture still waiting for
-        it: the row asserts that nothing covers the key, so once something
-        does, leaving it would put a false entry on the review list.
+        The state says whether the registry covers the key, so the list doubles
+        as the evidence that a declaration matches something real. Only an
+        ignored row keeps its state: somebody decided it needs no purpose, and
+        a further sighting is not new information.
 
-        :param keys: dicts of name, type and url, as sent by the browser
-        :return: the captures created or touched
+        :param keys: dicts of name, type and url, as the scan found them
+        :return: the findings created or seen again
         """
         valid_types = dict(OBSERVATION_TYPES)
         found = self.browse()
@@ -151,29 +153,14 @@ class CookieObservation(models.Model):
             storage_type = str(key.get('type') or '')
             if not name or storage_type not in valid_types:
                 continue
-            if self._is_declared(website, name, storage_type):
-                self._drop_settled(website, name, storage_type)
-                continue
-            found |= self._touch(website, name, storage_type, key.get('url'))
+            found |= self._touch(
+                website,
+                name,
+                storage_type,
+                key.get('url'),
+                self._is_declared(website, name, storage_type),
+            )
         return found
-
-    @api.model
-    def _drop_settled(
-        self, website: models.Model, name: str, storage_type: str
-    ) -> None:
-        """Remove a capture the registry has caught up with.
-
-        Only one still waiting to be reviewed: a capture that was declared or
-        ignored records a decision somebody took, which stays.
-        """
-        self.search(
-            [
-                ('name', '=', name),
-                ('storage_type', '=', storage_type),
-                ('website_id', '=', website.id),
-                ('state', '=', 'new'),
-            ]
-        ).unlink()
 
     @api.model
     def _touch(
@@ -182,8 +169,9 @@ class CookieObservation(models.Model):
         name: str,
         storage_type: str,
         url: str | None,
+        declared: bool,
     ) -> models.Model:
-        """Create a capture, or count another sighting of a known one."""
+        """Create a finding, or count another sighting of a known one."""
         existing = self.search(
             [
                 ('name', '=', name),
@@ -193,21 +181,44 @@ class CookieObservation(models.Model):
             limit=1,
         )
         if existing:
-            existing.write(
-                {
-                    'hit_count': existing.hit_count + 1,
-                    'last_seen': fields.Datetime.now(),
-                }
-            )
+            values = {
+                'hit_count': existing.hit_count + 1,
+                'last_seen': fields.Datetime.now(),
+            }
+            if existing.state != 'ignored':
+                values['state'] = 'declared' if declared else 'new'
+            existing.write(values)
             return existing
         return self.create(
             {
                 'name': name,
                 'storage_type': storage_type,
                 'sample_url': str(url or '')[:256] or False,
+                'state': 'declared' if declared else 'new',
                 'website_id': website.id,
             }
         )
+
+    @api.model
+    def _resync_states(self) -> None:
+        """Line the findings up with the registry as it stands now.
+
+        Declaring or withdrawing a cookie changes what is covered, and a list
+        that still shows the old answer sends somebody to declare a key twice.
+        Ignored rows are left alone: they record a decision, not a state of the
+        registry.
+        """
+        findings = self.sudo().search([('state', '!=', 'ignored')])
+        for finding in findings:
+            state = (
+                'declared'
+                if self._is_declared(
+                    finding.website_id, finding.name, finding.storage_type
+                )
+                else 'new'
+            )
+            if finding.state != state:
+                finding.state = state
 
     # ----------------------------------------------------------
     # Actions
@@ -247,14 +258,25 @@ class CookieObservation(models.Model):
         )
 
     def action_ignore(self) -> None:
-        """Mark the captures as reviewed and not worth declaring."""
+        """Mark the findings as reviewed and not worth declaring."""
         self.write({'state': 'ignored'})
 
     def action_reopen(self) -> None:
-        """Put the captures back on the review list."""
+        """Take back an ignore, leaving the registry to say what the state is."""
         self.filtered(lambda o: not o.cookie_id and not o.service_id).write(
             {'state': 'new'}
         )
+        self._resync_states()
+
+    @api.model
+    def action_scan_now(self) -> dict:
+        """Scan every website that has the consent manager switched on."""
+        websites = (
+            self.env['website']
+            .search([])
+            .filtered(lambda website: website._is_cookie_consent_active())
+        )
+        return websites.action_cookie_scan()
 
     # ----------------------------------------------------------
     # Functions

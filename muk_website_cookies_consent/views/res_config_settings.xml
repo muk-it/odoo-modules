@@ -144,6 +144,43 @@
 							</div>
 						</div>
 					</div>
+					<div
+						class="col-12 col-lg-6 o_setting_box"
+						id="muk_cookie_scan_setting"
+					>
+						<div class="o_setting_right_pane">
+							<label for="cookie_scan_pages" string="Website Scan"/>
+							<div class="text-muted">
+								Once a week the site fetches its own pages and lists the cookies they set, the storage keys their scripts write and the third-party hosts they load. Anything no declaration covers is put up for review.
+							</div>
+							<div class="content-group mt-2">
+								<div class="row">
+									<label
+										for="cookie_scan_pages"
+										class="col-lg-4 o_light_label"
+										string="Pages per Scan"
+									/>
+									<field name="cookie_scan_pages" class="col-lg-2"/>
+								</div>
+							</div>
+							<div class="mt-2">
+								<button
+									name="action_cookie_scan"
+									type="object"
+									string="Scan Now"
+									class="btn-link ps-0"
+									icon="fa-refresh"
+								/>
+								<span
+									class="text-muted"
+									attrs="{'invisible': [('cookie_scan_date', '=', False)]}"
+								>
+									Last scan
+									<field name="cookie_scan_date" readonly="1"/>
+								</span>
+							</div>
+						</div>
+					</div>
 				</div>
 			</xpath>
 		</field>

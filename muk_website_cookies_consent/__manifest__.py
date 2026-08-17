@@ -1,6 +1,6 @@
 {
     'name': 'MuK Cookie Consent',
-    'summary': 'Granular cookie consent with per-service blocking and consent proof',
+    'summary': 'Granular cookie consent manager with per-service blocking and consent proof',
     'description': """
         Replaces the built-in cookies bar with a real consent manager.
         Visitors consent per purpose instead of all-or-nothing, every
@@ -8,7 +8,7 @@
         blocked per service until their category is granted, and Google
         Consent Mode v2 is signalled automatically.
     """,
-    'version': '16.0.1.0.0',
+    'version': '16.0.1.1.0',
     'category': 'Website/Website',
     'license': 'LGPL-3',
     'author': 'MuK IT',

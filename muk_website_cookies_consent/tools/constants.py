@@ -18,6 +18,11 @@ OBSERVATION_STORAGE_TYPES = ('http', 'local', 'session')
 
 OBSERVATION_BATCH_LIMIT = 200
 
+SCAN_PAGE_LIMIT = 100
+SCAN_TIMEOUT = 20
+SCAN_USER_AGENT = 'MukCookieScanner/1.0 (+http://www.mukit.at)'
+SCAN_LOCK_NAMESPACE = 8619
+
 CONSENT_MODE_SIGNALS = (
     'ad_storage',
     'ad_user_data',

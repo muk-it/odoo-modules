@@ -2,20 +2,24 @@ from __future__ import annotations
 
 import hashlib
 import json
-from urllib.parse import urlsplit
+import logging
+from urllib.parse import quote, urljoin, urlsplit
 
+import requests
 from lxml import etree, html
 from markupsafe import Markup
 
-from odoo import api, fields, models, tools
-from odoo.exceptions import MissingError
+from odoo import _, api, fields, models, tools
+from odoo.exceptions import MissingError, UserError
 from odoo.http import request
 
 from odoo.addons.muk_website_cookies_consent.tools.consent import (
+    build_state,
     granted_categories,
     granted_services,
     is_current,
     parse_state,
+    serialise_state,
 )
 from odoo.addons.muk_website_cookies_consent.tools.constants import (
     BLOCKED_IFRAME_CLASSES,
@@ -28,8 +32,18 @@ from odoo.addons.muk_website_cookies_consent.tools.constants import (
     DEFAULT_LIFETIME_DAYS,
     ESSENTIAL_CODE,
     REGISTRY_HASH_LENGTH,
+    SCAN_LOCK_NAMESPACE,
+    SCAN_PAGE_LIMIT,
+    SCAN_TIMEOUT,
+    SCAN_USER_AGENT,
     UNCLASSIFIED_CODE,
 )
+from odoo.addons.muk_website_cookies_consent.tools.scanner import (
+    extract_keys,
+    normalise_host,
+)
+
+_logger = logging.getLogger(__name__)
 
 
 class Website(models.Model):
@@ -164,6 +178,26 @@ class Website(models.Model):
             'empty to use the page Odoo publishes at /cookie-policy, which '
             'lists your declarations on its own.'
         ),
+    )
+
+    cookie_scan_pages = fields.Integer(
+        string='Pages per Scan',
+        help=(
+            'How many pages a scan fetches before it stops. The scan walks the '
+            'sitemap, so the most linked pages come first.'
+        ),
+        required=True,
+        default=SCAN_PAGE_LIMIT,
+    )
+
+    cookie_scan_date = fields.Datetime(
+        string='Last Scan',
+        readonly=True,
+    )
+
+    cookie_scan_count = fields.Integer(
+        string='Pages Scanned',
+        readonly=True,
     )
 
     # ----------------------------------------------------------
@@ -653,6 +687,46 @@ class Website(models.Model):
         return module.installed_version or ''
 
     # ----------------------------------------------------------
+    # Actions
+    # ----------------------------------------------------------
+
+    def action_cookie_scan(self) -> dict:
+        """Scan the site now and report what the crawl filed.
+
+        :raise UserError: when not one page of the site could be fetched
+        """
+        summary = {'pages': 0, 'keys': 0, 'failures': 0, 'running': 0}
+        for website in self:
+            result = website._scan_cookies()
+            for key, value in result.items():
+                summary[key] += value
+        if not summary['pages'] and summary['running']:
+            raise UserError(
+                _('A scan is already running. Its findings appear when it ends.')
+            )
+        if not summary['pages'] and summary['failures']:
+            raise UserError(
+                _(
+                    'The site could not be reached at %(url)s. A scan fetches '
+                    'your own pages over HTTP, so that address has to answer '
+                    'from the server Odoo runs on.',
+                    url=self[:1].get_base_url(),
+                )
+            )
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'type': 'success',
+                'message': _(
+                    '%(pages)s pages scanned, %(keys)s keys on record.',
+                    pages=summary['pages'],
+                    keys=summary['keys'],
+                ),
+            },
+        }
+
+    # ----------------------------------------------------------
     # ORM
     # ----------------------------------------------------------
 
@@ -828,3 +902,134 @@ class Website(models.Model):
             atts['data-muk-cookie-label'] = service.name
             if service.placeholder_text:
                 atts['data-muk-cookie-placeholder'] = service.placeholder_text
+
+    # ----------------------------------------------------------
+    # Scan
+    # ----------------------------------------------------------
+
+    def _get_cookie_scan_urls(self) -> list[str]:
+        """Return the pages a scan fetches, the home page first.
+
+        Taken from the sitemap core already builds, so a page reachable by a
+        visitor is a page the scan looks at, and a controller that publishes
+        itself (a shop, a blog) is covered without knowing about it here.
+        """
+        self.ensure_one()
+        limit = max(self.cookie_scan_pages, 1)
+        urls = ['/']
+        policy = self.cookie_policy_url or COOKIE_POLICY_PATH
+        if policy.startswith('/'):
+            urls.append(policy)
+        for page in self._enumerate_pages():
+            if len(urls) >= limit:
+                break
+            location = page.get('loc') or ''
+            if location.startswith('/') and location not in urls:
+                urls.append(location)
+        return urls[:limit]
+
+    def _get_cookie_scan_consent(self) -> str:
+        """Return a consent payload granting everything the site declares.
+
+        The scan asks what the site loads when nothing is held back, which is
+        the disclosure the registry has to match. Fetched as a refusing visitor
+        it would only ever see its own blocking at work.
+        """
+        self.ensure_one()
+        return serialise_state(
+            build_state(
+                categories=self._get_cookie_categories().mapped('code'),
+                services=self._get_cookie_services().mapped('technical_name'),
+                policy_version=self.cookie_policy_version,
+                registry_hash=self._get_cookie_registry_hash(),
+                lang_code=self.default_lang_id.code or '',
+            )
+        )
+
+    def _get_cookie_scan_hosts(self) -> set[str]:
+        """Return the hosts that are the site itself rather than a third party."""
+        self.ensure_one()
+        hosts = {normalise_host(urlsplit(self.get_base_url()).hostname or '')}
+        if self.domain:
+            hosts.add(normalise_host(urlsplit(self.domain).hostname or self.domain))
+        return {host for host in hosts if host}
+
+    def _lock_cookie_scan(self) -> bool:
+        """Take the scan lock for this website, or report it is already taken.
+
+        The weekly cron and a Scan Now click can land together, and two scans of
+        one website race each other to the same rows — which Postgres ends by
+        killing whichever commits second. An advisory lock keeps the second one
+        out without holding a row lock for the length of a crawl.
+        """
+        self.ensure_one()
+        self.env.cr.execute(
+            'SELECT pg_try_advisory_xact_lock(%s, %s)',
+            (SCAN_LOCK_NAMESPACE, self.id),
+        )
+        return self.env.cr.fetchone()[0]
+
+    def _fetch_cookie_scan_page(self, session, url: str) -> str:
+        """Return the markup of one page, or an empty string when it fails."""
+        try:
+            response = session.get(url, timeout=SCAN_TIMEOUT)
+            response.raise_for_status()
+        except requests.RequestException as error:
+            _logger.info('Cookie scan could not fetch %s: %s', url, error)
+            return ''
+        return response.text
+
+    def _scan_cookies(self) -> dict:
+        """Fetch the site's own pages and file what they set and load.
+
+        One session for the whole crawl, so a cookie set on the first page is
+        seen even when only that page sets it. What the browser holds in local
+        or session storage stays out of reach here; the pages' own scripts are
+        read for the keys they write instead.
+
+        :return: how many pages answered, how many keys are on record, how many
+            pages could not be fetched and whether a scan was already running
+        """
+        self.ensure_one()
+        idle = {'pages': 0, 'keys': 0, 'failures': 0, 'running': 0}
+        if not self._lock_cookie_scan():
+            _logger.info('A scan of %s is already running.', self.display_name)
+            return dict(idle, running=1)
+        observations = self.env['muk_website_cookies_consent.observation'].sudo()
+        base = self.get_base_url()
+        session = requests.Session()
+        session.headers['User-Agent'] = SCAN_USER_AGENT
+        session.cookies.set(
+            CONSENT_COOKIE,
+            quote(self._get_cookie_scan_consent()),
+            domain=urlsplit(base).hostname,
+        )
+        own_hosts = self._get_cookie_scan_hosts()
+        pages, failures, seen = 0, 0, observations.browse()
+        for url in self._get_cookie_scan_urls():
+            markup = self._fetch_cookie_scan_page(session, urljoin(base, url))
+            if not markup:
+                failures += 1
+                continue
+            pages += 1
+            keys = extract_keys(markup, own_hosts, url)
+            keys += [
+                {'name': cookie.name, 'type': 'http', 'url': url}
+                for cookie in session.cookies
+            ]
+            seen |= observations._record_keys(self, keys)
+        self.sudo().write(
+            {'cookie_scan_date': fields.Datetime.now(), 'cookie_scan_count': pages}
+        )
+        return {'pages': pages, 'keys': len(seen), 'failures': failures, 'running': 0}
+
+    # ----------------------------------------------------------
+    # Cron
+    # ----------------------------------------------------------
+
+    @api.model
+    def _cron_scan_cookies(self) -> None:
+        """Scan every website whose consent manager is switched on."""
+        for website in self.search([]):
+            if website._is_cookie_consent_active():
+                website._scan_cookies()
