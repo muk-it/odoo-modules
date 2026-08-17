@@ -41,10 +41,13 @@ class RateLimiterTestCase(common.TransactionCase):
 
     def test_window_expiry(self):
         for _ in range(3):
-            self.limiter.check('key', 3, 0.05)
-        self.assertFalse(self.limiter.check('key', 3, 0.05))
-        time.sleep(0.06)
-        self.assertTrue(self.limiter.check('key', 3, 0.05))
+            self.limiter.check('key', 3, 60)
+        self.assertFalse(self.limiter.check('key', 3, 60))
+        window = self.limiter._windows['key']
+        aged = time.monotonic() - 120
+        window.clear()
+        window.extend([aged] * 3)
+        self.assertTrue(self.limiter.check('key', 3, 60))
 
     def test_cleanup_removes_stale_keys(self):
         self.limiter.check('old', 10, 60)

@@ -9,7 +9,10 @@ from odoo.exceptions import AccessError, UserError
 
 from odoo.addons.muk_mcp.core.route import mcp_route
 from odoo.addons.muk_mcp.tools import common, protocol, version
-from odoo.addons.muk_mcp.tools.exception import MCPScopeDenied
+from odoo.addons.muk_mcp.tools.exception import (
+    MCPResourceNotFound,
+    MCPScopeDenied,
+)
 
 class MCPController(http.Controller):
 
@@ -302,7 +305,7 @@ class MCPController(http.Controller):
             'tools/list': self._handle_tools_list,
             'tools/call': self._handle_tools_call,
             'resources/list': lambda p: {'resources': []},
-            'resources/read': lambda p: {'contents': []},
+            'resources/read': self._handle_resources_read,
             'resources/templates/list': lambda p: {
                 'resourceTemplates': []
             },
@@ -387,6 +390,13 @@ class MCPController(http.Controller):
         start = time.time()
         try:
             result = handler(params)
+        except MCPResourceNotFound:
+            return protocol.make_jsonrpc_error(
+                common.JSONRPC_INVALID_PARAMS,
+                'Resource not found',
+                data={'uri': params.get('uri') or ''},
+                request_id=request_id,
+            )
         except Exception as exc:
             if not is_tool_call:
                 self._log_request(
@@ -491,6 +501,10 @@ class MCPController(http.Controller):
         return protocol.make_tool_result(
             [protocol.make_text_content(text)]
         )
+
+    def _handle_resources_read(self, params):
+        """Handle ``resources/read``: no resource is served, so every URI is missing."""
+        raise MCPResourceNotFound
 
     # ----------------------------------------------------------
     # Routes
