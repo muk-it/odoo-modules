@@ -450,7 +450,8 @@ class MCPController(http.Controller):
         if method.startswith('notifications/'):
             return None
         return protocol.make_jsonrpc_response(
-            result, request_id=request_id, result_type=profile.result_type
+            protocol.make_result_envelope(result, profile, method),
+            request_id=request_id,
         )
 
     def _handle_initialize(self, params):

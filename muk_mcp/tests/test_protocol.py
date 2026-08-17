@@ -18,28 +18,62 @@ class TestProtocol(common.TransactionCase):
         self.assertEqual(result['result'], {'foo': 'bar'})
         self.assertNotIn('error', result)
 
-    def test_make_jsonrpc_response_stamps_the_result_type(self):
-        result = protocol.make_jsonrpc_response(
+    def test_make_result_envelope_names_the_result_type(self):
+        envelope = protocol.make_result_envelope(
             {'foo': 'bar'},
-            request_id=1,
-            result_type='complete',
+            version.get_profile(version.MCP_VERSION_2026_07_28),
+            'tools/call',
+        )
+        self.assertEqual(envelope['resultType'], 'complete')
+        self.assertEqual(envelope['foo'], 'bar')
+
+    def test_make_result_envelope_leaves_an_earlier_revision_untouched(self):
+        result = {'foo': 'bar'}
+        self.assertEqual(
+            protocol.make_result_envelope(
+                result,
+                version.get_profile(version.MCP_VERSION_2025_11_25),
+                'tools/list',
+            ),
+            result,
+        )
+
+    def test_make_result_envelope_overrides_a_handler_result_type(self):
+        envelope = protocol.make_result_envelope(
+            {'resultType': 'input_required'},
+            version.get_profile(version.MCP_VERSION_2026_07_28),
+            'tools/call',
+        )
+        self.assertEqual(envelope['resultType'], 'complete')
+
+    def test_make_result_envelope_carries_the_caching_hints(self):
+        envelope = protocol.make_result_envelope(
+            {'tools': []},
+            version.get_profile(version.MCP_VERSION_2026_07_28),
+            'tools/list',
+        )
+        self.assertEqual(envelope['cacheScope'], 'private')
+        self.assertGreaterEqual(envelope['ttlMs'], 0)
+
+    def test_make_result_envelope_carries_no_hints_for_an_uncacheable_method(self):
+        envelope = protocol.make_result_envelope(
+            {'content': []},
+            version.get_profile(version.MCP_VERSION_2026_07_28),
+            'tools/call',
+        )
+        self.assertNotIn('ttlMs', envelope)
+        self.assertNotIn('cacheScope', envelope)
+
+    def test_make_result_envelope_carries_the_server_identity(self):
+        envelope = protocol.make_result_envelope(
+            {'tools': []},
+            version.get_profile(version.MCP_VERSION_2026_07_28),
+            'tools/list',
         )
         self.assertEqual(
-            result['result'],
-            {'foo': 'bar', 'resultType': 'complete'},
+            envelope['_meta'][version.META_SERVER_INFO],
+            protocol.make_server_info(),
         )
-
-    def test_make_jsonrpc_response_omits_an_unnamed_result_type(self):
-        result = protocol.make_jsonrpc_response({'foo': 'bar'}, request_id=1)
-        self.assertNotIn('resultType', result['result'])
-
-    def test_make_jsonrpc_response_overrides_a_handler_result_type(self):
-        result = protocol.make_jsonrpc_response(
-            {'resultType': 'input_required', 'foo': 'bar'},
-            request_id=1,
-            result_type='complete',
-        )
-        self.assertEqual(result['result']['resultType'], 'complete')
 
     def test_make_jsonrpc_error(self):
         result = protocol.make_jsonrpc_error(
