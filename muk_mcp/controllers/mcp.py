@@ -19,7 +19,10 @@ from odoo.addons.muk_mcp.tools import common, protocol, version
 from odoo.addons.muk_mcp.tools.content import (
     is_textual_mimetype, normalize_mimetype
 )
-from odoo.addons.muk_mcp.tools.exception import MCPScopeDenied
+from odoo.addons.muk_mcp.tools.exception import (
+    MCPResourceNotFound,
+    MCPScopeDenied,
+)
 from odoo.addons.muk_mcp.tools.version import ProtocolProfile
 
 class MCPController(http.Controller):
@@ -421,6 +424,13 @@ class MCPController(http.Controller):
         start = time.time()
         try:
             result = handler(params)
+        except MCPResourceNotFound:
+            return protocol.make_jsonrpc_error(
+                common.JSONRPC_INVALID_PARAMS,
+                'Resource not found',
+                data={'uri': params.get('uri') or ''},
+                request_id=request_id,
+            )
         except Exception as exc:
             if not is_tool_call:
                 self._log_request(
@@ -592,16 +602,21 @@ class MCPController(http.Controller):
         )
 
     def _handle_resources_read(self, params):
+        """Handle ``resources/read``: resolve the URI to content or report it missing.
+
+        An empty ``contents`` array is ambiguous -- it reads as a resource that
+        exists and is blank -- so an unresolvable URI is answered as not found.
+        """
         if not (uri := (params or {}).get('uri')):
-            return {'contents': []}
+            raise MCPResourceNotFound
         try:
             mimetype, raw, name = (
                 request.env['muk_mcp.mixin']._resolve_resource_uri(
                     uri
                 )
             )
-        except (UserError, AccessError):
-            return {'contents': []}
+        except (UserError, AccessError) as exc:
+            raise MCPResourceNotFound from exc
         normalized = normalize_mimetype(
             mimetype
         )

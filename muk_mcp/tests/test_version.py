@@ -404,6 +404,24 @@ class TestVersionNegotiationHttp(MCPHttpCase):
         self.mcp_stateless_post('prompts/list')
         self.assertEqual(self.session_model.search_count([]), before)
 
+    def test_a_missing_resource_is_reported_not_found(self):
+        response = self.mcp_stateless_post(
+            'resources/read',
+            {'uri': 'odoo://attachment/999999999'},
+        )
+        self.assertEqual(response.status_code, 400)
+        error = response.json()['error']
+        self.assertEqual(error['code'], mcp_common.JSONRPC_INVALID_PARAMS)
+        self.assertEqual(error['data']['uri'], 'odoo://attachment/999999999')
+
+    def test_a_resource_read_without_a_uri_is_reported_not_found(self):
+        response = self.mcp_stateless_post('resources/read', {})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json()['error']['code'],
+            mcp_common.JSONRPC_INVALID_PARAMS,
+        )
+
     def test_a_stateless_tool_call_returns_its_result(self):
         response = self.mcp_stateless_post(
             'tools/call',
