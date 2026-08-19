@@ -44,7 +44,6 @@ export class ChatSidebar extends Component {
         spaces: { type: Array, optional: true },
         spaceSessions: { type: Object, optional: true },
         spaceUnread: { type: Object, optional: true },
-        agents: { type: Array, optional: true },
         unreadIds: { type: Array, optional: true },
         activeSessionId: { type: [Number, { value: null }], optional: true },
         hasMore: { type: Boolean, optional: true },
@@ -68,6 +67,7 @@ export class ChatSidebar extends Component {
     };
     setup() {
         this.dialog = useService('dialog');
+        this.user = useService('user');
         this.state = useState({
             query: '',
             expanded: {},
@@ -94,7 +94,7 @@ export class ChatSidebar extends Component {
         });
         useSortable({
             ref: this.listRef,
-            elements: '.mk_sidebar_item',
+            elements: '.mk_sidebar_item:not(.mk_sidebar_shared)',
             groups: '.mk_space_group',
             connectGroups: true,
             cursor: 'grabbing',
@@ -268,7 +268,8 @@ export class ChatSidebar extends Component {
             name: space.name || '',
             icon: space.icon || 'fa-folder-o',
             agentId: space.agent_id || false,
-            agents: this.props.agents || [],
+            agentName: space.agent_name || '',
+            instructions: space.instructions || '',
             onConfirm: (values) =>
                 this.props.onSpaceEdit && this.props.onSpaceEdit(space.id, values),
         });
@@ -322,8 +323,35 @@ export class ChatSidebar extends Component {
         this.props.onSessionFile(sessionId, spaceId);
     }
 
+    /**
+     * Whether the chat is the caller's own, and so theirs to rename or drop.
+     * @param {object} session the sidebar entry
+     * @returns {boolean}
+     */
+    isOwn(session) {
+        const owner = Array.isArray(session.user_id)
+            ? session.user_id[0]
+            : session.user_id;
+        return !owner || owner === this.user.userId;
+    }
     isUnread(sessionId) {
         return (this.props.unreadIds || []).includes(sessionId);
+    }
+    /**
+     * The users a chat is shared with, capped to what the row can carry.
+     * @param {object} session the sidebar entry
+     * @returns {number[]} user ids, at most three
+     */
+    sharedWith(session) {
+        return (session.share_user_ids || []).slice(0, 3);
+    }
+    /**
+     * @param {object} session the sidebar entry
+     * @returns {string} the tooltip naming how many may read the chat
+     */
+    sharedTitle(session) {
+        const count = (session.share_user_ids || []).length;
+        return _t('Shared with %s person(s) — they can read it', count);
     }
     statusLabel(state) {
         return (

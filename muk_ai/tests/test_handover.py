@@ -43,7 +43,7 @@ class TestHandover(TransactionCase):
         session.with_user(self.user_a).action_handover(self.user_b.id)
         self.assertEqual(session.sudo().user_id, self.user_b)
 
-    def test_old_owner_loses_access(self):
+    def test_old_owner_keeps_read_access(self):
         session = self._owned_session(self.user_a)
         session.with_user(self.user_a).action_handover(self.user_b.id)
         visible = (
@@ -51,7 +51,14 @@ class TestHandover(TransactionCase):
             .with_user(self.user_a)
             .search([('id', '=', session.id)])
         )
-        self.assertFalse(visible)
+        self.assertEqual(visible, session.sudo())
+        self.assertIn(self.user_a, session.sudo().share_user_ids)
+
+    def test_old_owner_loses_write_access(self):
+        session = self._owned_session(self.user_a)
+        session.with_user(self.user_a).action_handover(self.user_b.id)
+        with self.assertRaises(AccessError):
+            session.with_user(self.user_a).write({'name': 'mine again'})
 
     def test_new_owner_gains_access(self):
         session = self._owned_session(self.user_a)

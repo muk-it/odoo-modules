@@ -50,6 +50,7 @@
                         class="btn btn-sm mk_approval_pill rounded-pill border-0 d-inline-flex align-items-center gap-1"
                         t-att-class="approvalPill.className"
                         t-att-title="approvalPill.tooltip"
+                        t-att-disabled="!session.canWrite()"
                         t-on-click="() => this.session.cycleApprovalMode()"
                     >
                         <i class="fa" t-att-class="approvalPill.icon"/>
@@ -68,6 +69,7 @@
                         </button>
                         <button
                             class="btn btn-link p-0 border-0 text-reset ms-1 mk_ctx_unpin"
+                            t-if="session.canWrite()"
                             title="Unpin view context"
                             t-on-click="() => this.session.runUnpin()"
                         >
@@ -147,6 +149,7 @@
                                         <button
                                             class="btn btn-sm mk_queue_cancel"
                                             type="button"
+                                            t-if="session.canWrite()"
                                             title="Cancel queued message"
                                             t-on-click="() => session.cancelQueued(queued_index)"
                                         >
@@ -161,7 +164,7 @@
                                         <strong><i class="fa fa-exclamation-circle me-1"/>Error:</strong>
                                         <span t-esc="session.state.error"/>
                                     </div>
-                                    <button t-if="session.canRegenerate and session.canRegenerate()"
+                                    <button t-if="session.canRegenerate()"
                                             class="btn btn-sm btn-outline-danger flex-shrink-0 align-self-end"
                                             type="button"
                                             title="Regenerate this answer"
@@ -178,10 +181,11 @@
                     <ChatComposer
                         value="session.state.input"
                         placeholder="inputPlaceholder"
-                        disabled="composerDisabled"
-                        canSend="canSend"
-                        canStop="canStop"
-                        canAttach="canAttach"
+                        readonly="session.state.readonly"
+                        readonlyOwner="session.state.ownerName"
+                        canSend="session.canSend()"
+                        canStop="session.canStop()"
+                        canAttach="session.canAttach()"
                         isQueueing="isQueueing"
                         attachments="session.state.pendingAttachments"
                         agents="session.state.agents"

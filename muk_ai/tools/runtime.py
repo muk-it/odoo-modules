@@ -51,6 +51,8 @@ CLIENT_ACTION_TIMEOUT_SECONDS = 600
 WALLCLOCK_SAFETY_MARGIN = 30
 WALLCLOCK_MIN_SECONDS = 30
 
+GC_SESSION_BATCH = 1000
+
 # ----------------------------------------------------------
 # Worker Coordination
 # ----------------------------------------------------------
@@ -99,6 +101,10 @@ COMPACT_SUMMARY_REINJECTION = (
 
 class StreamCancelled(Exception):
     """Raised to abort an in-progress streaming agent turn."""
+
+
+class TurnSuperseded(StreamCancelled):
+    """Raised when a newer turn has replaced the one being streamed."""
 
 
 def coerce_ids(values) -> list[int]:

@@ -33,6 +33,7 @@
                     widget="domain"
                     options="{'model': 'muk_ai.session'}"
                     attrs="{'invisible': [('user_id', '!=', False)]}"
+                    readonly="1"
                 />
 			</tree>
 		</field>
@@ -65,9 +66,29 @@
 							<field name="user_id" widget="many2one_avatar_user"/>
 						</group>
 						<group>
-							<field name="sequence"/>
 							<field name="icon" widget="icon_selector"/>
+							<field name="retention_mode"/>
+							<label
+								for="retention_days"
+								string="Keep For"
+								invisible="retention_mode != 'days'"
+							/>
+							<div class="o_row" invisible="retention_mode != 'days'">
+								<field name="retention_days"/>
+								<span class="ms-2">Days</span>
+							</div>
 						</group>
+					</group>
+					<group
+                        string="Instructions"
+                        attrs="{'invisible': [('user_id', '=', False)]}"
+                    >
+						<field
+							name="instructions"
+							nolabel="1"
+							colspan="2"
+							placeholder="How the assistant should work in this space..."
+						/>
 					</group>
 					<group
                         string="System Space"
@@ -79,6 +100,7 @@
 							options="{'model': 'muk_ai.session'}"
 							nolabel="1"
 							colspan="2"
+							readonly="1"
 						/>
 					</group>
 				</sheet>

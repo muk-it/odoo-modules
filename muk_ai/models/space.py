@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import ast
-
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
 from odoo.osv import expression
+from odoo.tools.safe_eval import safe_eval
 
 
 class AISpace(models.Model):
@@ -48,6 +47,15 @@ class AISpace(models.Model):
         ondelete='set null',
     )
 
+    instructions = fields.Text(
+        string='Instructions',
+        help=(
+            'How the assistant should work in this space: context to keep in '
+            'mind, wording to prefer, steps to follow. The text is handed to '
+            'every chat the space holds.'
+        ),
+    )
+
     user_id = fields.Many2one(
         comodel_name='res.users',
         string='Owner',
@@ -69,6 +77,29 @@ class AISpace(models.Model):
         ),
     )
 
+    retention_mode = fields.Selection(
+        selection=[
+            ('default', 'Follow the Default'),
+            ('days', 'Keep for a While'),
+            ('forever', 'Keep Forever'),
+        ],
+        string='Retention',
+        help=(
+            'What becomes of the finished chats in this space. They follow '
+            'the general setting unless this space says otherwise.'
+        ),
+        required=True,
+        default='default',
+    )
+
+    retention_days = fields.Integer(
+        string='Retention Days',
+        help=(
+            'Days a finished chat in this space is kept before the scheduled '
+            'cleanup deletes it.'
+        ),
+    )
+
     session_count = fields.Integer(
         compute='_compute_session_count',
         string='Chats',
@@ -78,17 +109,57 @@ class AISpace(models.Model):
     # Helper
     # ----------------------------------------------------------
 
+    def _parsed_domain(self) -> list:
+        """Return the stored domain with ``uid`` resolved to the reader.
+
+        A space that collects what was shared with somebody has to name that
+        somebody, and the domain is stored once for everyone, so it is read
+        per user rather than taken literally.
+        """
+        return safe_eval(self.domain, {'uid': self.env.uid})
+
     def _session_domain(self) -> list:
-        """Return the domain selecting the sessions of this space."""
+        """Return the domain selecting the sessions of this space.
+
+        Filing a chat by hand overrules the domain that would collect it, but
+        only for whoever filed it: a chat somebody shared and then filed into
+        a space of their own stays listed for the people they shared it with,
+        who cannot see that space at all.
+
+        That is asked as "unfiled, or not mine" rather than through
+        ``space_id.user_id``: a chat may only be filed into a space of its own
+        owner, so the two say the same thing, and 16.0 rewrites a negated leaf
+        by inverting its operator — the traversal would become a sub-search
+        running under the reader's own record rules, which never sees the
+        space somebody else filed the chat into.
+        """
         if not self.domain:
             return [('space_id', '=', self.id)]
-        return [*ast.literal_eval(self.domain), ('space_id', '=', False)]
+        return [
+            *self._parsed_domain(),
+            '|',
+            ('space_id', '=', False),
+            ('user_id', '!=', self.env.uid),
+        ]
 
     def _sidebar_spaces(self) -> AISpace:
         """Return the spaces of the current user plus the system ones."""
         return self.search(
             ['|', ('user_id', '=', self.env.uid), ('user_id', '=', False)]
         )
+
+    @api.model
+    def _unclaimed_session_domain(self) -> list:
+        """Return the domain of the chats no space collects.
+
+        A space is a filter rather than a folder, so what one collects is
+        listed there instead of a second time among the loose chats.
+        """
+        domain = [('space_id', '=', False)]
+        for space in self.search([('domain', '!=', False)]):
+            claimed = expression.normalize_domain(space._parsed_domain())
+            domain = expression.AND([domain, ['!', *claimed]])
+        return domain
 
     def _count_by_space(self, session_ids: list[int] | None = None) -> dict[int, int]:
         """Count the sessions each space of this set collects.
@@ -151,6 +222,11 @@ class AISpace(models.Model):
         return {str(space_id): count for space_id, count in counts.items()}
 
     @api.model
+    def fetch_general_domain(self) -> list:
+        """Return the domain of the chats the sidebar lists outside any space."""
+        return list(self._unclaimed_session_domain())
+
+    @api.model
     def fetch_spaces(self) -> list[dict]:
         """Return the spaces the sidebar shows the current user.
 
@@ -163,6 +239,8 @@ class AISpace(models.Model):
                 'name': space.name,
                 'icon': space.icon,
                 'agent_id': space.agent_id.id,
+                'agent_name': space.agent_id.display_name or '',
+                'instructions': space.instructions or '',
                 'system': bool(space.domain),
                 'session_domain': space._session_domain(),
             }
@@ -227,6 +305,23 @@ class AISpace(models.Model):
                     )
                 )
 
+    @api.constrains('instructions', 'domain')
+    def _check_instructions(self) -> None:
+        """Keep instructions on personal spaces only.
+
+        A system space derives its chats from a domain, so it holds the chats
+        of everybody, filed there by nobody, and instructions stored on one
+        would reach chats their owners never handed them to.
+        """
+        for record in self:
+            if record.instructions and record.domain:
+                raise ValidationError(
+                    _(
+                        'The system space "%s" cannot carry instructions.',
+                        record.name,
+                    )
+                )
+
     @api.constrains('domain')
     def _check_domain(self) -> None:
         """Reject a domain the session model cannot evaluate.
@@ -239,13 +334,14 @@ class AISpace(models.Model):
         sessions = self.env['muk_ai.session']
         for record in self.filtered('domain'):
             try:
-                expression.expression(ast.literal_eval(record.domain), sessions)
+                expression.expression(record._parsed_domain(), sessions)
             except (
                 AssertionError,
                 SyntaxError,
                 TypeError,
                 ValueError,
                 KeyError,
+                NameError,
             ) as error:
                 raise ValidationError(
                     _(
@@ -254,6 +350,21 @@ class AISpace(models.Model):
                         error=error,
                     )
                 ) from error
+
+    @api.constrains('retention_mode', 'retention_days')
+    def _check_retention_days(self) -> None:
+        """Require a length from a space that keeps its chats for a while.
+
+        :raise ValidationError: when the mode asks for days and none are given
+        """
+        for record in self:
+            if record.retention_mode == 'days' and record.retention_days <= 0:
+                raise ValidationError(
+                    _(
+                        'Say how many days "%(name)s" keeps its chats for.',
+                        name=record.name,
+                    )
+                )
 
     # ----------------------------------------------------------
     # ORM

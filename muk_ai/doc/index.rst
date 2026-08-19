@@ -173,6 +173,25 @@ duplicated per user and matching chats appear retroactively.
 Administrators manage every space under
 *MuK AI > Configuration > Spaces*.
 
+**Read-only sharing**
+
+A chat belongs to the person who started it, but it can be handed
+around to be read. The line above the composer names who can read the
+current chat and opens a picker of colleagues to add or drop. Everyone
+you pick sees the whole transcript — every tool call, every answer,
+exactly as it ran — and nothing else: the composer states that the chat
+is read only instead of offering an input, and the agent, the approval
+mode, rewind, branch and regenerate are all withheld. The same holds in
+the popped-out window, and add-ons inherit it, so a shared chat cannot
+be steered from anywhere. A reader watches the answer arrive as it is
+written: a chat streams on a channel of its own, which the server hands
+out only to the people allowed to read it, so their transcript and their
+chat list keep up on their own. Reading is granted by a record rule of its
+own, so an administrator keeps their usual access and nobody else gains
+any. A system space, *Shared with Me*, collects everything shared with
+you. Handing a chat over to someone else leaves you on the list as a
+reader, so work you started stays visible.
+
 **Source citations**
 
 When the assistant reads data to answer, what it relied on is

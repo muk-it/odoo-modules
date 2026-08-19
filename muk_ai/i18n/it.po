@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 16.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-31 22:10+0000\n"
-"PO-Revision-Date: 2026-07-31 22:10+0000\n"
+"POT-Creation-Date: 2026-08-06 19:41+0000\n"
+"PO-Revision-Date: 2026-08-06 19:41+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -658,6 +658,16 @@ msgstr ""
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "<span class=\"col-auto ms-2\">Days</span>"
+msgstr "<span class=\"col-auto ms-2\">giorni</span>"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "<span class=\"col-auto ms-2\">Seconds</span>"
+msgstr "<span class=\"col-auto ms-2\">secondi</span>"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "<span class=\"col-auto ms-2\">in Days</span>"
 msgstr "<span class=\"col-auto ms-2\">in giorni</span>"
 
@@ -685,6 +695,11 @@ msgstr "<span class=\"col-auto ms-2\">per slice</span>"
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "<span class=\"col-auto ms-2\">per Turn</span>"
 msgstr "<span class=\"col-auto ms-2\">per turno</span>"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_space_form
+msgid "<span class=\"ms-2\">Days</span>"
+msgstr "<span class=\"ms-2\">giorni</span>"
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_muk_ai_provider_form
@@ -1044,6 +1059,15 @@ msgid "Annotate Messages"
 msgstr "Annota i messaggi"
 
 #. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid ""
+"Answer for a browser that never carried out an action a chat asked for, so "
+"the turn is not left waiting for good."
+msgstr ""
+"Risponde al posto di un browser che non ha mai eseguito un'azione richiesta "
+"da una chat, così il turno non resta in attesa per sempre."
+
+#. module: muk_ai
 #: model:ir.actions.act_window,name:muk_ai.action_ai_approval
 #: model:ir.ui.menu,name:muk_ai.menu_ai_approval
 msgid "Approval Log"
@@ -1390,6 +1414,11 @@ msgid "Chat %s"
 msgstr "Chat %s"
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__ai_session_retention_enabled
+msgid "Chat Retention"
+msgstr "Conservazione delle chat"
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_mcp_log__session_id
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_mcp_log_search_inherit_muk_ai
 msgid "Chat Session"
@@ -1440,6 +1469,11 @@ msgstr "Cancellato il"
 #: code:addons/muk_ai/static/src/chat/session/view_context_format.js:0
 msgid "Click to open · /unpin to clear"
 msgstr "Fai clic per aprire · /unpin per cancellare"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__ai_client_action_timeout
+msgid "Client Action Timeout (s)"
+msgstr "Timeout azioni client (s)"
 
 #. module: muk_ai
 #. odoo-python
@@ -1530,6 +1564,11 @@ msgstr "Compattazione saltata: il provider non ha restituito alcun riepilogo."
 #: model:ir.model,name:muk_ai.model_res_company
 msgid "Companies"
 msgstr "Aziende"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Compatible Providers"
+msgstr "Provider compatibili"
 
 #. module: muk_ai
 #: model:ir.model,name:muk_ai.model_res_config_settings
@@ -1678,6 +1717,19 @@ msgid "Cost in USD per 1,000,000 output tokens."
 msgstr "Costo in USD per 1.000.000 di token di output."
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_session__turn_seq
+msgid ""
+"Counter raised every time a turn starts. A worker streams under the number "
+"it read, and stops as soon as the session carries another one, so an answer "
+"to a question that was cancelled or replaced can never arrive as the answer "
+"to the next."
+msgstr ""
+"Contatore incrementato a ogni avvio di un turno. Un worker trasmette con il "
+"numero che ha letto e si ferma non appena la sessione ne porta un altro, "
+"così la risposta a una domanda annullata o sostituita non può mai arrivare "
+"come risposta a quella successiva."
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__create_uid
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent_suggestion__create_uid
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_approval__create_uid
@@ -1784,6 +1836,22 @@ msgid "Customers"
 msgstr "Clienti"
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_space__retention_days
+msgid ""
+"Days a finished chat in this space is kept before the scheduled cleanup "
+"deletes it."
+msgstr ""
+"Giorni per cui una chat conclusa in questo spazio viene conservata prima che"
+" la pulizia pianificata la elimini."
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__ai_session_retention_days
+msgid "Days a finished chat is kept before the cleanup deletes it."
+msgstr ""
+"Giorni per cui una chat conclusa viene conservata prima che la pulizia la "
+"elimini."
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_approval__user_id
 msgid "Decided By"
 msgstr "Deciso da"
@@ -1846,6 +1914,11 @@ msgstr ""
 "disattivare."
 
 #. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Defaults"
+msgstr "Valori predefiniti"
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__deferred_vision_attachment_ids
 msgid "Deferred Vision Attachments"
 msgstr "Allegati visione differiti"
@@ -1872,10 +1945,24 @@ msgid "Delete \"%s\"? This cannot be undone."
 msgstr "Eliminare \"%s\"? Questa operazione è irreversibile."
 
 #. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Delete Old Chats"
+msgstr "Elimina le chat vecchie"
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
 msgid "Delete chat"
 msgstr "Elimina chat"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid ""
+"Delete finished chats once they are old enough. A chat that is still running"
+" is never touched."
+msgstr ""
+"Elimina le chat concluse quando sono abbastanza vecchie. Una chat ancora in "
+"corso non viene mai toccata."
 
 #. module: muk_ai
 #. odoo-javascript
@@ -2056,6 +2143,11 @@ msgstr ""
 "affidargli la conversazione."
 
 #. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Extensions"
+msgstr "Estensioni"
+
+#. module: muk_ai
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_agent__reasoning_effort__xhigh
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_model__reasoning_effort_default__xhigh
 msgid "Extra High"
@@ -2189,6 +2281,11 @@ msgstr ""
 "eventi in stile chat. Rispecchia `fetch_events()['events']`."
 
 #. module: muk_ai
+#: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_space__retention_mode__default
+msgid "Follow the Default"
+msgstr "Segui il valore predefinito"
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__message_follower_ids
 msgid "Followers"
 msgstr "Follower"
@@ -2226,6 +2323,11 @@ msgstr "Da"
 #: model:muk_ai.agent,name:muk_ai.agent_general
 msgid "General Assistant"
 msgstr "Assistente generale"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Give Up on Stale Actions"
+msgstr "Rinuncia alle azioni obsolete"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -2277,6 +2379,11 @@ msgstr "Alto"
 #: code:addons/muk_ai/models/revision_mixin.py:0
 msgid "History"
 msgstr "Cronologia"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Housekeeping"
+msgstr "Manutenzione"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -2466,6 +2573,26 @@ msgid "JSON Code Editor"
 msgstr "Editor di codice JSON"
 
 #. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Keep Chats for"
+msgstr "Conserva le chat per"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_space_form
+msgid "Keep For"
+msgstr "Conserva per"
+
+#. module: muk_ai
+#: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_space__retention_mode__forever
+msgid "Keep Forever"
+msgstr "Conserva per sempre"
+
+#. module: muk_ai
+#: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_space__retention_mode__days
+msgid "Keep for a While"
+msgstr "Conserva per un periodo"
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_event__kind
 msgid "Kind"
 msgstr "Tipo"
@@ -2536,7 +2663,17 @@ msgstr ""
 "Consenti all'LLM di usare lo strumento di ricerca web nativo del provider."
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__ai_session_retention_enabled
+msgid ""
+"Let the scheduled cleanup delete finished chats once they are old enough. A "
+"chat that is still running is never touched."
+msgstr ""
+"Consente alla pulizia pianificata di eliminare le chat concluse quando sono "
+"abbastanza vecchie. Una chat ancora in corso non viene mai toccata."
+
+#. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_muk_ai_provider_form
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "Limits"
 msgstr "Limiti"
 
@@ -2607,6 +2744,7 @@ msgstr "Basso"
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_mcp_log__source__mcp
 #: model:ir.ui.menu,name:muk_ai.menu_ai_mcp
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_mcp_log_search_inherit_muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "MCP"
 msgstr "MCP"
 
@@ -2800,6 +2938,11 @@ msgstr "Minimo"
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Mistral"
+msgstr "Mistral"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "Mistral AI: Large, Medium, Magistral, Pixtral, Codestral."
 msgstr "Mistral AI: Large, Medium, Magistral, Pixtral, Codestral."
 
@@ -2859,30 +3002,21 @@ msgstr "MuK AI Chat"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_compat
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "MuK AI Compatible Providers"
 msgstr "Provider compatibili MuK AI"
 
 #. module: muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "MuK AI Extensions"
-msgstr "Estensioni MuK AI"
-
-#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_mcp
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "MuK AI MCP"
 msgstr "MuK AI MCP"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_mistral
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "MuK AI Mistral"
 msgstr "MuK AI Mistral"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_schedule
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "MuK AI Schedule"
 msgstr "MuK AI Schedule"
 
@@ -2894,19 +3028,16 @@ msgstr "MuK AI Session"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_skills
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "MuK AI Skills"
 msgstr "MuK AI Skills"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_voice
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "MuK AI Voice"
 msgstr "MuK AI Voice"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_workflows
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "MuK AI Workflows"
 msgstr "MuK AI Workflows"
 
@@ -3766,9 +3897,16 @@ msgid "Result"
 msgstr "Risultato"
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_space__retention_mode
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "Retention"
 msgstr "Conservazione"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_space__retention_days
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__ai_session_retention_days
+msgid "Retention Days"
+msgstr "Giorni di conservazione"
 
 #. module: muk_ai
 #: model:muk_ai.agent.suggestion,label:muk_ai.agent_read_only_suggestion_revenue
@@ -3877,6 +4015,17 @@ msgid "Save"
 msgstr "Salva"
 
 #. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/space.py:0
+msgid "Say how many days \"%(name)s\" keeps its chats for."
+msgstr "Indica per quanti giorni \"%(name)s\" conserva le sue chat."
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Schedule"
+msgstr "Pianificazione"
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
 msgid "Scheduled"
@@ -3931,6 +4080,17 @@ msgstr "Cerca in questa chat…"
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
 msgid "Searching…"
 msgstr "Ricerca…"
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__ai_client_action_timeout
+msgid ""
+"Seconds a chat waits for the browser to carry out an action it asked for "
+"before the cleanup answers for it and lets the turn go on. Zero waits for "
+"good."
+msgstr ""
+"Secondi per cui una chat attende che il browser esegua un'azione richiesta "
+"prima che la pulizia risponda al suo posto e lasci proseguire il turno. Zero"
+" attende per sempre."
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_provider__idle_timeout
@@ -4082,6 +4242,7 @@ msgstr ""
 "la sessione; comanda il badge di attenzione nel systray."
 
 #. module: muk_ai
+#: model:ir.actions.act_window,name:muk_ai.action_muk_ai_config_settings
 #: model:ir.ui.menu,name:muk_ai.menu_ai_settings
 msgid "Settings"
 msgstr "Impostazioni"
@@ -4132,6 +4293,11 @@ msgstr "Mostra riepilogo"
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_approval__signature
 msgid "Signature"
 msgstr "Firma"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Skills"
+msgstr "Competenze"
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
@@ -4605,6 +4771,11 @@ msgid "Total Cost (USD)"
 msgstr "Costo totale (USD)"
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__turn_seq
+msgid "Turn"
+msgstr "Turno"
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__ai_turn_cost_limit
 msgid "Turn Cost Limit"
 msgstr "Limite di costo per turno"
@@ -4800,6 +4971,16 @@ msgid "View context cleared."
 msgstr "Contesto vista cancellato."
 
 #. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Voice"
+msgstr "Voce"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Wait for"
+msgstr "Attendi"
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
 #: code:addons/muk_ai/static/src/chat/utils.js:0
@@ -4817,6 +4998,15 @@ msgstr "Marcatore wall-clock impostato da /clear e /compact."
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
 msgid "Web Search"
 msgstr "Ricerca web"
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_space__retention_mode
+msgid ""
+"What becomes of the finished chats in this space. They follow the general "
+"setting unless this space says otherwise."
+msgstr ""
+"Che cosa accade alle chat concluse in questo spazio. Seguono l'impostazione "
+"generale, a meno che questo spazio non disponga diversamente."
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_session__pending_ask
@@ -4847,6 +5037,11 @@ msgstr "Worker rivendicato il"
 #: code:addons/muk_ai/models/session.py:0
 msgid "Worker abandoned the session — please retry."
 msgstr "Il worker ha abbandonato la sessione — riprova."
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Workflows"
+msgstr "Workflow"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -5060,3 +5255,159 @@ msgstr "· avanti"
 #: code:addons/muk_ai/static/src/chat/tools/tool_card.xml:0
 msgid "· run"
 msgstr "· esegui"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/share/share_users.js:0
+msgid "%s people can read this chat"
+msgstr "%s persone possono leggere questa chat"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/share/share_users.js:0
+msgid "1 person can read this chat"
+msgstr "1 persona può leggere questa chat"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/utils.js:0
+msgid "Approvals of a shared chat cannot be changed"
+msgstr "Le approvazioni di una chat condivisa non possono essere modificate"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/share/share_dialog.xml:0
+msgid "Discard"
+msgstr "Annulla"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/share/share_users.xml:0
+msgid "Manage"
+msgstr "Gestisci"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/share/share_users.js:0
+msgid "Only you can read this chat"
+msgstr "Solo tu puoi leggere questa chat"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/composer/chat_composer.js:0
+msgid "Read only — %s shared this chat with you."
+msgstr "Sola lettura — %s ha condiviso questa chat con te."
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/composer/chat_composer.js:0
+msgid "Read only — this chat was shared with you."
+msgstr "Sola lettura — questa chat è stata condivisa con te."
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/share/share_users.xml:0
+msgid "Share"
+msgstr "Condividi"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/share/share_dialog.js:0
+msgid "Share this chat"
+msgstr "Condividi questa chat"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__share_user_ids
+msgid "Shared With"
+msgstr "Condiviso con"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
+msgid "Shared with %s person(s) — they can read it"
+msgstr "Condivisa con %s persona/e — possono leggerla"
+
+#. module: muk_ai
+#: model:muk_ai.space,name:muk_ai.space_shared
+msgid "Shared with Me"
+msgstr "Condivisi con me"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+msgid "The agent of a shared chat cannot be changed"
+msgstr "L'agente di una chat condivisa non può essere modificato"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/share/share_dialog.xml:0
+msgid ""
+"They see the whole transcript, including what the tools returned.\n"
+"                    They cannot reply, rename or re-share it."
+msgstr ""
+"Vedono l’intera trascrizione, compreso l’output degli strumenti. Non possono"
+" rispondere, rinominare né ricondividere."
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_session__share_user_ids
+msgid ""
+"Users who may read this chat. They see the whole transcript, including the "
+"tool output it gathered under the owner rights, and cannot write to it or "
+"carry it on."
+msgstr ""
+"Utenti che possono leggere questa chat. Vedono l’intera trascrizione, "
+"compreso l’output degli strumenti raccolto con i diritti del proprietario, e"
+" non possono scriverci né proseguirla."
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+msgid "Waiting for the owner to answer."
+msgstr "In attesa della risposta del proprietario."
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/share/share_dialog.xml:0
+msgid "Who may read it"
+msgstr "Chi può leggerla"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/sidebar/space_dialog.xml:0
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_space__instructions
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_space_form
+msgid "Instructions"
+msgstr "Istruzioni"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_space_form
+msgid "How the assistant should work in this space..."
+msgstr "Come deve lavorare l'assistente in questo spazio..."
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/sidebar/space_dialog.xml:0
+msgid "Context and preferences for every chat in this space..."
+msgstr "Contesto e preferenze per ogni chat in questo spazio..."
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_space__instructions
+msgid ""
+"How the assistant should work in this space: context to keep in mind, "
+"wording to prefer, steps to follow. The text is handed to every chat the "
+"space holds."
+msgstr ""
+"Come deve lavorare l'assistente in questo spazio: contesto da tenere "
+"presente, formulazioni da preferire, passaggi da seguire. Il testo viene "
+"passato a ogni chat dello spazio."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/space.py:0
+msgid "The system space \"%s\" cannot carry instructions."
+msgstr "Lo spazio di sistema \"%s\" non può contenere istruzioni."
+
+#. module: muk_ai
+#: model:ir.model,name:muk_ai.model_ir_websocket
+msgid "websocket message handling"
+msgstr "Gestione dei messaggi WebSocket"

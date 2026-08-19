@@ -153,9 +153,30 @@
             grid-row: 1;
             grid-column: 2;
             min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .mk_sidebar_label {
+            min-width: 0;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+        }
+        .mk_sidebar_share {
+            display: inline-flex;
+            flex: 0 0 auto;
+            opacity: 0.55;
+        }
+        .mk_sidebar_share_avatar {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            object-fit: cover;
+            + .mk_sidebar_share_avatar {
+                margin-left: -5px;
+                box-shadow: 0 0 0 1.5px var(--mk-bg);
+            }
         }
         .mk_sidebar_meta {
             grid-row: 2;
@@ -492,6 +513,18 @@
         &:hover {
             background: var(--mk-bg-soft);
             color: var(--mk-text);
+        }
+        .mk_sidebar_icon {
+            display: block;
+            width: 18px;
+            height: 18px;
+            opacity: 0.75;
+        }
+        .mk_sidebar_icon_pane {
+            opacity: 0.45;
+        }
+        &:hover .mk_sidebar_icon {
+            opacity: 1;
         }
     }
     .mk_avatar {
@@ -2054,6 +2087,38 @@
         padding: 0.75rem 1.5rem 1rem;
         width: 100%;
     }
+    .mk_chat_share {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+        width: 100%;
+        font-size: 0.78rem;
+        color: var(--mk-text-muted);
+        min-height: 1.6rem;
+    }
+    .mk_chat_share_faces {
+        display: inline-flex;
+        flex: 0 0 auto;
+    }
+    .mk_chat_share_avatar {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        object-fit: cover;
+        + .mk_chat_share_avatar {
+            margin-left: -5px;
+            box-shadow: 0 0 0 1.5px var(--mk-bg);
+        }
+    }
+    .mk_chat_share_edit {
+        margin-left: auto;
+        padding: 0 0.25rem;
+        font-size: 0.78rem;
+        color: var(--mk-text-muted);
+        &:hover {
+            color: var(--mk-primary);
+        }
+    }
     .mk_slash_popover {
         position: absolute;
         bottom: calc(100% + 4px);
@@ -2350,6 +2415,17 @@
         border-color: rgba(220, 53, 69, 0.25);
         color: var(--mk-danger);
     }
+    .mk_composer_readonly {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.65rem 0.9rem;
+        border: 1px dashed var(--mk-border);
+        border-radius: 12px;
+        background: var(--mk-bg-soft);
+        color: var(--mk-text-muted);
+        font-size: 0.82rem;
+    }
     .mk_sidebar_backdrop {
         display: none;
     }
@@ -2534,5 +2610,43 @@
     .btn {
         font-size: inherit;
         padding: 0.125rem 0.5rem;
+    }
+}
+
+.mk_share_dialog {
+    font-size: 0.875rem;
+    .mk_share_label {
+        display: block;
+        font-size: 0.78rem;
+        color: var(--bs-secondary-color);
+        margin-bottom: 0.35rem;
+    }
+    .mk_share_field {
+        border: 1px solid var(--bs-border-color);
+        border-radius: 0.5rem;
+        padding: 0.4rem 0.5rem;
+        min-height: 2.5rem;
+        display: flex;
+        align-items: center;
+        &:focus-within {
+            border-color: var(--mk-primary, #714b67);
+        }
+        .o_field_many2many_avatar_user {
+            width: 100%;
+        }
+        .many2many_tags_avatar_field_container {
+            border: 0;
+            padding: 0;
+            background: transparent;
+            box-shadow: none;
+        }
+    }
+    .mk_share_note {
+        margin-top: 0.9rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--bs-border-color);
+        font-size: 0.75rem;
+        color: var(--bs-secondary-color);
+        line-height: 1.5;
     }
 }

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.ChatShareUsers">
+        <div class="mk_chat_share d-none d-md-flex align-items-center gap-2">
+            <span class="mk_chat_share_faces" t-if="shareIds.length">
+                <img
+                    t-foreach="shareIds.slice(0, 4)" t-as="uid" t-key="uid"
+                    class="mk_chat_share_avatar"
+                    t-att-src="avatar(uid)"
+                    alt=""
+                />
+            </span>
+            <span class="mk_chat_share_text" t-esc="summary"/>
+            <button
+                t-if="canShare"
+                class="btn btn-link btn-sm mk_chat_share_edit"
+                t-on-click="openDialog"
+            >
+                <i class="fa fa-user-plus me-1"/>
+                <t t-if="shareIds.length">Manage</t>
+                <t t-else="">Share</t>
+            </button>
+        </div>
+    </t>
+
+</templates>

@@ -25,6 +25,10 @@ class TestSpace(AITestCommon):
         """Create a chat session owned by the current user."""
         return self.env['muk_ai.session'].create({'name': name, **values})
 
+    def _system_text(self, session: models.Model) -> str:
+        """Return the system message a session hands to the model."""
+        return session._system_message()['content'][0]['text']
+
     # ----------------------------------------------------------
     # Tests
     # ----------------------------------------------------------
@@ -80,7 +84,7 @@ class TestSpace(AITestCommon):
             if row['id'] == space.id
         )
         self.assertFalse(entry['system'])
-        self.assertEqual(entry['session_domain'], [('space_id', '=', space.id)])
+        self.assertIn(('space_id', '=', space.id), entry['session_domain'])
 
     def test_count_sessions_sorts_ids_into_personal_spaces(self):
         space = self._space('Q3 Budget')
@@ -170,7 +174,11 @@ class TestSpace(AITestCommon):
             if row['id'] == space.id
         )
         self.assertTrue(entry['system'])
-        self.assertIn(('space_id', '=', False), entry['session_domain'])
+        loose = self._session('Loose')
+        filed = self._session('Filed', space_id=self._space('Q3').id)
+        collected = self.env['muk_ai.session'].search(entry['session_domain'])
+        self.assertIn(loose.id, collected.ids)
+        self.assertNotIn(filed.id, collected.ids)
 
     def test_handing_over_a_filed_chat_releases_it(self):
         other = new_test_user(self.env, login='space_handover')
@@ -300,3 +308,90 @@ class TestSpace(AITestCommon):
         space = self._space('Shared', user_id=False, domain="[('id', '>', 0)]")
         action = space.action_open_sessions()
         self.assertFalse(action['context'])
+
+    def test_the_instructions_of_a_space_reach_the_system_prompt(self):
+        space = self._space('Q3 Budget', instructions='Answer in German.')
+        session = self._session('Filed', space_id=space.id)
+        system_text = self._system_text(session)
+        self.assertIn('<space_instructions>', system_text)
+        self.assertIn('Answer in German.', system_text)
+        self.assertIn('Q3 Budget', system_text)
+
+    def test_the_instructions_precede_the_blocks_they_may_not_override(self):
+        space = self._space('Q3 Budget', instructions='Answer in German.')
+        session = self._session('Filed', space_id=space.id)
+        system_text = self._system_text(session)
+        self.assertLess(
+            system_text.index('<space_instructions>'),
+            system_text.index(session._build_runtime_block()),
+            'user instructions must not be the last word on the runtime facts',
+        )
+
+    def test_a_chat_outside_a_space_carries_no_instructions(self):
+        self._space('Q3 Budget', instructions='Answer in German.')
+        session = self._session('Loose')
+        self.assertNotIn('<space_instructions>', self._system_text(session))
+
+    def test_an_empty_instruction_leaves_no_block_behind(self):
+        space = self._space('Q3 Budget', instructions='   \n  ')
+        session = self._session('Filed', space_id=space.id)
+        self.assertNotIn('<space_instructions>', self._system_text(session))
+
+    def test_the_instructions_leave_with_the_chat(self):
+        space = self._space('Q3 Budget', instructions='Answer in German.')
+        session = self._session('Filed', space_id=space.id)
+        session.space_id = False
+        self.assertNotIn('<space_instructions>', self._system_text(session))
+
+    def test_the_instructions_are_handed_over_unrendered(self):
+        raw = (
+            'Secret: {{ env["ir.config_parameter"].sudo().get_param("database.uuid") }}'
+        )
+        space = self._space('Q3 Budget', instructions=raw)
+        session = self._session('Filed', space_id=space.id)
+        self.assertIn(raw, self._system_text(session))
+
+    def test_a_system_space_refuses_instructions_on_create(self):
+        with self.assertRaises(ValidationError):
+            self._space(
+                'Scheduled',
+                user_id=False,
+                domain="[('id', '>', 0)]",
+                instructions='Answer in German.',
+            )
+
+    def test_a_system_space_refuses_instructions_on_write(self):
+        space = self._space('Scheduled', user_id=False, domain="[('id', '>', 0)]")
+        with self.assertRaises(ValidationError):
+            space.instructions = 'Answer in German.'
+
+    def test_a_space_carrying_instructions_refuses_to_become_a_system_one(self):
+        space = self._space('Q3 Budget', instructions='Answer in German.')
+        with self.assertRaises(ValidationError):
+            space.write({'user_id': False, 'domain': "[('id', '>', 0)]"})
+
+    def test_the_instructions_of_a_shared_chat_reach_its_readers(self):
+        owner = new_test_user(self.env, login='space_instructor')
+        reader = new_test_user(self.env, login='space_instructed')
+        space = (
+            self.env['muk_ai.space']
+            .with_user(owner)
+            .create({'name': 'Q3 Budget', 'instructions': 'Answer in German.'})
+        )
+        session = (
+            self.env['muk_ai.session']
+            .with_user(owner)
+            .create({'name': 'Filed', 'space_id': space.id})
+        )
+        session.sudo().share_user_ids = [(6, 0, reader.ids)]
+        block = session.with_user(reader)._build_space_block()
+        self.assertIn('Answer in German.', block)
+
+    def test_fetch_spaces_carries_the_instructions(self):
+        space = self._space('Q3 Budget', instructions='Answer in German.')
+        entry = next(
+            row
+            for row in self.env['muk_ai.space'].fetch_spaces()
+            if row['id'] == space.id
+        )
+        self.assertEqual(entry['instructions'], 'Answer in German.')

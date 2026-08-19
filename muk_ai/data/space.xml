@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo noupdate="1">
+
+	<record id="space_shared" model="muk_ai.space">
+		<field name="name">Shared with Me</field>
+		<field name="sequence">4</field>
+		<field name="icon">fa-share-alt</field>
+		<field name="user_id" eval="False"/>
+		<field name="domain">[('share_user_ids', 'in', uid)]</field>
+	</record>
+
+</odoo>

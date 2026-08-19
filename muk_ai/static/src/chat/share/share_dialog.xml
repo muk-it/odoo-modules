@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.ShareDialog">
+        <Dialog size="'md'" title="title">
+            <div class="mk_share_dialog" t-if="state.fieldInfo">
+                <label class="mk_share_label">Who may read it</label>
+                <div class="mk_share_field">
+                    <Record
+                        resModel="'muk_ai.session'"
+                        resId="props.sessionId"
+                        fieldNames="['share_user_ids']"
+                        activeFields="activeFields"
+                        mode="'edit'"
+                        hooks="hooks"
+                        t-slot-scope="data"
+                    >
+                        <Field
+                            name="'share_user_ids'"
+                            record="data.record"
+                            fieldInfo="state.fieldInfo"
+                        />
+                    </Record>
+                </div>
+                <div class="mk_share_note">
+                    <i class="fa fa-eye me-1"/>
+                    They see the whole transcript, including what the tools returned.
+                    They cannot reply, rename or re-share it.
+                </div>
+            </div>
+            <t t-set-slot="footer">
+                <button class="btn btn-primary" t-on-click="save">Save</button>
+                <button class="btn btn-secondary" t-on-click="() => props.close()">
+                    <t t-if="state.dirty">Discard</t>
+                    <t t-else="">Close</t>
+                </button>
+            </t>
+        </Dialog>
+    </t>
+
+</templates>
