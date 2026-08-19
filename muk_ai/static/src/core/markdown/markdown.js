@@ -2,6 +2,7 @@
 
 const SAFE_SCHEME = /^(https?:|mailto:|#|\/)/i;
 const SAFE_IMG_SCHEME = /^(https?:|data:image\/(png|jpeg|jpg|gif|webp);base64,|\/)/i;
+const RECORD_HREF_RE = /^([a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+),(\d+)$/;
 const HTML_ESCAPE = {
     '&': '&amp;',
     '<': '&lt;',
@@ -9,6 +10,16 @@ const HTML_ESCAPE = {
     '"': '&quot;',
     "'": '&#39;',
 };
+
+/**
+ * Build the backend form URL this Odoo version serves for a record.
+ * @param {string} model technical model name
+ * @param {string|number} id database id
+ * @returns {string} the deep link to the record's form view
+ */
+function recordUrl(model, id) {
+    return `/web#id=${id}&model=${model}&view_type=form`;
+}
 
 function escapeHtml(text) {
     return String(text).replace(/[&<>"']/g, (c) => HTML_ESCAPE[c]);
@@ -116,7 +127,7 @@ function buildRenderer() {
                     }
                     const [whole, fileUrl, model, id] = match;
                     const lo = new state.Token('link_open', 'a', 1);
-                    lo.attrSet('href', fileUrl || `/odoo/${model}/${id}`);
+                    lo.attrSet('href', fileUrl || recordUrl(model, id));
                     lo.attrSet('class', fileUrl ? 'mk_file_link' : 'mk_record_link');
                     newChildren.push(lo);
                     const lt = new state.Token('text', '', 0);
@@ -144,7 +155,13 @@ function buildRenderer() {
         const hrefIdx = token.attrIndex('href');
         if (hrefIdx >= 0) {
             const href = String(token.attrs[hrefIdx][1]).trim();
-            token.attrs[hrefIdx][1] = SAFE_SCHEME.test(href) ? href : '#';
+            const record = RECORD_HREF_RE.exec(href);
+            if (record) {
+                token.attrs[hrefIdx][1] = recordUrl(record[1], record[2]);
+                token.attrJoin('class', 'mk_record_link');
+            } else {
+                token.attrs[hrefIdx][1] = SAFE_SCHEME.test(href) ? href : '#';
+            }
         }
         token.attrSet('target', '_blank');
         token.attrSet('rel', 'noopener noreferrer');
