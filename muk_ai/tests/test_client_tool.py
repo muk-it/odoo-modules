@@ -631,6 +631,13 @@ class TestClientToolSeam(AITestCommon):
             self.env['muk_ai.session']._sweep_stale_client_actions()
         self.assertEqual(session.state, 'waiting')
 
+    def test_the_timeout_can_be_set_from_the_settings(self):
+        settings = self.env['res.config.settings'].create(
+            {'ai_client_action_timeout': 45}
+        )
+        settings.execute()
+        self.assertEqual(self.env['muk_ai.session']._client_action_timeout(), 45)
+
     def test_timeout_param_falls_back_on_invalid_value(self):
         self.env['ir.config_parameter'].sudo().set_param(
             'muk_ai.client_action_timeout', 'off'

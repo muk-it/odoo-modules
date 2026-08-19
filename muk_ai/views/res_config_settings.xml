@@ -82,6 +82,39 @@
 							</div>
 						</setting>
 					</block>
+					<block title="Housekeeping" name="muk_ai_settings_autovacuum">
+						<setting
+							id="muk_ai_client_action_timeout"
+							string="Give Up on Stale Actions"
+							help="Answer for a browser that never carried out an action a chat asked for, so the turn is not left waiting for good."
+						>
+							<div class="content-group">
+								<div class="row">
+									<div class="o_light_label">
+										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Wait for" for="ai_client_action_timeout"/>
+										<field name="ai_client_action_timeout" class="w-25 text-center" nolabel="1"/>
+										<span class="col-auto ms-2">Seconds</span>
+									</div>
+								</div>
+							</div>
+						</setting>
+						<setting
+							id="muk_ai_session_retention"
+							string="Delete Old Chats"
+							help="Delete finished chats once they are old enough. A chat that is still running is never touched."
+						>
+							<field name="ai_session_retention_enabled"/>
+							<div class="content-group mt16" invisible="not ai_session_retention_enabled">
+								<div class="row">
+									<div class="o_light_label">
+										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Keep Chats for" for="ai_session_retention_days"/>
+										<field name="ai_session_retention_days" class="w-25 text-center" nolabel="1"/>
+										<span class="col-auto ms-2">Days</span>
+									</div>
+								</div>
+							</div>
+						</setting>
+					</block>
 					<block title="MCP Server" name="muk_ai_mcp_settings">
 						<setting id="muk_ai_mcp_session_timeout">
 							<label string="Session Timeout" for="mcp_session_timeout"/>
@@ -146,6 +179,13 @@
 				</app>
 			</xpath>
 		</field>
+	</record>
+
+	<record id="action_muk_ai_config_settings" model="ir.actions.act_window">
+		<field name="name">Settings</field>
+		<field name="res_model">res.config.settings</field>
+		<field name="view_mode">form</field>
+		<field name="context">{'module': 'muk_ai', 'bin_size': False}</field>
 	</record>
 
 </odoo>

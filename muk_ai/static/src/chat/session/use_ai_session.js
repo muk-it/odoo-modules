@@ -13,6 +13,8 @@ import { busSubscribe, busUnsubscribe } from '@muk_ai/core/compat/bus';
 import { formatError } from '@muk_ai/chat/utils';
 
 import { buildRenderedTurns } from '@muk_ai/chat/session/turns';
+import { useOpenSession } from '@muk_ai/chat/session/open_sessions';
+import { useSessionChannel } from '@muk_ai/chat/session/session_channel';
 
 export const SESSION_READ_FIELDS = [
     'id',
@@ -28,6 +30,7 @@ export const SESSION_READ_FIELDS = [
     'last_input_tokens',
     'context_window',
     'user_id',
+    'share_user_ids',
     'agent_id',
     'total_cost',
     'override_approval_mode',
@@ -64,6 +67,34 @@ export const SLASH_COMMANDS = [
     },
 ];
 
+/**
+ * Session actions that steer the chat rather than read it. They are all
+ * neutralised at once on a read-only chat, so no surface and no extension
+ * has to remember a guard of its own.
+ */
+const WRITE_ACTIONS = [
+    'onSend',
+    'onStop',
+    'onAttachFiles',
+    'onRemoveAttachment',
+    'setAgent',
+    'onSetAgent',
+    'onRegenerate',
+    'cancelQueued',
+    'runUnpin',
+    'setApprovalMode',
+    'cycleApprovalMode',
+    'approveTool',
+    'approveForSession',
+    'rejectTool',
+    'answerWithOption',
+    'respondYesno',
+    'runStopCompact',
+    'runUndoToEvent',
+    'runForkAtEvent',
+    'openHandoverPicker',
+];
+
 const COMPACT_WARN_RATIO = 0.65;
 const COMPACT_AUTO_RATIO = 0.8;
 const STREAM_IDLE_MS = 3000;
@@ -77,6 +108,7 @@ let clientKeySeq = 0;
  */
 export function useAiSession(options = {}) {
     const orm = useService('orm');
+    const user = useService('user');
     const busEnv = useEnv();
     const bus = busEnv.services.bus_service;
     const notification = useService('notification');
@@ -113,6 +145,9 @@ export function useAiSession(options = {}) {
         agentId: null,
         agentName: '',
         ownerId: null,
+        ownerName: '',
+        shareIds: [],
+        readonly: false,
         autoCompactPending: false,
         viewContext: null,
         approvalMode: false,
@@ -129,6 +164,8 @@ export function useAiSession(options = {}) {
     let requeueRerouting = false;
     const busHandler = (payload) => onBusEvent(payload);
     busSubscribe(bus, 'muk_ai.event', busHandler);
+    useSessionChannel(() => state.sessionId);
+    useOpenSession(() => (state.readonly ? null : state.sessionId));
     function clearStreamIdleTimer() {
         if (streamIdleTimer) {
             clearTimeout(streamIdleTimer);
@@ -441,6 +478,7 @@ export function useAiSession(options = {}) {
             pendingLoad = null;
         }
         if (loadError) {
+            state.readonly = true;
             state.error = formatError(loadError);
             state.loading = false;
             return null;
@@ -463,6 +501,10 @@ export function useAiSession(options = {}) {
     }
     function _resetSessionState(sessionId) {
         state.sessionId = sessionId;
+        state.ownerId = null;
+        state.ownerName = '';
+        state.shareIds = [];
+        state.readonly = !!sessionId;
         state.input = '';
         state.error = null;
         state.pendingAsk = null;
@@ -529,6 +571,9 @@ export function useAiSession(options = {}) {
             : typeof owner === 'number'
               ? owner
               : null;
+        state.ownerName = Array.isArray(owner) ? owner[1] : '';
+        state.shareIds = record.share_user_ids || [];
+        state.readonly = !!(state.ownerId && state.ownerId !== user.userId);
         rebuildEventKeys();
     }
     function applySnapshot(snapshot) {
@@ -632,19 +677,28 @@ export function useAiSession(options = {}) {
             }
         }
     }
+    /**
+     * Tell whether this chat may be steered as well as read.
+     * @returns {boolean} false on a chat shared with the current user
+     */
+    function canWrite() {
+        return !state.readonly;
+    }
     function canSend() {
         const hasContent =
             state.input.trim().length > 0 || state.pendingAttachments.length > 0;
-        return !!state.sessionId && !state.loading && hasContent;
+        return canWrite() && !!state.sessionId && !state.loading && hasContent;
     }
     function canAttach() {
-        return !!state.sessionId && !state.loading && state.status !== 'running';
+        return (
+            canWrite() &&
+            !!state.sessionId &&
+            !state.loading &&
+            state.status !== 'running'
+        );
     }
     function canStop() {
-        return state.status === 'running';
-    }
-    function composerDisabled() {
-        return false;
+        return canWrite() && state.status === 'running';
     }
     function isQueueing() {
         return (
@@ -866,7 +920,7 @@ export function useAiSession(options = {}) {
         }
     }
     function canRegenerate() {
-        if (!state.sessionId) return false;
+        if (!state.sessionId || !canWrite()) return false;
         if (
             state.status === 'running' ||
             state.status === 'compacting' ||
@@ -1458,7 +1512,7 @@ export function useAiSession(options = {}) {
         busUnsubscribe(bus, 'muk_ai.event', busHandler);
         clearStreamIdleTimer();
     });
-    return {
+    const api = {
         state,
         load,
         loadMoreEvents,
@@ -1480,10 +1534,10 @@ export function useAiSession(options = {}) {
         onRegenerate,
         canRegenerate,
         setScrollCallback,
+        canWrite,
         canSend,
         canAttach,
         canStop,
-        composerDisabled,
         isQueueing,
         cancelQueued,
         runUnpin,
@@ -1500,4 +1554,9 @@ export function useAiSession(options = {}) {
         runForkAtEvent,
         openHandoverPicker,
     };
+    for (const name of WRITE_ACTIONS) {
+        const action = api[name];
+        api[name] = (...args) => (state.readonly ? undefined : action(...args));
+    }
+    return api;
 }

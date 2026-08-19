@@ -16,7 +16,7 @@ from odoo.exceptions import UserError
 from odoo.tools import mute_logger
 
 from odoo.addons.muk_ai.tests.common import AITestCommon
-from odoo.addons.muk_ai.tools import StreamCancelled
+from odoo.addons.muk_ai.tools import StreamCancelled, TurnSuperseded
 
 
 class TestAiStreaming(AITestCommon):
@@ -267,6 +267,51 @@ class TestAiStreaming(AITestCommon):
         self.assertEqual(self._assistant_messages(session), [])
         self.assertEqual(self._persisted_texts(session), [])
         self.assertFalse(session.last_text)
+
+    def test_a_turn_replaced_mid_stream_stops_the_worker(self):
+        session = self.env['muk_ai.session'].create({'name': 'stream-superseded'})
+        session.write({'state': 'running', 'turn_seq': 4})
+        with self.assertRaises(TurnSuperseded):
+            session._check_cancelled({'turn': 3, 'last_state_check': 0})
+
+    def test_a_stopped_session_is_not_reported_as_superseded(self):
+        session = self.env['muk_ai.session'].create({'name': 'stream-stopped'})
+        session.write({'state': 'stopped', 'turn_seq': 4})
+        with self.assertRaises(StreamCancelled) as caught:
+            session._check_cancelled({'turn': 4, 'last_state_check': 0})
+        self.assertNotIsInstance(caught.exception, TurnSuperseded)
+
+    def test_the_turn_being_streamed_is_left_alone(self):
+        session = self.env['muk_ai.session'].create({'name': 'stream-current'})
+        session.write({'state': 'running', 'turn_seq': 4})
+        session._check_cancelled({'turn': 4, 'last_state_check': 0})
+
+    def test_a_replaced_turn_keeps_its_half_answer_to_itself(self):
+        session = self.env['muk_ai.session'].create({'name': 'stream-dropped'})
+        session.write({'state': 'running', 'turn_seq': 2})
+        buffer_state = {
+            'turn': 1,
+            'last_state_check': 0,
+            'full_text': 'an answer to the old question',
+        }
+        with self.assertRaises(StreamCancelled):
+            session._check_cancelled(buffer_state)
+        self.assertFalse(session.last_text)
+        self.assertEqual(self._assistant_messages(session), [])
+
+    def test_asking_again_after_a_stop_starts_a_later_turn(self):
+        session = self.env['muk_ai.session'].create({'name': 'stream-counter'})
+        attachments = self.env['ir.attachment']
+        session._enqueue_user_turn('first question', attachments)
+        first = session.turn_seq
+        session.action_stop()
+        session._enqueue_user_turn('second question', attachments)
+        self.assertEqual(session.turn_seq, first + 1)
+
+    def test_a_caller_outside_a_turn_is_never_superseded(self):
+        session = self.env['muk_ai.session'].create({'name': 'stream-no-turn'})
+        session.write({'state': 'running', 'turn_seq': 7})
+        self.assertFalse(session._turn_superseded({}))
 
     # ----------------------------------------------------------
     # Tests: provider delta callback

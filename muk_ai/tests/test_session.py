@@ -486,7 +486,7 @@ class TestAiSession(AITestCommon):
         events = [
             message
             for target, notification_type, message in captured
-            if notification_type == 'muk_ai.event' and target == partner
+            if notification_type == 'muk_ai.event' and target == self.session
         ]
         self.assertTrue(events)
         self.assertTrue(
@@ -1485,6 +1485,82 @@ class TestAiSession(AITestCommon):
         session.write({'state': 'running'})
         with self.assertRaises(UserError):
             session.fork_at_event(target.id)
+
+    def test_undo_after_clear_truncates_conversation(self):
+        session = self.env['muk_ai.session'].create({'name': 'clear-undo'})
+        with self._patch_provider([self._text_payload('answer 1')]):
+            session.start('question 1')
+        session.clear()
+        with self._patch_provider([self._text_payload('answer 2')]):
+            session.send_message('question 2')
+        target = next(
+            event
+            for event in session.event_ids.sorted('sequence')
+            if event.kind == 'user_message'
+            and 'question 2' in (event.payload or {}).get('content', '')
+        )
+        session.undo_to_event(target.id)
+        self.assertFalse(
+            session.conversation,
+            'undoing the only post-clear user message must empty the conversation',
+        )
+
+    def test_undo_after_compact_truncates_conversation(self):
+        agent = self.env['muk_ai.agent'].create(
+            {
+                'name': 'Small window',
+                'model_id': self._create_model(
+                    'test-compact-undo', context_window=10000
+                ).id,
+            }
+        )
+        session = self.env['muk_ai.session'].create(
+            {'name': 'compact-undo', 'agent_id': agent.id}
+        )
+        filler = 'x' * 4000
+        with self._patch_provider([self._text_payload(f'answer 1 {filler}')]):
+            session.start(f'question 1 {filler}')
+        with self._patch_provider([self._text_payload(f'answer 2 {filler}')]):
+            session.send_message(f'question 2 {filler}')
+        with self._patch_provider([self._text_payload('compact summary')]):
+            session.compact()
+        self.assertNotIn('question 1', json.dumps(session.conversation or []))
+        with self._patch_provider([self._text_payload('answer 3')]):
+            session.send_message('question 3')
+        target = next(
+            event
+            for event in session.event_ids.sorted('sequence')
+            if event.kind == 'user_message'
+            and 'question 3' in (event.payload or {}).get('content', '')
+        )
+        session.undo_to_event(target.id)
+        self.assertNotIn(
+            'question 3',
+            json.dumps(session.conversation or []),
+            'undoing after a compaction must drop the undone turn from the context',
+        )
+
+    def test_fork_after_clear_does_not_copy_tail(self):
+        session = self.env['muk_ai.session'].create({'name': 'clear-fork'})
+        with self._patch_provider([self._text_payload('answer 1')]):
+            session.start('question 1')
+        session.clear()
+        with self._patch_provider([self._text_payload('answer 2')]):
+            session.send_message('question 2')
+        with self._patch_provider([self._text_payload('answer 3')]):
+            session.send_message('question 3')
+        target = next(
+            event
+            for event in session.event_ids.sorted('sequence')
+            if event.kind == 'user_message'
+            and 'question 2' in (event.payload or {}).get('content', '')
+        )
+        fork = self.env['muk_ai.session'].browse(session.fork_at_event(target.id))
+        self.assertNotIn(
+            'question 3',
+            json.dumps(fork.conversation or []),
+            'a fork must not carry turns made after the fork point',
+        )
 
     def test_compact_tail_drop_fallback_on_provider_error(self):
         session = self.env['muk_ai.session'].create({'name': 'tail-drop'})

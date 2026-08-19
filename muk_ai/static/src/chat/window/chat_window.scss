@@ -212,4 +212,15 @@
         width: 30px;
         height: 30px;
     }
+    .mk_composer_readonly {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.45rem 0.6rem;
+        border: 1px dashed var(--mk-border);
+        border-radius: 10px;
+        background: var(--mk-bg-soft);
+        color: var(--mk-text-muted);
+        font-size: 0.8rem;
+    }
 }

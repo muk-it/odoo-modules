@@ -19,12 +19,21 @@
 
     .o_select_menu_toggler {
         min-height: $input-height;
-        padding: $input-padding-y $input-padding-x;
-        border: 0 !important;
+        padding: $form-select-padding-y $form-select-indicator-padding
+            $form-select-padding-y $form-select-padding-x;
+        border: $input-border-width solid $input-border-color !important;
         border-radius: $input-border-radius;
         background-color: $input-bg !important;
+        background-image: escape-svg($form-select-indicator);
+        background-repeat: no-repeat;
+        background-position: $form-select-bg-position;
+        background-size: $form-select-bg-size;
         box-shadow: none !important;
         color: $input-color;
+    }
+
+    .o_select_menu_caret {
+        display: none;
     }
 }
 

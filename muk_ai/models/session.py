@@ -14,10 +14,12 @@ import psycopg2
 import urllib3
 from markupsafe import Markup, escape
 
-from odoo import SUPERUSER_ID, _, api, fields, models, modules, release
+from odoo import SUPERUSER_ID, Command, _, api, fields, models, modules, release
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.http import request
+from odoo.osv.expression import AND, FALSE_DOMAIN, OR, normalize_domain
 from odoo.tools import SQL, config
+from odoo.tools.sql import create_index
 
 from odoo.addons.muk_ai.tools import (
     ADVISORY_LOCK_NAMESPACE,
@@ -32,6 +34,7 @@ from odoo.addons.muk_ai.tools import (
     COMPACT_SUMMARY_TEMPLATE,
     DEFAULT_CONTEXT_WINDOW,
     DISPATCH_MAX_TURNS,
+    GC_SESSION_BATCH,
     IMAGE_MIMETYPES,
     INLINE_IMAGE_RE,
     ITERATION_WARNING_ROUNDS,
@@ -49,6 +52,7 @@ from odoo.addons.muk_ai.tools import (
     WORKER_HEARTBEAT_INTERVAL,
     WORKER_STALE_THRESHOLD,
     StreamCancelled,
+    TurnSuperseded,
     build_tool_call_output,
     clean_ask_preview,
     clean_view_context_payload,
@@ -150,6 +154,20 @@ class AISession(models.Model):
         index=True,
     )
 
+    share_user_ids = fields.Many2many(
+        comodel_name='res.users',
+        relation='muk_ai_session_share_user_rel',
+        column1='session_id',
+        column2='user_id',
+        string='Shared With',
+        help=(
+            'Users who may read this chat. They see the whole transcript, '
+            'including the tool output it gathered under the owner rights, '
+            'and cannot write to it or carry it on.'
+        ),
+        copy=False,
+    )
+
     # ----------------------------------------------------------
     # Fields Configuration
     # ----------------------------------------------------------
@@ -199,6 +217,20 @@ class AISession(models.Model):
         string='Conversation',
         readonly=True,
         default=list,
+        copy=False,
+    )
+
+    turn_seq = fields.Integer(
+        string='Turn',
+        help=(
+            'Counter raised every time a turn starts. A worker streams under '
+            'the number it read, and stops as soon as the session carries '
+            'another one, so an answer to a question that was cancelled or '
+            'replaced can never arrive as the answer to the next.'
+        ),
+        readonly=True,
+        default=0,
+        copy=False,
     )
 
     cleared_at = fields.Datetime(
@@ -244,6 +276,7 @@ class AISession(models.Model):
     last_text = fields.Text(
         string='Last AI Message',
         readonly=True,
+        copy=False,
     )
 
     view_context = fields.Json(
@@ -276,6 +309,7 @@ class AISession(models.Model):
             '`kind`.'
         ),
         readonly=True,
+        copy=False,
     )
 
     approved_signatures = fields.Json(
@@ -507,6 +541,35 @@ class AISession(models.Model):
             return '\n'.join(lines)
         return ''
 
+    def _build_space_block(self) -> str:
+        """Build the prompt block carrying the instructions of the session's space.
+
+        The text belongs to the user rather than to an administrator, so it is
+        handed over as written instead of rendered: the evaluation context of
+        :meth:`~odoo.addons.muk_ai.models.prompt_mixin.AIPromptMixin._render_prompt`
+        reaches ``env``. The space is read sudoed, as a chat shared with
+        somebody stays filed in a space of its owner, which the people it was
+        shared with cannot read.
+        """
+        space = self.space_id.sudo()
+        if instructions := (space.instructions or '').strip():
+            return '\n'.join(
+                [
+                    '<space_instructions>',
+                    (
+                        'How the user wants you to work in the space '
+                        '%(space)s. Follow them wherever they apply. They '
+                        'refine the instructions above rather than replace '
+                        'them, and they grant no access you do not already '
+                        'have.'
+                    )
+                    % {'space': space.display_name},
+                    instructions,
+                    '</space_instructions>',
+                ]
+            )
+        return ''
+
     def _build_files_block(self) -> str:
         """Build the prompt block stating how to hand a file to the user."""
         return (
@@ -693,6 +756,7 @@ class AISession(models.Model):
         """Return the system message rebuilt from the current agent and context."""
         parts = [
             self._effective_system_prompt(),
+            self._build_space_block(),
             *self._system_prompt_addenda(),
             self._build_runtime_block(),
             self._build_files_block(),
@@ -852,9 +916,45 @@ class AISession(models.Model):
     # Helper Bus
     # ----------------------------------------------------------
 
-    def _bus_channel(self) -> models.BaseModel:
-        """Return the partner used as the session's bus channel."""
-        return self.user_id.partner_id
+    def _audience_partners(self) -> models.BaseModel:
+        """Return the partners whose chat list shows this session."""
+        return (self.user_id | self.share_user_ids).partner_id
+
+    def _notify_share_change(self, previous: models.BaseModel) -> None:
+        """Tell the people a chat was just given to, or taken from.
+
+        A reader who lost it holds a live subscription until something makes
+        their surface let go, so they are told the way a deletion is told:
+        the chat leaves their list, and with it the channel it streamed on.
+        Someone handed the chat itself is still in the audience, so they are
+        not told it went away.
+        """
+        for partner in previous.partner_id - self._audience_partners():
+            self.env['bus.bus']._sendone(
+                partner,
+                'muk_ai.session_state',
+                {'session_id': self.id, 'deleted': True},
+            )
+        for partner in (self.share_user_ids - previous).partner_id:
+            self.env['bus.bus']._sendone(
+                partner,
+                'muk_ai.session_state',
+                {
+                    'session_id': self.id,
+                    'name': self.name,
+                    'state': self.state,
+                },
+            )
+
+    def _bus_send_audience(self, notification_type: str, message: dict) -> None:
+        """Notify everyone whose chat list shows this session.
+
+        The transcript rides the session's own channel, which only whoever
+        opened it subscribes to; what belongs in a sidebar that is not open
+        has to reach its people directly instead.
+        """
+        for partner in self._audience_partners():
+            self.env['bus.bus']._sendone(partner, notification_type, message)
 
     def _bus_send(self, notification_type: str, message: dict) -> None:
         """Send a notification to the webclient on each record's channel.
@@ -862,9 +962,7 @@ class AISession(models.Model):
         Replaces ``bus.listener.mixin``, which only exists from 18.0 on.
         """
         for record in self:
-            channel = record._bus_channel()
-            channel.ensure_one()
-            self.env['bus.bus']._sendone(channel, notification_type, message)
+            self.env['bus.bus']._sendone(record, notification_type, message)
 
     def _public_pending_ask(self, pending: dict | None = None) -> dict | None:
         """Return the pending ask payload stripped of internal keys."""
@@ -923,7 +1021,7 @@ class AISession(models.Model):
             },
         )
         if event_type == 'state':
-            self._bus_send(
+            self._bus_send_audience(
                 'muk_ai.session_state',
                 {
                     'session_id': self.id,
@@ -933,7 +1031,7 @@ class AISession(models.Model):
             )
             self._notify_state_transition(payload)
         elif event_type == 'rename':
-            self._bus_send(
+            self._bus_send_audience(
                 'muk_ai.session_state',
                 {
                     'session_id': self.id,
@@ -954,9 +1052,29 @@ class AISession(models.Model):
                 capped['truncated'] = True
         return capped
 
+    def _should_autoname(self) -> bool:
+        """Return whether the first message may retitle the session.
+
+        A chat starts nameless and takes its title from what was asked. A
+        session a surface opened under a name of its own keeps it: that name
+        says what the session is for, which the first instruction does not.
+        """
+        return True
+
+    def _should_notify_state(self) -> bool:
+        """Return whether a terminal state is worth telling the owner about.
+
+        True for a session somebody started and walked away from. A surface
+        that shows the run as it happens overrides this: it has already told
+        them, and a notification on top of it is noise.
+        """
+        return True
+
     def _notify_state_transition(self, payload: dict) -> None:
         """Emit bus and inbox notifications for terminal state transitions."""
         new_state = (payload or {}).get('state')
+        if not self._should_notify_state():
+            return
         if new_state == 'done' and (
             self.pending_ids or self.env.context.get('muk_ai_skip_done_notification')
         ):
@@ -967,7 +1085,8 @@ class AISession(models.Model):
             title, message = self._notification_summary(new_state, payload, ask_kind)
             self.notification_unread = True
             with suppress(Exception):
-                self._bus_send(
+                self.env['bus.bus']._sendone(
+                    self.user_id.partner_id,
                     'muk_ai.session_notification',
                     {
                         'session_id': self.id,
@@ -1171,15 +1290,7 @@ class AISession(models.Model):
             self._extend_conversation([user_entry])
         if user_message or attachments:
             self._append_event(self._user_message_log(user_message, attachments))
-        self.write(
-            {
-                'state': 'running',
-                'error_message': False,
-                'claimed_at': False,
-                'turn_wallclock_spent': 0.0,
-                'turn_cost_spent': 0.0,
-            }
-        )
+        self.write(self._turn_start_values())
         self._publish_event('state', {'state': 'running'})
 
     def _tool_result_sources(
@@ -1432,12 +1543,30 @@ class AISession(models.Model):
         """Return the context keys threaded through tool dispatch."""
         return {'muk_mcp_session_id': self.id}
 
+    def _enforce_tool_scope(self) -> str | None:
+        """Return the MCP scope tool calls are capped at, or ``None`` for all.
+
+        Extension modules narrow this per session — a session started from an
+        untrusted surface stays read-only whatever its agent is allowed to do.
+        """
+        return 'read' if self.agent_id and self.agent_id.read_only else None
+
+    def _can_ask_user(self) -> bool:
+        """Return whether this session may stop and put a question to a human.
+
+        Extension modules answer ``False`` for a session nobody is watching,
+        where a pending question would never be answered. Dropping the tool
+        from the advertised schema is not enough on its own: the model can
+        still emit the call, so the dispatcher refuses it here as well.
+        """
+        return True
+
     def _dispatch_tool_call(self, name: str, arguments: dict, call_id: str) -> tuple:
         """Execute a tool call and return its output and success flag."""
         if name == 'tool_load':
             output = self._dispatch_tool_load(arguments, parent_call_id=call_id)
             return output, 'error' not in output
-        enforce_scope = 'read' if self.agent_id and self.agent_id.read_only else None
+        enforce_scope = self._enforce_tool_scope()
         arguments, resolved_refs = self._resolve_value_refs(arguments)
         try:
             tool_env = self.env(
@@ -1660,23 +1789,56 @@ class AISession(models.Model):
     def _check_cancelled(self, buffer_state: dict) -> None:
         """Persist partial output and heartbeat, raising when cancelled.
 
-        :raise StreamCancelled: when the session has been stopped
+        A stop is only seen when the provider sends its next chunk, by which
+        time the user may have asked again and the session be running once
+        more. The turn the round started under settles which of the two it
+        is, so an answer to a replaced question is dropped, never persisted.
+
+        :raise StreamCancelled: when the session was stopped
+        :raise TurnSuperseded: when a newer turn replaced this one
         """
         last = buffer_state.get('last_state_check', 0)
         if (now := time.monotonic()) - last >= 0.3:
             buffer_state['last_state_check'] = now
-            self.invalidate_recordset(['state'])
+            self.invalidate_recordset(['state', 'turn_seq'])
             if self.state == 'stopped':
                 if buffer_state.get('full_text'):
                     self._persist_partial(buffer_state)
                     buffer_state['full_text'] = ''
                     self._commit_safe()
                 raise StreamCancelled()
+            if self._turn_superseded(buffer_state):
+                buffer_state.clear()
+                raise TurnSuperseded()
             last_beat = buffer_state.get('last_heartbeat', 0)
             if now - last_beat >= WORKER_HEARTBEAT_INTERVAL:
                 buffer_state['last_heartbeat'] = now
                 self.claimed_at = fields.Datetime.now()
                 self._commit_safe()
+
+    def _turn_start_values(self) -> dict:
+        """Return the values that put the session into a fresh turn.
+
+        Every way of starting one writes these, so no entry point can leave
+        the counter behind and strand a worker on a turn nobody awaits.
+        """
+        return {
+            'state': 'running',
+            'error_message': False,
+            'claimed_at': False,
+            'turn_seq': (self.turn_seq or 0) + 1,
+            'turn_wallclock_spent': 0.0,
+            'turn_cost_spent': 0.0,
+        }
+
+    def _turn_superseded(self, buffer_state: dict) -> bool:
+        """Return whether a newer turn has replaced the one being streamed.
+
+        :param buffer_state: stream buffer carrying the turn the round started
+            under, absent for a caller that runs outside a turn
+        """
+        turn = buffer_state.get('turn')
+        return turn is not None and turn != self.turn_seq
 
     def _on_stream_delta(self, kind: str, payload: dict, buffer_state: dict) -> None:
         """Coalesce and publish a streamed delta of the given kind."""
@@ -1831,7 +1993,11 @@ class AISession(models.Model):
 
         :raise StreamCancelled: when the session is cancelled mid-stream
         """
-        buffer_state = {'text': '', 'last_text_flush': time.monotonic()}
+        buffer_state = {
+            'text': '',
+            'last_text_flush': time.monotonic(),
+            'turn': self.turn_seq,
+        }
         try:
             payload = provider._request_responses(
                 inputs=self._materialize_round_inputs(
@@ -2578,6 +2744,15 @@ class AISession(models.Model):
                 self._skip_tool_call(outputs, call, call['_parse_error'])
                 continue
             if call['name'] == 'ask_user':
+                if not self._can_ask_user():
+                    self._record_tool_call(call)
+                    self._skip_tool_call(
+                        outputs,
+                        call,
+                        'ask_user_unavailable',
+                        log_result={'error': 'ask_user_unavailable'},
+                    )
+                    continue
                 if wait_for_user:
                     self._record_tool_call(call)
                     self._skip_tool_call(
@@ -2700,14 +2875,18 @@ class AISession(models.Model):
             '_cache_volatile': True,
         }
 
+    def _wake_worker_cron(self) -> None:
+        """Ask a worker cron to pick the session up."""
+        if crons := self._session_worker_crons():
+            with suppress(Exception):
+                random.choice(crons)._trigger()
+
     def _yield_slice(self) -> None:
         """Commit and trigger a worker cron to continue the turn elsewhere."""
         if modules.module.current_test:
             return
         self._commit_safe()
-        if crons := self._session_worker_crons():
-            with suppress(Exception):
-                random.choice(crons)._trigger()
+        self._wake_worker_cron()
 
     def _handle_wallclock_expiry(
         self, slice_start: float, spent_before: float, turn_budget: float
@@ -2795,10 +2974,11 @@ class AISession(models.Model):
                         remaining if remaining <= ITERATION_WARNING_ROUNDS else None
                     ),
                 )
+            except TurnSuperseded:
+                raise
             except StreamCancelled:
-                self.invalidate_recordset(['state'])
-                if self.state == 'stopped':
-                    self._publish_event('state', {'state': 'stopped'})
+                if self.state == 'running':
+                    self._yield_slice()
                 return
             except UserError as error:
                 self._transition_state('error', error=str(error))
@@ -3500,63 +3680,47 @@ class AISession(models.Model):
             and not item.get('_vision_entry')
         )
 
-    def _conversation_cut_index(self, event: models.BaseModel) -> int:
-        """Return the conversation index to cut at when undoing to an event."""
-        earlier_user_msgs = (
-            self.env['muk_ai.session.event']
-            .sudo()
-            .search_count(
-                [
-                    ('session_id', '=', self.id),
-                    ('sequence', '<', event.sequence),
-                    ('kind', '=', 'user_message'),
-                ]
-            )
-        )
-        conv = list(self.conversation or [])
-        user_seen = 0
-        if event.kind == 'user_message':
-            for i, item in enumerate(conv):
-                if self._is_counted_user_entry(item):
-                    if user_seen == earlier_user_msgs:
-                        return i
-                    user_seen += 1
-            return len(conv)
-        for i, item in enumerate(conv):
-            if self._is_counted_user_entry(item):
-                user_seen += 1
-                if user_seen == earlier_user_msgs:
-                    return i + 1
-        return len(conv)
+    def _conversation_cut_index(
+        self, event: models.BaseModel, keep_turn: bool = False
+    ) -> int:
+        """Return the conversation index to cut at for an event.
 
-    def _conversation_cut_index_for_fork(self, event: models.BaseModel) -> int:
-        """Return the conversation index to cut at when forking at an event."""
-        earlier_user_msgs = (
+        The event log and the conversation are mapped from their common tail:
+        ``clear()`` and compaction drop the conversation head while keeping
+        every event, so counting from the start would mis-cut every turn made
+        after such a reset.
+
+        :param keep_turn: When set, the entries the event itself produced are
+            kept (fork); otherwise they are dropped as well (undo).
+        """
+        is_user = event.kind == 'user_message'
+        later_user_msgs = (
             self.env['muk_ai.session.event']
             .sudo()
             .search_count(
                 [
                     ('session_id', '=', self.id),
-                    ('sequence', '<', event.sequence),
+                    ('sequence', '>=' if is_user else '>', event.sequence),
                     ('kind', '=', 'user_message'),
                 ]
             )
         )
+        if is_user:
+            rank, offset = later_user_msgs, 1 if keep_turn else 0
+        else:
+            rank, offset = (
+                (later_user_msgs, 0) if keep_turn else (later_user_msgs + 1, 1)
+            )
         conv = list(self.conversation or [])
-        user_seen = 0
-        if event.kind == 'user_message':
-            for i, item in enumerate(conv):
-                if self._is_counted_user_entry(item):
-                    if user_seen == earlier_user_msgs:
-                        return i + 1
-                    user_seen += 1
+        if rank <= 0:
             return len(conv)
-        for i, item in enumerate(conv):
-            if self._is_counted_user_entry(item):
+        user_seen = 0
+        for i in range(len(conv) - 1, -1, -1):
+            if self._is_counted_user_entry(conv[i]):
                 user_seen += 1
-                if user_seen > earlier_user_msgs:
-                    return i
-        return len(conv)
+                if user_seen == rank:
+                    return i + offset
+        return 0
 
     # ----------------------------------------------------------
     # Functions
@@ -3623,7 +3787,11 @@ class AISession(models.Model):
         return snapshot
 
     def dismiss_notifications(self) -> bool:
-        """Clear the attention flag and mark inbox notifications read."""
+        """Clear the attention flag and mark inbox notifications read.
+
+        The flag belongs to the owner, so reading a chat somebody shared with
+        you leaves theirs alone rather than attempting a write you may not make.
+        """
         if partner := self.env.user.partner_id:
             messages = (
                 self.env['mail.message']
@@ -3638,7 +3806,12 @@ class AISession(models.Model):
             )
             if messages:
                 messages.with_user(self.env.user).set_message_done()
-            self.filtered('notification_unread').notification_unread = False
+            owned = self.filtered(
+                lambda session: (
+                    session.user_id == self.env.user and session.notification_unread
+                )
+            )
+            owned.notification_unread = False
             self._push_notification_badge(self.env.user)
             return True
         return False
@@ -3705,7 +3878,9 @@ class AISession(models.Model):
             raise UserError(_('Session is not in a startable state.'))
         attachments = self._resolve_attachments(attachment_ids)
         if not self.conversation:
-            if title := self._autoname_from_text(user_message):
+            if self._should_autoname() and (
+                title := self._autoname_from_text(user_message)
+            ):
                 self.write({'name': title})
                 with suppress(Exception):
                     self._publish_event('rename', {'name': title})
@@ -3816,16 +3991,7 @@ class AISession(models.Model):
             stale = Event.search([('session_id', '=', self.id)])
         if stale:
             stale.unlink()
-        self.write(
-            {
-                'pending_ask': False,
-                'error_message': False,
-                'state': 'running',
-                'claimed_at': False,
-                'turn_wallclock_spent': 0.0,
-                'turn_cost_spent': 0.0,
-            }
-        )
+        self.write({'pending_ask': False, **self._turn_start_values()})
         self._publish_event('state', {'state': 'running'})
         self._trigger_worker()
         return self.get_snapshot()
@@ -3943,12 +4109,15 @@ class AISession(models.Model):
     def fork_at_event(self, event_id: int) -> int:
         """Fork a new session copied up to the given event; return its id.
 
+        :raise AccessError: when the caller may only read the session
         :raise UserError: when the session is running or compacting
         """
+        self.check_access_rights('write')
+        self.check_access_rule('write')
         if self.state in ('running', 'compacting'):
             raise UserError(_('Cannot fork while the session is running.'))
         target = self._resolve_event(event_id)
-        cut_index = self._conversation_cut_index_for_fork(target)
+        cut_index = self._conversation_cut_index(target, keep_turn=True)
         new_conv = list(self.conversation or [])[:cut_index]
         fork = self.copy(
             {
@@ -4190,7 +4359,8 @@ class AISession(models.Model):
         """Transfer ownership of this session to another internal user.
 
         The chat leaves the space it was filed into, as a space belongs to
-        one user.
+        one user. Whoever gives it away stays on as a reader, or they would
+        lose sight of the chat the moment they handed it over.
 
         :param new_user_id: the target ``res.users`` id
         :raise AccessError: when the caller is not the owner or an admin
@@ -4214,6 +4384,10 @@ class AISession(models.Model):
                 'user_id': target.id,
                 'space_id': False,
                 'notification_unread': True,
+                'share_user_ids': [
+                    Command.link(old_owner.id),
+                    Command.unlink(target.id),
+                ],
             }
         )
         session._publish_event('state', {'state': session.state})
@@ -4286,6 +4460,16 @@ class AISession(models.Model):
     # ORM
     # ----------------------------------------------------------
 
+    def init(self) -> None:
+        """Index a user's chats by recency, the order the sidebar lists them."""
+        super().init()
+        create_index(
+            self.env.cr,
+            'muk_ai_session_owner_recent_idx',
+            self._table,
+            ['user_id', 'create_date DESC'],
+        )
+
     @api.model_create_multi
     def create(self, vals_list: list[dict]) -> AISession:
         """Enforce the rate limit and broadcast initial state on create."""
@@ -4293,7 +4477,7 @@ class AISession(models.Model):
         records = super().create(vals_list)
         for record in records:
             with suppress(Exception):
-                record._bus_send(
+                record._bus_send_audience(
                     'muk_ai.session_state',
                     {
                         'session_id': record.id,
@@ -4313,11 +4497,17 @@ class AISession(models.Model):
         ``switch_agent`` MCP tool with one consistent marker.
 
         Filing an unread chat also refreshes the badge, which carries the
-        per-space unread counts.
+        per-space unread counts, and changing who a chat is shared with tells
+        the people it was given to or taken from.
         """
         previous = (
             {record.id: record.agent_id for record in self}
             if 'agent_id' in vals
+            else None
+        )
+        shared = (
+            {record.id: record.share_user_ids for record in self}
+            if 'share_user_ids' in vals
             else None
         )
         owners = (
@@ -4328,6 +4518,9 @@ class AISession(models.Model):
         result = super().write(vals)
         for owner in owners:
             self._push_notification_badge(owner)
+        if shared is not None:
+            for record in self:
+                record._notify_share_change(shared.get(record.id))
         if previous is None:
             return result
         for record in self:
@@ -4354,7 +4547,7 @@ class AISession(models.Model):
         users = self.user_id
         for record in self:
             with suppress(Exception):
-                record._bus_send(
+                record._bus_send_audience(
                     'muk_ai.session_state',
                     {'session_id': record.id, 'deleted': True},
                 )
@@ -4367,6 +4560,78 @@ class AISession(models.Model):
     # ----------------------------------------------------------
     # Cron
     # ----------------------------------------------------------
+
+    @api.model
+    def _retention_days(self) -> int:
+        """Return the days a finished chat is kept, zero to keep it forever."""
+        params = self.env['ir.config_parameter'].sudo()
+        if not params.get_param('muk_ai.session_retention_enabled'):
+            return 0
+        try:
+            return max(int(params.get_param('muk_ai.session_retention_days') or 0), 0)
+        except ValueError:
+            return 0
+
+    @api.model
+    def _gc_sessions_older_than(self, days: int, domain: list) -> tuple[int, int]:
+        """Delete the finished chats matching ``domain`` past ``days``.
+
+        One batch at a time, so the vacuum is told what is left and runs
+        again rather than shedding a backlog one cron run at a time.
+
+        :param days: how long such a chat is kept, zero to keep it forever
+        :param domain: what to restrict the deletion to
+        :return: how many chats were deleted, and how many are still due
+        """
+        if days <= 0:
+            return 0, 0
+        cutoff = fields.Datetime.now() - timedelta(days=days)
+        stale_domain = AND(
+            [
+                domain,
+                [
+                    ('state', 'in', ('done', 'error', 'stopped')),
+                    ('write_date', '<', cutoff),
+                ],
+            ]
+        )
+        stale = self.sudo().search(stale_domain, limit=GC_SESSION_BATCH)
+        count = len(stale)
+        stale.unlink()
+        if count < GC_SESSION_BATCH:
+            return count, 0
+        return count, self.sudo().search_count(stale_domain)
+
+    @api.autovacuum
+    def _gc_sessions(self) -> tuple[int, int]:
+        """Delete the finished chats nobody asked to keep.
+
+        Spaces that state a retention are swept on their own terms, the rest
+        on the general setting. Two system spaces can collect the same chat,
+        so what one keeps forever is taken out of every other sweep too.
+
+        :return: how many chats were deleted, and how many are still due
+        """
+        spaces = (
+            self.env['muk_ai.space']
+            .sudo()
+            .search([('retention_mode', '!=', 'default')])
+        )
+        kept = FALSE_DOMAIN
+        for space in spaces.filtered(lambda space: space.retention_mode == 'forever'):
+            kept = OR([kept, space._session_domain()])
+        not_kept = ['!', *normalize_domain(kept)]
+        general = not_kept
+        done = remaining = 0
+        for space in spaces.filtered(lambda space: space.retention_mode == 'days'):
+            claimed = space._session_domain()
+            swept, due = self._gc_sessions_older_than(
+                space.retention_days, AND([claimed, not_kept])
+            )
+            done, remaining = done + swept, remaining + due
+            general = AND([general, ['!', *normalize_domain(claimed)]])
+        swept, due = self._gc_sessions_older_than(self._retention_days(), general)
+        return done + swept, remaining + due
 
     @api.model
     def _client_action_timeout(self) -> int:
@@ -4506,8 +4771,14 @@ class AISession(models.Model):
 
     @api.model
     def _process_session_in_worker(self, session_id: int) -> bool:
-        """Process one session under an advisory lock in a fresh cursor."""
+        """Process one session under an advisory lock in a fresh cursor.
+
+        A turn replaced mid-stream leaves its replacement waiting for a worker,
+        and the one it tried is this one, so another is woken once the lock is
+        released — waking it any earlier would only bounce off the lock.
+        """
         processed = False
+        superseded = False
         with self.pool.cursor() as cr:
             cr.execute(
                 SQL(
@@ -4538,6 +4809,9 @@ class AISession(models.Model):
                             else:
                                 session._run_to_completion()
                             cr.commit()
+                        except TurnSuperseded:
+                            cr.rollback()
+                            superseded = True
                         except StreamCancelled:
                             cr.rollback()
                         except Exception as error:  # noqa: BLE001 — record any worker failure
@@ -4554,6 +4828,8 @@ class AISession(models.Model):
                             )
                         )
                         cr.fetchone()
+        if superseded:
+            self.browse(session_id)._wake_worker_cron()
         return processed
 
     @api.model

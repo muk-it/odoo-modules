@@ -1,3 +1,18 @@
+`1.16.0`
+-------
+
+- Space Instructions
+
+`1.15.0`
+-------
+
+- Dedicated Bus
+
+`1.14.0`
+-------
+
+- Chat Sharing
+
 `1.13.0`
 -------
 

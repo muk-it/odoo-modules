@@ -3,6 +3,11 @@
 
     <t t-name="muk_ai.ChatComposer">
         <div class="mk_composer_host position-relative">
+        <div class="mk_composer_readonly" t-if="props.readonly">
+            <i class="fa fa-eye"/>
+            <span t-esc="readonlyNotice"/>
+        </div>
+        <t t-else="">
         <div class="mk_slash_popover" t-if="showSlashMenu">
             <t t-if="isAgentMode">
                 <t t-foreach="agentMatches" t-as="agent" t-key="agent.id">
@@ -74,7 +79,6 @@
                     t-on-keydown="(ev) => this.onKeydown(ev)"
                     t-on-paste="(ev) => this.onPaste(ev)"
                     t-att-placeholder="props.placeholder"
-                    t-att-disabled="props.disabled ? 'disabled' : null"
                 />
                 <button
                     class="btn mk_send rounded-circle"
@@ -87,6 +91,7 @@
                 </button>
             </div>
         </div>
+        </t>
         </div>
     </t>
 
