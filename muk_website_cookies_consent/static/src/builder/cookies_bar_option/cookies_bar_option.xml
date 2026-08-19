@@ -2,7 +2,7 @@
 <templates xml:space="preserve">
 
 	<t t-inherit="website.CookiesBarOption" t-inherit-mode="extension">
-		<xpath expr="//BuilderSelect" position="replace">
+		<xpath expr="//BuilderSelect[@action=&quot;'selectLayout'&quot;]" position="replace">
 			<BuilderSelect action="'selectCookieLayout'">
 				<BuilderSelectItem actionValue="'bar_bottom'">
 					Bar at the bottom
@@ -21,7 +21,7 @@
 				</BuilderSelectItem>
 			</BuilderSelect>
 		</xpath>
-		<xpath expr="//BuilderRow" position="after">
+		<xpath expr="//BuilderRow[BuilderSelect[@action=&quot;'selectLayout'&quot;]]" position="after">
 			<BuilderRow label.translate="Density">
 				<BuilderSelect action="'selectCookieDensity'">
 					<BuilderSelectItem actionValue="'full'">Full</BuilderSelectItem>

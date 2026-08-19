@@ -71,6 +71,12 @@
 					</li>
 				</ul>
 			</div>
+			<p t-if="website.cookie_respect_gpc">
+				We honour the Global Privacy Control signal. If your browser or an extension sends it, we treat that as a refusal of every optional purpose and load nothing that is not strictly necessary, whatever you may have chosen here before.
+			</p>
+			<p t-else="">
+				We do not act on Global Privacy Control signals. Please use the choices above instead.
+			</p>
 			<div class="alert alert-info mt-4" role="status">
 				<button type="button" class="btn btn-primary mk_cookies_reopen">
 					Change my cookie choices
@@ -80,14 +86,6 @@
 					of our cookie policy.
 				</span>
 			</div>
-		</xpath>
-		<xpath expr="//p[contains(text(), 'Do Not Track')]" position="replace">
-			<p t-if="website.cookie_respect_gpc">
-				We honour the Global Privacy Control signal. If your browser or an extension sends it, we treat that as a refusal of every optional purpose and load nothing that is not strictly necessary, whatever you may have chosen here before.
-			</p>
-			<p t-else="">
-				We do not currently act on Do Not Track or Global Privacy Control signals. Please use the choices above instead.
-			</p>
 		</xpath>
 	</template>
 

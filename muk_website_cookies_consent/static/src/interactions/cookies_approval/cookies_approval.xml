@@ -2,7 +2,7 @@
 <templates xml:space="preserve">
 
 	<t t-inherit="website.cookiesWarning" t-inherit-mode="extension">
-		<xpath expr="//button" position="replace">
+		<xpath expr="//button[contains(@t-attf-class, 'o_no_optional_cookie')]" position="replace">
 			<div
 				t-attf-class="o_no_optional_cookie mk_cookies_placeholder {{extraClasses}}"
 				t-att-style="extraStyle"
