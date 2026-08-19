@@ -1,5 +1,6 @@
 const SAFE_SCHEME = /^(https?:|mailto:|#|\/)/i;
 const SAFE_IMG_SCHEME = /^(https?:|data:image\/(png|jpeg|jpg|gif|webp);base64,|\/)/i;
+const RECORD_HREF_RE = /^([a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+),(\d+)$/;
 const HTML_ESCAPE = {
     '&': '&amp;',
     '<': '&lt;',
@@ -142,7 +143,13 @@ function buildRenderer() {
         const hrefIdx = token.attrIndex('href');
         if (hrefIdx >= 0) {
             const href = String(token.attrs[hrefIdx][1]).trim();
-            token.attrs[hrefIdx][1] = SAFE_SCHEME.test(href) ? href : '#';
+            const record = RECORD_HREF_RE.exec(href);
+            if (record) {
+                token.attrs[hrefIdx][1] = `/odoo/${record[1]}/${record[2]}`;
+                token.attrJoin('class', 'mk_record_link');
+            } else {
+                token.attrs[hrefIdx][1] = SAFE_SCHEME.test(href) ? href : '#';
+            }
         }
         token.attrSet('target', '_blank');
         token.attrSet('rel', 'noopener noreferrer');

@@ -156,6 +156,27 @@ test('text that only looks like a reference stays plain', () => {
     expect(hrefsOf(out)).toEqual([]);
 });
 
+test('an explicit link with a model,id target becomes a backend record link', () => {
+    const out = renderMarkdown('[INV/2026/0042](account.move,42)');
+    expect(
+        out.includes(
+            '<a href="/odoo/account.move/42" class="mk_record_link" ' +
+                'target="_blank" rel="noopener noreferrer">INV/2026/0042</a>',
+        ),
+    ).toBe(true);
+});
+
+test('an href that only looks like a reference is still neutralised', () => {
+    for (const href of [
+        'partner,5',
+        'res.partner,x',
+        'Res.Partner,5',
+        'res.partner,5x',
+    ]) {
+        expect(hrefsOf(renderMarkdown(`[label](${href})`))).toEqual(['#']);
+    }
+});
+
 test('clicking mk_code_copy button invokes navigator.clipboard.writeText', async () => {
     const original = navigator.clipboard;
     const writes = [];
