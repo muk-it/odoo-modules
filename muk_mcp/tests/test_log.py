@@ -3,7 +3,9 @@ import json
 from unittest.mock import patch
 
 from odoo import api
+from odoo.exceptions import AccessError
 from odoo.tests import common
+from odoo.tests.common import new_test_user
 
 from odoo.addons.muk_mcp.core.tool import invalidate_registry_cache, mcp_tool
 
@@ -29,6 +31,8 @@ class TestMcpLog(common.TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.log_model = cls.env['muk_mcp.log']
+        cls.session_model = cls.env['muk_mcp.session']
+        cls.notification_model = cls.env['muk_mcp.notification']
         cls.tool_model = cls.env['muk_mcp.tool']
         cls.mixin_cls = type(cls.env['muk_mcp.mixin'])
         cls.startClassPatcher(patch.object(
@@ -37,6 +41,18 @@ class TestMcpLog(common.TransactionCase):
         ))
         invalidate_registry_cache(cls.env)
         cls.addClassCleanup(invalidate_registry_cache, cls.env)
+
+    # ----------------------------------------------------------
+    # Helper
+    # ----------------------------------------------------------
+
+    def _make_notification(self, user, event_id):
+        session = self.session_model.sudo().create({'user_id': user.id})
+        return self.notification_model.sudo().create({
+            'session_id': session.id,
+            'event_id': event_id,
+            'method': 'notifications/tools/list_changed',
+        })
 
     # ----------------------------------------------------------
     # Tests
@@ -168,3 +184,54 @@ class TestMcpLog(common.TransactionCase):
         self.assertEqual(len(captured), 1)
         self.assertEqual(captured[0]['status'], 'error')
         self.assertEqual(captured[0]['tool_name'], 'mcp_test_unknown_tool')
+
+    # ----------------------------------------------------------
+    # Tests: record rule isolation
+    # ----------------------------------------------------------
+
+    def test_user_only_sees_their_own_log_rows(self):
+        user = new_test_user(self.env, login='mcp_log_reader')
+        mine = self.log_model.sudo().create({
+            'user_id': user.id,
+            'method': 'tools/call',
+            'tool_name': 'mcp_log_mine',
+            'status': 'ok',
+        })
+        theirs = self.log_model.sudo().create({
+            'user_id': self.env.ref('base.user_admin').id,
+            'method': 'tools/call',
+            'tool_name': 'mcp_log_theirs',
+            'request_data': '{"secret": "value"}',
+            'status': 'ok',
+        })
+        visible = self.log_model.with_user(user).search(
+            [('id', 'in', (mine + theirs).ids)],
+        )
+        self.assertEqual(visible, mine)
+        with self.assertRaises(AccessError):
+            theirs.with_user(user).read(['request_data'])
+
+    def test_user_only_sees_notifications_of_their_own_sessions(self):
+        user = new_test_user(self.env, login='mcp_notification_reader')
+        mine = self._make_notification(user, 'mcp-log-mine')
+        theirs = self._make_notification(
+            self.env.ref('base.user_admin'), 'mcp-log-theirs',
+        )
+        visible = self.notification_model.with_user(user).search(
+            [('id', 'in', (mine + theirs).ids)],
+        )
+        self.assertEqual(visible, mine)
+
+    def test_user_cannot_write_create_or_unlink_notifications(self):
+        user = new_test_user(self.env, login='mcp_notification_writer')
+        mine = self._make_notification(user, 'mcp-log-write')
+        with self.assertRaises(AccessError):
+            mine.with_user(user).write({'delivered': True})
+        with self.assertRaises(AccessError):
+            self.notification_model.with_user(user).create({
+                'session_id': mine.session_id.id,
+                'event_id': 'mcp-log-forged',
+                'method': 'notifications/tools/list_changed',
+            })
+        with self.assertRaises(AccessError):
+            mine.with_user(user).unlink()
