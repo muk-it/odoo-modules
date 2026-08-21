@@ -5,6 +5,7 @@ import json
 from typing import Any
 from unittest.mock import patch
 
+from odoo import models
 from odoo.exceptions import AccessError
 from odoo.tests import common, tagged
 from odoo.tests.common import new_test_user
@@ -23,6 +24,7 @@ class TestMcpAclIsolation(common.TransactionCase):
         super().setUpClass()
         cls.tool_model = cls.env['muk_mcp.tool']
         cls.log_model = cls.env['muk_mcp.log']
+        cls.notification_model = cls.env['muk_mcp.notification']
         cls.company_a = cls.env['res.company'].create({'name': 'MCP Company A'})
         cls.company_b = cls.env['res.company'].create({'name': 'MCP Company B'})
         cls.company_c = cls.env['res.company'].create({'name': 'MCP Company C'})
@@ -94,6 +96,19 @@ class TestMcpAclIsolation(common.TransactionCase):
         """Run a tool in the privileged test environment and decode its result."""
         text, _info = self.tool_model._call(name, arguments, self.env, **kwargs)
         return json.loads(text)
+
+    def _make_notification(
+        self, user: models.BaseModel, event_id: str
+    ) -> models.BaseModel:
+        """Queue one notification on a fresh session owned by ``user``."""
+        session = self.env['muk_mcp.session'].create({'user_id': user.id})
+        return self.notification_model.create(
+            {
+                'session_id': session.id,
+                'event_id': event_id,
+                'method': 'notifications/tools/list_changed',
+            },
+        )
 
     # ----------------------------------------------------------
     # Tests: record rules
@@ -240,6 +255,36 @@ class TestMcpAclIsolation(common.TransactionCase):
         self.assertEqual(visible, mine)
         with self.assertRaises(AccessError):
             theirs.with_user(self.user).read(['request_data'])
+
+    # ----------------------------------------------------------
+    # Tests: notification isolation
+    # ----------------------------------------------------------
+
+    def test_user_only_sees_notifications_of_their_own_sessions(self):
+        mine = self._make_notification(self.user, 'mcp-acl-mine')
+        theirs = self._make_notification(
+            self.env.ref('base.user_admin'),
+            'mcp-acl-theirs',
+        )
+        visible = self.notification_model.with_user(self.user).search(
+            [('id', 'in', (mine + theirs).ids)],
+        )
+        self.assertEqual(visible, mine)
+
+    def test_user_cannot_write_create_or_unlink_notifications(self):
+        mine = self._make_notification(self.user, 'mcp-acl-write')
+        with self.assertRaises(AccessError):
+            mine.with_user(self.user).write({'delivered': True})
+        with self.assertRaises(AccessError):
+            self.notification_model.with_user(self.user).create(
+                {
+                    'session_id': mine.session_id.id,
+                    'event_id': 'mcp-acl-forged',
+                    'method': 'notifications/tools/list_changed',
+                },
+            )
+        with self.assertRaises(AccessError):
+            mine.with_user(self.user).unlink()
 
     # ----------------------------------------------------------
     # Tests: read scope reaches export and report rendering
