@@ -5,7 +5,7 @@ access_muk_mcp_tool_user,access_muk_mcp_tool_user,model_muk_mcp_tool,base.group_
 access_muk_mcp_session_admin,access_muk_mcp_session_admin,model_muk_mcp_session,base.group_system,1,1,1,1
 access_muk_mcp_session_user,access_muk_mcp_session_user,model_muk_mcp_session,base.group_user,1,1,1,1
 access_muk_mcp_notification_admin,access_muk_mcp_notification_admin,model_muk_mcp_notification,base.group_system,1,1,1,1
-access_muk_mcp_notification_user,access_muk_mcp_notification_user,model_muk_mcp_notification,base.group_user,1,1,1,1
+access_muk_mcp_notification_user,access_muk_mcp_notification_user,model_muk_mcp_notification,base.group_user,1,0,0,0
 access_muk_mcp_key_admin,access_muk_mcp_key_admin,model_muk_mcp_key,base.group_system,1,1,1,1
 access_muk_mcp_key_user,access_muk_mcp_key_user,model_muk_mcp_key,base.group_user,1,1,1,1
 access_muk_mcp_log_admin,access_muk_mcp_log_admin,model_muk_mcp_log,base.group_system,1,1,0,1
