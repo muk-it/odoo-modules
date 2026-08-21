@@ -46,4 +46,48 @@
 		<field name="perm_unlink" eval="True"/>
 	</record>
 
+	<record id="rule_mcp_notification_user" model="ir.rule">
+		<field name="name">MCP Notification: own sessions</field>
+		<field name="model_id" ref="model_muk_mcp_notification"/>
+		<field name="domain_force">[('session_id.user_id', '=', user.id)]</field>
+		<field name="groups" eval="[(4, ref('base.group_user'))]"/>
+		<field name="perm_read" eval="True"/>
+		<field name="perm_write" eval="False"/>
+		<field name="perm_create" eval="False"/>
+		<field name="perm_unlink" eval="False"/>
+	</record>
+
+	<record id="rule_mcp_notification_admin" model="ir.rule">
+		<field name="name">MCP Notification: admin access</field>
+		<field name="model_id" ref="model_muk_mcp_notification"/>
+		<field name="domain_force">[(1, '=', 1)]</field>
+		<field name="groups" eval="[(4, ref('base.group_system'))]"/>
+		<field name="perm_read" eval="True"/>
+		<field name="perm_write" eval="True"/>
+		<field name="perm_create" eval="True"/>
+		<field name="perm_unlink" eval="True"/>
+	</record>
+
+	<record id="rule_mcp_log_user" model="ir.rule">
+		<field name="name">MCP Log: own logs</field>
+		<field name="model_id" ref="model_muk_mcp_log"/>
+		<field name="domain_force">[('user_id', '=', user.id)]</field>
+		<field name="groups" eval="[(4, ref('base.group_user'))]"/>
+		<field name="perm_read" eval="True"/>
+		<field name="perm_write" eval="False"/>
+		<field name="perm_create" eval="False"/>
+		<field name="perm_unlink" eval="False"/>
+	</record>
+
+	<record id="rule_mcp_log_admin" model="ir.rule">
+		<field name="name">MCP Log: admin access</field>
+		<field name="model_id" ref="model_muk_mcp_log"/>
+		<field name="domain_force">[(1, '=', 1)]</field>
+		<field name="groups" eval="[(4, ref('base.group_system'))]"/>
+		<field name="perm_read" eval="True"/>
+		<field name="perm_write" eval="True"/>
+		<field name="perm_create" eval="True"/>
+		<field name="perm_unlink" eval="True"/>
+	</record>
+
 </odoo>
