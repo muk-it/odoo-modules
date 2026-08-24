@@ -1,9 +1,12 @@
 .o_navbar_apps_menu .dropdown-toggle {
 	padding: 0px 14px !important;
 }
-	
+
+.mk_app_menu.dropdown-menu.show {
+
+}
+
 .mk_app_menu.dropdown-menu {
-	display: flex !important;
 	flex-direction: row !important;
 	flex-wrap: wrap !important;
 	align-content: flex-start;
@@ -65,3 +68,4 @@
 	    }
 	}
 }
+.mk_app_menu.dropdown-menu.show { display: flex !important; }
