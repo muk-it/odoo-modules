@@ -138,6 +138,12 @@
             <xpath expr="//field[@name='child_ids']//list//field[@name='phone']" position="after">
 				<field name="mobile" optional="hide"/>
             </xpath>
+            <xpath expr="//field[@name='child_ids']/form//field[@name='phone']/.." position="after">
+				<div class="d-flex align-items-baseline">
+					<i class="fa fa-fw me-1 fa-mobile text-primary" title="Mobile"/>
+					<field name="mobile" class="w-100" widget="phone" placeholder="Mobile"/>
+				</div>
+            </xpath>
             <xpath expr="//field[@name='child_ids']/form//field[@name='email']/.." position="before">
 				<div class="d-flex align-items-baseline" invisible="type != 'contact'">
 					<i class="fa fa-fw me-1 fa-user text-primary d-none d-sm-inline-block" title="Contact Name"/>

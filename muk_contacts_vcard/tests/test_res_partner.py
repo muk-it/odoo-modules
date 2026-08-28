@@ -31,6 +31,18 @@ class TestResPartner(TransactionCase):
     # Tests
     # ----------------------------------------------------------
 
+    def test_child_contact_form_shows_the_mobile_field(self):
+        arch = self.env['res.partner'].get_view(
+            self.env.ref('base.view_partner_form').id, 'form'
+        )['arch']
+        child_form = re.search(
+            r'<field name="child_ids".*?</field>', arch, re.DOTALL
+        )
+        self.assertTrue(child_form, 'The contacts tab is missing from the partner form')
+        form = re.search(r'<form.*?</form>', child_form.group(0), re.DOTALL)
+        self.assertTrue(form, 'The contacts tab has no inline form')
+        self.assertIn('name="mobile"', form.group(0))
+
     def test_name_is_computed_from_first_middle_last(self):
         partner = self.env['res.partner'].create({'name': 'Initial Name'})
         partner.write(
