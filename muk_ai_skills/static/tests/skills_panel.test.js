@@ -28,12 +28,17 @@ const SKILLS = [
  * @param {object} options the skills to list and whether to focus the search
  * @returns {object} the `picked` names and `closed` flags, both live arrays
  */
-async function mountPanel({ skills = SKILLS, autofocus = true } = {}) {
+async function mountPanel({
+    skills = SKILLS,
+    lockedSkills = [],
+    autofocus = true,
+} = {}) {
     const picked = [];
     const closed = [];
     await mountWithCleanup(SkillsPanel, {
         props: {
             skills,
+            lockedSkills,
             autofocus,
             onSelect: (name) => picked.push(name),
             onClose: () => closed.push(true),
@@ -142,4 +147,36 @@ test('a recently used skill is listed first under its own group', async () => {
     await mountPanel();
     expect(queryAllTexts('.mk_skill_label')).toEqual(['Beta', 'Alpha']);
     expect(queryAllTexts('.mk_skills_group')).toEqual(['Recently used', 'All skills']);
+});
+
+test('a withheld skill is listed apart, inert, and says what it needs', async () => {
+    await mountPanel({
+        skills: [SKILLS[0]],
+        lockedSkills: [{ ...SKILLS[1], requirement: 'needs a record open' }],
+    });
+    expect('.mk_skill_locked').toHaveCount(1);
+    expect('.mk_skill_locked').toHaveAttribute('disabled');
+    expect(queryFirst('.mk_skill_locked .mk_skill_preview')).toHaveText(
+        'needs a record open',
+    );
+    expect(queryAll('.mk_skills_group').at(-1)).toHaveText('Once something is open');
+});
+
+test('the keyboard never reaches a withheld skill', async () => {
+    const { picked } = await mountPanel({
+        skills: [SKILLS[0]],
+        lockedSkills: [{ ...SKILLS[1], requirement: 'needs a record open' }],
+    });
+    await press('ArrowDown');
+    await press('Enter');
+    expect(picked).toEqual(['alpha']);
+});
+
+test('the empty state stays away while a withheld skill is listed', async () => {
+    await mountPanel({
+        skills: [],
+        lockedSkills: [{ ...SKILLS[1], requirement: 'needs a record open' }],
+    });
+    expect('.mk_skills_empty').toHaveCount(0);
+    expect('.mk_skill_locked').toHaveCount(1);
 });

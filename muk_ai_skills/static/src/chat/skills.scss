@@ -100,6 +100,14 @@
                 border-color: var(--mk-primary);
                 box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
             }
+            &.mk_skill_locked {
+                cursor: default;
+                opacity: 0.55;
+                &:hover {
+                    border-color: var(--mk-border);
+                    box-shadow: none;
+                }
+            }
             .mk_skill_badge {
                 width: 28px;
                 height: 28px;

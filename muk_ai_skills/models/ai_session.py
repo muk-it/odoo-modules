@@ -80,9 +80,51 @@ class AISession(models.Model):
         for skill in skills:
             description = (skill.description or '').strip().splitlines()
             summary = description[0] if description else ''
-            lines.append(f'- `{skill.name}`: {summary}')
+            requirement = skill._scope_requirement()
+            suffix = f' ({requirement})' if requirement else ''
+            lines.append(f'- `{skill.name}`: {summary}{suffix}')
         lines.append('</available_skills>')
         return '\n'.join(lines)
+
+    def _enrich_view_context(self, payload: dict) -> dict:
+        """Tell the client whether the pinned record's model has a chatter.
+
+        The panel decides on its own which skills a navigation makes
+        available, and it cannot inspect the registry to answer that.
+        """
+        payload = super()._enrich_view_context(payload)
+        if payload.get('kind') == 'record':
+            payload = {
+                **payload,
+                'has_chatter': self.env['muk_ai.skill']._model_has_chatter(
+                    payload.get('model') or ''
+                ),
+            }
+        return payload
+
+    def _skill_scope_context(self) -> dict | None:
+        """Return the context a skill's scope is judged against.
+
+        The pinned view, for a session somebody is watching. A surface that
+        runs without one stands its own record in, the way the record chip
+        would if there were a screen.
+        """
+        return self.view_context
+
+    def _check_skill_scope(self, skill: models.BaseModel) -> None:
+        """Refuse a skill the session's context does not satisfy.
+
+        :raise UserError: when what the session has open does not match its scope
+        """
+        if skill._scope_satisfied_by(self._skill_scope_context()):
+            return
+        raise UserError(
+            _(
+                'Skill %(name)s %(requirement)s.',
+                name=skill.name,
+                requirement=skill._scope_requirement(),
+            )
+        )
 
     def _build_skill_call_id(self, name: str) -> str:
         """Build a unique synthetic tool-call id for a slash invocation."""
@@ -133,10 +175,9 @@ class AISession(models.Model):
         )
         return [
             {
-                'name': skill.name,
-                'label': skill.label or skill.display_name or skill.name,
-                'description': (skill.description or '').strip(),
-                'icon': skill.icon or 'fa-bolt',
+                key: value
+                for key, value in skill._skill_descriptor().items()
+                if key != 'body'
             }
             for skill in skills
         ]
@@ -160,6 +201,7 @@ class AISession(models.Model):
         skill = self._visible_skills().filtered(lambda s: s.name == name)[:1]
         if not skill:
             raise UserError(_('Skill %r is not available.', name))
+        self._check_skill_scope(skill)
         payload = self._build_skill_tool_payload(skill)
         call_id = self._build_skill_call_id(skill.name)
         user_text = (user_input or '').strip()

@@ -15,6 +15,7 @@
 				<field name="owner_id"/>
 				<field name="agent_ids"/>
 				<field name="skill_type"/>
+				<field name="scope"/>
 				<filter
                     name="my_skills"
                     string="My Skills"
@@ -52,11 +53,27 @@
                     string="Scoped"
                     domain="[('agent_ids', '!=', False)]"
                 />
+				<separator/>
+				<filter
+                    name="anywhere"
+                    string="Works Anywhere"
+                    domain="[('scope', '=', 'any')]"
+                />
+				<filter
+                    name="needs_context"
+                    string="Needs Something Open"
+                    domain="[('scope', '!=', 'any')]"
+                />
 				<group>
 					<filter
                         name="group_type"
                         string="Type"
                         context="{'group_by': 'skill_type'}"
+                    />
+					<filter
+                        name="group_scope"
+                        string="Availability"
+                        context="{'group_by': 'scope'}"
                     />
 					<filter
                         name="group_owner"
@@ -130,6 +147,10 @@
 								<i class="fa fa-lock me-1" title="Shared with selected users" role="img"/>
 								<field name="user_count"/> Users
 							</span>
+							<span t-if="record.scope.raw_value != 'any'" class="badge text-bg-primary">
+								<i class="fa fa-thumb-tack me-1" title="Needs something open" role="img"/>
+								<field name="scope"/>
+							</span>
 							<span t-if="!record.agent_count.raw_value" class="badge text-bg-secondary">
 								<i class="fa fa-globe me-1" title="Global" role="img"/>Global
 							</span>
@@ -157,6 +178,7 @@
 				<field name="name"/>
 				<field name="label"/>
 				<field name="skill_type" optional="show"/>
+				<field name="scope" optional="hide"/>
 				<field name="owner_id" optional="show"/>
 				<field name="user_ids" widget="many2many_tags" optional="hide"/>
 				<field name="description" optional="show"/>
@@ -219,6 +241,19 @@
 							<field
                                 name="icon"
                                 widget="icon_selector"
+                                readonly="not is_editable"
+                            />
+						</group>
+					</group>
+					<group string="Scope">
+						<group>
+							<field name="scope" readonly="not is_editable"/>
+						</group>
+						<group>
+							<field
+                                name="model_ids"
+                                widget="many2many_tags"
+                                options="{'no_create': True}"
                                 readonly="not is_editable"
                             />
 						</group>

@@ -20,7 +20,8 @@
         <xpath expr="//div[hasclass('mk_composer')]" position="before">
             <SkillsPanel
                 t-if="showSkillsPanel"
-                skills="sessionSkills"
+                skills="availableSkills"
+                lockedSkills="lockedSkills"
                 autofocus="skillsAutofocus"
                 onSelect.bind="invokeSkill"
                 onClose.bind="closeSkillsPanel"

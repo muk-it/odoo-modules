@@ -7,6 +7,7 @@
 		<field name="user_ids" eval="[(5, 0, 0)]"/>
 		<field name="label">Log Note</field>
 		<field name="icon">fa-sticky-note-o</field>
+		<field name="scope">chatter</field>
 		<field name="description">Post a one-line internal log note on the pinned record's chatter — no composer, no review.</field>
 		<field name="body"><![CDATA[
 Post a quick internal log note on the pinned record's chatter. Fast complement to `/reply` —
@@ -37,6 +38,7 @@ note for the team.
 		<field name="user_ids" eval="[(5, 0, 0)]"/>
 		<field name="label">Schedule Activity</field>
 		<field name="icon">fa-calendar-plus-o</field>
+		<field name="scope">record</field>
 		<field name="description">Schedule a follow-up activity (to-do, call, meeting, email) on the pinned record.</field>
 		<field name="body"><![CDATA[
 Schedule a `mail.activity` on the pinned record. Use when the user wants to create a follow-up

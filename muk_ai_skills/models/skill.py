@@ -65,6 +65,36 @@ class Skill(models.Model):
         index=True,
     )
 
+    scope = fields.Selection(
+        selection=[
+            ('any', 'Anywhere'),
+            ('context', 'On a Record or a List'),
+            ('record', 'On a Single Record'),
+            ('chatter', 'On a Record with a Chatter'),
+        ],
+        string='Available',
+        help=(
+            'What the user must have open for the skill to apply. A skill '
+            'that acts on what is on screen is offered only there, and is '
+            'refused when it is invoked against nothing.'
+        ),
+        required=True,
+        default='any',
+        index=True,
+    )
+
+    model_ids = fields.Many2many(
+        comodel_name='ir.model',
+        relation='muk_ai_skill_ir_model_rel',
+        column1='skill_id',
+        column2='model_id',
+        string='Models',
+        help=(
+            'Models the skill applies to. Leave empty to offer it on every '
+            'model the scope allows.'
+        ),
+    )
+
     active = fields.Boolean(
         string='Active',
         default=True,
@@ -276,6 +306,44 @@ class Skill(models.Model):
             if pending:
                 pending.sudo().write({'res_id': record.id})
 
+    @api.model
+    def _model_has_chatter(self, model_name: str) -> bool:
+        """Tell whether records of ``model_name`` carry a chatter."""
+        model = self.env['ir.model'].sudo()._get(model_name)
+        return bool(model and model.is_mail_thread)
+
+    def _scope_satisfied_by(self, view_context: dict | None) -> bool:
+        """Tell whether what the user has open satisfies this skill's scope.
+
+        A pinned list, pivot or graph names a model but no record, so only
+        ``kind == 'record'`` counts as one; an unsaved form reports itself as a
+        list and is therefore not a record either. A model restriction needs a
+        model on screen, whatever the scope.
+        """
+        context = view_context or {}
+        model = context.get('model') or ''
+        if self.scope != 'any':
+            if not model:
+                return False
+            if self.scope in ('record', 'chatter') and context.get('kind') != 'record':
+                return False
+            if self.scope == 'chatter' and not self._model_has_chatter(model):
+                return False
+        return not self.model_ids or model in self.model_ids.mapped('model')
+
+    def _scope_requirement(self) -> str:
+        """Return the one line stating what this skill needs to be open."""
+        requirement = {
+            'context': _('needs a record or a list open'),
+            'record': _('needs a record open'),
+            'chatter': _('needs a record with a chatter open'),
+        }.get(self.scope, '')
+        if self.model_ids:
+            names = ', '.join(sorted(self.model_ids.mapped('model')))
+            restriction = _('only on %(models)s', models=names)
+            return f'{requirement}, {restriction}' if requirement else restriction
+        return requirement
+
     def _skill_descriptor(self) -> dict:
         """Return what a surface needs to offer this skill.
 
@@ -288,6 +356,9 @@ class Skill(models.Model):
             'label': self.label or self.display_name or self.name,
             'description': (self.description or '').strip(),
             'icon': self.icon or 'fa-bolt',
+            'scope': self.scope,
+            'models': sorted(self.model_ids.mapped('model')),
+            'requirement': self._scope_requirement(),
             'body': self.body or '',
         }
 
@@ -415,6 +486,24 @@ class Skill(models.Model):
         'unique(name, owner_id)',
         'You already own a skill with this technical name.',
     )
+
+    @api.constrains('scope', 'model_ids')
+    def _check_scope_models(self) -> None:
+        """Refuse a chatter scope on a model that has none.
+
+        :raise ValidationError: when a selected model is not a thread
+        """
+        for record in self.filtered(lambda skill: skill.scope == 'chatter'):
+            without = record.model_ids.filtered(lambda model: not model.is_mail_thread)
+            if without:
+                raise ValidationError(
+                    _(
+                        'Skill %(name)s asks for a chatter, which %(models)s '
+                        'does not have.',
+                        name=record.name or '',
+                        models=', '.join(sorted(without.mapped('model'))),
+                    )
+                )
 
     @api.constrains('name')
     def _check_name_format(self) -> None:
