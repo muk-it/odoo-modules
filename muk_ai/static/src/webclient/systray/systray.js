@@ -64,7 +64,7 @@ export class MukAISystray extends Component {
                     'muk_ai.session',
                     [['user_id', '=', user.userId]],
                     ['id', 'name', 'state'],
-                    { limit: SYSTRAY_LIMIT, order: 'create_date DESC' },
+                    { limit: SYSTRAY_LIMIT, order: 'write_date DESC' },
                 ),
                 this.orm.searchRead(
                     'muk_ai.session',
@@ -73,7 +73,7 @@ export class MukAISystray extends Component {
                         ['notification_unread', '=', true],
                     ],
                     ['id', 'name', 'state'],
-                    { limit: SYSTRAY_LIMIT, order: 'create_date DESC' },
+                    { limit: SYSTRAY_LIMIT, order: 'write_date DESC' },
                 ),
             ]);
             if (seq === this._loadSeq) {
