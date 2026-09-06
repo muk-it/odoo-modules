@@ -194,6 +194,7 @@
                             attachments="session.state.pendingAttachments"
                             agents="session.state.agents"
                             sessionId="session.state.sessionId"
+                            viewContext="session.state.viewContext"
                             activeAgentId="session.state.agentId"
                             focusToken="session.state.focusToken"
                             onInput.bind="onInputChange"

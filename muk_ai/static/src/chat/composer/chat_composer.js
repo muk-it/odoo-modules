@@ -41,6 +41,7 @@ export class ChatComposer extends Component {
         agents: { type: Array, optional: true },
         activeAgentId: { optional: true },
         sessionId: { optional: true },
+        viewContext: { optional: true },
         onInput: { type: Function },
         onSend: { type: Function },
         onStop: { type: Function, optional: true },
