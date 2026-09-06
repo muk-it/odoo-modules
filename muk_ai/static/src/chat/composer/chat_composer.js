@@ -40,6 +40,7 @@ export class ChatComposer extends Component {
         canAttach: { type: Boolean, optional: true },
         agents: { type: Array, optional: true },
         activeAgentId: { optional: true },
+        sessionId: { optional: true },
         onInput: { type: Function },
         onSend: { type: Function },
         onStop: { type: Function, optional: true },

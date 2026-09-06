@@ -679,3 +679,18 @@ test('Enter with live text while running queues the send instead of stopping', a
     expect(sent).toBe(1);
     expect(stopped).toBe(0);
 });
+
+test('the composer takes a session id, its absence and its empty state', async () => {
+    for (const sessionId of [undefined, null, 7]) {
+        const composer = await mountWithCleanup(ChatComposer, {
+            props: {
+                value: '',
+                placeholder: 'type',
+                onInput: () => {},
+                onSend: () => {},
+                ...(sessionId === undefined ? {} : { sessionId }),
+            },
+        });
+        expect(composer.props.sessionId).toBe(sessionId);
+    }
+});

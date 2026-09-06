@@ -189,6 +189,7 @@
                         isQueueing="isQueueing"
                         attachments="session.state.pendingAttachments"
                         agents="session.state.agents"
+                        sessionId="session.state.sessionId"
                         activeAgentId="session.state.agentId"
                         focusToken="session.state.focusToken"
                         onInput.bind="onInputChange"
