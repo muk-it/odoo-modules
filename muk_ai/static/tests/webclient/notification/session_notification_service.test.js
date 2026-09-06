@@ -187,3 +187,38 @@ test('a hidden tab stays silent so only the visible one toasts', () => {
     emit(notify({ state: 'error' }));
     expect(toasts).toHaveLength(0);
 });
+
+test('a notification for the chat on screen clears its inbox instead of toasting', () => {
+    mockTabVisibility('visible');
+    const { api, emit, toasts, ormCalls } = startService();
+    api.markActive(7);
+    ormCalls.length = 0;
+    emit(notify({ state: 'done' }));
+    expect(toasts).toHaveLength(0);
+    expect(ormCalls).toEqual([
+        {
+            model: 'muk_ai.session',
+            method: 'dismiss_notifications',
+            args: [[7]],
+        },
+    ]);
+});
+
+test('a notification for another chat leaves the open one alone', () => {
+    mockTabVisibility('visible');
+    const { api, emit, toasts, ormCalls } = startService();
+    api.markActive(7);
+    ormCalls.length = 0;
+    emit(notify({ session_id: 9, state: 'done' }));
+    expect(ormCalls).toEqual([]);
+    expect(toasts).toHaveLength(1);
+});
+
+test('a chat open in a hidden tab keeps its unread flag', () => {
+    mockTabVisibility('hidden');
+    const { api, emit, ormCalls } = startService();
+    api.markActive(7);
+    ormCalls.length = 0;
+    emit(notify({ state: 'done' }));
+    expect(ormCalls).toEqual([]);
+});

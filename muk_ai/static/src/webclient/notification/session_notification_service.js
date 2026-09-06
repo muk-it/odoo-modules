@@ -102,9 +102,14 @@ export const sessionNotificationService = {
             }
         }
         function onNotification(payload) {
+            const isActive = active.has(payload?.session_id);
+            const isVisible = document.visibilityState === 'visible';
+            if (isActive && isVisible) {
+                dismissInbox(payload.session_id);
+            }
             const show = shouldShowNotification(payload, {
-                isActive: active.has(payload?.session_id),
-                isVisible: document.visibilityState === 'visible',
+                isActive,
+                isVisible,
                 now: Date.now(),
             });
             if (!show) {
