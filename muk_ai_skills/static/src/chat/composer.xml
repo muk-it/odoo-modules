@@ -3,14 +3,12 @@
 
     <t t-inherit="muk_ai.Chat" t-inherit-mode="extension">
         <xpath expr="//ChatComposer" position="attributes">
-            <attribute name="sessionId">session.state.sessionId</attribute>
             <attribute name="onInvokeSkill.bind">runSkill</attribute>
         </xpath>
     </t>
 
     <t t-inherit="muk_ai.ChatWindow" t-inherit-mode="extension">
         <xpath expr="//ChatComposer" position="attributes">
-            <attribute name="sessionId">session.state.sessionId</attribute>
             <attribute name="onInvokeSkill.bind">runSkill</attribute>
         </xpath>
     </t>

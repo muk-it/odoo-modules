@@ -11,7 +11,6 @@ import { SkillsPanel } from '@muk_ai_skills/chat/skills_panel';
 ChatComposer.components = { ...ChatComposer.components, SkillsPanel };
 ChatComposer.props = {
     ...ChatComposer.props,
-    sessionId: { type: [Number, String], optional: true },
     onInvokeSkill: { type: Function, optional: true },
 };
 
