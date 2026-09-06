@@ -5,6 +5,7 @@ from . import test_mention
 from . import test_mention_answer
 from . import test_mention_discuss
 from . import test_session_record_acl
+from . import test_skill_scope_fallback
 from . import test_session_transcript_access
 from . import test_js
 from . import test_tour

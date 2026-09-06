@@ -104,6 +104,21 @@ class AISession(models.Model):
     # Helper
     # ----------------------------------------------------------
 
+    def _skill_scope_context(self) -> dict | None:
+        """Stand the linked record in for a view the session never had.
+
+        A mention or an automation runs without a screen, so a skill that acts
+        on the record it was started from would otherwise be refused for want
+        of a pinned view.
+        """
+        context = super()._skill_scope_context()
+        if context:
+            return context
+        record = self._linked_record()
+        if record is None or not self._owner_can_read(record):
+            return None
+        return {'kind': 'record', 'model': record._name, 'id': record.id}
+
     def _linked_record(self) -> models.BaseModel | None:
         """Return the linked business record, or ``None`` when unresolved."""
         if not self.res_model or not self.res_id or self.res_model not in self.env:

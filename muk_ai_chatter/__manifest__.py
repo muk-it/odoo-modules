@@ -12,7 +12,7 @@
         answer. On a record, the writing helper in the composer is the
         surface instead.
     """,
-    'version': '19.0.1.0.2',
+    'version': '19.0.1.0.3',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',
