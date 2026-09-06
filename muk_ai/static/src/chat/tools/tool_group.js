@@ -100,7 +100,7 @@ export class ToolGroup extends Component {
         return this.props.tools.filter((t) => toolBlockHasError(t.block)).length;
     }
     get chips() {
-        const names = this.props.tools.map((t) => t.block.name);
+        const names = this.props.tools.map((t) => t.block.label || t.block.name);
         return {
             shown: names.slice(0, CHIP_LIMIT),
             hasMore: names.length > CHIP_LIMIT,
