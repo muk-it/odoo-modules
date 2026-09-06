@@ -251,11 +251,6 @@ class AIAgent(models.Model):
             'search_read',
         ]
 
-    def _build_system_prompt(self, session: models.BaseModel | None = None) -> str:
-        """Render the agent's system prompt with optional session extras."""
-        extras = session._session_prompt_extras() if session else {}
-        return self._render_prompt(self.system_prompt or '', **extras)
-
     def _get_essential_tool_names(self) -> list[str]:
         """Return the configured essential tool names, or the default set."""
         self.ensure_one()
