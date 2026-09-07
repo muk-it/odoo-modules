@@ -1,6 +1,7 @@
 from . import common
 from . import test_chatter_mirror_access
 from . import test_compose
+from . import test_quick_action
 from . import test_mention
 from . import test_mention_answer
 from . import test_mention_discuss

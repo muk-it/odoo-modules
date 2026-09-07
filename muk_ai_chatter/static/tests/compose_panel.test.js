@@ -2,6 +2,7 @@ import { describe, expect, test } from '@odoo/hoot';
 import {
     animationFrame,
     click,
+    press,
     queryAll,
     queryAllTexts,
     queryFirst,
@@ -94,6 +95,7 @@ function mockServer() {
         detached: false,
         discarded: false,
         openFails: false,
+        saved: [],
         state: 'done',
         answer: 'A better sentence.',
     };
@@ -120,6 +122,17 @@ function mockServer() {
     onRpc('muk_ai.session', 'detach_from_composer', () => {
         calls.detached = true;
         return true;
+    });
+    onRpc('muk_ai.skill', 'save_composer_prompt', ({ args }) => {
+        calls.saved.push(args);
+        return {
+            name: 'saved_button',
+            label: args[0],
+            icon: 'fa-magic',
+            category: args[2],
+            description: args[1],
+            body: args[1],
+        };
     });
     onRpc('muk_ai.session', 'read', () => [
         { id: SESSION_ID, last_text: calls.answer, state: calls.state },
@@ -193,6 +206,19 @@ async function pickFirst() {
     }
 }
 
+/**
+ * Type into a field the way the panel's own inputs expect.
+ * @param {string} selector the field to fill
+ * @param {string} value what to type
+ * @returns {Promise<void>} once the panel has re-rendered
+ */
+async function typeInto(selector, value) {
+    const input = queryFirst(selector);
+    input.value = value;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await animationFrame();
+}
+
 test('an empty composer offers one action, and reveals the rest on demand', async () => {
     mockBus();
     mockServer();
@@ -202,7 +228,10 @@ test('an empty composer offers one action, and reveals the rest on demand', asyn
     expect('.o-mail-ComposePanel-tone').toHaveCount(0);
     await click('.o-mail-ComposePanel-action');
     await animationFrame();
-    expect(queryAllTexts('.o-mail-ComposePanel-chip')).toEqual(['Reply']);
+    expect(queryAllTexts('.o-mail-ComposePanel-chip')).toEqual([
+        'Reply',
+        'New quick action',
+    ]);
     expect('.o-mail-ComposePanel-length').toHaveCount(3);
     expect('.o-mail-ComposePanel-tone').toHaveCount(3);
 });
@@ -509,4 +538,99 @@ test('a second helper closes the one that was already open', async () => {
     expect(first.closed).toHaveLength(0);
     await mountPanel();
     expect(first.closed).toHaveLength(1);
+});
+
+test('a free-text ask that worked offers to become a quick action', async () => {
+    const { notify } = mockBus();
+    const calls = mockServer();
+    await mountPanel();
+    await typeInto('.o-mail-ComposePanel-custom', 'Make it rhyme');
+    await click('.o-mail-ComposePanel-send');
+    await animationFrame();
+    notify({ session_id: SESSION_ID, type: 'state', payload: { state: 'done' } });
+    await animationFrame();
+    await animationFrame();
+    expect(calls.sent).toHaveLength(1);
+    expect('.o-mail-ComposePanel-saveOpen').toHaveCount(1);
+});
+
+test('a chip that ran offers nothing to save, since it already is one', async () => {
+    const { notify } = mockBus();
+    mockServer();
+    await mountPanel();
+    await pickFirst();
+    notify({ session_id: SESSION_ID, type: 'state', payload: { state: 'done' } });
+    await animationFrame();
+    await animationFrame();
+    expect('.o-mail-ComposePanel-saveOpen').toHaveCount(0);
+});
+
+test('naming a free-text ask saves it as a button of its own', async () => {
+    const { notify } = mockBus();
+    const calls = mockServer();
+    await mountPanel();
+    await typeInto('.o-mail-ComposePanel-custom', 'Make it rhyme');
+    await click('.o-mail-ComposePanel-send');
+    await animationFrame();
+    notify({ session_id: SESSION_ID, type: 'state', payload: { state: 'done' } });
+    await animationFrame();
+    await animationFrame();
+    await click('.o-mail-ComposePanel-saveOpen');
+    await animationFrame();
+    await typeInto('.o-mail-ComposePanel-saveLabel', 'Rhyme it');
+    await click('.o-mail-ComposePanel-saveConfirm');
+    await animationFrame();
+    expect(calls.saved).toEqual([['Rhyme it', 'Make it rhyme', 'generate']]);
+    expect('.o-mail-ComposePanel-saved').toHaveCount(1);
+});
+
+test('the same ask over a draft is saved as a rewrite', async () => {
+    const { notify } = mockBus();
+    const calls = mockServer();
+    await mountPanel('', 'Something already written.');
+    await typeInto('.o-mail-ComposePanel-custom', 'Make it rhyme');
+    await click('.o-mail-ComposePanel-send');
+    await animationFrame();
+    notify({ session_id: SESSION_ID, type: 'state', payload: { state: 'done' } });
+    await animationFrame();
+    await animationFrame();
+    await click('.o-mail-ComposePanel-saveOpen');
+    await animationFrame();
+    await typeInto('.o-mail-ComposePanel-saveLabel', 'Rhyme it');
+    await click('.o-mail-ComposePanel-saveConfirm');
+    await animationFrame();
+    expect(calls.saved[0][2]).toBe('rewrite');
+});
+
+test('a quick action can be written from scratch without running it', async () => {
+    mockBus();
+    const calls = mockServer();
+    await mountPanel();
+    await click('.o-mail-ComposePanel-chipNew');
+    await animationFrame();
+    expect('.o-mail-ComposePanel-createRow').toHaveCount(1);
+    await typeInto('.o-mail-ComposePanel-createLabel', 'From scratch');
+    await typeInto('.o-mail-ComposePanel-createBody', 'Do the thing.');
+    await click('.o-mail-ComposePanel-createConfirm');
+    await animationFrame();
+    expect(calls.saved).toEqual([['From scratch', 'Do the thing.', 'generate']]);
+    expect('.o-mail-ComposePanel-createRow').toHaveCount(0);
+});
+
+test('escape folds the naming row without closing the panel', async () => {
+    const { notify } = mockBus();
+    mockServer();
+    const { closed } = await mountPanel();
+    await typeInto('.o-mail-ComposePanel-custom', 'Make it rhyme');
+    await click('.o-mail-ComposePanel-send');
+    await animationFrame();
+    notify({ session_id: SESSION_ID, type: 'state', payload: { state: 'done' } });
+    await animationFrame();
+    await animationFrame();
+    await click('.o-mail-ComposePanel-saveOpen');
+    await animationFrame();
+    await press('Escape');
+    await animationFrame();
+    expect('.o-mail-ComposePanel-saveLabel').toHaveCount(0);
+    expect(closed).toEqual([]);
 });

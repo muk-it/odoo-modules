@@ -10,6 +10,10 @@
                     <span class="fw-bolder text-truncate" t-esc="title"/>
                     <small class="text-muted text-truncate" t-esc="subtitle"/>
                 </div>
+                <button class="btn btn-sm btn-link text-muted p-0 o-mail-ComposePanel-headBtn o-mail-ComposePanel-skills"
+                        t-on-click="onOpenSkillsOverview" title="Manage your quick actions — rename, share or delete them">
+                    <i class="fa fa-fw fa-cog"/>
+                </button>
                 <button class="btn btn-sm btn-link text-muted p-0 o-mail-ComposePanel-headBtn o-mail-ComposePanel-chat"
                         t-on-click="onOpenInChat" title="Continue in the AI chat, where you can talk it through">
                     <i class="fa fa-fw fa-external-link"/>
@@ -72,9 +76,36 @@
                         </t>
                     </t>
 
+                    <div t-if="!state.createOpen" class="mt-2">
+                        <button class="btn btn-sm o-mail-ComposePanel-chip o-mail-ComposePanel-chipNew rounded-pill d-flex align-items-center gap-1"
+                                title="Create a quick action of your own"
+                                t-on-click="() => this.onOpenCreate()">
+                            <i class="fa fa-fw fa-plus"/>
+                            <span>New quick action</span>
+                        </button>
+                    </div>
+                    <div t-if="state.createOpen" class="o-mail-ComposePanel-createRow d-flex flex-column gap-1 mt-2">
+                        <input type="text" class="form-control form-control-sm o-mail-ComposePanel-createLabel"
+                               placeholder="Name the quick action…"
+                               t-ref="createLabel"
+                               t-model="state.createLabel"
+                               t-on-keydown="onCreateKeydown"/>
+                        <textarea class="form-control form-control-sm o-mail-ComposePanel-createBody" rows="2"
+                                  t-att-placeholder="customPlaceholder"
+                                  t-model="state.createBody"
+                                  t-on-keydown="onCreateKeydown"/>
+                        <div class="d-flex align-items-center gap-2">
+                            <button class="btn btn-sm btn-primary o-mail-ComposePanel-createConfirm"
+                                    t-on-click="onCreateConfirm"
+                                    t-att-disabled="!state.createLabel.trim() or !state.createBody.trim() or state.saving">Save</button>
+                            <button class="btn btn-sm btn-link text-muted o-mail-ComposePanel-createCancel"
+                                    t-on-click="onCloseCreate">Cancel</button>
+                        </div>
+                    </div>
+
                     <div class="o-mail-ComposePanel-ask input-group input-group-sm mt-3">
                         <input type="text" class="form-control o-mail-ComposePanel-custom"
-                               placeholder="Ask for something else…"
+                               t-att-placeholder="customPlaceholder"
                                t-model="state.custom"
                                t-on-keydown="onCustomKeydown"/>
                         <button class="btn btn-primary o-mail-ComposePanel-send"
@@ -127,6 +158,37 @@
                         </button>
                         <button class="btn btn-sm btn-link text-muted ms-auto o-mail-ComposePanel-discard"
                                 t-on-click="onDiscard">Discard</button>
+                    </div>
+
+                    <div t-if="canOfferSave and !state.saveOpen" class="mt-2 d-flex align-items-center gap-1 small">
+                        <span class="text-muted">Ask this often?</span>
+                        <button class="btn btn-sm btn-link p-0 o-mail-ComposePanel-saveOpen d-inline-flex align-items-center gap-1"
+                                t-on-click="onOpenSave"
+                                title="Keep this instruction as a quick action of this panel">
+                            <i class="fa fa-fw fa-bolt"/>
+                            <span>Save as quick action</span>
+                        </button>
+                    </div>
+                    <div t-if="canOfferSave and state.saveOpen" class="input-group input-group-sm mt-2 o-mail-ComposePanel-saveRow">
+                        <input type="text" class="form-control o-mail-ComposePanel-saveLabel"
+                               placeholder="Name the quick action…"
+                               t-ref="saveLabel"
+                               t-model="state.saveLabel"
+                               t-on-keydown="onSaveKeydown"/>
+                        <button class="btn btn-primary o-mail-ComposePanel-saveConfirm"
+                                t-on-click="onSaveConfirm"
+                                t-att-disabled="!state.saveLabel.trim() or state.saving"
+                                title="Save">
+                            <i class="fa fa-check"/>
+                        </button>
+                        <button class="btn btn-outline-secondary o-mail-ComposePanel-saveCancel"
+                                t-on-click="onCloseSave" title="Cancel">
+                            <i class="fa fa-times"/>
+                        </button>
+                    </div>
+                    <div t-if="state.savedLabel" class="mt-2 small text-muted o-mail-ComposePanel-saved d-flex align-items-center gap-1">
+                        <i class="fa fa-fw fa-check"/>
+                        <span>Saved — "<t t-esc="state.savedLabel"/>" is now a quick action of this panel.</span>
                     </div>
                 </t>
             </div>

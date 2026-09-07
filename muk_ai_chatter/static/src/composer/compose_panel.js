@@ -1,4 +1,12 @@
-import { Component, onMounted, onWillStart, onWillUnmount, useState } from '@odoo/owl';
+import {
+    Component,
+    onMounted,
+    onWillStart,
+    onWillUnmount,
+    useEffect,
+    useRef,
+    useState,
+} from '@odoo/owl';
 
 import { useHotkey } from '@web/core/hotkeys/hotkey_hook';
 import { _t } from '@web/core/l10n/translation';
@@ -69,6 +77,7 @@ export class ComposePanel extends Component {
         this.bus = useService('bus_service');
         this.chatWindow = useService('muk_ai.chat_window');
         this.notification = useService('notification');
+        this.action = useService('action');
         this.state = useState({
             sessionId: null,
             phase: 'idle',
@@ -84,7 +93,40 @@ export class ComposePanel extends Component {
             custom: '',
             asked: '',
             opened: '',
+            // The free-text instruction behind the answer on screen, kept so
+            // it can be saved as a chip; empty when a chip asked instead.
+            customAsked: '',
+            saveOpen: false,
+            saveLabel: '',
+            savedLabel: '',
+            saving: false,
+            // The "+" chip's inline form: a quick action written from
+            // scratch, without running it first.
+            createOpen: false,
+            createLabel: '',
+            createBody: '',
+            createCategory: '',
         });
+        this.saveLabelRef = useRef('saveLabel');
+        this.createLabelRef = useRef('createLabel');
+        // Focused from an effect rather than from the click handler: the
+        // input exists only after the state change is rendered.
+        useEffect(
+            (open) => {
+                if (open) {
+                    this.saveLabelRef.el?.focus();
+                }
+            },
+            () => [this.state.saveOpen],
+        );
+        useEffect(
+            (open) => {
+                if (open) {
+                    this.createLabelRef.el?.focus();
+                }
+            },
+            () => [this.state.createOpen],
+        );
         this.busHandler = (event) => this.onSessionEvent(event);
         this.bus.subscribe('muk_ai.event', this.busHandler);
         // The session is its own bus channel, and the panel is told about a
@@ -251,6 +293,16 @@ export class ComposePanel extends Component {
         const target = this.target.trim();
         return target.length > 180 ? `${target.slice(0, 180)}…` : target;
     }
+    /** A free-text ask that worked is worth keeping; a chip already is one. */
+    get canOfferSave() {
+        return Boolean(this.state.customAsked) && !this.state.savedLabel;
+    }
+    /** What the free-text field does right now: write, or change what is written. */
+    get customPlaceholder() {
+        return this.isRewrite
+            ? _t('Describe what should change…')
+            : _t('Describe what to write…');
+    }
 
     // ----------------------------------------------------------
     // Helper
@@ -402,6 +454,8 @@ export class ComposePanel extends Component {
         this.state.label = label;
         this.state.asked = prompt;
         this.state.opened = '';
+        this.state.saveOpen = false;
+        this.state.savedLabel = '';
         this.state.streaming = '';
         this.state.result = '';
         this.state.error = '';
@@ -431,6 +485,7 @@ export class ComposePanel extends Component {
         this.state.tone = id;
     }
     onSkillClick(skill) {
+        this.state.customAsked = '';
         this.run(skill.label, skill.body);
     }
     /**
@@ -453,6 +508,7 @@ export class ComposePanel extends Component {
         const asked = this.state.custom.trim();
         if (asked) {
             this.state.custom = '';
+            this.state.customAsked = asked;
             this.run(_t('Writing'), asked);
         }
     }
@@ -498,6 +554,121 @@ export class ComposePanel extends Component {
     onRetry() {
         if (this.state.asked) {
             this.run(this.state.label, this.state.asked);
+        }
+    }
+    onOpenSave() {
+        this.state.saveOpen = true;
+        this.state.saveLabel = '';
+    }
+    onCloseSave() {
+        this.state.saveOpen = false;
+    }
+    onSaveKeydown(ev) {
+        if (ev.key === 'Enter') {
+            this.onSaveConfirm();
+        } else if (ev.key === 'Escape') {
+            // Fold the naming row only; the global hotkey would close the
+            // panel and take the answer on screen with it.
+            ev.stopPropagation();
+            this.onCloseSave();
+        }
+    }
+    /**
+     * Save the instruction behind the answer on screen as a chip.
+     *
+     * The category follows the situation it was asked in: written from an
+     * empty composer it generates, asked over a draft it rewrites — the same
+     * split that decides when the panel offers it again.
+     *
+     * @returns {Promise<void>}
+     */
+    async onSaveConfirm() {
+        const label = this.state.saveLabel.trim();
+        if (!label || this.state.saving) {
+            return;
+        }
+        const saved = await this.saveQuickAction(
+            label,
+            this.state.customAsked,
+            this.isRewrite ? 'rewrite' : 'generate',
+        );
+        if (saved) {
+            this.state.saveOpen = false;
+            this.state.savedLabel = label;
+        }
+    }
+    /**
+     * Create the quick action and offer it as a chip straight away.
+     * @param {string} label wording shown on the chip
+     * @param {string} body the instruction the chip will carry
+     * @param {string} category where the panel offers it
+     * @returns {Promise<boolean>} whether it was saved
+     */
+    async saveQuickAction(label, body, category) {
+        this.state.saving = true;
+        try {
+            const descriptor = await this.orm.call(
+                'muk_ai.skill',
+                'save_composer_prompt',
+                [label, body, category],
+            );
+            this.state.skills.push(descriptor);
+            return true;
+        } catch (error) {
+            this.notification.add(
+                error.data?.message || error.message || String(error),
+                { type: 'danger' },
+            );
+            return false;
+        } finally {
+            this.state.saving = false;
+        }
+    }
+    /**
+     * Open the place where quick actions are managed — renamed, shared or
+     * deleted. The panel itself only creates and runs them.
+     */
+    onOpenSkillsOverview() {
+        this.props.close?.();
+        this.action.doAction({
+            type: 'ir.actions.act_window',
+            name: _t('Skills'),
+            res_model: 'muk_ai.skill',
+            views: [
+                [false, 'list'],
+                [false, 'form'],
+            ],
+        });
+    }
+    /**
+     * Open the "+" chip's form. The quick action lands in the mode it was
+     * started from, so it comes back exactly where it was created.
+     */
+    onOpenCreate() {
+        this.state.createOpen = true;
+        this.state.createLabel = '';
+        this.state.createBody = '';
+        this.state.createCategory = this.isRewrite ? 'rewrite' : 'generate';
+    }
+    onCloseCreate() {
+        this.state.createOpen = false;
+    }
+    onCreateKeydown(ev) {
+        if (ev.key === 'Enter' && ev.target.tagName !== 'TEXTAREA') {
+            this.onCreateConfirm();
+        } else if (ev.key === 'Escape') {
+            ev.stopPropagation();
+            this.onCloseCreate();
+        }
+    }
+    async onCreateConfirm() {
+        const label = this.state.createLabel.trim();
+        const body = this.state.createBody.trim();
+        if (!label || !body || this.state.saving) {
+            return;
+        }
+        if (await this.saveQuickAction(label, body, this.state.createCategory)) {
+            this.state.createOpen = false;
         }
     }
     /**
