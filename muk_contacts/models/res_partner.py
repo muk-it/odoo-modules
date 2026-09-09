@@ -61,6 +61,8 @@ class Partner(models.Model):
         definition='country_id.partner_properties_definition',
         string='Properties',
         copy=True,
+        # Explicitly disable precomputation due to country_id dependency.
+        precompute=False,
     )
 
     # ----------------------------------------------------------
