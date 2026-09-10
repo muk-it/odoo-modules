@@ -38,7 +38,7 @@ class AIModel(models.Model):
 
     technical_name = fields.Char(
         string='Technical Name',
-        help="Provider-facing model identifier — e.g. 'gpt-5-mini'.",
+        help="Provider-facing model identifier — e.g. 'gpt-5.6-terra'.",
         readonly=True,
         required=True,
         index=True,

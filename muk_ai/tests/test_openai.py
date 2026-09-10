@@ -94,7 +94,7 @@ class TestAiOpenAIProvider(AITestCommon):
 
         with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
-                inputs=[], model='gpt-5-mini', reasoning_effort='low'
+                inputs=[], model='gpt-5.4-mini', reasoning_effort='low'
             )
         self.assertEqual(captured['body']['reasoning']['effort'], 'low')
 
@@ -108,7 +108,7 @@ class TestAiOpenAIProvider(AITestCommon):
             )
 
         with patch.object(requests.Session, 'post', side_effect=fake_post):
-            self.provider._request_responses(inputs=[], model='gpt-5-mini')
+            self.provider._request_responses(inputs=[], model='gpt-5.4-mini')
         self.assertEqual(captured['body']['reasoning']['effort'], 'medium')
 
     def test_reasoning_effort_clamped_to_model_floor(self):
@@ -249,7 +249,7 @@ class TestAiOpenAIProvider(AITestCommon):
 
     @mute_logger('odoo.addons.muk_ai.providers.base')
     def test_rejected_effort_is_stripped_and_served(self):
-        record = self.env.ref('muk_ai.model_gpt_5_mini')
+        record = self.env.ref('muk_ai.model_gpt_5_4_mini')
         bodies = []
 
         def fake_post(url, **kwargs):
@@ -270,7 +270,7 @@ class TestAiOpenAIProvider(AITestCommon):
 
         with patch.object(requests.Session, 'post', side_effect=fake_post):
             result = self.provider._request_responses(
-                inputs=[], model='gpt-5-mini', reasoning_effort='low'
+                inputs=[], model='gpt-5.4-mini', reasoning_effort='low'
             )
         self.assertEqual(len(bodies), 2)
         self.assertEqual(bodies[0]['reasoning']['effort'], 'low')
@@ -282,7 +282,7 @@ class TestAiOpenAIProvider(AITestCommon):
 
     @mute_logger('odoo.addons.muk_ai.providers.base')
     def test_summary_rejection_spares_the_tier_catalog(self):
-        record = self.env.ref('muk_ai.model_gpt_5_mini')
+        record = self.env.ref('muk_ai.model_gpt_5_4_mini')
         bodies = []
 
         def fake_post(url, **kwargs):
@@ -304,7 +304,7 @@ class TestAiOpenAIProvider(AITestCommon):
 
         with patch.object(requests.Session, 'post', side_effect=fake_post):
             result = self.provider._request_responses(
-                inputs=[], model='gpt-5-mini', reasoning_effort='low'
+                inputs=[], model='gpt-5.4-mini', reasoning_effort='low'
             )
         self.assertEqual(len(bodies), 3)
         self.assertEqual(bodies[1]['reasoning'], {'summary': 'detailed'})
@@ -328,7 +328,7 @@ class TestAiOpenAIProvider(AITestCommon):
         with patch.object(requests.Session, 'post', side_effect=fake_post):
             with self.assertRaises(UserError):
                 self.provider._request_responses(
-                    inputs=[], model='gpt-5-mini', reasoning_effort='low'
+                    inputs=[], model='gpt-5.4-mini', reasoning_effort='low'
                 )
         self.assertEqual(len(bodies), 1)
 
@@ -772,7 +772,7 @@ class TestAiOpenAIProvider(AITestCommon):
             with self.assertRaises(UserError):
                 self.provider._request_responses(
                     inputs=[],
-                    model='gpt-5-mini',
+                    model='gpt-5.4-mini',
                     reasoning_effort='low',
                     on_delta=lambda kind, data: deltas.append((kind, data)),
                 )

@@ -45,7 +45,7 @@
 				filters, read-only scope enforcement, multimodal attachments
 				(images, PDFs, text files), lazy tool loading with a per-agent
 				essentials list, agent suggestion prompts, field history
-				versioning, and a prebuilt catalog of current GPT-5.x /
+				versioning, and a prebuilt catalog of current GPT-5.x/6 /
 				Claude 4.x&ndash;5 / Gemini 2.5&ndash;3.x models with input,
 				output and cache (read + write) pricing and per-model
 				reasoning-effort tiers.
@@ -163,9 +163,10 @@
 			<h3 class="oe_slogan">Live Reasoning Stream</h3>
 			<p>
 				When the underlying model exposes a reasoning channel
-				(<strong>OpenAI</strong> o-series and GPT-5 family,
-				<strong>Anthropic</strong> Opus 4.x and Sonnet 4.x with extended
-				or adaptive thinking), the chat replaces the static
+				(<strong>OpenAI</strong> GPT-5.x and GPT-6 family,
+				<strong>Anthropic</strong> Opus 4.5&ndash;5, Sonnet 4.5&ndash;5
+				and Fable 5 with extended or adaptive thinking), the chat
+				replaces the static
 				&ldquo;Thinking&hellip;&rdquo; placeholder with the model's
 				latest reasoning sentence as it streams. The line rotates as new
 				thoughts arrive and disappears the moment the answer text starts
@@ -262,7 +263,7 @@
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>openai</code></td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Responses API</td>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><span style="background:#d4edda; color:#155724; padding:2px 8px; border-radius:3px; font-size:12px;">SSE</span></td>
-						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Summary stream on o-series &amp; GPT-5; encrypted carry for stateless mode</td>
+						<td style="padding:8px 12px; border-bottom:1px solid #eee;">Summary stream on GPT-5.x &amp; GPT-6; encrypted carry for stateless mode</td>
 					</tr>
 					<tr>
 						<td style="padding:8px 12px; border-bottom:1px solid #eee;"><code>anthropic</code></td>
@@ -279,13 +280,14 @@
 				</tbody>
 			</table>
 			<p class="mt16">
-				The shipped catalog includes the current GPT-5.x family
-				(5, 5.1, 5.2, 5.4 incl. Pro variants, 5.5 + Pro, 5.6), GPT-4.1
-				family, GPT-4o, the o-series; Claude Opus 4 / 4.1 / 4.5 / 4.6 /
-				4.7 / 4.8, Sonnet 4.x / 5, Haiku, Fable 5; Gemini 2.5
-				Pro/Flash/Flash-Lite/Flash-Image and the 3.x previews &mdash;
+				The shipped catalog includes GPT-6 Astra, the GPT-5.x family
+				(5.1, 5.2, 5.4 incl. Pro variants, 5.5 + Pro, 5.6), GPT-4.1
+				and GPT-4o; Claude Opus 4.5 / 4.6 / 4.7 / 4.8 / 5,
+				Sonnet 4.5 / 4.6 / 5, Haiku 4.5, Fable 5 and 5.1; Gemini 2.5
+				Pro/Flash/Flash-Lite and the 3.x Flash and Pro tiers &mdash;
 				each with context window and per-1M-token pricing for live cost
-				display.
+				display. Models the vendors retire are dropped, so every entry
+				in the list still answers.
 			</p>
 			<div class="oe_demo oe_screenshot mt16">
 				<img src="screenshot_providers.png">

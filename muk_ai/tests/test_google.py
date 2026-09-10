@@ -82,7 +82,7 @@ class TestAiGoogleProvider(AITestCommon):
                 inputs=[
                     {'role': 'user', 'content': [{'type': 'input_text', 'text': 'hi'}]}
                 ],
-                model='gemini-3-flash-preview',
+                model='gemini-3.8-flash',
                 reasoning_effort='low',
             )
         self.assertEqual(
@@ -102,7 +102,7 @@ class TestAiGoogleProvider(AITestCommon):
                 inputs=[
                     {'role': 'user', 'content': [{'type': 'input_text', 'text': 'hi'}]}
                 ],
-                model='gemini-3-flash-preview',
+                model='gemini-3.8-flash',
             )
         config = captured['body'].get('generationConfig') or {}
         self.assertNotIn('thinkingConfig', config)
@@ -119,7 +119,7 @@ class TestAiGoogleProvider(AITestCommon):
                 inputs=[
                     {'role': 'user', 'content': [{'type': 'input_text', 'text': 'hi'}]}
                 ],
-                model='gemini-3-flash-preview',
+                model='gemini-3.8-flash',
                 reasoning_effort='max',
             )
         self.assertEqual(
@@ -131,7 +131,7 @@ class TestAiGoogleProvider(AITestCommon):
                 inputs=[
                     {'role': 'user', 'content': [{'type': 'input_text', 'text': 'hi'}]}
                 ],
-                model='gemini-3-flash-preview',
+                model='gemini-3.8-flash',
                 reasoning_effort='minimal',
             )
         self.assertEqual(
@@ -141,7 +141,7 @@ class TestAiGoogleProvider(AITestCommon):
 
     @mute_logger('odoo.addons.muk_ai.providers.base')
     def test_rejected_thinking_level_is_stripped_and_served(self):
-        record = self.env.ref('muk_ai.model_gemini_3_flash_preview')
+        record = self.env.ref('muk_ai.model_gemini_3_8_flash')
         bodies = []
 
         def fake_post(url, **kwargs):
@@ -160,7 +160,7 @@ class TestAiGoogleProvider(AITestCommon):
                 inputs=[
                     {'role': 'user', 'content': [{'type': 'input_text', 'text': 'hi'}]}
                 ],
-                model='gemini-3-flash-preview',
+                model='gemini-3.8-flash',
                 reasoning_effort='low',
             )
         self.assertEqual(len(bodies), 2)
@@ -170,7 +170,7 @@ class TestAiGoogleProvider(AITestCommon):
         )
         self.assertNotIn('thinkingConfig', bodies[1]['generationConfig'])
         self.assertEqual(result['text'], 'ok')
-        self.assertEqual(record.reasoning_efforts, ['low', 'high'])
+        self.assertEqual(record.reasoning_efforts, ['low', 'medium', 'high'])
 
     def test_thinking_level_not_sent_for_gemini_2_5(self):
         captured = {}
@@ -211,7 +211,7 @@ class TestAiGoogleProvider(AITestCommon):
                 inputs=[
                     {'role': 'user', 'content': [{'type': 'input_text', 'text': 'hi'}]}
                 ],
-                model='gemini-3-flash-preview',
+                model='gemini-3.8-flash',
                 reasoning_effort='low',
             )
         self.assertEqual(len(bodies), 2)
@@ -566,7 +566,7 @@ class TestAiGoogleProvider(AITestCommon):
                 inputs=[],
                 enable_image_generation=True,
             )
-        self.assertIn('/models/gemini-2.5-flash-image', captured['url'])
+        self.assertIn('/models/gemini-3.1-flash-image', captured['url'])
 
     def test_text_schema_sets_response_mime_type_and_schema(self):
         captured = {}

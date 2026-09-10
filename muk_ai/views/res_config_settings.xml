@@ -208,7 +208,7 @@
 						<setting
 							id="muk_ai_addon_mistral"
 							string="Mistral"
-							help="Mistral AI: Large, Medium, Magistral, Pixtral, Codestral."
+							help="Mistral AI: Large 3, Medium 3.5, Small 4, Ministral 3, Codestral, GLM 5.2."
 						>
 							<field
 								name="module_muk_ai_mistral"

@@ -93,16 +93,23 @@ class TestAiAnthropicProvider(AITestCommon):
         self.assertEqual(body['output_config'], {'effort': 'medium'})
 
     def test_legacy_thinking_low_effort_disables_thinking(self):
-        body = self._capture_request_body('claude-sonnet-4-6', 'low')
+        body = self._capture_request_body('claude-opus-4-5', 'low')
         self.assertNotIn('thinking', body)
 
     def test_legacy_thinking_budget_scales_with_effort(self):
-        default = self._capture_request_body('claude-sonnet-4-6')
+        default = self._capture_request_body('claude-opus-4-5')
         self.assertEqual(default['thinking']['budget_tokens'], 1024)
-        high = self._capture_request_body('claude-sonnet-4-6', 'high')
+        high = self._capture_request_body('claude-opus-4-5', 'high')
         self.assertEqual(high['thinking']['budget_tokens'], 4096)
-        maximum = self._capture_request_body('claude-sonnet-4-6', 'max')
-        self.assertEqual(maximum['thinking']['budget_tokens'], 16384)
+
+    def test_legacy_thinking_budget_follows_the_catalogue_tiers(self):
+        body = self._capture_request_body('claude-opus-4-5', 'max')
+        self.assertEqual(body['thinking']['budget_tokens'], 4096)
+
+    def test_sonnet_4_6_uses_adaptive_thinking_with_effort(self):
+        body = self._capture_request_body('claude-sonnet-4-6', 'high')
+        self.assertEqual(body['thinking'], {'type': 'adaptive'})
+        self.assertEqual(body['output_config'], {'effort': 'high'})
 
     def test_adaptive_thinking_maps_minimal_to_low(self):
         body = self._capture_request_body('claude-opus-4-8', 'minimal')

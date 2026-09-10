@@ -4,7 +4,7 @@ from collections.abc import Callable
 
 from odoo.addons.muk_ai.providers.base import ProviderBase
 
-REASONING_MODEL_PREFIXES = ('o1', 'o3', 'o4', 'gpt-5')
+REASONING_MODEL_PREFIXES = ('o1', 'o3', 'o4', 'gpt-5', 'gpt-6')
 
 
 class OpenAIProvider(ProviderBase):
@@ -12,7 +12,7 @@ class OpenAIProvider(ProviderBase):
 
     name = 'openai'
     label = 'OpenAI'
-    default_model = 'gpt-5-mini'
+    default_model = 'gpt-5.6-terra'
     default_url = 'https://api.openai.com/v1'
 
     supports_web_search = True

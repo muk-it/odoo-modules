@@ -9,7 +9,7 @@ from odoo.addons.muk_mcp.tools.schema import to_strict_schema
 
 GROUNDING_TOOL_KEY = 'googleSearch'
 CODE_EXECUTION_TOOL_KEY = 'codeExecution'
-IMAGE_OUTPUT_MODEL = 'gemini-2.5-flash-image'
+IMAGE_OUTPUT_MODEL = 'gemini-3.1-flash-image'
 
 THINKING_LEVELS = {
     'minimal': 'low',
@@ -26,7 +26,7 @@ class GoogleProvider(ProviderBase):
 
     name = 'google'
     label = 'Google'
-    default_model = 'gemini-2.5-flash'
+    default_model = 'gemini-3.8-flash'
     default_url = 'https://generativelanguage.googleapis.com/v1beta'
 
     supports_web_search = True
