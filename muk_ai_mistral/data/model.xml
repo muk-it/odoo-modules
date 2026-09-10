@@ -8,7 +8,7 @@
 		<field name="name">Mistral Large 3</field>
 		<field name="provider_id" ref="provider_mistral"/>
 		<field name="technical_name">mistral-large-latest</field>
-		<field name="context_window">256000</field>
+		<field name="context_window">262144</field>
 		<field name="input_rate">0.5</field>
 		<field name="output_rate">1.5</field>
 		<field name="currency">USD</field>
@@ -18,7 +18,7 @@
 		<field name="name">Mistral Medium 3.5</field>
 		<field name="provider_id" ref="provider_mistral"/>
 		<field name="technical_name">mistral-medium-latest</field>
-		<field name="context_window">256000</field>
+		<field name="context_window">262144</field>
 		<field name="input_rate">1.5</field>
 		<field name="output_rate">7.5</field>
 		<field name="currency">USD</field>
@@ -28,7 +28,7 @@
 		<field name="name">Mistral Small 4</field>
 		<field name="provider_id" ref="provider_mistral"/>
 		<field name="technical_name">mistral-small-latest</field>
-		<field name="context_window">256000</field>
+		<field name="context_window">262144</field>
 		<field name="input_rate">0.15</field>
 		<field name="output_rate">0.6</field>
 		<field name="currency">USD</field>
@@ -38,7 +38,7 @@
 		<field name="name">Ministral 3 14B</field>
 		<field name="provider_id" ref="provider_mistral"/>
 		<field name="technical_name">ministral-14b-latest</field>
-		<field name="context_window">256000</field>
+		<field name="context_window">262144</field>
 		<field name="input_rate">0.2</field>
 		<field name="output_rate">0.2</field>
 		<field name="currency">USD</field>
@@ -48,7 +48,7 @@
 		<field name="name">Ministral 3 8B</field>
 		<field name="provider_id" ref="provider_mistral"/>
 		<field name="technical_name">ministral-8b-latest</field>
-		<field name="context_window">256000</field>
+		<field name="context_window">262144</field>
 		<field name="input_rate">0.15</field>
 		<field name="output_rate">0.15</field>
 		<field name="currency">USD</field>
@@ -58,7 +58,7 @@
 		<field name="name">Ministral 3 3B</field>
 		<field name="provider_id" ref="provider_mistral"/>
 		<field name="technical_name">ministral-3b-latest</field>
-		<field name="context_window">256000</field>
+		<field name="context_window">131072</field>
 		<field name="input_rate">0.1</field>
 		<field name="output_rate">0.1</field>
 		<field name="currency">USD</field>
@@ -68,29 +68,21 @@
 		<field name="name">Codestral</field>
 		<field name="provider_id" ref="provider_mistral"/>
 		<field name="technical_name">codestral-latest</field>
-		<field name="context_window">128000</field>
+		<field name="context_window">256000</field>
 		<field name="input_rate">0.3</field>
 		<field name="output_rate">0.9</field>
 		<field name="currency">USD</field>
 	</record>
 
-	<record id="model_magistral_medium" model="muk_ai.model">
-		<field name="name">Magistral Medium</field>
+	<record id="model_zai_glm_5_2" model="muk_ai.model">
+		<field name="name">Z.ai GLM 5.2</field>
 		<field name="provider_id" ref="provider_mistral"/>
-		<field name="technical_name">magistral-medium-latest</field>
-		<field name="context_window">128000</field>
-		<field name="input_rate">2.0</field>
-		<field name="output_rate">5.0</field>
-		<field name="currency">USD</field>
-	</record>
-
-	<record id="model_magistral_small" model="muk_ai.model">
-		<field name="name">Magistral Small</field>
-		<field name="provider_id" ref="provider_mistral"/>
-		<field name="technical_name">magistral-small-latest</field>
-		<field name="context_window">128000</field>
-		<field name="input_rate">0.5</field>
-		<field name="output_rate">1.5</field>
+		<field name="technical_name">zai-glm-5-2</field>
+		<field name="context_window">1048576</field>
+		<field name="notes">Third-party open model from Z.ai, served by Mistral on the same infrastructure and under the same regional controls as Mistral's own models. Public preview and not part of every subscription tier. Text only — no vision. Chat, function calling and structured output are documented; the Mistral built-in connectors (web search, code interpreter, image generation) are not.</field>
+		<field name="input_rate">1.4</field>
+		<field name="output_rate">4.4</field>
+		<field name="cache_read_rate">0.14</field>
 		<field name="currency">USD</field>
 	</record>
 

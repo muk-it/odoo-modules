@@ -2,9 +2,9 @@
 
 Adds **Mistral AI** as a first-class provider for `muk_ai`. Pick
 *Mistral AI*, paste your API key, and the whole catalogue is already
-there — **Mistral Large**, **Mistral Medium 3**, **Mistral Small**, the
-**Magistral** reasoning models, **Pixtral** vision, **Codestral**,
-**Ministral** and the open **Mistral Nemo**. The chat, agents, tools
+there — **Mistral Large 3**, **Mistral Medium 3.5**, **Mistral Small 4**,
+**Ministral 3** (14B / 8B / 3B), **Codestral** and the third-party
+**Z.ai GLM 5.2** that Mistral serves itself. The chat, agents, tools
 and approval flow of MuK AI all work unchanged.
 
 Depends only on `muk_ai` — the Mistral translator is self-contained.
@@ -37,7 +37,7 @@ Models use Mistral's stable `-latest` aliases.
 
 Talks to Mistral's **Conversations API** (`POST /v1/conversations`,
 stateless) with live token streaming, function/tool calling against the
-`muk_mcp` registry, image input (Pixtral) and structured output — plus
+`muk_mcp` registry, image input and structured output — plus
 the full set of Mistral built-in connectors, wired to the same capability
 toggles the other muk_ai providers use:
 

@@ -9,18 +9,17 @@ the only thing left to configure is your API key.
 Models
 ======
 
-Seeded ``muk_ai.model`` records (Mistral ``-latest`` aliases):
+Seeded ``muk_ai.model`` records (stable ``-latest`` aliases where Mistral
+publishes one):
 
-- ``mistral-large-latest`` — Mistral Large
-- ``mistral-medium-latest`` — Mistral Medium 3 (default)
-- ``mistral-small-latest`` — Mistral Small 3
-- ``magistral-medium-latest`` — Magistral Medium (reasoning)
-- ``magistral-small-latest`` — Magistral Small (reasoning)
-- ``pixtral-large-latest`` — Pixtral Large (vision)
-- ``codestral-latest`` — Codestral (code, 256K context)
-- ``ministral-8b-latest`` — Ministral 8B
-- ``ministral-3b-latest`` — Ministral 3B
-- ``open-mistral-nemo`` — Mistral Nemo (open weight)
+- ``mistral-large-latest`` — Mistral Large 3
+- ``mistral-medium-latest`` — Mistral Medium 3.5 (default)
+- ``mistral-small-latest`` — Mistral Small 4
+- ``ministral-14b-latest`` — Ministral 3 14B
+- ``ministral-8b-latest`` — Ministral 3 8B
+- ``ministral-3b-latest`` — Ministral 3 3B
+- ``codestral-latest`` — Codestral (code)
+- ``zai-glm-5-2`` — Z.ai GLM 5.2 (third-party open model, 1M context)
 
 Capabilities
 ============
@@ -30,7 +29,7 @@ The provider speaks Mistral's stateless **Conversations API**
 
 - Live token and tool-call streaming
 - Function / tool calling via the ``muk_mcp`` tool registry
-- Image input (Pixtral) and inline document attachments
+- Image input and inline document attachments
 - Structured output (JSON schema response format)
 - **Web search** connector (``web_search``) with inline source citations
 - **Code interpreter** connector (``code_interpreter``); code and output

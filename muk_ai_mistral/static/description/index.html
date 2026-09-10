@@ -23,10 +23,10 @@
 				<strong>MuK AI Mistral</strong> adds <strong>Mistral AI</strong>
 				as a first-class provider for <code>muk_ai</code>. Pick
 				<em>Mistral AI</em>, paste your API key, and the whole
-				catalogue is already there &mdash; Mistral Large, Mistral
-				Medium&nbsp;3, Mistral Small, the Magistral reasoning models,
-				Pixtral vision, Codestral, Ministral and the open Mistral
-				Nemo. The chat, agents, tools and approval flow of MuK AI all
+				catalogue is already there &mdash; Mistral Large&nbsp;3, Mistral
+				Medium&nbsp;3.5, Mistral Small&nbsp;4, the Ministral&nbsp;3
+				line, Codestral and the third-party Z.ai GLM&nbsp;5.2 that
+				Mistral hosts itself. The chat, agents, tools and approval flow of MuK AI all
 				work unchanged. Depends only on <code>muk_ai</code>.
 			</p>
 		</div>
@@ -42,13 +42,15 @@
 				with its context window and pricing so usage and cost
 				tracking light up from the first message. Models use Mistral's
 				stable <code>-latest</code> aliases, so you always reach the
-				current release: <strong>Mistral Large</strong>,
-				<strong>Mistral Medium&nbsp;3</strong> (default),
-				<strong>Mistral Small</strong>, <strong>Magistral
-				Medium</strong> and <strong>Small</strong> for reasoning,
-				<strong>Pixtral Large</strong> for vision,
-				<strong>Codestral</strong> for code, <strong>Ministral
-				8B / 3B</strong> and the open <strong>Mistral Nemo</strong>.
+				current release: <strong>Mistral Large&nbsp;3</strong>,
+				<strong>Mistral Medium&nbsp;3.5</strong> (default),
+				<strong>Mistral Small&nbsp;4</strong>,
+				<strong>Ministral&nbsp;3 14B / 8B / 3B</strong> and
+				<strong>Codestral</strong> for code &mdash; plus
+				<strong>Z.ai GLM&nbsp;5.2</strong>, the third-party open model
+				Mistral serves on its own infrastructure, under the same
+				regional controls as its own models, with a 1M-token context
+				window.
 			</p>
 		</div>
 	</div>
@@ -62,7 +64,7 @@
 				Talks to Mistral's stateless <strong>Conversations API</strong>
 				natively, with live token streaming, function and tool calling
 				against the same <code>muk_mcp</code> tool registry as every
-				other provider, image input for Pixtral and structured output.
+				other provider, image input and structured output.
 				The full set of Mistral built-in connectors is wired to the
 				same capability toggles MuK AI uses for GPT-5, Claude and
 				Gemini &mdash; <strong>web search</strong> with inline source
