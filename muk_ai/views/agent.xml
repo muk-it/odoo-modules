@@ -147,7 +147,7 @@
 							<field name="reasoning_effort_options" invisible="1"/>
 							<field
                                 name="reasoning_effort"
-                                widget="effort_picker"
+                                widget="filtered_selection"
                                 options="{'options_field': 'reasoning_effort_options'}"
                                 placeholder="Model Default"
                                 invisible="not reasoning_effort_options"

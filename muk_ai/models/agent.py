@@ -313,7 +313,7 @@ class AIAgent(models.Model):
     # Compute
     # ----------------------------------------------------------
 
-    @api.depends('model_id.provider_id')
+    @api.depends('model_id.provider_id', 'model_id.provider_id.api_region')
     def _compute_provider_capabilities(self) -> None:
         """Reflect the resolved provider's capability flags onto the agent."""
         default_provider = self.env['muk_ai.provider']._get_default()

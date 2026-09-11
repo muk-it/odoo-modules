@@ -13,6 +13,7 @@ from odoo import models
 from odoo.api import Environment
 from odoo.exceptions import UserError
 
+from odoo.addons.muk_ai.providers.region import Region
 from odoo.addons.muk_ai.tools import StreamCancelled
 
 _logger = logging.getLogger(__name__)
@@ -25,6 +26,7 @@ class ProviderBase:
     label = ''
     default_model = ''
     default_url = ''
+    regions: tuple[Region, ...] = ()
 
     supports_web_search = False
     supports_image_generation = False
@@ -50,10 +52,19 @@ class ProviderBase:
         """Return the environment of the owning provider record."""
         return self.provider.env
 
+    @classmethod
+    def region(cls, code: str | None) -> Region | None:
+        """Return the declared region with the given code, if any."""
+        return next((region for region in cls.regions if region.code == code), None)
+
     @property
     def api_url(self) -> str:
-        """Return the base API URL for this provider."""
-        return self.default_url
+        """Return the endpoint for the configured region, or the implementation default."""
+        provider = self.provider.sudo()
+        if provider.api_region == 'custom':
+            return provider.api_url or ''
+        region = self.region(provider.api_region)
+        return (region.url if region else None) or self.default_url
 
     @property
     def _api_key(self) -> str:

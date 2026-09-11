@@ -74,7 +74,7 @@
 							<field name="reasoning_efforts" invisible="1"/>
 							<field
                                 name="reasoning_effort_default"
-                                widget="effort_picker"
+                                widget="filtered_selection"
                                 options="{'options_field': 'reasoning_efforts'}"
                                 invisible="not reasoning_efforts"
                             />

@@ -24,6 +24,7 @@
 			<list>
 				<field name="sequence" widget="handle"/>
 				<field name="name"/>
+				<field name="code"/>
 				<field name="default_model_id"/>
 				<field name="max_tokens"/>
 				<field name="request_timeout"/>
@@ -56,15 +57,35 @@
 					<div class="oe_title">
 						<label for="name"/>
 						<h1>
-							<field name="name"/>
+							<field name="name" readonly="id"/>
 						</h1>
+						<h3 invisible="id and code == 'default'">
+							<field name="code" placeholder="default"/>
+						</h3>
 					</div>
 					<group>
-						<group string="Credentials">
+						<group string="Connection">
 							<field name="api_key" password="True"/>
 							<field
                                 name="default_model_id"
                                 options="{'no_create': True}"
+                            />
+							<field name="api_region_options" invisible="1"/>
+							<field
+                                name="api_region"
+                                widget="filtered_selection"
+                                options="{'options_field': 'api_region_options'}"
+                                invisible="not api_region_options"
+                            />
+							<field
+                                name="api_url"
+                                invisible="api_region != 'custom'"
+                                required="api_region == 'custom'"
+                                placeholder="https://my-resource.openai.azure.com/openai/v1"
+                            />
+							<field
+                                name="api_endpoint"
+                                invisible="not api_region_options"
                             />
 						</group>
 						<group string="Limits">

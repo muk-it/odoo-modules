@@ -46,3 +46,4 @@ from . import test_tool_file
 from . import test_agent_handoff
 from . import test_handover
 from . import test_share
+from . import test_region

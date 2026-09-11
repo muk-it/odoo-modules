@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from odoo.addons.muk_ai.providers.base import ProviderBase
+from odoo.addons.muk_ai.providers.region import CUSTOM, Region
 
 REASONING_MODEL_PREFIXES = ('o1', 'o3', 'o4', 'gpt-5', 'gpt-6')
 
@@ -14,6 +15,12 @@ class OpenAIProvider(ProviderBase):
     label = 'OpenAI'
     default_model = 'gpt-5.6-terra'
     default_url = 'https://api.openai.com/v1'
+    regions = (
+        Region('eu', 'Europe', 'https://eu.api.openai.com/v1'),
+        Region('us', 'United States', 'https://us.api.openai.com/v1'),
+        Region('mtls-eu', 'Europe (mTLS)', 'https://mtls-eu.api.openai.com/v1'),
+        CUSTOM,
+    )
 
     supports_web_search = True
     supports_image_generation = True

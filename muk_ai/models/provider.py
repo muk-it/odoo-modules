@@ -3,10 +3,11 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from odoo import _, api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 
 from odoo.addons.muk_ai.providers import REGISTRY
 from odoo.addons.muk_ai.providers.base import ProviderBase
+from odoo.addons.muk_ai.providers.region import CUSTOM
 from odoo.addons.muk_ai.tools import (
     is_unmaterialized_attachment,
     nearest_reasoning_effort,
@@ -28,6 +29,15 @@ class AIProvider(models.Model):
         """Return the selection of registered provider names and labels."""
         return [(cls.name, cls.label) for cls in REGISTRY.values()]
 
+    def _selection_api_region(self) -> list[tuple[str, str]]:
+        """Return the union of every registered region, first label winning."""
+        labels = {'default': _('Provider Default')}
+        for cls in REGISTRY.values():
+            for region in cls.regions:
+                labels.setdefault(region.code, _(region.label))
+        labels.setdefault(CUSTOM.code, _(CUSTOM.label))
+        return list(labels.items())
+
     # ----------------------------------------------------------
     # Fields
     # ----------------------------------------------------------
@@ -37,6 +47,13 @@ class AIProvider(models.Model):
         string='Provider',
         readonly=True,
         required=True,
+    )
+
+    code = fields.Char(
+        string='Code',
+        required=True,
+        default='default',
+        copy=False,
     )
 
     active = fields.Boolean(
@@ -52,6 +69,33 @@ class AIProvider(models.Model):
     api_key = fields.Char(
         string='API Key',
         help='Authentication token for this provider.',
+        groups='base.group_system',
+    )
+
+    api_region = fields.Selection(
+        compute='_compute_api_region',
+        precompute=True,
+        selection=lambda self: self._selection_api_region(),
+        string='Region',
+        readonly=False,
+        required=True,
+        store=True,
+    )
+
+    api_region_options = fields.Json(
+        compute='_compute_api_region_options',
+        string='Region Options',
+    )
+
+    api_url = fields.Char(
+        string='Custom URL',
+        help='Endpoint base URL used when the region is set to Custom URL.',
+        groups='base.group_system',
+    )
+
+    api_endpoint = fields.Char(
+        compute='_compute_api_endpoint',
+        string='Endpoint',
         groups='base.group_system',
     )
 
@@ -142,6 +186,14 @@ class AIProvider(models.Model):
                 )
             )
         return impl_cls(provider=self)
+
+    def _valid_regions(self) -> list[str]:
+        """Return the region codes the provider implementation accepts."""
+        self.ensure_one()
+        if (impl := REGISTRY.get(self.name)) is None:
+            return []
+        codes = ['default'] if impl.default_url else []
+        return codes + [region.code for region in impl.regions]
 
     def _resolve_model_name(self, override: str | None = None) -> str:
         """Return the technical model name, honoring an explicit override."""
@@ -288,24 +340,66 @@ class AIProvider(models.Model):
     # Compute
     # ----------------------------------------------------------
 
-    @api.depends('name')
+    @api.depends('name', 'code')
     def _compute_display_name(self) -> None:
-        """Set the display name from the provider selection label."""
+        """Set the display name from the provider label, suffixed by a non-default code."""
         labels = dict(self._fields['name']._description_selection(self.env))
         for record in self:
-            record.display_name = labels.get(record.name) or record.name or ''
+            label = labels.get(record.name) or record.name or ''
+            if record.code and record.code != 'default':
+                label = f'{label} ({record.code})'
+            record.display_name = label
 
     @api.depends('name')
+    def _compute_api_region(self) -> None:
+        """Seed the region and repair one the implementation does not offer.
+
+        A region the implementation declares is an admin's choice and stays.
+        The implementation of a provider whose addon loads after this one is
+        not registered yet while an upgrade seeds the column, so such a record
+        is seeded once from its stored URL instead of the class default.
+        """
+        for record in self:
+            if (impl := REGISTRY.get(record.name)) is not None:
+                if record.api_region not in record._valid_regions():
+                    record.api_region = 'default' if impl.default_url else 'custom'
+            elif not record.api_region:
+                record.api_region = 'custom' if record.api_url else 'default'
+
+    @api.depends('name')
+    def _compute_api_region_options(self) -> None:
+        """Expose the selectable regions, empty when there is nothing to choose."""
+        for record in self:
+            codes = record._valid_regions()
+            record.api_region_options = codes if codes != ['default'] else []
+
+    @api.depends('name', 'api_region', 'api_url')
+    def _compute_api_endpoint(self) -> None:
+        """Resolve the exact base URL the HTTP layer will use."""
+        for record in self:
+            record.api_endpoint = (
+                record._get_client().api_url if record.name in REGISTRY else ''
+            )
+
+    @api.depends('name', 'api_region')
     def _compute_capabilities(self) -> None:
-        """Reflect the registry capability flags onto the record."""
+        """Reflect the registry capability flags, minus those the region disables."""
         for record in self:
             impl = REGISTRY.get(record.name)
-            record.supports_web_search = bool(impl and impl.supports_web_search)
+            region = impl.region(record.api_region) if impl else None
+            disabled = region.disabled if region else ()
+            record.supports_web_search = bool(
+                impl and impl.supports_web_search and 'web_search' not in disabled
+            )
             record.supports_image_generation = bool(
-                impl and impl.supports_image_generation
+                impl
+                and impl.supports_image_generation
+                and 'image_generation' not in disabled
             )
             record.supports_code_interpreter = bool(
-                impl and impl.supports_code_interpreter
+                impl
+                and impl.supports_code_interpreter
+                and 'code_interpreter' not in disabled
             )
             record.supports_vision = bool(impl and impl.supports_vision)
 
@@ -313,7 +407,59 @@ class AIProvider(models.Model):
     # Constraints
     # ----------------------------------------------------------
 
+    @api.constrains('name', 'api_region', 'api_url')
+    def _check_api_region(self) -> None:
+        """Reject a region the implementation lacks or a custom region without URL.
+
+        A provider whose addon has not registered its implementation yet
+        (its module loads after this one during an upgrade) has nothing to
+        validate against and is skipped.
+        """
+        for record in self:
+            if record.name not in REGISTRY:
+                continue
+            if record.api_region not in record._valid_regions():
+                raise ValidationError(
+                    _(
+                        'Region %(region)s is not available for provider %(provider)s.',
+                        region=record.api_region,
+                        provider=record.name,
+                    )
+                )
+            if record.api_region == 'custom' and not record.api_url:
+                raise ValidationError(
+                    _('A custom URL is required when the region is set to Custom URL.')
+                )
+
     _unique_name = models.Constraint(
-        'unique(name)',
-        'A provider with this name already exists.',
+        'unique(name, code)',
+        'A provider with this name and code already exists.',
     )
+
+    # ----------------------------------------------------------
+    # ORM methods
+    # ----------------------------------------------------------
+
+    def unlink(self) -> bool:
+        """Delete the providers, refusing the ones an addon ships.
+
+        :raise UserError: when a record carries an external identifier, since
+            its implementation stays registered and no upgrade recreates the
+            record once it is gone
+        """
+        shipped = (
+            self.env['ir.model.data']
+            .sudo()
+            .search([('model', '=', self._name), ('res_id', 'in', self.ids)])
+        )
+        if shipped:
+            raise UserError(
+                _(
+                    'These providers ship with their addon and cannot be '
+                    'deleted: %(providers)s. Archive them instead.',
+                    providers=', '.join(
+                        self.browse(shipped.mapped('res_id')).mapped('display_name')
+                    ),
+                )
+            )
+        return super().unlink()
