@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import contextlib
-import functools
 import json
 import logging
 from collections.abc import Callable, Iterator
@@ -13,9 +12,12 @@ from odoo import _, models
 from odoo.api import Environment
 from odoo.exceptions import UserError
 
-from odoo.addons.muk_ai.tools import StreamCancelled
+from odoo.addons.muk_ai.providers.region import Region
+from odoo.addons.muk_ai.tools import StreamCancelled, http_session
 
 _logger = logging.getLogger(__name__)
+
+PROVIDER_STATE_KEY = 'provider_state'
 
 
 class ProviderBase:
@@ -25,11 +27,11 @@ class ProviderBase:
     label = ''
     default_model = ''
     default_url = ''
+    regions: tuple[Region, ...] = ()
 
-    supports_web_search = False
-    supports_image_generation = False
-    supports_code_interpreter = False
     supports_vision = True
+    supports_web_search = False
+    supports_code_interpreter = False
 
     reasoning_error_tokens = ()
 
@@ -50,10 +52,19 @@ class ProviderBase:
         """Return the environment of the owning provider record."""
         return self.provider.env
 
+    @classmethod
+    def region(cls, code: str | None) -> Region | None:
+        """Return the declared region with the given code, if any."""
+        return next((region for region in cls.regions if region.code == code), None)
+
     @property
     def api_url(self) -> str:
-        """Return the base API URL for this provider."""
-        return self.default_url
+        """Return the endpoint for the configured region, or the implementation default."""
+        provider = self.provider.sudo()
+        if provider.api_region == 'custom':
+            return provider.api_url or ''
+        region = self.region(provider.api_region)
+        return (region.url if region else None) or self.default_url
 
     @property
     def _api_key(self) -> str:
@@ -61,12 +72,22 @@ class ProviderBase:
         return self.provider.sudo().api_key or ''
 
     @property
+    def authenticated(self) -> bool:
+        """Return whether this account holds the credentials the vendor requires.
+
+        An adapter whose endpoint may legitimately need none — a local Ollama
+        behind the OpenAI-compatible wire — overrides this, and :attr:`api_key`
+        follows it, so the two can never disagree.
+        """
+        return bool(self._api_key)
+
+    @property
     def api_key(self) -> str:
         """Return the configured API key.
 
         :raise UserError: when no API key is configured.
         """
-        if not self._api_key:
+        if not self.authenticated:
             raise UserError(
                 _(
                     '%(provider)s API key is not configured.',
@@ -86,6 +107,11 @@ class ProviderBase:
         return self.provider.idle_timeout
 
     @property
+    def image_timeout(self) -> int:
+        """Return the image generation timeout in seconds."""
+        return self.provider.image_timeout
+
+    @property
     def max_tokens(self) -> int:
         """Return the completion token limit per request."""
         return self.provider.max_tokens
@@ -94,7 +120,7 @@ class ProviderBase:
         """Return the override, the record default model, or the class default."""
         return (
             override
-            or self.provider.default_model_id.technical_name
+            or self.provider._default_model('chat').technical_name
             or self.default_model
         )
 
@@ -106,6 +132,14 @@ class ProviderBase:
         """Return the HTTP headers for a provider request."""
         raise NotImplementedError
 
+    def serves_builtin_tools(self, model: str) -> bool:
+        """Return whether the model runs built-in tools next to function calling.
+
+        A session always declares its Odoo tools, so a model that cannot
+        combine the two serves no built-in capability at all.
+        """
+        return True
+
     def request(
         self,
         inputs,
@@ -114,7 +148,6 @@ class ProviderBase:
         on_delta=None,
         model=None,
         enable_web_search=False,
-        enable_image_generation=False,
         enable_code_interpreter=False,
         extra=None,
     ) -> dict:
@@ -146,46 +179,60 @@ class ProviderBase:
             )
         return True
 
+    def generate_image(
+        self,
+        model: str,
+        prompt: str,
+        options: dict | None = None,
+    ) -> dict:
+        """Render one image with a catalogued image model of this provider.
+
+        Defaults to the OpenAI ``/images/generations`` wire.
+
+        :raise UserError: when the request fails or no image data comes back
+        """
+        body = {
+            'model': model,
+            'prompt': prompt,
+            **{key: value for key, value in (options or {}).items() if value},
+        }
+        # gpt-image-* rejects response_format and always answers base64.
+        if not model.startswith('gpt-image'):
+            body['response_format'] = 'b64_json'
+        try:
+            response = self._http_session().post(
+                f'{self.api_url}/images/generations',
+                headers=self.headers(),
+                json=body,
+                timeout=self.image_timeout,
+            )
+            response.raise_for_status()
+        except requests.HTTPError as error:
+            self._raise(getattr(error.response, 'text', '') or str(error))
+        except requests.RequestException as error:
+            self._raise(error)
+        payload = response.json()
+        entry = next(iter(payload.get('data') or []), None) or {}
+        if not (data_b64 := entry.get('b64_json')):
+            self._raise(_('no image data returned'))
+        return {
+            'data_b64': data_b64,
+            'mimetype': 'image/png',
+            'revised_prompt': entry.get('revised_prompt') or '',
+            'usage': {'images': 1},
+        }
+
     # ----------------------------------------------------------
     # HTTP
     # ----------------------------------------------------------
 
-    @staticmethod
-    @functools.lru_cache(maxsize=1)
-    def _http_session() -> requests.Session:
-        """Return the process-wide HTTP session pooling keep-alive connections.
+    _http_session = staticmethod(http_session)
 
-        Provider clients are rebuilt on every round, so the connection pool
-        must outlive them: one shared session reuses the TLS connection to
-        each API host across rounds — its urllib3 pool is thread-safe and
-        auth stays per-request — instead of handshaking anew every round.
-
-        The pool is built lazily on first use (inside a worker, after any
-        fork) so no socket ever crosses ``fork()``. Retries are connect-only:
-        a dead pooled socket is re-established transparently, but a request
-        that already reached the server is never replayed, so a tool-calling
-        POST cannot execute twice.
-        """
-        session = requests.Session()
-        adapter = requests.adapters.HTTPAdapter(
-            pool_maxsize=32,
-            max_retries=requests.adapters.Retry(
-                total=2,
-                connect=2,
-                read=False,
-                status=0,
-                redirect=False,
-                other=0,
-                allowed_methods=None,
-            ),
-        )
-        session.mount('https://', adapter)
-        session.mount('http://', adapter)
-        return session
-
-    def _post_json(self, path: str, body: dict) -> dict:
+    def _post_json(self, path: str, body: dict, timeout: int | None = None) -> dict:
         """POST a JSON body and return the decoded response.
 
+        :param timeout: budget in seconds, defaulting to the chat request
+            timeout; a route that outlives it (image rendering) passes its own.
         :raise UserError: on HTTP or transport errors.
         """
         try:
@@ -193,7 +240,7 @@ class ProviderBase:
                 f'{self.api_url}{path}',
                 headers=self.headers(),
                 json=body,
-                timeout=self.request_timeout,
+                timeout=timeout or self.request_timeout,
             )
             response.raise_for_status()
         except requests.HTTPError as error:
@@ -311,20 +358,45 @@ class ProviderBase:
             raise error
 
     # ----------------------------------------------------------
-    # Caching
+    # Carry state
     # ----------------------------------------------------------
 
-    @staticmethod
-    def _strip_cache_markers(inputs) -> list:
-        """Return inputs with the internal ``_cache_volatile`` marker removed.
+    @classmethod
+    def _carried_state(cls, item) -> dict:
+        """Return this provider's own private state carried on an input item.
 
-        The session layer marks per-round trailer items (view context,
-        budget notices) so cache-aware providers can anchor a breakpoint
-        before them; the marker itself must never reach a provider wire
-        format, so providers that spread input items strip it here.
+        An adapter only ever sees the slot filed under its own name, so state
+        another vendor signed is invisible here rather than merely unused.
+        """
+        if not isinstance(item, dict):
+            return {}
+        return (item.get(PROVIDER_STATE_KEY) or {}).get(cls.name) or {}
+
+    @classmethod
+    def _carry_state(cls, carry: dict, state: dict) -> dict:
+        """Return the carry item with this provider's private state attached.
+
+        Opaque material a provider must replay to itself — a Gemini
+        ``thoughtSignature`` — belongs here, not on the canonical item, so
+        :meth:`_wire_items` drops it when another vendor gets the conversation.
+        """
+        by_provider = {**(carry.get(PROVIDER_STATE_KEY) or {}), cls.name: state}
+        return {**carry, PROVIDER_STATE_KEY: by_provider}
+
+    @classmethod
+    def _wire_items(cls, inputs) -> list:
+        """Return the input items without any key the wire must not see.
+
+        Canonical items carry session bookkeeping under an underscore prefix
+        and provider-private state under :data:`PROVIDER_STATE_KEY`; neither
+        may ride along into a request.
         """
         return [
-            {key: value for key, value in item.items() if key != '_cache_volatile'}
+            {
+                key: value
+                for key, value in item.items()
+                if not key.startswith('_') and key != PROVIDER_STATE_KEY
+            }
             if isinstance(item, dict)
             else item
             for item in inputs or []

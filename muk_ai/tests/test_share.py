@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from odoo import models
 from odoo.exceptions import AccessError
-from odoo.osv.expression import AND
+from odoo.osv import expression
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase, new_test_user
 
@@ -152,7 +152,7 @@ class TestShare(TransactionCase):
         found = (
             self.env['muk_ai.session']
             .with_user(self.owner)
-            .search(AND([general, [('user_id', '=', self.owner.id)]]))
+            .search(expression.AND([general, [('user_id', '=', self.owner.id)]]))
         )
         self.assertIn(self.session.id, found.ids)
 

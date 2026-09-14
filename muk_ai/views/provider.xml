@@ -24,7 +24,8 @@
 			<tree>
 				<field name="sequence" widget="handle"/>
 				<field name="name"/>
-				<field name="default_model_id"/>
+				<field name="code"/>
+				<field name="default_chat_model_id"/>
 				<field name="max_tokens"/>
 				<field name="request_timeout"/>
 				<field name="rate_limit"/>
@@ -57,15 +58,42 @@
 					<div class="oe_title">
 						<label for="name"/>
 						<h1>
-							<field name="name"/>
+							<field name="name" readonly="id"/>
 						</h1>
+						<h3 invisible="id and code == 'default'">
+							<field name="code" placeholder="default"/>
+						</h3>
 					</div>
 					<group>
-						<group string="Credentials">
+						<group string="Connection">
 							<field name="api_key" password="True"/>
+							<field name="model_modalities" invisible="1"/>
 							<field
-                                name="default_model_id"
+                                name="default_chat_model_id"
                                 options="{'no_create': True}"
+                                invisible="'chat' not in (model_modalities or [])"
+                            />
+							<field
+                                name="default_image_model_id"
+                                options="{'no_create': True}"
+                                invisible="'image' not in (model_modalities or [])"
+                            />
+							<field name="api_region_options" invisible="1"/>
+							<field
+                                name="api_region"
+                                widget="filtered_selection"
+                                options="{'options_field': 'api_region_options'}"
+                                invisible="not api_region_options"
+                            />
+							<field
+                                name="api_url"
+                                invisible="api_region != 'custom'"
+                                required="api_region == 'custom'"
+                                placeholder="https://my-resource.openai.azure.com/openai/v1"
+                            />
+							<field
+                                name="api_endpoint"
+                                invisible="not api_region_options"
                             />
 						</group>
 						<group string="Limits">
@@ -78,6 +106,11 @@
 							<label for="idle_timeout"/>
 							<div class="d-flex align-items-center gap-2">
 								<field name="idle_timeout" class="flex-grow-1"/>
+								<span>Seconds</span>
+							</div>
+							<label for="image_timeout"/>
+							<div class="d-flex align-items-center gap-2">
+								<field name="image_timeout" class="flex-grow-1"/>
 								<span>Seconds</span>
 							</div>
 							<label for="rate_limit"/>
@@ -94,11 +127,13 @@
 									<field name="sequence" widget="handle"/>
 									<field name="name"/>
 									<field name="technical_name"/>
-									<field name="context_window"/>
+									<field name="modality"/>
+									<field name="context_window" invisible="modality != 'chat'"/>
+									<field name="rate_unit"/>
 									<field name="input_rate"/>
-									<field name="output_rate"/>
-									<field name="cache_read_rate"/>
-									<field name="cache_write_rate"/>
+									<field name="output_rate" invisible="modality not in ('chat', 'image')"/>
+									<field name="cache_read_rate" invisible="modality != 'chat'"/>
+									<field name="cache_write_rate" invisible="modality != 'chat'"/>
 									<field name="active" widget="boolean_toggle"/>
 								</tree>
 							</field>

@@ -1,16 +1,3 @@
-@mixin mk-composer-row-stacked {
-    flex-wrap: wrap;
-    row-gap: 0.4rem;
-    > .form-control {
-        flex: 1 0 100%;
-        order: -1;
-        min-height: 2.5rem;
-    }
-    .mk_send {
-        margin-left: auto;
-    }
-}
-
 .mk_chat {
     --mk-primary: var(--o-cc1-btn-primary, #714b67);
     --mk-primary-rgb: var(--primary-rgb, 113, 75, 103);
@@ -307,6 +294,58 @@
             }
         }
     }
+    .mk_space_divider {
+        border: 0;
+        border-top: 1px solid var(--mk-border);
+        margin: 0.5rem 0.55rem 0.35rem;
+        opacity: 1;
+    }
+    .mk_space_auto {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.4rem 0.6rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.66rem;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--mk-text-muted);
+        transition: background 0.12s ease;
+        &:hover {
+            background: rgba(var(--mk-primary-rgb), 0.06);
+            color: var(--mk-text);
+        }
+        .mk_space_caret {
+            width: 10px;
+            font-size: 0.7rem;
+        }
+        .mk_space_auto_label {
+            flex: 1;
+            min-width: 0;
+        }
+        .mk_space_auto_unread {
+            font-size: 0.62rem;
+            font-weight: 600;
+            letter-spacing: 0;
+            line-height: 1;
+            padding: 0.2rem 0.4rem;
+            border-radius: 10px;
+            background: rgba(var(--mk-primary-rgb), 0.16);
+            color: var(--mk-primary);
+        }
+        .mk_space_auto_count {
+            font-size: 0.62rem;
+            font-weight: 600;
+            letter-spacing: 0;
+            line-height: 1;
+            padding: 0.2rem 0.4rem;
+            border-radius: 10px;
+            background: var(--mk-bg-soft);
+            color: var(--mk-text-muted);
+        }
+    }
     .mk_space_row {
         position: relative;
         display: flex;
@@ -326,12 +365,6 @@
             background: rgba(var(--mk-primary-rgb), 0.12);
             outline: 2px dashed var(--mk-primary);
             outline-offset: -2px;
-        }
-        &.mk_space_system {
-            .mk_space_icon,
-            .mk_space_name {
-                color: var(--mk-primary);
-            }
         }
         .mk_space_grip {
             width: 10px;
@@ -680,32 +713,6 @@
             font-variant-numeric: tabular-nums;
             i {
                 opacity: 0.9;
-            }
-        }
-        .mk_approval_pill {
-            font-size: 0.75rem;
-            padding: 2px 10px;
-            font-weight: 500;
-            line-height: 1.3;
-            &.mk_approval_ask {
-                color: var(--mk-primary);
-                background: rgba(var(--mk-primary-rgb), 0.1);
-                &:hover {
-                    background: rgba(var(--mk-primary-rgb), 0.2);
-                }
-            }
-            &.mk_approval_bypass {
-                color: #b45309;
-                background: rgba(250, 176, 74, 0.22);
-                &:hover {
-                    background: rgba(250, 176, 74, 0.35);
-                }
-            }
-            &.mk_approval_override {
-                box-shadow: inset 0 0 0 1px currentColor;
-            }
-            i {
-                font-size: 0.75rem;
             }
         }
         .mk_ctx_chip {
@@ -2198,7 +2205,6 @@
         }
         .mk_attach {
             flex: 0 0 auto;
-            align-self: flex-end;
             width: 34px;
             height: 34px;
             border: 0;
@@ -2245,9 +2251,14 @@
                 color: var(--mk-text-muted);
             }
         }
+        .mk_composer_row {
+            min-height: 34px;
+        }
+        .mk_composer_right {
+            margin-left: auto;
+        }
         .mk_send {
             flex: 0 0 auto;
-            align-self: flex-end;
             width: 34px;
             height: 34px;
             border: 0;
@@ -2395,6 +2406,53 @@
         background: rgba(255, 255, 255, 0.97);
         border-color: rgba(255, 255, 255, 0.3);
     }
+    .mk_composer_meta {
+        min-height: 30px;
+    }
+    .mk_approval_pill,
+    .mk_effort_pill {
+        font-size: 0.75rem;
+        padding: 2px 10px;
+        font-weight: 500;
+        line-height: 1.3;
+        white-space: nowrap;
+        &.mk_pill_override {
+            box-shadow: inset 0 0 0 1px currentColor;
+        }
+        i {
+            font-size: 0.75rem;
+        }
+        .mk_pill_caret {
+            opacity: 0.7;
+        }
+    }
+    .mk_approval_pill {
+        &.mk_approval_ask {
+            color: var(--mk-primary);
+            background: rgba(var(--mk-primary-rgb), 0.1);
+            &:hover {
+                background: rgba(var(--mk-primary-rgb), 0.2);
+            }
+        }
+        &.mk_approval_bypass {
+            color: #b45309;
+            background: rgba(250, 176, 74, 0.22);
+            &:hover {
+                background: rgba(250, 176, 74, 0.35);
+            }
+        }
+    }
+    .mk_effort_pill {
+        color: var(--mk-text-muted);
+        background: var(--mk-bg-soft);
+        &:hover {
+            background: var(--mk-border);
+            color: var(--mk-text);
+        }
+        &.mk_pill_override {
+            color: var(--mk-text);
+        }
+    }
     .mk_composer_hint {
         display: flex;
         gap: 1rem;
@@ -2525,6 +2583,10 @@
             padding: 0.65rem;
             font-size: 0.8rem;
         }
+        .mk_space_auto {
+            padding-top: 0.6rem;
+            padding-bottom: 0.6rem;
+        }
         .mk_space_filter {
             padding: 0.4rem 0.5rem;
             font-size: 0.75rem;
@@ -2556,8 +2618,8 @@
         .mk_composer_hint {
             display: none;
         }
-        .mk_composer_row {
-            @include mk-composer-row-stacked;
+        .mk_pill_label {
+            display: none;
         }
         .mk_bubble,
         .mk_tool,
@@ -2648,5 +2710,29 @@
         font-size: 0.75rem;
         color: var(--bs-secondary-color);
         line-height: 1.5;
+    }
+}
+
+.mk_pill_menu {
+    min-width: 224px;
+    --dropdown-padding-y: 0.25rem;
+    .mk_pill_option {
+        padding: 0.35rem 0.6rem;
+    }
+    .mk_pill_option_body {
+        line-height: 1.35;
+    }
+    .mk_pill_check {
+        margin-top: 0.15rem;
+        font-size: 0.7rem;
+        color: var(--o-cc1-btn-primary, #714b67);
+    }
+    .mk_pill_option_label {
+        font-weight: 600;
+        font-size: 0.82rem;
+    }
+    .mk_pill_option_hint {
+        font-size: 0.75rem;
+        color: var(--secondary-color, #6b7280);
     }
 }

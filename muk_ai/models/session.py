@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
 import random
 import re
 import threading
@@ -17,9 +18,8 @@ from markupsafe import Markup, escape
 from odoo import SUPERUSER_ID, Command, _, api, fields, models, modules, release
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.http import request
-from odoo.osv.expression import AND, FALSE_DOMAIN, OR, normalize_domain
-from odoo.tools import SQL, config
-from odoo.tools.sql import create_index
+from odoo.osv import expression
+from odoo.tools import SQL, config, create_index
 
 from odoo.addons.muk_ai.tools import (
     ADVISORY_LOCK_NAMESPACE,
@@ -41,6 +41,7 @@ from odoo.addons.muk_ai.tools import (
     MAX_ITERATIONS,
     MAX_TOOL_CALLS_PER_ROUND,
     MAX_WALLCLOCK_SECONDS,
+    REASONING_EFFORT_SELECTION,
     TERMINATING_TOOLS,
     TOOL_LOAD_TOOL,
     TOOL_VISION_MAX_B64_CHARS,
@@ -71,6 +72,17 @@ PG_CONCURRENCY_EXCEPTIONS_TO_RETRY = (
     psycopg2.errors.SerializationFailure,
     psycopg2.errors.DeadlockDetected,
 )
+
+_logger = logging.getLogger(__name__)
+
+
+def _negate(domain: list) -> list:
+    """Return the domain matching everything the given one does not.
+
+    ``odoo.fields.Domain`` and its ``~`` operator are 19.0 only, so the
+    negation is spelled out the way the older branches expect it.
+    """
+    return ['!'] + expression.normalize_domain(domain)
 
 
 def has_access(records: models.BaseModel, operation: str) -> bool:
@@ -207,6 +219,30 @@ class AISession(models.Model):
     effective_approval_mode = fields.Char(
         compute='_compute_effective_approval_mode',
         string='Effective Approval Mode',
+    )
+
+    override_reasoning_effort = fields.Selection(
+        selection=REASONING_EFFORT_SELECTION,
+        string='Reasoning Effort Override',
+        help=(
+            "Per-session override for the agent's reasoning effort. "
+            'Leave empty to inherit from the agent.'
+        ),
+    )
+
+    effective_reasoning_effort = fields.Char(
+        compute='_compute_effective_reasoning_effort',
+        string='Effective Reasoning Effort',
+    )
+
+    reasoning_effort_options = fields.Json(
+        compute='_compute_reasoning_effort_options',
+        string='Available Effort Options',
+    )
+
+    agent_reasoning_effort = fields.Selection(
+        related='agent_id.reasoning_effort',
+        string='Agent Reasoning Effort',
     )
 
     # ----------------------------------------------------------
@@ -460,6 +496,10 @@ class AISession(models.Model):
     )
 
     # ----------------------------------------------------------
+    # Index
+    # ----------------------------------------------------------
+
+    # ----------------------------------------------------------
     # Helper Resolvers
     # ----------------------------------------------------------
 
@@ -623,28 +663,27 @@ class AISession(models.Model):
         lines.append('</runtime>')
         return '\n'.join(lines)
 
-    def _effective_model_record(self) -> models.BaseModel:
-        """Return the model record used by the session's agent or default."""
-        if self.agent_id and self.agent_id.model_id:
-            return self.agent_id.model_id
-        return self.env['muk_ai.provider']._get_default().default_model_id
+    def _resolve_model_for(self, modality: str) -> models.BaseModel:
+        """Return the model this session runs ``modality`` on.
 
-    def _effective_provider(self) -> models.BaseModel:
-        """Return the provider backing the session's effective model."""
-        if record := self._effective_model_record():
-            return record.provider_id
-        return self.env['muk_ai.provider']._get_default()
+        The single seam for session-level model selection: everything the
+        runtime resolves — provider, context window, every modality — reads
+        through here, so an override placed on it reaches all of them.
+        """
+        return self.agent_id._resolve_model_for(modality)
+
+    def _resolve_provider(self) -> models.BaseModel:
+        """Return the provider backing this session's chat model."""
+        model = self._resolve_model_for('chat')
+        return model.provider_id or self.env['muk_ai.provider']._get_default()
+
+    def _resolve_context_window(self) -> int:
+        """Return the context window of this session's model, or the default."""
+        return self._resolve_model_for('chat').context_window or DEFAULT_CONTEXT_WINDOW
 
     def _effective_model(self) -> str | None:
         """Return the technical name of the effective model, or ``None``."""
-        if record := self._effective_model_record():
-            return record.technical_name
-        return None
-
-    def _resolve_context_window(self) -> int:
-        """Return the effective model's context window, or the default."""
-        record = self._effective_model_record()
-        return (record.context_window if record else 0) or DEFAULT_CONTEXT_WINDOW
+        return self._resolve_model_for('chat').technical_name or None
 
     def _effective_approval_mode(self) -> str:
         """Return the approval mode from the override, agent, or default."""
@@ -653,6 +692,24 @@ class AISession(models.Model):
         if self.agent_id and self.agent_id.approval_mode:
             return self.agent_id.approval_mode
         return 'ask'
+
+    def _reasoning_effort_options(self) -> list[str]:
+        """Return the effort tiers the session's chat model accepts."""
+        tiers = dict(REASONING_EFFORT_SELECTION)
+        supported = self._resolve_model_for('chat').reasoning_efforts or []
+        return [tier for tier in supported if tier in tiers]
+
+    def _effective_reasoning_effort(self) -> str | None:
+        """Return the effort tier from the override or the agent.
+
+        An override the model does not accept is ignored rather than snapped
+        to a neighbour, so a model swap mid-conversation falls back to what
+        the agent asked for instead of silently spending a different tier.
+        """
+        supported = self._reasoning_effort_options()
+        if self.override_reasoning_effort in supported:
+            return self.override_reasoning_effort
+        return (self.agent_id.reasoning_effort if self.agent_id else None) or None
 
     @api.model
     def _int_config_param(self, key: str, default: int) -> int:
@@ -805,9 +862,8 @@ class AISession(models.Model):
     def _get_filtered_catalog(self) -> list[dict]:
         """Return the tool catalog filtered by agent and client availability.
 
-        Client-executed tools (``_meta.execute == 'client'``) are dropped
-        unless their declared ``_meta.client`` kind is currently available
-        (see ``_available_client_kinds``).
+        ``web_search`` is offered only on its tool route, so the model never
+        sees both the app-side tool and a built-in connector.
         """
         tool_env = self.env(
             context={**self.env.context, **self._tool_dispatch_context()}
@@ -816,11 +872,19 @@ class AISession(models.Model):
         if self.agent_id:
             catalog = self.agent_id.apply_tool_filter(catalog)
         kinds = self._available_client_kinds()
+        hidden = set()
+        if self.agent_id._web_search_route() != 'tool':
+            hidden.add('web_search')
+        if not self._resolve_model_for('image'):
+            hidden.add('generate_image')
         return [
             entry
             for entry in catalog
-            if (meta := entry.get('_meta') or {}).get('execute') != 'client'
-            or meta.get('client') in kinds
+            if entry.get('name') not in hidden
+            and (
+                (meta := entry.get('_meta') or {}).get('execute') != 'client'
+                or meta.get('client') in kinds
+            )
         ]
 
     def _tool_client_kind(self, name: str) -> str | None:
@@ -885,26 +949,16 @@ class AISession(models.Model):
             result.append(self._tool_entry_to_schema(ASK_USER_TOOL))
         return result
 
-    @staticmethod
-    def _strip_internal_keys(items: Iterable) -> list:
-        """Return conversation items without internal underscore-prefixed keys."""
-        return [
-            {key: value for key, value in item.items() if not key.startswith('_')}
-            if isinstance(item, dict)
-            else item
-            for item in (items or [])
-        ]
-
     def _build_request_inputs(self) -> list[dict]:
         """Return a fresh system message followed by the annotated conversation.
 
-        Any system item persisted by an older version is dropped so the system
-        message always reflects the current agent.
+        Internal keys stay on the items; :meth:`ProviderBase._wire_items` is
+        the single place they are dropped before the request goes out.
         """
         self._close_orphan_tool_calls('tool result missing')
         history = [
             item
-            for item in self._strip_internal_keys(self.conversation)
+            for item in self.conversation or []
             if not (isinstance(item, dict) and item.get('role') == 'system')
         ]
         return [
@@ -1007,6 +1061,10 @@ class AISession(models.Model):
             'pending_ask': self._public_pending_ask(),
             'override_approval_mode': self.override_approval_mode or False,
             'effective_approval_mode': self._effective_approval_mode(),
+            'override_reasoning_effort': self.override_reasoning_effort or False,
+            'effective_reasoning_effort': self._effective_reasoning_effort() or False,
+            'reasoning_effort_options': self._reasoning_effort_options(),
+            'agent_reasoning_effort': self.agent_reasoning_effort or False,
             'total_cost': self.total_cost,
         }
 
@@ -1216,7 +1274,7 @@ class AISession(models.Model):
                             }
                         )
                     )
-                stamped = {**stamped, 'event_id': event.id}
+                stamped = {**stamped, 'event_id': event.id, 'sequence': sequence}
                 break
             except psycopg2.errors.UniqueViolation:
                 continue
@@ -1530,8 +1588,13 @@ class AISession(models.Model):
             if count + batch_size > limit:
                 raise UserError(
                     _(
-                        'Rate limit reached (%(count)s sessions in the last minute.',
+                        'Rate limit reached: at most %(limit)s chats may be '
+                        'started per minute. You started %(count)s in the last '
+                        'minute and asked for %(batch)s more. Try again in a '
+                        'minute.',
+                        limit=limit,
                         count=count,
+                        batch=batch_size,
                     )
                 )
 
@@ -1578,6 +1641,7 @@ class AISession(models.Model):
         except Exception as error:  # noqa: BLE001 — report any tool failure to the LLM
             return {'error': str(error)}, False
         self._maybe_publish_ui_action(text, name, call_id)
+        self._settle_tool_cost(name, text)
         if previews := [
             r['preview_url'] for r in resolved_refs if r.get('preview_url')
         ]:
@@ -1762,7 +1826,7 @@ class AISession(models.Model):
                     'kind': 'list',
                     'model': res_model,
                     'view_type': (action.get('view_mode') or '').split(',')[0]
-                    or 'tree',
+                    or 'list',
                 }
                 if isinstance(domain := action.get('domain'), list) and domain:
                     payload['domain'] = domain
@@ -2010,10 +2074,13 @@ class AISession(models.Model):
                 on_delta=lambda kind, data: self._on_stream_delta(
                     kind, data, buffer_state
                 ),
-                reasoning_effort=agent.reasoning_effort if agent else None,
-                enable_web_search=bool(agent and agent.enable_web_search),
-                enable_image_generation=bool(agent and agent.enable_image_generation),
-                enable_code_interpreter=bool(agent and agent.enable_code_interpreter),
+                reasoning_effort=self._effective_reasoning_effort(),
+                enable_web_search=(
+                    bool(agent) and self.agent_id._web_search_route() == 'native'
+                ),
+                enable_code_interpreter=(
+                    bool(agent) and self.agent_id._code_interpreter_route() == 'native'
+                ),
                 cache_key=f'muk_ai.session:{self.id}',
             )
             self._flush_stream_buffer(buffer_state)
@@ -2042,9 +2109,16 @@ class AISession(models.Model):
     # Helper Agent Loop
     # ----------------------------------------------------------
 
-    def _accrue_cost_deltas(self, usage: dict | None) -> dict:
-        """Return the cumulative cost field deltas for a usage payload."""
-        if record := self._effective_model_record():
+    def _accrue_cost_deltas(
+        self,
+        usage: dict | None,
+        record: models.BaseModel | None = None,
+    ) -> dict:
+        """Return the cumulative cost field deltas for a usage payload.
+
+        ``record`` prices the usage and defaults to the effective chat model.
+        """
+        if record := record or self._resolve_model_for('chat'):
             delta = record._compute_usage_cost(usage or {})
             return {
                 'total_input_cost': (self.total_input_cost or 0.0)
@@ -2055,6 +2129,28 @@ class AISession(models.Model):
                 'turn_cost_spent': (self.turn_cost_spent or 0.0) + delta['total_cost'],
             }
         return {}
+
+    def _accrue_model_usage(self, record: models.BaseModel, usage: dict) -> None:
+        """Charge a usage payload priced by ``record`` to the session's cost ledger."""
+        self.write(self._accrue_cost_deltas(usage, record))
+
+    def _settle_tool_cost(self, name: str, text) -> None:
+        """Charge what the image tool spent to the session's cost ledger.
+
+        ``generate_image`` is the only tool that spends money of its own, and
+        its usage is priced by the image model this session resolved — never by
+        one the tool result names.
+        """
+        if name != 'generate_image' or not (isinstance(text, str) and '"cost"' in text):
+            return
+        try:
+            cost = json.loads(text).get('cost')
+        except (ValueError, AttributeError):
+            return
+        if not isinstance(cost, dict) or not isinstance(cost.get('usage'), dict):
+            return
+        if record := self._resolve_model_for('image'):
+            self._accrue_model_usage(record, cost['usage'])
 
     def _persist_inline_images(self, text: str, cache: dict | None = None) -> str:
         """Replace inline base64 images with stored attachment references."""
@@ -2124,7 +2220,7 @@ class AISession(models.Model):
 
     def _vision_enabled(self) -> bool:
         """Return whether the effective provider can consume image inputs."""
-        provider = self._effective_provider()
+        provider = self._resolve_provider()
         return bool(provider and provider.supports_vision)
 
     @staticmethod
@@ -2244,16 +2340,9 @@ class AISession(models.Model):
     def _persist_tool_file(self, result) -> object:
         """Store a tool's file payload and swap its base64 for a download URL.
 
-        A file-producing tool answers with ``content_base64``. Left in place it
-        floods the context window and still leaves the model no way to hand the
-        file over, which is why models resort to inventing ``data:`` links. The
-        bytes become a session attachment instead, and the result carries the
-        ``/web/content`` URL the chat renderer accepts.
-
         The registry JSON-encodes a tool's dict result, so the payload usually
-        arrives as text and is decoded before the swap. The reported mimetype
-        is the stored one, not the transport content type the tool sent, so
-        the chat resolves the same preview the attachment itself would.
+        arrives as text and is decoded before the swap. The reported mimetype is
+        the stored one, not the transport content type the tool sent.
         """
         if isinstance(result, str):
             if 'content_base64' not in result:
@@ -2280,12 +2369,15 @@ class AISession(models.Model):
             )
         except UserError as error:
             return {**rest, 'error': str(error)}
-        return {
+        stored = {
             **rest,
             'mimetype': attachment.mimetype,
             'attachment_id': attachment.id,
             'url': f'/web/content/{attachment.id}?download=1',
         }
+        if attachment.mimetype in IMAGE_MIMETYPES:
+            stored['image_url'] = f'/web/image/{attachment.id}'
+        return stored
 
     def _bound_tool_output(self, entry: dict) -> dict:
         """Cap an oversized tool output so one result can't exhaust the window.
@@ -2833,7 +2925,7 @@ class AISession(models.Model):
 
     def _cost_currency(self) -> str:
         """Return the currency of the effective model, defaulting to USD."""
-        record = self._effective_model_record()
+        record = self._resolve_model_for('chat')
         return (record and record.currency) or 'USD'
 
     def _turn_cost_error(self, limit: float) -> None:
@@ -2955,7 +3047,7 @@ class AISession(models.Model):
             self.invalidate_recordset(['pending_ids', 'expanded_tool_names'])
             if self.pending_ids and self._drain_pending_message():
                 has_terminating = False
-            provider, model = self._effective_provider(), self._effective_model()
+            provider, model = self._resolve_provider(), self._effective_model()
             if provider.id != provider_key:
                 provider_key, materialize_cache = provider.id, {}
             tool_schema = self._get_tool_schema()
@@ -3357,7 +3449,7 @@ class AISession(models.Model):
                 'role': 'system',
                 'content': [{'type': 'input_text', 'text': COMPACT_SUMMARY_SYSTEM}],
             },
-            *self._strip_internal_keys(prefix),
+            *prefix,
             {
                 'role': 'user',
                 'content': [{'type': 'input_text', 'text': prompt_text}],
@@ -3567,7 +3659,7 @@ class AISession(models.Model):
                 self._commit_safe()
 
         try:
-            payload = self._effective_provider()._request_responses(
+            payload = self._resolve_provider()._request_responses(
                 inputs=inputs,
                 tools_schema=None,
                 on_delta=on_delta,
@@ -3752,6 +3844,7 @@ class AISession(models.Model):
                 payload = dict(event.payload or {})
                 payload.setdefault('kind', event.kind)
                 payload['event_id'] = event.id
+                payload['sequence'] = event.sequence
                 if not payload.get('at') and event.at:
                     payload['at'] = event.at.isoformat()
                 events.append(payload)
@@ -4220,6 +4313,17 @@ class AISession(models.Model):
         self._publish_event('state', {'state': self.state})
         return self.get_snapshot()
 
+    def set_reasoning_effort(self, effort: str | None) -> dict:
+        """Override the effort tier the session's turns run on.
+
+        :raise UserError: when the tier is not one the chat model accepts
+        """
+        if effort and effort not in self._reasoning_effort_options():
+            raise UserError(_('Unknown reasoning effort %(effort)r.', effort=effort))
+        self.write({'override_reasoning_effort': effort or False})
+        self._publish_event('state', {'state': self.state})
+        return self.get_snapshot()
+
     def approve_tool(self) -> dict:
         """Approve the pending tool call once and resume the round."""
         pending = self._require_pending_approval()
@@ -4420,6 +4524,27 @@ class AISession(models.Model):
             record.effective_approval_mode = record._effective_approval_mode()
 
     @api.depends(
+        'agent_id',
+        'agent_id.provider_id',
+        'agent_id.model_id',
+        'agent_id.model_id.reasoning_efforts',
+    )
+    def _compute_reasoning_effort_options(self) -> None:
+        """Expose the effort tiers the session's chat model accepts."""
+        for record in self:
+            record.reasoning_effort_options = record._reasoning_effort_options()
+
+    @api.depends(
+        'override_reasoning_effort',
+        'reasoning_effort_options',
+        'agent_id.reasoning_effort',
+    )
+    def _compute_effective_reasoning_effort(self) -> None:
+        """Resolve the effort tier each session's turns run on."""
+        for record in self:
+            record.effective_reasoning_effort = record._effective_reasoning_effort()
+
+    @api.depends(
         'pending_ids',
         'pending_ids.queued_at',
         'pending_ids.content',
@@ -4461,7 +4586,11 @@ class AISession(models.Model):
     # ----------------------------------------------------------
 
     def init(self) -> None:
-        """Index a user's chats by recency, the order the sidebar lists them."""
+        """Create the index that serves the owner's most recent chats.
+
+        ``models.Index`` is 19.0 only; on this branch the same index is
+        created by hand, with the same name the ORM would have given it.
+        """
         super().init()
         create_index(
             self.env.cr,
@@ -4538,6 +4667,13 @@ class AISession(models.Model):
                         'agent_id': record.agent_id.id if record.agent_id else False,
                         'agent_name': record.agent_id.name if record.agent_id else '',
                         'effective_approval_mode': record._effective_approval_mode(),
+                        'effective_reasoning_effort': (
+                            record._effective_reasoning_effort() or False
+                        ),
+                        'reasoning_effort_options': record._reasoning_effort_options(),
+                        'agent_reasoning_effort': (
+                            record.agent_reasoning_effort or False
+                        ),
                     },
                 )
         return result
@@ -4586,7 +4722,7 @@ class AISession(models.Model):
         if days <= 0:
             return 0, 0
         cutoff = fields.Datetime.now() - timedelta(days=days)
-        stale_domain = AND(
+        stale_domain = expression.AND(
             [
                 domain,
                 [
@@ -4617,21 +4753,27 @@ class AISession(models.Model):
             .sudo()
             .search([('retention_mode', '!=', 'default')])
         )
-        kept = FALSE_DOMAIN
-        for space in spaces.filtered(lambda space: space.retention_mode == 'forever'):
-            kept = OR([kept, space._session_domain()])
-        not_kept = ['!', *normalize_domain(kept)]
-        general = not_kept
+        kept = [
+            space._session_domain()
+            for space in spaces.filtered(
+                lambda space: space.retention_mode == 'forever'
+            )
+        ]
+        general = expression.AND([[]] + [_negate(one) for one in kept])
         done = remaining = 0
         for space in spaces.filtered(lambda space: space.retention_mode == 'days'):
             claimed = space._session_domain()
             swept, due = self._gc_sessions_older_than(
-                space.retention_days, AND([claimed, not_kept])
+                space.retention_days,
+                expression.AND([claimed] + [_negate(one) for one in kept]),
             )
             done, remaining = done + swept, remaining + due
-            general = AND([general, ['!', *normalize_domain(claimed)]])
+            general = expression.AND([general, _negate(claimed)])
         swept, due = self._gc_sessions_older_than(self._retention_days(), general)
-        return done + swept, remaining + due
+        done, remaining = done + swept, remaining + due
+        if done:
+            _logger.info('Retention deleted %s chats, %s still due.', done, remaining)
+        return done, remaining
 
     @api.model
     def _client_action_timeout(self) -> int:

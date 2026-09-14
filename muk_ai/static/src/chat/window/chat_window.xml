@@ -45,17 +45,10 @@
             </button>
             <t t-if="!props.minimized and (session.state.viewContext or session.state.sessionId)">
                 <div class="mk_window_subheader">
-                    <button
-                        t-if="session.state.sessionId"
-                        class="btn btn-sm mk_approval_pill rounded-pill border-0 d-inline-flex align-items-center gap-1"
-                        t-att-class="approvalPill.className"
-                        t-att-title="approvalPill.tooltip"
-                        t-att-disabled="!session.canWrite()"
-                        t-on-click="() => this.session.cycleApprovalMode()"
-                    >
-                        <i class="fa" t-att-class="approvalPill.icon"/>
-                        <span t-esc="approvalPill.label"/>
-                    </button>
+                    <t t-call="muk_ai.SessionPills">
+                        <t t-set="approval" t-value="approvalPill"/>
+                        <t t-set="effort" t-value="effortPill"/>
+                    </t>
                     <span
                         class="mk_chip mk_ctx_chip rounded-pill d-inline-flex align-items-center"
                         t-if="session.state.viewContext"
@@ -189,6 +182,8 @@
                         isQueueing="isQueueing"
                         attachments="session.state.pendingAttachments"
                         agents="session.state.agents"
+                        sessionId="session.state.sessionId"
+                        viewContext="session.state.viewContext"
                         activeAgentId="session.state.agentId"
                         focusToken="session.state.focusToken"
                         onInput.bind="onInputChange"

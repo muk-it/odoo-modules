@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from odoo.api import Environment
 
+from . import controllers
 from . import mcp
 from . import models
 from . import providers

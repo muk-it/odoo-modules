@@ -31,7 +31,8 @@
 				<field
                     name="domain"
                     widget="domain"
-                    options="{'model': 'muk_ai.session', 'foldable': True}"
+                    options="{'model': 'muk_ai.session', 'foldable': True, 'allow_expressions': True}"
+                    context="{'uid': uid}"
                     invisible="user_id"
                     readonly="1"
                 />
@@ -88,13 +89,16 @@
 						/>
 					</group>
 					<group string="System Space" invisible="user_id">
+						<field name="can_edit_domain" invisible="1"/>
+						<field name="pinned" widget="boolean_toggle"/>
 						<field
 							name="domain"
 							widget="domain"
-							options="{'model': 'muk_ai.session', 'foldable': False}"
+							options="{'model': 'muk_ai.session', 'foldable': False, 'allow_expressions': True}"
+							context="{'uid': uid}"
 							nolabel="1"
 							colspan="2"
-							readonly="1"
+							readonly="not can_edit_domain"
 						/>
 					</group>
 				</sheet>

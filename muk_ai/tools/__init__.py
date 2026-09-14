@@ -62,13 +62,33 @@ from .attachment import (
     is_unmaterialized_attachment,
     tool_file_payload,
 )
-from .sources import SOURCE_EXTRACTORS, extract_sources, source_extractor
+from .http import http_session
+from .image import IMAGE_OPTIONS
+from .modality import MODALITIES, Modality, chat_cost, image_cost
+from .sources import SOURCE_EXTRACTORS, extract_sources, source_extractor, web_domain
 from .url_fetch import (
     CONNECT_TIMEOUT,
+    FAVICON_BUDGET,
+    FAVICON_CACHE_SECONDS,
+    FAVICON_DEADLINE,
+    FAVICON_GC_BATCH,
+    FAVICON_MAX_AGE_DAYS,
+    FAVICON_MAX_BYTES,
+    FAVICON_MIMETYPES,
+    FAVICON_ROUTE,
     READ_TIMEOUT,
     WEB_FETCH_MAX_CHARS,
     FetchResult,
     fetch_url,
     page_icon,
     render_content,
+)
+from .web_search import (
+    FRESHNESS_DAYS,
+    SEARCH_BACKENDS,
+    WEB_SEARCH_MAX_RESULTS,
+    SearchBackend,
+    SearchHit,
+    SearchQuery,
+    search_backend,
 )

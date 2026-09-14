@@ -6,7 +6,7 @@
 		<field name="name">Read-only Analyst</field>
 		<field name="sequence">20</field>
 		<field name="read_only" eval="True"/>
-		<field name="enable_web_search" eval="True"/>
+		<field name="web_search">auto</field>
 		<field name="description">Restricted to read-only tools.</field>
 		<field name="tool_filter">["search_count", "search_read", "read_records", "read_group", "list_models", "describe_model", "ask_user"]</field>
 		<field name="system_prompt"><![CDATA[

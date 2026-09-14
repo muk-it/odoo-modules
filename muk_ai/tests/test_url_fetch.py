@@ -302,6 +302,68 @@ class TestUrlFetchHardening(AITestCommon):
         ):
             fetch_url('https://start.example/go')
 
+    def test_a_deadline_shrinks_the_per_hop_timeouts(self):
+        response = self._mock_response([b'ok'], headers={'Content-Type': 'text/plain'})
+        pools = []
+
+        def make_pool(**kwargs):
+            pools.append(kwargs['timeout'])
+            return self._mock_pool(response)
+
+        with (
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
+                return_value=self._addrinfo('8.8.8.8'),
+            ),
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
+                side_effect=make_pool,
+            ),
+        ):
+            fetch_url('https://example.com/f.ico', deadline=2)
+        self.assertLessEqual(pools[0].connect_timeout, 2)
+        self.assertLessEqual(pools[0].read_timeout, 2)
+
+    def test_a_redirect_chain_cannot_outlive_the_deadline(self):
+        redirect = self._mock_response(
+            [], status=302, headers={'Location': 'https://example.com/next'}
+        )
+        clock = iter([0.0, 0.5, 99.0, 99.0])
+        with (
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.monotonic',
+                side_effect=lambda: next(clock),
+            ),
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
+                return_value=self._addrinfo('8.8.8.8'),
+            ),
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
+                side_effect=lambda **kwargs: self._mock_pool(redirect),
+            ),
+            self.assertRaises(UserError),
+        ):
+            fetch_url('https://example.com/f.ico', deadline=5)
+
+    def test_without_a_deadline_the_clock_is_not_consulted(self):
+        response = self._mock_response([b'ok'], headers={'Content-Type': 'text/plain'})
+        with (
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.monotonic',
+                side_effect=AssertionError('a deadline-free fetch read the clock'),
+            ),
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
+                return_value=self._addrinfo('8.8.8.8'),
+            ),
+            patch(
+                'odoo.addons.muk_ai.tools.url_fetch.urllib3.HTTPSConnectionPool',
+                return_value=self._mock_pool(response),
+            ),
+        ):
+            self.assertEqual(fetch_url('https://example.com/f.txt').body, b'ok')
+
     def test_github_blob_rewritten_to_raw(self):
         resp = self._mock_response([b'code'], headers={'Content-Type': 'text/plain'})
         with (

@@ -10,6 +10,7 @@ SourceExtractor = Callable[[dict, object], list[dict]]
 # with a long id list) can return hundreds of rows; cap how many become citable
 # sources per call so one call cannot flood the sources rail.
 MAX_RECORD_SOURCES_PER_CALL = 20
+MAX_WEB_SEARCH_SOURCES_PER_CALL = 10
 
 UNSET_MODULE_ICON = '/base/static/description/icon.png'
 
@@ -63,6 +64,27 @@ def extract_sources(name: str, arguments: dict | None, result: object) -> list[d
 # ----------------------------------------------------------
 
 
+def web_domain(url: str) -> str:
+    """Return the host of ``url`` without a leading ``www.``, '' when it has none."""
+    domain = urlparse(url).hostname or ''
+    return domain[4:] if domain.startswith('www.') else domain
+
+
+def _web_source(url: str, title: str | None, icon: str | None) -> dict:
+    """Build a web source descriptor keyed by URL, so a page cited twice merges."""
+    domain = web_domain(url)
+    source = {
+        'id': f'web:{url}',
+        'type': 'web',
+        'url': url,
+        'title': title or domain or url,
+        'domain': domain,
+    }
+    if icon:
+        source['icon'] = icon
+    return source
+
+
 @source_extractor('web_fetch')
 def _web_fetch_sources(arguments: dict, result: object) -> list[dict]:
     """Turn a ``web_fetch`` descriptor into a single web source (sans content)."""
@@ -70,18 +92,23 @@ def _web_fetch_sources(arguments: dict, result: object) -> list[dict]:
         return []
     if not (url := result.get('url')):
         return []
-    domain = urlparse(url).hostname or ''
-    domain = domain[4:] if domain.startswith('www.') else domain
-    source = {
-        'id': f'web:{url}',
-        'type': 'web',
-        'url': url,
-        'title': result.get('title') or domain or url,
-        'domain': domain,
-    }
-    if icon := result.get('icon'):
-        source['icon'] = icon
-    return [source]
+    return [_web_source(url, result.get('title'), result.get('icon'))]
+
+
+@source_extractor('web_search')
+def _web_search_sources(arguments: dict, result: object) -> list[dict]:
+    """Turn ``web_search`` hits into capped web sources sharing ``web_fetch``'s ids."""
+    if not isinstance(result, dict) or result.get('error'):
+        return []
+    hits = [
+        hit
+        for hit in result.get('results') or []
+        if isinstance(hit, dict) and hit.get('url')
+    ]
+    return [
+        _web_source(hit['url'], hit.get('title'), hit.get('icon'))
+        for hit in hits[:MAX_WEB_SEARCH_SOURCES_PER_CALL]
+    ]
 
 
 def _record_source(model: str, row: object) -> dict | None:
