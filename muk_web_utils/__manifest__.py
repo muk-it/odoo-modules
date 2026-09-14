@@ -5,7 +5,7 @@
         Technical module to provide some utility features and libraries that
         can be used in other applications.
     """,
-    'version': '19.0.1.2.6',
+    'version': '19.0.1.2.7',
     'category': 'Tools/Utils',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -47,6 +47,7 @@
             'muk_web_utils/static/src/tour/**/*',
             'muk_web_utils/static/src/webclient/**/*',
             'muk_web_utils/static/src/views/module_availability.js',
+            'muk_web_utils/static/src/views/fields/domain/*',
             'muk_web_utils/static/src/views/fields/json/*',
             'muk_web_utils/static/src/views/fields/module_link/*',
             'muk_web_utils/static/src/views/fields/text_icons/*',
