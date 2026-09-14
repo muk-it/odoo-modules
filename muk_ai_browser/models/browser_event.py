@@ -64,7 +64,9 @@ class BrowserEvent(models.Model):
 
         Uses ``FOR UPDATE SKIP LOCKED`` so concurrent SSE readers never claim the
         same rows, marks the selected rows delivered and returns them ordered by
-        sequence.
+        sequence. The pick is a materialized CTE: as an ``IN`` subquery the
+        planner may re-run it per candidate row and hand back more than
+        ``limit`` events.
 
         :param after_seq: only claim events with a higher sequence (resume support).
         :return: a list of ``(seq, type, payload)`` tuples ordered by sequence
@@ -72,19 +74,22 @@ class BrowserEvent(models.Model):
         self.env.cr.execute(
             SQL(
                 """
-            UPDATE %s SET delivered = true
-             WHERE id IN (
+            WITH picked AS MATERIALIZED (
                 SELECT id FROM %s
                  WHERE browser_session_id = %s AND delivered = false AND seq > %s
                  ORDER BY seq ASC LIMIT %s
                    FOR UPDATE SKIP LOCKED
-             ) RETURNING seq, type, payload
+            )
+            UPDATE %s AS event SET delivered = true
+              FROM picked
+             WHERE event.id = picked.id
+            RETURNING event.seq, event.type, event.payload
             """,
-                SQL.identifier(self._table),
                 SQL.identifier(self._table),
                 browser_session.id,
                 after_seq,
                 limit,
+                SQL.identifier(self._table),
             ),
         )
         rows = sorted(self.env.cr.fetchall(), key=lambda row: row[0])
