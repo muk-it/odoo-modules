@@ -6,9 +6,6 @@ from urllib.parse import urlparse
 
 SourceExtractor = Callable[[dict, object], list[dict]]
 
-# A single record read (``search_read`` scanning a domain, or ``read_records``
-# with a long id list) can return hundreds of rows; cap how many become citable
-# sources per call so one call cannot flood the sources rail.
 MAX_RECORD_SOURCES_PER_CALL = 20
 MAX_WEB_SEARCH_SOURCES_PER_CALL = 10
 

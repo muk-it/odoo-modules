@@ -10,13 +10,13 @@ def http_session() -> requests.Session:
     """Return the process-wide HTTP session pooling keep-alive connections.
 
     Cached rather than eager so the pool is built inside a worker and no
-    socket ever crosses ``fork()``.
+    socket ever crosses ``fork()``. Retries are connect-only: a dead pooled
+    socket is re-established, but a request that already reached the server is
+    never replayed.
     """
     session = requests.Session()
     adapter = requests.adapters.HTTPAdapter(
         pool_maxsize=32,
-        # Connect-only: a dead pooled socket is re-established, but a request
-        # that already reached the server is never replayed.
         max_retries=requests.adapters.Retry(
             total=2,
             connect=2,

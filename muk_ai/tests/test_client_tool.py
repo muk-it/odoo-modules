@@ -208,9 +208,6 @@ class TestClientToolSeam(AITestCommon):
         session = self._new_session('kind-lookup')
         with self._kind_catalog():
             self.assertEqual(session._tool_client_kind('adjust_search'), 'webclient')
-            # the kind is a static registration property: it resolves even for
-            # tools whose kind is currently unavailable (routing must not
-            # depend on visibility, e.g. on the approval-resume path)
             self.assertEqual(session._tool_client_kind('browser_click'), 'browser')
             self.assertIsNone(session._tool_client_kind('search_count'))
             self.assertIsNone(session._tool_client_kind('bare_client'))
@@ -662,11 +659,6 @@ class TestClientToolSeam(AITestCommon):
         self.assertEqual(session.state, 'waiting')
 
     def test_build_request_inputs_closes_orphan_client_call(self):
-        # Regression: a client action (e.g. open_view with target="current")
-        # navigates the tab away before submit_client_result runs, leaving its
-        # function_call without a function_call_output. Rebuilding the request
-        # must close the orphan, else the provider rejects the input with
-        # "No tool output found for function call ...".
         session = self._new_session()
         call_id = 'call_orphan_open_view'
         session.conversation = [
@@ -686,9 +678,7 @@ class TestClientToolSeam(AITestCommon):
 
         inputs = session._build_request_inputs()
 
-        # The orphan gained an interrupted output, persisted on the session...
         self.assertEqual(len(self._outputs_for(session, call_id)), 1)
-        # ...and no function_call in the built request is left unanswered.
         pending = {
             item['call_id']
             for item in inputs

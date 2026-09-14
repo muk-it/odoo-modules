@@ -14,6 +14,7 @@ import odoo.tests
 from odoo import fields, models
 from odoo.exceptions import UserError
 from odoo.tests.common import new_test_user, tagged
+from odoo.tools import mute_logger
 
 from odoo.addons.base.models.ir_autovacuum import is_autovacuum
 from odoo.addons.muk_ai.mcp import web as web_module
@@ -230,6 +231,7 @@ class TestSourceIconRefusals(SourceIconCase):
     def test_an_oversized_response_is_refused(self):
         self._refused('huge.test', UserError('@url: response from x exceeds the cap.'))
 
+    @mute_logger('odoo.tools.translate')
     def test_an_icon_pointing_at_an_internal_address_is_refused(self):
         with patch(
             'odoo.addons.muk_ai.tools.url_fetch.socket.getaddrinfo',
