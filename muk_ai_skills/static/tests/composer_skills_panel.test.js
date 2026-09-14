@@ -92,11 +92,11 @@ test('opening the panel takes the caret out of the composer', async () => {
     reset();
     setSkills(42, SKILLS);
     await mountComposer();
-    await click('.mk_composer_row textarea');
-    expect('.mk_composer_row textarea').toBeFocused();
+    await click('.mk_composer textarea');
+    expect('.mk_composer textarea').toBeFocused();
     await click('.mk_skill_btn');
     await animationFrame();
-    expect('.mk_composer_row textarea').not.toBeFocused();
+    expect('.mk_composer textarea').not.toBeFocused();
 });
 
 test('picking a skill invokes it and closes the panel', async () => {
@@ -119,7 +119,7 @@ test('picking a skill leaves the composer draft alone', async () => {
     await animationFrame();
     await click(queryAll('.mk_skill')[0]);
     await animationFrame();
-    expect('.mk_composer_row textarea').toHaveValue('half written message');
+    expect('.mk_composer textarea').toHaveValue('half written message');
 });
 
 test('the panel yields to the slash popover while a command is typed', async () => {
@@ -139,12 +139,12 @@ test('a slash command closes the panel instead of parking it behind', async () =
     await click('.mk_skill_btn');
     await animationFrame();
     expect('.mk_skills_panel').toHaveCount(1);
-    await click('.mk_composer_row textarea');
+    await click('.mk_composer textarea');
     await edit('/he');
     await animationFrame();
     expect('.mk_skills_panel').toHaveCount(0);
     await edit('');
     await animationFrame();
     expect('.mk_skills_panel').toHaveCount(0);
-    expect('.mk_composer_row textarea').toBeFocused();
+    expect('.mk_composer textarea').toBeFocused();
 });

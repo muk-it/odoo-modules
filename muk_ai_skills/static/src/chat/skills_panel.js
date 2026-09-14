@@ -9,11 +9,12 @@ export class SkillsPanel extends Component {
     static template = 'muk_ai_skills.SkillsPanel';
     static props = {
         skills: { type: Array },
+        lockedSkills: { type: Array, optional: true },
         autofocus: { type: Boolean, optional: true },
         onSelect: { type: Function },
         onClose: { type: Function },
     };
-    static defaultProps = { autofocus: false };
+    static defaultProps = { lockedSkills: [], autofocus: false };
     setup() {
         this.rootRef = useRef('root');
         this.searchRef = useRef('search');
@@ -61,6 +62,17 @@ export class SkillsPanel extends Component {
                 previous = group;
                 return { skill, group, first };
             });
+    }
+    /** Return the skills the pinned context withholds, matching the search. */
+    get lockedEntries() {
+        const filter = this.state.filter.trim().toLowerCase();
+        return this.props.lockedSkills.filter((skill) =>
+            filter
+                ? `${skill.label || ''} ${skill.name} ${skill.description || ''}`
+                      .toLowerCase()
+                      .includes(filter)
+                : true,
+        );
     }
     onFilterInput(event) {
         this.state.filter = event.target.value;

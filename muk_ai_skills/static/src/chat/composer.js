@@ -5,13 +5,13 @@ import { patch } from '@web/core/utils/patch';
 
 import { ChatComposer } from '@muk_ai/chat/composer/chat_composer';
 
+import { skillScopeSatisfied } from '@muk_ai_skills/chat/scope';
 import { skillStore } from '@muk_ai_skills/chat/skill_cache';
 import { SkillsPanel } from '@muk_ai_skills/chat/skills_panel';
 
 ChatComposer.components = { ...ChatComposer.components, SkillsPanel };
 ChatComposer.props = {
     ...ChatComposer.props,
-    sessionId: { type: [Number, String], optional: true },
     onInvokeSkill: { type: Function, optional: true },
 };
 
@@ -45,7 +45,7 @@ patch(ChatComposer.prototype, {
             return builtIn;
         }
         const prefix = value.split(/\s+/)[0].toLowerCase();
-        const skillEntries = this.sessionSkills.map((skill) => ({
+        const skillEntries = this.availableSkills.map((skill) => ({
             name: `/${skill.name}`,
             hint: skill.description
                 ? `Skill: ${skill.description}`
@@ -67,11 +67,21 @@ patch(ChatComposer.prototype, {
     get sessionSkills() {
         return (this.props.sessionId && this.skillState[this.props.sessionId]) || [];
     },
+    get availableSkills() {
+        return this.sessionSkills.filter((skill) =>
+            skillScopeSatisfied(skill, this.props.viewContext),
+        );
+    },
+    get lockedSkills() {
+        return this.sessionSkills.filter(
+            (skill) => !skillScopeSatisfied(skill, this.props.viewContext),
+        );
+    },
     get hasSkills() {
         return this.sessionSkills.length > 0;
     },
     get showSkillsPanel() {
-        return this.localState.skillsOpen && !this.props.disabled;
+        return this.localState.skillsOpen;
     },
     /** Focus the panel search only where a keyboard will not cover the list. */
     get skillsAutofocus() {

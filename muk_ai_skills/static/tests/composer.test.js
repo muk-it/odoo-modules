@@ -11,7 +11,7 @@ import { setSkills } from '@muk_ai_skills/chat/skill_cache';
 describe.current.tags('muk_ai_skills');
 defineMailModels();
 
-function makeParent({ value = '', sessionId = 42 } = {}) {
+function makeParent({ value = '', sessionId = 42, viewContext = null } = {}) {
     class Parent extends Component {
         static components = { ChatComposer };
         static props = {};
@@ -19,6 +19,7 @@ function makeParent({ value = '', sessionId = 42 } = {}) {
             <ChatComposer
                 value="props.value"
                 sessionId="props.sessionId"
+                viewContext="props.viewContext"
                 placeholder="'type'"
                 canSend="false"
                 canStop="false"
@@ -30,8 +31,12 @@ function makeParent({ value = '', sessionId = 42 } = {}) {
             />
         `;
     }
-    Parent.props = { value: { type: String }, sessionId: { type: Number } };
-    return { Parent, props: { value, sessionId } };
+    Parent.props = {
+        value: { type: String },
+        sessionId: { type: Number },
+        viewContext: { optional: true },
+    };
+    return { Parent, props: { value, sessionId, viewContext } };
 }
 
 function reset() {
@@ -101,4 +106,45 @@ test('non-slash input is unaffected by skills', async () => {
     const { Parent, props } = makeParent({ value: 'hello', sessionId: 42 });
     await mountWithCleanup(Parent, { props });
     expect('.mk_slash_item').toHaveCount(0);
+});
+
+test('a record skill is offered only once a record is pinned', async () => {
+    reset();
+    setSkills(42, [
+        { name: 'note', label: 'Note', description: 'Note it.', scope: 'record' },
+    ]);
+    const { Parent, props } = makeParent({
+        value: '/no',
+        viewContext: { kind: 'list', model: 'res.partner' },
+    });
+    await mountWithCleanup(Parent, { props });
+    const onList = queryAll('.mk_slash_item').map((el) => el.textContent);
+    expect(onList.some((l) => l.includes('/note'))).toBe(false);
+
+    const pinned = makeParent({
+        value: '/no',
+        viewContext: { kind: 'record', model: 'res.partner', id: 1 },
+    });
+    await mountWithCleanup(pinned.Parent, { props: pinned.props });
+    const onRecord = queryAll('.mk_slash_item').map((el) => el.textContent);
+    expect(onRecord.some((l) => l.includes('/note'))).toBe(true);
+});
+
+test('a chatter skill is withheld on a record whose model has none', async () => {
+    reset();
+    setSkills(42, [
+        { name: 'reply', label: 'Reply', description: 'Reply.', scope: 'chatter' },
+    ]);
+    const { Parent, props } = makeParent({
+        value: '/re',
+        viewContext: {
+            kind: 'record',
+            model: 'res.currency',
+            id: 1,
+            has_chatter: false,
+        },
+    });
+    await mountWithCleanup(Parent, { props });
+    const labels = queryAll('.mk_slash_item').map((el) => el.textContent);
+    expect(labels.some((l) => l.includes('/reply'))).toBe(false);
 });

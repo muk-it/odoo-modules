@@ -320,3 +320,75 @@ class TestSkillSharing(TransactionCase):
             skill.with_user(self.user_other).write(
                 {'attachment_ids': [(4, attachment.id)]}
             )
+
+    # ----------------------------------------------------------
+    # Tests archived sharees
+    # ----------------------------------------------------------
+
+    def test_archived_sharee_keeps_the_skill_private(self):
+        skill = self._make_skill(self.user_owner, name='retired_owner')
+        self.user_owner.active = False
+        skill.invalidate_recordset()
+        self.assertFalse(skill.user_ids, 'reading a many2many drops archived ids')
+        self.assertEqual(skill._shared_users(), self.user_owner)
+        self.assertEqual(skill.visibility, 'owner')
+        self.assertEqual(skill.user_count, 0)
+        found = self.Skill.with_user(self.user_other).search([('id', '=', skill.id)])
+        self.assertFalse(found, 'the surviving row still hides the skill')
+
+    def test_skill_created_for_an_archived_owner_stays_with_its_creator(self):
+        self.user_owner.active = False
+        skill = self.Skill.with_user(self.user_admin).create(
+            {
+                'name': 'system_procedure',
+                'description': 'Authored for an archived account.',
+                'owner_id': self.user_owner.id,
+            }
+        )
+        self.assertEqual(
+            skill._shared_users(),
+            self.user_admin,
+            'an archived owner falls back to the creator, never to everyone',
+        )
+        found = self.Skill.with_user(self.user_other).search([('id', '=', skill.id)])
+        self.assertFalse(found)
+
+    def test_skill_authored_by_an_archived_account_is_shared_with_everyone(self):
+        self.user_owner.active = False
+        skill = self.Skill.with_user(self.user_owner).create(
+            {
+                'name': 'shipped_procedure',
+                'description': 'Authored by an archived account, like OdooBot.',
+            }
+        )
+        self.assertFalse(skill._shared_users())
+        self.assertEqual(skill.visibility, 'everyone')
+        found = self.Skill.with_user(self.user_other).search([('id', '=', skill.id)])
+        self.assertEqual(found, skill)
+
+    def test_share_everyone_clears_an_archived_row(self):
+        skill = self._make_skill(self.user_owner, name='freed_procedure')
+        self.user_owner.active = False
+        skill.invalidate_recordset()
+        skill.action_share_everyone()
+        self.assertFalse(skill._shared_users())
+        self.assertEqual(skill.visibility, 'everyone')
+        found = self.Skill.with_user(self.user_other).search([('id', '=', skill.id)])
+        self.assertEqual(found, skill)
+
+    def test_archived_sharee_does_not_open_a_private_skill(self):
+        departed = new_test_user(self.env, login='skill_departed')
+        skill = self._make_skill(
+            self.user_owner,
+            name='private_procedure',
+            user_ids=[(6, 0, (self.user_owner | departed).ids)],
+        )
+        departed.active = False
+        skill.invalidate_recordset()
+        self.assertEqual(
+            skill.visibility,
+            'users',
+            'the restriction stays even though the sharee is gone',
+        )
+        found = self.Skill.with_user(self.user_other).search([('id', '=', skill.id)])
+        self.assertFalse(found)

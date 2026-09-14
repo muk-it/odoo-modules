@@ -19,7 +19,7 @@
                     t-on-input="(ev) => this.onFilterInput(ev)"
                 />
             </div>
-            <div class="mk_skills_empty" t-if="!entries.length">
+            <div class="mk_skills_empty" t-if="!entries.length and !lockedEntries.length">
                 No skill matches.
             </div>
             <t t-foreach="entries" t-as="entry" t-key="entry.skill.name">
@@ -39,6 +39,20 @@
                         <span class="mk_skill_preview" t-esc="entry.skill.description"/>
                     </span>
                 </button>
+            </t>
+            <t t-if="lockedEntries.length">
+                <div class="mk_skills_group">Once something is open</div>
+                <t t-foreach="lockedEntries" t-as="skill" t-key="skill.name">
+                    <button type="button" class="mk_skill mk_skill_locked" disabled="disabled">
+                        <span class="mk_skill_badge">
+                            <i class="fa" t-att-class="skill.icon"/>
+                        </span>
+                        <span class="mk_skill_text">
+                            <span class="mk_skill_label" t-esc="skill.label"/>
+                            <span class="mk_skill_preview" t-esc="skill.requirement"/>
+                        </span>
+                    </button>
+                </t>
             </t>
         </div>
     </t>
