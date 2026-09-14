@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from odoo import _, api, fields, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Domain
 from odoo.tools.safe_eval import safe_eval
 
@@ -77,6 +77,15 @@ class AISpace(models.Model):
         ),
     )
 
+    pinned = fields.Boolean(
+        string='Pinned',
+        help=(
+            'Keep this system space in the sidebar while the automatic '
+            'section is collapsed. Personal spaces are ordered by hand '
+            'instead and cannot be pinned.'
+        ),
+    )
+
     retention_mode = fields.Selection(
         selection=[
             ('default', 'Follow the Default'),
@@ -103,6 +112,11 @@ class AISpace(models.Model):
     session_count = fields.Integer(
         compute='_compute_session_count',
         string='Chats',
+    )
+
+    can_edit_domain = fields.Boolean(
+        compute='_compute_can_edit_domain',
+        string='Can Edit Domain',
     )
 
     # ----------------------------------------------------------
@@ -226,6 +240,7 @@ class AISpace(models.Model):
                 'agent_name': space.agent_id.display_name or '',
                 'instructions': space.instructions or '',
                 'system': bool(space.domain),
+                'pinned': space.pinned,
                 'session_domain': space._session_domain(),
             }
             for space in self._sidebar_spaces()
@@ -247,6 +262,18 @@ class AISpace(models.Model):
         counts = self.filtered('id')._count_by_space()
         for record in self:
             record.session_count = counts.get(record.id, 0)
+
+    def _compute_can_edit_domain(self) -> None:
+        """Tell the form who may write the domain of a system space.
+
+        The owner constraint waves system users through and refuses everybody
+        else, so the field follows that same rule instead of being readonly
+        for all and leaving an administrator unable to describe the space
+        they are creating.
+        """
+        editable = self.env.user._is_system()
+        for record in self:
+            record.can_edit_domain = editable
 
     # ----------------------------------------------------------
     # Constraints
@@ -306,6 +333,24 @@ class AISpace(models.Model):
                     )
                 )
 
+    @api.constrains('pinned', 'domain')
+    def _check_pinned(self) -> None:
+        """Keep pinning on system spaces only.
+
+        A personal space is already ordered by hand through its sequence, so
+        pinning one would be a second and worse way to do what its grip
+        handle already does.
+        """
+        for record in self:
+            if record.pinned and not record.domain:
+                raise ValidationError(
+                    _(
+                        'The space "%s" is yours to order by hand and cannot '
+                        'be pinned.',
+                        record.name,
+                    )
+                )
+
     @api.constrains('domain')
     def _check_domain(self) -> None:
         """Reject a domain the session model cannot evaluate."""
@@ -339,6 +384,25 @@ class AISpace(models.Model):
     # ----------------------------------------------------------
     # ORM
     # ----------------------------------------------------------
+
+    @api.ondelete(at_uninstall=False)
+    def _unlink_except_system(self) -> None:
+        """Refuse to delete a space its module maintains.
+
+        A system space is shipped as data and collects its chats through a
+        domain, so dropping one takes that view away from everybody at once
+        and nothing short of reinstalling brings it back. Uninstalling the
+        module that ships it still removes it.
+
+        :raise UserError: when the set holds a space that carries a domain
+        """
+        if system := self.filtered('domain'):
+            raise UserError(
+                _(
+                    'The space "%s" is maintained by its module and cannot be deleted.',
+                    system[0].name,
+                )
+            )
 
     def write(self, vals: dict) -> bool:
         """Release the chats a space can no longer hold after a change."""

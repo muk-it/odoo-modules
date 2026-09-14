@@ -3,7 +3,7 @@ from __future__ import annotations
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
 
-from odoo.addons.muk_ai.tools import REASONING_EFFORT_SELECTION
+from odoo.addons.muk_ai.tools import MODALITIES, REASONING_EFFORT_SELECTION
 
 
 class AIModel(models.Model):
@@ -44,11 +44,23 @@ class AIModel(models.Model):
         index=True,
     )
 
+    modality = fields.Selection(
+        selection=[('chat', 'Chat'), ('image', 'Image')],
+        string='Modality',
+        help=(
+            'Kind of work the model does. Decides which rates apply and how '
+            'usage is billed; the same technical name may be catalogued once '
+            'per modality when the provider prices them apart.'
+        ),
+        readonly=True,
+        required=True,
+        default='chat',
+    )
+
     context_window = fields.Integer(
         string='Context Window',
         help='Maximum input tokens the provider accepts for this model.',
         readonly=True,
-        required=True,
     )
 
     reasoning_efforts = fields.Json(
@@ -70,24 +82,28 @@ class AIModel(models.Model):
         ),
     )
 
+    rate_unit = fields.Char(
+        compute='_compute_rate_unit',
+        string='Rate Unit',
+    )
+
     input_rate = fields.Float(
-        string='Input $/M tokens',
-        help='Cost in USD per 1,000,000 fresh input tokens.',
+        string='Input Rate',
+        help='Cost of fresh input, quoted in the rate unit.',
         readonly=True,
         required=True,
         digits=(12, 6),
     )
 
     output_rate = fields.Float(
-        string='Output $/M tokens',
-        help='Cost in USD per 1,000,000 output tokens.',
+        string='Output Rate',
+        help='Cost of output, quoted in the rate unit.',
         readonly=True,
-        required=True,
         digits=(12, 6),
     )
 
     cache_read_rate = fields.Float(
-        string='Cache Read $/M tokens',
+        string='Cache Read Rate',
         help=(
             'Cost in USD per 1,000,000 cache-read input tokens. '
             'Leave at 0 when the provider does not bill cached tokens '
@@ -99,7 +115,7 @@ class AIModel(models.Model):
     )
 
     cache_write_rate = fields.Float(
-        string='Cache Write $/M tokens',
+        string='Cache Write Rate',
         help=(
             'Cost in USD per 1,000,000 cache-write input tokens. '
             'Leave at 0 when the provider does not bill cache writes '
@@ -131,50 +147,73 @@ class AIModel(models.Model):
     # Helper
     # ----------------------------------------------------------
 
-    def _compute_usage_cost(self, usage: dict | None) -> dict:
-        """Return input, output, and total cost for a token usage payload.
+    @api.model
+    def _default_for(
+        self,
+        modality: str,
+        first: models.BaseModel | None = None,
+        configured: bool = True,
+    ) -> AIModel:
+        """Return the default model of the modality across the active providers.
 
-        ``input_tokens`` is the full prompt; cache-read and cache-write
-        tokens are subsets of it billed at their own rates, with the fresh
-        input rate as the fallback when a cache rate is unset.
+        The walk is ``first``, the company default, then active providers by sequence.
+
+        :param configured: pass ``False`` to walk accounts that cannot serve too
         """
-        usage = usage or {}
-        input_tokens = int(usage.get('input_tokens') or 0)
-        output_tokens = int(usage.get('output_tokens') or 0)
-        cache_read_tokens = int(usage.get('cache_read_tokens') or 0)
-        cache_write_tokens = int(usage.get('cache_write_tokens') or 0)
-        cache_read_rate = self.cache_read_rate or self.input_rate
-        cache_write_rate = self.cache_write_rate or self.input_rate
-        fresh_tokens = max(0, input_tokens - cache_read_tokens - cache_write_tokens)
-        input_cost = (
-            fresh_tokens * self.input_rate
-            + cache_read_tokens * cache_read_rate
-            + cache_write_tokens * cache_write_rate
+        providers = self.env['muk_ai.provider']
+        chain = (first or providers) | providers._get_default()
+        for provider in chain | providers.search([('active', '=', True)]):
+            record = provider._default_model(modality)
+            if record and (not configured or provider._can_serve()):
+                return record
+        return self.browse()
+
+    def _compute_usage_cost(self, usage: dict | None) -> dict:
+        """Return input, output, and total cost for a provider usage payload."""
+        profile = MODALITIES.get(self.modality)
+        input_cost, output_cost = (
+            profile.cost(self, usage or {}) if profile else (0.0, 0.0)
         )
-        output_cost = output_tokens * self.output_rate
         return {
-            'input_cost': input_cost / 1_000_000,
-            'output_cost': output_cost / 1_000_000,
-            'total_cost': (input_cost + output_cost) / 1_000_000,
+            'input_cost': input_cost,
+            'output_cost': output_cost,
+            'total_cost': input_cost + output_cost,
         }
+
+    # ----------------------------------------------------------
+    # Compute
+    # ----------------------------------------------------------
+
+    @api.depends('name', 'provider_id.name', 'provider_id.code')
+    def _compute_display_name(self) -> None:
+        """Suffix the label with the provider, since pickers span every vendor."""
+        for record in self:
+            record.display_name = f'{record.name} ({record.provider_id.display_name})'
+
+    @api.depends('modality', 'currency')
+    def _compute_rate_unit(self) -> None:
+        """Spell out the unit the rates are quoted in, e.g. ``USD per M tokens``."""
+        for record in self:
+            profile = MODALITIES.get(record.modality)
+            record.rate_unit = f'{record.currency} {profile.unit}' if profile else ''
 
     # ----------------------------------------------------------
     # Constraints
     # ----------------------------------------------------------
 
     _unique_provider_model = models.Constraint(
-        'unique(provider_id, technical_name)',
-        'A model with this provider and name already exists.',
+        'unique(provider_id, technical_name, modality)',
+        'A model with this provider, name and modality already exists.',
     )
 
-    @api.constrains('context_window')
+    @api.constrains('context_window', 'modality')
     def _check_context_window(self) -> None:
-        """Ensure the context window is a positive integer.
+        """Ensure a chat model declares a positive context window.
 
-        :raise ValidationError: when the context window is not positive
+        :raise ValidationError: when a chat model's context window is not positive
         """
         for record in self:
-            if record.context_window <= 0:
+            if record.modality == 'chat' and record.context_window <= 0:
                 raise ValidationError(
                     _(
                         'Context Window must be a positive integer.',

@@ -120,6 +120,18 @@ class AIProvider(models.Model):
         default=45,
     )
 
+    image_timeout = fields.Integer(
+        string='Image Timeout',
+        help=(
+            'Timeout in seconds for a single image generation request. '
+            'Rendering answers in one long response instead of a stream and '
+            'high quality regularly outlives the chat request timeout, so it '
+            'gets its own budget.'
+        ),
+        required=True,
+        default=180,
+    )
+
     rate_limit = fields.Integer(
         string='Rate Limit',
         help='Max sessions a single user may create per minute. 0 = disabled.',
@@ -127,11 +139,23 @@ class AIProvider(models.Model):
         default=10,
     )
 
-    default_model_id = fields.Many2one(
+    default_chat_model_id = fields.Many2one(
         comodel_name='muk_ai.model',
-        string='Default Model',
+        string='Default Chat Model',
         help='Model used when an agent does not specify one.',
-        domain="[('provider_id', '=', id)]",
+        domain="[('provider_id', '=', id), ('modality', '=', 'chat')]",
+    )
+
+    default_image_model_id = fields.Many2one(
+        comodel_name='muk_ai.model',
+        string='Default Image Model',
+        help=(
+            'Model that renders images when an agent leaves its image model '
+            'empty. The pinned provider of the agent leads, then its chat '
+            'provider, then the company default provider, then the other '
+            'providers in list order.'
+        ),
+        domain="[('provider_id', '=', id), ('modality', '=', 'image')]",
     )
 
     model_ids = fields.One2many(
@@ -140,14 +164,14 @@ class AIProvider(models.Model):
         inverse_name='provider_id',
     )
 
+    model_modalities = fields.Json(
+        compute='_compute_model_modalities',
+        string='Model Modalities',
+    )
+
     supports_web_search = fields.Boolean(
         compute='_compute_capabilities',
         string='Supports Web Search',
-    )
-
-    supports_image_generation = fields.Boolean(
-        compute='_compute_capabilities',
-        string='Supports Image Generation',
     )
 
     supports_code_interpreter = fields.Boolean(
@@ -195,13 +219,33 @@ class AIProvider(models.Model):
         codes = ['default'] if impl.default_url else []
         return codes + [region.code for region in impl.regions]
 
-    def _resolve_model_name(self, override: str | None = None) -> str:
-        """Return the technical model name, honoring an explicit override."""
-        return (
-            override
-            or self.default_model_id.technical_name
-            or REGISTRY[self.name].default_model
-        )
+    def _serves_builtin_tools(self, technical_name: str | None = None) -> bool:
+        """Return whether the named model runs this provider's built-in tools.
+
+        Combining built-in connectors with function calling is a per-model
+        property, so the adapter answers it.
+        """
+        self.ensure_one()
+        if self.name not in REGISTRY:
+            return False
+        client = self._get_client()
+        return client.serves_builtin_tools(client.model_for(technical_name))
+
+    def _can_serve(self) -> bool:
+        """Return whether this account can actually reach its vendor.
+
+        The adapter owns the answer: an OpenAI-compatible endpoint configured
+        for no authentication — a local Ollama — serves without a key.
+        """
+        return self.name in REGISTRY and self._get_client().authenticated
+
+    def _default_model(self, modality: str) -> models.BaseModel:
+        """Return the default model of the modality, empty unless it is set and active.
+
+        Archiving a model retires it, so an archived default stops resolving
+        and the walk moves on to the next provider.
+        """
+        return self[f'default_{modality}_model_id'].filtered('active')
 
     def _effective_reasoning_effort(
         self,
@@ -287,21 +331,20 @@ class AIProvider(models.Model):
         on_delta: Callable | None = None,
         model: str | None = None,
         enable_web_search: bool = False,
-        enable_image_generation: bool = False,
         enable_code_interpreter: bool = False,
         cache_key: str | None = None,
         reasoning_effort: str | None = None,
     ) -> dict:
         """Send a streaming responses request through the provider client."""
-        technical_name = self._resolve_model_name(model)
-        return self._get_client().request(
+        client = self._get_client()
+        technical_name = client.model_for(model)
+        return client.request(
             inputs=self._materialize_inputs(inputs),
             tools_schema=tools_schema,
             text_schema=text_schema,
             on_delta=on_delta,
             model=technical_name,
             enable_web_search=enable_web_search,
-            enable_image_generation=enable_image_generation,
             enable_code_interpreter=enable_code_interpreter,
             extra=self._build_request_extra(
                 cache_key=cache_key,
@@ -381,6 +424,12 @@ class AIProvider(models.Model):
                 record._get_client().api_url if record.name in REGISTRY else ''
             )
 
+    @api.depends('model_ids.modality', 'model_ids.active')
+    def _compute_model_modalities(self) -> None:
+        """List the modalities the provider's active models cover."""
+        for record in self:
+            record.model_modalities = sorted(set(record.model_ids.mapped('modality')))
+
     @api.depends('name', 'api_region')
     def _compute_capabilities(self) -> None:
         """Reflect the registry capability flags, minus those the region disables."""
@@ -390,11 +439,6 @@ class AIProvider(models.Model):
             disabled = region.disabled if region else ()
             record.supports_web_search = bool(
                 impl and impl.supports_web_search and 'web_search' not in disabled
-            )
-            record.supports_image_generation = bool(
-                impl
-                and impl.supports_image_generation
-                and 'image_generation' not in disabled
             )
             record.supports_code_interpreter = bool(
                 impl

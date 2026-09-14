@@ -5,6 +5,8 @@ import { patchTranslations } from '@web/../tests/web_test_helpers';
 import {
     approvalPill,
     costTooltip,
+    effortLabel,
+    effortPill,
     formatCost,
     formatDurationSeconds,
     formatRelativeTime,
@@ -88,7 +90,7 @@ test('approvalPill marks override when approvalMode is set', () => {
         effectiveApprovalMode: 'off',
         approvalMode: 'off',
     });
-    expect(pill.className).toMatch(/mk_approval_override/);
+    expect(pill.className).toMatch(/mk_pill_override/);
     expect(pill.tooltip.toString()).toMatch(/override/);
 });
 
@@ -97,8 +99,69 @@ test('approvalPill drops override flag when approvalMode is false', () => {
         effectiveApprovalMode: 'ask',
         approvalMode: false,
     });
-    expect(pill.className).not.toMatch(/mk_approval_override/);
+    expect(pill.className).not.toMatch(/mk_pill_override/);
     expect(pill.tooltip.toString()).toMatch(/from agent/);
+});
+
+test('effortPill is null when the model offers no tiers', () => {
+    expect(effortPill({ reasoningEffortOptions: [] })).toBe(null);
+});
+
+test('effortPill leads with the agent-default row, then the model tiers', () => {
+    const pill = effortPill({
+        reasoningEffortOptions: ['low', 'medium', 'high'],
+        effectiveReasoningEffort: 'medium',
+        agentReasoningEffort: 'medium',
+        reasoningEffort: false,
+    });
+    expect(pill.options.map((o) => o.tier)).toEqual([false, 'low', 'medium', 'high']);
+    expect(String(pill.options[0].label)).toMatch(/Agent default/);
+    expect(String(pill.options[0].label)).toMatch(/Medium/);
+    // Exactly one tick, and while inheriting it belongs to the default row:
+    // the pill reads Medium because that is what resolves, not what is pinned.
+    expect(pill.options.filter((o) => o.active).map((o) => o.tier)).toEqual([false]);
+    expect(String(pill.label)).toBe('Medium');
+    expect(pill.className).not.toMatch(/mk_pill_override/);
+});
+
+test('effortPill moves the tick onto the pinned tier', () => {
+    const pill = effortPill({
+        reasoningEffortOptions: ['low', 'medium', 'high'],
+        effectiveReasoningEffort: 'high',
+        agentReasoningEffort: 'low',
+        reasoningEffort: 'high',
+    });
+    expect(pill.options.filter((o) => o.active).map((o) => o.tier)).toEqual(['high']);
+    expect(pill.className).toMatch(/mk_pill_override/);
+    expect(pill.tooltip.toString()).toMatch(/override/);
+});
+
+test('effortPill ignores an override the model no longer accepts', () => {
+    const pill = effortPill({
+        reasoningEffortOptions: ['low', 'medium'],
+        effectiveReasoningEffort: 'low',
+        agentReasoningEffort: 'low',
+        reasoningEffort: 'max',
+    });
+    expect(pill.options.filter((o) => o.active).map((o) => o.tier)).toEqual([false]);
+    expect(pill.className).not.toMatch(/mk_pill_override/);
+    expect(String(pill.label)).toBe('Low');
+});
+
+test('effortPill falls back to Default when nothing resolves a tier', () => {
+    const pill = effortPill({
+        reasoningEffortOptions: ['low'],
+        effectiveReasoningEffort: false,
+        agentReasoningEffort: false,
+        reasoningEffort: false,
+    });
+    expect(String(pill.label)).toBe('Default');
+    expect(String(pill.options[0].label)).toBe('Agent default');
+});
+
+test('effortLabel names known tiers and passes unknown ones through', () => {
+    expect(String(effortLabel('xhigh'))).toBe('Extra High');
+    expect(String(effortLabel('banana'))).toBe('banana');
 });
 
 test('inputPlaceholder overrides default when waiting for a question', () => {

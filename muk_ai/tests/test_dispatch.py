@@ -4,6 +4,7 @@ import threading
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager, suppress
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from odoo import models, modules
@@ -47,6 +48,12 @@ class TestTurnDispatch(AITestCommon):
         :param method: name of the ``muk_ai.session`` budget method to call
         :param thread_type: value of the running thread's ``type`` attribute
         :param elapsed: seconds the thread has already been running
+        The clock the budget methods read is frozen for the call, so
+        ``elapsed`` is exactly the simulated age of the thread: without that
+        the real microseconds between setting ``start_time`` and reading it
+        back cross a whole-second truncation seam at random, and two budgets
+        resolved from the same inputs disagree by a second.
+
         :param limits: ``limit_time_real`` and ``limit_time_real_cron`` values
         """
         thread = threading.current_thread()
@@ -54,11 +61,19 @@ class TestTurnDispatch(AITestCommon):
             getattr(thread, 'type', None),
             getattr(thread, 'start_time', None),
         )
+        now = time.time()
         if thread_type:
             thread.type = thread_type
-            thread.start_time = time.time() - elapsed
+            thread.start_time = now - elapsed
         try:
-            with patch.object(session_module, 'config', limits):
+            with (
+                patch.object(session_module, 'config', limits),
+                patch.object(
+                    session_module,
+                    'time',
+                    SimpleNamespace(time=lambda: now, monotonic=time.monotonic),
+                ),
+            ):
                 return getattr(self.env['muk_ai.session'], method)()
         finally:
             for name, value in zip(('type', 'start_time'), previous, strict=True):
@@ -161,7 +176,7 @@ class TestTurnDispatch(AITestCommon):
         limit = self._hard_limit(
             'http', 40, limit_time_real=120, limit_time_real_cron=-1
         )
-        self.assertIn(limit, range(78, 82))
+        self.assertEqual(limit, 80)
 
     def test_http_budget_is_unlimited_when_disabled(self):
         self.assertEqual(

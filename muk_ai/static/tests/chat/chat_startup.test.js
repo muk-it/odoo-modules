@@ -1,5 +1,5 @@
 import { describe, expect, test } from '@odoo/hoot';
-import { resize } from '@odoo/hoot-dom';
+import { queryFirst, resize } from '@odoo/hoot-dom';
 import { animationFrame } from '@odoo/hoot-mock';
 import { mockService, mountWithCleanup, onRpc } from '@web/../tests/web_test_helpers';
 import { defineMailModels } from '@mail/../tests/mail_test_helpers';
@@ -207,4 +207,17 @@ test('handing a chat over removes it from the sidebar and opens the next one', a
     await animationFrame();
     await animationFrame();
     expect(chat.session.state.sessionId).toBe(8);
+});
+
+test('a requested session that cannot be read leaves a usable empty chat', async () => {
+    const notifications = baseMocks({ sessions: [], knownIds: [] });
+    const chat = await mountWithCleanup(AIChat, {
+        props: { action: { params: { session_id: 99999999999 } } },
+    });
+    await animationFrame();
+    expect(notifications.some((m) => /no longer exists/.test(m))).toBe(true);
+    expect(chat.session.state.sessionId).toBe(null);
+    expect(chat.session.state.readonly).toBe(false);
+    expect(queryFirst('.mk_empty')).not.toBe(null);
+    expect(queryFirst('.mk_composer_readonly')).toBe(null);
 });

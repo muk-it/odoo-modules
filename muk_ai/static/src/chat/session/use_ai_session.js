@@ -33,6 +33,10 @@ export const SESSION_READ_FIELDS = [
     'total_cost',
     'override_approval_mode',
     'effective_approval_mode',
+    'override_reasoning_effort',
+    'effective_reasoning_effort',
+    'reasoning_effort_options',
+    'agent_reasoning_effort',
     'pending_user_messages',
 ];
 
@@ -82,6 +86,7 @@ const WRITE_ACTIONS = [
     'runUnpin',
     'setApprovalMode',
     'cycleApprovalMode',
+    'setReasoningEffort',
     'approveTool',
     'approveForSession',
     'rejectTool',
@@ -148,6 +153,10 @@ export function useAiSession(options = {}) {
         viewContext: null,
         approvalMode: false,
         effectiveApprovalMode: 'ask',
+        reasoningEffort: false,
+        effectiveReasoningEffort: false,
+        reasoningEffortOptions: [],
+        agentReasoningEffort: false,
         pendingMessages: [],
         streamIdle: false,
         resumeAt: '',
@@ -357,6 +366,11 @@ export function useAiSession(options = {}) {
             if (payload.effective_approval_mode) {
                 state.effectiveApprovalMode = payload.effective_approval_mode;
             }
+            if (payload.reasoning_effort_options) {
+                state.effectiveReasoningEffort = payload.effective_reasoning_effort;
+                state.reasoningEffortOptions = payload.reasoning_effort_options;
+                state.agentReasoningEffort = payload.agent_reasoning_effort;
+            }
         } else if (event.type === 'ui_action') {
             handleUiAction(event.payload);
         } else if (event.type === 'view_context') {
@@ -428,6 +442,15 @@ export function useAiSession(options = {}) {
         }
         chatWindow.open(state.sessionId);
     }
+    /**
+     * Load a session into the state, or clear it when it cannot be read.
+     * A session that is gone or not shared with this user falls back to the
+     * empty new-chat state: keeping its id and flagging the state read-only
+     * would advertise a missing session as one somebody shared, and leave
+     * the user with no composer.
+     * @param {number|null} sessionId
+     * @returns {Promise<object|null>} the loaded record, null when unusable
+     */
     async function load(sessionId) {
         const seq = ++loadSeq;
         const previousSessionId = state.sessionId;
@@ -469,28 +492,25 @@ export function useAiSession(options = {}) {
         }
         sessionNotification.markInactive(previousSessionId);
         clearStreamIdleTimer();
-        _resetSessionState(sessionId);
         if (pendingLoad === myLoad) {
             pendingLoad = null;
         }
-        if (loadError) {
-            state.readonly = true;
-            state.error = formatError(loadError);
+        if (loadError || !record) {
+            _resetSessionState(null);
             state.loading = false;
             return null;
         }
-        if (record) {
-            sessionNotification.markActive(sessionId);
-            applyRecord(record);
-            if (snapshot && snapshot.events !== undefined) {
-                state.events = snapshot.events || [];
-                state.oldestSequence = snapshot.oldest_sequence ?? null;
-                state.hasMoreOlder = !!snapshot.has_more_older;
-                rebuildEventKeys();
-            }
-            for (const buffered of myLoad.buffer) {
-                onBusEvent(buffered);
-            }
+        _resetSessionState(sessionId);
+        sessionNotification.markActive(sessionId);
+        applyRecord(record);
+        if (snapshot && snapshot.events !== undefined) {
+            state.events = snapshot.events || [];
+            state.oldestSequence = snapshot.oldest_sequence ?? null;
+            state.hasMoreOlder = !!snapshot.has_more_older;
+            rebuildEventKeys();
+        }
+        for (const buffered of myLoad.buffer) {
+            onBusEvent(buffered);
         }
         state.loading = false;
         return record;
@@ -522,6 +542,10 @@ export function useAiSession(options = {}) {
         state.viewContext = payload.view_context || null;
         state.approvalMode = payload.override_approval_mode || false;
         state.effectiveApprovalMode = payload.effective_approval_mode || 'ask';
+        state.reasoningEffort = payload.override_reasoning_effort || false;
+        state.effectiveReasoningEffort = payload.effective_reasoning_effort || false;
+        state.reasoningEffortOptions = payload.reasoning_effort_options || [];
+        state.agentReasoningEffort = payload.agent_reasoning_effort || false;
         state.error = payload.error_message || null;
         state.iterationCount = payload.iteration_count || 0;
         state.inputTokens = payload.total_input_tokens || 0;
@@ -605,12 +629,33 @@ export function useAiSession(options = {}) {
             });
         }
         if (incomingEvents.length || state.status !== 'running') {
-            state.events = incomingEvents;
-            if (snapshot.oldest_sequence !== undefined) {
-                state.oldestSequence = snapshot.oldest_sequence ?? null;
-            }
-            if (snapshot.has_more_older !== undefined) {
-                state.hasMoreOlder = !!snapshot.has_more_older;
+            // A snapshot is a WINDOW over the newest events, never the whole
+            // transcript. Replacing with it makes the client shrink: on a
+            // tool-heavy turn the 100 newest events are all tool calls, so the
+            // question that started the turn drops off the screen mid-answer.
+            // Keep what we hold from before the window and let the window own
+            // its own range onward — truncation (clear, undo, fork) only ever
+            // removes NEWER events, so those stay correct too.
+            const oldest = snapshot.oldest_sequence ?? null;
+            const older =
+                oldest === null
+                    ? []
+                    : (state.events || []).filter(
+                          (entry) =>
+                              entry &&
+                              Number.isInteger(entry.sequence) &&
+                              entry.sequence < oldest,
+                      );
+            state.events = older.length
+                ? [...older, ...incomingEvents]
+                : incomingEvents;
+            if (!older.length) {
+                if (snapshot.oldest_sequence !== undefined) {
+                    state.oldestSequence = snapshot.oldest_sequence ?? null;
+                }
+                if (snapshot.has_more_older !== undefined) {
+                    state.hasMoreOlder = !!snapshot.has_more_older;
+                }
             }
         }
         const preserveStreaming =
@@ -1045,6 +1090,23 @@ export function useAiSession(options = {}) {
         } catch (error) {
             notification.add(
                 _t('Failed to set approval mode: %s', formatError(error)),
+                { type: 'danger' },
+            );
+        }
+    }
+    async function setReasoningEffort(effort) {
+        if (!state.sessionId) {
+            return;
+        }
+        try {
+            const snapshot = await orm.call('muk_ai.session', 'set_reasoning_effort', [
+                state.sessionId,
+                effort || false,
+            ]);
+            applySnapshot(snapshot);
+        } catch (error) {
+            notification.add(
+                _t('Failed to set reasoning effort: %s', formatError(error)),
                 { type: 'danger' },
             );
         }
@@ -1539,6 +1601,7 @@ export function useAiSession(options = {}) {
         runUnpin,
         setApprovalMode,
         cycleApprovalMode,
+        setReasoningEffort,
         openPinnedContext,
         approveTool,
         approveForSession,

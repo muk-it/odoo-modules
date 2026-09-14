@@ -13,7 +13,7 @@
 						<setting
 							id="muk_ai_default_provider"
 							string="Default Provider"
-							help="Provider used when an agent does not specify one."
+							help="Provider whose default models serve an agent that picks none, before the other providers in list order."
 						>
 							<field name="ai_provider_id" options="{'no_create': True}"/>
 						</setting>
@@ -23,6 +23,37 @@
 							help="Agent used for new chat sessions when none is specified."
 						>
 							<field name="ai_agent_id" options="{'no_create': True}"/>
+						</setting>
+					</block>
+					<block title="Web Search" name="muk_ai_settings_search">
+						<setting
+							id="muk_ai_search_backend"
+							string="Search Backend"
+							help="Search API the web_search tool queries on every provider. Leave empty to keep the provider's built-in search where it has one."
+						>
+							<field name="ai_search_backend" placeholder="Provider Built-in"/>
+							<field name="ai_search_needs_key" invisible="1"/>
+							<field name="ai_search_needs_url" invisible="1"/>
+							<div class="text-muted mt8" invisible="ai_search_backend != 'searxng'">
+								Self-hosted and free: no account and no API key. The instance
+								must list <code>json</code> under <code>search.formats</code>,
+								or it answers 403.
+							</div>
+						</setting>
+						<setting
+							id="muk_ai_search_credentials"
+							string="Connection"
+							help="Credentials for the selected backend. Only what that backend actually uses is asked for."
+							invisible="not ai_search_backend"
+						>
+							<div class="content-group" invisible="not ai_search_needs_key">
+								<label for="ai_search_api_key" string="API Key" class="o_light_label"/>
+								<field name="ai_search_api_key" password="True" class="w-100"/>
+							</div>
+							<div class="content-group" invisible="not ai_search_needs_url">
+								<label for="ai_search_url" string="Instance URL" class="o_light_label"/>
+								<field name="ai_search_url" placeholder="http://searxng:8080" class="w-100"/>
+							</div>
 						</setting>
 					</block>
 					<block title="Limits" name="muk_ai_settings_limits">
@@ -208,7 +239,7 @@
 						<setting
 							id="muk_ai_addon_mistral"
 							string="Mistral"
-							help="Mistral AI: Large 3, Medium 3.5, Small 4, Ministral 3, Codestral, GLM 5.2."
+							help="Mistral Large, Medium, Small, Ministral, Codestral and GLM."
 						>
 							<field
 								name="module_muk_ai_mistral"

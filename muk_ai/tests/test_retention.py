@@ -8,6 +8,7 @@ from odoo.exceptions import ValidationError
 from odoo.fields import Domain
 from odoo.tests.common import tagged
 
+from odoo.addons.base.models.ir_autovacuum import is_autovacuum
 from odoo.addons.muk_ai.models import session as session_module
 from odoo.addons.muk_ai.tests.common import AITestCommon
 
@@ -45,6 +46,9 @@ class TestRetention(AITestCommon):
     # ----------------------------------------------------------
     # Tests
     # ----------------------------------------------------------
+
+    def test_the_daily_vacuum_collects_the_sweep(self):
+        self.assertTrue(is_autovacuum(type(self.env['muk_ai.session'])._gc_sessions))
 
     def test_nothing_is_deleted_while_the_setting_is_off(self):
         session = self._aged_session('Ancient', 900)

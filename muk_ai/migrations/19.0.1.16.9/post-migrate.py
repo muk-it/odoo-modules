@@ -128,8 +128,10 @@ def migrate(cr: Cursor, version: str) -> None:
     retired. Refresh the survivors, drop the retired ones, and move a
     provider default forward only while it still points at the model this
     module used to ship — a default an administrator picked themselves is
-    left alone. Agents on a dropped model fall back to the company default
-    via the ``ondelete='set null'`` on ``muk_ai.agent.model_id``.
+    left alone (the default column is already renamed by the 19.0.1.18.0
+    pre-migration when this runs). Agents on a dropped model fall back to
+    the company default via the ``ondelete='set null'`` on
+    ``muk_ai.agent.model_id``.
     """
     env = api.Environment(cr, SUPERUSER_ID, {})
     for xml_id, values in MODEL_UPDATES.items():
@@ -140,9 +142,9 @@ def migrate(cr: Cursor, version: str) -> None:
         provider = env.ref(f'muk_ai.{provider_xml_id}', raise_if_not_found=False)
         model = env.ref(f'muk_ai.{current}', raise_if_not_found=False)
         previous = env.ref(f'muk_ai.{shipped}', raise_if_not_found=False)
-        current_default = provider.default_model_id if provider else None
+        current_default = provider.default_chat_model_id if provider else None
         if provider and model and (not current_default or current_default == previous):
-            provider.default_model_id = model
+            provider.default_chat_model_id = model
     for xml_id in REMOVED_MODELS:
         record = env.ref(f'muk_ai.{xml_id}', raise_if_not_found=False)
         if record:

@@ -3,7 +3,7 @@ from __future__ import annotations
 from unittest.mock import patch
 
 from odoo import models
-from odoo.exceptions import AccessError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests.common import new_test_user
 
 from odoo.addons.muk_ai.models.session import AISession
@@ -395,3 +395,53 @@ class TestSpace(AITestCommon):
             if row['id'] == space.id
         )
         self.assertEqual(entry['instructions'], 'Answer in German.')
+
+    def test_a_system_space_can_be_pinned(self):
+        space = self._space(
+            'Shared', user_id=False, domain="[('id', '>', 0)]", pinned=True
+        )
+        self.assertTrue(space.pinned)
+
+    def test_pinning_a_personal_space_is_refused(self):
+        with self.assertRaises(ValidationError):
+            self._space('Q3 Budget', pinned=True)
+
+    def test_a_pinned_space_losing_its_domain_is_refused(self):
+        space = self._space(
+            'Shared', user_id=False, domain="[('id', '>', 0)]", pinned=True
+        )
+        with self.assertRaises(ValidationError):
+            space.write({'user_id': self.env.user.id, 'domain': False})
+
+    def test_fetch_spaces_carries_the_pin(self):
+        space = self._space(
+            'Shared', user_id=False, domain="[('id', '>', 0)]", pinned=True
+        )
+        entry = next(
+            row
+            for row in self.env['muk_ai.space'].fetch_spaces()
+            if row['id'] == space.id
+        )
+        self.assertTrue(entry['pinned'])
+
+    def test_deleting_a_system_space_is_refused(self):
+        space = self._space('Scheduled', user_id=False, domain="[('id', '>', 0)]")
+        with self.assertRaises(UserError):
+            space.unlink()
+
+    def test_deleting_a_personal_space_still_works(self):
+        space = self._space('Q3 Budget')
+        space.unlink()
+        self.assertFalse(space.exists())
+
+    def test_the_shipped_shared_space_is_pinned(self):
+        self.assertTrue(self.env.ref('muk_ai.space_shared').pinned)
+
+    def test_a_system_user_may_edit_the_domain(self):
+        space = self._space('Scheduled', user_id=False, domain="[('id', '>', 0)]")
+        self.assertTrue(space.can_edit_domain)
+
+    def test_a_plain_user_may_not_edit_the_domain(self):
+        user = new_test_user(self.env, login='space_plain')
+        space = self.env['muk_ai.space'].with_user(user).create({'name': 'Mine'})
+        self.assertFalse(space.can_edit_domain)

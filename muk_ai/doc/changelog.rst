@@ -1,3 +1,23 @@
+`1.21.0`
+-------
+
+- Automatic Spaces Section
+
+`1.20.0`
+-------
+
+- Reasoning Effort UI
+
+`1.19.0`
+-------
+
+- Web Search Backends
+
+`1.18.0`
+-------
+
+- Model Modalities
+
 `1.17.0`
 -------
 

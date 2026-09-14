@@ -70,7 +70,6 @@
             t-att-class="{
                 mk_space_group: !space.system,
                 mk_space_personal: !space.system,
-                mk_space_fixed: space.system,
             }"
             t-att-data-space-id="space.id"
         >
@@ -196,9 +195,6 @@
             </div>
             <div class="mk_sidebar_list flex-grow-1" t-ref="list">
                 <t t-if="!isServerSearch">
-                    <t t-foreach="systemSpaces" t-as="space" t-key="space.id">
-                        <t t-call="muk_ai.ChatSidebarSpace"/>
-                    </t>
                     <div class="mk_space_head" t-if="props.onSpaceCreate">
                         <span>Spaces</span>
                         <button
@@ -233,6 +229,38 @@
                     >
                         No space yet. Create a new space.
                     </div>
+                    <t t-if="systemSpaces.length">
+                        <hr class="mk_space_divider"/>
+                        <t t-foreach="shownSystemSpaces" t-as="space" t-key="space.id">
+                            <t t-call="muk_ai.ChatSidebarSpace"/>
+                        </t>
+                        <t t-if="foldedSystemSpaces.length">
+                            <div class="mk_space_auto" t-on-click="toggleAutomatic">
+                                <i
+                                    class="fa mk_space_caret"
+                                    t-att-class="state.automaticOpen ? 'fa-caret-down' : 'fa-caret-right'"
+                                />
+                                <span class="mk_space_auto_label">Automatic</span>
+                                <t t-if="!state.automaticOpen">
+                                    <span
+                                        class="mk_space_auto_unread"
+                                        t-if="foldedUnread"
+                                        title="Unread chats in here"
+                                        t-esc="foldedUnread"
+                                    />
+                                    <span
+                                        class="mk_space_auto_count"
+                                        t-esc="foldedSystemSpaces.length"
+                                    />
+                                </t>
+                            </div>
+                            <t t-if="state.automaticOpen">
+                                <t t-foreach="foldedSystemSpaces" t-as="space" t-key="space.id">
+                                    <t t-call="muk_ai.ChatSidebarSpace"/>
+                                </t>
+                            </t>
+                        </t>
+                    </t>
                 </t>
                 <t t-if="!hasAnySession">
                     <div class="text-center text-muted small py-4 px-3">

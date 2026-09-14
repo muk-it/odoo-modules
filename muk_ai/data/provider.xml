@@ -8,6 +8,7 @@
 		<field name="max_tokens">4096</field>
 		<field name="request_timeout">60</field>
 		<field name="idle_timeout">45</field>
+		<field name="image_timeout">180</field>
 		<field name="rate_limit">10</field>
 	</record>
 
@@ -17,6 +18,7 @@
 		<field name="max_tokens">4096</field>
 		<field name="request_timeout">60</field>
 		<field name="idle_timeout">45</field>
+		<field name="image_timeout">180</field>
 		<field name="rate_limit">10</field>
 	</record>
 
@@ -26,6 +28,7 @@
 		<field name="max_tokens">4096</field>
 		<field name="request_timeout">60</field>
 		<field name="idle_timeout">45</field>
+		<field name="image_timeout">180</field>
 		<field name="rate_limit">10</field>
 	</record>
 

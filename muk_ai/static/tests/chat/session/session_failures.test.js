@@ -406,3 +406,20 @@ test('a failing regenerate is reported and the log survives', async () => {
     expect(session.state.events).toHaveLength(1);
     expect(notifications.some((m) => /Failed to regenerate/.test(m))).toBe(true);
 });
+
+test('a session read answering nothing falls back to a usable new chat', async () => {
+    makeBusMock();
+    makeNotificationMock();
+    class Harness extends Component {
+        static props = {};
+        static template = xml`<div class="mk_harness"/>`;
+        setup() {
+            this.session = useAiSession();
+        }
+    }
+    onRpc('muk_ai.session', 'read', () => []);
+    const harness = await mountWithCleanup(Harness, { props: {} });
+    expect(await harness.session.load(4242)).toBe(null);
+    expect(harness.session.state.sessionId).toBe(null);
+    expect(harness.session.state.readonly).toBe(false);
+});

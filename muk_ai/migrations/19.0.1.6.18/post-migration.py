@@ -24,7 +24,7 @@ def migrate(cr: Cursor, version: str) -> None:
     cr.execute(
         """
         UPDATE muk_ai_provider
-        SET default_model_id = (
+        SET default_chat_model_id = (
             SELECT res_id FROM ir_model_data
             WHERE module = 'muk_ai' AND name = 'model_gemini_3_5_flash'
         )
@@ -32,7 +32,7 @@ def migrate(cr: Cursor, version: str) -> None:
             SELECT res_id FROM ir_model_data
             WHERE module = 'muk_ai' AND name = 'provider_google'
         )
-        AND default_model_id = (
+        AND default_chat_model_id = (
             SELECT res_id FROM ir_model_data
             WHERE module = 'muk_ai' AND name = 'model_gemini_3_flash_preview'
         )

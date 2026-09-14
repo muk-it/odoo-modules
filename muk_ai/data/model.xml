@@ -202,8 +202,31 @@
 		<field name="currency">USD</field>
 	</record>
 
+	<record id="model_gpt_image_2" model="muk_ai.model">
+		<field name="name">GPT Image 2</field>
+		<field name="provider_id" ref="provider_openai"/>
+		<field name="technical_name">gpt-image-2</field>
+		<field name="modality">image</field>
+		<field name="notes">Rate is for a medium-quality 1024x1024 image. OpenAI bills $0.006 at low and $0.211 at high quality; larger sizes and edits cost more.</field>
+		<field name="input_rate">0.0</field>
+		<field name="output_rate">0.053</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_gpt_image_1_5" model="muk_ai.model">
+		<field name="name">GPT Image 1.5</field>
+		<field name="provider_id" ref="provider_openai"/>
+		<field name="technical_name">gpt-image-1.5</field>
+		<field name="modality">image</field>
+		<field name="notes">Rate is for a medium-quality 1024x1024 image. OpenAI bills $0.009 at low and $0.133 at high quality; larger sizes and edits cost more.</field>
+		<field name="input_rate">0.0</field>
+		<field name="output_rate">0.034</field>
+		<field name="currency">USD</field>
+	</record>
+
 	<record id="provider_openai" model="muk_ai.provider">
-		<field name="default_model_id" ref="model_gpt_5_6_terra"/>
+		<field name="default_chat_model_id" ref="model_gpt_5_6_terra"/>
+		<field name="default_image_model_id" ref="model_gpt_image_2"/>
 	</record>
 
 	<!-- Anthropic -->
@@ -360,7 +383,7 @@
 	</record>
 
 	<record id="provider_anthropic" model="muk_ai.provider">
-		<field name="default_model_id" ref="model_claude_sonnet_5"/>
+		<field name="default_chat_model_id" ref="model_claude_sonnet_5"/>
 	</record>
 
 	<!-- Google -->
@@ -462,8 +485,20 @@
 		<field name="currency">USD</field>
 	</record>
 
+	<record id="model_gemini_3_1_flash_image" model="muk_ai.model">
+		<field name="name">Gemini 3.1 Flash Image</field>
+		<field name="provider_id" ref="provider_google"/>
+		<field name="technical_name">gemini-3.1-flash-image</field>
+		<field name="modality">image</field>
+		<field name="notes">Rate is for a 1K output image. Google bills $0.045 at 0.5K, $0.101 at 2K and $0.15 at 4K, plus the text prompt at $0.25 input and $1.50 output per million tokens.</field>
+		<field name="input_rate">0.0</field>
+		<field name="output_rate">0.067</field>
+		<field name="currency">USD</field>
+	</record>
+
 	<record id="provider_google" model="muk_ai.provider">
-		<field name="default_model_id" ref="model_gemini_3_8_flash"/>
+		<field name="default_chat_model_id" ref="model_gemini_3_8_flash"/>
+		<field name="default_image_model_id" ref="model_gemini_3_1_flash_image"/>
 	</record>
 
 </odoo>

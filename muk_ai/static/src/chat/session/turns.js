@@ -130,7 +130,14 @@ export function buildRenderedTurns(log) {
             const block = entry.call_id && toolsByCallId[entry.call_id];
             if (block) {
                 block.result = entry.result;
-            } else if (current) {
+            } else {
+                if (!current) {
+                    current = withEventId(
+                        withAt({ role: 'assistant', blocks: [] }, at),
+                        eventId,
+                    );
+                    turns.push(current);
+                }
                 current.blocks.push(
                     withAt(
                         {

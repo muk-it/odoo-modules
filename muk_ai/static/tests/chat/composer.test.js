@@ -694,3 +694,34 @@ test('the composer takes a session id, its absence and its empty state', async (
         expect(composer.props.sessionId).toBe(sessionId);
     }
 });
+
+async function mountReadonlyComposer(readonlyOwner = '') {
+    class Parent extends Component {
+        static components = { ChatComposer };
+        static props = { readonlyOwner: { type: String } };
+        static template = xml`
+            <ChatComposer
+                value="''"
+                placeholder="'type'"
+                readonly="true"
+                readonlyOwner="props.readonlyOwner"
+                onInput="() => {}"
+                onSend="() => {}"
+            />
+        `;
+    }
+    await mountWithCleanup(Parent, { props: { readonlyOwner } });
+    return queryFirst('.mk_composer_readonly').textContent.trim();
+}
+
+test('a shared chat names the owner who shared it', async () => {
+    expect(await mountReadonlyComposer('Alice')).toMatch(
+        /Alice shared this chat with you/,
+    );
+});
+
+test('a read-only chat with no known owner claims no share', async () => {
+    const notice = await mountReadonlyComposer('');
+    expect(notice).toMatch(/cannot write/);
+    expect(notice).not.toMatch(/shared/);
+});

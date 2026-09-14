@@ -211,18 +211,121 @@ export function approvalPill(state) {
     return {
         label: isOff ? _t('Bypass') : _t('Ask'),
         icon: isOff ? 'fa-bolt' : 'fa-shield',
+        options: [
+            {
+                mode: 'ask',
+                label: _t('Ask first'),
+                hint: _t('Ask before risky writes'),
+                icon: 'fa-shield',
+                active: !isOff,
+            },
+            {
+                mode: 'off',
+                label: _t('Bypass'),
+                hint: _t('Run without asking'),
+                icon: 'fa-bolt',
+                active: isOff,
+            },
+        ],
         className: `${isOff ? 'mk_approval_bypass' : 'mk_approval_ask'}${
-            override ? ' mk_approval_override' : ''
+            override ? ' mk_pill_override' : ''
         }${state.readonly ? ' disabled' : ''}`,
         tooltip: state.readonly
             ? _t('Approvals of a shared chat cannot be changed')
             : isOff
               ? override
-                  ? _t('Bypass (override). Click to cycle.')
-                  : _t('Bypass (from agent). Click to cycle.')
+                  ? _t('Bypass (override)')
+                  : _t('Bypass (from agent)')
               : override
-                ? _t('Ask before risky writes (override). Click to cycle.')
-                : _t('Ask before risky writes (from agent). Click to cycle.'),
+                ? _t('Ask before risky writes (override)')
+                : _t('Ask before risky writes (from agent)'),
+    };
+}
+
+/**
+ * Name a reasoning effort tier for display.
+ * @param {string} tier effort tier key
+ * @returns {string} translated tier label, or the raw key when unknown
+ */
+export function effortLabel(tier) {
+    return (
+        {
+            minimal: _t('Minimal'),
+            low: _t('Low'),
+            medium: _t('Medium'),
+            high: _t('High'),
+            xhigh: _t('Extra High'),
+            max: _t('Maximum'),
+        }[tier] ||
+        tier ||
+        ''
+    );
+}
+
+/**
+ * State what a reasoning effort tier buys and what it costs.
+ * @param {string} tier effort tier key
+ * @returns {string} translated one-line hint, empty when the tier is unknown
+ */
+function effortHint(tier) {
+    return (
+        {
+            minimal: _t('Answers immediately, barely thinks'),
+            low: _t('Fastest, everyday questions'),
+            medium: _t('Balanced'),
+            high: _t('Hard analysis · costs more'),
+            xhigh: _t('Long chains of reasoning · costs much more'),
+            max: _t('Everything the model has · slowest'),
+        }[tier] || ''
+    );
+}
+
+/**
+ * Build the reasoning-effort pill descriptor, or null when the model has none.
+ *
+ * An override the model stopped accepting reads as no override at all: the
+ * pill then shows what the turn will really run on rather than a ring over a
+ * tier the session cannot spend.
+ * @param {object} state session UI state
+ * @returns {object|null} pill descriptor, or null when there is nothing to pick
+ */
+export function effortPill(state) {
+    const tiers = state.reasoningEffortOptions || [];
+    if (!tiers.length) {
+        return null;
+    }
+    const override = tiers.includes(state.reasoningEffort)
+        ? state.reasoningEffort
+        : false;
+    const effective = state.effectiveReasoningEffort;
+    const agent = state.agentReasoningEffort;
+    return {
+        label: effective ? effortLabel(effective) : _t('Default'),
+        // The inherit row is just the first option, so every surface can render
+        // the menu as one loop and clearing reads as picking a tier.
+        options: [
+            {
+                tier: false,
+                label: agent
+                    ? _t('Agent default — %s', effortLabel(agent))
+                    : _t('Agent default'),
+                hint: '',
+                active: !override,
+            },
+            ...tiers.map((tier) => ({
+                tier,
+                label: effortLabel(tier),
+                hint: effortHint(tier),
+                // Checked means "pinned to this chat", not "what the turn
+                // happens to run on" — otherwise inheriting a tier ticks both
+                // the agent default row and the tier it resolves to.
+                active: tier === override,
+            })),
+        ],
+        className: override ? 'mk_pill_override' : '',
+        tooltip: override
+            ? _t('How hard the model thinks (override)')
+            : _t('How hard the model thinks (from agent)'),
     };
 }
 

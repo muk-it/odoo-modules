@@ -102,11 +102,24 @@ test('orphan tool_result without matching call gets its own block when assistant
     ]);
 });
 
-test('orphan tool_result with no current assistant turn is dropped (does not throw)', () => {
+test('orphan tool_result with no current assistant turn opens one', () => {
+    // A snapshot is a window over the newest events, so the call that started
+    // a tool can sit before the window while its result sits inside it.
+    // Dropping the result would blank the block the transcript is showing.
     const turns = buildRenderedTurns([
         { kind: 'tool_result', call_id: 'unknown', result: 'r' },
     ]);
-    expect(turns).toEqual([]);
+    expect(turns.length).toBe(1);
+    expect(turns[0].role).toBe('assistant');
+    expect(turns[0].blocks).toEqual([
+        {
+            type: 'tool',
+            name: undefined,
+            arguments: null,
+            callId: 'unknown',
+            result: 'r',
+        },
+    ]);
 });
 
 test('user_message resets the assistant accumulator (next text starts a new turn)', () => {

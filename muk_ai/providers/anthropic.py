@@ -21,6 +21,8 @@ LEGACY_THINKING_BUDGETS = {
     'max': 16384,
 }
 
+THINKING_BLOCK_TYPES = ('thinking', 'redacted_thinking')
+
 CACHE_CONTROL = {'type': 'ephemeral'}
 
 
@@ -33,7 +35,6 @@ class AnthropicProvider(ProviderBase):
     default_url = 'https://api.anthropic.com/v1'
 
     supports_web_search = True
-    supports_image_generation = False
     supports_code_interpreter = True
 
     reasoning_error_tokens = ('thinking', 'effort', 'output_config')
@@ -58,7 +59,6 @@ class AnthropicProvider(ProviderBase):
         on_delta=None,
         model=None,
         enable_web_search=False,
-        enable_image_generation=False,
         enable_code_interpreter=False,
         extra=None,
     ) -> dict:
@@ -170,10 +170,9 @@ class AnthropicProvider(ProviderBase):
     ) -> tuple[str, list[dict], tuple[int, int] | None]:
         """Convert canonical inputs into Anthropic system text, messages, and anchor.
 
-        The anchor is the ``(message, block)`` index of the last content block
-        built from a non-volatile input — the safe spot for a conversation
-        cache breakpoint, sitting before per-round trailers that would
-        otherwise re-write the cache every round.
+        Signed thinking blocks replay ahead of a turn's canonical content — the
+        order Anthropic validates. The anchor is the ``(message, block)`` index
+        of the last non-volatile block, the safe spot for a cache breakpoint.
         """
         system_parts = []
         messages = []
@@ -228,7 +227,9 @@ class AnthropicProvider(ProviderBase):
                     anchor = position
                 continue
             if role in ('user', 'assistant'):
-                for block in cls._content_to_anthropic(item.get('content')):
+                thinking = cls._carried_state(item).get('thinking') or []
+                content = cls._content_to_anthropic(item.get('content'))
+                for block in [*thinking, *content]:
                     position = append(role, block)
                     if not volatile:
                         anchor = position
@@ -247,15 +248,6 @@ class AnthropicProvider(ProviderBase):
             chunk_type = chunk.get('type')
             if chunk_type == 'muk_ai_attachment':
                 blocks.append(cls._attachment_to_anthropic(chunk))
-            elif chunk_type == 'muk_ai_thinking':
-                if chunk.get('thinking'):
-                    blocks.append(
-                        {
-                            'type': 'thinking',
-                            'thinking': chunk['thinking'],
-                            'signature': chunk.get('signature') or '',
-                        }
-                    )
             elif chunk.get('text'):
                 blocks.append({'type': 'text', 'text': chunk['text']})
         return blocks
@@ -320,6 +312,35 @@ class AnthropicProvider(ProviderBase):
     # Parse
     # ----------------------------------------------------------
 
+    @staticmethod
+    def _replayable_thinking(block: dict) -> dict | None:
+        """Return the thinking block to replay verbatim, or ``None`` when there is none.
+
+        Anthropic validates a thinking block against its own signature, so an
+        unsigned one (a stream cut before ``signature_delta``) is dropped.
+        """
+        if block.get('type') == 'redacted_thinking':
+            data = block.get('data')
+            return {'type': 'redacted_thinking', 'data': data} if data else None
+        thinking = block.get('thinking')
+        signature = block.get('signature')
+        if not thinking or not signature:
+            return None
+        return {'type': 'thinking', 'thinking': thinking, 'signature': signature}
+
+    @classmethod
+    def _assistant_carry(cls, content: list, thinking: list) -> list:
+        """Return the assistant carry of a turn: one item, or none when it is empty.
+
+        Thinking signatures authenticate a replay to Anthropic and mean nothing
+        to any other vendor, so they ride in this provider's private state
+        rather than in the canonical content.
+        """
+        if not content and not thinking:
+            return []
+        carry = {'role': 'assistant', 'content': content}
+        return [cls._carry_state(carry, {'thinking': thinking}) if thinking else carry]
+
     def _parse_response(self, payload: dict) -> dict:
         """Parse a non-streaming response into text, tool calls, carry inputs, and usage."""
         content = payload.get('content') or []
@@ -327,6 +348,7 @@ class AnthropicProvider(ProviderBase):
         tool_calls = []
         function_call_carries = []
         assistant_content = []
+        thinking_blocks = []
         for block in content:
             block_type = block.get('type')
             if block_type == 'text':
@@ -339,16 +361,9 @@ class AnthropicProvider(ProviderBase):
                             'text': text,
                         }
                     )
-            elif block_type == 'thinking':
-                thinking = block.get('thinking') or ''
-                if thinking:
-                    assistant_content.append(
-                        {
-                            'type': 'muk_ai_thinking',
-                            'thinking': thinking,
-                            'signature': block.get('signature') or '',
-                        }
-                    )
+            elif block_type in THINKING_BLOCK_TYPES:
+                if replay := self._replayable_thinking(block):
+                    thinking_blocks.append(replay)
             elif block_type == 'tool_use':
                 call_id = block.get('id')
                 name = block.get('name')
@@ -369,19 +384,13 @@ class AnthropicProvider(ProviderBase):
                         'call_id': call_id,
                     }
                 )
-        carry_inputs = []
-        if assistant_content:
-            carry_inputs.append(
-                {
-                    'role': 'assistant',
-                    'content': assistant_content,
-                }
-            )
-        carry_inputs.extend(function_call_carries)
         result = {
             'text': '\n'.join(text_parts).strip(),
             'tool_calls': tool_calls,
-            'carry_inputs': carry_inputs,
+            'carry_inputs': [
+                *self._assistant_carry(assistant_content, thinking_blocks),
+                *function_call_carries,
+            ],
             'usage': self._usage_from_anthropic(payload.get('usage') or {}),
         }
         if payload.get('stop_reason') == 'max_tokens':
@@ -423,18 +432,13 @@ class AnthropicProvider(ProviderBase):
         tool_calls = []
         function_call_carries = []
         assistant_content = []
+        thinking_blocks = []
         for index in sorted(blocks_by_index):
             entry = blocks_by_index[index]
             entry_type = entry.get('type')
-            if entry_type == 'thinking':
-                if entry.get('thinking'):
-                    assistant_content.append(
-                        {
-                            'type': 'muk_ai_thinking',
-                            'thinking': entry['thinking'],
-                            'signature': entry.get('signature') or '',
-                        }
-                    )
+            if entry_type in THINKING_BLOCK_TYPES:
+                if replay := self._replayable_thinking(entry):
+                    thinking_blocks.append(replay)
             elif entry_type == 'text':
                 text = entry.get('text') or ''
                 if text:
@@ -465,19 +469,13 @@ class AnthropicProvider(ProviderBase):
                         'call_id': entry['call_id'],
                     }
                 )
-        carry_inputs = []
-        if assistant_content:
-            carry_inputs.append(
-                {
-                    'role': 'assistant',
-                    'content': assistant_content,
-                }
-            )
-        carry_inputs.extend(function_call_carries)
         result = {
             'text': ''.join(text_parts).strip(),
             'tool_calls': tool_calls,
-            'carry_inputs': carry_inputs,
+            'carry_inputs': [
+                *self._assistant_carry(assistant_content, thinking_blocks),
+                *function_call_carries,
+            ],
             'usage': self._usage_from_anthropic(raw_usage),
         }
         if meta.get('stop_reason') == 'max_tokens':
@@ -513,12 +511,8 @@ class AnthropicProvider(ProviderBase):
             block_type = block.get('type')
             if block_type == 'text':
                 blocks_by_index[index] = {'type': 'text', 'text': ''}
-            elif block_type == 'thinking':
-                blocks_by_index[index] = {
-                    'type': 'thinking',
-                    'thinking': block.get('thinking') or '',
-                    'signature': block.get('signature') or '',
-                }
+            elif block_type in THINKING_BLOCK_TYPES:
+                blocks_by_index[index] = {'thinking': '', 'signature': '', **block}
             elif block_type == 'tool_use':
                 entry = {
                     'type': 'tool_use',

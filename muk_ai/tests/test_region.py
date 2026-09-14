@@ -19,7 +19,7 @@ RESTRICTED = Region(
     'restricted',
     'Restricted',
     'https://restricted.test/v1',
-    disabled=('web_search', 'image_generation'),
+    disabled=('web_search', 'code_interpreter'),
 )
 
 
@@ -105,22 +105,24 @@ class TestAiProviderRegion(AITestCommon):
         with self._patch_regions(RESTRICTED, CUSTOM):
             self.provider.api_region = 'restricted'
             self.assertFalse(self.provider.supports_web_search)
-            self.assertFalse(self.provider.supports_image_generation)
-            self.assertTrue(self.provider.supports_code_interpreter)
+            self.assertFalse(self.provider.supports_code_interpreter)
+            self.assertTrue(self.provider.supports_vision)
             self.provider.api_region = 'default'
             self.assertTrue(self.provider.supports_web_search)
-            self.assertTrue(self.provider.supports_image_generation)
+            self.assertTrue(self.provider.supports_code_interpreter)
 
     def test_agent_capabilities_follow_the_provider_region(self):
         model = self._create_model('gpt-region')
         agent = self.env['muk_ai.agent'].create(
-            {'name': 'Regional', 'model_id': model.id, 'enable_web_search': True}
+            {'name': 'Regional', 'model_id': model.id, 'web_search': 'auto'}
         )
-        self.assertTrue(agent.enable_web_search)
+        self.assertEqual(agent._web_search_route(), 'native')
+        self.assertFalse(agent.capability_warning)
         with self._patch_regions(RESTRICTED, CUSTOM):
             self.provider.api_region = 'restricted'
-            self.assertFalse(agent.supports_web_search)
-            self.assertFalse(agent.enable_web_search)
+            self.assertIsNone(agent._web_search_route())
+            self.assertEqual(agent.web_search, 'auto')
+            self.assertIn('Web search is enabled', agent.capability_warning)
 
     def test_display_name_carries_a_non_default_code(self):
         second = self.env['muk_ai.provider'].create({'name': 'openai', 'code': 'eu'})

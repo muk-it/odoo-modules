@@ -77,6 +77,19 @@ class TestAiSecurity(TransactionCase):
         with self.assertRaises(UserError):
             Session.create({'name': 's3'})
 
+    def test_rate_limit_message_names_the_limit_and_the_batch(self):
+        provider = self.env.ref('muk_ai.provider_openai').sudo()
+        provider.write({'rate_limit': 3})
+        self.env.company.default_ai_provider_id = provider
+        Session = self.env['muk_ai.session'].with_user(self.user_a)
+        with self.assertRaises(UserError) as caught:
+            Session.create([{'name': f's{index}'} for index in range(4)])
+        message = str(caught.exception)
+        self.assertEqual(message.count('('), message.count(')'))
+        self.assertIn('at most 3 chats', message)
+        self.assertIn('started 0 in the last minute', message)
+        self.assertIn('asked for 4 more', message)
+
     # ----------------------------------------------------------
     # Tests: cross-user method access
     # ----------------------------------------------------------

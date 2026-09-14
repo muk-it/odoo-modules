@@ -4,9 +4,11 @@ import { useService } from '@web/core/utils/hooks';
 
 /**
  * A source's icon: the site's favicon for a web page, the owning app's icon
- * for a record. Both are resolved server-side and arrive on the descriptor;
- * anything the server could not resolve, or that fails to load, falls back to
- * the type's glyph.
+ * for a record. Both are resolved server-side and arrive on the descriptor as
+ * a path this Odoo serves. Only such a path is ever rendered: an absolute URL
+ * would make the viewer's browser announce its IP and this Odoo's hostname to
+ * whichever host it names. Anything the server could not resolve, anything not
+ * local, and anything that fails to load falls back to the type's glyph.
  */
 export class SourceIcon extends Component {
     static template = 'muk_ai.SourceIcon';
@@ -17,7 +19,9 @@ export class SourceIcon extends Component {
         this.state = useState({ iconFailed: false });
     }
     get iconUrl() {
-        return this.state.iconFailed ? '' : this.props.source.icon || '';
+        const icon = this.props.source.icon || '';
+        const isLocal = icon.startsWith('/') && !icon.startsWith('//');
+        return !this.state.iconFailed && isLocal ? icon : '';
     }
     onIconError() {
         this.state.iconFailed = true;
