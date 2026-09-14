@@ -54,8 +54,6 @@ FAVICON_MAX_AGE_DAYS = 30
 FAVICON_CACHE_SECONDS = 7 * 24 * 60 * 60
 FAVICON_GC_BATCH = 1000
 
-# No SVG: opened directly it renders as a document whose scripts run, so a
-# hostile favicon would be stored XSS on this Odoo's own origin.
 FAVICON_MIMETYPES = frozenset(
     {'image/bmp', 'image/gif', 'image/jpeg', 'image/png', 'image/webp', 'image/x-icon'}
 )
@@ -168,6 +166,9 @@ def fetch_url(
 ) -> FetchResult:
     """Fetch an ``https://`` URL, following redirects with SSRF guards.
 
+    Every hop is re-validated and IP-pinned, so a public URL cannot bounce the
+    fetch to an internal address.
+
     :param deadline: seconds the whole fetch may take, redirects included
     :raise UserError: on validation failure, an HTTP error status, too many
         redirects, a body over ``max_bytes``, or the deadline running out
@@ -181,8 +182,6 @@ def fetch_url(
                 raise UserError(_lt('@url: %s took longer than allowed.', url))
             connect_timeout = min(connect_timeout, left)
             read_timeout = min(read_timeout, left)
-        # Re-validated and IP-pinned on every hop, so a public URL cannot
-        # bounce the fetch to an internal address.
         host, resolved = _validate_url(current)
         parsed = urlparse(current)
         path = parsed.path or '/'
