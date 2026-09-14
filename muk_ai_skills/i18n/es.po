@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-06 19:36+0000\n"
-"PO-Revision-Date: 2026-08-06 19:36+0000\n"
+"POT-Creation-Date: 2026-09-14 16:38+0000\n"
+"PO-Revision-Date: 2026-09-14 16:38+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -22,7 +22,8 @@ msgid ""
 "Draft a chatter message and open the mail composer wizard pre-filled with the draft. Do NOT post\n"
 "the message — leave it for the user to review and send from the wizard.\n"
 "\n"
-"1. Resolve the target record from the pinned record in `<ui_ctx>` (model + id). If still missing,\n"
+"1. Take the target record (model + id) from `<ui_ctx>`, or from `<linked_record>` when the\n"
+"   session was started from a record. If neither names one,\n"
 "   call `ask_user` once for a record reference.\n"
 "2. Decide what the reply should say:\n"
 "   - If the user already wrote the message text in their request (the prompt after `/reply ...`\n"
@@ -48,67 +49,36 @@ msgid ""
 "   it from the composer.` Stop. Do not post the message yourself.\n"
 "        "
 msgstr ""
-
-#. module: muk_ai_skills
-#: model:muk_ai.skill,body:muk_ai_skills.demo_skill_log
-msgid ""
 "\n"
-"Post a quick internal log note on the pinned record's chatter. Fast complement to `/reply` —\n"
-"no composer, no recipients, no review. Use this when the user just wants to capture a short\n"
-"note for the team.\n"
+"Redacta un mensaje de chatter y abre el asistente de correo precargado con el borrador. NO publiques\n"
+"el mensaje — déjalo para que el usuario lo revise y lo envíe desde el asistente.\n"
 "\n"
-"1. Resolve the target record from the pinned record in `<ui_ctx>` (model + id). If still\n"
-"   missing, call `ask_user` once for a record reference.\n"
-"2. Take the user's text after `/log ...` as the note body. Do NOT rephrase, expand, or polish it;\n"
-"   that is what `/reply` is for. If the user gave no text after the slash command, call\n"
-"   `ask_user` once asking what to log.\n"
-"3. Wrap the text as minimal HTML — `<p>…</p>` paragraphs only. No styles, no signature.\n"
-"4. Call `call_method`:\n"
-"   - `model`: target model\n"
-"   - `method`: `message_post`\n"
-"   - `ids`: `[<id>]`\n"
-"   - `kwargs`:\n"
-"     - `body`: the HTML\n"
-"     - `subtype_xmlid`: `mail.mt_note`\n"
-"     - `message_type`: `comment`\n"
-"5. Reply with one short confirmation line, e.g. `Logged on <display_name>.` Stop. Do not open\n"
-"   the record or call any other tool.\n"
-msgstr ""
-
-#. module: muk_ai_skills
-#: model:muk_ai.skill,body:muk_ai_skills.demo_skill_escalate
-msgid ""
-"\n"
-"Schedule a `mail.activity` on the pinned record. Use when the user wants to create a follow-up\n"
-"todo, call, meeting, or email reminder tied to a record.\n"
-"\n"
-"1. Resolve the target record from the pinned record in `<ui_ctx>` (model + id). If still\n"
-"   missing, call `ask_user` once for a record reference.\n"
-"2. Collect the activity details. If the user already gave them in their request, use those; for\n"
-"   anything still missing, call `ask_user` ONCE with a single combined question covering the\n"
-"   missing pieces (type, deadline, assignee, summary). Acceptable activity types:\n"
-"   - To-Do    → `mail.mail_activity_data_todo`\n"
-"   - Call     → `mail.mail_activity_data_call`\n"
-"   - Meeting  → `mail.mail_activity_data_meeting`\n"
-"   - Email    → `mail.mail_activity_data_email`\n"
-"   Defaults if unspecified after asking once: type = To-Do, deadline = today + 3 days, assignee\n"
-"   = current user (omit `user_id`), summary = short echo of the user's request.\n"
-"3. Resolve the assignee: if a name was given, `search_read` `res.users` with\n"
-"   `[('name','ilike',<name>)]` (fall back to `login`), limit 5. Pick the unique match; if more\n"
-"   than one, call `ask_user` once with the candidate list.\n"
-"4. Call `call_method`:\n"
-"   - `model`: target model\n"
-"   - `method`: `activity_schedule`\n"
-"   - `ids`: `[<id>]`\n"
-"   - `kwargs`:\n"
-"     - `act_type_xmlid`: chosen xmlid\n"
-"     - `date_deadline`: ISO date string `YYYY-MM-DD`\n"
-"     - `summary`: short title\n"
-"     - `user_id`: assignee id (omit to default to current user)\n"
-"     - `note`: optional HTML, only if the user provided extra context\n"
-"5. Reply with one short confirmation: `Scheduled <type> on <display_name> for <date>, assigned\n"
-"   to <assignee>.` Stop. Do not open the record afterwards.\n"
-msgstr ""
+"1. Toma el registro objetivo (modelo + id) de `<ui_ctx>`, o de `<linked_record>` cuando la\n"
+"   sesión se inició desde un registro. Si ninguno lo indica,\n"
+"   llama a `ask_user` una vez para pedir una referencia de registro.\n"
+"2. Decide qué debe decir la respuesta:\n"
+"   - Si el usuario ya escribió el texto del mensaje en su petición (el prompt tras `/reply ...`\n"
+"     se lee como una frase terminada dirigida a un destinatario), usa ese texto casi literalmente y\n"
+"     limítate a reformatearlo como párrafos HTML cortos.\n"
+"   - Si el usuario solo dio una indicación (p. ej. \"agradéceles la rapidez\", \"pregunta cuándo\n"
+"     se envía\"), fundamenta el borrador: `search_read` sobre `mail.message` con el dominio\n"
+"     `[('model','=',<model>),('res_id','=',<id>),('message_type','in',['comment','email'])]`,\n"
+"     orden `date desc`, límite 3, campos `date,subject,body,author_id`. Después escribe una respuesta\n"
+"     diplomática de 60–90 palabras que siga la indicación y haga referencia concreta al mensaje\n"
+"     anterior más reciente. Si no hay ningún mensaje previo, empieza con una breve reintroducción.\n"
+"3. Envuelve el borrador como HTML mínimo — solo párrafos `<p>…</p>`. Sin estilos en línea, sin firma\n"
+"   (Odoo añade una).\n"
+"4. Llama a `open_action`:\n"
+"   - `action_ref`: `mail.action_email_compose_message_wizard`\n"
+"   - `additional_context`:\n"
+"     - `default_model`: el modelo objetivo\n"
+"     - `default_res_ids`: `[<id>]`\n"
+"     - `default_composition_mode`: `comment`\n"
+"     - `default_subtype_xmlid`: `mail.mt_comment`\n"
+"     - `default_body`: el borrador HTML\n"
+"5. Responde con una única línea breve de confirmación, p. ej. `Borrador de respuesta para <display_name>; revísalo y\n"
+"   envíalo desde el asistente.` Detente. No publiques tú mismo el mensaje.\n"
+"        "
 
 #. module: muk_ai_skills
 #: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_kanban
@@ -133,6 +103,11 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_kanban
 msgid "<i class=\"fa fa-paperclip me-1\" title=\"Resources\" role=\"img\"/>"
 msgstr "<i class=\"fa fa-paperclip me-1\" title=\"Recursos\" role=\"img\"/>"
+
+#. module: muk_ai_skills
+#: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_kanban
+msgid "<i class=\"fa fa-thumb-tack me-1\" title=\"Needs something open\" role=\"img\"/>"
+msgstr "<i class=\"fa fa-thumb-tack me-1\" title=\"Necesita algo abierto\" role=\"img\"/>"
 
 #. module: muk_ai_skills
 #: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_kanban
@@ -200,6 +175,11 @@ msgid "All skills"
 msgstr "Todas las habilidades"
 
 #. module: muk_ai_skills
+#: model:ir.model.fields.selection,name:muk_ai_skills.selection__muk_ai_skill__scope__any
+msgid "Anywhere"
+msgstr "En cualquier lugar"
+
+#. module: muk_ai_skills
 #: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_kanban
 msgid "Archive"
 msgstr "Archivar"
@@ -224,6 +204,16 @@ msgid ""
 msgstr ""
 "Adjuntos listados en el manifiesto de la habilidad. El agente puede obtener "
 "cualquiera de ellos mediante read_resource usando el uri del manifiesto."
+
+#. module: muk_ai_skills
+#: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_search
+msgid "Availability"
+msgstr "Disponibilidad"
+
+#. module: muk_ai_skills
+#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__scope
+msgid "Available"
+msgstr "Disponible"
 
 #. module: muk_ai_skills
 #: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__body
@@ -269,7 +259,7 @@ msgstr "Descripción"
 #: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__display_name
 #: model:ir.model.fields,field_description:muk_ai_skills.field_muk_mcp_mixin__display_name
 msgid "Display Name"
-msgstr "Nombre visible"
+msgstr "Nombre para mostrar"
 
 #. module: muk_ai_skills
 #: model:muk_ai.skill,description:muk_ai_skills.skill_reply
@@ -344,11 +334,6 @@ msgid "Last Updated on"
 msgstr "Última actualización el"
 
 #. module: muk_ai_skills
-#: model:muk_ai.skill,label:muk_ai_skills.demo_skill_log
-msgid "Log Note"
-msgstr "Registrar una nota"
-
-#. module: muk_ai_skills
 #: model:ir.model.fields,help:muk_ai_skills.field_muk_ai_skill__name
 msgid ""
 "Lowercase technical identifier used in the slash command and in the LLM-"
@@ -383,15 +368,55 @@ msgstr ""
 "adjuntos."
 
 #. module: muk_ai_skills
+#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__model_ids
+msgid "Models"
+msgstr "Modelos"
+
+#. module: muk_ai_skills
+#: model:ir.model.fields,help:muk_ai_skills.field_muk_ai_skill__model_ids
+msgid ""
+"Models the skill applies to. Leave empty to offer it on every model the "
+"scope allows."
+msgstr ""
+"Modelos a los que se aplica la habilidad. Deje vacío para ofrecerla en todos"
+" los modelos que permita el ámbito."
+
+#. module: muk_ai_skills
 #: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_search
 msgid "My Skills"
 msgstr "Mis habilidades"
+
+#. module: muk_ai_skills
+#: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_search
+msgid "Needs Something Open"
+msgstr "Necesita algo abierto"
 
 #. module: muk_ai_skills
 #. odoo-javascript
 #: code:addons/muk_ai_skills/static/src/chat/skills_panel.xml:0
 msgid "No skill matches."
 msgstr "Ninguna habilidad coincide."
+
+#. module: muk_ai_skills
+#: model:ir.model.fields.selection,name:muk_ai_skills.selection__muk_ai_skill__scope__context
+msgid "On a Record or a List"
+msgstr "En un registro o una lista"
+
+#. module: muk_ai_skills
+#: model:ir.model.fields.selection,name:muk_ai_skills.selection__muk_ai_skill__scope__chatter
+msgid "On a Record with a Chatter"
+msgstr "En un registro con chatter"
+
+#. module: muk_ai_skills
+#: model:ir.model.fields.selection,name:muk_ai_skills.selection__muk_ai_skill__scope__record
+msgid "On a Single Record"
+msgstr "En un solo registro"
+
+#. module: muk_ai_skills
+#. odoo-javascript
+#: code:addons/muk_ai_skills/static/src/chat/skills_panel.xml:0
+msgid "Once something is open"
+msgstr "Cuando haya algo abierto"
 
 #. module: muk_ai_skills
 #: model:ir.model.fields,help:muk_ai_skills.field_muk_ai_skill__description
@@ -422,15 +447,6 @@ msgstr "Abrir"
 #: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_search
 msgid "Owner"
 msgstr "Propietario"
-
-#. module: muk_ai_skills
-#: model:muk_ai.skill,description:muk_ai_skills.demo_skill_log
-msgid ""
-"Post a one-line internal log note on the pinned record's chatter — no "
-"composer, no review."
-msgstr ""
-"Publica una nota interna de una línea en el chatter del registro fijado – "
-"sin editor, sin revisión."
 
 #. module: muk_ai_skills
 #: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__prompt_history
@@ -467,18 +483,9 @@ msgid "Revisions"
 msgstr "Revisiones"
 
 #. module: muk_ai_skills
-#: model:muk_ai.skill,label:muk_ai_skills.demo_skill_escalate
-msgid "Schedule Activity"
-msgstr "Planificar actividad"
-
-#. module: muk_ai_skills
-#: model:muk_ai.skill,description:muk_ai_skills.demo_skill_escalate
-msgid ""
-"Schedule a follow-up activity (to-do, call, meeting, email) on the pinned "
-"record."
-msgstr ""
-"Planifica una actividad de seguimiento (tarea, llamada, reunión, correo) en "
-"el registro fijado."
+#: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_form
+msgid "Scope"
+msgstr "Ámbito"
 
 #. module: muk_ai_skills
 #: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_search
@@ -542,6 +549,18 @@ msgstr "La habilidad %(name)r no es válida."
 #. module: muk_ai_skills
 #. odoo-python
 #: code:addons/muk_ai_skills/models/ai_session.py:0
+msgid "Skill %(name)s %(requirement)s."
+msgstr "La habilidad %(name)s %(requirement)s."
+
+#. module: muk_ai_skills
+#. odoo-python
+#: code:addons/muk_ai_skills/models/skill.py:0
+msgid "Skill %(name)s asks for a chatter, which %(models)s does not have."
+msgstr "La habilidad %(name)s requiere un chatter, que %(models)s no tiene."
+
+#. module: muk_ai_skills
+#. odoo-python
+#: code:addons/muk_ai_skills/models/ai_session.py:0
 msgid "Skill %r is not available."
 msgstr "La habilidad %r no está disponible."
 
@@ -557,7 +576,14 @@ msgstr ""
 #: code:addons/muk_ai_skills/mcp/skill.py:0
 msgid "Skill tools can only be invoked from inside an AI session."
 msgstr ""
-"Las herramientas de habilidad solo pueden invocarse desde una sesión IA."
+"Las herramientas de habilidades solo pueden invocarse desde dentro de una "
+"sesión IA."
+
+#. module: muk_ai_skills
+#. odoo-javascript
+#: code:addons/muk_ai_skills/static/src/chat/turn_decorators.js:0
+msgid "Skill: %s"
+msgstr "Habilidad: %s"
 
 #. module: muk_ai_skills
 #. odoo-javascript
@@ -622,6 +648,17 @@ msgid "Visibility"
 msgstr "Visibilidad"
 
 #. module: muk_ai_skills
+#: model:ir.model.fields,help:muk_ai_skills.field_muk_ai_skill__scope
+msgid ""
+"What the user must have open for the skill to apply. A skill that acts on "
+"what is on screen is offered only there, and is refused when it is invoked "
+"against nothing."
+msgstr ""
+"Lo que el usuario debe tener abierto para que la habilidad se aplique. Una "
+"habilidad que actúa sobre lo que hay en pantalla solo se ofrece ahí, y se "
+"rechaza cuando se invoca sin nada."
+
+#. module: muk_ai_skills
 #: model:ir.model.fields,help:muk_ai_skills.field_muk_ai_skill__skill_type
 msgid ""
 "Where the skill is offered. Only chat skills are listed to the language "
@@ -642,6 +679,11 @@ msgstr ""
 "permanece vacía cuando la habilidad es visible para todos."
 
 #. module: muk_ai_skills
+#: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_search
+msgid "Works Anywhere"
+msgstr "Funciona en cualquier lugar"
+
+#. module: muk_ai_skills
 #: model:ir.model.constraint,message:muk_ai_skills.constraint_muk_ai_skill_unique_name_owner
 msgid "You already own a skill with this technical name."
 msgstr "Ya tienes una habilidad con este nombre técnico."
@@ -655,3 +697,27 @@ msgstr "p. ej. Seguimiento de cotización"
 #: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_form
 msgid "e.g. quote_followup"
 msgstr "p. ej. quote_followup"
+
+#. module: muk_ai_skills
+#. odoo-python
+#: code:addons/muk_ai_skills/models/skill.py:0
+msgid "needs a record open"
+msgstr "necesita un registro abierto"
+
+#. module: muk_ai_skills
+#. odoo-python
+#: code:addons/muk_ai_skills/models/skill.py:0
+msgid "needs a record or a list open"
+msgstr "necesita un registro o una lista abiertos"
+
+#. module: muk_ai_skills
+#. odoo-python
+#: code:addons/muk_ai_skills/models/skill.py:0
+msgid "needs a record with a chatter open"
+msgstr "necesita un registro con chatter abierto"
+
+#. module: muk_ai_skills
+#. odoo-python
+#: code:addons/muk_ai_skills/models/skill.py:0
+msgid "only on %(models)s"
+msgstr "solo en %(models)s"
