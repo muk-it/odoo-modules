@@ -7,7 +7,7 @@
 		<field name="model">muk_ai.agent</field>
 		<field name="inherit_id" ref="muk_ai.view_ai_agent_form"/>
 		<field name="arch" type="xml">
-			<xpath expr="//field[@name='approval_mode']/ancestor::group[1]" position="after">
+			<xpath expr="//group[@name='abilities']" position="after">
 				<group string="Chatter">
 					<field
                         name="mention_enabled"
