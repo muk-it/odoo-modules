@@ -14,21 +14,22 @@ Post a quick internal log note on the pinned record's chatter. Fast complement t
 no composer, no recipients, no review. Use this when the user just wants to capture a short
 note for the team.
 
-1. Resolve the target record from the pinned record in `<ui_ctx>` (model + id). If still
-   missing, call `ask_user` once for a record reference.
+1. Take the target record (model + id) from `<ui_ctx>`, or from `<linked_record>` when the
+   session was started from a record. If neither names one, call `ask_user` once for a
+   record reference.
 2. Take the user's text after `/log ...` as the note body. Do NOT rephrase, expand, or polish it;
    that is what `/reply` is for. If the user gave no text after the slash command, call
    `ask_user` once asking what to log.
-3. Wrap the text as minimal HTML — `<p>…</p>` paragraphs only. No styles, no signature.
-4. Call `call_method`:
+3. Call `call_method`:
    - `model`: target model
    - `method`: `message_post`
    - `ids`: `[<id>]`
    - `kwargs`:
-     - `body`: the HTML
+     - `body`: the user's text as plain text — `message_post` escapes strings, so HTML tags
+       would show up literally in the note
      - `subtype_xmlid`: `mail.mt_note`
      - `message_type`: `comment`
-5. Reply with one short confirmation line, e.g. `Logged on <display_name>.` Stop. Do not open
+4. Reply with one short confirmation line, e.g. `Logged on <display_name>.` Stop. Do not open
    the record or call any other tool.
 ]]></field>
 	</record>
@@ -44,8 +45,9 @@ note for the team.
 Schedule a `mail.activity` on the pinned record. Use when the user wants to create a follow-up
 todo, call, meeting, or email reminder tied to a record.
 
-1. Resolve the target record from the pinned record in `<ui_ctx>` (model + id). If still
-   missing, call `ask_user` once for a record reference.
+1. Take the target record (model + id) from `<ui_ctx>`, or from `<linked_record>` when the
+   session was started from a record. If neither names one, call `ask_user` once for a
+   record reference.
 2. Collect the activity details. If the user already gave them in their request, use those; for
    anything still missing, call `ask_user` ONCE with a single combined question covering the
    missing pieces (type, deadline, assignee, summary). Acceptable activity types:

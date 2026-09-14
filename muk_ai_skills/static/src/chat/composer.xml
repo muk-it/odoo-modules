@@ -27,7 +27,7 @@
                 onClose.bind="closeSkillsPanel"
             />
         </xpath>
-        <xpath expr="//textarea" position="before">
+        <xpath expr="//label[hasclass('mk_attach')]" position="after">
             <button
                 type="button"
                 class="btn mk_skill_btn rounded-circle"

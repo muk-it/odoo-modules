@@ -13,7 +13,8 @@
 Draft a chatter message and open the mail composer wizard pre-filled with the draft. Do NOT post
 the message — leave it for the user to review and send from the wizard.
 
-1. Resolve the target record from the pinned record in `<ui_ctx>` (model + id). If still missing,
+1. Take the target record (model + id) from `<ui_ctx>`, or from `<linked_record>` when the
+   session was started from a record. If neither names one,
    call `ask_user` once for a record reference.
 2. Decide what the reply should say:
    - If the user already wrote the message text in their request (the prompt after `/reply ...`
