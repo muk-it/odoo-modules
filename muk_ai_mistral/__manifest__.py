@@ -7,11 +7,12 @@
         pricing, so the only thing left to configure is your API key.
         Talks to Mistral's stateless Conversations API with live
         streaming, function/tool calling, vision and structured output,
-        plus the Mistral built-in connectors — web search, code
-        interpreter and image generation — wired to the same capability
-        toggles the other muk_ai providers use.
+        plus the Mistral built-in connectors — web search and code
+        interpreter — wired to the same capability toggles the other
+        muk_ai providers use, and image generation as a catalogued
+        image model any agent can pick.
     """,
-    'version': '19.0.1.1.3',
+    'version': '19.0.1.2.2',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',

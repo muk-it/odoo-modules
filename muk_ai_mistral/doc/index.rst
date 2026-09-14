@@ -34,13 +34,15 @@ The provider speaks Mistral's stateless **Conversations API**
 - **Web search** connector (``web_search``) with inline source citations
 - **Code interpreter** connector (``code_interpreter``); code and output
   rendered as fenced blocks
-- **Image generation** connector (``image_generation``); generated
-  images downloaded via the files endpoint and embedded inline
+- **Image generation** through the catalogued *Mistral Medium 3.5
+  Images* model: the app-side ``generate_image`` tool runs a one-shot
+  conversation carrying the ``image_generation`` connector and stores
+  the downloaded file, so any agent can pick Mistral as its image model
 
 The built-in connectors are gated by the same ``supports_web_search`` /
-``supports_image_generation`` / ``supports_code_interpreter`` capability
-flags the other muk_ai providers expose, and can be combined with custom
-function tools in a single request.
+``supports_code_interpreter`` capability flags the other muk_ai
+providers expose, and can be combined with custom function tools in a
+single request.
 
 Configuration
 =============

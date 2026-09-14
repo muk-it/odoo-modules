@@ -1,3 +1,4 @@
+import base64
 import json
 from unittest.mock import MagicMock, patch
 
@@ -9,6 +10,7 @@ from .common import MistralTestCommon
 from odoo.addons.muk_ai_mistral.providers.mistral import (
     REQUEST_ATTEMPTS,
     STREAM_ATTEMPTS,
+    TOOL_NAME_PREFIX,
     MistralProvider,
 )
 
@@ -307,21 +309,26 @@ class TestAiMistralProvider(MistralTestCommon):
         self.assertIn('print(1)', result['text'])
         self.assertIn('done', result['text'])
 
-    def test_image_generation_tool_injected_and_file_downloaded(self):
+    def test_generate_image_drives_the_connector_in_one_shot(self):
         captured = {}
 
         def fake_post(url, **kwargs):
-            captured['body'] = kwargs.get('json')
+            captured.update(url=url, body=kwargs.get('json'))
             return self._mock_http_response(
                 self._conv_response(
                     [
+                        {
+                            'object': 'entry',
+                            'type': 'tool.execution',
+                            'name': 'image_generation',
+                        },
                         self._message_output(
                             [
                                 {
                                     'type': 'tool_file',
                                     'tool': 'image_generation',
                                     'file_id': 'file_1',
-                                    'file_name': 'cat',
+                                    'file_name': 'image_generated_0',
                                     'file_type': 'png',
                                 },
                             ]
@@ -332,20 +339,35 @@ class TestAiMistralProvider(MistralTestCommon):
 
         def fake_get(url, **kwargs):
             captured['file_url'] = url
-            return self._mock_http_response(content=b'\x89PNG')
+            return self._mock_http_response(content=b'\xff\xd8\xff\xe0JFIF')
 
-        with patch.object(requests.Session, 'post', side_effect=fake_post):
-            with patch.object(requests, 'get', side_effect=fake_get):
-                result = self.provider._request_responses(
-                    inputs=[],
-                    enable_image_generation=True,
-                )
-        self.assertIn({'type': 'image_generation'}, captured['body']['tools'])
+        with (
+            patch.object(requests.Session, 'post', side_effect=fake_post),
+            patch.object(requests.Session, 'get', side_effect=fake_get),
+        ):
+            result = self.provider._get_client().generate_image(
+                'mistral-medium-latest', 'a cat', {'size': '1024x1024'}
+            )
+        self.assertTrue(captured['url'].endswith('/conversations'))
+        self.assertEqual(captured['body']['model'], 'mistral-medium-latest')
+        self.assertEqual(captured['body']['tools'], [{'type': 'image_generation'}])
+        self.assertFalse(captured['body']['store'])
+        self.assertIn('exactly once', captured['body']['instructions'])
+        self.assertEqual(captured['body']['inputs'][0]['content'], 'a cat')
+        self.assertNotIn('size', json.dumps(captured['body']))
         self.assertTrue(captured['file_url'].endswith('/files/file_1/content'))
-        self.assertIn('data:image/png;base64,', result['text'])
+        self.assertEqual(result['mimetype'], 'image/jpeg')
+        self.assertEqual(
+            result['data_b64'], base64.b64encode(b'\xff\xd8\xff\xe0JFIF').decode()
+        )
+        self.assertEqual(result['usage'], {'images': 1})
 
-    def test_image_file_download_failure_falls_back_to_text(self):
+    def test_generate_image_runs_on_the_image_timeout(self):
+        self.provider.write({'request_timeout': 15, 'image_timeout': 240})
+        captured = {}
+
         def fake_post(url, **kwargs):
+            captured.update(kwargs)
             return self._mock_http_response(
                 self._conv_response(
                     [
@@ -355,7 +377,71 @@ class TestAiMistralProvider(MistralTestCommon):
                                     'type': 'tool_file',
                                     'tool': 'image_generation',
                                     'file_id': 'file_1',
-                                    'file_name': 'cat',
+                                }
+                            ]
+                        )
+                    ]
+                )
+            )
+
+        with (
+            patch.object(requests.Session, 'post', side_effect=fake_post),
+            patch.object(
+                requests.Session,
+                'get',
+                return_value=self._mock_http_response(content=b'fake-png'),
+            ),
+        ):
+            self.provider._get_client().generate_image('mistral-medium-latest', 'a cat')
+        self.assertEqual(captured['timeout'], 240)
+
+    def test_generate_image_reports_a_driver_that_answered_with_text(self):
+        response = self._mock_http_response(self._text_response('I cannot draw.'))
+        with (
+            patch.object(requests.Session, 'post', return_value=response),
+            self.assertRaises(UserError) as caught,
+        ):
+            self.provider._get_client().generate_image('mistral-medium-latest', 'x')
+        self.assertIn('answered with text', str(caught.exception))
+
+    def test_generate_image_reports_a_failed_download(self):
+        response = self._mock_http_response(
+            self._conv_response(
+                [
+                    self._message_output(
+                        [
+                            {
+                                'type': 'tool_file',
+                                'tool': 'image_generation',
+                                'file_id': 'f',
+                            }
+                        ]
+                    )
+                ]
+            )
+        )
+        with (
+            patch.object(requests.Session, 'post', return_value=response),
+            patch.object(
+                requests.Session, 'get', side_effect=requests.ConnectionError('boom')
+            ),
+            self.assertRaises(UserError) as caught,
+        ):
+            self.provider._get_client().generate_image('mistral-medium-latest', 'x')
+        self.assertIn('boom', str(caught.exception))
+
+    def test_tool_file_download_failure_falls_back_to_text(self):
+        def fake_post(url, **kwargs):
+            return self._mock_http_response(
+                self._conv_response(
+                    [
+                        self._message_output(
+                            [
+                                {
+                                    'type': 'tool_file',
+                                    'tool': 'code_interpreter',
+                                    'file_id': 'file_1',
+                                    'file_name': 'plot',
                                     'file_type': 'png',
                                 },
                             ]
@@ -369,10 +455,10 @@ class TestAiMistralProvider(MistralTestCommon):
             raise requests.ConnectionError(msg)
 
         with patch.object(requests.Session, 'post', side_effect=fake_post):
-            with patch.object(requests, 'get', side_effect=fake_get):
+            with patch.object(requests.Session, 'get', side_effect=fake_get):
                 result = self.provider._request_responses(
                     inputs=[],
-                    enable_image_generation=True,
+                    enable_code_interpreter=True,
                 )
         self.assertIn('generated file', result['text'])
 
@@ -824,6 +910,254 @@ class TestAiMistralProvider(MistralTestCommon):
         self.assertNotIn('tools', captured['body'])
 
     # ----------------------------------------------------------
+    # Protected tool names
+    # ----------------------------------------------------------
+
+    def test_protected_tool_names_travel_under_a_prefix(self):
+        tools = MistralProvider._tools_to_mistral(
+            [
+                {'name': 'web_search'},
+                {'name': 'generate_image'},
+                {'name': 'search_read'},
+                {'name': 'web_fetch'},
+            ]
+        )
+        self.assertEqual(
+            [tool['function']['name'] for tool in tools],
+            [
+                f'{TOOL_NAME_PREFIX}web_search',
+                f'{TOOL_NAME_PREFIX}generate_image',
+                'search_read',
+                'web_fetch',
+            ],
+        )
+
+    def test_a_protected_function_call_entry_uses_the_same_wire_name(self):
+        _instructions, entries = MistralProvider._inputs_to_entries(
+            [
+                {
+                    'type': 'function_call',
+                    'name': 'web_search',
+                    'arguments': '{"query": "odoo"}',
+                    'call_id': 'c1',
+                },
+                {
+                    'type': 'function_call',
+                    'name': 'search_read',
+                    'arguments': '{}',
+                    'call_id': 'c2',
+                },
+            ]
+        )
+        self.assertEqual(entries[0]['name'], f'{TOOL_NAME_PREFIX}web_search')
+        self.assertEqual(entries[1]['name'], 'search_read')
+
+    def test_a_buffered_protected_call_maps_back_to_its_muk_ai_name(self):
+        def fake_post(url, **kwargs):
+            return self._mock_http_response(
+                self._conv_response(
+                    [
+                        self._function_call(
+                            'c1',
+                            f'{TOOL_NAME_PREFIX}generate_image',
+                            {'prompt': 'a red cube'},
+                        ),
+                    ]
+                )
+            )
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            result = self.provider._request_responses(inputs=[])
+        self.assertEqual(result['tool_calls'][0]['name'], 'generate_image')
+        self.assertEqual(result['carry_inputs'][0]['name'], 'generate_image')
+
+    def test_a_streamed_protected_call_maps_back_to_its_muk_ai_name(self):
+        sse = self._sse_lines(
+            [
+                {
+                    'type': 'function.call.delta',
+                    'output_index': 0,
+                    'id': 'fc_1',
+                    'name': f'{TOOL_NAME_PREFIX}web_search',
+                    'tool_call_id': 'Y2T9LVzh8',
+                    'arguments': '',
+                },
+                {
+                    'type': 'function.call.delta',
+                    'output_index': 0,
+                    'id': 'fc_1',
+                    'name': f'{TOOL_NAME_PREFIX}web_search',
+                    'tool_call_id': 'Y2T9LVzh8',
+                    'arguments': '{"query": "Mistral AI CEO"}',
+                },
+                {
+                    'type': 'conversation.response.done',
+                    'usage': {'prompt_tokens': 69, 'completion_tokens': 22},
+                },
+            ]
+        )
+        response = MagicMock()
+        response.iter_lines.return_value = iter(sse)
+        response.raise_for_status.return_value = None
+        deltas = []
+        with patch.object(requests.Session, 'post', return_value=response):
+            result = self.provider._request_responses(
+                inputs=[],
+                on_delta=lambda k, p: deltas.append((k, p)),
+            )
+        tool_starts = [payload for (kind, payload) in deltas if kind == 'tool_start']
+        self.assertEqual(tool_starts[0]['name'], 'web_search')
+        self.assertEqual(result['tool_calls'][0]['name'], 'web_search')
+        self.assertEqual(
+            result['tool_calls'][0]['arguments'],
+            {'query': 'Mistral AI CEO'},
+        )
+        self.assertEqual(result['carry_inputs'][0]['name'], 'web_search')
+
+    def test_a_streamed_control_call_keeps_its_name(self):
+        sse = self._sse_lines(
+            [
+                {
+                    'type': 'function.call.delta',
+                    'output_index': 0,
+                    'id': 'fc_1',
+                    'name': 'search_read',
+                    'tool_call_id': 'Y2T9LVzh8',
+                    'arguments': '{"model": "res.partner"}',
+                },
+                {
+                    'type': 'conversation.response.done',
+                    'usage': {'prompt_tokens': 69, 'completion_tokens': 22},
+                },
+            ]
+        )
+        response = MagicMock()
+        response.iter_lines.return_value = iter(sse)
+        response.raise_for_status.return_value = None
+        with patch.object(requests.Session, 'post', return_value=response):
+            result = self.provider._request_responses(
+                inputs=[],
+                on_delta=lambda kind, payload: None,
+            )
+        self.assertEqual(result['tool_calls'][0]['name'], 'search_read')
+
+    def test_a_native_connector_execution_is_not_read_as_a_function_call(self):
+        sse = self._sse_lines(
+            [
+                {
+                    'type': 'tool.execution.started',
+                    'output_index': 0,
+                    'id': 'tool_exec_1',
+                    'name': 'image_generation',
+                    'arguments': '{"',
+                    'function': 'generate_image',
+                },
+                {
+                    'type': 'tool.execution.delta',
+                    'output_index': 0,
+                    'id': 'tool_exec_1',
+                    'name': 'image_generation',
+                    'arguments': 'prompt": "a red cube"}',
+                    'function': 'generate_image',
+                },
+                {
+                    'type': 'tool.execution.done',
+                    'output_index': 0,
+                    'id': 'tool_exec_1',
+                    'name': 'image_generation',
+                    'function': 'generate_image',
+                    'info': {'result': '{"url": "https://blob.example/image.jpg"}'},
+                },
+                {
+                    'type': 'message.output.delta',
+                    'output_index': 1,
+                    'content': {
+                        'type': 'tool_file',
+                        'tool': 'image_generation',
+                        'file_id': 'file_9',
+                        'file_name': 'image_generated_0',
+                        'file_type': 'png',
+                    },
+                },
+                {
+                    'type': 'conversation.response.done',
+                    'usage': {'prompt_tokens': 200, 'completion_tokens': 316},
+                },
+            ]
+        )
+        response = MagicMock()
+        response.iter_lines.return_value = iter(sse)
+        response.raise_for_status.return_value = None
+
+        def fake_get(url, **kwargs):
+            return self._mock_http_response(content=b'\x89PNG\r\n\x1a\n')
+
+        with (
+            patch.object(requests.Session, 'post', return_value=response),
+            patch.object(requests.Session, 'get', side_effect=fake_get),
+        ):
+            result = self.provider._request_responses(
+                inputs=[],
+                on_delta=lambda kind, payload: None,
+            )
+        self.assertEqual(result['tool_calls'], [])
+        self.assertIn('data:image/png;base64,', result['text'])
+
+    def test_a_native_web_search_execution_streams_its_references(self):
+        sse = self._sse_lines(
+            [
+                {
+                    'type': 'tool.execution.started',
+                    'output_index': 0,
+                    'id': 'tool_exec_1',
+                    'name': 'web_search',
+                    'arguments': '{"',
+                    'function': 'web_search',
+                },
+                {
+                    'type': 'tool.execution.done',
+                    'output_index': 0,
+                    'id': 'tool_exec_1',
+                    'name': 'web_search',
+                    'function': 'web_search',
+                    'info': {'result': '{"YmzJrfbG": {"url": "https://mistral.ai/"}}'},
+                },
+                {
+                    'type': 'message.output.delta',
+                    'output_index': 1,
+                    'content': 'Arthur Mensch',
+                },
+                {
+                    'type': 'message.output.delta',
+                    'output_index': 1,
+                    'content': {
+                        'type': 'tool_reference',
+                        'tool': 'web_search',
+                        'title': 'About Mistral',
+                        'url': 'https://mistral.ai/about/',
+                    },
+                },
+                {
+                    'type': 'conversation.response.done',
+                    'usage': {'prompt_tokens': 773, 'completion_tokens': 88},
+                },
+            ]
+        )
+        response = MagicMock()
+        response.iter_lines.return_value = iter(sse)
+        response.raise_for_status.return_value = None
+        with patch.object(requests.Session, 'post', return_value=response):
+            result = self.provider._request_responses(
+                inputs=[],
+                on_delta=lambda kind, payload: None,
+            )
+        self.assertEqual(result['tool_calls'], [])
+        self.assertEqual(
+            result['text'],
+            'Arthur Mensch ([About Mistral](https://mistral.ai/about/))',
+        )
+
+    # ----------------------------------------------------------
     # Tool call parsing
     # ----------------------------------------------------------
 
@@ -1168,12 +1502,12 @@ class TestAiMistralProvider(MistralTestCommon):
 
         def fake_get(url, **kwargs):
             captured['url'] = url
-            return self._mock_http_response(content=b'\x89PNG')
+            return self._mock_http_response(content=b'\x89PNG\r\n\x1a\n')
 
         deltas = []
         with (
             patch.object(requests.Session, 'post', return_value=response),
-            patch.object(requests, 'get', side_effect=fake_get),
+            patch.object(requests.Session, 'get', side_effect=fake_get),
         ):
             result = self.provider._request_responses(
                 inputs=[],

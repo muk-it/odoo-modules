@@ -86,8 +86,20 @@
 		<field name="currency">USD</field>
 	</record>
 
+	<record id="model_mistral_medium_image" model="muk_ai.model">
+		<field name="name">Mistral Medium 3.5 Images</field>
+		<field name="provider_id" ref="provider_mistral"/>
+		<field name="technical_name">mistral-medium-latest</field>
+		<field name="modality">image</field>
+		<field name="notes">Mistral Medium 3.5 driving the image generation connector. Mistral bills $0.10 per generated image plus the driver's few hundred prompt and completion tokens at the chat rate.</field>
+		<field name="input_rate">0.0</field>
+		<field name="output_rate">0.1</field>
+		<field name="currency">USD</field>
+	</record>
+
 	<record id="provider_mistral" model="muk_ai.provider">
-		<field name="default_model_id" ref="model_mistral_medium"/>
+		<field name="default_chat_model_id" ref="model_mistral_medium"/>
+		<field name="default_image_model_id" ref="model_mistral_medium_image"/>
 	</record>
 
 </odoo>

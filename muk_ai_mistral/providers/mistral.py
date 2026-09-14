@@ -7,12 +7,28 @@ from collections.abc import Callable
 import requests
 
 from odoo.exceptions import UserError
+from odoo.tools.mimetypes import guess_mimetype
 
 from odoo.addons.muk_ai.providers.base import ProviderBase
 
 WEB_SEARCH_TOOL = 'web_search'
 CODE_INTERPRETER_TOOL = 'code_interpreter'
 IMAGE_GENERATION_TOOL = 'image_generation'
+PROTECTED_TOOL_NAMES = frozenset(
+    {
+        'code_interpreter',
+        'edit_image',
+        'generate_image',
+        'library_search',
+        'news_search',
+        'web_search',
+    }
+)
+TOOL_NAME_PREFIX = 'muk_ai_'
+IMAGE_INSTRUCTIONS = (
+    'Call the image_generation tool exactly once to render the request as one '
+    'image, then stop. Do not describe the image and do not answer with text.'
+)
 
 STREAM_ATTEMPTS = 2
 REQUEST_ATTEMPTS = 3
@@ -27,7 +43,6 @@ class MistralProvider(ProviderBase):
     default_url = 'https://api.mistral.ai/v1'
 
     supports_web_search = True
-    supports_image_generation = True
     supports_code_interpreter = True
 
     # ----------------------------------------------------------
@@ -49,7 +64,6 @@ class MistralProvider(ProviderBase):
         on_delta: Callable | None = None,
         model: str | None = None,
         enable_web_search: bool = False,
-        enable_image_generation: bool = False,
         enable_code_interpreter: bool = False,
         extra: dict | None = None,
     ) -> dict:
@@ -87,13 +101,118 @@ class MistralProvider(ProviderBase):
             tools.append({'type': WEB_SEARCH_TOOL})
         if enable_code_interpreter:
             tools.append({'type': CODE_INTERPRETER_TOOL})
-        if enable_image_generation:
-            tools.append({'type': IMAGE_GENERATION_TOOL})
         if tools:
             body['tools'] = tools
         if callable(on_delta):
             return self._stream_request(body, on_delta)
         return self._buffered_request(body)
+
+    def generate_image(
+        self,
+        model: str,
+        prompt: str,
+        options: dict | None = None,
+    ) -> dict:
+        """Render one image through a one-shot conversation driving the image tool.
+
+        The catalogued image model is the chat model that calls Mistral's
+        ``image_generation`` connector; the options have no equivalent there
+        and are not sent.
+
+        Rendering answers in one long response instead of a stream, so the
+        conversation runs on the provider's :attr:`image_timeout` rather than
+        the chat request timeout.
+
+        :raise UserError: when the request or the download fails, or the
+            driver answers with text instead of calling the tool
+        """
+        payload = self._post_json(
+            '/conversations',
+            {
+                'model': model,
+                'instructions': IMAGE_INSTRUCTIONS,
+                'inputs': [
+                    {
+                        'object': 'entry',
+                        'type': 'message.input',
+                        'role': 'user',
+                        'content': prompt,
+                    }
+                ],
+                'tools': [{'type': IMAGE_GENERATION_TOOL}],
+                'store': False,
+            },
+            timeout=self.image_timeout,
+        )
+        chunk = next(
+            (
+                chunk
+                for entry in payload.get('outputs') or []
+                if entry.get('type') == 'message.output'
+                and isinstance(entry.get('content'), list)
+                for chunk in entry['content']
+                if isinstance(chunk, dict) and chunk.get('type') == 'tool_file'
+            ),
+            None,
+        )
+        if not (chunk and chunk.get('file_id')):
+            self._raise(self.env._('the model answered with text instead of an image'))
+        mimetype, data_b64 = self._download_file(chunk['file_id'])
+        return {
+            'data_b64': data_b64,
+            'mimetype': mimetype,
+            'revised_prompt': '',
+            'usage': {'images': 1},
+        }
+
+    # ----------------------------------------------------------
+    # Tools
+    # ----------------------------------------------------------
+
+    @staticmethod
+    def _to_wire_name(name: str) -> str:
+        """Prefix a tool name Mistral reserves for its own connectors.
+
+        A declaration called ``web_search`` or ``generate_image`` is
+        rejected with ``422 protected function name``, so the app-side
+        tools of that name travel under a prefix and are mapped back with
+        :meth:`_from_wire_name` on the way in.
+        """
+        return f'{TOOL_NAME_PREFIX}{name}' if name in PROTECTED_TOOL_NAMES else name
+
+    @staticmethod
+    def _from_wire_name(name: str) -> str:
+        """Restore the muk_ai name of a tool sent under the protection prefix."""
+        stripped = name.removeprefix(TOOL_NAME_PREFIX)
+        return stripped if stripped in PROTECTED_TOOL_NAMES else name
+
+    @classmethod
+    def _tools_to_mistral(cls, tools_schema: list | None) -> list:
+        """Map muk_ai tool schemas to Mistral function-tool definitions."""
+        if not tools_schema:
+            return []
+        seen = set()
+        out = []
+        for tool in tools_schema:
+            name = tool.get('name')
+            if not name or name in seen:
+                continue
+            seen.add(name)
+            out.append(
+                {
+                    'type': 'function',
+                    'function': {
+                        'name': cls._to_wire_name(name),
+                        'description': tool.get('description') or '',
+                        'parameters': tool.get('parameters')
+                        or {
+                            'type': 'object',
+                            'properties': {},
+                        },
+                    },
+                }
+            )
+        return out
 
     # ----------------------------------------------------------
     # Inputs
@@ -124,7 +243,7 @@ class MistralProvider(ProviderBase):
                         'object': 'entry',
                         'type': 'function.call',
                         'tool_call_id': item.get('call_id') or '',
-                        'name': item.get('name') or '',
+                        'name': cls._to_wire_name(item.get('name') or ''),
                         'arguments': arguments,
                     }
                 )
@@ -235,34 +354,6 @@ class MistralProvider(ProviderBase):
         if not text:
             return None
         return {'type': 'text', 'text': prefix + text}
-
-    @staticmethod
-    def _tools_to_mistral(tools_schema: list | None) -> list:
-        """Map muk_ai tool schemas to Mistral function-tool definitions."""
-        if not tools_schema:
-            return []
-        seen = set()
-        out = []
-        for tool in tools_schema:
-            name = tool.get('name')
-            if not name or name in seen:
-                continue
-            seen.add(name)
-            out.append(
-                {
-                    'type': 'function',
-                    'function': {
-                        'name': name,
-                        'description': tool.get('description') or '',
-                        'parameters': tool.get('parameters')
-                        or {
-                            'type': 'object',
-                            'properties': {},
-                        },
-                    },
-                }
-            )
-        return out
 
     # ----------------------------------------------------------
     # Parse
@@ -379,12 +470,12 @@ class MistralProvider(ProviderBase):
         file_id = chunk.get('file_id')
         if not file_id:
             return ''
-        file_type = (chunk.get('file_type') or 'png').lstrip('.')
-        data_uri = self._download_file(file_id, file_type)
         name = chunk.get('file_name') or 'image'
-        if data_uri:
-            return f'\n\n![{name}]({data_uri})\n\n'
-        return f'\n\n_(generated file: `{name}`)_\n\n'
+        try:
+            mimetype, data_b64 = self._download_file(file_id)
+        except UserError:
+            return f'\n\n_(generated file: `{name}`)_\n\n'
+        return f'\n\n![{name}](data:{mimetype};base64,{data_b64})\n\n'
 
     @staticmethod
     def _render_tool_execution(entry: dict) -> str:
@@ -409,7 +500,7 @@ class MistralProvider(ProviderBase):
     ) -> None:
         """Append a parsed function call and its carry input to the buffers."""
         call_id = entry.get('tool_call_id') or entry.get('id') or ''
-        name = entry.get('name') or ''
+        name = self._from_wire_name(entry.get('name') or '')
         raw_args = entry.get('arguments')
         if raw_args is None:
             raw_args = '{}'
@@ -445,23 +536,27 @@ class MistralProvider(ProviderBase):
     # Files
     # ----------------------------------------------------------
 
-    def _download_file(self, file_id: str, file_type: str) -> str | None:
-        """Fetch a generated file and return it as a base64 data URI.
+    def _download_file(self, file_id: str) -> tuple[str, str]:
+        """Fetch a generated file and return its mimetype and base64 content.
 
-        :return: ``None`` when the download fails
+        The mimetype is sniffed from the bytes: Mistral reports ``png`` for
+        files it serves as JPEG.
+
+        :raise UserError: when the download fails
         """
         try:
-            response = requests.get(
+            response = self._http_session().get(
                 f'{self.api_url}/files/{file_id}/content',
                 headers=self.headers(),
                 timeout=self.request_timeout,
             )
             response.raise_for_status()
-        except requests.RequestException:
-            return None
-        mimetype = f'image/{file_type}' if file_type else 'application/octet-stream'
-        encoded = base64.b64encode(response.content).decode('ascii')
-        return f'data:{mimetype};base64,{encoded}'
+        except requests.RequestException as error:
+            self._raise(error)
+        return (
+            guess_mimetype(response.content, default='application/octet-stream'),
+            base64.b64encode(response.content).decode('ascii'),
+        )
 
     # ----------------------------------------------------------
     # Streaming
@@ -640,7 +735,7 @@ class MistralProvider(ProviderBase):
             entry['call_id'] = call_id
         name = event.get('name')
         if name and not entry['name']:
-            entry['name'] = name
+            entry['name'] = self._from_wire_name(name)
             self._call_on_delta(
                 on_delta,
                 'tool_start',

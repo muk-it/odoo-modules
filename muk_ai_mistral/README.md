@@ -44,8 +44,9 @@ toggles the other muk_ai providers use:
 - **Web search** — `web_search` connector, with inline source citations
 - **Code interpreter** — `code_interpreter` connector; code and output
   are rendered as fenced blocks
-- **Image generation** — `image_generation` connector; generated images
-  are downloaded and embedded inline
+- **Image generation** — the catalogued *Mistral Medium 3.5 Images* model
+  drives the `image_generation` connector in a one-shot conversation, so
+  any agent can pick Mistral as its image model
 
 Custom function tools and built-in connectors can run together in the
 same request.
