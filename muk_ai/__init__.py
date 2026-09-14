@@ -4,6 +4,7 @@ from odoo import SUPERUSER_ID
 from odoo.api import Environment
 from odoo.sql_db import Cursor
 
+from . import controllers
 from . import mcp
 from . import models
 from . import providers

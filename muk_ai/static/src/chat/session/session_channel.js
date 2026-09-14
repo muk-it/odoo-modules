@@ -1,6 +1,6 @@
-import { useEffect } from '@odoo/owl';
+// @odoo-module
 
-import { useService } from '@web/core/utils/hooks';
+import { useEffect, useEnv } from '@odoo/owl';
 
 import { makeRefCount } from '@muk_ai/chat/session/refcount';
 
@@ -24,7 +24,7 @@ export function sessionChannel(sessionId) {
  * @param {function(): (number|null)} getSessionId reads the displayed session
  */
 export function useSessionChannel(getSessionId) {
-    const bus = useService('bus_service');
+    const bus = useEnv().services.bus_service;
     let held = null;
     const drop = () => {
         if (held && followers.release(held)) {

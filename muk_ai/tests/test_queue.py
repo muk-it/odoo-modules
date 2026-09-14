@@ -126,18 +126,12 @@ class TestAiSessionQueue(AITestCommon):
         cursor = self.env.registry.cursor()
         statement = (
             'SELECT pg_advisory_unlock(%s, %s)',
-            (
-                ADVISORY_LOCK_NAMESPACE,
-                session_id,
-            ),
+            [ADVISORY_LOCK_NAMESPACE, session_id],
         )
         try:
             cursor.execute(
                 'SELECT pg_try_advisory_lock(%s, %s)',
-                (
-                    ADVISORY_LOCK_NAMESPACE,
-                    session_id,
-                ),
+                [ADVISORY_LOCK_NAMESPACE, session_id],
             )
             self.assertTrue(
                 cursor.fetchone()[0],

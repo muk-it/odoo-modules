@@ -175,6 +175,10 @@ class TestToolFile(AITestCommon):
         self.assertIn('`data:` URIs', block)
         self.assertIn('/web/content/', block)
 
+    def test_the_files_block_names_the_way_back_to_a_stored_file(self):
+        block = self._new_session()._build_files_block()
+        self.assertIn('odoo://attachment/', block)
+
     def test_the_files_block_reaches_the_system_prompt(self):
         session = self._new_session()
         prompt = session._system_message()['content'][0]['text']

@@ -2,7 +2,7 @@
 
 <templates xml:space="preserve">
 
-    <t t-name="muk_ai.ChatShareUsers">
+    <t t-name="muk_ai.ChatShareUsers" owl="1">
         <div class="mk_chat_share d-none d-md-flex align-items-center gap-2">
             <span class="mk_chat_share_faces" t-if="shareIds.length">
                 <img

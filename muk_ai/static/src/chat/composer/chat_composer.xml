@@ -51,26 +51,7 @@
                     />
                 </t>
             </div>
-            <div class="mk_composer_row d-flex align-items-end gap-2">
-                <label
-                    class="btn mk_attach rounded-circle mb-0"
-                    t-att-class="{ 'mk_attach_disabled': !props.canAttach }"
-                    t-att-for="fileInputId"
-                    t-on-click="(ev) => this.onLabelClick(ev)"
-                    title="Attach file"
-                >
-                    <i class="fa fa-paperclip"/>
-                </label>
-                <input
-                    type="file"
-                    class="mk_file_input"
-                    t-ref="fileInput"
-                    t-att-id="fileInputId"
-                    multiple="multiple"
-                    t-att-accept="accept"
-                    t-att-disabled="!props.canAttach ? 'disabled' : null"
-                    t-on-change="(ev) => this.onFileInputChange(ev)"
-                />
+            <div class="mk_composer_layout d-flex flex-column gap-2">
                 <textarea
                     class="form-control border-0 shadow-none"
                     rows="1"
@@ -80,19 +61,120 @@
                     t-on-paste="(ev) => this.onPaste(ev)"
                     t-att-placeholder="props.placeholder"
                 />
-                <button
-                    class="btn mk_send rounded-circle"
-                    t-att-class="(props.canSend and props.isQueueing) ? 'mk_queue' : (props.canStop and !props.canSend) ? 'mk_stop' : ''"
-                    t-on-click="() => this.onSendOrStop()"
-                    t-att-disabled="(!props.canStop and !props.canSend) ? 'disabled' : null"
-                    t-att-title="(props.canSend and props.isQueueing) ? 'Queue (sends after current turn)' : (props.canStop and !props.canSend) ? 'Stop' : 'Send'"
-                >
-                    <i class="fa" t-att-class="(props.canSend and props.isQueueing) ? 'fa-clock-o' : (props.canStop and !props.canSend) ? 'fa-stop' : 'fa-arrow-up'"/>
-                </button>
+                <div class="mk_composer_row d-flex align-items-center gap-2">
+                    <div class="mk_composer_left d-flex align-items-center gap-2">
+                        <label
+                            class="btn mk_attach rounded-circle mb-0"
+                            t-att-class="{ 'mk_attach_disabled': !props.canAttach }"
+                            t-att-for="fileInputId"
+                            t-on-click="(ev) => this.onLabelClick(ev)"
+                            title="Attach file"
+                        >
+                            <i class="fa fa-paperclip"/>
+                        </label>
+                        <input
+                            type="file"
+                            class="mk_file_input"
+                            t-ref="fileInput"
+                            t-att-id="fileInputId"
+                            multiple="multiple"
+                            t-att-accept="accept"
+                            t-att-disabled="!props.canAttach ? 'disabled' : null"
+                            t-on-change="(ev) => this.onFileInputChange(ev)"
+                        />
+                    </div>
+                    <div class="mk_composer_right d-flex align-items-center gap-2">
+                        <button
+                            class="btn mk_send rounded-circle"
+                            t-att-class="(props.canSend and props.isQueueing) ? 'mk_queue' : (props.canStop and !props.canSend) ? 'mk_stop' : ''"
+                            t-on-click="() => this.onSendOrStop()"
+                            t-att-disabled="(!props.canStop and !props.canSend) ? 'disabled' : null"
+                            t-att-title="(props.canSend and props.isQueueing) ? 'Queue (sends after current turn)' : (props.canStop and !props.canSend) ? 'Stop' : 'Send'"
+                        >
+                            <i class="fa" t-att-class="(props.canSend and props.isQueueing) ? 'fa-clock-o' : (props.canStop and !props.canSend) ? 'fa-stop' : 'fa-arrow-up'"/>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div
+            class="mk_composer_meta d-flex align-items-center gap-2 mt-1 ps-1"
+            t-if="props.showHint or props.approvalPill or props.effortPill"
+        >
+            <div class="mk_composer_hint" t-if="props.showHint">
+                <span><kbd>Enter</kbd> to send</span>
+                <span><kbd>Shift</kbd>+<kbd>Enter</kbd> for newline</span>
+            </div>
+            <div class="mk_composer_meta_actions ms-auto d-flex align-items-center gap-2">
+                <t t-call="muk_ai.SessionPills">
+                    <t t-set="approval" t-value="props.approvalPill"/>
+                    <t t-set="effort" t-value="props.effortPill"/>
+                </t>
             </div>
         </div>
         </t>
         </div>
+    </t>
+
+    <t t-name="muk_ai.SessionPills" owl="1">
+        <Dropdown t-if="approval" menuClass="'mk_pill_menu'">
+            <button
+                type="button"
+                class="btn btn-sm mk_approval_pill rounded-pill border-0 d-inline-flex align-items-center gap-1"
+                t-att-class="approval.className"
+                t-att-title="approval.tooltip"
+            >
+                <i class="fa" t-att-class="approval.icon"/>
+                <span class="mk_pill_label" t-esc="approval.label"/>
+                <i class="fa fa-angle-down mk_pill_caret"/>
+            </button>
+            <t t-set-slot="content">
+                <t t-foreach="approval.options" t-as="opt" t-key="opt.mode">
+                    <DropdownItem
+                        class="'mk_pill_option'"
+                        onSelected="() => this.onSetApproval(opt.mode)"
+                    >
+                        <t t-call="muk_ai.ComposerPillOption">
+                            <t t-set="option" t-value="opt"/>
+                        </t>
+                    </DropdownItem>
+                </t>
+            </t>
+        </Dropdown>
+        <Dropdown t-if="effort" menuClass="'mk_pill_menu'">
+            <button
+                type="button"
+                class="btn btn-sm mk_effort_pill rounded-pill border-0 d-inline-flex align-items-center gap-1"
+                t-att-class="effort.className"
+                t-att-title="effort.tooltip"
+            >
+                <i class="fa fa-tachometer"/>
+                <span class="mk_pill_label" t-esc="effort.label"/>
+                <i class="fa fa-angle-down mk_pill_caret"/>
+            </button>
+            <t t-set-slot="content">
+                <t t-foreach="effort.options" t-as="opt" t-key="opt_index">
+                    <DropdownItem
+                        class="'mk_pill_option'"
+                        onSelected="() => this.onSetEffort(opt.tier)"
+                    >
+                        <t t-call="muk_ai.ComposerPillOption">
+                            <t t-set="option" t-value="opt"/>
+                        </t>
+                    </DropdownItem>
+                </t>
+            </t>
+        </Dropdown>
+    </t>
+
+    <t t-name="muk_ai.ComposerPillOption" owl="1">
+        <span class="mk_pill_option_body d-flex align-items-start gap-2">
+            <i class="fa fa-check mk_pill_check" t-att-class="{ invisible: !option.active }"/>
+            <span>
+                <span class="mk_pill_option_label d-block" t-esc="option.label"/>
+                <span class="mk_pill_option_hint d-block" t-if="option.hint" t-esc="option.hint"/>
+            </span>
+        </span>
     </t>
 
 </templates>

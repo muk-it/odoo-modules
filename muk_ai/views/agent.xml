@@ -38,12 +38,12 @@
 				<field name="model_id"/>
 				<field name="image_128"/>
 				<field name="read_only"/>
-				<field name="enable_web_search"/>
+				<field name="web_search"/>
 				<field name="enable_image_generation"/>
 				<field name="enable_code_interpreter"/>
 				<field name="active"/>
 				<templates>
-					<t t-name="kanban-menu">
+					<t t-name="menu">
 						<div class="container o_kanban_card_manage_pane">
 							<div class="o_kanban_card_manage_section">
 								<a type="open" class="dropdown-item" role="menuitem">Open</a>
@@ -52,44 +52,43 @@
 							</div>
 						</div>
 					</t>
-					<t t-name="kanban-box">
-						<div class="oe_kanban_global_click p-2">
-							<widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" attrs="{'invisible': [('active', '=', True)]}"/>
-							<div class="d-flex">
-								<div>
-									<img
-                                        t-attf-src="/web/image/muk_ai.agent/{{record.id.raw_value}}/image_128"
-                                        alt="Agent"
-                                        class="rounded"
-                                        style="width: 64px; height: 64px; object-fit: cover;"
-                                    />
-								</div>
-								<div class="ms-2 flex-grow-1 overflow-hidden">
-									<h4 class="mb-0 text-truncate">
-										<field name="name"/>
-									</h4>
-									<field
-                                        t-if="record.model_id.raw_value"
-                                        name="model_id"
-                                        class="small px-1 text-bg-primary rounded"
-                                    />
-								</div>
-							</div>
-							<div class="mt-2">
-								<field name="description" class="text-muted"/>
-							</div>
-							<div class="mt-2 d-flex flex-wrap gap-1">
-								<span t-if="record.read_only.raw_value" class="badge text-bg-secondary">Read-only</span>
-								<span t-if="record.enable_web_search.raw_value" class="badge text-bg-info">
-									<i class="fa fa-globe me-1" title="Web Search" role="img"/>Web
-								</span>
-								<span t-if="record.enable_image_generation.raw_value" class="badge text-bg-info">
-									<i class="fa fa-image me-1" title="Image Generation" role="img"/>Image
-								</span>
-								<span t-if="record.enable_code_interpreter.raw_value" class="badge text-bg-info">
-									<i class="fa fa-code me-1" title="Code Interpreter" role="img"/>Code
-								</span>
-							</div>
+					<t t-name="card">
+						<field name="active" invisible="1"/>
+						<widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" attrs="{'invisible': [('active', '!=', False)]}"/>
+						<div class="d-flex">
+							<aside>
+								<img
+                                    t-attf-src="/web/image/muk_ai.agent/{{record.id.raw_value}}/image_128"
+                                    alt="Agent"
+                                    class="rounded"
+                                    style="width: 64px; height: 64px; object-fit: cover;"
+                                />
+							</aside>
+							<main class="ms-2 flex-grow-1 overflow-hidden">
+								<h4 class="mb-0 text-truncate">
+									<field name="name"/>
+								</h4>
+								<field
+                                    t-if="record.model_id.raw_value"
+                                    name="model_id"
+                                    class="small px-1 text-bg-primary rounded"
+                                />
+							</main>
+						</div>
+						<div class="mt-2">
+							<field name="description" class="text-muted"/>
+						</div>
+						<div class="mt-2 d-flex flex-wrap gap-1">
+							<span t-if="record.read_only.raw_value" class="badge text-bg-secondary">Read-only</span>
+							<span t-if="record.web_search.raw_value !== 'off'" class="badge text-bg-info">
+								<i class="fa fa-globe me-1" title="Web Search" role="img"/>Web
+							</span>
+							<span t-if="record.enable_image_generation.raw_value" class="badge text-bg-info">
+								<i class="fa fa-image me-1" title="Image Generation" role="img"/>Image
+							</span>
+							<span t-if="record.enable_code_interpreter.raw_value" class="badge text-bg-info">
+								<i class="fa fa-code me-1" title="Code Interpreter" role="img"/>Code
+							</span>
 						</div>
 					</t>
 				</templates>
@@ -115,6 +114,9 @@
 		<field name="model">muk_ai.agent</field>
 		<field name="arch" type="xml">
 			<form>
+				<div class="alert alert-warning" role="alert" attrs="{'invisible': [('capability_warning', '=', False)]}">
+					<field name="capability_warning" class="fw-bold"/>
+				</div>
 				<sheet>
 					<div class="oe_button_box" name="button_box">
 						<button
@@ -135,7 +137,7 @@
 						</button>
 					</div>
 					<field name="active" invisible="1"/>
-					<widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" attrs="{'invisible': [('active', '=', True)]}"/>
+					<widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" attrs="{'invisible': [('active', '!=', False)]}"/>
 					<field name="image_1920" widget="image" class="oe_avatar" options="{'preview_image': 'image_128'}"/>
 					<div class="oe_title">
 						<label for="name"/>
@@ -145,102 +147,78 @@
 						<field name="description" placeholder="Short description shown to admins..."/>
 					</div>
 					<group>
-						<group string="Model">
-							<field name="model_id" options="{'no_create': True}"/>
+						<group string="Model" name="model">
+							<field name="provider_id" options="{'no_create': True}"/>
+							<field name="model_placeholder" invisible="1"/>
+							<field
+                                name="model_id"
+                                domain="[('modality', '=', 'chat')] + (provider_id and [('provider_id', '=', provider_id)] or [])"
+                                options="{'no_create': True, 'placeholder_field': 'model_placeholder'}"
+                            />
 							<field name="reasoning_effort_options" invisible="1"/>
 							<field
                                 name="reasoning_effort"
-                                widget="effort_picker"
+                                string="Reasoning"
+                                widget="filtered_selection"
                                 options="{'options_field': 'reasoning_effort_options'}"
-                                placeholder="Model Default"
-                                attrs="{'invisible': [('reasoning_effort_options', '=', False)]}"
-                            />
-							<field name="supports_web_search" invisible="1"/>
-							<field name="supports_image_generation" invisible="1"/>
-							<field name="supports_code_interpreter" invisible="1"/>
-							<field
-                                name="enable_web_search"
-                                string="Web Search"
-                                widget="boolean_toggle"
-                                attrs="{'invisible': [('supports_web_search', '=', False)]}"
-                            />
-							<field
-                                name="enable_image_generation"
-                                string="Image Generation"
-                                widget="boolean_toggle"
-                                attrs="{'invisible': [('supports_image_generation', '=', False)]}"
-                            />
-							<field
-                                name="enable_code_interpreter"
-                                string="Code Interpreter"
-                                widget="boolean_toggle"
-                                attrs="{'invisible': [('supports_code_interpreter', '=', False)]}"
+                                placeholder="Model Default" attrs="{'invisible': ['|', ('reasoning_effort_options', '=', False), ('reasoning_effort_options', '=', [])]}"
                             />
 						</group>
-						<group string="Behavior">
-							<field
-                                name="read_only"
-                                string="Readonly"
-                                widget="boolean_toggle"
-                            />
+						<group string="Behavior" name="behavior">
 							<field
                                 name="allow_handoff"
                                 string="Allow Handoff"
                                 widget="boolean_toggle"
                             />
 							<field name="approval_mode"/>
-							<field
-                                name="tool_filter"
-                                widget="tool_picker"
-                                options="{'options_field': 'tool_filter_options'}"
+						</group>
+						<group string="Abilities" name="abilities">
+							<field name="web_search"/>
+							<field name="image_model_placeholder" invisible="1"/>
+							<label for="enable_image_generation" string="Images"/>
+							<div class="d-flex align-items-center gap-2 flex-wrap">
+								<field
+                                name="enable_image_generation"
+                                class="w-auto"
+                                widget="boolean_toggle"
+                                nolabel="1"
                             />
-							<field
-                                name="essential_tool_names"
-                                widget="tool_picker"
-                                options="{'options_field': 'tool_filter_options'}"
+								<field
+                                name="image_model_id"
+                                class="text-muted flex-grow-1 w-auto"
+                                options="{'no_create': True, 'placeholder_field': 'image_model_placeholder'}" attrs="{'invisible': [('enable_image_generation', '=', False)]}"
                             />
+							</div>
+							<label for="enable_code_interpreter" string="Code Interpreter"/>
+							<div class="d-flex align-items-center gap-2 flex-wrap">
+								<field
+                                name="enable_code_interpreter"
+                                class="w-auto"
+                                widget="boolean_toggle"
+                                nolabel="1"
+                            />
+								<field
+                                name="code_interpreter_performer"
+                                class="text-muted w-auto" attrs="{'invisible': [('enable_code_interpreter', '=', False)]}"
+                            />
+							</div>
 						</group>
 					</group>
 					<notebook>
-						<page string="Suggestions" name="suggestions">
-							<field name="suggestion_ids" nolabel="1">
-								<kanban>
-									<field name="id"/>
-									<field name="sequence"/>
-									<field name="label"/>
-									<field name="prompt"/>
-									<templates>
-										<t t-name="kanban-box">
-											<div class="oe_kanban_global_click p-2 overflow-hidden">
-												<div class="fw-semibold text-truncate">
-													<field name="label"/>
-												</div>
-												<div class="small text-muted text-truncate">
-													<field name="prompt"/>
-												</div>
-											</div>
-										</t>
-									</templates>
-								</kanban>
-								<form>
-									<sheet>
-										<group>
-											<field name="label" placeholder="e.g. Explore"/>
-											<field name="sequence"/>
-										</group>
-										<group>
-											<field
-                                                name="prompt"
-                                                nolabel="1"
-                                                placeholder="Text sent to the assistant when the user clicks this suggestion..."
-                                            />
-										</group>
-									</sheet>
-								</form>
-							</field>
-							<div class="oe_form_box_info mt-2">
-								Starter prompts shown in the empty chat for this agent. Leave empty to show no suggestions.
-							</div>
+						<page string="Tools" name="tools">
+							<group>
+								<field name="read_only" widget="boolean_toggle"/>
+								<field
+                                    name="tool_filter"
+                                    widget="tool_picker"
+                                    options="{'options_field': 'tool_filter_options'}"
+                                />
+								<field
+                                    name="essential_tool_names"
+                                    widget="tool_picker"
+                                    options="{'options_field': 'tool_filter_options'}"
+                                />
+							</group>
 						</page>
 						<page string="System Prompt" name="system_prompt">
 							<field
@@ -273,13 +251,49 @@
 								</div>
 							</div>
 						</page>
+						<page string="Suggestions" name="suggestions">
+							<field name="suggestion_ids" nolabel="1">
+								<kanban>
+									<field name="id"/>
+									<field name="sequence"/>
+									<field name="label"/>
+									<field name="prompt"/>
+									<templates>
+										<t t-name="card" class="flex-row">
+											<main class="flex-grow-1 overflow-hidden">
+												<div class="fw-semibold text-truncate">
+													<field name="label"/>
+												</div>
+												<div class="small text-muted text-truncate">
+													<field name="prompt"/>
+												</div>
+											</main>
+										</t>
+									</templates>
+								</kanban>
+								<form>
+									<sheet>
+										<group>
+											<field name="label" placeholder="e.g. Explore"/>
+											<field name="sequence"/>
+										</group>
+										<group>
+											<field
+                                                name="prompt"
+                                                nolabel="1"
+                                                placeholder="Text sent to the assistant when the user clicks this suggestion..."
+                                            />
+										</group>
+									</sheet>
+								</form>
+							</field>
+							<div class="oe_form_box_info mt-2">
+								Starter prompts shown in the empty chat for this agent. Leave empty to show no suggestions.
+							</div>
+						</page>
 					</notebook>
 				</sheet>
-				<div class="oe_chatter">
-					<field name="message_follower_ids"/>
-					<field name="activity_ids"/>
-					<field name="message_ids"/>
-				</div>
+				<chatter/>
 			</form>
 		</field>
 	</record>

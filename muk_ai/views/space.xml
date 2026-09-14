@@ -31,8 +31,8 @@
 				<field
                     name="domain"
                     widget="domain"
-                    options="{'model': 'muk_ai.session'}"
-                    attrs="{'invisible': [('user_id', '!=', False)]}"
+                    options="{'model': 'muk_ai.session', 'foldable': True, 'allow_expressions': True}"
+                    context="{'uid': uid}" attrs="{'invisible': [('user_id', '!=', False)]}"
                     readonly="1"
                 />
 			</tree>
@@ -70,19 +70,15 @@
 							<field name="retention_mode"/>
 							<label
 								for="retention_days"
-								string="Keep For"
-								invisible="retention_mode != 'days'"
+								string="Keep For" attrs="{'invisible': [('retention_mode', '!=', 'days')]}"
 							/>
-							<div class="o_row" invisible="retention_mode != 'days'">
+							<div class="o_row" attrs="{'invisible': [('retention_mode', '!=', 'days')]}">
 								<field name="retention_days"/>
 								<span class="ms-2">Days</span>
 							</div>
 						</group>
 					</group>
-					<group
-                        string="Instructions"
-                        attrs="{'invisible': [('user_id', '=', False)]}"
-                    >
+					<group string="Instructions" attrs="{'invisible': [('user_id', '=', False)]}">
 						<field
 							name="instructions"
 							nolabel="1"
@@ -90,17 +86,16 @@
 							placeholder="How the assistant should work in this space..."
 						/>
 					</group>
-					<group
-                        string="System Space"
-                        attrs="{'invisible': [('user_id', '!=', False)]}"
-                    >
+					<group string="System Space" attrs="{'invisible': [('user_id', '!=', False)]}">
+						<field name="can_edit_domain" invisible="1"/>
+						<field name="pinned" widget="boolean_toggle"/>
 						<field
 							name="domain"
 							widget="domain"
-							options="{'model': 'muk_ai.session'}"
+							options="{'model': 'muk_ai.session', 'foldable': False, 'allow_expressions': True}"
+							context="{'uid': uid}"
 							nolabel="1"
-							colspan="2"
-							readonly="1"
+							colspan="2" attrs="{'readonly': [('can_edit_domain', '=', False)]}"
 						/>
 					</group>
 				</sheet>

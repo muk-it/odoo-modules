@@ -1,3 +1,5 @@
+// @odoo-module
+
 import { useEffect } from '@odoo/owl';
 
 import { makeRefCount } from '@muk_ai/chat/session/refcount';

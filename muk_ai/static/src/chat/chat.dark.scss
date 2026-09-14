@@ -141,6 +141,17 @@
     .mk_approval_pill.mk_approval_bypass {
         color: #f0b968;
     }
+    .mk_composer_hint kbd {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.13);
+        color: var(--mk-text-muted);
+    }
+    .mk_effort_pill {
+        background: rgba(255, 255, 255, 0.07);
+        &:hover {
+            background: rgba(255, 255, 255, 0.13);
+        }
+    }
     .mk_ask_card {
         .mk_ask_head,
         .mk_ask_toggle,

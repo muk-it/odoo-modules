@@ -193,8 +193,15 @@
                             isQueueing="isQueueing"
                             attachments="session.state.pendingAttachments"
                             agents="session.state.agents"
+                            sessionId="session.state.sessionId"
+                            viewContext="session.state.viewContext"
                             activeAgentId="session.state.agentId"
                             focusToken="session.state.focusToken"
+                            approvalPill="approvalPill"
+                            effortPill="effortPill"
+                            showHint="true"
+                            onSetApproval="(mode) => session.setApprovalMode(mode)"
+                            onSetEffort="(tier) => session.setReasoningEffort(tier)"
                             onInput.bind="onInputChange"
                             onSend.bind="onSend"
                             onStop.bind="onStop"
@@ -203,13 +210,6 @@
                             onOpenAttachment.bind="onOpenAttachment"
                             onSelectAgent="(agentId) => session.onSetAgent(agentId)"
                         />
-                        <div
-                            class="mk_composer_hint mt-1 ps-1"
-                            t-att-class="{ 'd-none': session.state.readonly }"
-                        >
-                            <span><kbd>Enter</kbd> to send</span>
-                            <span><kbd>Shift</kbd>+<kbd>Enter</kbd> for newline</span>
-                        </div>
                     </div>
                 </t>
             </main>
@@ -303,17 +303,6 @@
             >
                 <t t-esc="resumeRelativeText"/>
             </span>
-            <button
-                t-if="session.state.sessionId"
-                class="btn btn-sm mk_approval_pill rounded-pill border-0 d-inline-flex align-items-center gap-1"
-                t-att-class="approvalPill.className"
-                t-att-title="approvalPill.tooltip"
-                t-att-disabled="!session.canWrite()"
-                t-on-click="() => this.session.cycleApprovalMode()"
-            >
-                <i class="fa" t-att-class="approvalPill.icon"/>
-                <span t-esc="approvalPill.label"/>
-            </button>
             <div class="mk_tokens ms-auto d-flex align-items-center gap-2" t-if="session.state.sessionId">
                 <button
                     class="btn btn-link btn-sm mk_search_toggle"

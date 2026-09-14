@@ -72,14 +72,10 @@ class TestSessionBus(TransactionCase):
 
         The core builder reads the websocket request for the caller, which a
         plain transaction has none of, so it is stood in for the same way
-        Odoo tests its own builder. Mail's own builder picks a guest out of
-        the request cookies, so the stand-in carries an empty cookie jar and
-        mail's module globals are pointed at it — it reads request and
-        wsrequest from its own namespace, which the bus patch never reaches.
+        Odoo tests its own builder.
         """
         request = MagicMock()
         request.session.uid = user.id
-        request.httprequest.cookies = {}
         with (
             patch('odoo.addons.bus.models.ir_websocket.wsrequest', new=request),
             patch('odoo.addons.mail.models.ir_websocket.request', new=None),

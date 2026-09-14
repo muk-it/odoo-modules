@@ -2,7 +2,7 @@
 
 <templates xml:space="preserve">
 
-    <t t-name="muk_ai.ShareDialog">
+    <t t-name="muk_ai.ShareDialog" owl="1">
         <Dialog size="'md'" title="title">
             <div class="mk_share_dialog" t-if="state.fieldInfo">
                 <label class="mk_share_label">Who may read it</label>

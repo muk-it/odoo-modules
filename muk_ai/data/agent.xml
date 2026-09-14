@@ -5,7 +5,7 @@
 	<record id="agent_general" model="muk_ai.agent">
 		<field name="name">General Assistant</field>
 		<field name="sequence">10</field>
-		<field name="enable_web_search" eval="True"/>
+		<field name="web_search">auto</field>
 		<field name="allow_handoff" eval="True"/>
 		<field name="description">Default agent with full tool access.</field>
 		<field name="essential_tool_names" eval="[
@@ -142,7 +142,7 @@ Today's overview — focused triage for right now.
    - If truncated, add `(+N more)` below the table.
    - After the table, pick **the single most urgent** from the full list and explain in one sentence why, with the record reference.
 
-2. **Inbox highlights** — summarize my unread Discuss messages. **Do not mark anything as read** (no calls to `set_message_done`, `mark_as_read`, `channel_fetched`, or similar).
+2. **Inbox highlights** — summarize my unread Discuss messages. **Do not mark anything as read** (no calls to `set_message_done`, `channel_fetched`, or similar).
    - Surface up to 5 of the most relevant: @mentions of me first, then DMs with a clear question or decision request, then channel threads that look unresolved.
    - Per item: sender, one-line gist, and a reference to the record the message is on as `[Display Name](model,id)` so I can jump to it.
    - End with a one-liner: total unread across mentions, DMs, and channels.

@@ -16,8 +16,9 @@ class ResCompany(models.Model):
         comodel_name='muk_ai.provider',
         string='Default AI Provider',
         help=(
-            'Provider used when an agent does not specify one. '
-            'Falls back to the first active provider if unset.'
+            'Provider whose default models serve an agent that picks none, '
+            'before the other providers in list order. Falls back to the '
+            'first active provider if unset.'
         ),
         domain=[('active', '=', True)],
     )

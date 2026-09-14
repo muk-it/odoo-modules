@@ -4,8 +4,8 @@ from unittest.mock import patch
 
 from odoo import models, release
 
+from odoo.addons.muk_ai.providers.anthropic import AnthropicProvider
 from odoo.addons.muk_ai.tests.common import AITestCommon
-from odoo.addons.muk_ai.tools import DEFAULT_CONTEXT_WINDOW
 
 
 class TestAiAgent(AITestCommon):
@@ -58,6 +58,18 @@ class TestAiAgent(AITestCommon):
         agent.model_id = plain.id
         self.assertFalse(agent.reasoning_effort_options)
         self.assertFalse(agent.reasoning_effort)
+
+    def test_agent_reasoning_effort_follows_the_resolved_model(self):
+        capable = self._create_model(
+            'gpt-5-resolved-effort-test', reasoning_efforts=['low', 'high']
+        )
+        provider = capable.provider_id
+        provider.default_chat_model_id = capable.id
+        agent = self.env['muk_ai.agent'].create(
+            {'name': 'Resolved Effort Agent', 'provider_id': provider.id}
+        )
+        self.assertFalse(agent.model_id)
+        self.assertEqual(agent.reasoning_effort_options, ['low', 'high'])
 
     def test_apply_tool_filter_empty_allows_all(self):
         agent = self.env['muk_ai.agent'].create(
@@ -251,21 +263,7 @@ class TestAiAgent(AITestCommon):
                 'model_id': model.id,
             }
         )
-        self.assertEqual(agent._resolve_model(), model)
-        self.assertEqual(agent._resolve_context_window(), 128000)
-
-    def test_agent_resolve_context_window_falls_back_to_default(self):
-        default_model = self._make_model('auto-default', context_window=64000)
-        self.provider.default_model_id = default_model
-        self.env.company.default_ai_provider_id = self.provider
-        agent = self.env['muk_ai.agent'].create({'name': 'Auto'})
-        self.assertEqual(agent._resolve_context_window(), 64000)
-
-    def test_agent_resolve_context_window_hard_fallback(self):
-        default_provider = self.env['muk_ai.provider']._get_default()
-        default_provider.default_model_id = False
-        agent = self.env['muk_ai.agent'].create({'name': 'NoModel'})
-        self.assertEqual(agent._resolve_context_window(), DEFAULT_CONTEXT_WINDOW)
+        self.assertEqual(agent._resolve_model_for('chat'), model)
 
     def test_session_tool_schema_respects_agent_filter(self):
         agent = self.env['muk_ai.agent'].create(
@@ -360,7 +358,7 @@ class TestAiAgent(AITestCommon):
         agent.invalidate_recordset()
         self.assertEqual(agent.prompt_history_count, 2)
 
-    def test_provider_capabilities_force_off_the_unsupported_enable_flags(self):
+    def test_an_unsupported_code_interpreter_keeps_its_toggle_on(self):
         openai_model = self._make_model('cap-openai', provider=self.provider)
         anthropic_model = self._make_model(
             'cap-anthropic',
@@ -370,22 +368,19 @@ class TestAiAgent(AITestCommon):
             {
                 'name': 'Mirror',
                 'model_id': openai_model.id,
-                'enable_web_search': True,
+                'web_search': 'auto',
                 'enable_image_generation': True,
                 'enable_code_interpreter': True,
             }
         )
-        self.assertTrue(agent.supports_web_search)
-        self.assertTrue(agent.supports_image_generation)
-        self.assertTrue(agent.supports_code_interpreter)
+        self.assertEqual(agent._code_interpreter_route(), 'native')
+        with patch.object(AnthropicProvider, 'supports_code_interpreter', False):
+            self.env.invalidate_all()
+            agent.model_id = anthropic_model.id
+            self.assertIsNone(agent._code_interpreter_route())
+            self.assertTrue(agent.enable_code_interpreter)
+        self.assertEqual(agent.web_search, 'auto')
         self.assertTrue(agent.enable_image_generation)
-        agent.model_id = anthropic_model.id
-        self.assertTrue(agent.supports_web_search)
-        self.assertFalse(agent.supports_image_generation)
-        self.assertTrue(agent.supports_code_interpreter)
-        self.assertFalse(agent.enable_image_generation)
-        self.assertTrue(agent.enable_web_search)
-        self.assertTrue(agent.enable_code_interpreter)
 
     def test_compute_suggestions_reflects_suggestion_records(self):
         agent = self.env['muk_ai.agent'].create(

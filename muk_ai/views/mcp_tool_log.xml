@@ -19,8 +19,8 @@
 		</field>
 	</record>
 
-	<record id="view_mcp_log_tree_inherit_muk_ai" model="ir.ui.view">
-		<field name="name">muk_mcp.log.tree.inherit.muk_ai</field>
+	<record id="view_mcp_log_list_inherit_muk_ai" model="ir.ui.view">
+		<field name="name">muk_mcp.log.list.inherit.muk_ai</field>
 		<field name="model">muk_mcp.log</field>
 		<field name="inherit_id" ref="muk_mcp.view_mcp_log_tree"/>
 		<field name="arch" type="xml">

@@ -4,6 +4,7 @@ import ipaddress
 import json
 import re
 import socket
+from time import monotonic
 from typing import NamedTuple
 from urllib.parse import urljoin, urlparse
 
@@ -37,6 +38,24 @@ _REDIRECT_STATUSES = frozenset({301, 302, 303, 307, 308})
 _HTML_SNIFF_RE = re.compile(rb'<\s*(?:!doctype\s+html|html|head|body)\b', re.IGNORECASE)
 _GITHUB_BLOB_RE = re.compile(
     r'^https?://github\.com/([^/]+)/([^/]+)/blob/(.+)$', re.IGNORECASE
+)
+
+# ----------------------------------------------------------
+# Favicon Cache
+# ----------------------------------------------------------
+
+FAVICON_ROUTE = '/muk_ai/source/icon'
+FAVICON_MAX_BYTES = 64 * 1024
+FAVICON_DEADLINE = 3
+FAVICON_BUDGET = 5
+FAVICON_MAX_AGE_DAYS = 30
+FAVICON_CACHE_SECONDS = 7 * 24 * 60 * 60
+FAVICON_GC_BATCH = 1000
+
+# No SVG: opened directly it renders as a document whose scripts run, so a
+# hostile favicon would be stored XSS on this Odoo's own origin.
+FAVICON_MIMETYPES = frozenset(
+    {'image/bmp', 'image/gif', 'image/jpeg', 'image/png', 'image/webp', 'image/x-icon'}
 )
 
 # ----------------------------------------------------------
@@ -120,40 +139,48 @@ def _charset(content_type: str) -> str | None:
     return None
 
 
-def _read_body(response: urllib3.HTTPResponse, url: str) -> bytes:
-    """Stream a response body, enforcing the size cap.
+def _read_body(response: urllib3.HTTPResponse, url: str, max_bytes: int) -> bytes:
+    """Stream a response body, stopping as soon as it exceeds ``max_bytes``.
 
-    :raise UserError: when the body exceeds ``URL_FETCH_MAX_BYTES``
+    :raise UserError: when the body exceeds ``max_bytes``
     """
     chunks, total = [], 0
     for chunk in response.stream(CHUNK_SIZE):
         chunks.append(chunk)
         total += len(chunk)
-        if total > URL_FETCH_MAX_BYTES:
+        if total > max_bytes:
             raise UserError(
                 _(
-                    '@url: response from %s exceeds the %s MiB cap.',
-                    url,
-                    URL_FETCH_MAX_BYTES // (1024 * 1024),
+                    '@url: response from %(url)s exceeds the %(cap)s byte cap.',
+                    url=url,
+                    cap=max_bytes,
                 )
             )
     return b''.join(chunks)
 
 
-def fetch_url(url: str) -> FetchResult:
+def fetch_url(
+    url: str,
+    max_bytes: int = URL_FETCH_MAX_BYTES,
+    deadline: float | None = None,
+) -> FetchResult:
     """Fetch an ``https://`` URL, following redirects with SSRF guards.
 
-    Every redirect hop is re-validated against the SSRF guard and pinned to
-    its resolved IP, so a public URL cannot bounce the fetch to an internal
-    address. ``http`` URLs are upgraded to ``https`` and GitHub blob URLs are
-    rewritten to their raw endpoint.
-
-    :return: the fetched page with its final URL and decoded metadata
-    :raise UserError: on validation failure, an HTTP error status, a missing
-        redirect target, too many redirects, or a body over the size cap
+    :param deadline: seconds the whole fetch may take, redirects included
+    :raise UserError: on validation failure, an HTTP error status, too many
+        redirects, a body over ``max_bytes``, or the deadline running out
     """
     current = _normalize_url(url)
-    for _attempt in range(MAX_REDIRECTS + 1):
+    expires = monotonic() + deadline if deadline else None
+    for _hop in range(MAX_REDIRECTS + 1):
+        connect_timeout, read_timeout = CONNECT_TIMEOUT, READ_TIMEOUT
+        if expires is not None:
+            if (left := expires - monotonic()) <= 0:
+                raise UserError(_('@url: %s took longer than allowed.', url))
+            connect_timeout = min(connect_timeout, left)
+            read_timeout = min(read_timeout, left)
+        # Re-validated and IP-pinned on every hop, so a public URL cannot
+        # bounce the fetch to an internal address.
         host, resolved = _validate_url(current)
         parsed = urlparse(current)
         path = parsed.path or '/'
@@ -164,7 +191,7 @@ def fetch_url(url: str) -> FetchResult:
             port=parsed.port or 443,
             assert_hostname=host,
             server_hostname=host,
-            timeout=urllib3.Timeout(connect=CONNECT_TIMEOUT, read=READ_TIMEOUT),
+            timeout=urllib3.Timeout(connect=connect_timeout, read=read_timeout),
             retries=False,
         )
         try:
@@ -196,7 +223,7 @@ def fetch_url(url: str) -> FetchResult:
                             url=current,
                         )
                     )
-                body = _read_body(response, current)
+                body = _read_body(response, current, max_bytes)
                 raw_type = response.headers.get('Content-Type', '') or ''
                 return FetchResult(
                     url=current,

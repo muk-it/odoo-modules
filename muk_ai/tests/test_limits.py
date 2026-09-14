@@ -51,7 +51,7 @@ class TestSessionLimits(AITestCommon):
                 'currency': 'EUR',
             }
         )
-        cls.provider.default_model_id = cls.cost_model
+        cls.provider.default_chat_model_id = cls.cost_model
 
     # ----------------------------------------------------------
     # Helper
@@ -217,8 +217,7 @@ class TestSessionLimits(AITestCommon):
         self.assertIn('1.50 EUR', session.error_message)
 
     def test_cost_error_falls_back_to_usd_without_a_model(self):
-        self.provider.default_model_id = False
-        self.cost_model.active = False
+        self._clear_default_models()
         session = self._session()
         self.assertEqual(session._cost_currency(), 'USD')
         session._turn_cost_error(2.0)

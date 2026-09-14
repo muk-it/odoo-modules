@@ -48,8 +48,8 @@ class TestAiSession(AITestCommon):
     ) -> AbstractContextManager[MagicMock]:
         """Patch the provider to pop one payload per LLM request.
 
-        :param captured: When given, receives the inputs, tool schema and
-            built-in tool flags of every request.
+        :param captured: When given, receives the inputs, tool schema,
+            built-in tool flags and effort tier of every request.
         :raise AssertionError: When more requests are made than payloads given.
         """
         remaining = list(payloads)
@@ -69,12 +69,10 @@ class TestAiSession(AITestCommon):
                         'inputs': inputs,
                         'tools_schema': tools_schema,
                         'enable_web_search': kwargs.get('enable_web_search', False),
-                        'enable_image_generation': kwargs.get(
-                            'enable_image_generation', False
-                        ),
                         'enable_code_interpreter': kwargs.get(
                             'enable_code_interpreter', False
                         ),
+                        'reasoning_effort': kwargs.get('reasoning_effort'),
                     }
                 )
             if not remaining:
@@ -175,11 +173,7 @@ class TestAiSession(AITestCommon):
         stale = fields.Datetime.now() - timedelta(seconds=WORKER_STALE_THRESHOLD + 30)
         self.env.cr.execute(
             'UPDATE muk_ai_session SET write_date = %s, claimed_at = %s WHERE id = %s',
-            (
-                stale,
-                stale,
-                session.id,
-            ),
+            [stale, stale, session.id],
         )
         session.invalidate_recordset()
 
@@ -193,10 +187,7 @@ class TestAiSession(AITestCommon):
             def __enter__(self_):
                 self_._cr.execute(
                     'SELECT pg_try_advisory_lock(%s, %s)',
-                    (
-                        ADVISORY_LOCK_NAMESPACE,
-                        session_id,
-                    ),
+                    [ADVISORY_LOCK_NAMESPACE, session_id],
                 )
                 acquired = self_._cr.fetchone()[0]
                 assert acquired, 'failed to acquire test lock'
@@ -206,10 +197,7 @@ class TestAiSession(AITestCommon):
                 try:
                     self_._cr.execute(
                         'SELECT pg_advisory_unlock(%s, %s)',
-                        (
-                            ADVISORY_LOCK_NAMESPACE,
-                            session_id,
-                        ),
+                        [ADVISORY_LOCK_NAMESPACE, session_id],
                     )
                     self_._cr.fetchone()
                 finally:
@@ -223,19 +211,13 @@ class TestAiSession(AITestCommon):
         try:
             cursor.execute(
                 'SELECT pg_try_advisory_lock(%s, %s)',
-                (
-                    ADVISORY_LOCK_NAMESPACE,
-                    session_id,
-                ),
+                [ADVISORY_LOCK_NAMESPACE, session_id],
             )
             acquired = cursor.fetchone()[0]
             if acquired:
                 cursor.execute(
                     'SELECT pg_advisory_unlock(%s, %s)',
-                    (
-                        ADVISORY_LOCK_NAMESPACE,
-                        session_id,
-                    ),
+                    [ADVISORY_LOCK_NAMESPACE, session_id],
                 )
                 cursor.fetchone()
             return acquired
@@ -664,7 +646,7 @@ class TestAiSession(AITestCommon):
                 'output_rate': 2.0,
             }
         )
-        self.provider.default_model_id = fallback.id
+        self.provider.default_chat_model_id = fallback
         session = self.env['muk_ai.session'].create({'name': 'No override'})
         session.agent_id = False
         self.assertEqual(session._effective_model(), fallback.technical_name)
@@ -735,8 +717,7 @@ class TestAiSession(AITestCommon):
         agent = self.env['muk_ai.agent'].create(
             {
                 'name': 'Power',
-                'enable_web_search': True,
-                'enable_image_generation': True,
+                'web_search': 'auto',
                 'enable_code_interpreter': True,
             }
         )
@@ -751,7 +732,6 @@ class TestAiSession(AITestCommon):
             session.start('go')
         self.assertTrue(captured)
         self.assertTrue(captured[0]['enable_web_search'])
-        self.assertTrue(captured[0]['enable_image_generation'])
         self.assertTrue(captured[0]['enable_code_interpreter'])
 
     def test_agent_capability_flags_default_off(self):
@@ -767,7 +747,6 @@ class TestAiSession(AITestCommon):
             session.start('go')
         self.assertTrue(captured)
         self.assertFalse(captured[0]['enable_web_search'])
-        self.assertFalse(captured[0]['enable_image_generation'])
         self.assertFalse(captured[0]['enable_code_interpreter'])
 
     # ----------------------------------------------------------
@@ -1407,14 +1386,16 @@ class TestAiSession(AITestCommon):
         ]
         self.assertEqual(len(counted), 1)
 
-    def test_request_inputs_strip_internal_keys(self):
+    def test_request_inputs_keep_internal_keys_for_the_adapters(self):
         session = self.env['muk_ai.session'].create({'name': 'strip'})
         session.conversation = [
             {'role': 'user', 'content': 'hi'},
             {'role': 'user', 'content': 'files', '_answer_entry': True},
         ]
-        for item in session._build_request_inputs():
-            self.assertNotIn('_answer_entry', item)
+        inputs = session._build_request_inputs()
+        self.assertTrue(any(item.get('_answer_entry') for item in inputs))
+        wired = self.provider._get_client()._wire_items(inputs)
+        self.assertFalse(any('_answer_entry' in item for item in wired))
 
     def test_fork_at_event_creates_independent_session(self):
         session = self.env['muk_ai.session'].create({'name': 'forkable'})
@@ -1780,6 +1761,89 @@ class TestAiSession(AITestCommon):
         session = self.env['muk_ai.session'].create({'name': 'mode-bad'})
         with self.assertRaises(UserError):
             session.set_approval_mode('banana')
+
+    # ----------------------------------------------------------
+    # Tests: reasoning effort override
+    # ----------------------------------------------------------
+
+    def _thinking_session(self, agent_effort: str | bool = False) -> models.BaseModel:
+        """Create a session on an agent whose model offers three effort tiers."""
+        model = self._create_model(
+            'test-thinker', reasoning_efforts=['low', 'medium', 'high']
+        )
+        agent = self.env['muk_ai.agent'].create(
+            {
+                'name': 'Thinker',
+                'model_id': model.id,
+                'reasoning_effort': agent_effort,
+            }
+        )
+        return self.env['muk_ai.session'].create(
+            {
+                'name': 'effort',
+                'agent_id': agent.id,
+            }
+        )
+
+    def test_set_reasoning_effort_overrides_the_agent_default(self):
+        session = self._thinking_session(agent_effort='low')
+        self.assertEqual(session._effective_reasoning_effort(), 'low')
+        snapshot = session.set_reasoning_effort('high')
+        self.assertEqual(session._effective_reasoning_effort(), 'high')
+        self.assertEqual(snapshot['override_reasoning_effort'], 'high')
+        self.assertEqual(snapshot['effective_reasoning_effort'], 'high')
+        self.assertEqual(snapshot['agent_reasoning_effort'], 'low')
+        snapshot = session.set_reasoning_effort(None)
+        self.assertFalse(session.override_reasoning_effort)
+        self.assertEqual(session._effective_reasoning_effort(), 'low')
+        self.assertFalse(snapshot['override_reasoning_effort'])
+        self.assertEqual(snapshot['effective_reasoning_effort'], 'low')
+
+    def test_set_reasoning_effort_rejects_a_tier_the_model_lacks(self):
+        session = self._thinking_session()
+        with self.assertRaises(UserError):
+            session.set_reasoning_effort('max')
+
+    def test_reasoning_effort_options_follow_the_resolved_model(self):
+        session = self._thinking_session()
+        self.assertEqual(session._reasoning_effort_options(), ['low', 'medium', 'high'])
+        session.agent_id.model_id.reasoning_efforts = []
+        self.assertEqual(session._reasoning_effort_options(), [])
+
+    def test_reasoning_effort_override_ignored_once_unsupported(self):
+        session = self._thinking_session(agent_effort='low')
+        session.set_reasoning_effort('high')
+        session.agent_id.model_id.reasoning_efforts = ['low', 'medium']
+        self.assertEqual(session.override_reasoning_effort, 'high')
+        self.assertEqual(session._effective_reasoning_effort(), 'low')
+        self.assertEqual(session._state_metrics()['effective_reasoning_effort'], 'low')
+
+    def test_reasoning_effort_fields_are_readable_by_the_client(self):
+        session = self._thinking_session(agent_effort='low')
+        session.set_reasoning_effort('high')
+        [values] = session.read(
+            [
+                'override_reasoning_effort',
+                'effective_reasoning_effort',
+                'reasoning_effort_options',
+                'agent_reasoning_effort',
+            ]
+        )
+        self.assertEqual(values['override_reasoning_effort'], 'high')
+        self.assertEqual(values['effective_reasoning_effort'], 'high')
+        self.assertEqual(values['reasoning_effort_options'], ['low', 'medium', 'high'])
+        self.assertEqual(values['agent_reasoning_effort'], 'low')
+
+    def test_reasoning_effort_override_reaches_the_request(self):
+        session = self._thinking_session(agent_effort='low')
+        captured = []
+        with self._patch_provider([self._text_payload('hi')], captured):
+            session.send_message('before')
+        self.assertEqual(captured[0]['reasoning_effort'], 'low')
+        session.set_reasoning_effort('high')
+        with self._patch_provider([self._text_payload('hi')], captured):
+            session.send_message('after')
+        self.assertEqual(captured[1]['reasoning_effort'], 'high')
 
     # ----------------------------------------------------------
     # Tests: send_message routing

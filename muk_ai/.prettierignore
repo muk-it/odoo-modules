@@ -4,9 +4,6 @@
 node_modules/
 package-lock.json
 
-# Vendored third-party libraries
-static/lib/
-
 # Lint / type-check caches
 .ruff_cache/
 .mypy_cache/
@@ -17,3 +14,9 @@ venv/
 
 # Test / coverage
 htmlcov/
+
+# Vendored third-party bundles
+static/lib/
+
+# App-store description page
+static/description/

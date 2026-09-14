@@ -1,3 +1,5 @@
+// @odoo-module
+
 /**
  * Count how many holders claim each key.
  *
