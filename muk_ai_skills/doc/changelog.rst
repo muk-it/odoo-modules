@@ -1,3 +1,13 @@
+`1.4.0`
+-------
+
+- Skill Availability
+
+`1.3.0`
+-------
+
+- Named Skill Tool Cards
+
 `1.2.0`
 -------
 
