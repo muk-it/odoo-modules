@@ -9,8 +9,6 @@ from lxml import etree, html
 # Extraction Config
 # ----------------------------------------------------------
 
-# Dropped wholesale before rendering: non-content, interactive, and
-# boilerplate containers (nav/header/footer/aside are readability noise).
 _DROP_TAGS = (
     'script',
     'style',
@@ -30,7 +28,6 @@ _DROP_TAGS = (
     'aside',
 )
 
-# Preferred main-content containers, most specific first.
 _MAIN_XPATHS = (
     '//main',
     '//article',
@@ -50,8 +47,6 @@ _WS_RE = re.compile(r'[ \t\r\f\v]+')
 _BLANK_RE = re.compile(r'\n{3,}')
 _DIGITS_RE = re.compile(r'\d+')
 
-# ``rel`` tokens that mark a link as the page's icon. A scalable icon
-# (sizes="any") outranks every pixel size a page can advertise.
 _ICON_RELS = frozenset({'icon', 'apple-touch-icon', 'apple-touch-icon-precomposed'})
 _ICON_SIZE_ANY = 10_000
 

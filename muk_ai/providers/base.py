@@ -187,7 +187,8 @@ class ProviderBase:
     ) -> dict:
         """Render one image with a catalogued image model of this provider.
 
-        Defaults to the OpenAI ``/images/generations`` wire.
+        Defaults to the OpenAI ``/images/generations`` wire. ``gpt-image-*``
+        models reject ``response_format`` and always answer base64.
 
         :raise UserError: when the request fails or no image data comes back
         """
@@ -196,7 +197,6 @@ class ProviderBase:
             'prompt': prompt,
             **{key: value for key, value in (options or {}).items() if value},
         }
-        # gpt-image-* rejects response_format and always answers base64.
         if not model.startswith('gpt-image'):
             body['response_format'] = 'b64_json'
         try:
