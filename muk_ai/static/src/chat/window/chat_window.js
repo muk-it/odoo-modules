@@ -8,6 +8,8 @@ import {
     useState,
 } from '@odoo/owl';
 
+import { Dropdown } from '@web/core/dropdown/dropdown';
+import { DropdownItem } from '@web/core/dropdown/dropdown_item';
 import { _t } from '@web/core/l10n/translation';
 import { useDropzone } from '@web/core/dropzone/dropzone_hook';
 import { useFileViewer } from '@web/core/file_viewer/file_viewer_hook';
@@ -18,6 +20,7 @@ import { AttachmentCard } from '@muk_ai/core/attachment/attachment_card';
 import { SourceIcon, SourceList } from '@muk_ai/chat/artifacts/types/sources_tab';
 import {
     approvalPill,
+    effortPill,
     costTooltip,
     formatCost,
     formatRelativeTime,
@@ -52,6 +55,8 @@ export class ChatWindow extends Component {
     static template = 'muk_ai.ChatWindow';
     static components = {
         ChatComposer,
+        Dropdown,
+        DropdownItem,
         ToolCard,
         ToolGroup,
         AttachmentCard,
@@ -305,6 +310,19 @@ export class ChatWindow extends Component {
         return { label: formatCost(cost), tooltip: costTooltip(cost) };
     }
     get approvalPill() {
-        return approvalPill(this.session.state);
+        return this.session.state.sessionId
+            ? approvalPill(this.session.state)
+            : undefined;
+    }
+    get effortPill() {
+        return this.session.state.sessionId
+            ? effortPill(this.session.state) || undefined
+            : undefined;
+    }
+    onSetApproval(mode) {
+        this.session.setApprovalMode(mode);
+    }
+    onSetEffort(tier) {
+        this.session.setReasoningEffort(tier);
     }
 }

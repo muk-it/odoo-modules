@@ -26,6 +26,7 @@ import { AIChatShareUsers } from '@muk_ai/chat/share/share_users';
 import { useNotificationBadge } from '@muk_ai/core/notification_badge';
 import {
     approvalPill,
+    effortPill,
     costTooltip,
     formatCost,
     formatRelativeTime,
@@ -1101,7 +1102,14 @@ export class AIChat extends Component {
         return viewContextTooltip(this.session.state.viewContext);
     }
     get approvalPill() {
-        return approvalPill(this.session.state);
+        return this.session.state.sessionId
+            ? approvalPill(this.session.state)
+            : undefined;
+    }
+    get effortPill() {
+        return this.session.state.sessionId
+            ? effortPill(this.session.state) || undefined
+            : undefined;
     }
 }
 

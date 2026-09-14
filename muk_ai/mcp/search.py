@@ -7,8 +7,6 @@ from odoo.exceptions import UserError
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
 
-CLIENT_META = {'execute': 'client', 'client': 'webclient'}
-
 
 class AISearch(models.AbstractModel):
     """Client-executed tool adjusting the live view under the chat window.
@@ -126,7 +124,7 @@ class AISearch(models.AbstractModel):
         },
         category='read',
         registry='odoo',
-        meta=CLIENT_META,
+        meta={'execute': 'client', 'client': 'webclient'},
     )
     def _mcp_adjust_search(self, **kwargs: Any) -> NoReturn:
         """Adjust the active view's search model (client-executed)."""

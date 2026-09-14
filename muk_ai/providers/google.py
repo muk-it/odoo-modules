@@ -9,7 +9,24 @@ from odoo.addons.muk_mcp.tools.schema import to_strict_schema
 
 GROUNDING_TOOL_KEY = 'googleSearch'
 CODE_EXECUTION_TOOL_KEY = 'codeExecution'
-IMAGE_OUTPUT_MODEL = 'gemini-2.5-flash-image'
+
+LEGACY_TOOL_MODEL_PREFIXES = ('gemini-1.', 'gemini-2.')
+
+IMAGE_ASPECT_RATIOS = {
+    f'{width}:{height}': width / height
+    for width, height in (
+        (1, 1),
+        (2, 3),
+        (3, 2),
+        (3, 4),
+        (4, 3),
+        (4, 5),
+        (5, 4),
+        (9, 16),
+        (16, 9),
+        (21, 9),
+    )
+}
 
 THINKING_LEVELS = {
     'minimal': 'low',
@@ -26,11 +43,10 @@ class GoogleProvider(ProviderBase):
 
     name = 'google'
     label = 'Google'
-    default_model = 'gemini-2.5-flash'
+    default_model = 'gemini-3.8-flash'
     default_url = 'https://generativelanguage.googleapis.com/v1beta'
 
     supports_web_search = True
-    supports_image_generation = True
     supports_code_interpreter = True
 
     reasoning_error_tokens = ('thinking',)
@@ -54,15 +70,11 @@ class GoogleProvider(ProviderBase):
         on_delta=None,
         model=None,
         enable_web_search=False,
-        enable_image_generation=False,
         enable_code_interpreter=False,
         extra=None,
     ) -> dict:
         """Build and run a generateContent request, streaming when requested."""
-        if enable_image_generation:
-            model = IMAGE_OUTPUT_MODEL
-        else:
-            model = self.model_for(model)
+        model = self.model_for(model)
         system_text, contents = self._inputs_to_contents(inputs)
         body = {'contents': contents}
         if system_text:
@@ -73,23 +85,29 @@ class GoogleProvider(ProviderBase):
         if text_schema:
             gen_cfg['responseMimeType'] = 'application/json'
             gen_cfg['responseSchema'] = text_schema['schema']
-        effort = (extra or {}).get('reasoning_effort')
-        if level := THINKING_LEVELS.get(effort):
-            gen_cfg['thinkingConfig'] = {'thinkingLevel': level}
-        if gen_cfg:
-            body['generationConfig'] = gen_cfg
+        thinking = {'includeThoughts': True}
+        if level := THINKING_LEVELS.get((extra or {}).get('reasoning_effort')):
+            thinking['thinkingLevel'] = level
+        gen_cfg['thinkingConfig'] = thinking
+        body['generationConfig'] = gen_cfg
         tools = self._tools_to_google(tools_schema)
-        if enable_web_search:
-            tools.append({GROUNDING_TOOL_KEY: {}})
-        if enable_code_interpreter:
-            tools.append({CODE_EXECUTION_TOOL_KEY: {}})
-        if tools:
-            body['tools'] = tools
+        builtin = [
+            {key: {}}
+            for key, enabled in (
+                (GROUNDING_TOOL_KEY, enable_web_search),
+                (CODE_EXECUTION_TOOL_KEY, enable_code_interpreter),
+            )
+            if enabled
+        ]
+        if tools and builtin and self.serves_builtin_tools(model):
+            body['toolConfig'] = {'includeServerSideToolInvocations': True}
+        if tools or builtin:
+            body['tools'] = tools + builtin
         return self._invoke_with_reasoning_retry(
             model,
             lambda callback: self._invoke(model, body, callback),
             on_delta,
-            ((body.get('generationConfig') or {}, ('thinkingConfig',)),),
+            ((gen_cfg, ('thinkingConfig',)),),
         )
 
     def _invoke(self, model: str, body: dict, on_delta: Callable | None) -> dict:
@@ -99,6 +117,64 @@ class GoogleProvider(ProviderBase):
             return self._stream(path, body, on_delta)
         path = f'/models/{model}:generateContent'
         return self._parse_response(self._post_json(path, body))
+
+    def serves_builtin_tools(self, model: str) -> bool:
+        """Return whether the model runs built-in tools next to function calling.
+
+        Gemini 3 serves grounding and code execution alongside the declared
+        functions; earlier generations reject both the combination and the
+        ``toolConfig`` opt-in.
+        """
+        return not model.startswith(LEGACY_TOOL_MODEL_PREFIXES)
+
+    def generate_image(
+        self,
+        model: str,
+        prompt: str,
+        options: dict | None = None,
+    ) -> dict:
+        """Render one image with an image-output model through ``generateContent``.
+
+        ``size`` maps to the closest aspect ratio; other options have none.
+
+        :raise UserError: when the request fails or no image data comes back
+        """
+        config = {'responseModalities': ['IMAGE']}
+        if ratio := self._aspect_ratio((options or {}).get('size')):
+            config['imageConfig'] = {'aspectRatio': ratio}
+        payload = self._post_json(
+            f'/models/{model}:generateContent',
+            {
+                'contents': [{'role': 'user', 'parts': [{'text': prompt}]}],
+                'generationConfig': config,
+            },
+            timeout=self.image_timeout,
+        )
+        candidate = next(iter(payload.get('candidates') or []), None) or {}
+        parts = (candidate.get('content') or {}).get('parts') or []
+        data = next((part['inlineData'] for part in parts if 'inlineData' in part), {})
+        if not data.get('data'):
+            self._raise(self.env._('no image data returned'))
+        return {
+            'data_b64': data['data'],
+            'mimetype': data.get('mimeType') or 'image/png',
+            'revised_prompt': '',
+            'usage': {'images': 1},
+        }
+
+    @staticmethod
+    def _aspect_ratio(size: str | None) -> str | None:
+        """Map a ``WxH`` size to the closest aspect ratio Gemini renders."""
+        try:
+            width, height = (int(value) for value in (size or '').lower().split('x'))
+        except ValueError:
+            return None
+        if width <= 0 or height <= 0:
+            return None
+        return min(
+            IMAGE_ASPECT_RATIOS,
+            key=lambda ratio: abs(IMAGE_ASPECT_RATIOS[ratio] - width / height),
+        )
 
     # ----------------------------------------------------------
     # Inputs
@@ -116,16 +192,23 @@ class GoogleProvider(ProviderBase):
                 parts.append(text)
         return ''.join(parts)
 
-    @classmethod
-    def _inputs_to_contents(cls, inputs) -> tuple[str, list[dict]]:
-        """Convert canonical inputs into Google system text and contents."""
+    def _inputs_to_contents(self, inputs) -> tuple[str, list[dict]]:
+        """Convert canonical inputs into Google system text and contents.
+
+        Gemini rejects an unsigned ``functionCall`` part in a model turn, so a
+        call this adapter did not sign replays as transcript text together with
+        its result.
+        """
         call_names = {}
+        foreign = set()
         for item in inputs or []:
             if item.get('type') == 'function_call':
                 call_id = item.get('call_id')
                 name = item.get('name')
                 if call_id and name:
                     call_names[call_id] = name
+                if not self._carried_state(item).get('parts'):
+                    foreign.add(call_id)
 
         system_parts = []
         contents = []
@@ -140,29 +223,24 @@ class GoogleProvider(ProviderBase):
             item_type = item.get('type')
             role = item.get('role')
             if role == 'system':
-                text = cls._text_from_content(item.get('content'))
+                text = self._text_from_content(item.get('content'))
                 if text:
                     system_parts.append(text)
                 continue
             if item_type == 'function_call':
-                try:
-                    args = json.loads(item.get('arguments') or '{}')
-                except ValueError:
-                    args = {}
-                append(
-                    'model',
-                    {
-                        'functionCall': {
-                            'name': item.get('name') or '',
-                            'args': args,
-                        },
-                    },
-                )
+                if parts := self._carried_state(item).get('parts'):
+                    for part in parts:
+                        append('model', part)
+                else:
+                    append('model', {'text': self._transcript_call(item)})
                 continue
             if item_type == 'function_call_output':
                 call_id = item.get('call_id')
                 name = call_names.get(call_id) or ''
                 output = item.get('output')
+                if call_id in foreign:
+                    append('user', {'text': self._transcript_result(name, output)})
+                    continue
                 if isinstance(output, str):
                     try:
                         parsed = json.loads(output)
@@ -186,13 +264,25 @@ class GoogleProvider(ProviderBase):
                 )
                 continue
             if role == 'assistant':
-                for part in cls._content_to_google(item.get('content')):
+                for part in self._content_to_google(item.get('content')):
                     append('model', part)
             elif role == 'user':
-                for part in cls._content_to_google(item.get('content')):
+                for part in self._content_to_google(item.get('content')):
                     append('user', part)
 
         return '\n\n'.join(system_parts), contents
+
+    @staticmethod
+    def _transcript_call(item: dict) -> str:
+        """Render a function call this adapter never signed as model text."""
+        return f'[tool call] {item.get("name") or ""}({item.get("arguments") or "{}"})'
+
+    @staticmethod
+    def _transcript_result(name: str, output) -> str:
+        """Render the result of an unsigned function call as user text."""
+        if not isinstance(output, str):
+            output = json.dumps(output, default=str)
+        return f'[tool result] {name}: {output}'
 
     @classmethod
     def _content_to_google(cls, content) -> list[dict]:
@@ -268,100 +358,163 @@ class GoogleProvider(ProviderBase):
     # Parse
     # ----------------------------------------------------------
 
+    @classmethod
+    def _usage_from_google(cls, meta: dict) -> dict:
+        """Normalize a ``usageMetadata`` block, folding reasoning into the output.
+
+        ``candidatesTokenCount`` excludes ``thoughtsTokenCount``; both bill at
+        the output rate, so they are summed here.
+        """
+        return cls._usage(
+            input_tokens=meta.get('promptTokenCount'),
+            output_tokens=(meta.get('candidatesTokenCount') or 0)
+            + (meta.get('thoughtsTokenCount') or 0),
+            cache_read_tokens=meta.get('cachedContentTokenCount'),
+        )
+
     def _parse_response(self, payload: dict) -> dict:
         """Parse a non-streaming response into text, tool calls, carry inputs, and usage."""
+        turn = self._new_turn()
         candidates = payload.get('candidates') or []
-        text_parts = []
-        tool_calls = []
-        carry_inputs = []
-        message_text_parts = []
         if candidates:
-            content = candidates[0].get('content') or {}
-            for part in content.get('parts') or []:
-                self._consume_part(
-                    part,
-                    text_parts,
-                    message_text_parts,
-                    tool_calls,
-                    carry_inputs,
-                )
-        if message_text_parts:
-            carry_inputs.insert(
-                0, self._assistant_text_carry(''.join(message_text_parts))
-            )
-        usage = payload.get('usageMetadata') or {}
-        result = {
-            'text': '\n'.join(text_parts).strip(),
-            'tool_calls': tool_calls,
-            'carry_inputs': carry_inputs,
-            'usage': self._usage(
-                input_tokens=usage.get('promptTokenCount'),
-                output_tokens=usage.get('candidatesTokenCount'),
-                cache_read_tokens=usage.get('cachedContentTokenCount'),
-            ),
+            for part in (candidates[0].get('content') or {}).get('parts') or []:
+                self._consume_part(part, turn)
+        return self._turn_result(
+            turn,
+            self._usage_from_google(payload.get('usageMetadata') or {}),
+            truncated=bool(candidates)
+            and candidates[0].get('finishReason') == 'MAX_TOKENS',
+        )
+
+    @staticmethod
+    def _new_turn() -> dict:
+        """Return the accumulators collecting one model turn."""
+        return {
+            'text': [],
+            'message': [],
+            'tool_calls': [],
+            'carry': [],
+            'builtin': [],
+            'replay': None,
         }
-        if candidates and candidates[0].get('finishReason') == 'MAX_TOKENS':
-            self._apply_truncation(result, limit=self.max_tokens)
+
+    def _turn_result(
+        self,
+        turn: dict,
+        usage: dict,
+        on_delta: Callable | None = None,
+        truncated: bool = False,
+    ) -> dict:
+        """Assemble the provider result from a finished model turn.
+
+        Built-in parts still pending when the turn ends close the sequence of
+        the last function call, so the next round replays that call bracketed
+        by the signed parts exactly as the wire produced them.
+        """
+        if turn['builtin'] and turn['replay'] is not None:
+            turn['replay'].extend(turn['builtin'])
+            turn['builtin'] = []
+        if turn['message']:
+            turn['carry'].insert(
+                0, self._assistant_text_carry(''.join(turn['message']))
+            )
+        result = {
+            'text': ''.join(turn['text']).strip(),
+            'tool_calls': turn['tool_calls'],
+            'carry_inputs': turn['carry'],
+            'usage': usage,
+        }
+        if truncated:
+            self._apply_truncation(result, on_delta, self.max_tokens)
         return result
 
-    @classmethod
-    def _consume_part(
-        cls,
-        part: dict,
-        text_parts: list,
-        message_text_parts: list,
-        tool_calls: list,
-        carry_inputs: list,
-    ) -> None:
-        """Consume one non-streaming response part into the accumulators."""
-        if 'functionCall' in part:
-            fc = part['functionCall']
-            name = fc.get('name') or ''
-            args = fc.get('args') or {}
-            call_id = cls._make_call_id()
-            tool_calls.append(
-                {
-                    'call_id': call_id,
-                    'name': name,
-                    'arguments': args,
-                    '_parse_error': None,
-                }
-            )
-            carry_inputs.append(
-                {
-                    'type': 'function_call',
-                    'name': name,
-                    'arguments': json.dumps(args, default=str),
-                    'call_id': call_id,
-                }
-            )
+    def _consume_part(self, part: dict, turn: dict, on_delta=None) -> None:
+        """Consume one response part into the turn, forwarding streaming deltas.
+
+        Thoughts stream as reasoning and stay out of the answer. A ``toolCall``
+        or ``toolResponse`` part is kept verbatim for the function call it
+        brackets, which cannot be replayed without it.
+        """
+        if part.get('thought'):
+            if text := part.get('text') or '':
+                self._call_on_delta(on_delta, 'reasoning', {'delta': text})
             return
         if 'text' in part:
-            text = part.get('text') or ''
-            if text:
-                text_parts.append(text)
-                message_text_parts.append(text)
+            if not (text := part.get('text') or ''):
+                return
+            turn['text'].append(text)
+            turn['message'].append(text)
+            self._call_on_delta(on_delta, 'text', {'delta': text})
             return
-        if 'inlineData' in part:
-            data = part['inlineData']
-            mime = data.get('mimeType') or 'image/png'
-            b64 = data.get('data') or ''
-            snippet = f'![image](data:{mime};base64,{b64})'
-            text_parts.append(snippet)
-            message_text_parts.append(snippet)
+        if 'functionCall' in part:
+            call, carry = self._function_call_entries(part, turn)
+            self._call_on_delta(
+                on_delta,
+                'tool_start',
+                {
+                    'call_id': call['call_id'],
+                    'name': call['name'],
+                },
+            )
+            self._call_on_delta(
+                on_delta,
+                'tool_args',
+                {
+                    'call_id': call['call_id'],
+                    'delta': carry['arguments'],
+                },
+            )
+            turn['tool_calls'].append(call)
+            turn['carry'].append(carry)
             return
+        if snippet := self._code_snippet(part):
+            turn['text'].append(snippet)
+            turn['message'].append(snippet)
+            self._call_on_delta(on_delta, 'text', {'delta': snippet})
+            return
+        turn['builtin'].append(part)
+
+    @staticmethod
+    def _code_snippet(part: dict) -> str:
+        """Render a code execution part as Markdown, empty when it is not one."""
         if 'executableCode' in part:
-            code = part['executableCode']
-            lang = (code.get('language') or '').lower()
-            snippet = f'```{lang}\n{code.get("code") or ""}\n```'
-            text_parts.append(snippet)
-            message_text_parts.append(snippet)
-            return
+            code = part['executableCode'] or {}
+            language = (code.get('language') or '').lower()
+            return f'\n\n```{language}\n{code.get("code") or ""}\n```\n\n'
         if 'codeExecutionResult' in part:
-            result = part['codeExecutionResult']
-            snippet = f'```\n{result.get("output") or ""}\n```'
-            text_parts.append(snippet)
-            message_text_parts.append(snippet)
+            result = part['codeExecutionResult'] or {}
+            return f'\n\n```\n{result.get("output") or ""}\n```\n\n'
+        return ''
+
+    def _function_call_entries(self, part: dict, turn: dict) -> tuple[dict, dict]:
+        """Build the tool call and the carry item for one ``functionCall`` part.
+
+        Gemini rejects a replayed call whose ``thoughtSignature`` and bracketing
+        built-in parts are not echoed back verbatim, so those parts are carried
+        as this provider's private state.
+        """
+        fc = part['functionCall']
+        name = fc.get('name') or ''
+        args = fc.get('args') or {}
+        call_id = self._make_call_id()
+        call = {
+            'call_id': call_id,
+            'name': name,
+            'arguments': args,
+            '_parse_error': None,
+        }
+        turn['replay'] = [*turn['builtin'], part]
+        turn['builtin'] = []
+        carry = self._carry_state(
+            {
+                'type': 'function_call',
+                'name': name,
+                'arguments': json.dumps(args, default=str),
+                'call_id': call_id,
+            },
+            {'parts': turn['replay']},
+        )
+        return call, carry
 
     @staticmethod
     def _assistant_text_carry(text: str) -> dict:
@@ -382,52 +535,30 @@ class GoogleProvider(ProviderBase):
 
     def _stream(self, path: str, body: dict, on_delta) -> dict:
         """Stream a generateContent request and assemble the final result."""
-        text_parts = []
-        message_text_parts = []
-        tool_calls = []
-        carry_inputs = []
-        usage = self._usage()
+        turn = self._new_turn()
+        raw_usage = {}
         meta = {}
         for event in self._post_stream(path, body):
-            self._handle_stream_event(
-                event,
-                on_delta,
-                text_parts,
-                message_text_parts,
-                tool_calls,
-                carry_inputs,
-                usage,
-                meta,
-            )
-        if message_text_parts:
-            carry_inputs.insert(
-                0, self._assistant_text_carry(''.join(message_text_parts))
-            )
-        result = {
-            'text': ''.join(text_parts).strip(),
-            'tool_calls': tool_calls,
-            'carry_inputs': carry_inputs,
-            'usage': usage,
-        }
-        if meta.get('truncated'):
-            self._apply_truncation(result, on_delta, self.max_tokens)
-        return result
+            self._handle_stream_event(event, turn, on_delta, raw_usage, meta)
+        return self._turn_result(
+            turn,
+            self._usage_from_google(raw_usage),
+            on_delta=on_delta,
+            truncated=bool(meta.get('truncated')),
+        )
 
     def _handle_stream_event(
         self,
         event: dict,
+        turn: dict,
         on_delta,
-        text_parts: list,
-        message_text_parts: list,
-        tool_calls: list,
-        carry_inputs: list,
-        usage: dict,
+        raw_usage: dict,
         meta: dict,
     ) -> None:
-        """Apply one streaming event to the accumulators and forward deltas.
+        """Apply one streaming event to the turn and forward deltas.
 
-        A ``MAX_TOKENS`` finish is flagged in ``meta`` as truncation.
-
+        :param raw_usage: accumulates raw ``usageMetadata`` fields, normalized
+            once by :meth:`_usage_from_google` after the stream ends
         :raise UserError: when the event signals an error or safety block.
         """
         if error := event.get('error'):
@@ -445,102 +576,6 @@ class GoogleProvider(ProviderBase):
                 meta['truncated'] = True
             elif finish and finish not in ('STOP', 'FINISH_REASON_UNSPECIFIED'):
                 self._raise(f'Response blocked by Google (finishReason: {finish})')
-            content = first.get('content') or {}
-            for part in content.get('parts') or []:
-                self._stream_part(
-                    part,
-                    on_delta,
-                    text_parts,
-                    message_text_parts,
-                    tool_calls,
-                    carry_inputs,
-                )
-        meta = event.get('usageMetadata') or {}
-        if meta:
-            if 'promptTokenCount' in meta:
-                usage['input_tokens'] = meta['promptTokenCount']
-            if 'candidatesTokenCount' in meta:
-                usage['output_tokens'] = meta['candidatesTokenCount']
-            if 'cachedContentTokenCount' in meta:
-                usage['cache_read_tokens'] = meta['cachedContentTokenCount']
-
-    def _stream_part(
-        self,
-        part: dict,
-        on_delta,
-        text_parts: list,
-        message_text_parts: list,
-        tool_calls: list,
-        carry_inputs: list,
-    ) -> None:
-        """Consume one streaming response part into the accumulators and forward deltas."""
-        if 'text' in part:
-            text = part.get('text') or ''
-            if not text:
-                return
-            text_parts.append(text)
-            message_text_parts.append(text)
-            self._call_on_delta(on_delta, 'text', {'delta': text})
-            return
-        if 'functionCall' in part:
-            fc = part['functionCall']
-            name = fc.get('name') or ''
-            args = fc.get('args') or {}
-            call_id = self._make_call_id()
-            args_json = json.dumps(args, default=str)
-            self._call_on_delta(
-                on_delta,
-                'tool_start',
-                {
-                    'call_id': call_id,
-                    'name': name,
-                },
-            )
-            self._call_on_delta(
-                on_delta,
-                'tool_args',
-                {
-                    'call_id': call_id,
-                    'delta': args_json,
-                },
-            )
-            tool_calls.append(
-                {
-                    'call_id': call_id,
-                    'name': name,
-                    'arguments': args,
-                    '_parse_error': None,
-                }
-            )
-            carry_inputs.append(
-                {
-                    'type': 'function_call',
-                    'name': name,
-                    'arguments': args_json,
-                    'call_id': call_id,
-                }
-            )
-            return
-        if 'inlineData' in part:
-            data = part['inlineData']
-            mime = data.get('mimeType') or 'image/png'
-            b64 = data.get('data') or ''
-            snippet = f'![image](data:{mime};base64,{b64})'
-            text_parts.append(snippet)
-            message_text_parts.append(snippet)
-            self._call_on_delta(on_delta, 'text', {'delta': snippet})
-            return
-        if 'executableCode' in part:
-            code = part['executableCode']
-            lang = (code.get('language') or '').lower()
-            snippet = f'```{lang}\n{code.get("code") or ""}\n```'
-            text_parts.append(snippet)
-            message_text_parts.append(snippet)
-            self._call_on_delta(on_delta, 'text', {'delta': snippet})
-            return
-        if 'codeExecutionResult' in part:
-            result = part['codeExecutionResult']
-            snippet = f'```\n{result.get("output") or ""}\n```'
-            text_parts.append(snippet)
-            message_text_parts.append(snippet)
-            self._call_on_delta(on_delta, 'text', {'delta': snippet})
+            for part in (first.get('content') or {}).get('parts') or []:
+                self._consume_part(part, turn, on_delta)
+        raw_usage.update(event.get('usageMetadata') or {})

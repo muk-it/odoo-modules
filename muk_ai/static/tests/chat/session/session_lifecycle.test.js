@@ -102,7 +102,7 @@ test('loading a null session id wipes every trace of the previous one', async ()
     expect(session.state.loading).toBe(false);
 });
 
-test('a failing read surfaces the error and leaves no half-loaded session', async () => {
+test('a failing read leaves no half-loaded session and claims no share', async () => {
     makeBusMock();
     onRpc('muk_ai.session', 'read', () => {
         throw new Error('record gone');
@@ -110,10 +110,12 @@ test('a failing read surfaces the error and leaves no half-loaded session', asyn
     const session = await mountSession();
     const result = await session.load(7);
     expect(result).toBe(null);
-    expect(session.state.sessionId).toBe(7);
+    expect(session.state.sessionId).toBe(null);
+    expect(session.state.readonly).toBe(false);
+    expect(session.state.ownerName).toBe('');
+    expect(session.canWrite()).toBe(true);
     expect(session.state.events).toEqual([]);
     expect(session.state.loading).toBe(false);
-    expect(session.state.error).toMatch(/record gone/);
 });
 
 test('a superseded load never overwrites the session the user switched to', async () => {

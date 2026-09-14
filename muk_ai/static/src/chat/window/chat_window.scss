@@ -119,6 +119,15 @@
     background: var(--mk-bg-soft);
     border-bottom: 1px solid var(--mk-border);
     font-size: 0.72rem;
+    // The band is already --mk-bg-soft, which is the neutral pill's own fill,
+    // and --mk-bg is only two shades off it: step down to the border tone so
+    // the chip actually reads against the band. (Dark redefines this again.)
+    .mk_effort_pill {
+        background: var(--mk-border);
+        &:hover {
+            background: var(--mk-border-strong);
+        }
+    }
     .mk_cost_chip {
         display: inline-flex;
         align-items: center;
@@ -204,13 +213,6 @@
         font-size: 0.88rem;
         max-height: 140px;
         padding: 0.3rem 0;
-    }
-    .mk_composer_row {
-        @include mk-composer-row-stacked;
-    }
-    .mk_send {
-        width: 30px;
-        height: 30px;
     }
     .mk_composer_readonly {
         display: flex;

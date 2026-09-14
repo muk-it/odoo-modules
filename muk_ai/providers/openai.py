@@ -3,8 +3,9 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from odoo.addons.muk_ai.providers.base import ProviderBase
+from odoo.addons.muk_ai.providers.region import CUSTOM, Region
 
-REASONING_MODEL_PREFIXES = ('o1', 'o3', 'o4', 'gpt-5')
+REASONING_MODEL_PREFIXES = ('o1', 'o3', 'o4', 'gpt-5', 'gpt-6')
 
 
 class OpenAIProvider(ProviderBase):
@@ -12,11 +13,16 @@ class OpenAIProvider(ProviderBase):
 
     name = 'openai'
     label = 'OpenAI'
-    default_model = 'gpt-5-mini'
+    default_model = 'gpt-5.6-terra'
     default_url = 'https://api.openai.com/v1'
+    regions = (
+        Region('eu', 'Europe', 'https://eu.api.openai.com/v1'),
+        Region('us', 'United States', 'https://us.api.openai.com/v1'),
+        Region('mtls-eu', 'Europe (mTLS)', 'https://mtls-eu.api.openai.com/v1'),
+        CUSTOM,
+    )
 
     supports_web_search = True
-    supports_image_generation = True
     supports_code_interpreter = True
 
     reasoning_error_tokens = ('reasoning', 'effort')
@@ -40,7 +46,6 @@ class OpenAIProvider(ProviderBase):
         on_delta=None,
         model=None,
         enable_web_search=False,
-        enable_image_generation=False,
         enable_code_interpreter=False,
         extra=None,
     ) -> dict:
@@ -73,8 +78,6 @@ class OpenAIProvider(ProviderBase):
         tools = list(tools_schema or [])
         if enable_web_search:
             tools.append({'type': 'web_search'})
-        if enable_image_generation:
-            tools.append({'type': 'image_generation'})
         if enable_code_interpreter:
             tools.append(
                 {
@@ -116,9 +119,14 @@ class OpenAIProvider(ProviderBase):
 
     @classmethod
     def _rewrite_attachments(cls, inputs) -> list:
-        """Rewrite attachment blocks to OpenAI form and drop thinking blocks."""
+        """Rewrite attachment blocks to their OpenAI form, dropping canonical-only ones.
+
+        This adapter forwards canonical content blocks verbatim, so a
+        ``muk_ai_`` block with no OpenAI counterpart is dropped here rather
+        than sent to be rejected.
+        """
         rewritten = []
-        for item in cls._strip_cache_markers(inputs):
+        for item in cls._wire_items(inputs):
             content = item.get('content') if isinstance(item, dict) else None
             if not isinstance(content, list):
                 rewritten.append(item)
@@ -128,12 +136,10 @@ class OpenAIProvider(ProviderBase):
                 if not isinstance(block, dict):
                     new_content.append(block)
                     continue
-                block_type = block.get('type')
+                block_type = block.get('type') or ''
                 if block_type == 'muk_ai_attachment':
                     new_content.append(cls._attachment_to_openai(block))
-                elif block_type == 'muk_ai_thinking':
-                    continue
-                else:
+                elif not block_type.startswith('muk_ai_'):
                     new_content.append(block)
             rewritten.append({**item, 'content': new_content})
         return rewritten
@@ -164,21 +170,6 @@ class OpenAIProvider(ProviderBase):
     # ----------------------------------------------------------
     # Built-in tool output rendering
     # ----------------------------------------------------------
-
-    @staticmethod
-    def _render_image_call(item: dict) -> str:
-        """Render an image-generation call result as a Markdown image, or ``''``."""
-        if item.get('status') == 'failed':
-            return ''
-        result = (item.get('result') or '').strip()
-        if not result:
-            return ''
-        url = (
-            result
-            if result.startswith(('data:', 'http'))
-            else f'data:image/png;base64,{result}'
-        )
-        return f'\n\n![generated image]({url})\n\n'
 
     @staticmethod
     def _render_code_call(item: dict) -> str:
@@ -228,10 +219,6 @@ class OpenAIProvider(ProviderBase):
                 for content in line.get('content') or []:
                     if text := content.get('text'):
                         text_parts.append(text)
-            elif line_type == 'image_generation_call':
-                snippet = self._render_image_call(line)
-                if snippet:
-                    text_parts.append(snippet)
             elif line_type == 'code_interpreter_call':
                 snippet = self._render_code_call(line)
                 if snippet:
@@ -272,27 +259,8 @@ class OpenAIProvider(ProviderBase):
         usage = {}
         truncation = None
         rendered_item_ids = set()
-        image_b64_by_item = {}
         for event in self._post_stream('/responses', body):
             event_type = event.get('type') or ''
-            if event_type == 'response.image_generation_call.partial_image':
-                b64 = event.get('partial_image_b64')
-                item_id = event.get('item_id')
-                if b64 and item_id:
-                    image_b64_by_item[item_id] = b64
-                continue
-            if event_type == 'response.image_generation_call.completed':
-                item_id = event.get('item_id')
-                b64 = image_b64_by_item.get(item_id)
-                if b64 and item_id not in rendered_item_ids:
-                    rendered_item_ids.add(item_id)
-                    snippet = self._render_image_call(
-                        {'status': 'completed', 'result': b64}
-                    )
-                    if snippet:
-                        text_parts.append(snippet)
-                        self._call_on_delta(on_delta, 'text', {'delta': snippet})
-                continue
             if event_type == 'response.output_text.delta':
                 delta = event.get('delta') or ''
                 if not delta:
@@ -348,15 +316,6 @@ class OpenAIProvider(ProviderBase):
                         carry_inputs.append(item)
                 elif item_type == 'reasoning':
                     carry_inputs.append(item)
-                elif item_type == 'image_generation_call':
-                    item_id = item.get('id')
-                    if not item.get('result') and item_id in image_b64_by_item:
-                        item = {**item, 'result': image_b64_by_item[item_id]}
-                    snippet = self._render_image_call(item)
-                    if snippet and item_id not in rendered_item_ids:
-                        rendered_item_ids.add(item_id)
-                        text_parts.append(snippet)
-                        self._call_on_delta(on_delta, 'text', {'delta': snippet})
                 elif item_type == 'code_interpreter_call':
                     snippet = self._render_code_call(item)
                     if snippet and item.get('id') not in rendered_item_ids:
@@ -382,15 +341,6 @@ class OpenAIProvider(ProviderBase):
                         )
                     ):
                         carry_inputs.append(item)
-                    elif item_type == 'image_generation_call':
-                        item_id = item.get('id')
-                        if not item.get('result') and item_id in image_b64_by_item:
-                            item = {**item, 'result': image_b64_by_item[item_id]}
-                        snippet = self._render_image_call(item)
-                        if snippet and item_id not in rendered_item_ids:
-                            rendered_item_ids.add(item_id)
-                            text_parts.append(snippet)
-                            self._call_on_delta(on_delta, 'text', {'delta': snippet})
                     elif item_type == 'code_interpreter_call':
                         snippet = self._render_code_call(item)
                         if snippet and item.get('id') not in rendered_item_ids:

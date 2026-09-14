@@ -12,6 +12,7 @@ import { SpaceDialog } from '@muk_ai/chat/sidebar/space_dialog';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WIDTH_KEY = 'muk_ai.sidebar_width';
+const AUTOMATIC_KEY = 'muk_ai.sidebar_automatic_open';
 const WIDTH_MIN = 220;
 const WIDTH_MAX = 520;
 const WIDTH_DEFAULT = 272;
@@ -26,6 +27,14 @@ function storedWidth() {
         return WIDTH_DEFAULT;
     }
     return Math.min(WIDTH_MAX, Math.max(WIDTH_MIN, raw));
+}
+
+/**
+ * Read whether the automatic section was left open.
+ * @returns {boolean} true when the user expanded it and never closed it again
+ */
+function storedAutomaticOpen() {
+    return browser.localStorage.getItem(AUTOMATIC_KEY) === '1';
 }
 
 /**
@@ -72,6 +81,7 @@ export class ChatSidebar extends Component {
             dropTargetId: null,
             width: storedWidth(),
             resizing: false,
+            automaticOpen: storedAutomaticOpen(),
         });
         this.asideRef = useRef('aside');
         this.listRef = useRef('list');
@@ -145,6 +155,26 @@ export class ChatSidebar extends Component {
     get systemSpaces() {
         return (this.props.spaces || []).filter((space) => space.system);
     }
+    /** @returns {object[]} the system spaces shown outside the automatic section */
+    get shownSystemSpaces() {
+        return this.systemSpaces.filter((space) => space.pinned);
+    }
+    /** @returns {object[]} the system spaces the automatic section holds */
+    get foldedSystemSpaces() {
+        return this.systemSpaces.filter((space) => !space.pinned);
+    }
+    /**
+     * Unread chats waiting inside the collapsed automatic section.
+     * The count rolls up to the header because the rows it belongs to are
+     * hidden, so without it a colleague's question goes unseen behind a fold.
+     * @returns {number}
+     */
+    get foldedUnread() {
+        return this.foldedSystemSpaces.reduce(
+            (total, space) => total + this.spaceUnread(space.id),
+            0,
+        );
+    }
     get personalSpaces() {
         return (this.props.spaces || []).filter((space) => !space.system);
     }
@@ -209,6 +239,14 @@ export class ChatSidebar extends Component {
         if (open && this.props.onSpaceOpen) {
             this.props.onSpaceOpen(spaceId);
         }
+    }
+    /** Open or close the automatic section, remembering it per browser. */
+    toggleAutomatic() {
+        this.state.automaticOpen = !this.state.automaticOpen;
+        browser.localStorage.setItem(
+            AUTOMATIC_KEY,
+            this.state.automaticOpen ? '1' : '0',
+        );
     }
     startCreate(ev) {
         ev.stopPropagation();

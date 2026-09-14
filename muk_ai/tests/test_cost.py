@@ -27,7 +27,7 @@ class TestSessionCostAccrual(AITestCommon):
                 'cache_read_rate': 0.0,
             }
         )
-        cls.provider.default_model_id = cls.model.id
+        cls.provider.default_chat_model_id = cls.model
 
     # ----------------------------------------------------------
     # Helper
@@ -136,9 +136,25 @@ class TestSessionCostAccrual(AITestCommon):
         self.assertGreater(session.total_cost, first_total)
         self.assertAlmostEqual(session.total_cost - first_total, 2.2)
 
+    def test_model_usage_is_priced_by_the_given_record(self):
+        image = self._create_model(
+            'test-image-model',
+            modality='image',
+            context_window=0,
+            input_rate=0.0,
+            output_rate=0.5,
+        )
+        session = self.env['muk_ai.session'].create(
+            {'name': 'image-cost', 'agent_id': False}
+        )
+        session._accrue_model_usage(image, {'images': 2})
+        self.assertEqual(session.total_input_cost, 0.0)
+        self.assertAlmostEqual(session.total_output_cost, 1.0)
+        self.assertAlmostEqual(session.total_cost, 1.0)
+        self.assertAlmostEqual(session.turn_cost_spent, 1.0)
+
     def test_cost_stays_zero_when_no_default_model(self):
-        self.provider.default_model_id = False
-        self.model.active = False
+        self._clear_default_models()
         session = self.env['muk_ai.session'].create(
             {'name': 'no-price', 'agent_id': False}
         )

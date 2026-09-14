@@ -82,12 +82,13 @@ leaving the page.
 
 **Models — `MuK AI > Configuration > Models`**
 
-The model catalog ships prefilled with current API-available SKUs — the
-GPT-5.x family (5, 5.1, 5.2, 5.4 + Pro, 5.5 + Pro, and the 5.6 Sol / Terra
-/ Luna tiers), GPT-4.1 family, GPT-4o and the o-series; Claude (Opus 4.x
-through 4.8, Sonnet 4.x and Sonnet 5, Haiku, Fable 5); and Gemini (2.5
-Pro/Flash/Flash-Lite/Flash-Image plus the 3.x previews). Each record
-carries:
+The model catalog ships prefilled with current API-available SKUs —
+GPT-6 Astra, the GPT-5.x family (5.1, 5.2, 5.4 + Pro, 5.5 + Pro and the
+5.6 Sol / Terra / Luna tiers), GPT-4.1 and GPT-4o; Claude (Opus 4.5
+through 5, Sonnet 4.5/4.6 and Sonnet 5, Haiku 4.5, Fable 5 and 5.1); and
+Gemini (2.5 Pro/Flash/Flash-Lite plus the 3.x Flash and Pro tiers).
+Retired SKUs are dropped as the vendors shut them down, so the list stays
+callable rather than historical. Each record carries:
 
 - **Technical Name** — API id (`gpt-5.2`, `claude-sonnet-5`,
   `gemini-3.5-flash`, …).
@@ -317,8 +318,19 @@ Open **MuK AI > Agents**. An agent is a named preset:
 - **System Prompt** — rendered with inline-template placeholders
   (`{{ user.name }}`, `{{ company.name }}`, `{{ today }}`,
   `{{ approval_mode }}`) at session start and on `/compact`.
-- **Model** — optional override; blank falls back to the provider
-  default.
+- **Provider** — pin the agent to a vendor without naming an exact
+  model. Every modality then prefers that provider's default and only
+  falls back elsewhere when it catalogues no model of that kind, so an
+  agent pinned to Anthropic still draws images. Blank follows the
+  company default provider.
+- **Chat Model** — optional override of the pinned provider; blank
+  falls back to the default chat model of the pin, else of the company
+  default provider. The picker is limited to the pinned provider when
+  one is set.
+- **Image Model**, **TTS Model**, **STT Model** — the per-modality
+  overrides, grouped with the chat model since they answer the same
+  question. Each placeholder names the model an empty picker resolves
+  to, so the fallback is never a guess.
 - **Reasoning Effort** — how hard the model thinks before answering:
   `Minimal`, `Low`, `Medium`, `High`, `Extra High` or `Maximum`. Blank
   uses the model's default. Only the tiers the model actually supports
@@ -327,11 +339,16 @@ Open **MuK AI > Agents**. An agent is a named preset:
   above what the model allows it is clamped to the nearest supported
   one, and a provider that still rejects it is retried without the
   effort so the answer is always served.
-- **Provider-native toggles** — enable the active provider's web
-  search, image generation and code interpreter tools when the
-  provider supports them.
-- **Read-only** — enforced server-side through the MCP scope check,
-  not just a prompt instruction.
+- **Capabilities** — **Web Search** as an explicit route (`Off`,
+  `Automatic`, `Provider Built-in` or `Search Backend`), **Image
+  Generation** and **Code Interpreter**. `Automatic` prefers a configured backend and
+  falls back to the vendor connector; the two explicit routes are never
+  substituted. A capability nothing can serve stays selected and the
+  alert above the form names the one setting that repairs it —
+  including a tool filter that hides `web_search` or `generate_image`.
+- **Restrict to Read-only Tools** — on the **Tools** page next to the
+  pickers it interacts with; enforced server-side through the MCP scope
+  check, not just a prompt instruction.
 - **Tool Filter** — whitelist of MCP tool names the agent may call
   (empty = all tools allowed).
 - **Essential Tools** — names that ship with full schemas at session
@@ -439,7 +456,7 @@ is one source of truth and no config drift.
 |---------------|-----------|-------------------------------------------------------------------------------|
 | `openai`      | SSE       | OpenAI Responses API; skips `temperature` for reasoning models                |
 | `anthropic`   | SSE       | Messages API; in-dispatcher adapter for `tool_use` / `tool_result`            |
-| `google`      | SSE       | Gemini `streamGenerateContent`; native image generation and grounding support |
+| `google`      | SSE       | Gemini `streamGenerateContent`; grounding; image models via `generateContent` |
 
 All three providers emit the same on-delta events (`text`,
 `tool_start`, `tool_args`), so the chat UI feels identical regardless
@@ -514,7 +531,6 @@ class MistralProvider(ProviderBase):
         on_delta=None, 
         model=None,
         enable_web_search=False, 
-        enable_image_generation=False, 
         enable_code_interpreter=False, 
         extra=None,
     ):

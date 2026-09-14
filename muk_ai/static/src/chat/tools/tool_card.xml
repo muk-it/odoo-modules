@@ -23,7 +23,7 @@
                         <i class="fa fa-wrench" />
                     </span>
                 </t>
-                <span class="mk_tool_name" t-esc="props.block.name" />
+                <span class="mk_tool_name" t-esc="props.block.label or props.block.name" />
                 <t t-if="scheduleSummary">
                     <t t-if="!scheduleSummary.ok">
                         <span class="mk_tool_schedule_band mk_tool_schedule_error text-danger small ms-2">

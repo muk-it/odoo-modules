@@ -10,7 +10,7 @@
         muk_mcp tool registry your external AI clients use — one source
         of truth, one permission model, one audit trail.
     """,
-    'version': '18.0.1.16.2',
+    'version': '18.0.1.21.1',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -76,10 +76,6 @@
         ],
         'web.assets_unit_tests': [
             'muk_ai/static/tests/**/*.test.js',
-        ],
-        'muk_ai.assets_prism': [
-            'web/static/lib/prismjs/prism.js',
-            'web/static/lib/prismjs/themes/default.css',
         ],
     },
     'images': [

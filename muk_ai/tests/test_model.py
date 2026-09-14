@@ -3,7 +3,6 @@ from __future__ import annotations
 from odoo import models
 from odoo.exceptions import ValidationError
 from odoo.tools import mute_logger
-from odoo.tools.safe_eval import safe_eval
 
 from odoo.addons.muk_ai.tests.common import AITestCommon
 
@@ -89,20 +88,6 @@ class TestAiModel(AITestCommon):
         empty = self.env['muk_ai.model'].browse([])
         cost = empty._compute_usage_cost({'input_tokens': 999, 'output_tokens': 999})
         self.assertEqual(cost['total_cost'], 0.0)
-
-    def test_provider_default_model_domain_scopes_to_own_models(self):
-        mine = self._make_model('test-oai-def')
-        theirs = self._make_model(
-            'test-anth-def',
-            provider=self.provider_anthropic,
-        )
-        domain = safe_eval(
-            self.env['muk_ai.provider']._fields['default_model_id'].domain,
-            {'id': self.provider.id},
-        )
-        selectable = self.env['muk_ai.model'].search(domain)
-        self.assertIn(mine, selectable)
-        self.assertNotIn(theirs, selectable)
 
     def test_positive_context_window_required(self):
         with self.assertRaises(ValidationError):

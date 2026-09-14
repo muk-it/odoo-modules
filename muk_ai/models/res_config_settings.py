@@ -1,12 +1,22 @@
 from __future__ import annotations
 
-from odoo import fields, models
+from odoo import api, fields, models
+
+from odoo.addons.muk_ai.tools import SEARCH_BACKENDS
 
 
 class ResConfigSettings(models.TransientModel):
-    """Expose AI provider, agent, and runtime limits in the settings."""
+    """Expose AI provider, agent, web search and runtime limits in the settings."""
 
     _inherit = 'res.config.settings'
+
+    # ----------------------------------------------------------
+    # Selections
+    # ----------------------------------------------------------
+
+    def _selection_ai_search_backend(self) -> list[tuple[str, str]]:
+        """Return the registered web search backends as selection values."""
+        return [(cls.code, cls.label) for cls in SEARCH_BACKENDS.values()]
 
     # ----------------------------------------------------------
     # Fields
@@ -20,6 +30,43 @@ class ResConfigSettings(models.TransientModel):
     ai_agent_id = fields.Many2one(
         related='company_id.default_ai_agent_id',
         readonly=False,
+    )
+
+    ai_search_backend = fields.Selection(
+        selection=lambda self: self._selection_ai_search_backend(),
+        string='Web Search Backend',
+        help=(
+            'Search API the web_search tool queries. Once set, every agent '
+            'with web search enabled searches through it instead of the '
+            "provider's built-in connector, on every provider. Country and "
+            'language follow the company and the user.'
+        ),
+        config_parameter='muk_ai.search_backend',
+    )
+
+    ai_search_api_key = fields.Char(
+        string='Web Search API Key',
+        config_parameter='muk_ai.search_api_key',
+    )
+
+    ai_search_needs_key = fields.Boolean(
+        compute='_compute_ai_search_requirements',
+        string='Backend Needs a Key',
+    )
+
+    ai_search_needs_url = fields.Boolean(
+        compute='_compute_ai_search_requirements',
+        string='Backend Needs a URL',
+    )
+
+    ai_search_url = fields.Char(
+        string='Web Search URL',
+        help=(
+            'Base URL of the self-hosted instance, e.g. http://searxng:8080. '
+            'Only a self-hosted backend is queried here; the vendor APIs '
+            'answer at their own endpoint and ignore this value.'
+        ),
+        config_parameter='muk_ai.search_url',
     )
 
     ai_max_iterations = fields.Integer(
@@ -90,3 +137,50 @@ class ResConfigSettings(models.TransientModel):
         config_parameter='muk_ai.client_action_timeout',
         default=600,
     )
+
+    module_muk_ai_compat = fields.Boolean(
+        string='MuK AI Compatible Providers',
+        help='Ollama, vLLM, OpenRouter and every OpenAI-compatible LLM.',
+    )
+
+    module_muk_ai_mcp = fields.Boolean(
+        string='MuK AI MCP',
+        help='Connect remote MCP servers whose tools AI agents can call.',
+    )
+
+    module_muk_ai_mistral = fields.Boolean(
+        string='MuK AI Mistral',
+        help='Use Mistral AI as a provider.',
+    )
+
+    module_muk_ai_schedule = fields.Boolean(
+        string='MuK AI Schedule',
+        help='Run agents on a schedule; let them pause and resume.',
+    )
+
+    module_muk_ai_skills = fields.Boolean(
+        string='MuK AI Skills',
+        help='Pre-built agent skills the user or LLM can switch into.',
+    )
+
+    module_muk_ai_voice = fields.Boolean(
+        string='MuK AI Voice',
+        help='Talk to the assistant: realtime STT and spoken replies via TTS.',
+    )
+
+    module_muk_ai_workflows = fields.Boolean(
+        string='MuK AI Workflows',
+        help='Multi-step AI playbooks and stateful business processes.',
+    )
+
+    # ----------------------------------------------------------
+    # Compute
+    # ----------------------------------------------------------
+
+    @api.depends('ai_search_backend')
+    def _compute_ai_search_requirements(self) -> None:
+        """Tell the form which credentials the chosen backend actually takes."""
+        for record in self:
+            backend = SEARCH_BACKENDS.get(record.ai_search_backend)
+            record.ai_search_needs_key = bool(backend and backend.needs_key)
+            record.ai_search_needs_url = bool(backend and backend.needs_url)

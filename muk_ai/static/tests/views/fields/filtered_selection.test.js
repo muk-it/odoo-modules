@@ -1,4 +1,5 @@
 import { describe, expect, test } from '@odoo/hoot';
+import { animationFrame, click } from '@odoo/hoot-dom';
 import {
     defineModels,
     fields,
@@ -7,7 +8,7 @@ import {
 } from '@web/../tests/web_test_helpers';
 import { defineMailModels } from '@mail/../tests/mail_test_helpers';
 
-import '@muk_ai/views/fields/effort_picker/effort_picker';
+import '@muk_ai/views/fields/filtered_selection/filtered_selection';
 
 describe.current.tags('muk_ai');
 defineMailModels();
@@ -15,7 +16,7 @@ defineMailModels();
 const ARCH = `
     <form>
         <field name="effort_options" invisible="1"/>
-        <field name="effort" widget="effort_picker"
+        <field name="effort" widget="filtered_selection"
                options="{'options_field': 'effort_options'}"/>
     </form>`;
 
@@ -39,35 +40,29 @@ class MukAiEffortModel extends models.Model {
 }
 defineModels([MukAiEffortModel]);
 
-/**
- * Return the selectable effort labels, dropping the empty placeholder option.
- * @returns {string[]} labels in render order
- */
-function effortChoices() {
-    const options = document.querySelectorAll(
-        '.o_field_widget[name="effort"] select option',
-    );
-    return [...options]
-        .filter((el) => el.value !== 'false')
-        .map((el) => el.textContent.trim());
-}
-
-test('EffortPickerField limits choices to the supported options', async () => {
+test('FilteredSelectionField limits choices to the supported options', async () => {
     await mountView({
         resModel: 'muk_ai.effort_model',
         resId: 1,
         type: 'form',
         arch: ARCH,
     });
-    expect(effortChoices()).toEqual(['Low', 'High']);
+    await click('.o_field_widget[name="effort"] .o_select_menu_toggler');
+    await animationFrame();
+    const labels = [...document.querySelectorAll('.o_select_menu_item')].map((el) =>
+        el.textContent.trim(),
+    );
+    expect(labels).toEqual(['Low', 'High']);
 });
 
-test('EffortPickerField falls back to every choice without options', async () => {
+test('FilteredSelectionField falls back to every choice without options', async () => {
     await mountView({
         resModel: 'muk_ai.effort_model',
         resId: 2,
         type: 'form',
         arch: ARCH,
     });
-    expect(effortChoices().length).toBe(6);
+    await click('.o_field_widget[name="effort"] .o_select_menu_toggler');
+    await animationFrame();
+    expect(document.querySelectorAll('.o_select_menu_item').length).toBe(6);
 });

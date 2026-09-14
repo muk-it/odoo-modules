@@ -5,8 +5,8 @@ import {
     selectionField,
 } from '@web/views/fields/selection/selection_field';
 
-/** Selection field limited to the tiers listed in a JSON options field. */
-export class EffortPickerField extends SelectionField {
+/** Selection field limited to the values listed in a sibling JSON options field. */
+export class FilteredSelectionField extends SelectionField {
     static props = {
         ...SelectionField.props,
         optionsField: { type: String, optional: true },
@@ -25,14 +25,14 @@ export class EffortPickerField extends SelectionField {
             return base;
         }
         const allowed = new Set(supported);
-        return base.filter(([tier]) => allowed.has(tier));
+        return base.filter(([value]) => allowed.has(value));
     }
 }
 
-export const effortPickerField = {
+export const filteredSelectionField = {
     ...selectionField,
-    component: EffortPickerField,
-    displayName: _t('Effort Picker'),
+    component: FilteredSelectionField,
+    displayName: _t('Filtered Selection'),
     supportedOptions: [
         {
             label: _t('Options field'),
@@ -49,4 +49,4 @@ export const effortPickerField = {
         options.options_field ? [{ name: options.options_field, type: 'json' }] : [],
 };
 
-registry.category('fields').add('effort_picker', effortPickerField);
+registry.category('fields').add('filtered_selection', filteredSelectionField);

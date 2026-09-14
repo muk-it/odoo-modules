@@ -5,6 +5,7 @@ from . import test_bus
 from . import test_openai
 from . import test_anthropic
 from . import test_google
+from . import test_carry_state
 from . import test_http_pool
 from . import test_retention
 from . import test_session
@@ -33,6 +34,7 @@ from . import test_web_fetch
 from . import test_html_markdown
 from . import test_render_content
 from . import test_sources
+from . import test_source_icon
 from . import test_space
 from . import test_session_sources
 from . import test_log_unification
@@ -46,3 +48,12 @@ from . import test_tool_file
 from . import test_agent_handoff
 from . import test_handover
 from . import test_share
+from . import test_region
+from . import test_modality
+from . import test_web_search
+from . import test_generate_image
+from . import test_capability_warning
+from . import test_provider_pin
+from . import test_web_search_route
+from . import test_session_seam
+from . import test_agent_form

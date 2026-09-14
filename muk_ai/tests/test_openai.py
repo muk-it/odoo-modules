@@ -94,7 +94,7 @@ class TestAiOpenAIProvider(AITestCommon):
 
         with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
-                inputs=[], model='gpt-5-mini', reasoning_effort='low'
+                inputs=[], model='gpt-5.4-mini', reasoning_effort='low'
             )
         self.assertEqual(captured['body']['reasoning']['effort'], 'low')
 
@@ -108,7 +108,7 @@ class TestAiOpenAIProvider(AITestCommon):
             )
 
         with patch.object(requests.Session, 'post', side_effect=fake_post):
-            self.provider._request_responses(inputs=[], model='gpt-5-mini')
+            self.provider._request_responses(inputs=[], model='gpt-5.4-mini')
         self.assertEqual(captured['body']['reasoning']['effort'], 'medium')
 
     def test_reasoning_effort_clamped_to_model_floor(self):
@@ -232,7 +232,7 @@ class TestAiOpenAIProvider(AITestCommon):
             )
         self.assertEqual(captured['body']['reasoning']['effort'], 'max')
 
-    def test_max_effort_clamped_to_xhigh_on_gpt_5_5(self):
+    def test_max_effort_clamped_to_xhigh_on_gpt_5_4(self):
         captured = {}
 
         def fake_post(url, **kwargs):
@@ -243,13 +243,13 @@ class TestAiOpenAIProvider(AITestCommon):
 
         with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
-                inputs=[], model='gpt-5.5', reasoning_effort='max'
+                inputs=[], model='gpt-5.4', reasoning_effort='max'
             )
         self.assertEqual(captured['body']['reasoning']['effort'], 'xhigh')
 
     @mute_logger('odoo.addons.muk_ai.providers.base')
     def test_rejected_effort_is_stripped_and_served(self):
-        record = self.env.ref('muk_ai.model_gpt_5_mini')
+        record = self.env.ref('muk_ai.model_gpt_5_4_mini')
         bodies = []
 
         def fake_post(url, **kwargs):
@@ -270,7 +270,7 @@ class TestAiOpenAIProvider(AITestCommon):
 
         with patch.object(requests.Session, 'post', side_effect=fake_post):
             result = self.provider._request_responses(
-                inputs=[], model='gpt-5-mini', reasoning_effort='low'
+                inputs=[], model='gpt-5.4-mini', reasoning_effort='low'
             )
         self.assertEqual(len(bodies), 2)
         self.assertEqual(bodies[0]['reasoning']['effort'], 'low')
@@ -282,7 +282,7 @@ class TestAiOpenAIProvider(AITestCommon):
 
     @mute_logger('odoo.addons.muk_ai.providers.base')
     def test_summary_rejection_spares_the_tier_catalog(self):
-        record = self.env.ref('muk_ai.model_gpt_5_mini')
+        record = self.env.ref('muk_ai.model_gpt_5_4_mini')
         bodies = []
 
         def fake_post(url, **kwargs):
@@ -304,7 +304,7 @@ class TestAiOpenAIProvider(AITestCommon):
 
         with patch.object(requests.Session, 'post', side_effect=fake_post):
             result = self.provider._request_responses(
-                inputs=[], model='gpt-5-mini', reasoning_effort='low'
+                inputs=[], model='gpt-5.4-mini', reasoning_effort='low'
             )
         self.assertEqual(len(bodies), 3)
         self.assertEqual(bodies[1]['reasoning'], {'summary': 'detailed'})
@@ -328,7 +328,7 @@ class TestAiOpenAIProvider(AITestCommon):
         with patch.object(requests.Session, 'post', side_effect=fake_post):
             with self.assertRaises(UserError):
                 self.provider._request_responses(
-                    inputs=[], model='gpt-5-mini', reasoning_effort='low'
+                    inputs=[], model='gpt-5.4-mini', reasoning_effort='low'
                 )
         self.assertEqual(len(bodies), 1)
 
@@ -469,21 +469,6 @@ class TestAiOpenAIProvider(AITestCommon):
         types = [t.get('type') for t in captured['body'].get('tools') or []]
         self.assertIn('web_search', types)
 
-    def test_openai_injects_image_generation_tool(self):
-        captured = {}
-
-        def fake_post(url, **kwargs):
-            captured['body'] = kwargs.get('json')
-            return self._mock_http_response({'output': [], 'usage': {}})
-
-        with patch.object(requests.Session, 'post', side_effect=fake_post):
-            self.provider._request_responses(
-                inputs=[],
-                enable_image_generation=True,
-            )
-        types = [t.get('type') for t in captured['body'].get('tools') or []]
-        self.assertIn('image_generation', types)
-
     def test_openai_injects_code_interpreter_tool(self):
         captured = {}
 
@@ -609,41 +594,6 @@ class TestAiOpenAIProvider(AITestCommon):
         self.assertEqual(result['usage']['input_tokens'], 11)
         self.assertEqual(result['usage']['cache_read_tokens'], 3)
 
-    def test_stream_renders_image_partial_and_done(self):
-        response = self._mock_stream_response(
-            [
-                {
-                    'type': 'response.image_generation_call.partial_image',
-                    'item_id': 'img1',
-                    'partial_image_b64': 'AAAA',
-                },
-                {
-                    'type': 'response.output_item.done',
-                    'item': {
-                        'type': 'image_generation_call',
-                        'id': 'img1',
-                    },
-                },
-                {
-                    'type': 'response.completed',
-                    'response': {
-                        'output': [],
-                        'usage': {'input_tokens': 2, 'output_tokens': 1},
-                    },
-                },
-            ]
-        )
-        deltas = []
-        with patch.object(requests.Session, 'post', return_value=response):
-            result = self.provider._request_responses(
-                inputs=[],
-                enable_image_generation=True,
-                on_delta=lambda k, p: deltas.append((k, p)),
-            )
-        self.assertIn('![generated image](data:image/png;base64,AAAA)', result['text'])
-        text_payloads = [p for (k, p) in deltas if k == 'text']
-        self.assertTrue(any('generated image' in p['delta'] for p in text_payloads))
-
     def test_stream_renders_code_interpreter_on_item_done(self):
         response = self._mock_stream_response(
             [
@@ -702,30 +652,6 @@ class TestAiOpenAIProvider(AITestCommon):
         kinds = {item['type'] for item in result['carry_inputs']}
         self.assertIn('message', kinds)
 
-    def test_stream_image_call_on_response_completed_uses_cached_b64(self):
-        response = self._mock_stream_response(
-            [
-                {
-                    'type': 'response.image_generation_call.partial_image',
-                    'item_id': 'imgZ',
-                    'partial_image_b64': 'ZZZ',
-                },
-                {
-                    'type': 'response.completed',
-                    'response': {
-                        'output': [{'type': 'image_generation_call', 'id': 'imgZ'}],
-                        'usage': {'input_tokens': 1, 'output_tokens': 1},
-                    },
-                },
-            ]
-        )
-        with patch.object(requests.Session, 'post', return_value=response):
-            result = self.provider._request_responses(
-                inputs=[],
-                on_delta=lambda k, p: None,
-            )
-        self.assertIn('ZZZ', result['text'])
-
     def test_stream_code_call_on_response_completed(self):
         response = self._mock_stream_response(
             [
@@ -772,7 +698,7 @@ class TestAiOpenAIProvider(AITestCommon):
             with self.assertRaises(UserError):
                 self.provider._request_responses(
                     inputs=[],
-                    model='gpt-5-mini',
+                    model='gpt-5.4-mini',
                     reasoning_effort='low',
                     on_delta=lambda kind, data: deltas.append((kind, data)),
                 )
@@ -977,40 +903,6 @@ class TestAiOpenAIProvider(AITestCommon):
     # ----------------------------------------------------------
     # Parse non-streaming
     # ----------------------------------------------------------
-
-    def test_parse_renders_image_generation_call_output(self):
-        response = self._mock_http_response(
-            {
-                'output': [
-                    {
-                        'type': 'image_generation_call',
-                        'status': 'completed',
-                        'result': 'BASE64IMG',
-                    }
-                ],
-                'usage': {},
-            }
-        )
-        with patch.object(requests.Session, 'post', return_value=response):
-            result = self.provider._request_responses(inputs=[])
-        self.assertIn('data:image/png;base64,BASE64IMG', result['text'])
-
-    def test_parse_skips_failed_image_generation_call(self):
-        response = self._mock_http_response(
-            {
-                'output': [
-                    {
-                        'type': 'image_generation_call',
-                        'status': 'failed',
-                        'result': '',
-                    }
-                ],
-                'usage': {},
-            }
-        )
-        with patch.object(requests.Session, 'post', return_value=response):
-            result = self.provider._request_responses(inputs=[])
-        self.assertEqual(result['text'], '')
 
     def test_parse_renders_code_interpreter_call_output(self):
         response = self._mock_http_response(
