@@ -88,6 +88,7 @@ class SkillToolsMixin(models.AbstractModel):
         """Return the body and resource manifest of an invoked skill."""
         session = self._resolve_skill_session()
         skill = self._resolve_visible_skill(session, skill_name)
+        session._check_skill_scope(skill)
         return {
             'name': skill.name,
             'label': skill.label or skill.display_name or skill.name,

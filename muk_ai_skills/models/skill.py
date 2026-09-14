@@ -18,11 +18,6 @@ class Skill(models.Model):
     # Fields
     # ----------------------------------------------------------
 
-    display_name = fields.Char(
-        compute='_compute_display_name',
-        store=False,
-    )
-
     name = fields.Char(
         string='Technical Name',
         help=(
@@ -48,6 +43,51 @@ class Skill(models.Model):
             'skills panel, e.g. "fa-calendar-plus-o".'
         ),
         default='fa-bolt',
+    )
+
+    skill_type = fields.Selection(
+        selection=[
+            ('chat', 'Chat'),
+        ],
+        string='Type',
+        help=(
+            'Where the skill is offered. Only chat skills are listed to the '
+            'language model and invoked by name; every other surface adds its '
+            'own type and offers them for the user to pick.'
+        ),
+        required=True,
+        default='chat',
+        index=True,
+    )
+
+    scope = fields.Selection(
+        selection=[
+            ('any', 'Anywhere'),
+            ('context', 'On a Record or a List'),
+            ('record', 'On a Single Record'),
+            ('chatter', 'On a Record with a Chatter'),
+        ],
+        string='Available',
+        help=(
+            'What the user must have open for the skill to apply. A skill '
+            'that acts on what is on screen is offered only there, and is '
+            'refused when it is invoked against nothing.'
+        ),
+        required=True,
+        default='any',
+        index=True,
+    )
+
+    model_ids = fields.Many2many(
+        comodel_name='ir.model',
+        relation='muk_ai_skill_ir_model_rel',
+        column1='skill_id',
+        column2='model_id',
+        string='Models',
+        help=(
+            'Models the skill applies to. Leave empty to offer it on every '
+            'model the scope allows.'
+        ),
     )
 
     active = fields.Boolean(
@@ -87,7 +127,7 @@ class Skill(models.Model):
             'sessions run as their configured user and only see the '
             'skills visible to that user.'
         ),
-        default=lambda self: self.env.user,
+        default=lambda self: self._default_user_ids(),
     )
 
     description = fields.Text(
@@ -174,6 +214,31 @@ class Skill(models.Model):
     # Helper
     # ----------------------------------------------------------
 
+    def _default_user_ids(self) -> models.BaseModel:
+        """Seed the share list with the author, unless the author is archived.
+
+        Shipped and demo records are authored by OdooBot, an archived
+        account, and a share row on it makes the skill private to a login
+        nobody uses.
+        """
+        return self.env.user if self.env.user.active else self.env['res.users']
+
+    def _unfiltered(self) -> models.BaseModel:
+        """Return the same records with archived share rows still readable.
+
+        Reading a many2many drops archived ids while the row stays in the
+        table, so the share list reads back empty while the visibility domain
+        still searches -- and finds -- the surviving row. Kept as a recordset
+        rather than a share list so a compute can walk it alongside ``self``
+        and read ``user_ids`` for the whole batch in one query.
+        """
+        return self.sudo().with_context(active_test=False)
+
+    def _shared_users(self) -> models.BaseModel:
+        """Return the share list of a single record, archived users included."""
+        self.ensure_one()
+        return self._unfiltered().user_ids
+
     @api.model
     def _user_visibility_domain(self, user: models.BaseModel) -> list:
         """Return the domain of skills visible to the given user.
@@ -236,30 +301,113 @@ class Skill(models.Model):
             if pending:
                 pending.sudo().write({'res_id': record.id})
 
+    @api.model
+    def _model_has_chatter(self, model_name: str) -> bool:
+        """Tell whether records of ``model_name`` carry a chatter."""
+        model = self.env['ir.model'].sudo()._get(model_name)
+        return bool(model and model.is_mail_thread)
+
+    def _scope_satisfied_by(self, view_context: dict | None) -> bool:
+        """Tell whether what the user has open satisfies this skill's scope.
+
+        A pinned list, pivot or graph names a model but no record, so only
+        ``kind == 'record'`` counts as one; an unsaved form reports itself as a
+        list and is therefore not a record either. A model restriction needs a
+        model on screen, whatever the scope.
+        """
+        context = view_context or {}
+        model = context.get('model') or ''
+        if self.scope != 'any':
+            if not model:
+                return False
+            if self.scope in ('record', 'chatter') and context.get('kind') != 'record':
+                return False
+            if self.scope == 'chatter' and not self._model_has_chatter(model):
+                return False
+        return not self.model_ids or model in self.model_ids.mapped('model')
+
+    def _scope_requirement(self) -> str:
+        """Return the one line stating what this skill needs to be open."""
+        requirement = {
+            'context': _('needs a record or a list open'),
+            'record': _('needs a record open'),
+            'chatter': _('needs a record with a chatter open'),
+        }.get(self.scope, '')
+        if self.model_ids:
+            names = ', '.join(sorted(self.model_ids.mapped('model')))
+            restriction = _('only on %(models)s', models=names)
+            return f'{requirement}, {restriction}' if requirement else restriction
+        return requirement
+
+    def _skill_descriptor(self) -> dict:
+        """Return what a surface needs to offer this skill.
+
+        The seam a surface extends to carry what only it understands: the
+        writing helper adds the group it arranges its offers by, and nothing
+        here has to know that such a grouping exists.
+        """
+        return {
+            'name': self.name,
+            'label': self.label or self.display_name or self.name,
+            'description': (self.description or '').strip(),
+            'icon': self.icon or 'fa-bolt',
+            'scope': self.scope,
+            'models': sorted(self.model_ids.mapped('model')),
+            'requirement': self._scope_requirement(),
+            'body': self.body or '',
+        }
+
     # ----------------------------------------------------------
     # Actions
     # ----------------------------------------------------------
 
     def action_share_everyone(self) -> None:
-        """Clear the share list so the skill is visible to all users."""
-        self.write({'user_ids': [(5, 0, 0)]})
+        """Clear the share list so the skill is visible to all users.
+
+        Unlinked row by row rather than with ``(5, 0, 0)``: the ORM diffs a
+        many2many write against the value it can read, so clearing everything
+        clears nothing when the only sharee is archived.
+        """
+        for record, unfiltered in zip(self, self._unfiltered()):
+            shared = unfiltered.user_ids
+            if shared:
+                unfiltered.write({'user_ids': [(3, user.id) for user in shared]})
 
     def action_make_private(self) -> None:
         """Reset the share list so only the owner can see the skill."""
-        for record in self:
-            record.user_ids = [(6, 0, record.owner_id.ids)]
+        for record, unfiltered in zip(self, self._unfiltered()):
+            shared = unfiltered.user_ids
+            commands = [(3, user.id) for user in shared - record.owner_id]
+            if record.owner_id and record.owner_id not in shared:
+                commands.append((4, record.owner_id.id))
+            if commands:
+                unfiltered.write({'user_ids': commands})
+
+    # ----------------------------------------------------------
+    # Functions
+    # ----------------------------------------------------------
+
+    @api.model
+    def fetch_skills(self, skill_type: str) -> list[dict]:
+        """Return the skills a surface offers, in the order they appear.
+
+        Scoped to the user rather than to a session: a surface asks for its
+        offers before it has one, and what it offers is picked by the user
+        rather than discovered by an agent.
+
+        :param skill_type: the surface asking, see the ``skill_type`` field
+        :return: descriptors carrying what a surface needs to offer a skill
+        """
+        domain = [('active', '=', True), ('skill_type', '=', skill_type)]
+        domain += self._user_visibility_domain(self.env.user)
+        skills = self.env['muk_ai.session']._dedupe_visible_skills(
+            self.sudo().search(domain), self.env.user
+        )
+        return [skill._skill_descriptor() for skill in skills]
 
     # ----------------------------------------------------------
     # Compute
     # ----------------------------------------------------------
-
-    @api.depends('label', 'name')
-    @api.depends_context('lang')
-    def _compute_display_name(self) -> None:
-        for record in self:
-            record.display_name = record.label or (
-                record.name.replace('_', ' ').title() if record.name else ''
-            )
 
     @api.depends('attachment_ids')
     def _compute_attachment_count(self) -> None:
@@ -273,15 +421,16 @@ class Skill(models.Model):
 
     @api.depends('user_ids', 'owner_id')
     def _compute_user_count(self) -> None:
-        for record in self:
-            record.user_count = len(record.user_ids - record.owner_id)
+        for record, unfiltered in zip(self, self._unfiltered()):
+            record.user_count = len(unfiltered.user_ids - record.owner_id)
 
     @api.depends('user_ids', 'owner_id')
     def _compute_visibility(self) -> None:
-        for record in self:
-            if not record.user_ids:
+        for record, unfiltered in zip(self, self._unfiltered()):
+            shared = unfiltered.user_ids
+            if not shared:
                 record.visibility = 'everyone'
-            elif record.user_ids <= record.owner_id:
+            elif shared <= record.owner_id:
                 record.visibility = 'owner'
             else:
                 record.visibility = 'users'
@@ -295,9 +444,9 @@ class Skill(models.Model):
         """
         for record in self:
             if record.visibility == 'everyone':
-                record.user_ids = [(5, 0, 0)]
-            elif record.visibility == 'owner' or not record.user_ids:
-                record.user_ids = [(6, 0, record.owner_id.ids)]
+                record.action_share_everyone()
+            elif record.visibility == 'owner' or not record._shared_users():
+                record.action_make_private()
 
     @api.depends('owner_id')
     @api.depends_context('uid')
@@ -328,6 +477,24 @@ class Skill(models.Model):
         ),
     ]
 
+    @api.constrains('scope', 'model_ids')
+    def _check_scope_models(self) -> None:
+        """Refuse a chatter scope on a model that has none.
+
+        :raise ValidationError: when a selected model is not a thread
+        """
+        for record in self.filtered(lambda skill: skill.scope == 'chatter'):
+            without = record.model_ids.filtered(lambda model: not model.is_mail_thread)
+            if without:
+                raise ValidationError(
+                    _(
+                        'Skill %(name)s asks for a chatter, which %(models)s '
+                        'does not have.',
+                        name=record.name or '',
+                        models=', '.join(sorted(without.mapped('model'))),
+                    )
+                )
+
     @api.constrains('name')
     def _check_name_format(self) -> None:
         """Validate the technical name against the lowercase identifier rule.
@@ -348,13 +515,31 @@ class Skill(models.Model):
     # ORM
     # ----------------------------------------------------------
 
+    def name_get(self) -> list[tuple[int, str]]:
+        """Label a skill by its caption, falling back to its technical name."""
+        return [
+            (
+                record.id,
+                record.label
+                or (record.name.replace('_', ' ').title() if record.name else ''),
+            )
+            for record in self
+        ]
+
     @api.model_create_multi
     def create(self, vals_list: list[dict]) -> models.BaseModel:
-        """Create skills, defaulting the share list to the skill owner."""
+        """Create skills, defaulting the share list to an active skill owner.
+
+        An archived owner is left to the field default, which falls back to
+        the creator: a share row on a login nobody uses would make the skill
+        private to nobody, unreachable for every human.
+        """
         for vals in vals_list:
             if 'user_ids' not in vals:
                 owner_id = vals.get('owner_id') or self.env.uid
-                vals['user_ids'] = [(6, 0, [owner_id])]
+                owner = self.env['res.users'].sudo().browse(owner_id).exists()
+                if owner and owner.active:
+                    vals['user_ids'] = [(6, 0, [owner_id])]
         records = super().create(vals_list)
         records._relink_attachments()
         return records

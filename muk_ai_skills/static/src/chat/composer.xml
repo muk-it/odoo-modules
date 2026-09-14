@@ -3,14 +3,12 @@
 
     <t t-inherit="muk_ai.Chat" t-inherit-mode="extension" owl="1">
         <xpath expr="//ChatComposer" position="attributes">
-            <attribute name="sessionId">session.state.sessionId</attribute>
             <attribute name="onInvokeSkill.bind">runSkill</attribute>
         </xpath>
     </t>
 
     <t t-inherit="muk_ai.ChatWindow" t-inherit-mode="extension" owl="1">
         <xpath expr="//ChatComposer" position="attributes">
-            <attribute name="sessionId">session.state.sessionId</attribute>
             <attribute name="onInvokeSkill.bind">runSkill</attribute>
         </xpath>
     </t>
@@ -22,13 +20,14 @@
         <xpath expr="//div[hasclass('mk_composer')]" position="before">
             <SkillsPanel
                 t-if="showSkillsPanel"
-                skills="sessionSkills"
+                skills="availableSkills"
+                lockedSkills="lockedSkills"
                 autofocus="skillsAutofocus"
                 onSelect.bind="invokeSkill"
                 onClose.bind="closeSkillsPanel"
             />
         </xpath>
-        <xpath expr="//textarea" position="before">
+        <xpath expr="//label[hasclass('mk_attach')]" position="after">
             <button
                 type="button"
                 class="btn mk_skill_btn rounded-circle"

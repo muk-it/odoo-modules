@@ -113,6 +113,39 @@ class TestAvailableSkillNames(TransactionCase):
         entry = next(e for e in entries if e['name'] == 'b_no_icon')
         self.assertEqual(entry['icon'], 'fa-bolt')
 
+    def test_only_chat_skills_are_offered_to_the_language_model(self):
+        self._make_skill(self.user_b, name='b_chat_only')
+        session = self._make_session(self.user_b)
+        self.assertIn('b_chat_only', session._visible_skills().mapped('name'))
+        self.assertNotIn(
+            'b_chat_only', session._visible_skills('composer').mapped('name')
+        )
+
+    def test_fetch_skills_answers_for_the_surface_that_asks(self):
+        self._make_skill(
+            self.user_b,
+            name='b_fetched',
+            label='Fetched',
+            description='  Does a thing.  ',
+            body='Do the thing.',
+        )
+        entries = self.Skill.with_user(self.user_b).fetch_skills('chat')
+        entry = next(e for e in entries if e['name'] == 'b_fetched')
+        self.assertEqual(entry['label'], 'Fetched')
+        self.assertEqual(entry['description'], 'Does a thing.')
+        self.assertEqual(entry['body'], 'Do the thing.')
+        self.assertEqual(entry['icon'], 'fa-bolt')
+
+    def test_fetch_skills_offers_nothing_to_another_surface(self):
+        self._make_skill(self.user_b, name='b_not_composed')
+        entries = self.Skill.with_user(self.user_b).fetch_skills('composer')
+        self.assertNotIn('b_not_composed', [entry['name'] for entry in entries])
+
+    def test_fetch_skills_keeps_another_users_private_skill_hidden(self):
+        self._make_skill(self.user_a, name='a_private')
+        entries = self.Skill.with_user(self.user_b).fetch_skills('chat')
+        self.assertNotIn('a_private', [entry['name'] for entry in entries])
+
     def test_entry_carries_label_and_stripped_description(self):
         self._make_skill(
             self.user_b,
