@@ -198,12 +198,12 @@ class TestToolLazy(ToolCatalogMixin, AITestCommon):
         names = {entry['name'] for entry in schema}
         self.assertEqual(names, {'list_models', 'ask_user'})
 
-    def test_ask_user_omitted_when_approval_off(self):
+    def test_ask_user_survives_approval_off(self):
         self.session.override_approval_mode = 'off'
         with self._patch_catalog():
             schema = self.session._get_tool_schema()
         names = {entry['name'] for entry in schema}
-        self.assertNotIn('ask_user', names)
+        self.assertIn('ask_user', names)
         self.assertIn('tool_load', names)
 
     # ----------------------------------------------------------

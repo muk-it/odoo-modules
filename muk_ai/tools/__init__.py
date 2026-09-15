@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from .call import (
     ASK_USER_TOOL,
+    AVAILABLE_TOOLS_PREAMBLE,
+    CAPABILITY_TOOLS,
     TERMINATING_TOOLS,
     TOOL_LOAD_TOOL,
     TOOL_SUMMARY_MAX_CHARS,

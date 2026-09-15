@@ -28,6 +28,8 @@ from odoo.addons.muk_ai.tools import (
     ASK_USER_TOOL,
     ATTACHMENT_REF_MAX_BYTES,
     ATTACHMENT_REF_RE,
+    AVAILABLE_TOOLS_PREAMBLE,
+    CAPABILITY_TOOLS,
     CLIENT_ACTION_TIMEOUT_SECONDS,
     COMPACT_AUTO_RATIO,
     COMPACT_SUMMARY_REINJECTION,
@@ -529,30 +531,7 @@ class AISession(models.Model):
         if deferred := sorted(set(catalog) - loaded):
             lines = [
                 '<available_tools>',
-                (
-                    'This list is COMPLETE: every tool the session can call '
-                    'is either in your `tools` array (immediately callable) '
-                    'or listed below. Do NOT call list_models or any '
-                    'other tool to look for tools — every name is here.'
-                ),
-                (
-                    'To use a tool listed below, call tool_load with a '
-                    '`call` argument that loads the schema AND executes the '
-                    'tool in ONE round-trip:'
-                ),
-                'tool_load(names=["<tool>"], call={name: "<tool>", arguments: {...}})',
-                (
-                    'Returns {loaded: {...}, call: {output: <result>}}. No '  # noqa: RUF027 — literal prompt text, not an f-string
-                    'follow-up turn. This is the strongly preferred shape '
-                    'for any deferred tool — never load and then call in '
-                    'two separate rounds when one will do.'
-                ),
-                (
-                    'Each line below is `name(arguments): summary`, where `*` '
-                    'marks a required argument. Pass ONLY the arguments listed '
-                    'for that tool — anything else is rejected. The summary is '
-                    'abbreviated; tool_load returns the full schema.'
-                ),
+                *AVAILABLE_TOOLS_PREAMBLE,
                 *self._available_tools_extra_paragraphs(),
                 *(
                     f'{signature}: {summary}' if summary else signature
@@ -629,6 +608,33 @@ class AISession(models.Model):
         agent = self.agent_id or self.env['muk_ai.agent']._get_default()
         return agent._render_prompt(raw, **self._session_prompt_extras())
 
+    def _runtime_capability_lines(self) -> list[str]:
+        """State the capabilities no tool in the list reveals.
+
+        The search backend route stays unstated: it ships ``web_search``.
+        """
+        agent = self.agent_id or self.env['muk_ai.agent']._get_default()
+        lines = []
+        route = agent._web_search_route()
+        if route == 'native':
+            lines.append(
+                'Web search: provider built-in — search the web whenever '
+                'freshness matters, and name the sources you used.'
+            )
+        elif route is None:
+            lines.append(
+                'Web search: unavailable — say so plainly instead of '
+                'guessing at facts that may have moved on.'
+            )
+        if agent._resolve_model_for('image'):
+            lines.append('Image generation: available through generate_image.')
+        if agent._code_interpreter_route():
+            lines.append(
+                'Code interpreter: provider-side sandboxed Python, for '
+                'analytics over data you already fetched.'
+            )
+        return lines
+
     def _build_runtime_block(self) -> str:
         """Build the prompt block stating runtime facts about the session."""
         lines = [
@@ -643,6 +649,7 @@ class AISession(models.Model):
         if len(self.env.user.company_ids) > 1:
             names = ', '.join(self.env.user.company_ids.sorted('id').mapped('name'))
             lines.append(f'Companies accessible: {names}')
+        lines.extend(self._runtime_capability_lines())
         lines.append('</runtime>')
         return '\n'.join(lines)
 
@@ -886,23 +893,37 @@ class AISession(models.Model):
                 return None
         return None
 
-    def _get_essential_tool_names(self) -> list[str]:
-        """Return the essential tool names plus every visible client tool.
+    @api.model
+    def _eager_tool_name_registry(self) -> set[str]:
+        """Return every tool an addon may load upfront, condition aside.
 
-        Client tools load their full schemas upfront so a call pauses on the
-        client-action seam instead of being loaded and inline-called through
-        ``tool_load`` (which would execute it without pausing for the client).
+        The agent form subtracts this from the essential picker.
+        """
+        return set(CAPABILITY_TOOLS)
+
+    def _eager_tool_names(self) -> set[str]:
+        """Return the registered tools this session can use right now."""
+        return set(CAPABILITY_TOOLS)
+
+    def _get_essential_tool_names(self) -> list[str]:
+        """Return the essential names plus every client and eager-loaded tool.
+
+        Client tools ship upfront so a call pauses on the client-action seam.
         """
         if self.agent_id:
             names = list(self.agent_id._get_essential_tool_names())
         else:
             names = list(self.env['muk_ai.agent']._get_default_essential_tool_names())
+        eager = self._eager_tool_names()
         names.extend(
             entry['name']
             for entry in self._get_filtered_catalog()
             if entry.get('name')
             and entry['name'] not in names
-            and (entry.get('_meta') or {}).get('execute') == 'client'
+            and (
+                (entry.get('_meta') or {}).get('execute') == 'client'
+                or entry['name'] in eager
+            )
         )
         return names
 
@@ -918,7 +939,10 @@ class AISession(models.Model):
         return result
 
     def _get_tool_schema(self) -> list[dict]:
-        """Build the function schema list for currently loaded tools."""
+        """Build the function schema list for currently loaded tools.
+
+        ``ask_user`` always rides along: asking is not approving.
+        """
         catalog_by_name = {
             entry['name']: entry for entry in self._get_filtered_catalog()
         }
@@ -928,7 +952,7 @@ class AISession(models.Model):
         ]
         if set(catalog_by_name) - loaded:
             result.append(self._tool_entry_to_schema(TOOL_LOAD_TOOL))
-        if self._effective_approval_mode() != 'off' and 'ask_user' not in loaded:
+        if 'ask_user' not in loaded:
             result.append(self._tool_entry_to_schema(ASK_USER_TOOL))
         return result
 
