@@ -139,6 +139,11 @@ class AISession(models.Model):
             'resources': manifest,
         }
 
+    @api.model
+    def _eager_tool_name_registry(self) -> set[str]:
+        """Register the skill invocation tool as loaded by the session, not chosen on the agent."""
+        return super()._eager_tool_name_registry() | {'invoke_skill'}
+
     def _eager_tool_names(self) -> set[str]:
         """Load the skill invocation tool when this session exposes skills."""
         names = super()._eager_tool_names()
