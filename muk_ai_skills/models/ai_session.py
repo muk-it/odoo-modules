@@ -139,6 +139,18 @@ class AISession(models.Model):
             'resources': manifest,
         }
 
+    @api.model
+    def _eager_tool_name_registry(self) -> set[str]:
+        """Register the skill invocation tool as loaded by the session, not chosen on the agent."""
+        return super()._eager_tool_name_registry() | {'invoke_skill'}
+
+    def _eager_tool_names(self) -> set[str]:
+        """Load the skill invocation tool when this session exposes skills."""
+        names = super()._eager_tool_names()
+        if self and self.id and self._visible_skills():
+            names.add('invoke_skill')
+        return names
+
     def _system_prompt_addenda(self) -> list[str]:
         """Append the available-skills block when the session exposes skills."""
         addenda = super()._system_prompt_addenda()
