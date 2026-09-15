@@ -22,7 +22,7 @@ def migrate(cr: Cursor, version: str) -> None:
     if not record:
         return
     path = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'agent.xml')
-    tree = etree.parse(path)  # noqa: S320 -- trusted in-repo data file
+    tree = etree.parse(path)
     nodes = tree.xpath("//record[@id='agent_general']/field[@name='system_prompt']")
     if nodes and nodes[0].text is not None:
         record.system_prompt = nodes[0].text

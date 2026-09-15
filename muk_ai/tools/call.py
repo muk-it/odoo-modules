@@ -17,6 +17,42 @@ TERMINATING_TOOLS = frozenset(
     }
 )
 
+CAPABILITY_TOOLS = frozenset(
+    {
+        'generate_image',
+        'web_search',
+    }
+)
+
+# ----------------------------------------------------------
+# Prompt Blocks
+# ----------------------------------------------------------
+
+AVAILABLE_TOOLS_PREAMBLE = (
+    (
+        'This list is COMPLETE: every tool the session can call is either in '
+        'your `tools` array (immediately callable) or listed below. Do NOT '
+        'call list_models or any other tool to look for tools — every name '
+        'is here.'
+    ),
+    (
+        'To use a tool listed below, call tool_load with a `call` argument '
+        'that loads the schema AND executes the tool in ONE round-trip:'
+    ),
+    'tool_load(names=["<tool>"], call={name: "<tool>", arguments: {...}})',
+    (
+        'Returns {loaded: {...}, call: {output: <result>}}. No follow-up '
+        'turn. This is the strongly preferred shape for any deferred tool — '
+        'never load and then call in two separate rounds when one will do.'
+    ),
+    (
+        'Each line below is `name(arguments): summary`, where `*` marks a '
+        'required argument. Pass ONLY the arguments listed for that tool — '
+        'anything else is rejected. The summary is abbreviated; tool_load '
+        'returns the full schema.'
+    ),
+)
+
 # ----------------------------------------------------------
 # Builtin Tool Schemas
 # ----------------------------------------------------------
