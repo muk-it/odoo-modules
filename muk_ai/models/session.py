@@ -604,11 +604,7 @@ class AISession(models.Model):
     def _runtime_capability_lines(self) -> list[str]:
         """State the capabilities no tool in the list reveals.
 
-        A capability the provider serves itself ships no Odoo tool, so saying
-        nothing reads exactly like having none: the agent then promises work
-        it cannot do, or refuses work it can. The search backend route is the
-        one case left unstated — it ships the ``web_search`` tool, and that is
-        already the disclosure.
+        The search backend route stays unstated: it ships ``web_search``.
         """
         agent = self.agent_id or self.env['muk_ai.agent']._get_default()
         lines = []
@@ -890,23 +886,22 @@ class AISession(models.Model):
                 return None
         return None
 
-    def _eager_tool_names(self) -> set[str]:
-        """Return the tools this session loads upfront whatever the agent stores.
+    @api.model
+    def _eager_tool_name_registry(self) -> set[str]:
+        """Return every tool an addon may load upfront, condition aside.
 
-        The seam an addon extends for a tool that has to be there the moment
-        it can be used at all, rather than being a curated choice: the
-        condition that makes it useful is the condition that loads it. Capability
-        tools qualify because :meth:`_get_filtered_catalog` carries them only
-        once something serves them.
+        The agent form subtracts this from the essential picker.
         """
+        return set(CAPABILITY_TOOLS)
+
+    def _eager_tool_names(self) -> set[str]:
+        """Return the registered tools this session can use right now."""
         return set(CAPABILITY_TOOLS)
 
     def _get_essential_tool_names(self) -> list[str]:
         """Return the essential names plus every client and eager-loaded tool.
 
-        Client tools load their full schemas upfront so a call pauses on the
-        client-action seam instead of being loaded and inline-called through
-        ``tool_load`` (which would execute it without pausing for the client).
+        Client tools ship upfront so a call pauses on the client-action seam.
         """
         if self.agent_id:
             names = list(self.agent_id._get_essential_tool_names())
@@ -937,7 +932,10 @@ class AISession(models.Model):
         return result
 
     def _get_tool_schema(self) -> list[dict]:
-        """Build the function schema list for currently loaded tools."""
+        """Build the function schema list for currently loaded tools.
+
+        ``ask_user`` always rides along: asking is not approving.
+        """
         catalog_by_name = {
             entry['name']: entry for entry in self._get_filtered_catalog()
         }
@@ -947,7 +945,7 @@ class AISession(models.Model):
         ]
         if set(catalog_by_name) - loaded:
             result.append(self._tool_entry_to_schema(TOOL_LOAD_TOOL))
-        if self._effective_approval_mode() != 'off' and 'ask_user' not in loaded:
+        if 'ask_user' not in loaded:
             result.append(self._tool_entry_to_schema(ASK_USER_TOOL))
         return result
 

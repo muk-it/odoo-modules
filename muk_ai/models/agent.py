@@ -2,11 +2,7 @@ from __future__ import annotations
 
 from odoo import _, api, fields, models, release
 
-from odoo.addons.muk_ai.tools import (
-    CAPABILITY_TOOLS,
-    REASONING_EFFORT_SELECTION,
-    search_backend,
-)
+from odoo.addons.muk_ai.tools import REASONING_EFFORT_SELECTION, search_backend
 from odoo.addons.muk_mcp.core.tool import get_tool_index
 
 
@@ -58,7 +54,6 @@ class AIAgent(models.Model):
 
     system_prompt = fields.Text(
         string='System Prompt',
-        translate=True,
     )
 
     provider_id = fields.Many2one(
@@ -189,11 +184,7 @@ class AIAgent(models.Model):
             'Tool names that ship with full schemas at session start. '
             'Every other catalog tool is name-only in the prompt and '
             'fetched on demand via tool_load. Empty falls back to a '
-            'curated default of read primitives and navigation, which '
-            'every installed addon extends with the tools it needs '
-            'upfront. To disable lazy loading entirely, list every '
-            'catalog tool. Names outside the tool filter are silently '
-            'dropped.'
+            'curated default. Names outside the tool filter are dropped.'
         ),
         default=list,
     )
@@ -317,15 +308,12 @@ class AIAgent(models.Model):
 
     @api.model
     def _rule_governed_tool_names(self) -> set[str]:
-        """Return the tools whose eager loading no agent setting decides.
-
-        ``ask_user`` reaches the model from the session rather than the tool
-        catalog, a client tool always ships upfront so a call pauses on its
-        seam, and a capability tool follows whatever serves it. Listing any of
-        them as essential promises a choice the session then ignores.
-        """
+        """Return the tools the session loads itself, whatever the agent stores."""
         index = get_tool_index(self.env, registry='odoo')
-        return {'ask_user', *CAPABILITY_TOOLS} | {
+        return {
+            'ask_user',
+            *self.env['muk_ai.session']._eager_tool_name_registry(),
+        } | {
             name
             for name, entry in index.items()
             if (entry.get('meta') or {}).get('execute') == 'client'
@@ -710,11 +698,7 @@ class AIAgent(models.Model):
 
     @api.depends('tool_filter_options')
     def _compute_essential_tool_options(self) -> None:
-        """Offer only the tools whose eager loading this field decides.
-
-        The filter above stays complete, since filtering a rule-governed tool
-        away does take it from the model. Choosing it as essential does not.
-        """
+        """Offer only the tools whose eager loading this field decides."""
         governed = self._rule_governed_tool_names()
         for record in self:
             record.essential_tool_options = [
