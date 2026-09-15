@@ -212,12 +212,14 @@
 								<field
                                     name="tool_filter"
                                     widget="tool_picker"
+                                    placeholder="Empty — every tool allowed"
                                     options="{'options_field': 'tool_filter_options'}"
                                 />
 								<field
                                     name="essential_tool_names"
                                     widget="tool_picker"
-                                    options="{'options_field': 'tool_filter_options'}"
+                                    placeholder="Add a tool to load it upfront"
+                                    options="{'options_field': 'essential_tool_options'}"
                                 />
 							</group>
 						</page>

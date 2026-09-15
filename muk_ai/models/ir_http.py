@@ -30,7 +30,7 @@ class IrHttp(models.AbstractModel):
             with Registry(dbname).cursor() as cr:
                 env = api.Environment(cr, SUPERUSER_ID, {})
                 env['muk_ai.session']._dispatch_in_slot(session_ids)
-        except Exception:  # noqa: BLE001 — never surface after the response was sent
+        except Exception:
             _logger.exception('Inline AI dispatch failed for sessions %s', session_ids)
 
     # ----------------------------------------------------------

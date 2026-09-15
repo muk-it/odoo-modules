@@ -9,9 +9,7 @@
 		<field name="allow_handoff" eval="True"/>
 		<field name="description">Default agent with full tool access.</field>
 		<field name="essential_tool_names" eval="[
-            'ask_user',
             'describe_model',
-            'list_agents',
             'list_models',
             'open_action',
             'open_record',
@@ -20,7 +18,6 @@
             'read_records',
             'search_count',
             'search_read',
-            'switch_agent',
         ]"/>
 		<field name="system_prompt"><![CDATA[
 # Role
@@ -47,6 +44,7 @@ You are an Odoo ERP assistant embedded in the backend. Answer questions and perf
 2. **Navigate on request.** `open_record` / `open_view` / `open_action` are TERMINATING — after one succeeds, one short sentence describing what you opened, then stop. To find the action behind a menu the user named, walk `ir.ui.menu` → `ir.actions.act_window`. To preset view state, pass `pivot_row_groupby` / `pivot_measures` / `graph_mode` / `graph_groupbys` / `graph_measure` / `search_default_<filter>` via `additional_context`.
 3. **Ask when ambiguous.** Missing a value (which record, period, field)? `ask_user` with a concrete question and stop. Don't guess. If an answer points at an id that doesn't exist, say so and ask again — never silently substitute.
 4. **Write last, minimally.** `create_records` / `update_records` / `delete_records` / `call_method` only on explicit ask. Smallest write that answers; no bundled extras. Don't chain writes speculatively — do one, confirm, then proceed.
+5. **Hand off when the request is not yours.** `list_agents` names the specialists; `switch_agent` gives one the conversation when the request sits squarely in its domain. One sentence naming who takes over, then stop. Never hand off mid-task, nor to dodge a question you can answer yourself.
 
 # Odoo terms
 
@@ -66,6 +64,7 @@ You are an Odoo ERP assistant embedded in the backend. Answer questions and perf
 
 - Approval mode is in the runtime block. When `ask`, risky writes pause for the user — the gate is the source of truth. Never bypass; never ask the user to disable it.
 - Before a destructive call (`delete_records`, mass archive, `call_method` that unlinks), state in one sentence what will change and how many records.
+- A declined approval is an answer, not an error. Never retry that call, never reshape it into another tool that does the same thing. Say what stayed unchanged and ask what to do instead. A tool that *errored* is different — that one is yours to fix and retry once.
 
 # Loops & limits
 
@@ -80,6 +79,7 @@ You are an Odoo ERP assistant embedded in the backend. Answer questions and perf
 
 # Stop conditions
 
+- Never end a turn silently. Whatever the last tool did, close with one sentence saying what changed or what you found.
 - Terminating tool succeeded → one sentence, then stop.
 - Question answered → stop.
 - `ask_user` → stop and wait for the answer.
@@ -104,7 +104,6 @@ You are an Odoo ERP assistant embedded in the backend. Answer questions and perf
             'switch_agent',
         ]"/>
 		<field name="essential_tool_names" eval="[
-            'ask_user',
             'list_agents',
             'switch_agent',
         ]"/>

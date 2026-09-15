@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from odoo import _, api, fields, models, release
 
-from odoo.addons.muk_ai.tools import REASONING_EFFORT_SELECTION, search_backend
+from odoo.addons.muk_ai.tools import (
+    CAPABILITY_TOOLS,
+    REASONING_EFFORT_SELECTION,
+    search_backend,
+)
 from odoo.addons.muk_mcp.core.tool import get_tool_index
 
 
@@ -210,6 +214,11 @@ class AIAgent(models.Model):
         string='Available Tool Options',
     )
 
+    essential_tool_options = fields.Json(
+        compute='_compute_essential_tool_options',
+        string='Available Essential Options',
+    )
+
     approval_mode = fields.Selection(
         selection=[
             ('ask', 'Ask on writes'),
@@ -302,6 +311,22 @@ class AIAgent(models.Model):
         if configured:
             return configured
         return self._get_default_essential_tool_names()
+
+    @api.model
+    def _rule_governed_tool_names(self) -> set[str]:
+        """Return the tools whose eager loading no agent setting decides.
+
+        ``ask_user`` reaches the model from the session rather than the tool
+        catalog, a client tool always ships upfront so a call pauses on its
+        seam, and a capability tool follows whatever serves it. Listing any of
+        them as essential promises a choice the session then ignores.
+        """
+        index = get_tool_index(self.env, registry='odoo')
+        return {'ask_user', *CAPABILITY_TOOLS} | {
+            name
+            for name, entry in index.items()
+            if (entry.get('meta') or {}).get('execute') == 'client'
+        }
 
     def _leading_provider(self) -> models.BaseModel:
         """Return the provider that leads the default walk of every modality.
@@ -679,6 +704,21 @@ class AIAgent(models.Model):
         options = sorted(seen.values(), key=lambda o: o['name'])
         for record in self:
             record.tool_filter_options = options
+
+    @api.depends('tool_filter_options')
+    def _compute_essential_tool_options(self) -> None:
+        """Offer only the tools whose eager loading this field decides.
+
+        The filter above stays complete, since filtering a rule-governed tool
+        away does take it from the model. Choosing it as essential does not.
+        """
+        governed = self._rule_governed_tool_names()
+        for record in self:
+            record.essential_tool_options = [
+                option
+                for option in record.tool_filter_options
+                if option['name'] not in governed
+            ]
 
     def _compute_session_count(self) -> None:
         """Count the sessions linked to each agent."""

@@ -28,6 +28,8 @@ from odoo.addons.muk_ai.tools import (
     ASK_USER_TOOL,
     ATTACHMENT_REF_MAX_BYTES,
     ATTACHMENT_REF_RE,
+    AVAILABLE_TOOLS_PREAMBLE,
+    CAPABILITY_TOOLS,
     CLIENT_ACTION_TIMEOUT_SECONDS,
     COMPACT_AUTO_RATIO,
     COMPACT_SUMMARY_REINJECTION,
@@ -522,30 +524,7 @@ class AISession(models.Model):
         if deferred := sorted(set(catalog) - loaded):
             lines = [
                 '<available_tools>',
-                (
-                    'This list is COMPLETE: every tool the session can call '
-                    'is either in your `tools` array (immediately callable) '
-                    'or listed below. Do NOT call list_models or any '
-                    'other tool to look for tools — every name is here.'
-                ),
-                (
-                    'To use a tool listed below, call tool_load with a '
-                    '`call` argument that loads the schema AND executes the '
-                    'tool in ONE round-trip:'
-                ),
-                'tool_load(names=["<tool>"], call={name: "<tool>", arguments: {...}})',
-                (
-                    'Returns {loaded: {...}, call: {output: <result>}}. No '  # noqa: RUF027 — literal prompt text, not an f-string
-                    'follow-up turn. This is the strongly preferred shape '
-                    'for any deferred tool — never load and then call in '
-                    'two separate rounds when one will do.'
-                ),
-                (
-                    'Each line below is `name(arguments): summary`, where `*` '
-                    'marks a required argument. Pass ONLY the arguments listed '
-                    'for that tool — anything else is rejected. The summary is '
-                    'abbreviated; tool_load returns the full schema.'
-                ),
+                *AVAILABLE_TOOLS_PREAMBLE,
                 *self._available_tools_extra_paragraphs(),
                 *(
                     f'{signature}: {summary}' if summary else signature
@@ -622,6 +601,37 @@ class AISession(models.Model):
         agent = self.agent_id or self.env['muk_ai.agent']._get_default()
         return agent._render_prompt(raw, **self._session_prompt_extras())
 
+    def _runtime_capability_lines(self) -> list[str]:
+        """State the capabilities no tool in the list reveals.
+
+        A capability the provider serves itself ships no Odoo tool, so saying
+        nothing reads exactly like having none: the agent then promises work
+        it cannot do, or refuses work it can. The search backend route is the
+        one case left unstated — it ships the ``web_search`` tool, and that is
+        already the disclosure.
+        """
+        agent = self.agent_id or self.env['muk_ai.agent']._get_default()
+        lines = []
+        route = agent._web_search_route()
+        if route == 'native':
+            lines.append(
+                'Web search: provider built-in — search the web whenever '
+                'freshness matters, and name the sources you used.'
+            )
+        elif route is None:
+            lines.append(
+                'Web search: unavailable — say so plainly instead of '
+                'guessing at facts that may have moved on.'
+            )
+        if agent._resolve_model_for('image'):
+            lines.append('Image generation: available through generate_image.')
+        if agent._code_interpreter_route():
+            lines.append(
+                'Code interpreter: provider-side sandboxed Python, for '
+                'analytics over data you already fetched.'
+            )
+        return lines
+
     def _build_runtime_block(self) -> str:
         """Build the prompt block stating runtime facts about the session."""
         lines = [
@@ -636,6 +646,7 @@ class AISession(models.Model):
         if len(self.env.user.company_ids) > 1:
             names = ', '.join(self.env.user.company_ids.sorted('id').mapped('name'))
             lines.append(f'Companies accessible: {names}')
+        lines.extend(self._runtime_capability_lines())
         lines.append('</runtime>')
         return '\n'.join(lines)
 
@@ -880,11 +891,15 @@ class AISession(models.Model):
         return None
 
     def _get_essential_tool_names(self) -> list[str]:
-        """Return the essential tool names plus every visible client tool.
+        """Return the essential names plus every visible client and capability tool.
 
         Client tools load their full schemas upfront so a call pauses on the
         client-action seam instead of being loaded and inline-called through
         ``tool_load`` (which would execute it without pausing for the client).
+
+        Capability tools are the ones an agent setting switches on, which a
+        stored list cannot mirror: :meth:`_get_filtered_catalog` carries them
+        only once something serves them, so their presence is the signal.
         """
         if self.agent_id:
             names = list(self.agent_id._get_essential_tool_names())
@@ -895,7 +910,10 @@ class AISession(models.Model):
             for entry in self._get_filtered_catalog()
             if entry.get('name')
             and entry['name'] not in names
-            and (entry.get('_meta') or {}).get('execute') == 'client'
+            and (
+                (entry.get('_meta') or {}).get('execute') == 'client'
+                or entry['name'] in CAPABILITY_TOOLS
+            )
         )
         return names
 
