@@ -1,0 +1,17 @@
+.mk_chat,
+.mk_window {
+    .mk_tool.mk_tool_schedule_resume {
+        border-left-color: #58a6ff;
+    }
+    .mk_tool.mk_tool_schedule_recur {
+        border-left-color: #3fb950;
+    }
+    .mk_tool.mk_tool_schedule_resume:not(.mk_tool_streaming) .mk_tool_icon {
+        background: rgba(88, 166, 255, 0.16);
+        color: #58a6ff;
+    }
+    .mk_tool.mk_tool_schedule_recur:not(.mk_tool_streaming) .mk_tool_icon {
+        background: rgba(63, 185, 80, 0.16);
+        color: #3fb950;
+    }
+}
