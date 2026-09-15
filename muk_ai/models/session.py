@@ -890,21 +890,29 @@ class AISession(models.Model):
                 return None
         return None
 
+    def _eager_tool_names(self) -> set[str]:
+        """Return the tools this session loads upfront whatever the agent stores.
+
+        The seam an addon extends for a tool that has to be there the moment
+        it can be used at all, rather than being a curated choice: the
+        condition that makes it useful is the condition that loads it. Capability
+        tools qualify because :meth:`_get_filtered_catalog` carries them only
+        once something serves them.
+        """
+        return set(CAPABILITY_TOOLS)
+
     def _get_essential_tool_names(self) -> list[str]:
-        """Return the essential names plus every visible client and capability tool.
+        """Return the essential names plus every client and eager-loaded tool.
 
         Client tools load their full schemas upfront so a call pauses on the
         client-action seam instead of being loaded and inline-called through
         ``tool_load`` (which would execute it without pausing for the client).
-
-        Capability tools are the ones an agent setting switches on, which a
-        stored list cannot mirror: :meth:`_get_filtered_catalog` carries them
-        only once something serves them, so their presence is the signal.
         """
         if self.agent_id:
             names = list(self.agent_id._get_essential_tool_names())
         else:
             names = list(self.env['muk_ai.agent']._get_default_essential_tool_names())
+        eager = self._eager_tool_names()
         names.extend(
             entry['name']
             for entry in self._get_filtered_catalog()
@@ -912,7 +920,7 @@ class AISession(models.Model):
             and entry['name'] not in names
             and (
                 (entry.get('_meta') or {}).get('execute') == 'client'
-                or entry['name'] in CAPABILITY_TOOLS
+                or entry['name'] in eager
             )
         )
         return names

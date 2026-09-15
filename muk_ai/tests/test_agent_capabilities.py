@@ -48,6 +48,10 @@ class TestAgentCapabilities(ImageCase):
     # Tests: essential tools
     # ----------------------------------------------------------
 
+    def test_the_core_default_carries_the_resource_reader(self):
+        defaults = self.env['muk_ai.agent']._get_default_essential_tool_names()
+        self.assertIn('read_resource', defaults)
+
     def test_the_search_backend_route_loads_web_search_upfront(self):
         self._backend('brave')
         session = self._session(self._agent(web_search='tool'))
