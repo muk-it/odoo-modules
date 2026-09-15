@@ -434,7 +434,7 @@ class ProviderBase:
             psycopg2.errors.SerializationFailure,
         ) as exc:
             raise StreamCancelled() from exc
-        except Exception:  # noqa: BLE001 — delta handler must never break the stream
+        except Exception:
             _logger.exception('on_delta handler failed')
 
     @staticmethod

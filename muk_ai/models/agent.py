@@ -54,7 +54,6 @@ class AIAgent(models.Model):
 
     system_prompt = fields.Text(
         string='System Prompt',
-        translate=True,
     )
 
     provider_id = fields.Many2one(
@@ -185,9 +184,7 @@ class AIAgent(models.Model):
             'Tool names that ship with full schemas at session start. '
             'Every other catalog tool is name-only in the prompt and '
             'fetched on demand via tool_load. Empty falls back to a '
-            'curated default (read primitives + navigation + ask_user). '
-            'To disable lazy loading entirely, list every catalog tool. '
-            'Names outside the tool filter are silently dropped.'
+            'curated default. Names outside the tool filter are dropped.'
         ),
         default=list,
     )
@@ -208,6 +205,11 @@ class AIAgent(models.Model):
     tool_filter_options = fields.Json(
         compute='_compute_tool_filter_options',
         string='Available Tool Options',
+    )
+
+    essential_tool_options = fields.Json(
+        compute='_compute_essential_tool_options',
+        string='Available Essential Options',
     )
 
     approval_mode = fields.Selection(
@@ -287,6 +289,7 @@ class AIAgent(models.Model):
             'open_view',
             'read_group',
             'read_records',
+            'read_resource',
             'search_count',
             'search_read',
         ]
@@ -302,6 +305,19 @@ class AIAgent(models.Model):
         if configured:
             return configured
         return self._get_default_essential_tool_names()
+
+    @api.model
+    def _rule_governed_tool_names(self) -> set[str]:
+        """Return the tools the session loads itself, whatever the agent stores."""
+        index = get_tool_index(self.env, registry='odoo')
+        return {
+            'ask_user',
+            *self.env['muk_ai.session']._eager_tool_name_registry(),
+        } | {
+            name
+            for name, entry in index.items()
+            if (entry.get('meta') or {}).get('execute') == 'client'
+        }
 
     def _leading_provider(self) -> models.BaseModel:
         """Return the provider that leads the default walk of every modality.
@@ -679,6 +695,17 @@ class AIAgent(models.Model):
         options = sorted(seen.values(), key=lambda o: o['name'])
         for record in self:
             record.tool_filter_options = options
+
+    @api.depends('tool_filter_options')
+    def _compute_essential_tool_options(self) -> None:
+        """Offer only the tools whose eager loading this field decides."""
+        governed = self._rule_governed_tool_names()
+        for record in self:
+            record.essential_tool_options = [
+                option
+                for option in record.tool_filter_options
+                if option['name'] not in governed
+            ]
 
     def _compute_session_count(self) -> None:
         """Count the sessions linked to each agent."""
