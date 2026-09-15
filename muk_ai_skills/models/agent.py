@@ -14,8 +14,5 @@ class AIAgent(models.Model):
 
     @api.model
     def _get_default_essential_tool_names(self) -> list[str]:
-        """Append the skill invocation tools to the essential tool names."""
-        return super()._get_default_essential_tool_names() + [
-            'invoke_skill',
-            'read_resource',
-        ]
+        """Append the skill invocation tool to the essential tool names."""
+        return super()._get_default_essential_tool_names() + ['invoke_skill']
