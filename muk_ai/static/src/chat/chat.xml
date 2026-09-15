@@ -494,6 +494,9 @@
                 </t>
             </div>
         </t>
+        <t t-elif="turnRenderer(turn)">
+            <t t-component="turnRenderer(turn)" turn="turn" session="session"/>
+        </t>
         <t t-else="">
             <div class="mk_turn mk_turn_assistant" t-att-class="turn.inHistory ? 'mk_turn_in_history' : ''">
                 <t t-foreach="turnItems(turn)" t-as="item" t-key="item.key">

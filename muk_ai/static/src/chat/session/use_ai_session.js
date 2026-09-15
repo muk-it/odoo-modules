@@ -2,6 +2,7 @@ import { markup, onWillUnmount, useEnv, useState } from '@odoo/owl';
 
 import { ConfirmationDialog } from '@web/core/confirmation_dialog/confirmation_dialog';
 import { _t } from '@web/core/l10n/translation';
+import { registry } from '@web/core/registry';
 import { user } from '@web/core/user';
 import { useService } from '@web/core/utils/hooks';
 import { SelectCreateDialog } from '@web/views/view_dialogs/select_create_dialog';
@@ -98,6 +99,16 @@ const WRITE_ACTIONS = [
     'openHandoverPicker',
 ];
 
+/**
+ * Registry of live-update handlers for bus event types the core does not
+ * handle, keyed by event type. Each handler has the signature
+ * `(payload, session) => void`, where `session` exposes the reactive
+ * `state`, `updateEvent(eventId, kind, update)` rewriting one logged event
+ * in place through `update(entry) => entry`, `bumpStreamActivity()` and
+ * `requestScroll()`.
+ */
+export const sessionEventHandlers = registry.category('muk_ai.session_event_handlers');
+
 const COMPACT_WARN_RATIO = 0.65;
 const COMPACT_AUTO_RATIO = 0.8;
 const STREAM_IDLE_MS = 3000;
@@ -160,6 +171,7 @@ export function useAiSession(options = {}) {
         pendingMessages: [],
         streamIdle: false,
         resumeAt: '',
+        artifactsFocus: null,
     });
     let eventKeys = new Set();
     let onScrollCallback = null;
@@ -383,19 +395,10 @@ export function useAiSession(options = {}) {
             if (eventId == null || !delta) {
                 return;
             }
-            state.events = state.events.map((entry) => {
-                if (
-                    entry &&
-                    entry.event_id === eventId &&
-                    entry.kind === 'compact_progress'
-                ) {
-                    return {
-                        ...entry,
-                        streamed_text: (entry.streamed_text || '') + delta,
-                    };
-                }
-                return entry;
-            });
+            updateEvent(eventId, 'compact_progress', (entry) => ({
+                ...entry,
+                streamed_text: (entry.streamed_text || '') + delta,
+            }));
             bumpStreamActivity();
             requestScroll();
         } else if (event.type === 'compact_update') {
@@ -404,18 +407,29 @@ export function useAiSession(options = {}) {
             if (eventId == null) {
                 return;
             }
-            state.events = state.events.map((entry) => {
-                if (
-                    entry &&
-                    entry.event_id === eventId &&
-                    entry.kind === 'compact_progress'
-                ) {
-                    return { ...entry, ...patch };
-                }
-                return entry;
-            });
+            updateEvent(eventId, 'compact_progress', (entry) => ({
+                ...entry,
+                ...patch,
+            }));
             requestScroll();
+        } else {
+            const handle = sessionEventHandlers.get(event.type, null);
+            if (handle) {
+                handle(event.payload || {}, {
+                    state,
+                    updateEvent,
+                    bumpStreamActivity,
+                    requestScroll,
+                });
+            }
         }
+    }
+    function updateEvent(eventId, kind, update) {
+        state.events = state.events.map((entry) =>
+            entry && entry.event_id === eventId && entry.kind === kind
+                ? update(entry)
+                : entry,
+        );
     }
     async function handleUiAction(payload) {
         const action = payload && payload.action;
@@ -745,8 +759,16 @@ export function useAiSession(options = {}) {
         return (
             state.status === 'running' ||
             state.status === 'compacting' ||
-            (state.status === 'waiting' && (state.pendingAsk || {}).kind === 'approval')
+            (state.status === 'waiting' && !!(state.pendingAsk || {}).queues_input)
         );
+    }
+    /**
+     * Ask the artifacts panel to open on a tab and single out one of its items.
+     * @param {string} tab artifact type id
+     * @param {number|string|null} [itemId] item to single out within the tab
+     */
+    function focusArtifact(tab, itemId = null) {
+        state.artifactsFocus = { tab, itemId };
     }
     function onInputChange(value) {
         state.input = value;
@@ -1597,6 +1619,7 @@ export function useAiSession(options = {}) {
         canAttach,
         canStop,
         isQueueing,
+        focusArtifact,
         cancelQueued,
         runUnpin,
         setApprovalMode,

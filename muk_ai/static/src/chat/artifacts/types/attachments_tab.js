@@ -10,6 +10,7 @@ export class AttachmentsTab extends Component {
         items: { type: Array },
         session: { type: Object, optional: true },
         onOpenAttachment: { type: Function, optional: true },
+        focusItemId: { type: [Number, String, { value: null }], optional: true },
     };
     onOpen(attachment) {
         if (this.props.onOpenAttachment) {

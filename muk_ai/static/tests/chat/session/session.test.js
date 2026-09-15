@@ -1103,6 +1103,50 @@ test('canSend requires text; running allows queueing', async () => {
     expect(session.canSend()).toBe(true);
 });
 
+test('isQueueing follows the queues_input flag of the pending ask', async () => {
+    onRpc('muk_ai.session', 'read', () => [
+        {
+            ...SESSION_RECORD,
+            state: 'waiting',
+            pending_ask: { kind: 'approval', call_id: 'c1', queues_input: true },
+        },
+    ]);
+    makeBusMock();
+    const harness = makeHarness();
+    const session = await mountAndLoad(harness);
+    expect(session.isQueueing()).toBe(true);
+    session.state.pendingAsk = { kind: 'approval', call_id: 'c1' };
+    expect(session.isQueueing()).toBe(false);
+    session.state.pendingAsk = { kind: 'parked', queues_input: true };
+    expect(session.isQueueing()).toBe(true);
+    session.state.status = 'done';
+    expect(session.isQueueing()).toBe(false);
+});
+
+test('onSend queues through enqueue_message while a flagged ask is pending', async () => {
+    const parked = {
+        ...SESSION_RECORD,
+        state: 'waiting',
+        pending_ask: { kind: 'parked', queues_input: true },
+    };
+    onRpc('muk_ai.session', 'read', () => [parked]);
+    onRpc('muk_ai.session', 'get_snapshot', () => snapshotFor(parked));
+    const calls = [];
+    onRpc('muk_ai.session', 'enqueue_message', ({ args }) => {
+        calls.push(args);
+        return snapshotFor(parked, {
+            pending_user_messages: [{ content: args[1], attachment_ids: [] }],
+        });
+    });
+    makeBusMock();
+    const harness = makeHarness();
+    const session = await mountAndLoad(harness);
+    session.onInputChange('while parked');
+    await session.onSend();
+    expect(calls).toEqual([[7, 'while parked']]);
+    expect(session.state.pendingMessages).toHaveLength(1);
+});
+
 test('canStop only when running', async () => {
     onRpc('muk_ai.session', 'read', () => [{ ...SESSION_RECORD, state: 'running' }]);
     makeBusMock();

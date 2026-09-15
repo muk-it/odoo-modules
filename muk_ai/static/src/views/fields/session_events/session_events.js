@@ -9,7 +9,7 @@ import { AttachmentCard } from '@muk_ai/core/attachment/attachment_card';
 import { ToolCard } from '@muk_ai/chat/tools/tool_card';
 import { ToolGroup, buildTurnItems } from '@muk_ai/chat/tools/tool_group';
 import { renderMarkdown as renderMarkdownToHtml } from '@muk_ai/core/markdown/markdown';
-import { buildRenderedTurns } from '@muk_ai/chat/session/turns';
+import { buildRenderedTurns, turnRendererFor } from '@muk_ai/chat/session/turns';
 import { formatTimestamp } from '@muk_ai/chat/utils';
 import {
     askArgsText,
@@ -46,6 +46,9 @@ export class SessionEventsField extends Component {
             return [];
         }
         return buildRenderedTurns(value);
+    }
+    turnRenderer(turn) {
+        return turnRendererFor(turn);
     }
     turnItems(turn) {
         return buildTurnItems(turn.blocks, (block) =>

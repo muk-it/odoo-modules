@@ -1,4 +1,4 @@
-import { describe, expect, test } from '@odoo/hoot';
+import { afterEach, describe, expect, test } from '@odoo/hoot';
 import { Component, xml } from '@odoo/owl';
 import {
     mockService,
@@ -8,10 +8,19 @@ import {
 } from '@web/../tests/web_test_helpers';
 import { defineMailModels } from '@mail/../tests/mail_test_helpers';
 
-import { useAiSession } from '@muk_ai/chat/session/use_ai_session';
+import {
+    sessionEventHandlers,
+    useAiSession,
+} from '@muk_ai/chat/session/use_ai_session';
 
 describe.current.tags('muk_ai');
 defineMailModels();
+
+afterEach(() => {
+    if (sessionEventHandlers.contains('probe_delta')) {
+        sessionEventHandlers.remove('probe_delta');
+    }
+});
 
 const { DateTime } = luxon;
 
@@ -313,4 +322,34 @@ test('applySnapshot ignores a snapshot addressed to another session', async () =
     expect(session.state.status).toBe('running');
     session.applySnapshot(null);
     expect(session.state.status).toBe('running');
+});
+
+test('an unknown bus event type reaches its registered handler', async () => {
+    const seen = [];
+    sessionEventHandlers.add(
+        'probe_delta',
+        (payload, session) => {
+            seen.push(payload);
+            session.updateEvent(payload.event_id, 'probe', (entry) => ({
+                ...entry,
+                text: entry.text + payload.delta,
+            }));
+        },
+        { force: true },
+    );
+    const bus = makeBusMock();
+    const session = await mountSession({
+        ...SESSION_RECORD,
+        events: [...SESSION_RECORD.events, { event_id: 23, kind: 'probe', text: 'A' }],
+    });
+    bus.emit({
+        session_id: 7,
+        type: 'probe_delta',
+        payload: { event_id: 23, delta: 'Z' },
+    });
+    expect(seen).toEqual([{ event_id: 23, delta: 'Z' }]);
+    expect(session.state.events[2].text).toBe('AZ');
+    expect(session.state.events[1].text).toBe(undefined);
+    bus.emit({ session_id: 7, type: 'probe_unhandled', payload: {} });
+    expect(session.state.events).toHaveLength(3);
 });

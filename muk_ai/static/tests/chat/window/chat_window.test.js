@@ -1,4 +1,5 @@
 import { describe, expect, test } from '@odoo/hoot';
+import { animationFrame } from '@odoo/hoot-mock';
 import {
     mockService,
     mountWithCleanup,
@@ -81,6 +82,25 @@ test('ChatWindow mounts and loads the session through use_ai_session', async () 
     });
     expect(window_.session.state.sessionId).toBe(11);
     expect(window_.session.state.name).toBe('Popout');
+});
+
+test('focusing an artifact in the floating window is a harmless no-op', async () => {
+    registerMocks();
+    const window_ = await mountWithCleanup(ChatWindow, {
+        props: {
+            sessionId: 11,
+            minimized: false,
+            onClose: () => {},
+            onToggleMinimized: () => {},
+        },
+    });
+    window_.session.focusArtifact('sources', 'web:1');
+    await animationFrame();
+    expect(window_.session.state.artifactsFocus).toEqual({
+        tab: 'sources',
+        itemId: 'web:1',
+    });
+    expect('.mk_artifacts_panel').toHaveCount(0);
 });
 
 test('costPill uses formatted cost + USD tooltip', async () => {

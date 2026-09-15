@@ -1010,6 +1010,11 @@ class AISession(models.Model):
         for partner in self._audience_partners():
             self.env['bus.bus']._sendone(partner, notification_type, message)
 
+    def _pending_ask_queues_input(self, pending: dict | None = None) -> bool:
+        """Tell whether typed input queues behind the pending ask."""
+        pending = self.pending_ask if pending is None else pending
+        return (pending or {}).get('kind') in ('approval', 'client_action')
+
     def _public_pending_ask(self, pending: dict | None = None) -> dict | None:
         """Return the pending ask payload stripped of internal keys."""
         pending = self.pending_ask if pending is None else pending
@@ -1038,6 +1043,7 @@ class AISession(models.Model):
                 }
                 for action in public['actions']
             ]
+        public['queues_input'] = self._pending_ask_queues_input(pending)
         return public
 
     def _state_metrics(self) -> dict:
@@ -4012,10 +4018,9 @@ class AISession(models.Model):
         if self.state in ('running', 'compacting'):
             return self.enqueue_message(user_message, attachment_ids=attachment_ids)
         if self.state == 'waiting':
-            kind = (self.pending_ask or {}).get('kind')
-            if kind in ('approval', 'client_action'):
+            if self._pending_ask_queues_input():
                 return self.enqueue_message(user_message, attachment_ids=attachment_ids)
-            if kind == 'question':
+            if (self.pending_ask or {}).get('kind') == 'question':
                 return self.answer(user_message, attachment_ids=attachment_ids)
         if not self.conversation:
             return self.start(user_message, attachment_ids=attachment_ids)

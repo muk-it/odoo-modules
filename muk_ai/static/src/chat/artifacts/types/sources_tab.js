@@ -121,5 +121,6 @@ export class SourcesTab extends Component {
         items: { type: Array },
         session: { type: Object, optional: true },
         onOpenAttachment: { type: Function, optional: true },
+        focusItemId: { type: [Number, String, { value: null }], optional: true },
     };
 }

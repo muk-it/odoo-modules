@@ -1,8 +1,14 @@
-import { describe, expect, test } from '@odoo/hoot';
+import { afterEach, describe, expect, test } from '@odoo/hoot';
 
-import { buildRenderedTurns } from '@muk_ai/chat/session/turns';
+import { buildRenderedTurns, turnBuilders } from '@muk_ai/chat/session/turns';
 
 describe.current.tags('muk_ai');
+
+afterEach(() => {
+    if (turnBuilders.contains('probe')) {
+        turnBuilders.remove('probe');
+    }
+});
 
 test('returns empty list for empty / nullish log', () => {
     expect(buildRenderedTurns([])).toEqual([]);
@@ -250,4 +256,30 @@ test('a tool result without a file leaves the turn unattached', () => {
         },
     ]);
     expect(turns[0].attachments).toBe(undefined);
+});
+
+test('an unknown event kind is dropped until a builder claims it', () => {
+    const log = [{ kind: 'probe', event_id: 5, at: '2026-01-01', label: 'x' }];
+    expect(buildRenderedTurns(log)).toEqual([]);
+    turnBuilders.add('probe', (entry) => ({ role: 'probe', label: entry.label }), {
+        force: true,
+    });
+    expect(buildRenderedTurns(log)).toEqual([
+        { role: 'probe', label: 'x', at: '2026-01-01', eventId: 5 },
+    ]);
+});
+
+test('a builder returning null drops the event', () => {
+    turnBuilders.add('probe', () => null, { force: true });
+    expect(buildRenderedTurns([{ kind: 'probe' }])).toEqual([]);
+});
+
+test('a built turn closes the open assistant turn like a command does', () => {
+    turnBuilders.add('probe', () => ({ role: 'probe' }), { force: true });
+    const turns = buildRenderedTurns([
+        { kind: 'text', content: 'a' },
+        { kind: 'probe' },
+        { kind: 'text', content: 'b' },
+    ]);
+    expect(turns.map((turn) => turn.role)).toEqual(['assistant', 'probe', 'assistant']);
 });

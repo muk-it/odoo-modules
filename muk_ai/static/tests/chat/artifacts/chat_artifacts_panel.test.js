@@ -20,11 +20,14 @@ defineMailModels();
 patchTranslations();
 
 class ProbeTab extends Component {
-    static template = xml`<div class="mk_probe_tab" t-esc="props.items.length"/>`;
+    static template = xml`
+        <div class="mk_probe_tab" t-att-data-focus="props.focusItemId" t-esc="props.items.length"/>
+    `;
     static props = {
         items: { type: Array },
         session: { type: Object, optional: true },
         onOpenAttachment: { type: Function, optional: true },
+        focusItemId: { type: [Number, String, { value: null }], optional: true },
     };
 }
 
@@ -225,4 +228,27 @@ test('attachments dedupe by id across pending + events', async () => {
     await mountPanel(session);
     const cards = queryAll('.mk_artifacts_panel .mk_att_card');
     expect(cards.length).toBe(2);
+});
+
+test('a focus on the session state selects the tab, hands over the item and clears', async () => {
+    registerType('probe', {
+        sequence: 50,
+        component: ProbeTab,
+        collect: () => [{ id: 3 }],
+    });
+    const session = makeSession({
+        pendingAttachments: [{ id: 1, filename: 'a.png', mimetype: 'image/png' }],
+    });
+    const { parent } = await mountPanel(session);
+    expect('.mk_att_card').toHaveCount(1);
+    session.state.artifactsFocus = { tab: 'probe', itemId: 3 };
+    parent.render(true);
+    await animationFrame();
+    await animationFrame();
+    expect('.mk_att_card').toHaveCount(0);
+    expect(queryFirst('.mk_probe_tab').dataset.focus).toBe('3');
+    expect(session.state.artifactsFocus).toBe(null);
+    await contains('.mk_artifacts_tab', { text: 'Attachments' }).click();
+    await contains('.mk_artifacts_tab', { text: 'probe' }).click();
+    expect(queryFirst('.mk_probe_tab').dataset.focus).toBe(undefined);
 });

@@ -5,6 +5,31 @@ import { toolResultFiles } from '@muk_ai/core/attachment/tool_files';
 
 export const toolBlockDecorators = registry.category('muk_ai.tool_block_decorators');
 
+/**
+ * Registry of transcript builders for event kinds the core does not render,
+ * keyed by event kind. Each builder has the signature `(entry) => turn`,
+ * where `entry` is the raw session event and `turn` is a renderable item
+ * carrying the `role` a `muk_ai.turn_renderers` entry is keyed by, or
+ * `null` to drop the event. The event's `at` and `event_id` are stamped
+ * onto the returned turn.
+ */
+export const turnBuilders = registry.category('muk_ai.turn_builders');
+
+/**
+ * Registry of components drawing the turns addons build, keyed by turn
+ * role. Each component receives the props `turn` and `session`.
+ */
+export const turnRenderers = registry.category('muk_ai.turn_renderers');
+
+/**
+ * Look up the component registered to draw a turn.
+ * @param {object} turn rendered turn
+ * @returns {Function|null} component class, null for a core-rendered turn
+ */
+export function turnRendererFor(turn) {
+    return turnRenderers.get(turn.role, null);
+}
+
 function withAt(obj, at) {
     return at ? { ...obj, at } : obj;
 }
@@ -248,6 +273,13 @@ export function buildRenderedTurns(log) {
                 ),
             );
             current = null;
+        } else {
+            const build = turnBuilders.get(entry.kind, null);
+            const turn = build && build(entry);
+            if (turn) {
+                turns.push(withEventId(withAt(turn, at), eventId));
+                current = null;
+            }
         }
     }
     let lastBoundary = -1;

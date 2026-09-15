@@ -32,6 +32,7 @@ import {
 } from '@muk_ai/chat/utils';
 
 import { ChatComposer } from '@muk_ai/chat/composer/chat_composer';
+import { turnRendererFor } from '@muk_ai/chat/session/turns';
 import { useAiSession } from '@muk_ai/chat/session/use_ai_session';
 import {
     onScrollUpNearTop,
@@ -190,6 +191,9 @@ export class ChatWindow extends Component {
     }
     get renderedTurns() {
         return this.session.renderedTurns();
+    }
+    turnRenderer(turn) {
+        return turnRendererFor(turn);
     }
     renderMarkdown(text) {
         return this.session.renderMarkdown(text);

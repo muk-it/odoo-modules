@@ -5,6 +5,7 @@ import {
     onPatched,
     onWillStart,
     onWillUnmount,
+    useEffect,
     useRef,
     useState,
 } from '@odoo/owl';
@@ -38,6 +39,7 @@ import {
 } from '@muk_ai/chat/utils';
 
 import { ChatComposer } from '@muk_ai/chat/composer/chat_composer';
+import { turnRendererFor } from '@muk_ai/chat/session/turns';
 import { useAiSession } from '@muk_ai/chat/session/use_ai_session';
 import {
     onScrollUpNearTop,
@@ -249,6 +251,14 @@ export class AIChat extends Component {
         onPatched(() => {
             this._handleScrollTarget();
         });
+        useEffect(
+            (focus) => {
+                if (focus && this.state.artifactsHidden) {
+                    this.openArtifacts();
+                }
+            },
+            () => [this.session.state.artifactsFocus],
+        );
         onWillUnmount(() => {
             this._disconnectUserBus();
             this._uninstallRootPasteHandler();
@@ -640,9 +650,15 @@ export class AIChat extends Component {
         this.state.sidebarHidden = !this.state.sidebarHidden;
     }
     toggleArtifacts() {
-        const willOpen = this.state.artifactsHidden;
-        this.state.artifactsHidden = !this.state.artifactsHidden;
-        if (willOpen && typeof window !== 'undefined' && window.innerWidth < 1200) {
+        if (this.state.artifactsHidden) {
+            this.openArtifacts();
+            return;
+        }
+        this.state.artifactsHidden = true;
+    }
+    openArtifacts() {
+        this.state.artifactsHidden = false;
+        if (typeof window !== 'undefined' && window.innerWidth < 1200) {
             this.state.sidebarHidden = true;
         }
     }
@@ -976,6 +992,9 @@ export class AIChat extends Component {
     }
     get renderedTurns() {
         return this.session.renderedTurns();
+    }
+    turnRenderer(turn) {
+        return turnRendererFor(turn);
     }
     renderMarkdown(text) {
         return this.session.renderMarkdown(text);
