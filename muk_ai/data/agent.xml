@@ -16,6 +16,7 @@
             'open_view',
             'read_group',
             'read_records',
+            'read_resource',
             'search_count',
             'search_read',
         ]"/>

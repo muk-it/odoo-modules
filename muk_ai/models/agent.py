@@ -189,9 +189,11 @@ class AIAgent(models.Model):
             'Tool names that ship with full schemas at session start. '
             'Every other catalog tool is name-only in the prompt and '
             'fetched on demand via tool_load. Empty falls back to a '
-            'curated default (read primitives + navigation + ask_user). '
-            'To disable lazy loading entirely, list every catalog tool. '
-            'Names outside the tool filter are silently dropped.'
+            'curated default of read primitives and navigation, which '
+            'every installed addon extends with the tools it needs '
+            'upfront. To disable lazy loading entirely, list every '
+            'catalog tool. Names outside the tool filter are silently '
+            'dropped.'
         ),
         default=list,
     )
@@ -296,6 +298,7 @@ class AIAgent(models.Model):
             'open_view',
             'read_group',
             'read_records',
+            'read_resource',
             'search_count',
             'search_read',
         ]
