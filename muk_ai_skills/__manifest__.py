@@ -9,7 +9,7 @@
         can invoke them directly with a /<name> slash command or from
         the skills panel in the chat composer.
     """,
-    'version': '17.0.1.4.3',
+    'version': '17.0.1.4.6',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',
