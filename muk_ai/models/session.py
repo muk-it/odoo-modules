@@ -1565,18 +1565,21 @@ class AISession(models.Model):
         return max(0, provider.rate_limit or 0) if provider else 0
 
     @api.model
+    def _rate_limit_domain(self) -> list:
+        """Return the domain counting the chats this user started this minute."""
+        return [
+            ('user_id', '=', self.env.user.id),
+            ('create_date', '>=', fields.Datetime.now() - timedelta(minutes=1)),
+        ]
+
+    @api.model
     def _check_rate_limit(self, batch_size: int = 1) -> None:
         """Raise when creating ``batch_size`` sessions exceeds the rate limit.
 
         :raise UserError: when the per-minute rate limit would be exceeded
         """
         if limit := self._get_rate_limit():
-            count = self.sudo().search_count(
-                [
-                    ('user_id', '=', self.env.user.id),
-                    ('create_date', '>=', fields.Datetime.now() - timedelta(minutes=1)),
-                ]
-            )
+            count = self.sudo().search_count(self._rate_limit_domain())
             if count + batch_size > limit:
                 raise UserError(
                     _(
@@ -2914,6 +2917,10 @@ class AISession(models.Model):
             ),
         )
 
+    def _max_iterations_error(self) -> None:
+        """Transition to error when the turn ran out of iterations."""
+        self._transition_state('error', error=_('Maximum iterations reached.'))
+
     def _cost_currency(self) -> str:
         """Return the currency of the effective model, defaulting to USD."""
         record = self._resolve_model_for('chat')
@@ -3077,7 +3084,7 @@ class AISession(models.Model):
                 return
             has_terminating = has_terminating or result
         if self.state == 'running':
-            self._transition_state('error', error=_('Maximum iterations reached.'))
+            self._max_iterations_error()
 
     # ----------------------------------------------------------
     # Queue
