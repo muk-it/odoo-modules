@@ -14,3 +14,9 @@ venv/
 
 # Test / coverage
 htmlcov/
+
+# Vendored third-party bundles
+static/lib/
+
+# App-store description page
+static/description/

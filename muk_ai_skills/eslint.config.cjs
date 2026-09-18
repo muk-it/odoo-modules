@@ -3,9 +3,7 @@ const globals = require('globals');
 const jsdoc = require('eslint-plugin-jsdoc');
 
 module.exports = [
-    js.configs.recommended,
     {
-        files: ['**/*.js'],
         ignores: [
             '**/node_modules/**',
             '**/dist/**',
@@ -13,6 +11,10 @@ module.exports = [
             '**/.venv/**',
             '**/static/lib/**',
         ],
+    },
+    js.configs.recommended,
+    {
+        files: ['**/*.js'],
         plugins: { jsdoc },
         languageOptions: {
             ecmaVersion: 2024,
@@ -24,6 +26,7 @@ module.exports = [
                 owl: 'readonly',
                 luxon: 'readonly',
                 openerp: 'readonly',
+                QUnit: 'readonly',
             },
         },
         rules: {
@@ -37,7 +40,7 @@ module.exports = [
             'no-fallthrough': 'error',
             'no-duplicate-imports': 'error',
             'prefer-const': 'warn',
-            'jsdoc/check-tag-names': 'warn',
+            'jsdoc/check-tag-names': ['warn', { definedTags: ['odoo-module'] }],
             'jsdoc/check-types': 'warn',
         },
     },
