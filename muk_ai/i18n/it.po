@@ -1792,6 +1792,22 @@ msgstr ""
 "elimini."
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_space__retention_days
+msgid ""
+"Days a finished chat in this space is kept before the scheduled cleanup "
+"deletes it."
+msgstr ""
+"Giorni per cui una chat conclusa in questo spazio viene conservata prima che"
+" la pulizia pianificata la elimini."
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__ai_session_retention_days
+msgid "Days a finished chat is kept before the cleanup deletes it."
+msgstr ""
+"Giorni per cui una chat conclusa viene conservata prima che la pulizia la "
+"elimini."
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_approval__user_id
 msgid "Decided By"
 msgstr "Deciso da"
@@ -2092,9 +2108,19 @@ msgstr "Eventi"
 
 #. module: muk_ai
 #. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/tools/tool_card.xml:0
-msgid "Every"
-msgstr "Ogni"
+#: code:addons/muk_ai/static/src/chat/utils.js:0
+msgid "Everything the model has · slowest"
+msgstr "Tutto ciò che il modello ha · il più lento"
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_agent__model_id
+msgid ""
+"Exact model this agent talks to, overriding the pinned provider. Leave empty"
+" to use the default chat model of the pinned provider, else of the company "
+"default provider, else of the first provider in the list that has one."
+msgstr ""
+"Modello usato da questo agente. Lascia vuoto per usare il modello "
+"predefinito dell'azienda."
 
 #. module: muk_ai
 #. odoo-javascript
@@ -3807,6 +3833,11 @@ msgid "Pricing"
 msgstr "Prezzi"
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_event__private_user_id
+msgid "Private To"
+msgstr "Privato per"
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent_suggestion__prompt
 msgid "Prompt"
 msgstr "Prompt"
@@ -3949,6 +3980,11 @@ msgstr "Sola lettura — non puoi scrivere in questa chat."
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_search
 msgid "Read-only"
 msgstr "Sola lettura"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__read_only
+msgid "Read-only Mode"
+msgstr "Limita agli strumenti in sola lettura"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__read_only
@@ -5609,9 +5645,19 @@ msgstr "ad es. Assistente vendite"
 
 #. module: muk_ai
 #. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/tools/tool_card.js:0
-msgid "error"
-msgstr "errore"
+#: code:addons/muk_ai/static/src/chat/composer/chat_composer.xml:0
+msgid "for newline"
+msgstr "per andare a capo"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "http://searxng:8080"
+msgstr "http://searxng:8080"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_muk_ai_provider_form
+msgid "https://my-resource.openai.azure.com/openai/v1"
+msgstr "https://my-resource.openai.azure.com/openai/v1"
 
 #. module: muk_ai
 #. odoo-javascript

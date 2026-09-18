@@ -11,7 +11,11 @@ import { AttachmentCard } from '@muk_ai/core/attachment/attachment_card';
 import { ToolCard } from '@muk_ai/chat/tools/tool_card';
 import { ToolGroup, buildTurnItems } from '@muk_ai/chat/tools/tool_group';
 import { renderMarkdown as renderMarkdownToHtml } from '@muk_ai/core/markdown/markdown';
-import { buildRenderedTurns } from '@muk_ai/chat/session/turns';
+import {
+    buildRenderedTurns,
+    isToolBlockHidden,
+    turnRendererFor,
+} from '@muk_ai/chat/session/turns';
 import { formatTimestamp } from '@muk_ai/chat/utils';
 import {
     askArgsText,
@@ -40,6 +44,7 @@ export class SessionEventsField extends Component {
             canWrite: () => false,
             canRegenerate: () => false,
             copyText: (text) => this.copyText(text),
+            renderMarkdown: (source) => this.renderMarkdown(source),
         };
     }
     get turns() {
@@ -48,6 +53,9 @@ export class SessionEventsField extends Component {
             return [];
         }
         return buildRenderedTurns(value);
+    }
+    turnRenderer(turn) {
+        return turnRendererFor(turn);
     }
     turnItems(turn) {
         return buildTurnItems(turn.blocks, (block) =>
@@ -73,10 +81,7 @@ export class SessionEventsField extends Component {
         return !!this.state.expandedTools[callId];
     }
     isToolHiddenForAsk(block, turn) {
-        if (block.result !== null && block.result !== undefined) {
-            return false;
-        }
-        return turn.blocks.some((b) => b.type === 'ask' && b.callId === block.callId);
+        return isToolBlockHidden(block, turn);
     }
     isToolStreaming() {
         return false;

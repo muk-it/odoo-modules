@@ -1,6 +1,6 @@
 // @odoo-module
 
-import { Component, useState } from '@odoo/owl';
+import { Component, useEffect, useRef, useState } from '@odoo/owl';
 
 import { useService } from '@web/core/utils/hooks';
 
@@ -37,10 +37,22 @@ export class SourceCard extends Component {
     static props = {
         source: { type: Object },
         sessionId: { type: [Number, String], optional: true },
+        focused: { type: Boolean, optional: true },
     };
     setup() {
         this.action = useService('action');
         this.chatWindow = useService('muk_ai.chat_window');
+        this.root = useRef('root');
+        // Clicking a citation is a request to be shown that source, so the
+        // rail scrolls to it rather than opening somewhere near it.
+        useEffect(
+            (focused) => {
+                if (focused && this.root.el) {
+                    this.root.el.scrollIntoView({ block: 'nearest' });
+                }
+            },
+            () => [this.props.focused],
+        );
     }
     /**
      * Open a cited record beside the chat, docking the conversation first so
@@ -69,6 +81,10 @@ export class SourceCard extends Component {
             { clearBreadcrumbs: true },
         );
     }
+    get cardClass() {
+        const focused = this.props.focused ? ' mk_source_focused' : '';
+        return `mk_source_${this.props.source.type}${focused}`;
+    }
     get href() {
         const source = this.props.source;
         return source.type === 'web' ? source.url : source.href || '#';
@@ -95,6 +111,7 @@ export class SourceList extends Component {
         sources: { type: Array },
         cap: { type: Number, optional: true },
         sessionId: { type: [Number, String], optional: true },
+        focusItemId: { type: [Number, String, { value: null }], optional: true },
     };
     setup() {
         this.state = useState({ showAll: false });
@@ -103,9 +120,12 @@ export class SourceList extends Component {
         return this.props.cap || SOURCE_LIST_DISPLAY_CAP;
     }
     get visible() {
-        return this.state.showAll
-            ? this.props.sources
-            : this.props.sources.slice(0, this.cap);
+        // A source the reader was sent to must not be the one behind "+N more".
+        const capped = this.props.sources.slice(0, this.cap);
+        const hidden =
+            this.props.focusItemId &&
+            !capped.some((source) => source.id === this.props.focusItemId);
+        return this.state.showAll || hidden ? this.props.sources : capped;
     }
     get hiddenCount() {
         return Math.max(0, this.props.sources.length - this.cap);
@@ -123,5 +143,6 @@ export class SourcesTab extends Component {
         items: { type: Array },
         session: { type: Object, optional: true },
         onOpenAttachment: { type: Function, optional: true },
+        focusItemId: { type: [Number, String, { value: null }], optional: true },
     };
 }

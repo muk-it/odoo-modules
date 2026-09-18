@@ -31,16 +31,7 @@
             <div class="mk_artifacts_body flex-grow-1">
                 <t t-foreach="tabs" t-as="tab" t-key="tab.id">
                     <div t-if="activeTab and activeTab.id === tab.id" class="mk_artifacts_body_slot h-100">
-                        <t t-if="tab.id === 'attachments'">
-                            <AttachmentsTab
-                                items="tab.items"
-                                session="props.session"
-                                onOpenAttachment="bodyProps.onOpenAttachment"
-                            />
-                        </t>
-                        <t t-else="">
-                            <t t-component="tab.component" t-props="bodyProps"/>
-                        </t>
+                        <t t-component="tab.component" t-props="bodyProps"/>
                     </div>
                 </t>
                 <div t-if="!activeTab" class="mk_artifacts_empty text-muted small p-3">

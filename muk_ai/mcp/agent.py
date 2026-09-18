@@ -21,13 +21,11 @@ class AIAgentHandoffTools(models.AbstractModel):
         :raise UserError: when invoked outside an AI session or when the
             referenced session no longer exists
         """
-        if not (session_id := self.env.context.get('muk_mcp_session_id')):
-            raise UserError(
-                _('The handoff tools can only be invoked from inside an AI session.')
-            )
-        session = self.env['muk_ai.session'].sudo().browse(session_id)
-        if not session.exists():
-            raise UserError(_('Session %(sid)s no longer exists.', sid=session_id))
+        session = self._resolve_mcp_session(
+            _('The handoff tools can only be invoked from inside an AI session.')
+        ).sudo()
+        if not session:
+            raise UserError(_('This session no longer exists.'))
         return session
 
     def _resolve_handoff_target(self, agent: int | str) -> models.Model:

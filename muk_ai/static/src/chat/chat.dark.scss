@@ -27,23 +27,11 @@
     .mk_tool.mk_tool_write {
         border-left-color: #d29922;
     }
-    .mk_tool.mk_tool_nav,
-    .mk_tool.mk_tool_schedule_resume {
+    .mk_tool.mk_tool_nav {
         border-left-color: #58a6ff;
     }
     .mk_tool.mk_tool_error {
         border-left-color: #f85149;
-    }
-    .mk_tool.mk_tool_schedule_recur {
-        border-left-color: #3fb950;
-    }
-    .mk_tool.mk_tool_schedule_resume .mk_tool_schedule_icon {
-        background: rgba(88, 166, 255, 0.16);
-        color: #58a6ff;
-    }
-    .mk_tool.mk_tool_schedule_recur .mk_tool_schedule_icon {
-        background: rgba(63, 185, 80, 0.16);
-        color: #3fb950;
     }
     .mk_tool_group.mk_tool_group_has_error {
         border-color: rgba(248, 81, 73, 0.45);
@@ -146,7 +134,7 @@
         border-color: rgba(255, 255, 255, 0.13);
         color: var(--mk-text-muted);
     }
-    .mk_effort_pill {
+    .mk_session_pill {
         background: rgba(255, 255, 255, 0.07);
         &:hover {
             background: rgba(255, 255, 255, 0.13);
@@ -200,4 +188,15 @@
 
 .mk_window_header {
     background: var(--mk-primary-fill);
+}
+
+// The shared note's two tones, unreadable on a dark transcript otherwise.
+.mk_note_good {
+    background: rgba(116, 195, 154, 0.14);
+    color: #74c39a;
+}
+
+.mk_note_warn {
+    background: rgba(217, 164, 65, 0.16);
+    color: #d9a441;
 }

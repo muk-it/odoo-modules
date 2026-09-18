@@ -1,5 +1,41 @@
 from __future__ import annotations
 
+import psycopg2
+
+from odoo import modules
+from odoo.api import Environment
+
+# This Odoo does not expose the tuple from ``odoo.service.model``.
+PG_CONCURRENCY_EXCEPTIONS_TO_RETRY = (
+    psycopg2.errors.LockNotAvailable,
+    psycopg2.errors.SerializationFailure,
+    psycopg2.errors.DeadlockDetected,
+)
+
+# ----------------------------------------------------------
+# Transactions
+# ----------------------------------------------------------
+
+
+def commit_safe(env: Environment) -> None:
+    """Commit outside tests, re-raising on serialization conflicts.
+
+    Any long job that pays for something irreversible — an LLM round, a
+    batch of embeddings — has to land what it already bought before the
+    worker is killed at its time limit, and a test transaction must never
+    be committed out from under the runner.
+
+    :param env: the environment whose cursor to commit
+    """
+    if not modules.module.current_test:
+        try:
+            env.cr.commit()
+        except PG_CONCURRENCY_EXCEPTIONS_TO_RETRY:
+            env.cr.rollback()
+            env.invalidate_all()
+            raise
+
+
 # ----------------------------------------------------------
 # Model Defaults
 # ----------------------------------------------------------
