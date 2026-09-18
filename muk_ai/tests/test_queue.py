@@ -5,8 +5,6 @@ from collections.abc import Iterator
 from contextlib import contextmanager, suppress
 from unittest.mock import patch
 
-import psycopg2
-
 from odoo import models
 from odoo.exceptions import UserError
 from odoo.tools import SQL
@@ -453,32 +451,31 @@ class TestAiSessionQueue(AITestCommon):
         )
         self.assertEqual(second.event_ids.sorted('sequence').mapped('sequence'), [0, 1])
 
-    def test_append_event_retries_after_a_unique_violation(self):
+    def test_append_event_moves_past_a_sequence_another_writer_took(self):
+        # Two subagents reporting at once read the same next sequence. The
+        # loser cannot see the winner's row in its own snapshot, so re-reading
+        # the maximum would hand it the same taken number for ever.
         session = self.env['muk_ai.session'].create({'name': 'sequence-retry'})
         session._append_event({'kind': 'note', 'index': 0})
-        event_model = type(self.env['muk_ai.session.event'])
-        original_create = event_model.create
-        attempts = []
+        session._append_event({'kind': 'note', 'index': 1})
+        cursor = self.env.cr
+        real_fetchone = cursor.fetchone
+        stale = []
 
-        def flaky(self_arg, vals_list):
-            attempts.append(vals_list)
-            if len(attempts) == 1:
-                msg = 'duplicate key value violates unique constraint'
-                raise psycopg2.errors.UniqueViolation(msg)
-            return original_create(self_arg, vals_list)
+        def frozen_fetchone():
+            row = real_fetchone()
+            if stale:
+                return row
+            stale.append(row)
+            return (0,)
 
-        with patch.object(
-            event_model,
-            'create',
-            autospec=True,
-            side_effect=flaky,
-        ):
-            event = session._append_event({'kind': 'note', 'index': 1})
-        self.assertEqual(len(attempts), 2)
-        self.assertTrue(event.exists())
-        self.assertEqual(event.sequence, 1)
+        with patch.object(cursor, 'fetchone', frozen_fetchone):
+            event = session._append_event({'kind': 'note', 'index': 2})
+
+        self.assertTrue(event, 'the event was dropped instead of re-sequenced')
+        self.assertEqual(event.sequence, 2)
         self.assertEqual(
-            session.event_ids.sorted('sequence').mapped('sequence'), [0, 1]
+            session.event_ids.sorted('sequence').mapped('sequence'), [0, 1, 2]
         )
 
     # ----------------------------------------------------------

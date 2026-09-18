@@ -1252,15 +1252,15 @@ class AISession(models.Model):
             else {**entry, 'at': fields.Datetime.now().isoformat()}
         )
         event = self.env['muk_ai.session.event'].sudo()
-        for _attempt in range(5):
-            self.env.cr.execute(
-                SQL(
-                    'SELECT COALESCE(MAX(sequence), -1) + 1 '
-                    'FROM muk_ai_session_event WHERE session_id = %s',
-                    self.id,
-                )
+        self.env.cr.execute(
+            SQL(
+                'SELECT COALESCE(MAX(sequence), -1) + 1 '
+                'FROM muk_ai_session_event WHERE session_id = %s',
+                self.id,
             )
-            sequence = self.env.cr.fetchone()[0]
+        )
+        sequence = self.env.cr.fetchone()[0]
+        for _attempt in range(5):
             try:
                 with self.env.cr.savepoint():
                     event = (
@@ -1280,7 +1280,9 @@ class AISession(models.Model):
                 stamped = {**stamped, 'event_id': event.id, 'sequence': sequence}
                 break
             except psycopg2.errors.UniqueViolation:
-                continue
+                # This snapshot cannot see the winner's row, so re-reading the
+                # maximum would hand back the same number for ever.
+                sequence += 1
         payload = self._bus_log_payload(stamped)
         if private:
             # Never the session channel: everyone reading the chat is on it.
