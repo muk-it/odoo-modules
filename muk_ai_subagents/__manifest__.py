@@ -11,7 +11,7 @@
         doing, every child is openable and keeps a permanent link, and a
         child that starts repeating itself says so before it ends.
     """,
-    'version': '19.0.1.0.5',
+    'version': '19.0.1.0.6',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',

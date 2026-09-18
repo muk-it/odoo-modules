@@ -33,18 +33,15 @@ subagent re-plan rather than ending the run.
 Steering a running subagent
 ===========================
 
-Both the user and the main agent can change a subagent's direction while
-it works: the user opens the subagent and types into the one composer,
-which is already addressing it, and the main agent calls
-``message_subagent`` with its id. Nothing arrives mid-thought
-— a message is handed over at the end of the step the subagent is on, so
-a tool call in flight always finishes. The answer to the main agent is
-always ``queued``, never ``delivered``.
+The user can change a subagent's direction while it works: open the
+subagent and type into the one composer, which is already addressing it.
+Nothing arrives mid-thought — a message is handed over at the end of the
+step the subagent is on, so a tool call in flight always finishes.
 
 A subagent that has already reported is asked again on a turn of its own
 rather than steered, and at most five messages may wait for one subagent.
-When the user redirects a subagent, the main agent is told in its own
-transcript, because it is waiting on a brief it wrote.
+The main agent is told in its own transcript when the user redirects a
+subagent, because it is waiting on a brief it wrote.
 
 Limits
 ======
