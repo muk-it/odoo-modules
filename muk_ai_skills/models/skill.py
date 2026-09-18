@@ -508,6 +508,24 @@ class Skill(models.Model):
                     )
                 )
 
+    @api.constrains('scope', 'model_ids')
+    def _check_scope_models(self) -> None:
+        """Refuse a chatter scope on a model that has none.
+
+        :raise ValidationError: when a selected model is not a thread
+        """
+        for record in self.filtered(lambda skill: skill.scope == 'chatter'):
+            without = record.model_ids.filtered(lambda model: not model.is_mail_thread)
+            if without:
+                raise ValidationError(
+                    _(
+                        'Skill %(name)s asks for a chatter, which %(models)s '
+                        'does not have.',
+                        name=record.name or '',
+                        models=', '.join(sorted(without.mapped('model'))),
+                    )
+                )
+
     @api.constrains('name')
     def _check_name_format(self) -> None:
         """Validate the technical name against the lowercase identifier rule.
