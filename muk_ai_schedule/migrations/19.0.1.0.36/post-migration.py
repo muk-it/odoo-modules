@@ -52,7 +52,7 @@ def migrate(cr: Cursor, version: str) -> None:
     if legacy:
         try:
             legacy.sudo().unlink()
-        except Exception as exc:  # noqa: BLE001 — legacy cron removal is best-effort
+        except Exception as exc:
             _logger.warning('could not delete legacy cron: %s', exc)
 
     cr.execute('DROP TABLE IF EXISTS _muk_ai_schedule_nextcall_snapshot')

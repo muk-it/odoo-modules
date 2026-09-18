@@ -1,6 +1,6 @@
 import { _t } from '@web/core/l10n/translation';
 
-import { toolBlockDecorators } from '@muk_ai/chat/session/turns';
+import { describeToolBlock, toolBlockDecorators } from '@muk_ai/chat/session/turns';
 import {
     formatDurationSeconds,
     formatRelativeTime,
@@ -8,17 +8,6 @@ import {
 } from '@muk_ai/chat/utils';
 
 const PROMPT_PREVIEW_MAX = 200;
-
-function parseJson(value) {
-    if (typeof value !== 'string') {
-        return value || null;
-    }
-    try {
-        return JSON.parse(value);
-    } catch {
-        return null;
-    }
-}
 
 function truncatePrompt(value) {
     const text = String(value || '');
@@ -77,25 +66,16 @@ function decorateScheduleBlock(block) {
     if (!tool) {
         return;
     }
-    block.kind = tool.kind;
-    Object.defineProperties(block, {
-        icon: {
-            enumerable: true,
-            get() {
-                const result = parseJson(this.result);
-                return result?.ok === false ? 'fa-exclamation-triangle' : tool.icon;
-            },
-        },
-        band: {
-            enumerable: true,
-            get() {
-                const result = parseJson(this.result);
-                if (result?.ok === false) {
-                    const error = result.error || _t('error');
-                    return result.cap ? `${error}: ${result.cap}` : error;
-                }
-                return tool.band(parseJson(this.arguments) || {}, result);
-            },
+    describeToolBlock(block, {
+        kind: tool.kind,
+        icon: ({ result }) =>
+            result?.ok === false ? 'fa-exclamation-triangle' : tool.icon,
+        band: ({ args, result }) => {
+            if (result?.ok === false) {
+                const error = result.error || _t('error');
+                return result.cap ? `${error}: ${result.cap}` : error;
+            }
+            return tool.band(args, result);
         },
     });
 }
