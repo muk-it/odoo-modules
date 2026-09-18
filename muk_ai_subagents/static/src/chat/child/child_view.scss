@@ -1,0 +1,97 @@
+.mk_chat {
+    .mk_subagent_child {
+        // It stands in for the conversation, so it takes the room the
+        // conversation had.
+        flex: 1 1 auto;
+        min-width: 0;
+        min-height: 0;
+        background: var(--mk-bg);
+        .mk_messages {
+            overflow-x: hidden;
+        }
+        .mk_subagent_child_inner {
+            min-width: 0;
+            max-width: 100%;
+        }
+        .mk_bubble,
+        .mk_turn,
+        .mk_tool,
+        pre {
+            max-width: 100%;
+        }
+        pre {
+            overflow-x: auto;
+        }
+    }
+    .mk_subagent_child_header {
+        flex: 0 0 auto;
+        gap: 0.4rem;
+        min-height: 44px;
+        padding: 0.4rem 0.6rem;
+        border-bottom: 1px solid var(--mk-border);
+        background: var(--mk-bg-muted);
+        box-shadow: inset 3px 0 0 var(--mk-agent-color);
+    }
+    .mk_subagent_back {
+        color: var(--mk-text-muted);
+        text-decoration: none;
+        line-height: 1;
+        &:hover {
+            color: var(--mk-text);
+        }
+    }
+    .mk_subagent_crumbs {
+        gap: 0.35rem;
+        min-width: 0;
+        font-size: 0.8rem;
+    }
+    .mk_subagent_crumb {
+        min-width: 0;
+        max-width: 40%;
+    }
+    .mk_subagent_crumb_parent {
+        border: 0;
+        padding: 0;
+        background: transparent;
+        color: var(--mk-text-muted);
+        cursor: pointer;
+        &:hover {
+            color: var(--mk-text);
+            text-decoration: underline;
+        }
+    }
+    .mk_subagent_crumb_sep {
+        flex: 0 0 auto;
+        color: var(--mk-text-muted);
+        font-size: 0.75rem;
+    }
+    .mk_subagent_crumb_child {
+        font-weight: 600;
+        color: var(--mk-text);
+    }
+    .mk_subagent_crumb_agent {
+        min-width: 0;
+        flex: 1 1 auto;
+        overflow: hidden;
+        font-size: 0.72rem;
+        color: var(--mk-text-muted);
+    }
+    .mk_subagent_child_status {
+        flex: 0 0 auto;
+        width: 24px;
+        height: 24px;
+        font-size: 0.7rem;
+    }
+    .mk_subagent_child_body {
+        min-height: 0;
+        .mk_messages {
+            overflow-y: auto;
+            min-height: 0;
+        }
+    }
+    .mk_subagent_child_compact .mk_subagent_child_header {
+        padding: 0.3rem 0.5rem;
+        min-height: 38px;
+        font-size: 0.78rem;
+    }
+}

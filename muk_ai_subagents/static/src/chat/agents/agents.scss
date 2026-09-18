@@ -1,0 +1,282 @@
+.mk_chat {
+    // ----------------------------------------------------------
+    // The strip
+    // ----------------------------------------------------------
+    .mk_run_strip {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 0.4rem;
+        border: 1px solid var(--mk-border);
+        border-radius: 10px;
+        background: var(--mk-bg);
+        overflow: hidden;
+        &.mk_run_strip_open {
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.06);
+        }
+    }
+    .mk_run_strip_line {
+        gap: 0.5rem;
+        width: 100%;
+        padding: 0.35rem 0.6rem;
+        border: 0;
+        background: transparent;
+        color: var(--mk-text);
+        font-size: 0.76rem;
+        text-align: left;
+        cursor: pointer;
+        transition: background 0.12s ease;
+        &:hover,
+        &:focus-visible {
+            background: var(--mk-bg-soft);
+            outline: none;
+        }
+        &.mk_run_strip_blocked {
+            background: color-mix(in srgb, var(--mk-agent-color) 8%, transparent);
+        }
+        &.mk_run_strip_failed .mk_run_strip_text {
+            color: var(--mk-danger);
+        }
+        &.mk_run_strip_stuck .mk_run_strip_text {
+            color: var(--mk-warning);
+        }
+    }
+    .mk_run_strip_dots {
+        flex: 0 0 auto;
+        gap: 0.2rem;
+    }
+    .mk_agent_dot_done {
+        opacity: 0.45;
+    }
+    .mk_run_strip_more {
+        font-size: 0.66rem;
+        color: var(--mk-text-muted);
+        font-variant-numeric: tabular-nums;
+    }
+    .mk_run_strip_text {
+        min-width: 0;
+    }
+    .mk_run_strip_cost {
+        flex: 0 0 auto;
+        font-size: 0.72rem;
+        color: var(--mk-success);
+        font-variant-numeric: tabular-nums;
+        &.mk_agents_cost_over {
+            color: var(--mk-danger);
+        }
+    }
+    .mk_run_strip_caret {
+        flex: 0 0 auto;
+        font-size: 0.8rem;
+        color: var(--mk-text-muted);
+    }
+    .mk_run_strip_roster {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        border-bottom: 1px solid var(--mk-border);
+    }
+    .mk_run_strip_list {
+        overflow-y: auto;
+        min-height: 0;
+        max-height: #{'min(46vh, 340px)'};
+        padding: 0.4rem 0.5rem;
+    }
+
+    // ----------------------------------------------------------
+    // One subagent's row
+    // ----------------------------------------------------------
+    .mk_agents_section {
+        margin-bottom: 0.5rem;
+    }
+    .mk_agents_section_label {
+        font-size: 0.68rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--mk-text-muted);
+        padding: 0.25rem 0.35rem;
+    }
+    .mk_agents_section_needs_you .mk_agents_section_label {
+        color: var(--mk-warning);
+    }
+    .mk_agents_section_failed .mk_agents_section_label {
+        color: var(--mk-danger);
+    }
+    .mk_agent_row {
+        gap: 0.55rem;
+        padding: 0.35rem 0.4rem;
+        border-radius: 8px;
+        cursor: pointer;
+        min-height: 40px;
+        transition: background 0.12s ease;
+        &:hover,
+        &:focus-visible {
+            background: var(--mk-bg-soft);
+            outline: none;
+        }
+        &.mk_agent_row_open,
+        &.mk_agent_row_detail {
+            background: color-mix(in srgb, var(--mk-agent-color) 10%, transparent);
+        }
+        &.mk_agent_row_done .mk_agent_row_name,
+        &.mk_agent_row_done .mk_agent_row_activity {
+            color: var(--mk-text-muted);
+        }
+        &.mk_agent_row_failed .mk_agent_row_flag {
+            color: var(--mk-danger);
+        }
+        &.mk_agent_row_blocked .mk_agent_row_flag {
+            color: var(--mk-warning);
+        }
+        &.mk_agent_row_stuck .mk_agent_row_flag {
+            color: var(--mk-warning);
+        }
+    }
+    .mk_agent_row_body {
+        min-width: 0;
+        flex: 1 1 auto;
+        gap: 0.1rem;
+    }
+    .mk_agent_row_head {
+        gap: 0.35rem;
+        min-width: 0;
+    }
+    .mk_agent_row_name {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--mk-text);
+        min-width: 0;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .mk_agent_row_flag.fa-spin {
+            animation: none;
+            opacity: 0.6;
+        }
+    }
+    .mk_agent_row_flag {
+        flex: 0 0 auto;
+        font-size: 0.7rem;
+        color: var(--mk-text-muted);
+    }
+    .mk_agent_row_elapsed {
+        flex: 0 0 auto;
+        font-size: 0.7rem;
+        color: var(--mk-text-muted);
+        font-variant-numeric: tabular-nums;
+    }
+    .mk_agent_row_activity {
+        display: block;
+        font-size: 0.72rem;
+        color: var(--mk-text-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+    }
+
+    // ----------------------------------------------------------
+    // One subagent's detail, opened in place
+    // ----------------------------------------------------------
+    .mk_agent_detail {
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+        margin: 0.1rem 0 0.4rem 0.9rem;
+        padding: 0.55rem 0.65rem;
+        border-left: 2px solid var(--mk-agent-color);
+        border-radius: 0 8px 8px 0;
+        background: var(--mk-bg-soft);
+        font-size: 0.76rem;
+        color: var(--mk-text);
+    }
+    .mk_agent_detail_stuck {
+        padding: 0.4rem 0.55rem;
+        border-radius: 6px;
+        border: 1px solid var(--mk-warning);
+        background: rgba(224, 168, 0, 0.08);
+        line-height: 1.4;
+    }
+    .mk_agent_detail_loading {
+        font-size: 0.74rem;
+    }
+    .mk_agent_detail_label {
+        font-size: 0.66rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--mk-text-muted);
+        margin-bottom: 0.2rem;
+    }
+    .mk_agent_detail_call {
+        font-family: var(--mk-mono);
+        font-size: 0.7rem;
+        color: var(--mk-text-muted);
+        line-height: 1.5;
+    }
+    .mk_agent_detail_actions {
+        gap: 0.4rem;
+        padding-top: 0.35rem;
+        border-top: 1px solid var(--mk-border);
+        .btn {
+            font-size: 0.74rem;
+            padding: 0.2rem 0.6rem;
+        }
+    }
+    .mk_agent_detail_cost {
+        font-size: 0.72rem;
+        color: var(--mk-text-muted);
+        font-variant-numeric: tabular-nums;
+    }
+
+    // ----------------------------------------------------------
+    // The footer
+    // ----------------------------------------------------------
+    .mk_agents_done_toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        width: 100%;
+        padding: 0.3rem 0.35rem;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        color: var(--mk-text-muted);
+        font-size: 0.74rem;
+        font-weight: 500;
+        cursor: pointer;
+        &:hover {
+            background: var(--mk-bg-soft);
+            color: var(--mk-text);
+        }
+        i {
+            width: 10px;
+        }
+    }
+    .mk_agents_footer {
+        flex: 0 0 auto;
+        gap: 0.5rem;
+        padding: 0.4rem 0.6rem;
+        border-top: 1px solid var(--mk-border);
+        background: var(--mk-bg-muted);
+    }
+    .mk_agents_cost {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.74rem;
+        font-weight: 500;
+        color: var(--mk-success);
+        font-variant-numeric: tabular-nums;
+        &.mk_agents_cost_over {
+            color: var(--mk-danger);
+        }
+        i {
+            font-size: 0.68rem;
+        }
+    }
+    .mk_agents_stop_all {
+        font-size: 0.72rem;
+        padding: 0.2rem 0.55rem;
+    }
+}

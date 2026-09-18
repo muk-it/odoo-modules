@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_ai_agent_form_inherit_subagents" model="ir.ui.view">
+		<field name="name">muk_ai.agent.form.inherit.subagents</field>
+		<field name="model">muk_ai.agent</field>
+		<field name="inherit_id" ref="muk_ai.view_ai_agent_form"/>
+		<field name="arch" type="xml">
+			<xpath expr="//group[@name='abilities']" position="after">
+				<group string="Delegation" name="delegation">
+					<field name="allow_delegation" widget="boolean_toggle"/>
+					<field
+						name="delegate_agent_ids"
+						widget="many2many_tags"
+						domain="[('id', '!=', id)]"
+						options="{'no_create': True}"
+						invisible="not allow_delegation"
+					/>
+				</group>
+			</xpath>
+		</field>
+	</record>
+
+</odoo>
