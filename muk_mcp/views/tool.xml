@@ -83,7 +83,7 @@
 							<field 
 								name="input_schema"
 								widget="ace"
-								options="{'mode': 'javascript'}"
+								options="{'mode': 'js'}"
 							/>
 						</page>
 					</notebook>
