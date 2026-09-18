@@ -338,6 +338,11 @@ msgid "Last Updated on"
 msgstr "Zuletzt aktualisiert am"
 
 #. module: muk_ai_skills
+#: model:muk_ai.skill,label:muk_ai_skills.demo_skill_log
+msgid "Log Note"
+msgstr "Notiz hinterlassen"
+
+#. module: muk_ai_skills
 #: model:ir.model.fields,help:muk_ai_skills.field_muk_ai_skill__name
 msgid ""
 "Lowercase technical identifier used in the slash command and in the LLM-"

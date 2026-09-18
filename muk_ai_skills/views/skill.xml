@@ -233,6 +233,10 @@
                                 name="active"
                                 widget="boolean_toggle" attrs="{'readonly': [('is_editable', '=', False)]}"
                             />
+							<field
+                                name="active"
+                                widget="boolean_toggle" attrs="{'readonly': [('is_editable', '=', False)]}"
+                            />
 						</group>
 						<group>
 							<field name="skill_type" attrs="{'readonly': [('is_editable', '=', False)]}"/>
