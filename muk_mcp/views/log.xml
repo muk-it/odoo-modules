@@ -128,10 +128,10 @@
 					</group>
 					<notebook>
 						<page string="Request">
-							<field name="request_data" widget="code" options="{'mode': 'javascript'}" readonly="1"/>
+							<field name="request_data" widget="ace" options="{'mode': 'js'}" readonly="1"/>
 						</page>
 						<page string="Response">
-							<field name="response_data" widget="code" options="{'mode': 'javascript'}" readonly="1"/>
+							<field name="response_data" widget="ace" options="{'mode': 'js'}" readonly="1"/>
 						</page>
 						<page string="Error" attrs="{'invisible': [('error_message', '=', False)]}">
 							<field name="error_message" readonly="1"/>
