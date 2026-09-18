@@ -11,7 +11,7 @@
 	</record>
 
 	<record id="space_writing" model="muk_ai.space">
-		<field name="name">Writing Helper</field>
+		<field name="name">Chatter</field>
 		<field name="sequence">3</field>
 		<field name="icon">fa-magic</field>
 		<field name="user_id" eval="False"/>

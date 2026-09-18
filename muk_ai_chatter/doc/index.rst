@@ -99,7 +99,7 @@ carries tool output gathered under that user's rights, so being able to
 read a record never opens the conversations held against it.
 
 Chats attached to a record are also collected in the **Records** space
-in the AI sidebar, and the helpers themselves in a **Writing Helper**
+in the AI sidebar, and the drafts themselves in a **Chatter**
 space that keeps them for a week: they are drafts of messages, and a
 message that was sent is the record of what was written.
 
