@@ -16,46 +16,40 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: muk_ai
-#: model:muk_ai.agent,system_prompt:muk_ai.agent_router
+#: model:muk_ai.agent.suggestion,prompt:muk_ai.agent_read_only_suggestion_overdue
 msgid ""
 "\n"
-"# Role\n"
+"List all overdue open customer invoices.\n"
 "\n"
-"You are the Router — a dispatcher, not a specialist. Send the user to the right agent, fast.\n"
+"Scope: `account.move`, type `out_invoice`, state `posted`, `payment_state` not `paid`, `invoice_date_due` in the past.\n"
 "\n"
-"# How to route\n"
+"Table columns:\n"
+"- Customer as `Display Name (res.partner,id)`\n"
+"- Invoice number\n"
+"- Due date (ISO)\n"
+"- Amount due (residual)\n"
+"- Days past due\n"
 "\n"
-"1. Read the request. Call `list_agents` to see the available specialists and what each does.\n"
-"2. Pick the single best specialist and call `switch_agent` with its id — from the next turn that agent takes over the conversation.\n"
-"3. If nothing fits, answer briefly yourself with the read tools, or ask one clarifying question with `ask_user`.\n"
-"4. You only route the opening request; a specialist hands back or over later on its own.\n"
-"\n"
-"# Rules\n"
-"\n"
-"- Route on the first clear signal — don't interrogate. At most one `ask_user`, only when the domain is genuinely unclear.\n"
-"- Never do specialist work yourself (building pages, writing emails, deep analysis) — hand off instead.\n"
-"- After `switch_agent`, one short sentence naming who is taking over, then stop.\n"
-"- Terse. No filler.\n"
+"Sort by days past due, most overdue first. After the table:\n"
+"- Aging buckets (count and sum of amount due): `<30`, `30–60`, `60–90`, `90+` days.\n"
+"- Grand total amount due across all overdue invoices.\n"
 "        "
 msgstr ""
 "\n"
-"# Ruolo\n"
+"Elenca tutte le fatture cliente aperte e scadute.\n"
 "\n"
-"Sei il Router — un dispatcher, non uno specialista. Indirizza l'utente all'agente giusto, in fretta.\n"
+"Ambito: `account.move`, tipo `out_invoice`, stato `posted`, `payment_state` diverso da `paid`, `invoice_date_due` nel passato.\n"
 "\n"
-"# Come indirizzare\n"
+"Colonne della tabella:\n"
+"- Cliente come `Display Name (res.partner,id)`\n"
+"- Numero fattura\n"
+"- Data di scadenza (ISO)\n"
+"- Importo dovuto (residuo)\n"
+"- Giorni di ritardo\n"
 "\n"
-"1. Leggi la richiesta. Chiama `list_agents` per vedere gli specialisti disponibili e cosa fa ciascuno.\n"
-"2. Scegli il singolo specialista migliore e chiama `switch_agent` con il suo id — dal turno successivo quell'agente prende in carico la conversazione.\n"
-"3. Se nessuno è adatto, rispondi tu stesso brevemente con gli strumenti di lettura, oppure poni una sola domanda di chiarimento con `ask_user`.\n"
-"4. Indirizzi solo la richiesta iniziale; in seguito uno specialista restituisce o passa la conversazione da solo.\n"
-"\n"
-"# Regole\n"
-"\n"
-"- Indirizza al primo segnale chiaro — non interrogare. Al massimo un `ask_user`, solo quando l'ambito è davvero poco chiaro.\n"
-"- Non svolgere mai tu il lavoro dello specialista (creare pagine, scrivere email, analisi approfondite) — passa invece il testimone.\n"
-"- Dopo `switch_agent`, una breve frase che indica chi prende il controllo, poi fermati.\n"
-"- Conciso. Nessun riempitivo.\n"
+"Ordina per giorni di ritardo, le più in ritardo per prime. Dopo la tabella:\n"
+"- Fasce di anzianità (numero e somma dell'importo dovuto): `<30`, `30–60`, `60–90`, `90+` giorni.\n"
+"- Totale generale dell'importo dovuto su tutte le fatture scadute.\n"
 "        "
 
 #. module: muk_ai
@@ -64,7 +58,7 @@ msgid ""
 "\n"
 "My morning sales briefing — what's my pipeline status and who should I call today?\n"
 "\n"
-"Scope: open opportunities I own (`crm.lead` where I am the salesperson, not won/lost). Reference each opportunity as `[Customer Name](crm.lead,id)` so I can click through.\n"
+"Scope: open opportunities I own (`crm.lead` where I am the salesperson, not won/lost). Reference each opportunity as `Customer Name (crm.lead,id)` so I can click through.\n"
 "\n"
 "1. **Status line** — one sentence with: total open opportunities, total expected revenue (sum), weighted pipeline (sum of `expected_revenue * probability / 100`), and how that compares to last month.\n"
 "\n"
@@ -111,7 +105,7 @@ msgid ""
 "\n"
 "1. **Overdue** — `date_deadline` in the past.\n"
 "   - Read all matching tasks. If there are more than 5, show only the first 5 in the table but still analyze the full list to pick the most urgent.\n"
-"   - Table columns: task as `[Task Name](project.task,id)`, project, deadline (ISO), days overdue, stage, priority.\n"
+"   - Table columns: task as `Task Name (project.task,id)`, project, deadline (ISO), days overdue, stage, priority.\n"
 "   - Sort by days overdue descending, then priority.\n"
 "   - If truncated, add `(+N more)` below the table.\n"
 "   - After the table, pick **the single most urgent** from the full list and explain in one sentence why.\n"
@@ -169,7 +163,7 @@ msgid ""
 "\n"
 "2. **Month-over-month** — current MTD vs the same day-of-month last month (e.g. if today is the 12th, compare against the 1st–12th of last month). Show % change on revenue.\n"
 "\n"
-"3. **Top 5 customers this month** — customer as `[Display Name](res.partner,id)`, total invoiced, invoice count. Sort by invoiced descending.\n"
+"3. **Top 5 customers this month** — customer as `Display Name (res.partner,id)`, total invoiced, invoice count. Sort by invoiced descending.\n"
 "\n"
 "4. **Top 5 products this month** — invoice lines grouped by product: product, quantity sold, revenue. Sort by revenue descending.\n"
 "\n"
@@ -202,6 +196,37 @@ msgstr ""
 "        "
 
 #. module: muk_ai
+#: model:muk_ai.agent.suggestion,prompt:muk_ai.agent_read_only_suggestion_pipeline
+msgid ""
+"\n"
+"Summarize the open CRM pipeline (all owners, not won/lost).\n"
+"\n"
+"For each stage in pipeline order:\n"
+"- Stage name, opportunity count, sum of expected revenue.\n"
+"- Top 3 by expected revenue: customer, amount, salesperson, expected close date.\n"
+"\n"
+"Then:\n"
+"- **Slipping**: open opps whose expected close date is already in the past — customer, amount, salesperson, days slipped.\n"
+"- **Stale**: open opps with no activity in the last 14 days — customer, amount, salesperson, days since last activity.\n"
+"\n"
+"End with two totals on one line: total open opportunities and total expected revenue.\n"
+"    "
+msgstr ""
+"\n"
+"Riassumi la pipeline CRM aperta (tutti i responsabili, non vinte/perse).\n"
+"\n"
+"Per ogni fase nell'ordine della pipeline:\n"
+"- Nome fase, numero di opportunità, somma dei ricavi attesi.\n"
+"- Top 3 per ricavi attesi: cliente, importo, venditore, data di chiusura prevista.\n"
+"\n"
+"Poi:\n"
+"- **In ritardo**: opportunità aperte con data di chiusura prevista già passata — cliente, importo, venditore, giorni di slittamento.\n"
+"- **Ferme**: opportunità aperte senza attività negli ultimi 14 giorni — cliente, importo, venditore, giorni dall'ultima attività.\n"
+"\n"
+"Chiudi con due totali in una riga: totale opportunità aperte e totale ricavi attesi.\n"
+"    "
+
+#. module: muk_ai
 #: model:muk_ai.agent.suggestion,prompt:muk_ai.agent_general_suggestion_explore
 msgid ""
 "\n"
@@ -209,13 +234,13 @@ msgid ""
 "\n"
 "1. **Activities overdue or due today** (assigned to me)\n"
 "   - Read **all** matching activities. If there are more than 5, show only the first 5 in the table but still analyze the full list to pick the most urgent.\n"
-"   - Table columns: activity type, deadline (ISO), record as `[Display Name](model,id)`, days overdue (0 = today). Sort by days overdue descending.\n"
+"   - Table columns: activity type, deadline (ISO), record as `Display Name (model,id)`, days overdue (0 = today). Sort by days overdue descending.\n"
 "   - If truncated, add `(+N more)` below the table.\n"
 "   - After the table, pick **the single most urgent** from the full list and explain in one sentence why, with the record reference.\n"
 "\n"
-"2. **Inbox highlights** — summarize my unread Discuss messages. **Do not mark anything as read** (no calls to `set_message_done`, `channel_fetched`, or similar).\n"
+"2. **Inbox highlights** — summarize my unread Discuss messages. **Do not mark anything as read** (no calls to `set_message_done`, `mark_as_read`, `channel_fetched`, or similar).\n"
 "   - Surface up to 5 of the most relevant: @mentions of me first, then DMs with a clear question or decision request, then channel threads that look unresolved.\n"
-"   - Per item: sender, one-line gist, and a reference to the record the message is on as `[Display Name](model,id)` so I can jump to it.\n"
+"   - Per item: sender, one-line gist, and a reference to the record the message is on as `Display Name (model,id)` so I can jump to it.\n"
 "   - End with a one-liner: total unread across mentions, DMs, and channels.\n"
 "\n"
 "3. **Calendar today** — short list of today's events I attend: time range, title, attendees count.\n"
@@ -1226,6 +1251,11 @@ msgid "Can Edit Domain"
 msgstr "Può modificare il dominio"
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__can_write
+msgid "Can Steer"
+msgstr "Può guidare"
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
 #: code:addons/muk_ai/static/src/chat/sidebar/rename_dialog.xml:0
@@ -1776,6 +1806,11 @@ msgid "Custom URL"
 msgstr "URL personalizzato"
 
 #. module: muk_ai
+#: model:muk_ai.agent.suggestion,label:muk_ai.agent_read_only_suggestion_top_customers
+msgid "Customers"
+msgstr "Clienti"
+
+#. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_space__retention_days
 msgid ""
 "Days a finished chat in this space is kept before the scheduled cleanup "
@@ -1991,12 +2026,6 @@ msgstr "Trascina per ridimensionare"
 
 #. module: muk_ai
 #. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/tools/tool_card.xml:0
-msgid "Each fire asks:"
-msgstr "Ogni esecuzione chiede:"
-
-#. module: muk_ai
-#. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
 msgid "Edit"
 msgstr "Modifica"
@@ -2089,12 +2118,6 @@ msgstr "Evento non trovato in questa sessione."
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__event_ids
 msgid "Events"
 msgstr "Eventi"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/tools/tool_card.xml:0
-msgid "Every"
-msgstr "Ogni"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -3331,6 +3354,11 @@ msgid "New space"
 msgstr "Nuovo spazio"
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__activity_calendar_event_id
+msgid "Next Activity Calendar Event"
+msgstr "Prossimo evento del calendario delle attività"
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__activity_date_deadline
 msgid "Next Activity Deadline"
 msgstr "Scadenza prossima attività"
@@ -3664,6 +3692,11 @@ msgid "Output tokens"
 msgstr "Token di output"
 
 #. module: muk_ai
+#: model:muk_ai.agent.suggestion,label:muk_ai.agent_read_only_suggestion_overdue
+msgid "Overdue"
+msgstr "Scadute"
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__user_id
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_space__user_id
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_session_search
@@ -3680,12 +3713,6 @@ msgstr ""
 "Proprietario di uno spazio personale. Lascia vuoto per uno spazio di "
 "sistema: lo vedono tutti gli utenti e raccoglie le sue chat tramite il "
 "proprio dominio."
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/tools/tool_card.xml:0
-msgid "Paused — resumes"
-msgstr "In pausa — riprende"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_event__payload
@@ -3807,6 +3834,11 @@ msgid "Pricing"
 msgstr "Prezzi"
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_event__private_user_id
+msgid "Private To"
+msgstr "Privato per"
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent_suggestion__prompt
 msgid "Prompt"
 msgstr "Prompt"
@@ -3901,6 +3933,37 @@ msgid "Queued User Messages"
 msgstr "Messaggi utente in coda"
 
 #. module: muk_ai
+#: model:muk_ai.agent.suggestion,prompt:muk_ai.agent_read_only_suggestion_top_customers
+msgid ""
+"Rank the top 10 customers by total invoiced amount this calendar year.\n"
+"\n"
+"Scope: `account.move` of type `out_invoice`, state `posted`, within the current year. Subtract matching `out_refund` credit notes from the totals.\n"
+"\n"
+"Table columns:\n"
+"- Customer as `Display Name (res.partner,id)`\n"
+"- Total invoiced (tax-excluded)\n"
+"- Number of invoices\n"
+"- Average invoice amount\n"
+"- Most recent invoice date (ISO)\n"
+"\n"
+"Sort descending by total invoiced. End with a one-line grand total across the top 10 and the share of total company revenue that represents.\n"
+"        "
+msgstr ""
+"Classifica i 10 clienti principali per importo totale fatturato in questo anno solare.\n"
+"\n"
+"Ambito: `account.move` di tipo `out_invoice`, stato `posted`, nell'anno in corso. Sottrai dai totali le note di credito `out_refund` corrispondenti.\n"
+"\n"
+"Colonne della tabella:\n"
+"- Cliente come `Display Name (res.partner,id)`\n"
+"- Totale fatturato (imposte escluse)\n"
+"- Numero di fatture\n"
+"- Importo medio delle fatture\n"
+"- Data della fattura più recente (ISO)\n"
+"\n"
+"Ordina per totale fatturato decrescente. Chiudi con un totale generale in una riga sui primi 10 e la quota dei ricavi totali dell'azienda che rappresenta.\n"
+"        "
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_provider__rate_limit
 msgid "Rate Limit"
 msgstr "Limite di frequenza"
@@ -3928,6 +3991,11 @@ msgstr ""
 "altre %(batch)s. Riprova tra un minuto."
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__rating_ids
+msgid "Ratings"
+msgstr "Valutazioni"
+
+#. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_session_form
 msgid "Raw"
 msgstr "Grezzo"
@@ -3949,6 +4017,11 @@ msgstr "Sola lettura — non puoi scrivere in questa chat."
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_search
 msgid "Read-only"
 msgstr "Sola lettura"
+
+#. module: muk_ai
+#: model:muk_ai.agent,name:muk_ai.agent_read_only
+msgid "Read-only Analyst"
+msgstr "Analista in sola lettura"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__read_only
@@ -4064,6 +4137,41 @@ msgid "Rename chat"
 msgstr "Rinomina la chat"
 
 #. module: muk_ai
+#: model:muk_ai.agent.suggestion,prompt:muk_ai.agent_read_only_suggestion_revenue
+msgid ""
+"Report invoiced revenue for the last 6 full calendar months (exclude the current partial month).\n"
+"\n"
+"Scope: posted customer invoices (`account.move`, type `out_invoice`, state `posted`), minus credit notes (`out_refund`).\n"
+"\n"
+"Per month table:\n"
+"- Month (YYYY-MM)\n"
+"- Total invoiced (untaxed and tax-included)\n"
+"- Number of invoices\n"
+"- Top 3 customers contributing and their share\n"
+"- Month-over-month % change on the tax-excluded total\n"
+"\n"
+"End with:\n"
+"- 6-month total (untaxed and tax-included)\n"
+"- Average monthly revenue\n"
+"- Use the default company currency; do not convert."
+msgstr ""
+"Riporta i ricavi fatturati degli ultimi 6 mesi solari completi (escludi il mese corrente parziale).\n"
+"\n"
+"Ambito: fatture cliente registrate (`account.move`, tipo `out_invoice`, stato `posted`), meno le note di credito (`out_refund`).\n"
+"\n"
+"Tabella per mese:\n"
+"- Mese (YYYY-MM)\n"
+"- Totale fatturato (imposte escluse e incluse)\n"
+"- Numero di fatture\n"
+"- Top 3 clienti che contribuiscono e la loro quota\n"
+"- Variazione % mese su mese del totale imposte escluse\n"
+"\n"
+"Chiudi con:\n"
+"- Totale 6 mesi (imposte escluse e incluse)\n"
+"- Ricavi mensili medi\n"
+"- Usa la valuta predefinita dell'azienda; non convertire."
+
+#. module: muk_ai
 #: model:ir.ui.menu,name:muk_ai.menu_ai_report
 msgid "Reports"
 msgstr "Report"
@@ -4126,6 +4234,11 @@ msgstr ""
 " tramite scope MCP)."
 
 #. module: muk_ai
+#: model:muk_ai.agent,description:muk_ai.agent_read_only
+msgid "Restricted to read-only tools."
+msgstr "Limitato agli strumenti in sola lettura."
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/tools/tool_card.xml:0
 msgid "Result"
@@ -4142,6 +4255,11 @@ msgstr "Conservazione"
 #: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__ai_session_retention_days
 msgid "Retention Days"
 msgstr "Giorni di conservazione"
+
+#. module: muk_ai
+#: model:muk_ai.agent.suggestion,label:muk_ai.agent_read_only_suggestion_revenue
+msgid "Revenue"
+msgstr "Ricavi"
 
 #. module: muk_ai
 #. odoo-python
@@ -4425,12 +4543,6 @@ msgid "Session"
 msgstr "Sessione"
 
 #. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/mcp/agent.py:0
-msgid "Session %(sid)s no longer exists."
-msgstr "La sessione %(sid)s non esiste più."
-
-#. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "Session Timeout"
 msgstr "Timeout della sessione"
@@ -4523,6 +4635,17 @@ msgid ""
 msgstr ""
 "Impostato al passaggio a uno stato terminale, azzerato quando l'utente apre "
 "la sessione; comanda il badge di attenzione nel systray."
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_session_event__private_user_id
+msgid ""
+"Set when this line carries something about one person rather than something "
+"said in the chat. Nobody else is shown it, not a reader the chat was shared "
+"with and not a later owner."
+msgstr ""
+"Impostato quando questa riga riguarda una persona e non qualcosa detto nella"
+" chat. Nessun altro la vede, né un lettore con cui la chat è stata condivisa"
+" né un proprietario successivo."
 
 #. module: muk_ai
 #: model:ir.actions.act_window,name:muk_ai.action_muk_ai_config_settings
@@ -5012,6 +5135,12 @@ msgstr ""
 #: code:addons/muk_ai/models/revision_mixin.py:0
 msgid "This record has no prompt field."
 msgstr "Questo record non ha un campo prompt."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/mcp/agent.py:0
+msgid "This session no longer exists."
+msgstr "Questa sessione non esiste più."
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_model__reasoning_effort_default
@@ -5513,12 +5642,6 @@ msgid "Who may read it"
 msgstr "Chi può leggerla"
 
 #. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/tools/tool_card.xml:0
-msgid "Will ask:"
-msgstr "Chiederà:"
-
-#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__claimed_at
 msgid "Worker Claimed At"
 msgstr "Worker rivendicato il"
@@ -5606,12 +5729,6 @@ msgstr "ad es. Esplora"
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
 msgid "e.g. Sales Assistant"
 msgstr "ad es. Assistente vendite"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/tools/tool_card.js:0
-msgid "error"
-msgstr "errore"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -5761,15 +5878,3 @@ msgstr "view_context.model deve essere una stringa."
 #: model:ir.model,name:muk_ai.model_ir_websocket
 msgid "websocket message handling"
 msgstr "Gestione dei messaggi websocket"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/tools/tool_card.xml:0
-msgid "· next"
-msgstr "· prossimo"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/tools/tool_card.xml:0
-msgid "· run"
-msgstr "· esecuzione"

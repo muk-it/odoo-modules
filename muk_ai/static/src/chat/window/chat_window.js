@@ -21,6 +21,8 @@ import { SourceIcon, SourceList } from '@muk_ai/chat/artifacts/types/sources_tab
 import {
     approvalPill,
     effortPill,
+    extraPills,
+    selectPill,
     costTooltip,
     formatCost,
     formatRelativeTime,
@@ -32,7 +34,7 @@ import {
 } from '@muk_ai/chat/utils';
 
 import { ChatComposer } from '@muk_ai/chat/composer/chat_composer';
-import { turnRendererFor } from '@muk_ai/chat/session/turns';
+import { isToolBlockHidden, turnRendererFor } from '@muk_ai/chat/session/turns';
 import { useAiSession } from '@muk_ai/chat/session/use_ai_session';
 import {
     onScrollUpNearTop,
@@ -211,14 +213,7 @@ export class ChatWindow extends Component {
         return this.session.isToolExpanded(callId);
     }
     isToolHiddenForAsk(block, turn) {
-        if (block.result !== null && block.result !== undefined) {
-            return false;
-        }
-        const pending = this.session.state.pendingAsk;
-        if (pending && pending.call_id === block.callId) {
-            return true;
-        }
-        return turn.blocks.some((b) => b.type === 'ask' && b.callId === block.callId);
+        return isToolBlockHidden(block, turn, this.session.state.pendingAsk);
     }
     isToolStreaming(block) {
         if (block.result !== null && block.result !== undefined) {
@@ -322,6 +317,12 @@ export class ChatWindow extends Component {
         return this.session.state.sessionId
             ? effortPill(this.session.state) || undefined
             : undefined;
+    }
+    get extraPills() {
+        return this.session.state.sessionId ? extraPills(this.session.state) : [];
+    }
+    onSelectPill(key, value) {
+        selectPill(key, this.session, value);
     }
     onSetApproval(mode) {
         this.session.setApprovalMode(mode);

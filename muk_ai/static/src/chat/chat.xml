@@ -183,6 +183,7 @@
                     />
                     <div class="mk_composer_wrap">
                         <ChatComposer
+                            session="session"
                             value="session.state.input"
                             placeholder="inputPlaceholder"
                             readonly="session.state.readonly"
@@ -199,6 +200,8 @@
                             focusToken="session.state.focusToken"
                             approvalPill="approvalPill"
                             effortPill="effortPill"
+                            extraPills="extraPills"
+                            onSelectPill.bind="onSelectPill"
                             showHint="true"
                             onSetApproval="(mode) => session.setApprovalMode(mode)"
                             onSetEffort="(tier) => session.setReasoningEffort(tier)"
@@ -340,7 +343,7 @@
                     t-if="session.state.viewContext"
                 >
                     <button
-                        class="btn btn-link p-0 border-0 text-reset text-decoration-none d-inline-flex align-items-center"
+                        class="btn btn-link p-0 border-0 text-reset text-decoration-none d-inline-flex align-items-center mk_ctx_open"
                         t-att-title="viewContextTooltip"
                         t-on-click="() => this.session.openPinnedContext()"
                     >

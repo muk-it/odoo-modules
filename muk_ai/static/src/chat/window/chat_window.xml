@@ -48,6 +48,7 @@
                     <t t-call="muk_ai.SessionPills">
                         <t t-set="approval" t-value="approvalPill"/>
                         <t t-set="effort" t-value="effortPill"/>
+                        <t t-set="extra" t-value="extraPills"/>
                     </t>
                     <span
                         class="mk_chip mk_ctx_chip rounded-pill d-inline-flex align-items-center"
@@ -172,6 +173,7 @@
                 </div>
                 <div class="mk_window_composer">
                     <ChatComposer
+                        session="session"
                         value="session.state.input"
                         placeholder="inputPlaceholder"
                         readonly="session.state.readonly"

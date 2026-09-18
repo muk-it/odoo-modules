@@ -77,7 +77,6 @@ export class ChatArtifactsPanel extends Component {
             items: tab.items,
             session: this.props.session,
             onOpenAttachment: this.props.onOpenAttachment || (() => {}),
-            onClose: this.props.onClose,
             focusItemId: this.state.focusedItemId ?? undefined,
         };
     }

@@ -5,7 +5,7 @@ import { DropdownItem } from '@web/core/dropdown/dropdown_item';
 import { _t } from '@web/core/l10n/translation';
 
 import { AttachmentCard } from '@muk_ai/core/attachment/attachment_card';
-import { SLASH_COMMANDS } from '@muk_ai/chat/session/use_ai_session';
+import { allSlashCommands } from '@muk_ai/chat/session/use_ai_session';
 
 let fileInputCounter = 0;
 
@@ -43,12 +43,15 @@ export class ChatComposer extends Component {
         agents: { type: Array, optional: true },
         activeAgentId: { optional: true },
         sessionId: { optional: true },
+        session: { type: Object, optional: true },
         viewContext: { optional: true },
         approvalPill: { type: Object, optional: true },
         effortPill: { type: Object, optional: true },
+        extraPills: { type: Array, optional: true },
         showHint: { type: Boolean, optional: true },
         onSetApproval: { type: Function, optional: true },
         onSetEffort: { type: Function, optional: true },
+        onSelectPill: { type: Function, optional: true },
         onInput: { type: Function },
         onSend: { type: Function },
         onStop: { type: Function, optional: true },
@@ -59,6 +62,7 @@ export class ChatComposer extends Component {
         focusToken: { type: [Number, String], optional: true },
     };
     static defaultProps = {
+        extraPills: [],
         readonly: false,
         showHint: false,
         readonlyOwner: '',
@@ -122,7 +126,7 @@ export class ChatComposer extends Component {
             return [];
         }
         const prefix = value.split(/\s+/)[0].toLowerCase();
-        return SLASH_COMMANDS.filter((c) => c.name.startsWith(prefix));
+        return allSlashCommands().filter((c) => c.name.startsWith(prefix));
     }
     get isAgentMode() {
         return /^\/agent(\s|$)/.test((this.props.value || '').trimStart());
@@ -236,6 +240,11 @@ export class ChatComposer extends Component {
     }
     hoverSlashCommand(index) {
         this.localState.slashActive = index;
+    }
+    onSelectPill(key, value) {
+        if (this.props.onSelectPill) {
+            this.props.onSelectPill(key, value);
+        }
     }
     onSetApproval(mode) {
         if (this.props.onSetApproval) {

@@ -7,8 +7,8 @@
     .o_input_dropdown .o-autocomplete--input {
         width: 100%;
         min-height: $input-height;
-        padding: $input-padding-y $form-select-indicator-padding
-            $input-padding-y $input-padding-x;
+        padding: $input-padding-y $form-select-indicator-padding $input-padding-y
+            $input-padding-x;
         border: $input-border-width solid $input-border-color;
         border-radius: $input-border-radius;
         background-color: $input-bg;

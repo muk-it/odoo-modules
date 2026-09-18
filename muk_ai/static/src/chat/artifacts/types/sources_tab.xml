@@ -20,8 +20,9 @@
 
     <t t-name="muk_ai.SourceCard">
         <a
+            t-ref="root"
             class="mk_source_card d-flex align-items-center"
-            t-att-class="'mk_source_' + props.source.type"
+            t-att-class="cardClass"
             t-att-href="href"
             target="_blank"
             rel="noopener noreferrer"
@@ -40,7 +41,11 @@
     <t t-name="muk_ai.SourceList">
         <div class="mk_source_list">
             <t t-foreach="visible" t-as="src" t-key="src.id">
-                <SourceCard source="src" sessionId="props.sessionId"/>
+                <SourceCard
+                    source="src"
+                    sessionId="props.sessionId"
+                    focused="src.id === props.focusItemId"
+                />
             </t>
         </div>
         <button
@@ -62,6 +67,7 @@
             <SourceList
                 sources="props.items"
                 sessionId="props.session and props.session.state.sessionId"
+                focusItemId="props.focusItemId"
             />
         </t>
         <t t-else="">
