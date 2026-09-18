@@ -282,7 +282,13 @@ class AISession(models.Model):
         super()._resume_tool_round(paused, approved, reject_reason=reject_reason)
 
     def approve_for_session(self) -> dict:
-        """Approve the pending call and grant the origin ``follow_plan`` if browser."""
+        """Approve the pending call and grant the origin ``follow_plan`` if browser.
+
+        :raise AccessError: when the caller may only read this chat
+        """
+        # Before the grant, not after: a reader must not spend the owner's
+        # consent on the way to being refused by super().
+        self.check_access('write')
         pending = dict(self.pending_ask or {})
         if pending.get('_browser_action') and pending.get('origin'):
             self.env['muk_ai_browser.permission']._grant(
