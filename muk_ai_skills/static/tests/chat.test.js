@@ -1,5 +1,7 @@
 import { describe, expect, test } from '@odoo/hoot';
 
+import { sessionSlashCommands } from '@muk_ai/chat/session/use_ai_session';
+
 import { resolveChatSkill } from '@muk_ai_skills/chat/chat';
 import { setSkills } from '@muk_ai_skills/chat/skill_cache';
 
@@ -22,4 +24,15 @@ test('resolveChatSkill lets a built-in command win over a same-named skill', () 
 test('resolveChatSkill returns null for an unknown skill head', () => {
     setSkills(7, []);
     expect(resolveChatSkill(7, 'nope')).toBe(null);
+});
+
+test("resolveChatSkill lets an addon's command win over a same-named skill", () => {
+    sessionSlashCommands.add(
+        '/remember',
+        { name: '/remember', hint: 'Write a memory by hand' },
+        { force: true },
+    );
+    setSkills(7, [{ name: 'remember' }]);
+    expect(resolveChatSkill(7, 'remember')).toBe(null);
+    setSkills(7, []);
 });

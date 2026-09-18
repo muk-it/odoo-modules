@@ -1,34 +1,30 @@
 import { useEffect } from '@odoo/owl';
 
-import { patch } from '@web/core/utils/patch';
 import { _t } from '@web/core/l10n/translation';
 import { useService } from '@web/core/utils/hooks';
 
-import { AIChat } from '@muk_ai/chat/chat';
-import { ChatWindow } from '@muk_ai/chat/window/chat_window';
+import { patchChatSurfaces } from '@muk_ai/chat/surfaces';
 import { formatError } from '@muk_ai/chat/utils';
-import { SLASH_COMMANDS } from '@muk_ai/chat/session/use_ai_session';
+import { allSlashCommands } from '@muk_ai/chat/session/use_ai_session';
 
 import { recordSkillUse } from '@muk_ai_skills/chat/recent_skills';
 import { findSkill, setSkills } from '@muk_ai_skills/chat/skill_cache';
 
-const BUILTIN_COMMAND_NAMES = new Set(
-    SLASH_COMMANDS.map((c) => c.name.replace(/^\//, '').toLowerCase()),
-);
-
 /**
- * Resolve the skill a slash command head routes to, or null when a built-in
- * command of the same name exists. Built-in commands always take precedence so
- * a skill named like `help`/`clear`/`compact` cannot hijack the built-in.
+ * Resolve the skill a slash command head routes to, or null when a command of
+ * the same name exists. Commands always take precedence so a skill named like
+ * `help` or `remember` cannot hijack one. Read on every call, because an addon
+ * registers its commands as it loads.
  * @param {number} sessionId the session whose skills to search
  * @param {string} head the slash command head, without the leading slash
- * @returns {object|null} the matching skill, or null when a built-in wins
+ * @returns {object|null} the matching skill, or null when a command wins
  */
 export function resolveChatSkill(sessionId, head) {
-    if (BUILTIN_COMMAND_NAMES.has((head || '').toLowerCase())) {
+    const name = (head || '').toLowerCase();
+    if (allSlashCommands().some((c) => c.name.slice(1).toLowerCase() === name)) {
         return null;
     }
-    return findSkill(sessionId, head);
+    return findSkill(sessionId, name);
 }
 
 /**
@@ -106,18 +102,9 @@ function installSkillRouting(component) {
     );
 }
 
-/** Install skill slash-command routing on the main AI chat. */
-patch(AIChat.prototype, {
+patchChatSurfaces(() => ({
     setup() {
         super.setup();
         installSkillRouting(this);
     },
-});
-
-/** Install skill slash-command routing on the chat window. */
-patch(ChatWindow.prototype, {
-    setup() {
-        super.setup();
-        installSkillRouting(this);
-    },
-});
+}));
