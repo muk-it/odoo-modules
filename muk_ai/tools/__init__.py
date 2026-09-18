@@ -45,6 +45,7 @@ from .runtime import (
     StreamCancelled,
     TurnSuperseded,
     coerce_ids,
+    commit_safe,
     nearest_reasoning_effort,
     sanitize_json_schema,
 )

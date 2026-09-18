@@ -214,3 +214,58 @@ test('detects diff body in result and swaps to language-diff pre', async () => {
     await mountWithCleanup(Parent, { props });
     expect('.language-diff').toHaveCount(2);
 });
+
+test('renders a decorator-set icon, kind and band instead of the defaults', async () => {
+    const { Parent, props } = makeParent({
+        block: {
+            name: 'mystery',
+            arguments: { x: 1 },
+            callId: 'c8',
+            icon: 'fa-bolt',
+            kind: 'custom',
+            band: 'Fires at noon',
+        },
+    });
+    await mountWithCleanup(Parent, { props });
+    expect('.fa-bolt').toHaveCount(1);
+    expect('.fa-wrench').toHaveCount(0);
+    expect('.mk_tool_custom').toHaveCount(1);
+    expect('.mk_tool_default').toHaveCount(0);
+    expect('.mk_tool_preview').toHaveCount(0);
+    expect(queryFirst('.mk_tool_band').textContent).toBe('Fires at noon');
+    expect(queryFirst('.mk_tool_band').getAttribute('title')).toBe('Fires at noon');
+});
+
+test('undecorated block keeps the wrench, the name-derived kind and the preview', async () => {
+    const { Parent, props } = makeParent({
+        block: {
+            name: 'search_read',
+            arguments: { model: 'res.partner' },
+            callId: 'c9',
+        },
+    });
+    await mountWithCleanup(Parent, { props });
+    expect('.fa-wrench').toHaveCount(1);
+    expect('.mk_tool_read').toHaveCount(1);
+    expect('.mk_tool_band').toHaveCount(0);
+    expect(queryFirst('.mk_tool_preview').textContent).toBe(
+        '{ "model": "res.partner" }',
+    );
+});
+
+test('decorator-set kind wins over an error result and the band turns red', async () => {
+    const { Parent, props } = makeParent({
+        block: {
+            name: 'search_read',
+            arguments: null,
+            callId: 'c10',
+            kind: 'custom',
+            band: 'failed',
+            result: { ok: false, error: 'nope' },
+        },
+    });
+    await mountWithCleanup(Parent, { props });
+    expect('.mk_tool_custom').toHaveCount(1);
+    expect('.mk_tool_error').toHaveCount(0);
+    expect('.mk_tool_band.text-danger').toHaveCount(1);
+});

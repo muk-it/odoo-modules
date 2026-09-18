@@ -1,8 +1,21 @@
-import { describe, expect, test } from '@odoo/hoot';
+import { afterEach, describe, expect, test } from '@odoo/hoot';
 
-import { buildRenderedTurns } from '@muk_ai/chat/session/turns';
+import {
+    buildRenderedTurns,
+    describeToolBlock,
+    hiddenToolBlocks,
+    isToolBlockHidden,
+    toolPayload,
+    turnBuilders,
+} from '@muk_ai/chat/session/turns';
 
 describe.current.tags('muk_ai');
+
+afterEach(() => {
+    if (turnBuilders.contains('probe')) {
+        turnBuilders.remove('probe');
+    }
+});
 
 test('returns empty list for empty / nullish log', () => {
     expect(buildRenderedTurns([])).toEqual([]);
@@ -132,11 +145,13 @@ test('user_message resets the assistant accumulator (next text starts a new turn
     expect(turns[0]).toEqual({
         role: 'assistant',
         blocks: [{ type: 'text', text: 'a' }],
+        lastTextAt: 0,
     });
     expect(turns[1].role).toBe('user');
     expect(turns[2]).toEqual({
         role: 'assistant',
         blocks: [{ type: 'text', text: 'b' }],
+        lastTextAt: 0,
         regenerateAt: 0,
     });
 });
@@ -204,7 +219,12 @@ test('unknown kinds are ignored without breaking the rest', () => {
         { kind: 'text', content: 'a' },
     ]);
     expect(turns).toEqual([
-        { role: 'assistant', blocks: [{ type: 'text', text: 'a' }], regenerateAt: 0 },
+        {
+            role: 'assistant',
+            blocks: [{ type: 'text', text: 'a' }],
+            lastTextAt: 0,
+            regenerateAt: 0,
+        },
     ]);
 });
 
@@ -250,4 +270,127 @@ test('a tool result without a file leaves the turn unattached', () => {
         },
     ]);
     expect(turns[0].attachments).toBe(undefined);
+});
+
+test('an unknown event kind is dropped until a builder claims it', () => {
+    const log = [{ kind: 'probe', event_id: 5, at: '2026-01-01', label: 'x' }];
+    expect(buildRenderedTurns(log)).toEqual([]);
+    turnBuilders.add('probe', (entry) => ({ role: 'probe', label: entry.label }), {
+        force: true,
+    });
+    expect(buildRenderedTurns(log)).toEqual([
+        { role: 'probe', label: 'x', at: '2026-01-01', eventId: 5 },
+    ]);
+});
+
+test('a builder returning null drops the event', () => {
+    turnBuilders.add('probe', () => null, { force: true });
+    expect(buildRenderedTurns([{ kind: 'probe' }])).toEqual([]);
+});
+
+test('a built turn closes the open assistant turn like a command does', () => {
+    turnBuilders.add('probe', () => ({ role: 'probe' }), { force: true });
+    const turns = buildRenderedTurns([
+        { kind: 'text', content: 'a' },
+        { kind: 'probe' },
+        { kind: 'text', content: 'b' },
+    ]);
+    expect(turns.map((turn) => turn.role)).toEqual(['assistant', 'probe', 'assistant']);
+});
+
+test('a payload that is not JSON reads as nothing rather than throwing', () => {
+    // A tool result arrives as a string while it streams and as an object
+    // once it has landed, and half a JSON document in between.
+    expect(toolPayload('{not json')).toBe(null);
+    expect(toolPayload(undefined)).toBe(null);
+    expect(toolPayload({ searched: ['x'] })).toEqual({ searched: ['x'] });
+});
+
+test('a described card reads the result it did not have when it was built', () => {
+    // The card is decorated as the call starts and rendered again as the
+    // answer streams in, so the band has to be a getter, not a value.
+    const block = { name: 'probe', arguments: '{"query": "vat"}' };
+    describeToolBlock(block, {
+        kind: 'probe',
+        icon: () => 'fa-flask',
+        label: ({ args }) => `Looked up ${args.query}`,
+        band: ({ result }) => (result ? `${result.hits} hits` : 'looking…'),
+    });
+    expect(block.kind).toBe('probe');
+    expect(block.icon).toBe('fa-flask');
+    expect(block.label).toBe('Looked up vat');
+    expect(block.band).toBe('looking…');
+    block.result = '{"hits": 2}';
+    expect(block.band).toBe('2 hits');
+});
+
+test('a card describes only the parts it was given', () => {
+    const block = { name: 'probe' };
+    describeToolBlock(block, { band: () => 'done' });
+    expect(block.band).toBe('done');
+    expect(block.icon).toBe(undefined);
+    expect(block.label).toBe(undefined);
+    expect(block.kind).toBe(undefined);
+});
+
+test('lastTextAt marks where the answer ends on every assistant turn', () => {
+    const turns = buildRenderedTurns([
+        { kind: 'text', content: 'let me check' },
+        { kind: 'tool_call', name: 'search_read', call_id: 'c1' },
+        { kind: 'tool_result', name: 'search_read', call_id: 'c1', result: '[]' },
+        { kind: 'text', content: 'here it is' },
+        { kind: 'user_message', content: 'thanks', attachments: [] },
+        { kind: 'text', content: 'welcome' },
+    ]);
+    const assistants = turns.filter((turn) => turn.role === 'assistant');
+    expect(assistants).toHaveLength(2);
+    // Two bubbles split by the tool card, and the answer is the second.
+    expect(assistants[0].blocks.filter((b) => b.type === 'text')).toHaveLength(2);
+    expect(assistants[0].lastTextAt).toBe(assistants[0].blocks.length - 1);
+    expect(assistants[0].regenerateAt).toBe(undefined);
+    expect(assistants[1].lastTextAt).toBe(0);
+    expect(assistants[1].regenerateAt).toBe(0);
+});
+
+test('a tool block another surface draws is left out, result or not', () => {
+    hiddenToolBlocks.add('probe', (block) => block.name === 'delegate', {
+        force: true,
+    });
+    const turn = { blocks: [] };
+    // Unlike the ask rule, this one applies to a finished call too: the
+    // surface that replaces the card outlives the call.
+    expect(isToolBlockHidden({ name: 'delegate', result: '{}' }, turn)).toBe(true);
+    expect(isToolBlockHidden({ name: 'delegate', result: null }, turn)).toBe(true);
+    expect(isToolBlockHidden({ name: 'search_read', result: '{}' }, turn)).toBe(false);
+    hiddenToolBlocks.remove('probe');
+});
+
+test('a tool block the session is waiting on is left out until it answers', () => {
+    const turn = { blocks: [] };
+    const asked = { callId: 'c1', result: null };
+    expect(isToolBlockHidden(asked, turn, { call_id: 'c1' })).toBe(true);
+    expect(isToolBlockHidden({ ...asked, result: 'ok' }, turn, { call_id: 'c1' })).toBe(
+        false,
+    );
+    expect(isToolBlockHidden(asked, turn, { call_id: 'other' })).toBe(false);
+});
+
+test('a tool block whose turn already shows it as an ask is left out', () => {
+    const turn = { blocks: [{ type: 'ask', callId: 'c1' }] };
+    expect(isToolBlockHidden({ callId: 'c1', result: null }, turn)).toBe(true);
+    expect(isToolBlockHidden({ callId: 'c2', result: null }, turn)).toBe(false);
+});
+
+test('a band is told it is pending only while the call has not answered', () => {
+    const block = { name: 'search', arguments: '{}', result: null };
+    let seen = null;
+    describeToolBlock(block, { band: (parts) => ((seen = parts), '') });
+    void block.band;
+    expect(seen.pending).toBe(true);
+    // A result too large for the bus arrives truncated and unparsable: the
+    // call has answered, so a band must not keep saying it is running.
+    block.result = '{"passages": [{"text": "…';
+    void block.band;
+    expect(seen.pending).toBe(false);
+    expect(seen.result).toBe(null);
 });

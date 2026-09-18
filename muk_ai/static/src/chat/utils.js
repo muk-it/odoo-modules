@@ -1,5 +1,41 @@
 import { _t } from '@web/core/l10n/translation';
 import { formatDateTime } from '@web/core/l10n/dates';
+import { registry } from '@web/core/registry';
+
+/**
+ * Session pills an addon adds beside Approval and Effort.
+ *
+ * Each entry is `{sequence, build, onSelect}`: `build(state)` returns a pill
+ * descriptor or nothing, and `onSelect(session, value)` acts on the choice.
+ * Both surfaces draw the same list, so a pill written once appears in the
+ * full page and in the floating window.
+ */
+export const sessionPills = registry.category('muk_ai.session_pills');
+
+/**
+ * Build the descriptors of the pills addons contribute for one session.
+ * @param {object} state session UI state
+ * @returns {Array} `{key, pill}` entries, those with nothing to show dropped
+ */
+export function extraPills(state) {
+    return sessionPills
+        .getEntries()
+        .map(([key, entry]) => ({ key, pill: entry.build(state) }))
+        .filter((entry) => entry.pill);
+}
+
+/**
+ * Act on a choice made in an addon's pill.
+ * @param {string} key the pill's registry key
+ * @param {object} session the session handle the surface holds
+ * @param {*} value what was chosen
+ */
+export function selectPill(key, session, value) {
+    const entry = sessionPills.get(key, null);
+    if (entry) {
+        entry.onSelect(session, value);
+    }
+}
 
 const { DateTime } = luxon;
 

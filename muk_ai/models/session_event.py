@@ -46,6 +46,18 @@ class AISessionEvent(models.Model):
         default=fields.Datetime.now,
     )
 
+    private_user_id = fields.Many2one(
+        comodel_name='res.users',
+        string='Private To',
+        help=(
+            'Set when this line carries something about one person rather '
+            'than something said in the chat. Nobody else is shown it, not '
+            'a reader the chat was shared with and not a later owner.'
+        ),
+        index=True,
+        ondelete='cascade',
+    )
+
     # ----------------------------------------------------------
     # Constraints
     # ----------------------------------------------------------

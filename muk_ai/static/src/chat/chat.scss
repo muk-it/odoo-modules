@@ -653,8 +653,10 @@
         min-width: 0;
         .mk_ctx_chip {
             min-width: 0;
-            max-width: 22ch;
-            .btn:not(.mk_ctx_unpin) {
+            // wide enough that the label still reads once an addon has hung
+            // its own control on the pin
+            max-width: 26ch;
+            .mk_ctx_open {
                 min-width: 0;
                 display: inline-block;
                 overflow: hidden;
@@ -1261,7 +1263,10 @@
             position: absolute;
             top: 100%;
             right: 0;
-            left: 0;
+            // Only as wide as its content: a short message leaves the bubble
+            // narrower than its own timestamp and buttons, which then spilled
+            // past the turn and scrolled the whole transcript sideways.
+            left: auto;
             margin-top: 0.15rem;
             display: flex;
             flex-wrap: nowrap;
@@ -1792,21 +1797,7 @@
         &.mk_tool_error {
             border-left-color: #cf222e;
         }
-        &.mk_tool_schedule_resume {
-            border-left-color: #0c7cd5;
-        }
-        &.mk_tool_schedule_recur {
-            border-left-color: #1f8a4a;
-        }
-        &.mk_tool_schedule_resume .mk_tool_schedule_icon {
-            background: rgba(12, 124, 213, 0.12);
-            color: #0c7cd5;
-        }
-        &.mk_tool_schedule_recur .mk_tool_schedule_icon {
-            background: rgba(31, 138, 74, 0.12);
-            color: #1f8a4a;
-        }
-        .mk_tool_schedule_band {
+        .mk_tool_band {
             font-family: var(--mk-mono);
             font-size: 0.74rem;
             color: var(--mk-text);
@@ -2410,7 +2401,7 @@
         min-height: 30px;
     }
     .mk_approval_pill,
-    .mk_effort_pill {
+    .mk_session_pill {
         font-size: 0.75rem;
         padding: 2px 10px;
         font-weight: 500;
@@ -2442,7 +2433,7 @@
             }
         }
     }
-    .mk_effort_pill {
+    .mk_session_pill {
         color: var(--mk-text-muted);
         background: var(--mk-bg-soft);
         &:hover {
@@ -2735,4 +2726,43 @@
         font-size: 0.75rem;
         color: var(--secondary-color, #6b7280);
     }
+}
+
+// A quiet line in the transcript: something the chat did, worth checking but
+// not competing with the answer. Shared, so several addons still read as one.
+.mk_note {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 2px 10px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--mk-bg-soft);
+    color: var(--mk-text-muted);
+    font-size: 0.72rem;
+    line-height: 1.6;
+    text-align: left;
+    i {
+        font-size: 0.7rem;
+        opacity: 0.85;
+    }
+}
+
+button.mk_note {
+    cursor: pointer;
+    transition: color 0.12s ease;
+    &:hover {
+        color: var(--mk-primary);
+    }
+}
+
+// The two things a note says beyond its text: went well, or needs a look.
+.mk_note_good {
+    background: rgba(40, 167, 69, 0.12);
+    color: var(--mk-success, #1d7449);
+}
+
+.mk_note_warn {
+    background: rgba(255, 193, 7, 0.16);
+    color: var(--mk-warning, #9a5c06);
 }

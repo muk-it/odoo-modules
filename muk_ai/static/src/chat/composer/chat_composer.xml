@@ -99,7 +99,7 @@
         </div>
         <div
             class="mk_composer_meta d-flex align-items-center gap-2 mt-1 ps-1"
-            t-if="props.showHint or props.approvalPill or props.effortPill"
+            t-if="props.showHint or props.approvalPill or props.effortPill or props.extraPills.length"
         >
             <div class="mk_composer_hint" t-if="props.showHint">
                 <span><kbd>Enter</kbd> to send</span>
@@ -109,6 +109,7 @@
                 <t t-call="muk_ai.SessionPills">
                     <t t-set="approval" t-value="props.approvalPill"/>
                     <t t-set="effort" t-value="props.effortPill"/>
+                    <t t-set="extra" t-value="props.extraPills"/>
                 </t>
             </div>
         </div>
@@ -141,10 +142,36 @@
                 </t>
             </t>
         </Dropdown>
+        <t t-foreach="extra or []" t-as="entry" t-key="entry.key">
+            <Dropdown menuClass="'mk_pill_menu'">
+                <button
+                    type="button"
+                    class="btn btn-sm mk_session_pill rounded-pill border-0 d-inline-flex align-items-center gap-1"
+                    t-att-class="entry.pill.className"
+                    t-att-title="entry.pill.tooltip"
+                >
+                    <i class="fa" t-att-class="entry.pill.icon"/>
+                    <span class="mk_pill_label" t-esc="entry.pill.label"/>
+                    <i class="fa fa-angle-down mk_pill_caret"/>
+                </button>
+                <t t-set-slot="content">
+                    <t t-foreach="entry.pill.options" t-as="opt" t-key="opt.value">
+                        <DropdownItem
+                            class="'mk_pill_option'"
+                            onSelected="() => this.onSelectPill(entry.key, opt.value)"
+                        >
+                            <t t-call="muk_ai.ComposerPillOption">
+                                <t t-set="option" t-value="opt"/>
+                            </t>
+                        </DropdownItem>
+                    </t>
+                </t>
+            </Dropdown>
+        </t>
         <Dropdown t-if="effort" menuClass="'mk_pill_menu'">
             <button
                 type="button"
-                class="btn btn-sm mk_effort_pill rounded-pill border-0 d-inline-flex align-items-center gap-1"
+                class="btn btn-sm mk_session_pill rounded-pill border-0 d-inline-flex align-items-center gap-1"
                 t-att-class="effort.className"
                 t-att-title="effort.tooltip"
             >

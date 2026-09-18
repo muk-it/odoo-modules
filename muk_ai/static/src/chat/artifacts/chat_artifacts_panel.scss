@@ -82,6 +82,9 @@
             border-color: var(--mk-primary);
         }
     }
+    .mk_source_focused {
+        box-shadow: inset 0 0 0 2px var(--mk-primary);
+    }
     .mk_source_card {
         gap: 0.55rem;
         padding: 0.5rem 0.6rem;

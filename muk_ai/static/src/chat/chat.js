@@ -5,6 +5,7 @@ import {
     onPatched,
     onWillStart,
     onWillUnmount,
+    useEffect,
     useRef,
     useState,
 } from '@odoo/owl';
@@ -27,6 +28,8 @@ import { useNotificationBadge } from '@muk_ai/core/notification_badge';
 import {
     approvalPill,
     effortPill,
+    extraPills,
+    selectPill,
     costTooltip,
     formatCost,
     formatRelativeTime,
@@ -38,6 +41,7 @@ import {
 } from '@muk_ai/chat/utils';
 
 import { ChatComposer } from '@muk_ai/chat/composer/chat_composer';
+import { isToolBlockHidden, turnRendererFor } from '@muk_ai/chat/session/turns';
 import { useAiSession } from '@muk_ai/chat/session/use_ai_session';
 import {
     onScrollUpNearTop,
@@ -249,6 +253,14 @@ export class AIChat extends Component {
         onPatched(() => {
             this._handleScrollTarget();
         });
+        useEffect(
+            (focus) => {
+                if (focus && this.state.artifactsHidden) {
+                    this.openArtifacts();
+                }
+            },
+            () => [this.session.state.artifactsFocus],
+        );
         onWillUnmount(() => {
             this._disconnectUserBus();
             this._uninstallRootPasteHandler();
@@ -368,9 +380,19 @@ export class AIChat extends Component {
      *
      * @returns {Array} a search domain on `muk_ai.session`
      */
+    /**
+     * What counts as one of this user's chats, before any narrowing.
+     *
+     * The sidebar list and the sidebar search both start here, so an addon
+     * that hides a kind of session hides it from both by saying so once.
+     * @returns {Array} a search domain on `muk_ai.session`
+     */
+    get baseSessionsDomain() {
+        return [['user_id', '=', user.userId]];
+    }
     get ownSessionsDomain() {
         return [
-            ['user_id', '=', user.userId],
+            ...this.baseSessionsDomain,
             ...(this.state.generalDomain ?? [['space_id', '=', false]]),
         ];
     }
@@ -380,10 +402,7 @@ export class AIChat extends Component {
      * @returns {Array} a search domain on `muk_ai.session`
      */
     sessionSearchDomain(query) {
-        return [
-            ['user_id', '=', user.userId],
-            ['name', 'ilike', query],
-        ];
+        return [...this.baseSessionsDomain, ['name', 'ilike', query]];
     }
     async _loadSessions() {
         if (this.state.sessionsSearchMode) {
@@ -640,9 +659,15 @@ export class AIChat extends Component {
         this.state.sidebarHidden = !this.state.sidebarHidden;
     }
     toggleArtifacts() {
-        const willOpen = this.state.artifactsHidden;
-        this.state.artifactsHidden = !this.state.artifactsHidden;
-        if (willOpen && typeof window !== 'undefined' && window.innerWidth < 1200) {
+        if (this.state.artifactsHidden) {
+            this.openArtifacts();
+            return;
+        }
+        this.state.artifactsHidden = true;
+    }
+    openArtifacts() {
+        this.state.artifactsHidden = false;
+        if (typeof window !== 'undefined' && window.innerWidth < 1200) {
             this.state.sidebarHidden = true;
         }
     }
@@ -977,6 +1002,9 @@ export class AIChat extends Component {
     get renderedTurns() {
         return this.session.renderedTurns();
     }
+    turnRenderer(turn) {
+        return turnRendererFor(turn);
+    }
     renderMarkdown(text) {
         return this.session.renderMarkdown(text);
     }
@@ -987,14 +1015,7 @@ export class AIChat extends Component {
         return this.session.isToolExpanded(callId);
     }
     isToolHiddenForAsk(block, turn) {
-        if (block.result !== null && block.result !== undefined) {
-            return false;
-        }
-        const pending = this.session.state.pendingAsk;
-        if (pending && pending.call_id === block.callId) {
-            return true;
-        }
-        return turn.blocks.some((b) => b.type === 'ask' && b.callId === block.callId);
+        return isToolBlockHidden(block, turn, this.session.state.pendingAsk);
     }
     isToolStreaming(block) {
         if (block.result !== null && block.result !== undefined) {
@@ -1110,6 +1131,12 @@ export class AIChat extends Component {
         return this.session.state.sessionId
             ? effortPill(this.session.state) || undefined
             : undefined;
+    }
+    get extraPills() {
+        return this.session.state.sessionId ? extraPills(this.session.state) : [];
+    }
+    onSelectPill(key, value) {
+        selectPill(key, this.session, value);
     }
 }
 

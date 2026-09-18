@@ -122,7 +122,7 @@
     // The band is already --mk-bg-soft, which is the neutral pill's own fill,
     // and --mk-bg is only two shades off it: step down to the border tone so
     // the chip actually reads against the band. (Dark redefines this again.)
-    .mk_effort_pill {
+    .mk_session_pill {
         background: var(--mk-border);
         &:hover {
             background: var(--mk-border-strong);

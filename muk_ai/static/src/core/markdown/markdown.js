@@ -1,3 +1,4 @@
+import { registry } from '@web/core/registry';
 const SAFE_SCHEME = /^(https?:|mailto:|#|\/)/i;
 const SAFE_IMG_SCHEME = /^(https?:|data:image\/(png|jpeg|jpg|gif|webp);base64,|\/)/i;
 const RECORD_HREF_RE = /^([a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+),(\d+)$/;
@@ -25,6 +26,16 @@ function highlightFence(code, lang) {
         return escapeHtml(code);
     }
 }
+
+/**
+ * Registry of markdown-it plugins applied after the core rules, keyed by
+ * name. Each entry has the signature `(md) => void` and may add rulers,
+ * renderer rules or inline parsers.
+ *
+ * Plugins are read once, when the renderer is first built, so an addon
+ * registers at module load rather than in a component.
+ */
+export const markdownPlugins = registry.category('muk_ai.markdown_plugins');
 
 function buildRenderer() {
     const md = window.markdownit({
@@ -167,6 +178,9 @@ function buildRenderer() {
         token.attrSet('class', 'mk_md_image');
         return self.renderToken(tokens, idx, options, env);
     };
+    for (const plugin of markdownPlugins.getAll()) {
+        plugin(md);
+    }
     return md;
 }
 

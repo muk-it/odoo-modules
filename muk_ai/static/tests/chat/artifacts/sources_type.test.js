@@ -164,3 +164,24 @@ test('buildRenderedTurns scopes sources per turn', () => {
     expect(assistants[0].sources.map((s) => s.id)).toEqual(['web:https://a.test']);
     expect(assistants[1].sources.map((s) => s.id)).toEqual(['web:https://b.test']);
 });
+
+test('SourceList marks the focused card and reveals it past the cap', async () => {
+    await mountWithCleanup(SourceList, {
+        props: {
+            sources: makeRecordSources(12),
+            cap: 8,
+            focusItemId: 'record:res.partner,11',
+        },
+    });
+    expect(queryAll('.mk_source_card').length).toBe(12);
+    const focused = queryAll('.mk_source_focused');
+    expect(focused.length).toBe(1);
+    expect(focused[0].textContent).toInclude('Partner 11');
+});
+
+test('SourceList focuses nothing when no item is asked for', async () => {
+    await mountWithCleanup(SourceList, {
+        props: { sources: makeRecordSources(3), cap: 8 },
+    });
+    expect(queryAll('.mk_source_focused').length).toBe(0);
+});

@@ -1,5 +1,4 @@
 import { describe, expect, test } from '@odoo/hoot';
-import { animationFrame, click } from '@odoo/hoot-dom';
 import {
     defineModels,
     fields,
@@ -40,6 +39,18 @@ class MukAiEffortModel extends models.Model {
 }
 defineModels([MukAiEffortModel]);
 
+/**
+ * Read the choices the effort field offers.
+ *
+ * This Odoo renders a selection field as a native ``select``, so the choices
+ * are in the DOM already and the first option is the empty placeholder.
+ * @returns {Array} the option labels, without the placeholder
+ */
+function choiceLabels() {
+    const options = document.querySelectorAll('.o_field_widget[name="effort"] option');
+    return [...options].map((option) => option.textContent.trim()).filter(Boolean);
+}
+
 test('FilteredSelectionField limits choices to the supported options', async () => {
     await mountView({
         resModel: 'muk_ai.effort_model',
@@ -47,12 +58,7 @@ test('FilteredSelectionField limits choices to the supported options', async () 
         type: 'form',
         arch: ARCH,
     });
-    await click('.o_field_widget[name="effort"] .o_select_menu_toggler');
-    await animationFrame();
-    const labels = [...document.querySelectorAll('.o_select_menu_item')].map((el) =>
-        el.textContent.trim(),
-    );
-    expect(labels).toEqual(['Low', 'High']);
+    expect(choiceLabels()).toEqual(['Low', 'High']);
 });
 
 test('FilteredSelectionField falls back to every choice without options', async () => {
@@ -62,7 +68,5 @@ test('FilteredSelectionField falls back to every choice without options', async 
         type: 'form',
         arch: ARCH,
     });
-    await click('.o_field_widget[name="effort"] .o_select_menu_toggler');
-    await animationFrame();
-    expect(document.querySelectorAll('.o_select_menu_item').length).toBe(6);
+    expect(choiceLabels().length).toBe(6);
 });

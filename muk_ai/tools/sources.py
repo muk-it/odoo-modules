@@ -52,7 +52,7 @@ def extract_sources(name: str, arguments: dict | None, result: object) -> list[d
             return []
     try:
         return extractor(arguments or {}, result) or []
-    except Exception:  # noqa: BLE001 — sources are best-effort, never fatal
+    except Exception:
         return []
 
 

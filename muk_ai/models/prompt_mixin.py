@@ -44,7 +44,7 @@ class AIPromptMixin(models.AbstractModel):
                 render_inline_template(parse_inline_template(raw), eval_ctx),
                 None,
             )
-        except Exception as exc:  # noqa: BLE001 — surface any render error as text
+        except Exception as exc:
             return (raw, str(exc))
 
     def _render_prompt(self, raw: str, **add_context) -> str:

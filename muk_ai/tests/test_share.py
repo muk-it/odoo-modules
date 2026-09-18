@@ -47,6 +47,27 @@ class TestShare(TransactionCase):
         """Return the shared session read as the given user."""
         return self.session.with_user(user)
 
+    def _footprint(self) -> tuple:
+        """Return everything a steering call leaves behind on the chat."""
+        session = self.session.sudo()
+        session.invalidate_recordset()
+        return (
+            session.state,
+            session.conversation,
+            session.pending_ask,
+            session.view_context,
+            session.override_approval_mode,
+            session.override_reasoning_effort,
+            session.attachment_ids.ids,
+            session.pending_ids.ids,
+            self.env['muk_ai.session.event']
+            .sudo()
+            .search_count([('session_id', '=', session.id)]),
+            self.env['muk_ai.approval']
+            .sudo()
+            .search_count([('session_id', '=', session.id)]),
+        )
+
     # ----------------------------------------------------------
     # Tests
     # ----------------------------------------------------------
@@ -135,6 +156,59 @@ class TestShare(TransactionCase):
     def test_a_reader_cannot_fork_the_chat(self):
         with self.assertRaises(AccessError):
             self._as(self.reader).fork_at_event(1)
+
+    def test_a_reader_is_refused_before_a_steering_call_does_anything(self):
+        event = self.session.sudo()._append_event(
+            {'kind': 'command', 'name': '/noop', 'message': 'noop'}
+        )
+        self.session.sudo().pending_ids.create(
+            {'session_id': self.session.id, 'content': 'queued by the owner'}
+        )
+        calls = (
+            ('enqueue_message', ('more',)),
+            ('start', ('hello',)),
+            ('answer', ('42',)),
+            ('send_message', ('hello',)),
+            ('regenerate_last_turn', ()),
+            ('clear', ()),
+            ('compact', ()),
+            ('stop_compact', ()),
+            ('undo_to_event', (event.id,)),
+            ('set_view_context', ({'kind': 'none'},)),
+            ('unpin_view_context', ()),
+            ('set_approval_mode', ('off',)),
+            ('set_reasoning_effort', (None,)),
+            ('approve_tool', ()),
+            ('approve_for_session', ()),
+            ('reject_tool', ('no',)),
+            ('submit_client_result', ('c1', {})),
+            ('reject_client_action', ()),
+            ('upload_attachments', ([],)),
+            ('discard_attachments', ([],)),
+            ('fork_at_event', (event.id,)),
+        )
+        before = self._footprint()
+        for name, args in calls:
+            with self.subTest(method=name), self.assertRaises(AccessError):
+                getattr(self._as(self.reader), name)(*args)
+            self.assertEqual(self._footprint(), before)
+
+    def test_a_reader_still_reads_the_chat_and_sees_no_queue(self):
+        queued = self.session.sudo().pending_ids.create(
+            {'session_id': self.session.id, 'content': 'queued by the owner'}
+        )
+        reader = self._as(self.reader)
+        snapshot = reader.get_snapshot()
+        self.assertEqual(snapshot['id'], self.session.id)
+        self.assertFalse(snapshot['can_write'])
+        self.assertEqual(snapshot['pending_user_messages'], [])
+        self.assertIn('events', reader.fetch_events())
+        self.assertIn('count', reader.notification_badge())
+        # Refused outright rather than quietly doing nothing: whether it
+        # would have found a row depended on what was already in the cache.
+        with self.assertRaises(AccessError):
+            reader.cancel_queued(0)
+        self.assertTrue(queued.exists())
 
     def test_the_shared_space_leaves_the_owner_their_own_chat(self):
         space = self.env.ref('muk_ai.space_shared')
