@@ -184,6 +184,12 @@ class AIModel(models.Model):
     # Compute
     # ----------------------------------------------------------
 
+    @api.depends('name', 'provider_id.name', 'provider_id.code')
+    def _compute_display_name(self) -> None:
+        """Suffix the label with the provider, since pickers span every vendor."""
+        for record in self:
+            record.display_name = f'{record.name} ({record.provider_id.display_name})'
+
     @api.depends('modality', 'currency')
     def _compute_rate_unit(self) -> None:
         """Spell out the unit the rates are quoted in, e.g. ``USD per M tokens``."""

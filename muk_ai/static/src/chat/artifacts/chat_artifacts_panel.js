@@ -1,15 +1,16 @@
 // @odoo-module
 
-import { Component, useState } from '@odoo/owl';
+import { Component, useEffect, useState } from '@odoo/owl';
 
 import { registry } from '@web/core/registry';
 
-import { AttachmentsTab } from '@muk_ai/chat/artifacts/types/attachments_tab';
-
-/** Side panel grouping session artifacts (attachments, etc.) into tabs. */
+/**
+ * Side panel grouping session artifacts (attachments, etc.) into tabs.
+ * A `{ tab, itemId }` focus set on the session state selects that tab,
+ * hands the item to it as `focusItemId`, and is cleared once honoured.
+ */
 export class ChatArtifactsPanel extends Component {
     static template = 'muk_ai.ChatArtifactsPanel';
-    static components = { AttachmentsTab };
     static props = {
         session: { type: Object },
         onClose: { type: Function },
@@ -18,7 +19,18 @@ export class ChatArtifactsPanel extends Component {
     setup() {
         this.state = useState({
             activeTabId: null,
+            focusedItemId: null,
         });
+        useEffect(
+            (focus) => {
+                if (focus) {
+                    this.state.activeTabId = focus.tab;
+                    this.state.focusedItemId = focus.itemId ?? null;
+                    this.props.session.state.artifactsFocus = null;
+                }
+            },
+            () => [this.props.session.state.artifactsFocus],
+        );
     }
     get tabs() {
         const sessionState = this.props.session?.state || {};
@@ -67,9 +79,11 @@ export class ChatArtifactsPanel extends Component {
             items: tab.items,
             session: this.props.session,
             onOpenAttachment: this.props.onOpenAttachment || (() => {}),
+            focusItemId: this.state.focusedItemId ?? undefined,
         };
     }
     onSelectTab(tabId) {
         this.state.activeTabId = tabId;
+        this.state.focusedItemId = null;
     }
 }

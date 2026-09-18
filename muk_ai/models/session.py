@@ -59,6 +59,7 @@ from odoo.addons.muk_ai.tools import (
     build_tool_call_output,
     clean_ask_preview,
     clean_view_context_payload,
+    commit_safe,
     extract_sources,
     fetch_url,
     format_tool_signature,
@@ -67,12 +68,6 @@ from odoo.addons.muk_ai.tools import (
     summarize_tool_description,
     tool_file_payload,
     with_ui_ctx,
-)
-
-PG_CONCURRENCY_EXCEPTIONS_TO_RETRY = (
-    psycopg2.errors.LockNotAvailable,
-    psycopg2.errors.SerializationFailure,
-    psycopg2.errors.DeadlockDetected,
 )
 
 _logger = logging.getLogger(__name__)
@@ -98,6 +93,27 @@ def has_access(records: models.BaseModel, operation: str) -> bool:
     except AccessError:
         return False
     return True
+
+
+def check_access(records: models.BaseModel, operation: str) -> None:
+    """Raise unless the current user may perform ``operation`` on ``records``.
+
+    Replaces the ``check_access`` model method, which only exists from 18.0 on.
+    :raise AccessError: when the user may not
+    """
+    records.check_access_rights(operation)
+    records.check_access_rule(operation)
+
+
+def filtered_access(records: models.BaseModel, operation: str) -> models.BaseModel:
+    """Return the subset of ``records`` the current user may act on.
+
+    Replaces ``_filtered_access``, which only exists from 18.0 on. It checks
+    one record at a time because the rule is what decides, not the model.
+    """
+    return records.browse(
+        [record.id for record in records if has_access(record, operation)]
+    )
 
 
 class AISession(models.Model):
@@ -166,6 +182,11 @@ class AISession(models.Model):
         required=True,
         default=lambda self: self.env.user,
         index=True,
+    )
+
+    can_write = fields.Boolean(
+        string='Can Steer',
+        compute='_compute_can_write',
     )
 
     share_user_ids = fields.Many2many(
@@ -1042,6 +1063,11 @@ class AISession(models.Model):
         for record in self:
             self.env['bus.bus']._sendone(record, notification_type, message)
 
+    def _pending_ask_queues_input(self, pending: dict | None = None) -> bool:
+        """Tell whether typed input queues behind the pending ask."""
+        pending = self.pending_ask if pending is None else pending
+        return (pending or {}).get('kind') in ('approval', 'client_action')
+
     def _public_pending_ask(self, pending: dict | None = None) -> dict | None:
         """Return the pending ask payload stripped of internal keys."""
         pending = self.pending_ask if pending is None else pending
@@ -1070,6 +1096,7 @@ class AISession(models.Model):
                 }
                 for action in public['actions']
             ]
+        public['queues_input'] = self._pending_ask_queues_input(pending)
         return public
 
     def _state_metrics(self) -> dict:
@@ -1156,6 +1183,8 @@ class AISession(models.Model):
         """Emit bus and inbox notifications for terminal state transitions."""
         new_state = (payload or {}).get('state')
         if not self._should_notify_state():
+            return
+        if self.env.context.get('muk_ai_state_unchanged'):
             return
         if new_state == 'done' and (
             self.pending_ids or self.env.context.get('muk_ai_skip_done_notification')
@@ -1268,6 +1297,8 @@ class AISession(models.Model):
 
     def _append_event(self, entry: dict) -> models.BaseModel:
         """Append an event with the next sequence and broadcast it."""
+        entry = dict(entry)
+        private = self.env['res.users'].browse(entry.pop('private_user_id', None) or [])
         stamped = (
             entry
             if 'at' in entry
@@ -1293,6 +1324,7 @@ class AISession(models.Model):
                                 'kind': stamped.get('kind') or '',
                                 'payload': stamped,
                                 'at': fields.Datetime.now(),
+                                'private_user_id': private.id or False,
                             }
                         )
                     )
@@ -1300,7 +1332,16 @@ class AISession(models.Model):
                 break
             except psycopg2.errors.UniqueViolation:
                 continue
-        self._publish_event('log', self._bus_log_payload(stamped))
+        payload = self._bus_log_payload(stamped)
+        if private:
+            # Never the session channel: everyone reading the chat is on it.
+            self.env['bus.bus']._sendone(
+                private.partner_id,
+                'muk_ai.event',
+                {'session_id': self.id, 'type': 'log', 'payload': payload},
+            )
+        else:
+            self._publish_event('log', payload)
         return event
 
     def _extend_conversation(self, items: list[dict]) -> None:
@@ -1444,13 +1485,7 @@ class AISession(models.Model):
 
     def _commit_safe(self) -> None:
         """Commit outside tests, re-raising on serialization conflicts."""
-        if not modules.module.current_test:
-            try:
-                self.env.cr.commit()
-            except PG_CONCURRENCY_EXCEPTIONS_TO_RETRY:
-                self.env.cr.rollback()
-                self.invalidate_recordset()
-                raise
+        commit_safe(self.env)
 
     def _transition_state(self, state: str, error: str | None = None) -> None:
         """Persist a new state and publish the matching state event."""
@@ -1510,7 +1545,7 @@ class AISession(models.Model):
         try:
             self.env.cr.execute(*statement)
             self.env.cr.fetchone()
-        except Exception:  # noqa: BLE001 — unlock is best-effort across cursor state
+        except Exception:
             self.env.cr.rollback()
             with suppress(Exception):
                 self.env.cr.execute(*statement)
@@ -1547,7 +1582,7 @@ class AISession(models.Model):
         try:
             self.env.cr.execute(*statement)
             self.env.cr.fetchone()
-        except Exception:  # noqa: BLE001 — unlock is best-effort across cursor state
+        except Exception:
             self.env.cr.rollback()
             with suppress(Exception):
                 self.env.cr.execute(*statement)
@@ -1584,18 +1619,21 @@ class AISession(models.Model):
         return max(0, provider.rate_limit or 0) if provider else 0
 
     @api.model
+    def _rate_limit_domain(self) -> list:
+        """Return the domain counting the chats this user started this minute."""
+        return [
+            ('user_id', '=', self.env.user.id),
+            ('create_date', '>=', fields.Datetime.now() - timedelta(minutes=1)),
+        ]
+
+    @api.model
     def _check_rate_limit(self, batch_size: int = 1) -> None:
         """Raise when creating ``batch_size`` sessions exceeds the rate limit.
 
         :raise UserError: when the per-minute rate limit would be exceeded
         """
         if limit := self._get_rate_limit():
-            count = self.sudo().search_count(
-                [
-                    ('user_id', '=', self.env.user.id),
-                    ('create_date', '>=', fields.Datetime.now() - timedelta(minutes=1)),
-                ]
-            )
+            count = self.sudo().search_count(self._rate_limit_domain())
             if count + batch_size > limit:
                 raise UserError(
                     _(
@@ -1649,7 +1687,7 @@ class AISession(models.Model):
             text, _info = tool_env['muk_mcp.tool']._call(
                 name, arguments, tool_env, enforce_scope=enforce_scope
             )
-        except Exception as error:  # noqa: BLE001 — report any tool failure to the LLM
+        except Exception as error:
             return {'error': str(error)}, False
         self._maybe_publish_ui_action(text, name, call_id)
         self._settle_tool_cost(name, text)
@@ -2187,7 +2225,7 @@ class AISession(models.Model):
                                 res_id=self.id,
                             )
                         )
-                    except Exception:  # noqa: BLE001 — keep raw image on store failure
+                    except Exception:
                         return match.group(0)
                     attachment_id = attachment.id
                     cache[b64] = attachment_id
@@ -2934,6 +2972,10 @@ class AISession(models.Model):
             ),
         )
 
+    def _max_iterations_error(self) -> None:
+        """Transition to error when the turn ran out of iterations."""
+        self._transition_state('error', error=_('Maximum iterations reached.'))
+
     def _cost_currency(self) -> str:
         """Return the currency of the effective model, defaulting to USD."""
         record = self._resolve_model_for('chat')
@@ -3097,14 +3139,20 @@ class AISession(models.Model):
                 return
             has_terminating = has_terminating or result
         if self.state == 'running':
-            self._transition_state('error', error=_('Maximum iterations reached.'))
+            self._max_iterations_error()
 
     # ----------------------------------------------------------
     # Queue
     # ----------------------------------------------------------
 
     def _serialize_pending(self) -> list[dict]:
-        """Return the serialized payloads of queued pending messages."""
+        """Return the queued messages, which belong to the owner alone.
+
+        Said here rather than left to the pending record rule: what someone
+        has typed but not sent is not part of a chat they shared.
+        """
+        if not self.env.su and self.user_id.id != self.env.uid:
+            return []
         return [p._to_payload() for p in self.pending_ids]
 
     def enqueue_message(
@@ -3119,8 +3167,11 @@ class AISession(models.Model):
         instead of queueing, the snapshot is returned with the marker
         ``queue_rejected_state`` and the caller re-sends the message
         through the regular send path.
+
+        :raise AccessError: when the caller may only read the session
         """
         self.ensure_one()
+        check_access(self, 'write')
         self.flush_recordset()
         self.env.cr.execute(
             'SELECT state FROM muk_ai_session WHERE id = %s FOR UPDATE',
@@ -3145,7 +3196,11 @@ class AISession(models.Model):
         return self.get_snapshot()
 
     def cancel_queued(self, index: int) -> dict:
-        """Remove a queued message by index and return the snapshot."""
+        """Remove a queued message by index and return the snapshot.
+
+        :raise AccessError: when the caller may only read this chat
+        """
+        check_access(self, 'write')
         pending = self.pending_ids
         if 0 <= index < len(pending):
             pending[index].unlink()
@@ -3676,7 +3731,7 @@ class AISession(models.Model):
                 on_delta=on_delta,
                 model=self._effective_model(),
             )
-        except Exception as error:  # noqa: BLE001 — fall back to tail-drop on any failure
+        except Exception as error:
             self._tail_drop_fallback(
                 progress_event, prefix, tail, str(error), resume=resume
             )
@@ -3836,7 +3891,12 @@ class AISession(models.Model):
         if self.id:
             self.check_access_rights('read')
             self.check_access_rule('read')
-            domain = [('session_id', '=', self.id)]
+            domain = [
+                ('session_id', '=', self.id),
+                '|',
+                ('private_user_id', '=', False),
+                ('private_user_id', '=', self.env.uid),
+            ]
             if before_sequence is not None:
                 domain.append(('sequence', '<', before_sequence))
             rows = (
@@ -3884,6 +3944,7 @@ class AISession(models.Model):
             'total_input_cost': self.total_input_cost,
             'total_output_cost': self.total_output_cost,
             'pending_user_messages': self._serialize_pending(),
+            'can_write': self.can_write,
             **self._state_metrics(),
         }
         if include_conversation:
@@ -3975,8 +4036,10 @@ class AISession(models.Model):
     ) -> dict:
         """Start a session turn and trigger a worker.
 
+        :raise AccessError: when the caller may only read the session
         :raise UserError: when the session is not in a startable state
         """
+        check_access(self, 'write')
         self._recover_if_stuck()
         if self.state not in ('new', 'error', 'stopped'):
             raise UserError(_('Session is not in a startable state.'))
@@ -3998,8 +4061,10 @@ class AISession(models.Model):
     def answer(self, answer: str, attachment_ids: list[int] | None = None) -> dict:
         """Answer a pending question and resume the turn.
 
+        :raise AccessError: when the caller may only read the session
         :raise UserError: when the session is not awaiting an answer
         """
+        check_access(self, 'write')
         self._recover_if_stuck()
         pending = self.pending_ask or {}
         if self.state != 'waiting' or pending.get('kind') != 'question':
@@ -4035,14 +4100,14 @@ class AISession(models.Model):
         self, user_message: str, attachment_ids: list[int] | None = None
     ) -> dict:
         """Route a user message to start, answer, queue, or extend a turn."""
+        check_access(self, 'write')
         self._recover_if_stuck()
         if self.state in ('running', 'compacting'):
             return self.enqueue_message(user_message, attachment_ids=attachment_ids)
         if self.state == 'waiting':
-            kind = (self.pending_ask or {}).get('kind')
-            if kind in ('approval', 'client_action'):
+            if self._pending_ask_queues_input():
                 return self.enqueue_message(user_message, attachment_ids=attachment_ids)
-            if kind == 'question':
+            if (self.pending_ask or {}).get('kind') == 'question':
                 return self.answer(user_message, attachment_ids=attachment_ids)
         if not self.conversation:
             return self.start(user_message, attachment_ids=attachment_ids)
@@ -4054,8 +4119,10 @@ class AISession(models.Model):
     def regenerate_last_turn(self) -> dict:
         """Rewind to the last user turn and re-run it.
 
+        :raise AccessError: when the caller may only read the session
         :raise UserError: when running, compacting, waiting, or no user turn exists
         """
+        check_access(self, 'write')
         if self.state in ('running', 'compacting', 'waiting'):
             raise UserError(
                 _(
@@ -4103,8 +4170,10 @@ class AISession(models.Model):
     def clear(self) -> dict:
         """Reset the conversation and session state to new.
 
+        :raise AccessError: when the caller may only read the session
         :raise UserError: when the session is running or compacting
         """
+        check_access(self, 'write')
         if self.state in ('running', 'compacting'):
             raise UserError(
                 _('Cannot clear the conversation while the session is running.')
@@ -4139,8 +4208,10 @@ class AISession(models.Model):
     def compact(self) -> dict:
         """Begin asynchronous conversation compaction.
 
+        :raise AccessError: when the caller may only read the session
         :raise UserError: when running, waiting, or the conversation is empty
         """
+        check_access(self, 'write')
         if self.state in ('running', 'compacting'):
             raise UserError(
                 _('Cannot compact while the session is running. Stop first.')
@@ -4159,6 +4230,7 @@ class AISession(models.Model):
 
     def stop_compact(self) -> dict:
         """Cancel an in-progress compaction and return to done."""
+        check_access(self, 'write')
         if self.state != 'compacting':
             return self.get_snapshot()
         event = self._find_active_compact_event()
@@ -4177,8 +4249,10 @@ class AISession(models.Model):
     def undo_to_event(self, event_id: int) -> dict:
         """Rewind the conversation and events back to before an event.
 
+        :raise AccessError: when the caller may only read the session
         :raise UserError: when the session is running, compacting, or waiting
         """
+        check_access(self, 'write')
         if self.state in ('running', 'compacting'):
             raise UserError(_('Cannot rewind while the session is running.'))
         if self.state == 'waiting':
@@ -4256,6 +4330,7 @@ class AISession(models.Model):
                         'kind': src.kind,
                         'payload': src.payload,
                         'at': src.at,
+                        'private_user_id': src.private_user_id.id or False,
                     }
                     for src in source_events
                 ]
@@ -4293,6 +4368,7 @@ class AISession(models.Model):
 
     def set_view_context(self, payload: dict | None) -> dict:
         """Pin or clear the session's view context from a client payload."""
+        check_access(self, 'write')
         kind = payload.get('kind') if isinstance(payload, dict) else None
         self._write_view_context(
             None
@@ -4303,6 +4379,7 @@ class AISession(models.Model):
 
     def unpin_view_context(self) -> dict:
         """Clear the pinned view context and record the command."""
+        check_access(self, 'write')
         self._write_view_context(None)
         self._append_event(
             {
@@ -4316,8 +4393,10 @@ class AISession(models.Model):
     def set_approval_mode(self, mode: str | None) -> dict:
         """Override the session approval mode.
 
+        :raise AccessError: when the caller may only read the session
         :raise UserError: when the mode is not ``ask`` or ``off``
         """
+        check_access(self, 'write')
         if mode and mode not in ('ask', 'off'):
             raise UserError(_('Unknown approval mode %(mode)r.', mode=mode))
         self.write({'override_approval_mode': mode or False})
@@ -4327,8 +4406,10 @@ class AISession(models.Model):
     def set_reasoning_effort(self, effort: str | None) -> dict:
         """Override the effort tier the session's turns run on.
 
+        :raise AccessError: when the caller may only read the session
         :raise UserError: when the tier is not one the chat model accepts
         """
+        check_access(self, 'write')
         if effort and effort not in self._reasoning_effort_options():
             raise UserError(_('Unknown reasoning effort %(effort)r.', effort=effort))
         self.write({'override_reasoning_effort': effort or False})
@@ -4337,6 +4418,7 @@ class AISession(models.Model):
 
     def approve_tool(self) -> dict:
         """Approve the pending tool call once and resume the round."""
+        check_access(self, 'write')
         pending = self._require_pending_approval()
         self._record_approval_audit(
             decision='approved',
@@ -4353,6 +4435,7 @@ class AISession(models.Model):
 
     def approve_for_session(self) -> dict:
         """Approve the pending call and whitelist its signature for the session."""
+        check_access(self, 'write')
         pending = self._require_pending_approval()
         risk = pending.get('risk') or {}
         if signature := risk.get('signature'):
@@ -4375,6 +4458,7 @@ class AISession(models.Model):
 
     def reject_tool(self, reason: str | None = None) -> dict:
         """Reject the pending tool call and resume the round with the rejection."""
+        check_access(self, 'write')
         pending = self._require_pending_approval()
         reason = (reason or '').strip() or _('User rejected the call.')
         self._record_approval_audit(
@@ -4394,9 +4478,11 @@ class AISession(models.Model):
     def submit_client_result(self, call_id: str, result) -> dict:
         """Submit a client-executed tool result, resuming once all are in.
 
+        :raise AccessError: when the caller may only read the session
         :raise UserError: when the session is busy or not awaiting this
             client action
         """
+        check_access(self, 'write')
         if not self._try_session_lock(self.id):
             raise UserError(_('The session is currently busy. Please try again.'))
         try:
@@ -4414,9 +4500,11 @@ class AISession(models.Model):
         Without ``call_id`` every unanswered action in the batch is
         rejected, which always resumes the turn.
 
+        :raise AccessError: when the caller may only read the session
         :raise UserError: when the session is busy or not awaiting this
             client action
         """
+        check_access(self, 'write')
         if not self._try_session_lock(self.id):
             raise UserError(_('The session is currently busy. Please try again.'))
         try:
@@ -4494,6 +4582,14 @@ class AISession(models.Model):
         if target.id == self.user_id.id:
             return True
         old_owner, session = self.user_id, self.sudo()
+        # The stored context is the previous owner's request, and the worker
+        # builds its environment from it, so it has to describe the new owner.
+        context = dict(session.user_context or {})
+        companies = [
+            company_id
+            for company_id in context.get('allowed_company_ids') or []
+            if company_id in target.company_ids.ids
+        ]
         session.write(
             {
                 'user_id': target.id,
@@ -4503,9 +4599,17 @@ class AISession(models.Model):
                     Command.link(old_owner.id),
                     Command.unlink(target.id),
                 ],
+                'user_context': {
+                    **context,
+                    **self.with_user(target).env['res.users'].context_get(),
+                    'allowed_company_ids': companies or [target.company_id.id],
+                },
             }
         )
-        session._publish_event('state', {'state': session.state})
+        session.approved_signatures = []
+        session.with_context(muk_ai_state_unchanged=True)._publish_event(
+            'state', {'state': session.state}
+        )
         session._post_inbox_notification(
             _('Chat handed over to you'),
             _(
@@ -4521,6 +4625,17 @@ class AISession(models.Model):
     # ----------------------------------------------------------
     # Compute
     # ----------------------------------------------------------
+
+    @api.depends_context('uid', 'su')
+    def _compute_can_write(self) -> None:
+        """Say whether this user may steer each chat, not merely read it.
+
+        Asked of the record rules rather than inferred from ownership: a chat
+        can be writable without being owned, and the client must not guess.
+        """
+        allowed = filtered_access(self, 'write')
+        for record in self:
+            record.can_write = record in allowed
 
     @api.depends('agent_id', 'agent_id.model_id', 'agent_id.model_id.context_window')
     def _compute_context_window(self) -> None:
@@ -4962,7 +5077,7 @@ class AISession(models.Model):
                             superseded = True
                         except StreamCancelled:
                             cr.rollback()
-                        except Exception as error:  # noqa: BLE001 — record any worker failure
+                        except Exception as error:
                             cr.rollback()
                             self._mark_session_error(session_id, str(error))
                         processed = True

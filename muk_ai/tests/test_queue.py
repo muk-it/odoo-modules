@@ -510,3 +510,13 @@ class TestAiSessionQueue(AITestCommon):
         self.assertEqual(len(outputs), 1)
         self.assertEqual(json.loads(outputs[0]['output']), {'ok': True})
         self.assertEqual(self._event_kinds(session).count('client_action_result'), 1)
+
+    def test_public_pending_ask_flags_the_asks_that_queue_typed_input(self):
+        session = self.env['muk_ai.session'].create({'name': 'flagged'})
+        approval = session._public_pending_ask({'kind': 'approval', 'call_id': 'c1'})
+        self.assertTrue(approval['queues_input'])
+        client = session._public_pending_ask({'kind': 'client_action', 'actions': []})
+        self.assertTrue(client['queues_input'])
+        question = session._public_pending_ask({'kind': 'question', 'text': 'Which?'})
+        self.assertFalse(question['queues_input'])
+        self.assertIsNone(session._public_pending_ask({}))

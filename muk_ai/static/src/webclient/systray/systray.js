@@ -62,19 +62,15 @@ export class MukAISystray extends Component {
     async _load() {
         const seq = ++this._loadSeq;
         try {
+            const domain = this.sessionDomain;
             const [recent, unread] = await Promise.all([
+                this.orm.searchRead('muk_ai.session', domain, ['id', 'name', 'state'], {
+                    limit: SYSTRAY_LIMIT,
+                    order: 'write_date DESC',
+                }),
                 this.orm.searchRead(
                     'muk_ai.session',
-                    [['user_id', '=', this.user.userId]],
-                    ['id', 'name', 'state'],
-                    { limit: SYSTRAY_LIMIT, order: 'write_date DESC' },
-                ),
-                this.orm.searchRead(
-                    'muk_ai.session',
-                    [
-                        ['user_id', '=', this.user.userId],
-                        ['notification_unread', '=', true],
-                    ],
+                    [...domain, ['notification_unread', '=', true]],
                     ['id', 'name', 'state'],
                     { limit: SYSTRAY_LIMIT, order: 'write_date DESC' },
                 ),
@@ -131,6 +127,13 @@ export class MukAISystray extends Component {
             updated,
             ...this.state.sessions.slice(idx + 1),
         ];
+    }
+    /**
+     * The chats this list offers, so an extension can narrow what counts.
+     * @returns {Array} a search domain over `muk_ai.session`
+     */
+    get sessionDomain() {
+        return [['user_id', '=', this.user.userId]];
     }
     get runningCount() {
         return this.state.sessions.filter(

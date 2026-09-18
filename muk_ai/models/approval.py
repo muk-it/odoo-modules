@@ -318,7 +318,7 @@ class AIApproval(models.Model):
         values = arguments.get('values')
         if not isinstance(values, dict):
             return None
-        model = self.env[model_name] if model_name in self.env else None  # noqa: SIM401 — env is not a plain dict, has no get()
+        model = self.env[model_name] if model_name in self.env else None
         if tool_name == 'update_records':
             current = self._read_current(model, ids, list(values))
             return {

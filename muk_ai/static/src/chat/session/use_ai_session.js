@@ -3,6 +3,7 @@
 import { markup, onWillUnmount, useEnv, useState } from '@odoo/owl';
 
 import { ConfirmationDialog } from '@web/core/confirmation_dialog/confirmation_dialog';
+import { registry } from '@web/core/registry';
 import { _t } from '@muk_ai/core/compat/translation';
 import { useService } from '@web/core/utils/hooks';
 import { SelectCreateDialog } from '@web/views/view_dialogs/select_create_dialog';
@@ -10,6 +11,14 @@ import { SelectCreateDialog } from '@web/views/view_dialogs/select_create_dialog
 import { fileToBase64 } from '@muk_ai/core/attachment/file_helpers';
 import { renderMarkdown as renderMarkdownToHtml } from '@muk_ai/core/markdown/markdown';
 import { formatError } from '@muk_ai/chat/utils';
+
+/**
+ * Session fields an addon needs in the client state, beyond the core's own.
+ *
+ * Each entry is `{field, apply}`: the field is read with the session, and
+ * `apply(state, record)` copies it in once the core fields have landed.
+ */
+export const sessionStateFields = registry.category('muk_ai.session_state_fields');
 
 import { buildRenderedTurns } from '@muk_ai/chat/session/turns';
 import { useOpenSession } from '@muk_ai/chat/session/open_sessions';
@@ -40,6 +49,7 @@ export const SESSION_READ_FIELDS = [
     'reasoning_effort_options',
     'agent_reasoning_effort',
     'pending_user_messages',
+    'can_write',
 ];
 
 export const SLASH_COMMANDS = [
@@ -71,6 +81,43 @@ export const SLASH_COMMANDS = [
     },
 ];
 
+export const sessionSlashCommands = registry.category('muk_ai.slash_commands');
+
+/**
+ * Return every slash command the composer should offer, core and addon.
+ * @returns {Array} `{name, hint}` entries
+ */
+export function allSlashCommands() {
+    return [...SLASH_COMMANDS, ...sessionSlashCommands.getAll()];
+}
+
+/**
+ * Build a send route answering slash commands with a single session call.
+ *
+ * The core's slash dispatcher is a fixed chain an addon cannot extend, so an
+ * addon command rides the send routes instead.
+ * @param {object} commands map of `/command` to the session method it calls
+ * @returns {Function} a route for `sessionSendRoutes`
+ */
+export function commandRoute(commands) {
+    return async ({ state, orm, appendCommand }, text) => {
+        const [name, ...rest] = (text || '').trim().split(/\s+/);
+        // The core's parser lowercases too, so /Remember is the same command.
+        const method = commands[name.toLowerCase()];
+        if (!method) {
+            return false;
+        }
+        if (state.sessionId) {
+            const summary = await orm.call('muk_ai.session', method, [
+                state.sessionId,
+                rest.join(' '),
+            ]);
+            appendCommand(name, { summary });
+        }
+        return true;
+    };
+}
+
 /**
  * Session actions that steer the chat rather than read it. They are all
  * neutralised at once on a read-only chat, so no surface and no extension
@@ -99,6 +146,25 @@ const WRITE_ACTIONS = [
     'runForkAtEvent',
     'openHandoverPicker',
 ];
+
+/**
+ * Registry of live-update handlers for bus event types the core does not
+ * handle, keyed by event type. Each handler has the signature
+ * `(payload, session) => void`, where `session` exposes the reactive
+ * `state`, `updateEvent(eventId, kind, update)` rewriting one logged event
+ * in place through `update(entry) => entry`, `bumpStreamActivity()` and
+ * `requestScroll()`.
+ */
+export const sessionEventHandlers = registry.category('muk_ai.session_event_handlers');
+
+/**
+ * Routes the composer's send is offered to first, as
+ * `({state, orm, appendCommand}, text) => Promise<boolean>`.
+ *
+ * A route returning true has taken the message. It lives on the session so
+ * that every way of sending goes through it, voice mode included.
+ */
+export const sessionSendRoutes = registry.category('muk_ai.session_send_routes');
 
 const COMPACT_WARN_RATIO = 0.65;
 const COMPACT_AUTO_RATIO = 0.8;
@@ -164,6 +230,7 @@ export function useAiSession(options = {}) {
         pendingMessages: [],
         streamIdle: false,
         resumeAt: '',
+        artifactsFocus: null,
     });
     let eventKeys = new Set();
     let onScrollCallback = null;
@@ -387,19 +454,10 @@ export function useAiSession(options = {}) {
             if (eventId == null || !delta) {
                 return;
             }
-            state.events = state.events.map((entry) => {
-                if (
-                    entry &&
-                    entry.event_id === eventId &&
-                    entry.kind === 'compact_progress'
-                ) {
-                    return {
-                        ...entry,
-                        streamed_text: (entry.streamed_text || '') + delta,
-                    };
-                }
-                return entry;
-            });
+            updateEvent(eventId, 'compact_progress', (entry) => ({
+                ...entry,
+                streamed_text: (entry.streamed_text || '') + delta,
+            }));
             bumpStreamActivity();
             requestScroll();
         } else if (event.type === 'compact_update') {
@@ -408,18 +466,29 @@ export function useAiSession(options = {}) {
             if (eventId == null) {
                 return;
             }
-            state.events = state.events.map((entry) => {
-                if (
-                    entry &&
-                    entry.event_id === eventId &&
-                    entry.kind === 'compact_progress'
-                ) {
-                    return { ...entry, ...patch };
-                }
-                return entry;
-            });
+            updateEvent(eventId, 'compact_progress', (entry) => ({
+                ...entry,
+                ...patch,
+            }));
             requestScroll();
+        } else {
+            const handle = sessionEventHandlers.get(event.type, null);
+            if (handle) {
+                handle(event.payload || {}, {
+                    state,
+                    updateEvent,
+                    bumpStreamActivity,
+                    requestScroll,
+                });
+            }
         }
+    }
+    function updateEvent(eventId, kind, update) {
+        state.events = state.events.map((entry) =>
+            entry && entry.event_id === eventId && entry.kind === kind
+                ? update(entry)
+                : entry,
+        );
     }
     async function handleUiAction(payload) {
         const action = payload && payload.action;
@@ -476,7 +545,10 @@ export function useAiSession(options = {}) {
             const [result] = await orm.read(
                 'muk_ai.session',
                 [sessionId],
-                SESSION_READ_FIELDS,
+                [
+                    ...SESSION_READ_FIELDS,
+                    ...sessionStateFields.getAll().map((entry) => entry.field),
+                ],
             );
             record = result || null;
             if (record) {
@@ -563,6 +635,13 @@ export function useAiSession(options = {}) {
         if (typeof payload.context_window === 'number') {
             state.contextWindow = payload.context_window;
         }
+        for (const entry of sessionStateFields.getAll()) {
+            // Snapshots carry only the core's fields, so an addon's applier
+            // would read undefined and reset the state it is keeping.
+            if (entry.field in payload) {
+                entry.apply(state, payload);
+            }
+        }
     }
     function normalizeResumeAt(value) {
         if (!value) {
@@ -597,7 +676,12 @@ export function useAiSession(options = {}) {
               : null;
         state.ownerName = Array.isArray(owner) ? owner[1] : '';
         state.shareIds = record.share_user_ids || [];
-        state.readonly = !!(state.ownerId && state.ownerId !== user.userId);
+        // The server's verdict, not a guess from ownership: a chat can be
+        // writable without being owned, as a subagent is after a handover.
+        state.readonly =
+            record.can_write === undefined
+                ? !!(state.ownerId && state.ownerId !== user.userId)
+                : !record.can_write;
         rebuildEventKeys();
     }
     function applySnapshot(snapshot) {
@@ -749,8 +833,16 @@ export function useAiSession(options = {}) {
         return (
             state.status === 'running' ||
             state.status === 'compacting' ||
-            (state.status === 'waiting' && (state.pendingAsk || {}).kind === 'approval')
+            (state.status === 'waiting' && !!(state.pendingAsk || {}).queues_input)
         );
+    }
+    /**
+     * Ask the artifacts panel to open on a tab and single out one of its items.
+     * @param {string} tab artifact type id
+     * @param {number|string|null} [itemId] item to single out within the tab
+     */
+    function focusArtifact(tab, itemId = null) {
+        state.artifactsFocus = { tab, itemId };
     }
     function onInputChange(value) {
         state.input = value;
@@ -785,6 +877,18 @@ export function useAiSession(options = {}) {
     async function onSend() {
         if (!canSend()) {
             return;
+        }
+        for (const route of sessionSendRoutes.getAll()) {
+            if (
+                await route(
+                    { state, orm, appendCommand: appendLocalCommandLog },
+                    state.input,
+                )
+            ) {
+                state.input = '';
+                state.focusToken += 1;
+                return;
+            }
         }
         const slash = parseSlashCommand(state.input);
         if (slash) {
@@ -1209,7 +1313,9 @@ export function useAiSession(options = {}) {
         }
     }
     function _helpSummary() {
-        return SLASH_COMMANDS.map((c) => `**${c.name}** — ${c.hint}`).join('\n\n');
+        return allSlashCommands()
+            .map((c) => `**${c.name}** — ${c.hint}`)
+            .join('\n\n');
     }
     function appendLocalCommandLog(name, extra) {
         const entry = {
@@ -1574,8 +1680,24 @@ export function useAiSession(options = {}) {
         busUnsubscribe(bus, 'muk_ai.event', busHandler);
         clearStreamIdleTimer();
     });
+    /**
+     * Call a method on the session this surface is showing.
+     *
+     * An addon draws its pill or card outside this hook and still has to act
+     * on the chat it is drawn in.
+     * @param {string} method the method on ``muk_ai.session``
+     * @param {Array} [args] its arguments after the session id
+     * @returns {Promise<*>} whatever the method returned, null without a session
+     */
+    async function callSession(method, args = []) {
+        if (!state.sessionId) {
+            return null;
+        }
+        return orm.call('muk_ai.session', method, [state.sessionId, ...args]);
+    }
     const api = {
         state,
+        callSession,
         load,
         loadMoreEvents,
         applySnapshot,
@@ -1601,6 +1723,7 @@ export function useAiSession(options = {}) {
         canAttach,
         canStop,
         isQueueing,
+        focusArtifact,
         cancelQueued,
         runUnpin,
         setApprovalMode,
@@ -1622,4 +1745,18 @@ export function useAiSession(options = {}) {
         api[name] = (...args) => (state.readonly ? undefined : action(...args));
     }
     return api;
+}
+
+/**
+ * Observe a session handed down as a prop through this component's own proxy.
+ *
+ * OWL re-renders a subcomponent only when a prop changes identity, and the
+ * `session` object is the same one on every parent render. Reading the state
+ * through the component's own proxy subscribes it to the keys it uses, so a
+ * card driven by the event log follows the session it is shown in.
+ * @param {object} session the session api received as a prop
+ * @returns {object} the same api, reading state through this component's proxy
+ */
+export function useSessionState(session) {
+    return Object.assign(Object.create(session), { state: useState(session.state) });
 }

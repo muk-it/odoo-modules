@@ -1790,6 +1790,22 @@ msgstr ""
 "löscht."
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_space__retention_days
+msgid ""
+"Days a finished chat in this space is kept before the scheduled cleanup "
+"deletes it."
+msgstr ""
+"Tage, die ein beendeter Chat in diesem Bereich aufbewahrt wird, bevor die "
+"geplante Bereinigung ihn löscht."
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__ai_session_retention_days
+msgid "Days a finished chat is kept before the cleanup deletes it."
+msgstr ""
+"Tage, die ein beendeter Chat aufbewahrt wird, bevor die Bereinigung ihn "
+"löscht."
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_approval__user_id
 msgid "Decided By"
 msgstr "Entschieden von"
@@ -2089,9 +2105,19 @@ msgstr "Ereignisse"
 
 #. module: muk_ai
 #. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/tools/tool_card.xml:0
-msgid "Every"
-msgstr "Alle"
+#: code:addons/muk_ai/static/src/chat/utils.js:0
+msgid "Everything the model has · slowest"
+msgstr "Alles, was das Modell kann · am langsamsten"
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_agent__model_id
+msgid ""
+"Exact model this agent talks to, overriding the pinned provider. Leave empty"
+" to use the default chat model of the pinned provider, else of the company "
+"default provider, else of the first provider in the list that has one."
+msgstr ""
+"Modell, das von diesem Agenten verwendet wird. Leer lassen, um das "
+"Standardmodell des Unternehmens zu verwenden."
 
 #. module: muk_ai
 #. odoo-javascript
@@ -3803,6 +3829,11 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_muk_ai_model_form
 msgid "Pricing"
 msgstr "Preisgestaltung"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_event__private_user_id
+msgid "Private To"
+msgstr "Privat für"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent_suggestion__prompt
@@ -5621,9 +5652,19 @@ msgstr "z. B. Vertriebsassistent"
 
 #. module: muk_ai
 #. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/tools/tool_card.js:0
-msgid "error"
-msgstr "Fehler"
+#: code:addons/muk_ai/static/src/chat/composer/chat_composer.xml:0
+msgid "for newline"
+msgstr "für neue Zeile"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "http://searxng:8080"
+msgstr "http://searxng:8080"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_muk_ai_provider_form
+msgid "https://my-resource.openai.azure.com/openai/v1"
+msgstr "https://my-resource.openai.azure.com/openai/v1"
 
 #. module: muk_ai
 #. odoo-javascript

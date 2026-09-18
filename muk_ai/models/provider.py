@@ -383,6 +383,16 @@ class AIProvider(models.Model):
     # Compute
     # ----------------------------------------------------------
 
+    @api.depends('name', 'code')
+    def _compute_display_name(self) -> None:
+        """Set the display name from the provider label, suffixed by a non-default code."""
+        labels = dict(self._fields['name']._description_selection(self.env))
+        for record in self:
+            label = labels.get(record.name) or record.name or ''
+            if record.code and record.code != 'default':
+                label = f'{label} ({record.code})'
+            record.display_name = label
+
     @api.depends('name')
     def _compute_api_region(self) -> None:
         """Seed the region and repair one the implementation does not offer.

@@ -318,6 +318,7 @@ export class ChatSidebar extends Component {
             title: _t('Delete space'),
             body: _t('Delete "%s"? Its chats are kept and become loose.', space.name),
             confirmLabel: _t('Delete'),
+            confirmClass: 'btn-danger',
             confirm: () =>
                 this.props.onSpaceDelete && this.props.onSpaceDelete(space.id),
             cancel: () => {},

@@ -1,6 +1,6 @@
 .mk_window_dock {
     position: fixed;
-    right: 16px;
+    right: #{'min(calc(16px + var(--mk-discuss-reserved, 0px)), max(16px, calc(100vw - var(--mk-dock-width, 0px) - 16px)))'};
     bottom: 0;
     z-index: 1040;
     display: flex;
@@ -122,7 +122,7 @@
     // The band is already --mk-bg-soft, which is the neutral pill's own fill,
     // and --mk-bg is only two shades off it: step down to the border tone so
     // the chip actually reads against the band. (Dark redefines this again.)
-    .mk_effort_pill {
+    .mk_session_pill {
         background: var(--mk-border);
         &:hover {
             background: var(--mk-border-strong);

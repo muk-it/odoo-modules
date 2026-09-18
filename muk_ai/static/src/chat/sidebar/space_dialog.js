@@ -30,6 +30,7 @@ export class SpaceDialog extends Component {
         onConfirm: Function,
     };
     static defaultProps = {
+        title: _t('Edit space'),
         name: '',
         icon: 'fa-folder-o',
         agentId: false,

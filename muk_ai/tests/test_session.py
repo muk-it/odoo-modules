@@ -2067,7 +2067,7 @@ class TestAiSession(AITestCommon):
                 session_module.AISession._commit_safe(fake_session)
 
         self.assertEqual(fake_cr.rollback.call_count, 1)
-        fake_session.invalidate_recordset.assert_called_once()
+        fake_env.invalidate_all.assert_called_once()
 
     # ----------------------------------------------------------
     # Tests: tool round resume locking
@@ -2324,3 +2324,68 @@ class TestAiSession(AITestCommon):
             self.session.start('hello again')
         self.assertEqual(self.session.state, 'done')
         self.assertLess(self.session.turn_cost_spent, 0.5)
+
+    def test_a_private_event_reaches_only_the_person_it_is_about(self):
+        # Some lines carry facts about one person rather than something said
+        # in the chat; sharing the chat must not hand those over with it.
+        reader = new_test_user(self.env, login='event-reader', groups='base.group_user')
+        session = self.env['muk_ai.session'].create({'name': 'chat'})
+        session._append_event({'kind': 'text', 'content': 'said out loud'})
+        session._append_event(
+            {'kind': 'note', 'content': 'about me', 'private_user_id': self.env.uid}
+        )
+        session.share_user_ids = [(4, reader.id)]
+        kinds = [event['kind'] for event in session.fetch_events()['events']]
+        self.assertEqual(kinds, ['text', 'note'])
+        theirs = session.with_user(reader).fetch_events()['events']
+        self.assertEqual([event['kind'] for event in theirs], ['text'])
+
+    def test_a_private_event_is_not_inherited_by_the_next_owner(self):
+        session = self.env['muk_ai.session'].create({'name': 'chat'})
+        session._append_event(
+            {'kind': 'note', 'content': 'about me', 'private_user_id': self.env.uid}
+        )
+        target = new_test_user(self.env, login='event-heir', groups='base.group_user')
+        session.action_handover(target.id)
+        theirs = session.with_user(target).fetch_events()['events']
+        self.assertEqual(theirs, [])
+
+    def test_whether_a_chat_may_be_steered_is_the_rules_answer_not_the_owner_s(self):
+        reader = new_test_user(self.env, login='steer-reader', groups='base.group_user')
+        session = self.env['muk_ai.session'].create({'name': 'chat'})
+        self.assertTrue(session.can_write)
+        session.share_user_ids = [(4, reader.id)]
+        self.assertFalse(session.with_user(reader).can_write)
+        self.assertTrue(session.with_user(reader).get_snapshot()['can_write'] is False)
+
+    def test_a_fork_keeps_a_private_event_private(self):
+        heir = new_test_user(self.env, login='fork-heir', groups='base.group_user')
+        session = self.env['muk_ai.session'].create({'name': 'chat'})
+        session._append_event({'kind': 'text', 'content': 'said out loud'})
+        last = session._append_event(
+            {'kind': 'note', 'content': 'about me', 'private_user_id': self.env.uid}
+        )
+        fork = self.env['muk_ai.session'].browse(session.fork_at_event(last.id))
+        fork.action_handover(heir.id)
+        kinds = [
+            event['kind'] for event in fork.with_user(heir).fetch_events()['events']
+        ]
+        self.assertEqual(kinds, ['text'])
+
+    def test_handing_over_a_finished_chat_does_not_say_it_just_finished(self):
+        heir = new_test_user(self.env, login='quiet-heir', groups='base.group_user')
+        session = self.env['muk_ai.session'].create({'name': 'chat', 'state': 'done'})
+        with patch.object(
+            type(session), '_notification_summary', autospec=True
+        ) as summarised:
+            session.action_handover(heir.id)
+        self.assertFalse(summarised.called)
+
+    def test_an_approval_granted_for_a_session_does_not_come_with_it(self):
+        # Approving "for this session" is a person's consent to a risk, and
+        # the person is changing.
+        heir = new_test_user(self.env, login='consent-heir', groups='base.group_user')
+        session = self.env['muk_ai.session'].create({'name': 'chat'})
+        session.approved_signatures = ['unlink:res.partner']
+        session.action_handover(heir.id)
+        self.assertFalse(session.approved_signatures)
