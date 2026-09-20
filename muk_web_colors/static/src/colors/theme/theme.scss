@@ -1,0 +1,16 @@
+$o-community-color: $mk_color_brand;
+$o-enterprise-color: $mk_color_brand;
+$o-enterprise-action-color: $mk_color_primary;
+$o-brand-odoo: $mk_color_brand;
+$o-brand-primary: $mk_color_primary;
+$o-success: $mk_color_success;
+$o-info: $mk_color_info;
+$o-warning: $mk_color_warning;
+$o-danger: $mk_color_danger;
+$o-theme-text-colors: (
+    "primary": $mk_color_brand,
+    "success": $o-success,
+    "info": $o-info,
+    "warning": $o-warning,
+    "danger": $o-danger,
+);
