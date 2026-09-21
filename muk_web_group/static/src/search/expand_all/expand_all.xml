@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_web_group.ExpandAll">
+        <DropdownItem
+            class="'mk_expand_all_menu'"
+            onSelected.bind="this.onExpandButtonClicked"
+        >
+            <i class="oi oi-fw me-1" data-icon="expand_more"/>Expand All
+        </DropdownItem>
+    </t>
+
+</templates>
