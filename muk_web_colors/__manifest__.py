@@ -4,7 +4,7 @@
     'description': """
         This module gives you options to customize the theme colors.
     """,
-    'version': '20.0.1.0.12',
+    'version': '20.0.1.0.13',
     'category': 'Tools/UI',
     'license': 'LGPL-3',
     'author': 'MuK IT',
