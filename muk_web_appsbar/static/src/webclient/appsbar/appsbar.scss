@@ -1,6 +1,7 @@
 .mk_apps_sidebar_panel {
     @include mk-disable-scrollbar();
     background-color: $mk-appbar-background;
+    box-shadow: inset -1px 0 0 $mk-appbar-border;
     width: var(--mk-sidebar-width, 0);
     overflow-y: auto;
     .mk_apps_sidebar {
@@ -10,13 +11,16 @@
         justify-content: space-between;
         white-space: nowrap;
         .mk_apps_sidebar_menu {
-            padding: 0;
+            padding: 6px 0;
+            list-style: none;
             > li > a {
                 cursor: pointer;
-                font-size: 13px;
-                font-weight: 300;
+                font-size: 14px;
+                font-weight: 400;
                 overflow: hidden;
-                padding: 8px 11px;
+                margin: 1px var(--mk-appbar-inset, 8px);
+                padding: 8px var(--mk-appbar-pad, 10px);
+                border-radius: 6px;
                 text-decoration: none;
                 color: $mk-appbar-color;
                 text-overflow: ellipsis;
@@ -28,9 +32,10 @@
             }
             > li.active > a {
                 background: $mk-appbar-active;
+                color: #ffffff;
             }
-            > li:hover > a {
-                background: $mk-appbar-active;
+            > li:not(.active):hover > a {
+                background: $mk-appbar-hover;
             }
         }
     }
@@ -40,6 +45,8 @@
 }
 .mk_sidebar_type_small {
     --mk-sidebar-width: #{$mk-sidebar-small-width};
+    --mk-appbar-inset: 4px;
+    --mk-appbar-pad: 8px;
     .mk_apps_sidebar_name {
         display: none;
     }
@@ -59,6 +66,8 @@
 @include media-breakpoint-only(md) {
     .mk_sidebar_type_large {
         --mk-sidebar-width: #{$mk-sidebar-small-width};
+        --mk-appbar-inset: 4px;
+        --mk-appbar-pad: 8px;
         .mk_apps_sidebar_name {
             display: none;
         }
