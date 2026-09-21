@@ -1,3 +1,5 @@
+// @odoo-module
+
 import { patch } from '@web/core/utils/patch';
 
 import { AIChat } from '@muk_ai/chat/chat';
