@@ -107,7 +107,7 @@
 				<field name="owner_id"/>
 				<field name="active"/>
 				<templates>
-					<t t-name="menu">
+					<t t-name="kanban-menu">
 						<div class="container o_kanban_card_manage_pane">
 							<div class="o_kanban_card_manage_section">
 								<a type="open" class="dropdown-item" role="menuitem">Open</a>
@@ -116,53 +116,55 @@
 							</div>
 						</div>
 					</t>
-					<t t-name="card">
-						<field name="active" invisible="1"/>
-						<widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
-						<main class="flex-grow-1 overflow-hidden">
-							<div class="d-flex align-items-center gap-2">
-								<span class="mk_skill_icon d-inline-flex align-items-center justify-content-center rounded-circle">
-									<i class="fa" t-att-class="record.icon.raw_value" role="img"/>
-								</span>
-								<div class="overflow-hidden">
-									<h4 class="mb-0 text-truncate">
-										<field name="display_name"/>
-									</h4>
-									<code class="small text-muted">
-										<field name="name"/>
-									</code>
+					<t t-name="kanban-box">
+						<div class="oe_kanban_global_click">
+							<field name="active" invisible="1"/>
+							<widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+							<div class="flex-grow-1 overflow-hidden">
+								<div class="d-flex align-items-center gap-2">
+									<span class="mk_skill_icon d-inline-flex align-items-center justify-content-center rounded-circle">
+										<i class="fa" t-att-class="record.icon.raw_value" role="img"/>
+									</span>
+									<div class="overflow-hidden">
+										<h4 class="mb-0 text-truncate">
+											<field name="display_name"/>
+										</h4>
+										<code class="small text-muted">
+											<field name="name"/>
+										</code>
+									</div>
 								</div>
 							</div>
-						</main>
-						<div class="mt-2">
-							<field name="description" class="text-muted"/>
-						</div>
-						<div class="mt-2 d-flex flex-wrap gap-1">
-							<span t-if="!record.user_ids.raw_value.length" class="badge text-bg-success">
-								<i class="fa fa-users me-1" title="Shared with everyone" role="img"/>Everyone
-							</span>
-							<span t-if="record.user_ids.raw_value.length and !record.user_count.raw_value" class="badge text-bg-secondary">
-								<i class="fa fa-lock me-1" title="Private to the owner" role="img"/>Private
-							</span>
-							<span t-if="record.user_count.raw_value" class="badge text-bg-warning">
-								<i class="fa fa-lock me-1" title="Shared with selected users" role="img"/>
-								<field name="user_count"/> Users
-							</span>
-							<span t-if="record.scope.raw_value != 'any'" class="badge text-bg-primary">
-								<i class="fa fa-thumb-tack me-1" title="Needs something open" role="img"/>
-								<field name="scope"/>
-							</span>
-							<span t-if="!record.agent_count.raw_value" class="badge text-bg-secondary">
-								<i class="fa fa-globe me-1" title="Global" role="img"/>Global
-							</span>
-							<span t-if="record.agent_count.raw_value" class="badge text-bg-info">
-								<i class="fa fa-user me-1" title="Agents" role="img"/>
-								<field name="agent_count"/> Agents
-							</span>
-							<span t-if="record.attachment_count.raw_value" class="badge text-bg-info">
-								<i class="fa fa-paperclip me-1" title="Resources" role="img"/>
-								<field name="attachment_count"/> Resources
-							</span>
+							<div class="mt-2">
+								<field name="description" class="text-muted"/>
+							</div>
+							<div class="mt-2 d-flex flex-wrap gap-1">
+								<span t-if="!record.user_ids.raw_value.length" class="badge text-bg-success">
+									<i class="fa fa-users me-1" title="Shared with everyone" role="img"/>Everyone
+								</span>
+								<span t-if="record.user_ids.raw_value.length and !record.user_count.raw_value" class="badge text-bg-secondary">
+									<i class="fa fa-lock me-1" title="Private to the owner" role="img"/>Private
+								</span>
+								<span t-if="record.user_count.raw_value" class="badge text-bg-warning">
+									<i class="fa fa-lock me-1" title="Shared with selected users" role="img"/>
+									<field name="user_count"/> Users
+								</span>
+								<span t-if="record.scope.raw_value != 'any'" class="badge text-bg-primary">
+									<i class="fa fa-thumb-tack me-1" title="Needs something open" role="img"/>
+									<field name="scope"/>
+								</span>
+								<span t-if="!record.agent_count.raw_value" class="badge text-bg-secondary">
+									<i class="fa fa-globe me-1" title="Global" role="img"/>Global
+								</span>
+								<span t-if="record.agent_count.raw_value" class="badge text-bg-info">
+									<i class="fa fa-user me-1" title="Agents" role="img"/>
+									<field name="agent_count"/> Agents
+								</span>
+								<span t-if="record.attachment_count.raw_value" class="badge text-bg-info">
+									<i class="fa fa-paperclip me-1" title="Resources" role="img"/>
+									<field name="attachment_count"/> Resources
+								</span>
+							</div>
 						</div>
 					</t>
 				</templates>
