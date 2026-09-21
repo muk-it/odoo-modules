@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<templates xml:space="preserve">
+
+    <t
+        t-name="muk_web_chatter.Composer"
+        t-inherit="mail.Composer"
+        t-inherit-mode="extension"
+    >
+        <xpath expr="//RecipientsInput/../.." position="attributes">
+            <attribute name="t-if">
+                this.webComposerProps.withMessageFields and (this.props.type === 'message' or this.isInternalNote)
+            </attribute>
+        </xpath>
+    </t>
+
+</templates>

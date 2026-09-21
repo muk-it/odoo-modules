@@ -1,0 +1,24 @@
+.o-mail-Chatter-top:has(.o-mail-Chatter-sendMessage.active) .o-mail-Composer-send {
+    @extend .btn-danger;
+}
+.mk_chatter_resize {
+    display: none;
+}
+.o-mail-Form-chatter.o-aside {
+    width: var(
+        --mk-Chatter-width,
+        calc(#{$o-mail-Chatter-minWidth} + var(--Chatter-asideExtraWidth))
+    );
+    max-width: var(--mk-Chatter-width, none);
+    .mk_chatter_resize {
+        top: 0;
+        bottom: 0;
+        width: 5px;
+        height: 100%;
+        display: block;
+        cursor: col-resize;
+        position: absolute;
+        z-index: $o-mail-NavigableList-zIndex + 1;
+        border-left: var(--ControlPanel-border-bottom, 1px solid $o-gray-300);
+    }
+}
