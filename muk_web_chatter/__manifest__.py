@@ -5,7 +5,7 @@
         This module improves the design of the chatter and adds a user
         preference to set the position of the chatter in the form view.
     """,
-    'version': '20.0.1.5.0',
+    'version': '20.0.1.5.2',
     'category': 'Tools/UI',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -29,9 +29,46 @@
             ),
         ],
         'web.assets_backend': [
-            'muk_web_chatter/static/src/chatter/**/*',
-            'muk_web_chatter/static/src/core/**/*',
-            'muk_web_chatter/static/src/views/**/*',
+            'muk_web_chatter/static/src/chatter/web/chatter.scss',
+            'muk_web_chatter/static/src/chatter/web/chatter.xml',
+            'muk_web_chatter/static/src/chatter/web/composer.xml',
+            'muk_web_chatter/static/src/core/web/recipients_input.xml',
+            'muk_web_chatter/static/src/views/form/form_renderer.scss',
+            (
+                'after',
+                'mail/static/src/chatter/web/chatter_patch.js',
+                'muk_web_chatter/static/src/chatter/web/chatter.js',
+            ),
+            (
+                'after',
+                'mail/static/src/chatter/web/composer_patch.js',
+                'muk_web_chatter/static/src/chatter/web/composer.js',
+            ),
+            (
+                'after',
+                'mail/static/src/core/common/store_service.js',
+                'muk_web_chatter/static/src/core/common/store_service.js',
+            ),
+            (
+                'after',
+                'mail/static/src/core/common/thread.js',
+                'muk_web_chatter/static/src/core/common/thread.js',
+            ),
+            (
+                'after',
+                'mail/static/src/core/web/recipients_input.js',
+                'muk_web_chatter/static/src/core/web/recipients_input.js',
+            ),
+            (
+                'after',
+                'mail/static/src/chatter/web/form_compiler.js',
+                'muk_web_chatter/static/src/views/form/form_compiler.js',
+            ),
+            (
+                'after',
+                'mail/static/src/chatter/web/form_renderer.js',
+                'muk_web_chatter/static/src/views/form/form_renderer.js',
+            ),
         ],
         'web.assets_unit_tests': [
             'muk_web_chatter/static/tests/**/*.test.js',
