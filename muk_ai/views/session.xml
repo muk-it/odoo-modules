@@ -79,17 +79,18 @@
 		<field name="arch" type="xml">
 			<form create="0" edit="0">
 				<header>
+					<field name="can_write" invisible="1"/>
 					<button
                         name="action_open"
                         type="object"
                         string="Open"
                         class="btn-primary"
-                        icon="fa-comments" attrs="{'invisible': [('user_id', '!=', uid)]}"
+                        icon="fa-comments" attrs="{'invisible': [('can_write', '=', False)]}"
                     />
 					<button
                         name="action_stop"
                         type="object"
-                        string="Stop" attrs="{'invisible': ['|', ('state', 'not in', ['running', 'waiting']), ('user_id', '!=', uid)]}"
+                        string="Stop" attrs="{'invisible': ['|', ('state', 'not in', ['running', 'waiting']), ('can_write', '=', False)]}"
                         groups="!base.group_system"
                     />
 					<button

@@ -4,9 +4,10 @@ import { Component, onWillStart, useState } from '@odoo/owl';
 
 import { Dialog } from '@web/core/dialog/dialog';
 import { _t } from '@web/core/l10n/translation';
+import { registry } from '@web/core/registry';
 import { useService } from '@web/core/utils/hooks';
 import { Record } from '@web/views/record';
-import { Field, getFieldFromRegistry } from '@web/views/fields/field';
+import { Field } from '@web/views/fields/field';
 
 /**
  * Pick who may read a chat.
@@ -27,36 +28,52 @@ export class AIShareDialog extends Component {
     setup() {
         this.orm = useService('orm');
         this.user = useService('user');
-        this.state = useState({ fieldInfo: null, dirty: false });
+        this.state = useState({ fieldInfo: null });
         this.record = null;
-        this.hooks = {
-            onRecordChanged: (record) => {
-                this.record = record;
-                this.state.dirty = true;
-            },
-        };
+        // The slot renders against a context derived from this component, so
+        // an unbound ``capture`` would write the record onto that derived
+        // object and leave ``this.record`` null here.
+        this.capture = this.capture.bind(this);
         onWillStart(async () => {
+            const FieldComponent = registry
+                .category('fields')
+                .get('many2many_avatar_user');
+            const attrs = { options: {} };
+            // Odoo 16 has no field descriptors: the registry holds the
+            // component, and the arch parser hands the view what is spelled
+            // out here. 17.0 replaced all of it with one descriptor object.
             this.state.fieldInfo = {
                 name: 'share_user_ids',
-                field: getFieldFromRegistry('many2many', 'many2many_avatar_user'),
-                attrs: {},
-                options: {},
+                viewType: 'form',
+                context: '{}',
                 string: '',
-                limit: 80,
+                modifiers: {},
+                decorations: {},
+                rawAttrs: {},
+                options: attrs.options,
+                FieldComponent,
+                fieldsToFetch: FieldComponent.fieldsToFetch,
                 domain: await this.candidateDomain(),
-                related: {
-                    fields: { display_name: { name: 'display_name', type: 'char' } },
-                    activeFields: {
-                        display_name: {
-                            attrs: {},
-                            options: {},
-                            domain: '[]',
-                            string: '',
-                        },
-                    },
-                },
+                propsFromAttrs: FieldComponent.extractProps({
+                    field: { relation: 'res.users' },
+                    attrs,
+                }),
             };
         });
+    }
+
+    /**
+     * Keep the datapoint the ``Record`` slot renders with.
+     *
+     * Odoo 16's ``Record`` takes no ``onRecordChanged`` hook — that arrived in
+     * 17.0 — so the slot is the only place it hands the datapoint out.
+     *
+     * @param {object} record the record datapoint being rendered
+     * @returns {string} nothing, so the caller renders no text
+     */
+    capture(record) {
+        this.record = record;
+        return '';
     }
 
     /**
@@ -75,7 +92,7 @@ export class AIShareDialog extends Component {
         );
         return (
             `[('share', '=', False), ('active', '=', True), ` +
-            `('group_ids', 'in', [${employees}]), ` +
+            `('groups_id', 'in', [${employees}]), ` +
             `('id', 'not in', [1, ${this.user.userId}])]`
         );
     }
@@ -86,6 +103,26 @@ export class AIShareDialog extends Component {
 
     get activeFields() {
         return { share_user_ids: this.state.fieldInfo };
+    }
+
+    /**
+     * Describe the record's fields, rather than letting ``Record`` fetch them.
+     *
+     * Odoo 16 parses every value the read returns against this map, so ``id``
+     * has to be in it or the datapoint throws on its own primary key.
+     *
+     * @returns {object} field descriptions keyed by name
+     */
+    get fields() {
+        return {
+            id: { name: 'id', type: 'integer', readonly: true },
+            share_user_ids: {
+                name: 'share_user_ids',
+                type: 'many2many',
+                relation: 'res.users',
+                string: '',
+            },
+        };
     }
 
     async save() {

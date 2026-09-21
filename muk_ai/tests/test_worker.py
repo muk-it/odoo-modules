@@ -115,6 +115,11 @@ class TestSessionWorker(AITestCommon):
         pending = self.env['muk_ai.session']._find_pending_session_ids(limit=100)
         self.assertIn(session.id, pending)
 
+    def test_workers_are_not_retired_after_their_first_run(self):
+        crons = self.env['muk_ai.session']._session_worker_crons()
+        self.assertTrue(crons)
+        self.assertEqual(set(crons.mapped('numbercall')), {-1})
+
     def test_pending_lookup_is_capped_by_the_active_worker_count(self):
         crons = self.env['muk_ai.session']._session_worker_crons()
         self.assertTrue(crons)

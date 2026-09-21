@@ -8,6 +8,7 @@
         <field name="state">ai_session</field>
         <field name="interval_number">1</field>
         <field name="interval_type">minutes</field>
+        <field name="numbercall">-1</field>
         <field name="active" eval="True"/>
         <field name="user_id" ref="base.user_root"/>
     </record>
@@ -18,6 +19,7 @@
         <field name="state">ai_session</field>
         <field name="interval_number">1</field>
         <field name="interval_type">minutes</field>
+        <field name="numbercall">-1</field>
         <field name="active" eval="True"/>
         <field name="user_id" ref="base.user_root"/>
     </record>
@@ -28,6 +30,7 @@
         <field name="state">ai_session</field>
         <field name="interval_number">1</field>
         <field name="interval_type">minutes</field>
+        <field name="numbercall">-1</field>
         <field name="active" eval="True"/>
         <field name="user_id" ref="base.user_root"/>
     </record>
@@ -38,6 +41,7 @@
         <field name="state">ai_session</field>
         <field name="interval_number">1</field>
         <field name="interval_type">minutes</field>
+        <field name="numbercall">-1</field>
         <field name="active" eval="True"/>
         <field name="user_id" ref="base.user_root"/>
     </record>

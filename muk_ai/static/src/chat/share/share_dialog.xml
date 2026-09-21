@@ -10,12 +10,12 @@
                     <Record
                         resModel="'muk_ai.session'"
                         resId="props.sessionId"
-                        fieldNames="['share_user_ids']"
+                        fields="fields"
                         activeFields="activeFields"
                         mode="'edit'"
-                        hooks="hooks"
                         t-slot-scope="data"
                     >
+                        <t t-esc="capture(data.record)"/>
                         <Field
                             name="'share_user_ids'"
                             record="data.record"
@@ -32,8 +32,7 @@
             <t t-set-slot="footer">
                 <button class="btn btn-primary" t-on-click="save">Save</button>
                 <button class="btn btn-secondary" t-on-click="() => props.close()">
-                    <t t-if="state.dirty">Discard</t>
-                    <t t-else="">Close</t>
+                    Close
                 </button>
             </t>
         </Dialog>
