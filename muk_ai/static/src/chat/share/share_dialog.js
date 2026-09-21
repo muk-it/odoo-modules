@@ -73,7 +73,7 @@ export class AIShareDialog extends Component {
         );
         return (
             `[('share', '=', False), ('active', '=', True), ` +
-            `('group_ids', 'in', [${employees}]), ` +
+            `('groups_id', 'in', [${employees}]), ` +
             `('id', 'not in', [1, ${user.userId}])]`
         );
     }
