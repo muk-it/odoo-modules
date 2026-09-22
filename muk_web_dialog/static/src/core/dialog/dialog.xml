@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<templates xml:space="preserve">
+
+    <t
+        t-name="muk_web_dialog.Dialog.header"
+        t-inherit="web.Dialog.header"
+        t-inherit-mode="extension"
+    >
+        <xpath expr="//h4[hasclass('modal-title')]" position="after">
+            <t t-set="mkSize" t-value="this.env.dialogData.mkSize" />
+            <button
+                t-if="!fullscreen and mkSize.canMaximize()"
+                type="button"
+                class="btn oi oi-lg opacity-50 opacity-100-hover mk_btn_dialog_size"
+                t-att-data-icon="mkSize.maximized() ? 'close_fullscreen' : 'fullscreen'"
+                t-att-title="mkSize.title()"
+                t-on-click="mkSize.toggle"
+            />
+        </xpath>
+        <xpath expr="//button[@t-custom-click='onExpand']" position="attributes">
+            <attribute name="data-icon">open_in_new</attribute>
+            <attribute name="aria-label">Open Form View</attribute>
+        </xpath>
+    </t>
+
+</templates>
