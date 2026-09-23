@@ -31,9 +31,7 @@ class MailThread(models.AbstractModel):
             and not self.env.user.share
         ):
             partners = self._get_internal_follower_partners() - self.env.user.partner_id
-            return self.with_context(
-                mail_notify_internal_followers=False
-            ).message_post(
+            return self.with_context(mail_notify_internal_followers=False).message_post(
                 partner_ids=sorted({*(partner_ids or []), *partners.ids}), **kwargs
             )
         return super().message_post(partner_ids=partner_ids, **kwargs)
