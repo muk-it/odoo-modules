@@ -134,7 +134,7 @@ class TestColorAssetsEditor(TransactionCase):
             ['color_brand', 'color_primary'],
         )
         self.assertEqual(values['color_brand'], '#243742')
-        self.assertEqual(values['color_primary'], '#5D8DA8')
+        self.assertEqual(values['color_primary'], '#5d8da8')
 
     def test_read_returns_falsy_for_an_unknown_variable(self):
         values = self.editor.read_colors(
@@ -163,7 +163,7 @@ class TestColorAssetsEditor(TransactionCase):
             ['color_brand', 'color_success'],
         )
         self.assertEqual(dark['color_brand'], '#243742')
-        self.assertEqual(dark['color_success'], '#1DC959')
+        self.assertEqual(dark['color_success'], '#1dc959')
 
     def test_reset_removes_the_attachment_and_the_ir_asset(self):
         self.editor.write_colors(self.light_url, self.light_bundle, self.values)

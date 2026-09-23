@@ -47,10 +47,10 @@ class TestResConfigSettings(TransactionCase):
     def test_settings_expose_the_asset_defaults(self):
         settings = self.settings_model.create({})
         self.assertEqual(settings.color_brand_light, '#243742')
-        self.assertEqual(settings.color_primary_light, '#5D8DA8')
-        self.assertEqual(settings.color_success_light, '#28A745')
-        self.assertEqual(settings.color_success_dark, '#1DC959')
-        self.assertEqual(settings.color_danger_dark, '#FF5757')
+        self.assertEqual(settings.color_primary_light, '#5d8da8')
+        self.assertEqual(settings.color_success_light, '#28a745')
+        self.assertEqual(settings.color_success_dark, '#1dc959')
+        self.assertEqual(settings.color_danger_dark, '#ff5757')
 
     def test_saving_without_a_change_creates_no_customization(self):
         self.settings_model.create({}).execute()
@@ -76,7 +76,7 @@ class TestResConfigSettings(TransactionCase):
         self.assertFalse(self._custom_attachment(self.light_custom_url))
         reloaded = self.settings_model.create({})
         self.assertEqual(reloaded.color_warning_dark, '#0D0E0F')
-        self.assertEqual(reloaded.color_warning_light, '#FFAC00')
+        self.assertEqual(reloaded.color_warning_light, '#ffac00')
 
     def test_reset_light_colors_drops_the_customization(self):
         settings = self.settings_model.create({})
