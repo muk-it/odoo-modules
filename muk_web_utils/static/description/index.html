@@ -116,26 +116,28 @@
 			<div class="col-lg-6 col-12">
 				<div style="background-color: #1C3A4C; border-radius: 6px; padding: 22px; height: 100%;">
 					<div style="font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #9EBCCD; margin-bottom: 14px;">01 &nbsp;Widgets</div>
-<pre style="margin: 0; padding: 0; background-color: transparent; border: 0; border-radius: 0; color: #FFFFFF; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; line-height: 1.75; white-space: pre-wrap;">&lt;field name=&quot;state&quot; widget=&quot;selection_icons&quot;
-       options=&quot;{&#x27;icons&#x27;: {&#x27;done&#x27;: &#x27;check&#x27;}}&quot;/&gt;
+<pre style="margin: 0; padding: 0; background-color: transparent; border: 0; border-radius: 0; color: #FFFFFF; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; line-height: 1.75; white-space: pre-wrap;">&lt;field
+    name=&quot;state&quot; widget=&quot;selection_icons&quot;
+    options=&quot;{&#x27;icons&#x27;: {&#x27;done&#x27;: &#x27;check&#x27;}}&quot;
+/&gt;
 &lt;field name=&quot;comment&quot; widget=&quot;text_icon&quot;/&gt;</pre>
 				</div>
 			</div>
 			<div class="col-lg-6 col-12">
 				<div style="background-color: #1C3A4C; border-radius: 6px; padding: 22px; height: 100%;">
-					<div style="font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #9EBCCD; margin-bottom: 14px;">02 &nbsp;Options</div>
-<pre style="margin: 0; padding: 0; background-color: transparent; border: 0; border-radius: 0; color: #FFFFFF; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; line-height: 1.75; white-space: pre-wrap;">&lt;field name=&quot;line_ids&quot; options=&quot;{&#x27;no_open&#x27;: 1}&quot;/&gt;
-&lt;field name=&quot;payload&quot; options=&quot;{&#x27;prettify&#x27;: 1}&quot;/&gt;
-&lt;field name=&quot;country_id&quot; icon=&quot;public&quot;/&gt;</pre>
-				</div>
-			</div>
-			<div class="col-12">
-				<div style="background-color: #1C3A4C; border-radius: 6px; padding: 22px; height: 100%;">
-					<div style="font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #9EBCCD; margin-bottom: 14px;">03 &nbsp;Python</div>
+					<div style="font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #9EBCCD; margin-bottom: 14px;">02 &nbsp;Python</div>
 <pre style="margin: 0; padding: 0; background-color: transparent; border: 0; border-radius: 0; color: #FFFFFF; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; line-height: 1.75; white-space: pre-wrap;">from odoo.addons.muk_web_utils.tools import encoder
 
 json.dumps(partner, cls=encoder.RecordEncoder)
 # [[7, &quot;Azure Interior&quot;]]</pre>
+				</div>
+			</div>
+			<div class="col-12">
+				<div style="background-color: #1C3A4C; border-radius: 6px; padding: 22px; height: 100%;">
+					<div style="font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #9EBCCD; margin-bottom: 14px;">03 &nbsp;Options</div>
+<pre style="margin: 0; padding: 0; background-color: transparent; border: 0; border-radius: 0; color: #FFFFFF; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; line-height: 1.75; white-space: pre-wrap;">&lt;field name=&quot;line_ids&quot; widget=&quot;one2many&quot; options=&quot;{&#x27;no_open&#x27;: 1}&quot;/&gt;
+&lt;field name=&quot;payload&quot; widget=&quot;json&quot; options=&quot;{&#x27;prettify&#x27;: 1}&quot;/&gt;
+&lt;field name=&quot;country_id&quot; icon=&quot;public&quot;/&gt;</pre>
 				</div>
 			</div>
 		</div>
