@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_web_utils.PrettyJsonField" t-inherit="web.JsonField" t-inherit-mode="primary">
+        <xpath expr="//span" position="before">
+            <pre t-if="this.props.prettify" class="mk_json_pretty" t-out="this.formattedValue"/>
+        </xpath>
+        <xpath expr="//span" position="attributes">
+            <attribute name="t-else">""</attribute>
+        </xpath>
+    </t>
+
+</templates>

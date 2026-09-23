@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_web_utils.SelectionIconsField" t-inherit="web.SelectionField" t-inherit-mode="primary">
+        <xpath expr="//span[@t-att-raw-value='this.value']/.." position="replace">
+            <t t-if="this.props.readonly or this.props.noLabel">
+                <div class="text-center">
+                    <i
+                        class="oi"
+                        t-att-data-icon="this.valueIcon(this.value)"
+                        t-att-data-tooltip="this.string"
+                        t-att-raw-value="this.value"
+                    />
+                </div>
+            </t>
+        </xpath>
+    </t>
+
+</templates>

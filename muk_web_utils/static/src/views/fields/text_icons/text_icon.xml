@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_web_utils.TextIconField">
+        <div
+            t-if="this.hasValue"
+            class="text-center"
+            t-on-click.prevent.stop="this.showValue"
+        >
+            <a
+                class="oi"
+                t-ref="this.iconRef"
+                t-att-data-icon="this.props.icon"
+                t-att-title="this.props.record.fields[this.props.name].string"
+            />
+        </div>
+    </t>
+
+    <t t-name="muk_web_utils.TextValuePopover">
+        <div class="mk_text_value_popover p-3" t-out="this.props.value"/>
+    </t>
+
+</templates>

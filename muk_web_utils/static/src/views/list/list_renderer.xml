@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-inherit="web.ListRenderer" t-inherit-mode="extension">
+        <xpath expr="//t[@t-if=&quot;column.hasLabel and column.widget !== 'handle'&quot;]" position="after">
+            <t t-elif="column.labelIcon">
+                <div
+                    class="d-flex align-items-center justify-content-center"
+                    t-att-data-tooltip-template="this.debugMode.isActive() ? 'web.FieldTooltip' : 'web.ListHeaderTooltip'"
+                    t-att-data-tooltip-info="this.makeTooltip(column)"
+                >
+                    <i class="oi" t-att-data-icon="column.labelIcon"/>
+                </div>
+            </t>
+        </xpath>
+    </t>
+
+</templates>

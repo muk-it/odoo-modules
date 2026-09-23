@@ -1,0 +1,14 @@
+.mk_block_progress_overlay {
+    cursor: wait;
+    z-index: $zindex-popover !important;
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    .mk_block_progress_card {
+        width: 90%;
+        max-width: 420px;
+        background: $white;
+        .progress {
+            height: 25px;
+        }
+    }
+}
