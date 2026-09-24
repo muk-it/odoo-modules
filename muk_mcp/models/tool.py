@@ -151,12 +151,15 @@ class MCPTool(models.Model):
                 getattr(type(env[entry['model']]), entry['method'])
             )
             try:
-                raw_result = func(env[entry['model']], **arguments)
+                inspect.signature(func).bind(env[entry['model']], **arguments)
             except TypeError as exc:
                 raise UserError(_(
-                    "Invalid arguments for tool %(name)s: %(error)s",
+                    "Invalid arguments for tool %(name)s: %(error)s. "
+                    "Expected input schema: %(schema)s",
                     name=name, error=exc,
-                ))
+                    schema=json.dumps(entry['input_schema']),
+                )) from exc
+            raw_result = func(env[entry['model']], **arguments)
             text = self._serialize_result(raw_result)
         return (
             text,

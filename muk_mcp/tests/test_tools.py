@@ -152,12 +152,25 @@ class TestMcpTool(common.TransactionCase):
             })
 
     def test_read_group_without_groupby_raises(self):
-        with self.assertRaises(UserError):
+        with self.assertRaisesRegex(UserError, 'groupby is required'):
             self._call('read_group', {
                 'model': 'res.partner',
                 'fields': ['is_company'],
                 'groupby': [],
             })
+
+    def test_invalid_arguments_return_input_schema(self):
+        with self.assertRaisesRegex(
+            UserError, "unexpected keyword argument 'aggregates'"
+        ) as ctx:
+            self._call('read_group', {
+                'model': 'res.partner',
+                'fields': ['is_company'],
+                'aggregates': ['__count'],
+                'groupby': ['is_company'],
+            })
+        self.assertIn('Expected input schema', str(ctx.exception))
+        self.assertIn('"fields"', str(ctx.exception))
 
     def test_tool_result_contains_id_for_create(self):
         created = self._call('create_records', {
