@@ -1,5 +1,5 @@
 import { session } from '@web/session';
-import { expect, test } from '@odoo/hoot';
+import { describe, expect, test } from '@odoo/hoot';
 import { animationFrame } from '@odoo/hoot-mock';
 
 import { MainComponentsContainer } from '@web/core/main_components_container';
@@ -30,6 +30,8 @@ class MukDialogPartner extends models.Model {
 }
 
 defineMailModels();
+
+describe.current.tags('desktop');
 defineModels([MukDialogPartner]);
 
 async function mountSelectCreateDialog(dialogSize) {

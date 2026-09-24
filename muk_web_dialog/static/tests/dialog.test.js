@@ -30,7 +30,7 @@ async function mountDialog(dialogSize, size) {
     await mountWithCleanup(Parent);
 }
 
-test.tags('muk_web_dialog');
+test.tags('muk_web_dialog', 'desktop');
 test('maximize preference opens the dialog fullscreen', async () => {
     await mountDialog('maximize');
     expect('.o_dialog .modal-fs').toHaveCount(1);
@@ -40,7 +40,7 @@ test('maximize preference opens the dialog fullscreen', async () => {
     );
 });
 
-test.tags('muk_web_dialog');
+test.tags('muk_web_dialog', 'desktop');
 test('minimize preference keeps the requested dialog size', async () => {
     await mountDialog('minimize');
     expect('.o_dialog .modal-lg').toHaveCount(1);
@@ -48,14 +48,14 @@ test('minimize preference keeps the requested dialog size', async () => {
     expect('.o_dialog .mk_btn_dialog_size').toHaveAttribute('data-icon', 'fullscreen');
 });
 
-test.tags('muk_web_dialog');
+test.tags('muk_web_dialog', 'desktop');
 test('an unset preference keeps the requested dialog size', async () => {
     await mountDialog(undefined, 'xl');
     expect('.o_dialog .modal-xl').toHaveCount(1);
     expect('.o_dialog .mk_btn_dialog_size').toHaveAttribute('data-icon', 'fullscreen');
 });
 
-test.tags('muk_web_dialog');
+test.tags('muk_web_dialog', 'desktop');
 test('the size toggle switches back to the size the dialog was opened with', async () => {
     await mountDialog('minimize', 'xl');
     expect('.o_dialog .modal-xl').toHaveCount(1);
@@ -70,7 +70,7 @@ test('the size toggle switches back to the size the dialog was opened with', asy
     expect('.o_dialog .mk_btn_dialog_size').toHaveAttribute('data-icon', 'fullscreen');
 });
 
-test.tags('muk_web_dialog');
+test.tags('muk_web_dialog', 'desktop');
 test('the size toggle restores the default size for a maximized dialog', async () => {
     await mountDialog('maximize');
     expect('.o_dialog .modal-fs').toHaveCount(1);
@@ -95,7 +95,7 @@ test('a medium dialog is left minimal and offers no size toggle', async () => {
     expect('.o_dialog .mk_btn_dialog_size').toHaveCount(0);
 });
 
-test.tags('muk_web_dialog');
+test.tags('muk_web_dialog', 'desktop');
 test('the expand button keeps pointing at the form view', async () => {
     patchWithCleanup(session, { dialog_size: 'minimize' });
 
@@ -109,4 +109,11 @@ test('the expand button keeps pointing at the form view', async () => {
     await mountWithCleanup(Parent);
     expect('.o_dialog .o_expand_button').toHaveAttribute('data-icon', 'open_in_new');
     expect('.o_dialog .mk_btn_dialog_size').toHaveAttribute('data-icon', 'fullscreen');
+});
+
+test.tags('muk_web_dialog', 'mobile');
+test('a small screen shows every dialog fullscreen without the size toggle', async () => {
+    await mountDialog('minimize', 'xl');
+    expect('.o_dialog .modal.o_modal_full').toHaveCount(1);
+    expect('.o_dialog .mk_btn_dialog_size').toHaveCount(0);
 });
