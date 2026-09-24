@@ -5,7 +5,7 @@
         This module adds a sidebar to the main screen. The sidebar has a list
         of all installed apps similar to the home menu to ease navigation.
     """,
-    'version': '20.0.1.2.1',
+    'version': '20.0.1.2.2',
     'category': 'Tools/UI',
     'license': 'LGPL-3',
     'author': 'MuK IT',

@@ -7,6 +7,9 @@ class ResUsers(models.Model):
     """Add the per-user sidebar display preference."""
 
     _inherit = 'res.users'
+    _explanation = (
+        'Users also choose how the apps sidebar is shown: large, small or invisible.'
+    )
 
     # ----------------------------------------------------------
     # Fields
