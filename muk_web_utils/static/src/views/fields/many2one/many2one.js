@@ -23,12 +23,13 @@ function extractProps(staticInfo, dynamicInfo) {
     return props;
 }
 
-// eslint-disable-next-line no-import-assign -- reach every widget built on the core extractor
-M2OField.extractM2OFieldProps = extractProps;
-// eslint-disable-next-line no-import-assign -- reach every widget built on the core description
-M2OField.buildM2OFieldDescription = (component) => ({
-    ...buildM2OFieldDescription(component),
-    extractProps,
+/** Route every widget built on the core many2one helpers through the switch. */
+patch(M2OField, {
+    extractM2OFieldProps: extractProps,
+    buildM2OFieldDescription: (component) => ({
+        ...buildM2OFieldDescription(component),
+        extractProps,
+    }),
 });
 
 /** Apply the quick-create switch to the many2one field registered by core. */
