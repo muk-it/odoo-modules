@@ -497,8 +497,12 @@ msgstr "Schema di input"
 #. module: muk_mcp
 #. odoo-python
 #: code:addons/muk_mcp/models/tool.py:0
-msgid "Invalid arguments for tool %(name)s: %(error)s"
-msgstr "Argomenti non validi per lo strumento %(name)s: %(error)s"
+msgid ""
+"Invalid arguments for tool %(name)s: %(error)s. Expected input schema: "
+"%(schema)s"
+msgstr ""
+"Argomenti non validi per lo strumento %(name)s: %(error)s. Schema di input previsto: "
+"%(schema)s"
 
 #. module: muk_mcp
 #: model:ir.model.fields,help:muk_mcp.field_muk_mcp_tool__input_schema
