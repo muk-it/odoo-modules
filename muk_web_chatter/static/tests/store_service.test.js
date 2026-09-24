@@ -1,8 +1,13 @@
-import { expect, test } from '@odoo/hoot';
+import { beforeEach, expect, test } from '@odoo/hoot';
+
+import { emojiLoader } from '@web/core/emoji_picker/emoji_loader';
+import { patchWithCleanup } from '@web/../tests/web_test_helpers';
 
 import { Store } from '@mail/core/common/store_service';
 
 import '@muk_web_chatter/core/common/store_service';
+
+beforeEach(() => patchWithCleanup(emojiLoader, { load: async () => {} }));
 
 function makeStore() {
     return Object.assign(Object.create(Store.prototype), {
