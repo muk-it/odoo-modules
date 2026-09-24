@@ -8,8 +8,12 @@ import { defineGroupModels, KANBAN_ARCH, LIST_ARCH } from './helpers/models';
 
 defineGroupModels();
 
-function makeEnv(viewType, groupBy = []) {
-    return { config: { viewType }, searchModel: { groupBy } };
+function makeEnv(viewType, groupBy = [], isSmall = false) {
+    return {
+        config: { viewType },
+        searchModel: { groupBy },
+        services: { ui: { isSmall } },
+    };
 }
 
 async function openCogMenu() {
@@ -50,7 +54,7 @@ test('collapse all folds nested groups from the innermost level up', async () =>
     expect('tbody tr.o_data_row').toHaveCount(0);
 });
 
-test.tags('muk_web_group');
+test.tags('muk_web_group', 'desktop');
 test('collapse all folds every column of a grouped kanban', async () => {
     await mountView({
         type: 'kanban',
@@ -92,6 +96,16 @@ test('collapse all is hidden in an ungrouped list', async () => {
 });
 
 test.tags('muk_web_group');
+test('collapse all is not offered for a kanban on a small screen', async () => {
+    expect(
+        await collapseAllItem.isDisplayed(makeEnv('kanban', ['category_id'], true)),
+    ).toBe(false);
+    expect(
+        await collapseAllItem.isDisplayed(makeEnv('list', ['category_id'], true)),
+    ).toBe(true);
+});
+
+test.tags('muk_web_group');
 test('collapse all is only offered for grouped list and kanban views', async () => {
     expect(await collapseAllItem.isDisplayed(makeEnv('list', ['category_id']))).toBe(
         true,
@@ -103,4 +117,31 @@ test('collapse all is only offered for grouped list and kanban views', async () 
     expect(await collapseAllItem.isDisplayed(makeEnv('form', ['category_id']))).toBe(
         false,
     );
+});
+
+test.tags('muk_web_group', 'mobile');
+test('a small-screen kanban offers neither collapse all nor expand all', async () => {
+    await mountView({
+        type: 'kanban',
+        resModel: 'product',
+        groupBy: ['category_id'],
+        arch: KANBAN_ARCH,
+    });
+    await openCogMenu();
+    expect('.o-dropdown--menu').toHaveCount(1);
+    expect('.mk_collapse_all_menu').toHaveCount(0);
+    expect('.mk_expand_all_menu').toHaveCount(0);
+});
+
+test.tags('muk_web_group', 'mobile');
+test('a small-screen list still offers collapse all and expand all', async () => {
+    await mountView({
+        type: 'list',
+        resModel: 'product',
+        groupBy: ['category_id'],
+        arch: LIST_ARCH,
+    });
+    await openCogMenu();
+    expect('.mk_collapse_all_menu').toHaveCount(1);
+    expect('.mk_expand_all_menu').toHaveCount(1);
 });

@@ -2,6 +2,8 @@ import { Component } from '@odoo/owl';
 import { registry } from '@web/core/registry';
 import { DropdownItem } from '@web/core/dropdown/dropdown_item';
 
+import { hasFoldableGroups } from '@muk_web_group/search/collapse_all/collapse_all';
+
 const cogMenuRegistry = registry.category('cogMenu');
 
 /**
@@ -45,9 +47,7 @@ export class ExpandAll extends Component {
 export const expandAllItem = {
     Component: ExpandAll,
     groupNumber: 3,
-    isDisplayed: async (env) =>
-        ['kanban', 'list'].includes(env.config.viewType) &&
-        env.searchModel.groupBy.length > 0,
+    isDisplayed: async (env) => hasFoldableGroups(env),
 };
 
 cogMenuRegistry.add('expand-all-menu', expandAllItem, { sequence: 1 });

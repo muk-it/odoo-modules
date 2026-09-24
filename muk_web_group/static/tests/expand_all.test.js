@@ -19,8 +19,12 @@ import {
 
 defineGroupModels();
 
-function makeEnv(viewType, groupBy = []) {
-    return { config: { viewType }, searchModel: { groupBy } };
+function makeEnv(viewType, groupBy = [], isSmall = false) {
+    return {
+        config: { viewType },
+        searchModel: { groupBy },
+        services: { ui: { isSmall } },
+    };
 }
 
 function cogMenuShape() {
@@ -61,7 +65,7 @@ test('expand all unfolds nested groups down to the records', async () => {
     expect('.o_group_header').toHaveCount(5);
 });
 
-test.tags('muk_web_group');
+test.tags('muk_web_group', 'desktop');
 test('expand all unfolds every column of a grouped kanban', async () => {
     await mountView({
         type: 'kanban',
