@@ -7,6 +7,10 @@ class IrActionsServer(models.Model):
     """Add a server action type that broadcasts view reload requests."""
 
     _inherit = 'ir.actions.server'
+    _explanation = (
+        'Server actions also offer the "Reload Views" type, which asks every open web '
+        'client showing the chosen view types to reload them.'
+    )
 
     # ----------------------------------------------------------
     # Fields

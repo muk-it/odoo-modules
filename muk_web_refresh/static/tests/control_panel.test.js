@@ -54,7 +54,7 @@ class Product extends models.Model {
 defineModels([Product]);
 defineMailModels();
 
-test.tags('muk_web_refresh');
+test.tags('muk_web_refresh', 'desktop');
 test('refresh button is visible on list view', async () => {
     onRpc('has_group', () => true);
     await mountView({
@@ -65,7 +65,7 @@ test('refresh button is visible on list view', async () => {
     expect('.mk_cp_refresh [data-icon="autorenew"]').toHaveCount(1);
 });
 
-test.tags('muk_web_refresh');
+test.tags('muk_web_refresh', 'desktop');
 test('refresh button is visible on kanban view', async () => {
     onRpc('has_group', () => true);
     await mountView({
@@ -84,7 +84,7 @@ test('refresh button is visible on kanban view', async () => {
     expect('.mk_cp_refresh [data-icon="autorenew"]').toHaveCount(1);
 });
 
-test.tags('muk_web_refresh');
+test.tags('muk_web_refresh', 'desktop');
 test('refresh button is visible on form view', async () => {
     onRpc('has_group', () => true);
     await mountView({
@@ -96,7 +96,7 @@ test('refresh button is visible on form view', async () => {
     expect('.mk_cp_refresh [data-icon="autorenew"]').toHaveCount(1);
 });
 
-test.tags('muk_web_refresh');
+test.tags('muk_web_refresh', 'desktop');
 test('single click triggers refresh', async () => {
     onRpc('has_group', () => true);
     await mountView({
@@ -110,7 +110,7 @@ test('single click triggers refresh', async () => {
     expect('.mk_cp_refresh [data-icon="autorenew"]').toHaveClass('text-muted');
 });
 
-test.tags('muk_web_refresh');
+test.tags('muk_web_refresh', 'desktop');
 test('double click toggles auto refresh on list view', async () => {
     onRpc('has_group', () => true);
     await mountView({
@@ -129,7 +129,7 @@ test('double click toggles auto refresh on list view', async () => {
     expect('.mk_cp_refresh [data-icon="autorenew"]').toHaveClass('text-muted');
 });
 
-test.tags('muk_web_refresh');
+test.tags('muk_web_refresh', 'desktop');
 test('double click does not toggle auto refresh on form view', async () => {
     onRpc('has_group', () => true);
     await mountView({
@@ -144,7 +144,7 @@ test('double click does not toggle auto refresh on form view', async () => {
     expect('.mk_cp_refresh [data-icon="autorenew"]').toHaveClass('text-muted');
 });
 
-test.tags('muk_web_refresh');
+test.tags('muk_web_refresh', 'desktop');
 test('auto-refresh pauses when tab is hidden', async () => {
     onRpc('has_group', () => true);
     let rpcCount = 0;
@@ -170,7 +170,7 @@ test('auto-refresh pauses when tab is hidden', async () => {
     expect(rpcCount).toBeGreaterThan(countBefore);
 });
 
-test.tags('muk_web_refresh');
+test.tags('muk_web_refresh', 'desktop');
 test('in-flight guard prevents overlapping refreshes', async () => {
     onRpc('has_group', () => true);
     const def = Promise.withResolvers();
@@ -197,4 +197,16 @@ test('in-flight guard prevents overlapping refreshes', async () => {
     await animationFrame();
     await advanceTime(31000);
     expect(refreshCount).toBe(2);
+});
+
+test.tags('muk_web_refresh', 'mobile');
+test('a small screen shows no refresh button', async () => {
+    onRpc('has_group', () => true);
+    await mountView({
+        type: 'list',
+        resModel: 'product',
+        arch: `<list><field name="name"/></list>`,
+    });
+    expect('.o_control_panel').toHaveCount(1);
+    expect('.mk_cp_refresh').toHaveCount(0);
 });
