@@ -296,15 +296,29 @@ class TestMcpTool(common.TransactionCase):
             )
 
     def test_read_group_without_groupby_raises(self):
-        with self.assertRaises(UserError):
+        with self.assertRaisesRegex(UserError, 'groupby is required'):
+            self._call(
+                'read_group',
+                {
+                    'model': 'res.partner',
+                    'groupby': [],
+                },
+            )
+
+    def test_invalid_arguments_return_input_schema(self):
+        with self.assertRaisesRegex(
+            UserError, "unexpected keyword argument 'fields'"
+        ) as ctx:
             self._call(
                 'read_group',
                 {
                     'model': 'res.partner',
                     'fields': ['is_company'],
-                    'groupby': [],
+                    'groupby': ['is_company'],
                 },
             )
+        self.assertIn('Expected input schema', str(ctx.exception))
+        self.assertIn('"aggregates"', str(ctx.exception))
 
     def test_context_override_threads_through(self):
         archived = self.env['res.partner'].create(
