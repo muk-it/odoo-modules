@@ -7,6 +7,10 @@ class ResCompany(models.Model):
     """Add favicon and apps-menu background-image fields to the company."""
 
     _inherit = 'res.company'
+    _explanation = (
+        'Companies also store the browser favicon and the background image of the apps'
+        ' menu.'
+    )
 
     # ----------------------------------------------------------
     # Fields
