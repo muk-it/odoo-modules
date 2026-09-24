@@ -14,6 +14,10 @@ class ColorAssetsEditor(models.AbstractModel):
 
     _name = 'muk_web_colors.color_assets_editor'
     _description = 'Color Assets Editor'
+    _explanation = (
+        'Reads, writes and resets the customized color variables of the backend theme,'
+        ' for light and dark mode.'
+    )
 
     # ----------------------------------------------------------
     # Helper
