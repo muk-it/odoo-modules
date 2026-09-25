@@ -15,7 +15,6 @@ from . import test_registry
 from . import test_report
 from . import test_resource
 from . import test_tools
-from . import test_url_fetch
 from . import test_tour
 from . import test_transport
 from . import test_version
