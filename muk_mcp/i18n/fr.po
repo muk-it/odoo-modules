@@ -16,6 +16,12 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/write.py:0
+msgid "%(model)s(%(id)s) does not exist."
+msgstr "%(model)s(%(id)s) n'existe pas."
+
+#. module: muk_mcp
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
 msgid "<span class=\"col-auto ms-2\">in Days</span>"
 msgstr "<span class=\"col-auto ms-2\">en jours</span>"
@@ -294,6 +300,18 @@ msgid "DB"
 msgstr "BDD"
 
 #. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/tools/url_fetch.py:0
+msgid "DNS lookup failed for %(host)s: %(error)s"
+msgstr "La résolution DNS de %(host)s a échoué : %(error)s"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/tools/url_fetch.py:0
+msgid "DNS lookup returned no addresses for %s."
+msgstr "La résolution DNS n'a renvoyé aucune adresse pour %s."
+
+#. module: muk_mcp
 #: model:ir.model.fields,help:muk_mcp.field_res_config_settings__mcp_rate_limit_requests
 msgid ""
 "Default maximum MCP requests per minute per key. Set to 0 to disable. Used "
@@ -360,6 +378,18 @@ msgid "Done"
 msgstr "Terminé"
 
 #. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/tools/url_fetch.py:0
+msgid "Downloading %(url)s failed with HTTP %(status)s."
+msgstr "Le téléchargement de %(url)s a échoué avec HTTP %(status)s."
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/tools/url_fetch.py:0
+msgid "Downloading %(url)s failed: %(error)s"
+msgstr "Le téléchargement de %(url)s a échoué : %(error)s"
+
+#. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__duration_ms
 msgid "Duration (ms)"
 msgstr "Durée (ms)"
@@ -404,6 +434,12 @@ msgstr "Échec de la génération de la clé : %s"
 #: code:addons/muk_mcp/static/src/playground/playground.js:0
 msgid "Failed to load tools: %s"
 msgstr "Échec du chargement des outils : %s"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/write.py:0
+msgid "Field %(field)r is not a binary field on %(model)s."
+msgstr "Le champ %(field)r n'est pas un champ binaire de %(model)s."
 
 #. module: muk_mcp
 #: model:ir.model.fields,help:muk_mcp.field_muk_mcp_key__key_prefix
@@ -799,6 +835,12 @@ msgid "OK"
 msgstr "OK"
 
 #. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/tools/url_fetch.py:0
+msgid "Only https:// URLs can be downloaded: %s"
+msgstr "Seules les URL https:// peuvent être téléchargées : %s"
+
+#. module: muk_mcp
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_form
 msgid "Open Record"
 msgstr "Ouvrir l'enregistrement"
@@ -926,6 +968,15 @@ msgstr "ID d'enregistrement"
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__res_ids
 msgid "Record IDs"
 msgstr "IDs d'enregistrement"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/tools/url_fetch.py:0
+msgid ""
+"Refusing to download from %(host)s: %(address)s is not publicly routable."
+msgstr ""
+"Téléchargement depuis %(host)s refusé : %(address)s n'est pas routable "
+"publiquement."
 
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__registry
@@ -1068,6 +1119,30 @@ msgid "Status"
 msgstr "Statut"
 
 #. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/tools/url_fetch.py:0
+msgid "The URL %s has no hostname."
+msgstr "L'URL %s n'a pas de nom d'hôte."
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/tools/url_fetch.py:0
+msgid "The file at %(url)s exceeds the limit of %(limit)s bytes."
+msgstr "Le fichier à %(url)s dépasse la limite de %(limit)s octets."
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/write.py:0
+msgid "The file at %(url)s is not an image (%(mimetype)s)."
+msgstr "Le fichier à %(url)s n'est pas une image (%(mimetype)s)."
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/tools/url_fetch.py:0
+msgid "The redirect from %s has no location."
+msgstr "La redirection depuis %s n'a pas de destination."
+
+#. module: muk_mcp
 #. odoo-javascript
 #: code:addons/muk_mcp/static/src/playground/playground.xml:0
 msgid "This tool takes no parameters."
@@ -1082,6 +1157,12 @@ msgstr "Heure"
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
 msgid "Timeout"
 msgstr "Délai d'expiration"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/tools/url_fetch.py:0
+msgid "Too many redirects for %s."
+msgstr "Trop de redirections pour %s."
 
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__tool_name
