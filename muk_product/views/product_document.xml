@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="action_product_document" model="ir.actions.act_window">
+        <field name="name">Documents</field>
+        <field name="path">product-documents</field>
+        <field name="explanation">Opens the documents attached to all products and variants. Use this when the user wants to find, download or archive a product document without opening each product.</field>
+        <field name="res_model">product.document</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="search_view_id" ref="product.product_document_search"/>
+        <field name="domain">
+            [('res_model', 'in', ['product.template', 'product.product'])]
+        </field>
+        <field name="context">{'create': False, 'hide_upload_button': True}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No product documents yet
+            </p>
+            <p>
+                Upload documents from the Documents button of a product.
+            </p>
+        </field>
+    </record>
+
+</odoo>

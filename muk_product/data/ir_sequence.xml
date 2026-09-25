@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<odoo noupdate="1">
+
+    <record id="seq_product_reference" model="ir.sequence">
+        <field name="name">Product Reference</field>
+        <field name="code">product.product.default_code</field>
+        <field name="padding">8</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+    <record id="seq_product_barcode" model="ir.sequence">
+        <field name="name">Product Barcode</field>
+        <field name="code">product.product.barcode</field>
+        <field name="padding">12</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+</odoo>

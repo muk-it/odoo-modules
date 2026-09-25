@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="action_product_combo" model="ir.actions.act_window">
+        <field name="name">Combo Choices</field>
+        <field name="path">product-combos</field>
+        <field name="explanation">Opens the combo choices, the groups of products a customer picks from when buying a combo product. Use this when the user wants to create or edit the choices offered by combo products.</field>
+        <field name="res_model">product.combo</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="product.product_combo_view_tree"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a new combo choice
+            </p>
+            <p>
+                Combo products let the customer pick one product from each choice.
+            </p>
+        </field>
+    </record>
+
+</odoo>

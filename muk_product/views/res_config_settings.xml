@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_res_config_settings_form" model="ir.ui.view">
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app
+                    string="Products"
+                    data-string="Products"
+                    name="muk_product"
+                    groups="base.group_system"
+                >
+                    <block title="Catalog" name="product_catalog_setting_container">
+                        <setting help="Sell products in several variants such as size or color">
+                            <field name="group_product_variant"/>
+                            <div class="content-group" invisible="not group_product_variant">
+                                <button
+                                    name="%(product.attribute_action)d"
+                                    icon="east"
+                                    type="action"
+                                    string="Attributes"
+                                    class="btn-link mt8"
+                                />
+                            </div>
+                        </setting>
+                        <setting help="Set several prices per product, automatic discounts, etc.">
+                            <field name="group_product_pricelist"/>
+                            <div class="content-group" invisible="not group_product_pricelist">
+                                <button
+                                    name="%(product.product_pricelist_action2)d"
+                                    icon="east"
+                                    type="action"
+                                    string="Pricelists"
+                                    class="btn-link mt8"
+                                />
+                            </div>
+                        </setting>
+                        <setting help="Sell and purchase products in different units and packagings">
+                            <field name="group_uom"/>
+                            <div class="content-group" invisible="not group_uom">
+                                <button
+                                    name="%(uom.uom_uom_action_list)d"
+                                    icon="east"
+                                    type="action"
+                                    string="Units &amp; Packagings"
+                                    class="btn-link mt8"
+                                />
+                            </div>
+                        </setting>
+                        <setting help="Display the price per base unit, such as per kg or per liter">
+                            <field name="group_show_uom_price"/>
+                            <div class="content-group" invisible="not group_show_uom_price">
+                                <button
+                                    name="%(product.base_unit_action)d"
+                                    icon="east"
+                                    type="action"
+                                    string="Base Units"
+                                    class="btn-link mt8"
+                                />
+                            </div>
+                        </setting>
+                    </block>
+                    <block title="Automation" name="product_automation_setting_container">
+                        <setting help="Activate to automatically generate product references">
+                            <field name="active_product_default_code_automation" string="Product Reference Automation"/>
+                        </setting>
+                        <setting help="Activate to automatically generate product barcodes">
+                            <field name="active_product_barcode_automation" string="Product Barcode Automation"/>
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_product_config_settings" model="ir.actions.act_window">
+        <field name="name">Settings</field>
+        <field name="path">product-settings</field>
+        <field name="explanation">Opens the product settings: variants, pricelists, units and packagings, base unit prices and the automatic references and barcodes. Use this when the user wants to switch a product feature on or off.</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="context">{'module': 'muk_product'}</field>
+    </record>
+
+</odoo>
