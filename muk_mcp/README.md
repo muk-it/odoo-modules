@@ -171,7 +171,7 @@ curl -X POST https://your-odoo.com/mcp \
 ## Usage
 
 Once connected, the AI client automatically discovers all available
-tools via the `tools/list` MCP method. The module ships with 17
+tools via the `tools/list` MCP method. The module ships with 18
 built-in tools organized into two categories:
 
 **Read Tools (12)**
@@ -200,12 +200,14 @@ built-in tools organized into two categories:
   `order_line/product_id/default_code`). Honours record rules and
   field access through Odoo's `export_data`.
 
-**Write Tools (5)**
+**Write Tools (6)**
 
 - `create_records` -- Create new records with support for relational
   field command tuples.
 - `update_records` -- Update existing records by ID (partial writes).
 - `delete_records` -- Permanently delete records by ID.
+- `set_binary_from_url` -- Set a binary or image field from a public
+  https URL; Odoo downloads the file itself (SSRF-guarded, 20 MB cap).
 - `post_message` -- Post comments or internal notes on a record's
   chatter thread.
 - `call_method` -- Call any public method on a model or recordset
