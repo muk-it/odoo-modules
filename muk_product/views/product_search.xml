@@ -7,8 +7,8 @@
         <field name="model">muk_product.product_search</field>
         <field name="arch" type="xml">
             <form>
-                <field 
-                    name="search_value" 
+                <field
+                    name="search_value"
                     nolabel="1"
                     placeholder="Insert search values..."
                 />

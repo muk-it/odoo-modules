@@ -5,6 +5,7 @@ from . import test_product_code_uniqueness
 from . import test_product_display_name_search
 from . import test_product_template
 from . import test_product_search
+from . import test_product_category
 from . import test_res_config_settings
 from . import test_migration
 from . import test_js

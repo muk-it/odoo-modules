@@ -79,7 +79,7 @@
                 id="menu_product_category"
                 sequence="5"
                 name="Product Categories"
-                action="product.product_category_action_form"
+                action="action_product_category"
             />
             <menuitem
                 id="menu_product_tag"

@@ -170,6 +170,11 @@ msgid "Create a new product"
 msgstr "Crear un nuevo producto"
 
 #. module: muk_product
+#: model_terms:ir.actions.act_window,help:muk_product.action_product_category
+msgid "Create a new product category"
+msgstr "Crear una nueva categoría de producto"
+
+#. module: muk_product
 #: model_terms:ir.actions.act_window,help:muk_product.action_product
 msgid "Create a new product variant"
 msgstr "Crear una nueva variante de producto"
@@ -301,6 +306,12 @@ msgid "MuK Product"
 msgstr "MuK Producto"
 
 #. module: muk_product
+#: model_terms:ir.actions.act_window,help:muk_product.action_product_category
+msgid "Nest categories under a parent to group your products."
+msgstr ""
+"Anide las categorías bajo una categoría padre para agrupar sus productos."
+
+#. module: muk_product
 #: model_terms:ir.actions.act_window,help:muk_product.action_product_document
 msgid "No product documents yet"
 msgstr "Todavía no hay documentos de productos"
@@ -363,7 +374,9 @@ msgid "Product Barcode Automation"
 msgstr "Automatización de código de barras de producto"
 
 #. module: muk_product
+#: model:ir.actions.act_window,name:muk_product.action_product_category
 #: model:ir.ui.menu,name:muk_product.menu_product_category
+#: model_terms:ir.ui.view,arch_db:muk_product.view_product_category_treelist
 msgid "Product Categories"
 msgstr "Categorías de producto"
 
@@ -412,6 +425,7 @@ msgstr "Variantes de producto"
 #: model:ir.actions.act_window,name:muk_product.action_product_template
 #: model:ir.ui.menu,name:muk_product.menu_main
 #: model:ir.ui.menu,name:muk_product.menu_product_template
+#: model_terms:ir.ui.view,arch_db:muk_product.view_product_category_treelist
 #: model_terms:ir.ui.view,arch_db:muk_product.view_res_config_settings_form
 msgid "Products"
 msgstr "Productos"

@@ -5,7 +5,7 @@
         This module gives you a quick view of all your products,
         accessible from your home menu.
     """,
-    'version': '20.0.1.5.1',
+    'version': '20.0.1.6.0',
     'category': 'Sales/Product',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -17,6 +17,7 @@
     'depends': [
         'product',
         'muk_web_utils',
+        'muk_web_tree',
     ],
     'data': [
         'security/ir.access.csv',
@@ -26,6 +27,7 @@
         'views/product_document.xml',
         'views/product_combo.xml',
         'views/product_pricelist_item.xml',
+        'views/product_category.xml',
         'views/res_config_settings.xml',
         'views/product_search.xml',
         'views/menu.xml',

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_product_category_treelist" model="ir.ui.view">
+        <field name="name">product.category.treelist</field>
+        <field name="model">product.category</field>
+        <field name="arch" type="xml">
+            <treelist string="Product Categories" editable="bottom" draggable="1">
+                <field name="name"/>
+                <field name="product_count" string="Products"/>
+                <field
+                    name="company_id"
+                    groups="base.group_multi_company"
+                    optional="hide"
+                />
+            </treelist>
+        </field>
+    </record>
+
+    <record id="action_product_category" model="ir.actions.act_window">
+        <field name="name">Product Categories</field>
+        <field name="path">product-category-trees</field>
+        <field name="explanation">Opens the product categories as a tree, with the subcategories nested under their parent. Use this when the user wants to browse, create, rename or move product categories within the category hierarchy.</field>
+        <field name="res_model">product.category</field>
+        <field name="view_mode">treelist,list,form</field>
+        <field name="view_id" ref="view_product_category_treelist"/>
+        <field name="search_view_id" ref="product.product_category_search_view"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a new product category
+            </p>
+            <p>
+                Nest categories under a parent to group your products.
+            </p>
+        </field>
+    </record>
+
+</odoo>
