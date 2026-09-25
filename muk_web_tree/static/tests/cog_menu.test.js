@@ -1,11 +1,17 @@
 import { expect, test } from '@odoo/hoot';
-import { contains, mountView, patchWithCleanup } from '@web/../tests/web_test_helpers';
+import {
+    contains,
+    mountView,
+    patchWithCleanup,
+    toggleMenuItem,
+    toggleSearchBarMenu,
+} from '@web/../tests/web_test_helpers';
 import { download } from '@web/core/network/download';
 
 import { collapseAllItem } from '@muk_web_group/search/collapse_all/collapse_all';
 import { expandAllItem } from '@muk_web_group/search/expand_all/expand_all';
 
-import { defineTreeModels, rowNames, TREE_ARCH } from './helpers/models';
+import { defineTreeModels, rowNames, SEARCH_ARCH, TREE_ARCH } from './helpers/models';
 
 defineTreeModels();
 
@@ -74,7 +80,12 @@ test('export all sends the parent field of the tree', async () => {
     patchWithCleanup(download, {
         _download: (options) => {
             const { context, fields } = JSON.parse(options.data.data);
-            expect.step([options.url, context.treelist_parent_field, fields.length]);
+            expect.step([
+                options.url,
+                context.treelist_parent_field,
+                context.treelist_search,
+                fields.length,
+            ]);
             return Promise.resolve();
         },
     });
@@ -82,9 +93,15 @@ test('export all sends the parent field of the tree', async () => {
         type: 'treelist',
         resModel: 'category',
         arch: TREE_ARCH,
+        searchViewArch: SEARCH_ARCH,
         config: { actionType: 'ir.actions.act_window' },
     });
     await contains('.o_cp_action_menus .dropdown-toggle').click();
     await contains('.o_export_all_menu').click();
-    expect.verifySteps([['/web/export/xlsx', 'parent_id', 2]]);
+    expect.verifySteps([['/web/export/xlsx', 'parent_id', false, 2]]);
+    await toggleSearchBarMenu();
+    await toggleMenuItem('Leaf');
+    await contains('.o_cp_action_menus .dropdown-toggle').click();
+    await contains('.o_export_all_menu').click();
+    expect.verifySteps([['/web/export/xlsx', 'parent_id', true, 2]]);
 });

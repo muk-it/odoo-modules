@@ -75,7 +75,8 @@ Usage
   A search inside groups shows only the matches, without greyed-out parents.
 * An Excel export lists every parent before its children, indents the first
   column by level and outlines the rows, so they open and close in Excel too.
-  A record whose parent is not exported starts a new tree.
+  During a search, the greyed-out parents are exported as header rows above
+  their matches, as on the screen.
 * *Expand All* and *Collapse All* in the cog menu open or close every row, or
   the groups when the view is grouped.
 

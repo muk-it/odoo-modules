@@ -35,5 +35,6 @@ mode `treelist`:
 - Click **+** on a row to add a child record directly under it.
 - Drag a row by its handle onto another row to move it there.
 - Grouped, each group shows its records as a tree.
-- Excel exports keep the tree: indented, with collapsible outline rows.
+- Excel exports keep the tree: indented, with collapsible outline rows and,
+  during a search, the parents as header rows.
 - **Expand All** and **Collapse All** in the cog menu open or close every row.

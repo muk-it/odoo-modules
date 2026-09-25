@@ -39,8 +39,8 @@ class TestTreeExport(HttpCase):
     # Helper
     # ----------------------------------------------------------
 
-    def _export(self, **params: object) -> list[tuple[str, int, int]]:
-        """Export the partner names and return each row's name, outline and indent."""
+    def _export(self, **params: object) -> list[tuple[str, int, int, bool]]:
+        """Export the partner names, return each row's name, outline, indent and fill."""
         self.authenticate('admin', 'admin')
         data = {
             'model': 'res.partner',
@@ -62,10 +62,13 @@ class TestTreeExport(HttpCase):
             strings = etree.fromstring(workbook.read('xl/sharedStrings.xml'))
             styles = etree.fromstring(workbook.read('xl/styles.xml'))
         texts = [node.text for node in strings.iterfind('x:si/x:t', XLSX_NAMESPACE)]
-        indents = [
-            int(alignment.get('indent', 0))
-            if (alignment := node.find('x:alignment', XLSX_NAMESPACE)) is not None
-            else 0
+        cell_styles = [
+            (
+                int(alignment.get('indent', 0))
+                if (alignment := node.find('x:alignment', XLSX_NAMESPACE)) is not None
+                else 0,
+                int(node.get('fillId', 0)) > 1,
+            )
             for node in styles.iterfind('x:cellXfs/x:xf', XLSX_NAMESPACE)
         ]
         rows = []
@@ -75,7 +78,7 @@ class TestTreeExport(HttpCase):
                 (
                     texts[int(cell.findtext('x:v', namespaces=XLSX_NAMESPACE))],
                     int(row.get('outlineLevel', 0)),
-                    indents[int(cell.get('s', 0))],
+                    *cell_styles[int(cell.get('s', 0))],
                 )
             )
         return rows
@@ -110,11 +113,11 @@ class TestTreeExport(HttpCase):
         self.assertEqual(
             self._export(),
             [
-                ('Tree Export Alpha', 0, 0),
-                ('Tree Export Alpha One', 1, 1),
-                ('Tree Export Alpha Two', 1, 1),
-                ('Tree Export Leaf', 2, 2),
-                ('Tree Export Beta', 0, 0),
+                ('Tree Export Alpha', 0, 0, False),
+                ('Tree Export Alpha One', 1, 1, False),
+                ('Tree Export Alpha Two', 1, 1, False),
+                ('Tree Export Leaf', 2, 2, False),
+                ('Tree Export Beta', 0, 0, False),
             ],
         )
 
@@ -122,12 +125,25 @@ class TestTreeExport(HttpCase):
         self.assertEqual(
             self._export(ids=[self.beta.id, self.leaf.id, self.alpha_two.id]),
             [
-                ('Tree Export Alpha Two', 0, 0),
-                ('Tree Export Leaf', 1, 1),
-                ('Tree Export Beta', 0, 0),
+                ('Tree Export Alpha Two', 0, 0, False),
+                ('Tree Export Leaf', 1, 1, False),
+                ('Tree Export Beta', 0, 0, False),
             ],
         )
 
     def test_export_without_the_parent_field_stays_flat(self):
         rows = self._export(context={})
-        self.assertEqual({outline for _name, outline, _indent in rows}, {0})
+        self.assertEqual({outline for _name, outline, _indent, _fill in rows}, {0})
+
+    def test_search_export_writes_the_parents_as_headers(self):
+        self.assertEqual(
+            self._export(
+                domain=[('name', '=', 'Tree Export Leaf')],
+                context={'treelist_parent_field': 'parent_id', 'treelist_search': True},
+            ),
+            [
+                ('Tree Export Alpha', 0, 0, True),
+                ('Tree Export Alpha Two', 1, 1, True),
+                ('Tree Export Leaf', 2, 2, False),
+            ],
+        )

@@ -73,7 +73,11 @@ export class TreeRecordList extends DynamicRecordList {
         return Boolean(this.model.treeParentField);
     }
     get context() {
-        return { ...super.context, treelist_parent_field: this.model.treeParentField };
+        return {
+            ...super.context,
+            treelist_parent_field: this.model.treeParentField,
+            treelist_search: this.model.treeIsSearching(),
+        };
     }
     get isRecordCountTrustable() {
         return !this.isTree;
