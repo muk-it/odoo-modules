@@ -30,5 +30,4 @@ from . import test_tools
 from . import test_tour
 from . import test_transaction
 from . import test_uri
-from . import test_url_fetch
 from . import test_version
