@@ -2,8 +2,10 @@
 MuK Product
 ===========
 
-This module gives you a quick view of all your products, accessible from your 
-home menu. Similar to the contact app it centralizes all product-related menus.
+This module gives you a quick view of all your products, accessible from your
+home menu. Similar to the contact app it centralizes all product-related menus
+and settings. New products get their internal reference and barcode from a
+sequence, and a bulk search opens many products at once.
 
 Installation
 ============
@@ -16,7 +18,7 @@ list by clicking on the "Update Apps List" link. Now install the module by
 clicking on the install button.
 
 Upgrade
-============
+=======
 
 To upgrade this module, you need to:
 
@@ -27,13 +29,17 @@ clicking on the upgrade button.
 Configuration
 =============
 
-No additional configuration is needed to use this module.
+The settings are in Products > Settings. The Catalog block switches on variants,
+pricelists, units and packagings and base unit prices. The Automation block
+switches the automatic internal reference and barcode on or off.
 
 Usage
-=============
+=====
 
 After the module is installed, a new product icon will be displayed on the home
 menu. Click on the icon to find all menus related to products in a single menu.
+The Search button next to New opens the bulk search: paste a list of internal
+references, names or barcodes to open exactly those products.
 
 Credits
 =======
