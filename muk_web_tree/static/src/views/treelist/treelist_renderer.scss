@@ -1,0 +1,156 @@
+$mk-treelist-toggle: 1.25rem;
+.o_list_renderer {
+    --mk-treelist-indent: 1.25rem;
+    --mk-treelist-gutter: 0.25rem;
+    @include media-breakpoint-down(md) {
+        --mk-treelist-indent: 0.75rem;
+    }
+    &.mk_treelist_draggable_rows {
+        --mk-treelist-gutter: 1rem;
+    }
+    .mk_treelist_header {
+        padding-inline-start: calc(
+            var(--mk-treelist-gutter) + #{$mk-treelist-toggle} + 0.25rem
+        ) !important;
+    }
+    .mk_treelist_cell {
+        position: relative;
+        padding-inline-start: calc(
+            var(--mk-treelist-gutter) + var(--mk-treelist-level, 0) *
+                var(--mk-treelist-indent) + #{$mk-treelist-toggle} + 0.25rem
+        ) !important;
+        &::before {
+            content: '';
+            position: absolute;
+            inset-block: 0;
+            inset-inline-start: calc(
+                var(--mk-treelist-gutter) + #{$mk-treelist-toggle} / 2
+            );
+            width: calc(var(--mk-treelist-level, 0) * var(--mk-treelist-indent));
+            background-image: repeating-linear-gradient(
+                to right,
+                $border-color 0 1px,
+                transparent 1px var(--mk-treelist-indent)
+            );
+            pointer-events: none;
+        }
+        .mk_treelist_controls {
+            position: absolute;
+            inset-block: 0;
+            inset-inline-start: calc(
+                var(--mk-treelist-gutter) + var(--mk-treelist-level, 0) *
+                    var(--mk-treelist-indent)
+            );
+            display: flex;
+            align-items: center;
+        }
+        .mk_treelist_handle {
+            position: absolute;
+            inset-block: 0;
+            inset-inline-start: 0;
+            display: flex;
+            align-items: center;
+            width: 1rem;
+            cursor: grab;
+            opacity: 0;
+            color: $text-muted;
+            transition: opacity 0.15s;
+        }
+        .mk_treelist_toggle,
+        .mk_treelist_add {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: $mk-treelist-toggle;
+            height: $mk-treelist-toggle;
+            border-radius: $border-radius-sm;
+            background-color: transparent;
+            color: $text-muted;
+            line-height: 1;
+            &:hover,
+            &:focus-visible {
+                background-color: $gray-200;
+                color: $body-color;
+            }
+        }
+        .mk_treelist_toggle {
+            .oi {
+                transition: transform 0.15s ease-in-out;
+            }
+            &.mk_treelist_expanded .oi {
+                transform: rotate(90deg);
+            }
+            .spinner-border {
+                width: 0.75rem;
+                height: 0.75rem;
+                border-width: 0.125rem;
+            }
+        }
+        .mk_treelist_add {
+            position: absolute;
+            inset-block-start: 50%;
+            inset-inline-end: 0.25rem;
+            transform: translateY(-50%);
+            display: none;
+        }
+    }
+    &.mk_treelist_addable_rows .o_data_row .mk_treelist_cell {
+        padding-inline-end: calc(#{$mk-treelist-toggle} + 0.5rem);
+    }
+    .o_data_row:hover .mk_treelist_cell {
+        .mk_treelist_handle {
+            opacity: 1;
+        }
+        .mk_treelist_add {
+            display: inline-flex;
+        }
+    }
+    @media (hover: none) {
+        .mk_treelist_cell .mk_treelist_handle {
+            opacity: 1;
+        }
+        .mk_treelist_cell .mk_treelist_add {
+            display: inline-flex;
+        }
+    }
+    .mk_treelist_rollup {
+        font-weight: $font-weight-semibold;
+    }
+    .mk_treelist_context > td {
+        color: $text-muted;
+    }
+    .mk_treelist_cell .mk_treelist_pager {
+        position: absolute;
+        inset-block-start: 50%;
+        inset-inline-end: calc(#{$mk-treelist-toggle} + 0.5rem);
+        transform: translateY(-50%);
+        font-size: $font-size-sm;
+    }
+    .mk_treelist_placeholder {
+        visibility: hidden;
+    }
+    .mk_treelist_dragged {
+        margin-block-start: 2rem;
+        margin-inline-start: 1.5rem;
+        opacity: 0.9;
+        box-shadow: $box-shadow;
+        > td {
+            background-color: $o-view-background-color;
+        }
+    }
+    .mk_treelist_drop_target > td {
+        background-color: rgba($primary, 0.12);
+        &:first-child {
+            box-shadow: inset 3px 0 0 $primary;
+        }
+    }
+    .mk_treelist_drop_above > td {
+        box-shadow: inset 0 2px 0 $primary;
+    }
+    .mk_treelist_drop_below > td {
+        box-shadow: inset 0 -2px 0 $primary;
+    }
+    &.mk_treelist_drop_root thead th {
+        box-shadow: inset 0 -2px 0 $primary;
+    }
+}

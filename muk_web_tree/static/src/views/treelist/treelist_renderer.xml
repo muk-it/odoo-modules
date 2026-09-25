@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t
+        t-name="muk_web_tree.TreeListRenderer"
+        t-inherit="web.ListRenderer"
+        t-inherit-mode="primary"
+    >
+        <xpath expr="//div[hasclass('o_list_renderer')]" position="attributes">
+            <attribute name="t-att-class">this.treeRendererClass</attribute>
+        </xpath>
+        <xpath expr="//table" position="attributes">
+            <attribute name="t-att-role">this.isTree ? 'treegrid' : undefined</attribute>
+        </xpath>
+    </t>
+
+    <t t-name="muk_web_tree.TreeListRenderer.Toggle">
+        <t t-set="treeNode" t-value="this.getTreeNode(record)"/>
+        <span
+            t-if="this.canDragRecords and record.resId"
+            class="mk_treelist_handle oi"
+            data-icon="drag_indicator"
+            t-on-click.stop=""
+        />
+        <span class="mk_treelist_controls">
+            <button
+                t-if="treeNode.count"
+                type="button"
+                class="mk_treelist_toggle btn btn-link p-0"
+                t-att-class="{ mk_treelist_expanded: treeNode.expanded }"
+                tabindex="-1"
+                t-att-aria-label="this.getTreeToggleLabel(record)"
+                t-att-title="this.getTreeToggleLabel(record)"
+                t-on-click.stop="() => this.toggleRecord(record)"
+            >
+                <span
+                    t-if="this.treeLoadingId() === record.resId"
+                    class="spinner-border"
+                    role="status"
+                />
+                <i t-else="" class="oi" data-icon="chevron_right"/>
+            </button>
+        </span>
+        <span
+            t-if="this.showTreePager(record)"
+            class="mk_treelist_pager"
+            t-on-click.stop=""
+        >
+            <Pager t-props="this.getTreePagerProps(record)"/>
+        </span>
+        <button
+            t-if="this.canAddChild and record.resId and !record.isInEdition"
+            type="button"
+            class="mk_treelist_add btn btn-link p-0"
+            tabindex="-1"
+            aria-label="Add a child"
+            title="Add a child"
+            t-on-click.stop="() => this.onAddChild(record)"
+        >
+            <i class="oi" data-icon="add"/>
+        </button>
+    </t>
+
+    <t
+        t-name="muk_web_tree.TreeListRenderer.RecordRow"
+        t-inherit="web.ListRenderer.RecordRow"
+        t-inherit-mode="primary"
+    >
+        <xpath expr="//tr[hasclass('o_data_row')]" position="attributes">
+            <attribute name="t-att-data-res-id">record.resId</attribute>
+            <attribute name="t-att-aria-level">this.getTreeRowLevel(record)</attribute>
+            <attribute name="t-att-aria-expanded">this.getTreeRowExpanded(record)</attribute>
+        </xpath>
+        <xpath
+            expr="//td[hasclass('o_list_record_selector')]/CheckBox"
+            position="attributes"
+        >
+            <attribute name="disabled">!_canSelectRecord or record.treeNode.context</attribute>
+        </xpath>
+        <xpath
+            expr="//t[@t-if=&quot;column.type === 'field'&quot;]/td"
+            position="attributes"
+        >
+            <attribute name="t-att-style">this.getTreeCellStyle(column, record)</attribute>
+            <attribute name="t-att-title">this.getTreeCellTitle(column, record)</attribute>
+        </xpath>
+        <xpath
+            expr="//t[@t-if=&quot;column.type === 'field'&quot;]/td/t[@t-if='!isInvisible']"
+            position="before"
+        >
+            <t
+                t-if="this.isTreeColumn(column)"
+                t-call="muk_web_tree.TreeListRenderer.Toggle"
+            />
+        </xpath>
+        <xpath
+            expr="//t[@t-if=&quot;column.type === 'column_group'&quot;]/td"
+            position="attributes"
+        >
+            <attribute name="t-att-style">this.getTreeCellStyle(column, record)</attribute>
+        </xpath>
+        <xpath
+            expr="//t[@t-if=&quot;column.type === 'column_group'&quot;]/td/t[@t-foreach='column.fields']"
+            position="before"
+        >
+            <t
+                t-if="this.isTreeColumn(column)"
+                t-call="muk_web_tree.TreeListRenderer.Toggle"
+            />
+        </xpath>
+    </t>
+
+</templates>
