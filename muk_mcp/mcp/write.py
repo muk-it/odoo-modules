@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import base64
 from typing import Any
 
-from odoo import _, api, models
+from odoo import _, api, fields, models
 from odoo.exceptions import UserError
+from odoo.tools.mimetypes import guess_mimetype
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
 from odoo.addons.muk_mcp.tools.descriptions import (
@@ -12,6 +14,7 @@ from odoo.addons.muk_mcp.tools.descriptions import (
     model_field,
 )
 from odoo.addons.muk_mcp.tools.parser import normalize_ids
+from odoo.addons.muk_mcp.tools.url_fetch import fetch_url
 
 
 class MCPMixin(models.AbstractModel):
@@ -145,3 +148,88 @@ class MCPMixin(models.AbstractModel):
         self._mcp_assert_records_allowed(model, target_ids)
         self._resolve_model(model).browse(target_ids).unlink()
         return {'success': True, 'deleted_ids': target_ids}
+
+    @api.model
+    @mcp_tool(
+        name='set_binary_from_url',
+        description=(
+            'Use this to set an image or file field (e.g. image_1920 of a '
+            'product) from a public https URL. Odoo downloads the file '
+            'itself. NEVER pass base64 file content in tool arguments. For '
+            'files the user uploaded or that only exist in the sandbox, '
+            'first create a file_storage share link on the platform and '
+            'pass that share URL.'
+        ),
+        input_schema={
+            'type': 'object',
+            'properties': {
+                'model': model_field(),
+                'id': {
+                    'type': 'integer',
+                    'description': 'ID of the record to update.',
+                },
+                'field': {
+                    'type': 'string',
+                    'description': (
+                        'Name of the binary or image field to set (e.g. image_1920).'
+                    ),
+                },
+                'url': {
+                    'type': 'string',
+                    'description': (
+                        'Public https:// URL of the file (max. 20 MB). '
+                        'Private and internal addresses are rejected.'
+                    ),
+                },
+                'context': context_field(),
+            },
+            'required': ['model', 'id', 'field', 'url'],
+        },
+        category='write',
+    )
+    def _mcp_set_binary_from_url(
+        self,
+        model: str,
+        id: int,
+        field: str,
+        url: str,
+    ) -> dict[str, Any]:
+        """Download ``url`` into the binary ``field`` of one record and describe it.
+
+        :raise UserError: when ``field`` is not a binary field, the record does
+            not exist, the download is refused or fails, or an image field
+            receives content that is not an image.
+        """
+        target = self._resolve_model(model)
+        definition = target._fields.get(field)
+        if definition is None or definition.type != 'binary':
+            raise UserError(
+                _(
+                    'Field %(field)r is not a binary field on %(model)s.',
+                    field=field,
+                    model=model,
+                ),
+            )
+        if not (record := target.browse(id).exists()):
+            raise UserError(
+                _('%(model)s(%(id)s) does not exist.', model=model, id=id),
+            )
+        self._mcp_assert_records_allowed(model, [record.id])
+        body, mimetype = fetch_url(url)
+        sniffed = guess_mimetype(body)
+        if isinstance(definition, fields.Image) and not sniffed.startswith('image/'):
+            raise UserError(
+                _(
+                    'The file at %(url)s is not an image (%(mimetype)s).',
+                    url=url,
+                    mimetype=sniffed,
+                ),
+            )
+        record.write({field: base64.b64encode(body)})
+        return {
+            'success': True,
+            'id': record.id,
+            'field': field,
+            'size': len(body),
+            'mimetype': mimetype or sniffed,
+        }

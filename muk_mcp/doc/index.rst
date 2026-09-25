@@ -224,7 +224,7 @@ Usage
 =====
 
 Once connected, the AI client automatically discovers all available
-tools via the ``tools/list`` MCP method. The module ships with 18
+tools via the ``tools/list`` MCP method. The module ships with 19
 built-in tools organized into two categories:
 
 **Read Tools (13)**
@@ -269,12 +269,14 @@ built-in tools organized into two categories:
    only materializes bytes (via ``read_resource`` or the protocol-level
    ``resources/read``) when it actually needs to *see* the file.
 
-**Write Tools (5)**
+**Write Tools (6)**
 
 - ``create_records`` — Create new records with support for relational
   field command tuples.
 - ``update_records`` — Update existing records by ID (partial writes).
 - ``delete_records`` — Permanently delete records by ID.
+- ``set_binary_from_url`` — Set a binary or image field from a public
+  https URL; Odoo downloads the file itself (SSRF-guarded, 20 MB cap).
 - ``post_message`` — Post comments or internal notes on a record's
   chatter thread.
 - ``call_method`` — Call any public method on a model or recordset
