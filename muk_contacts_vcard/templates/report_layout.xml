@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <template id="contact_name" inherit_id="muk_contacts.contact_name">
+        <xpath expr="//div" position="replace">
+            <div t-if="'name' in fields">
+                <t t-if="object.parent_name">
+                    <div itemprop="company" t-out="object.parent_name"/>
+                    <div
+                        t-if="object.department"
+                        itemprop="department"
+                        t-out="object.department"
+                    />
+                </t>
+                <div t-if="object.name" itemprop="name" t-out="object.formatted_name"/>
+                <t
+                    t-if="options.get('country_image') and 'country_id' in fields and object.country_id.image_url"
+                >
+                    <span
+                        t-field="object.country_id.image_url"
+                        t-options="{'widget': 'image_url', 'class': 'country_flag'}"
+                    />
+                </t>
+            </div>
+        </xpath>
+    </template>
+
+</odoo>

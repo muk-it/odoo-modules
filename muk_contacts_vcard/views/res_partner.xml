@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_partner_list" model="ir.ui.view">
+        <field name="name">res.partner.list</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="muk_contacts.view_partner_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="attributes">
+                <attribute name="optional">hide</attribute>
+            </xpath>
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="firstname" optional="show" invisible="is_company"/>
+                <field name="lastname" optional="show" invisible="is_company"/>
+            </xpath>
+            <xpath expr="//field[@name='phone']" position="after">
+                <field name="mobile" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_partner_simple_form" model="ir.ui.view">
+        <field name="name">res.partner.simplified.form</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_simple_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='phone'][@widget='phone']" position="attributes">
+                <attribute name="options">{'enable_sms': false, 'dial_field': 'phone_formatted'}</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_partner_form" model="ir.ui.view">
+        <field name="name">res.partner.form</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="muk_contacts.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//h1/field[@name='name']" position="attributes">
+                <attribute name="readonly">not is_company and type == 'contact'</attribute>
+                <attribute name="force_save">1</attribute>
+            </xpath>
+            <xpath expr="//sheet//label[@for='parent_id']" position="before">
+                <label
+                    for="firstname"
+                    string="First, Middle and Last Name"
+                    class="d-md-none"
+                    invisible="is_company or type != 'contact'"
+                />
+                <div
+                    class="d-flex align-items-baseline w-md-50 gap-2"
+                    invisible="is_company or type != 'contact'"
+                >
+                    <i
+                        class="oi d-none d-md-inline-flex"
+                        data-icon="person"
+                        title="Contact Name"
+                    />
+                    <div class="d-flex flex-wrap flex-sm-nowrap align-items-center w-100">
+                        <field
+                            name="firstname"
+                            placeholder="Firstname"
+                            class="flex-fill w-100 w-sm-auto pe-sm-1"
+                        />
+                        <field
+                            name="middlename"
+                            placeholder="Middlename"
+                            class="flex-fill w-100 w-sm-auto ps-sm-1 pe-sm-1"
+                        />
+                        <field
+                            name="lastname"
+                            placeholder="Lastname"
+                            class="flex-fill w-100 w-sm-auto ps-sm-1"
+                        />
+                    </div>
+                </div>
+            </xpath>
+            <xpath expr="//field[@name='phone']/.." position="after">
+                <label for="mobile" class="d-md-none"/>
+                <div class="d-flex align-items-baseline w-md-50 gap-2">
+                    <i
+                        class="oi d-none d-md-inline-flex"
+                        data-icon="smartphone"
+                        title="Mobile"
+                    />
+                    <field name="mobile_sanitized" invisible="1"/>
+                    <field name="mobile_formatted" invisible="1"/>
+                    <field name="mobile_blacklisted" invisible="1" groups="base.group_user"/>
+                    <button
+                        name="phone_action_blacklist_remove"
+                        type="object"
+                        title="This mobile number is blacklisted for SMS. Click to unblacklist."
+                        class="oi text-danger"
+                        data-icon="block"
+                        context="{'default_phone': mobile}"
+                        groups="base.group_user"
+                        invisible="not mobile_blacklisted"
+                    />
+                    <field name="mobile" widget="phone" placeholder="Mobile"/>
+                </div>
+            </xpath>
+            <xpath
+                expr="//sheet//field[@name='phone'][@widget='phone']"
+                position="attributes"
+            >
+                <attribute name="options">{'dial_field': 'phone_formatted'}</attribute>
+            </xpath>
+            <xpath
+                expr="//field[@name='child_ids']/form//field[@name='phone'][@widget='phone']"
+                position="attributes"
+            >
+                <attribute name="options">{'dial_field': 'phone_formatted'}</attribute>
+            </xpath>
+            <xpath expr="//div[@name='identifiers']" position="attributes">
+                <attribute name="invisible">parent_id</attribute>
+            </xpath>
+            <xpath expr="//sheet/group//field[@name='function']" position="before">
+                <field name="department" placeholder="e.g. IT" invisible="is_company"/>
+            </xpath>
+            <xpath expr="//sheet/group//field[@name='function']" position="after">
+                <field
+                    name="role"
+                    placeholder="e.g. Compliance Oversight"
+                    invisible="is_company or not parent_id"
+                />
+            </xpath>
+            <xpath expr="//field[@name='properties']/.." position="before">
+                <separator string="Personal Information" invisible="is_company"/>
+                <group invisible="is_company">
+                    <group>
+                        <field
+                            name="gender"
+                            widget="radio"
+                            options="{'horizontal': true}"
+                        />
+                        <field
+                            name="honorific_prefix_ids"
+                            string="Prefix"
+                            widget="many2many_tags"
+                            placeholder="e.g. Dr."
+                            context="{'default_position': 'preceding'}"
+                        />
+                        <field
+                            name="honorific_suffix_ids"
+                            string="Suffix"
+                            widget="many2many_tags"
+                            placeholder="e.g. B.Sc."
+                            context="{'default_position': 'following'}"
+                        />
+                    </group>
+                    <group>
+                        <field name="nickname" placeholder="e.g. Mike"/>
+                        <field name="birthdate_placeholder" invisible="1"/>
+                        <field
+                            name="birthdate"
+                            options="{'placeholder_field': 'birthdate_placeholder'}"
+                        />
+                        <field
+                            name="email2"
+                            widget="email"
+                            placeholder="e.g. home@example.com"
+                        />
+                        <field
+                            name="phone2"
+                            widget="phone"
+                            placeholder="e.g. +1 111 222 3333"
+                        />
+                    </group>
+                </group>
+                <separator string="Additional Information" invisible="not properties"/>
+            </xpath>
+            <xpath expr="//field[@name='ref']" position="after">
+                <field name="tz"/>
+            </xpath>
+            <xpath
+                expr="//field[@name='child_ids']//list//field[@name='phone']"
+                position="after"
+            >
+                <field name="mobile" optional="hide"/>
+            </xpath>
+            <xpath
+                expr="//field[@name='child_ids']/form//field[@name='phone']/.."
+                position="after"
+            >
+                <label for="mobile" class="d-md-none"/>
+                <div class="d-flex align-items-baseline w-md-50 gap-2">
+                    <i
+                        class="oi d-none d-md-block"
+                        data-icon="smartphone"
+                        title="Mobile"
+                    />
+                    <field name="mobile_sanitized" invisible="1"/>
+                    <field name="mobile_formatted" invisible="1"/>
+                    <field name="mobile_blacklisted" invisible="1" groups="base.group_user"/>
+                    <button
+                        name="phone_action_blacklist_remove"
+                        type="object"
+                        title="This mobile number is blacklisted for SMS. Click to unblacklist."
+                        class="oi text-danger"
+                        data-icon="block"
+                        context="{'default_phone': mobile}"
+                        groups="base.group_user"
+                        invisible="not mobile_blacklisted"
+                    />
+                    <field name="mobile" widget="phone" placeholder="Mobile"/>
+                </div>
+            </xpath>
+            <xpath
+                expr="//field[@name='child_ids']/form//label[@for='email']"
+                position="before"
+            >
+                <label
+                    for="firstname"
+                    string="First, Middle and Last Name"
+                    class="d-md-none"
+                    invisible="type != 'contact'"
+                />
+                <div
+                    class="d-flex align-items-baseline w-md-50 gap-2"
+                    invisible="type != 'contact'"
+                >
+                    <i
+                        class="oi d-none d-md-block"
+                        data-icon="person"
+                        title="Contact Name"
+                    />
+                    <div class="d-flex flex-wrap flex-sm-nowrap align-items-center w-100">
+                        <field
+                            name="firstname"
+                            placeholder="Firstname"
+                            class="flex-fill w-100 w-sm-auto pe-sm-1"
+                        />
+                        <field
+                            name="middlename"
+                            placeholder="Middlename"
+                            class="flex-fill w-100 w-sm-auto ps-sm-1 pe-sm-1"
+                        />
+                        <field
+                            name="lastname"
+                            placeholder="Lastname"
+                            class="flex-fill w-100 w-sm-auto ps-sm-1"
+                        />
+                    </div>
+                </div>
+            </xpath>
+            <xpath
+                expr="//field[@name='child_ids']/form//label[@for='function']"
+                position="replace"
+            />
+            <xpath
+                expr="//field[@name='child_ids']/form//field[@name='function']/.."
+                position="replace"
+            />
+            <xpath
+                expr="//field[@name='child_ids']/form//group[@name='other_info']"
+                position="after"
+            >
+                <group invisible="type != 'contact'">
+                    <group string="Job Information">
+                        <field name="department" placeholder="e.g. IT"/>
+                        <field name="function" placeholder="e.g. Sales Director"/>
+                        <field name="role" placeholder="e.g. Compliance Oversight"/>
+                    </group>
+                    <group string="Personal Information">
+                        <field
+                            name="gender"
+                            widget="radio"
+                            options="{'horizontal': true}"
+                        />
+                        <field
+                            name="honorific_prefix_ids"
+                            string="Prefix"
+                            widget="many2many_tags"
+                            placeholder="e.g. Dr."
+                            context="{'default_position': 'preceding'}"
+                        />
+                        <field
+                            name="honorific_suffix_ids"
+                            string="Suffix"
+                            widget="many2many_tags"
+                            placeholder="e.g. B.Sc."
+                            context="{'default_position': 'following'}"
+                        />
+                    </group>
+                </group>
+            </xpath>
+            <xpath
+                expr="//field[@name='child_ids']/form//group[@name='other_info']"
+                position="attributes"
+            >
+                <attribute name="string">Address</attribute>
+            </xpath>
+            <xpath
+                expr="//field[@name='child_ids']/form//group[@name='other_info']"
+                position="inside"
+            >
+                <xpath
+                    expr="//field[@name='child_ids']/form//div[@name='div_address']"
+                    position="move"
+                />
+            </xpath>
+            <xpath
+                expr="//field[@name='child_ids']/form//div[@name='div_address']"
+                position="attributes"
+            >
+                <attribute name="colspan">2</attribute>
+            </xpath>
+            <xpath
+                expr="//field[@name='child_ids']/form//group[@name='other_info']/group"
+                position="replace"
+            />
+            <xpath
+                expr="//field[@name='child_ids']/form//label[@for='comment']"
+                position="replace"
+            />
+            <xpath
+                expr="//field[@name='child_ids']/form//field[@name='comment']/.."
+                position="attributes"
+            >
+                <attribute name="string">Notes</attribute>
+            </xpath>
+            <xpath
+                expr="//field[@name='child_ids']/form//field[@name='comment']"
+                position="attributes"
+            >
+                <attribute name="colspan">2</attribute>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
