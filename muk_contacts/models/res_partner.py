@@ -185,14 +185,18 @@ class Partner(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list: list[dict]) -> Partner:
-        """Assign a contact number to new top-level partners lacking one."""
+        """Number new top-level partners; a partner with a parent is no company."""
         for vals in vals_list:
-            if not vals.get('contact_number') and not vals.get('parent_id'):
+            if vals.get('parent_id'):
+                vals['is_company'] = False
+            elif not vals.get('contact_number'):
                 vals['contact_number'] = self._get_next_contact_number()
         return super().create(vals_list)
 
     def write(self, vals: dict) -> bool:
-        """Renumber detached children still carrying an inherited contact number."""
+        """Renumber detached children; a partner given a parent is no company."""
+        if vals.get('parent_id'):
+            vals = {**vals, 'is_company': False}
         if (
             'parent_id' in vals
             and not vals.get('parent_id')

@@ -17,7 +17,7 @@
                 <filter
                     string="Persons"
                     name="type_person"
-                    domain="[('is_company', '=', False)]"
+                    domain="[('is_company', '=', False), ('type', '=', 'contact')]"
                 />
                 <filter
                     string="Companies"

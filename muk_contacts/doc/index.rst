@@ -45,7 +45,8 @@ searched wherever a contact is searched.
 
 The Company switch above the job position tells a top-level contact apart
 as a company or a person. Odoo sets it from the tax ID, and it can be changed
-by hand; a contact that belongs to a company is always a person. The search
+by hand until the tax ID changes again; a contact that belongs to a company is
+always a person. The search
 filters Persons and Companies list either kind.
 
 The default invoice and delivery address are set on the Sales & Purchase tab

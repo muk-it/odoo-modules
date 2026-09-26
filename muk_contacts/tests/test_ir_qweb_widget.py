@@ -16,8 +16,8 @@ class TestIrQwebWidget(TransactionCase):
         html = self.env['ir.qweb.field.contact'].value_to_html(
             contact, {'fields': ['name', 'contact_number']}
         )
-        self.assertIn('Widget Company</span>', html)
-        self.assertIn('Widget Contact</span>', html)
+        self.assertIn('>Widget Company<', html)
+        self.assertIn('>Widget Contact<', html)
         self.assertNotIn('Widget Company, Widget Contact', html)
         self.assertIn(company.contact_number, html)
 

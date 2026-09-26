@@ -27,8 +27,8 @@ class TestCompanyFlag(TransactionCase):
     def test_the_form_shows_the_flag_only_for_top_level_contacts(self):
         company = self.env['res.partner'].create({'name': 'Flag Employer'})
         with Form(self.env['res.partner']) as form:
-            form.name = 'Flag Employee'
             form.is_company = True
+            form.name = 'Flag Employee'
             self.assertFalse(form._get_modifier('is_company', 'invisible'))
             self.assertTrue(form._get_modifier('function', 'invisible'))
             form.parent_id = company
@@ -36,3 +36,25 @@ class TestCompanyFlag(TransactionCase):
             self.assertFalse(form.is_company)
             self.assertFalse(form._get_modifier('function', 'invisible'))
         self.assertFalse(form.record.is_company)
+
+    def test_a_contact_with_a_parent_is_never_a_company(self):
+        company = self.env['res.partner'].create({'name': 'Flag Parent'})
+        child = (
+            self.env['res.partner']
+            .with_context(default_is_company=True)
+            .create({'name': 'Flag Child', 'parent_id': company.id})
+        )
+        self.assertFalse(child.is_company)
+        other = self.env['res.partner'].create(
+            {'name': 'Flag Other', 'is_company': True}
+        )
+        other.write({'parent_id': company.id})
+        self.assertFalse(other.is_company)
+
+    def test_the_company_default_applies_to_new_top_level_contacts(self):
+        partner = (
+            self.env['res.partner']
+            .with_context(default_is_company=True)
+            .create({'name': 'Flag Default'})
+        )
+        self.assertTrue(partner.is_company)
