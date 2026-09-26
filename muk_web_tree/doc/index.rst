@@ -49,6 +49,9 @@ the action's view mode. The view takes the same children and attributes as a
   its siblings to change their order, as in a list.
 * ``rollup="1"`` on a numeric field without a widget - show the total of the
   subtree on each parent row and in the footer.
+* A ``<column>`` as the first column - its fields sit side by side after the
+  chevron, such as an icon before the name. Give it a ``width`` such as
+  ``[240]``: a list sizes a column group by its first field.
 
 Usage
 =====
@@ -73,6 +76,7 @@ Usage
 * Grouped, each group shows its records as a tree and pages its top-level rows.
   A record whose parent falls into another group is a root of its own group.
   A search inside groups shows only the matches, without greyed-out parents.
+* A search panel that the list view shows is shown next to the tree as well.
 * An Excel export lists every parent before its children, indents the first
   column by level and outlines the rows, so they open and close in Excel too.
   During a search, the greyed-out parents are exported as header rows above

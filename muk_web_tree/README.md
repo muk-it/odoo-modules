@@ -25,6 +25,9 @@ mode `treelist`:
   their siblings.
 - `rollup="1"` on a numeric field without a widget -- show subtree totals on
   parent rows and in the footer.
+- A `<column>` as the first column -- its fields sit side by side after the
+  chevron, such as an icon before the name. Give it a `width` such as
+  `[240]`: a list sizes a column group by its first field.
 
 ## Usage
 
@@ -35,6 +38,7 @@ mode `treelist`:
 - Click **+** on a row to add a child record directly under it.
 - Drag a row by its handle onto another row to move it there.
 - Grouped, each group shows its records as a tree.
+- A search panel that the list view shows is shown next to the tree as well.
 - Excel exports keep the tree: indented, with collapsible outline rows and,
   during a search, the parents as header rows.
 - **Expand All** and **Collapse All** in the cog menu open or close every row.
