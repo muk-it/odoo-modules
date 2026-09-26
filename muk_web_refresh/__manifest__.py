@@ -8,11 +8,12 @@
         tab is in the background. A Reload Views server action lets an automation rule
         push a refresh to every open view of a model from the backend.
     """,
-    'version': '20.0.1.1.14',
+    'version': '20.0.1.1.15',
     'category': 'Tools/UI',
     'license': 'LGPL-3',
     'author': 'MuK IT',
     'website': 'http://www.mukit.at',
+    'support': 'support@mukit.at',
     'live_test_url': 'https://youtu.be/dGeMQaWkBbs',
     'contributors': [
         'Mathias Markl <mathias.markl@mukit.at>',
