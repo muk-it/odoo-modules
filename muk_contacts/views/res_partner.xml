@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_partner_search" model="ir.ui.view">
+        <field name="name">res.partner.search</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_res_partner_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='user_id']" position="after">
+                <separator/>
+                <filter
+                    string="Main Contacts"
+                    name="filter_top_level"
+                    domain="[('parent_id', '=', False)]"
+                />
+            </xpath>
+            <xpath expr="//filter[@name='inactive']" position="after">
+                <filter
+                    string="All Contacts"
+                    name="all_contacts"
+                    domain="['|', ('active', '=', False), ('active', '=', True)]"
+                />
+                <separator/>
+                <filter
+                    string="Portal Users"
+                    name="portal_users"
+                    domain="[('partner_share', '=', True), ('user_ids', '!=', False)]"
+                />
+                <filter
+                    string="Internal Users"
+                    name="internal_users"
+                    domain="[('partner_share', '=', False), ('user_ids', '!=', False)]"
+                />
+            </xpath>
+            <xpath expr="//group" position="after">
+                <searchpanel>
+                    <field
+                        name="company_id"
+                        groups="base.group_multi_company"
+                        icon="business"
+                    />
+                    <field name="country_id" icon="public"/>
+                    <field name="category_id" string="Tags" icon="sell" select="multi"/>
+                </searchpanel>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_partner_list" model="ir.ui.view">
+        <field name="name">res.partner.list</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="attributes">
+                <attribute name="decoration-bf">is_company</attribute>
+                <attribute name="decoration-muted">not active</attribute>
+                <attribute name="decoration-info">type == 'delivery'</attribute>
+                <attribute name="decoration-success">type == 'invoice'</attribute>
+                <attribute name="decoration-warning">type == 'other'</attribute>
+            </xpath>
+            <xpath expr="//field[@name='display_name']" position="before">
+                <field
+                    name="contact_kind"
+                    nolabel="1"
+                    widget="selection_icons"
+                    options="{'icons': {'company': 'business', 'person': 'person', 'invoice': 'description', 'delivery': 'local_shipping', 'other': 'deployed_code'}}"
+                    optional="show"
+                />
+                <field
+                    name="linked_user_state"
+                    nolabel="1"
+                    widget="selection_icons"
+                    options="{'icons': {'portal': 'shopping_basket', 'internal': 'work'}}"
+                    optional="hide"
+                />
+                <field
+                    name="comment"
+                    nolabel="1"
+                    widget="text_icon"
+                    options="{'icon': 'sticky_note_2'}"
+                    optional="show"
+                />
+                <field name="contact_number" optional="show"/>
+                <field name="commercial_company_name" string="Company" optional="show"/>
+            </xpath>
+            <xpath expr="//field[@name='display_name']" position="attributes">
+                <attribute name="string">Complete Name</attribute>
+                <attribute name="optional">hide</attribute>
+            </xpath>
+            <xpath expr="//field[@name='display_name']" position="after">
+                <field name="name" optional="show" invisible="is_company"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_partner_treelist" model="ir.ui.view">
+        <field name="name">res.partner.treelist</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <treelist
+                string="Contacts"
+                draggable="1"
+                decoration-bf="is_company"
+                decoration-muted="not active"
+                decoration-info="type == 'delivery'"
+                decoration-success="type == 'invoice'"
+                decoration-warning="type == 'other'"
+            >
+                <column string="Name" width="[240]">
+                    <field
+                        name="contact_kind"
+                        nolabel="1"
+                        widget="selection_icons"
+                        options="{'icons': {'company': 'business', 'person': 'person', 'invoice': 'description', 'delivery': 'local_shipping', 'other': 'deployed_code'}}"
+                    />
+                    <field name="name"/>
+                </column>
+                <field
+                    name="linked_user_state"
+                    nolabel="1"
+                    widget="selection_icons"
+                    options="{'icons': {'portal': 'shopping_basket', 'internal': 'work'}}"
+                    optional="hide"
+                />
+                <field
+                    name="comment"
+                    nolabel="1"
+                    widget="text_icon"
+                    options="{'icon': 'sticky_note_2'}"
+                    optional="show"
+                />
+                <field name="contact_number" optional="show"/>
+                <field name="function" optional="hide"/>
+                <field name="vat" optional="hide"/>
+                <field name="email" optional="show"/>
+                <field name="phone" class="o_force_ltr" optional="show"/>
+                <field
+                    name="user_id"
+                    widget="many2one_avatar_user"
+                    optional="hide"
+                />
+                <field name="street" optional="hide"/>
+                <field name="city" optional="show"/>
+                <field name="state_id" optional="hide"/>
+                <field name="country_id" optional="show"/>
+                <field
+                    name="application_statistics"
+                    widget="contact_statistics"
+                    nolabel="1"
+                    optional="show"
+                />
+                <field
+                    name="category_id"
+                    widget="many2many_tags"
+                    options="{'color_field': 'color'}"
+                    optional="hide"
+                />
+                <field
+                    name="company_id"
+                    groups="base.group_multi_company"
+                    optional="hide"
+                />
+            </treelist>
+        </field>
+    </record>
+
+    <record id="view_partner_form" model="ir.ui.view">
+        <field name="name">res.partner.form</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//span[@name='address_name']" position="before">
+                <label for="contact_number" invisible="parent_id"/>
+                <div class="o_row align-items-center" invisible="parent_id">
+                    <field
+                        name="contact_number"
+                        placeholder="is filled in automatically"
+                        class="w-100"
+                    />
+                    <button
+                        name="action_generate_contact_number"
+                        type="object"
+                        icon="add_circle"
+                        class="btn-link p-0 ms-1"
+                        title="Generate Contact Number"
+                        invisible="contact_number or parent_id"
+                    />
+                </div>
+            </xpath>
+            <xpath expr="//group[@name='misc']" position="before">
+                <group string="Default Address" name="default_address">
+                    <field name="default_invoice_partner_id" string="Invoice"/>
+                    <field name="default_delivery_partner_id" string="Delivery"/>
+                </group>
+            </xpath>
+            <xpath expr="//field[@name='child_ids']" position="attributes">
+                <attribute name="mode">list,kanban</attribute>
+            </xpath>
+            <xpath expr="//field[@name='child_ids']" position="inside">
+                <list decoration-bf="is_company">
+                    <field
+                        name="avatar_128"
+                        widget="image"
+                        options="{'size': [24, 24], 'img_class': 'o_avatar rounded border object-fit-contain'}"
+                        width="30"
+                        nolabel="1"
+                    />
+                    <field name="name"/>
+                    <field name="phone" optional="show"/>
+                    <field name="email" optional="show"/>
+                    <field name="street" optional="hide"/>
+                    <field name="zip" optional="hide"/>
+                    <field name="city" optional="show"/>
+                    <field name="country_id" optional="hide"/>
+                    <field
+                        name="type"
+                        widget="badge"
+                        decoration-info="type == 'delivery'"
+                        decoration-success="type == 'invoice'"
+                        decoration-warning="type == 'other'"
+                    />
+                    <button
+                        name="action_view_partner"
+                        type="object"
+                        string="Open View"
+                        class="btn btn-link text-primary"
+                    />
+                </list>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_contacts_view_treelist" model="ir.actions.act_window.view">
+        <field name="sequence" eval="-1"/>
+        <field name="view_mode">treelist</field>
+        <field name="view_id" ref="view_partner_treelist"/>
+        <field name="act_window_id" ref="contacts.action_contacts"/>
+    </record>
+
+    <record id="contacts.action_contacts_view_tree" model="ir.actions.act_window.view">
+        <field name="sequence" eval="2"/>
+    </record>
+
+</odoo>
