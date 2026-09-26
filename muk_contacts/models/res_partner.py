@@ -21,6 +21,11 @@ class Partner(models.Model):
         index=True,
     )
 
+    is_company = fields.Boolean(
+        readonly=False,
+        default=None,
+    )
+
     contact_kind = fields.Selection(
         compute='_compute_contact_kind',
         selection=[

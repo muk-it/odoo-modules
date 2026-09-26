@@ -43,6 +43,11 @@ The contact number sits above the address on the contact form. A contact
 without one gets one with the button beside the field. The number can be
 searched wherever a contact is searched.
 
+The Company switch above the job position tells a top-level contact apart
+as a company or a person. Odoo sets it from the tax ID, and it can be changed
+by hand; a contact that belongs to a company is always a person. The search
+filters Persons and Companies list either kind.
+
 The default invoice and delivery address are set on the Sales & Purchase tab
 and are used by sales orders instead of the first matching address.
 

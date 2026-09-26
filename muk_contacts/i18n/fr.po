@@ -52,7 +52,20 @@ msgid "Another entry with the same contact number already exists."
 msgstr "Une autre entrée avec le même numéro de contact existe déjà."
 
 #. module: muk_contacts
+#: model:ir.model.fields,help:muk_contacts.field_res_partner__is_company
+#: model:ir.model.fields,help:muk_contacts.field_res_users__is_company
+msgid "Check if the contact is a company, otherwise it is a person"
+msgstr ""
+"Cochez si ce contact est une société, sinon il s'agit d'un particulier"
+
+#. module: muk_contacts
+#: model_terms:ir.ui.view,arch_db:muk_contacts.view_partner_search
+msgid "Companies"
+msgstr "Sociétés"
+
+#. module: muk_contacts
 #: model:ir.model.fields.selection,name:muk_contacts.selection__res_partner__contact_kind__company
+#: model_terms:ir.ui.view,arch_db:muk_contacts.view_partner_form
 #: model_terms:ir.ui.view,arch_db:muk_contacts.view_partner_list
 msgid "Company"
 msgstr "Société"
@@ -171,6 +184,12 @@ msgid "Invoice Address"
 msgstr "Adresse de facturation"
 
 #. module: muk_contacts
+#: model:ir.model.fields,field_description:muk_contacts.field_res_partner__is_company
+#: model:ir.model.fields,field_description:muk_contacts.field_res_users__is_company
+msgid "Is a Company"
+msgstr "Est une société"
+
+#. module: muk_contacts
 #: model:ir.model.fields,field_description:muk_contacts.field_res_partner__linked_user_id
 #: model:ir.model.fields,field_description:muk_contacts.field_res_users__linked_user_id
 msgid "Linked User"
@@ -216,6 +235,11 @@ msgstr "Autre adresse"
 #: model:ir.model.fields.selection,name:muk_contacts.selection__res_partner__contact_kind__person
 msgid "Person"
 msgstr "Personne"
+
+#. module: muk_contacts
+#: model_terms:ir.ui.view,arch_db:muk_contacts.view_partner_search
+msgid "Persons"
+msgstr "Personnes"
 
 #. module: muk_contacts
 #: model:ir.model.fields.selection,name:muk_contacts.selection__res_partner__linked_user_state__portal

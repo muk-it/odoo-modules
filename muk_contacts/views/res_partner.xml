@@ -13,6 +13,17 @@
                     name="filter_top_level"
                     domain="[('parent_id', '=', False)]"
                 />
+                <separator/>
+                <filter
+                    string="Persons"
+                    name="type_person"
+                    domain="[('is_company', '=', False)]"
+                />
+                <filter
+                    string="Companies"
+                    name="type_company"
+                    domain="[('is_company', '=', True)]"
+                />
             </xpath>
             <xpath expr="//filter[@name='inactive']" position="after">
                 <filter
@@ -169,6 +180,20 @@
         <field name="model">res.partner</field>
         <field name="inherit_id" ref="base.view_partner_form"/>
         <field name="arch" type="xml">
+            <xpath expr="//sheet/group//field[@name='function']" position="attributes">
+                <attribute name="invisible">is_company</attribute>
+            </xpath>
+            <xpath expr="//group[@name='misc']/field[@name='industry_id']" position="attributes">
+                <attribute name="invisible">not is_company</attribute>
+            </xpath>
+            <xpath expr="//sheet/group//field[@name='function']" position="before">
+                <field
+                    name="is_company"
+                    string="Company"
+                    widget="boolean_toggle"
+                    invisible="parent_id"
+                />
+            </xpath>
             <xpath expr="//span[@name='address_name']" position="before">
                 <label for="contact_number" invisible="parent_id"/>
                 <div class="o_row align-items-center" invisible="parent_id">

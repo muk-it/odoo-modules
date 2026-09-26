@@ -5,12 +5,12 @@
         This module improves and extends the contact app
         and the related partner model.
     """,
-    'version': '20.0.1.2.0',
+    'version': '20.0.1.3.0',
     'category': 'Sales/CRM',
     'license': 'LGPL-3',
     'author': 'MuK IT',
     'website': 'http://www.mukit.at',
-    'live_test_url': 'https://youtu.be/UE_owy582jY',
+    'live_test_url': 'https://youtu.be/w4n6-NtSR70',
     'contributors': [
         'Mathias Markl <mathias.markl@mukit.at>',
     ],
