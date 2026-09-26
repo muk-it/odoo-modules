@@ -9,11 +9,12 @@
         what a list view offers: inline editing, optional columns, sums,
         widgets and decorations.
     """,
-    'version': '20.0.1.0.3',
+    'version': '20.0.1.0.4',
     'category': 'Tools/UI',
     'license': 'LGPL-3',
     'author': 'MuK IT',
     'website': 'http://www.mukit.at',
+    'support': 'support@mukit.at',
     'live_test_url': 'https://youtu.be/FFZvYAT0uQo',
     'contributors': [
         'Mathias Markl <mathias.markl@mukit.at>',
