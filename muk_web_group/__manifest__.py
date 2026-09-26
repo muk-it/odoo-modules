@@ -5,11 +5,12 @@
         Enables you to expand and collapse groups that were created by
         grouping the data by a certain field for list and kanban views.
     """,
-    'version': '20.0.1.0.10',
+    'version': '20.0.1.0.11',
     'category': 'Tools/UI',
     'license': 'LGPL-3',
     'author': 'MuK IT',
     'website': 'http://www.mukit.at',
+    'support': 'support@mukit.at',
     'live_test_url': 'https://youtu.be/Vcv7VbGPFFM',
     'contributors': [
         'Mathias Markl <mathias.markl@mukit.at>',
