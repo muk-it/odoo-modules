@@ -5,11 +5,12 @@
         This module gives you a quick view of all your products,
         accessible from your home menu.
     """,
-    'version': '20.0.1.6.0',
+    'version': '20.0.1.6.1',
     'category': 'Sales/Product',
     'license': 'LGPL-3',
     'author': 'MuK IT',
     'website': 'http://www.mukit.at',
+    'support': 'support@mukit.at',
     'live_test_url': 'https://youtu.be/pSzEzlStTXg',
     'contributors': [
         'Mathias Markl <mathias.markl@mukit.at>',
