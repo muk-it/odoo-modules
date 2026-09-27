@@ -8,11 +8,10 @@ from . import models
 
 def _setup_module(env: Environment) -> None:
     """Seed the main company favicon from Odoo's default favicon image."""
-    company = env.ref('base.main_company', False)
-    if not company:
-        return
     with file_open('web/static/img/favicon.ico', 'rb') as file:
-        company.favicon = BinaryBytes(file.read(), filename='favicon.ico')
+        env['res.company']._get_main_company().favicon = BinaryBytes(
+            file.read(), filename='favicon.ico'
+        )
 
 
 def _uninstall_cleanup(env: Environment) -> None:
