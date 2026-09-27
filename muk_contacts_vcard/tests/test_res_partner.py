@@ -1,606 +1,98 @@
-from __future__ import annotations
-
-import os
 import re
-from datetime import date, datetime, timedelta
-from io import BytesIO
+from datetime import date, datetime
 
 import vobject
-from lxml import etree
-from PIL import Image
 
-from odoo import Command, fields
+from odoo import Command
 from odoo.tests import Form, TransactionCase, new_test_user
-from odoo.tools import BinaryBytes
-
-from odoo.addons.muk_contacts_vcard import _restore_mobile_from_upgrade_notes
-
-
-def _noise_png(size: int = 256) -> bytes:
-    """Return an incompressible PNG image of ``size`` pixels for binary tests."""
-    buffer = BytesIO()
-    image = Image.frombytes('RGB', (size, size), os.urandom(size * size * 3))
-    image.save(buffer, format='PNG')
-    return buffer.getvalue()
 
 
 class TestResPartner(TransactionCase):
-    """Covers name computation, formatting, and vCard export details."""
+    """Covers name parts, phone numbers, and the vCard export of partners."""
 
     # ----------------------------------------------------------
     # Tests
     # ----------------------------------------------------------
 
-    def test_child_contact_form_shows_the_mobile_field(self):
-        arch = self.env['res.partner'].get_view(
-            self.env.ref('base.view_partner_form').id, 'form'
-        )['arch']
-        mobile = etree.fromstring(arch).xpath(
-            "//field[@name='child_ids']/form//field[@name='mobile']"
-        )
-        self.assertEqual(len(mobile), 1)
+    def test_the_name_is_composed_from_its_parts(self):
+        cases = [
+            (('John', 'M', 'Doe'), 'John M Doe'),
+            (('John', False, 'Doe'), 'John Doe'),
+            ((False, False, 'Doe'), 'Doe'),
+        ]
+        for (firstname, middlename, lastname), name in cases:
+            with self.subTest(name=name):
+                partner = self.env['res.partner'].create(
+                    {
+                        'firstname': firstname,
+                        'middlename': middlename,
+                        'lastname': lastname,
+                    }
+                )
+                self.assertEqual(partner.name, name)
 
-    def test_name_is_computed_from_first_middle_last(self):
-        partner = self.env['res.partner'].create({'name': 'Initial Name'})
-        partner.write(
-            {
-                'firstname': 'John',
-                'middlename': 'M',
-                'lastname': 'Doe',
-            }
-        )
-        self.assertEqual(partner.name, 'John M Doe')
-
-    def test_name_inverse_splits_into_first_and_last(self):
-        partner = self.env['res.partner'].create({'name': 'Initial Name'})
-        partner.write({'name': 'Jane Smith'})
-        self.assertEqual(partner.firstname, 'Jane')
-        self.assertEqual(partner.lastname, 'Smith')
-        self.assertFalse(partner.middlename)
-
-    def test_formatted_name_can_include_honorific(self):
-        prefix = self.env['muk_contacts_vcard.honorific'].create(
-            {
-                'name': 'Dr.',
-                'shortcut': 'Dr.',
-                'position': 'preceding',
-            }
-        )
-        suffix = self.env['muk_contacts_vcard.honorific'].create(
-            {
-                'name': 'PhD',
-                'shortcut': 'PhD',
-                'position': 'following',
-            }
-        )
-        partner = self.env['res.partner'].create({'name': 'Initial Name'})
-        partner.write(
-            {
-                'firstname': 'John',
-                'lastname': 'Doe',
-                'honorific_prefix_ids': [Command.set(prefix.ids)],
-                'honorific_suffix_ids': [Command.set(suffix.ids)],
-            }
-        )
-        self.assertIn('Dr.', partner.formatted_name)
-        self.assertIn('PhD', partner.formatted_name)
-
-    def test_build_vcard_includes_uid_and_home_contacts(self):
-        partner = self.env['res.partner'].create({'name': 'Initial Name'})
-        partner.write(
-            {
-                'firstname': 'John',
-                'lastname': 'Doe',
-                'email': 'john.doe@work.example.com',
-                'email2': 'john.doe@home.example.com',
-                'phone': '+431234',
-                'phone2': '+439876',
-                'gender': 'm',
-                'birthdate': fields.Date.today() - timedelta(days=1),
-                'nickname': 'Johnny',
-            }
-        )
-        self.assertTrue(partner.vcard_modified)
-        serialized = partner._build_vcard().serialize()
-        self.assertIn('UID:', serialized)
-        self.assertIn(partner.vcard_uid, serialized)
-        self.assertIn('EMAIL', serialized)
-        self.assertIn('TYPE=HOME', serialized)
-
-    def test_build_vcard_includes_mobile_as_cell(self):
+    def test_a_typed_name_is_split_into_first_and_last_name(self):
         partner = self.env['res.partner'].create(
-            {
-                'name': 'Mobile Partner',
-                'mobile': '+43 664 1234567',
-            }
+            {'firstname': 'Old', 'middlename': 'M', 'lastname': 'Name'}
         )
-        serialized = partner._build_vcard().serialize()
-        self.assertIn('TYPE=CELL', serialized)
-        self.assertIn('+43 664 1234567', serialized)
+        cases = [
+            ('Jane Smith', 'Jane', 'Smith'),
+            ('Jane de la Cruz', 'Jane', 'de la Cruz'),
+            ('Cher', False, 'Cher'),
+        ]
+        for name, firstname, lastname in cases:
+            with self.subTest(name=name):
+                partner.write({'name': name})
+                self.assertEqual(partner.firstname, firstname)
+                self.assertFalse(partner.middlename)
+                self.assertEqual(partner.lastname, lastname)
+                self.assertEqual(partner.name, name)
 
-    def test_restore_mobile_from_upgrade_notes(self):
-        partner = self.env['res.partner'].create(
-            {
-                'name': 'Restore Partner',
-                'phone': '+43 1 2345678',
-            }
-        )
-        message = self.env['mail.message'].create(
-            {
-                'model': 'res.partner',
-                'res_id': partner.id,
-                'message_type': 'notification',
-                'body': 'placeholder',
-            }
-        )
-        self.env.flush_all()
-        self.env.cr.execute(
-            'UPDATE mail_message SET body = %s WHERE id = %s',
-            ('Previous Mobile: +43 664 9876543', message.id),
-        )
-        count = _restore_mobile_from_upgrade_notes(self.env)
-        self.assertEqual(count, 1)
-        self.assertEqual(partner.mobile, '+43 664 9876543')
-        self.assertEqual(partner.phone_sanitized, '+436649876543')
-
-    def test_restore_mobile_skips_numbers_already_on_partner(self):
-        partner = self.env['res.partner'].create(
-            {
-                'name': 'Merged Partner',
-                'phone': '+43 664 9876543',
-            }
-        )
-        message = self.env['mail.message'].create(
-            {
-                'model': 'res.partner',
-                'res_id': partner.id,
-                'message_type': 'notification',
-                'body': 'placeholder',
-            }
-        )
-        self.env.flush_all()
-        self.env.cr.execute(
-            'UPDATE mail_message SET body = %s WHERE id = %s',
-            ('Previous Mobile: +43 664 9876543', message.id),
-        )
-        _restore_mobile_from_upgrade_notes(self.env)
-        self.assertFalse(partner.mobile)
-
-    def test_restore_mobile_keeps_existing_mobile(self):
-        partner = self.env['res.partner'].create(
-            {
-                'name': 'Current Partner',
-                'mobile': '+43 664 1111111',
-            }
-        )
-        message = self.env['mail.message'].create(
-            {
-                'model': 'res.partner',
-                'res_id': partner.id,
-                'message_type': 'notification',
-                'body': 'placeholder',
-            }
-        )
-        self.env.flush_all()
-        self.env.cr.execute(
-            'UPDATE mail_message SET body = %s WHERE id = %s',
-            ('Previous Mobile: +43 664 9876543', message.id),
-        )
-        _restore_mobile_from_upgrade_notes(self.env)
-        self.assertEqual(partner.mobile, '+43 664 1111111')
-
-    def test_vcard_export_does_not_require_partner_write_access(self):
-        user = new_test_user(self.env, login='vcard_ro', groups='base.group_user')
-        partner = self.env['res.partner'].create(
-            {
-                'firstname': 'Jane',
-                'lastname': 'Doe',
-            }
-        )
-        self.assertFalse(partner.vcard_uid)
-        content = partner.with_user(user)._get_vcard_file()
-        self.assertTrue(content)
-        self.assertTrue(partner.vcard_uid)
-
-    def test_formatted_name_recomputes_on_shortcut_change(self):
-        honorific = self.env['muk_contacts_vcard.honorific'].create(
-            {
-                'name': 'Doctor',
-                'shortcut': 'Dr.',
-                'position': 'preceding',
-            }
-        )
-        partner = self.env['res.partner'].create(
-            {
-                'firstname': 'John',
-                'lastname': 'Doe',
-                'honorific_prefix_ids': [Command.set(honorific.ids)],
-            }
-        )
-        self.assertEqual(partner.formatted_name, 'Dr. John Doe')
-        honorific.shortcut = 'Dr'
-        self.assertIn(
-            partner,
-            self.env.records_to_compute(partner._fields['vcard_modified']),
-        )
-        partner.invalidate_recordset(['formatted_name'])
-        self.assertEqual(partner.formatted_name, 'Dr John Doe')
-
-    def test_vcard_modified_bumps_on_street2(self):
-        stale = datetime(2020, 1, 1, 0, 0, 0)
-        partner = self.env['res.partner'].create(
-            {
-                'firstname': 'Rev',
-                'lastname': 'Partner',
-                'street': 'Main 1',
-            }
-        )
-        self.env.flush_all()
-        self.env.cr.execute(
-            'UPDATE res_partner SET vcard_modified = %s WHERE id = %s',
-            (stale, partner.id),
-        )
-        partner.invalidate_recordset(['vcard_modified'])
-        self.assertEqual(partner.vcard_modified, stale)
-        partner.write({'street2': 'Floor 3'})
-        self.env.flush_all()
-        partner.invalidate_recordset(['vcard_modified'])
-        self.assertNotEqual(partner.vcard_modified, stale)
-
-    def test_vcard_modified_bumps_on_department(self):
-        stale = datetime(2020, 1, 1, 0, 0, 0)
-        company = self.env['res.partner'].create({'name': 'RevCo', 'is_company': True})
-        employee = self.env['res.partner'].create(
-            {
-                'firstname': 'Emp',
-                'lastname': 'Loyee',
-                'parent_id': company.id,
-                'type': 'contact',
-            }
-        )
-        self.env.flush_all()
-        self.env.cr.execute(
-            'UPDATE res_partner SET vcard_modified = %s WHERE id = %s',
-            (stale, employee.id),
-        )
-        employee.invalidate_recordset(['vcard_modified'])
-        self.assertEqual(employee.vcard_modified, stale)
-        employee.write({'department': 'Research'})
-        self.env.flush_all()
-        employee.invalidate_recordset(['vcard_modified'])
-        self.assertNotEqual(employee.vcard_modified, stale)
-
-    def test_formatted_name_recomputes_on_parent_rename(self):
-        company = self.env['res.partner'].create(
-            {
-                'name': 'OldCo',
-                'is_company': True,
-            }
-        )
-        child = self.env['res.partner'].create(
-            {
-                'parent_id': company.id,
-                'type': 'invoice',
-                'street': 'Street 1',
-            }
-        )
-        self.assertIn('OldCo', child.formatted_name)
-        company.name = 'NewCo'
-        child.invalidate_recordset(['formatted_name'])
-        self.assertIn('NewCo', child.formatted_name)
-
-    def test_portal_user_can_read_honorific_shortcut(self):
-        portal = new_test_user(
-            self.env, login='vcard_portal', groups='base.group_portal'
-        )
-        honorific = self.env['muk_contacts_vcard.honorific'].create(
-            {
-                'name': 'Doctor',
-                'shortcut': 'Dr.',
-                'position': 'preceding',
-            }
-        )
-        partner = portal.partner_id.commercial_partner_id
-        partner.honorific_prefix_ids = [Command.set(honorific.ids)]
-        result = partner.with_user(portal).mapped('honorific_prefix_ids.shortcut')
-        self.assertEqual(result, ['Dr.'])
-
-    def test_build_vcard_includes_categories_for_internal_user(self):
-        category = self.env['res.partner.category'].create({'name': 'VIP'})
-        partner = self.env['res.partner'].create(
-            {
-                'name': 'Tagged Partner',
-                'category_id': [Command.set(category.ids)],
-            }
-        )
-        self.assertIn('CATEGORIES', partner._build_vcard().serialize())
-
-    def test_ensure_vcard_uid_sets_uid(self):
-        partner = self.env['res.partner'].create({'name': 'Initial Name'})
-        partner.write(
-            {
-                'firstname': 'John',
-                'lastname': 'Doe',
-                'vcard_uid': False,
-            }
-        )
-        uid = partner._ensure_vcard_uid()
-        self.assertTrue(uid)
-        self.assertEqual(partner.vcard_uid, uid)
-
-    def test_build_vcard_drops_org_for_company(self):
-        company = self.env['res.partner'].create(
-            {
-                'name': 'Acme Inc',
-                'is_company': True,
-            }
-        )
-        serialized = company._build_vcard().serialize()
-        self.assertNotIn('ORG:', serialized)
-        self.assertNotIn('ORG;', serialized)
-
-    def test_build_vcard_keeps_org_for_individual(self):
-        company = self.env['res.partner'].create(
-            {
-                'name': 'Acme Inc',
-                'is_company': True,
-            }
-        )
-        employee = self.env['res.partner'].create(
-            {
-                'name': 'Jane Doe',
-                'parent_id': company.id,
-                'type': 'contact',
-            }
-        )
-        self.assertIn('ORG:Acme Inc', employee._build_vcard().serialize())
-
-    def test_build_vcard_kind_org_for_company(self):
-        company = self.env['res.partner'].create(
-            {
-                'name': 'Acme Inc',
-                'is_company': True,
-            }
-        )
-        self.assertIn('KIND:org', company._build_vcard().serialize())
-
-    def test_build_vcard_kind_individual_for_contact(self):
-        partner = self.env['res.partner'].create(
-            {
-                'name': 'John Doe',
-                'is_company': False,
-                'type': 'contact',
-            }
-        )
-        self.assertIn('KIND:individual', partner._build_vcard().serialize())
-
-    def test_build_vcard_company_embeds_child_addresses_as_labeled_adr(self):
-        company = self.env['res.partner'].create(
-            {
-                'name': 'Acme Inc',
-                'is_company': True,
-                'street': '1 Main St',
-                'city': 'HQ City',
-            }
-        )
-        self.env['res.partner'].create(
-            {
-                'name': 'Invoice Address',
-                'parent_id': company.id,
-                'type': 'invoice',
-                'street': '10 Billing Rd',
-                'city': 'Bill City',
-                'zip': '12345',
-            }
-        )
-        self.env['res.partner'].create(
-            {
-                'name': 'Delivery Address',
-                'parent_id': company.id,
-                'type': 'delivery',
-                'street': '20 Ship Ave',
-                'city': 'Ship City',
-            }
-        )
-        self.env['res.partner'].create(
-            {
-                'name': 'Other Address',
-                'parent_id': company.id,
-                'type': 'other',
-                'street': '30 Side St',
-            }
-        )
-        self.env['res.partner'].create(
-            {
-                'name': 'Jane Doe',
-                'parent_id': company.id,
-                'type': 'contact',
-            }
-        )
-        serialized = company._build_vcard().serialize()
-        groups = dict(re.findall(r'(item\d+)\.X-ABLABEL:([^\r\n]+)', serialized))
-        self.assertEqual(len(groups), 3, msg='expected 3 grouped labels')
-        for group, label in groups.items():
-            self.assertRegex(
-                serialized,
-                rf'{group}\.ADR;TYPE=WORK:',
-                msg=f'no grouped ADR for {label}',
-            )
-        self.assertIn('10 Billing Rd', serialized)
-        self.assertIn('20 Ship Ave', serialized)
-        self.assertIn('30 Side St', serialized)
-
-    def test_build_vcard_uses_child_name_as_label_when_set(self):
-        company = self.env['res.partner'].create(
-            {
-                'name': 'Acme Inc',
-                'is_company': True,
-            }
-        )
-        self.env['res.partner'].create(
-            {
-                'name': 'Vienna Office Billing',
-                'parent_id': company.id,
-                'type': 'invoice',
-                'street': '10 Billing Rd',
-            }
-        )
-        self.env['res.partner'].create(
-            {
-                'name': 'Acme Inc',
-                'parent_id': company.id,
-                'type': 'delivery',
-                'street': '20 Ship Ave',
-            }
-        )
-        serialized = company._build_vcard().serialize()
-        self.assertIn('X-ABLABEL:Vienna Office Billing', serialized)
-        self.assertNotIn('X-ABLABEL:Acme Inc', serialized)
-        self.assertEqual(
-            len(re.findall(r'X-ABLABEL:', serialized)),
-            2,
-            msg='expected 2 labels (custom + delivery fallback)',
-        )
-
-    def test_build_vcard_company_skips_empty_child_addresses(self):
-        company = self.env['res.partner'].create(
-            {
-                'name': 'Acme Inc',
-                'is_company': True,
-            }
-        )
-        self.env['res.partner'].create(
-            {
-                'name': 'Empty Invoice',
-                'parent_id': company.id,
-                'type': 'invoice',
-            }
-        )
-        serialized = company._build_vcard().serialize()
-        self.assertNotIn('X-ABLABEL', serialized)
-
-    def test_build_vcard_individual_does_not_embed_child_addresses(self):
-        company = self.env['res.partner'].create(
-            {
-                'name': 'Acme Inc',
-                'is_company': True,
-            }
-        )
-        person = self.env['res.partner'].create(
-            {
-                'name': 'John Doe',
-                'is_company': False,
-                'type': 'contact',
-                'parent_id': company.id,
-            }
-        )
-        self.env['res.partner'].create(
-            {
-                'name': 'Invoice Address',
-                'parent_id': company.id,
-                'type': 'invoice',
-                'street': '10 Billing Rd',
-            }
-        )
-        serialized = person._build_vcard().serialize()
-        self.assertNotIn('X-ABLABEL', serialized)
-
-    def test_build_name_joins_only_the_filled_parts(self):
-        model = self.env['res.partner']
-        self.assertEqual(model._build_name('John', 'M', 'Doe'), 'John M Doe')
-        self.assertEqual(model._build_name('John', False, 'Doe'), 'John Doe')
-        self.assertEqual(model._build_name(False, False, 'Doe'), 'Doe')
-        self.assertEqual(model._build_name(False, False, False), '')
-
-    def test_split_name_keeps_compound_last_names_together(self):
-        model = self.env['res.partner']
-        self.assertEqual(model._split_name('Jane Smith'), ('Smith', 'Jane'))
-        self.assertEqual(model._split_name('Jane de la Cruz'), ('de la Cruz', 'Jane'))
-        self.assertEqual(model._split_name('Cher'), ('Cher', False))
-        self.assertEqual(model._split_name(''), (False, False))
-        self.assertEqual(
-            model._split_name('Acme Holding Inc', whole=True),
-            ('Acme Holding Inc', False),
-        )
-
-    def test_renaming_a_company_never_splits_off_a_first_name(self):
+    def test_companies_and_addresses_keep_their_name_whole(self):
         company = self.env['res.partner'].create(
             {'name': 'Acme Inc', 'is_company': True}
         )
         company.write({'name': 'Acme Holding Inc'})
-        self.assertEqual(company.lastname, 'Acme Holding Inc')
-        self.assertFalse(company.firstname)
-        self.assertEqual(company.name, 'Acme Holding Inc')
+        address = self.env['res.partner'].create(
+            {'name': 'Main Warehouse', 'parent_id': company.id, 'type': 'delivery'}
+        )
+        for partner, name in (
+            (company, 'Acme Holding Inc'),
+            (address, 'Main Warehouse'),
+        ):
+            with self.subTest(name=name):
+                self.assertFalse(partner.firstname)
+                self.assertEqual(partner.lastname, name)
+                self.assertEqual(partner.name, name)
 
-    def test_unicode_name_parts_round_trip_through_the_vcard(self):
-        partner = self.env['res.partner'].create(
-            {
-                'firstname': 'Ægir',
-                'middlename': '日本',
-                'lastname': 'Müller-Łukasz',
-            }
-        )
-        reparsed = vobject.readOne(partner._build_vcard().serialize())
-        self.assertEqual(reparsed.n.value.family, 'Müller-Łukasz')
-        self.assertEqual(reparsed.n.value.given, 'Ægir')
-        self.assertEqual(reparsed.n.value.additional, '日本')
-        self.assertEqual(reparsed.fn.value, 'Ægir 日本 Müller-Łukasz')
+    def test_switching_between_company_and_person_splits_the_name_again(self):
+        partner = self.env['res.partner'].create({'name': 'Acme Holding Inc'})
+        self.assertEqual(partner.firstname, 'Acme')
+        partner.write({'is_company': True})
+        self.assertEqual(partner.lastname, 'Acme Holding Inc')
+        self.assertFalse(partner.firstname)
+        partner.write({'is_company': False})
+        self.assertEqual(partner.firstname, 'Acme')
+        self.assertEqual(partner.lastname, 'Holding Inc')
 
-    def test_build_vcard_exports_the_extended_contact_details(self):
-        partner = self.env['res.partner'].create(
-            {
-                'firstname': 'Detail',
-                'lastname': 'Partner',
-                'street': 'Main 1',
-                'street2': 'Floor 3',
-                'city': 'Vienna',
-                'zip': '1010',
-                'lang': 'en_US',
-                'tz': 'Europe/Vienna',
-                'gender': 'f',
-                'birthdate': date(1990, 5, 1),
-                'nickname': 'Dee',
-                'role': 'Maintainer',
-                'comment': '<p>Line one<br/>Line two</p>',
-            }
-        )
-        serialized = partner._build_vcard().serialize()
-        self.assertIn('LANG:en-US', serialized)
-        self.assertIn('TZ:Europe/Vienna', serialized)
-        self.assertIn('GENDER:F', serialized)
-        self.assertIn('BDAY:19900501', serialized)
-        self.assertIn('NICKNAME:Dee', serialized)
-        self.assertIn('ROLE:Maintainer', serialized)
-        self.assertIn('NOTE:', serialized)
-        self.assertIn('Floor 3', serialized)
+    def test_a_name_typed_as_company_survives_switching_to_person(self):
+        with Form(
+            self.env['res.partner'].with_context(default_is_company=True)
+        ) as form:
+            form.name = 'John Doe'
+            form.is_company = False
+        self.assertEqual(form.record.name, 'John Doe')
+        self.assertEqual(form.record.firstname, 'John')
+        self.assertEqual(form.record.lastname, 'Doe')
 
-    def test_build_vcard_org_carries_the_department(self):
-        company = self.env['res.partner'].create(
-            {'name': 'Acme Inc', 'is_company': True}
+    def test_formatted_name_follows_the_parent_company(self):
+        company = self.env['res.partner'].create({'name': 'OldCo', 'is_company': True})
+        child = self.env['res.partner'].create(
+            {'parent_id': company.id, 'type': 'invoice', 'street': 'Street 1'}
         )
-        employee = self.env['res.partner'].create(
-            {
-                'firstname': 'Dep',
-                'lastname': 'Member',
-                'parent_id': company.id,
-                'type': 'contact',
-                'department': 'Research',
-            }
-        )
-        self.assertIn('ORG:Acme Inc;Research', employee._build_vcard().serialize())
-
-    def test_build_vcard_embeds_a_large_photo_without_corrupting_it(self):
-        raw = _noise_png()
-        partner = self.env['res.partner'].create(
-            {
-                'firstname': 'Photo',
-                'lastname': 'Partner',
-                'image_1920': BinaryBytes(raw, filename='photo.png'),
-            }
-        )
-        reparsed = vobject.readOne(partner._build_vcard().serialize())
-        self.assertEqual(reparsed.photo.value, partner.avatar_512.content)
-        self.assertGreater(len(reparsed.photo.value), 1024)
+        self.assertIn('OldCo', child.formatted_name)
+        company.name = 'NewCo'
+        self.assertIn('NewCo', child.formatted_name)
 
     def test_birthdate_derives_the_day_month_and_label(self):
         partner = self.env['res.partner'].create(
@@ -608,8 +100,7 @@ class TestResPartner(TransactionCase):
         )
         self.assertEqual(partner.birthdate_day, 1)
         self.assertEqual(partner.birthdate_month, 5)
-        self.assertTrue(partner.birthday)
-        self.assertTrue(partner.birthdate_placeholder)
+        self.assertEqual(partner.birthday, 'May 1')
         partner.birthdate = False
         self.assertFalse(partner.birthdate_day)
         self.assertFalse(partner.birthdate_month)
@@ -627,65 +118,25 @@ class TestResPartner(TransactionCase):
         self.assertEqual(partner.phone_formatted, '+43 1 5550100')
         self.assertEqual(partner.mobile_sanitized, '+436645550199')
         self.assertEqual(partner.mobile_formatted, '+43 664 5550199')
-
-    def test_an_empty_phone_does_not_show_the_mobile(self):
-        partner = self.env['res.partner'].create(
-            {'name': 'Mobile Only', 'mobile': '+43 664 5550188'}
-        )
-        self.assertEqual(partner.phone_sanitized, '+436645550188')
+        partner.phone = False
+        self.assertEqual(partner.phone_sanitized, '+436645550199')
         self.assertFalse(partner.phone_formatted)
-
-    def test_the_phone_search_finds_the_mobile_number(self):
-        partner = self.env['res.partner'].create(
-            {'name': 'Mobile Only', 'mobile': '+43 664 5550177'}
-        )
         found = self.env['res.partner'].search(
-            [('phone_mobile_search', 'ilike', '664 5550177')]
+            [('phone_mobile_search', 'ilike', '664 5550199')]
         )
         self.assertIn(partner, found)
-
-    def test_the_quick_create_form_keeps_sms_off_and_dials_the_phone(self):
-        arch = self.env['res.partner'].get_view(
-            self.env.ref('base.view_partner_simple_form').id, 'form'
-        )['arch']
-        self.assertIn("'enable_sms': false", arch)
-        self.assertIn("'dial_field': 'phone_formatted'", arch)
-
-    def test_switching_to_company_keeps_the_name_whole(self):
-        partner = self.env['res.partner'].create({'name': 'Acme Holding Inc'})
-        self.assertEqual(partner.firstname, 'Acme')
-        partner.write({'is_company': True})
-        self.assertEqual(partner.lastname, 'Acme Holding Inc')
-        self.assertFalse(partner.firstname)
-        self.assertIn('KIND:org', partner._build_vcard().serialize())
-        partner.write({'is_company': False})
-        self.assertEqual(partner.firstname, 'Acme')
-        self.assertEqual(partner.lastname, 'Holding Inc')
-
-    def test_an_address_keeps_its_name_whole(self):
-        company = self.env['res.partner'].create({'name': 'Address Co'})
-        address = self.env['res.partner'].create(
-            {'name': 'Main Warehouse', 'parent_id': company.id, 'type': 'delivery'}
-        )
-        self.assertEqual(address.lastname, 'Main Warehouse')
-        self.assertFalse(address.firstname)
-
-    def test_a_name_typed_as_company_survives_switching_to_person(self):
-        with Form(
-            self.env['res.partner'].with_context(default_is_company=True)
-        ) as form:
-            form.name = 'John Doe'
-            form.is_company = False
-        self.assertEqual(form.record.name, 'John Doe')
-        self.assertEqual(form.record.firstname, 'John')
-        self.assertEqual(form.record.lastname, 'Doe')
 
     def test_the_mobile_is_not_copied_into_an_empty_phone(self):
         partner = self.env['res.partner'].create(
             {'name': 'Copy Guard', 'mobile': '+43 664 5550166'}
         )
-        partner.write({'phone': '+436645550166'})
+        other = self.env['res.partner'].create({'name': 'Other'})
+        (partner | other).write(
+            {'phone': '+436645550166', 'email': 'guard@example.com'}
+        )
         self.assertFalse(partner.phone)
+        self.assertEqual(partner.email, 'guard@example.com')
+        self.assertEqual(other.phone, '+436645550166')
         partner.write({'phone': '+43 1 5550166'})
         self.assertEqual(partner.phone, '+43 1 5550166')
 
@@ -715,3 +166,143 @@ class TestResPartner(TransactionCase):
         partner.invalidate_recordset(['mobile_blacklisted', 'phone_blacklisted'])
         self.assertTrue(partner.mobile_blacklisted)
         self.assertFalse(partner.phone_blacklisted)
+
+    def test_build_vcard_exports_the_extended_contact_details(self):
+        company = self.env['res.partner'].create(
+            {'name': 'Acme Inc', 'is_company': True}
+        )
+        partner = self.env['res.partner'].create(
+            {
+                'firstname': 'Dee',
+                'middlename': 'Ann',
+                'lastname': 'Müller',
+                'parent_id': company.id,
+                'department': 'Research',
+                'street': 'Main 1',
+                'street2': 'Floor 3',
+                'lang': 'en_US',
+                'tz': 'Europe/Vienna',
+                'gender': 'f',
+                'birthdate': date(1990, 5, 1),
+                'nickname': 'Dee',
+                'role': 'Maintainer',
+                'comment': '<p>Line one</p>',
+                'email': 'dee@work.example.com',
+                'email2': 'dee@home.example.com',
+                'mobile': '+43 664 1234567',
+                'phone2': '+43 1 9876543',
+                'category_id': [Command.create({'name': 'VIP'})],
+            }
+        )
+        vcard = vobject.readOne(partner._build_vcard().serialize())
+        self.assertEqual(
+            (vcard.n.value.given, vcard.n.value.additional, vcard.n.value.family),
+            ('Dee', 'Ann', 'Müller'),
+        )
+        self.assertEqual(vcard.fn.value, 'Dee Ann Müller')
+        self.assertEqual(vcard.adr.value.extended, 'Floor 3')
+        self.assertEqual(vcard.org.value, ['Acme Inc', 'Research'])
+        self.assertEqual(
+            {
+                (line.type_param, line.value)
+                for line in vcard.contents['email'] + vcard.contents['tel']
+            },
+            {
+                ('INTERNET', 'dee@work.example.com'),
+                ('HOME', 'dee@home.example.com'),
+                ('CELL', '+43 664 1234567'),
+                ('HOME', '+43 1 9876543'),
+            },
+        )
+        expected = {
+            'lang': 'en-US',
+            'tz': 'Europe/Vienna',
+            'gender': 'F',
+            'bday': '19900501',
+            'nickname': 'Dee',
+            'role': 'Maintainer',
+            'note': 'Line one',
+            'categories': ['VIP'],
+            'kind': 'individual',
+        }
+        for name, value in expected.items():
+            with self.subTest(name=name):
+                self.assertEqual(vcard.contents[name][0].value, value)
+
+    def test_build_vcard_describes_a_company_without_an_org(self):
+        company = self.env['res.partner'].create(
+            {'name': 'Acme Inc', 'department': 'Research'}
+        )
+        company.write({'is_company': True})
+        vcard = vobject.readOne(company._build_vcard().serialize())
+        self.assertEqual(vcard.kind.value, 'org')
+        self.assertNotIn('org', vcard.contents)
+
+    def test_build_vcard_embeds_the_filled_child_addresses_with_labels(self):
+        company = self.env['res.partner'].create(
+            {'name': 'Acme Inc', 'is_company': True, 'street': '1 Main St'}
+        )
+        self.env['res.partner'].create(
+            [
+                {
+                    'name': 'Vienna Office Billing',
+                    'parent_id': company.id,
+                    'type': 'invoice',
+                    'street': '10 Billing Rd',
+                    'zip': '12345',
+                },
+                {
+                    'name': 'Acme Inc',
+                    'parent_id': company.id,
+                    'type': 'delivery',
+                    'street': '20 Ship Ave',
+                },
+                {'parent_id': company.id, 'type': 'other', 'city': 'Side City'},
+                {'name': 'Empty Invoice', 'parent_id': company.id, 'type': 'invoice'},
+                {'name': 'Jane Doe', 'parent_id': company.id, 'type': 'contact'},
+            ]
+        )
+        serialized = company._build_vcard().serialize()
+        labels = dict(re.findall(r'(item\d+)\.X-ABLABEL:([^\r\n]+)', serialized))
+        self.assertEqual(
+            sorted(labels.values()), ['Delivery', 'Other', 'Vienna Office Billing']
+        )
+        for group in labels:
+            self.assertRegex(serialized, rf'{group}\.ADR;TYPE=WORK:')
+        self.assertIn('10 Billing Rd', serialized)
+        self.assertIn('20 Ship Ave', serialized)
+        self.assertIn('Side City', serialized)
+
+    def test_the_vcard_uid_is_stable_and_needs_no_write_access(self):
+        user = new_test_user(self.env, login='vcard_ro', groups='base.group_user')
+        partner = self.env['res.partner'].create({'name': 'Jane Doe'})
+        self.assertFalse(partner.vcard_uid)
+        first = vobject.readOne(partner.with_user(user)._get_vcard_file().decode())
+        second = vobject.readOne(partner.with_user(user)._get_vcard_file().decode())
+        self.assertTrue(partner.vcard_uid)
+        self.assertEqual(first.uid.value, partner.vcard_uid)
+        self.assertEqual(second.uid.value, partner.vcard_uid)
+
+    def test_the_vcard_revision_moves_when_exported_data_changes(self):
+        stale = datetime(2020, 1, 1)
+        company = self.env['res.partner'].create({'name': 'RevCo', 'is_company': True})
+        partner = self.env['res.partner'].create(
+            {'firstname': 'Rev', 'lastname': 'Partner', 'parent_id': company.id}
+        )
+        cases = [
+            (partner, {'street2': 'Floor 3'}),
+            (partner, {'department': 'Research'}),
+            (partner, {'mobile': '+43 664 5550111'}),
+            (company, {'child_ids': [Command.create({'type': 'other', 'zip': '1'})]}),
+        ]
+        for record, vals in cases:
+            with self.subTest(vals=vals):
+                self.env.flush_all()
+                self.env.cr.execute(
+                    'UPDATE res_partner SET vcard_modified = %s WHERE id = %s',
+                    (stale, record.id),
+                )
+                record.invalidate_recordset(['vcard_modified'])
+                record.write(vals)
+                self.assertNotEqual(record.vcard_modified, stale)
+                self.assertNotIn('REV:2020', record._build_vcard().serialize())

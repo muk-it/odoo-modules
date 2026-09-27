@@ -2,15 +2,12 @@ from __future__ import annotations
 
 import uuid
 
+import vobject.vcard
+
 from odoo import api, fields, models
 from odoo.tools import format_date, html2plaintext
 
 from odoo.addons.web.models import res_partner as web_partner
-
-try:
-    import vobject
-except ImportError:
-    vobject = None
 
 
 class Partner(models.Model):

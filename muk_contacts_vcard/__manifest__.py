@@ -5,7 +5,7 @@
         This module extends the vCard export to include more detailed
         contact information. Furthermore, it improves the contact view.
     """,
-    'version': '20.0.1.1.24',
+    'version': '20.0.1.1.25',
     'category': 'Sales/CRM',
     'license': 'LGPL-3',
     'author': 'MuK IT',

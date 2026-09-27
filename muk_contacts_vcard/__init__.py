@@ -5,7 +5,7 @@ from odoo.api import Environment
 from . import models
 
 
-def _restore_mobile_from_upgrade_notes(env: Environment) -> int:
+def _restore_mobile_from_upgrade_notes(env: Environment) -> None:
     """Restore mobile numbers logged as chatter notes by the version upgrade.
 
     The Odoo 19 upgrade removed ``mobile`` from partners, moved the value
@@ -40,7 +40,6 @@ def _restore_mobile_from_upgrade_notes(env: Environment) -> int:
     partners = env['res.partner'].with_context(active_test=False)
     for partner_id, mobile in rows:
         partners.browse(partner_id).write({'mobile': mobile})
-    return len(rows)
 
 
 def _setup_module(env: Environment) -> None:
