@@ -19,7 +19,4 @@ export class AppsBar extends Component {
             });
         }
     }
-    _onAppClick(app) {
-        return this.appMenuService.selectApp(app);
-    }
 }

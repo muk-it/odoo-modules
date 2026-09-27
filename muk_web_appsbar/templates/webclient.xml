@@ -6,7 +6,7 @@
         <xpath expr="//t[@t-call='web.layout']" position="attributes">
             <attribute
                 name="body_classname.f"
-                add="mk_sidebar_type_{{ request.env.user.sidebar_type or 'large' }}"
+                add="mk_sidebar_type_{{ request.env.user.sidebar_type }}"
                 separator=" "
             />
         </xpath>

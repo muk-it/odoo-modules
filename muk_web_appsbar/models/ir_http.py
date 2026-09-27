@@ -16,10 +16,7 @@ class IrHttp(models.AbstractModel):
         """Flag companies that carry an appbar footer image."""
         result = super().session_info()
         if self.env.user._is_internal():
-            for company in self.env.user.company_ids:
-                result['user_companies']['allowed_companies'][company.id].update(
-                    {
-                        'has_appsbar_image': bool(company.appbar_image),
-                    }
-                )
+            allowed = result['user_companies']['allowed_companies']
+            for company in self.env['res.company'].browse(allowed):
+                allowed[company.id]['has_appsbar_image'] = bool(company.appbar_image)
         return result
