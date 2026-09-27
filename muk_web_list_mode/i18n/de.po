@@ -1,0 +1,17 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* muk_web_list_mode
+msgid ""
+msgstr "Language: de\n"
+
+#. module: muk_web_list_mode
+#. odoo-javascript
+#: code:addons/muk_web_list_mode/static/src/views/list/list_controller.js:0
+msgid "Inline Edit Mode"
+msgstr "Inline-Bearbeitungsmodus"
+
+#. module: muk_web_list_mode
+#. odoo-javascript
+#: code:addons/muk_web_list_mode/static/src/views/list/list_controller.js:0
+msgid "Open Form View"
+msgstr "Formularansicht öffnen"

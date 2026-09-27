@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-inherit="web.ControlPanel" t-inherit-mode="extension">
+        <xpath expr="//div[hasclass('o_cp_pager')]" position="after">
+            <nav
+                t-if="this.display.modeSwitch"
+                class="btn-group o_switcher d-print-none mk_mode_switch"
+            >
+                <t
+                    t-foreach="this.display.modeSwitch.entries"
+                    t-as="entry"
+                    t-key="entry.mode"
+                >
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        t-att-class="{ active: entry.mode === this.display.modeSwitch.mode }"
+                        t-att-data-mode="entry.mode"
+                        t-att-data-tooltip="entry.name"
+                        t-att-aria-label="entry.name"
+                        t-on-click="() => this.display.modeSwitch.select(entry.mode)"
+                    >
+                        <i class="oi oi-fw" t-att-data-icon="entry.icon"/>
+                    </button>
+                </t>
+            </nav>
+        </xpath>
+    </t>
+
+</templates>
