@@ -47,7 +47,7 @@ export class ExpandAll extends Component {
 export const expandAllItem = {
     Component: ExpandAll,
     groupNumber: 3,
-    isDisplayed: async (env) => hasFoldableGroups(env),
+    isDisplayed: hasFoldableGroups,
 };
 
 cogMenuRegistry.add('expand-all-menu', expandAllItem, { sequence: 1 });

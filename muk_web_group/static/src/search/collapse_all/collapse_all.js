@@ -34,13 +34,10 @@ export class CollapseAll extends Component {
         let groups = this.env.model.root.groups;
         while (groups.length) {
             const unfoldedGroups = groups.filter((group) => !group.isFolded);
-            if (unfoldedGroups.length) {
-                for (const group of unfoldedGroups) {
-                    await group.toggle();
-                }
+            for (const group of unfoldedGroups) {
+                await group.toggle();
             }
-            const subGroups = unfoldedGroups.map((group) => group.list.groups || []);
-            groups = subGroups.reduce((a, b) => a.concat(b), []);
+            groups = unfoldedGroups.flatMap((group) => group.list.groups || []);
         }
         await this.env.model.root.load();
         this.env.model.notify();
@@ -50,7 +47,7 @@ export class CollapseAll extends Component {
 export const collapseAllItem = {
     Component: CollapseAll,
     groupNumber: 3,
-    isDisplayed: async (env) => hasFoldableGroups(env),
+    isDisplayed: hasFoldableGroups,
 };
 
 cogMenuRegistry.add('collapse-all-menu', collapseAllItem, { sequence: 2 });
