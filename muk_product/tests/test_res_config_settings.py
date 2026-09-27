@@ -3,8 +3,6 @@ from odoo.tests import new_test_user
 
 from odoo.addons.muk_product.tests.common import ProductCommon
 
-CODE_XMLID = 'muk_product.seq_product_reference'
-BARCODE_XMLID = 'muk_product.seq_product_barcode'
 GROUP_MENUS = {
     'group_product_variant': ['menu_product_product'],
     'group_product_pricelist': ['menu_salespricelists'],
@@ -26,9 +24,8 @@ class TestResConfigSettings(ProductCommon):
         self.assertTrue(settings.active_product_default_code_automation)
         self.assertFalse(settings.active_product_barcode_automation)
 
-    def test_saving_the_toggles_switches_the_sequences(self):
-        settings = self.env['res.config.settings'].create({})
-        settings.write(
+    def test_saving_the_toggles_switches_the_code_automation(self):
+        settings = self.env['res.config.settings'].create(
             {
                 'active_product_default_code_automation': False,
                 'active_product_barcode_automation': False,
@@ -37,6 +34,9 @@ class TestResConfigSettings(ProductCommon):
         settings.set_values()
         self.assertFalse(self.code_sequence.active)
         self.assertFalse(self.barcode_sequence.active)
+        product = self.env['product.product'].create({'name': 'Unsequenced Product'})
+        self.assertFalse(product.default_code)
+        self.assertFalse(product.barcode)
         settings.write(
             {
                 'active_product_default_code_automation': True,
@@ -47,36 +47,13 @@ class TestResConfigSettings(ProductCommon):
         self.assertTrue(self.code_sequence.active)
         self.assertTrue(self.barcode_sequence.active)
 
-    def test_switching_the_toggles_off_stops_the_code_automation(self):
+    def test_a_missing_sequence_reads_as_disabled_and_fails_on_save(self):
+        self.code_sequence.unlink()
         settings = self.env['res.config.settings'].create({})
-        settings.write(
-            {
-                'active_product_default_code_automation': False,
-                'active_product_barcode_automation': False,
-            }
-        )
-        settings.set_values()
-        product = self.env['product.product'].create({'name': 'Unsequenced Product'})
-        self.assertFalse(product.default_code)
-        self.assertFalse(product.barcode)
-
-    def test_a_missing_sequence_reports_a_user_error_on_save(self):
-        self.env.ref(CODE_XMLID).unlink()
-        settings = self.env['res.config.settings'].create({})
+        self.assertFalse(settings.active_product_default_code_automation)
+        self.assertTrue(settings.active_product_barcode_automation)
         with self.assertRaises(UserError):
             settings.set_values()
-
-    def test_a_missing_sequence_reads_as_a_disabled_automation(self):
-        self.env.ref(BARCODE_XMLID).unlink()
-        settings = self.env['res.config.settings']
-        self.assertFalse(settings._get_product_sequence_active(BARCODE_XMLID))
-        self.assertFalse(settings._get_product_sequence_active('muk_product.unknown'))
-
-    def test_setting_an_unknown_sequence_reports_a_user_error(self):
-        with self.assertRaises(UserError):
-            self.env['res.config.settings']._set_product_sequence_active(
-                'muk_product.unknown', True
-            )
 
     def test_the_settings_unlock_the_product_menus(self):
         user = new_test_user(

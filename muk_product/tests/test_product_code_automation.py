@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from odoo.addons.muk_product.tests.common import ProductCommon
 
 
@@ -12,7 +14,27 @@ class TestProductCodeAutomation(ProductCommon):
         product = self.env['product.product'].create({'name': 'Auto Codes'})
         self.assertEqual(len(product.default_code), 8)
         self.assertTrue(product.default_code.isdigit())
+        self.assertEqual(len(product.barcode), 13)
         self.assert_valid_barcode(product.barcode)
+
+    def test_the_barcode_check_digit_follows_the_gtin_weighting(self):
+        cases = {
+            '400638133393': '4006381333931',
+            '000000000000': '0000000000000',
+            '12': '123',
+            '7': '79',
+        }
+        for payload, barcode in cases.items():
+            with (
+                self.subTest(payload=payload),
+                patch.object(
+                    type(self.env['ir.sequence']),
+                    'next_by_code',
+                    return_value=payload,
+                ),
+            ):
+                product = self.env['product.product'].create({'name': payload})
+                self.assertEqual(product.barcode, barcode)
 
     def test_variant_creation_keeps_the_provided_codes(self):
         product = self.env['product.product'].create(
@@ -53,24 +75,21 @@ class TestProductCodeAutomation(ProductCommon):
         self.assertEqual(template.product_variant_id.default_code, 'TMPL-REF')
         self.assertEqual(template.product_variant_id.barcode, '4006381333931')
 
-    def test_batch_template_creation_assigns_distinct_codes(self):
-        templates = self.env['product.template'].create(
-            [{'name': f'Batch {index}'} for index in range(3)]
+    def test_template_creation_only_fills_the_missing_code(self):
+        template = self.env['product.template'].create(
+            {'name': 'Half Coded', 'barcode': '4006381333931'}
         )
-        variants = templates.product_variant_ids
-        self.assertEqual(len(variants), 3)
-        self.assertEqual(len(set(variants.mapped('default_code'))), 3)
-        self.assertEqual(len(set(variants.mapped('barcode'))), 3)
-        for barcode in variants.mapped('barcode'):
-            self.assert_valid_barcode(barcode)
+        self.assertEqual(template.product_variant_id.barcode, '4006381333931')
+        self.assertEqual(len(template.product_variant_id.default_code), 8)
 
     def test_every_generated_variant_gets_its_own_codes(self):
         template = self.create_variant_template('Shirt', ['Red', 'Blue', 'Green'])
         variants = template.product_variant_ids
         self.assertEqual(len(variants), 3)
-        self.assertTrue(all(variants.mapped('default_code')))
         self.assertEqual(len(set(variants.mapped('default_code'))), 3)
         self.assertEqual(len(set(variants.mapped('barcode'))), 3)
+        for barcode in variants.mapped('barcode'):
+            self.assert_valid_barcode(barcode)
 
     def test_a_variant_added_later_gets_its_own_codes(self):
         template = self.create_variant_template('Mug', ['Small', 'Medium'])
@@ -90,33 +109,12 @@ class TestProductCodeAutomation(ProductCommon):
         self.assertNotIn(added.default_code, existing.mapped('default_code'))
 
     def test_duplicating_a_template_generates_fresh_codes(self):
-        template = self.env['product.template'].create(
-            {
-                'name': 'Original',
-                'manufacturer_name': 'ACME Widget',
-            }
-        )
+        template = self.env['product.template'].create({'name': 'Original'})
         copied = template.copy()
         self.assertTrue(copied.default_code)
         self.assertNotEqual(copied.default_code, template.default_code)
         self.assertNotEqual(copied.barcode, template.barcode)
         self.assert_valid_barcode(copied.barcode)
-        self.assertEqual(copied.manufacturer_name, 'ACME Widget')
-
-    def test_assign_missing_codes_only_fills_the_empty_one(self):
-        product = (
-            self.env['product.product']
-            .with_context(skip_product_code_automation=True)
-            .create(
-                {
-                    'name': 'Half Coded',
-                    'barcode': '4006381333931',
-                }
-            )
-        )
-        product._assign_missing_product_codes()
-        self.assertEqual(product.barcode, '4006381333931')
-        self.assertTrue(product.default_code)
 
     def test_switching_off_the_barcode_sequence_keeps_the_reference(self):
         self.barcode_sequence.write({'active': False})

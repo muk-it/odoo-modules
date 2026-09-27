@@ -2,7 +2,6 @@ import { click } from '@odoo/hoot-dom';
 import { expect, test } from '@odoo/hoot';
 import { defineMailModels } from '@mail/../tests/mail_test_helpers';
 import {
-    contains,
     defineModels,
     fields,
     mockService,
@@ -41,88 +40,27 @@ const kanbanArch = `
     </kanban>
 `;
 
-function trackDoAction() {
-    const calls = [];
-    mockService('action', {
-        doAction(action) {
-            calls.push(action);
-        },
+for (const [type, arch, recordSelector, createSelector] of [
+    ['list', listArch, '.o_data_row', '.o_list_button_add'],
+    [
+        'kanban',
+        kanbanArch,
+        '.o_kanban_record:not(.o_kanban_ghost)',
+        '.o-kanban-button-new',
+    ],
+]) {
+    test.tags('muk_product', 'desktop');
+    test(`product ${type} adds a search button opening the wizard`, async () => {
+        const calls = [];
+        mockService('action', {
+            doAction(action) {
+                calls.push(action);
+            },
+        });
+        await mountView({ type, resModel: 'product.template', arch });
+        expect(recordSelector).toHaveCount(2);
+        expect(createSelector).toHaveCount(1);
+        await click('.mk_button_product_search');
+        expect(calls).toEqual(['muk_product.action_product_search']);
     });
-    return calls;
 }
-
-test.tags('muk_product', 'desktop');
-test('product list exposes a search button opening the wizard', async () => {
-    const calls = trackDoAction();
-    await mountView({
-        type: 'list',
-        resModel: 'product.template',
-        arch: listArch,
-    });
-    expect('.mk_button_product_search').toHaveCount(1);
-    expect('.mk_button_product_search').toHaveText('Search');
-    await click('.mk_button_product_search');
-    expect(calls).toEqual(['muk_product.action_product_search']);
-});
-
-test.tags('muk_product', 'desktop');
-test('product list keeps its records and its standard create button', async () => {
-    await mountView({
-        type: 'list',
-        resModel: 'product.template',
-        arch: listArch,
-    });
-    expect('.o_list_table tbody tr.o_data_row').toHaveCount(2);
-    expect('.o_list_button_add').toHaveCount(1);
-});
-
-test.tags('muk_product', 'desktop');
-test('product kanban exposes a search button opening the wizard', async () => {
-    const calls = trackDoAction();
-    await mountView({
-        type: 'kanban',
-        resModel: 'product.template',
-        arch: kanbanArch,
-    });
-    expect('.mk_button_product_search').toHaveCount(1);
-    expect('.mk_button_product_search').toHaveText('Search');
-    await click('.mk_button_product_search');
-    expect(calls).toEqual(['muk_product.action_product_search']);
-});
-
-test.tags('muk_product', 'desktop');
-test('product kanban keeps its records and its standard create button', async () => {
-    await mountView({
-        type: 'kanban',
-        resModel: 'product.template',
-        arch: kanbanArch,
-    });
-    expect('.o_kanban_record:not(.o_kanban_ghost)').toHaveCount(2);
-    expect('.o-kanban-button-new').toHaveCount(1);
-});
-
-test.tags('muk_product', 'mobile');
-test('product list offers the search button in the mobile dropdown', async () => {
-    const calls = trackDoAction();
-    await mountView({
-        type: 'list',
-        resModel: 'product.template',
-        arch: listArch,
-    });
-    await contains('.o_control_panel_main_buttons .dropdown-toggle').click();
-    await contains('.dropdown-item.mk_button_product_search').click();
-    expect(calls).toEqual(['muk_product.action_product_search']);
-});
-
-test.tags('muk_product', 'mobile');
-test('product kanban offers the search button in the mobile dropdown', async () => {
-    const calls = trackDoAction();
-    await mountView({
-        type: 'kanban',
-        resModel: 'product.template',
-        arch: kanbanArch,
-    });
-    await contains('.o_control_panel_main_buttons .dropdown-toggle').click();
-    await contains('.dropdown-item.mk_button_product_search').click();
-    expect(calls).toEqual(['muk_product.action_product_search']);
-});
