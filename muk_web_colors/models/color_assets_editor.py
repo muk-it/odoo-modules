@@ -34,11 +34,6 @@ class ColorAssetsEditor(models.AbstractModel):
         return self.env['ir.attachment'].search([('url', '=', custom_url)])
 
     @api.model
-    def _get_colors_asset(self, custom_url: str) -> models.BaseModel:
-        """Return the ``ir.asset`` record replacing the original color asset."""
-        return self.env['ir.asset'].search([('path', '=', custom_url)])
-
-    @api.model
     def _get_colors_content(self, url: str, bundle: str) -> str:
         """Return the color asset content, preferring the customized copy."""
         attachment = self._get_colors_attachment(
@@ -53,7 +48,7 @@ class ColorAssetsEditor(models.AbstractModel):
     def _save_colors_content(self, url: str, bundle: str, content: str) -> None:
         """Store the color content as an attachment replacing the bundled asset."""
         custom_url = self._get_custom_colors_url(url, bundle)
-        raw = (content or '\n').encode('utf-8')
+        raw = content.encode('utf-8')
         attachment = self._get_colors_attachment(custom_url)
         if attachment:
             attachment.write({'raw': raw})
@@ -101,4 +96,4 @@ class ColorAssetsEditor(models.AbstractModel):
         """Delete the customized attachment and ``ir.asset`` of a color bundle."""
         custom_url = self._get_custom_colors_url(url, bundle)
         self._get_colors_attachment(custom_url).unlink()
-        self._get_colors_asset(custom_url).unlink()
+        self.env['ir.asset'].search([('path', '=', custom_url)]).unlink()

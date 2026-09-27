@@ -93,25 +93,6 @@ class ResConfigSettings(models.TransientModel):
     # ----------------------------------------------------------
 
     @api.model
-    def _get_color_values(self, palette: str) -> dict:
-        """Return the color values stored in the asset of one color palette."""
-        url, bundle, names = self.COLOR_ASSETS[palette]
-        return self.env['muk_web_colors.color_assets_editor'].read_colors(
-            url, bundle, names
-        )
-
-    def _detect_color_change(self, palette: str) -> bool:
-        """Return whether a color field of one palette differs from its asset."""
-        stored = self._get_color_values(palette)
-        return any(self[f'{name}_{palette}'] != value for name, value in stored.items())
-
-    def _replace_color_values(self, palette: str) -> None:
-        """Save the color fields of one palette to its customized asset."""
-        url, bundle, names = self.COLOR_ASSETS[palette]
-        values = {name: self[f'{name}_{palette}'] for name in names}
-        self.env['muk_web_colors.color_assets_editor'].write_colors(url, bundle, values)
-
-    @api.model
     def _reset_color_assets(self, palette: str) -> None:
         """Delete the customized color asset of one color palette."""
         url, bundle, _names = self.COLOR_ASSETS[palette]
@@ -145,14 +126,17 @@ class ResConfigSettings(models.TransientModel):
     def get_values(self) -> dict:
         """Add the stored color values of every palette to the settings values."""
         values = super().get_values()
-        for palette in self.COLOR_ASSETS:
-            for name, value in self._get_color_values(palette).items():
+        editor = self.env['muk_web_colors.color_assets_editor']
+        for palette, (url, bundle, names) in self.COLOR_ASSETS.items():
+            for name, value in editor.read_colors(url, bundle, names).items():
                 values[f'{name}_{palette}'] = value
         return values
 
     def set_values(self) -> None:
         """Save the changed color values of every palette to their assets."""
         super().set_values()
-        for palette in self.COLOR_ASSETS:
-            if self._detect_color_change(palette):
-                self._replace_color_values(palette)
+        editor = self.env['muk_web_colors.color_assets_editor']
+        for palette, (url, bundle, names) in self.COLOR_ASSETS.items():
+            values = {name: self[f'{name}_{palette}'] for name in names}
+            if values != editor.read_colors(url, bundle, names):
+                editor.write_colors(url, bundle, values)
