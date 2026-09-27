@@ -39,8 +39,12 @@ class TestTreeExport(HttpCase):
     # Helper
     # ----------------------------------------------------------
 
-    def _export(self, **params: object) -> list[tuple[str, int, int, bool]]:
-        """Export the partner names, return each row's name, outline, indent and fill."""
+    def _export(self, **params: object) -> list[tuple]:
+        """
+        Export the partners, return each row's first cell, outline, indent and fill.
+
+        The values of the other cells follow, a text or a number.
+        """
         self.authenticate('admin', 'admin')
         data = {
             'model': 'res.partner',
@@ -73,12 +77,20 @@ class TestTreeExport(HttpCase):
         ]
         rows = []
         for row in sheet.findall('x:sheetData/x:row', XLSX_NAMESPACE)[1:]:
-            cell = row.find('x:c', XLSX_NAMESPACE)
+            cells = row.findall('x:c', XLSX_NAMESPACE)
+            values = []
+            for node in cells:
+                value = node.findtext('x:v', '', XLSX_NAMESPACE)
+                if node.get('t') == 's':
+                    values.append(texts[int(value)])
+                else:
+                    values.append(float(value) if value else '')
             rows.append(
                 (
-                    texts[int(cell.findtext('x:v', namespaces=XLSX_NAMESPACE))],
+                    values[0],
                     int(row.get('outlineLevel', 0)),
-                    *cell_styles[int(cell.get('s', 0))],
+                    *cell_styles[int(cells[0].get('s', 0))],
+                    *values[1:],
                 )
             )
         return rows
@@ -145,5 +157,30 @@ class TestTreeExport(HttpCase):
                 ('Tree Export Alpha', 0, 0, True),
                 ('Tree Export Alpha Two', 1, 1, True),
                 ('Tree Export Leaf', 2, 2, False),
+            ],
+        )
+
+    def test_search_export_keeps_numbers_and_sub_rows(self):
+        tags = self.env['res.partner.category'].create(
+            [{'name': 'Tree Export Tag A'}, {'name': 'Tree Export Tag B'}]
+        )
+        self.alpha_two.write({'color': 3, 'partner_latitude': 1.5})
+        self.leaf.write({'color': 4, 'category_id': tags.ids})
+        self.assertEqual(
+            self._export(
+                fields=[
+                    {'name': 'name', 'label': 'Name', 'type': 'char'},
+                    {'name': 'color', 'label': 'Color', 'type': 'integer'},
+                    {'name': 'partner_latitude', 'label': 'Lat', 'type': 'float'},
+                    {'name': 'category_id/name', 'label': 'Tags', 'type': 'char'},
+                ],
+                domain=[('name', '=', 'Tree Export Leaf')],
+                context={'treelist_parent_field': 'parent_id', 'treelist_search': True},
+            ),
+            [
+                ('Tree Export Alpha', 0, 0, True, 0.0, 1.5, ''),
+                ('Tree Export Alpha Two', 1, 1, True, 3.0, 1.5, ''),
+                ('Tree Export Leaf', 2, 2, False, 4.0, 1.5, 'Tree Export Tag A'),
+                ('', 2, 2, False, '', '', 'Tree Export Tag B'),
             ],
         )

@@ -23,10 +23,14 @@ class Base(models.AbstractModel):
     # ----------------------------------------------------------
 
     @api.model
-    def _tree_context(
+    def _tree_nodes(
         self, domain: Domain, parent_field: str
     ) -> tuple[dict[int, int], dict[int, int]]:
-        """Return the matches and their accessible ancestors outside the domain."""
+        """Return the visible records of a search and its context rows.
+
+        Both map a record to its parent: the matches with their accessible
+        ancestors outside the domain, and those ancestors alone.
+        """
         matched = self._search(domain)
         matched.order = None
         rows = self.env.execute_query(
@@ -70,11 +74,12 @@ class Base(models.AbstractModel):
                 accessible=accessible.select(),
             )
         )
-        return matched, {
+        context = {
             record_id: parent_id
             for record_id, parent_id in rows
             if record_id not in matched
         }
+        return {**matched, **context}, context
 
     @api.model
     def _tree_with(
@@ -365,18 +370,6 @@ class Base(models.AbstractModel):
             }
             for row in rows
         }
-
-    @api.model
-    def _tree_nodes(
-        self, domain: Domain, parent_field: str
-    ) -> tuple[dict[int, int], dict[int, int]]:
-        """Return the visible records of a search and its context rows.
-
-        Both map a record to its parent: the matches with their accessible
-        ancestors, and those ancestors alone. The search runs only once.
-        """
-        matched, context = self._tree_context(domain, parent_field)
-        return {**matched, **context}, context
 
     def _tree_export_levels(self, parent_field: str) -> dict[int, int]:
         """Return the level of each record, with every parent before its children.

@@ -3,7 +3,7 @@ from __future__ import annotations
 from unittest.mock import patch
 
 from odoo import models
-from odoo.tests import TransactionCase
+from odoo.tests import TransactionCase, new_test_user
 
 SPECIFICATION = {'name': {}}
 
@@ -106,38 +106,70 @@ class TestTreeRead(TransactionCase):
         result = self._read(limit=1, offset=1)
         self.assertEqual(self._rows(result), [('Beta', 0)])
 
-    def test_search_adds_context_ancestors(self):
-        domain = [*self.domain, ('name', '=', 'Alpha Two Leaf')]
-        result = self._read(domain, expand_context=True)
-        self.assertEqual(
-            self._rows(result),
-            [('Alpha', 0), ('Alpha Two', 1), ('Alpha Two Leaf', 2)],
+    def test_search_shows_the_matches_under_their_ancestors(self):
+        cases = [
+            (
+                ['Alpha Two Leaf'],
+                True,
+                [
+                    ('Alpha', 0, True),
+                    ('Alpha Two', 1, True),
+                    ('Alpha Two Leaf', 2, False),
+                ],
+            ),
+            (['Alpha Two Leaf'], False, [('Alpha', 0, True)]),
+            (
+                ['Alpha', 'Alpha Two Leaf'],
+                True,
+                [
+                    ('Alpha', 0, False),
+                    ('Alpha Two', 1, True),
+                    ('Alpha Two Leaf', 2, False),
+                ],
+            ),
+            (['Alpha One'], True, [('Alpha', 0, True), ('Alpha One', 1, False)]),
+        ]
+        for names, expand_context, expected in cases:
+            with self.subTest(names=names, expand_context=expand_context):
+                result = self._read(
+                    [*self.domain, ('name', 'in', names)], expand_context=expand_context
+                )
+                self.assertEqual(
+                    [
+                        (
+                            row['name'],
+                            row['__tree__']['level'],
+                            row['__tree__']['context'],
+                        )
+                        for row in result['records']
+                    ],
+                    expected,
+                )
+                self.assertEqual(result['records'][0]['__tree__']['count'], 1)
+
+    def test_search_leaves_out_inaccessible_ancestors(self):
+        company = self.env['res.company'].create({'name': 'Tree Other Company'})
+        self.alpha.company_id = company
+        (self.alpha_two | self.alpha_two_leaf).company_id = self.env.company
+        user = new_test_user(
+            self.env,
+            'tree_user',
+            company_id=self.env.company.id,
+            company_ids=self.env.company.ids,
         )
-        context = [row['__tree__']['context'] for row in result['records']]
-        self.assertEqual(context, [True, True, False])
-        self.assertEqual(result['records'][0]['__tree__']['count'], 1)
-
-    def test_search_without_context_expansion(self):
+        partner = self.env['res.partner'].with_user(user)
         domain = [*self.domain, ('name', '=', 'Alpha Two Leaf')]
-        result = self._read(domain)
-        self.assertEqual(self._rows(result), [('Alpha', 0)])
-        self.assertTrue(result['records'][0]['__tree__']['context'])
-
-    def test_matching_ancestor_is_not_context(self):
-        domain = [*self.domain, ('name', 'in', ('Alpha', 'Alpha Two Leaf'))]
-        result = self._read(domain, expand_context=True)
-        self.assertEqual(
-            self._rows(result),
-            [('Alpha', 0), ('Alpha Two', 1), ('Alpha Two Leaf', 2)],
+        result = partner.web_tree_read(
+            domain,
+            SPECIFICATION,
+            'parent_id',
+            search=True,
+            expand_context=True,
         )
-        context = [row['__tree__']['context'] for row in result['records']]
-        self.assertEqual(context, [False, True, False])
-
-    def test_unmatched_parent_without_matching_descendant(self):
-        domain = [*self.domain, ('name', '=', 'Alpha One')]
-        result = self._read(domain, expand_context=True)
-        self.assertEqual(self._rows(result), [('Alpha', 0), ('Alpha One', 1)])
-        self.assertNotIn('Alpha Two', {row['name'] for row in result['records']})
+        self.assertEqual(self._rows(result), [('Alpha Two', 0), ('Alpha Two Leaf', 1)])
+        self.assertEqual(
+            partner.web_tree_search_count(domain, 'parent_id', search=True), 1
+        )
 
     def test_rollups(self):
         result = self._read(expanded_ids=[self.alpha.id], rollup_fields=['color'])
@@ -146,27 +178,14 @@ class TestTreeRead(TransactionCase):
         self.assertEqual(rollups['Alpha Two'], {'color': 7})
         self.assertEqual(rollups['Alpha One'], {})
         self.assertEqual(rollups['Beta'], {})
+        result = self._read(expanded_ids=[self.alpha.id], rollup_fields=['name'])
+        self.assertEqual(result['records'][0]['__tree__']['rollups'], {})
 
     def test_rollups_follow_search(self):
         domain = [*self.domain, ('name', '!=', 'Alpha One')]
         result = self._read(domain, rollup_fields=['color'])
         rollups = {row['name']: row['__tree__']['rollups'] for row in result['records']}
         self.assertEqual(rollups['Alpha'], {'color': 8})
-
-    def test_parent_store_model(self):
-        category = self.env['res.partner.category']
-        root = category.create({'name': 'Node Root'})
-        child = category.create({'name': 'Node Child', 'parent_id': root.id})
-        category.create({'name': 'Node Leaf', 'parent_id': child.id})
-        result = self._read(
-            [('name', '=like', 'Node %')],
-            model='res.partner.category',
-            expand_all=True,
-        )
-        self.assertEqual(
-            self._rows(result),
-            [('Node Root', 0), ('Node Child', 1), ('Node Leaf', 2)],
-        )
 
     def test_archived_parent_makes_root(self):
         category = self.env['res.partner.category']

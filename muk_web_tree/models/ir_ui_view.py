@@ -28,12 +28,6 @@ class IrUiView(models.Model):
         """Give the treelist view its switcher icon."""
         return {'treelist': {'icon': 'account_tree'}} | super()._get_view_info()
 
-    def _get_view_fields(self, view_type: str, models: dict) -> dict:
-        """Load the fields a treelist needs like those of a list."""
-        if view_type == 'treelist':
-            view_type = 'list'
-        return super()._get_view_fields(view_type, models)
-
     def _add_missing_fields(
         self, node: etree._Element, name_manager: NameManager
     ) -> dict:
@@ -60,12 +54,6 @@ class IrUiView(models.Model):
     def _onchange_able_view_treelist(self, node: etree._Element) -> bool:
         """Run onchanges on inline edited treelist rows."""
         return True
-
-    def _modifiers_from_model(self, node: etree._Element) -> list[str]:
-        """Take the readonly and required modifiers of the model fields."""
-        if node.tag == 'treelist':
-            return ['readonly', 'required']
-        return super()._modifiers_from_model(node)
 
     def _validate_tag_treelist(
         self, node: etree._Element, name_manager: NameManager, node_info: dict

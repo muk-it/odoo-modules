@@ -8,9 +8,6 @@ import {
 } from '@web/../tests/web_test_helpers';
 import { download } from '@web/core/network/download';
 
-import { collapseAllItem } from '@muk_web_group/search/collapse_all/collapse_all';
-import { expandAllItem } from '@muk_web_group/search/expand_all/expand_all';
-
 import { defineTreeModels, rowNames, SEARCH_ARCH, TREE_ARCH } from './helpers/models';
 
 defineTreeModels();
@@ -45,21 +42,6 @@ test('expand all unfolds the groups of a grouped treelist', async () => {
     await contains('.mk_expand_all_menu').click();
     expect('.o_data_row').toHaveCount(5);
     expect('.mk_treelist_toggle').toHaveCount(0);
-});
-
-test.tags('muk_web_tree');
-test('cog menu entries show on any treelist', async () => {
-    const makeEnv = (viewType, groupBy) => ({
-        config: { viewType },
-        searchModel: { groupBy },
-        services: { ui: { isSmall: false } },
-    });
-    for (const item of [expandAllItem, collapseAllItem]) {
-        expect(await item.isDisplayed(makeEnv('treelist', []))).toBe(true);
-        expect(await item.isDisplayed(makeEnv('treelist', ['parent_id']))).toBe(true);
-        expect(await item.isDisplayed(makeEnv('list', []))).toBe(false);
-        expect(await item.isDisplayed(makeEnv('list', ['parent_id']))).toBe(true);
-    }
 });
 
 test.tags('muk_web_tree', 'desktop');

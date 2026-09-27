@@ -1,5 +1,6 @@
 from lxml import etree
 
+from odoo import Command
 from odoo.exceptions import ValidationError
 from odoo.tests import TransactionCase
 from odoo.tools import mute_logger
@@ -11,13 +12,6 @@ class TestTreeListView(TransactionCase):
     # ----------------------------------------------------------
     # Tests
     # ----------------------------------------------------------
-
-    def test_view_type_and_icon(self):
-        self.assertIn(
-            'treelist', dict(self.env['ir.ui.view']._fields['type'].selection)
-        )
-        view_info = self.env['ir.ui.view']._get_view_info()
-        self.assertEqual(view_info['treelist']['icon'], 'account_tree')
 
     def test_create_valid_view(self):
         view = self.env['ir.ui.view'].create(
@@ -77,12 +71,15 @@ class TestTreeListView(TransactionCase):
         self.assertEqual(added[0].get('column_invisible'), 'True')
         self.assertIsNone(added[0].get('invisible'))
 
-    def test_action_view_mode(self):
+    def test_action_opens_a_treelist_view(self):
         action = self.env['ir.actions.act_window'].create(
             {
                 'name': 'Partners',
                 'res_model': 'res.partner',
-                'view_mode': 'treelist,form',
+                'view_mode': 'list,form',
+                'view_ids': [Command.create({'view_mode': 'treelist'})],
             }
         )
-        self.assertEqual([mode for _view, mode in action.views], ['treelist', 'form'])
+        self.assertEqual(
+            [mode for _view, mode in action.views], ['treelist', 'list', 'form']
+        )

@@ -17,7 +17,9 @@ defineTreeModels();
 test.tags('muk_web_tree', 'desktop');
 test('renders the root records with a toggle on parents', async () => {
     await mountView({ type: 'treelist', resModel: 'category', arch: TREE_ARCH });
+    expect('.o_view_controller').toHaveClass('o_list_view');
     expect('table.o_list_table').toHaveAttribute('role', 'treegrid');
+    expect('thead th[data-name=name]').toHaveClass('mk_treelist_header');
     expect(rowNames()).toEqual(['Alpha', 'Beta']);
     expect(rowLevels()).toEqual(['1', '1']);
     expect('.o_data_row:eq(0) .mk_treelist_toggle').toHaveCount(1);
@@ -58,7 +60,7 @@ test('expands and collapses rows', async () => {
 });
 
 test.tags('muk_web_tree', 'desktop');
-test('search shows the matches under greyed ancestors', async () => {
+test('search shows the matches under greyed ancestors, not remembered', async () => {
     await mountView({
         type: 'treelist',
         resModel: 'category',
@@ -69,6 +71,9 @@ test('search shows the matches under greyed ancestors', async () => {
     expect(rowNames()).toEqual(['Alpha', 'Alpha Two', 'Alpha Two Leaf']);
     expect('.o_data_row.mk_treelist_context').toHaveCount(2);
     expect('.o_data_row:eq(2)').not.toHaveClass('mk_treelist_context');
+    expect(JSON.parse(browser.localStorage.getItem('mk_treelist,category,0'))).toEqual(
+        [],
+    );
 });
 
 test.tags('muk_web_tree', 'desktop');
@@ -150,13 +155,6 @@ test('arrow keys expand, collapse and move to the parent', async () => {
 });
 
 test.tags('muk_web_tree', 'desktop');
-test('treelist carries the list view styles', async () => {
-    await mountView({ type: 'treelist', resModel: 'category', arch: TREE_ARCH });
-    expect('.o_view_controller').toHaveClass('o_list_view');
-    expect('thead th[data-name=name]').toHaveClass('mk_treelist_header');
-});
-
-test.tags('muk_web_tree', 'desktop');
 test('pages the children of a parent with its own pager', async () => {
     await mountView({
         type: 'treelist',
@@ -183,22 +181,7 @@ test('selecting the whole domain counts every record', async () => {
 });
 
 test.tags('muk_web_tree', 'desktop');
-test('search expansions are not remembered', async () => {
-    await mountView({
-        type: 'treelist',
-        resModel: 'category',
-        arch: TREE_ARCH,
-        searchViewArch: SEARCH_ARCH,
-        context: { search_default_leaf: 1 },
-    });
-    expect(rowNames()).toEqual(['Alpha', 'Alpha Two', 'Alpha Two Leaf']);
-    expect(JSON.parse(browser.localStorage.getItem('mk_treelist,category,0'))).toEqual(
-        [],
-    );
-});
-
-test.tags('muk_web_tree', 'desktop');
-test('context rows cannot be selected', async () => {
+test('context rows cannot be selected, not even with the whole search', async () => {
     await mountView({
         type: 'treelist',
         resModel: 'category',
@@ -213,18 +196,6 @@ test('context rows cannot be selected', async () => {
     expect('.o_data_row_selected').toHaveCount(1);
     expect('.o_data_row_selected td[name=name]').toHaveText('Alpha Two Leaf');
     expect('thead .o_list_record_selector input').toBeChecked();
-});
-
-test.tags('muk_web_tree', 'desktop');
-test('selecting the whole search skips the context rows', async () => {
-    await mountView({
-        type: 'treelist',
-        resModel: 'category',
-        arch: TREE_ARCH,
-        searchViewArch: SEARCH_ARCH,
-        context: { search_default_leaf: 1 },
-    });
-    await contains('thead .o_list_record_selector input').click();
     await contains('.o_select_domain').click();
     expect('.o_selection_box').toHaveText(/All 1 selected/);
     expect('.o_data_row_selected').toHaveCount(1);
