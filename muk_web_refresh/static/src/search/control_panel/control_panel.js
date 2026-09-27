@@ -6,8 +6,10 @@ import { ControlPanel } from '@web/search/control_panel/control_panel';
 
 import { onWillDestroy, proxy, useListener, useOnChange } from '@odoo/owl';
 
-import { getAutoLoadInterval } from '@muk_web_refresh/core/utils/refresh';
-import { REFRESH_VIEW_EVENT } from '@muk_web_refresh/services/refresh/refresh_plugin';
+import {
+    getAutoLoadInterval,
+    REFRESH_VIEW_EVENT,
+} from '@muk_web_refresh/services/refresh/refresh_plugin';
 
 /**
  * Provide a callback that briefly flashes the refresh animation on the content.
@@ -17,29 +19,18 @@ import { REFRESH_VIEW_EVENT } from '@muk_web_refresh/services/refresh/refresh_pl
  */
 function useRefreshAnimation(timeout) {
     let timeoutId = null;
-    function contentClassList() {
+    onWillDestroy(() => clearTimeout(timeoutId));
+    return () => {
         const content = document.querySelector('.o_content');
-        return content ? content.classList : null;
-    }
-    function clearAnimationTimeout() {
-        if (timeoutId) {
+        if (content) {
             clearTimeout(timeoutId);
+            content.classList.add('mk_refresh');
+            timeoutId = setTimeout(
+                () => content.classList.remove('mk_refresh'),
+                timeout,
+            );
         }
-        timeoutId = null;
-    }
-    function animate() {
-        clearAnimationTimeout();
-        const classList = contentClassList();
-        if (classList) {
-            classList.add('mk_refresh');
-            timeoutId = setTimeout(() => {
-                classList.remove('mk_refresh');
-                clearAnimationTimeout();
-            }, timeout);
-        }
-    }
-    onWillDestroy(clearAnimationTimeout);
-    return animate;
+    };
 }
 
 /** Add a manual refresh button and a per-view auto-load timer. */
@@ -54,18 +45,15 @@ patch(ControlPanel.prototype, {
         });
         this.autoLoadState = proxy({
             active:
-                this.checkAutoLoadAvailability() && !!this.getAutoLoadStorageValue(),
+                this.checkAutoLoadAvailability() &&
+                !!browser.localStorage.getItem(this.getAutoLoadStorageKey()),
             counter: 0,
         });
         this.visibilityState = proxy({ hidden: document.hidden });
         useListener(document, 'visibilitychange', () => {
             this.visibilityState.hidden = document.hidden;
         });
-        onWillDestroy(() => {
-            if (this._clickTimeout) {
-                clearTimeout(this._clickTimeout);
-            }
-        });
+        onWillDestroy(() => clearTimeout(this._clickTimeout));
         useOnChange(
             () => [this.autoLoadState.active, this.visibilityState.hidden],
             (active, hidden) => {
@@ -127,36 +115,17 @@ patch(ControlPanel.prototype, {
      * @returns {string} the storage key for the open action and view
      */
     getAutoLoadStorageKey() {
-        const keys = [
-            this.env?.config?.actionId ?? '',
-            this.env?.config?.viewType ?? '',
-            this.env?.config?.viewId ?? '',
-        ];
-        return `pager_autoload:${keys.join(',')}`;
-    },
-    /**
-     * Read the stored auto-load toggle for the open action and view.
-     *
-     * @returns {string|null} the stored value, or null when unset
-     */
-    getAutoLoadStorageValue() {
-        return browser.localStorage.getItem(this.getAutoLoadStorageKey());
-    },
-    /** Remember that auto-load is on for the open action and view. */
-    setAutoLoadStorageValue() {
-        browser.localStorage.setItem(this.getAutoLoadStorageKey(), true);
-    },
-    /** Forget the auto-load toggle for the open action and view. */
-    removeAutoLoadStorageValue() {
-        browser.localStorage.removeItem(this.getAutoLoadStorageKey());
+        const { actionId, viewType, viewId } = this.env.config;
+        return `pager_autoload:${[actionId, viewType, viewId].join(',')}`;
     },
     /** Flip auto-load for the open view and persist the new state. */
     toggleAutoLoad() {
         this.autoLoadState.active = !this.autoLoadState.active;
+        const key = this.getAutoLoadStorageKey();
         if (this.autoLoadState.active) {
-            this.setAutoLoadStorageValue();
+            browser.localStorage.setItem(key, true);
         } else {
-            this.removeAutoLoadStorageValue();
+            browser.localStorage.removeItem(key);
         }
     },
     /**
@@ -179,22 +148,15 @@ patch(ControlPanel.prototype, {
         return false;
     },
     onClickRefresh() {
-        if (this._clickTimeout) {
-            clearTimeout(this._clickTimeout);
-            this._clickTimeout = null;
-        }
+        clearTimeout(this._clickTimeout);
         this._clickTimeout = setTimeout(async () => {
-            this._clickTimeout = null;
             if (await this.refreshView()) {
                 this.refreshAnimation();
             }
         }, 300);
     },
     onDblClickRefresh() {
-        if (this._clickTimeout) {
-            clearTimeout(this._clickTimeout);
-            this._clickTimeout = null;
-        }
+        clearTimeout(this._clickTimeout);
         if (this.checkAutoLoadAvailability()) {
             this.toggleAutoLoad();
         }

@@ -35,9 +35,9 @@ class IrActionsServer(models.Model):
     # Actions
     # ----------------------------------------------------------
 
-    def _run_action_refresh_multi(self, eval_context: dict | None = None) -> None:
+    def _run_action_refresh_multi(self, eval_context: dict) -> None:
         """Send a view reload request to internal users over the bus."""
-        records = eval_context.get('records') or eval_context.get('record')
+        records = eval_context['records'] or eval_context['record']
         message = {
             'model': self.model_id.model,
             'view_types': [

@@ -1,14 +1,22 @@
 import { GlobalBusPlugin } from '@web/core/global_bus_plugin';
 import { services } from '@web/core/services';
+import { session } from '@web/session';
 import { ActionPlugin } from '@web/webclient/actions/action_plugin';
 
 import { BusPlugin } from '@bus/services/bus_plugin';
 
 import { onWillDestroy, Plugin, usePlugin } from '@odoo/owl';
 
-import { getAutoLoadInterval } from '@muk_web_refresh/core/utils/refresh';
-
 export const REFRESH_VIEW_EVENT = 'muk_web_refresh.refresh-view';
+
+/**
+ * Return the configured auto-load interval in milliseconds.
+ *
+ * @returns {number}
+ */
+export function getAutoLoadInterval() {
+    return session.pager_autoload_interval ?? 30000;
+}
 
 /**
  * Tell whether the current view matches the reload notification payload.

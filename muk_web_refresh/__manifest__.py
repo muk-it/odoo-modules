@@ -8,7 +8,7 @@
         tab is in the background. A Reload Views server action lets an automation rule
         push a refresh to every open view of a model from the backend.
     """,
-    'version': '20.0.1.1.15',
+    'version': '20.0.1.1.16',
     'category': 'Tools/UI',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -31,7 +31,6 @@
     ],
     'assets': {
         'web.assets_backend': [
-            'muk_web_refresh/static/src/core/utils/refresh.js',
             'muk_web_refresh/static/src/search/control_panel/control_panel.scss',
             (
                 'after',
