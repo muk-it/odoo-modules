@@ -5,19 +5,14 @@ import { Store } from '@mail/core/common/store_service';
 patch(Store.prototype, {
     async getMessagePostParams({ postData, thread }) {
         const params = await super.getMessagePostParams(...arguments);
-        if (!postData?.notifyInternalFollowers) {
+        if (!postData.notifyInternalFollowers) {
             return params;
         }
         for (const recipient of thread.additionalRecipients) {
-            const isCc = recipient.recipient_type === 'cc';
-            if (isCc && !postData.isCcEnabled) {
-                continue;
-            }
-            const field = `partner_${isCc ? 'cc_' : ''}${
-                recipient.persona ? 'ids' : 'emails'
-            }`;
-            (params.post_data[field] ??= []).push(
-                recipient.persona?.id ?? recipient.email,
+            const cc = recipient.recipient_type === 'cc' ? 'cc_' : '';
+            const field = recipient.partner_id ? 'ids' : 'emails';
+            (params.post_data[`partner_${cc}${field}`] ??= []).push(
+                recipient.partner_id || recipient.email,
             );
         }
         params.context = {

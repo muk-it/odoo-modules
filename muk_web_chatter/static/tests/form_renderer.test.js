@@ -6,15 +6,15 @@ import { browser } from '@web/core/browser/browser';
 import { session } from '@web/session';
 
 import {
+    SIZES,
+    contains,
     defineMailModels,
     openFormView,
+    patchUiSize,
     start,
     startServer,
 } from '@mail/../tests/mail_test_helpers';
 import { patchWithCleanup } from '@web/../tests/web_test_helpers';
-
-import '@muk_web_chatter/views/form/form_compiler';
-import '@muk_web_chatter/views/form/form_renderer';
 
 describe.current.tags('desktop');
 defineMailModels();
@@ -29,27 +29,16 @@ const ARCH = `
 `;
 
 async function openPartnerForm() {
-    patchWithCleanup(session, { chatter_position: 'side' });
+    patchUiSize({ size: SIZES.XXL });
     const pyEnv = await startServer();
     const partnerId = pyEnv['res.partner'].create({ name: 'Chatter Partner' });
     await start();
     await openFormView('res.partner', partnerId, { arch: ARCH });
+    return partnerId;
 }
 
-function startDrag(fromX) {
-    queryOne('.mk_chatter_resize').dispatchEvent(
-        new MouseEvent('mousedown', { button: 0, clientX: fromX, bubbles: true }),
-    );
-}
-
-function moveTo(toX) {
-    document.dispatchEvent(
-        new MouseEvent('mousemove', { clientX: toX, bubbles: true }),
-    );
-}
-
-function stopDrag() {
-    document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+function mouse(target, type, init = {}) {
+    target.dispatchEvent(new MouseEvent(type, { button: 0, bubbles: true, ...init }));
 }
 
 function storedWidth() {
@@ -63,83 +52,62 @@ function chatterWidth() {
 }
 
 test.tags('muk_web_chatter');
-test('dragging the handle to the left widens the chatter', async () => {
+test('the chatter position preference places the chatter', async () => {
+    const partnerId = await openPartnerForm();
+    await contains('.o-mail-Form-chatter.o-aside .mk_chatter_resize');
+    patchWithCleanup(session, { chatter_position: 'bottom' });
+    await openFormView('res.partner', partnerId, { arch: ARCH });
+    await contains('.o-mail-Form-chatter:not(.o-aside)');
+    await contains('.o-mail-Form-chatter.o-aside', { count: 0 });
+});
+
+test.tags('muk_web_chatter');
+test('dragging the handle resizes the chatter within its bounds', async () => {
     await openPartnerForm();
     const chatter = queryOne('.o-mail-Form-chatter');
     const initialWidth = chatter.offsetWidth;
     const maxWidth = Math.max(chatter.parentElement.offsetWidth - 250, 250);
-    startDrag(600);
-    moveTo(500);
+    mouse(queryOne('.mk_chatter_resize'), 'mousedown', { clientX: 600 });
+    mouse(document, 'mousemove', { clientX: 500 });
     await animationFrame();
     expect(chatterWidth()).toBe(`${Math.min(initialWidth + 100, maxWidth)}px`);
-    stopDrag();
-});
-
-test.tags('muk_web_chatter');
-test('the width reaches local storage when the drag ends, not while it runs', async () => {
-    await openPartnerForm();
-    startDrag(600);
-    moveTo(500);
-    await animationFrame();
-    expect(storedWidth()).toBe(null);
-    stopDrag();
-    await animationFrame();
-    expect(storedWidth()).toBe(chatterWidth().replace('px', ''));
-});
-
-test.tags('muk_web_chatter');
-test('dragging never shrinks the chatter below its minimum width', async () => {
-    await openPartnerForm();
-    startDrag(600);
-    moveTo(100000);
+    mouse(document, 'mousemove', { clientX: 100000 });
     await animationFrame();
     expect(chatterWidth()).toBe('50px');
-    stopDrag();
+    mouse(document, 'mouseup');
 });
 
 test.tags('muk_web_chatter');
-test('dragging stops tracking the mouse after the button is released', async () => {
+test('releasing the handle stores the width and ends the drag', async () => {
     await openPartnerForm();
-    startDrag(600);
-    moveTo(500);
+    mouse(queryOne('.mk_chatter_resize'), 'mousedown', { clientX: 600 });
+    mouse(document, 'mousemove', { clientX: 500 });
     await animationFrame();
-    const widthAfterDrag = chatterWidth();
-    stopDrag();
-    moveTo(200);
+    const width = chatterWidth();
+    expect(storedWidth()).toBe(null);
+    mouse(document, 'mouseup');
+    mouse(document, 'mousemove', { clientX: 200 });
     await animationFrame();
-    expect(chatterWidth()).toBe(widthAfterDrag);
+    expect(storedWidth()).toBe(width.replace('px', ''));
+    expect(chatterWidth()).toBe(width);
 });
 
 test.tags('muk_web_chatter');
 test('a non primary mouse button does not start a resize', async () => {
     await openPartnerForm();
-    queryOne('.mk_chatter_resize').dispatchEvent(
-        new MouseEvent('mousedown', { button: 2, clientX: 600, bubbles: true }),
-    );
-    moveTo(400);
+    mouse(queryOne('.mk_chatter_resize'), 'mousedown', { button: 2, clientX: 600 });
+    mouse(document, 'mousemove', { clientX: 400 });
     await animationFrame();
     expect(chatterWidth()).toBe('');
 });
 
 test.tags('muk_web_chatter');
-test('double clicking the handle clears the stored width', async () => {
-    await openPartnerForm();
-    startDrag(600);
-    moveTo(500);
-    stopDrag();
-    await animationFrame();
-    expect(storedWidth()).not.toBe(null);
-    queryOne('.mk_chatter_resize').dispatchEvent(
-        new MouseEvent('dblclick', { bubbles: true }),
-    );
-    await animationFrame();
-    expect(storedWidth()).toBe(null);
-    expect(chatterWidth()).toBe('');
-});
-
-test.tags('muk_web_chatter');
-test('a stored width is restored on the next form render', async () => {
+test('a stored width is restored and double clicking the handle resets it', async () => {
     browser.localStorage.setItem('muk_web_chatter.width', '640');
     await openPartnerForm();
     expect(chatterWidth()).toBe('640px');
+    mouse(queryOne('.mk_chatter_resize'), 'dblclick');
+    await animationFrame();
+    expect(storedWidth()).toBe(null);
+    expect(chatterWidth()).toBe('');
 });

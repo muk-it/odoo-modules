@@ -38,12 +38,15 @@ patch(RecipientsInput.prototype, {
         if (!this.isInternalNote) {
             return tags;
         }
-        const suggested = new Set(
-            this.props.thread.suggestedRecipients.map(
-                (recipient) => recipient.partner_id,
-            ),
+        const suggested = this.props.thread.suggestedRecipients;
+        return tags.filter(
+            (tag) =>
+                !suggested.some(
+                    (recipient) =>
+                        recipient.partner_id === tag.resId &&
+                        (recipient.email || '') === tag.email,
+                ),
         );
-        return tags.filter((tag) => !suggested.has(tag.resId));
     },
     getPlaceholder() {
         if (this.isInternalNote && this.props.recipientType === 'to') {

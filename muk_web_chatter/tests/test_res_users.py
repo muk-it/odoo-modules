@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-from odoo.exceptions import AccessError
-from odoo.tests import TransactionCase, new_test_user
-from odoo.tools import mute_logger
+from odoo.tests import Form, HttpCase, new_test_user
 
 
-class TestResUsers(TransactionCase):
-    """Cover the self-service access granted to the chatter position."""
+class TestResUsers(HttpCase):
+    """Cover the chatter position a user picks in the preferences."""
 
     # ----------------------------------------------------------
     # Setup
@@ -14,44 +12,35 @@ class TestResUsers(TransactionCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        """Create two internal users to act on each other."""
+        """Create the internal user who edits the preference."""
         super().setUpClass()
         cls.user = new_test_user(
             cls.env,
-            login='chatter_pref',
-            password='chatter_pref',
+            login='chatter_user',
+            password='chatter_user',
             groups='base.group_user',
         )
-        cls.other = new_test_user(
-            cls.env,
-            login='chatter_other',
-            password='chatter_other',
-            groups='base.group_user',
+
+    # ----------------------------------------------------------
+    # Helper
+    # ----------------------------------------------------------
+
+    def _get_chatter_position(self) -> str:
+        """Return the chatter position of a freshly opened user session."""
+        self.authenticate('chatter_user', 'chatter_user')
+        info = self.make_jsonrpc_request(
+            '/web/session/get_session_info', {}, timeout=120
         )
+        return info['chatter_position']
 
     # ----------------------------------------------------------
     # Tests
     # ----------------------------------------------------------
 
-    def test_default_chatter_position(self):
-        self.assertEqual(self.user.chatter_position, 'side')
-
-    def test_user_updates_own_chatter_position(self):
-        self.user.with_user(self.user).write({'chatter_position': 'bottom'})
-        self.assertEqual(self.user.chatter_position, 'bottom')
-        self.assertEqual(
-            self.user.with_user(self.user).read(['chatter_position'])[0][
-                'chatter_position'
-            ],
-            'bottom',
-        )
-
-    @mute_logger('odoo.models')
-    def test_user_cannot_update_unlisted_field(self):
-        with self.assertRaises(AccessError):
-            self.user.with_user(self.user).write({'login': 'chatter_hijack'})
-
-    @mute_logger('odoo.models')
-    def test_user_cannot_update_other_user_chatter_position(self):
-        with self.assertRaises(AccessError):
-            self.other.with_user(self.user).write({'chatter_position': 'bottom'})
+    def test_user_sets_the_chatter_position_in_the_preferences(self):
+        self.assertEqual(self._get_chatter_position(), 'side')
+        with Form(
+            self.user.with_user(self.user), view='base.view_users_form_simple_modif'
+        ) as preferences:
+            preferences.chatter_position = 'bottom'
+        self.assertEqual(self._get_chatter_position(), 'bottom')

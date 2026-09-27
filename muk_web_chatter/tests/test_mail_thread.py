@@ -29,10 +29,11 @@ class TestMailThread(TransactionCase):
         )
         cls.contact = cls.env['res.partner'].create({'name': 'Chatter Contact'})
         cls.record = cls.env['res.partner'].create({'name': 'Chatter Record'})
-        cls.followers = (
-            cls.internal_user.partner_id | cls.portal_user.partner_id | cls.contact
+        cls.record.message_subscribe(
+            partner_ids=(
+                cls.internal_user.partner_id | cls.portal_user.partner_id | cls.contact
+            ).ids
         )
-        cls.record.message_subscribe(partner_ids=cls.followers.ids)
         cls.internal_record = cls.record.with_context(
             mail_notify_internal_followers=True
         )
@@ -41,40 +42,36 @@ class TestMailThread(TransactionCase):
     # Tests
     # ----------------------------------------------------------
 
-    def test_internal_followers_ignore_portal_and_contact_followers(self):
-        self.assertEqual(
-            self.record._get_internal_follower_partners(),
-            self.internal_user.partner_id,
-        )
-
-    def test_note_notifies_the_internal_followers(self):
-        message = self.internal_record.message_post(
-            body='Internal update', subtype_xmlid='mail.mt_note'
-        )
-        self.assertEqual(message.partner_ids, self.internal_user.partner_id)
-
-    def test_note_without_the_context_keeps_no_recipient(self):
-        message = self.record.message_post(
-            body='Plain note', subtype_xmlid='mail.mt_note'
-        )
-        self.assertFalse(message.partner_ids)
-
-    def test_note_merges_the_explicit_recipients(self):
-        message = self.internal_record.message_post(
-            body='Internal update',
-            subtype_xmlid='mail.mt_note',
-            partner_ids=self.contact.ids,
-        )
-        self.assertEqual(
-            message.partner_ids, self.internal_user.partner_id | self.contact
-        )
-
-    def test_note_from_a_portal_user_adds_no_recipient(self):
-        record = self.record.with_user(self.portal_user).sudo()
-        message = record.with_context(mail_notify_internal_followers=True).message_post(
-            body='Portal note', subtype_xmlid='mail.mt_note'
-        )
-        self.assertFalse(message.partner_ids)
+    def test_note_recipients(self):
+        internal = self.internal_user.partner_id
+        cases = [
+            ('internal followers only', self.internal_record, [], internal),
+            ('without the context', self.record, [], self.env['res.partner']),
+            (
+                'explicit recipients kept',
+                self.internal_record,
+                self.contact.ids,
+                internal | self.contact,
+            ),
+            (
+                'portal author',
+                self.internal_record.with_user(self.portal_user).sudo(),
+                [],
+                self.env['res.partner'],
+            ),
+            (
+                'author skipped',
+                self.internal_record.with_user(self.internal_user),
+                [],
+                self.env['res.partner'],
+            ),
+        ]
+        for label, record, partner_ids, expected in cases:
+            with self.subTest(label):
+                message = record.message_post(
+                    body=label, subtype_xmlid='mail.mt_note', partner_ids=partner_ids
+                )
+                self.assertEqual(message.partner_ids, expected)
 
     def test_note_does_not_leak_the_notification_to_nested_posts(self):
         nested = self.env['mail.message']
@@ -100,9 +97,3 @@ class TestMailThread(TransactionCase):
             )
         self.assertTrue(nested)
         self.assertFalse(nested.partner_ids)
-
-    def test_note_skips_the_author(self):
-        message = self.internal_record.with_user(self.internal_user).message_post(
-            body='Internal update', subtype_xmlid='mail.mt_note'
-        )
-        self.assertFalse(message.partner_ids)
