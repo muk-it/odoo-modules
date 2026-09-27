@@ -5,8 +5,6 @@ import {
     models,
 } from '@web/../tests/web_test_helpers';
 
-let areModelsDefined = false;
-
 export class Product extends models.Model {
     name = fields.Char();
     state = fields.Selection({
@@ -25,16 +23,11 @@ export class Product extends models.Model {
             description: 'Has value',
             note: '<p>Has note</p>',
         },
-        { id: 2, name: 'Beta', state: 'unknown', description: '', note: '' },
+        { id: 2, name: 'Beta', state: 'unknown', description: '', note: '<p><br></p>' },
     ];
 }
 
 export function defineProductModels() {
-    if (areModelsDefined) {
-        return;
-    }
-    areModelsDefined = true;
-
     defineWebModels();
     defineModels({ Product });
 }

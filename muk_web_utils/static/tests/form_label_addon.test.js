@@ -17,7 +17,7 @@ class ResConfigSettings extends models.Model {
     _name = 'res.config.settings';
     module_muk_present = fields.Boolean({ string: 'Present Module' });
     module_muk_missing = fields.Boolean({ string: 'Missing Module' });
-    plain_setting = fields.Boolean({ string: 'Plain Setting' });
+    module_muk_plain = fields.Boolean({ string: 'Plain Setting' });
 }
 
 class IrModuleModule extends models.Model {
@@ -38,7 +38,7 @@ const SETTINGS_ARCH = `
                 <field name="module_muk_missing" widget="module_link"/>
             </setting>
             <setting string="Plain Setting">
-                <field name="plain_setting"/>
+                <field name="module_muk_plain"/>
             </setting>
         </app>
     </form>`;
@@ -46,38 +46,13 @@ const SETTINGS_ARCH = `
 // ----------------------------------------------------------
 // Tests
 
-test('the add-on badge marks only the labels of unavailable modules', async () => {
+test('the add-on badge marks only module_link labels of unavailable modules', async () => {
     onRpc('/base_setup/demo_active', () => true);
     await mountView({
         type: 'form',
         resModel: 'res.config.settings',
         arch: SETTINGS_ARCH,
     });
-    expect(
-        '.o_setting_box:contains(Missing Module) .badge:contains(Add-on)',
-    ).toHaveCount(1);
-    expect(
-        '.o_setting_box:contains(Present Module) .badge:contains(Add-on)',
-    ).toHaveCount(0);
-    expect(
-        '.o_setting_box:contains(Plain Setting) .badge:contains(Add-on)',
-    ).toHaveCount(0);
-});
-
-test('a plain boolean setting named module_ gets no badge', async () => {
-    onRpc('/base_setup/demo_active', () => true);
-    await mountView({
-        type: 'form',
-        resModel: 'res.config.settings',
-        arch: `
-            <form js_class="base_settings">
-                <app string="MuK" name="muk">
-                    <setting string="No Widget">
-                        <field name="module_muk_missing"/>
-                    </setting>
-                </app>
-            </form>`,
-    });
-    expect('.o_setting_box:contains(No Widget)').toHaveCount(1);
-    expect('.o_setting_box .badge:contains(Add-on)').toHaveCount(0);
+    expect('.o_setting_box .badge:contains(Add-on)').toHaveCount(1);
+    expect('.o_setting_box:contains(Missing Module) .badge').toHaveCount(1);
 });

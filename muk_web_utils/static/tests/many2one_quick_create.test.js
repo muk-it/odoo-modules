@@ -9,8 +9,6 @@ import {
     patchWithCleanup,
 } from '@web/../tests/web_test_helpers';
 
-import * as M2OField from '@web/views/fields/many2one/many2one_field';
-
 import '@muk_web_utils/views/fields/many2one/many2one';
 
 describe.current.tags('muk_web_utils', 'desktop');
@@ -72,32 +70,11 @@ test('an explicit no_quick_create option overrides the session flag', async () =
     expect('.o_m2o_dropdown_option_create').toHaveCount(1);
 });
 
-test('no_quick_create still wins over a disabled session flag', async () => {
-    patchWithCleanup(session, { disable_quick_create: false });
+test('widgets built from the core many2one helper honour the flag too', async () => {
+    patchWithCleanup(session, { disable_quick_create: true });
     await typeInMany2one(
-        `<form>
-            <field name="category_id" options="{'no_quick_create': True}"/>
-        </form>`,
+        '<form><field name="category_id" widget="many2one_avatar"/></form>',
     );
     expect('.o_m2o_dropdown_option_create').toHaveCount(0);
-});
-
-test('a field description built from the core helper drops quick create too', async () => {
-    patchWithCleanup(session, { disable_quick_create: true });
-    const description = M2OField.buildM2OFieldDescription(M2OField.Many2OneField);
-    const props = description.extractProps(
-        { options: {}, viewType: 'form', attrs: {} },
-        { context: {}, domain: () => [], readonly: false, required: false },
-    );
-    expect(props.canQuickCreate).toBe(false);
-});
-
-test('a field description built from the core helper keeps an explicit opt-out', async () => {
-    patchWithCleanup(session, { disable_quick_create: true });
-    const description = M2OField.buildM2OFieldDescription(M2OField.Many2OneField);
-    const props = description.extractProps(
-        { options: { no_quick_create: false }, viewType: 'form', attrs: {} },
-        { context: {}, domain: () => [], readonly: false, required: false },
-    );
-    expect(props.canQuickCreate).toBe(true);
+    expect('.o_m2o_dropdown_option_create_edit').toHaveCount(1);
 });

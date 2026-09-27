@@ -1,10 +1,13 @@
 import { describe, expect, test } from '@odoo/hoot';
-import { queryFirst } from '@odoo/hoot-dom';
+import { queryOne } from '@odoo/hoot-dom';
+import { animationFrame } from '@odoo/hoot-mock';
 import {
+    contains,
     defineModels,
     fields,
     models,
     mountView,
+    onRpc,
 } from '@web/../tests/web_test_helpers';
 
 import '@muk_web_utils/views/fields/module_link/module_link';
@@ -32,53 +35,52 @@ class IrModuleModule extends models.Model {
 
 defineModels([ModuleLinkModel, IrModuleModule]);
 
-const ARCH = `
-    <form>
+/**
+ * Mount a form showing the given module_link fields.
+ * @param {string} fieldsXml the field nodes of the form
+ * @returns {Promise<void>}
+ */
+async function mountForm(fieldsXml) {
+    await mountView({
+        resModel: 'muk_web_utils.module_link_model',
+        resId: 1,
+        type: 'form',
+        arch: `<form>${fieldsXml}</form>`,
+    });
+}
+
+// ----------------------------------------------------------
+// Tests
+
+test('an available module gets a checkbox, a missing one an Apps store link', async () => {
+    await mountForm(`
         <field name="module_muk_ai_schedule" widget="module_link"/>
-        <field name="module_muk_ai_skills" widget="module_link"/>
-    </form>`;
-
-test('ModuleLinkField renders a checkbox when the module is on disk', async () => {
-    await mountView({
-        resModel: 'muk_web_utils.module_link_model',
-        resId: 1,
-        type: 'form',
-        arch: ARCH,
-    });
-    const scheduleCell = queryFirst('[name="module_muk_ai_schedule"]');
-    expect(scheduleCell.querySelector('input[type="checkbox"]')).not.toBe(null);
-    expect(scheduleCell.querySelector('a.o_module_link')).toBe(null);
-});
-
-test('ModuleLinkField renders an Apps store link when the module is missing', async () => {
-    await mountView({
-        resModel: 'muk_web_utils.module_link_model',
-        resId: 1,
-        type: 'form',
-        arch: ARCH,
-    });
-    const skillsCell = queryFirst('[name="module_muk_ai_skills"]');
-    expect(skillsCell.querySelector('input[type="checkbox"]')).toBe(null);
-    const link = skillsCell.querySelector('a.o_module_link');
-    expect(link).not.toBe(null);
-    expect(link.getAttribute('href')).toBe(
+        <field name="module_muk_ai_skills" widget="module_link"/>`);
+    expect('[name="module_muk_ai_schedule"] input[type="checkbox"]').toHaveCount(1);
+    expect('[name="module_muk_ai_schedule"] a.o_module_link').toHaveCount(0);
+    expect('[name="module_muk_ai_skills"] input[type="checkbox"]').toHaveCount(0);
+    expect('[name="module_muk_ai_skills"] a.o_module_link').toHaveAttribute(
+        'href',
         'https://apps.odoo.com/apps/modules/muk_ai_skills',
     );
-    expect(link.getAttribute('target')).toBe('_blank');
 });
 
-test('ModuleLinkField uses the url option when provided', async () => {
-    await mountView({
-        resModel: 'muk_web_utils.module_link_model',
-        resId: 1,
-        type: 'form',
-        arch: `
-            <form>
-                <field name="module_muk_ai_skills"
-                       widget="module_link"
-                       options="{'url': 'https://my.mukit.at/r/skills'}"/>
-            </form>`,
+test('the url option overrides the Apps store link', async () => {
+    await mountForm(`
+        <field name="module_muk_ai_skills"
+               widget="module_link"
+               options="{'url': 'https://my.mukit.at/r/skills'}"/>`);
+    expect('a.o_module_link').toHaveAttribute('href', 'https://my.mukit.at/r/skills');
+});
+
+test('ticking the checkbox writes the field back to the record', async () => {
+    onRpc('web_save', ({ args }) => {
+        expect.step(`web_save:${args[1].module_muk_ai_schedule}`);
     });
-    const link = queryFirst('a.o_module_link');
-    expect(link.getAttribute('href')).toBe('https://my.mukit.at/r/skills');
+    await mountForm('<field name="module_muk_ai_schedule" widget="module_link"/>');
+    await contains('[name="module_muk_ai_schedule"] input[type="checkbox"]').click();
+    await animationFrame();
+    expect(queryOne('[name="module_muk_ai_schedule"] input').checked).toBe(true);
+    await contains('.o_form_button_save').click();
+    expect.verifySteps(['web_save:true']);
 });

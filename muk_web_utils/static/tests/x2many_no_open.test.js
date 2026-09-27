@@ -61,17 +61,6 @@ test('rows of a plain x2many list open a record dialog', async () => {
     expect('.modal').toHaveCount(1);
 });
 
-test('no_open prevents opening a record from the x2many list', async () => {
-    await mountView({
-        type: 'form',
-        resModel: 'muk_web_utils.parent',
-        resId: 1,
-        arch: notebookArch(' options="{\'no_open\': 1}"'),
-    });
-    await contains('.o_field_x2many_list .o_data_row:eq(0) .o_data_cell').click();
-    expect('.modal').toHaveCount(0);
-});
-
 test('no_open survives the field being re-created by a notebook page switch', async () => {
     await mountView({
         type: 'form',

@@ -36,10 +36,8 @@ class TestSessionInfo(HttpCase):
     # Tests
     # ----------------------------------------------------------
 
-    def test_session_info_quick_create_default(self):
+    def test_session_info_follows_the_quick_create_setting(self):
         self.assertFalse(self._get_session_info()['disable_quick_create'])
-
-    def test_session_info_quick_create_from_settings(self):
         self.env['res.config.settings'].create(
             {'disable_many2one_quick_create': True}
         ).execute()

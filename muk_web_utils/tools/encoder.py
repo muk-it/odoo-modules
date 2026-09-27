@@ -13,10 +13,10 @@ def ustr_sql(value: bytes) -> str:
     return str(value, errors='replace').replace('\x00', '\ufffd')
 
 
-def limit_text_size(text: str, default: int = 25000) -> str:
+def limit_text_size(text: str) -> str:
     """Truncate text to the configured logging content limit."""
     value = config.get('muk_logging_content_limit')
-    limit = int(value) if value is not None else default
+    limit = int(value) if value is not None else 25000
     if limit and len(text) > limit:
         return f'{text[:limit]}\n\n...'
     return text

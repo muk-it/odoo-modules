@@ -32,10 +32,9 @@ test('prettify option renders an indented pre block', async () => {
                 <field name="payload" options="{'prettify': True}"/>
             </form>`,
     });
-    const pretty = queryFirst('pre.mk_json_pretty');
-    expect(pretty).not.toBe(null);
-    expect(pretty.textContent).toBe(JSON.stringify({ b: 2, a: [1, 2] }, null, 4));
-    expect(pretty.textContent).toInclude('\n    "b": 2');
+    expect(queryFirst('pre.mk_json_pretty').textContent).toBe(
+        JSON.stringify({ b: 2, a: [1, 2] }, null, 4),
+    );
 });
 
 test('without the prettify option the default span is rendered', async () => {
