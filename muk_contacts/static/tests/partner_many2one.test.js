@@ -56,13 +56,8 @@ async function openSuggestions(rows, fieldName = 'partner_id') {
     return specifications;
 }
 
-test('the partner search asks for the contact kind', async () => {
-    const specifications = await openSuggestions([]);
-    expect(specifications.at(-1)).toEqual({ display_name: {}, contact_kind: {} });
-});
-
-test('each suggestion is prefixed with the icon of its kind', async () => {
-    await openSuggestions([
+test('each partner suggestion is prefixed with the icon of its kind', async () => {
+    const specifications = await openSuggestions([
         { id: 2, display_name: 'Acme Inc', contact_kind: 'company' },
         { id: 3, display_name: 'Ada Byron', contact_kind: 'person' },
         { id: 4, display_name: 'Acme Billing', contact_kind: 'invoice' },
@@ -75,11 +70,7 @@ test('each suggestion is prefixed with the icon of its kind', async () => {
     expect(`${SUGGESTION} i[data-icon=local_shipping]`).toHaveCount(1);
     expect(`${SUGGESTION} i[data-icon=deployed_code]`).toHaveCount(1);
     expect(`${SUGGESTION}:first`).toHaveText('Acme Inc');
-});
-
-test('a suggestion without a kind falls back to the person icon', async () => {
-    await openSuggestions([{ id: 2, display_name: 'Unannotated' }]);
-    expect(`${SUGGESTION} i[data-icon=person]`).toHaveCount(1);
+    expect(specifications.at(-1)).toEqual({ display_name: {}, contact_kind: {} });
 });
 
 test('the icon markup does not escape the highlighted display name', async () => {

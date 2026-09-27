@@ -23,7 +23,7 @@ patch(Many2XAutocomplete.prototype, {
     buildRecordSuggestion(request, record) {
         const suggestion = super.buildRecordSuggestion(request, record);
         if (this.props.resModel === 'res.partner') {
-            const icon = KIND_ICONS[record.contact_kind] || KIND_ICONS.person;
+            const icon = KIND_ICONS[record.contact_kind];
             suggestion.label = markup`<i class="oi oi-fw me-1 text-muted" data-icon="${icon}"></i>${suggestion.label}`;
         }
         return suggestion;

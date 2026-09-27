@@ -245,7 +245,7 @@
                         decoration-warning="type == 'other'"
                     />
                     <button
-                        name="action_view_partner"
+                        name="get_record_default_action"
                         type="object"
                         string="Open View"
                         class="btn btn-link text-primary"

@@ -8,21 +8,19 @@ class TestCompanyFlag(TransactionCase):
     # Tests
     # ----------------------------------------------------------
 
-    def test_a_contact_without_tax_id_can_be_marked_as_company(self):
-        partner = self.env['res.partner'].create({'name': 'Flag Company'})
-        self.assertFalse(partner.is_company)
-        partner.write({'is_company': True})
-        self.assertTrue(partner.is_company)
-        self.assertEqual(partner.contact_kind, 'company')
-
-    def test_a_contact_with_tax_id_can_be_marked_as_person(self):
-        partner = self.env['res.partner'].create(
-            {'name': 'Flag Freelancer', 'vat': 'BE0477472701'}
+    def test_the_flag_overrides_the_tax_id_guess_both_ways(self):
+        company, freelancer = self.env['res.partner'].create(
+            [
+                {'name': 'Flag Company'},
+                {'name': 'Flag Freelancer', 'vat': 'BE0477472701'},
+            ]
         )
-        self.assertTrue(partner.is_company)
-        partner.write({'is_company': False})
-        self.assertFalse(partner.is_company)
-        self.assertEqual(partner.contact_kind, 'person')
+        self.assertFalse(company.is_company)
+        self.assertTrue(freelancer.is_company)
+        company.write({'is_company': True})
+        freelancer.write({'is_company': False})
+        self.assertEqual(company.contact_kind, 'company')
+        self.assertEqual(freelancer.contact_kind, 'person')
 
     def test_the_form_shows_the_flag_only_for_top_level_contacts(self):
         company = self.env['res.partner'].create({'name': 'Flag Employer'})
@@ -38,23 +36,11 @@ class TestCompanyFlag(TransactionCase):
         self.assertFalse(form.record.is_company)
 
     def test_a_contact_with_a_parent_is_never_a_company(self):
-        company = self.env['res.partner'].create({'name': 'Flag Parent'})
-        child = (
-            self.env['res.partner']
-            .with_context(default_is_company=True)
-            .create({'name': 'Flag Child', 'parent_id': company.id})
-        )
-        self.assertFalse(child.is_company)
-        other = self.env['res.partner'].create(
-            {'name': 'Flag Other', 'is_company': True}
-        )
+        partner = self.env['res.partner'].with_context(default_is_company=True)
+        company = partner.create({'name': 'Flag Parent'})
+        child = partner.create({'name': 'Flag Child', 'parent_id': company.id})
+        other = partner.create({'name': 'Flag Other'})
         other.write({'parent_id': company.id})
+        self.assertTrue(company.is_company)
+        self.assertFalse(child.is_company)
         self.assertFalse(other.is_company)
-
-    def test_the_company_default_applies_to_new_top_level_contacts(self):
-        partner = (
-            self.env['res.partner']
-            .with_context(default_is_company=True)
-            .create({'name': 'Flag Default'})
-        )
-        self.assertTrue(partner.is_company)

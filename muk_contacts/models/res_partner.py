@@ -91,19 +91,6 @@ class Partner(models.Model):
     # Actions
     # ----------------------------------------------------------
 
-    def action_view_partner(self) -> dict:
-        """Return a window action opening this partner's form view."""
-        self.ensure_one()
-        return {
-            'type': 'ir.actions.act_window',
-            'view_mode': 'form',
-            'name': self.name,
-            'res_model': 'res.partner',
-            'res_id': self.id,
-            'views': [(self.env.ref('base.view_partner_form').id, 'form')],
-            'context': self.env.context,
-        }
-
     def action_generate_contact_number(self) -> None:
         """Assign a freshly drawn contact number to the record."""
         self.ensure_one()
@@ -204,8 +191,7 @@ class Partner(models.Model):
         ):
             for record in self:
                 if (
-                    record.parent_id
-                    and record.contact_number
+                    record.contact_number
                     and record.commercial_partner_id != record
                     and record.contact_number
                     == record.commercial_partner_id.contact_number

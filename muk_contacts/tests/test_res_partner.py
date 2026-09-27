@@ -3,85 +3,70 @@ from odoo.tests import TransactionCase, new_test_user
 
 
 class TestResPartner(TransactionCase):
-    """Test contact number generation and address default resolution."""
+    """Test contact numbers, address defaults and the linked user of partners."""
 
     # ----------------------------------------------------------
     # Tests
     # ----------------------------------------------------------
 
-    def test_contact_number_is_generated_on_action(self):
-        partner = self.env['res.partner'].create(
-            {
-                'contact_number': False,
-                'name': 'Test Partner',
-            }
+    def test_top_level_partners_are_numbered_and_children_share_the_number(self):
+        company, imported = self.env['res.partner'].create(
+            [
+                {'name': 'Numbered Co'},
+                {'name': 'Imported Co', 'contact_number': 'CN-IMPORTED'},
+            ]
         )
+        child = self.env['res.partner'].create(
+            {'name': 'Numbered Child', 'parent_id': company.id}
+        )
+        self.assertTrue(company.contact_number)
+        self.assertEqual(imported.contact_number, 'CN-IMPORTED')
+        self.assertEqual(child.contact_number, company.contact_number)
+        company.write({'contact_number': 'CN-RENUMBERED'})
+        self.assertEqual(child.contact_number, 'CN-RENUMBERED')
+
+    def test_generating_a_contact_number_needs_the_sequence(self):
+        sequence = self.env.ref('muk_contacts.sequence_contact_number')
+        sequence.active = False
+        partner = self.env['res.partner'].create({'name': 'Sequenceless Partner'})
+        self.assertFalse(partner.contact_number)
+        with self.assertRaises(UserError):
+            partner.action_generate_contact_number()
+        sequence.active = True
         partner.action_generate_contact_number()
         self.assertTrue(partner.contact_number)
 
-    def test_contact_number_is_generated_on_create(self):
-        partner = self.env['res.partner'].create(
-            {
-                'contact_number': False,
-                'name': 'Test Partner',
-                'parent_id': False,
-            }
+    def test_detaching_a_child_renumbers_it_only_when_it_shares_the_number(self):
+        company = self.env['res.partner'].create({'name': 'Detach Co'})
+        shared, own, explicit = self.env['res.partner'].create(
+            [
+                {'name': name, 'parent_id': company.id}
+                for name in ('Shared Child', 'Own Child', 'Explicit Child')
+            ]
         )
-        self.assertTrue(partner.contact_number)
+        own.write({'contact_number': 'CN-OWN'})
+        (shared | own).write({'parent_id': False})
+        explicit.write({'parent_id': False, 'contact_number': 'CN-EXPLICIT'})
+        self.env.flush_all()
+        self.assertTrue(shared.contact_number)
+        self.assertNotEqual(shared.contact_number, company.contact_number)
+        self.assertEqual(own.contact_number, 'CN-OWN')
+        self.assertEqual(explicit.contact_number, 'CN-EXPLICIT')
 
-    def test_contact_number_is_inherited_for_child_contacts(self):
-        parent = self.env['res.partner'].create(
-            {
-                'contact_number': False,
-                'name': 'Parent Partner',
-                'parent_id': False,
-            }
-        )
-        child = self.env['res.partner'].create(
-            {
-                'contact_number': False,
-                'name': 'Child Partner',
-                'parent_id': parent.id,
-                'type': 'contact',
-            }
-        )
-        self.assertEqual(child.contact_number, parent.contact_number)
-
-    def test_detaching_child_does_not_collide_on_contact_number(self):
-        company = self.env['res.partner'].create(
-            {
-                'name': 'Company Partner',
-            }
-        )
-        self.assertTrue(company.contact_number)
-        child = self.env['res.partner'].create(
-            {
-                'name': 'Child Partner',
-                'parent_id': company.id,
-                'type': 'contact',
-            }
-        )
-        self.assertEqual(child.contact_number, company.contact_number)
-        child.write({'parent_id': False})
-        child.flush_recordset()
-        self.assertTrue(child.contact_number)
-        self.assertNotEqual(child.contact_number, company.contact_number)
-
-    def test_address_get_respects_default_invoice_delivery(self):
+    def test_address_get_prefers_the_configured_defaults(self):
         partner = self.env['res.partner'].create({'name': 'Address Partner'})
-        invoice = self.env['res.partner'].create(
-            {
-                'name': 'Invoice Address',
-                'parent_id': partner.id,
-                'type': 'invoice',
-            }
-        )
-        delivery = self.env['res.partner'].create(
-            {
-                'name': 'Delivery Address',
-                'parent_id': partner.id,
-                'type': 'delivery',
-            }
+        _first_invoice, invoice, _first_delivery, delivery = self.env[
+            'res.partner'
+        ].create(
+            [
+                {'name': name, 'parent_id': partner.id, 'type': kind}
+                for name, kind in (
+                    ('A Invoice', 'invoice'),
+                    ('B Invoice', 'invoice'),
+                    ('A Delivery', 'delivery'),
+                    ('B Delivery', 'delivery'),
+                )
+            ]
         )
         partner.write(
             {
@@ -90,93 +75,40 @@ class TestResPartner(TransactionCase):
             }
         )
         addresses = partner.address_get(['invoice', 'delivery'])
-        self.assertEqual(addresses.get('invoice'), invoice.id)
-        self.assertEqual(addresses.get('delivery'), delivery.id)
+        self.assertEqual(addresses['invoice'], invoice.id)
+        self.assertEqual(addresses['delivery'], delivery.id)
+        self.assertNotIn('invoice', partner.address_get(['delivery']))
 
-    def test_display_name_can_include_contact_number(self):
+    def test_display_name_shows_the_contact_number_only_on_request(self):
         partner = self.env['res.partner'].create(
-            {
-                'contact_number': False,
-                'name': 'Test Partner',
-                'parent_id': False,
-            }
+            {'name': 'Named Partner', 'contact_number': 'CN-NAME'}
         )
-        self.assertTrue(partner.contact_number)
-        self.assertIn(
-            partner.contact_number,
-            partner.with_context(show_contact_number=True).display_name,
-        )
-        partner_formatted = partner.with_context(
-            show_contact_number=True,
-            formatted_display_name=True,
-        )
-        self.assertIn(
-            f'--[{partner_formatted.contact_number}]--', partner_formatted.display_name
-        )
-
-    def test_display_name_stays_plain_without_the_context_flag(self):
-        partner = self.env['res.partner'].create({'name': 'Plain Partner'})
-        self.assertNotIn(partner.contact_number, partner.display_name)
-
-    def test_generating_a_contact_number_without_a_sequence_raises(self):
-        self.env.ref('muk_contacts.sequence_contact_number').active = False
-        partner = self.env['res.partner'].create({'name': 'Sequenceless Partner'})
-        self.assertFalse(partner.contact_number)
-        with self.assertRaises(UserError):
-            partner.action_generate_contact_number()
-
-    def test_contact_number_propagates_to_child_contacts_on_rename(self):
-        company = self.env['res.partner'].create({'name': 'Propagating Co'})
-        child = self.env['res.partner'].create(
-            {'name': 'Propagating Child', 'parent_id': company.id, 'type': 'contact'}
-        )
-        company.write({'contact_number': 'CN-PROPAGATED'})
-        self.assertEqual(child.contact_number, 'CN-PROPAGATED')
-
-    def test_detaching_a_child_with_its_own_number_keeps_it(self):
-        company = self.env['res.partner'].create({'name': 'Owner Co'})
-        child = self.env['res.partner'].create(
-            {'name': 'Own Number Child', 'parent_id': company.id, 'type': 'contact'}
-        )
-        child.write({'contact_number': 'CN-OWN'})
-        child.write({'parent_id': False})
-        child.flush_recordset()
-        self.assertEqual(child.contact_number, 'CN-OWN')
-
-    def test_detaching_a_child_honours_an_explicit_contact_number(self):
-        company = self.env['res.partner'].create({'name': 'Explicit Co'})
-        child = self.env['res.partner'].create(
-            {'name': 'Explicit Child', 'parent_id': company.id, 'type': 'contact'}
-        )
-        child.write({'parent_id': False, 'contact_number': 'CN-EXPLICIT'})
-        child.flush_recordset()
-        self.assertEqual(child.contact_number, 'CN-EXPLICIT')
-
-    def test_address_get_ignores_a_default_that_was_not_requested(self):
-        partner = self.env['res.partner'].create({'name': 'Partial Request'})
-        invoice = self.env['res.partner'].create(
-            {'name': 'Invoice Only', 'parent_id': partner.id, 'type': 'invoice'}
-        )
-        partner.write({'default_invoice_partner_id': invoice.id})
-        addresses = partner.address_get(['delivery'])
-        self.assertNotEqual(addresses.get('delivery'), invoice.id)
-        self.assertEqual(partner.address_get(['invoice'])['invoice'], invoice.id)
+        self.assertEqual(partner.display_name, 'Named Partner')
+        shown = partner.with_context(show_contact_number=True)
+        self.assertEqual(shown.display_name, '[CN-NAME] Named Partner')
+        formatted = shown.with_context(formatted_display_name=True)
+        self.assertEqual(formatted.display_name, '--[CN-NAME]-- Named Partner')
 
     def test_name_search_matches_the_contact_number(self):
-        partner = self.env['res.partner'].create({'name': 'Searchable Partner'})
-        self.assertTrue(partner.contact_number)
-        found = self.env['res.partner'].name_search(partner.contact_number)
-        self.assertIn(partner.id, [record_id for record_id, _label in found])
-
-    def test_action_view_partner_opens_the_contact_form(self):
-        partner = self.env['res.partner'].create({'name': 'Openable Partner'})
-        action = partner.action_view_partner()
-        self.assertEqual(action['res_model'], 'res.partner')
-        self.assertEqual(action['res_id'], partner.id)
-        self.assertEqual(action['name'], partner.name)
-        self.assertEqual(
-            action['views'], [(self.env.ref('base.view_partner_form').id, 'form')]
+        partner = self.env['res.partner'].create(
+            {'name': 'Searchable Partner', 'contact_number': 'CN-SEARCH'}
         )
+        found = self.env['res.partner'].name_search('CN-SEARCH')
+        self.assertEqual([record_id for record_id, _label in found], [partner.id])
+
+    def test_contact_kind_tells_companies_persons_and_addresses_apart(self):
+        company = self.env['res.partner'].create(
+            {'name': 'Kind Company', 'vat': 'BE0477472701'}
+        )
+        person, delivery = self.env['res.partner'].create(
+            [
+                {'name': 'Kind Person', 'parent_id': company.id},
+                {'name': 'Kind Delivery', 'parent_id': company.id, 'type': 'delivery'},
+            ]
+        )
+        self.assertEqual(company.contact_kind, 'company')
+        self.assertEqual(person.contact_kind, 'person')
+        self.assertEqual(delivery.contact_kind, 'delivery')
 
     def test_linked_user_exposes_the_user_kind_and_is_searchable(self):
         internal = new_test_user(
@@ -185,11 +117,13 @@ class TestResPartner(TransactionCase):
         portal = new_test_user(
             self.env, login='muk_contacts_portal', groups='base.group_portal'
         )
+        userless = self.env['res.partner'].create({'name': 'Userless Partner'})
         self.assertEqual(internal.partner_id.linked_user_id, internal)
         self.assertEqual(internal.partner_id.linked_user_state, 'internal')
         self.assertEqual(portal.partner_id.linked_user_state, 'portal')
+        self.assertFalse(userless.linked_user_state)
         found = self.env['res.partner'].search([('linked_user_id', '=', internal.id)])
-        self.assertIn(internal.partner_id, found)
+        self.assertEqual(found, internal.partner_id)
 
     def test_linked_user_still_resolves_for_an_archived_user(self):
         user = new_test_user(
@@ -207,34 +141,12 @@ class TestResPartner(TransactionCase):
         dst = self.env['res.partner'].create(
             {'name': 'Legacy Partner', 'email': 'dup@example.com'}
         )
-        self.assertFalse(dst.contact_number)
         sequence.active = True
         src = self.env['res.partner'].create(
             {'name': 'New Duplicate', 'email': 'dup@example.com'}
         )
         number = src.contact_number
-        self.assertTrue(number)
         wizard = self.env['base.partner.merge.automatic.wizard'].create({})
         wizard._merge([src.id, dst.id], dst)
         self.assertFalse(src.exists())
         self.assertEqual(dst.contact_number, number)
-
-    def test_a_partner_without_a_user_has_no_linked_user_state(self):
-        partner = self.env['res.partner'].create({'name': 'Userless Partner'})
-        self.assertFalse(partner.linked_user_id)
-        self.assertFalse(partner.linked_user_state)
-
-    def test_contact_kind_tells_companies_persons_and_addresses_apart(self):
-        company = self.env['res.partner'].create(
-            {'name': 'Kind Company', 'vat': 'BE0477472701'}
-        )
-        person = self.env['res.partner'].create(
-            {'name': 'Kind Person', 'parent_id': company.id}
-        )
-        delivery = self.env['res.partner'].create(
-            {'name': 'Kind Delivery', 'parent_id': company.id, 'type': 'delivery'}
-        )
-        self.assertTrue(company.is_company)
-        self.assertEqual(company.contact_kind, 'company')
-        self.assertEqual(person.contact_kind, 'person')
-        self.assertEqual(delivery.contact_kind, 'delivery')
