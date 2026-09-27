@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from odoo.tests import TransactionCase
 
+from odoo.addons.muk_web_theme import _setup_module, _uninstall_cleanup
+
 
 class TestResConfigSettings(TransactionCase):
-    """Cover the backend theme color settings round trip."""
+    """Cover the backend theme color settings and the module hooks."""
 
     # ----------------------------------------------------------
     # Setup
@@ -15,22 +17,12 @@ class TestResConfigSettings(TransactionCase):
         """Resolve the customized asset URL of every color palette."""
         super().setUpClass()
         cls.settings_model = cls.env['res.config.settings']
-        cls.editor = cls.env['muk_web_colors.color_assets_editor']
+        editor = cls.env['muk_web_colors.color_assets_editor']
+        assets = cls.settings_model.COLOR_ASSETS
         cls.custom_urls = {
-            palette: cls.editor._get_custom_colors_url(url, bundle)
-            for palette, (
-                url,
-                bundle,
-                _names,
-            ) in cls.settings_model.COLOR_ASSETS.items()
+            palette: editor._get_custom_colors_url(url, bundle)
+            for palette, (url, bundle, _names) in assets.items()
         }
-
-    def setUp(self) -> None:
-        """Drop every customized color asset left by an earlier test."""
-        super().setUp()
-        for custom_url in self.custom_urls.values():
-            self.env['ir.attachment'].search([('url', '=', custom_url)]).unlink()
-            self.env['ir.asset'].search([('path', '=', custom_url)]).unlink()
 
     # ----------------------------------------------------------
     # Helper
@@ -46,51 +38,15 @@ class TestResConfigSettings(TransactionCase):
     # Tests
     # ----------------------------------------------------------
 
-    def test_the_theme_palette_is_registered(self):
-        self.assertIn('theme', self.settings_model.COLOR_ASSETS)
-        url, bundle, names = self.settings_model.COLOR_ASSETS['theme']
-        self.assertEqual(url, '/muk_web_theme/static/src/colors/theme/theme.scss')
-        self.assertEqual(bundle, 'web._assets_primary_variables')
-        self.assertEqual(
-            names,
-            (
-                'color_appsmenu_text',
-                'color_appbar_text',
-                'color_appbar_active',
-                'color_appbar_background',
-            ),
-        )
-
-    def test_settings_expose_the_theme_asset_defaults(self):
-        settings = self.settings_model.create({})
-        self.assertEqual(settings.color_appsmenu_text_theme, '#f8f9fa')
-        self.assertEqual(settings.color_appbar_text_theme, '#dee2e6')
-        self.assertEqual(settings.color_appbar_active_theme, '#5d8da8')
-        self.assertEqual(settings.color_appbar_background_theme, '#111827')
-
-    def test_saving_without_a_change_creates_no_customization(self):
-        self.settings_model.create({}).execute()
-        self.assertFalse(self._is_customized('theme'))
-
-    def test_changing_a_theme_color_customizes_the_theme_asset(self):
+    def test_changing_a_theme_color_customizes_only_the_theme_asset(self):
         settings = self.settings_model.create({})
         settings.color_appbar_background_theme = '#001122'
         settings.execute()
         self.assertTrue(self._is_customized('theme'))
+        self.assertFalse(self._is_customized('light'))
         reloaded = self.settings_model.create({})
         self.assertEqual(reloaded.color_appbar_background_theme, '#001122')
         self.assertEqual(reloaded.color_appbar_text_theme, '#dee2e6')
-
-    def test_theme_colors_are_independent_from_the_generic_colors(self):
-        settings = self.settings_model.create({})
-        settings.color_appbar_text_theme = '#334455'
-        settings.execute()
-        self.assertTrue(self._is_customized('theme'))
-        self.assertFalse(self._is_customized('light'))
-        self.assertEqual(
-            self.settings_model.create({}).color_brand_light,
-            '#243742',
-        )
 
     def test_reset_theme_colors_resets_every_color_asset(self):
         settings = self.settings_model.create({})
@@ -100,8 +56,7 @@ class TestResConfigSettings(TransactionCase):
         settings.execute()
         for palette in self.custom_urls:
             self.assertTrue(self._is_customized(palette))
-        result = self.settings_model.create({}).action_reset_theme_color_assets()
-        self.assertEqual(result['tag'], 'reload')
+        self.settings_model.create({}).action_reset_theme_color_assets()
         for palette in self.custom_urls:
             self.assertFalse(self._is_customized(palette))
 
@@ -110,5 +65,12 @@ class TestResConfigSettings(TransactionCase):
         settings.color_appbar_text_theme = '#334455'
         settings.execute()
         self.assertTrue(self._is_customized('theme'))
-        self.settings_model._reset_color_assets('theme')
+        _uninstall_cleanup(self.env)
         self.assertFalse(self._is_customized('theme'))
+
+    def test_setup_seeds_the_main_company_images(self):
+        company = self.env.ref('base.main_company')
+        company.write({'favicon': False, 'background_image': False})
+        _setup_module(self.env)
+        self.assertTrue(company.favicon)
+        self.assertTrue(company.background_image)

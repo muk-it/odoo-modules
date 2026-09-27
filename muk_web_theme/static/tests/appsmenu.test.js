@@ -1,5 +1,5 @@
-import { describe, expect, test } from '@odoo/hoot';
-import { press, queryOne } from '@odoo/hoot-dom';
+import { beforeEach, describe, expect, test } from '@odoo/hoot';
+import { press, queryAllTexts, queryOne } from '@odoo/hoot-dom';
 import { animationFrame } from '@odoo/hoot-mock';
 
 import { user } from '@web/core/user';
@@ -9,6 +9,7 @@ import {
     contains,
     defineMenus,
     getMockEnv,
+    getService,
     mockService,
     mountWithCleanup,
     patchWithCleanup,
@@ -22,7 +23,7 @@ import '@muk_web_theme/webclient/navbar/navbar';
 describe.current.tags('desktop');
 defineMailModels();
 
-const MENUS = [{ id: 1, name: 'Alpha', xmlid: 'app.alpha', actionID: 11 }];
+let paletteCalls;
 
 function patchActiveCompany(values) {
     patchWithCleanup(user, {
@@ -33,13 +34,50 @@ function patchActiveCompany(values) {
 }
 
 async function openAppsMenu() {
-    defineMenus(MENUS);
     await mountWithCleanup(NavBar);
     await contains('.o_navbar_apps_menu button.dropdown-toggle').click();
 }
 
+beforeEach(() => {
+    patchActiveCompany({ has_background_image: false });
+    defineMenus([
+        { id: 1, name: 'Alpha', xmlid: 'app.alpha', actionID: 339 },
+        { id: 2, name: 'Beta', xmlid: 'app.beta', actionID: 12 },
+    ]);
+    paletteCalls = [];
+    mockService('command', {
+        openMainPalette(config, onClose) {
+            paletteCalls.push({ config, onClose });
+        },
+    });
+});
+
 test.tags('muk_web_theme');
-test('apps menu uses the company background image when one is set', async () => {
+test('apps menu lists every app with its icon, label and href', async () => {
+    await openAppsMenu();
+    expect('.mk_app_menu .o_app').toHaveCount(2);
+    expect('.mk_app_menu .mk_app_icon').toHaveCount(2);
+    expect(queryAllTexts('.mk_app_menu .mk_app_name')).toEqual(['Alpha', 'Beta']);
+    expect('.mk_app_menu .o_app:first').toHaveAttribute('href', '/odoo/action-339');
+    expect('.mk_app_menu .o_app:first').toHaveAttribute('data-menu-xmlid', 'app.alpha');
+});
+
+test.tags('muk_web_theme');
+test('clicking an app selects its menu', async () => {
+    const selected = [];
+    await mountWithCleanup(NavBar);
+    patchWithCleanup(getService('menu'), {
+        selectMenu(menu) {
+            selected.push(menu.id);
+        },
+    });
+    await contains('.o_navbar_apps_menu button.dropdown-toggle').click();
+    await contains('.mk_app_menu .o_app:contains(Beta)').click();
+    expect(selected).toEqual([2]);
+});
+
+test.tags('muk_web_theme');
+test('apps menu background follows the company image', async () => {
     patchActiveCompany({ has_background_image: true });
     await openAppsMenu();
     const background = queryOne('.mk_app_menu').style.backgroundImage;
@@ -50,7 +88,6 @@ test('apps menu uses the company background image when one is set', async () => 
 
 test.tags('muk_web_theme');
 test('apps menu falls back to the bundled background image', async () => {
-    patchActiveCompany({ has_background_image: false });
     await openAppsMenu();
     expect(queryOne('.mk_app_menu').style.backgroundImage).toInclude(
         '/muk_web_theme/static/src/webclient/appsmenu/background.png',
@@ -58,76 +95,32 @@ test('apps menu falls back to the bundled background image', async () => {
 });
 
 test.tags('muk_web_theme');
-test('typing a printable key in the apps menu opens the command palette', async () => {
-    patchActiveCompany({ has_background_image: false });
-    const calls = [];
-    mockService('command', {
-        openMainPalette(config, onClose) {
-            calls.push({ config, onClose });
-        },
-    });
-    await openAppsMenu();
-    await press('s');
-    await animationFrame();
-    expect(calls).toHaveLength(1);
-    expect(calls[0].config.searchValue).toBe('/s');
-});
-
-test.tags('muk_web_theme');
-test('the command palette is only opened once per apps menu session', async () => {
-    patchActiveCompany({ has_background_image: false });
-    const calls = [];
-    mockService('command', {
-        openMainPalette(config, onClose) {
-            calls.push({ config, onClose });
-        },
-    });
+test('typing in the open apps menu opens the command palette once', async () => {
     await openAppsMenu();
     await press('s');
     await press('a');
     await animationFrame();
-    expect(calls).toHaveLength(1);
-    calls[0].onClose();
+    expect(paletteCalls).toHaveLength(1);
+    expect(paletteCalls[0].config.searchValue).toBe('/s');
+    paletteCalls[0].onClose();
     await press('b');
     await animationFrame();
-    expect(calls).toHaveLength(2);
-    expect(calls[1].config.searchValue).toBe('/b');
+    expect(paletteCalls).toHaveLength(2);
+    expect(paletteCalls[1].config.searchValue).toBe('/b');
 });
 
 test.tags('muk_web_theme');
-test('a control shortcut does not open the command palette', async () => {
-    patchActiveCompany({ has_background_image: false });
-    const calls = [];
-    mockService('command', {
-        openMainPalette(config) {
-            calls.push(config);
-        },
-    });
-    await openAppsMenu();
-    await press(['ctrl', 'p']);
-    await animationFrame();
-    expect(calls).toHaveLength(0);
-});
-
-test.tags('muk_web_theme');
-test('a keystroke outside the apps menu does not open the command palette', async () => {
-    patchActiveCompany({ has_background_image: false });
-    const calls = [];
-    mockService('command', {
-        openMainPalette(config) {
-            calls.push(config);
-        },
-    });
-    defineMenus(MENUS);
+test('shortcuts and keys outside the apps menu leave the palette closed', async () => {
     await mountWithCleanup(NavBar);
     await press('s');
+    await contains('.o_navbar_apps_menu button.dropdown-toggle').click();
+    await press(['ctrl', 'p']);
     await animationFrame();
-    expect(calls).toHaveLength(0);
+    expect(paletteCalls).toHaveLength(0);
 });
 
 test.tags('muk_web_theme');
 test('the apps menu closes when the action manager updates the ui', async () => {
-    patchActiveCompany({ has_background_image: false });
     await openAppsMenu();
     expect('.mk_app_menu').toHaveCount(1);
     getMockEnv().bus.trigger('ACTION_MANAGER:UI-UPDATED');
