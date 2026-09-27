@@ -12,7 +12,7 @@ import { ListController } from '@web/views/list/list_controller';
 patch(ListController.prototype, {
     setup() {
         super.setup();
-        if (this.hasListModes && this.env.config.actionId) {
+        if (this.hasListModes) {
             const storedMode = browser.localStorage.getItem(this.getModeStorageKey());
             if (['read', 'edit'].includes(storedMode)) {
                 this.applyListMode(storedMode);
