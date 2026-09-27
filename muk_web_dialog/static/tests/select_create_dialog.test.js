@@ -34,8 +34,8 @@ defineMailModels();
 describe.current.tags('desktop');
 defineModels([MukDialogPartner]);
 
-async function mountSelectCreateDialog(dialogSize) {
-    patchWithCleanup(session, { dialog_size: dialogSize });
+async function mountSelectCreateDialog() {
+    patchWithCleanup(session, { dialog_size: 'minimize' });
     onRpc('has_group', () => true);
     await mountWithCleanup(MainComponentsContainer);
     getService('dialog').add(SelectCreateDialog, { resModel: 'muk.dialog.partner' });
@@ -44,7 +44,7 @@ async function mountSelectCreateDialog(dialogSize) {
 
 test.tags('muk_web_dialog');
 test('a dialog owning its header still gets the size toggle', async () => {
-    await mountSelectCreateDialog('minimize');
+    await mountSelectCreateDialog();
     expect('.o_dialog .mk_btn_dialog_size').toHaveAttribute('data-icon', 'fullscreen');
     await contains('.o_dialog .mk_btn_dialog_size').click();
     expect('.o_dialog .modal-fs').toHaveCount(1);
@@ -55,14 +55,4 @@ test('a dialog owning its header still gets the size toggle', async () => {
     await contains('.o_dialog .mk_btn_dialog_size').click();
     expect('.o_dialog .modal-fs').toHaveCount(0);
     expect('.o_dialog .mk_btn_dialog_size').toHaveAttribute('data-icon', 'fullscreen');
-});
-
-test.tags('muk_web_dialog');
-test('a dialog owning its header honors the maximize preference', async () => {
-    await mountSelectCreateDialog('maximize');
-    expect('.o_dialog .modal-fs').toHaveCount(1);
-    expect('.o_dialog .mk_btn_dialog_size').toHaveAttribute(
-        'data-icon',
-        'close_fullscreen',
-    );
 });

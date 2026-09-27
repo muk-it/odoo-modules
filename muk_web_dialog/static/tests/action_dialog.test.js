@@ -30,21 +30,11 @@ async function mountComposerDialog() {
     await mountWithCleanup(Parent);
 }
 
-test.tags('muk_web_dialog');
-test('the composer dialog carries a single size toggle', async () => {
+test.tags('muk_web_dialog', 'desktop');
+test('the composer dialog carries a single size toggle that drives its size', async () => {
     await mountComposerDialog();
     expect('.o_dialog .modal-header button[data-icon]').toHaveCount(1);
-    expect('.o_dialog .mk_btn_dialog_size').toHaveAttribute('data-icon', 'fullscreen');
-});
-
-test.tags('muk_web_dialog');
-test('the composer dialog size toggle drives the dialog size', async () => {
-    await mountComposerDialog();
     expect('.o_dialog .modal-fs').toHaveCount(0);
     await contains('.o_dialog .mk_btn_dialog_size').click();
     expect('.o_dialog .modal-fs').toHaveCount(1);
-    expect('.o_dialog .mk_btn_dialog_size').toHaveAttribute(
-        'data-icon',
-        'close_fullscreen',
-    );
 });

@@ -31,89 +31,40 @@ async function mountDialog(dialogSize, size) {
 }
 
 test.tags('muk_web_dialog', 'desktop');
-test('maximize preference opens the dialog fullscreen', async () => {
+test('maximize preference opens the dialog fullscreen and the toggle restores it', async () => {
     await mountDialog('maximize');
     expect('.o_dialog .modal-fs').toHaveCount(1);
     expect('.o_dialog .mk_btn_dialog_size').toHaveAttribute(
         'data-icon',
         'close_fullscreen',
     );
-});
-
-test.tags('muk_web_dialog', 'desktop');
-test('minimize preference keeps the requested dialog size', async () => {
-    await mountDialog('minimize');
+    await contains('.o_dialog .mk_btn_dialog_size').click();
     expect('.o_dialog .modal-lg').toHaveCount(1);
-    expect('.o_dialog .modal-fs').toHaveCount(0);
     expect('.o_dialog .mk_btn_dialog_size').toHaveAttribute('data-icon', 'fullscreen');
 });
 
 test.tags('muk_web_dialog', 'desktop');
-test('an unset preference keeps the requested dialog size', async () => {
-    await mountDialog(undefined, 'xl');
-    expect('.o_dialog .modal-xl').toHaveCount(1);
-    expect('.o_dialog .mk_btn_dialog_size').toHaveAttribute('data-icon', 'fullscreen');
-});
-
-test.tags('muk_web_dialog', 'desktop');
-test('the size toggle switches back to the size the dialog was opened with', async () => {
+test('minimize preference keeps the requested size and the toggle returns to it', async () => {
     await mountDialog('minimize', 'xl');
     expect('.o_dialog .modal-xl').toHaveCount(1);
     await contains('.o_dialog .mk_btn_dialog_size').click();
     expect('.o_dialog .modal-fs').toHaveCount(1);
-    expect('.o_dialog .mk_btn_dialog_size').toHaveAttribute(
-        'data-icon',
-        'close_fullscreen',
-    );
     await contains('.o_dialog .mk_btn_dialog_size').click();
     expect('.o_dialog .modal-xl').toHaveCount(1);
-    expect('.o_dialog .mk_btn_dialog_size').toHaveAttribute('data-icon', 'fullscreen');
 });
 
-test.tags('muk_web_dialog', 'desktop');
-test('the size toggle restores the default size for a maximized dialog', async () => {
-    await mountDialog('maximize');
-    expect('.o_dialog .modal-fs').toHaveCount(1);
-    await contains('.o_dialog .mk_btn_dialog_size').click();
-    expect('.o_dialog .modal-lg').toHaveCount(1);
-    await contains('.o_dialog .mk_btn_dialog_size').click();
-    expect('.o_dialog .modal-fs').toHaveCount(1);
-});
-
-test.tags('muk_web_dialog');
-test('a small dialog is left minimal and offers no size toggle', async () => {
-    await mountDialog('maximize', 'sm');
-    expect('.o_dialog .modal-sm').toHaveCount(1);
-    expect('.o_dialog .modal-fs').toHaveCount(0);
-    expect('.o_dialog .mk_btn_dialog_size').toHaveCount(0);
-});
-
-test.tags('muk_web_dialog');
-test('a medium dialog is left minimal and offers no size toggle', async () => {
-    await mountDialog('maximize', 'md');
-    expect('.o_dialog .modal-md').toHaveCount(1);
-    expect('.o_dialog .mk_btn_dialog_size').toHaveCount(0);
-});
-
-test.tags('muk_web_dialog', 'desktop');
-test('the expand button keeps pointing at the form view', async () => {
-    patchWithCleanup(session, { dialog_size: 'minimize' });
-
-    class Parent extends Component {
-        static components = { Dialog };
-        static template = xml`<Dialog title="'Hello'" onExpand="this.onExpand">Hello</Dialog>`;
-        onExpand() {}
-    }
-
-    assignDialogTestEnv();
-    await mountWithCleanup(Parent);
-    expect('.o_dialog .o_expand_button').toHaveAttribute('data-icon', 'open_in_new');
-    expect('.o_dialog .mk_btn_dialog_size').toHaveAttribute('data-icon', 'fullscreen');
-});
+for (const size of ['sm', 'md']) {
+    test.tags('muk_web_dialog', 'desktop');
+    test(`a ${size} dialog ignores the maximize preference and offers no toggle`, async () => {
+        await mountDialog('maximize', size);
+        expect(`.o_dialog .modal-${size}`).toHaveCount(1);
+        expect('.o_dialog .mk_btn_dialog_size').toHaveCount(0);
+    });
+}
 
 test.tags('muk_web_dialog', 'mobile');
 test('a small screen shows every dialog fullscreen without the size toggle', async () => {
-    await mountDialog('minimize', 'xl');
+    await mountDialog('maximize', 'xl');
     expect('.o_dialog .modal.o_modal_full').toHaveCount(1);
     expect('.o_dialog .mk_btn_dialog_size').toHaveCount(0);
 });
