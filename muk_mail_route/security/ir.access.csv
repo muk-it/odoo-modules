@@ -1,0 +1,4 @@
+id,name,model_id,group_id/id,operation,domain
+access_muk_mail_route_container_erp_manager,muk_mail_route.container erp manager,muk_mail_route.container,base.group_erp_manager,crud,
+access_muk_mail_route_configuration_erp_manager,muk_mail_route.configuration erp manager,muk_mail_route.configuration,base.group_erp_manager,crud,
+access_muk_mail_route_router_erp_manager,muk_mail_route.router erp manager,muk_mail_route.router,base.group_erp_manager,crud,
