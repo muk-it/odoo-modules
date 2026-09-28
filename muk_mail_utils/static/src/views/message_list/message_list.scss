@@ -1,0 +1,28 @@
+.mk_message_list_view {
+    &.o_view_controller > .o_content {
+        overflow: hidden;
+        display: flex;
+        .o_list_renderer {
+            @include media-only(screen) {
+                overflow: auto;
+                height: 100%;
+                flex: 1 1 100%;
+            }
+        }
+    }
+    .mk_message_preview {
+        overflow: auto;
+        height: 100%;
+        width: 50%;
+        background: $white;
+        border-left: $border-width solid $border-color;
+        .o_field_many2many_tags_avatar .o_tag {
+            width: 100%;
+        }
+    }
+    @include media-only(print) {
+        .o_search_panel {
+            display: none;
+        }
+    }
+}
