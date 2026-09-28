@@ -31,11 +31,17 @@
                         <small>Author:</small>
                     </div>
                     <Field
+                        t-if="this.previewState.selectedRecord.data.author_id"
                         name="'author_id'"
                         record="this.previewState.selectedRecord"
                         type="'many2one_avatar'"
                         canOpen="false"
                         readonly="true"
+                    />
+                    <span
+                        t-else=""
+                        class="mk_message_preview_email"
+                        t-out="this.previewState.selectedRecord.data.email_from"
                     />
                 </div>
                 <div

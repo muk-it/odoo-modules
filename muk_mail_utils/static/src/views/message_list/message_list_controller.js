@@ -46,6 +46,9 @@ export class MessageListController extends ListController {
         if (!params.config.activeFields.author_id) {
             params.config.activeFields.author_id = makeActiveField();
         }
+        if (!params.config.activeFields.email_from) {
+            params.config.activeFields.email_from = makeActiveField();
+        }
         if (!params.config.activeFields.body) {
             params.config.activeFields.body = makeActiveField();
         }

@@ -41,6 +41,7 @@ class TestMessage extends models.Model {
     body = fields.Html();
     author_id = fields.Many2one({ relation: 'res.partner' });
     notified_partner_ids = fields.Many2many({ relation: 'res.partner' });
+    email_from = fields.Char();
     attachment_ids = fields.Many2many({ relation: 'ir.attachment' });
 }
 
@@ -160,4 +161,28 @@ test('preview lists the attachments without a delete button', async () => {
         'invoice.txt',
     );
     expect('.o-mail-Attachment-unlink').toHaveCount(0);
+});
+
+test('preview shows the sender address when the message has no author', async () => {
+    await patchUiSize({ size: SIZES.XXL });
+    const pyEnv = await startServer();
+    pyEnv['x_test_message'].create({
+        body: '<p>Hello from a stranger</p>',
+        email_from: 'Stranger <stranger@example.com>',
+    });
+    await mountView({
+        type: 'list',
+        resModel: 'x_test_message',
+        arch: `
+            <list js_class="message_list">
+                <field name="body"/>
+            </list>
+        `,
+    });
+    await contains(
+        '.o_list_table tbody tr.o_data_row:eq(2) td.o_data_cell:eq(0)',
+    ).click();
+    expect('.mk_message_preview .mk_message_preview_email').toHaveText(
+        'Stranger <stranger@example.com>',
+    );
 });
