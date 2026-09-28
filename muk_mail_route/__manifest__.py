@@ -1,11 +1,11 @@
 {
     'name': 'MuK Mail Routing',
-    'summary': 'Collects unrouted and failed emails',
+    'summary': 'Collects lost, unrouted and failed emails',
     'description': """
         This module collects mails that could not be routed
         and allows them to be assigned subsequently.
     """,
-    'version': '20.0.1.1.11',
+    'version': '20.0.1.1.12',
     'category': 'Productivity/Mail',
     'license': 'LGPL-3',
     'author': 'MuK IT',
