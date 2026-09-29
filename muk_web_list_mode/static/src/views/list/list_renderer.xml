@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-inherit="web.ListRenderer" t-inherit-mode="extension">
+        <xpath expr="//th[hasclass('o_list_actions_header')]" position="attributes">
+            <attribute name="t-att-class">{ mk_mode_toggle_header: this.props.modeSwitch }</attribute>
+        </xpath>
+        <xpath expr="//th[hasclass('o_list_actions_header')]/div" position="before">
+            <button
+                t-if="this.props.modeSwitch"
+                type="button"
+                class="btn p-0 d-print-none mk_mode_toggle"
+                t-att-class="{ 'text-primary': this.props.modeSwitch.mode === 'edit' }"
+                t-att-data-mode="this.props.modeSwitch.mode"
+                t-att-data-tooltip="this.props.modeSwitch.title"
+                t-att-aria-label="this.props.modeSwitch.title"
+                tabindex="-1"
+                t-on-click.stop="this.props.modeSwitch.toggle"
+            >
+                <i class="oi oi-fw" t-att-data-icon="this.props.modeSwitch.icon"/>
+            </button>
+        </xpath>
+        <xpath expr="//tfoot//td[last()]" position="attributes">
+            <attribute name="t-if" add="or this.props.modeSwitch" separator=" "/>
+        </xpath>
+    </t>
+
+    <t t-inherit="web.ListRenderer.RecordRow" t-inherit-mode="extension">
+        <xpath
+            expr="//t[@t-if='this.displayOptionalFields or this.props.list.isGrouped or hasX2ManyAction']"
+            position="attributes"
+        >
+            <attribute name="t-if" add="or this.props.modeSwitch" separator=" "/>
+        </xpath>
+    </t>
+
+</templates>

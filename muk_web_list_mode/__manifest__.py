@@ -6,7 +6,7 @@
         long as the user has the needed access rights and the list view
         does not explicitly disable edit mode by being set to readonly.
     """,
-    'version': '20.0.1.0.13',
+    'version': '20.0.1.1.0',
     'category': 'Tools/UI',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -20,6 +20,11 @@
     ],
     'assets': {
         'web.assets_backend': [
+            (
+                'after',
+                'web/static/src/views/list/list_renderer.xml',
+                'muk_web_list_mode/static/src/views/list/list_renderer.xml',
+            ),
             'muk_web_list_mode/static/src/**/*',
         ],
         'web.assets_unit_tests': [

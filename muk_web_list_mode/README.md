@@ -12,3 +12,10 @@ its form. With "Inline Edit Mode" the rows are edited directly in the list;
 select several rows to change a field on all of them at once. The chosen mode
 is remembered per user, action and model. The switch is hidden in dialogs and
 on small screens.
+
+The lists of one2many and many2many fields in a form carry a toggle in the
+last column of their header, next to the optional columns. It shows the
+current mode and switches to the other one on click: "Open Form View" opens a
+line in a dialog, "Inline Edit Mode" edits it in the row, and "Add a line"
+follows the mode. The default is the mode set on the field's list; the chosen
+mode is remembered per user, model and field.

@@ -1,0 +1,14 @@
+.o_list_renderer .o_list_table {
+    .mk_mode_toggle_header {
+        padding-left: 1.75rem;
+        .mk_mode_toggle {
+            position: absolute;
+            top: 50%;
+            left: 0.25rem;
+            transform: translateY(-50%);
+        }
+    }
+    &:has(> thead .mk_mode_toggle_header) .o_list_record_remove {
+        padding-left: 1.75rem;
+    }
+}

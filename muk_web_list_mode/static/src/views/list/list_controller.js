@@ -1,9 +1,10 @@
 import { browser } from '@web/core/browser/browser';
-import { _t } from '@web/core/l10n/translation';
 import { user } from '@web/core/user';
 import { patch } from '@web/core/utils/patch';
 import { session } from '@web/session';
 import { ListController } from '@web/views/list/list_controller';
+
+import { LIST_MODES } from '@muk_web_list_mode/core/mode_switch/mode_switch';
 
 /**
  * Add a read/edit mode switch to list views, restoring the per-action mode
@@ -27,10 +28,7 @@ patch(ListController.prototype, {
      * @returns {object[]} entries with a ``mode``, a ``name`` and an ``icon``
      */
     get listModes() {
-        return [
-            { mode: 'read', name: _t('Open Form View'), icon: 'open_in_new' },
-            { mode: 'edit', name: _t('Inline Edit Mode'), icon: 'edit' },
-        ];
+        return LIST_MODES;
     },
     get listMode() {
         return this.editable ? 'edit' : 'read';
