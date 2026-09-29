@@ -59,6 +59,26 @@ class ResConfigSettings(models.TransientModel):
         string='AppsBar Background Color',
     )
 
+    module_muk_web_list_search = fields.Boolean(
+        string='MuK List Search',
+        help='Filter list views right below the column headers.',
+    )
+
+    module_muk_web_list_custom = fields.Boolean(
+        string='MuK List Custom',
+        help='Customize list views, store and share favorites.',
+    )
+
+    module_muk_mail_search = fields.Boolean(
+        string='MuK Mail Search',
+        help='Global search across all models plus a full text search in messages.',
+    )
+
+    module_muk_web_list_split = fields.Boolean(
+        string='MuK View Split',
+        help='Show the list and the form side by side.',
+    )
+
     # ----------------------------------------------------------
     # Actions
     # ----------------------------------------------------------

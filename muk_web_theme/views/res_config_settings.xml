@@ -201,6 +201,48 @@
                         </div>
                     </setting>
                 </block>
+                <block title="Theme Extensions" id="muk_web_theme_extensions">
+                    <setting
+                        id="muk_web_theme_addon_list_search"
+                        string="List Search"
+                        help="Filter list views right below the column headers."
+                    >
+                        <field
+                            name="module_muk_web_list_search"
+                            widget="module_link"
+                        />
+                    </setting>
+                    <setting
+                        id="muk_web_theme_addon_list_custom"
+                        string="List Custom"
+                        help="Customize list views, store and share favorites."
+                    >
+                        <field
+                            name="module_muk_web_list_custom"
+                            widget="module_link"
+                        />
+                    </setting>
+                    <setting
+                        id="muk_web_theme_addon_mail_search"
+                        string="Global Search"
+                        help="Global search across all models plus a full text search in messages."
+                    >
+                        <field
+                            name="module_muk_mail_search"
+                            widget="module_link"
+                        />
+                    </setting>
+                    <setting
+                        id="muk_web_theme_addon_list_split"
+                        string="Split View"
+                        help="Show the list and the form side by side."
+                    >
+                        <field
+                            name="module_muk_web_list_split"
+                            widget="module_link"
+                        />
+                    </setting>
+                </block>
             </xpath>
         </field>
     </record>
