@@ -1,7 +1,7 @@
 `1.1.0`
 -------
 
-- Mode switch for the lists of one2many and many2many fields in forms
+- Mode toggle for x2many lists
 
 `1.0.0`
 -------
