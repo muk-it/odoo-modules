@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+
+    <t t-inherit="web.ListRenderer" t-inherit-mode="extension">
+        <xpath expr="//th[@t-if=&quot;column.type === 'field'&quot;]//span[hasclass('o_resize')]" position="attributes">
+            <attribute name="t-on-pointerdown.stop.prevent">(ev) => this.onStartResizeWithSave(ev, column)</attribute>
+            <attribute name="t-on-dblclick">this.onResizeDoubleClickRemoveSave</attribute>
+        </xpath>
+        <xpath expr="//th[@t-elif=&quot;column.type === 'column_group'&quot;]/span[hasclass('o_resize')]" position="attributes">
+            <attribute name="t-on-pointerdown.stop.prevent">(ev) => this.onStartResizeWithSave(ev, column)</attribute>
+            <attribute name="t-on-dblclick">this.onResizeDoubleClickRemoveSave</attribute>
+        </xpath>
+    </t>
+
+</templates>
