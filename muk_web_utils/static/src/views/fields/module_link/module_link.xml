@@ -18,7 +18,7 @@
             class="o_module_link text-decoration-none"
             title="Get this add-on from the Odoo Apps store"
         >
-            <i class="oi oi-lg" data-icon="cloud_download"/>
+            <i class="oi mk_module_link_icon" data-icon="cloud_download"/>
         </a>
     </t>
 
