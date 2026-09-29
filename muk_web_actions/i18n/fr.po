@@ -1,0 +1,80 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* muk_web_actions
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 20.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-28 21:21+0000\n"
+"PO-Revision-Date: 2026-09-28 21:21+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: muk_web_actions
+#: model:ir.model,name:muk_web_actions.model_ir_actions_actions
+msgid "Action"
+msgstr "Action"
+
+#. module: muk_web_actions
+#: model:ir.model.fields,field_description:muk_web_actions.field_ir_actions_server__execution_batch_size
+#: model:ir.model.fields,field_description:muk_web_actions.field_ir_cron__execution_batch_size
+msgid "Batch Size"
+msgstr "Taille du lot"
+
+#. module: muk_web_actions
+#: model:ir.model.fields,field_description:muk_web_actions.field_ir_actions_actions__display_name
+#: model:ir.model.fields,field_description:muk_web_actions.field_ir_actions_report__display_name
+#: model:ir.model.fields,field_description:muk_web_actions.field_ir_actions_server__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: muk_web_actions
+#: model:ir.model.fields,field_description:muk_web_actions.field_ir_actions_report__execute_in_batch
+#: model:ir.model.fields,field_description:muk_web_actions.field_ir_actions_server__execute_in_batch
+#: model:ir.model.fields,field_description:muk_web_actions.field_ir_cron__execute_in_batch
+msgid "Execute in Batch"
+msgstr "Exécuter par lots"
+
+#. module: muk_web_actions
+#: model:ir.model.fields,field_description:muk_web_actions.field_ir_actions_actions__id
+#: model:ir.model.fields,field_description:muk_web_actions.field_ir_actions_report__id
+#: model:ir.model.fields,field_description:muk_web_actions.field_ir_actions_server__id
+msgid "ID"
+msgstr "ID"
+
+#. module: muk_web_actions
+#: model:ir.model.fields,help:muk_web_actions.field_ir_actions_report__execute_in_batch
+msgid ""
+"Print the report from the \"Print\" menu one record at a time, with one file"
+" per record and a progress bar."
+msgstr ""
+"Imprime le rapport depuis le menu \"Imprimer\" enregistrement par "
+"enregistrement, avec un fichier par enregistrement et une barre de "
+"progression."
+
+#. module: muk_web_actions
+#: model:ir.model,name:muk_web_actions.model_ir_actions_report
+msgid "Report Action"
+msgstr "Action de rapport"
+
+#. module: muk_web_actions
+#: model:ir.model.fields,help:muk_web_actions.field_ir_actions_server__execute_in_batch
+#: model:ir.model.fields,help:muk_web_actions.field_ir_cron__execute_in_batch
+msgid ""
+"Run the action from the \"Actions\" menu in batches of the given size, one "
+"request per batch, with a progress bar. Such actions should not return an "
+"action to open."
+msgstr ""
+"Exécute l'action depuis le menu \"Actions\" par lots de la taille indiquée, "
+"une requête par lot, avec une barre de progression. De telles actions ne "
+"doivent pas renvoyer une action à ouvrir."
+
+#. module: muk_web_actions
+#: model:ir.model,name:muk_web_actions.model_ir_actions_server
+msgid "Server Action"
+msgstr "Action serveur"
