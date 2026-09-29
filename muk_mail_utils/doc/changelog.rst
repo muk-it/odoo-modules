@@ -1,7 +1,7 @@
 `1.2.0`
 -------
 
-- Canned Responses in the HTML Editor
+- Canned Responses
 
 `1.1.0`
 -------
