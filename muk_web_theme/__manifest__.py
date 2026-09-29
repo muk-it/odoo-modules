@@ -7,7 +7,7 @@
         of the sidebar. In addition, the background image of the app menu can be set
         for each company.
     """,
-    'version': '20.0.1.4.19',
+    'version': '20.0.1.5.0',
     'category': 'Themes/Backend',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -23,6 +23,8 @@
         'muk_web_appsbar',
         'muk_web_colors',
         'muk_web_refresh',
+        'muk_web_list_column',
+        'muk_web_list_mode',
     ],
     'excludes': [
         'web_enterprise',
