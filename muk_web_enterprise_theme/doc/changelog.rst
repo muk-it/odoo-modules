@@ -1,3 +1,8 @@
+`1.5.0`
+-------
+
+- Add List Column and List Mode Modules
+
 `1.4.0`
 -------
 
