@@ -8,7 +8,7 @@
         <field name="arch" type="xml">
             <list default_order="date DESC" js_class="message_list">
                 <header>
-                    <button 
+                    <button
                         class="btn-primary"
                         string="Route"
                         name="action_route_message"
@@ -19,13 +19,13 @@
                 <field name="date"/>
                 <field name="email_from" optional="show"/>
                 <field name="author_id" optional="hide"/>
-                <field 
-                    name="display_content" 
+                <field
+                    name="display_content"
                     string="Content"
                     optional="show"
                 />
                 <field name="message_id" optional="hide"/>
-                    <button 
+                    <button
                         class="btn-primary"
                         string="Route"
                         name="action_route_message"
@@ -35,7 +35,7 @@
             </list>
         </field>
     </record>
-    
+
     <record id="action_failed_route" model="ir.actions.act_window">
         <field name="name">Lost Emails</field>
         <field name="path">mail-lost-emails</field>

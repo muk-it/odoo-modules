@@ -10,8 +10,8 @@
         <field name="domain">[('state','=','exception')]</field>
         <field name="context">
             {
-                'create': False, 
-                'edit': False, 
+                'create': False,
+                'edit': False,
                 'bin_size': True,
             }
         </field>
