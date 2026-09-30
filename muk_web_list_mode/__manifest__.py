@@ -6,7 +6,7 @@
         long as the user has the needed access rights and the list view
         does not explicitly disable edit mode by being set to readonly.
     """,
-    'version': '20.0.1.1.0',
+    'version': '20.0.1.1.2',
     'category': 'Tools/UI',
     'license': 'LGPL-3',
     'author': 'MuK IT',
