@@ -9,7 +9,7 @@
         own transaction, so large selections stay below the server timeout and a failing
         batch keeps the batches before it saved.
     """,
-    'version': '20.0.1.1.7',
+    'version': '20.0.1.1.8',
     'category': 'Tools/Utils',
     'license': 'LGPL-3',
     'author': 'MuK IT',
