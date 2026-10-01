@@ -101,6 +101,28 @@ class TestMcpTool(common.TransactionCase):
         })
         self.assertEqual(result[0]['id'], partner.id)
 
+    def test_read_tools_return_binary_size_not_content(self):
+        image = (
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGD4'
+            'DwABBAEAwS2OUAAAAABJRU5ErkJggg=='
+        )
+        partner = self.env['res.partner'].create({
+            'name': 'MCP Binary', 'image_1920': image,
+        })
+        read = self._call('read_records', {
+            'model': 'res.partner',
+            'ids': [partner.id],
+            'fields': ['image_1920'],
+        })
+        search = self._call('search_read', {
+            'model': 'res.partner',
+            'domain': [('id', '=', partner.id)],
+            'fields': ['image_1920'],
+        })
+        for value in (read[0]['image_1920'], search[0]['image_1920']):
+            self.assertNotEqual(value, image)
+            self.assertTrue(value.endswith('bytes'))
+
     def test_whoami_handler(self):
         result = self._call('whoami', {})
         self.assertIn('uid', result)

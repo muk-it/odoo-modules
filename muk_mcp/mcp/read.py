@@ -142,7 +142,8 @@ class MCPMixin(models.AbstractModel):
         offset=0,
         order=None,
     ):
-        return self._resolve_model(model).search_read(
+        records = self._resolve_model(model).with_context(bin_size=True)
+        return records.search_read(
             coerce_json_value(domain) or [],
             fields=fields,
             limit=limit,
@@ -194,7 +195,8 @@ class MCPMixin(models.AbstractModel):
         target_ids = self._normalize_ids(ids)
         if not target_ids:
             raise UserError(_('No record IDs provided'))
-        return self._resolve_model(model).browse(target_ids).read(fields)
+        records = self._resolve_model(model).browse(target_ids)
+        return records.with_context(bin_size=True).read(fields)
 
     @api.model
     @mcp_tool(
