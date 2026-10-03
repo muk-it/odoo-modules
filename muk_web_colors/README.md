@@ -1,6 +1,6 @@
 # MuK Colors
 
-[![Odoo 20.0](https://img.shields.io/badge/Odoo-20.0-714B67?style=flat-square)](https://apps.odoo.com/apps/modules/20.0/muk_web_colors)
+[![Odoo 20.0](https://img.shields.io/badge/Odoo-20.0-714B67?style=flat-square)](https://apps.odoo.com/apps/modules/muk_web_colors)
 ![Community](https://img.shields.io/badge/CE-%E2%9C%93-1C3A4C?style=flat-square)
 ![Enterprise](https://img.shields.io/badge/EE-%E2%9C%93-33627E?style=flat-square)
 ![Odoo.sh](https://img.shields.io/badge/Odoo.sh-%E2%9C%93-1C3A4C?style=flat-square)
