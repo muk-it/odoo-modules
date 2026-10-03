@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from odoo.sql_db import Cursor
 
-def migrate(cr, version: str | None) -> None:
+
+def migrate(cr: Cursor, version: str | None) -> None:
     """Move the fixed variant prices into the stored core sales price."""
     cr.execute(
         """
@@ -10,4 +12,3 @@ def migrate(cr, version: str | None) -> None:
          WHERE fixed_price != 0
         """
     )
-    cr.execute('ALTER TABLE product_product DROP COLUMN fixed_price')
