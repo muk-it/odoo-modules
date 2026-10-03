@@ -3,7 +3,7 @@
 [![License LGPL v3](https://img.shields.io/badge/License-LGPL_v3-blue?style=flat-square)](LICENSE)
 [![Odoo 15.0](https://img.shields.io/badge/Odoo-15.0-714B67?style=flat-square)](https://github.com/muk-it/odoo-modules/tree/15.0)
 [![Website mukit.at](https://img.shields.io/badge/Website-mukit.at-243742?style=flat-square)](https://www.mukit.at)
-[![Apps Store](https://img.shields.io/badge/Apps_Store-Open-243742?style=flat-square)](https://apps.odoo.com/apps/modules/browse?price=Paid&series=15.0&author=MuK+IT)
+[![Apps Store](https://img.shields.io/badge/Apps-Store-243742?style=flat-square)](https://apps.odoo.com/apps/modules/browse?price=Paid&series=15.0&author=MuK+IT)
 [![YouTube](https://img.shields.io/badge/YouTube-Follow-243742?style=flat-square)](https://www.youtube.com/@mukitgmbh)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Follow-243742?style=flat-square)](https://www.linkedin.com/company/mukit)
 [![Facebook](https://img.shields.io/badge/Facebook-Follow-243742?style=flat-square)](https://www.facebook.com/mukitgmbh)
