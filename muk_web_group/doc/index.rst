@@ -36,10 +36,10 @@ Usage
 
 1. Open any list or kanban view (e.g. Sales Orders, Contacts).
 2. Group the view by a field (via the search bar Group By).
-3. Click the cog menu in the view’s control panel.
+3. Click the cog menu in the view's control panel.
 
-- *Expand All* – unfold every group, at every level, down to the records.
-- *Collapse All* – fold every group back up again.
+- *Expand All*: unfold every group, at every level, down to the records.
+- *Collapse All*: fold every group back up again.
 
 Credits
 =======
