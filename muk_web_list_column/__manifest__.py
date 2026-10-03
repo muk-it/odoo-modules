@@ -7,7 +7,7 @@
         column keeps the saved width. Double-clicking a column's resize handle restores
         the automatic widths and forgets the saved ones.
     """,
-    'version': '20.0.1.0.10',
+    'version': '20.0.1.0.11',
     'category': 'Tools/UI',
     'license': 'LGPL-3',
     'author': 'MuK IT',
