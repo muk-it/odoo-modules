@@ -105,7 +105,17 @@ back: serve those from your own server if they must not load before consent.
 
 Region rules decide how long a decision is relied on. The shipped presets cover
 the EU/EEA, the UK and Switzerland, with per-country retention where an
-authority has published one, and each preset names its source.
+authority has published one, and each preset names its source, because several
+widely-quoted figures are practitioner convention rather than published
+guidance. Austria is a case in point: no re-ask interval is published, so it
+defaults to the conservative six months.
+
+The dialog is built to WCAG 2.2 AA: a real ``role="dialog"`` labelled by its own
+heading, keyboard-operable switches, 24 px minimum targets, and no control
+hidden from assistive technology. The notice leaves the page usable and does
+not take the focus; the preference centre covers the page, announces itself as
+modal, keeps Tab inside it and hands focus back to the control that opened it.
+Escape leaves the preference centre and never counts as a decision.
 
 Each consent record stores what the visitor was shown, not only what they chose:
 the policy version, a fingerprint of the cookie registry in force, the banner

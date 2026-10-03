@@ -1,116 +1,51 @@
 # MuK Cookie Consent
 
-Replaces the built-in cookies bar with a real consent manager. Visitors consent
-per purpose instead of all-or-nothing, every decision is recorded as proof,
-third-party scripts and embeds are blocked per service until their category is
-granted, and Google Consent Mode v2 is signalled automatically.
+[![Odoo 20.0](https://img.shields.io/badge/Odoo-20.0-714B67?style=flat-square)](https://apps.odoo.com/apps/modules/muk_website_cookies_consent)
+![Community](https://img.shields.io/badge/CE-%E2%9C%93-1C3A4C?style=flat-square)
+![Enterprise](https://img.shields.io/badge/EE-%E2%9C%93-33627E?style=flat-square)
+![Odoo.sh](https://img.shields.io/badge/Odoo.sh-%E2%9C%93-1C3A4C?style=flat-square)
+![On-Premise](https://img.shields.io/badge/On--Premise-%E2%9C%93-33627E?style=flat-square)
+[![License LGPL v3](https://img.shields.io/badge/License-LGPL_v3-blue?style=flat-square)](LICENSE)
+[![YouTube demo](https://img.shields.io/badge/YouTube-demo-FF0000?style=flat-square&logo=youtube&logoColor=white)](https://youtu.be/TsmTtG9hDXU)
+[![Website mukit.at](https://img.shields.io/badge/Website-mukit.at-243742?style=flat-square)](https://www.mukit.at)
 
-## Configuration
+**Ask per purpose, block until granted, keep the proof.** A consent manager in
+place of Odoo's cookies bar: a choice per purpose, third-party scripts held back
+per service, Google Consent Mode v2 and a record of every decision.
 
-Everything sits in the **Cookie Consent** section of Website > Configuration >
-Settings. Turn on Odoo's own **Cookies Bar** there and this module takes over
-the banner. With it come Odoo's **Block tracking 3rd-party services** switch,
-which this module answers per service, the block list, and the **Cookie policy
-page** the banner and the footer link to. The section then offers:
+![The first layer: two equal answers, the details and the cookie policy](static/description/screenshot_banner.png)
 
-- **Google Consent Mode**: _Basic_ withholds Google tags until a purpose they
-  serve is granted, so a refusal keeps them unloaded. _Advanced_ loads them
-  immediately and allows cookieless pings, which recovers conversion modelling
-  but sends data before any consent. Basic is the default.
-- **Policy Version**: raising it asks every visitor again.
-- **Website Scan**: the weekly scan, and a button to run it now.
+## Features
 
-A `Sec-GPC` request header (Global Privacy Control) always counts as a refusal
-of everything optional.
+- **A choice per purpose**: functional, statistics and marketing switched on one
+  by one, each listing the cookies it covers.
+- **Blocking per service**: scripts and embeds are removed server-side until
+  their purpose is granted; one click allows a single embed.
+- **Consent Mode and GPC**: all seven Google Consent Mode v2 signals, basic or
+  advanced, and Global Privacy Control always honoured.
+- **A consent log**: every decision filed append-only with the disclosure the
+  visitor was shown, never a readable IP.
+- **A registry and a weekly scan**: Odoo's own cookies declared out of the box,
+  undeclared ones put up for review.
+- **Usable by everyone**: WCAG 2.2 AA, in English, German, French, Spanish and
+  Italian.
 
-How the banner looks is set where you can see it, in the website editor: select
-the Cookies Bar block in the sidebar for its **Layout**, its **Density** and the
-**Floating Button** that brings a visitor back to their choice. Odoo itself
-adds a _Cookie Policy - Update Cookie Preferences_ line to the footer whenever
-the bar is on, and that link reopens the banner too.
+![The preference centre, one switch per purpose](static/description/screenshot_preferences.png)
 
-Captured keys, purposes, services, declarations and region rules live under
-Website > Configuration > Cookie Consent. The consent log sits under
-Website > Reporting > Consent Logs. Website editors may read it; only a system
-administrator may change or delete a record, and even then the model refuses
-anything but the retention purge.
+## Getting started
 
-## Usage
+1. Install the module from **Apps**.
+2. Turn on **Cookies Bar** in the **Cookie Consent** section of
+   **Website > Configuration > Settings**, and pick the Consent Mode, the policy
+   version and the policy page.
+3. Set the layout in the website editor by selecting the Cookies Bar block, and
+   add your own third parties under **Website > Configuration > Cookie
+   Consent**.
 
-A first-time visitor is asked before anything optional runs. The first layer
-offers _Refuse all_, _Accept all_ and _Manage choices_; the second layer lists
-every purpose with the cookies it covers, taken from your own declarations.
+![One Accept all in the consent log](static/description/screenshot_consent.png)
 
-Nothing optional runs until the visitor agrees:
+## Support
 
-- Cookies are gated per purpose. Odoo's own `optional` cookies, such as UTM
-  attribution, follow the marketing purpose.
-- Scripts and embeds belonging to a service whose purpose is refused are removed
-  from the page server-side, before the browser sees them. A refused embed shows
-  a notice in its place; clicking it allows that one embed without changing any
-  other choice.
-- A service marked **Ask In Place Only** is never released by a purpose, not
-  even by _Accept all_. It stays blocked until the visitor allows it where it
-  stands, which is how the seeded video and map services are set up: consent to
-  a purpose is not consent to load a named third party into the page.
-- Google Consent Mode v2 is emitted with all seven signals, `wait_for_update`,
-  `ads_data_redaction` and `url_passthrough`, for whichever Google tag your
-  site already loads, a Google Tag Manager container included. Deploying that
-  tag stays Odoo's job, not this module's.
-- Plausible is consent-gated, which the built-in bar does not do.
-
-Every decision reloads the page. Scripts that already ran cannot be unloaded, so
-a reload is the only way a withdrawal actually takes effect.
-
-A decision stops being relied on when it expires, when you raise the policy
-version, or when the cookie registry itself changes: adding a purpose, a service
-or a declared cookie asks visitors again automatically, because consent given
-against an older disclosure no longer covers the new one.
-
-### What the registry ships with
-
-The seeded declarations cover what Odoo itself stores on a visitor's device —
-the session, language and company cookies, the timezone, the live-update and
-presence keys, the basket count, a live chat, a survey in progress, the UTM
-attribution cookies and the storage the Enterprise appointment and push
-notification features use. Everything Odoo can set is declared, whether or not
-the app that sets it is installed, so archive the rows you do not need.
-
-Two things it deliberately does not ship:
-
-- **Your own third parties.** A payment provider's SDK, an advertising pixel
-  or anything you paste into the page tracking code is yours to add as a
-  service, since only you know which you use. A weekly scan walks your own
-  pages and lists what they set and load under Captured, so anything no
-  declaration covers is put up for review.
-- **Stylesheets and fonts.** Blocking works on `script` and `iframe` sources,
-  which is what Odoo's own gating covers. A `link` to Google Fonts is neither,
-  so it cannot be held back: serve fonts from your own server if you need them
-  gone before consent.
-
-### Regions
-
-Region rules decide how long a decision is relied on. The shipped presets cover
-the EU/EEA, the UK and Switzerland, with per-country retention where an
-authority has published one — and each preset names its source, because several
-widely-quoted figures are practitioner convention rather than published
-guidance. Austria is a case in point: no re-ask interval is published, so it
-defaults to the conservative six months.
-
-### Accessibility
-
-The dialog is built to WCAG 2.2 AA: a real `role="dialog"` labelled by its own
-heading, keyboard-operable switches, 24 px minimum targets, and no control
-hidden from assistive technology. Modality is claimed only where it is true —
-the notice leaves the page usable and does not take your focus, while the
-preference centre covers the page and so announces itself as modal, keeps Tab
-inside it, and hands focus back to the control that opened it. Escape leaves the
-preference centre and never counts as a decision, in either direction.
-
-## Consent records
-
-Each decision is stored with what the visitor was shown, not only what they
-chose: the policy version, a fingerprint of the cookie registry in force, the
-banner version, the language, the resolved country and region rule, the granted
-and the refused purposes, and a salted hash of the truncated IP. Records are
-append-only and pruned by a weekly scheduled action after three years.
+Issues and merge requests are welcome. A registry filled in for your own third
+parties, or a fix on a deadline, is paid work, quoted up front. Maintained by
+[MuK IT GmbH](https://www.mukit.at), Vienna. Contact: sale@mukit.at
