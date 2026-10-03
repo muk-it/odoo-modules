@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo noupdate="1">
+
+	<record id="service_youtube" model="muk_website_cookies_consent.service">
+		<field name="name">YouTube</field>
+		<field name="technical_name">youtube</field>
+		<field name="category_id" ref="category_marketing"/>
+		<field name="provider">Google Ireland Limited</field>
+		<field name="domains">youtube.com
+youtu.be
+youtube-nocookie.com</field>
+		<field name="contextual_only" eval="True"/>
+		<field name="placeholder_text">This video is hosted by YouTube. Playing it lets Google set cookies on your device.</field>
+		<field name="sequence">10</field>
+	</record>
+
+	<record id="service_vimeo" model="muk_website_cookies_consent.service">
+		<field name="name">Vimeo</field>
+		<field name="technical_name">vimeo</field>
+		<field name="category_id" ref="category_marketing"/>
+		<field name="provider">Vimeo.com, Inc.</field>
+		<field name="domains">vimeo.com</field>
+		<field name="contextual_only" eval="True"/>
+		<field name="placeholder_text">This video is hosted by Vimeo. Playing it lets Vimeo set cookies on your device.</field>
+		<field name="sequence">11</field>
+	</record>
+
+	<record id="service_dailymotion" model="muk_website_cookies_consent.service">
+		<field name="name">Dailymotion</field>
+		<field name="technical_name">dailymotion</field>
+		<field name="category_id" ref="category_marketing"/>
+		<field name="provider">Dailymotion SA</field>
+		<field name="domains">dailymotion.com
+dai.ly</field>
+		<field name="contextual_only" eval="True"/>
+		<field name="placeholder_text">This video is hosted by Dailymotion. Playing it lets Dailymotion set cookies on your device.</field>
+		<field name="sequence">12</field>
+	</record>
+
+	<record id="service_google_maps" model="muk_website_cookies_consent.service">
+		<field name="name">Google Maps</field>
+		<field name="technical_name">google_maps</field>
+		<field name="category_id" ref="category_functional"/>
+		<field name="provider">Google Ireland Limited</field>
+		<field name="domains">maps.google.com
+maps.googleapis.com
+google.com/maps</field>
+		<field name="contextual_only" eval="True"/>
+		<field name="placeholder_text">This map is served by Google Maps. Loading it lets Google set cookies on your device.</field>
+		<field name="sequence">20</field>
+	</record>
+
+	<record id="service_instagram" model="muk_website_cookies_consent.service">
+		<field name="name">Instagram</field>
+		<field name="technical_name">instagram</field>
+		<field name="category_id" ref="category_marketing"/>
+		<field name="provider">Meta Platforms Ireland Limited</field>
+		<field name="domains">instagram.com
+instagr.am
+ig.me</field>
+		<field name="contextual_only" eval="True"/>
+		<field name="placeholder_text">This content is hosted by Instagram. Loading it lets Meta set cookies on your device.</field>
+		<field name="sequence">21</field>
+	</record>
+
+	<record id="service_facebook" model="muk_website_cookies_consent.service">
+		<field name="name">Facebook</field>
+		<field name="technical_name">facebook</field>
+		<field name="category_id" ref="category_marketing"/>
+		<field name="provider">Meta Platforms Ireland Limited</field>
+		<field name="domains">facebook.com
+facebook.net
+fb.com
+fb.me
+fb.watch</field>
+		<field name="placeholder_text">This content is hosted by Facebook. Loading it lets Meta set cookies on your device.</field>
+		<field name="sequence">30</field>
+	</record>
+
+	<record id="service_tiktok" model="muk_website_cookies_consent.service">
+		<field name="name">TikTok</field>
+		<field name="technical_name">tiktok</field>
+		<field name="category_id" ref="category_marketing"/>
+		<field name="provider">TikTok Technology Limited</field>
+		<field name="domains">tiktok.com</field>
+		<field name="contextual_only" eval="True"/>
+		<field name="placeholder_text">This content is hosted by TikTok. Loading it lets TikTok set cookies on your device.</field>
+		<field name="sequence">31</field>
+	</record>
+
+	<record id="service_x" model="muk_website_cookies_consent.service">
+		<field name="name">X (Twitter)</field>
+		<field name="technical_name">x</field>
+		<field name="category_id" ref="category_marketing"/>
+		<field name="provider">Twitter International Unlimited Company</field>
+		<field name="domains">x.com
+twitter.com
+t.co</field>
+		<field name="contextual_only" eval="True"/>
+		<field name="placeholder_text">This content is hosted by X. Loading it lets X set cookies on your device.</field>
+		<field name="sequence">32</field>
+	</record>
+
+	<record id="service_linkedin" model="muk_website_cookies_consent.service">
+		<field name="name">LinkedIn</field>
+		<field name="technical_name">linkedin</field>
+		<field name="category_id" ref="category_marketing"/>
+		<field name="provider">LinkedIn Ireland Unlimited Company</field>
+		<field name="domains">linkedin.com
+licdn.com</field>
+		<field name="sequence">33</field>
+	</record>
+
+	<record id="service_recaptcha" model="muk_website_cookies_consent.service">
+		<field name="name">Google reCAPTCHA</field>
+		<field name="technical_name">recaptcha</field>
+		<field name="category_id" ref="category_essential"/>
+		<field name="provider">Google Ireland Limited</field>
+		<field name="domains">recaptcha.net
+google.com/recaptcha</field>
+		<field name="sequence">40</field>
+	</record>
+
+</odoo>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo noupdate="1">
+
+	<record id="category_essential" model="muk_website_cookies_consent.category">
+		<field name="name">Strictly necessary</field>
+		<field name="code">essential</field>
+		<field name="description">Needed for the site to work: signing in, keeping your cart, remembering your language and recording the cookie choice you make here. These cannot be switched off.</field>
+		<field name="sequence">1</field>
+		<field name="essential" eval="True"/>
+		<field name="default_enabled" eval="True"/>
+		<field name="consent_mode_signals">security_storage</field>
+	</record>
+
+	<record id="category_functional" model="muk_website_cookies_consent.category">
+		<field name="name">Functional</field>
+		<field name="code">functional</field>
+		<field name="description">Remember choices you make so the site can behave the way you prefer, such as a chat widget or an embedded map. Refusing these keeps the site working, with fewer conveniences.</field>
+		<field name="sequence">10</field>
+		<field name="consent_mode_signals">
+			functionality_storage personalization_storage
+		</field>
+	</record>
+
+	<record id="category_analytics" model="muk_website_cookies_consent.category">
+		<field name="name">Statistics</field>
+		<field name="code">analytics</field>
+		<field name="description">Help us understand how the site is used, by collecting visit and interaction data. This is used to improve the site, not to advertise to you.</field>
+		<field name="sequence">20</field>
+		<field name="consent_mode_signals">analytics_storage</field>
+	</record>
+
+	<record id="category_marketing" model="muk_website_cookies_consent.category">
+		<field name="name">Marketing</field>
+		<field name="code">marketing</field>
+		<field name="description">Used to measure advertising and to show you relevant adverts on this and other sites. This is the category that involves sharing data with advertising partners.</field>
+		<field name="sequence">30</field>
+		<field name="consent_mode_signals">
+			ad_storage ad_user_data ad_personalization
+		</field>
+	</record>
+
+	<record id="category_unclassified" model="muk_website_cookies_consent.category">
+		<field name="name">Unclassified</field>
+		<field name="code">unclassified</field>
+		<field name="description">Holding area for cookies and services found on the site but not yet classified. Nothing here is put to visitors, because a purpose that cannot be described cannot be consented to: it stays refused until someone reviews it.</field>
+		<field name="sequence">40</field>
+	</record>
+
+</odoo>

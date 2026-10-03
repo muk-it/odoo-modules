@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="res_config_settings_view_form" model="ir.ui.view">
+		<field name="name">res.config.settings.view.form.inherit.cookies.consent</field>
+		<field name="model">res.config.settings</field>
+		<field name="inherit_id" ref="website.res_config_settings_view_form"/>
+		<field name="arch" type="xml">
+			<xpath expr="//block[@id='website_settings']" position="after">
+				<block
+					title="Cookie Consent"
+					id="website_cookie_consent_settings"
+					invisible="not website_id"
+				>
+					<setting
+						id="cookie_consent_mode_setting"
+						string="Google Consent Mode"
+						help="Basic withholds Google tags until a purpose they serve is granted, so a refusal keeps them unloaded. Advanced loads them immediately and allows cookieless pings, which recovers conversion modelling but sends data before consent."
+						invisible="not website_cookies_bar"
+					>
+						<field name="cookie_consent_mode"/>
+					</setting>
+					<setting
+						id="cookie_policy_version_setting"
+						string="Policy Version"
+						help="Raising this asks every visitor again. Adding a purpose, a service or a cookie already does that on its own."
+						invisible="not website_cookies_bar"
+					>
+						<field name="cookie_policy_version"/>
+					</setting>
+					<setting
+						id="muk_cookie_scan_setting"
+						string="Website Scan"
+						help="Once a week the site fetches its own pages and lists the cookies they set, the storage keys their scripts write and the third-party hosts they load. Anything no declaration covers is put up for review."
+						invisible="not website_cookies_bar"
+					>
+						<div class="text-muted mt-2" invisible="not cookie_scan_date">
+							Last scan
+							<field name="cookie_scan_date" readonly="1"/>
+						</div>
+						<div class="mt-1">
+							<button
+								name="action_cookie_scan"
+								type="object"
+								string="Scan Now"
+								class="btn-link p-0"
+								icon="refresh"
+							/>
+						</div>
+					</setting>
+				</block>
+			</xpath>
+			<xpath expr="//setting[@id='cookie_consent_mode_setting']" position="before">
+				<xpath expr="//setting[@id='website_cookies_bar_setting']" position="move"/>
+			</xpath>
+			<xpath
+				expr="//setting[@id='website_cookies_bar_setting']//field[@name='cookie_policy_id']/../.."
+				position="attributes"
+			>
+				<attribute name="groups"/>
+			</xpath>
+			<xpath
+				expr="//setting[@id='website_cookies_bar_setting']//div[hasclass('text-warning')]/.."
+				position="attributes"
+			>
+				<attribute name="groups"/>
+			</xpath>
+		</field>
+	</record>
+
+</odoo>

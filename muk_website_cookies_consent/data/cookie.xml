@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo noupdate="1">
+
+	<record id="cookie_session_id" model="muk_website_cookies_consent.cookie">
+		<field name="name">session_id</field>
+		<field name="category_id" ref="category_essential"/>
+		<field name="provider">This website</field>
+		<field name="description">Identifies your browsing session so the server can keep you signed in and keep your basket.</field>
+		<field name="duration">7 days of inactivity</field>
+		<field name="storage_type">http</field>
+		<field name="necessity_justification">Without a session identifier the server cannot associate requests with each other, so signing in, checking out and any form submission become impossible. This is the classic example of a cookie strictly necessary for a service the user requested.</field>
+	</record>
+
+	<record id="cookie_muk_cookie_consent" model="muk_website_cookies_consent.cookie">
+		<field name="name">muk_cookie_consent</field>
+		<field name="category_id" ref="category_essential"/>
+		<field name="provider">This website</field>
+		<field name="description">Stores the cookie choice you made here, so you are not asked again on every page.</field>
+		<field name="duration">6 to 24 months, depending on your region</field>
+		<field name="storage_type">http</field>
+		<field name="necessity_justification">Recording a consent decision is itself strictly necessary: without it the choice could not be honoured or demonstrated. Regulators treat the consent record as exempt for this reason.</field>
+	</record>
+
+	<record id="cookie_website_cookies_bar" model="muk_website_cookies_consent.cookie">
+		<field name="name">website_cookies_bar</field>
+		<field name="category_id" ref="category_essential"/>
+		<field name="provider">This website</field>
+		<field name="description">Mirrors your choice for parts of Odoo that read the built-in consent cookie.</field>
+		<field name="duration">6 to 24 months, depending on your region</field>
+		<field name="storage_type">http</field>
+		<field name="necessity_justification">Written alongside the record above so that the rest of Odoo honours the same decision. Serves no purpose other than carrying the consent state.</field>
+	</record>
+
+	<record id="cookie_frontend_lang" model="muk_website_cookies_consent.cookie">
+		<field name="name">frontend_lang</field>
+		<field name="category_id" ref="category_essential"/>
+		<field name="provider">This website</field>
+		<field name="description">Remembers the language you chose so pages are served in it.</field>
+		<field name="duration">1 year</field>
+		<field name="storage_type">http</field>
+		<field name="necessity_justification">Set while the page is served, so the language you are reading is the one the next page arrives in. Required to serve the site at all, and it holds a language code and nothing else.</field>
+	</record>
+
+	<record id="cookie_tz" model="muk_website_cookies_consent.cookie">
+		<field name="name">tz</field>
+		<field name="category_id" ref="category_essential"/>
+		<field name="provider">This website</field>
+		<field name="description">Holds your time zone so dates and times are shown correctly.</field>
+		<field name="duration">Session</field>
+		<field name="storage_type">http</field>
+		<field name="necessity_justification">Needed to render times correctly in the service you requested. It holds a time zone name; where visitor statistics are switched on, that zone is also stamped on the visit record.</field>
+	</record>
+
+	<record id="cookie_cids" model="muk_website_cookies_consent.cookie">
+		<field name="name">cids</field>
+		<field name="category_id" ref="category_essential"/>
+		<field name="provider">This website</field>
+		<field name="description">Remembers which company's data you are working in, on multi-company sites.</field>
+		<field name="duration">1 year</field>
+		<field name="storage_type">http</field>
+		<field name="necessity_justification">Determines the scope of the records served. Without it the site cannot show the correct company's content to a signed-in user.</field>
+	</record>
+
+	<record id="cookie_utm_campaign" model="muk_website_cookies_consent.cookie">
+		<field name="name">odoo_utm_campaign</field>
+		<field name="category_id" ref="category_marketing"/>
+		<field name="provider">This website</field>
+		<field name="description">Remembers which campaign brought you here, so a later enquiry can be attributed to it.</field>
+		<field name="duration">31 days</field>
+		<field name="storage_type">http</field>
+	</record>
+
+	<record id="cookie_utm_source" model="muk_website_cookies_consent.cookie">
+		<field name="name">odoo_utm_source</field>
+		<field name="category_id" ref="category_marketing"/>
+		<field name="provider">This website</field>
+		<field name="description">Remembers which source brought you here, for campaign attribution.</field>
+		<field name="duration">31 days</field>
+		<field name="storage_type">http</field>
+	</record>
+
+	<record id="cookie_utm_medium" model="muk_website_cookies_consent.cookie">
+		<field name="name">odoo_utm_medium</field>
+		<field name="category_id" ref="category_marketing"/>
+		<field name="provider">This website</field>
+		<field name="description">Remembers which medium brought you here, for campaign attribution.</field>
+		<field name="duration">31 days</field>
+		<field name="storage_type">http</field>
+	</record>
+
+	<record id="cookie_ga" model="muk_website_cookies_consent.cookie">
+		<field name="name">_ga</field>
+		<field name="pattern">^_ga</field>
+		<field name="category_id" ref="category_analytics"/>
+		<field name="provider">Google Ireland Limited</field>
+		<field name="description">Distinguishes visitors for Google Analytics reporting.</field>
+		<field name="duration">2 years</field>
+		<field name="storage_type">http</field>
+	</record>
+
+	<record id="cookie_gid" model="muk_website_cookies_consent.cookie">
+		<field name="name">_gid</field>
+		<field name="category_id" ref="category_analytics"/>
+		<field name="provider">Google Ireland Limited</field>
+		<field name="description">Distinguishes visitors for Google Analytics reporting.</field>
+		<field name="duration">24 hours</field>
+		<field name="storage_type">http</field>
+	</record>
+
+	<record id="cookie_youtube_visitor_info" model="muk_website_cookies_consent.cookie">
+		<field name="name">VISITOR_INFO1_LIVE</field>
+		<field name="service_id" ref="service_youtube"/>
+		<field name="category_id" ref="category_marketing"/>
+		<field name="provider">Google Ireland Limited</field>
+		<field name="description">Estimates your bandwidth on pages with an embedded YouTube video, and is used for advertising.</field>
+		<field name="duration">6 months</field>
+		<field name="storage_type">http</field>
+	</record>
+
+	<record id="cookie_youtube_ysc" model="muk_website_cookies_consent.cookie">
+		<field name="name">YSC</field>
+		<field name="service_id" ref="service_youtube"/>
+		<field name="category_id" ref="category_marketing"/>
+		<field name="provider">Google Ireland Limited</field>
+		<field name="description">Records a unique identifier for your session to count video views.</field>
+		<field name="duration">Session</field>
+		<field name="storage_type">http</field>
+	</record>
+
+	<record id="cookie_vimeo_player" model="muk_website_cookies_consent.cookie">
+		<field name="name">vuid</field>
+		<field name="service_id" ref="service_vimeo"/>
+		<field name="category_id" ref="category_marketing"/>
+		<field name="provider">Vimeo.com, Inc.</field>
+		<field name="description">Records which videos you have watched, in Vimeo's analytics.</field>
+		<field name="duration">2 years</field>
+		<field name="storage_type">http</field>
+	</record>
+
+	<record id="cookie_facebook_fr" model="muk_website_cookies_consent.cookie">
+		<field name="name">fr</field>
+		<field name="service_id" ref="service_facebook"/>
+		<field name="category_id" ref="category_marketing"/>
+		<field name="provider">Meta Platforms Ireland Limited</field>
+		<field name="description">Used by Meta to deliver and measure advertising.</field>
+		<field name="duration">3 months</field>
+		<field name="storage_type">http</field>
+	</record>
+
+	<record id="cookie_linkedin_bcookie" model="muk_website_cookies_consent.cookie">
+		<field name="name">bcookie</field>
+		<field name="service_id" ref="service_linkedin"/>
+		<field name="category_id" ref="category_marketing"/>
+		<field name="provider">LinkedIn Ireland Unlimited Company</field>
+		<field name="description">Identifies your browser for LinkedIn advertising and analytics.</field>
+		<field name="duration">1 year</field>
+		<field name="storage_type">http</field>
+	</record>
+
+	<record id="cookie_odoo_color_scheme" model="muk_website_cookies_consent.cookie">
+		<field name="name">color_scheme</field>
+		<field name="category_id" ref="category_essential"/>
+		<field name="provider">This website</field>
+		<field name="description">Holds whether the interface is drawn light or dark.</field>
+		<field name="duration">1 year</field>
+		<field name="storage_type">http</field>
+		<field name="necessity_justification">Written while the interface loads, from your saved preference or, failing that, from the appearance your system asks for. It carries no identifier and decides only how the page you requested is drawn.</field>
+	</record>
+
+	<record id="cookie_odoo_current_action" model="muk_website_cookies_consent.cookie">
+		<field name="name">current_action</field>
+		<field name="category_id" ref="category_essential"/>
+		<field name="provider">This website</field>
+		<field name="description">Remembers which screen you had open, so a reload puts you back where you were.</field>
+		<field name="duration">Session</field>
+		<field name="storage_type">session</field>
+		<field name="necessity_justification">Holds the position of the interface you are using. Without it a reload would lose your place in the service you requested.</field>
+	</record>
+
+	<record id="cookie_odoo_current_lang" model="muk_website_cookies_consent.cookie">
+		<field name="name">current_lang</field>
+		<field name="category_id" ref="category_essential"/>
+		<field name="provider">This website</field>
+		<field name="description">Remembers the language the screen you had open was shown in.</field>
+		<field name="duration">Session</field>
+		<field name="storage_type">session</field>
+		<field name="necessity_justification">Follows the language you chose, so a reload does not switch it back. Discarded when the tab closes.</field>
+	</record>
+
+	<record id="cookie_odoo_current_state" model="muk_website_cookies_consent.cookie">
+		<field name="name">current_state</field>
+		<field name="category_id" ref="category_essential"/>
+		<field name="provider">This website</field>
+		<field name="description">Remembers the state of the screen you had open, such as filters.</field>
+		<field name="duration">Session</field>
+		<field name="storage_type">session</field>
+		<field name="necessity_justification">Part of the same navigation state as the entry above; carries no identifier and is never read for any other purpose.</field>
+	</record>
+
+	<record id="cookie_odoo_menu_id" model="muk_website_cookies_consent.cookie">
+		<field name="name">menu_id</field>
+		<field name="category_id" ref="category_essential"/>
+		<field name="provider">This website</field>
+		<field name="description">Remembers which menu you were in.</field>
+		<field name="duration">Session</field>
+		<field name="storage_type">session</field>
+		<field name="necessity_justification">Navigation state for the interface you are using; discarded when the tab closes.</field>
+	</record>
+
+	<record id="cookie_odoo_presence" model="muk_website_cookies_consent.cookie">
+		<field name="name">presence.focus</field>
+		<field name="pattern">^presence\.</field>
+		<field name="category_id" ref="category_essential"/>
+		<field name="provider">This website</field>
+		<field name="description">Records when this tab was last active, so messages reach a window you are actually using and an idle session can be timed out.</field>
+		<field name="duration">Until the browser storage is cleared</field>
+		<field name="storage_type">local</field>
+		<field name="necessity_justification">The messaging and session-timeout services need to know whether you are still there. It stores a timestamp of your last interaction, which is why it is disclosed rather than treated as invisible plumbing.</field>
+	</record>
+
+	<record id="cookie_odoo_webclient_menus" model="muk_website_cookies_consent.cookie">
+		<field name="name">webclient_menus</field>
+		<field name="pattern">^webclient_menus</field>
+		<field name="category_id" ref="category_essential"/>
+		<field name="provider">This website</field>
+		<field name="description">Stores a copy of the menu so screens open without fetching it again.</field>
+		<field name="duration">Until the menu changes</field>
+		<field name="storage_type">local</field>
+		<field name="necessity_justification">A local copy of the interface you asked for. It holds no identifier and is read by nothing else, so it neither tracks you nor serves any purpose beyond the service you requested.</field>
+	</record>
+
+	<record
+		id="cookie_odoo_last_connected_user"
+		model="muk_website_cookies_consent.cookie"
+	>
+		<field name="name">web.lastConnectedUser</field>
+		<field name="category_id" ref="category_essential"/>
+		<field name="provider">This website</field>
+		<field name="description">Remembers who signed in last, so the sign-in screen can offer that account again instead of an empty form.</field>
+		<field name="duration">Until the browser storage is cleared</field>
+		<field name="storage_type">local</field>
+		<field name="necessity_justification">Written by the sign-in screen for the convenience of the person using this browser. It is read only when signing in and is never sent anywhere, so it serves the service asked for and nothing else.</field>
+	</record>
+
+	<record id="cookie_odoo_multi_tab" model="muk_website_cookies_consent.cookie">
+		<field name="name">legacy_multi_tab</field>
+		<field name="pattern">^legacy_multi_tab\.</field>
+		<field name="category_id" ref="category_essential"/>
+		<field name="provider">This website</field>
+		<field name="description">A shared scratchpad your open tabs read, holding things like the last notification each of them has seen.</field>
+		<field name="duration">Until the browser storage is cleared</field>
+		<field name="storage_type">local</field>
+		<field name="necessity_justification">Lets several open tabs agree on what has already been delivered instead of each repeating it. The key carries the site address, so it is matched by pattern rather than by name.</field>
+	</record>
+
+	<record id="cookie_odoo_multi_tab_service" model="muk_website_cookies_consent.cookie">
+		<field name="name">multi_tab_service</field>
+		<field name="pattern">^multi_tab_service\.</field>
+		<field name="category_id" ref="category_essential"/>
+		<field name="provider">This website</field>
+		<field name="description">Elects one of your open tabs to hold the connection that delivers live updates, so the others do not each open one of their own.</field>
+		<field name="duration">Until the browser storage is cleared</field>
+		<field name="storage_type">local</field>
+		<field name="necessity_justification">Live updates are part of the pages you asked for, and a browser limits how many connections a site may hold. The keys carry a timestamp and a flag, no identifier, and are read by no one but your own tabs.</field>
+	</record>
+
+	<record id="cookie_odoo_cart_quantity" model="muk_website_cookies_consent.cookie">
+		<field name="name">website_sale_cart_quantity</field>
+		<field name="category_id" ref="category_essential"/>
+		<field name="provider">This website</field>
+		<field name="description">Holds how many items your basket contains, so the header count is right before the page has finished loading.</field>
+		<field name="duration">Session</field>
+		<field name="storage_type">session</field>
+		<field name="necessity_justification">A count of what you put in your own basket, kept for the shop you are using. It is dropped when the tab closes and never leaves the browser.</field>
+	</record>
+
+	<record id="cookie_odoo_pwa_state" model="muk_website_cookies_consent.cookie">
+		<field name="name">pwaService.installationState</field>
+		<field name="category_id" ref="category_functional"/>
+		<field name="provider">This website</field>
+		<field name="description">Remembers whether you were already offered to install this site as an app, so the offer is not repeated once you have answered it.</field>
+		<field name="duration">Until the browser storage is cleared</field>
+		<field name="storage_type">local</field>
+		<field name="necessity_justification">A record of one answer you gave to one prompt. Refusing it means the install offer may be shown again.</field>
+	</record>
+
+	<record id="cookie_odoo_survey_answer" model="muk_website_cookies_consent.cookie">
+		<field name="name">survey_&lt;token&gt;</field>
+		<field name="pattern">^survey_</field>
+		<field name="category_id" ref="category_essential"/>
+		<field name="provider">This website</field>
+		<field name="description">Remembers the survey you are part way through, so closing the tab does not lose your answers.</field>
+		<field name="duration">24 hours</field>
+		<field name="storage_type">http</field>
+		<field name="necessity_justification">Written only once you begin a survey, and only to return you to your own answers. The name carries the survey it belongs to, so it is matched by pattern rather than by name.</field>
+	</record>
+
+	<record id="cookie_odoo_livechat" model="muk_website_cookies_consent.cookie">
+		<field name="name">im_livechat</field>
+		<field name="pattern">^(EXPIRABLE_STORAGE_im_livechat|.*_im_livechat\.)</field>
+		<field name="category_id" ref="category_functional"/>
+		<field name="provider">This website</field>
+		<field name="description">Keeps a live chat going: which conversation is yours, who you spoke to last and whether the window was already offered to you.</field>
+		<field name="duration">Up to 7 days</field>
+		<field name="storage_type">local</field>
+		<field name="necessity_justification">Written when a chat starts, so a reload does not drop the conversation. It holds a conversation token rather than anything about you, and refusing it costs only the chat window.</field>
+	</record>
+
+	<record id="cookie_odoo_recaptcha" model="muk_website_cookies_consent.cookie">
+		<field name="name">_GRECAPTCHA</field>
+		<field name="category_id" ref="category_essential"/>
+		<field name="service_id" ref="service_recaptcha"/>
+		<field name="provider">Google Ireland Limited</field>
+		<field name="description">Set by reCAPTCHA when a form is protected against automated abuse, to tell a person from a script.</field>
+		<field name="duration">6 months</field>
+		<field name="storage_type">http</field>
+		<field name="necessity_justification">Only set where the site protects a form you chose to submit, and only to decide whether that submission is automated. Blocking it would stop the form being accepted at all, which is why it is not put to a choice.</field>
+	</record>
+
+	<record id="cookie_odoo_reveal_rules" model="muk_website_cookies_consent.cookie">
+		<field name="name">rule_ids</field>
+		<field name="category_id" ref="category_marketing"/>
+		<field name="provider">This website</field>
+		<field name="description">Records which lead-generation rules have already fired for you, so the same rule does not report your visit twice.</field>
+		<field name="duration">Session</field>
+		<field name="storage_type">http</field>
+		<field name="necessity_justification">Serves lead generation rather than the page you asked for, which is why Odoo itself classes it as optional and nothing writes it until marketing is granted.</field>
+	</record>
+
+	<record id="cookie_odoo_forum_welcome" model="muk_website_cookies_consent.cookie">
+		<field name="name">forum_welcome_message</field>
+		<field name="category_id" ref="category_marketing"/>
+		<field name="provider">This website</field>
+		<field name="description">Remembers that you closed the welcome message on the forum, so it is not shown to you again.</field>
+		<field name="duration">1 year</field>
+		<field name="storage_type">http</field>
+		<field name="necessity_justification">Odoo itself writes this one as optional, so nothing is stored until the purpose that covers Odoo's optional cookies is granted. Refusing it means the welcome message can come back.</field>
+	</record>
+
+	<record id="cookie_odoo_appointment" model="muk_website_cookies_consent.cookie">
+		<field name="name">appointment</field>
+		<field name="pattern">^appointment\.</field>
+		<field name="category_id" ref="category_functional"/>
+		<field name="provider">This website</field>
+		<field name="description">Remembers what you already typed into a booking form and which upcoming appointment notice you dismissed.</field>
+		<field name="duration">Until the browser storage is cleared</field>
+		<field name="storage_type">local</field>
+		<field name="necessity_justification">Convenience for someone in the middle of booking: the details you entered and the notices you closed. Refusing it costs a repeated form, nothing else.</field>
+	</record>
+
+	<record id="cookie_odoo_push" model="muk_website_cookies_consent.cookie">
+		<field name="name">social_push_notifications</field>
+		<field name="pattern">^social_push_notifications\.</field>
+		<field name="category_id" ref="category_marketing"/>
+		<field name="provider">This website</field>
+		<field name="description">Holds the push-notification setup for this browser and when you were last asked to allow notifications.</field>
+		<field name="duration">Until the browser storage is cleared</field>
+		<field name="storage_type">local</field>
+		<field name="necessity_justification">Exists to send you messages after you leave, which is marketing rather than part of the page you asked for.</field>
+	</record>
+
+</odoo>
