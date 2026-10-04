@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<templates xml:space="preserve">
+
+    <t t-name="muk_mcp.ToolDetail">
+        <div
+            class="mk_mcp_detail flex-grow-1 d-flex flex-column overflow-hidden"
+            t-on-keydown="this.onKeyDown"
+        >
+            <t t-set="tool" t-value="this.props.tool"/>
+            <div class="p-3 border-bottom">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <h4 class="mb-0 text-break" t-out="tool.name"/>
+                    <span
+                        t-att-class="'badge ' + this.categoryBadge(tool.category)"
+                        t-out="tool.category"
+                    />
+                    <span t-if="tool.kind === 'db'" class="badge text-bg-secondary">DB</span>
+                    <span t-if="tool.kind === 'method'" class="badge text-bg-secondary">
+                        Code
+                    </span>
+                    <div class="ms-auto d-flex gap-1">
+                        <CopyButton
+                            className="'btn-sm btn-secondary'"
+                            icon="'terminal'"
+                            copyText.translate="curl"
+                            successText.translate="Copied"
+                            content="this.mcp.curl('tools/call', this.params)"
+                        />
+                        <CopyButton
+                            className="'btn-sm btn-secondary'"
+                            icon="'code'"
+                            copyText.translate="JSON-RPC"
+                            successText.translate="Copied"
+                            content="this.mcp.jsonrpc('tools/call', this.params)"
+                        />
+                    </div>
+                </div>
+                <div class="text-muted mt-1" t-out="tool.description"/>
+            </div>
+            <ul class="nav nav-tabs px-3 pt-2 bg-light">
+                <li class="nav-item">
+                    <a
+                        href="#"
+                        t-att-class="{ 'nav-link': true, active: this.state.tab === 'form' }"
+                        t-on-click.prevent="() => this.state.tab = 'form'"
+                    >
+                        Form
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a
+                        href="#"
+                        t-att-class="{ 'nav-link': true, active: this.state.tab === 'schema' }"
+                        t-on-click.prevent="() => this.state.tab = 'schema'"
+                    >
+                        Schema
+                    </a>
+                </li>
+            </ul>
+            <div class="p-3 flex-grow-1 overflow-auto">
+                <SchemaForm
+                    t-if="this.state.tab === 'form'"
+                    schema="this.schema"
+                    value="this.state.args"
+                    onChange.alike="(args) => this.state.args = args"
+                />
+                <pre t-else="" class="mb-0" t-out="this.schemaJson"/>
+            </div>
+            <div class="p-3 border-top bg-light d-flex align-items-center gap-2 flex-wrap">
+                <button
+                    class="btn btn-primary"
+                    t-att-disabled="!this.canRun"
+                    t-on-click="this.onRun"
+                >
+                    <i t-if="this.state.running" class="oi oi-spin me-2" data-icon="autorenew"/>
+                    <i t-else="" class="oi me-2" data-icon="play_arrow"/>
+                    <t t-if="this.state.running">Calling...</t>
+                    <t t-else="">Try it</t>
+                </button>
+                <button class="btn btn-outline-secondary" t-on-click="this.onReset">
+                    Reset args
+                </button>
+                <span t-if="!this.mcp.key()" class="text-danger small">
+                    <i class="oi me-1" data-icon="warning"/>Pick or generate an MCP key first.
+                </span>
+                <span t-else="" class="text-muted small d-none d-md-inline">
+                    <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to run
+                </span>
+                <span t-if="this.state.response" class="ms-auto small">
+                    <span
+                        t-att-class="'fw-bold ' + this.statusClass(this.state.response.status)"
+                    >
+                        HTTP <t t-out="this.state.response.status"/>
+                    </span>
+                    <span class="text-muted"> · <t t-out="this.state.response.duration"/> ms</span>
+                </span>
+            </div>
+            <div t-if="this.state.response" class="mk_mcp_response p-3 border-top overflow-auto">
+                <ResponsePanel response="this.state.response"/>
+            </div>
+        </div>
+    </t>
+
+</templates>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<templates xml:space="preserve">
+
+    <t t-name="muk_mcp.SchemaForm">
+        <div t-if="!this.fields.length" class="text-muted small">
+            This tool takes no parameters.
+        </div>
+        <div t-foreach="this.fields" t-as="field" t-key="field.name" class="mb-3">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span class="fw-bold" t-out="field.name"/>
+                <span t-if="field.required" class="text-danger">*</span>
+                <span class="badge text-bg-secondary" t-out="field.schema.type or 'any'"/>
+            </label>
+            <div
+                t-if="field.schema.description"
+                class="form-text"
+                t-out="field.schema.description"
+            />
+            <t t-set="value" t-value="this.props.value[field.name]"/>
+            <select
+                t-if="field.kind === 'enum'"
+                class="form-select"
+                t-on-change="(ev) => this.onInput(field, ev)"
+            >
+                <option value="">-</option>
+                <option
+                    t-foreach="field.schema.enum"
+                    t-as="option"
+                    t-key="option_index"
+                    t-att-value="option"
+                    t-att-selected="value === option"
+                    t-out="option"
+                />
+            </select>
+            <div t-elif="field.kind === 'bool'" class="form-check form-switch">
+                <input
+                    type="checkbox"
+                    class="form-check-input"
+                    t-att-checked="value"
+                    t-on-change="(ev) => this.onInput(field, ev)"
+                />
+            </div>
+            <input
+                t-elif="field.kind !== 'json'"
+                t-att-type="field.kind === 'string' ? 'text' : 'number'"
+                t-att-step="field.kind === 'int' ? 1 : field.kind === 'number' ? 'any' : undefined"
+                class="form-control"
+                t-att-value="value ?? ''"
+                t-on-input="(ev) => this.onInput(field, ev)"
+            />
+            <t t-else="">
+                <textarea
+                    class="form-control font-monospace"
+                    rows="4"
+                    placeholder="JSON..."
+                    t-on-input="(ev) => this.onInput(field, ev)"
+                    t-out="this.jsonText(field.name)"
+                />
+                <div class="form-text">Enter JSON for this complex argument.</div>
+            </t>
+        </div>
+    </t>
+
+</templates>

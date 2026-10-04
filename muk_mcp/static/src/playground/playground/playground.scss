@@ -1,0 +1,93 @@
+.mk_mcp_playground {
+    background: var(--o-action-view-bg, #fff);
+    border-top: 1px solid var(--o-border-color, #dee2e6);
+    .mk_mcp_panel_rail {
+        flex: 0 0 44px;
+        width: 44px;
+        .mk_mcp_panel_tab {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 0;
+            border: 0;
+            border-bottom: 1px solid var(--o-border-color, #dee2e6);
+            border-radius: 0;
+            color: var(--o-color-text-muted, #6c757d);
+            text-decoration: none;
+            &:hover {
+                background: rgba(0, 0, 0, 0.04);
+                color: inherit;
+            }
+            &.active {
+                background: var(--primary, #714b67);
+                color: #fff;
+                box-shadow: inset 3px 0 0 rgba(0, 0, 0, 0.2);
+            }
+        }
+        .mk_mcp_panel_tab_label {
+            font-weight: 500;
+            line-height: 1;
+            writing-mode: vertical-rl;
+            transform: rotate(180deg) translateX(2px);
+            letter-spacing: 0.5px;
+        }
+    }
+    .mk_mcp_panel_body,
+    .mk_mcp_detail {
+        min-width: 0;
+    }
+    .mk_mcp_keybar,
+    .mk_mcp_list,
+    .mk_mcp_group_header {
+        background: var(--o-view-background-color, #f8f9fa);
+    }
+    .mk_mcp_list {
+        flex: 0 0 320px;
+        width: 320px;
+        .mk_mcp_group_header {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        .mk_mcp_entry {
+            border-bottom: 1px solid var(--o-border-color, #dee2e6);
+            border-radius: 0;
+            &:hover {
+                background: rgba(0, 0, 0, 0.04);
+                text-decoration: none;
+            }
+            &.active {
+                background: var(--primary, #714b67);
+                .text-body,
+                .text-muted {
+                    color: #fff !important;
+                }
+            }
+        }
+    }
+    .mk_mcp_response {
+        max-height: 45%;
+    }
+    pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    @include media-breakpoint-down(md) {
+        .mk_mcp_body {
+            flex-direction: column;
+            overflow: auto !important;
+        }
+        .mk_mcp_list {
+            flex: 0 0 auto;
+            width: 100%;
+            max-height: 35vh;
+        }
+        .mk_mcp_detail {
+            overflow: visible !important;
+        }
+        .mk_mcp_response {
+            max-height: none;
+        }
+    }
+}

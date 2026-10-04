@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<templates xml:space="preserve">
+
+    <t t-name="muk_mcp.KeyBar">
+        <div class="mk_mcp_keybar border-bottom p-2 d-flex align-items-center gap-2 flex-wrap">
+            <span class="fw-bold">MCP Key</span>
+            <span t-if="this.mcp.key()" class="badge text-bg-success">
+                <i class="oi me-1" data-icon="key"/>
+                <t t-out="this.mcp.key().slice(0, 8)"/>...
+            </span>
+            <span t-else="" class="badge text-bg-secondary">
+                <i class="oi me-1" data-icon="lock_open"/>none
+            </span>
+            <div class="d-flex align-items-center gap-1 flex-wrap">
+                <button class="btn btn-sm btn-secondary" t-on-click="this.onPasteToggle">
+                    <i class="oi me-1" data-icon="login"/>Use existing
+                </button>
+                <div class="vr mx-1"/>
+                <select
+                    class="form-select form-select-sm w-auto"
+                    t-model.proxy="this.state.scope"
+                >
+                    <option value="read">Read</option>
+                    <option value="write">Read &amp; Write</option>
+                </select>
+                <input
+                    type="text"
+                    class="form-control form-control-sm w-auto"
+                    placeholder="Key label (optional)"
+                    t-model.proxy="this.state.label"
+                />
+                <button class="btn btn-sm btn-primary" t-on-click="this.onGenerate">
+                    <i class="oi me-1" data-icon="add_circle"/>Generate new
+                </button>
+                <button
+                    t-if="this.mcp.key()"
+                    class="btn btn-sm btn-outline-danger"
+                    title="Clear key from this tab"
+                    t-on-click="() => this.mcp.setKey('')"
+                >
+                    <i class="oi" data-icon="close"/>
+                </button>
+            </div>
+            <div class="text-muted small ms-auto">
+                Keys are stored in sessionStorage (this tab only). Plaintext is never persisted server-side after generation.
+            </div>
+            <div t-if="this.state.pasting" class="w-100 d-flex gap-2 mt-2 align-items-center">
+                <input
+                    type="password"
+                    class="form-control form-control-sm"
+                    placeholder="Paste MCP key (Bearer token)..."
+                    t-model.proxy="this.state.pasted"
+                />
+                <button
+                    class="btn btn-sm btn-primary text-nowrap"
+                    t-att-disabled="!this.state.pasted.trim()"
+                    t-on-click="this.onPasteConfirm"
+                >
+                    Use
+                </button>
+                <button class="btn btn-sm btn-link" t-on-click="this.onPasteToggle">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </t>
+
+</templates>

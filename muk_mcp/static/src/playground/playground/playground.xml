@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<templates xml:space="preserve">
+
+    <t t-name="muk_mcp.Playground">
+        <div class="mk_mcp_playground d-flex h-100">
+            <nav
+                t-if="this.panels.length > 1"
+                class="mk_mcp_panel_rail d-flex flex-column border-end bg-light"
+            >
+                <button
+                    t-foreach="this.panels"
+                    t-as="panel"
+                    t-key="panel.id"
+                    type="button"
+                    t-att-class="{
+                        'mk_mcp_panel_tab btn btn-link': true,
+                        active: panel.id === this.activePanel.id,
+                    }"
+                    t-att-title="panel.label"
+                    t-on-click="() => this.onSelectPanel(panel.id)"
+                >
+                    <i t-if="panel.icon" class="oi oi-fw oi-lg" t-att-data-icon="panel.icon"/>
+                    <span class="mk_mcp_panel_tab_label small" t-out="panel.label"/>
+                </button>
+            </nav>
+            <div class="mk_mcp_panel_body flex-grow-1 d-flex flex-column overflow-hidden">
+                <t
+                    t-if="this.activePanel.component"
+                    t-component="this.activePanel.component"
+                    t-key="this.activePanel.id"
+                />
+                <t t-else="">
+                    <KeyBar/>
+                    <div class="mk_mcp_body flex-grow-1 d-flex overflow-hidden">
+                        <div class="mk_mcp_list border-end d-flex flex-column">
+                            <div class="p-2 border-bottom">
+                                <input
+                                    type="search"
+                                    class="form-control form-control-sm"
+                                    placeholder="Search tools..."
+                                    t-ref="this.searchInput"
+                                    t-model.proxy="this.state.search"
+                                />
+                            </div>
+                            <div class="overflow-auto flex-grow-1">
+                                <div t-if="!this.groups.length" class="p-3 text-muted small">
+                                    No matching tools.
+                                </div>
+                                <t t-foreach="this.groups" t-as="group" t-key="group[0]">
+                                    <div
+                                        class="mk_mcp_group_header px-2 py-1 small text-uppercase text-muted d-flex align-items-center gap-2"
+                                    >
+                                        <span
+                                            t-att-class="'badge ' + this.categoryBadge(group[0])"
+                                            t-out="group[0]"
+                                        />
+                                        <span class="ms-auto" t-out="group[1].length"/>
+                                    </div>
+                                    <button
+                                        t-foreach="group[1]"
+                                        t-as="tool"
+                                        t-key="tool.name"
+                                        type="button"
+                                        t-att-class="{
+                                            'mk_mcp_entry btn btn-link text-start w-100 px-2 py-1': true,
+                                            active: tool.name === this.state.selected,
+                                        }"
+                                        t-on-click="() => this.onSelectTool(tool.name)"
+                                    >
+                                        <div class="fw-bold text-body text-break" t-out="tool.name"/>
+                                        <div
+                                            class="small text-muted text-truncate"
+                                            t-out="tool.description"
+                                        />
+                                    </button>
+                                </t>
+                            </div>
+                        </div>
+                        <ToolDetail
+                            t-if="this.selectedTool"
+                            tool="this.selectedTool"
+                            t-key="this.selectedTool.name"
+                        />
+                        <div t-else="" class="m-auto text-muted">
+                            Select a tool from the list on the left.
+                        </div>
+                    </div>
+                </t>
+            </div>
+        </div>
+    </t>
+
+</templates>

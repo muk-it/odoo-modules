@@ -1,0 +1,12 @@
+id,name,model_id,group_id/id,operation,domain
+access_muk_mcp_tool_system,Administrators manage MCP tools,muk_mcp.tool,base.group_system,crud,
+access_muk_mcp_tool_user,Users read MCP tools,muk_mcp.tool,base.group_user,r,
+access_muk_mcp_prompt_system,Administrators manage MCP prompts,muk_mcp.prompt,base.group_system,crud,
+access_muk_mcp_prompt_user,Users read MCP prompts,muk_mcp.prompt,base.group_user,r,
+access_muk_mcp_key_system,Administrators manage every MCP key,muk_mcp.key,base.group_system,crud,
+access_muk_mcp_key_user,Users manage their own MCP keys,muk_mcp.key,base.group_user,crud,"[('user_id', '=', user.id)]"
+access_muk_mcp_log_system,Administrators review the MCP log,muk_mcp.log,base.group_system,rud,
+access_muk_mcp_log_user,Users read their own MCP log,muk_mcp.log,base.group_user,r,"[('user_id', '=', user.id)]"
+access_muk_mcp_generate_key_user,Users run the MCP key wizard,muk_mcp.generate_key,base.group_user,crd,
+access_muk_mcp_key_show_user,Users see a new MCP key once,muk_mcp.key.show,base.group_user,cr,
+access_muk_mcp_connect_user,Users run the MCP connect wizard,muk_mcp.connect,base.group_user,crud,

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<templates xml:space="preserve">
+
+    <t t-name="muk_mcp.ResponsePanel">
+        <t t-set="body" t-value="this.props.response.body"/>
+        <div t-att-class="'alert d-flex align-items-center gap-2 mb-2 ' + this.alertClass">
+            <strong t-if="this.kind === 'ok'">OK</strong>
+            <strong t-elif="this.kind === 'tool_error'">Tool Error</strong>
+            <t t-elif="this.kind === 'error'">
+                <strong>JSON-RPC Error <t t-out="body.error.code"/></strong>
+                <span t-out="body.error.message"/>
+            </t>
+            <strong t-else="">Empty</strong>
+            <CopyButton
+                t-if="this.text"
+                className="'btn-sm btn-link ms-auto p-0'"
+                successText.translate="Copied"
+                content="this.text"
+            />
+        </div>
+        <t t-foreach="this.blocks" t-as="block" t-key="block_index">
+            <pre
+                t-if="block.type === 'text'"
+                class="mb-3 p-2 bg-light border rounded"
+                t-out="this.prettyJson(block.text)"
+            />
+            <div t-elif="block.type === 'image'" class="mb-3 p-2 bg-light border rounded">
+                <div class="small text-muted mb-1">image · <t t-out="block.mimeType"/></div>
+                <img
+                    class="img-fluid d-block"
+                    t-att-src="this.dataUri(block.mimeType, block.data)"
+                />
+            </div>
+            <div t-elif="block.type === 'audio'" class="mb-3 p-2 bg-light border rounded">
+                <div class="small text-muted mb-1">audio · <t t-out="block.mimeType"/></div>
+                <audio
+                    controls="controls"
+                    t-att-src="this.dataUri(block.mimeType, block.data)"
+                />
+            </div>
+            <div
+                t-elif="block.type === 'resource'"
+                class="mb-3 p-2 bg-light border rounded"
+            >
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span
+                        class="badge text-bg-secondary"
+                        t-out="block.resource.mimeType or 'binary'"
+                    />
+                    <code
+                        class="small text-truncate flex-grow-1"
+                        t-out="block.resource.uri"
+                    />
+                    <a
+                        t-if="block.resource.blob"
+                        class="btn btn-sm btn-outline-secondary"
+                        t-att-href="this.dataUri(block.resource.mimeType, block.resource.blob)"
+                        t-att-download="this.downloadName(block.resource)"
+                    >
+                        <i class="oi me-1" data-icon="download"/>Download
+                    </a>
+                </div>
+                <pre
+                    t-if="block.resource.text"
+                    class="mb-0 mt-2 small"
+                    t-out="block.resource.text"
+                />
+            </div>
+            <div t-else="" class="mb-3 p-2 bg-light border rounded text-muted small">
+                Unknown content block type: <code t-out="block.type"/>
+            </div>
+        </t>
+        <details>
+            <summary class="small text-muted">Raw JSON-RPC response</summary>
+            <div class="position-relative">
+                <CopyButton
+                    className="'btn-sm btn-link position-absolute top-0 end-0'"
+                    successText.translate="Copied"
+                    content="this.props.response.raw"
+                />
+                <pre
+                    class="mt-2 p-2 bg-light border rounded small"
+                    t-out="this.props.response.raw"
+                />
+            </div>
+        </details>
+    </t>
+
+</templates>
