@@ -119,9 +119,13 @@ class MCPTool(models.Model):
 
     @api.model
     def _check_scope(self, category: str, enforce_scope: str | None) -> None:
-        """Raise if a write tool is invoked under a read-only key scope."""
+        """Raise if a write tool is invoked under a read-only scope."""
         if enforce_scope == 'read' and category != 'read':
-            raise MCPScopeDenied(self.env._('Access denied: key scope is read-only'))
+            raise MCPScopeDenied(
+                self.env._(
+                    'Access denied: this tool changes data, but the access is read-only'
+                )
+            )
 
     @api.model
     def _coerce_arguments(self, arguments) -> dict[str, Any]:

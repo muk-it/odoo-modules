@@ -23,20 +23,34 @@ class IrHttp(models.AbstractModel):
     # ----------------------------------------------------------
 
     @classmethod
+    def _get_mcp_challenge(cls, token: str | None) -> WWWAuthenticate:
+        """Return the ``WWW-Authenticate`` challenge of a rejected MCP request."""
+        return WWWAuthenticate('bearer')
+
+    @classmethod
+    def _authenticate_mcp_token(cls, token: str) -> str | None:
+        """Switch the request to the user of the MCP key ``token``.
+
+        :return: the key's name, or ``None`` when no active key matches
+        """
+        if not (key := request.env['muk_mcp.key'].sudo().authenticate(token)):
+            return None
+        request.update_env(user=key.user_id.id)
+        request._mcp_key = key
+        return key.name
+
+    @classmethod
     def _auth_method_mcp(cls, routing: dict[str, Any]) -> None:
-        """Authenticate the request from its MCP key and switch to the key's user.
+        """Authenticate the request from its bearer token.
 
         :raise werkzeug.exceptions.Unauthorized: when the bearer token is missing
-            or does not match an active key
+            or matches no credential
         """
         header = request.httprequest.headers.get('Authorization', '')
         match = re.match(r'^bearer\s+(.+)$', header, re.IGNORECASE)
         token = match and match.group(1).strip()
-        key = token and request.env['muk_mcp.key'].sudo().authenticate(token)
-        if not key:
-            raise Unauthorized(www_authenticate=WWWAuthenticate('bearer'))
-        request.update_env(user=key.user_id.id)
-        request._mcp_key = key
+        if not (name := token and cls._authenticate_mcp_token(token)):
+            raise Unauthorized(www_authenticate=cls._get_mcp_challenge(token))
         if (
             request.env['ir.config_parameter']
             .sudo()
@@ -45,7 +59,7 @@ class IrHttp(models.AbstractModel):
                 True,
             )
         ):
-            request.update_context(mcp_name=key.name)
+            request.update_context(mcp_name=name)
         request.session.can_save = False
 
     @classmethod
