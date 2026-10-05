@@ -1,0 +1,158 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* muk_web_preview
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 20.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-04 12:16+0000\n"
+"PO-Revision-Date: 2026-10-04 12:16+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: muk_web_preview
+#: model:ir.module.module,description:base.module_muk_web_preview
+msgid ""
+"\n"
+"Extends the file viewer and the attachment thumbnails with previews\n"
+"for email files (.eml), Outlook messages (.msg), CSV and TSV tables\n"
+"and source code. Remote images in emails stay blocked until they are\n"
+"loaded on demand. Word, Excel and PowerPoint files can be opened with\n"
+"the Microsoft Office Online viewer.\n"
+msgstr ""
+"\n"
+"Estende il visualizzatore di file e le miniature degli allegati con anteprime\n"
+"per file e-mail (.eml), messaggi Outlook (.msg), tabelle CSV e TSV e codice\n"
+"sorgente. Le immagini remote nelle e-mail restano bloccate finché non vengono\n"
+"caricate su richiesta. I file Word, Excel e PowerPoint possono essere aperti\n"
+"con il visualizzatore Microsoft Office Online.\n"
+
+#. module: muk_web_preview
+#: model_terms:ir.ui.view,arch_db:muk_web_preview.content_mail
+msgid "(no subject)"
+msgstr "(nessun oggetto)"
+
+#. module: muk_web_preview
+#: model_terms:ir.ui.view,arch_db:muk_web_preview.content_mail
+msgid "<span>Remote images were blocked to protect your privacy.</span>"
+msgstr ""
+"<span>Le immagini remote sono state bloccate per proteggere la tua "
+"privacy.</span>"
+
+#. module: muk_web_preview
+#: model_terms:ir.ui.view,arch_db:muk_web_preview.content_mail
+msgid "Bcc"
+msgstr "Ccn"
+
+#. module: muk_web_preview
+#: model_terms:ir.ui.view,arch_db:muk_web_preview.content_mail
+msgid "Cc"
+msgstr ""
+
+#. module: muk_web_preview
+#. odoo-javascript
+#: code:addons/muk_web_preview/static/src/core/file_viewer/file_viewer.xml:0
+msgid "Check that the database is reachable from the internet."
+msgstr "Verifica che il database sia raggiungibile da internet."
+
+#. module: muk_web_preview
+#: model:ir.model,name:muk_web_preview.model_res_config_settings
+msgid "Config Settings"
+msgstr "Impostazioni di configurazione"
+
+#. module: muk_web_preview
+#: model_terms:ir.ui.view,arch_db:muk_web_preview.content_mail
+msgid "Date"
+msgstr "Data"
+
+#. module: muk_web_preview
+#: model:ir.model.fields,field_description:muk_web_preview.field_ir_http__display_name
+#: model:ir.model.fields,field_description:muk_web_preview.field_res_config_settings__display_name
+msgid "Display Name"
+msgstr "Nome visualizzato"
+
+#. module: muk_web_preview
+#: model_terms:ir.ui.view,arch_db:muk_web_preview.content_mail
+msgid "From"
+msgstr "Da"
+
+#. module: muk_web_preview
+#: model:ir.model,name:muk_web_preview.model_ir_http
+msgid "HTTP Routing"
+msgstr "Instradamento HTTP"
+
+#. module: muk_web_preview
+#: model:ir.model.fields,field_description:muk_web_preview.field_ir_http__id
+#: model:ir.model.fields,field_description:muk_web_preview.field_res_config_settings__id
+msgid "ID"
+msgstr ""
+
+#. module: muk_web_preview
+#. odoo-javascript
+#: code:addons/muk_web_preview/static/src/core/file_viewer/file_viewer.xml:0
+msgid "Loading"
+msgstr "Caricamento"
+
+#. module: muk_web_preview
+#: model:ir.model.fields,field_description:muk_web_preview.field_res_config_settings__preview_office_enabled
+msgid "MS Office Preview"
+msgstr "Anteprima MS Office"
+
+#. module: muk_web_preview
+#: model:ir.module.module,shortdesc:base.module_muk_web_preview
+msgid "MuK Preview"
+msgstr ""
+
+#. module: muk_web_preview
+#. odoo-python
+#: code:addons/muk_web_preview/controllers/attachment.py:0
+msgid "Only the first %(rows)s rows are shown."
+msgstr "Vengono mostrate solo le prime %(rows)s righe."
+
+#. module: muk_web_preview
+#: model:ir.model.fields,help:muk_web_preview.field_res_config_settings__preview_office_enabled
+msgid ""
+"Preview Word, Excel and PowerPoint files with the Microsoft Office Online "
+"viewer. Microsoft downloads the file through a signed link that expires "
+"after five minutes, so the database must be reachable from the internet."
+msgstr ""
+"Mostra i file Word, Excel e PowerPoint con il visualizzatore Microsoft "
+"Office Online. Microsoft scarica il file tramite un link firmato che scade "
+"dopo cinque minuti, quindi il database deve essere raggiungibile da "
+"internet."
+
+#. module: muk_web_preview
+#: model_terms:ir.ui.view,arch_db:muk_web_preview.view_res_config_settings_form
+msgid ""
+"Preview Word, Excel and PowerPoint files with the Microsoft Office Online "
+"viewer. The database must be reachable from the internet."
+msgstr ""
+"Mostra i file Word, Excel e PowerPoint con il visualizzatore Microsoft "
+"Office Online. Il database deve essere raggiungibile da internet."
+
+#. module: muk_web_preview
+#: model:ir.module.module,summary:base.module_muk_web_preview
+msgid "Preview emails, Outlook messages, CSV tables and Office files"
+msgstr "Anteprima di e-mail, messaggi Outlook, tabelle CSV e file Office"
+
+#. module: muk_web_preview
+#: model_terms:ir.ui.view,arch_db:muk_web_preview.content_mail
+msgid "Show remote images"
+msgstr "Mostra immagini remote"
+
+#. module: muk_web_preview
+#. odoo-javascript
+#: code:addons/muk_web_preview/static/src/core/file_viewer/file_viewer.xml:0
+msgid "The Office preview is not available."
+msgstr "L'anteprima di Office non è disponibile."
+
+#. module: muk_web_preview
+#: model_terms:ir.ui.view,arch_db:muk_web_preview.content_mail
+msgid "To"
+msgstr "A"

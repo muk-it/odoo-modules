@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-inherit="web.FileViewer" t-inherit-mode="extension">
+        <xpath expr="//iframe[@t-if='this.state.file.isText']" position="after">
+            <t t-if="this.state.file.isOffice">
+                <iframe
+                    t-if="this.state.officeUrl"
+                    class="o-FileViewer-view mk_office_preview w-75 h-100 border-0 bg-white"
+                    t-att-class="{ 'w-100': this.ui.isSmall }"
+                    t-att-src="this.state.officeUrl"
+                    sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+                />
+                <div
+                    t-elif="this.state.officeFailed"
+                    class="mk_office_preview_error text-center text-white"
+                    t-on-click.stop=""
+                >
+                    <i class="oi oi-3x d-block mb-3" data-icon="warning" role="img"/>
+                    <div>The Office preview is not available.</div>
+                    <div class="small opacity-75">
+                        Check that the database is reachable from the internet.
+                    </div>
+                </div>
+                <i
+                    t-else=""
+                    class="oi oi-3x oi-fw oi-spin text-white"
+                    data-icon="autorenew"
+                    role="img"
+                    title="Loading"
+                />
+            </t>
+        </xpath>
+    </t>
+
+</templates>

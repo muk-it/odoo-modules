@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <template id="content_layout" name="Preview Layout">
+        <html>
+            <head>
+                <meta charset="utf-8"/>
+                <t t-call-assets="muk_web_preview.assets_preview" t-js="false"/>
+            </head>
+            <body t-attf-class="mk_preview {{ 'mk_preview_thumbnail' if head else '' }}">
+                <t t-out="0"/>
+            </body>
+        </html>
+    </template>
+
+    <template id="content_table" name="Preview for Table Files">
+        <t t-call="muk_web_preview.content_layout">
+            <table class="mk_preview_table">
+                <thead t-if="header">
+                    <tr>
+                        <th t-foreach="header" t-as="cell" t-out="cell"/>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr t-foreach="rows" t-as="row">
+                        <td t-foreach="row" t-as="cell" t-out="cell"/>
+                    </tr>
+                </tbody>
+            </table>
+            <p t-if="note" class="mk_preview_note" t-out="note"/>
+        </t>
+    </template>
+
+    <template id="content_mail" name="Preview for Email Files">
+        <t t-call="muk_web_preview.content_layout">
+            <div t-if="remote_url" class="mk_preview_banner">
+                <span>Remote images were blocked to protect your privacy.</span>
+                <a t-att-href="remote_url">Show remote images</a>
+            </div>
+            <div class="mk_preview_header">
+                <h1 t-if="subject" t-out="subject"/>
+                <h1 t-else="">(no subject)</h1>
+                <div t-if="head" class="mk_preview_sender" t-out="sender"/>
+                <table t-else="">
+                    <tr t-if="sender">
+                        <th>From</th>
+                        <td t-out="sender"/>
+                    </tr>
+                    <tr t-if="to">
+                        <th>To</th>
+                        <td t-out="to"/>
+                    </tr>
+                    <tr t-if="cc">
+                        <th>Cc</th>
+                        <td t-out="cc"/>
+                    </tr>
+                    <tr t-if="bcc">
+                        <th>Bcc</th>
+                        <td t-out="bcc"/>
+                    </tr>
+                    <tr t-if="date">
+                        <th>Date</th>
+                        <td t-out="date"/>
+                    </tr>
+                </table>
+                <ul t-if="attachments and not head" class="mk_preview_attachments">
+                    <li t-foreach="attachments" t-as="attachment">
+                        <span t-out="attachment['name']"/>
+                        <small t-out="attachment['size']"/>
+                    </li>
+                </ul>
+            </div>
+            <div class="mk_preview_body" t-out="body"/>
+        </t>
+    </template>
+
+</odoo>
