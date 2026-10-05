@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_calendar_calendar_form" model="ir.ui.view">
+        <field name="name">calendar.calendar.form.sync</field>
+        <field name="model">calendar.calendar</field>
+        <field name="inherit_id" ref="calendar.calendar_calendar_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet/group" position="after">
+                <group string="Records" invisible="user_access_role != 'owner'" groups="base.group_system">
+                    <field name="source_model" invisible="1"/>
+                    <field
+                        name="source_model_id"
+                        placeholder="Show the records of a model, e.g. Task"
+                        options="{'no_create': True, 'no_open': True}"
+                    />
+                    <field
+                        name="source_date_start_field_id"
+                        invisible="not source_model_id"
+                        required="source_model_id"
+                        options="{'no_create': True, 'no_open': True}"
+                    />
+                    <field
+                        name="source_date_stop_field_id"
+                        invisible="not source_model_id"
+                        options="{'no_create': True, 'no_open': True}"
+                    />
+                    <field name="source_allday" invisible="not source_model_id"/>
+                    <field
+                        name="source_duration"
+                        widget="float_time"
+                        invisible="not source_model_id or source_allday or source_date_stop_field_id"
+                    />
+                    <field
+                        name="source_partner_field_id"
+                        invisible="not source_model_id"
+                        options="{'no_create': True, 'no_open': True}"
+                    />
+                    <field
+                        name="source_domain"
+                        widget="domain"
+                        invisible="not source_model_id"
+                        options="{'model': 'source_model', 'in_dialog': True}"
+                    />
+                    <div colspan="2" invisible="not source_model_id">
+                        <button
+                            name="action_source_sync"
+                            type="object"
+                            string="Sync now"
+                            class="btn-link px-0"
+                            icon="refresh"
+                        />
+                    </div>
+                </group>
+                <group string="iCal Subscription" invisible="user_access_role != 'owner'">
+                    <field name="ical_url" widget="CopyClipboardChar" invisible="not ical_url"/>
+                    <field name="ical_scope" widget="radio"/>
+                    <div colspan="2" class="text-muted" invisible="not ical_url">
+                        Add the link as a subscribed calendar in Google, Apple or Outlook.
+                    </div>
+                    <div colspan="2">
+                        <button
+                            name="action_ical_generate"
+                            type="object"
+                            string="Create iCal link"
+                            class="btn-secondary"
+                            icon="link"
+                            invisible="ical_url"
+                        />
+                        <button
+                            name="action_ical_generate"
+                            type="object"
+                            string="New link"
+                            class="btn-link"
+                            icon="autorenew"
+                            invisible="not ical_url"
+                            confirm="Subscriptions using the current link stop receiving events."
+                        />
+                        <button
+                            name="action_ical_disable"
+                            type="object"
+                            string="Stop sharing"
+                            class="btn-link text-danger"
+                            icon="link_off"
+                            invisible="not ical_url"
+                            confirm="Subscriptions using the current link stop receiving events."
+                        />
+                    </div>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

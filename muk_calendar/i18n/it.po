@@ -1,0 +1,338 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* muk_calendar
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 20.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-05 21:03+0000\n"
+"PO-Revision-Date: 2026-10-05 21:03+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: muk_calendar
+#: model:ir.module.module,description:base.module_muk_calendar
+msgid ""
+"\n"
+"This module improves and extends the calendar app. A calendar can\n"
+"show the records of any model on one of their dates, such as task\n"
+"deadlines or scheduled deliveries, and follows every change to them.\n"
+"Any calendar can be shared as a secret iCal link to subscribe to it\n"
+"from Google, Apple or Outlook.\n"
+msgstr ""
+"\n"
+"Questo modulo migliora ed estende l'app Calendario. Un calendario può\n"
+"mostrare i record di qualsiasi modello su uno dei loro campi data, come le\n"
+"scadenze delle attività o le consegne pianificate, e segue ogni modifica.\n"
+"Ogni calendario può essere condiviso come link iCal segreto per abbonarsi\n"
+"da Google, Apple o Outlook.\n"
+
+#. module: muk_calendar
+#: model_terms:ir.ui.view,arch_db:muk_calendar.view_calendar_calendar_form
+msgid "Add the link as a subscribed calendar in Google, Apple or Outlook."
+msgstr ""
+"Aggiungi il link come calendario in abbonamento in Google, Apple o Outlook."
+
+#. module: muk_calendar
+#: model:ir.model.fields,field_description:muk_calendar.field_calendar_calendar__source_allday
+msgid "All Day"
+msgstr "Tutto il giorno"
+
+#. module: muk_calendar
+#: model:ir.model.fields,field_description:muk_calendar.field_calendar_calendar__source_partner_field_id
+msgid "Attendees"
+msgstr "Partecipanti"
+
+#. module: muk_calendar
+#. odoo-python
+#: code:addons/muk_calendar/models/calendar_calendar.py:0
+msgid "Busy"
+msgstr "Occupato"
+
+#. module: muk_calendar
+#: model:ir.model.fields.selection,name:muk_calendar.selection__calendar_calendar__ical_scope__busy
+msgid "Busy times only"
+msgstr "Solo orari occupati"
+
+#. module: muk_calendar
+#: model:ir.model.fields,field_description:muk_calendar.field_ir_actions_server__calendar_id
+#: model:ir.model.fields,field_description:muk_calendar.field_ir_cron__calendar_id
+msgid "Calendar"
+msgstr "Calendario"
+
+#. module: muk_calendar
+#: model:ir.model,name:muk_calendar.model_calendar_attendee
+msgid "Calendar Attendee Information"
+msgstr "Informazioni partecipante nel calendario"
+
+#. module: muk_calendar
+#: model:ir.model,name:muk_calendar.model_calendar_event
+msgid "Calendar Event"
+msgstr "Evento del calendario"
+
+#. module: muk_calendar
+#. odoo-python
+#: code:addons/muk_calendar/models/calendar_calendar.py:0
+msgid "Calendar Sync: %s"
+msgstr "Sincronizzazione calendario: %s"
+
+#. module: muk_calendar
+#: model:ir.actions.server,name:muk_calendar.cron_source_sync_ir_actions_server
+msgid "Calendar: Sync Record Calendars"
+msgstr "Calendario: sincronizza i calendari dei record"
+
+#. module: muk_calendar
+#. odoo-python
+#: code:addons/muk_calendar/models/calendar_calendar.py:0
+msgid "Choose the date field the records of %s are placed on."
+msgstr "Scegli il campo data su cui sono posizionati i record di %s."
+
+#. module: muk_calendar
+#: model_terms:ir.ui.view,arch_db:muk_calendar.view_calendar_calendar_form
+msgid "Create iCal link"
+msgstr "Crea link iCal"
+
+#. module: muk_calendar
+#: model:ir.model.fields,field_description:muk_calendar.field_calendar_calendar__source_date_start_field_id
+msgid "Date"
+msgstr "Data"
+
+#. module: muk_calendar
+#: model:ir.model.fields,field_description:muk_calendar.field_calendar_attendee__display_name
+#: model:ir.model.fields,field_description:muk_calendar.field_calendar_calendar__display_name
+#: model:ir.model.fields,field_description:muk_calendar.field_calendar_event__display_name
+#: model:ir.model.fields,field_description:muk_calendar.field_ir_actions_server__display_name
+msgid "Display Name"
+msgstr "Nome visualizzato"
+
+#. module: muk_calendar
+#: model:ir.model.fields,field_description:muk_calendar.field_calendar_calendar__source_duration
+msgid "Duration"
+msgstr "Durata"
+
+#. module: muk_calendar
+#: model:ir.model.fields,field_description:muk_calendar.field_calendar_calendar__source_date_stop_field_id
+msgid "End Date"
+msgstr "Data di fine"
+
+#. module: muk_calendar
+#: model:ir.model.fields.selection,name:muk_calendar.selection__calendar_calendar__ical_scope__details
+msgid "Event details"
+msgstr "Dettagli dell'evento"
+
+#. module: muk_calendar
+#: model:ir.model.fields,field_description:muk_calendar.field_calendar_calendar__source_domain
+msgid "Filter"
+msgstr "Filtro"
+
+#. module: muk_calendar
+#: model:ir.model.fields,field_description:muk_calendar.field_calendar_attendee__id
+#: model:ir.model.fields,field_description:muk_calendar.field_calendar_calendar__id
+#: model:ir.model.fields,field_description:muk_calendar.field_calendar_event__id
+#: model:ir.model.fields,field_description:muk_calendar.field_ir_actions_server__id
+msgid "ID"
+msgstr "ID"
+
+#. module: muk_calendar
+#: model:ir.module.module,shortdesc:base.module_muk_calendar
+msgid "MuK Calendar"
+msgstr ""
+
+#. module: muk_calendar
+#: model_terms:ir.ui.view,arch_db:muk_calendar.view_calendar_calendar_form
+msgid "New link"
+msgstr "Nuovo link"
+
+#. module: muk_calendar
+#. odoo-python
+#: code:addons/muk_calendar/models/calendar_calendar.py:0
+msgid "Only administrators can sync calendars."
+msgstr "Solo gli amministratori possono sincronizzare i calendari."
+
+#. module: muk_calendar
+#. odoo-python
+#: code:addons/muk_calendar/models/calendar_calendar.py:0
+msgid "Only the calendar owner can share it as iCal."
+msgstr "Solo il proprietario del calendario può condividerlo come iCal."
+
+#. module: muk_calendar
+#: model:ir.model.fields,help:muk_calendar.field_calendar_calendar__source_domain
+msgid "Only the records matching this filter are shown."
+msgstr "Vengono mostrati solo i record che corrispondono a questo filtro."
+
+#. module: muk_calendar
+#: model:ir.module.module,summary:base.module_muk_calendar
+msgid "Record sync and iCal sharing for the calendar app"
+msgstr "Sincronizzazione dei record e condivisione iCal per l'app Calendario"
+
+#. module: muk_calendar
+#: model:ir.model.fields,field_description:muk_calendar.field_calendar_calendar__source_model_id
+#: model_terms:ir.ui.view,arch_db:muk_calendar.view_calendar_calendar_form
+msgid "Records"
+msgstr "Record"
+
+#. module: muk_calendar
+#: model:ir.model.fields,field_description:muk_calendar.field_calendar_calendar__source_model
+msgid "Records Model"
+msgstr "Modello dei record"
+
+#. module: muk_calendar
+#: model:ir.model,name:muk_calendar.model_ir_actions_server
+msgid "Server Action"
+msgstr "Azione server"
+
+#. module: muk_calendar
+#: model:ir.model.fields,help:muk_calendar.field_calendar_calendar__source_allday
+msgid "Show the records as all-day events, even on a date and time."
+msgstr ""
+"Mostra i record come eventi dell'intera giornata, anche con data e ora."
+
+#. module: muk_calendar
+#: model_terms:ir.ui.view,arch_db:muk_calendar.view_calendar_calendar_form
+msgid "Show the records of a model, e.g. Task"
+msgstr "Mostra i record di un modello, ad es. Attività"
+
+#. module: muk_calendar
+#: model_terms:ir.ui.view,arch_db:muk_calendar.view_calendar_calendar_form
+msgid "Stop sharing"
+msgstr "Interrompi condivisione"
+
+#. module: muk_calendar
+#: model_terms:ir.ui.view,arch_db:muk_calendar.view_calendar_calendar_form
+msgid "Subscriptions using the current link stop receiving events."
+msgstr "Gli abbonamenti con il link attuale non ricevono più eventi."
+
+#. module: muk_calendar
+#: model:ir.model.fields.selection,name:muk_calendar.selection__ir_actions_server__state__calendar_sync
+msgid "Sync Calendar"
+msgstr "Sincronizza calendario"
+
+#. module: muk_calendar
+#: model_terms:ir.ui.view,arch_db:muk_calendar.view_calendar_calendar_form
+msgid "Sync now"
+msgstr "Sincronizza ora"
+
+#. module: muk_calendar
+#: model:ir.model.fields,field_description:muk_calendar.field_calendar_event__source_calendar_id
+msgid "Synced By"
+msgstr "Sincronizzato da"
+
+#. module: muk_calendar
+#. odoo-python
+#: code:addons/muk_calendar/models/calendar_calendar.py:0
+msgid "The attendees must be a field of %s."
+msgstr "I partecipanti devono essere un campo di %s."
+
+#. module: muk_calendar
+#: model:ir.model.fields,help:muk_calendar.field_ir_actions_server__calendar_id
+#: model:ir.model.fields,help:muk_calendar.field_ir_cron__calendar_id
+msgid "The calendar whose events follow the records of this action."
+msgstr "Il calendario i cui eventi seguono i record di questa azione."
+
+#. module: muk_calendar
+#: model:ir.model.fields,help:muk_calendar.field_calendar_calendar__source_partner_field_id
+msgid "The contacts or users of a record that attend its event."
+msgstr "I contatti o gli utenti di un record che partecipano al suo evento."
+
+#. module: muk_calendar
+#: model:ir.model.fields,help:muk_calendar.field_calendar_calendar__source_date_stop_field_id
+msgid "The date a record ends on, to show it as a range."
+msgstr "La data in cui termina un record, per mostrarlo come intervallo."
+
+#. module: muk_calendar
+#: model:ir.model.fields,help:muk_calendar.field_calendar_calendar__source_date_start_field_id
+msgid "The date a record is placed on."
+msgstr "La data su cui è posizionato un record."
+
+#. module: muk_calendar
+#. odoo-python
+#: code:addons/muk_calendar/models/calendar_calendar.py:0
+msgid "The end date must be a field of the same type as the date."
+msgstr "La data di fine deve essere un campo dello stesso tipo della data."
+
+#. module: muk_calendar
+#. odoo-python
+#: code:addons/muk_calendar/models/calendar_calendar.py:0
+msgid "The filter of %s is not valid."
+msgstr "Il filtro di %s non è valido."
+
+#. module: muk_calendar
+#: model:ir.model.fields,help:muk_calendar.field_calendar_calendar__source_duration
+msgid "The length of an event, in hours, when there is no end date."
+msgstr "La durata di un evento, in ore, quando non c'è una data di fine."
+
+#. module: muk_calendar
+#: model:ir.model.fields,help:muk_calendar.field_calendar_calendar__source_model_id
+msgid "The model whose records the calendar shows as events."
+msgstr "Il modello i cui record il calendario mostra come eventi."
+
+#. module: muk_calendar
+#: model:ir.model.fields,help:muk_calendar.field_calendar_event__source_calendar_id
+msgid "The record calendar that mirrors the record of this event."
+msgstr "Il calendario dei record che rispecchia il record di questo evento."
+
+#. module: muk_calendar
+#: model:ir.model.fields,field_description:muk_calendar.field_ir_actions_server__state
+#: model:ir.model.fields,field_description:muk_calendar.field_ir_cron__state
+msgid "Type"
+msgstr "Tipologia"
+
+#. module: muk_calendar
+#: model:ir.model.fields,help:muk_calendar.field_ir_actions_server__state
+#: model:ir.model.fields,help:muk_calendar.field_ir_cron__state
+msgid ""
+"Type of server action. The following values are available:\n"
+"- 'Update a Record': update the values of a record\n"
+"- 'Create Activity': create an activity (Discuss)\n"
+"- 'Send Email': post a message, a note or send an email (Discuss)\n"
+"- 'Send SMS': send SMS, log them on documents (SMS)- 'Add/Remove Followers': add or remove followers to a record (Discuss)\n"
+"- 'Create Record': create a new record with new values\n"
+"- 'Execute Code': a block of Python code that will be executed\n"
+"- 'Send Webhook Notification': send a POST request to an external system, also known as a Webhook\n"
+"- 'Multi Actions': define an action that triggers several other server actions\n"
+msgstr ""
+"Tipo azione server. Sono disponibili i seguenti valori:\n"
+"- 'Aggiorna record': aggiorna i valori di un record\n"
+"- 'Crea attività': crea un'attività (Comunicazioni)\n"
+"- 'Invia e-mail': pubblica un messaggio, una nota o invia un'e-mail (Comunicazioni)\n"
+"- 'Invia SMS': invia SMS, registrali nei documenti (SMS)- 'Aggiungi/rimuovi follower': aggiungi o rimuovi follower a un record (Comunicazioni)\n"
+"- 'Crea record': crea un nuovo record con nuovi valori\n"
+"- 'Esegui codice': un blocco di codice Python che verrà eseguito\n"
+"- 'Invia notifica Webhook': invia una richiesta di PUBBLICAZIONE, conosciuta anche come Webhook\n"
+"- 'Azioni multiple': definisci un'azione che attiva diverse altre azioni del server\n"
+
+#. module: muk_calendar
+#: model:ir.model,name:muk_calendar.model_calendar_calendar
+msgid "User Calendar"
+msgstr "Calendario dell'utente"
+
+#. module: muk_calendar
+#: model:ir.model.fields,help:muk_calendar.field_calendar_calendar__ical_scope
+msgid "What subscribers of the iCal link see of each event."
+msgstr "Cosa vedono di ogni evento gli abbonati al link iCal."
+
+#. module: muk_calendar
+#: model:ir.model.fields,field_description:muk_calendar.field_calendar_calendar__ical_scope
+msgid "iCal Content"
+msgstr "Contenuto iCal"
+
+#. module: muk_calendar
+#: model:ir.model.fields,field_description:muk_calendar.field_calendar_calendar__ical_url
+msgid "iCal Link"
+msgstr "Link iCal"
+
+#. module: muk_calendar
+#: model_terms:ir.ui.view,arch_db:muk_calendar.view_calendar_calendar_form
+msgid "iCal Subscription"
+msgstr "Abbonamento iCal"
+
+#. module: muk_calendar
+#: model:ir.model.fields,field_description:muk_calendar.field_calendar_calendar__ical_token
+msgid "iCal Token"
+msgstr "Token iCal"

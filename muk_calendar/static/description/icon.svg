@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100pt" height="100pt">
+  <rect x="4" y="12" width="78" height="78" rx="12" fill="#33627E"/>
+  <path d="M 16 12 L 70 12 C 76.627 12 82 17.373 82 24 L 82 32 L 4 32 L 4 24 C 4 17.373 9.373 12 16 12 Z" fill="#1C3A4C"/>
+  <rect x="20" y="4" width="8" height="18" rx="4" fill="#13181C"/>
+  <rect x="58" y="4" width="8" height="18" rx="4" fill="#13181C"/>
+  <rect x="13" y="41" width="44" height="10" rx="5" fill="#FFFFFF"/>
+  <rect x="13" y="56" width="32" height="10" rx="5" fill="#DCE8EE"/>
+  <rect x="13" y="71" width="22" height="10" rx="5" fill="#9EBCCD"/>
+  <circle cx="74" cy="74" r="25" fill="#FFFFFF"/>
+  <circle cx="74" cy="74" r="21" fill="#F28C38"/>
+  <path d="M 62.5 71 A 12 12 0 0 1 83.5 65" fill="none" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M 87.5 61 L 86.5 71 L 77.5 67.5 Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M 85.5 77 A 12 12 0 0 1 64.5 83" fill="none" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M 60.5 87 L 61.5 77 L 70.5 80.5 Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="round"/>
+</svg>
