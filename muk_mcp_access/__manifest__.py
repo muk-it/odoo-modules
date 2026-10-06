@@ -1,7 +1,7 @@
 {
     'name': 'MuK MCP Access',
     'summary': 'Model-level access control for the MCP server',
-    'description': '''
+    'description': """
         Defence-in-depth add-on for MuK MCP Server. Controls which Odoo
         models are reachable through MCP, independent of the user's normal
         access rights. Administrators build a whitelist of models and choose
@@ -9,8 +9,8 @@
         every model is accessible (backwards-compatible). As soon as the
         first model is added only whitelisted models are exposed — the AI
         agent cannot discover or query anything else.
-    ''',
-    'version': '18.0.1.1.1',
+    """,
+    'version': '18.0.1.1.12',
     'category': 'Tools/API',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -33,6 +33,9 @@
     'assets': {
         'web.assets_backend': [
             'muk_mcp_access/static/src/views/**/*',
+        ],
+        'web.assets_unit_tests': [
+            'muk_mcp_access/static/tests/**/*',
         ],
     },
     'images': [
