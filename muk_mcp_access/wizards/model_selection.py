@@ -1,10 +1,13 @@
-from odoo import _, api, fields, models
+from __future__ import annotations
+
+from odoo import api, fields, models
 
 
 class MCPModelSelectionWizard(models.TransientModel):
+    """Wizard to bulk-add models to the MCP access allowlist."""
 
     _name = 'muk_mcp_access.model.selection'
-    _description = "MCP Model Selection Wizard"
+    _description = 'MCP Model Selection Wizard'
 
     # ----------------------------------------------------------
     # Fields
@@ -17,18 +20,18 @@ class MCPModelSelectionWizard(models.TransientModel):
 
     model_ids = fields.Many2many(
         comodel_name='ir.model',
-        string="Models",
+        string='Models',
         required=True,
         domain="[('transient', '=', False), ('id', 'not in', _existing_model_ids)]",
     )
 
     allow_read = fields.Boolean(
-        string="Read",
+        string='Read',
         default=True,
     )
 
     allow_write = fields.Boolean(
-        string="Write",
+        string='Write',
         default=False,
     )
 
@@ -36,11 +39,10 @@ class MCPModelSelectionWizard(models.TransientModel):
     # Actions
     # ----------------------------------------------------------
 
-    def action_enable_models(self):
+    def action_enable_models(self) -> dict:
+        """Create allowlist entries for the selected models, skipping duplicates."""
         access_model = self.env['muk_mcp_access.model']
-        existing = set(
-            access_model.search([]).mapped('model_id').ids
-        )
+        existing = set(access_model.search([]).mapped('model_id').ids)
         vals_list = [
             {
                 'model_id': model.id,
@@ -59,7 +61,8 @@ class MCPModelSelectionWizard(models.TransientModel):
     # ----------------------------------------------------------
 
     @api.depends_context('uid')
-    def _compute_existing_model_ids(self):
+    def _compute_existing_model_ids(self) -> None:
+        """Compute the models already present in the allowlist for exclusion."""
         existing = self.env['muk_mcp_access.model'].search([])
         ids = existing.mapped('model_id').ids
         for record in self:
