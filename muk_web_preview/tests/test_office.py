@@ -47,7 +47,7 @@ class TestOffice(HttpCase):
     def _viewer_url(self, attachment_id: int) -> str:
         """Ask the server for the viewer URL of an attachment as the test user."""
         self.authenticate(self.user.login, self.user.login)
-        return self.make_jsonrpc_request(f'/muk_web_preview/office/{attachment_id}')
+        return self.make_jsonrpc_request(f'/web_preview/office/{attachment_id}')
 
     # ----------------------------------------------------------
     # Tests
@@ -72,7 +72,7 @@ class TestOffice(HttpCase):
         with mute_logger('odoo.http'):
             self.assertEqual(self.url_open(f'{file_url.path}x').status_code, 404)
             self.assertEqual(
-                self.url_open('/muk_web_preview/office/file/garbage').status_code, 404
+                self.url_open('/web_preview/office/file/garbage').status_code, 404
             )
 
     def test_refused(self):

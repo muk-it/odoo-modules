@@ -18,7 +18,7 @@ class OfficeController(http.Controller):
     # ----------------------------------------------------------
 
     @http.route(
-        '/muk_web_preview/office/<int:attachment_id>',
+        '/web_preview/office/<int:attachment_id>',
         type='jsonrpc',
         auth='user',
         readonly=True,
@@ -35,11 +35,11 @@ class OfficeController(http.Controller):
         attachment.check_access('read')
         token = sign_attachment(request.env, attachment.id)
         return viewer_url(
-            f'{attachment.get_base_url()}/muk_web_preview/office/file/{token}'
+            f'{attachment.get_base_url()}/web_preview/office/file/{token}'
         )
 
     @http.route(
-        '/muk_web_preview/office/file/<string:token>',
+        '/web_preview/office/file/<string:token>',
         type='http',
         auth='public',
         readonly=True,

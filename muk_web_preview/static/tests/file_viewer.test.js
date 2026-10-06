@@ -65,8 +65,8 @@ test('Office files stay downloads while the Office preview is off', async () => 
 
 test('an Office file opens in the Office Online viewer', async () => {
     patchWithCleanup(session, { preview_office_enabled: true });
-    onRpc('/muk_web_preview/office/1', () => 'https://view.example/embed?src=1');
-    onRpc('/muk_web_preview/office/3', () => {
+    onRpc('/web_preview/office/1', () => 'https://view.example/embed?src=1');
+    onRpc('/web_preview/office/3', () => {
         throw makeServerError({ message: 'Not found' });
     });
     await mountViewer([
@@ -90,8 +90,8 @@ test('an Office file opens in the Office Online viewer', async () => {
 test('a late viewer URL of a file that is no longer shown is dropped', async () => {
     patchWithCleanup(session, { preview_office_enabled: true });
     const late = Promise.withResolvers();
-    onRpc('/muk_web_preview/office/1', () => late.promise);
-    onRpc('/muk_web_preview/office/2', () => 'https://view.example/embed?src=2');
+    onRpc('/web_preview/office/1', () => late.promise);
+    onRpc('/web_preview/office/2', () => 'https://view.example/embed?src=2');
     await mountViewer([
         makeFile(1, 'first.docx', 'application/msword'),
         makeFile(2, 'second.docx', 'application/msword'),

@@ -26,7 +26,7 @@ patch(FileViewer.prototype, {
      */
     async loadOfficeUrl(file) {
         try {
-            const officeUrl = await rpc(`/muk_web_preview/office/${file.id}`);
+            const officeUrl = await rpc(`/web_preview/office/${file.id}`);
             if (this.state.file === file) {
                 this.state.officeUrl = officeUrl;
             }

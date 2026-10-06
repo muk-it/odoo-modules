@@ -8,7 +8,7 @@
         loaded on demand. Word, Excel and PowerPoint files can be opened with
         the Microsoft Office Online viewer.
     """,
-    'version': '20.0.1.1.0',
+    'version': '20.0.1.1.1',
     'category': 'Tools/Utils',
     'license': 'LGPL-3',
     'author': 'MuK IT',
