@@ -110,6 +110,10 @@ registerWebsitePreviewTour('muk_cookies_builder', { url: '/', edition: true }, (
         trigger: `${OPTION} we-button[data-select-cookie-layout='center']`,
         run: 'click',
     },
+    {
+        content: 'Wait for the editor to reload with the stored layout',
+        trigger: ':iframe #website_cookies_bar .mk_cookies_center:not(:visible)',
+    },
     showTheBanner('Show the banner again, once the editor has reloaded'),
     {
         content: 'The layout is rendered from the website, not swapped in place',
@@ -126,6 +130,11 @@ registerWebsitePreviewTour('muk_cookies_builder', { url: '/', edition: true }, (
         content: 'Trim the notice',
         trigger: `${OPTION} we-button[data-select-cookie-density='compact']`,
         run: 'click',
+    },
+    {
+        content: 'Wait for the editor to reload with the stored density',
+        trigger:
+            ':iframe #website_cookies_bar .mk_cookies_density_compact:not(:visible)',
     },
     showTheBanner('Show the banner once more'),
     {
@@ -149,7 +158,6 @@ registerWebsitePreviewTour('muk_cookies_builder', { url: '/', edition: true }, (
         trigger: `${OPTION} we-button[data-toggle-cookie-footer] we-checkbox`,
         run: 'click',
     },
-    showTheBanner('Show the banner after the footer link was turned off'),
     {
         content: 'Turning the footer link off is stored and takes the link away',
         trigger: ':iframe body:not(:has(.mk_cookies_footer))',
@@ -160,11 +168,16 @@ registerWebsitePreviewTour('muk_cookies_builder', { url: '/', edition: true }, (
             }
         },
     },
+    showTheBanner('Show the banner after the footer link was turned off'),
     openChoices('Open the floating button choices', 'select-cookie-float'),
     {
         content: 'Move it to the other corner',
         trigger: `${OPTION} we-button[data-select-cookie-float='left']`,
         run: 'click',
+    },
+    {
+        content: 'Wait for the editor to reload with the stored corner',
+        trigger: ':iframe .mk_cookies_float.mk_cookies_float_left',
     },
     showTheBanner('Show the banner once the corner has changed'),
     {
@@ -175,21 +188,6 @@ registerWebsitePreviewTour('muk_cookies_builder', { url: '/', edition: true }, (
             if (stored.cookie_reopen_float !== 'left') {
                 throw new Error('The chosen corner was not stored.');
             }
-            // The option panel relabels itself from the record after its
-            // reload, so what the sidebar reads is a race; what the page
-            // renders is the claim worth waiting for.
-            for (let attempt = 0; attempt < 10; attempt++) {
-                const rendered = [...document.querySelectorAll('iframe')].some((el) =>
-                    el.contentDocument?.querySelector(
-                        '.mk_cookies_float.mk_cookies_float_left',
-                    ),
-                );
-                if (rendered) {
-                    return;
-                }
-                await new Promise((resolve) => setTimeout(resolve, 300));
-            }
-            throw new Error('The button was not rendered in that corner.');
         },
     },
 ]);

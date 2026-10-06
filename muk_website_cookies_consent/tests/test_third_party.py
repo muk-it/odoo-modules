@@ -98,6 +98,22 @@ class TestThirdParty(CookieConsentCommon):
         self.assertNotIn('about:blank', html)
         self.assertIn('youtube.com/embed/abc123', html)
 
+    def test_video_block_is_released_once_its_service_is_granted(self):
+        for services, flagged in (([], True), (['youtube'], False)):
+            with self.subTest(services=services):
+                self.patch_request(self.build_cookie([], services=services))
+                atts = {
+                    'class': 'media_iframe_video',
+                    'data-oe-expression': '//www.youtube.com/embed/abc123',
+                }
+                self.as_visitor()._remove_third_party_trackers('div', atts, ['classes'])
+                self.assertEqual(
+                    'data-need-cookies-approval' in atts,
+                    flagged,
+                    'A flagged container stays collapsed, so an allowed video '
+                    'would load into a block of no height.',
+                )
+
     def test_one_purpose_does_not_release_another(self):
         self.patch_request(self.build_cookie(['analytics']))
         html = self.as_visitor()._control_third_party_trackers_in_html(LINKEDIN_SCRIPT)

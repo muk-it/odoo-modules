@@ -851,7 +851,22 @@ class Website(models.Model):
         )
 
     def _is_tag_classes_watchlisted(self, tagName: str, atts: dict) -> bool:  # noqa: N803, ARG002
-        """Report whether an element could build a blocked iframe client-side."""
+        """Report whether an element could build a blocked iframe client-side.
+
+        A container whose embed belongs to a granted service is released: core
+        flags a video block by its class alone, and its own script keeps the
+        block collapsed while the flag stands, so an embed allowed in place
+        would load into a block of no height.
+        """
+        if self._is_cookie_consent_active() and self.cookie_blocking:
+            url = (
+                atts.get('data-embed-url')
+                or atts.get('data-src')
+                or atts.get('data-oe-expression')
+            )
+            service = self._find_cookie_service(url)
+            if service and self._is_cookie_service_granted(service):
+                return False
         return bool(
             self._get_blocked_iframe_containers_classes().intersection(
                 (atts.get('class') or '').split(' ')
