@@ -37,6 +37,7 @@ export const SESSION_READ_FIELDS = [
     'total_input_tokens',
     'total_output_tokens',
     'last_input_tokens',
+    'turn_usage',
     'context_window',
     'user_id',
     'share_user_ids',
@@ -205,6 +206,7 @@ export function useAiSession(options = {}) {
         outputTokens: 0,
         totalCost: 0,
         lastInputTokens: 0,
+        turnUsage: {},
         contextWindow: 0,
         expandedTools: {},
         streamingText: '',
@@ -627,6 +629,7 @@ export function useAiSession(options = {}) {
         state.inputTokens = payload.total_input_tokens || 0;
         state.outputTokens = payload.total_output_tokens || 0;
         state.lastInputTokens = payload.last_input_tokens || 0;
+        state.turnUsage = payload.turn_usage || {};
         state.pendingMessages = payload.pending_user_messages || [];
         state.resumeAt = normalizeResumeAt(payload.resume_at);
         if (typeof payload.total_cost === 'number') {

@@ -70,13 +70,11 @@
                             <i class="fa fa-times"/>
                         </button>
                     </span>
-                    <span
-                        class="mk_chip mk_cost_chip rounded-pill ms-auto"
+                    <AIUsageMeter
                         t-if="session.state.sessionId"
-                        t-att-title="costPill.tooltip"
-                    >
-                        <i class="fa fa-dollar me-1"/><t t-esc="costPill.label"/>
-                    </span>
+                        state="session.state"
+                        dropDown="true"
+                    />
                 </div>
             </t>
             <t t-if="!props.minimized">

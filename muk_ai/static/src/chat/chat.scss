@@ -679,44 +679,6 @@
                 opacity: 0.7;
             }
         }
-        .mk_context_chip {
-            font-weight: 500;
-            &.mk_context_green {
-                color: var(--mk-success);
-                background: rgba(40, 167, 69, 0.1);
-            }
-            &.mk_context_amber {
-                color: #b88300;
-                background: rgba(224, 168, 0, 0.14);
-            }
-            &.mk_context_red {
-                color: var(--mk-danger);
-                background: rgba(220, 53, 69, 0.12);
-                animation: mk-pulse 1.4s ease-in-out infinite;
-            }
-            i {
-                opacity: 1;
-            }
-            .mk_context_ring {
-                display: inline-block;
-                width: 11px;
-                height: 11px;
-                border-radius: 50%;
-                background: conic-gradient(
-                    currentColor calc(var(--pct, 0) * 1%),
-                    rgba(0, 0, 0, 0.18) 0
-                );
-                flex-shrink: 0;
-            }
-        }
-        .mk_cost_chip {
-            color: var(--mk-success);
-            background: rgba(40, 167, 69, 0.1);
-            font-variant-numeric: tabular-nums;
-            i {
-                opacity: 0.9;
-            }
-        }
         .mk_ctx_chip {
             max-width: 320px;
             overflow: hidden;
@@ -2490,9 +2452,6 @@
             min-width: 0;
             font-size: 0.88rem;
         }
-        .mk_tokens .mk_chip:not(.mk_context_chip) {
-            display: none;
-        }
     }
     @include media-breakpoint-down(md) {
         .mk_sidebar_resizer {
@@ -2527,9 +2486,6 @@
             flex: 1 0 100%;
             justify-content: flex-start;
             margin-left: 0;
-            .mk_context_chip {
-                margin-left: auto;
-            }
         }
         .mk_sidebar_item .mk_sidebar_actions,
         .mk_space_row.mk_space_open .mk_space_actions {
@@ -2609,6 +2565,12 @@
         .mk_composer_hint {
             display: none;
         }
+        .mk_composer_meta_actions {
+            margin-left: 0 !important;
+        }
+        .mk_composer_meta .mk_usage {
+            margin-left: auto;
+        }
         .mk_pill_label {
             display: none;
         }
@@ -2639,16 +2601,12 @@
         }
         .mk_tokens {
             gap: 0.25rem;
-            .mk_chip:not(.mk_context_chip) {
+            .mk_chip {
                 display: none;
             }
             .mk_popout {
                 display: none;
             }
-        }
-        .mk_context_chip {
-            padding: 2px 6px;
-            font-size: 0.7rem;
         }
         .mk_slash_popover {
             max-width: calc(100vw - 1.5rem);
