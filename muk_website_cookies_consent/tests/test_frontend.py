@@ -272,7 +272,7 @@ class TestFrontend(HttpCase):
         self.opener.cookies.pop('muk_cookie_consent', None)
         before = self.env['muk_website_cookies_consent.consent'].search_count([])
         self.opener.post(
-            f'{self.base_url()}/muk_website_cookies_consent/consent',
+            f'{self.base_url()}/website_cookies_consent/consent',
             json={
                 'jsonrpc': '2.0',
                 'method': 'call',
@@ -316,7 +316,7 @@ class TestFrontend(HttpCase):
         self.opener.cookies.set('muk_cookie_consent', quote(json.dumps(state)))
         payload = {'state': state, 'action': 'custom', 'source': 'preferences'}
         result = self.opener.post(
-            f'{self.base_url()}/muk_website_cookies_consent/consent',
+            f'{self.base_url()}/website_cookies_consent/consent',
             json={'jsonrpc': '2.0', 'method': 'call', 'id': 1, 'params': payload},
         ).json()
         self.assertEqual(result['result']['reference'], 'http-test-uid')
@@ -337,7 +337,7 @@ class TestFrontend(HttpCase):
     def test_a_junk_payload_records_nothing(self):
         before = self.env['muk_website_cookies_consent.consent'].search_count([])
         self.opener.post(
-            f'{self.base_url()}/muk_website_cookies_consent/consent',
+            f'{self.base_url()}/website_cookies_consent/consent',
             json={
                 'jsonrpc': '2.0',
                 'method': 'call',

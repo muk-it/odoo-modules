@@ -275,7 +275,7 @@ export class CookiesBanner extends Popup {
         };
         try {
             browser
-                .fetch('/muk_website_cookies_consent/consent', {
+                .fetch('/website_cookies_consent/consent', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload),

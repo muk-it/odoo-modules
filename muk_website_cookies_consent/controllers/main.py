@@ -40,7 +40,7 @@ class CookieConsentController(http.Controller):
     # ----------------------------------------------------------
 
     @http.route(
-        '/muk_website_cookies_consent/consent',
+        '/website_cookies_consent/consent',
         type='jsonrpc',
         auth='public',
         website=True,
