@@ -200,6 +200,12 @@ msgid "%(provider)s API key is not configured."
 msgstr ""
 
 #. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/usage/usage_meter.js:0
+msgid "%(tokens)s / %(window)s tokens"
+msgstr ""
+
+#. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
 msgid "%s (fork)"
@@ -906,6 +912,12 @@ msgstr ""
 
 #. module: muk_ai
 #. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/usage/usage_meter.xml:0
+msgid "At 100% the conversation is compacted automatically"
+msgstr ""
+
+#. module: muk_ai
+#. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/composer/chat_composer.xml:0
 msgid "Attach file"
 msgstr ""
@@ -1395,6 +1407,12 @@ msgid "Content"
 msgstr ""
 
 #. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/usage/usage_meter.xml:0
+msgid "Context"
+msgstr ""
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_model__context_window
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__context_window
 msgid "Context Window"
@@ -1432,7 +1450,7 @@ msgstr ""
 
 #. module: muk_ai
 #. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/chat.js:0
+#: code:addons/muk_ai/static/src/chat/usage/usage_meter.js:0
 msgid "Context window: %(tokens)s / %(window)s tokens"
 msgstr ""
 
@@ -1465,6 +1483,12 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
 msgid "Copy message"
+msgstr ""
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/usage/usage_meter.js:0
+msgid "Cost"
 msgstr ""
 
 #. module: muk_ai
@@ -2277,6 +2301,19 @@ msgid "ID"
 msgstr ""
 
 #. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/usage/usage_meter.js:0
+msgid "Input"
+msgstr ""
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_session__turn_usage
+msgid ""
+"Input and output tokens, provider rounds and cost of the most recent user "
+"turn. Reset when a new turn starts."
+msgstr ""
+
+#. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_model__currency
 msgid "ISO code of the price currency."
 msgstr ""
@@ -2414,12 +2451,6 @@ msgid "Input Tokens"
 msgstr ""
 
 #. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/chat.xml:0
-msgid "Input tokens"
-msgstr ""
-
-#. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_session__last_input_tokens
 msgid ""
 "Input tokens consumed by the most recent provider round. Drives the context-"
@@ -2463,7 +2494,7 @@ msgstr ""
 
 #. module: muk_ai
 #. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/chat.xml:0
+#: code:addons/muk_ai/static/src/chat/usage/usage_meter.js:0
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__iteration_count
 msgid "Iterations"
 msgstr ""
@@ -2528,6 +2559,12 @@ msgstr ""
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__last_input_tokens
 msgid "Last Input Tokens"
+msgstr ""
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/usage/usage_meter.xml:0
+msgid "Last turn"
 msgstr ""
 
 #. module: muk_ai
@@ -3362,6 +3399,12 @@ msgid "Options field"
 msgstr ""
 
 #. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/usage/usage_meter.js:0
+msgid "Output"
+msgstr ""
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__total_output_cost
 msgid "Output Cost (USD)"
 msgstr ""
@@ -3374,12 +3417,6 @@ msgstr ""
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__total_output_tokens
 msgid "Output Tokens"
-msgstr ""
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/chat.xml:0
-msgid "Output tokens"
 msgstr ""
 
 #. module: muk_ai
@@ -4146,6 +4183,8 @@ msgid "Server Action"
 msgstr ""
 
 #. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/usage/usage_meter.xml:0
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_approval__session_id
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_event__session_id
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_pending__session_id
@@ -4156,12 +4195,6 @@ msgstr ""
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "Session Timeout"
-msgstr ""
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/utils.js:0
-msgid "Session cost so far: $%s (USD)"
 msgstr ""
 
 #. module: muk_ai
@@ -4838,6 +4871,11 @@ msgstr ""
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "Turn Runtime"
+msgstr ""
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__turn_usage
+msgid "Turn Usage"
 msgstr ""
 
 #. module: muk_ai

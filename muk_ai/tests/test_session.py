@@ -790,6 +790,28 @@ class TestAiSession(AITestCommon):
         self.assertEqual(session.last_input_tokens, 120)
         self.assertEqual(session.total_input_tokens, 162)
 
+    def test_turn_usage_counts_only_the_latest_turn(self):
+        session = self.env['muk_ai.session'].create({'name': 'turn meter'})
+
+        def make_payload(tokens):
+            return {
+                'text': 'ok',
+                'tool_calls': [],
+                'carry_inputs': [],
+                'usage': {'input_tokens': tokens, 'output_tokens': 3},
+            }
+
+        with self._patch_provider([make_payload(42)]):
+            session.start('hi')
+        with self._patch_provider([make_payload(120)]):
+            session.send_message('again')
+        self.assertEqual(session.turn_usage['input_tokens'], 120)
+        self.assertEqual(session.turn_usage['output_tokens'], 3)
+        self.assertEqual(session.turn_usage['iterations'], 1)
+        self.assertEqual(session.get_snapshot()['turn_usage'], session.turn_usage)
+        session.clear()
+        self.assertFalse(session.turn_usage)
+
     def test_snapshot_exposes_context_window(self):
         model = self.env['muk_ai.model'].create(
             {

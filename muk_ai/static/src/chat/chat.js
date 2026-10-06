@@ -30,8 +30,6 @@ import {
     effortPill,
     extraPills,
     selectPill,
-    costTooltip,
-    formatCost,
     formatRelativeTime,
     formatTimestamp,
     inputPlaceholder,
@@ -962,6 +960,12 @@ export class AIChat extends Component {
             if (typeof payload.context_window === 'number') {
                 this.session.state.contextWindow = payload.context_window;
             }
+            if (typeof payload.total_cost === 'number') {
+                this.session.state.totalCost = payload.total_cost;
+            }
+            if (payload.turn_usage) {
+                this.session.state.turnUsage = payload.turn_usage;
+            }
         }
     }
     _refreshSidebar() {
@@ -1065,38 +1069,6 @@ export class AIChat extends Component {
             return '';
         }
         return _t('resumes in %s', relative);
-    }
-    get contextPercent() {
-        const window = this.session.state.contextWindow;
-        if (!window) {
-            return 0;
-        }
-        return Math.max(
-            0,
-            Math.min(
-                100,
-                Math.round((this.session.state.lastInputTokens / window) * 100),
-            ),
-        );
-    }
-    get contextClass() {
-        const pct = this.contextPercent;
-        if (pct >= 90) return 'mk_context_red';
-        if (pct >= 70) return 'mk_context_amber';
-        return 'mk_context_green';
-    }
-    get costPill() {
-        const cost = this.session.state.totalCost;
-        return { label: formatCost(cost), tooltip: costTooltip(cost) };
-    }
-    get contextTooltip() {
-        const tokens = this.session.state.lastInputTokens || 0;
-        const window = this.session.state.contextWindow || 0;
-        const fmt = new Intl.NumberFormat();
-        return _t('Context window: %(tokens)s / %(window)s tokens', {
-            tokens: fmt.format(tokens),
-            window: fmt.format(window),
-        });
     }
     askArgsText(block) {
         return askArgsText(block);

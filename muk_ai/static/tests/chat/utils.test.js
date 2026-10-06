@@ -4,7 +4,6 @@ import { patchTranslations } from '@web/../tests/web_test_helpers';
 
 import {
     approvalPill,
-    costTooltip,
     effortLabel,
     effortPill,
     formatCost,
@@ -62,13 +61,6 @@ test('formatCost uses 3 decimals between 0.01 and 1', () => {
 test('formatCost uses 2 decimals at or above 1', () => {
     expect(formatCost(1)).toBe('1.00');
     expect(formatCost(12.3456)).toBe('12.35');
-});
-
-test('costTooltip formats 6 decimals with USD suffix', () => {
-    expect(costTooltip(0).toString()).toBe('Session cost so far: $0.000000 (USD)');
-    expect(costTooltip(0.12345678).toString()).toBe(
-        'Session cost so far: $0.123457 (USD)',
-    );
 });
 
 test('approvalPill returns Bypass pill when mode is off', () => {
