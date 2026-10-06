@@ -42,8 +42,33 @@ class MCPMixin(models.AbstractModel):
         return self.env[model]
 
     @api.model
+    def _mcp_apply_domain(self, model, domain):
+        """Hook to merge a configured record domain into the caller domain."""
+        return domain
+
+    @api.model
     def _mcp_assert_records_allowed(self, model, ids):
         """Hook to assert the records may be exposed via MCP."""
+
+    @api.model
+    def _mcp_call_model_method(self, target, method, unbound, args, kwargs):
+        """Hook invoking an ``@api.model`` method reached through MCP.
+
+        Such a method carries no record ids, so the record hook never fires
+        for it and any narrowing has to happen around the call itself.
+        """
+        return unbound(target, *args, **kwargs)
+
+    @api.model
+    def _mcp_attachment_exempt_models(self):
+        """Return the models whose attachments are MCP payloads, not business documents.
+
+        Empty here. A module that parks the files it hands to the agent on
+        its own records (a chat upload, a published resource) adds those
+        models, so that they stay readable when another module layers access
+        restrictions on top of MCP.
+        """
+        return frozenset()
 
     @api.model
     def _resolve_resource_uri(self, uri):

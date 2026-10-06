@@ -78,13 +78,13 @@ class MCPMixin(models.AbstractModel):
         except (AccessError, AttributeError) as exc:
             raise UserError(str(exc))
         target_ids = self._normalize_ids(ids)
-        if getattr(unbound, '_api_model', False):
-            recordset = target
-        else:
-            recordset = (
-                target.browse(target_ids)
-                if target_ids else target
-            )
         positional = self._coerce_json_value(args) or []
         keyword = self._coerce_json_value(kwargs) or {}
-        return unbound(recordset, *positional, **keyword)
+        if getattr(unbound, '_api', None) in ('model', 'model_create'):
+            return self._mcp_call_model_method(
+                target, method, unbound, positional, keyword,
+            )
+        if target_ids:
+            self._mcp_assert_records_allowed(model, target_ids)
+            target = target.browse(target_ids)
+        return unbound(target, *positional, **keyword)

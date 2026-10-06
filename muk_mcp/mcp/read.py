@@ -65,7 +65,9 @@ class MCPMixin(models.AbstractModel):
     def _mcp_search_count(self, model, domain=None):
         return {
             'count': self._resolve_model(model).search_count(
-                self._coerce_json_value(domain) or [],
+                self._coerce_json_value(
+                    self._mcp_apply_domain(model, domain),
+                ) or [],
             ),
         }
 
@@ -120,7 +122,9 @@ class MCPMixin(models.AbstractModel):
         order=None,
     ):
         rows = self._resolve_model(model).search_read(
-            self._coerce_json_value(domain) or [],
+            self._coerce_json_value(
+                self._mcp_apply_domain(model, domain),
+            ) or [],
             fields=fields,
             limit=limit,
             offset=offset,
@@ -153,6 +157,7 @@ class MCPMixin(models.AbstractModel):
         target_ids = self._normalize_ids(ids)
         if not target_ids:
             raise UserError(_('No record IDs provided'))
+        self._mcp_assert_records_allowed(model, target_ids)
         rows = self._resolve_model(model).browse(target_ids).read(fields)
         return self._swap_binary_to_uri(model, rows)
 
@@ -233,7 +238,9 @@ class MCPMixin(models.AbstractModel):
         if '__count' not in aggregates:
             aggregates.append('__count')
         rows = target._read_group(
-            self._coerce_json_value(domain) or [],
+            self._coerce_json_value(
+                self._mcp_apply_domain(model, domain),
+            ) or [],
             groupby=groupby,
             aggregates=aggregates,
             limit=limit,
