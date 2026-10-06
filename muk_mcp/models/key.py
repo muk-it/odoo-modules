@@ -174,9 +174,9 @@ class MCPKey(models.Model):
     def authenticate(self, token: str) -> MCPKey:
         """Resolve a bearer token to its active key and stamp its last use.
 
-        The stamp tolerates a concurrent request on the same key.
-
-        :return: the matching key, or an empty recordset
+        The stamp is written at most once a minute and skips a key another
+        request is stamping, so parallel requests on one key do not collide.
+        Return the matching key, or an empty recordset.
         """
         key = self.sudo().search(
             Domain('key_hash', '=', self._hash_key(token))
@@ -188,10 +188,13 @@ class MCPKey(models.Model):
                 with mute_logger('odoo.sql_db'), self.env.cr.savepoint(flush=False):
                     self.env.cr.execute(
                         SQL(
-                            "UPDATE %s SET last_used = NOW() AT TIME ZONE 'UTC' "
-                            'WHERE id = %s',
-                            SQL.identifier(self._table),
-                            key.id,
+                            "UPDATE %(table)s SET last_used = NOW() AT TIME ZONE 'UTC' "
+                            'WHERE id IN (SELECT id FROM %(table)s WHERE id = %(id)s '
+                            'AND (last_used IS NULL OR last_used < '
+                            "NOW() AT TIME ZONE 'UTC' - INTERVAL '1 minute') "
+                            'FOR NO KEY UPDATE SKIP LOCKED)',
+                            table=SQL.identifier(self._table),
+                            id=key.id,
                         ),
                     )
             except psycopg2.Error:

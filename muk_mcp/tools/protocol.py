@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import json
+import traceback
 from typing import Any
+
+from odoo.tools import config
 
 from odoo.addons.muk_mcp.tools import common, version
 
@@ -12,6 +15,14 @@ class ToolContent(list):
 
 class ToolResult(dict):
     """Dict marker type for a structured MCP tool result."""
+
+
+def format_internal_error(exc: Exception) -> str:
+    """Build an error message, appending the traceback when ``mcp_debug`` is set."""
+    message = f'Internal server error: {exc}'
+    if config.get('mcp_debug', False):
+        message += '\n\n' + ''.join(traceback.format_exception(exc))
+    return message
 
 
 def make_jsonrpc_response(

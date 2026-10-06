@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import time
-import traceback
 from collections.abc import Callable
 from typing import Any
 
 from odoo import http, models
-from odoo.exceptions import AccessError, ConcurrencyError, UserError
+from odoo.exceptions import ConcurrencyError, UserError
 from odoo.http import Response, request
 from odoo.sql_db import PG_CONCURRENCY_EXCEPTIONS_TO_RETRY
 from odoo.tools import config
@@ -14,7 +13,6 @@ from odoo.tools import config
 from odoo.addons.muk_mcp.tools import common, protocol, version
 from odoo.addons.muk_mcp.tools.exception import (
     MCPResourceNotFound,
-    MCPScopeDenied,
 )
 
 
@@ -49,13 +47,6 @@ class MCPController(http.Controller):
                 ip_address=request.httprequest.remote_addr,
                 **kwargs,
             )
-
-    def _format_internal_error(self, exc: Exception) -> str:
-        """Build an error message, appending the traceback when ``mcp_debug`` is set."""
-        message = f'Internal server error: {exc}'
-        if config.get('mcp_debug', False):
-            message += '\n\n' + ''.join(traceback.format_exception(exc))
-        return message
 
     def _get_tool_enforce_scope(self) -> str | None:
         """Return the scope to enforce on tool calls, derived from the API key."""
@@ -309,7 +300,7 @@ class MCPController(http.Controller):
             )
             return protocol.make_jsonrpc_error(
                 common.JSONRPC_INTERNAL_ERROR,
-                self._format_internal_error(exc),
+                protocol.format_internal_error(exc),
                 request_id=request_id,
             ), protocol_version
         return protocol.make_jsonrpc_response(
@@ -384,41 +375,18 @@ class MCPController(http.Controller):
         return {'tools': request.env['muk_mcp.tool'].sudo().get_tools(registry='mcp')}
 
     def _handle_tools_call(self, params: dict[str, Any]) -> dict[str, Any]:
-        """Handle ``tools/call``: run the named tool, enforcing the API key scope.
-
-        Scope, access, user and unexpected errors become tool error results
-        rather than protocol errors. Concurrency failures propagate, so the
-        request as a whole is retried.
-        """
+        """Handle ``tools/call``: run the named tool, enforcing the API key scope."""
         if not (tool_name := params.get('name')):
             return protocol.make_tool_result(
                 [protocol.make_text_content('Tool name is required')],
                 is_error=True,
             )
-        try:
-            result, _record_info = request.env['muk_mcp.tool']._call(
-                tool_name,
-                params.get('arguments', {}),
-                request.env,
-                enforce_scope=self._get_tool_enforce_scope(),
-            )
-        except (*PG_CONCURRENCY_EXCEPTIONS_TO_RETRY, ConcurrencyError):
-            raise
-        except (MCPScopeDenied, AccessError, UserError) as exc:
-            return protocol.make_tool_result(
-                [protocol.make_text_content(str(exc))],
-                is_error=True,
-            )
-        except Exception as exc:
-            return protocol.make_tool_result(
-                [protocol.make_text_content(self._format_internal_error(exc))],
-                is_error=True,
-            )
-        if isinstance(result, protocol.ToolResult):
-            return dict(result)
-        if isinstance(result, protocol.ToolContent):
-            return protocol.make_tool_result(result)
-        return protocol.make_tool_result([protocol.make_text_content(result)])
+        return request.env['muk_mcp.tool']._call_result(
+            tool_name,
+            params.get('arguments', {}),
+            request.env,
+            enforce_scope=self._get_tool_enforce_scope(),
+        )
 
     def _handle_resources_list(self, params: dict[str, Any]) -> dict[str, Any]:
         """Handle ``resources/list``: no concrete resources are enumerated (templates only)."""

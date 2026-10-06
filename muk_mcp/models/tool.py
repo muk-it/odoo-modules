@@ -10,8 +10,9 @@ from markupsafe import Markup
 
 from odoo import api, fields, models
 from odoo.api import Environment
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import AccessError, ConcurrencyError, UserError, ValidationError
 from odoo.http import request
+from odoo.sql_db import PG_CONCURRENCY_EXCEPTIONS_TO_RETRY
 from odoo.tools import config
 from odoo.tools.safe_eval import json as safe_json
 from odoo.tools.safe_eval import safe_eval, test_python_expr
@@ -20,7 +21,13 @@ from odoo.addons.muk_mcp.core.tool import get_tool_index
 from odoo.addons.muk_mcp.tools.encoder import encode_request, encode_response
 from odoo.addons.muk_mcp.tools.exception import MCPScopeDenied
 from odoo.addons.muk_mcp.tools.logger import LoggerProxy
-from odoo.addons.muk_mcp.tools.protocol import ToolContent, ToolResult
+from odoo.addons.muk_mcp.tools.protocol import (
+    ToolContent,
+    ToolResult,
+    format_internal_error,
+    make_text_content,
+    make_tool_result,
+)
 from odoo.addons.muk_web_utils.tools.encoder import RecordEncoder
 
 
@@ -141,6 +148,35 @@ class MCPTool(models.Model):
                 ),
             )
         return dict(arguments or {})
+
+    @api.model
+    def _call_result(
+        self,
+        name: str,
+        arguments: dict[str, Any] | None,
+        env: Environment,
+        enforce_scope: str | None = None,
+    ) -> dict[str, Any]:
+        """Run a tool and return its ``tools/call`` result.
+
+        Scope, access, user and unexpected errors become error results.
+        Concurrency failures propagate, so the request as a whole is retried.
+        """
+        try:
+            result, _info = self._call(name, arguments, env, enforce_scope)
+        except (*PG_CONCURRENCY_EXCEPTIONS_TO_RETRY, ConcurrencyError):
+            raise
+        except (MCPScopeDenied, AccessError, UserError) as exc:
+            return make_tool_result([make_text_content(str(exc))], is_error=True)
+        except Exception as exc:
+            return make_tool_result(
+                [make_text_content(format_internal_error(exc))], is_error=True
+            )
+        if isinstance(result, ToolResult):
+            return dict(result)
+        if isinstance(result, ToolContent):
+            return make_tool_result(result)
+        return make_tool_result([make_text_content(result)])
 
     @api.model
     def _call(
