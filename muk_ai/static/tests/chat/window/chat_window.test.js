@@ -103,21 +103,6 @@ test('focusing an artifact in the floating window is a harmless no-op', async ()
     expect('.mk_artifacts_panel').toHaveCount(0);
 });
 
-test('costPill uses formatted cost + USD tooltip', async () => {
-    registerMocks();
-    const window_ = await mountWithCleanup(ChatWindow, {
-        props: {
-            sessionId: 11,
-            minimized: false,
-            onClose: () => {},
-            onToggleMinimized: () => {},
-        },
-    });
-    const pill = window_.costPill;
-    expect(pill.label).toBe('0.0025');
-    expect(String(pill.tooltip)).toMatch(/USD/);
-});
-
 test('approvalPill reflects session.state.effectiveApprovalMode', async () => {
     registerMocks();
     const window_ = await mountWithCleanup(ChatWindow, {

@@ -324,21 +324,6 @@ test('popping out on a small screen opens the full-page action instead', async (
     expect(actions[0][1].additionalContext).toEqual({ default_session_id: 7 });
 });
 
-test('the context gauge colours by fill ratio', async () => {
-    const { chat } = await mountChat();
-    chat.session.state.contextWindow = 8000;
-    chat.session.state.lastInputTokens = 1000;
-    expect(chat.contextClass).toBe('mk_context_green');
-    chat.session.state.lastInputTokens = 6000;
-    expect(chat.contextPercent).toBe(75);
-    expect(chat.contextClass).toBe('mk_context_amber');
-    chat.session.state.lastInputTokens = 7600;
-    expect(chat.contextClass).toBe('mk_context_red');
-    chat.session.state.contextWindow = 0;
-    expect(chat.contextPercent).toBe(0);
-    expect(String(chat.contextTooltip)).toMatch(/Context window/);
-});
-
 test('the resume countdown is empty until a resume time is known', async () => {
     const { chat } = await mountChat();
     expect(chat.resumeRelativeText).toBe('');

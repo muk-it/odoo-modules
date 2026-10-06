@@ -6,6 +6,7 @@ import { _t } from '@web/core/l10n/translation';
 
 import { AttachmentCard } from '@muk_ai/core/attachment/attachment_card';
 import { allSlashCommands } from '@muk_ai/chat/session/use_ai_session';
+import { AIUsageMeter } from '@muk_ai/chat/usage/usage_meter';
 
 let fileInputCounter = 0;
 
@@ -29,7 +30,7 @@ const ACCEPT = [
  */
 export class ChatComposer extends Component {
     static template = 'muk_ai.ChatComposer';
-    static components = { AttachmentCard, Dropdown, DropdownItem };
+    static components = { AttachmentCard, Dropdown, DropdownItem, AIUsageMeter };
     static props = {
         value: { type: String },
         placeholder: { type: String },
@@ -49,6 +50,7 @@ export class ChatComposer extends Component {
         effortPill: { type: Object, optional: true },
         extraPills: { type: Array, optional: true },
         showHint: { type: Boolean, optional: true },
+        showUsage: { type: Boolean, optional: true },
         onSetApproval: { type: Function, optional: true },
         onSetEffort: { type: Function, optional: true },
         onSelectPill: { type: Function, optional: true },
@@ -65,6 +67,7 @@ export class ChatComposer extends Component {
         extraPills: [],
         readonly: false,
         showHint: false,
+        showUsage: false,
         readonlyOwner: '',
         canSend: false,
         canStop: false,
@@ -119,6 +122,9 @@ export class ChatComposer extends Component {
             },
             () => [this.menuItems.length],
         );
+    }
+    get showUsage() {
+        return Boolean(this.props.showUsage && this.props.session?.state.sessionId);
     }
     get slashCommands() {
         const value = (this.props.value || '').trim();

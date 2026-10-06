@@ -481,23 +481,6 @@ test('onOpenAttachment opens via the file viewer', async () => {
     expect(opened[0].id).toBe(5);
 });
 
-test('contextPercent returns an integer ratio of last/context window', async () => {
-    registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
-    const chat = await mountWithCleanup(AIChat, { props: {} });
-    await chat.onSelectSession(7);
-    chat.session.state.lastInputTokens = 2000;
-    chat.session.state.contextWindow = 8000;
-    expect(chat.contextPercent).toBe(25);
-});
-
-test('contextPercent is 0 when lastInputTokens is 0', async () => {
-    registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
-    const chat = await mountWithCleanup(AIChat, { props: {} });
-    await chat.onSelectSession(7);
-    chat.session.state.lastInputTokens = 0;
-    expect(chat.contextPercent).toBe(0);
-});
-
 test('isToolStreaming is true for null-result blocks while running', async () => {
     registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
     const chat = await mountWithCleanup(AIChat, { props: {} });

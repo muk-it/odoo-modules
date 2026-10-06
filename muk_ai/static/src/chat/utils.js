@@ -221,16 +221,6 @@ export function formatCost(cost) {
     return value.toFixed(2);
 }
 
-/**
- * Build the tooltip text showing the running session cost.
- * @param {*} cost cost value
- * @returns {string} translated tooltip text
- */
-export function costTooltip(cost) {
-    const value = Number(cost) || 0;
-    return _t('Session cost so far: $%s (USD)', value.toFixed(6));
-}
-
 function hasOverride(state) {
     return state.approvalMode !== false && state.approvalMode !== undefined;
 }

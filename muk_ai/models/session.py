@@ -479,6 +479,16 @@ class AISession(models.Model):
         default=0,
     )
 
+    turn_usage = fields.Json(
+        string='Turn Usage',
+        help=(
+            'Input and output tokens, provider rounds and cost of the most '
+            'recent user turn. Reset when a new turn starts.'
+        ),
+        readonly=True,
+        copy=False,
+    )
+
     context_window = fields.Integer(
         compute='_compute_context_window',
         string='Context Window',
@@ -1066,6 +1076,7 @@ class AISession(models.Model):
             'total_input_tokens': self.total_input_tokens,
             'total_output_tokens': self.total_output_tokens,
             'last_input_tokens': self.last_input_tokens,
+            'turn_usage': self.turn_usage or {},
             'context_window': self._resolve_context_window(),
             'view_context': self.view_context or None,
             'pending_ask': self._public_pending_ask(),
@@ -1913,6 +1924,7 @@ class AISession(models.Model):
             'turn_seq': (self.turn_seq or 0) + 1,
             'turn_wallclock_spent': 0.0,
             'turn_cost_spent': 0.0,
+            'turn_usage': False,
         }
 
     def _turn_superseded(self, buffer_state: dict) -> bool:
@@ -2140,7 +2152,12 @@ class AISession(models.Model):
         """
         if record := record or self._resolve_model_for('chat'):
             delta = record._compute_usage_cost(usage or {})
+            turn = self.turn_usage or {}
             return {
+                'turn_usage': {
+                    **turn,
+                    'cost': turn.get('cost', 0.0) + delta['total_cost'],
+                },
                 'total_input_cost': (self.total_input_cost or 0.0)
                 + delta['input_cost'],
                 'total_output_cost': (self.total_output_cost or 0.0)
@@ -2549,19 +2566,28 @@ class AISession(models.Model):
         """Accumulate token counts and costs from a round's usage payload."""
         usage = usage or {}
         round_input_tokens = usage.get('input_tokens')
+        round_output_tokens = usage.get('output_tokens', 0)
+        costs = self._accrue_cost_deltas(usage)
+        turn = costs.pop('turn_usage', self.turn_usage or {})
         self.write(
             {
                 'iteration_count': self.iteration_count + 1,
                 'total_input_tokens': self.total_input_tokens
                 + (round_input_tokens or 0),
-                'total_output_tokens': self.total_output_tokens
-                + usage.get('output_tokens', 0),
+                'total_output_tokens': self.total_output_tokens + round_output_tokens,
                 'last_input_tokens': (
                     self.last_input_tokens
                     if round_input_tokens is None
                     else round_input_tokens
                 ),
-                **self._accrue_cost_deltas(usage),
+                'turn_usage': {
+                    **turn,
+                    'input_tokens': turn.get('input_tokens', 0)
+                    + (round_input_tokens or 0),
+                    'output_tokens': turn.get('output_tokens', 0) + round_output_tokens,
+                    'iterations': turn.get('iterations', 0) + 1,
+                },
+                **costs,
             }
         )
 
@@ -4159,6 +4185,7 @@ class AISession(models.Model):
                 'error_message': False,
                 'iteration_count': 0,
                 'last_input_tokens': 0,
+                'turn_usage': False,
                 'state': 'new',
                 'cleared_at': fields.Datetime.now(),
             }
