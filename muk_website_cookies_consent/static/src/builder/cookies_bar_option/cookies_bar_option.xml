@@ -21,7 +21,7 @@
 				</BuilderSelectItem>
 			</BuilderSelect>
 		</xpath>
-		<xpath expr="//BuilderRow[BuilderSelect[@action=&quot;'selectLayout'&quot;]]" position="after">
+		<xpath expr="//BuilderRow[BuilderSelect[@action=&quot;'selectCookieLayout'&quot;]]" position="after">
 			<BuilderRow label.translate="Density">
 				<BuilderSelect action="'selectCookieDensity'">
 					<BuilderSelectItem actionValue="'full'">Full</BuilderSelectItem>

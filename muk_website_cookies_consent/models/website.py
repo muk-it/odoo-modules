@@ -813,6 +813,24 @@ class Website(models.Model):
                 return False
         return super()._is_tag_domains_watchlisted(tagName, atts)
 
+    def _is_tag_classes_watchlisted(self, tagName: str, atts: dict) -> bool:  # noqa: N803
+        """Release a container whose embed belongs to a granted service.
+
+        Core flags a video block by its class alone, and its own script keeps
+        the block collapsed while the flag stands, so an embed allowed in
+        place would load into a block of no height.
+        """
+        if self._is_cookie_consent_active() and self.cookie_blocking:
+            url = (
+                atts.get('data-embed-url')
+                or atts.get('data-src')
+                or atts.get('data-oe-expression')
+            )
+            service = self._find_cookie_service(url)
+            if service and self._is_cookie_service_granted(service):
+                return False
+        return super()._is_tag_classes_watchlisted(tagName, atts)
+
     def _remove_third_party_trackers(
         self,
         tagName: str,
