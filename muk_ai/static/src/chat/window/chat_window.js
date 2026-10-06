@@ -26,8 +26,6 @@ import {
     effortPill,
     extraPills,
     selectPill,
-    costTooltip,
-    formatCost,
     formatRelativeTime,
     formatTimestamp,
     inputPlaceholder,
@@ -45,6 +43,7 @@ import {
     useChatScrollAnchor,
 } from '@muk_ai/chat/session/use_scroll_anchor';
 import { ToolCard } from '@muk_ai/chat/tools/tool_card';
+import { AIUsageMeter } from '@muk_ai/chat/usage/usage_meter';
 import { ToolGroup, buildTurnItems } from '@muk_ai/chat/tools/tool_group';
 import {
     askArgsText,
@@ -68,6 +67,7 @@ export class ChatWindow extends Component {
         AttachmentCard,
         SourceIcon,
         SourceList,
+        AIUsageMeter,
     };
     static props = {
         sessionId: { type: Number },
@@ -306,10 +306,6 @@ export class ChatWindow extends Component {
     }
     get viewContextTooltip() {
         return viewContextTooltip(this.session.state.viewContext);
-    }
-    get costPill() {
-        const cost = this.session.state.totalCost;
-        return { label: formatCost(cost), tooltip: costTooltip(cost) };
     }
     get approvalPill() {
         return this.session.state.sessionId

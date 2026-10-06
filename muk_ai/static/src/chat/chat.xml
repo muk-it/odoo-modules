@@ -203,6 +203,7 @@
                             extraPills="extraPills"
                             onSelectPill.bind="onSelectPill"
                             showHint="true"
+                            showUsage="true"
                             onSetApproval="(mode) => session.setApprovalMode(mode)"
                             onSetEffort="(tier) => session.setReasoningEffort(tier)"
                             onInput.bind="onInputChange"
@@ -357,26 +358,6 @@
                     >
                         <i class="fa fa-times"/>
                     </button>
-                </span>
-                <span
-                    class="mk_chip mk_context_chip rounded-pill"
-                    t-att-class="contextClass"
-                    t-att-title="contextTooltip"
-                    t-if="session.state.contextWindow"
-                >
-                    <span class="mk_context_ring" t-att-style="`--pct:${contextPercent}`"/><t t-esc="contextPercent"/>%
-                </span>
-                <span class="mk_chip rounded-pill" title="Iterations">
-                    <i class="fa fa-repeat"/><t t-esc="session.state.iterationCount"/>
-                </span>
-                <span class="mk_chip rounded-pill" title="Input tokens">
-                    <i class="fa fa-sign-in"/><t t-esc="session.state.inputTokens"/>
-                </span>
-                <span class="mk_chip rounded-pill" title="Output tokens">
-                    <i class="fa fa-sign-out"/><t t-esc="session.state.outputTokens"/>
-                </span>
-                <span class="mk_chip mk_cost_chip rounded-pill" t-att-title="costPill.tooltip">
-                    <i class="fa fa-dollar"/><t t-esc="costPill.label"/>
                 </span>
             </div>
         </div>

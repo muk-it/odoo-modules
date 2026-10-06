@@ -99,7 +99,7 @@
         </div>
         <div
             class="mk_composer_meta d-flex align-items-center gap-2 mt-1 ps-1"
-            t-if="props.showHint or props.approvalPill or props.effortPill or props.extraPills.length"
+            t-if="props.showHint or showUsage or props.approvalPill or props.effortPill or props.extraPills.length"
         >
             <div class="mk_composer_hint" t-if="props.showHint">
                 <span><kbd>Enter</kbd> to send</span>
@@ -112,6 +112,7 @@
                     <t t-set="extra" t-value="props.extraPills"/>
                 </t>
             </div>
+            <AIUsageMeter t-if="showUsage" state="props.session.state"/>
         </div>
         </t>
         </div>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.UsageMeter" owl="1">
+        <div class="mk_usage" t-att-class="{ mk_usage_down: props.dropDown }" t-ref="root">
+            <button
+                type="button"
+                class="mk_usage_meter"
+                t-att-class="level"
+                t-att-title="tooltip"
+                t-on-click="toggle"
+            >
+                <span t-esc="percent + '%'"/>
+                <span class="mk_usage_ring" t-attf-style="--pct: {{ percent }};"/>
+            </button>
+            <div class="mk_usage_pop" t-if="pop.open">
+                <div class="mk_usage_row">
+                    <span class="mk_usage_title">Context</span>
+                    <span t-esc="contextLabel"/>
+                </div>
+                <div class="mk_usage_bar">
+                    <span t-att-class="level" t-attf-style="width: {{ percent }}%;"/>
+                </div>
+                <div class="mk_usage_note">At 100% the conversation is compacted automatically</div>
+                <div class="mk_usage_divider"/>
+                <div class="mk_usage_grid">
+                    <span/>
+                    <span class="mk_usage_head">Last turn</span>
+                    <span class="mk_usage_head">Session</span>
+                    <t t-foreach="rows" t-as="row" t-key="row.key">
+                        <span><i class="fa me-1" t-att-class="row.icon"/><t t-esc="row.label"/></span>
+                        <span class="mk_usage_num" t-esc="row.turn"/>
+                        <span class="mk_usage_num" t-esc="row.session"/>
+                    </t>
+                </div>
+            </div>
+        </div>
+    </t>
+
+</templates>

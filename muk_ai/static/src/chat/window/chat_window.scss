@@ -119,6 +119,9 @@
     background: var(--mk-bg-soft);
     border-bottom: 1px solid var(--mk-border);
     font-size: 0.72rem;
+    .mk_usage {
+        margin-left: auto;
+    }
     // The band is already --mk-bg-soft, which is the neutral pill's own fill,
     // and --mk-bg is only two shades off it: step down to the border tone so
     // the chip actually reads against the band. (Dark redefines this again.)
@@ -126,19 +129,6 @@
         background: var(--mk-border);
         &:hover {
             background: var(--mk-border-strong);
-        }
-    }
-    .mk_cost_chip {
-        display: inline-flex;
-        align-items: center;
-        padding: 3px 10px;
-        color: var(--mk-success);
-        background: rgba(40, 167, 69, 0.12);
-        font-weight: 500;
-        font-variant-numeric: tabular-nums;
-        i {
-            opacity: 0.9;
-            font-size: 0.7rem;
         }
     }
     .mk_ctx_chip {
