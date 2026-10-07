@@ -30,7 +30,7 @@
 						<field name="cookie_policy_version"/>
 					</setting>
 					<setting
-						id="muk_cookie_scan_setting"
+						id="cookie_scan_setting"
 						string="Website Scan"
 						help="Once a week the site fetches its own pages and lists the cookies they set, the storage keys their scripts write and the third-party hosts they load. Anything no declaration covers is put up for review."
 						invisible="not website_cookies_bar"
