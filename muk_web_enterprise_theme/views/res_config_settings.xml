@@ -76,7 +76,7 @@
                 </setting>
 	    	</xpath>
 	    	<xpath expr="//block[@id='branding_settings']" position="after">
-                <block title="Theme Extensions" id="muk_web_theme_extensions">
+                <block title="Theme Extensions" id="theme_extensions">
                     <setting
                         id="muk_web_theme_addon_list_search"
                         string="List Search"

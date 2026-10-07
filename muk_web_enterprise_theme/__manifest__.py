@@ -5,7 +5,7 @@
         This module offers a mobile compatible design for Odoo Enterprise.
         Furthermore it allows the user to define some design preferences.
     """,
-    'version': '20.0.1.5.5',
+    'version': '20.0.1.5.6',
     'category': 'Themes/Backend',
     'license': 'LGPL-3',
     'author': 'MuK IT',
