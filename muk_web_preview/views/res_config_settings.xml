@@ -7,10 +7,16 @@
         <field name="arch" type="xml">
             <xpath expr="//block[@name='integration']" position="inside">
                 <setting
-                    id="muk_web_preview_office"
+                    id="preview_office"
                     help="Preview Word, Excel and PowerPoint files with the Microsoft Office Online viewer. The database must be reachable from the internet."
                 >
                     <field name="preview_office_enabled"/>
+                </setting>
+                <setting
+                    id="preview_report_open"
+                    help="Downloaded PDF and text reports also open in a new browser tab."
+                >
+                    <field name="preview_report_open"/>
                 </setting>
             </xpath>
         </field>

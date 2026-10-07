@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_web_preview.ReportPreview">
+        <span
+            t-if="item.action and !this.uiService.isSmall"
+            class="mk_report_preview float-end"
+            role="button"
+            title="Preview"
+            aria-label="Preview"
+        >
+            <i class="oi" data-icon="visibility"/>
+        </span>
+    </t>
+
+    <t t-inherit="web.ActionMenus" t-inherit-mode="extension">
+        <xpath
+            expr="//t[@t-foreach='this.state.printItems']/DropdownItem"
+            position="attributes"
+        >
+            <attribute name="onSelected">
+                (ev) => this.onItemSelected(item, ev)
+            </attribute>
+            <attribute name="t-out"/>
+        </xpath>
+        <xpath
+            expr="//t[@t-foreach='this.state.printItems']/DropdownItem"
+            position="inside"
+        >
+            <t t-call="muk_web_preview.ReportPreview" item="item"/>
+            <t t-out="item.description"/>
+        </xpath>
+    </t>
+
+    <t t-inherit="web.CogMenu" t-inherit-mode="extension">
+        <xpath
+            expr="//DropdownItem[@t-foreach='this.state.printItems']"
+            position="attributes"
+        >
+            <attribute name="onSelected">
+                (ev) => this.onItemSelected(item, ev)
+            </attribute>
+        </xpath>
+        <xpath
+            expr="//DropdownItem[@t-foreach='this.state.printItems']/t"
+            position="before"
+        >
+            <t t-call="muk_web_preview.ReportPreview" item="item"/>
+        </xpath>
+        <xpath
+            expr="//t[@t-if='this.state.printItems.length']/DropdownItem"
+            position="attributes"
+        >
+            <attribute name="onSelected">
+                (ev) => this.onItemSelected(this.state.printItems[0], ev)
+            </attribute>
+        </xpath>
+        <xpath
+            expr="//t[@t-if='this.state.printItems.length']/DropdownItem/i"
+            position="before"
+        >
+            <t
+                t-call="muk_web_preview.ReportPreview"
+                item="this.state.printItems[0]"
+            />
+        </xpath>
+    </t>
+
+    <t t-inherit="web.FormCogMenu" t-inherit-mode="extension">
+        <xpath
+            expr="//DropdownItem[@t-foreach='this.state.printItems']"
+            position="attributes"
+        >
+            <attribute name="onSelected">
+                (ev) => this.onItemSelected(item, ev)
+            </attribute>
+        </xpath>
+        <xpath
+            expr="//DropdownItem[@t-foreach='this.state.printItems']/t"
+            position="before"
+        >
+            <t t-call="muk_web_preview.ReportPreview" item="item"/>
+        </xpath>
+        <xpath
+            expr="//t[@t-if='this.state.printItems.length']/DropdownItem"
+            position="attributes"
+        >
+            <attribute name="onSelected">
+                (ev) => this.onItemSelected(this.state.printItems[0], ev)
+            </attribute>
+        </xpath>
+        <xpath
+            expr="//t[@t-if='this.state.printItems.length']/DropdownItem/i"
+            position="before"
+        >
+            <t
+                t-call="muk_web_preview.ReportPreview"
+                item="this.state.printItems[0]"
+            />
+        </xpath>
+    </t>
+
+    <t t-inherit="web.KanbanCogMenu" t-inherit-mode="extension">
+        <xpath
+            expr="//DropdownItem[@t-foreach='this.state.printItems']"
+            position="attributes"
+        >
+            <attribute name="onSelected">
+                (ev) => this.onItemSelected(item, ev)
+            </attribute>
+        </xpath>
+        <xpath
+            expr="//DropdownItem[@t-foreach='this.state.printItems']/t"
+            position="before"
+        >
+            <t t-call="muk_web_preview.ReportPreview" item="item"/>
+        </xpath>
+        <xpath
+            expr="//t[@t-if='this.state.printItems.length']/DropdownItem"
+            position="attributes"
+        >
+            <attribute name="onSelected">
+                (ev) => this.onItemSelected(this.state.printItems[0], ev)
+            </attribute>
+        </xpath>
+        <xpath
+            expr="//t[@t-if='this.state.printItems.length']/DropdownItem/i"
+            position="before"
+        >
+            <t
+                t-call="muk_web_preview.ReportPreview"
+                item="this.state.printItems[0]"
+            />
+        </xpath>
+    </t>
+
+</templates>

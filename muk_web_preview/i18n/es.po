@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 20.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-04 12:16+0000\n"
-"PO-Revision-Date: 2026-10-04 12:16+0000\n"
+"POT-Creation-Date: 2026-10-07 06:53+0000\n"
+"PO-Revision-Date: 2026-10-07 06:53+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: es\n"
@@ -24,7 +24,9 @@ msgid ""
 "for email files (.eml), Outlook messages (.msg), CSV and TSV tables\n"
 "and source code. Remote images in emails stay blocked until they are\n"
 "loaded on demand. Word, Excel and PowerPoint files can be opened with\n"
-"the Microsoft Office Online viewer.\n"
+"the Microsoft Office Online viewer. Reports open from the print menu\n"
+"in the file viewer instead of downloading, and downloaded reports can\n"
+"open in a new browser tab as well.\n"
 msgstr ""
 "\n"
 "Amplía el visor de archivos y las miniaturas de los adjuntos con vistas previas\n"
@@ -32,6 +34,9 @@ msgstr ""
 "y código fuente. Las imágenes remotas de los correos permanecen bloqueadas hasta\n"
 "que se cargan a petición. Los archivos de Word, Excel y PowerPoint se pueden\n"
 "abrir con el visor de Microsoft Office Online.\n"
+"Los informes del menú de impresión se abren en el visor de archivos en\n"
+"lugar de descargarse, y los informes descargados también pueden\n"
+"abrirse en una nueva pestaña del navegador.\n"
 
 #. module: muk_web_preview
 #: model_terms:ir.ui.view,arch_db:muk_web_preview.content_mail
@@ -77,6 +82,13 @@ msgid "Display Name"
 msgstr "Nombre para mostrar"
 
 #. module: muk_web_preview
+#: model_terms:ir.ui.view,arch_db:muk_web_preview.view_res_config_settings_form
+msgid "Downloaded PDF and text reports also open in a new browser tab."
+msgstr ""
+"Los informes PDF y de texto descargados también se abren en una nueva "
+"pestaña del navegador."
+
+#. module: muk_web_preview
 #: model_terms:ir.ui.view,arch_db:muk_web_preview.content_mail
 msgid "From"
 msgstr "De"
@@ -115,6 +127,27 @@ msgid "Only the first %(rows)s rows are shown."
 msgstr "Solo se muestran las primeras %(rows)s filas."
 
 #. module: muk_web_preview
+#: model:ir.model.fields,field_description:muk_web_preview.field_res_config_settings__preview_report_open
+msgid "Open Downloaded Reports"
+msgstr "Abrir informes descargados"
+
+#. module: muk_web_preview
+#: model:ir.model.fields,help:muk_web_preview.field_res_config_settings__preview_report_open
+msgid ""
+"Open every downloaded PDF or text report in a new browser tab as well. The "
+"browser must allow pop-ups for the database."
+msgstr ""
+"Abrir también cada informe PDF o de texto descargado en una nueva pestaña "
+"del navegador. El navegador debe permitir ventanas emergentes para la base "
+"de datos."
+
+#. module: muk_web_preview
+#. odoo-javascript
+#: code:addons/muk_web_preview/static/src/report/print_menu/print_menu.xml:0
+msgid "Preview"
+msgstr "Vista previa"
+
+#. module: muk_web_preview
 #: model:ir.model.fields,help:muk_web_preview.field_res_config_settings__preview_office_enabled
 msgid ""
 "Preview Word, Excel and PowerPoint files with the Microsoft Office Online "
@@ -137,10 +170,10 @@ msgstr ""
 
 #. module: muk_web_preview
 #: model:ir.module.module,summary:base.module_muk_web_preview
-msgid "Preview emails, Outlook messages, CSV tables and Office files"
+msgid "Preview reports, emails, Outlook messages, CSV tables and Office files"
 msgstr ""
-"Vista previa de correos, mensajes de Outlook, tablas CSV y archivos de "
-"Office"
+"Vista previa de informes, correos, mensajes de Outlook, tablas CSV y "
+"archivos de Office"
 
 #. module: muk_web_preview
 #: model_terms:ir.ui.view,arch_db:muk_web_preview.content_mail
@@ -152,6 +185,14 @@ msgstr "Mostrar imágenes remotas"
 #: code:addons/muk_web_preview/static/src/core/file_viewer/file_viewer.xml:0
 msgid "The Office preview is not available."
 msgstr "La vista previa de Office no está disponible."
+
+#. module: muk_web_preview
+#. odoo-javascript
+#: code:addons/muk_web_preview/static/src/report/preview/preview.js:0
+msgid "The browser blocked the report tab. Allow pop-ups for this site."
+msgstr ""
+"El navegador bloqueó la pestaña del informe. Permita las ventanas emergentes"
+" para este sitio."
 
 #. module: muk_web_preview
 #: model_terms:ir.ui.view,arch_db:muk_web_preview.content_mail

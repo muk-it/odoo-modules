@@ -4,7 +4,7 @@ from odoo import models
 
 
 class IrHttp(models.AbstractModel):
-    """Expose the Office preview toggle in the session info."""
+    """Expose the preview settings in the session info."""
 
     _inherit = 'ir.http'
 
@@ -13,11 +13,11 @@ class IrHttp(models.AbstractModel):
     # ----------------------------------------------------------
 
     def session_info(self) -> dict:
-        """Add the Office preview flag to the session info."""
+        """Add the Office preview and report tab flags to the session info."""
         result = super().session_info()
-        result['preview_office_enabled'] = (
-            self.env['ir.config_parameter']
-            .sudo()
-            .get_bool('muk_web_preview.office_enabled')
+        params = self.env['ir.config_parameter'].sudo()
+        result['preview_office_enabled'] = params.get_bool(
+            'muk_web_preview.office_enabled'
         )
+        result['preview_report_open'] = params.get_bool('muk_web_preview.report_open')
         return result

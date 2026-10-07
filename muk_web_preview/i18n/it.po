@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 20.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-04 12:16+0000\n"
-"PO-Revision-Date: 2026-10-04 12:16+0000\n"
+"POT-Creation-Date: 2026-10-07 06:53+0000\n"
+"PO-Revision-Date: 2026-10-07 06:53+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: it\n"
@@ -24,7 +24,9 @@ msgid ""
 "for email files (.eml), Outlook messages (.msg), CSV and TSV tables\n"
 "and source code. Remote images in emails stay blocked until they are\n"
 "loaded on demand. Word, Excel and PowerPoint files can be opened with\n"
-"the Microsoft Office Online viewer.\n"
+"the Microsoft Office Online viewer. Reports open from the print menu\n"
+"in the file viewer instead of downloading, and downloaded reports can\n"
+"open in a new browser tab as well.\n"
 msgstr ""
 "\n"
 "Estende il visualizzatore di file e le miniature degli allegati con anteprime\n"
@@ -32,6 +34,9 @@ msgstr ""
 "sorgente. Le immagini remote nelle e-mail restano bloccate finché non vengono\n"
 "caricate su richiesta. I file Word, Excel e PowerPoint possono essere aperti\n"
 "con il visualizzatore Microsoft Office Online.\n"
+"I report del menu di stampa si aprono nel visualizzatore di file invece\n"
+"di essere scaricati, e i report scaricati possono aprirsi anche in una\n"
+"nuova scheda del browser.\n"
 
 #. module: muk_web_preview
 #: model_terms:ir.ui.view,arch_db:muk_web_preview.content_mail
@@ -78,6 +83,13 @@ msgid "Display Name"
 msgstr "Nome visualizzato"
 
 #. module: muk_web_preview
+#: model_terms:ir.ui.view,arch_db:muk_web_preview.view_res_config_settings_form
+msgid "Downloaded PDF and text reports also open in a new browser tab."
+msgstr ""
+"I report PDF e di testo scaricati si aprono anche in una nuova scheda del "
+"browser."
+
+#. module: muk_web_preview
 #: model_terms:ir.ui.view,arch_db:muk_web_preview.content_mail
 msgid "From"
 msgstr "Da"
@@ -116,6 +128,26 @@ msgid "Only the first %(rows)s rows are shown."
 msgstr "Vengono mostrate solo le prime %(rows)s righe."
 
 #. module: muk_web_preview
+#: model:ir.model.fields,field_description:muk_web_preview.field_res_config_settings__preview_report_open
+msgid "Open Downloaded Reports"
+msgstr "Apri i report scaricati"
+
+#. module: muk_web_preview
+#: model:ir.model.fields,help:muk_web_preview.field_res_config_settings__preview_report_open
+msgid ""
+"Open every downloaded PDF or text report in a new browser tab as well. The "
+"browser must allow pop-ups for the database."
+msgstr ""
+"Apri anche ogni report PDF o di testo scaricato in una nuova scheda del "
+"browser. Il browser deve consentire i pop-up per il database."
+
+#. module: muk_web_preview
+#. odoo-javascript
+#: code:addons/muk_web_preview/static/src/report/print_menu/print_menu.xml:0
+msgid "Preview"
+msgstr "Anteprima"
+
+#. module: muk_web_preview
 #: model:ir.model.fields,help:muk_web_preview.field_res_config_settings__preview_office_enabled
 msgid ""
 "Preview Word, Excel and PowerPoint files with the Microsoft Office Online "
@@ -138,8 +170,9 @@ msgstr ""
 
 #. module: muk_web_preview
 #: model:ir.module.module,summary:base.module_muk_web_preview
-msgid "Preview emails, Outlook messages, CSV tables and Office files"
-msgstr "Anteprima di e-mail, messaggi Outlook, tabelle CSV e file Office"
+msgid "Preview reports, emails, Outlook messages, CSV tables and Office files"
+msgstr ""
+"Anteprima di report, e-mail, messaggi Outlook, tabelle CSV e file Office"
 
 #. module: muk_web_preview
 #: model_terms:ir.ui.view,arch_db:muk_web_preview.content_mail
@@ -151,6 +184,14 @@ msgstr "Mostra immagini remote"
 #: code:addons/muk_web_preview/static/src/core/file_viewer/file_viewer.xml:0
 msgid "The Office preview is not available."
 msgstr "L'anteprima di Office non è disponibile."
+
+#. module: muk_web_preview
+#. odoo-javascript
+#: code:addons/muk_web_preview/static/src/report/preview/preview.js:0
+msgid "The browser blocked the report tab. Allow pop-ups for this site."
+msgstr ""
+"Il browser ha bloccato la scheda del report. Consenti i pop-up per questo "
+"sito."
 
 #. module: muk_web_preview
 #: model_terms:ir.ui.view,arch_db:muk_web_preview.content_mail

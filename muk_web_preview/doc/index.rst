@@ -6,7 +6,8 @@ Extends the file viewer and the attachment thumbnails with previews for
 email files (.eml), Outlook messages (.msg), CSV and TSV tables and source
 code. Remote images in emails stay blocked until they are loaded on demand.
 Word, Excel and PowerPoint files can be opened with the Microsoft Office
-Online viewer.
+Online viewer. Reports open from the print menu in the file viewer instead
+of downloading, and downloaded reports can open in a new browser tab as well.
 
 Installation
 ============
@@ -36,6 +37,10 @@ Excel and PowerPoint files in the Microsoft Office Online viewer, enable
 Microsoft downloads the file through a signed link that expires after five
 minutes, so the database must be reachable from the internet.
 
+To open every downloaded PDF or text report in a new browser tab as well,
+enable **Open Downloaded Reports** in the same section. The browser must
+allow pop-ups for the database.
+
 Usage
 =====
 
@@ -50,6 +55,11 @@ opens in the file viewer:
 - **Source code and configuration files** are shown as text.
 
 The chatter cards show a preview of these files before they are opened.
+
+Every report in the **Print** menu has an eye icon. Clicking the icon shows
+the report in the file viewer instead of downloading it; the download button
+of the viewer saves it under its usual file name. On a phone the eye is not
+shown, and a report is downloaded without opening a new tab.
 
 Credits
 =======

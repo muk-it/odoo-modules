@@ -1,0 +1,10 @@
+.mk_report_preview {
+    margin-left: map-get($spacers, 3);
+    opacity: 0.5;
+    .oi {
+        vertical-align: -0.06em;
+    }
+    &:hover {
+        opacity: 1;
+    }
+}

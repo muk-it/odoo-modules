@@ -11,17 +11,16 @@
 
 **Open the email, not the download folder.** Email files, Outlook messages and
 CSV exports open in the Odoo file viewer and show a preview on their chatter
-card. Remote images stay blocked until you ask for them, and Word, Excel and
-PowerPoint can open in the Office Online viewer.
+card. Reports can be read before they are downloaded, remote images stay
+blocked until you ask for them, and Word, Excel and PowerPoint can open in the
+Office Online viewer.
 
 ![An email file opened in the Odoo file viewer](static/description/screenshot_email.png)
 
 ## Features
 
-- **Email files**: an `.eml` shows its header, its body with embedded pictures
-  and its attachments.
-- **Outlook messages**: a `.msg` opens the same way, read in plain Python with
-  no extra library.
+- **Email and Outlook files**: an `.eml` or `.msg` shows its header, its body
+  with embedded pictures and its attachments, read in plain Python.
 - **CSV and TSV tables**: an export becomes a table, whatever its delimiter and
   encoding.
 - **Previews on the card**: the chatter card shows the subject and sender of a
@@ -30,16 +29,20 @@ PowerPoint can open in the Office Online viewer.
   message.
 - **Office Online**: Word, Excel and PowerPoint in the Microsoft viewer, through
   a signed link that expires after five minutes.
+- **Report preview**: the eye next to a report in the Print menu shows it in
+  the file viewer; on request, every downloaded report opens in a new tab too.
 
 ![Chatter cards with previews](static/description/screenshot_chatter.png)
 
 ## Getting started
 
 1. Add the module to your addons path and install it from **Apps**.
-2. Click an email, Outlook or CSV attachment anywhere in Odoo; it opens in the
-   file viewer.
+2. Click an email, Outlook or CSV attachment anywhere in Odoo, or the eye next
+   to a report in the **Print** menu; it opens in the file viewer.
 3. For Office files, enable **Settings > General Settings > MS Office Preview**.
    The database must be reachable from the internet.
+4. To open downloaded reports in a new tab as well, enable
+   **Settings > General Settings > Open Downloaded Reports**.
 
 ## Support
 

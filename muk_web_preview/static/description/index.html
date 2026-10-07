@@ -4,7 +4,7 @@
 		<div class="row g-4 align-items-start" style="margin-bottom: 34px;">
 			<div class="col-xxl-9 col-lg-8 col-12">
 				<h1 style="margin: 0 0 24px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: clamp(34px, 5vw, 58px); line-height: 1.04; letter-spacing: -0.022em; font-weight: 700; text-align: left; color: #13181C;">Open the email, not the download folder.</h1>
-				<p style="margin: 0; max-width: 620px; font-size: clamp(18px, 1.5vw, 21px); line-height: 1.58; font-weight: 400; text-align: left; color: #3C464E;">Email files, Outlook messages and CSV exports open in the Odoo file viewer and show a preview on their chatter card. Remote images stay blocked until you ask for them, and Word, Excel and PowerPoint can open in the Office Online viewer.</p>
+				<p style="margin: 0; max-width: 620px; font-size: clamp(18px, 1.5vw, 21px); line-height: 1.58; font-weight: 400; text-align: left; color: #3C464E;">Email files, Outlook messages and CSV exports open in the Odoo file viewer and show a preview on their chatter card. Reports can be read before they are downloaded, remote images stay blocked until you ask for them, and Word, Excel and PowerPoint can open in the Office Online viewer.</p>
 			</div>
 			<div class="col-xxl-3 col-lg-4 col-12" style="padding-top: 12px;">
 				<div style="font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #5C666F; margin-bottom: 12px;" class="text-lg-end">Runs on</div>
@@ -170,6 +170,28 @@
 	</div>
 </section>
 
+<section style="width: 98vw; margin-left: calc(50% - 49vw); background-color: #FBFAF8; padding: 64px 0;">
+	<div class="px-4 px-md-5" style="max-width: 1288px; margin: 0 auto;">
+		<div class="row g-4 g-lg-5">
+			<div class="col-lg-7 col-12">
+				<div style="border: 1px solid #CFCBC3; border-radius: 8px; background-color: #FFFFFF;">
+					<div style="background-color: #F2F0EC; border-bottom: 1px solid #E3E0DA; border-radius: 7px 7px 0 0; padding: 10px 16px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; color: #5C666F;">Sales &nbsp;&rsaquo;&nbsp; Quotations &nbsp;&rsaquo;&nbsp; S00001</div>
+					<img src="screenshot_report.png" alt="The actions menu of a quotation, with an eye icon next to its report" style="display: block; width: 100%; height: auto; max-width: none; border-radius: 0 0 7px 7px;">
+				</div>
+				<div style="padding-top: 12px; font-size: 13px; line-height: 1.5; color: #5C666F;">The eye shows the report in the viewer; the name still downloads it.</div>
+			</div>
+			<div class="col-lg-5 col-12">
+				<div style="border-left-width: 3px; border-left-style: solid; border-left-color: #5D8DA8; padding-left: 22px;">
+					<div style="font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #33627E; margin-bottom: 12px;">Reports</div>
+					<h2 style="margin: 0 0 14px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: clamp(28px, 2.8vw, 36px); letter-spacing: -0.015em; line-height: 1.12; font-weight: 700; text-align: left; color: #13181C;">Read the report before you download it</h2>
+					<p style="margin: 0 0 14px 0; font-size: 16px; line-height: 1.7; font-weight: 400; text-align: left; color: #3C464E;">Every report in the Print menu carries an eye. One click shows the PDF in the file viewer, where you page through it, print it, or save it under the name Odoo gives it.</p>
+					<p style="margin: 0; font-size: 16px; line-height: 1.7; font-weight: 400; text-align: left; color: #3C464E;">Rather keep the download? Switch on Open Downloaded Reports in the general settings, and each downloaded report opens in a new browser tab as well.</p>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
+
 <section style="width: 98vw; margin-left: calc(50% - 49vw); background-color: #EFF4F7; border-top: 1px solid #DCE8EE; border-bottom: 1px solid #DCE8EE; padding: 56px 0;">
 	<div class="px-4 px-md-5" style="max-width: 1288px; margin: 0 auto;">
 		<div class="row g-4 g-lg-5">
@@ -286,7 +308,7 @@
 			<div class="col-lg-6 col-12">
 				<div style="border-top: 1px solid #E3E0DA; padding: 15px 0;">
 				<div style="font-size: 15.5px; font-weight: 600; line-height: 1.3; color: #13181C; margin-bottom: 5px;">Configuration</div>
-				<p style="margin: 0; font-size: 14px; line-height: 1.6; font-weight: 400; text-align: left; color: #3C464E;">None for emails and tables. Settings &nbsp;&rsaquo;&nbsp; General Settings &nbsp;&rsaquo;&nbsp; MS Office Preview for Office files.</p>
+				<p style="margin: 0; font-size: 14px; line-height: 1.6; font-weight: 400; text-align: left; color: #3C464E;">None for emails, tables and previews. Settings &nbsp;&rsaquo;&nbsp; General Settings for MS Office Preview and Open Downloaded Reports.</p>
 				</div>
 			</div>
 			<div class="col-lg-6 col-12">
@@ -298,13 +320,13 @@
 			<div class="col-lg-6 col-12">
 				<div style="border-top: 1px solid #E3E0DA; padding: 15px 0;">
 				<div style="font-size: 15.5px; font-weight: 600; line-height: 1.3; color: #13181C; margin-bottom: 5px;">Usage</div>
-				<p style="margin: 0; font-size: 14px; line-height: 1.6; font-weight: 400; text-align: left; color: #3C464E;">Click an attachment. Show remote images loads the pictures of one mail.</p>
+				<p style="margin: 0; font-size: 14px; line-height: 1.6; font-weight: 400; text-align: left; color: #3C464E;">Click an attachment, or the eye next to a report in the Print menu. Show remote images loads the pictures of one mail.</p>
 				</div>
 			</div>
 			<div class="col-lg-6 col-12">
 				<div style="border-top: 1px solid #E3E0DA; border-bottom: 1px solid #E3E0DA; padding: 15px 0;">
 				<div style="font-size: 15.5px; font-weight: 600; line-height: 1.3; color: #13181C; margin-bottom: 5px;">Upgrade</div>
-				<p style="margin: 0; font-size: 14px; line-height: 1.6; font-weight: 400; text-align: left; color: #3C464E;">No data of its own; the Office setting is kept.</p>
+				<p style="margin: 0; font-size: 14px; line-height: 1.6; font-weight: 400; text-align: left; color: #3C464E;">No data of its own; the settings are kept.</p>
 				</div>
 			</div>
 			<div class="col-lg-6 col-12">
