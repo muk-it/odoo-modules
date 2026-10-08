@@ -1,0 +1,20 @@
+.mk_composer .mk_skills_toggle.active {
+    color: var(--primary);
+    background: rgba(var(--primary-rgb), 0.12);
+}
+.mk_skills_panel {
+    max-width: 520px;
+    .mk_skills_group {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    .mk_skill_badge {
+        width: 28px;
+        height: 28px;
+        background: rgba(var(--primary-rgb), 0.12);
+    }
+    .mk_skill_label {
+        font-size: 0.82rem;
+    }
+}

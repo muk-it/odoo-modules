@@ -1,0 +1,4 @@
+id,name,model_id,group_id/id,operation,domain
+rule_muk_ai_skill_user_read,AI Skill: own and shared skills,muk_ai.skill,base.group_user,r,"['|', '|', ('owner_id', '=', user.id), ('user_ids', '=', False), ('user_ids', 'in', [user.id])]"
+rule_muk_ai_skill_user_modify,AI Skill: the owner modifies a skill,muk_ai.skill,base.group_user,cud,"[('owner_id', '=', user.id)]"
+rule_muk_ai_skill_admin,AI Skill: administrators manage all skills,muk_ai.skill,base.group_system,crud,

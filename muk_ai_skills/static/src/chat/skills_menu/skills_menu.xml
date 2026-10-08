@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai_skills.SkillsMenu">
+        <span t-if="this.skills.length" class="mk_skills_menu" t-ref="this.root">
+            <button
+                type="button"
+                class="btn mk_attach mk_skills_toggle d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 border-0 rounded-circle transition-base"
+                t-att-class="{ active: this.open }"
+                title="Skills"
+                t-on-mousedown.prevent="() => {}"
+                t-on-click="() => this.toggle()"
+            >
+                <i class="oi" data-icon="flash_on"/>
+            </button>
+            <div
+                t-if="this.open"
+                class="mk_slash_menu mk_skills_panel position-absolute start-0 end-0 bottom-100 mb-1 p-1 overflow-auto border bg-100"
+                t-on-keydown="this.onKeydown"
+            >
+                <div class="d-flex align-items-center gap-2 px-2 text-muted">
+                    <i class="oi" data-icon="search"/>
+                    <input
+                        type="text"
+                        class="form-control border-0 shadow-none bg-transparent"
+                        placeholder="Search skills..."
+                        t-ref="this.search"
+                        t-att-value="this.state.filter"
+                        t-on-input="this.onFilterInput"
+                    />
+                </div>
+                <div t-if="!this.entries.length and !this.locked.length" class="px-2 py-1 small text-muted">
+                    No skill matches.
+                </div>
+                <t t-foreach="this.entries" t-as="entry" t-key="entry.skill.name">
+                    <div t-if="entry.group" class="mk_skills_group px-2 pt-2 pb-1 text-primary fw-semibold" t-out="entry.group"/>
+                    <button
+                        type="button"
+                        class="mk_slash_item d-flex align-items-center gap-2 w-100 border-0 text-start text-body rounded-3 transition-base"
+                        t-att-class="{ active: entry_index === this.state.active }"
+                        t-on-click="() => this.pick(entry_index)"
+                        t-on-mouseenter="() => this.state.active = entry_index"
+                    >
+                        <t t-call="muk_ai_skills.SkillsMenuItem" skill="entry.skill" hint="entry.skill.description"/>
+                    </button>
+                </t>
+                <t t-if="this.locked.length">
+                    <div class="mk_skills_group px-2 pt-2 pb-1 text-muted fw-semibold">Once something is open</div>
+                    <button
+                        t-foreach="this.locked"
+                        t-as="locked"
+                        t-key="locked.name"
+                        type="button"
+                        class="mk_slash_item mk_skill_locked d-flex align-items-center gap-2 w-100 border-0 text-start text-body rounded-3 opacity-50"
+                        disabled="disabled"
+                    >
+                        <t t-call="muk_ai_skills.SkillsMenuItem" skill="locked" hint="locked.requirement"/>
+                    </button>
+                </t>
+            </div>
+        </span>
+    </t>
+
+    <t t-name="muk_ai_skills.SkillsMenuItem">
+        <span class="mk_skill_badge d-inline-flex align-items-center justify-content-center flex-shrink-0 rounded-circle text-primary">
+            <i class="oi" t-att-data-icon="skill.icon"/>
+        </span>
+        <span class="d-flex flex-column overflow-hidden">
+            <span class="mk_skill_label fw-semibold text-truncate" t-out="skill.label"/>
+            <span class="mk_slash_hint text-truncate text-muted" t-out="hint"/>
+        </span>
+    </t>
+
+    <t t-inherit="muk_ai.ChatComposer" t-inherit-mode="extension">
+        <xpath expr="//label[hasclass('mk_attach')]" position="after">
+            <SkillsMenu session="session"/>
+        </xpath>
+    </t>
+
+</templates>
