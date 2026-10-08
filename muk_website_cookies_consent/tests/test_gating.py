@@ -2,6 +2,7 @@ import json
 
 from odoo.tests import tagged
 
+from odoo.addons.muk_website_cookies_consent.models import website as website_model
 from odoo.addons.muk_website_cookies_consent.tests.common import CookieConsentCommon
 
 
@@ -215,3 +216,28 @@ class TestGating(CookieConsentCommon):
         website = self.as_visitor()
         self.assertFalse(website._has_cookie_record())
         self.assertFalse(website._is_cookie_category_granted('analytics'))
+
+    def test_consent_is_resolved_once_per_request(self):
+        self.patch_request(self.build_cookie(['analytics']))
+        parsed = []
+        parse_state = website_model.parse_state
+        self.patch(
+            website_model,
+            'parse_state',
+            lambda raw: parsed.append(raw) or parse_state(raw),
+        )
+        qweb = (
+            self.env['ir.qweb']
+            .with_user(self.env.ref('base.public_user'))
+            .with_context(website_id=self.website.id)
+        )
+        qweb._post_processing_att('div', {'class': 'row'})
+        self.assertTrue(parsed, 'The first element must resolve the consent.')
+        first = len(parsed)
+        for _index in range(50):
+            qweb._post_processing_att('div', {'class': 'row'})
+        self.assertEqual(
+            len(parsed),
+            first,
+            'Every further element must reuse the decision of the request.',
+        )
