@@ -9,7 +9,7 @@
         access rights of the user the key belongs to. Every call is
         recorded in an audit log.
     """,
-    'version': '20.0.4.0.2',
+    'version': '20.0.4.0.3',
     'category': 'Tools/API',
     'license': 'LGPL-3',
     'author': 'MuK IT',

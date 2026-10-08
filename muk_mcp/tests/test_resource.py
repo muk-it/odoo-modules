@@ -89,6 +89,7 @@ class TestMcpReadResource(MCPToolCase):
             ('clip.wav', 'audio/wav', bytes(range(32)), 'audio'),
             ('broken.txt', 'text/plain', b'\xff\xfe\x00bad', 'resource'),
             ('blob.bin', 'application/octet-stream', b'\x00' * 8, 'resource'),
+            ('guide.md', 'application/octet-stream', b'# Guide\n\nRead me.', 'text'),
         ):
             with self.subTest(mimetype=mimetype, data=data):
                 attachment = self._attach(name, mimetype, data)

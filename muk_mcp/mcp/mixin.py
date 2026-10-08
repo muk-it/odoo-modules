@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import mimetypes
 from collections.abc import Callable
 from typing import Any
 
@@ -72,7 +73,7 @@ class MCPMixin(models.AbstractModel):
 
     @api.model
     def _resolve_resource_uri(self, uri: str) -> tuple[str, bytes, str]:
-        """Parse an MCP resource URI and dispatch to its handler.
+        """Parse an MCP resource URI, dispatch to its handler and refine the mimetype.
 
         :return: a ``(mimetype, raw_bytes, name)`` tuple.
         :raise UserError: if the URI is malformed or its scheme is unsupported.
@@ -83,7 +84,10 @@ class MCPMixin(models.AbstractModel):
         }
         if not (parsed := parse_uri(uri)) or parsed[0] not in handlers:
             raise UserError(self.env._('Unsupported resource URI: %r', uri))
-        return handlers[parsed[0]](**parsed[1])
+        mimetype, raw, name = handlers[parsed[0]](**parsed[1])
+        if normalize_mimetype(mimetype) in ('', 'application/octet-stream'):
+            mimetype = mimetypes.guess_type(name)[0] or mimetype
+        return mimetype, raw, name
 
     @api.model
     def _dispatch_resources_read(self, uri: str) -> dict[str, Any] | None:
