@@ -117,7 +117,7 @@ class TestAgent(AITestCommon):
                 first,
                 'First prompt.',
             ),
-            (((everyone, {'active': False}),), {}, everyone.browse(), '<runtime>'),
+            (((everyone, {'active': False}),), {}, everyone.browse(), None),
         ):
             with (
                 self.subTest(values=values, writes=len(writes)),
@@ -128,7 +128,13 @@ class TestAgent(AITestCommon):
                 session = self._session(**values)
                 self.assertEqual(session.agent_id, expected)
                 request = self._request(session)
-                self.assertTrue(self._system_prompt(request).startswith(prompt))
+                system = self._system_prompt(request)
+                used = [
+                    text
+                    for text in ('Picked prompt.', 'First prompt.')
+                    if text in system
+                ]
+                self.assertEqual(used, [prompt] if prompt else [])
 
     def test_the_effort_offered_follows_the_model_the_agent_runs_on(self):
         capable = self._create_model('gpt-effort', reasoning_efforts=['low', 'high'])
