@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
 import logging
@@ -41,6 +42,32 @@ from odoo.addons.muk_website_cookies_consent.tools.scanner import (
 )
 
 _logger = logging.getLogger(__name__)
+
+
+def memoise_per_request(method):
+    """Compute a visitor-dependent answer once per request.
+
+    The gating is asked once per element core post-processes, thousands of
+    times on a long shop page, while everything it reads off the visitor (the
+    consent cookie, the GPC header, the country, the user) is fixed for the
+    length of a request. Keyed on the website and the user, because the
+    editor exemption depends on who renders. Without a request there is
+    nothing to keep the answer on, so it is computed every time.
+    """
+
+    @functools.wraps(method)
+    def wrapper(self):
+        if not request:
+            return method(self)
+        memo = getattr(request, '_muk_cookie_consent_memo', None)
+        if memo is None:
+            memo = request._muk_cookie_consent_memo = {}
+        key = (method.__name__, self.id, self.env.uid)
+        if key not in memo:
+            memo[key] = method(self)
+        return memo[key]
+
+    return wrapper
 
 
 class Website(models.Model):
@@ -355,29 +382,31 @@ class Website(models.Model):
         """
         return set(self._get_offered_cookie_categories().mapped('code'))
 
-    def _get_granted_cookie_codes(self) -> set[str]:
+    @memoise_per_request
+    def _get_granted_cookie_codes(self) -> frozenset[str]:
         """Return the purpose codes in force for the current request.
 
         Global Privacy Control overrides the stored decision. The result is
         narrowed to declared codes, so a forged cookie cannot mint cache keys.
         """
         if self._is_gpc_requested():
-            return {ESSENTIAL_CODE}
+            return frozenset({ESSENTIAL_CODE})
         if not self._has_cookie_decision():
-            return {ESSENTIAL_CODE}
+            return frozenset({ESSENTIAL_CODE})
         granted = granted_categories(self._get_cookie_state())
-        return (granted & self._get_known_cookie_codes()) | {ESSENTIAL_CODE}
+        return frozenset(granted & self._get_known_cookie_codes()) | {ESSENTIAL_CODE}
 
-    def _get_granted_cookie_services(self) -> set[str]:
+    @memoise_per_request
+    def _get_granted_cookie_services(self) -> frozenset[str]:
         """Return the service names granted for the current request.
 
         Keyed on the record rather than on an answered decision: allowing an
         embed in place grants that one service without answering anything.
         """
         if not self._has_cookie_record() or self._is_gpc_requested():
-            return set()
+            return frozenset()
         known = set(self._get_cookie_services().mapped('technical_name'))
-        return granted_services(self._get_cookie_state()) & known
+        return frozenset(granted_services(self._get_cookie_state()) & known)
 
     def _get_cookie_consent_key(self) -> str:
         """Return the granted purposes and services as one cache key part."""
@@ -673,6 +702,7 @@ class Website(models.Model):
         )
         return Markup(controlled.removeprefix('<div>').removesuffix('</div>'))
 
+    @memoise_per_request
     def _should_remove_third_party_trackers(self) -> bool:
         """Report whether anything still has to be stripped from the markup.
 

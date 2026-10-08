@@ -8,7 +8,7 @@
         blocked per service until their category is granted, and Google
         Consent Mode v2 is signalled automatically.
     """,
-    'version': '20.0.1.1.7',
+    'version': '20.0.1.1.8',
     'category': 'Website/Website',
     'license': 'LGPL-3',
     'author': 'MuK IT',
