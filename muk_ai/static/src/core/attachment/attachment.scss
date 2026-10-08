@@ -1,0 +1,50 @@
+.mk_att_card {
+    width: 160px;
+    height: 96px;
+    white-space: normal;
+    cursor: pointer;
+    &:hover {
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        transform: translateY(-1px);
+        .mk_att_card_actions {
+            opacity: 1;
+        }
+    }
+    .mk_att_card_preview .o_image {
+        width: 36px;
+        height: 36px;
+    }
+    .mk_att_card_name {
+        font-size: 0.78rem;
+    }
+    .mk_att_card_size {
+        font-size: 0.62rem;
+    }
+    .mk_att_card_actions {
+        opacity: 0;
+        .btn {
+            width: 22px;
+            height: 22px;
+            color: var(--white);
+            background: rgba(0, 0, 0, 0.55);
+            font-size: 0.8rem;
+            &:hover {
+                background: var(--primary);
+            }
+        }
+        .mk_att_card_remove:hover {
+            background: var(--danger);
+        }
+    }
+    &.mk_att_card_compact {
+        width: 136px;
+        height: 72px;
+        .mk_att_card_preview .o_image {
+            width: 28px;
+            height: 28px;
+        }
+        .mk_att_card_name {
+            font-size: 0.72rem;
+        }
+    }
+}

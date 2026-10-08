@@ -1,0 +1,7 @@
+.o_field_tool_picker {
+    width: 100%;
+    .o_field_many2many_selection .o_input {
+        border: none;
+        --o-input-background-color: transparent;
+    }
+}

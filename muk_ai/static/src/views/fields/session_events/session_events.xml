@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.SessionEventsField">
+        <div class="mk_session_events d-flex flex-column p-3 overflow-auto">
+            <ChatTurn t-foreach="this.turns" t-as="turn" t-key="turn_index" turn="turn" compact="true" hideSources="true"/>
+            <div t-if="!this.turns.length" class="text-muted text-center border rounded p-4">
+                <i class="oi me-2" data-icon="inbox"/>No entries yet.
+            </div>
+        </div>
+    </t>
+
+</templates>

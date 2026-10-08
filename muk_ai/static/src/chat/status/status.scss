@@ -1,0 +1,39 @@
+:root {
+    --mk-accent: #{if(
+            $o-webclient-color-scheme == dark,
+            var(--primary-text-emphasis),
+            var(--primary)
+        )};
+}
+.mk_state_new,
+.mk_state_stopped {
+    --mk-state: var(--secondary-color);
+}
+.mk_state_running {
+    --mk-state: var(--primary);
+}
+.mk_state_waiting {
+    --mk-state: var(--warning);
+}
+.mk_state_done {
+    --mk-state: var(--success);
+}
+.mk_state_error {
+    --mk-state: var(--danger);
+}
+.mk_avatar {
+    width: 30px;
+    height: 30px;
+    color: var(--mk-state);
+    background: color-mix(in srgb, var(--mk-state) 15%, transparent);
+    font-size: 0.85rem;
+    .oi::before {
+        transform: translateY(0.055em);
+    }
+    &.mk_state_running {
+        --mk-state: var(--mk-accent);
+    }
+}
+.mk_resume {
+    font-variant-numeric: tabular-nums;
+}

@@ -1,0 +1,18 @@
+.mk_prompt_history {
+    max-height: 60vh;
+    .mk_prompt_history_list {
+        width: 220px;
+        button {
+            padding: 8px;
+            border: 0;
+            border-radius: 4px;
+            background: none;
+            &:hover {
+                background: rgba(var(--primary-rgb), 0.08);
+            }
+            &.active {
+                background: rgba(var(--primary-rgb), 0.15);
+            }
+        }
+    }
+}

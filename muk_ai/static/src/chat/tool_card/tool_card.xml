@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.ToolCard">
+        <div
+            class="mk_tool overflow-hidden transition-base"
+            t-att-class="`mk_tool_${this.kind} ${this.props.streaming ? 'mk_tool_streaming' : ''}`"
+            t-att-data-expanded="this.props.expanded ? 1 : 0"
+        >
+            <button type="button" class="mk_tool_head d-flex align-items-center gap-2 w-100 border-0 text-body text-start" t-on-click="this.onHeadClick">
+                <i t-if="!this.props.streaming" class="oi mk_chevron text-muted transition-base" data-icon="chevron_right"/>
+                <span class="mk_tool_icon d-inline-flex align-items-center justify-content-center flex-shrink-0">
+                    <i t-if="this.props.streaming" class="oi oi-spin" data-icon="progress_activity"/>
+                    <i t-else="" class="oi" t-att-data-icon="this.props.block.icon or 'build'"/>
+                </span>
+                <span class="mk_tool_name fw-medium" t-out="this.props.block.label or this.props.block.name"/>
+                <span
+                    t-if="this.props.block.band"
+                    class="mk_tool_band text-truncate text-muted ms-2"
+                    t-att-class="{ 'text-danger': this.hasError }"
+                    t-att-title="this.props.block.band"
+                    t-out="this.props.block.band"
+                />
+                <span t-if="this.props.streaming" class="small ms-auto">running...</span>
+            </button>
+            <div t-if="this.props.expanded and !this.props.streaming" class="mk_tool_body border-top bg-100">
+                <div t-if="this.props.block.arguments" class="mk_tool_section">
+                    <div class="mk_tool_section_label mb-1 text-muted fw-semibold text-uppercase">Arguments</div>
+                    <pre class="language-json"><code class="language-json" t-out="this.highlight(this.props.block.arguments, 'json')"/></pre>
+                </div>
+                <div t-if="this.props.block.result" class="mk_tool_section">
+                    <div class="mk_tool_section_label mb-1 text-muted fw-semibold text-uppercase">Result</div>
+                    <pre t-att-class="`language-${this.resultLang}`"><code t-att-class="`language-${this.resultLang}`" t-out="this.highlight(this.props.block.result, this.resultLang)"/></pre>
+                </div>
+                <div t-else="" class="text-muted small">
+                    <i class="oi oi-spin me-1" data-icon="progress_activity"/>Running...
+                </div>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="muk_ai.ToolGroup">
+        <div class="mk_tool mk_tool_group overflow-hidden transition-base" t-att-class="{ mk_tool_group_has_error: this.errors }" t-att-data-expanded="this.state.expanded ? 1 : 0">
+            <button
+                type="button"
+                class="mk_tool_head d-flex align-items-center gap-2 w-100 border-0 text-muted text-start"
+                t-on-click="() => this.state.expanded = !this.state.expanded"
+            >
+                <i class="oi mk_chevron transition-base" data-icon="chevron_right"/>
+                <span class="mk_tool_icon d-inline-flex align-items-center justify-content-center flex-shrink-0">
+                    <i class="oi" data-icon="build"/>
+                </span>
+                <span class="mk_tool_label text-body fw-semibold text-nowrap">Used <t t-out="this.props.tools.length"/> tools</span>
+                <span class="mk_tool_group_chips d-flex gap-1 flex-grow-1 min-w-0 overflow-hidden">
+                    <t t-if="!this.props.compact">
+                        <span t-foreach="this.chips" t-as="chip" t-key="chip_index" class="mk_tool_chip border bg-100 text-nowrap" t-out="chip"/>
+                        <span t-if="this.props.tools.length &gt; this.chips.length" class="mk_tool_chip border bg-100 text-nowrap">...</span>
+                    </t>
+                </span>
+                <span t-if="this.props.tools.length &gt; this.errors" class="mk_tool_badge d-inline-flex align-items-center gap-1 flex-shrink-0 rounded-pill fw-semibold text-success-emphasis bg-success-subtle">
+                    <i class="oi" data-icon="check"/> <t t-out="this.props.tools.length - this.errors"/>
+                </span>
+                <span t-if="this.errors" class="mk_tool_badge d-inline-flex align-items-center gap-1 flex-shrink-0 rounded-pill fw-semibold text-danger-emphasis bg-danger-subtle">
+                    <i class="oi" data-icon="close"/> <t t-out="this.errors"/>
+                </span>
+            </button>
+            <div t-if="this.state.expanded" class="mk_tool_group_body border-top bg-100">
+                <t t-foreach="this.props.tools" t-as="tool" t-key="tool.key">
+                    <ToolCard
+                        block="tool.block"
+                        expanded="this.props.isExpanded(tool.block.callId)"
+                        onToggle="this.props.onToggle"
+                    />
+                </t>
+            </div>
+        </div>
+    </t>
+
+</templates>

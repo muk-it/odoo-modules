@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.PromptHistoryDialog">
+        <Dialog title="this.title" size="'lg'">
+            <div class="mk_prompt_history d-flex gap-3">
+                <div class="mk_prompt_history_list flex-shrink-0 overflow-auto border-end pe-2">
+                    <div t-if="!this.state.entries.length" class="text-muted small p-2">No history yet.</div>
+                    <button
+                        t-foreach="this.state.entries"
+                        t-as="entry"
+                        t-key="entry_index"
+                        type="button"
+                        class="d-block w-100 text-start mb-1"
+                        t-att-class="{ active: this.state.index === entry_index }"
+                        t-on-click="() => this.select(entry_index)"
+                    >
+                        <div class="fw-medium" t-out="this.formatTimestamp(entry.create_date)"/>
+                        <div class="text-muted small" t-out="entry.create_user_name or ''"/>
+                    </button>
+                </div>
+                <div class="mk_markdown flex-grow-1 overflow-auto" t-out="this.diff"/>
+            </div>
+            <t t-set-slot="footer">
+                <button class="btn btn-primary" t-att-disabled="this.state.index === null" t-on-click="() => this.restore()">
+                    Restore This Version
+                </button>
+                <button class="btn btn-secondary" t-on-click="() => this.props.close()">Close</button>
+            </t>
+        </Dialog>
+    </t>
+
+</templates>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.AttachmentCard">
+        <div
+            class="mk_att_card position-relative d-flex flex-column overflow-hidden border rounded-3 text-body bg-view transition-base"
+            t-att-class="{ mk_att_card_compact: this.props.compact, mk_att_card_image: this.file.isImage }"
+            t-att-title="this.props.attachment.filename"
+            role="button"
+            tabindex="0"
+            t-on-click="() => this.props.onOpen?.(this.props.attachment)"
+        >
+            <img
+                t-if="this.file.isImage"
+                class="w-100 h-100 object-fit-cover bg-100"
+                t-att-src="this.file.defaultSource"
+                t-att-alt="this.props.attachment.filename"
+            />
+            <t t-else="">
+                <div class="mk_att_card_preview d-flex flex-grow-1 align-items-center justify-content-center bg-100">
+                    <div class="o_image" t-att-data-mimetype="this.props.attachment.mimetype"/>
+                </div>
+                <div class="mk_att_card_info border-top px-2 py-1 bg-view lh-sm">
+                    <div class="mk_att_card_name text-truncate fw-semibold" t-out="this.props.attachment.filename"/>
+                    <div class="text-muted text-uppercase mk_att_card_size" t-if="this.size" t-out="this.size"/>
+                </div>
+            </t>
+            <div class="mk_att_card_actions position-absolute top-0 end-0 d-flex gap-1 p-1 transition-base">
+                <a
+                    t-if="this.props.attachment.id &gt; 0"
+                    class="btn btn-sm rounded-circle p-0 border-0 d-inline-flex align-items-center justify-content-center"
+                    t-att-href="this.file.downloadUrl"
+                    title="Download"
+                    download=""
+                    t-on-click.stop="() => {}"
+                >
+                    <i class="oi" data-icon="download"/>
+                </a>
+                <button
+                    t-if="this.props.removable"
+                    class="btn btn-sm rounded-circle p-0 border-0 d-inline-flex align-items-center justify-content-center mk_att_card_remove"
+                    title="Remove"
+                    t-on-click.stop="() => this.props.onRemove?.(this.props.attachment)"
+                >
+                    <i class="oi" data-icon="close"/>
+                </button>
+            </div>
+        </div>
+    </t>
+
+</templates>

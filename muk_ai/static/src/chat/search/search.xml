@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.ChatSearch">
+        <div class="mk_search_bar d-flex align-items-center border-bottom bg-100">
+            <div class="mk_search_field form-control form-control-sm d-flex flex-grow-1 w-auto align-items-center py-1 bg-100">
+                <i class="oi text-muted me-2" data-icon="search"/>
+                <input
+                    t-ref="this.input"
+                    type="text"
+                    class="o_input flex-grow-1 w-auto border-0 py-0 bg-transparent shadow-none"
+                    placeholder="Search this chat..."
+                    t-att-value="this.state.query"
+                    t-on-input="this.onInput"
+                    t-on-keydown="this.onKeydown"
+                />
+            </div>
+            <span t-if="this.state.query" class="mk_search_counter small text-muted text-nowrap ms-auto">
+                <t t-out="this.state.total ? this.state.index + 1 : 0"/> of <t t-out="this.state.total"/>
+            </span>
+            <button
+                class="btn btn-link btn-sm p-1 lh-1 text-decoration-none"
+                t-att-disabled="!this.state.total"
+                title="Previous match (Shift+Enter)"
+                t-on-click="() => this.move(-1)"
+            >
+                <i class="oi" data-icon="keyboard_arrow_up"/>
+            </button>
+            <button
+                class="btn btn-link btn-sm p-1 lh-1 text-decoration-none"
+                t-att-disabled="!this.state.total"
+                title="Next match (Enter)"
+                t-on-click="() => this.move(1)"
+            >
+                <i class="oi" data-icon="keyboard_arrow_down"/>
+            </button>
+            <button class="btn btn-link btn-sm p-1 lh-1 text-decoration-none" title="Close search (Esc)" t-on-click="() => this.props.onClose()">
+                <i class="oi" data-icon="close"/>
+            </button>
+        </div>
+    </t>
+
+</templates>

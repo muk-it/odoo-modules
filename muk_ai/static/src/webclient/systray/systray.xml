@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.Systray">
+        <Dropdown position="'bottom-end'" menuClass="'mk_systray_menu'">
+            <button class="mk_systray_btn btn btn-link d-inline-flex align-items-center justify-content-center position-relative h-100 lh-1" title="MuK AI" t-ref="this.button">
+                <span class="mk_systray_icon_wrap position-relative d-inline-flex">
+                    <span class="mk_icon_ai align-top"/>
+                    <span t-if="this.running" class="mk_systray_running rounded-circle position-absolute pe-none"/>
+                </span>
+                <span
+                    t-if="this.chat.badge.count"
+                    class="o_badge badge rounded-pill"
+                    t-out="this.chat.badge.count &gt; 99 ? '99+' : this.chat.badge.count"
+                />
+            </button>
+            <t t-set-slot="content">
+                <div class="mk_systray_header d-flex align-items-center justify-content-between gap-2 border-bottom">
+                    <span class="fw-semibold d-flex align-items-center gap-2"><span class="mk_icon_ai text-primary fs-6"/>MuK AI</span>
+                    <small t-if="this.running" class="text-muted"><t t-out="this.running"/> running</small>
+                </div>
+                <DropdownItem class="'mk_systray_item d-flex align-items-center gap-2'" onSelected="() => this.newChat()">
+                    <i class="oi oi-fw text-primary fs-6" data-icon="add"/>
+                    <span class="flex-grow-1">New Chat</span>
+                    <kbd t-out="this.hotkeys[0]"/>
+                </DropdownItem>
+                <DropdownItem class="'mk_systray_item d-flex align-items-center gap-2'" onSelected="() => this.chat.openFullChat()">
+                    <i class="oi oi-fw text-primary fs-6" data-icon="fullscreen"/>
+                    <span class="flex-grow-1">Open Full Chat</span>
+                    <kbd t-out="this.hotkeys[1]"/>
+                </DropdownItem>
+                <t t-if="this.rows.length">
+                    <div class="dropdown-divider my-1"/>
+                    <div class="mk_systray_heading text-muted fw-semibold text-uppercase">Recent sessions</div>
+                    <DropdownItem
+                        t-foreach="this.rows"
+                        t-as="row"
+                        t-key="row.id"
+                        class="{ 'mk_systray_item d-flex align-items-center gap-2': true, 'mk_systray_unread text-primary fw-semibold': this.chat.badge.unreadIds.includes(row.id) }"
+                        onSelected="() => this.chat.openWindow(row.id)"
+                    >
+                        <span class="oi-fw d-inline-flex align-items-center justify-content-center flex-shrink-0">
+                            <span class="mk_systray_dot rounded-circle" t-att-class="this.statusInfo(row.state).cls"/>
+                        </span>
+                        <span class="flex-grow-1 text-truncate" t-out="row.name"/>
+                    </DropdownItem>
+                </t>
+                <div t-elif="this.state.loaded" class="text-muted small px-3 py-2">No chats yet.</div>
+            </t>
+        </Dropdown>
+    </t>
+
+</templates>

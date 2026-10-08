@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.ChatComposer">
+        <t t-set="session" t-value="this.props.session"/>
+        <div class="mk_composer_host position-relative">
+            <div t-if="session.readonly" class="mk_composer_readonly d-flex align-items-center gap-2 text-muted">
+                <i class="oi" data-icon="visibility"/>
+                <span t-out="this.readonlyNotice"/>
+            </div>
+            <t t-else="">
+                <div t-if="this.items.length" class="mk_slash_menu position-absolute start-0 end-0 bottom-100 mb-1 p-1 overflow-auto border bg-100">
+                    <button
+                        t-foreach="this.items"
+                        t-as="item"
+                        t-key="item.key"
+                        type="button"
+                        class="mk_slash_item d-flex align-items-center gap-2 w-100 border-0 text-start text-body rounded-3 transition-base"
+                        t-att-class="{ active: item_index === this.state.active }"
+                        t-on-click="() => this.pick(item_index)"
+                        t-on-mouseenter="() => this.state.active = item_index"
+                    >
+                        <code t-if="item.command" class="mk_slash_name flex-shrink-0 p-0 border-0 bg-transparent text-primary fw-semibold" t-out="item.name"/>
+                        <span t-else="" class="mk_slash_name flex-shrink-0 text-primary fw-semibold" t-out="item.name"/>
+                        <span class="mk_slash_hint flex-grow-1 text-truncate text-muted" t-out="item.hint"/>
+                    </button>
+                </div>
+                <div class="mk_composer d-flex flex-column gap-2">
+                    <div t-if="session.state.attachments.length" class="d-flex flex-wrap gap-2">
+                        <AttachmentCard
+                            t-foreach="session.state.attachments"
+                            t-as="attachment"
+                            t-key="attachment.id"
+                            attachment="attachment"
+                            removable="true"
+                            compact="true"
+                            onOpen.bind="this.openAttachment"
+                            onRemove="(item) => session.detach(item.id)"
+                        />
+                    </div>
+                    <div class="mk_composer_input overflow-auto">
+                        <textarea
+                            class="form-control border-0 shadow-none bg-transparent text-body lh-base"
+                            rows="1"
+                            t-ref="this.textarea"
+                            t-model.proxy="session.state.input"
+                            t-att-placeholder="this.placeholder"
+                            t-on-keydown="this.onKeydown"
+                        />
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <label
+                            class="btn mk_attach d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 border-0 rounded-circle mb-0 transition-base"
+                            t-att-class="{ disabled: !session.canAttach }"
+                            title="Attach file"
+                        >
+                            <i class="oi" data-icon="attach_file"/>
+                            <input
+                                type="file"
+                                class="d-none"
+                                multiple="multiple"
+                                t-att-accept="this.accept"
+                                t-att-disabled="!session.canAttach"
+                                t-on-change="this.onFileChange"
+                            />
+                        </label>
+                        <button
+                            class="btn mk_send d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 border-0 rounded-circle ms-auto transition-base"
+                            t-att-class="this.button.cls"
+                            t-att-title="this.button.title"
+                            t-att-disabled="this.button.disabled"
+                            t-on-click="() => this.sendOrStop()"
+                        >
+                            <i class="oi" t-att-data-icon="this.button.icon"/>
+                        </button>
+                    </div>
+                </div>
+                <div t-if="this.props.showMeta" class="mk_composer_meta d-flex align-items-center gap-2 mt-1 ps-1">
+                    <div class="mk_composer_hint d-none d-md-flex gap-3 text-muted">
+                        <span><kbd>Enter</kbd> to send</span>
+                        <span><kbd>Shift</kbd>+<kbd>Enter</kbd> for newline</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 ms-md-auto">
+                        <SessionPills session="session"/>
+                    </div>
+                    <UsageMeter session="session"/>
+                </div>
+            </t>
+        </div>
+    </t>
+
+</templates>

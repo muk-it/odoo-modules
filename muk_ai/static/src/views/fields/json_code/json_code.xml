@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.JsonCodeField">
+        <div class="w-100" t-att-style="this.style">
+            <CodeEditor
+                value="this.text"
+                mode="this.props.mode"
+                readonly="this.props.readonly"
+                onBlur.bind="this.commit"
+                onChange.bind="this.onChange"
+                class="'mk_json_code_editor w-100 border rounded'"
+            />
+        </div>
+    </t>
+
+</templates>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.IconPicker">
+        <SelectMenu
+            choices="this.choices"
+            autoSort="false"
+            value="this.props.value"
+            required="this.props.required"
+            placeholder="this.props.placeholder"
+            searchPlaceholder="this.searchPlaceholder"
+            onSelect="(icon) => this.props.onSelect(icon)"
+            class="this.props.boxed ? 'mk_icon_picker mk_icon_picker_boxed' : 'mk_icon_picker'"
+            togglerClass="this.props.boxed ? 'form-select' : 'o_input'"
+            menuClass="'mk_icon_picker_menu'"
+        >
+            <span t-if="this.props.value" class="d-inline-flex align-items-center gap-2 text-truncate">
+                <i class="oi" t-att-data-icon="this.props.value"/>
+                <span t-out="this.props.value"/>
+            </span>
+            <t t-set-slot="choice" t-slot-scope="scope">
+                <i class="oi" t-att-data-icon="scope.data.value" t-att-title="scope.data.label"/>
+            </t>
+        </SelectMenu>
+    </t>
+
+    <t t-name="muk_ai.IconSelectorField">
+        <span t-if="this.props.readonly" class="d-inline-flex align-items-center gap-2">
+            <i t-if="this.icon" class="oi" t-att-data-icon="this.icon"/>
+            <span t-out="this.icon"/>
+        </span>
+        <IconPicker
+            t-else=""
+            value="this.icon"
+            required="this.props.required"
+            placeholder="this.props.placeholder"
+            onSelect.bind="this.onSelect"
+        />
+    </t>
+
+</templates>

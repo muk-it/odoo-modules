@@ -1,0 +1,154 @@
+.mk_markdown {
+    white-space: normal;
+    :is(p, ul, ol, pre, .mk_md_table, h1, h2, h3, h4) {
+        margin: 0 0 0.55rem;
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+    :is(h1, h2, h3, h4) {
+        font-weight: 600;
+        line-height: 1.3;
+    }
+    h1 {
+        font-size: 1.25rem;
+    }
+    h2 {
+        font-size: 1.1rem;
+    }
+    h3 {
+        font-size: 1rem;
+    }
+    h4 {
+        font-size: 0.95rem;
+    }
+    :is(ul, ol) {
+        padding-left: 1.25rem;
+    }
+    li {
+        margin-bottom: 0.2rem;
+    }
+    a {
+        color: var(--mk-accent);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+    code {
+        padding: 0 5px;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        background: var(--body-bg);
+        font-size: 0.88em;
+    }
+    pre,
+    pre[class*='language-'] {
+        position: relative;
+        padding: 1.6rem 0.9rem 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font: 0.82rem/1.55 var(--font-monospace);
+        text-shadow: none;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+        &[data-lang]::before {
+            content: attr(data-lang);
+            position: absolute;
+            top: 0.35rem;
+            left: 0.75rem;
+            color: var(--secondary-color);
+            font-size: 0.7rem;
+        }
+        &:not([data-lang]) {
+            padding-top: 0.75rem;
+            background: var(--tertiary-bg);
+        }
+        &:is(:hover, :focus-within) .mk_code_copy {
+            opacity: 1;
+        }
+        code {
+            padding: 0;
+            border: 0;
+            color: inherit;
+            background: none;
+            font: inherit;
+            text-shadow: none;
+        }
+    }
+    .mk_code_copy {
+        position: absolute;
+        top: 0.3rem;
+        right: 0.4rem;
+        padding: 0.1rem 0.5rem;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        color: var(--secondary-color);
+        background: var(--body-bg);
+        font-size: 0.72rem;
+        opacity: 0;
+        transition: 0.12s ease;
+        &:hover {
+            color: var(--body-color);
+            background: var(--tertiary-bg);
+        }
+        &.mk_code_copy_done {
+            border-color: var(--success);
+            color: var(--success);
+            opacity: 1;
+        }
+        &.mk_code_copy_fail {
+            border-color: var(--danger);
+            color: var(--danger);
+            opacity: 1;
+        }
+    }
+    hr {
+        margin: 1rem 0;
+        border-color: var(--border-color);
+        opacity: 1;
+    }
+    img {
+        display: block;
+        max-width: 100%;
+        max-height: 360px;
+        margin: 0.5rem 0;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        cursor: zoom-in;
+    }
+    li.mk_md_task {
+        margin-left: -1.25rem;
+        list-style: none;
+        input {
+            margin-right: 0.35rem;
+            vertical-align: middle;
+        }
+    }
+    .mk_md_table {
+        overflow-x: auto;
+    }
+    table {
+        width: 100%;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+        border-collapse: separate;
+        border-spacing: 0;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        :is(th, td) {
+            padding: 0.45rem 0.65rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        tr:last-child td {
+            border-bottom: 0;
+        }
+        th {
+            background: var(--body-bg);
+            font-weight: 600;
+        }
+        tbody tr:nth-child(even) td {
+            background: rgba(var(--emphasis-color-rgb), 0.02);
+        }
+    }
+}
+:is(.mk_markdown, .mk_tool) pre .token {
+    background: none;
+}

@@ -1,0 +1,21 @@
+id,name,model_id,group_id/id,operation,domain
+access_ai_model_user,muk_ai.model.user,muk_ai.model,base.group_user,r,
+access_ai_model_admin,muk_ai.model.admin,muk_ai.model,base.group_system,crud,
+access_ai_provider_user,muk_ai.provider.user,muk_ai.provider,base.group_user,r,
+access_ai_provider_admin,muk_ai.provider.admin,muk_ai.provider,base.group_system,crud,
+access_ai_agent_user,muk_ai.agent.user,muk_ai.agent,base.group_user,r,
+access_ai_agent_admin,muk_ai.agent.admin,muk_ai.agent,base.group_system,crud,
+access_ai_agent_suggestion_user,muk_ai.agent.suggestion.user,muk_ai.agent.suggestion,base.group_user,r,
+access_ai_agent_suggestion_admin,muk_ai.agent.suggestion.admin,muk_ai.agent.suggestion,base.group_system,crud,
+rule_ai_space_read,AI Space: own and system spaces,muk_ai.space,base.group_user,r,"['|', ('user_id', '=', user.id), ('user_id', '=', False)]"
+rule_ai_space_own,AI Space: edit own spaces only,muk_ai.space,base.group_user,cud,"[('user_id', '=', user.id)]"
+rule_ai_space_admin,AI Space: admin access,muk_ai.space,base.group_system,crud,
+rule_ai_session_user,AI Session: own sessions,muk_ai.session,base.group_user,crud,"[('user_id', '=', user.id)]"
+rule_ai_session_shared,AI Session: shared with me,muk_ai.session,base.group_user,r,"[('share_user_ids', 'in', user.id)]"
+rule_ai_session_admin,AI Session: admin access,muk_ai.session,base.group_system,crud,
+rule_ai_session_pending_user,AI Session Pending: own session,muk_ai.session.pending,base.group_user,crud,"[('session_id.user_id', '=', user.id)]"
+rule_ai_session_pending_admin,AI Session Pending: admin access,muk_ai.session.pending,base.group_system,crud,
+rule_ai_session_event_user,AI Session Event: own session,muk_ai.session.event,base.group_user,crud,"[('session_id.user_id', '=', user.id)]"
+rule_ai_session_event_admin,AI Session Event: admin access,muk_ai.session.event,base.group_system,crud,
+rule_ai_approval_user,AI Approval: own entries,muk_ai.approval,base.group_user,r,"[('user_id', '=', user.id)]"
+rule_ai_approval_admin,AI Approval: admin access,muk_ai.approval,base.group_system,r,

@@ -1,0 +1,42 @@
+.mk_share_bar {
+    min-height: 1.6rem;
+    font-size: 0.78rem;
+    .mk_share_faces img {
+        width: 18px;
+        height: 18px;
+        & + img {
+            margin-left: -5px;
+            box-shadow: 0 0 0 1.5px var(--body-bg);
+        }
+    }
+    .mk_share_edit {
+        padding: 0 0.25rem;
+        font-size: 0.78rem;
+        &:hover {
+            color: var(--mk-accent) !important;
+        }
+    }
+}
+.mk_share_dialog {
+    font-size: 0.875rem;
+    .mk_share_label {
+        margin-bottom: 0.35rem;
+        font-size: 0.78rem;
+    }
+    .mk_share_field {
+        min-height: 2.5rem;
+        padding: 0.4rem 0.5rem;
+        border-radius: 0.5rem;
+        &:focus-within {
+            border-color: var(--mk-accent) !important;
+        }
+        .o_input {
+            border: 0;
+        }
+    }
+    .mk_share_note {
+        margin-top: 0.9rem;
+        padding-top: 0.75rem;
+        font-size: 0.75rem;
+    }
+}

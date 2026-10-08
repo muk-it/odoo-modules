@@ -1,0 +1,50 @@
+.mk_pill {
+    padding: 2px 10px;
+    color: var(--secondary-color);
+    background: var(--tertiary-bg);
+    font-size: 0.75rem;
+    line-height: 1.3;
+    &:hover {
+        color: var(--body-color);
+        background: var(--secondary-bg);
+    }
+    &.mk_pill_override {
+        color: var(--body-color);
+        box-shadow: inset 0 0 0 1px currentColor;
+    }
+    &.mk_pill_ask {
+        color: var(--mk-accent);
+        background: rgba(var(--primary-rgb), 0.1);
+        &:hover {
+            background: rgba(var(--primary-rgb), 0.2);
+        }
+    }
+    &.mk_pill_bypass {
+        color: var(--warning-text-emphasis);
+        background: rgba(var(--warning-rgb), 0.22);
+        &:hover {
+            background: rgba(var(--warning-rgb), 0.35);
+        }
+    }
+    .oi {
+        font-size: 0.75rem;
+    }
+}
+.mk_pill_menu {
+    --dropdown-padding-y: 0.25rem;
+    min-width: 224px;
+    .mk_pill_option {
+        padding: 0.35rem 0.6rem;
+        line-height: 1.35;
+    }
+    .mk_pill_check {
+        margin-top: 0.15rem;
+        font-size: 0.85rem;
+    }
+    .mk_pill_option_label {
+        font-size: 0.82rem;
+    }
+    .mk_pill_option_hint {
+        font-size: 0.75rem;
+    }
+}

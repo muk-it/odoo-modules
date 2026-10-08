@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.UsageMeter">
+        <Dropdown position="this.props.position" menuClass="'mk_usage_pop'">
+            <button
+                type="button"
+                class="mk_usage_meter btn btn-sm d-inline-flex align-items-center border-0 fw-normal text-nowrap"
+                t-att-class="this.level"
+                t-att-title="this.tooltip"
+            >
+                <span t-out="`${this.percent}%`"/>
+                <span class="mk_usage_ring flex-shrink-0 rounded-circle" t-attf-style="--pct: {{ this.percent }};"/>
+            </button>
+            <t t-set-slot="content">
+                <div class="d-flex justify-content-between gap-2">
+                    <span class="fw-semibold">Context</span>
+                    <span t-out="`${this.tokens} (${this.percent}%)`"/>
+                </div>
+                <div class="progress rounded-pill bg-100" role="progressbar">
+                    <div class="progress-bar" t-att-class="this.level" t-attf-style="width: {{ this.percent }}%;"/>
+                </div>
+                <div class="mk_usage_note text-muted" t-out="this.compactNote"/>
+                <hr class="border-secondary-subtle"/>
+                <div class="mk_usage_grid">
+                    <span/>
+                    <span class="mk_usage_head text-muted text-end text-uppercase">Last turn</span>
+                    <span class="mk_usage_head text-muted text-end text-uppercase">Session</span>
+                    <t t-foreach="this.rows" t-as="row" t-key="row[0]">
+                        <span><i class="oi text-muted me-1" t-att-data-icon="row[0]"/><t t-out="row[1]"/></span>
+                        <span class="text-end" t-out="row[2]"/>
+                        <span class="text-end" t-out="row[3]"/>
+                    </t>
+                </div>
+            </t>
+        </Dropdown>
+    </t>
+
+</templates>

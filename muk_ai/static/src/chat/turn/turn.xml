@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.ChatTurn">
+        <t t-set="turn" t-value="this.props.turn"/>
+        <t t-set="session" t-value="this.props.session"/>
+        <div
+            class="mk_turn d-flex flex-column transition-base"
+            t-att-class="`mk_turn_${turn.role} ${turn.inHistory and !['command', 'compact_progress'].includes(turn.role) ? 'mk_turn_in_history' : ''}`"
+            t-on-click="this.onClick"
+        >
+            <t t-if="turn.role === 'user'">
+                <div class="mk_bubble mk_bubble_user shadow-sm" t-att-title="turn.at or ''">
+                    <span t-if="turn.text" class="mk_bubble_text" t-out="turn.text"/>
+                    <div t-if="turn.attachments.length" class="d-flex flex-wrap gap-2 mt-2">
+                        <AttachmentCard
+                            t-foreach="turn.attachments"
+                            t-as="attachment"
+                            t-key="attachment.id"
+                            attachment="attachment"
+                            onOpen.bind="this.openAttachment"
+                        />
+                    </div>
+                    <t t-call="muk_ai.ChatMsgMeta" meta="{ at: turn.at, text: turn.text, eventId: turn.eventId, user: true }"/>
+                </div>
+            </t>
+            <t t-elif="turn.role === 'command'">
+                <t t-call="muk_ai.ChatDivider" name="turn.name" compacted="turn.originalMessages or turn.originalTokens" meta="turn.message"/>
+                <div t-if="turn.summary" class="mk_divider_summary mk_markdown text-muted" t-out="this.renderMarkdown(turn.summary)"/>
+            </t>
+            <t t-elif="turn.role === 'compact_progress'">
+                <t t-call="muk_ai.ChatCompaction"/>
+            </t>
+            <t t-elif="this.renderer">
+                <t t-component="this.renderer" turn="turn" session="session"/>
+            </t>
+            <t t-else="">
+                <t t-foreach="this.items" t-as="item" t-key="item.key">
+                    <t t-set="block" t-value="item.block"/>
+                    <div t-if="item.type === 'text'" class="mk_bubble mk_bubble_assistant mk_markdown">
+                        <t
+                            t-call="muk_ai.ChatMsgMeta"
+                            meta="{
+                                at: block.at or turn.at,
+                                text: block.text,
+                                eventId: block.eventId or turn.eventId,
+                                regenerate: item.blockIndex === turn.regenerateAt and session?.canRegenerate,
+                            }"
+                        />
+                        <div class="mk_bubble_body" t-out="this.renderMarkdown(block.text)"/>
+                    </div>
+                    <ToolCard
+                        t-elif="item.type === 'tool' and !this.isHidden(block)"
+                        block="block"
+                        expanded="!!this.state.tools[block.callId]"
+                        streaming="this.isStreaming(block)"
+                        onToggle.bind="this.toggleTool"
+                    />
+                    <ToolGroup
+                        t-elif="item.type === 'group'"
+                        tools="item.tools"
+                        compact="this.props.compact"
+                        isExpanded.alike="(callId) => !!this.state.tools[callId]"
+                        onToggle.bind="this.toggleTool"
+                    />
+                    <t t-elif="item.type === 'ask'" t-call="muk_ai.AskCard"/>
+                </t>
+                <div t-if="turn.attachments.length" class="d-flex flex-wrap gap-2 mt-2">
+                    <AttachmentCard
+                        t-foreach="turn.attachments"
+                        t-as="attachment"
+                        t-key="attachment.id"
+                        attachment="attachment"
+                        onOpen.bind="this.openAttachment"
+                    />
+                </div>
+                <div t-if="turn.sources.length and !this.props.hideSources" class="mk_turn_sources mw-100 mt-2">
+                    <button
+                        class="mk_sources_chip d-inline-flex align-items-center rounded-pill lh-sm transition-base"
+                        type="button"
+                        t-att-aria-expanded="this.state.sources ? 'true' : 'false'"
+                        t-on-click="() => this.state.sources = !this.state.sources"
+                    >
+                        <span class="mk_sources_avatars d-inline-flex align-items-center">
+                            <SourceIcon t-foreach="turn.sources.slice(0, 4)" t-as="source" t-key="source.id" source="source"/>
+                            <span t-if="turn.sources.length &gt; 4" class="mk_sources_more d-inline-flex align-items-center justify-content-center text-muted fw-semibold" t-out="`+${turn.sources.length - 4}`"/>
+                        </span>
+                        <span class="mk_sources_label text-nowrap" t-out="this.sourcesLabel"/>
+                        <i class="oi opacity-50" t-att-data-icon="this.state.sources ? 'arrow_drop_up' : 'arrow_drop_down'"/>
+                    </button>
+                    <div t-if="this.state.sources" class="mk_turn_sources_list mt-2">
+                        <SourceList sources="turn.sources" sessionId="session?.id"/>
+                    </div>
+                </div>
+            </t>
+        </div>
+    </t>
+
+    <t t-name="muk_ai.ChatCompaction">
+        <div t-if="turn.state === 'streaming'" class="mk_compact_card">
+            <div class="mk_compact_head d-flex align-items-center gap-2 fw-semibold">
+                <i class="oi oi-spin text-primary" data-icon="progress_activity"/>
+                <span class="mk_compact_title text-primary text-uppercase">
+                    <t t-if="turn.auto">Auto-compacting</t>
+                    <t t-else="">Compacting</t>
+                </span>
+                <span class="mk_compact_meta text-muted fw-normal flex-grow-1">
+                    · <t t-out="turn.messageCount"/> msgs
+                    <t t-if="turn.tokensEstimate"> · ~<t t-out="turn.tokensEstimate"/> tokens</t>
+                </span>
+                <button t-if="this.writable" class="btn btn-sm btn-link mk_compact_stop text-muted text-decoration-none py-0 px-2" t-on-click="() => session.stopCompact()">
+                    <i class="oi me-1" data-icon="stop"/>Stop
+                </button>
+            </div>
+            <div t-if="turn.streamedText" class="mk_compact_body mk_markdown mt-2 overflow-auto" t-out="this.renderMarkdown(turn.streamedText)"/>
+            <div t-else="" class="mk_compact_body mt-2 text-muted">Summarizing conversation...</div>
+        </div>
+        <t t-elif="turn.state === 'error'">
+            <div class="mk_compact_card mk_compact_error">
+                <div class="mk_compact_head d-flex align-items-center fw-semibold">
+                    <i class="oi text-danger me-2" data-icon="warning"/>
+                    <span class="mk_compact_title text-primary text-uppercase">Compaction failed</span>
+                </div>
+                <div class="mk_compact_body mt-2 text-muted" t-out="turn.error"/>
+            </div>
+        </t>
+        <t t-else="">
+            <t t-set="cancelled">cancelled</t>
+            <t
+                t-call="muk_ai.ChatDivider"
+                name="turn.auto ? 'auto-compact' : '/compact'"
+                compacted="turn.state === 'done'"
+                meta="turn.message or cancelled"
+            />
+            <details t-if="turn.state === 'done' and turn.summary" class="mk_compact_details">
+                <summary class="text-center text-muted cursor-pointer"><i class="oi transition-base" data-icon="arrow_right"/>Show summary</summary>
+                <div class="mk_divider_summary mk_markdown text-muted" t-out="this.renderMarkdown(turn.summary)"/>
+            </details>
+        </t>
+    </t>
+
+    <t t-name="muk_ai.ChatDivider">
+        <div class="mk_divider d-flex align-items-center gap-2 w-100 user-select-none" role="separator" t-att-title="turn.at or ''">
+            <span class="mk_divider_line flex-grow-1"/>
+            <span class="mk_divider_label d-inline-flex align-items-center gap-1 rounded-pill border bg-100 text-muted text-nowrap" t-att-class="{ 'opacity-50': turn.state === 'cancelled' }">
+                <code class="p-0 bg-transparent fw-semibold" t-out="name"/>
+                <t t-if="compacted or meta">
+                    <span class="opacity-50">·</span>
+                    <span t-if="compacted" class="mk_divider_meta">compacted <t t-out="turn.originalMessages"/> msgs / <t t-out="turn.originalTokens"/> tokens</span>
+                    <span t-else="" class="mk_divider_meta" t-out="meta"/>
+                </t>
+            </span>
+            <span class="mk_divider_line flex-grow-1"/>
+        </div>
+    </t>
+
+    <t t-name="muk_ai.ChatMsgMeta">
+        <div class="mk_msg_meta position-absolute d-flex align-items-center gap-1 text-nowrap z-2 transition-base" t-att-class="{ mk_msg_meta_right: meta.user }">
+            <span t-if="meta.at" class="mk_msg_time text-muted" t-out="this.formatTimestamp(meta.at)"/>
+            <div class="mk_msg_actions d-inline-flex align-items-center gap-1 ms-auto">
+                <button class="mk_msg_btn mk_msg_copy d-inline-flex align-items-center justify-content-center p-0 border-0 rounded lh-1 transition-base" type="button" title="Copy message" t-on-click="() => this.chat.copy(meta.text)">
+                    <i class="oi" data-icon="content_copy"/>
+                </button>
+                <t t-if="meta.eventId and !turn.inHistory and this.writable">
+                    <button
+                        class="mk_msg_btn mk_msg_fork d-inline-flex align-items-center justify-content-center p-0 border-0 rounded lh-1 transition-base"
+                        type="button"
+                        title="Branch: open a new session with the history up to this message"
+                        t-on-click="() => this.fork(meta.eventId)"
+                    >
+                        <i class="oi" data-icon="fork_right"/>
+                    </button>
+                    <button
+                        class="mk_msg_btn mk_msg_undo d-inline-flex align-items-center justify-content-center p-0 border-0 rounded lh-1 transition-base"
+                        type="button"
+                        title="Rewind: remove this message and everything after"
+                        t-on-click="() => session.undoToEvent(meta.eventId)"
+                    >
+                        <i class="oi" data-icon="undo"/>
+                    </button>
+                </t>
+                <button
+                    t-if="meta.regenerate"
+                    class="mk_msg_btn mk_msg_regenerate d-inline-flex align-items-center justify-content-center p-0 border-0 rounded lh-1 transition-base"
+                    type="button"
+                    title="Regenerate this answer"
+                    t-on-click="() => session.regenerate()"
+                >
+                    <i class="oi" data-icon="refresh"/>
+                </button>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="muk_ai.AskCard">
+        <t t-set="waiting" t-value="this.pendingAsk?.call_id === block.callId"/>
+        <div t-if="block.resolution === 'yesno'" class="mk_ask_card">
+            <div class="mk_ask_head d-flex align-items-center gap-2 fw-semibold">
+                <i class="oi" data-icon="security"/>
+                <strong>Confirmation required</strong>
+                <span t-if="block.preview?.model_label or block.preview?.model" class="text-muted small fw-normal" t-out="`· ${block.preview.model_label or block.preview.model}`"/>
+                <button
+                    t-if="block.preview?.kind"
+                    class="btn btn-link btn-sm ms-auto mk_ask_toggle rounded text-decoration-none"
+                    t-att-title="this.askToggleTitle(block)"
+                    t-on-click="() => this.toggleAsk(block)"
+                >
+                    <i class="oi" t-att-data-icon="this.askMode(block) === 'technical' ? 'list_alt' : 'code'"/>
+                </button>
+            </div>
+            <div class="mk_ask_body">
+                <p t-if="block.text" class="mb-2 small" t-out="block.text"/>
+                <t t-if="this.askMode(block) === 'human' and block.preview?.kind" t-call="muk_ai.AskPreview" preview="block.preview"/>
+                <pre t-elif="block.preview" class="mk_ask_args mb-2 overflow-auto border rounded-3 bg-100 text-body font-monospace text-prewrap text-break" t-out="this.askArgs(block)"/>
+            </div>
+            <div t-if="!waiting" class="mk_ask_resolved mt-1 small text-muted">
+                <t t-if="block.decision === 'approved'">Approved once.</t>
+                <t t-elif="block.decision === 'approved_session'">Approved for this session.</t>
+                <t t-elif="block.decision === 'rejected'">Rejected.</t>
+                <t t-else="">Resolved.</t>
+            </div>
+            <div t-elif="!this.writable" class="mk_ask_resolved mt-1 small text-muted">Waiting for the owner to answer.</div>
+            <div t-else="" class="mk_ask_actions d-flex gap-1 mt-2">
+                <button class="btn btn-sm btn-primary" t-on-click="() => session.respondYesno('approve')">
+                    <i class="oi me-1" data-icon="check"/>Approve
+                </button>
+                <button
+                    t-if="this.pendingAsk.kind === 'approval'"
+                    class="btn btn-sm btn-outline-primary mk_ask_session text-truncate"
+                    title="Auto-approve matching calls for the rest of this conversation"
+                    t-on-click="() => session.respondYesno('session')"
+                >
+                    <i class="oi me-1" data-icon="star"/>Allow for session
+                </button>
+                <button class="btn btn-sm btn-outline-danger" t-on-click="() => session.respondYesno('reject')">
+                    <i class="oi me-1" data-icon="close"/>Reject
+                </button>
+            </div>
+        </div>
+        <div t-else="" class="mk_bubble mk_bubble_assistant mk_ask_simple">
+            <strong class="d-block mb-1"><i class="oi me-1" data-icon="help"/>Question</strong>
+            <span class="mk_bubble_text" t-out="block.text"/>
+            <div t-if="block.preview?.kind" class="mt-2">
+                <t t-call="muk_ai.AskPreview" preview="block.preview"/>
+            </div>
+            <div t-if="block.options.length" class="mk_ask_options d-flex flex-wrap gap-2 mt-2">
+                <button
+                    t-foreach="block.options"
+                    t-as="option"
+                    t-key="option_index"
+                    class="btn btn-sm btn-outline-primary mk_ask_option text-start text-wrap"
+                    t-att-disabled="!this.writable or !waiting or session.data.state === 'running'"
+                    t-on-click="() => session.answerWithOption(option)"
+                    t-out="option"
+                />
+            </div>
+            <t t-call="muk_ai.ChatMsgMeta" meta="{ at: block.at or turn.at, text: block.text, eventId: turn.eventId }"/>
+        </div>
+    </t>
+
+    <t t-name="muk_ai.AskPreview">
+        <div class="mk_ask_preview">
+            <div class="mk_ask_title mb-2 fw-semibold" t-out="preview.title"/>
+            <t t-if="preview.kind === 'update' or preview.kind === 'create'">
+                <div t-if="preview.targets?.length" class="small text-muted mb-2">
+                    <i class="oi me-1" data-icon="chevron_right"/>
+                    <t t-foreach="preview.targets" t-as="target" t-key="target_index">
+                        <span class="mk_ask_target text-body fw-medium" t-out="target.display_name"/>
+                        <span t-if="!target_last">, </span>
+                    </t>
+                </div>
+                <div class="mk_ask_changes">
+                    <t t-foreach="preview.kind === 'update' ? preview.changes : preview.properties" t-as="change" t-key="change_index">
+                        <div t-if="change.record and change.record !== preview.properties[change_index - 1]?.record" class="mk_ask_record fw-semibold">
+                            Record <t t-out="change.record"/>
+                        </div>
+                        <div class="mk_ask_change">
+                            <div class="mk_ask_label text-uppercase fw-semibold" t-att-title="change.field" t-out="change.label"/>
+                            <t t-set="value" t-value="preview.kind === 'update' ? change.to : change.value"/>
+                            <span t-if="preview.kind === 'update' and change.from" class="text-muted text-decoration-line-through me-1" t-out="change.from"/>
+                            <t t-if="change.lines">
+                                <div t-foreach="change.lines" t-as="line" t-key="line_index" class="mk_ask_line">
+                                    <div t-out="line.title"/>
+                                    <div t-if="line.details.length" class="d-flex flex-wrap text-muted">
+                                        <span t-foreach="line.details" t-as="item" t-key="item_index" class="mk_ask_detail text-nowrap" t-out="`${item.label} ${item.value}`"/>
+                                    </div>
+                                </div>
+                            </t>
+                            <span t-elif="value" t-out="value"/>
+                            <span t-else="" class="text-muted">-</span>
+                        </div>
+                    </t>
+                </div>
+            </t>
+            <t t-else="">
+                <div t-if="preview.kind === 'call'" class="mb-2">
+                    <i class="oi me-1" data-icon="flash_on"/><code t-out="preview.method"/>
+                    <span class="text-muted"> on </span><t t-out="preview.model_label or preview.model"/>
+                </div>
+                <ul class="mk_ask_targets_list small mt-1 mb-0 ps-3">
+                    <li t-foreach="preview.targets or []" t-as="target" t-key="target_index">
+                        <i t-if="preview.kind === 'delete'" class="oi text-danger me-1" data-icon="delete"/>
+                        <t t-out="target.display_name"/>
+                        <code class="text-muted ms-1" t-out="`#${target.id}`"/>
+                    </li>
+                    <li t-if="preview.kind === 'delete' and !preview.targets?.length" class="text-muted">No records resolved.</li>
+                </ul>
+            </t>
+        </div>
+    </t>
+
+</templates>

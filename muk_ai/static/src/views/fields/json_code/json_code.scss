@@ -1,0 +1,12 @@
+.o_field_json_code {
+    display: block;
+    width: 100%;
+    &:not(.o_readonly_modifier) .mk_json_code_editor {
+        min-height: 12em;
+    }
+    &.o_readonly_modifier .mk_json_code_editor {
+        height: var(--mk-json-code-height, auto);
+        min-height: 3em;
+        max-height: 30em;
+    }
+}

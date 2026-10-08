@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.ContextChip">
+        <span t-if="this.props.session.data.view_context" class="mk_ctx_chip d-flex align-items-center gap-1 min-w-0 mw-100 text-primary fw-medium text-nowrap cursor-pointer transition-base">
+            <button
+                class="btn btn-link p-0 border-0 text-reset text-decoration-none text-truncate mk_ctx_open"
+                t-att-title="this.tooltip"
+                t-on-click="() => this.props.session.openPinnedContext()"
+            >
+                <i class="oi me-1" data-icon="push_pin"/><t t-out="this.label"/>
+            </button>
+            <button
+                t-if="!this.props.session.readonly"
+                class="btn btn-link p-0 border-0 text-reset mk_ctx_unpin"
+                title="Unpin view context"
+                t-on-click="() => this.props.session.unpin()"
+            >
+                <i class="oi" data-icon="close_small"/>
+            </button>
+        </span>
+    </t>
+
+</templates>

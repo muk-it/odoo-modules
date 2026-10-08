@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.SessionStatus">
+        <span
+            class="mk_avatar d-inline-flex flex-shrink-0 align-items-center justify-content-center rounded-circle transition-base"
+            t-att-class="this.info.cls"
+            t-att-title="this.title"
+        >
+            <i class="oi" t-att-class="{ 'oi-spin': this.info.spin }" t-att-data-icon="this.info.icon"/>
+        </span>
+        <span
+            t-if="this.countdown"
+            class="mk_resume small text-nowrap"
+            t-att-title="this.formatTimestamp(this.scheduled)"
+            t-out="this.countdown"
+        />
+    </t>
+
+</templates>

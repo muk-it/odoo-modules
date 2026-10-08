@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.RenameDialog">
+        <Dialog size="'sm'" title.translate="Rename chat">
+            <div class="mb-2 text-muted small">Give this chat a descriptive name.</div>
+            <input
+                type="text"
+                class="form-control"
+                placeholder="Chat name"
+                t-ref="this.input"
+                t-model.proxy="this.state.name"
+                t-on-keydown="(ev) => ev.key === 'Enter' and !ev.isComposing and this.save()"
+            />
+            <t t-set-slot="footer">
+                <button class="btn btn-primary" t-att-disabled="!this.canSave" t-on-click="() => this.save()">Rename</button>
+                <button class="btn btn-secondary" t-on-click="() => this.props.close()">Cancel</button>
+            </t>
+        </Dialog>
+    </t>
+
+    <t t-name="muk_ai.SpaceDialog">
+        <Dialog size="'md'" title.translate="Edit space">
+            <div class="d-flex flex-column gap-3">
+                <div>
+                    <label class="form-label small text-muted mb-1">Name</label>
+                    <input
+                        type="text"
+                        class="form-control"
+                        placeholder="Space name"
+                        t-ref="this.input"
+                        t-model.proxy="this.state.name"
+                        t-on-keydown="(ev) => ev.key === 'Enter' and !ev.isComposing and this.save()"
+                    />
+                </div>
+                <div>
+                    <label class="form-label small text-muted mb-1">Icon</label>
+                    <IconPicker value="this.state.icon" required="true" boxed="true" onSelect="(icon) => this.state.icon = icon || 'folder'"/>
+                </div>
+                <div class="mk_space_agent">
+                    <label class="form-label small text-muted mb-1">Default agent</label>
+                    <Many2XAutocomplete t-props="this.agentPicker"/>
+                </div>
+                <div>
+                    <label class="form-label small text-muted mb-1">Instructions</label>
+                    <textarea
+                        class="form-control"
+                        rows="6"
+                        placeholder="Context and preferences for every chat in this space..."
+                        t-model.proxy="this.state.instructions"
+                    />
+                </div>
+            </div>
+            <t t-set-slot="footer">
+                <button class="btn btn-primary" t-att-disabled="!this.canSave" t-on-click="() => this.save()">Save</button>
+                <button class="btn btn-secondary" t-on-click="() => this.props.close()">Cancel</button>
+            </t>
+        </Dialog>
+    </t>
+
+</templates>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_ir_model_list" model="ir.ui.view">
+		<field name="name">ir.model.list</field>
+		<field name="model">ir.model</field>
+		<field name="inherit_id" ref="base.view_model_tree"/>
+		<field name="arch" type="xml">
+			<xpath expr="//field[@name='transient']" position="after">
+				<field name="ai_sensitive" widget="boolean_toggle" optional="hide"/>
+			</xpath>
+		</field>
+	</record>
+
+	<record id="view_ir_model_form" model="ir.ui.view">
+		<field name="name">ir.model.form</field>
+		<field name="model">ir.model</field>
+		<field name="inherit_id" ref="base.view_model_form"/>
+		<field name="arch" type="xml">
+			<xpath expr="//field[@name='modules']" position="after">
+				<field name="ai_sensitive" widget="boolean_toggle"/>
+			</xpath>
+		</field>
+	</record>
+
+</odoo>

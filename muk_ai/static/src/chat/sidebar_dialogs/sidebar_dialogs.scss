@@ -1,0 +1,5 @@
+.mk_space_agent .o-autocomplete--input {
+    padding: var(--input-padding-y, 0.375rem) 0.75rem;
+    border: var(--border-width) solid var(--border-color);
+    border-radius: var(--border-radius);
+}

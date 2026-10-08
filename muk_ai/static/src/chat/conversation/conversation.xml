@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.Suggestions">
+        <div class="mk_suggestions">
+            <button
+                t-foreach="suggestions"
+                t-as="suggestion"
+                t-key="suggestion_index"
+                class="mk_suggestion text-start text-body bg-100 transition-base"
+                t-on-click="() => onPick(suggestion.prompt)"
+            >
+                <span class="mk_suggestion_label d-block text-primary fw-semibold text-uppercase" t-out="suggestion.label"/>
+                <span class="mk_suggestion_preview o_line_clamp text-muted" t-out="suggestion.preview"/>
+            </button>
+        </div>
+    </t>
+
+    <t t-name="muk_ai.ChatConversation">
+        <t t-set="session" t-value="this.props.session"/>
+        <div
+            class="mk_conversation d-flex flex-column flex-grow-1 position-relative"
+            t-att-class="{ mk_conversation_compact: this.props.compact }"
+            t-ref="this.root"
+        >
+            <ContextChip t-if="this.props.compact or this.ui.isSmall()" session="session"/>
+            <div class="mk_messages_wrap flex-grow-1 position-relative d-flex flex-column">
+                <button
+                    t-if="!this.atBottom()"
+                    class="mk_scroll_bottom btn position-absolute p-0 rounded-circle"
+                    type="button"
+                    title="Scroll to latest"
+                    t-on-click="() => this.scrollToBottom()"
+                >
+                    <i class="oi" data-icon="arrow_downward"/>
+                </button>
+                <div class="mk_messages flex-grow-1 overflow-auto" t-ref="this.scroller">
+                    <div class="mk_messages_inner" t-ref="this.inner">
+                        <div t-if="session.state.hasMoreOlder" class="mk_load_older text-center small text-muted py-2">
+                            <t t-if="session.state.loadingOlder">
+                                <i class="oi oi-spin me-1" data-icon="progress_activity"/>Loading...
+                            </t>
+                            <button t-else="" class="btn btn-link btn-sm" t-on-click="() => this.loadOlder()">
+                                Load older messages
+                            </button>
+                        </div>
+                        <div t-if="session.state.loading and !session.turns.length" class="text-center text-muted small py-3">
+                            <i class="oi oi-spin me-1" data-icon="progress_activity"/>Loading...
+                        </div>
+                        <div
+                            t-elif="!this.props.compact and !session.turns.length and !session.busy and !session.data.pending_user_messages.length"
+                            class="mk_empty_inline d-flex flex-column align-items-center text-center text-muted py-5"
+                        >
+                            <div class="mk_empty_badge d-inline-flex align-items-center justify-content-center rounded-circle shadow-sm mb-3 text-white bg-primary lh-1">
+                                <i class="oi" data-icon="forum"/>
+                            </div>
+                            <p t-if="this.suggestions.length" class="mb-3">Type a message below or pick a suggestion.</p>
+                            <p t-else="" class="mb-3">Type a message below to begin.</p>
+                            <t t-call="muk_ai.Suggestions" suggestions="this.suggestions" onPick="(prompt) => this.onSuggestion(prompt)"/>
+                        </div>
+                        <ChatTurn
+                            t-foreach="session.turns"
+                            t-as="turn"
+                            t-key="turn.clientKey or (turn.eventId ? `e${turn.eventId}` : `${turn_index}-${turn.at}`)"
+                            turn="turn"
+                            session="session"
+                            compact="this.props.compact"
+                            onForked="this.props.onForked"
+                        />
+                        <div t-if="session.data.state === 'running'" class="mk_turn mk_turn_assistant d-flex flex-column">
+                            <ToolCard
+                                t-foreach="session.state.streamingTools"
+                                t-as="tool"
+                                t-key="tool.callId"
+                                block="{ name: tool.name, arguments: tool.args, callId: tool.callId }"
+                                streaming="true"
+                            />
+                            <div
+                                t-if="session.state.streamingText or session.state.streamingReasoning or !session.state.streamingTools.length"
+                                class="mk_bubble mk_bubble_assistant mk_markdown mk_streaming"
+                            >
+                                <t t-if="session.state.streamingText" t-out="this.renderMarkdown(session.state.streamingText)"/>
+                                <t t-if="!session.state.streamingText or session.state.streamIdle">
+                                    <span class="mk_thinking d-inline-flex align-items-center gap-2 text-muted fst-italic" t-att-class="{ 'mt-1': session.state.streamingText }">
+                                        <span class="mk_dots d-inline-flex"><span/><span/><span/></span>
+                                        <span class="mk_thinking_status text-truncate" t-if="session.state.streamingReasoning" t-out="session.latestReasoningLine"/>
+                                        <span t-elif="session.state.streamingText" class="mk_thinking_status">Still working...</span>
+                                        <span t-else="" class="mk_thinking_status">Thinking</span>
+                                    </span>
+                                </t>
+                            </div>
+                        </div>
+                        <div
+                            t-foreach="session.data.pending_user_messages"
+                            t-as="queued"
+                            t-key="queued_index"
+                            class="mk_turn mk_turn_user d-flex flex-column"
+                        >
+                            <div class="mk_bubble mk_bubble_user mk_bubble_queued shadow-sm d-inline-flex align-items-center fst-italic" t-att-title="queued.queued_at or ''">
+                                <i class="oi me-2 text-primary opacity-75" data-icon="schedule"/>
+                                <span t-out="queued.content"/>
+                                <button
+                                    t-if="!session.readonly"
+                                    class="btn btn-sm mk_queue_cancel position-absolute top-50 translate-middle-y d-inline-flex align-items-center justify-content-center p-0 border-0 rounded-circle"
+                                    type="button"
+                                    title="Cancel queued message"
+                                    t-on-click="() => session.cancelQueued(queued_index)"
+                                >
+                                    <i class="oi" data-icon="close"/>
+                                </button>
+                            </div>
+                        </div>
+                        <div
+                            t-if="session.data.error_message"
+                            class="alert alert-danger rounded-3 d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2 mt-3"
+                        >
+                            <div class="text-break">
+                                <strong class="me-1"><i class="oi me-1" data-icon="error"/>Error:</strong>
+                                <t t-out="session.data.error_message"/>
+                            </div>
+                            <button
+                                t-if="session.canRegenerate"
+                                class="btn btn-sm btn-outline-danger flex-shrink-0 align-self-end align-self-sm-auto"
+                                type="button"
+                                title="Regenerate this answer"
+                                t-on-click="() => session.regenerate()"
+                            >
+                                <i class="oi me-1" data-icon="refresh"/>Regenerate
+                            </button>
+                        </div>
+                        <t t-foreach="this.footers()" t-as="Footer" t-key="Footer_index">
+                            <t t-component="Footer" session="session"/>
+                        </t>
+                    </div>
+                </div>
+            </div>
+            <ShareBar t-if="!this.props.compact" session="session"/>
+            <div class="mk_composer_wrap">
+                <t t-foreach="this.accessories()" t-as="Accessory" t-key="Accessory_index">
+                    <t t-component="Accessory" session="session"/>
+                </t>
+                <ChatComposer
+                    session="session"
+                    placeholder="this.props.placeholder"
+                    showMeta="!this.props.compact"
+                />
+            </div>
+        </div>
+    </t>
+
+</templates>

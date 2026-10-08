@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.ChatDock">
+        <div
+            class="mk_window_dock d-flex flex-row-reverse align-items-end position-fixed bottom-0"
+            t-attf-style="--mk-discuss-reserved: {{ this.reserved }}px; --mk-dock-width: {{ this.width }}px;"
+        >
+            <ChatWindow
+                t-foreach="this.chat.windows"
+                t-as="entry"
+                t-key="entry.id"
+                id="entry.id"
+                minimized="entry.minimized"
+            />
+        </div>
+    </t>
+
+</templates>

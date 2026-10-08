@@ -1,0 +1,111 @@
+.mk_tool {
+    --mk-tool-ink: var(--border-color);
+    max-width: 92%;
+    margin: 0.4rem 0;
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--mk-tool-ink);
+    border-radius: 8px;
+    background: var(--body-bg);
+    &:hover:not(.mk_tool_streaming) {
+        border-color: var(--secondary-border-subtle);
+        border-left-color: var(--mk-tool-ink);
+    }
+    &.mk_tool_read {
+        --mk-tool-ink: var(--success);
+    }
+    &.mk_tool_write {
+        --mk-tool-ink: var(--warning);
+    }
+    &.mk_tool_nav {
+        --mk-tool-ink: var(--info);
+    }
+    &.mk_tool_error {
+        --mk-tool-ink: var(--danger);
+    }
+    &.mk_tool_group {
+        --mk-tool-ink: var(--border-color);
+        border-left-width: 1px;
+        &.mk_tool_group_has_error {
+            border-color: var(--danger-border-subtle);
+        }
+    }
+    &.mk_tool_streaming {
+        border-color: var(--mk-accent);
+        border-left-color: var(--mk-tool-ink);
+        background: rgba(var(--primary-rgb), 0.04);
+        .mk_tool_head {
+            pointer-events: none;
+        }
+        .mk_tool_icon {
+            color: var(--white);
+            background: var(--primary);
+        }
+    }
+    &[data-expanded='1'] > .mk_tool_head .mk_chevron {
+        transform: rotate(90deg);
+    }
+    .mk_tool_head {
+        padding: 0.45rem 0.7rem;
+        background: none;
+        font-size: 0.82rem;
+        &:hover {
+            background: var(--tertiary-bg);
+        }
+    }
+    .mk_chevron {
+        font-size: 1rem;
+    }
+    .mk_tool_icon {
+        width: 22px;
+        height: 22px;
+        border-radius: 5px;
+        color: var(--mk-accent);
+        background: rgba(var(--primary-rgb), 0.1);
+        font-size: 0.68rem;
+    }
+    .mk_tool_band {
+        flex: 1 1 auto;
+        min-width: 0;
+        font-size: 0.8rem;
+    }
+    .mk_tool_chip {
+        padding: 0 0.35rem;
+        border-radius: 5px;
+        font-size: 0.72rem;
+    }
+    .mk_tool_badge {
+        padding: 0 0.45rem;
+        font-size: 0.72rem;
+    }
+    .mk_tool_body {
+        padding: 0.6rem 0.7rem 0.7rem;
+    }
+    .mk_tool_group_body {
+        padding: 0.1rem 0.6rem 0.5rem;
+        .mk_tool {
+            max-width: 100%;
+        }
+    }
+    .mk_tool_section + .mk_tool_section {
+        margin-top: 0.5rem;
+    }
+    .mk_tool_section_label {
+        font-size: 0.68rem;
+        letter-spacing: 0.05em;
+    }
+    pre,
+    pre[class*='language-'] {
+        max-height: 20rem;
+        margin: 0.25rem 0 0;
+        padding: 0.6rem 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        font-family: var(--font-monospace);
+        font-size: 0.78rem;
+        text-shadow: none;
+        code {
+            font: inherit;
+            text-shadow: none;
+        }
+    }
+}

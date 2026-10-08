@@ -1,0 +1,103 @@
+.mk_composer {
+    padding: 0.5rem 0.5rem 0.5rem 0.9rem;
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    background: var(--body-bg);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    &:focus-within {
+        border-color: var(--mk-accent);
+        box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.15);
+    }
+    .mk_composer_input {
+        max-height: 100px;
+        textarea {
+            min-height: 0;
+            padding: 0.375rem 0;
+            resize: none;
+            font-size: 0.92rem;
+            &:disabled {
+                opacity: 0.55;
+            }
+            &::placeholder {
+                color: var(--secondary-color);
+            }
+        }
+    }
+    :is(.mk_attach, .mk_send) {
+        width: 34px;
+        height: 34px;
+    }
+    .mk_attach {
+        color: var(--secondary-color);
+        &:hover {
+            color: var(--body-color);
+            background: var(--tertiary-bg);
+        }
+        &.disabled {
+            opacity: 0.35;
+        }
+    }
+    .mk_send {
+        color: var(--white) !important;
+        background: var(--primary) !important;
+        font-size: 0.82rem;
+        &:hover:not(:disabled) {
+            transform: translateY(-1px);
+            filter: brightness(1.08);
+        }
+        &:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            pointer-events: auto;
+        }
+        &.mk_stop {
+            background: var(--danger) !important;
+        }
+        &.mk_queue {
+            background: var(--warning) !important;
+        }
+    }
+}
+.mk_slash_menu {
+    max-width: 420px;
+    max-height: var(--mk-popover-max-height, 60vh);
+    border-radius: 10px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    z-index: 10;
+    .mk_slash_item {
+        padding: 0.35rem 0.6rem;
+        background: transparent;
+        &:is(.active, :hover) {
+            background: rgba(var(--primary-rgb), 0.08);
+        }
+    }
+    .mk_slash_name {
+        min-width: 78px;
+        font-size: 0.82rem;
+    }
+    .mk_slash_hint {
+        font-size: 0.78rem;
+    }
+}
+.mk_composer_meta {
+    min-height: 30px;
+}
+.mk_composer_hint {
+    font-size: 0.68rem;
+    kbd {
+        padding: 1px 5px;
+        border: 1px solid rgba(var(--emphasis-color-rgb), 0.13);
+        border-radius: 3px;
+        color: inherit;
+        background: rgba(var(--emphasis-color-rgb), 0.05);
+        box-shadow: none;
+        font: 0.68rem var(--font-monospace);
+    }
+}
+.mk_composer_readonly {
+    padding: 0.65rem 0.9rem;
+    border: 1px dashed var(--border-color);
+    border-radius: 12px;
+    background: var(--tertiary-bg);
+    font-size: 0.82rem;
+}

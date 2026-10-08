@@ -1,0 +1,115 @@
+.mk_chat {
+    color: var(--body-color);
+    background: var(--body-bg);
+    font-size: 14px;
+    .mk_main_header {
+        min-height: 52px;
+        padding: 0.5rem 1rem;
+        border-bottom: 1px solid var(--border-color);
+        &:has(+ .mk_chat_body .mk_conversation > .mk_ctx_chip) {
+            border-bottom: 0;
+        }
+        .mk_main_title {
+            font-size: 0.95rem;
+        }
+        .mk_ctx_chip {
+            max-width: 320px;
+            margin-right: 0.5rem;
+            padding: 3px 8px;
+            border-radius: 50rem;
+            background: rgba(var(--primary-rgb), 0.1);
+            &:hover {
+                background: rgba(var(--primary-rgb), 0.2);
+            }
+        }
+        .mk_header_btn {
+            width: 28px;
+            height: 28px;
+            color: var(--secondary-color);
+            font-size: 14px;
+            &:is(:hover, .active) {
+                color: var(--mk-accent);
+            }
+            &.active {
+                background: rgba(var(--primary-rgb), 0.1);
+            }
+        }
+        .mk_sidebar_toggle {
+            width: auto;
+            height: auto;
+            padding: 0.25rem 0.5rem !important;
+            font-size: 1.1rem;
+            &:hover {
+                color: var(--body-color);
+                background: var(--tertiary-bg);
+            }
+        }
+    }
+    .mk_agent_pill {
+        max-width: 220px;
+        padding: 3px 10px;
+        border: 1px solid var(--border-color);
+        background: var(--tertiary-bg);
+        font-size: 0.75rem;
+        &:hover:not(:disabled) {
+            border-color: var(--mk-accent);
+        }
+    }
+    .mk_chat_body,
+    .mk_main {
+        min-height: 0;
+        min-width: 0;
+    }
+    .mk_empty {
+        padding: 3rem 1rem;
+        h2 {
+            font-size: 1.3rem;
+        }
+        p {
+            font-size: 0.9rem;
+        }
+        .mk_suggestions {
+            margin-top: 1.5rem;
+        }
+    }
+    .mk_sidebar_backdrop {
+        background: rgba(0, 0, 0, 0.24);
+        z-index: 15;
+    }
+    @include media-breakpoint-down(lg) {
+        .mk_main_header .mk_main_title {
+            flex: 1 1 0;
+            font-size: 0.88rem;
+        }
+        .mk_agent_pill {
+            max-width: 140px;
+        }
+    }
+    @include media-breakpoint-down(md) {
+        .mk_main_header {
+            flex-wrap: wrap;
+            gap: 0.25rem 0.35rem !important;
+            min-height: 48px;
+            padding: 0.4rem 0.6rem;
+            .mk_main_title {
+                flex: 1 1 8rem;
+            }
+        }
+        .mk_header_tools {
+            flex: 1 0 100%;
+            margin-left: 0 !important;
+        }
+        .mk_avatar {
+            width: 26px;
+            height: 26px;
+            font-size: 0.75rem;
+        }
+        .mk_agent_pill {
+            max-width: 120px;
+            padding: 2px 6px;
+            > span {
+                display: none;
+            }
+        }
+    }
+}

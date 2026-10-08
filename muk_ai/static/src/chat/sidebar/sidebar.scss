@@ -1,0 +1,313 @@
+.mk_sidebar {
+    min-width: 220px;
+    max-width: 520px;
+    border-right: 1px solid var(--border-color);
+    background: var(--tertiary-bg);
+    .mk_sidebar_header > .btn {
+        line-height: 1.25rem;
+    }
+    .mk_sidebar_search {
+        .mk_sidebar_search_icon {
+            left: 0.55rem;
+        }
+        input {
+            height: 1.75rem;
+            padding-inline: 1.75rem;
+            font-size: 0.8rem;
+            &:focus {
+                border-color: var(--mk-accent);
+                box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.15);
+            }
+        }
+        .mk_sidebar_search_clear {
+            right: 0.15rem;
+        }
+    }
+    .mk_sidebar_heading {
+        padding: 0.625rem 0.7rem 0.25rem;
+        color: var(--secondary-color);
+        font-size: 0.66rem;
+        line-height: 1rem;
+        letter-spacing: 0.05em;
+        &.mk_space_head {
+            padding-right: 0.35rem;
+        }
+    }
+    .mk_loose_group > .mk_sidebar_heading:first-child {
+        padding-top: 0.25rem;
+    }
+    :is(.mk_sidebar_item, .mk_space_row, .mk_space_auto):hover {
+        background: rgba(var(--primary-rgb), 0.06);
+    }
+    .mk_sidebar_item {
+        display: grid;
+        grid-template-columns: 18px 1fr auto;
+        align-items: center;
+        column-gap: 0.5rem;
+        margin-bottom: 2px;
+        padding: 0.5rem 0.6rem;
+        font-size: 0.875rem;
+        &.active {
+            color: var(--mk-accent);
+            background: rgba(var(--primary-rgb), 0.12);
+            font-weight: 500;
+        }
+        &.mk_running::before {
+            content: '';
+            position: absolute;
+            inset: 4px auto 4px 0;
+            width: 3px;
+            border-radius: 3px;
+            background: var(--primary);
+            animation: mk-pulse 1.5s ease-in-out infinite;
+        }
+        &.mk_unread .mk_sidebar_name {
+            font-weight: 600;
+        }
+        &.mk_sidebar_nested {
+            padding: 0.35rem 0.6rem;
+            font-size: 0.82rem;
+        }
+        .mk_sidebar_dot {
+            grid-row: span 2;
+            justify-self: center;
+            width: 16px;
+            height: 16px;
+            background: var(--mk-state);
+            font-size: 10px;
+            &:empty {
+                width: 9px;
+                height: 9px;
+            }
+        }
+        .mk_sidebar_share {
+            opacity: 0.55;
+            img {
+                width: 17px;
+                height: 17px;
+                & + img {
+                    margin-left: -5px;
+                    box-shadow: 0 0 0 1.5px var(--body-bg);
+                }
+            }
+        }
+        .mk_sidebar_meta {
+            grid-area: 2 / 2;
+        }
+        .mk_sidebar_sub {
+            font-size: 0.7rem;
+            line-height: 1.1;
+        }
+        .mk_sidebar_unread {
+            grid-area: 1 / 3 / span 2;
+            justify-self: end;
+            width: 8px;
+            height: 8px;
+        }
+        .mk_sidebar_actions {
+            grid-area: 1 / 3;
+            visibility: hidden;
+        }
+        &:is(:hover, .active) {
+            .mk_sidebar_actions {
+                visibility: visible;
+            }
+            .mk_sidebar_unread {
+                visibility: hidden;
+            }
+        }
+    }
+    :is(
+            .mk_sidebar_actions,
+            .mk_space_actions,
+            .mk_sidebar_search_clear,
+            .mk_space_head
+        )
+        .btn {
+        display: inline-flex;
+        align-items: center;
+        color: var(--secondary-color);
+        &:hover {
+            color: var(--body-color);
+        }
+        .oi::before {
+            transform: translateY(-0.041em);
+        }
+    }
+    .mk_space_row {
+        gap: 0.4rem;
+        padding: 0.5rem 0.6rem;
+        font-size: 0.9rem;
+        line-height: 1.3125rem;
+        &.mk_space_target {
+            outline: 2px dashed var(--mk-accent);
+            outline-offset: -2px;
+            background: rgba(var(--primary-rgb), 0.12);
+        }
+        .mk_space_grip,
+        .mk_space_actions {
+            display: none;
+        }
+        &:hover {
+            .mk_space_grip,
+            .mk_space_actions {
+                display: flex;
+            }
+            &:not(.mk_space_system) .mk_space_caret {
+                display: none;
+            }
+        }
+    }
+    :is(.mk_space_grip, .mk_space_caret, .mk_space_auto > .oi) {
+        margin-inline: -3px;
+        font-size: 1rem;
+    }
+    .mk_space_grip {
+        cursor: grab;
+    }
+    .mk_space_icon {
+        width: 16px;
+        font-size: 0.9rem;
+    }
+    :is(.mk_space_badge, .mk_space_count) {
+        min-width: 1.4rem;
+        padding: 0.2rem 0.45rem;
+        color: var(--mk-accent);
+        background: rgba(var(--primary-rgb), 0.16);
+        font-size: 0.68rem;
+        letter-spacing: 0;
+        &:hover {
+            background: rgba(var(--primary-rgb), 0.28);
+        }
+        &.mk_space_badge_on {
+            color: var(--white);
+            background: var(--primary);
+        }
+    }
+    .mk_space_count {
+        min-width: 0;
+        padding: 0.2rem 0.4rem;
+        font-size: 0.62rem;
+        &:not(.mk_space_count_unread) {
+            color: var(--secondary-color);
+            background: var(--secondary-bg);
+        }
+    }
+    .mk_space_auto {
+        padding: 0.4rem 0.6rem;
+        &:hover {
+            color: var(--body-color);
+        }
+    }
+    .mk_space_divider {
+        margin: 0.5rem 0.55rem 0.375rem;
+        border-color: var(--border-color);
+        opacity: 1;
+    }
+    .mk_space_new {
+        padding: 0.15rem 0.6rem 0.35rem 1rem;
+        .oi {
+            width: 14px;
+            font-size: 0.8rem;
+        }
+        input {
+            font-size: 0.85rem;
+        }
+    }
+    .mk_space_branch {
+        margin: 0.1rem 0 0.35rem 1.05rem;
+        padding-left: 0.45rem;
+    }
+    .mk_space_empty {
+        padding: 0.25rem 0.6rem 0.35rem;
+        font-size: 0.75rem;
+    }
+    .mk_space_filter {
+        padding: 0.2rem 0.5rem;
+        background: rgba(var(--primary-rgb), 0.08);
+        font-size: 0.7rem;
+    }
+    .mk_space_chip {
+        padding: 0 0.35rem;
+        font-size: 0.62rem;
+        line-height: 1.5;
+    }
+    .mk_load_more {
+        margin: 0.15rem 0 0.25rem;
+        padding: 0.35rem 0.6rem;
+        color: var(--secondary-color);
+        background: transparent;
+        font-size: 0.75rem;
+        &:hover:not(:disabled) {
+            color: var(--body-color);
+            background: var(--secondary-bg);
+        }
+    }
+    > .o_resizable_panel_handle {
+        width: 7px;
+        margin-right: -3px;
+        z-index: 3;
+        &:hover {
+            background: linear-gradient(var(--mk-accent), var(--mk-accent)) center / 1px
+                100% no-repeat;
+        }
+    }
+    @include media-breakpoint-down(md) {
+        position: absolute !important;
+        inset: 0 auto 0 0;
+        width: 280px !important;
+        max-width: 85vw;
+        min-width: 0;
+        box-shadow: 2px 0 12px rgba(0, 0, 0, 0.12);
+        z-index: 20;
+        > .o_resizable_panel_handle,
+        .mk_sidebar_item .mk_sidebar_unread,
+        .mk_space_row:not(.mk_space_open) .mk_space_actions {
+            display: none;
+        }
+        .mk_sidebar_item .mk_sidebar_actions,
+        .mk_space_row.mk_space_open .mk_space_actions {
+            display: flex;
+            gap: 0.35rem;
+            visibility: visible;
+            .btn {
+                min-width: 34px;
+                min-height: 34px;
+            }
+        }
+        .mk_space_row {
+            padding-block: 0.55rem;
+            &.mk_space_open {
+                flex-wrap: wrap;
+                .mk_space_actions {
+                    flex: 1 0 100%;
+                    .btn:nth-child(2) {
+                        margin-left: auto;
+                    }
+                }
+            }
+            .mk_space_badge {
+                min-width: 2rem;
+                padding: 0.45rem 0.55rem;
+                font-size: 0.72rem;
+            }
+            :is(.mk_space_grip, .mk_space_caret) {
+                display: inline-flex;
+                min-width: 20px;
+                min-height: 30px;
+            }
+        }
+        :is(.mk_load_more, .mk_space_filter) {
+            padding: 0.6rem;
+            font-size: 0.8rem;
+        }
+        .mk_space_auto {
+            padding-block: 0.6rem;
+        }
+    }
+}
+@keyframes mk-pulse {
+    50% {
+        opacity: 0.35;
+    }
+}

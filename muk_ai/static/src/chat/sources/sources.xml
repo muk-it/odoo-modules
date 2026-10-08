@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.SourceIcon">
+        <span
+            class="mk_source_ico d-inline-flex flex-shrink-0 align-items-center justify-content-center overflow-hidden rounded-3 text-muted bg-100"
+            t-att-class="`mk_source_ico_${this.props.source.type}`"
+        >
+            <img
+                t-if="this.iconUrl"
+                class="w-100 h-100 object-fit-contain"
+                t-att-src="this.iconUrl"
+                alt=""
+                t-on-error="() => this.failed.set(true)"
+            />
+            <i t-else="" class="oi" t-att-data-icon="this.props.source.type === 'web' ? 'public' : 'description'"/>
+        </span>
+    </t>
+
+    <t t-name="muk_ai.SourceCard">
+        <a
+            t-ref="this.root"
+            class="mk_source_card d-flex align-items-center min-w-0 bg-100 text-reset text-decoration-none transition-base"
+            t-att-class="{ mk_source_focused: this.props.focused }"
+            t-att-href="this.web ? this.props.source.url : this.props.source.href or '#'"
+            target="_blank"
+            rel="noopener noreferrer"
+            t-att-title="this.label"
+            t-on-click="this.onClick"
+        >
+            <SourceIcon source="this.props.source"/>
+            <span class="mk_source_body d-flex flex-column min-w-0 lh-sm">
+                <span class="mk_source_title text-truncate fw-medium" t-out="this.label"/>
+                <span class="mk_source_origin text-truncate text-muted" t-out="this.web ? this.props.source.domain : this.props.source.res_model"/>
+            </span>
+            <i class="oi mk_source_go flex-shrink-0 ms-auto text-muted transition-base" data-icon="open_in_new"/>
+        </a>
+    </t>
+
+    <t t-name="muk_ai.SourceList">
+        <div class="mk_source_list">
+            <SourceCard
+                t-foreach="this.visible"
+                t-as="source"
+                t-key="source.id"
+                source="source"
+                sessionId="this.props.sessionId"
+                focused="source.id === this.props.focusItemId"
+            />
+        </div>
+        <button
+            t-if="this.more"
+            class="mk_sources_more btn btn-sm mt-2 rounded-3 text-muted"
+            type="button"
+            t-on-click="() => this.state.showAll = !this.state.showAll"
+        >
+            <t t-if="this.state.showAll">Show less</t>
+            <t t-else="">+<t t-out="this.more"/> more</t>
+        </button>
+    </t>
+
+</templates>

@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.ChatSidebarItem">
+        <t t-set="info" t-value="this.statusInfo(row.state)"/>
+        <div
+            class="mk_sidebar_item position-relative rounded-3 cursor-pointer transition-base"
+            t-att-class="{
+                active: row.id === this.props.activeId,
+                mk_running: row.state === 'running' or row.state === 'waiting',
+                mk_unread: this.chat.badge.unreadIds.includes(row.id),
+                mk_sidebar_nested: nested,
+                mk_sidebar_shared: !this.isOwn(row),
+            }"
+            t-att-data-session-id="row.id"
+            t-att-data-space-id="row.space_id and row.space_id[0]"
+            t-att-title="info.label"
+            t-on-click="() => this.props.onSelect(row.id)"
+        >
+            <span class="mk_sidebar_dot d-flex align-items-center justify-content-center rounded-circle text-white lh-1" t-att-class="info.cls">
+                <i t-if="row.state === 'running'" class="oi oi-spin" data-icon="progress_activity"/>
+                <i t-elif="row.state === 'waiting'" class="oi" data-icon="question_mark"/>
+                <i t-elif="row.state === 'error'" class="oi" data-icon="priority_high"/>
+            </span>
+            <span class="mk_sidebar_name d-flex align-items-center gap-1 min-w-0">
+                <span class="text-truncate" t-out="row.name"/>
+                <span t-if="row.share_user_ids.length" class="mk_sidebar_share d-inline-flex flex-shrink-0" t-att-title="this.sharedTitle(row)">
+                    <img t-foreach="row.share_user_ids.slice(0, 3)" t-as="userId" t-key="userId" t-att-src="this.avatarUrl(userId)" class="rounded-circle object-fit-cover" alt=""/>
+                </span>
+            </span>
+            <span t-if="this.chat.badge.unreadIds.includes(row.id)" class="mk_sidebar_unread rounded-circle bg-primary" title="Unread"/>
+            <span class="mk_sidebar_meta d-flex d-empty-none align-items-center gap-1 min-w-0">
+                <span t-if="this.searchMode and row.space_id" class="mk_space_chip flex-shrink-1 text-truncate rounded-pill text-muted bg-200" t-out="row.space_id[1]"/>
+                <small t-if="row.state === 'running'" class="mk_sidebar_sub text-muted fw-medium text-truncate">thinking...</small>
+                <small t-elif="row.state === 'waiting'" class="mk_sidebar_sub text-muted fw-medium text-truncate">awaiting you</small>
+            </span>
+            <span t-if="this.isOwn(row)" class="mk_sidebar_actions d-flex gap-1">
+                <button class="btn btn-link btn-sm px-1 py-0 lh-1" title="Rename" t-on-click.stop="() => this.rename(row)">
+                    <i class="oi" data-icon="edit"/>
+                </button>
+                <button class="btn btn-link btn-sm px-1 py-0 lh-1 text-danger mk_delete" title="Delete" t-on-click.stop="() => this.remove(row)">
+                    <i class="oi" data-icon="delete"/>
+                </button>
+            </span>
+        </div>
+    </t>
+
+    <t t-name="muk_ai.ChatSidebarSpace">
+        <t t-set="branch" t-value="this.branch(space)"/>
+        <t t-set="open" t-value="this.state.expanded[space.id]"/>
+        <div t-att-class="{ mk_space_group: !space.system, mk_space_personal: !space.system }" t-att-data-space-id="space.id">
+            <div
+                class="mk_space_row d-flex align-items-center position-relative rounded-3 cursor-pointer transition-base fw-medium"
+                t-att-class="{ mk_space_system: space.system, mk_space_target: this.state.dropTarget === `${space.id}`, mk_space_open: open }"
+                t-on-click="() => this.toggleSpace(space)"
+            >
+                <i t-if="!space.system" class="oi mk_space_grip text-muted" data-icon="drag_indicator"/>
+                <i class="oi mk_space_caret text-muted" t-att-data-icon="open ? 'arrow_drop_down' : 'arrow_right'"/>
+                <i class="oi mk_space_icon text-muted" t-att-data-icon="space.icon or 'folder'"/>
+                <span class="mk_space_name flex-grow-1 text-truncate" t-out="space.name"/>
+                <button
+                    t-if="this.unread(space)"
+                    class="mk_space_badge border-0 rounded-pill fw-semibold lh-1 transition-base"
+                    t-att-class="{ mk_space_badge_on: branch.unreadOnly }"
+                    t-att-title="this.unreadTitle(branch)"
+                    t-on-click.stop="() => this.toggleUnread(space)"
+                    t-out="this.unread(space)"
+                />
+                <span t-if="!space.system" class="mk_space_actions">
+                    <button class="btn btn-link btn-sm px-1 py-0 lh-1" title="New chat here" t-on-click.stop="() => this.newChatIn(space)">
+                        <i class="oi" data-icon="add"/>
+                    </button>
+                    <button class="btn btn-link btn-sm px-1 py-0 lh-1" title="Edit" t-on-click.stop="() => this.editSpace(space)">
+                        <i class="oi" data-icon="edit"/>
+                    </button>
+                    <button class="btn btn-link btn-sm px-1 py-0 lh-1 text-danger mk_delete" title="Delete" t-on-click.stop="() => this.deleteSpace(space)">
+                        <i class="oi" data-icon="delete"/>
+                    </button>
+                </span>
+            </div>
+            <div t-if="open" class="mk_space_branch border-start">
+                <div t-if="branch.unreadOnly" class="mk_space_filter d-flex align-items-center gap-1 mb-1 rounded-2 text-primary fw-semibold">
+                    <i class="oi" data-icon="filter_alt"/>
+                    <span class="flex-grow-1">Unread only</span>
+                    <button class="btn btn-link btn-sm p-0 px-1 lh-1" title="Show all chats" t-on-click.stop="() => this.toggleUnread(space)">
+                        <i class="oi" data-icon="close_small"/>
+                    </button>
+                </div>
+                <t t-foreach="this.branchRows(space)" t-as="row" t-key="row.id">
+                    <t t-call="muk_ai.ChatSidebarItem" nested="true"/>
+                </t>
+                <div t-if="!branch.ids.length" class="mk_space_empty text-muted">
+                    <t t-if="branch.unreadOnly">Nothing unread here.</t>
+                    <t t-else="">No chats here yet.</t>
+                </div>
+                <button t-if="branch.hasMore" class="mk_load_more d-flex align-items-center justify-content-center gap-1 w-100 border-0 rounded-3 fw-medium transition-base" t-on-click.stop="() => this.loadBranch(space.id, true)">
+                    <i class="oi" data-icon="keyboard_arrow_down"/>Load more
+                </button>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="muk_ai.ChatSidebar">
+        <ResizablePanel
+            class="'mk_sidebar d-flex flex-column'"
+            minWidth="220"
+            initialWidth="this.width"
+            onResize.bind="this.onResize"
+        >
+            <div class="mk_sidebar_header p-3 border-bottom">
+                <button class="btn btn-primary btn-sm w-100 fw-semibold" t-on-click="() => this.props.onNew()">
+                    <i class="oi me-1" data-icon="add"/>New Chat
+                </button>
+                <div class="mk_sidebar_search position-relative mt-2">
+                    <i class="oi mk_sidebar_search_icon position-absolute top-50 translate-middle-y text-muted pe-none" data-icon="search"/>
+                    <input
+                        type="text"
+                        class="form-control form-control-sm"
+                        placeholder="Search chats..."
+                        t-att-value="this.state.query"
+                        t-on-input="this.onQuery"
+                    />
+                    <button
+                        t-if="this.searchMode"
+                        class="btn btn-link btn-sm mk_sidebar_search_clear position-absolute top-50 translate-middle-y py-0 px-2 lh-1"
+                        title="Clear"
+                        t-on-click="() => this.clearQuery()"
+                    >
+                        <i class="oi" data-icon="close_small"/>
+                    </button>
+                </div>
+            </div>
+            <div class="mk_sidebar_list flex-grow-1 overflow-auto p-2" t-ref="this.list">
+                <t t-if="!this.searchMode">
+                    <div class="mk_sidebar_heading mk_space_head d-flex align-items-center text-uppercase fw-semibold">
+                        <span class="flex-grow-1">Spaces</span>
+                        <button class="btn btn-link btn-sm p-0 px-1 lh-1" title="New space" t-on-click="() => this.state.creating = true">
+                            <i class="oi" data-icon="add"/>
+                        </button>
+                    </div>
+                    <div t-if="this.state.creating" class="mk_space_new d-flex align-items-center gap-1">
+                        <i class="oi text-muted" data-icon="folder"/>
+                        <input
+                            type="text"
+                            class="form-control form-control-sm"
+                            placeholder="Space name"
+                            t-ref="this.newSpace"
+                            t-on-keydown="this.onCreateKeydown"
+                            t-on-blur="this.createSpace"
+                        />
+                    </div>
+                    <div t-ref="this.spacesList">
+                        <t t-foreach="this.personalSpaces" t-as="space" t-key="space.id">
+                            <t t-call="muk_ai.ChatSidebarSpace"/>
+                        </t>
+                    </div>
+                    <div t-if="!this.personalSpaces.length and !this.state.creating" class="mk_space_empty text-muted">
+                        No space yet. Create a new space.
+                    </div>
+                    <t t-if="this.pinnedSpaces.length or this.foldedSpaces.length">
+                        <hr class="mk_space_divider"/>
+                        <t t-foreach="this.pinnedSpaces" t-as="space" t-key="space.id">
+                            <t t-call="muk_ai.ChatSidebarSpace"/>
+                        </t>
+                        <div t-if="this.foldedSpaces.length" class="mk_space_auto mk_sidebar_heading d-flex align-items-center gap-2 rounded-3 cursor-pointer transition-base text-uppercase fw-semibold" t-on-click="() => this.toggleAutomatic()">
+                            <i class="oi" t-att-data-icon="this.state.automaticOpen ? 'arrow_drop_down' : 'arrow_right'"/>
+                            <span class="flex-grow-1">Automatic</span>
+                            <t t-if="!this.state.automaticOpen">
+                                <span t-if="this.foldedUnread" class="mk_space_count mk_space_count_unread rounded-pill fw-semibold lh-1" title="Unread chats in here" t-out="this.foldedUnread"/>
+                                <span class="mk_space_count rounded-pill fw-semibold lh-1" t-out="this.foldedSpaces.length"/>
+                            </t>
+                        </div>
+                        <t t-if="this.state.automaticOpen">
+                            <t t-foreach="this.foldedSpaces" t-as="space" t-key="space.id">
+                                <t t-call="muk_ai.ChatSidebarSpace"/>
+                            </t>
+                        </t>
+                    </t>
+                </t>
+                <div t-if="this.state.searching and !this.rows.length" class="text-center text-muted small py-4">
+                    <i class="oi oi-spin oi-2x d-block mb-2 opacity-50" data-icon="progress_activity"/>Searching...
+                </div>
+                <div t-elif="this.searchMode and !this.rows.length" class="text-center text-muted small py-4">
+                    <i class="oi oi-2x d-block mb-2 opacity-50" data-icon="search"/>No chats match <strong t-out="this.state.query"/>.
+                </div>
+                <div t-elif="!this.rows.length and !this.state.spaces.length" class="text-center text-muted small py-4">
+                    <i class="oi oi-2x d-block mb-2 opacity-50" data-icon="forum"/>No chats yet.
+                </div>
+                <div class="mk_space_group mk_loose_group" t-att-class="{ mk_space_target: this.state.dropTarget === 'loose' }">
+                    <t t-foreach="this.groups" t-as="group" t-key="group.label">
+                        <div class="mk_sidebar_heading text-uppercase fw-semibold" t-out="group.label"/>
+                        <t t-foreach="group.rows" t-as="row" t-key="row.id">
+                            <t t-call="muk_ai.ChatSidebarItem" nested="false"/>
+                        </t>
+                    </t>
+                </div>
+                <button
+                    t-if="this.state.hasMore"
+                    class="mk_load_more d-flex align-items-center justify-content-center gap-1 w-100 border-0 rounded-3 fw-medium transition-base"
+                    t-att-disabled="this.state.loadingMore"
+                    t-on-click="() => this.loadSessions(true)"
+                >
+                    <t t-if="this.state.loadingMore"><i class="oi oi-spin" data-icon="progress_activity"/>Loading...</t>
+                    <t t-else=""><i class="oi" data-icon="keyboard_arrow_down"/>Load more</t>
+                </button>
+            </div>
+        </ResizablePanel>
+    </t>
+
+</templates>

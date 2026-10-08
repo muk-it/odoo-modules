@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.ShareDialog">
+        <Dialog size="'md'" title.translate="Share this chat">
+            <div class="mk_share_dialog" t-on-keydown="(ev) => ev.key === 'Enter' and !ev.defaultPrevented and this.save()">
+                <label class="mk_share_label d-block text-muted">Who may read it</label>
+                <div class="mk_share_field d-flex flex-wrap align-items-center gap-1 border">
+                    <AvatarTag
+                        t-foreach="this.state.users"
+                        t-as="reader"
+                        t-key="reader.id"
+                        imageUrl="this.avatarUrl(reader.id)"
+                        text="reader.display_name"
+                        onDelete="() => this.state.users = this.state.users.filter((item) => item.id !== reader.id)"
+                    />
+                    <div class="flex-grow-1">
+                        <Many2XAutocomplete t-props="this.picker"/>
+                    </div>
+                </div>
+                <div class="mk_share_note border-top text-muted">
+                    <i class="oi me-1" data-icon="visibility"/>
+                    They see the whole transcript, including what the tools returned.
+                    They cannot reply, rename or re-share it.
+                </div>
+            </div>
+            <t t-set-slot="footer">
+                <button class="btn btn-primary" t-att-disabled="!this.dirty" t-on-click="this.save">Save</button>
+                <button class="btn btn-secondary" t-on-click="() => this.props.close()">
+                    <t t-if="this.dirty">Discard</t>
+                    <t t-else="">Close</t>
+                </button>
+            </t>
+        </Dialog>
+    </t>
+
+    <t t-name="muk_ai.ShareBar">
+        <div class="mk_share_bar d-none d-md-flex align-items-center gap-2 text-muted">
+            <span t-if="this.props.session.data.share_user_ids.length" class="mk_share_faces d-inline-flex">
+                <img
+                    t-foreach="this.props.session.data.share_user_ids.slice(0, 4)"
+                    t-as="userId"
+                    t-key="userId"
+                    class="rounded-circle object-fit-cover"
+                    t-att-src="this.avatarUrl(userId)"
+                    alt=""
+                />
+            </span>
+            <span t-out="this.summary"/>
+            <button
+                t-if="!this.props.session.readonly"
+                class="btn btn-link btn-sm ms-auto text-muted mk_share_edit"
+                t-on-click="this.open"
+            >
+                <i class="oi me-1" data-icon="person_add"/>
+                <t t-if="this.props.session.data.share_user_ids.length">Manage</t>
+                <t t-else="">Share</t>
+            </button>
+        </div>
+    </t>
+
+</templates>

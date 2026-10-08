@@ -1,0 +1,41 @@
+.mk_artifacts_panel {
+    flex: 0 0 340px;
+    min-width: 0;
+    z-index: 4;
+    .mk_artifacts_header {
+        min-height: 45px;
+        padding: 0.5rem 0.75rem;
+    }
+    .mk_artifacts_tabs {
+        padding: 0.4rem 0.5rem 0;
+    }
+    .mk_artifacts_tab {
+        margin-bottom: -1px;
+        padding: 0.3rem 0.55rem;
+        border-bottom: 2px solid transparent !important;
+        color: var(--secondary-color);
+        font-size: 0.78rem;
+        &:hover {
+            color: var(--body-color);
+        }
+        &.active {
+            border-bottom-color: var(--mk-accent) !important;
+            color: var(--mk-accent);
+        }
+    }
+    .mk_artifacts_body {
+        min-height: 0;
+        padding: 0.6rem;
+    }
+    .mk_att_card {
+        width: 100%;
+    }
+    @include media-breakpoint-down(xl) {
+        position: absolute;
+        inset: 0 0 0 auto;
+        width: 340px;
+        max-width: 90vw;
+        box-shadow: -2px 0 12px rgba(0, 0, 0, 0.12);
+        z-index: 25;
+    }
+}

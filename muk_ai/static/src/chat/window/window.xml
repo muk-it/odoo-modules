@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.ChatWindow">
+        <t t-set="session" t-value="this.session()"/>
+        <div class="mk_window d-flex flex-column overflow-hidden bg-100 text-body" t-att-class="{ mk_window_min: this.props.minimized }">
+            <button
+                class="mk_window_header d-flex align-items-center gap-2 border-0 text-start text-white bg-primary"
+                t-on-click="() => this.chat.toggleWindow(this.props.id)"
+            >
+                <SessionStatus t-if="session" session="session"/>
+                <span class="mk_window_title text-truncate flex-grow-1 min-w-0 fw-medium">
+                    <t t-if="session?.data.name" t-out="session.data.name"/>
+                    <t t-else="">MuK AI</t>
+                </span>
+                <span class="mk_window_actions d-inline-flex gap-1 ms-1">
+                    <span class="mk_window_btn d-inline-flex align-items-center justify-content-center rounded-3" title="Open fullscreen" t-on-click.stop="() => this.openFullChat()">
+                        <i class="oi" data-icon="fullscreen"/>
+                    </span>
+                    <span
+                        class="mk_window_btn d-inline-flex align-items-center justify-content-center rounded-3"
+                        t-att-title="this.toggleTitle"
+                        t-on-click.stop="() => this.chat.toggleWindow(this.props.id)"
+                    >
+                        <i class="oi" t-att-data-icon="this.props.minimized ? 'keyboard_arrow_up' : 'minimize'"/>
+                    </span>
+                    <span class="mk_window_btn d-inline-flex align-items-center justify-content-center rounded-3" title="Close" t-on-click.stop="() => this.chat.closeWindow(this.props.id)">
+                        <i class="oi" data-icon="close"/>
+                    </span>
+                </span>
+            </button>
+            <t t-if="session and !this.props.minimized">
+                <div class="mk_window_subheader d-flex align-items-center bg-100">
+                    <SessionPills session="session"/>
+                    <div class="ms-auto">
+                        <UsageMeter session="session" position="'bottom-end'"/>
+                    </div>
+                </div>
+                <ChatConversation
+                    session="session"
+                    compact="true"
+                    placeholder="this.placeholder"
+                    onForked="(id) => this.chat.openWindow(id)"
+                />
+            </t>
+        </div>
+    </t>
+
+</templates>

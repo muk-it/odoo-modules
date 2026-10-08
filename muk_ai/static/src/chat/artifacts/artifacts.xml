@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.AttachmentsTab">
+        <div class="d-flex flex-column gap-2">
+            <AttachmentCard
+                t-foreach="this.props.items"
+                t-as="item"
+                t-key="item.id"
+                attachment="item"
+                onOpen.bind="this.open"
+            />
+        </div>
+    </t>
+
+    <t t-name="muk_ai.ArtifactsPanel">
+        <aside class="mk_artifacts_panel d-flex flex-column border-start bg-100">
+            <div class="mk_artifacts_header d-flex align-items-center gap-2 border-bottom bg-100">
+                <span class="fw-semibold small">Artifacts</span>
+                <button class="btn btn-link btn-sm ms-auto p-1 lh-1 text-muted" title="Close artifacts panel" t-on-click="() => this.props.onClose()">
+                    <i class="oi" data-icon="close"/>
+                </button>
+            </div>
+            <div t-if="this.tabs.length &gt; 1" class="mk_artifacts_tabs d-flex gap-1 border-bottom bg-100" role="tablist">
+                <button
+                    t-foreach="this.tabs"
+                    t-as="tab"
+                    t-key="tab.id"
+                    class="btn btn-link btn-sm mk_artifacts_tab border-0 text-decoration-none"
+                    t-att-class="{ active: tab.id === this.active.id }"
+                    role="tab"
+                    t-on-click="() => Object.assign(this.state, { tab: tab.id, itemId: null })"
+                >
+                    <i t-if="tab.icon" class="oi me-1" t-att-data-icon="tab.icon"/>
+                    <t t-out="tab.label"/>
+                </button>
+            </div>
+            <div class="mk_artifacts_body flex-grow-1 overflow-auto">
+                <t t-if="this.active" t-component="this.active.component" items="this.active.items" session="this.props.session" focusItemId="this.state.itemId"/>
+                <div t-else="" class="text-muted small text-center p-3">No artifacts in this conversation yet.</div>
+            </div>
+        </aside>
+    </t>
+
+</templates>

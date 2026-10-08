@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.SessionPills">
+        <t t-foreach="this.pills" t-as="item" t-key="item.key">
+            <Dropdown menuClass="'mk_pill_menu'" disabled="this.props.session.readonly">
+                <button
+                    type="button"
+                    class="btn btn-sm mk_pill rounded-pill border-0 d-inline-flex align-items-center gap-1 fw-medium text-nowrap"
+                    t-att-class="item.pill.className"
+                    t-att-title="item.pill.tooltip"
+                    t-att-data-pill="item.key"
+                >
+                    <i class="oi" t-att-data-icon="item.pill.icon"/>
+                    <span class="mk_pill_label" t-out="item.pill.label"/>
+                    <i class="oi mk_pill_caret opacity-75" data-icon="keyboard_arrow_down"/>
+                </button>
+                <t t-set-slot="content">
+                    <DropdownItem
+                        t-foreach="item.pill.options"
+                        t-as="option"
+                        t-key="option_index"
+                        class="'mk_pill_option'"
+                        onSelected="() => item.entry.onSelect(this.props.session, option.value)"
+                    >
+                        <span class="d-flex align-items-start gap-2">
+                            <i class="oi mk_pill_check text-primary" data-icon="check" t-att-class="{ invisible: !option.active }"/>
+                            <span>
+                                <span class="mk_pill_option_label d-block fw-semibold" t-out="option.label"/>
+                                <span t-if="option.hint" class="mk_pill_option_hint d-block text-muted" t-out="option.hint"/>
+                            </span>
+                        </span>
+                    </DropdownItem>
+                </t>
+            </Dropdown>
+        </t>
+    </t>
+
+</templates>
