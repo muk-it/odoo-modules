@@ -832,19 +832,24 @@ class AISession(models.Model):
         user_message: str | None = None,
         attachments: models.BaseModel | None = None,
     ) -> dict | None:
-        """Build a user conversation entry from a message and attachments."""
-        content = []
-        if user_message:
-            content.append({'type': 'input_text', 'text': user_message})
+        """Build a user conversation entry from a message and attachments.
+
+        Each attachment also names its ``odoo://`` uri, so tools can take it.
+        """
+        content = [{'type': 'input_text', 'text': user_message}] if user_message else []
         for attachment in attachments or []:
-            content.append(
+            content += [
+                {
+                    'type': 'input_text',
+                    'text': f'Attached file {attachment.name}: odoo://attachment/{attachment.id}',
+                },
                 {
                     'type': 'muk_ai_attachment',
                     'attachment_id': attachment.id,
                     'filename': attachment.name,
                     'mimetype': attachment.mimetype,
-                }
-            )
+                },
+            ]
         return {'role': 'user', 'content': content} if content else None
 
     def _system_message(self) -> dict:

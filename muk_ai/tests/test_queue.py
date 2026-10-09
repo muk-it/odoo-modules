@@ -283,7 +283,11 @@ class TestAiSessionQueue(AITestCommon):
                 for block in entry['content']
                 if block['type'] == 'input_text'
             ],
-            ['first half\n\nsecond half'],
+            [
+                'first half\n\nsecond half',
+                f'Attached file first.txt: odoo://attachment/{first.id}',
+                f'Attached file second.txt: odoo://attachment/{second.id}',
+            ],
         )
         self.assertEqual(
             [
