@@ -124,20 +124,35 @@ class TestMcpTools(MCPToolCase):
                 )
                 self.assertEqual(result, {'count': 1})
 
-    def test_binary_values_are_returned_as_resource_uris(self):
+    def test_reads_return_binaries_as_uris_and_lean_defaults(self):
         self.partner_a.image_1920 = PNG
-        uri = f'odoo://record/res.partner/{self.partner_a.id}/image_1920'
-        arguments = {'model': 'res.partner', 'fields': ['name', 'image_1920']}
-        rows = self.call_tool('read_records', {**arguments, 'ids': self.partner_a.id})
-        self.assertEqual(rows[0]['image_1920'], uri)
         rows = self.call_tool(
-            'search_read',
-            {**arguments, 'domain': [['id', '=', self.partner_a.id]]},
+            'read_records',
+            {
+                'model': 'res.partner',
+                'ids': [self.partner_a.id, self.partner_b.id],
+                'fields': ['name', 'image_1920'],
+            },
         )
         self.assertEqual(
-            rows,
-            [{'id': self.partner_a.id, 'name': 'MCP Partner A', 'image_1920': uri}],
+            [row['image_1920'] for row in rows],
+            [f'odoo://record/res.partner/{self.partner_a.id}/image_1920', False],
         )
+        found = self.call_tool(
+            'search_read',
+            {'model': 'res.partner', 'domain': [['id', '=', self.partner_a.id]]},
+            user=self.user,
+        )
+        self.assertEqual(
+            found, [{'id': self.partner_a.id, 'display_name': 'MCP Partner A'}]
+        )
+        [row] = self.call_tool(
+            'read_records',
+            {'model': 'res.partner', 'ids': self.partner_a.ids},
+            user=self.user,
+        )
+        self.assertEqual(row['email'], self.partner_a.email)
+        self.assertFalse({'image_1920', 'child_ids', 'tz_offset'} & row.keys())
 
     def test_crud_round_trip_is_audited(self):
         model = 'res.partner.category'

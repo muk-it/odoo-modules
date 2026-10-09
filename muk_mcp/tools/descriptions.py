@@ -82,14 +82,11 @@ def domain_field(extra_note: str = '') -> dict[str, Any]:
 
 def fields_field(
     *,
-    required_hint: bool = True,
     example: list[str] | None = None,
     extra_note: str = '',
 ) -> dict[str, Any]:
     """Return the JSON schema for a field-names parameter, tuned by the given hints."""
     parts = ['Field names to return.']
-    if required_hint:
-        parts.append('ALWAYS specify this to avoid returning all fields (slow).')
     if extra_note:
         parts.append(extra_note)
     parts.append(
