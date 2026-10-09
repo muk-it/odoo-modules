@@ -1,3 +1,8 @@
+`3.1.0`
+-------
+
+- Activity and File Transfer Tools
+
 `3.0.0`
 -------
 
