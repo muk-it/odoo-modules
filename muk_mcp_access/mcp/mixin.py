@@ -150,30 +150,15 @@ class MCPMixin(models.AbstractModel):
         return result
 
     @api.model
-    def _resolve_resource_attachment(
-        self,
-        attachment_id: int,
-    ) -> tuple[str, bytes, str]:
-        """Assert the linked record is exposed via MCP before resolving an attachment."""
-        attachment = self.env['ir.attachment'].sudo().browse(attachment_id).exists()
-        model = attachment.res_model
+    def _resolve_resource_target(self, uri: str) -> tuple[models.BaseModel, str]:
+        """Assert the record behind a resource, or behind an attachment, is exposed via MCP."""
+        record, field = super()._resolve_resource_target(uri)
+        if record._name != 'ir.attachment':
+            self._mcp_assert_records_allowed(record._name, record.ids)
+            return record, field
+        model, res_id = record.sudo().res_model, record.sudo().res_id
         if model and model not in self._mcp_attachment_exempt_models():
             self._resolve_model(model)
-            if attachment.res_id:
-                self._mcp_assert_records_allowed(model, [attachment.res_id])
-        return super()._resolve_resource_attachment(attachment_id)
-
-    @api.model
-    def _resolve_resource_record_field(
-        self,
-        model: str,
-        record_id: int,
-        field: str,
-    ) -> tuple[str, bytes, str]:
-        """Assert record access before resolving a binary field resource."""
-        self._mcp_assert_records_allowed(model, [record_id])
-        return super()._resolve_resource_record_field(
-            model,
-            record_id,
-            field,
-        )
+            if res_id:
+                self._mcp_assert_records_allowed(model, [res_id])
+        return record, field
