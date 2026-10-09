@@ -16,6 +16,12 @@ _CONTEXT_EXAMPLES = (
 )
 
 
+HTTP_HINT = (
+    'Clients that can run HTTP requests (a shell, curl, a script) should use '
+    'it: the file then never passes through the conversation.'
+)
+
+
 def model_field():
     return {
         'type': 'string',
