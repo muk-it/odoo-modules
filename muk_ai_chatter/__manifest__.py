@@ -1,22 +1,20 @@
 {
     'name': 'MuK AI Chatter',
-    'summary': 'Link AI sessions to records and mention agents in a thread',
+    'summary': 'Mention AI agents in Discuss and write chatter messages with AI',
     'description': """
-        Ties AI sessions to the business record they run for, listing them
-        in the chatter of any threaded model and collecting them in a
-        Records space. Lets users mention an AI agent with the regular @
-        syntax in a Discuss channel or in a direct chat, and receive its
-        answer in that same conversation, without the agent ever joining
-        it, being mailed or answering on its own again. A mentioned agent
-        never stops to ask, so a conversation always ends up with an
-        answer. On a record, the writing helper in the composer is the
-        surface instead.
+        Lets users mention an agent of MuK AI Assistant with the regular @
+        syntax in a Discuss channel or a direct chat, and posts its answer in
+        that conversation, without the agent ever joining it or being mailed.
+        In the chatter of any record, a writing helper fixes, rewrites or
+        drafts the message being written. Chats linked to a record are listed
+        in its chatter and collected in a Records space.
     """,
-    'version': '19.0.1.1.2',
+    'version': '19.0.1.1.3',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',
     'website': 'http://www.mukit.at',
+    'live_test_url': 'https://youtu.be/TYV-3Cmt2no',
     'contributors': [
         'Mathias Markl <mathias.markl@mukit.at>',
     ],

@@ -6,7 +6,7 @@
         <field name="model">mail.compose.message</field>
         <field name="inherit_id" ref="mail.email_compose_message_wizard_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//footer/field[@name='template_id']" position="after">
+            <xpath expr="//footer/field[@name='scheduled_date']" position="after">
                 <field
                     name="body"
                     widget="mail_composer_muk_ai"

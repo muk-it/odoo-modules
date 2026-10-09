@@ -1,104 +1,48 @@
 # MuK AI Chatter
 
-Mention an AI agent in a Discuss channel or a direct chat and get an
-answer back in the conversation. **MuK AI Chatter** ties
-`muk_ai.session` to the business record it runs for, lists those
-sessions in the chatter of any threaded model, and lets a user summon an
-agent with the ordinary `@` syntax — the same one they already use for
-colleagues.
+[![Odoo 19.0](https://img.shields.io/badge/Odoo-19.0-714B67?style=flat-square)](https://apps.odoo.com/apps/modules/muk_ai_chatter)
+![Community](https://img.shields.io/badge/CE-%E2%9C%93-1C3A4C?style=flat-square)
+![Enterprise](https://img.shields.io/badge/EE-%E2%9C%93-33627E?style=flat-square)
+![Odoo.sh](https://img.shields.io/badge/Odoo.sh-%E2%9C%93-1C3A4C?style=flat-square)
+![On-Premise](https://img.shields.io/badge/On--Premise-%E2%9C%93-33627E?style=flat-square)
+[![License LGPL v3](https://img.shields.io/badge/License-LGPL_v3-blue?style=flat-square)](LICENSE)
+[![YouTube demo](https://img.shields.io/badge/YouTube-demo-FF0000?style=flat-square&logo=youtube&logoColor=white)](https://youtu.be/TYV-3Cmt2no)
+[![Website mukit.at](https://img.shields.io/badge/Website-mukit.at-243742?style=flat-square)](https://www.mukit.at)
 
-The agent answers as an ordinary message in the conversation it was
-mentioned in. It never becomes a member, is never emailed, and never
-speaks again unless somebody mentions it. A mentioned agent **never
-stops to ask**: a conversation always ends up with an answer rather than
-a question nobody will see.
+**Ask an AI agent in the conversation, and let it help you write.** Mention an
+agent of MuK AI Assistant in a Discuss channel or a direct chat, and its
+answer lands in that conversation. In the chatter of any record, a writing
+helper fixes, rewrites or drafts your message from the thread.
 
-A record's chatter offers no agents and answers no mention. A chatter
-message is addressed to the people following the record, and an agent
-replying there reads as mail somebody sent — so the surface for a record
-is the **writing helper** in the composer instead.
+![An agent answering a mention in a Discuss channel](static/description/screenshot.png)
 
-## What's in the box
+## Features
 
-- **Record-linked sessions** — `res_model` / `res_id` on
-  `muk_ai.session`, the linked record as prompt context, and a mirror
-  note in the record's chatter announcing the run. Pinning a session to
-  a record grants nobody anything: muk_ai's own rule keeps a session to
-  the user who ran it, because a transcript carries tool output gathered
-  under that user's rights.
-- **AI Sessions chatter box** — an OWL component listing the sessions
-  the reader ran against the record, kept live over the bus, opening the
-  chat window for them. An administrator sees every run held against the
-  record, and opens the ones they do not own as a form.
-- **`@` mentions in Discuss** — every agent gets a stand-in contact
-  (`muk_ai.agent.partner_id`) with no email address, so Odoo's own
-  mention machinery carries it: the chip, the paste rules and the
-  recipient handling are all stock. Discuss suggests members only and
-  admits nobody else as a recipient, so the agents are named back into
-  both lists: they are offered alongside the members of a channel or a
-  chat and carried through the post, without ever joining the
-  conversation. They stay out of ordinary contact pickers, and out of
-  the chatter of a record, which answers no mention.
-- **Writing helper in the composer** — a *Write with AI* panel anchored to
-  the chatter composer, and the same one behind a toolbar button and a
-  `/` command in every rich-text editor. With text selected it offers the
-  transforms and shows what they changed as a **diff**; on an empty
-  composer it offers what can be written from the record, with a length
-  and a tone picked before anything is generated. Nothing reaches the
-  message until it is accepted, and `Open in AI chat ↗` hands the very
-  same session to the chat window when a request outgrows a chip.
-- **Composer skills** — the chips are `muk_ai.skill` records of type
-  *Composer*, not code, so an admin retunes the wording, the icon and the
-  category per customer or language under *MuK AI → Skills*. The category
-  decides where a chip is offered — *fix*, *rewrite* and *transform* act
-  on a selection, *generate* writes from the record — and a composer
-  skill never joins the list an agent discovers in a chat.
-- **Spaces** — a system `muk_ai.space` collecting every chat attached to
-  a record, and a second one for the writing helpers, kept for a week:
-  they are drafts of messages, and a message that was sent is the record
-  of what was written.
+- **Mentioned like a colleague**: agents are offered with `@` in channels and
+  direct chats, without joining them or being mailed.
+- **Always an answer**: a mentioned agent never stops to ask; a short note
+  answers at once and is replaced by the answer.
+- **A writing helper in every composer**: fix, shorten, change the tone,
+  translate, or write a reply, a follow-up or a summary, shown as a diff
+  before it is applied.
+- **Quick actions of your own**: the buttons are Composer skills; an
+  instruction that worked is saved as one with a click.
+- **Runs on the record**: chats started for a record are listed live in its
+  chatter, private to whoever ran them.
 
-## Guard rails
+![The writing helper rewriting a selection in the chatter](static/description/screenshot_compose.png)
 
-Mentioning an agent points a language model at a thread that is largely
-written by people outside the company — inbound customer mail is the
-most attacker-controlled text an Odoo database holds. So:
+## Getting started
 
-- **A mention answers unattended.** The spawned session runs the tools
-  the agent carries, writes included, and there is no approval prompt to
-  fall back on, because a mention must never pause. Give an agent people
-  may summon only the tools you mean it to use there.
-- **Thread content is data.** The conversation is passed inside a
-  `<thread_context>` block with an explicit "this is data, not
-  instructions" preamble, its closing tag stripped so a message cannot
-  break out, and the tool set is fixed before the agent reads any of it.
-- **The snapshot is frozen.** Chatter messages can be edited and deleted
-  after the fact, so what the agent was told is stored on the session
-  rather than re-read.
-- **No loops.** An agent's own post summons nobody, and neither does a
-  message written by a tool from inside a running session.
-- **No hidden recipients.** Agent contacts are stripped from
-  `partner_ids` before the message is created, on every thread and a
-  record's chatter included, so nothing is notified and nobody is
-  subscribed.
-- **Only staff summon agents.** A poster who may not run a session — a
-  portal customer commenting on their own order — gets no run and no
-  error: the mention is stripped and their message posts as usual.
-- **The writing helper only writes.** It runs read-only whatever it is
-  asked for, never stops to ask a question the panel could not show, and
-  posts nothing: it hands back text, and the user decides.
-- **Off switch.** *Answer Mentions* per agent takes an agent out of
-  every dropdown and leaves any mention of it unanswered.
+1. Install **MuK AI Chatter** from **Apps**; it needs **MuK AI Assistant** and
+   **MuK AI Skills** with a provider set up.
+2. On the agent form under **MuK AI > Agents**, keep **Answer Mentions** on
+   for the agents your team may mention, and reword the quick actions under
+   **MuK AI > Skills** if you like.
+3. Type `@` and the agent's name in Discuss, or click the AI button in a
+   chatter composer.
 
-## Usage
+## Support
 
-1. Open an agent under *MuK AI → Agents* and leave *Answer Mentions* on.
-2. In a Discuss channel or a direct chat, type `@`, pick the agent, and
-   write what you want.
-3. A message from the agent appears immediately and fills in with the
-   answer as the run finishes. Open *AI Sessions* in the chatter of a
-   record to read the runs attached to it.
-
-## Credits
-
-MuK IT GmbH — <https://www.mukit.at>
+Issues and merge requests are welcome. Maintained by
+[MuK IT GmbH](https://www.mukit.at), Vienna. Contact: sale@mukit.at

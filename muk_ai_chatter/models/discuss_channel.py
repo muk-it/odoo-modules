@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from odoo import _, models
+from odoo import models
 
-from odoo.addons.muk_ai_chatter.tools import mention_plaintext
+from odoo.addons.muk_ai_chatter.tools.mention import mention_plaintext
 
 
 class DiscussChannel(models.Model):
@@ -11,45 +11,29 @@ class DiscussChannel(models.Model):
     _inherit = 'discuss.channel'
 
     # ----------------------------------------------------------
-    # Helper Mention
+    # Helper
     # ----------------------------------------------------------
 
     def _ai_answer_mentions(
         self, message: models.BaseModel, agents: models.BaseModel
     ) -> None:
-        """Let the agents mentioned in a conversation answer it."""
-        if not self._ai_mention_is_machine_made(message):
-            self._ai_spawn_mention_sessions(message, agents)
+        """Start one session per mentioned agent, owned by the poster, and answer.
 
-    def _ai_mention_is_machine_made(self, message: models.BaseModel) -> bool:
-        """Return whether a running agent produced this message.
-
-        Two agents mentioning each other would answer each other forever. A
-        session posting through a tool writes under its owner's name, so the
-        dispatch context is what gives that case away.
+        A message a running session posted, or one an agent authored,
+        summons nobody, so agents never answer each other.
         """
         if self.env.context.get('muk_mcp_session_id'):
-            return True
-        author = message.sudo().author_id
-        return bool(author and author._ai_agent_partners())
-
-    def _ai_spawn_mention_sessions(
-        self, message: models.BaseModel, agents: models.BaseModel
-    ) -> models.BaseModel:
-        """Start one session per mentioned agent and let it answer.
-
-        The session belongs to the user who wrote the mention, so every tool it
-        runs is bound to what that user is allowed to see.
-        """
-        sessions = self.env['muk_ai.session']
+            return
+        if message.sudo().author_id._ai_agent_partners():
+            return
         prompt = mention_plaintext(message.body)
         if not prompt:
-            return sessions
+            return
         snapshot = self._ai_thread_context()
         for agent in agents:
-            session = sessions.create(
+            session = self.env['muk_ai.session'].create(
                 {
-                    'name': _(
+                    'name': self.env._(
                         '%(agent)s on %(record)s',
                         agent=agent.name,
                         record=self.display_name,
@@ -64,22 +48,15 @@ class DiscussChannel(models.Model):
             )
             session._post_mention_placeholder()
             session.start(prompt)
-            sessions |= session
-        return sessions
 
     # ----------------------------------------------------------
-    # ORM methods
+    # ORM
     # ----------------------------------------------------------
 
     def _get_allowed_message_partner_ids(self, partner_ids: list[int]) -> list[int]:
-        """Keep the mentioned agents among the partners a message may carry.
-
-        The base method admits members of the conversation only, and an agent
-        is a member of nothing. Left to that rule the mention would be dropped
-        before the thread saw it. Passing it through costs nothing: the agents
-        are taken out of the recipients a moment later.
-        """
-        agents = self.env['res.partner'].browse(partner_ids)._ai_agent_partners()
+        """Keep the mentioned agents, which are members of no conversation."""
         allowed = set(super()._get_allowed_message_partner_ids(partner_ids))
-        allowed |= set(agents.ids)
+        allowed |= set(
+            self.env['res.partner'].browse(partner_ids)._ai_agent_partners().ids
+        )
         return [partner_id for partner_id in partner_ids if partner_id in allowed]

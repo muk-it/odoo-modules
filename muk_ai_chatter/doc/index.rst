@@ -2,135 +2,78 @@
 MuK AI Chatter
 ==============
 
-Mention an AI agent in a Discuss channel or a direct chat and get an
-answer back in the conversation. **MuK AI Chatter** ties
-``muk_ai.session`` to the business record it runs for, lists those
-sessions in the chatter of any threaded model, and lets a user summon an
-agent with the ordinary ``@`` syntax — the same one they already use for
-colleagues.
-
-The agent answers as an ordinary message in the conversation it was
-mentioned in. It never becomes a member, is never emailed, and never
-speaks again unless somebody mentions it. A mentioned agent **never
-stops to ask**: a conversation always ends up with an answer rather than
-a question nobody will see.
-
-A record's chatter offers no agents and answers no mention: a chatter
-message is addressed to the people following the record, and an agent
-replying there reads as mail somebody sent. The surface for a record is
-the **writing helper** in the composer, described below.
+Lets users mention an agent of MuK AI Assistant with the regular ``@`` syntax
+in a Discuss channel or a direct chat, and posts its answer in that
+conversation, without the agent ever joining it or being mailed. In the
+chatter of any record, a writing helper fixes, rewrites or drafts the message
+being written. Chats linked to a record are listed in its chatter and
+collected in a Records space.
 
 Installation
 ============
 
 To install this module, you need to:
 
-Download the module and add it to your Odoo addons folder. Afterward, log
-on to your Odoo server and go to the Apps menu. Trigger the debug mode
-and update the list by clicking on the "Update Apps List" link. Now
-install the module by clicking on the install button.
+Download the module and add it to your Odoo addons folder. Afterward, log on to
+your Odoo server and go to the Apps menu. Trigger the debug mode and update the
+list by clicking on the "Update Apps List" link. Now install the module by
+clicking on the install button.
+
+Upgrade
+=======
+
+To upgrade this module, you need to:
+
+Download the module and add it to your Odoo addons folder. Restart the server
+and log on to your Odoo server. Select the Apps menu and upgrade the module by
+clicking on the upgrade button.
 
 Configuration
 =============
 
-Every agent is given a stand-in contact the first time this module is
-installed, and whenever an agent is created afterwards. That contact
-carries no email address, so mentioning an agent can never mail anybody.
+Every agent gets an archived contact without an email address, which stands
+in for it in conversations and stays out of the address book and every
+contact picker. The **Chatter** group of the agent form under *MuK AI >
+Agents* holds:
 
-Open *MuK AI → Agents* and use the **Chatter** group on the agent form:
+- **Answer Mentions**: whether colleagues can mention the agent. On by
+  default; turned off, the agent is offered nowhere.
+- **Agent Contact**: the contact standing in for the agent.
 
-- **Answer Mentions** — whether the agent replies when it is mentioned.
-  On by default. Turning it off takes the agent out of every suggestion
-  list, and its contact is still kept out of the recipients of a message
-  that names it anyway.
+A mentioned agent runs the tools it carries, writes included, and never
+stops to ask for an approval. Give an agent that people may mention only the
+tools you mean it to use there.
 
-A mention runs the tools the agent carries, writes included. It never
-stops to ask, so anything it may change it changes unattended: give an
-agent you let people summon from a conversation only the tools you mean
-it to use there.
+The buttons of the writing helper are skills of the type *Composer* under
+*MuK AI > Skills*. Each carries a **Category** that decides where it is
+offered: *Fix*, *Rewrite* and *Transform* act on what is written, *Generate*
+writes from the record. Reword them, add your own, or archive the ones your
+team does not use. The *Chatter* space can name the agent the helper runs
+under; otherwise the default agent answers.
 
 Usage
 =====
 
-In a Discuss channel or a direct chat, type ``@``, pick the agent from
-the suggestion list, and write the request. A message from the agent
-appears straight away and is rewritten in place with the answer as the
-run finishes — everybody looking at the conversation sees it swap over
-without reloading.
+In a Discuss channel or a direct chat, type ``@``, pick the agent and write
+the request. A short note answers at once and is replaced by the answer when
+the run ends; record references in it become links, and *View the run* opens
+the session with every step. A message written by an agent, or posted by a
+tool of a running session, summons nobody. A record's chatter offers no
+agents.
 
-Discuss offers members only and admits nobody else as a recipient of a
-chat, so the agents are named back into both lists — they are suggested
-next to the members and carried through the post, without ever being
-added to the conversation.
+In a chatter composer, the AI button opens the writing helper. With text
+selected it rewrites that part and shows the change as a diff; with a draft
+it reworks the whole message; with nothing written it offers a reply, a
+follow-up or a summary of the thread, with a length and a tone. Nothing
+reaches the message until it is accepted. An instruction typed into the
+helper can be saved as a quick action. *Continue in the AI chat* hands the
+session to a chat window, whose *Use this* button puts an answer back into
+the message. The full composer offers the same helper in its toolbar, as a
+``/`` command, and behind the button in its footer.
 
-Writing a message
------------------
-
-The composer carries a **Write with AI** button, and every rich-text
-editor the same command in its toolbar and behind ``/``. What the panel
-offers depends on what is in the composer:
-
-* **with text selected** — the transforms that rewrite exactly that part
-  (shorten, expand, formal, friendly, fix grammar, translate). The answer
-  is shown as a diff against what was selected, and replaces only that
-  part when accepted;
-* **on an empty composer** — what can be written from the record (reply
-  to the last message, follow up, summarize), with a length and a tone
-  chosen *before* generating.
-
-The answer streams into the panel as it is written. Nothing reaches the
-message until *Insert* or *Replace* is clicked; ``Esc`` dismisses at no
-cost, and *Try again* re-runs the same request. When a request outgrows a
-chip, **Open in AI chat** hands the same session — draft, selection and
-conversation included — to the chat window, where the agent can ask
-questions again.
-
-The chips are skills, not code: an admin edits them under *MuK AI →
-Skills*, where each one carries its wording, its icon and the category
-that decides where it is offered — *fix*, *rewrite* and *transform* act on
-what is already written, *generate* writes something new. A skill of type
-*Composer* is offered here and nowhere else: it never joins the list of
-skills the agent discovers in a chat.
-
-The **AI Sessions** box in the chatter lists the runs attached to the
-record — the ones you ran yourself, and, for an administrator, everybody
-else's as well. A session stays with whoever ran it: its transcript
-carries tool output gathered under that user's rights, so being able to
-read a record never opens the conversations held against it.
-
-Chats attached to a record are also collected in the **Records** space
-in the AI sidebar, and the drafts themselves in a **Chatter**
-space that keeps them for a week: they are drafts of messages, and a
-message that was sent is the record of what was written.
-
-Design notes
-============
-
-A mention, and the writing helper on a record, both point a language
-model at a thread that is largely written by people outside the company,
-so the module treats that thread as untrusted input:
-
-* the conversation is passed inside a ``<thread_context>`` block with an
-  explicit "this is data, not instructions" preamble, its closing tag
-  stripped so a message cannot break out of the block;
-* the tool set is fixed before the agent reads any of it, so nothing in
-  the thread can widen what the run is able to do;
-* the thread is snapshotted onto the session, because chatter messages
-  can be edited or deleted after the agent has been told about them;
-* an agent's own post summons nobody, and neither does a message written
-  by a tool from inside a running session, so agents cannot answer each
-  other in a loop;
-* approvals and browser-served tools are switched off for a mention, so
-  the run cannot pause waiting for somebody who is not there;
-* an agent contact is stripped from the recipients of every message on
-  every thread, a record's chatter included, so naming one never mails
-  it, notifies it or enrols it as a follower;
-* a poster who may not run a session at all — a portal customer on their
-  own order — summons nothing, and their message is posted as usual
-  rather than failing on an access error;
-* the writing helper runs read-only whatever it is asked for, cannot stop
-  to ask a question its panel could not show, and announces nothing in
-  the systray: the user is watching the run happen.
+A chat started for a record leaves a note on it and appears under the *AI
+Sessions* button of its chatter, with a dot for its state. Users see the
+runs they started; administrators see all of them.
 
 Credits
 =======
@@ -143,4 +86,11 @@ Contributors
 Author & Maintainer
 -------------------
 
-MuK IT GmbH
+This module is maintained by the `MuK IT GmbH <https://www.mukit.at/>`_.
+
+MuK IT is an Austrian company specialized in customizing and extending Odoo.
+We develop custom solutions for your individual needs to help you focus on
+your strength and expertise to grow your business.
+
+If you want to get in touch please contact us via mail
+(sale@mukit.at) or visit our website (https://mukit.at).

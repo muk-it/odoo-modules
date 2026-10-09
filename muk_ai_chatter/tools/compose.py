@@ -1,10 +1,6 @@
 from __future__ import annotations
 
-from .chatter import fenced
-
-# ----------------------------------------------------------
-# Composer Surfaces
-# ----------------------------------------------------------
+from odoo.addons.muk_ai_chatter.tools.chatter import PLAIN_TEXT_RULE, fenced
 
 COMPOSE_INTERFACES = [
     ('text_select', 'Rewriting a Selection'),
@@ -14,17 +10,9 @@ COMPOSE_INTERFACES = [
 
 COMPOSE_MAX_CHARS = 12000
 
-# ----------------------------------------------------------
-# Selection Marks
-# ----------------------------------------------------------
-
 SELECTION_OPEN = '[['
 
 SELECTION_CLOSE = ']]'
-
-# ----------------------------------------------------------
-# Prompt Scaffolding
-# ----------------------------------------------------------
 
 COMPOSE_RULES = (
     '<compose_rules>\n'
@@ -33,27 +21,37 @@ COMPOSE_RULES = (
     'so reply with the message text and nothing else: no preamble, no title '
     'or header line, no closing remark of your own, no explanation of what '
     'you changed, and no quotation marks around the whole answer. Never write '
-    'a model and id such as res.partner,42 — the reader is already on that '
-    'record; use its name, or say "this record". Keep the language the user '
-    'is writing in. Sign nothing and invent nothing — every fact must come '
-    'from the draft, the conversation or the record. Nobody can answer a '
-    'question here, so never call ask_user: if something is missing, write '
-    'the message with a clearly marked gap the user can fill in.\n'
+    'a model and id such as res.partner,42: the reader is already on that '
+    'record, so use its name, or say "this record". Keep the language the '
+    'user is writing in. Sign nothing and invent nothing: every fact must '
+    'come from the draft, the conversation or the record. Nobody can answer a '
+    'question here, so never call ask_user. If something is missing, write '
+    'the message with a clearly marked gap the user can fill in. '
+    f'{PLAIN_TEXT_RULE}\n'
     '</compose_rules>'
 )
 
-COMPOSE_TURN_REMINDER = (
-    '%s\n\n---\n'
-    'Answer with the message text itself, ready to send. Not a report of what '
-    'you drafted, not a title, not a model and id, not a note about the '
-    'composer — the words that go in the message, and nothing else.'
-)
+COMPOSE_TURN_REMINDER = {
+    'role': 'user',
+    'content': [
+        {
+            'type': 'input_text',
+            'text': (
+                '<compose_reminder>Answer with the message text itself, ready '
+                'to send. Not a report of what you drafted, not a title, not a '
+                'model and id, not a note about the composer: the words that go '
+                'in the message, and nothing else.</compose_reminder>'
+            ),
+        }
+    ],
+    '_cache_volatile': True,
+}
 
 COMPOSE_SELECTION_RULES = (
     'Rewrite the selected part only. The draft is shown with that part marked '
     'between %(open)s and %(close)s: what you return is pasted between the '
     'words before and after those marks, so read them first and make it fit '
-    'there. Match what the selection is — if it does not start a sentence, do '
+    'there. Match what the selection is: if it does not start a sentence, do '
     'not start one; if it does not end a sentence, do not end with a full '
     'stop; if it continues a clause, continue it. Never repeat the words '
     'around it, never write the marks, and return the replacement alone.'
@@ -69,13 +67,7 @@ def compose_text_values(draft: str | None, selection: str | None) -> dict:
 
 
 def mark_selection(draft: str, selection: str) -> str:
-    """Return ``draft`` with the part to rewrite marked where it sits.
-
-    A selection handed over on its own leaves the agent to guess what comes
-    before and after it, and it answers with a whole sentence where a fragment
-    belongs — ``I'll`` followed by ``Please prepare a quote.`` Shown in place,
-    the gap it has to fill is not a guess.
-    """
+    """Return ``draft`` with the part to rewrite marked where it sits."""
     if not selection or not draft or selection not in draft:
         return ''
     return draft.replace(selection, f'{SELECTION_OPEN}{selection}{SELECTION_CLOSE}', 1)

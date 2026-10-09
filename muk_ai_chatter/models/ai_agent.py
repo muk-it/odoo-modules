@@ -4,7 +4,7 @@ from odoo import api, fields, models
 
 
 class AIAgent(models.Model):
-    """Back agents with a partner so they can be mentioned in a conversation."""
+    """Back agents with a contact so they can be mentioned in a conversation."""
 
     _inherit = 'muk_ai.agent'
 
@@ -37,32 +37,22 @@ class AIAgent(models.Model):
     # Helper
     # ----------------------------------------------------------
 
-    def _partner_values(self) -> dict:
-        """Return the values the agent's stand-in contact is kept at.
-
-        The contact is archived on purpose. It exists only so the agent can
-        author a note and carry a mention chip — it is not a person anybody
-        should find in the address book, and archiving keeps it out of the
-        Contacts app and every ``res.partner`` picker at once, since neither
-        applies a domain we could hook. Mention suggestions opt back in.
-        """
-        return {
-            'name': self.name,
-            'email': False,
-            'active': False,
-        }
-
     def _provision_partners(self) -> None:
-        """Give every agent in this set a stand-in contact, creating it once."""
+        """Give every agent an archived, address-less contact named after it.
+
+        Archived keeps it out of the address book and every contact picker;
+        the mention suggestions of a conversation opt back in.
+        """
         partners = self.env['res.partner'].sudo()
         for agent in self:
+            values = {'name': agent.name, 'email': False, 'active': False}
             if agent.partner_id:
-                agent.partner_id.write(agent._partner_values())
-                continue
-            agent.partner_id = partners.create(agent._partner_values())
+                agent.partner_id.write(values)
+            else:
+                agent.partner_id = partners.create(values)
 
     # ----------------------------------------------------------
-    # ORM methods
+    # ORM
     # ----------------------------------------------------------
 
     @api.model_create_multi

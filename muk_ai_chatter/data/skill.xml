@@ -11,7 +11,6 @@
         <field name="user_ids" eval="[(5, 0, 0)]"/>
         <field name="body">Correct the spelling, grammar and punctuation of the selected text. Change nothing else: keep the wording, the tone and the language it is written in.</field>
     </record>
-
     <record id="skill_compose_shorten" model="muk_ai.skill">
         <field name="name">compose_shorten</field>
         <field name="label">Shorten</field>
@@ -23,7 +22,6 @@
         <field name="user_ids" eval="[(5, 0, 0)]"/>
         <field name="body">Rewrite the selected text so it says the same thing in fewer words. Keep every fact and the tone it was written in.</field>
     </record>
-
     <record id="skill_compose_expand" model="muk_ai.skill">
         <field name="name">compose_expand</field>
         <field name="label">Expand</field>
@@ -35,7 +33,6 @@
         <field name="user_ids" eval="[(5, 0, 0)]"/>
         <field name="body">Rewrite the selected text with more detail, staying on the same subject. Add nothing that is not already implied by it or by the record.</field>
     </record>
-
     <record id="skill_compose_formal" model="muk_ai.skill">
         <field name="name">compose_formal</field>
         <field name="label">More formal</field>
@@ -47,7 +44,6 @@
         <field name="user_ids" eval="[(5, 0, 0)]"/>
         <field name="body">Rewrite the selected text in a more formal register, as a professional would write to a customer. Keep the content unchanged.</field>
     </record>
-
     <record id="skill_compose_friendly" model="muk_ai.skill">
         <field name="name">compose_friendly</field>
         <field name="label">More friendly</field>
@@ -59,7 +55,6 @@
         <field name="user_ids" eval="[(5, 0, 0)]"/>
         <field name="body">Rewrite the selected text in a warmer, more personal tone, without becoming casual or padding it with pleasantries.</field>
     </record>
-
     <record id="skill_compose_translate" model="muk_ai.skill">
         <field name="name">compose_translate</field>
         <field name="label">Translate</field>
@@ -71,7 +66,6 @@
         <field name="user_ids" eval="[(5, 0, 0)]"/>
         <field name="body">Translate the selected text into the language the rest of the conversation is written in. If that is the language it is already in, translate it into English instead. Return the translation only.</field>
     </record>
-
     <record id="skill_compose_reply" model="muk_ai.skill">
         <field name="name">compose_reply</field>
         <field name="label">Reply to the last message</field>
@@ -83,7 +77,6 @@
         <field name="user_ids" eval="[(5, 0, 0)]"/>
         <field name="body">Write a reply to the most recent message in this conversation. Answer what was actually asked, in the language it was written in, and leave open anything you cannot know.</field>
     </record>
-
     <record id="skill_compose_follow_up" model="muk_ai.skill">
         <field name="name">compose_follow_up</field>
         <field name="label">Write a follow-up</field>
@@ -95,7 +88,6 @@
         <field name="user_ids" eval="[(5, 0, 0)]"/>
         <field name="body">Write a short follow-up message about this record, referring to what was last said and asking for what is still missing.</field>
     </record>
-
     <record id="skill_compose_summary" model="muk_ai.skill">
         <field name="name">compose_summary</field>
         <field name="label">Summarize the thread</field>

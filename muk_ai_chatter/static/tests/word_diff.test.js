@@ -1,6 +1,6 @@
 import { describe, expect, test } from '@odoo/hoot';
 
-import { wordDiff } from '@muk_ai_chatter/composer/word_diff';
+import { wordDiff } from '@muk_ai_chatter/composer/word_diff/word_diff';
 
 describe.current.tags('muk_ai_chatter');
 

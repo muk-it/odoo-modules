@@ -1,11 +1,17 @@
 import { describe, expect, getFixture, test } from '@odoo/hoot';
 
+import { setupEditor } from '@html_editor/../tests/_helpers/editor';
+import { MAIN_PLUGINS } from '@html_editor/plugin_sets';
+import { defineMailModels } from '@mail/../tests/mail_test_helpers';
+
 import {
     makeEditorAdapter,
     makeTextComposerAdapter,
-} from '@muk_ai_chatter/composer/adapters';
+} from '@muk_ai_chatter/composer/adapters/adapters';
+import { ComposeAIPlugin } from '@muk_ai_chatter/composer/editor_plugin/editor_plugin';
 
 describe.current.tags('muk_ai_chatter');
+defineMailModels();
 
 const DRAFT = 'Dear customer, thanks for you order.';
 
@@ -60,10 +66,10 @@ test('a selection deleted while the panel was open is inserted, not duplicated',
 });
 
 test('a message written from nothing lands at the caret', () => {
-    const { adapter, textarea } = makeFixture(null, 'Hi  — see you.');
+    const { adapter, textarea } = makeFixture(null, 'Hi  - see you.');
     textarea.setSelectionRange(3, 3);
     adapter.applyDraft('there');
-    expect(textarea.value).toBe('Hi there — see you.');
+    expect(textarea.value).toBe('Hi there - see you.');
 });
 
 test('a rewritten draft replaces everything that was written', () => {
@@ -73,74 +79,47 @@ test('a rewritten draft replaces everything that was written', () => {
     expect(textarea.selectionStart).toBe(textarea.value.length);
 });
 
-test('the record the composer writes about is what the helper is told', () => {
-    const { adapter } = makeFixture();
-    expect(adapter.getRecord()).toEqual({ resModel: 'res.partner', resId: 7 });
-    expect(adapter.interfaceKey).toBe('mail_composer');
-});
+const SIGNATURE =
+    '<div class="o-signature-container" data-o-mail-quote-container="1" contenteditable="false">' +
+    '<div data-o-mail-quote="1">-- <br><div contenteditable="true">' +
+    '<div data-o-mail-quote="1" class="o-paragraph">Mitchell Admin</div></div></div></div>';
 
 /**
- * Put an editable in the fixture and drive an editor adapter over it.
- * @param {string} html what the editor holds, signature included
- * @returns {{adapter: object, plugin: object}} the fixture
+ * Open a real editor over the given content and drive the helper's adapter.
+ * @param {string} html what the editor holds before the signature
+ * @param {string} [after] what follows the signature, a quoted reply
+ * @returns {Promise<{adapter: object, el: HTMLElement}>} the adapter and editable
  */
-function makeEditorFixture(html) {
-    const editable = document.createElement('div');
-    editable.innerHTML = html;
-    getFixture().append(editable);
-    const plugin = {
-        editable,
-        document,
-        dependencies: {
-            selection: {
-                preserveSelection: () => ({ restore: () => {} }),
-                setSelection: (spec) => {
-                    plugin.picked = spec;
-                },
-            },
-            dom: { insert: () => {} },
-            history: { addStep: () => {} },
-        },
-    };
-    const record = { resModel: 'res.partner', resId: 7 };
-    return { adapter: makeEditorAdapter(plugin, record), plugin };
+async function editorFixture(html, after = '') {
+    const { el, plugins } = await setupEditor(`${html}${SIGNATURE}${after}`, {
+        config: { Plugins: [...MAIN_PLUGINS, ComposeAIPlugin] },
+    });
+    const adapter = makeEditorAdapter(plugins.get('mukAiCompose'), {
+        resModel: 'res.partner',
+        resId: 7,
+    });
+    return { adapter, el };
 }
 
-const SIGNED = '<p>Hello there</p><div class="o-signature-container">-- Admin</div>';
-
-test('the signature the composer opens with is not a draft', () => {
-    const { adapter } = makeEditorFixture(SIGNED);
-    expect(adapter.getDraft().trim()).toBe('Hello there');
+test('the draft of a rich composer ends at the signature', async () => {
+    for (const [html, draft] of [
+        ['<p>Hello there</p>', 'Hello there'],
+        ['<p><br></p>', ''],
+    ]) {
+        const { adapter } = await editorFixture(html, '<p>On Monday you wrote...</p>');
+        expect(adapter.getDraft().trim()).toBe(draft);
+    }
 });
 
-test('a composer holding only a signature has nothing written in it', () => {
-    const { adapter } = makeEditorFixture(
-        '<p><br></p><div class="o-signature-container">-- Admin</div>',
+test('a rewritten message replaces the draft and keeps the signature under it', async () => {
+    const { adapter, el } = await editorFixture(
+        '<p>Hello there</p><p><br></p>',
+        '<p>On Monday you wrote...</p>',
     );
-    expect(adapter.getDraft().trim()).toBe('');
-});
-
-test('replacing the message leaves the signature under it', () => {
-    const { adapter, plugin } = makeEditorFixture(SIGNED);
-    adapter.replaceDraft('Good day to you.');
-    expect(plugin.picked.focusOffset).toBe(1);
-});
-
-test('a message with no signature is replaced whole', () => {
-    const { adapter, plugin } = makeEditorFixture('<p>One</p><p>Two</p>');
-    adapter.replaceDraft('Something else.');
-    expect(plugin.picked.focusOffset).toBe(2);
-});
-
-test('what sits under the signature is not part of the draft', () => {
-    const { adapter } = makeEditorFixture(`${SIGNED}<p>On Monday you wrote…</p>`);
-    expect(adapter.getDraft().trim()).toBe('Hello there');
-});
-
-test('a rewrite never lands above text it also rewrote', () => {
-    const { adapter, plugin } = makeEditorFixture(
-        `${SIGNED}<p>On Monday you wrote…</p>`,
-    );
-    adapter.replaceDraft('Good day to you.');
-    expect(plugin.picked.focusOffset).toBe(1);
+    adapter.replaceDraft('Good day to you.\n\nKind regards');
+    expect(adapter.getDraft()).toBe('Good day to you.Kind regards');
+    const signature = el.querySelector('.o-signature-container');
+    expect(signature).toHaveText(/--\s*Mitchell Admin/);
+    expect(signature.previousElementSibling).toHaveText('Kind regards');
+    expect(el.lastElementChild).toHaveText('On Monday you wrote...');
 });

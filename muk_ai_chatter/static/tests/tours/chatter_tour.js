@@ -3,37 +3,30 @@ import { registry } from '@web/core/registry';
 registry.category('web_tour.tours').add('muk_ai_chatter_tour', {
     steps: () => [
         {
-            trigger: '.o-mail-Chatter-aiSessions:contains("1")',
+            trigger: '.mk_chatter_ai_sessions:contains("1")',
             content: 'The chatter topbar counts the sessions linked to the record',
         },
         {
-            trigger: '.o-mail-Chatter-aiSessions',
+            trigger: '.o-mail-Chatter:not(:has(.mk_session_box))',
             content: 'The list stays out of the way until it is asked for',
-            run: () => {
-                if (document.querySelector('.o-mail-AISessionBox')) {
-                    throw new Error(
-                        'the AI sessions were listed before being asked for',
-                    );
-                }
-            },
         },
         {
-            trigger: '.o-mail-Chatter-aiSessions',
+            trigger: '.mk_chatter_ai_sessions',
             content: 'Show the AI sessions',
             run: 'click',
         },
         {
-            trigger: '.o-mail-AISessionBox:contains("AI Sessions")',
-            content: 'The AI Sessions section renders on the linked record',
+            trigger: '.mk_session_box_item:contains("Tour Session") .mk_state_done',
+            content: 'The linked session is listed, its state carried by a dot',
         },
         {
-            trigger: '.o-mail-AISessionBox-item:contains("Tour Session")',
-            content: 'The session linked to this record is listed',
+            trigger: '.mk_chatter_ai_sessions.active',
+            content: 'Hide the AI sessions again',
+            run: 'click',
         },
         {
-            trigger:
-                '.o-mail-AISessionBox-item .o-mail-AISessionBox-state.o-state-done',
-            content: 'Its state is carried by the colour of a dot',
+            trigger: '.o-mail-Chatter:not(:has(.mk_session_box))',
+            content: 'The list is gone again',
         },
     ],
 });

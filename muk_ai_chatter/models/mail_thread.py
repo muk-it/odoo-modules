@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import logging
 
-from odoo import _, api, models
+from odoo import api, models
 
-from odoo.addons.muk_ai_chatter.tools import (
-    CHATTER_SESSION_LIMIT,
+from odoo.addons.muk_ai_chatter.tools.chatter import CHATTER_SESSION_LIMIT
+from odoo.addons.muk_ai_chatter.tools.mention import (
     THREAD_CONTEXT_MESSAGES,
     THREAD_CONTEXT_TYPES,
     format_thread_context,
@@ -16,7 +16,7 @@ _logger = logging.getLogger(__name__)
 
 
 class MailThread(models.AbstractModel):
-    """Expose the AI sessions held against a record to its chatter."""
+    """Expose the AI sessions of a record to its chatter and strip agent recipients."""
 
     _inherit = 'mail.thread'
 
@@ -24,92 +24,42 @@ class MailThread(models.AbstractModel):
     # Helper
     # ----------------------------------------------------------
 
-    @api.model
-    def _ai_session_chatter_fields(self) -> list[str]:
-        """Return the session fields read for the chatter summary."""
-        return [
-            'id',
-            'name',
-            'state',
-            'create_date',
-            'user_id',
-            'agent_id',
-        ]
-
     def _ai_session_chatter_domain(self) -> list:
-        """Return the domain for the linked sessions the caller may see.
-
-        A session belongs to whoever ran it: the transcript carries tool
-        output gathered under that user's rights, so reading the record it is
-        pinned to never opens the conversation held against it.
-
-        Only a settings administrator is let past that, the way ``muk_ai``
-        writes its record rule — rather than through ``env.is_admin()``, which
-        would answer yes for an access-rights manager the rule denies.
-        """
+        """Return the linked sessions the caller may see: their own, all for a settings admin."""
         domain = [('res_model', '=', self._name), ('res_id', '=', self.id)]
         if not self.env.user._is_system():
             domain.append(('user_id', '=', self.env.uid))
         return domain
 
-    def _get_ai_sessions_for_chatter(self) -> models.BaseModel:
-        """Return the linked sessions shown in this record's chatter."""
-        return (
-            self.env['muk_ai.session']
-            .sudo()
-            .search(
-                self._ai_session_chatter_domain(),
-                order='create_date desc',
-                limit=CHATTER_SESSION_LIMIT,
-            )
-        )
-
     # ----------------------------------------------------------
-    # Helper Mention
+    # Helper
     # ----------------------------------------------------------
 
     def _ai_split_mentioned_agents(
         self, partner_ids: list[int] | None
     ) -> tuple[models.BaseModel, list[int]]:
-        """Split mentioned agents off the recipients of a message.
+        """Return the agents that answer and the partner ids left to notify.
 
-        The agents are dropped from ``partner_ids`` so no post notifies them,
-        mails them, or enrols them as followers — on every thread, whether or
-        not it is one they answer in. A poster who may not run a session gets
-        no agent back, only the stripping.
-
-        :param partner_ids: the mentioned partners the client sent
-        :return: the mentionable agents, and the partner ids left to notify
+        Agents never become recipients or followers; a poster who may not run
+        a session gets no agent back, only the stripping.
         """
-        empty = self.env['muk_ai.agent']
-        if not partner_ids:
-            return empty, list(partner_ids or [])
-        partners = self.env['res.partner'].sudo().browse(list(partner_ids))
+        agents = self.env['muk_ai.agent']
+        partners = self.env['res.partner'].sudo().browse(partner_ids or [])
         standing_in = partners._ai_agent_partners()
         if not standing_in:
-            return empty, list(partner_ids or [])
-        remaining = [pid for pid in partner_ids if pid not in set(standing_in.ids)]
-        if not self.env['muk_ai.session'].has_access('create'):
-            return empty, remaining
-        return standing_in._mentionable_ai_agents(), remaining
+            return agents, list(partner_ids or [])
+        remaining = [pid for pid in partner_ids if pid not in standing_in.ids]
+        if self.env['muk_ai.session'].has_access('create'):
+            agents = standing_in._mentionable_ai_agents()
+        return agents, remaining
 
     def _ai_answer_mentions(
         self, message: models.BaseModel, agents: models.BaseModel
     ) -> None:
-        """Answer the agents mentioned in this thread, if it is one they serve.
-
-        Nothing happens on a record: a chatter message is addressed to the
-        people following the record, and an agent answering it there reads as
-        mail somebody sent. The writing helper is the surface for a record.
-        """
+        """Answer the agents mentioned in this thread; a record answers none."""
 
     def _ai_thread_context(self) -> str:
-        """Return the recorded conversation of this record as prompt data.
-
-        Snapshotted once when a mention spawns its session: chatter messages
-        are editable and deletable, so re-reading them later would silently
-        change what the agent was told.
-        """
+        """Return the recorded conversation of this record as prompt data."""
         messages = (
             self.env['mail.message']
             .sudo()
@@ -125,46 +75,49 @@ class MailThread(models.AbstractModel):
         )
         lines = []
         for message in reversed(messages):
-            body = mention_plaintext(message.body)
-            if not body:
-                continue
-            author = message.author_id.display_name or message.email_from or _('System')
-            stamp = message.date.strftime('%Y-%m-%d %H:%M') if message.date else ''
-            lines.append(f'[{stamp}] {author}: {body}')
+            if body := mention_plaintext(message.body):
+                author = (
+                    message.author_id.display_name
+                    or message.email_from
+                    or self.env._('System')
+                )
+                stamp = message.date.strftime('%Y-%m-%d %H:%M')
+                lines.append(f'[{stamp}] {author}: {body}')
         return format_thread_context(lines)
 
     # ----------------------------------------------------------
     # Functions
     # ----------------------------------------------------------
 
+    @api.readonly
     def get_ai_sessions_summary(self) -> dict:
-        """Return per-record linked-session entries and total counts."""
-        Session = self.env['muk_ai.session'].sudo()
-        names = self._ai_session_chatter_fields()
+        """Return per record the newest linked sessions and their total count."""
+        sessions = self.env['muk_ai.session'].sudo()
         result = {}
         for thread in self:
-            sessions = thread._get_ai_sessions_for_chatter()
+            domain = thread._ai_session_chatter_domain()
             result[thread.id] = {
-                'entries': sessions.read(names),
-                'total': Session.search_count(thread._ai_session_chatter_domain()),
+                'entries': sessions.search_read(
+                    domain,
+                    ['name', 'state', 'create_date', 'user_id', 'agent_id'],
+                    order='create_date desc',
+                    limit=CHATTER_SESSION_LIMIT,
+                ),
+                'total': sessions.search_count(domain),
             }
         return result
 
     # ----------------------------------------------------------
-    # ORM methods
+    # ORM
     # ----------------------------------------------------------
 
     def message_post(
         self, *, partner_ids: list[int] | None = None, **kwargs
     ) -> models.BaseModel:
-        """Post the message, keeping any mentioned agent out of its recipients.
+        """Post the message with the agents out of its recipients, then answer them.
 
-        Answering is a side effect of posting, never a condition of it: a rate
-        limit reached, an agent whose provider is half configured, anything a
-        run refuses to start over, would otherwise unwind through ``super()``
-        and take the message somebody wrote down with it. The savepoint drops
-        whatever the failed spawn had already written; the message stands, and
-        the mention simply goes unanswered.
+        Answering runs in a savepoint: a run that refuses to start loses the
+        answer, never the message.
         """
         agents, recipients = self._ai_split_mentioned_agents(partner_ids)
         message = super().message_post(partner_ids=recipients, **kwargs)
@@ -186,11 +139,7 @@ class MailThread(models.AbstractModel):
         partner_ids: list[int] | None = None,
         **kwargs,
     ) -> None:
-        """Keep an agent out of the recipients of an edited message too.
-
-        Editing summons nobody: a mention is answered once, when it is written.
-        ``None`` is how the caller says it is not editing them at all.
-        """
+        """Keep the agents out of the recipients of an edited message, summoning none."""
         if partner_ids is not None:
             partner_ids = self._ai_split_mentioned_agents(partner_ids)[1]
         super()._message_update_content(message, partner_ids=partner_ids, **kwargs)

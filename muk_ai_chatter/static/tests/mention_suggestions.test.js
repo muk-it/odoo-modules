@@ -9,7 +9,7 @@ import {
     startServer,
 } from '@mail/../tests/mail_test_helpers';
 
-import '@muk_ai_chatter/mention/suggestion_service_patch';
+import '@muk_ai_chatter/mention/suggestions/suggestions';
 
 describe.current.tags('muk_ai_chatter', 'desktop');
 defineMailModels();

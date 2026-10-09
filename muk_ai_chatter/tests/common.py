@@ -5,11 +5,11 @@ from contextlib import contextmanager
 from unittest.mock import patch
 
 from odoo import models
-from odoo.tests.common import TransactionCase
+from odoo.tests import TransactionCase
 
 
 class ChatterTestCommon(TransactionCase):
-    """Shared fixtures for the chatter mention suites."""
+    """Shared fixtures for the chatter suites."""
 
     # ----------------------------------------------------------
     # Setup
@@ -29,40 +29,41 @@ class ChatterTestCommon(TransactionCase):
     # Helper
     # ----------------------------------------------------------
 
+    @classmethod
+    def _hide(cls, record: models.BaseModel) -> None:
+        """Hide ``record`` from everybody but the superuser."""
+        cls.env['ir.rule'].create(
+            {
+                'name': 'Hide one record',
+                'model_id': cls.env['ir.model']._get_id(record._name),
+                'domain_force': repr([('id', '!=', record.id)]),
+            }
+        )
+
     @contextmanager
     def _mute_worker(self) -> Iterator[list]:
-        """Stop sessions from reaching a provider and collect the prompts.
-
-        The mention path is what is under test, not the language model, so the
-        turn is captured at ``start`` and never dispatched.
-        """
+        """Capture the prompts sessions are started with, starting none."""
         started = []
 
-        def fake(session_arg, user_message=None, attachment_ids=None):
-            started.append((session_arg, user_message))
+        def fake(
+            session: models.BaseModel,
+            user_message: str | None = None,
+            attachment_ids: list[int] | None = None,
+        ) -> dict:
+            """Record the start instead of running it."""
+            started.append((session, user_message))
             return {}
 
         with patch.object(
-            type(self.env['muk_ai.session']),
-            'start',
-            autospec=True,
-            side_effect=fake,
+            type(self.env['muk_ai.session']), 'start', autospec=True, side_effect=fake
         ):
             yield started
 
     @contextmanager
     def _mute_dispatch(self) -> Iterator[None]:
-        """Let a session start for real, without handing it to a worker.
-
-        Unlike :meth:`_mute_worker`, ``start`` itself runs — it is what names
-        the session and builds its first turn — and only the dispatch to a
-        provider is held back.
-        """
+        """Let sessions start for real without handing them to a worker."""
         with patch.object(
-            type(self.env['muk_ai.session']),
-            '_trigger_worker',
-            autospec=True,
-            side_effect=lambda session_arg: None,
+            type(self.env['muk_ai.session']), '_trigger_worker', autospec=True
         ):
             yield
 
@@ -71,9 +72,8 @@ class ChatterTestCommon(TransactionCase):
         body: str = 'Summarise this thread',
         record: models.BaseModel | None = None,
     ) -> models.BaseModel:
-        """Post a message on the thread mentioning the agent."""
-        target = record if record is not None else self.record
-        return target.message_post(
+        """Post a message on a thread mentioning the agent."""
+        return (record or self.channel).message_post(
             body=body,
             message_type='comment',
             subtype_xmlid='mail.mt_comment',
@@ -81,15 +81,10 @@ class ChatterTestCommon(TransactionCase):
         )
 
     def _suggested_partner_ids(self, payload: dict | list) -> list[int]:
-        """Return the contact ids a mention suggestion payload offered.
-
-        Read out of the store payload rather than matched in its text: the
-        repr of a dict quotes its keys whichever way Python feels like, so a
-        substring assertion on it can pass while proving nothing.
-        """
+        """Return the contact ids a mention suggestion payload offered."""
         if not payload:
             return []
-        return [record['id'] for record in payload.get('res.partner', [])]
+        return [row['id'] for row in payload.get('res.partner', [])]
 
     def _sessions_on(self, record: models.BaseModel) -> models.BaseModel:
         """Return the sessions linked to ``record``, oldest first."""
@@ -99,7 +94,7 @@ class ChatterTestCommon(TransactionCase):
         )
 
     def _messages_on(self, record: models.BaseModel) -> models.BaseModel:
-        """Return the chatter messages of ``record``, oldest first."""
+        """Return the messages of ``record``, oldest first."""
         return self.env['mail.message'].search(
             [('model', '=', record._name), ('res_id', '=', record.id)],
             order='id',
