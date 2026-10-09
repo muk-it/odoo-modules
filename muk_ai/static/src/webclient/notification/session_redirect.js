@@ -1,6 +1,7 @@
 // @odoo-module
 
 import { registerPatch } from '@mail/model/model_core';
+import '@mail/models/messaging';
 
 export const AI_SESSION_MODEL = 'muk_ai.session';
 
