@@ -105,4 +105,4 @@ export class MukAISystray extends Component {
 
 registry
     .category('systray')
-    .add('muk_ai.Systray', { Component: MukAISystray }, { sequence: 60 });
+    .add('muk_ai.Systray', { Component: MukAISystray }, { sequence: 28 });
