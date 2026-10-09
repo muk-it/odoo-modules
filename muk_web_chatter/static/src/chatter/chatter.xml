@@ -77,8 +77,8 @@
         <xpath expr="//button[hasclass('o-mail-Chatter-activity')]/span" position="attributes">
             <attribute name="class" add="d-none d-sm-inline" separator=" " />
         </xpath>
-        <xpath expr="//button[@t-if='showsAttachmentPopout']" position="attributes">
-            <attribute name="t-if">props.isChatterAside and showsAttachmentPopout</attribute>
+        <xpath expr="//button[@t-on-click='popoutAttachment']" position="attributes">
+            <attribute name="t-if" add="props.isChatterAside" separator=" and " />
         </xpath>
         <xpath expr="//button[@t-on-click='onClickSearch']" position="after">
         	<button
