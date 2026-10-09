@@ -109,6 +109,8 @@ export class AIChatPlugin extends Plugin {
     }
     /**
      * Apply a `muk_ai.session_state` notification to the rows and sessions.
+     * A chat on screen takes its state from its own channel only, whose
+     * events keep their order.
      * @param {object} payload `{session_id, deleted}` or the state values
      */
     onSessionState(payload) {
@@ -128,7 +130,8 @@ export class AIChatPlugin extends Plugin {
                 });
             }
             if (session) {
-                Object.assign(session.data, values);
+                const { state, ...rest } = values;
+                Object.assign(session.data, session.holders ? rest : values);
             }
         }
         this.events.trigger('session_state', payload);

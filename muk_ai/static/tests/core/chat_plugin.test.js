@@ -9,6 +9,7 @@ import {
     getChat,
     openSession,
     recordNotifications,
+    snapshot,
 } from '@muk_ai/../tests/muk_ai_test_helpers';
 
 defineAIModels();
@@ -82,10 +83,16 @@ test('state notifications patch the rows, a deletion drops the chat everywhere',
         state: 'running',
     });
     expect(chat.rows[6]).toMatchObject({ name: 'New', state: 'running' });
+    onRpc('muk_ai.session', 'get_snapshot', () =>
+        snapshot({ id: 7, state: 'running' }),
+    );
+    const held = await openSession(7);
+    await emit('muk_ai.session_state', { session_id: 7, name: 'Seven', state: 'done' });
+    expect(held.data).toMatchObject({ name: 'Seven', state: 'running' });
     await emit('muk_ai.session_state', { session_id: 6, deleted: true });
     expect(chat.rows[6]).toBe(undefined);
     expect(chat.windowIds).toEqual([]);
-    expect(seen).toEqual([6, 6]);
+    expect(seen).toEqual([6, 7, 6]);
 });
 
 test('the badge loads once and follows its pushes', async () => {
