@@ -14,7 +14,7 @@ from odoo.addons.muk_ai.tests.common import (
 )
 from odoo.addons.muk_mcp.tools.protocol import (
     ToolResult,
-    make_image_content,
+    make_media_content,
     make_text_content,
     make_tool_result,
 )
@@ -73,7 +73,7 @@ class TestSessionHistory(AITestCommon):
             ]
         elif step == 'looks':
             image = make_tool_result(
-                [make_text_content('a chart'), make_image_content(PNG_1x1, 'image/png')]
+                [make_text_content('a chart'), make_media_content(PNG_1x1, 'image/png')]
             )
             payloads = [tool_payload(('search_read', {}, 'c1')), text_payload('seen')]
             results = {'search_read': ToolResult(image)}

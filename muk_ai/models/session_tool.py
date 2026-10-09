@@ -37,7 +37,6 @@ from odoo.addons.muk_ai.tools.vision import (
     strip_images,
 )
 from odoo.addons.muk_mcp.core.tool import get_tool_index
-from odoo.addons.muk_mcp.tools.encoder import encode_request
 
 PRIVATE_ASK_KEYS = (
     'arguments',
@@ -537,7 +536,7 @@ class AISessionTool(models.AbstractModel):
             **tool._tool_log_values(
                 name=call['name'],
                 env=self.env,
-                request_data=encode_request(arguments),
+                arguments=arguments,
                 model_name=arguments.get('model')
                 if isinstance(arguments, dict)
                 else None,
