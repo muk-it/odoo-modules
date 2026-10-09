@@ -104,17 +104,24 @@ class TestCarryState(AITestCommon):
             'content': [{'type': 'output_text', 'text': text}] if text else [],
             'provider_state': {
                 'anthropic': {
-                    'thinking': [
+                    'blocks': [
                         {
                             'type': 'thinking',
                             'thinking': 'step one',
                             'signature': 'sig-1',
                         },
                         {
+                            'type': 'server_tool_use',
+                            'id': 'srv_1',
+                            'name': 'web_search',
+                        },
+                        {'type': 'web_search_tool_result', 'tool_use_id': 'srv_1'},
+                        {
                             'type': 'thinking',
                             'thinking': 'step two',
                             'signature': 'sig-2',
                         },
+                        *([{'type': 'text', 'text': text}] if text else []),
                     ]
                 }
             },
@@ -305,20 +312,41 @@ class TestCarryState(AITestCommon):
     # Tests: thinking
     # ----------------------------------------------------------
 
-    def test_anthropic_replays_its_thinking_ahead_of_the_turn_text(self):
-        body = self._sent_body(
-            self.provider_anthropic,
-            self._session_inputs(self.agent_anthropic, [self._anthropic_carry()]),
-        )
-        content = next(
-            message for message in body['messages'] if message['role'] == 'assistant'
-        )['content']
-        self.assertEqual(
-            [(block['type'], block.get('signature')) for block in content],
-            [('thinking', 'sig-1'), ('thinking', 'sig-2'), ('text', None)],
-        )
+    def test_anthropic_replays_its_turn_blocks_as_they_came(self):
+        carry = self._anthropic_carry()
+        steps = [
+            block
+            for block in carry['provider_state']['anthropic']['blocks']
+            if block['type'] == 'thinking'
+        ]
+        older = {**carry, 'provider_state': {'anthropic': {'thinking': steps}}}
+        for item, blocks in (
+            (
+                carry,
+                [
+                    ('thinking', 'sig-1'),
+                    ('server_tool_use', None),
+                    ('web_search_tool_result', None),
+                    ('thinking', 'sig-2'),
+                    ('text', None),
+                ],
+            ),
+            (older, [('text', None)]),
+        ):
+            body = self._sent_body(
+                self.provider_anthropic,
+                self._session_inputs(self.agent_anthropic, [item]),
+            )
+            content = next(
+                message
+                for message in body['messages']
+                if message['role'] == 'assistant'
+            )['content']
+            self.assertEqual(
+                [(block['type'], block.get('signature')) for block in content], blocks
+            )
 
-    def test_anthropic_replays_its_thinking_ahead_of_its_tool_use(self):
+    def test_anthropic_replays_its_turn_blocks_ahead_of_its_tool_use(self):
         conversation = [
             self._anthropic_carry(text=''),
             {
@@ -338,7 +366,13 @@ class TestCarryState(AITestCommon):
         )['content']
         self.assertEqual(
             [block['type'] for block in content],
-            ['thinking', 'thinking', 'tool_use'],
+            [
+                'thinking',
+                'server_tool_use',
+                'web_search_tool_result',
+                'thinking',
+                'tool_use',
+            ],
         )
 
     def test_a_handoff_to_anthropic_sends_no_foreign_thinking(self):
