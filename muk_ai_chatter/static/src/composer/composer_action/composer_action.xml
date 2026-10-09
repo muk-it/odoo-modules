@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="muk_ai_chatter.ComposerWriteButton">
+        <button
+            t-if="store.self.isInternalUser"
+            class="mk_composer_ai_write btn border-0 rounded-circle p-0"
+            title="Write with AI"
+            aria-label="Write with AI"
+            t-on-click="onClickWriteWithAI"
+        >
+            <span class="mk_icon_ai fa-fw fa-lg"/>
+        </button>
+    </t>
+    <t t-inherit="mail.Composer.actions" t-inherit-mode="extension">
+        <xpath expr="//t[@t-call='mail.Composer.emojiPicker']" position="after">
+            <t t-call="muk_ai_chatter.ComposerWriteButton"/>
+        </xpath>
+    </t>
+    <t t-inherit="mail.Composer.quickActions" t-inherit-mode="extension">
+        <xpath expr="//t[@t-call='mail.Composer.emojiPicker']" position="after">
+            <t t-call="muk_ai_chatter.ComposerWriteButton"/>
+        </xpath>
+    </t>
+</templates>

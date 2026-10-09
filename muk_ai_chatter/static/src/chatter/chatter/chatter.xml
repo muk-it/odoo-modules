@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-inherit="mail.Chatter" t-inherit-mode="extension">
+        <xpath expr="//div[hasclass('o-mail-Followers')]" position="before">
+            <button
+                t-if="state.aiSessionTotal"
+                class="mk_chatter_ai_sessions btn btn-link px-1 d-flex align-items-center"
+                t-att-class="{
+                    'active': state.aiSessionsOpen,
+                    'text-muted': !state.aiSessionsOpen,
+                }"
+                aria-label="AI Sessions"
+                title="AI Sessions"
+                t-on-click="toggleAISessions"
+            >
+                <span class="mk_icon_ai me-1"/>
+                <sup t-out="state.aiSessionTotal"/>
+            </button>
+        </xpath>
+        <xpath expr="//SearchMessageResult" position="before">
+            <AISessionBox
+                t-if="state.thread.model and state.thread.id"
+                threadModel="state.thread.model"
+                threadId="state.thread.id"
+                open="state.aiSessionsOpen"
+                onLoaded="(total) => this.state.aiSessionTotal = total"
+            />
+        </xpath>
+    </t>
+</templates>
