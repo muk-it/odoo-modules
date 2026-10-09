@@ -10,7 +10,7 @@
         reachable; once it holds an entry, only the listed models are
         exposed and the agent cannot discover or query anything else.
     """,
-    'version': '20.0.1.1.12',
+    'version': '20.0.1.1.13',
     'category': 'Tools/API',
     'license': 'LGPL-3',
     'author': 'MuK IT',
