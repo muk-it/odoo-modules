@@ -10,9 +10,6 @@ from odoo.tools import mute_logger
 
 from odoo.addons.muk_ai.tests.common import json_response, sse_response
 from odoo.addons.muk_ai.tests.providers import (
-    ATTACHMENTS,
-    CASES,
-    EFFORT,
     SYSTEM,
     TOOLS,
     USER,
@@ -52,7 +49,7 @@ class TestProviders(ProviderTestCase):
 
     def test_the_request_carries_model_system_tools_and_limits(self):
         schema = {'name': 'plan', 'schema': {'type': 'object'}}
-        for name, case in CASES.items():
+        for name, case in self.cases.items():
             provider = self.providers[name]
             for model, max_tokens in ((case.model, 2048), (None, 0)):
                 with self.subTest(provider=name, model=model):
@@ -83,7 +80,7 @@ class TestProviders(ProviderTestCase):
                     self.assertEqual({key: wire[key] for key in expected}, expected)
 
     def test_streamed_text_and_tool_calls_reach_the_caller(self):
-        for name, case in CASES.items():
+        for name, case in self.cases.items():
             with self.subTest(provider=name, stream='text'):
                 result, deltas, _sent = self._stream(name, case.text)
                 self.assertEqual(deltas_of(deltas, 'text'), ['Hel', 'lo'])
@@ -126,7 +123,7 @@ class TestProviders(ProviderTestCase):
                 )
 
     def test_reasoning_streams_apart_from_the_answer(self):
-        for name, case in CASES.items():
+        for name, case in self.cases.items():
             with self.subTest(provider=name):
                 result, deltas, _sent = self._stream(name, case.reasoning)
                 self.assertEqual(deltas_of(deltas, 'reasoning'), ['weighing it'])
@@ -138,7 +135,7 @@ class TestProviders(ProviderTestCase):
                 )
 
     def test_a_max_token_stop_keeps_the_partial_answer_and_says_so(self):
-        for name, case in CASES.items():
+        for name, case in self.cases.items():
             with self.subTest(provider=name):
                 result, deltas, _sent = self._stream(name, case.truncated)
                 notice = deltas_of(deltas, 'text')[-1]
@@ -147,7 +144,7 @@ class TestProviders(ProviderTestCase):
                 self.assertEqual(result['usage']['output_tokens'], 4096)
 
     def test_built_in_tools_follow_their_flags(self):
-        for name, case in CASES.items():
+        for name, case in self.cases.items():
             for web, code in (
                 (False, False),
                 (True, False),
@@ -174,8 +171,8 @@ class TestProviders(ProviderTestCase):
                     self.assertEqual('tools' in body, bool(expected))
 
     def test_attachments_reach_each_vendor_in_its_native_form(self):
-        for label, content, expected in ATTACHMENTS:
-            for name, case in CASES.items():
+        for label, content, expected in self.attachments:
+            for name, case in self.cases.items():
                 with self.subTest(attachment=label, provider=name):
                     _result, _deltas, sent = self._stream(
                         name, case.text, inputs=[{'role': 'user', 'content': content}]
@@ -186,7 +183,7 @@ class TestProviders(ProviderTestCase):
                     )
 
     def test_a_failed_request_raises_a_user_error(self):
-        for name, case in CASES.items():
+        for name, case in self.cases.items():
             for failure, answers, message in (
                 (
                     'http',
@@ -214,7 +211,7 @@ class TestProviders(ProviderTestCase):
                     self.assertEqual(len(sent), len(answers))
 
     def test_the_connection_test_needs_a_text_answer(self):
-        for name, case in CASES.items():
+        for name, case in self.cases.items():
             provider = self.providers[name]
             with self.subTest(provider=name):
                 with self._wire(self._either(case.text, case.reply)) as sent:
@@ -228,8 +225,8 @@ class TestProviders(ProviderTestCase):
                     provider.action_test_connection()
 
     def test_reasoning_effort_is_clamped_to_the_model_and_mapped_per_vendor(self):
-        for name, model, requested, expected in EFFORT:
-            case = CASES[name]
+        for name, model, requested, expected in self.efforts:
+            case = self.cases[name]
             with self.subTest(provider=name, model=model, effort=requested):
                 _result, _deltas, sent = self._stream(
                     name, case.text, model=model, reasoning_effort=requested
@@ -240,7 +237,9 @@ class TestProviders(ProviderTestCase):
 
     @mute_logger('odoo.addons.muk_ai.providers.base')
     def test_a_rejected_effort_is_dropped_only_before_any_output(self):
-        for name, case in CASES.items():
+        for name, case in self.cases.items():
+            if not self.providers[name]._get_client().reasoning_error_tokens:
+                continue
             with self.subTest(provider=name, failure='rejected'):
                 result, _deltas, sent = self._stream(
                     name,

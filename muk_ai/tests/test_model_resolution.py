@@ -24,8 +24,10 @@ class TestModelResolution(AITestCommon):
 
     @classmethod
     def setUpClass(cls) -> None:
-        """Give every provider its own default models and add a keyless account."""
+        """Keep only the shipped providers, each with its own models, and a keyless one."""
         super().setUpClass()
+        shipped = cls.provider | cls.provider_anthropic | cls.provider_google
+        (cls.env['muk_ai.provider'].search([]) - shipped).active = False
         cls.chat_openai = cls._catalog(cls.provider, 'gpt-res-chat', window=300000)
         cls.image_openai = cls._catalog(cls.provider, 'gpt-res-image', 'image')
         cls.chat_anthropic = cls._catalog(cls.provider_anthropic, 'claude-res-chat')

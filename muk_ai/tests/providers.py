@@ -432,7 +432,15 @@ ATTACHMENTS = [
 
 
 class ProviderTestCase(AITestCommon):
-    """Shared setup of the provider adapter tests: the record of every vendor."""
+    """Shared setup of the provider adapter tests: the record of every vendor.
+
+    A provider addon runs the same contract on its own wire by overriding
+    ``cases``, ``attachments`` and ``efforts`` in a subclass.
+    """
+
+    cases = CASES
+    attachments = ATTACHMENTS
+    efforts = EFFORT
 
     # ----------------------------------------------------------
     # Setup
@@ -442,7 +450,9 @@ class ProviderTestCase(AITestCommon):
     def setUpClass(cls) -> None:
         """Bind the provider record of every recorded vendor."""
         super().setUpClass()
-        cls.providers = {name: cls.env.ref(case.xmlid) for name, case in CASES.items()}
+        cls.providers = {
+            name: cls.env.ref(case.xmlid) for name, case in cls.cases.items()
+        }
 
     # ----------------------------------------------------------
     # Helper
