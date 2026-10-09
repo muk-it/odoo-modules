@@ -227,10 +227,14 @@ class AnthropicProvider(ProviderBase):
                     anchor = position
                 continue
             if role in ('user', 'assistant'):
-                thinking = cls._carried_state(item).get('thinking') or []
-                content = cls._content_to_anthropic(item.get('content'))
-                for block in [*thinking, *content]:
-                    position = append(role, block)
+                state = cls._carried_state(item)
+                thinking = state.get('thinking') or []
+                content = state.get('blocks') or [
+                    *(thinking if len(thinking) == 1 else []),
+                    *cls._content_to_anthropic(item.get('content')),
+                ]
+                for block in content:
+                    position = append(role, dict(block))
                     if not volatile:
                         anchor = position
 
@@ -329,17 +333,18 @@ class AnthropicProvider(ProviderBase):
         return {'type': 'thinking', 'thinking': thinking, 'signature': signature}
 
     @classmethod
-    def _assistant_carry(cls, content: list, thinking: list) -> list:
+    def _assistant_carry(cls, content: list, blocks: list) -> list:
         """Return the assistant carry of a turn: one item, or none when it is empty.
 
-        Thinking signatures authenticate a replay to Anthropic and mean nothing
-        to any other vendor, so they ride in this provider's private state
-        rather than in the canonical content.
+        A turn with thinking or server tool blocks keeps all its Anthropic
+        blocks in order in this provider's private state, to replay unchanged.
         """
-        if not content and not thinking:
+        if not content and not blocks:
             return []
         carry = {'role': 'assistant', 'content': content}
-        return [cls._carry_state(carry, {'thinking': thinking}) if thinking else carry]
+        if all(block['type'] == 'text' for block in blocks):
+            return [carry]
+        return [cls._carry_state(carry, {'blocks': blocks})]
 
     def _parse_response(self, payload: dict) -> dict:
         """Parse a non-streaming response into text, tool calls, carry inputs, and usage."""
@@ -348,7 +353,7 @@ class AnthropicProvider(ProviderBase):
         tool_calls = []
         function_call_carries = []
         assistant_content = []
-        thinking_blocks = []
+        replay = []
         for block in content:
             block_type = block.get('type')
             if block_type == 'text':
@@ -361,10 +366,13 @@ class AnthropicProvider(ProviderBase):
                             'text': text,
                         }
                     )
+                    replay.append({'type': 'text', 'text': text})
             elif block_type in THINKING_BLOCK_TYPES:
-                if replay := self._replayable_thinking(block):
-                    thinking_blocks.append(replay)
-            elif block_type == 'tool_use':
+                if thinking := self._replayable_thinking(block):
+                    replay.append(thinking)
+            elif block_type != 'tool_use':
+                replay.append(block)
+            else:
                 call_id = block.get('id')
                 name = block.get('name')
                 arguments = block.get('input') or {}
@@ -388,7 +396,7 @@ class AnthropicProvider(ProviderBase):
             'text': '\n'.join(text_parts).strip(),
             'tool_calls': tool_calls,
             'carry_inputs': [
-                *self._assistant_carry(assistant_content, thinking_blocks),
+                *self._assistant_carry(assistant_content, replay),
                 *function_call_carries,
             ],
             'usage': self._usage_from_anthropic(payload.get('usage') or {}),
@@ -432,13 +440,13 @@ class AnthropicProvider(ProviderBase):
         tool_calls = []
         function_call_carries = []
         assistant_content = []
-        thinking_blocks = []
+        replay = []
         for index in sorted(blocks_by_index):
             entry = blocks_by_index[index]
             entry_type = entry.get('type')
             if entry_type in THINKING_BLOCK_TYPES:
-                if replay := self._replayable_thinking(entry):
-                    thinking_blocks.append(replay)
+                if thinking := self._replayable_thinking(entry):
+                    replay.append(thinking)
             elif entry_type == 'text':
                 text = entry.get('text') or ''
                 if text:
@@ -449,7 +457,13 @@ class AnthropicProvider(ProviderBase):
                             'text': text,
                         }
                     )
-            elif entry_type == 'tool_use':
+                    replay.append({'type': 'text', 'text': text})
+            elif entry_type != 'tool_use':
+                partial = entry.pop('partial_json', '')
+                replay.append(
+                    {**entry, **({'input': json.loads(partial)} if partial else {})}
+                )
+            else:
                 args, parse_error = self._parse_tool_arguments(
                     entry.get('partial_json'),
                 )
@@ -473,7 +487,7 @@ class AnthropicProvider(ProviderBase):
             'text': ''.join(text_parts).strip(),
             'tool_calls': tool_calls,
             'carry_inputs': [
-                *self._assistant_carry(assistant_content, thinking_blocks),
+                *self._assistant_carry(assistant_content, replay),
                 *function_call_carries,
             ],
             'usage': self._usage_from_anthropic(raw_usage),
@@ -529,6 +543,8 @@ class AnthropicProvider(ProviderBase):
                         'name': entry['name'],
                     },
                 )
+            elif block_type:
+                blocks_by_index[index] = {**block, 'partial_json': ''}
         elif event_type == 'content_block_delta':
             index = event.get('index', 0)
             entry = blocks_by_index.get(index)
@@ -552,11 +568,13 @@ class AnthropicProvider(ProviderBase):
                 signature = delta.get('signature') or ''
                 if signature:
                     entry['signature'] = (entry.get('signature') or '') + signature
-            elif delta_type == 'input_json_delta' and entry.get('type') == 'tool_use':
+            elif delta_type == 'input_json_delta' and 'partial_json' in entry:
                 partial = delta.get('partial_json') or ''
                 if not partial:
                     return
                 entry['partial_json'] += partial
+                if entry['type'] != 'tool_use':
+                    return
                 self._call_on_delta(
                     on_delta,
                     'tool_args',
