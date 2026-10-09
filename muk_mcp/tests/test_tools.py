@@ -117,18 +117,30 @@ class TestMcpTool(common.TransactionCase):
         finally:
             record.unlink()
 
-    def test_read_handler(self):
-        partner = self.partner_a
-        for name, arguments in (
-            ('read_records', {'ids': [partner.id], 'fields': ['name']}),
-            ('read_records', {'ids': [partner.id]}),
-            ('search_read', {'domain': [['id', '=', partner.id]]}),
-        ):
-            with self.subTest(name=name, arguments=arguments):
-                result = self._call(
-                    name, {'model': 'res.partner', **arguments}, user=self.user,
-                )
-                self.assertEqual(result[0]['name'], partner.name)
+    def test_reads_return_binaries_as_uris_and_lean_defaults(self):
+        self.partner_a.image_1920 = PNG
+        rows = self._call('read_records', {
+            'model': 'res.partner',
+            'ids': [self.partner_a.id, self.partner_b.id],
+            'fields': ['name', 'image_1920'],
+        })
+        self.assertEqual(
+            [row['image_1920'] for row in rows],
+            [f'odoo://record/res.partner/{self.partner_a.id}/image_1920', False],
+        )
+        found = self._call('search_read', {
+            'model': 'res.partner',
+            'domain': [['id', '=', self.partner_a.id]],
+        }, user=self.user)
+        self.assertEqual(
+            found, [{'id': self.partner_a.id, 'display_name': 'MCP Tool Partner A'}],
+        )
+        [row] = self._call('read_records', {
+            'model': 'res.partner',
+            'ids': self.partner_a.ids,
+        }, user=self.user)
+        self.assertEqual(row['email'], self.partner_a.email)
+        self.assertFalse({'image_1920', 'child_ids', 'tz_offset'} & row.keys())
 
     def test_whoami_handler(self):
         result = self._call('whoami', {})
