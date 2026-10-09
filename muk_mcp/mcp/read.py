@@ -1,8 +1,13 @@
+from __future__ import annotations
+
+from typing import Any
+
 from odoo import _, api, models
-from odoo.exceptions import AccessError, UserError
+from odoo.exceptions import UserError
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
 from odoo.addons.muk_mcp.tools.common import coerce_json_value
+from odoo.addons.muk_mcp.tools.uri import record_field_uri
 
 
 class MCPMixin(models.AbstractModel):
@@ -14,21 +19,18 @@ class MCPMixin(models.AbstractModel):
     # ----------------------------------------------------------
 
     @api.model
-    def _mcp_read(self, records, fields):
-        records = records.with_context(bin_size=True)
-        if fields:
-            return records.read(fields)
-        try:
-            return records.read()
-        except AccessError:
-            readable = []
-            for name in records.fields_get(attributes=()):
-                try:
-                    records.read([name])
-                except AccessError:
-                    continue
-                readable.append(name)
-            return records.read(readable)
+    def _mcp_read(
+        self, records: models.BaseModel, fields: list[str]
+    ) -> list[dict[str, Any]]:
+        """Read ``fields`` of ``records``, binary fields as resource URIs without their content."""
+        rows = records.with_context(bin_size=True).read(fields)
+        binary = [name for name in fields if records._fields[name].type == 'binary']
+        for row in rows:
+            for name in binary:
+                row[name] = row[name] and record_field_uri(
+                    records._name, row['id'], name
+                )
+        return rows
 
     # ----------------------------------------------------------
     # Functions
@@ -86,8 +88,8 @@ class MCPMixin(models.AbstractModel):
             "domain syntax: each condition is [field, operator, value]. "
             "Conditions are AND-ed by default. Use '|' for OR. Operators: "
             "=, !=, >, >=, <, <=, like, ilike, in, not in, child_of, "
-            "parent_of. Always specify 'fields' to avoid returning all "
-            "fields (which can be slow). Use 'limit' to paginate large "
+            "parent_of. Without 'fields' only id and display_name come "
+            "back; name the fields you need. Use 'limit' to paginate large "
             "result sets."
         ),
         input_schema={
@@ -115,8 +117,8 @@ class MCPMixin(models.AbstractModel):
                     'type': 'array',
                     'items': {'type': 'string'},
                     'description': (
-                        "Field names to return. ALWAYS specify this to "
-                        "avoid returning all fields. Example: "
+                        "Field names to return. Binary fields come back as a "
+                        "resource URI, or false when empty. Example: "
                         "['name','email','phone','state']."
                     ),
                 },
@@ -169,7 +171,7 @@ class MCPMixin(models.AbstractModel):
             offset=offset,
             order=order,
         )
-        return self._mcp_read(records, fields)
+        return self._mcp_read(records, fields or ['display_name'])
 
     @api.model
     @mcp_tool(
@@ -177,8 +179,9 @@ class MCPMixin(models.AbstractModel):
         description=(
             'Read specific records by their database IDs. Use this when '
             'you already know the exact record IDs (e.g. from a previous '
-            'search_read result or from a Many2one field value). Returns '
-            'all requested fields for each ID.'
+            'search_read result or from a Many2one field value). Without '
+            '"fields" it returns the stored base fields of each record; name '
+            'computed, one2many or many2many fields to get them.'
         ),
         input_schema={
             'type': 'object',
@@ -196,7 +199,8 @@ class MCPMixin(models.AbstractModel):
                     'type': 'array',
                     'items': {'type': 'string'},
                     'description': (
-                        'Field names to return. ALWAYS specify this.'
+                        'Field names to return. Binary fields come back as a '
+                        'resource URI, or false when empty.'
                     ),
                 },
                 'context': {
@@ -216,7 +220,16 @@ class MCPMixin(models.AbstractModel):
         if not target_ids:
             raise UserError(_('No record IDs provided'))
         records = self._resolve_model(model).browse(target_ids)
-        return self._mcp_read(records, fields)
+        return self._mcp_read(
+            records,
+            fields
+            or [
+                name
+                for name in records.fields_get(attributes=())
+                if (field := records._fields[name]).prefetch is True
+                and field.type not in ('one2many', 'many2many')
+            ],
+        )
 
     @api.model
     @mcp_tool(
