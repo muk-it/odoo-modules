@@ -1,0 +1,201 @@
+.mk_compose_panel_popover {
+    border: 0;
+    box-shadow: none;
+    background-color: transparent;
+}
+.mk_compose_panel {
+    width: 27rem;
+    max-width: 90vw;
+    max-height: 70vh;
+    overflow: hidden;
+    border: 1px solid var(--border-color, #{$border-color});
+    border-radius: 0.5rem;
+    background-color: $o-view-background-color;
+    box-shadow: 0 0.5rem 1.5rem rgba($black, 0.18);
+    .mk_compose_panel_head {
+        border-bottom: 1px solid var(--border-color, #{$border-color});
+    }
+    .mk_compose_panel_mark {
+        width: 2rem;
+        height: 2rem;
+        flex: 0 0 auto;
+        color: $primary;
+        background-color: rgba($primary, 0.1);
+        font-size: 1.05rem;
+        .mk_icon_ai {
+            translate: 0 -0.08em;
+        }
+    }
+    .mk_compose_panel_body {
+        overflow-y: auto;
+    }
+    .mk_compose_panel_label {
+        width: 3.25rem;
+        flex: 0 0 auto;
+        font-size: 0.8rem;
+    }
+    .mk_compose_panel_quote {
+        border-left: 3px solid rgba($primary, 0.45);
+        background-color: rgba($primary, 0.05);
+        max-height: 4.5rem;
+        overflow: hidden;
+        font-style: italic;
+    }
+    .mk_compose_panel_head_btn {
+        width: 1.5rem;
+        height: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+    }
+    .mk_compose_panel_action {
+        min-width: 0;
+        padding: 0.6rem 0.4rem 0.5rem;
+        border: 1px solid var(--border-color, #{$border-color});
+        border-radius: 0.5rem;
+        background-color: $o-view-background-color;
+        color: $body-color;
+        font-size: 0.82rem;
+        font-weight: 500;
+        transition:
+            border-color 0.12s ease,
+            background-color 0.12s ease;
+        .oi {
+            color: $primary;
+            font-size: 1.25rem;
+        }
+        &:hover {
+            border-color: rgba($primary, 0.5);
+            background-color: rgba($primary, 0.05);
+        }
+        &.mk_active {
+            border-color: $primary;
+            background-color: rgba($primary, 0.08);
+        }
+    }
+    .mk_compose_panel_chip {
+        border: 1px solid transparent;
+        background-color: $gray-100;
+        color: $body-color;
+        transition:
+            border-color 0.12s ease,
+            background-color 0.12s ease;
+        &:hover {
+            border-color: rgba($primary, 0.5);
+            background-color: rgba($primary, 0.07);
+        }
+        .oi {
+            color: $primary;
+        }
+    }
+    .mk_compose_panel_segment {
+        padding: 2px;
+        border-radius: 0.5rem;
+        background-color: $gray-100;
+        .btn {
+            border: 0;
+            border-radius: 0.4rem;
+            color: $text-muted;
+            &:hover {
+                color: $body-color;
+            }
+            &.mk_active {
+                background-color: $o-view-background-color;
+                color: $body-color;
+                font-weight: 500;
+                box-shadow: 0 1px 2px rgba($black, 0.12);
+            }
+        }
+    }
+    .mk_compose_panel_new {
+        color: $text-muted;
+        &:hover {
+            color: $primary;
+        }
+    }
+    .mk_compose_panel_ask {
+        border: 1px solid var(--border-color, #{$border-color});
+        border-radius: 1.25rem;
+        background-color: $o-view-background-color;
+        &:focus-within {
+            border-color: rgba($primary, 0.6);
+            box-shadow: 0 0 0 0.2rem rgba($primary, 0.12);
+        }
+        .mk_compose_panel_custom {
+            background-color: transparent;
+        }
+        .mk_compose_panel_send {
+            width: 1.85rem;
+            height: 1.85rem;
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    }
+    .mk_compose_panel_error {
+        max-width: 100%;
+        color: shade-color($danger, 25%);
+        background-color: rgba($danger, 0.1);
+        font-size: 0.78rem;
+    }
+    .mk_compose_panel_stream,
+    .mk_compose_panel_result,
+    .mk_compose_panel_diff {
+        max-height: 13rem;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        font-size: 0.85rem;
+        line-height: 1.45;
+        border: 1px solid var(--border-color, #{$border-color});
+        background-color: $o-view-background-color;
+    }
+    .mk_compose_panel_stream::after {
+        content: '';
+        display: inline-block;
+        width: 0.45rem;
+        height: 0.95rem;
+        margin-left: 1px;
+        vertical-align: text-bottom;
+        background-color: $primary;
+        animation: mk_compose_panel_caret 1s steps(2, start) infinite;
+    }
+    .mk_compose_panel_pulse {
+        width: 0.6rem;
+        height: 0.6rem;
+        border-radius: 50%;
+        background-color: $primary;
+        animation: mk_compose_panel_pulse 1.1s ease-in-out infinite;
+    }
+    .mk_compose_panel_removed {
+        color: shade-color($danger, 30%);
+        background-color: rgba($danger, 0.12);
+        border-radius: 2px;
+    }
+    .mk_compose_panel_added {
+        color: shade-color($success, 45%);
+        background-color: rgba($success, 0.16);
+        border-radius: 2px;
+        text-decoration: none;
+    }
+    .mk_compose_panel_legend {
+        font-size: 0.68rem;
+    }
+}
+@keyframes mk_compose_panel_caret {
+    to {
+        opacity: 0;
+    }
+}
+@keyframes mk_compose_panel_pulse {
+    0%,
+    100% {
+        transform: scale(0.7);
+        opacity: 0.55;
+    }
+    50% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}

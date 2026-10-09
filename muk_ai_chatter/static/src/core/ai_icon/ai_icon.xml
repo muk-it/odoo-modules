@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="muk_ai_chatter.AIIcon">
+        <span class="mk_icon_ai mk_ai_icon"/>
+    </t>
+</templates>

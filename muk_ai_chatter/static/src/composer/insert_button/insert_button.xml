@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="muk_ai_chatter.InsertButton">
+        <button
+            t-if="this.insert"
+            type="button"
+            class="mk_msg_btn mk_msg_insert d-inline-flex align-items-center justify-content-center p-0 border-0 rounded lh-1 transition-base"
+            title="Use this: put it back where you were writing"
+            t-on-click="() => this.insert(this.props.text)"
+        >
+            <i class="oi" data-icon="reply"/>
+        </button>
+    </t>
+    <t t-inherit="muk_ai.ChatMsgMeta" t-inherit-mode="extension">
+        <xpath expr="//button[hasclass('mk_msg_copy')]" position="after">
+            <InsertButton t-if="!meta.user and session and meta.text" session="session" text="meta.text"/>
+        </xpath>
+    </t>
+</templates>
