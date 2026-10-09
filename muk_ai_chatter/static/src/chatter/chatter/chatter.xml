@@ -4,11 +4,8 @@
         <xpath expr="//div[hasclass('o-mail-Followers')]" position="before">
             <button
                 t-if="state.aiSessionTotal"
-                class="mk_chatter_ai_sessions btn btn-link px-1 d-flex align-items-center"
-                t-att-class="{
-                    'active': state.aiSessionsOpen,
-                    'text-muted': !state.aiSessionsOpen,
-                }"
+                class="mk_chatter_ai_sessions btn btn-link text-action px-1 d-flex align-items-center"
+                t-att-class="{ 'active': state.aiSessionsOpen }"
                 aria-label="AI Sessions"
                 title="AI Sessions"
                 t-on-click="toggleAISessions"
