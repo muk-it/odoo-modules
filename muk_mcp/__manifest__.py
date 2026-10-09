@@ -9,7 +9,7 @@
         access rights of the user the key belongs to. Every call is
         recorded in an audit log.
     """,
-    'version': '20.0.4.0.3',
+    'version': '20.0.4.1.0',
     'category': 'Tools/API',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -27,12 +27,12 @@
     ],
     'data': [
         'security/ir.access.csv',
-        'data/tool.xml',
         'data/prompt.xml',
         'views/key.xml',
         'views/generate_key.xml',
         'views/show_key.xml',
         'views/log.xml',
+        'views/transfer.xml',
         'views/tool.xml',
         'views/prompt.xml',
         'views/connect.xml',

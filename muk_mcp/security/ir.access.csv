@@ -10,3 +10,4 @@ access_muk_mcp_log_user,Users read their own MCP log,muk_mcp.log,base.group_user
 access_muk_mcp_generate_key_user,Users run the MCP key wizard,muk_mcp.generate_key,base.group_user,crd,
 access_muk_mcp_key_show_user,Users see a new MCP key once,muk_mcp.key.show,base.group_user,cr,
 access_muk_mcp_connect_user,Users run the MCP connect wizard,muk_mcp.connect,base.group_user,crud,
+access_muk_mcp_transfer_system,Administrators review MCP file transfers,muk_mcp.transfer,base.group_system,rd,

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+	<record id="view_mcp_transfer_search" model="ir.ui.view">
+		<field name="name">muk_mcp.transfer.search</field>
+		<field name="model">muk_mcp.transfer</field>
+		<field name="arch" type="xml">
+			<search>
+				<field name="user_id"/>
+				<field name="key_name"/>
+				<field name="attachment_id"/>
+				<field name="uri"/>
+				<filter name="uploads" string="Uploads" domain="[('operation', '=', 'upload')]"/>
+				<filter name="downloads" string="Downloads" domain="[('operation', '=', 'download')]"/>
+				<filter name="used" string="Used" domain="[('used', '=', True)]"/>
+				<filter name="unused" string="Unused" domain="[('used', '=', False)]"/>
+				<group>
+					<filter name="group_operation" string="Operation" context="{'group_by': 'operation'}"/>
+					<filter name="group_user" string="User" context="{'group_by': 'user_id'}"/>
+				</group>
+			</search>
+		</field>
+	</record>
+	<record id="view_mcp_transfer_list" model="ir.ui.view">
+		<field name="name">muk_mcp.transfer.list</field>
+		<field name="model">muk_mcp.transfer</field>
+		<field name="arch" type="xml">
+			<list create="false" edit="false">
+				<field name="create_date" string="Time"/>
+				<field name="key_name"/>
+				<field name="user_id"/>
+				<field
+					name="operation"
+					widget="badge"
+					decoration-info="operation == 'upload'"
+					decoration-muted="operation == 'download'"
+				/>
+				<field name="attachment_id"/>
+				<field name="uri"/>
+				<field name="file_size" optional="hide"/>
+				<field name="expires_at"/>
+				<field name="used"/>
+			</list>
+		</field>
+	</record>
+	<record id="view_mcp_transfer_form" model="ir.ui.view">
+		<field name="name">muk_mcp.transfer.form</field>
+		<field name="model">muk_mcp.transfer</field>
+		<field name="arch" type="xml">
+			<form create="false" edit="false">
+				<sheet>
+					<group>
+						<group>
+							<field name="create_date"/>
+							<field name="user_id"/>
+							<field name="key_name"/>
+							<field name="operation"/>
+						</group>
+						<group>
+							<field name="attachment_id" invisible="operation != 'upload'"/>
+							<field name="uri" invisible="operation != 'download'"/>
+							<field name="file_size" invisible="not file_size"/>
+							<field name="sha256" invisible="not sha256"/>
+							<field name="expires_at"/>
+							<field name="used"/>
+						</group>
+					</group>
+				</sheet>
+			</form>
+		</field>
+	</record>
+	<record id="action_mcp_transfer" model="ir.actions.act_window">
+		<field name="name">File Transfers</field>
+		<field name="explanation">Opens the one-time file links MCP clients asked for to upload or download a file over HTTP. Use this when the user wants to see which files an AI assistant moved in or out, by which key and whether the link was used.</field>
+		<field name="res_model">muk_mcp.transfer</field>
+		<field name="view_mode">list,form</field>
+		<field name="context">{'create': False}</field>
+		<field name="path">mcp-file-transfers</field>
+	</record>
+</odoo>

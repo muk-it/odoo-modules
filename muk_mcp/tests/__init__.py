@@ -10,3 +10,4 @@ from . import test_stateless
 from . import test_tools
 from . import test_tour
 from . import test_utils
+from . import test_transfer

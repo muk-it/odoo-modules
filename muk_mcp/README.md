@@ -174,6 +174,8 @@ Read tools:
 - `export_records`: export records to CSV or XLSX through Odoo's export,
   with `/` field paths such as `partner_id/name`.
 - `read_resource`: read a file by its `odoo://` URI.
+- `authorize_download`: a one-time link to fetch a file with an HTTP
+  GET, so it never passes through the conversation.
 - `whoami`, `get_access_rights`: the key's user, company, language and
   groups, and the user's rights on a model.
 - `system_info`, `list_modules`, `list_languages`: the server, the installed
@@ -184,6 +186,12 @@ Write tools:
 - `create_records`, `update_records`, `delete_records`: write records,
   relational fields as Odoo command lists.
 - `post_message`: post a message or an internal note on a record.
+- `schedule_activity`: schedule an activity on a record, by type name,
+  for a user and a due date.
+- `upload_file`: put a file into a binary field or onto a record as an
+  attachment, from an `authorize_upload` file or as base64.
+- `authorize_upload`: a one-time link the client sends the raw file to
+  with an HTTP PUT, so the file never passes through the conversation.
 - `call_method`: call a public method on a model or on records. Methods
   starting with `_` are refused.
 

@@ -38,6 +38,23 @@ class MCPMixin(models.AbstractModel):
         return self.env[model]
 
     @api.model
+    def _mcp_record(self, model: str, res_id: int | None) -> models.BaseModel:
+        """Return the existing record a tool targets, checked against the record hook.
+
+        :raise UserError: when the model is unknown, the id is missing or the
+            record does not exist.
+        """
+        target = self._resolve_model(model)
+        if not res_id:
+            raise UserError(self.env._('A record ID is required with a model.'))
+        self._mcp_assert_records_allowed(model, [res_id])
+        if not (record := target.browse(res_id).exists()):
+            raise UserError(
+                self.env._('Record %(model)s/%(id)s not found', model=model, id=res_id)
+            )
+        return record
+
+    @api.model
     def _mcp_apply_domain(self, model: str, domain) -> list:
         """Hook to merge a configured record domain into the caller domain."""
         return domain
@@ -72,19 +89,57 @@ class MCPMixin(models.AbstractModel):
         return frozenset()
 
     @api.model
+    def _resolve_resource_target(self, uri: str) -> tuple[models.BaseModel, str]:
+        """Return the record and binary field an ``odoo://`` URI names, checked for reading.
+
+        :raise UserError: if the URI is unsupported, the field not binary or the
+            record missing.
+        :raise AccessError: without read access on the record or the field.
+        """
+        kind, params = parse_uri(uri) or (None, {})
+        if kind == 'attachment':
+            record = self.env['ir.attachment'].browse(params['attachment_id'])
+            field = 'raw'
+        elif kind == 'record_field':
+            target = self._resolve_model(params['model'])
+            field = params['field']
+            if (
+                target._fields.get(field) is None
+                or target._fields[field].type != 'binary'
+            ):
+                raise UserError(
+                    self.env._(
+                        'Field %(f)r is not a readable binary field on %(m)s.',
+                        f=field,
+                        m=target._name,
+                    ),
+                )
+            record = target.browse(params['record_id'])
+        else:
+            raise UserError(self.env._('Unsupported resource URI: %r', uri))
+        if not record.exists():
+            raise UserError(self.env._('Resource %s does not exist.', uri))
+        record.check_access('read')
+        record.check_field_access(record._fields[field], 'read')
+        return record, field
+
+    @api.model
     def _resolve_resource_uri(self, uri: str) -> tuple[str, bytes, str]:
-        """Parse an MCP resource URI, dispatch to its handler and refine the mimetype.
+        """Load the file an ``odoo://`` URI names and refine its mimetype.
 
         :return: a ``(mimetype, raw_bytes, name)`` tuple.
-        :raise UserError: if the URI is malformed or its scheme is unsupported.
+        :raise UserError: as ``_resolve_resource_target``, or when a record's
+            binary field is empty.
         """
-        handlers = {
-            'attachment': self._resolve_resource_attachment,
-            'record_field': self._resolve_resource_record_field,
-        }
-        if not (parsed := parse_uri(uri)) or parsed[0] not in handlers:
-            raise UserError(self.env._('Unsupported resource URI: %r', uri))
-        mimetype, raw, name = handlers[parsed[0]](**parsed[1])
+        record, field = self._resolve_resource_target(uri)
+        value = record[field]
+        if record._name == 'ir.attachment':
+            mimetype = record.mimetype or ''
+            raw, name = value.content if value else b'', record.name or ''
+        elif not value:
+            raise UserError(self.env._('Resource %s is empty.', uri))
+        else:
+            mimetype, raw, name = value.mimetype, value.content, value.filename or field
         if normalize_mimetype(mimetype) in ('', 'application/octet-stream'):
             mimetype = mimetypes.guess_type(name)[0] or mimetype
         return mimetype, raw, name
@@ -122,71 +177,3 @@ class MCPMixin(models.AbstractModel):
             'ascii',
         )
         return entry
-
-    @api.model
-    def _resolve_resource_attachment(
-        self, attachment_id: int
-    ) -> tuple[str, bytes, str]:
-        """Load an ``ir.attachment`` as ``(mimetype, raw, name)``.
-
-        Enforces read access via :meth:`ir.attachment.check_access`.
-
-        :raise UserError: if the attachment does not exist.
-        """
-        attachment = self.env['ir.attachment'].browse(attachment_id)
-        if not attachment.exists():
-            raise UserError(
-                self.env._(
-                    'Attachment %(aid)s does not exist.',
-                    aid=attachment_id,
-                ),
-            )
-        attachment.check_access('read')
-        return (
-            attachment.mimetype or '',
-            attachment.raw.content if attachment.raw else b'',
-            attachment.name or '',
-        )
-
-    @api.model
-    def _resolve_resource_record_field(
-        self,
-        model: str,
-        record_id: int,
-        field: str,
-    ) -> tuple[str, bytes, str]:
-        """Read a binary field of a record as ``(mimetype, raw, name)``.
-
-        :raise UserError: if the field is not binary, the record is missing
-            or the value is empty.
-        :raise AccessError: without read access on the record or the field.
-        """
-        target = self._resolve_model(model)
-        if target._fields.get(field) is None or target._fields[field].type != 'binary':
-            raise UserError(
-                self.env._(
-                    'Field %(f)r is not a readable binary field on %(m)s.',
-                    f=field,
-                    m=model,
-                ),
-            )
-        if not (record := target.browse(record_id)) or not record.exists():
-            raise UserError(
-                self.env._(
-                    '%(m)s(%(id)s) does not exist.',
-                    m=model,
-                    id=record_id,
-                ),
-            )
-        record.check_access('read')
-        record.check_field_access(target._fields[field], 'read')
-        if not (value := record[field]):
-            raise UserError(
-                self.env._(
-                    'Field %(f)s is empty on %(m)s(%(id)s).',
-                    f=field,
-                    m=model,
-                    id=record_id,
-                ),
-            )
-        return (value.mimetype, value.content, value.filename or field)

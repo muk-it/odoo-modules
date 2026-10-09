@@ -79,4 +79,12 @@
 		sequence="10"
 	/>
 
+	<menuitem
+		id="menu_mcp_transfer"
+		name="File Transfers"
+		parent="menu_mcp_logging"
+		action="action_mcp_transfer"
+		sequence="20"
+	/>
+
 </odoo>

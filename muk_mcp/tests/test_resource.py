@@ -12,12 +12,8 @@ from odoo.exceptions import AccessError, UserError
 from odoo.tests import new_test_user
 from odoo.tools import BinaryBytes
 
-from odoo.addons.muk_mcp.tests.common import MCPToolCase
+from odoo.addons.muk_mcp.tests.common import PNG, MCPToolCase
 
-PNG = (
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQ'
-    'VQYV2NgAAIAAAUAAarVyFEAAAAASUVORK5CYII='
-)
 XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
 

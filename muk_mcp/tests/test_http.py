@@ -9,14 +9,9 @@ from odoo.tests import new_test_user
 from odoo.tools import BinaryBytes, config
 
 from odoo.addons.mail.tools.discuss import Store
-from odoo.addons.muk_mcp.tests.common import MCPHttpCase, make_mcp_key
+from odoo.addons.muk_mcp.tests.common import PNG, MCPHttpCase, make_mcp_key
 from odoo.addons.muk_mcp.tools import version
 from odoo.addons.muk_mcp.tools.common import MCP_ENDPOINT
-
-PNG = (
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQ'
-    'VQYV2NgAAIAAAUAAarVyFEAAAAASUVORK5CYII='
-)
 
 
 class TestMcpHttp(MCPHttpCase):
@@ -30,7 +25,6 @@ class TestMcpHttp(MCPHttpCase):
     def setUpClass(cls) -> None:
         """Create the probe tools and the fixtures the requests act on."""
         super().setUpClass()
-        cls.log_model = cls.env['muk_mcp.log']
         cls.partner = cls.env['res.partner'].create({'name': 'MCP Http Partner'})
         cls.env['muk_mcp.tool'].create(
             [
@@ -198,7 +192,7 @@ class TestMcpHttp(MCPHttpCase):
                 response = self.mcp_call('ping', headers={'Origin': origin})
                 self.assertEqual(response.status_code, status)
         self.assertEqual(
-            self.log_model.search_count([('method', '=', 'origin_rejected')]),
+            len(self.logs([('method', '=', 'origin_rejected')])),
             2,
         )
 
@@ -208,7 +202,7 @@ class TestMcpHttp(MCPHttpCase):
         self.assertEqual(statuses, [200, 200, 429])
         response = self.mcp_call('ping', token=token)
         self.assertEqual(response.json()['error']['message'], 'Rate limit exceeded')
-        log = self.log_model.search([('key_prefix', '=', key.key_prefix)])
+        log = self.logs([('key_prefix', '=', key.key_prefix)])
         self.assertEqual(log.mapped('status'), ['rate_limited', 'rate_limited'])
 
     def test_initialize_negotiates_a_handshake_revision(self):
@@ -267,7 +261,7 @@ class TestMcpHttp(MCPHttpCase):
                 result = response.json()['result']
                 self.assertTrue(result['isError'])
                 self.assertIn(message, result['content'][0]['text'])
-        log = self.log_model.search([('tool_name', '=', 'mcp_test_probe')])
+        log = self.logs([('tool_name', '=', 'mcp_test_probe')])
         self.assertEqual(log.status, 'error')
         self.assertIn('must be a JSON object', log.error_message)
 
@@ -280,7 +274,7 @@ class TestMcpHttp(MCPHttpCase):
         self.assertFalse(
             self.env['res.partner'].search([('name', '=', 'MCP Partial Write')]),
         )
-        log = self.log_model.search([('tool_name', '=', 'mcp_test_partial')])
+        log = self.logs([('tool_name', '=', 'mcp_test_partial')])
         self.assertEqual(
             (log.status, log.key_name, log.ip_address),
             ('error', self.mcp_key.name, '127.0.0.1'),
@@ -290,7 +284,7 @@ class TestMcpHttp(MCPHttpCase):
         self.assertIn('Traceback', text)
 
     def test_read_scope_key_cannot_write(self):
-        token, _key = make_mcp_key(self.mcp_user, scope='read')
+        token, key = make_mcp_key(self.mcp_user, scope='read')
         result = self.mcp_tool(
             'create_records',
             {'model': 'res.partner', 'values': {'name': 'MCP Denied'}},
@@ -298,7 +292,7 @@ class TestMcpHttp(MCPHttpCase):
         )
         self.assertTrue(result['isError'])
         self.assertIn('read-only', result['content'][0]['text'])
-        log = self.log_model.search([('tool_name', '=', 'create_records')])
+        log = self.logs([('key_prefix', '=', key.key_prefix)])
         self.assertEqual(log.status, 'denied')
 
     def test_export_honours_the_export_right(self):
@@ -394,7 +388,7 @@ class TestMcpHttp(MCPHttpCase):
                 error = response.json()['error']
                 self.assertEqual(error['code'], code)
                 self.assertIn(message, error['message'])
-        log = self.log_model.search([('method', '=', 'prompts/get')])
+        log = self.logs([('method', '=', 'prompts/get')])
         self.assertEqual(log.status, 'error')
 
     def test_completion_suggests_model_names(self):

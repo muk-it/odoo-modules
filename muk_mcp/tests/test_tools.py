@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import base64
 import json
+from datetime import date, timedelta
 from unittest.mock import patch
 
-from odoo import api, models
+from odoo import api, fields, models
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests import new_test_user
 
@@ -12,13 +14,8 @@ from odoo.addons.muk_mcp.core.tool import (
     invalidate_registry_cache,
     mcp_tool,
 )
-from odoo.addons.muk_mcp.tests.common import MCPToolCase
+from odoo.addons.muk_mcp.tests.common import PNG, MCPToolCase
 from odoo.addons.muk_mcp.tools.exception import MCPScopeDenied
-
-PNG = (
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQ'
-    'VQYV2NgAAIAAAUAAarVyFEAAAAASUVORK5CYII='
-)
 
 
 @api.model
@@ -44,7 +41,6 @@ class TestMcpTools(MCPToolCase):
     def setUpClass(cls) -> None:
         """Create a user restricted to two of three companies and their partners."""
         super().setUpClass()
-        cls.log_model = cls.env['muk_mcp.log']
         cls.company_a, cls.company_b, cls.company_c = cls.env['res.company'].create(
             [{'name': f'MCP Tool Company {letter}'} for letter in 'ABC'],
         )
@@ -164,8 +160,10 @@ class TestMcpTools(MCPToolCase):
         deleted = self.call_tool('delete_records', {'model': model, 'ids': [record.id]})
         self.assertEqual(deleted, {'success': True, 'deleted_ids': [record.id]})
         self.assertFalse(record.exists())
-        logs = self.log_model.search(
-            [('tool_name', 'in', ('create_records', 'update_records'))]
+        logs = self.logs(
+            [
+                ('tool_name', 'in', ('create_records', 'update_records')),
+            ]
         )
         self.assertEqual(
             sorted(
@@ -194,8 +192,102 @@ class TestMcpTools(MCPToolCase):
             'get_messages', {'model': 'res.partner', 'id': self.partner_a.id}
         )
         self.assertIn('<p>Hello</p>', [entry['body'] for entry in messages])
-        log = self.log_model.search([('tool_name', '=', 'post_message')])
+        log = self.logs([('tool_name', '=', 'post_message')])
         self.assertEqual(log.res_id, self.partner_a.id)
+
+    def test_schedule_activity_resolves_type_deadline_and_user(self):
+        today = fields.Date.context_today(self.partner_a)
+        todo = self.env.ref('mail.mail_activity_data_todo')
+        call = self.env.ref('mail.mail_activity_data_call')
+        for arguments, kind, deadline, user, summary in (
+            ({}, todo, today + timedelta(days=5), self.env.user, 'To-Do'),
+            (
+                {
+                    'activity_type': 'call',
+                    'date_deadline': '2030-01-02',
+                    'user_id': self.user.id,
+                    'summary': 'Ring back',
+                    'note': '<p>About the offer</p>',
+                },
+                call,
+                date(2030, 1, 2),
+                self.user,
+                'Ring back',
+            ),
+            (
+                {'activity_type': 'mail.mail_activity_data_call'},
+                call,
+                today + timedelta(days=2),
+                self.env.user,
+                'Call',
+            ),
+            (
+                {'activity_type': todo.id},
+                todo,
+                today + timedelta(days=5),
+                self.env.user,
+                'To-Do',
+            ),
+        ):
+            with self.subTest(arguments=arguments):
+                result = self.call_tool(
+                    'schedule_activity',
+                    {'model': 'res.partner', 'id': self.partner_a.id, **arguments},
+                )
+                activity = self.env['mail.activity'].browse(result['id'])
+                self.assertEqual(
+                    (activity.res_model, activity.res_id, activity.activity_type_id),
+                    ('res.partner', self.partner_a.id, kind),
+                )
+                self.assertEqual(
+                    (activity.date_deadline, activity.user_id, result['summary']),
+                    (deadline, user, summary),
+                )
+        ring_back = self.partner_a.activity_ids.filtered(
+            lambda activity: activity.summary == 'Ring back'
+        )
+        self.assertEqual(str(ring_back.note), '<p>About the offer</p>')
+
+    def test_upload_file_writes_fields_and_attachments(self):
+        raw = base64.b64decode(PNG)
+        for extra, res_model, res_id in (
+            (
+                {'model': 'res.partner', 'id': self.partner_a.id},
+                'res.partner',
+                self.partner_a.id,
+            ),
+            ({}, False, 0),
+            ({'data': f'data:image/png;base64,{PNG}', 'name': 'pixel'}, False, 0),
+        ):
+            with self.subTest(extra=extra):
+                result = self.call_tool(
+                    'upload_file', {'data': PNG, 'name': 'pixel.png', **extra}
+                )
+                attachment = self.env['ir.attachment'].browse(result['id'])
+                self.assertEqual(
+                    (attachment.raw.content, attachment.mimetype),
+                    (raw, 'image/png'),
+                )
+                self.assertEqual(
+                    (attachment.res_model, attachment.res_id), (res_model, res_id)
+                )
+        result = self.call_tool(
+            'upload_file',
+            {
+                'data': PNG,
+                'name': 'pixel.png',
+                'model': 'res.partner',
+                'id': self.partner_b.id,
+                'field': 'image_1920',
+            },
+        )
+        self.assertEqual(
+            result['uri'], f'odoo://record/res.partner/{self.partner_b.id}/image_1920'
+        )
+        self.assertTrue(self.partner_b.image_1920)
+        self.env['ir.config_parameter'].sudo().set_int('web.max_file_upload_size', 10)
+        with self.assertRaisesRegex(UserError, 'upload limit'):
+            self.call_tool('upload_file', {'data': PNG, 'name': 'pixel.png'})
 
     def test_invalid_calls_raise_user_errors(self):
         for name, arguments, message in (
@@ -233,6 +325,55 @@ class TestMcpTools(MCPToolCase):
                 'call_method',
                 {'model': 'res.partner', 'method': 'no_such_method'},
                 'does not exist',
+            ),
+            ('schedule_activity', {'model': 'res.country', 'id': 1}, 'no activities'),
+            (
+                'schedule_activity',
+                {'model': 'res.partner', 'id': self.partner_a.id, 'user_id': 1},
+                'not an active user',
+            ),
+            (
+                'post_message',
+                {'model': 'res.country', 'id': 1, 'body': 'x'},
+                'no chatter',
+            ),
+            ('get_messages', {'model': 'res.partner', 'id': 999999999}, 'not found'),
+            (
+                'schedule_activity',
+                {'model': 'res.partner', 'id': 999999999},
+                'not found',
+            ),
+            (
+                'schedule_activity',
+                {
+                    'model': 'res.partner',
+                    'id': self.partner_a.id,
+                    'activity_type': 'Nope',
+                },
+                'not available',
+            ),
+            ('upload_file', {'data': 'not base64!', 'name': 'x'}, 'not valid base64'),
+            ('upload_file', {'name': 'x'}, 'either file or data'),
+            (
+                'upload_file',
+                {'data': PNG, 'name': 'x', 'field': 'image_1920'},
+                'model and record ID are required',
+            ),
+            (
+                'upload_file',
+                {'data': PNG, 'name': 'x', 'model': 'res.partner'},
+                'record ID is required',
+            ),
+            (
+                'upload_file',
+                {
+                    'data': PNG,
+                    'name': 'x',
+                    'model': 'res.partner',
+                    'id': self.partner_a.id,
+                    'field': 'name',
+                },
+                'not a binary field',
             ),
         ):
             with self.subTest(name=name, arguments=arguments):

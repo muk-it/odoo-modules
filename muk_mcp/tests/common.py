@@ -6,10 +6,16 @@ from typing import Any
 from requests import Response
 
 from odoo import models
+from odoo.api import Environment
 from odoo.tests import HttpCase, TransactionCase, new_test_user
 
 from odoo.addons.muk_mcp.tools import version
 from odoo.addons.muk_mcp.tools.common import MCP_ENDPOINT
+
+PNG = (
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQ'
+    'VQYV2NgAAIAAAUAAarVyFEAAAAASUVORK5CYII='
+)
 
 
 def make_mcp_key(
@@ -30,7 +36,37 @@ def make_mcp_key(
     return token, user.env['muk_mcp.key'].browse(record.id)
 
 
-class MCPToolCase(TransactionCase):
+def run_tool(
+    env: Environment,
+    name: str,
+    arguments: dict[str, Any] | None,
+    scope: str | None = None,
+) -> Any:
+    """Run tool ``name`` in ``env`` and return its result, JSON-decoded if text."""
+    result, _info = env['muk_mcp.tool']._call(name, arguments, env, enforce_scope=scope)
+    return json.loads(result) if isinstance(result, str) else result
+
+
+class MCPLogMixin:
+    """Read the audit entries a test wrote, whatever the database held before."""
+
+    def setUp(self) -> None:
+        """Remember the newest audit entry before the test runs."""
+        super().setUp()
+        self.log_floor = (
+            self.env['muk_mcp.log'].sudo().search([], order='id desc', limit=1).id
+        )
+
+    def logs(self, domain: list) -> models.BaseModel:
+        """Return the audit entries matching ``domain`` that this test wrote."""
+        return (
+            self.env['muk_mcp.log']
+            .sudo()
+            .search([*domain, ('id', '>', self.log_floor)])
+        )
+
+
+class MCPToolCase(MCPLogMixin, TransactionCase):
     """Base case running MCP tools in-process, auditing on the test cursor."""
 
     @classmethod
@@ -47,17 +83,12 @@ class MCPToolCase(TransactionCase):
         scope: str | None = None,
     ) -> Any:
         """Run tool ``name`` as ``user`` and return its result, JSON-decoded if text."""
-        env = self.env(user=user) if user else self.env
-        result, _info = env['muk_mcp.tool']._call(
-            name,
-            arguments,
-            env,
-            enforce_scope=scope,
+        return run_tool(
+            self.env(user=user) if user else self.env, name, arguments, scope
         )
-        return json.loads(result) if isinstance(result, str) else result
 
 
-class MCPHttpCase(HttpCase):
+class MCPHttpCase(MCPLogMixin, HttpCase):
     """Base case posting authenticated JSON-RPC requests to the MCP endpoint."""
 
     @classmethod

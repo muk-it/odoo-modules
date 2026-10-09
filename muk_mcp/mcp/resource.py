@@ -1,18 +1,20 @@
 from __future__ import annotations
 
 import textwrap
+from typing import Any
 
-from odoo import api, models
+from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.tools import BinaryBytes
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
+from odoo.addons.muk_mcp.models.transfer import TRANSFER_MINUTES
 from odoo.addons.muk_mcp.tools.content import (
     is_textual_mimetype,
     make_content_for_bytes,
     normalize_mimetype,
 )
-from odoo.addons.muk_mcp.tools.descriptions import context_field
+from odoo.addons.muk_mcp.tools.descriptions import HTTP_HINT, context_field
 from odoo.addons.muk_mcp.tools.protocol import (
     ToolContent,
     make_text_content,
@@ -20,7 +22,7 @@ from odoo.addons.muk_mcp.tools.protocol import (
 
 
 class MCPMixin(models.AbstractModel):
-    """Add the MCP resource-reading tool to the shared MCP mixin."""
+    """Add the MCP resource-reading tools to the shared MCP mixin."""
 
     _inherit = 'muk_mcp.mixin'
 
@@ -178,3 +180,43 @@ class MCPMixin(models.AbstractModel):
             name,
             format,
         )
+
+    @api.model
+    @mcp_tool(
+        name='authorize_download',
+        description=(
+            'Get a one-time link to download a file over plain HTTP: an '
+            'attachment (odoo://attachment/<id>) or a binary field '
+            '(odoo://record/<model>/<id>/<field>). Fetch it with an HTTP GET '
+            f'(curl -o <path> <url>) within {TRANSFER_MINUTES} minutes. '
+            + HTTP_HINT
+            + ' To read '
+            'the content into the conversation, use read_resource instead.'
+        ),
+        input_schema={
+            'type': 'object',
+            'properties': {
+                'uri': {
+                    'type': 'string',
+                    'description': (
+                        'Resource uri, e.g. "odoo://attachment/42" or '
+                        '"odoo://record/res.partner/5/image_1920".'
+                    ),
+                },
+                'context': context_field(),
+            },
+            'required': ['uri'],
+        },
+        category='read',
+        registry='mcp',
+    )
+    def _mcp_authorize_download(self, uri: str) -> dict[str, Any]:
+        """Check the resource is readable and issue the link that streams it."""
+        self._resolve_resource_target(uri)
+        transfer, url = self.env['muk_mcp.transfer']._issue('download', uri=uri)
+        return {
+            'download_url': url,
+            'method': 'GET',
+            'expires_at': fields.Datetime.to_string(transfer.expires_at),
+            'example': f'curl -o "<path>" "{url}"',
+        }
