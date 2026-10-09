@@ -63,7 +63,6 @@ class MCPMixin(models.AbstractModel):
             'properties': {
                 'model': model_field(),
                 'fields': fields_field(
-                    required_hint=False,
                     extra_note="Use '/' to traverse relations.",
                     example=['name', 'partner_id/name', 'order_line/product_id/default_code'],
                 ),

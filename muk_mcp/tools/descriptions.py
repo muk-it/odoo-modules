@@ -66,10 +66,8 @@ def domain_field(extra_note=''):
     return {'type': 'string', 'description': description}
 
 
-def fields_field(*, required_hint=True, example=None, extra_note=''):
+def fields_field(*, example=None, extra_note=''):
     parts = ['Field names to return.']
-    if required_hint:
-        parts.append('ALWAYS specify this to avoid returning all fields (slow).')
     if extra_note:
         parts.append(extra_note)
     parts.append(
