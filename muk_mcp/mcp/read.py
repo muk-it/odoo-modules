@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from odoo import _, api, models
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
 from odoo.addons.muk_mcp.tools.descriptions import (
@@ -25,6 +25,27 @@ class MCPMixin(models.AbstractModel):
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
+
+    @api.model
+    def _mcp_read(
+        self,
+        records: models.BaseModel,
+        fields: list[str] | None,
+    ) -> list[dict[str, Any]]:
+        """Read ``fields`` of ``records``, or every field the user may read without them."""
+        if fields:
+            return records.read(fields)
+        try:
+            return records.read()
+        except AccessError:
+            readable = []
+            for name in records.fields_get(attributes=()):
+                try:
+                    records.read([name])
+                except AccessError:
+                    continue
+                readable.append(name)
+            return records.read(readable)
 
     @api.model
     def _swap_binary_to_uri(
@@ -134,13 +155,13 @@ class MCPMixin(models.AbstractModel):
         order: str | None = None,
     ) -> list[dict[str, Any]]:
         """Search records by ``domain`` and return their field values with binaries swapped to URIs."""
-        rows = self._resolve_model(model).search_read(
+        records = self._resolve_model(model).search(
             coerce_json_value(self._mcp_apply_domain(model, domain)) or [],
-            fields=fields,
             limit=limit,
             offset=offset,
             order=order,
         )
+        rows = self._mcp_read(records, fields)
         return self._swap_binary_to_uri(model, rows)
 
     @api.model
@@ -178,7 +199,7 @@ class MCPMixin(models.AbstractModel):
         if not target_ids:
             raise UserError(_('No record IDs provided'))
         self._mcp_assert_records_allowed(model, target_ids)
-        rows = self._resolve_model(model).browse(target_ids).read(fields)
+        rows = self._mcp_read(self._resolve_model(model).browse(target_ids), fields)
         return self._swap_binary_to_uri(model, rows)
 
     @api.model
