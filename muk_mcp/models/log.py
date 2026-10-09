@@ -97,6 +97,19 @@ class MCPLog(models.Model):
     )
 
     # ----------------------------------------------------------
+    # Helper
+    # ----------------------------------------------------------
+
+    @api.model
+    def _retention_limit(self):
+        """Return the moment before which audit records are deleted."""
+        days = int(self.env['ir.config_parameter'].sudo().get_param(
+            'muk_mcp.log_autovacuum_days',
+            tools.config.get('mcp_log_autovacuum_days', 30)
+        ))
+        return fields.Datetime.subtract(fields.Datetime.now(), days=days)
+
+    # ----------------------------------------------------------
     # Actions
     # ----------------------------------------------------------
 
@@ -151,14 +164,7 @@ class MCPLog(models.Model):
 
     @api.autovacuum
     def _autovacuum_logs(self):
-        days = int(self.env['ir.config_parameter'].sudo().get_param(
-            'muk_mcp.log_autovacuum_days',
-            tools.config.get('mcp_log_autovacuum_days', 30)
-        ))
-        limit = fields.Datetime.subtract(
-            fields.Datetime.now(), days=days
-        )
-        domain = [('create_date', '<', limit)]
+        domain = [('create_date', '<', self._retention_limit())]
         while batch := self.search(domain, limit=5000):
             batch.unlink()
             self.env.cr.commit()

@@ -21,7 +21,8 @@ class MCPMixin(models.AbstractModel):
             'use command tuples: [[6,0,[id1,id2]]] to set, [[4,id]] to '
             'add. For One2many fields, use [[0,0,{values}]] to create '
             'inline records. Check required fields with describe_model '
-            'first.'
+            'first. Fields Odoo computes itself on create are listed in '
+            '"ignored_fields" when given, since their value is not kept.'
         ),
         input_schema={
             'type': 'object',
@@ -51,11 +52,21 @@ class MCPMixin(models.AbstractModel):
         category='write',
     )
     def _mcp_create_records(self, model, values):
-        record = self._resolve_model(model).create(values or {})
-        return {
-            'id': record.id,
-            'display_name': record.display_name,
-        }
+        """Create one record from ``values`` and return its id and display name.
+
+        :raise UserError: when ``values`` is not a JSON object.
+        """
+        if not isinstance(values, dict):
+            raise UserError(_('Pass "values" as one JSON object.'))
+        target = self._resolve_model(model)
+        ignored = sorted(
+            name for name in values
+            if (field := target._fields.get(name))
+            and field.compute and field.readonly
+        )
+        record = target.create(values)
+        result = {'id': record.id, 'display_name': record.display_name}
+        return {**result, 'ignored_fields': ignored} if ignored else result
 
     @api.model
     @mcp_tool(

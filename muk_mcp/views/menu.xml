@@ -43,6 +43,14 @@
 	/>
 
 	<menuitem
+		id="menu_mcp_transfer"
+		name="File Transfers"
+		parent="menu_mcp_root"
+		action="action_mcp_transfer"
+		sequence="32"
+	/>
+
+	<menuitem
 		id="menu_mcp_sessions"
 		name="Sessions"
 		parent="menu_mcp_root"

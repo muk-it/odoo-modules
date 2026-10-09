@@ -49,6 +49,19 @@ class TestMcpPrintReport(common.TransactionCase):
     # Tests
     # ----------------------------------------------------------
 
+    def test_print_by_id_as_string_and_named_by_the_report(self):
+        result = self._call('print_report', {
+            'report_ref': str(self.report.id),
+            'ids': [self.partner.id],
+        })
+        self.assertEqual(result['filename'], 'MCP_Test_Report.txt')
+        self.report.print_report_name = "'Doc / %s' % object.name"
+        result = self._call('print_report', {
+            'report_ref': self.report.id,
+            'ids': [self.partner.id],
+        })
+        self.assertEqual(result['filename'], 'Doc_MCP_Print_Target.txt')
+
     def test_print_by_id_returns_base64(self):
         result = self._call('print_report', {
             'report_ref': self.report.id,

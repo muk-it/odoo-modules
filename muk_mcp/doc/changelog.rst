@@ -1,3 +1,13 @@
+`3.2.0`
+-------
+
+- File Links for Reports and Exports
+
+`3.1.0`
+-------
+
+- Activity and File Transfer Tools
+
 `3.0.0`
 -------
 
