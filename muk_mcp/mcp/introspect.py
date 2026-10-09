@@ -74,26 +74,33 @@ class MCPMixin(models.AbstractModel):
     @mcp_tool(
         name='describe_model',
         description=(
-            "Get the complete field definitions for an Odoo model. Returns "
-            "every field with its type, label, help text, required/readonly "
-            "flags, and relation target (for Many2one/One2many/Many2many "
-            "fields). Use this before search_read to know which fields "
-            "exist and what types they are. The 'selection' attribute "
-            "shows allowed values for Selection fields."
+            "Get the field definitions of an Odoo model: every field with its "
+            "type, label, required/readonly flags and relation target (for "
+            "Many2one/One2many/Many2many fields); 'selection' lists the allowed "
+            "values. Pass 'fields' to get only those, with their help texts. "
+            "Use this before search_read to know which fields exist."
         ),
         input_schema={
             'type': 'object',
             'properties': {
                 'model': model_field(),
+                'fields': {
+                    'type': 'array',
+                    'items': {'type': 'string'},
+                    'description': (
+                        'Field names to describe with their help text. Omit '
+                        'for every field, without help texts.'
+                    ),
+                },
             },
             'required': ['model'],
         },
         category='read',
     )
-    def _mcp_describe_model(self, model):
+    def _mcp_describe_model(self, model, fields=None):
+        """Return the field definitions of a model, with help texts for named fields."""
+        attributes = ['string', 'type', 'required', 'readonly', 'relation', 'selection']
         return self._resolve_model(model).fields_get(
-            attributes=[
-                'string', 'type', 'help', 'required',
-                'readonly', 'relation', 'selection',
-            ],
+            allfields=fields,
+            attributes=[*attributes, 'help'] if fields else attributes,
         )

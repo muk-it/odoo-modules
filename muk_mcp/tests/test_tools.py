@@ -70,6 +70,12 @@ class TestMcpTool(common.TransactionCase):
         self.assertIn('name', result)
         self.assertIn('email', result)
         self.assertEqual(result['name']['type'], 'char')
+        self.assertNotIn('help', result['is_company'])
+        detail = self._call(
+            'describe_model', {'model': 'res.partner', 'fields': ['is_company']}
+        )
+        self.assertEqual(list(detail), ['is_company'])
+        self.assertIn('help', detail['is_company'])
 
     def test_search_read_handler(self):
         result = self._call('search_read', {
@@ -96,6 +102,16 @@ class TestMcpTool(common.TransactionCase):
             'ids': [created['id']],
         })
         self.assertTrue(deleted['success'])
+
+    def test_values_odoo_computes_itself_are_reported(self):
+        created = self._call('create_records', {
+            'model': 'res.partner',
+            'values': {'name': 'MCP Computed', 'commercial_company_name': 'Ignored'},
+        })
+        self.assertEqual(created['ignored_fields'], ['commercial_company_name'])
+        self.assertFalse(
+            self.env['res.partner'].browse(created['id']).commercial_company_name
+        )
 
     def test_update_handler(self):
         record = self.env['res.partner.category'].create({'name': 'MCP Update'})
@@ -337,6 +353,8 @@ class TestMcpTool(common.TransactionCase):
             result['uri'], f'odoo://record/res.partner/{self.partner_b.id}/image_1920'
         )
         self.assertTrue(self.partner_b.image_1920)
+        text = self._call('upload_file', {'text': 'Hello', 'name': 'hello.txt'})
+        self.assertEqual(self.env['ir.attachment'].browse(text['id']).raw, b'Hello')
         self.env['ir.config_parameter'].sudo().set_param('web.max_file_upload_size', 10)
         with self.assertRaisesRegex(UserError, 'upload limit'):
             self._call('upload_file', {'data': PNG, 'name': 'pixel.png'})
@@ -371,7 +389,12 @@ class TestMcpTool(common.TransactionCase):
                 'not available.*To-Do',
             ),
             ('upload_file', {'data': 'not base64!', 'name': 'x'}, 'not valid base64'),
-            ('upload_file', {'name': 'x'}, 'either file or data'),
+            ('upload_file', {'name': 'x'}, 'exactly one of file'),
+            (
+                'create_records',
+                {'model': 'res.partner', 'values': [{'name': 'x'}, {'name': 'y'}]},
+                'one JSON object',
+            ),
             ('upload_file', {'data': PNG}, 'file name is required'),
             (
                 'upload_file',
