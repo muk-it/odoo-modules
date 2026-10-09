@@ -140,14 +140,22 @@ class TestAnthropicProvider(ProviderTestCase):
     def test_signed_thinking_is_carried_in_order_as_private_state(self):
         first = {'type': 'thinking', 'thinking': 'first', 'signature': 'sig-1'}
         redacted = {'type': 'redacted_thinking', 'data': 'opaque'}
+        search = {'type': 'server_tool_use', 'id': 'srv_1', 'name': 'web_search'}
+        found = {'type': 'web_search_tool_result', 'tool_use_id': 'srv_1'}
         for label, events, carried in (
             (
                 'signed',
                 [
                     *self._thinking(0, 'first', 'sig-1'),
-                    *anthropic_block(1, redacted),
-                    *self._thinking(2, 'second', 'sig-2'),
-                    *anthropic_text(3, 'answer'),
+                    *anthropic_block(
+                        1,
+                        {**search, 'input': {}},
+                        {'type': 'input_json_delta', 'partial_json': '{"query": "x"}'},
+                    ),
+                    *anthropic_block(2, found),
+                    *anthropic_block(3, redacted),
+                    *self._thinking(4, 'second', 'sig-2'),
+                    *anthropic_text(5, 'answer'),
                 ],
                 [
                     {
@@ -155,14 +163,17 @@ class TestAnthropicProvider(ProviderTestCase):
                         'content': [ANSWER],
                         'provider_state': {
                             'anthropic': {
-                                'thinking': [
+                                'blocks': [
                                     first,
+                                    {**search, 'input': {'query': 'x'}},
+                                    found,
                                     redacted,
                                     {
                                         **first,
                                         'thinking': 'second',
                                         'signature': 'sig-2',
                                     },
+                                    {'type': 'text', 'text': 'answer'},
                                 ]
                             }
                         },
@@ -188,7 +199,7 @@ class TestAnthropicProvider(ProviderTestCase):
                     {
                         'role': 'assistant',
                         'content': [],
-                        'provider_state': {'anthropic': {'thinking': [first]}},
+                        'provider_state': {'anthropic': {'blocks': [first]}},
                     },
                     {
                         'type': 'function_call',

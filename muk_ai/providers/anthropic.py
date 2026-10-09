@@ -144,9 +144,9 @@ class AnthropicProvider(ProviderBase):
     ) -> tuple[str, list[dict], tuple[int, int] | None]:
         """Convert canonical inputs into Anthropic system text, messages, and anchor.
 
-        Signed thinking blocks replay ahead of a turn's canonical content, the
-        order Anthropic validates. The anchor is the ``(message, block)`` index
-        of the last non-volatile block, the safe spot for a cache breakpoint.
+        A turn carrying its Anthropic blocks replays them verbatim, as Anthropic
+        validates its thinking; a lone carried thinking block still replays.
+        The anchor is the ``(message, block)`` of the last non-volatile block.
         """
         messages = []
         anchor = None
@@ -181,9 +181,13 @@ class AnthropicProvider(ProviderBase):
                 }
                 append('user', block, volatile)
             elif role in ('user', 'assistant'):
-                thinking = cls._carried_state(item).get('thinking') or []
-                for block in [*thinking, *cls._content_parts(item.get('content'))]:
-                    append(role, block, volatile)
+                state = cls._carried_state(item)
+                thinking = state.get('thinking') or []
+                for block in state.get('blocks') or [
+                    *(thinking if len(thinking) == 1 else []),
+                    *cls._content_parts(item.get('content')),
+                ]:
+                    append(role, dict(block), volatile)
         return cls._system_text(inputs), messages, anchor
 
     @staticmethod
@@ -223,16 +227,18 @@ class AnthropicProvider(ProviderBase):
         return {'type': 'thinking', 'thinking': thinking, 'signature': signature}
 
     @classmethod
-    def _assistant_carry(cls, content: list, thinking: list) -> list:
+    def _assistant_carry(cls, content: list, blocks: list) -> list:
         """Return the assistant carry of a turn: one item, or none when it is empty.
 
-        Thinking signatures authenticate a replay to Anthropic and mean nothing
-        to any other vendor, so they ride in this provider's private state.
+        A turn with thinking or server tool blocks keeps all its Anthropic
+        blocks in order in this provider's private state, to replay unchanged.
         """
-        if not content and not thinking:
+        if not content and not blocks:
             return []
         carry = {'role': 'assistant', 'content': content}
-        return [cls._carry_state(carry, {'thinking': thinking}) if thinking else carry]
+        if all(block['type'] == 'text' for block in blocks):
+            return [carry]
+        return [cls._carry_state(carry, {'blocks': blocks})]
 
     @classmethod
     def _usage_from_anthropic(cls, usage: dict) -> dict:
@@ -257,25 +263,32 @@ class AnthropicProvider(ProviderBase):
         blocks, usage, meta = {}, {}, {}
         for event in self._post_stream('/messages', body):
             self._handle_stream_event(event, on_delta, blocks, usage, meta)
-        text, calls, content, thinking = [], [], [], []
+        text, calls, content, replay = [], [], [], []
         for index in sorted(blocks):
             block = blocks[index]
             if block['type'] in THINKING_BLOCK_TYPES:
-                if replay := self._replayable_thinking(block):
-                    thinking.append(replay)
-            elif block['type'] == 'text' and block['text']:
-                text.append(block['text'])
-                content.append({'type': 'output_text', 'text': block['text']})
+                if thinking := self._replayable_thinking(block):
+                    replay.append(thinking)
+            elif block['type'] == 'text':
+                if block['text']:
+                    text.append(block['text'])
+                    content.append({'type': 'output_text', 'text': block['text']})
+                    replay.append(self._text_part(block['text']))
             elif block['type'] == 'tool_use':
                 calls.append(
                     self._tool_call(
                         block['call_id'], block['name'], block['partial_json']
                     )
                 )
+            else:
+                partial = block.pop('partial_json', '')
+                replay.append(
+                    {**block, **({'input': json.loads(partial)} if partial else {})}
+                )
         return self._result(
             ''.join(text),
             calls,
-            [*self._assistant_carry(content, thinking), *map(self._call_item, calls)],
+            [*self._assistant_carry(content, replay), *map(self._call_item, calls)],
             self._usage_from_anthropic(usage),
             on_delta,
             meta.get('stop_reason') == 'max_tokens',
@@ -326,6 +339,8 @@ class AnthropicProvider(ProviderBase):
                     'tool_start',
                     {'call_id': block.get('id'), 'name': block.get('name')},
                 )
+            elif block.get('type'):
+                blocks[event.get('index', 0)] = {**block, 'partial_json': ''}
         elif kind == 'content_block_delta':
             entry = blocks.get(event.get('index', 0)) or {}
             delta = event.get('delta') or {}
@@ -347,17 +362,15 @@ class AnthropicProvider(ProviderBase):
                 entry['signature'] = (entry.get('signature') or '') + (
                     delta.get('signature') or ''
                 )
-            elif (
-                delta.get('type') == 'input_json_delta'
-                and entry.get('type') == 'tool_use'
-            ):
+            elif delta.get('type') == 'input_json_delta' and 'partial_json' in entry:
                 if partial := delta.get('partial_json'):
                     entry['partial_json'] += partial
-                    self._call_on_delta(
-                        on_delta,
-                        'tool_args',
-                        {'call_id': entry['call_id'], 'delta': partial},
-                    )
+                    if entry['type'] == 'tool_use':
+                        self._call_on_delta(
+                            on_delta,
+                            'tool_args',
+                            {'call_id': entry['call_id'], 'delta': partial},
+                        )
         elif kind == 'message_delta':
             if stop_reason := (event.get('delta') or {}).get('stop_reason'):
                 meta['stop_reason'] = stop_reason

@@ -34,14 +34,22 @@ OUTPUT = {
     'output': '{"count": 3}',
 }
 
+STEPS = [
+    {'type': 'thinking', 'thinking': 'step one', 'signature': 'sig-1'},
+    {'type': 'thinking', 'thinking': 'step two', 'signature': 'sig-2'},
+]
+
 THINKING_TURN = {
     'role': 'assistant',
     'content': [{'type': 'output_text', 'text': 'answer'}],
     'provider_state': {
         'anthropic': {
-            'thinking': [
-                {'type': 'thinking', 'thinking': 'step one', 'signature': 'sig-1'},
-                {'type': 'thinking', 'thinking': 'step two', 'signature': 'sig-2'},
+            'blocks': [
+                STEPS[0],
+                {'type': 'server_tool_use', 'id': 'srv_1', 'name': 'web_search'},
+                {'type': 'web_search_tool_result', 'tool_use_id': 'srv_1'},
+                STEPS[1],
+                {'type': 'text', 'text': 'answer'},
             ]
         }
     },
@@ -163,23 +171,39 @@ class TestCarryState(ProviderTestCase):
                 self.assertEqual([text for text in present if text not in body], [])
                 self.assertEqual([text for text in absent if text in body], [])
 
-    def test_anthropic_replays_its_signed_thinking_ahead_of_the_turn(self):
-        for conversation, blocks in (
+    def test_anthropic_replays_its_turn_blocks_as_they_came(self):
+        searched = [
+            ('thinking', 'sig-1'),
+            ('server_tool_use', None),
+            ('web_search_tool_result', None),
+            ('thinking', 'sig-2'),
+            ('text', None),
+        ]
+        for label, conversation, blocks in (
+            ('answer', [USER, THINKING_TURN], searched),
             (
-                [USER, THINKING_TURN],
-                [('thinking', 'sig-1'), ('thinking', 'sig-2'), ('text', None)],
-            ),
-            (
+                'tool call',
                 [
                     USER,
-                    {**THINKING_TURN, 'content': []},
+                    THINKING_TURN,
                     {**CALL, 'call_id': 'toolu_1'},
                     {**OUTPUT, 'call_id': 'toolu_1'},
                 ],
-                [('thinking', 'sig-1'), ('thinking', 'sig-2'), ('tool_use', None)],
+                [*searched, ('tool_use', None)],
+            ),
+            (
+                'older carry',
+                [
+                    USER,
+                    {
+                        **THINKING_TURN,
+                        'provider_state': {'anthropic': {'thinking': STEPS}},
+                    },
+                ],
+                [('text', None)],
             ),
         ):
-            with self.subTest(blocks=blocks[-1][0]):
+            with self.subTest(label):
                 body = self._next_turn('anthropic', conversation)
                 assistant = next(
                     message['content']
