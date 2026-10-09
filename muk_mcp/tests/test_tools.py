@@ -78,10 +78,24 @@ class TestMcpTools(MCPToolCase):
         )
         self.assertIn('res.partner', [entry['model'] for entry in models_found])
         self.assertTrue(all('res.partn' in entry['model'] for entry in models_found))
+        listed = {
+            entry['model']: entry
+            for entry in self.call_tool(
+                'list_models', {'search': 'res.partner'}, user=self.user
+            )
+        }
+        self.assertIn('people and companies', listed['res.partner']['explanation'])
+        self.assertNotIn('explanation', listed['res.partner.category'])
         modules = self.call_tool('list_modules', {'search': 'muk_mcp'})
         self.assertIn('muk_mcp', [module['name'] for module in modules])
         fields = self.call_tool('describe_model', {'model': 'res.partner'})
         self.assertEqual(fields['name']['type'], 'char')
+        self.assertNotIn('help', fields['is_company'])
+        detail = self.call_tool(
+            'describe_model', {'model': 'res.partner', 'fields': ['is_company']}
+        )
+        self.assertEqual(list(detail), ['is_company'])
+        self.assertIn('help', detail['is_company'])
         info = self.call_tool('system_info')
         self.assertEqual(info['database'], self.env.cr.dbname)
         self.assertIn(info['edition'], ('community', 'enterprise'))
@@ -171,6 +185,17 @@ class TestMcpTools(MCPToolCase):
                 ('update_records', 'ok', model, record.id, [record.id]),
             ],
         )
+
+    def test_values_odoo_computes_itself_are_reported(self):
+        created = self.call_tool(
+            'create_records',
+            {
+                'model': 'res.partner',
+                'values': {'name': 'MCP Computed', 'is_company': True},
+            },
+        )
+        self.assertEqual(created['ignored_fields'], ['is_company'])
+        self.assertFalse(self.env['res.partner'].browse(created['id']).is_company)
 
     def test_chatter_tools(self):
         posted = self.call_tool(
@@ -281,6 +306,10 @@ class TestMcpTools(MCPToolCase):
             result['uri'], f'odoo://record/res.partner/{self.partner_b.id}/image_1920'
         )
         self.assertTrue(self.partner_b.image_1920)
+        text = self.call_tool('upload_file', {'text': 'Hello', 'name': 'hello.txt'})
+        self.assertEqual(
+            self.env['ir.attachment'].browse(text['id']).raw.content, b'Hello'
+        )
         self.env['ir.config_parameter'].sudo().set_int('web.max_file_upload_size', 10)
         with self.assertRaisesRegex(UserError, 'upload limit'):
             self.call_tool('upload_file', {'data': PNG, 'name': 'pixel.png'})
@@ -349,7 +378,12 @@ class TestMcpTools(MCPToolCase):
                 'not available',
             ),
             ('upload_file', {'data': 'not base64!', 'name': 'x'}, 'not valid base64'),
-            ('upload_file', {'name': 'x'}, 'either file or data'),
+            ('upload_file', {'name': 'x'}, 'exactly one of file'),
+            (
+                'create_records',
+                {'model': 'res.partner', 'values': [{'name': 'x'}, {'name': 'y'}]},
+                'one JSON object',
+            ),
             (
                 'upload_file',
                 {'data': PNG, 'name': 'x', 'field': 'image_1920'},

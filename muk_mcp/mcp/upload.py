@@ -156,8 +156,9 @@ class MCPMixin(models.AbstractModel):
         name='upload_file',
         description=(
             'Put a file into Odoo from "file", an odoo:// uri (a chat attachment, '
-            'a generated image, what authorize_upload returned), or "data", the '
-            'content as base64 for small files. With model, id and field it is '
+            'a generated image, what authorize_upload returned), "text", the '
+            'content of a text file as is (.txt, .md, .csv, .json), or "data", '
+            'binary content as base64 for small files. With model, id and field it is '
             'written into that binary field (an image, a document); with model '
             'and id only it becomes an attachment of the record; with neither, '
             'a standalone attachment.'
@@ -168,6 +169,10 @@ class MCPMixin(models.AbstractModel):
                 'file': {
                     'type': 'string',
                     'description': 'An odoo:// uri, e.g. the one authorize_upload returned.',
+                },
+                'text': {
+                    'type': 'string',
+                    'description': 'The content of a text file, as plain text.',
                 },
                 'data': {
                     'type': 'string',
@@ -211,6 +216,7 @@ class MCPMixin(models.AbstractModel):
     def _mcp_upload_file(
         self,
         file: str | None = None,
+        text: str | None = None,
         data: str | None = None,
         name: str | None = None,
         model: str | None = None,
@@ -220,22 +226,25 @@ class MCPMixin(models.AbstractModel):
     ) -> dict[str, Any]:
         """Store a file in a binary field or as an attachment.
 
-        :raise UserError: when not exactly one of file and data is given, or a
+        :raise UserError: when not exactly one of file, text and data is given, or a
             field comes without a model, or a model without its record.
         """
-        if bool(file) == bool(data):
-            raise UserError(self.env._('Pass either file or data.'))
+        if [bool(file), bool(text), bool(data)].count(True) != 1:
+            raise UserError(self.env._('Pass exactly one of file, text or data.'))
         if file:
             source_mimetype, raw, source_name = self._resolve_resource_uri(file)
             if not raw:
                 raise UserError(
                     self.env._('%s is empty: upload the file to its link first.', file),
                 )
+        elif text:
+            raw, source_mimetype, source_name = text.encode(), None, None
+            self._mcp_check_upload_size(len(raw))
         else:
             raw, source_mimetype = self._mcp_decode_upload(data)
             source_name = None
         if not (name := name or source_name):
-            raise UserError(self.env._('A file name is required with data.'))
+            raise UserError(self.env._('A file name is required with text or data.'))
         if field and not model:
             raise UserError(
                 self.env._('A model and record ID are required with a field.')

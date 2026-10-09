@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import base64
 import mimetypes
 from collections.abc import Callable
 from typing import Any
 
 from odoo import api, models
 from odoo.exceptions import AccessError, UserError
+from odoo.http import request
+from odoo.tools import BinaryBytes
 
 from odoo.addons.muk_mcp.tools.content import make_resource_entry, normalize_mimetype
 from odoo.addons.muk_mcp.tools.parser import normalize_ids
@@ -60,6 +63,27 @@ class MCPMixin(models.AbstractModel):
                 self.env._('Record %(model)s/%(id)s not found', model=model, id=res_id)
             )
         return record
+
+    @api.model
+    def _mcp_file_result(
+        self, filename: str, mimetype: str, content: bytes, delivery: str
+    ) -> dict[str, Any]:
+        """Return a produced file as base64, or stored with a one-time download link.
+
+        Links go only to clients calling over the MCP endpoint; callers inside
+        Odoo get the file inline and keep it themselves.
+        """
+        result = {'filename': filename, 'mimetype': mimetype}
+        if delivery != 'link' or not (request and getattr(request, '_mcp_key', None)):
+            return {**result, 'content_base64': base64.b64encode(content).decode()}
+        attachment = self.env['ir.attachment'].create(
+            {'name': filename, 'raw': BinaryBytes(content, filename=filename)}
+        )
+        uri = f'odoo://attachment/{attachment.id}'
+        _transfer, url = self.env['muk_mcp.transfer']._issue(
+            'download', uri=uri, attachment_id=attachment.id
+        )
+        return {**result, 'file': uri, 'download_url': url}
 
     @api.model
     def _mcp_apply_domain(self, model: str, domain) -> list:

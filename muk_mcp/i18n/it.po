@@ -90,6 +90,7 @@ msgstr "Accesso negato: questo strumento modifica i dati, ma l'accesso è di sol
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__active
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_prompt__active
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_sandbox__active
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__active
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_prompt_search
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_tool_search
@@ -370,6 +371,7 @@ msgstr "Descrivi cosa fa questo strumento..."
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_generate_key__name
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_prompt__description
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_sandbox__description
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__description
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_prompt_form
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_tool_form
@@ -386,6 +388,7 @@ msgstr "Descrizione"
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__display_name
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_mixin__display_name
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_prompt__display_name
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_sandbox__display_name
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__display_name
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_transfer__display_name
 #: model:ir.model.fields,field_description:muk_mcp.field_res_config_settings__display_name
@@ -527,6 +530,7 @@ msgstr "Instradamento HTTP"
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__id
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_mixin__id
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_prompt__id
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_sandbox__id
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__id
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_transfer__id
 #: model:ir.model.fields,field_description:muk_mcp.field_res_config_settings__id
@@ -865,6 +869,7 @@ msgstr ""
 
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_prompt__name
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_sandbox__name
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__name
 msgid "Name"
 msgstr "Nome"
@@ -911,8 +916,7 @@ msgstr "Nessun messaggio restituito."
 
 #. module: muk_mcp
 #. odoo-python
-#: code:addons/muk_mcp/mcp/read.py:0 code:addons/muk_mcp/mcp/report.py:0
-#: code:addons/muk_mcp/mcp/write.py:0
+#: code:addons/muk_mcp/mcp/mixin.py:0
 msgid "No record IDs provided"
 msgstr "Nessun ID record fornito"
 
@@ -1163,6 +1167,7 @@ msgstr "Seleziona uno strumento dall'elenco a sinistra."
 
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_prompt__sequence
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_sandbox__sequence
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__sequence
 msgid "Sequence"
 msgstr "Sequenza"
@@ -1393,12 +1398,6 @@ msgstr "%s è vuoto: carica prima il file sul suo link."
 #. module: muk_mcp
 #. odoo-python
 #: code:addons/muk_mcp/mcp/upload.py:0
-msgid "A file name is required with data."
-msgstr "Con i dati serve un nome file."
-
-#. module: muk_mcp
-#. odoo-python
-#: code:addons/muk_mcp/mcp/upload.py:0
 msgid "A model and record ID are required with a field."
 msgstr "Con un campo servono un modello e un ID record."
 
@@ -1441,12 +1440,6 @@ msgstr "Operazione"
 
 #. module: muk_mcp
 #. odoo-python
-#: code:addons/muk_mcp/mcp/upload.py:0
-msgid "Pass either file or data."
-msgstr "Passa file oppure data."
-
-#. module: muk_mcp
-#. odoo-python
 #: code:addons/muk_mcp/mcp/mixin.py:0
 msgid "Record %(model)s/%(id)s not found"
 msgstr "Record %(model)s/%(id)s non trovato"
@@ -1462,11 +1455,6 @@ msgstr "La risorsa %s non esiste."
 #: code:addons/muk_mcp/mcp/mixin.py:0
 msgid "Resource %s is empty."
 msgstr "La risorsa %s è vuota."
-
-#. module: muk_mcp
-#: model:ir.model.fields,help:muk_mcp.field_muk_mcp_transfer__attachment_id
-msgid "The attachment an upload fills."
-msgstr "L'allegato che un caricamento riempie."
 
 #. module: muk_mcp
 #. odoo-python
@@ -1586,3 +1574,33 @@ msgstr "Caricamenti"
 #: code:addons/muk_mcp/mcp/mail.py:0
 msgid "User %s is not an active user."
 msgstr "L'utente %s non è un utente attivo."
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/upload.py:0
+msgid "A file name is required with text or data."
+msgstr "Con testo o dati serve un nome file."
+
+#. module: muk_mcp
+#: model:ir.model,name:muk_mcp.model_muk_mcp_sandbox
+msgid "MCP Sandbox"
+msgstr "Sandbox MCP"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/upload.py:0
+msgid "Pass exactly one of file, text or data."
+msgstr "Passa esattamente uno tra file, text o data."
+
+#. module: muk_mcp
+#: model:ir.model.fields,help:muk_mcp.field_muk_mcp_transfer__attachment_id
+msgid "The attachment an upload fills or a produced file is served from."
+msgstr ""
+"L'allegato che un caricamento riempie o da cui viene servito un file "
+"generato."
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/write.py:0
+msgid "Pass \"values\" as one JSON object."
+msgstr "Passa \"values\" come un unico oggetto JSON."

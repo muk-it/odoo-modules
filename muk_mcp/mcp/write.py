@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from odoo import api, models
+from odoo.exceptions import UserError
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
 from odoo.addons.muk_mcp.tools.descriptions import (
@@ -30,7 +31,8 @@ class MCPMixin(models.AbstractModel):
             'use command tuples: [[6,0,[id1,id2]]] to set, [[4,id]] to '
             'add. For One2many fields, use [[0,0,{values}]] to create '
             'inline records. Check required fields with describe_model '
-            'first.'
+            'first. Fields Odoo computes itself on create are listed in '
+            '"ignored_fields" when given, since their value is not kept.'
         ),
         input_schema={
             'type': 'object',
@@ -53,19 +55,29 @@ class MCPMixin(models.AbstractModel):
     def _mcp_create_records(
         self,
         model: str,
-        values,
+        values: dict[str, Any],
     ) -> dict[str, Any]:
         """Create one record from ``values`` and return its id and display name.
 
+        :raise UserError: when ``values`` is not a JSON object.
         :raise AccessError: when the created record lies outside the
             configured record domain.
         """
-        record = self._resolve_model(model).create(values or {})
+        if not isinstance(values, dict):
+            raise UserError(self.env._('Pass "values" as one JSON object.'))
+        target = self._resolve_model(model)
+        ignored = sorted(
+            name
+            for name in values
+            if (field := target._fields.get(name))
+            and field.compute
+            and field.readonly
+            and not field.precompute
+        )
+        record = target.create(values)
         self._mcp_assert_records_allowed(model, record.ids)
-        return {
-            'id': record.id,
-            'display_name': record.display_name,
-        }
+        result = {'id': record.id, 'display_name': record.display_name}
+        return {**result, 'ignored_fields': ignored} if ignored else result
 
     @api.model
     @mcp_tool(

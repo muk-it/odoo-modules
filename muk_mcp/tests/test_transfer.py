@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import base64
 import hashlib
+import json
 from datetime import timedelta
 from typing import Any
 from urllib.parse import urlparse
@@ -92,6 +94,22 @@ class TestMcpTransfer(MCPHttpCase):
                 link = self.call('authorize_download', {'uri': uri})
                 self.assertEqual(self.send(link['download_url']).content, content)
                 self.assertEqual(self.send(link['download_url']).status_code, 404)
+
+    def test_a_produced_file_is_linked_only_for_clients_over_http(self):
+        self.mcp_user.group_ids |= self.env.ref('base.group_allow_export')
+        arguments = {
+            'model': 'res.partner',
+            'fields': ['name'],
+            'ids': [self.partner.id],
+        }
+        inline = self.call('export_records', {**arguments, 'delivery': 'link'})
+        result = self.mcp_tool('export_records', {**arguments, 'delivery': 'link'})
+        linked = json.loads(result['content'][0]['text'])
+        self.assertNotIn('content_base64', linked)
+        self.assertEqual(
+            self.send(linked['download_url']).content,
+            base64.b64decode(inline['content_base64']),
+        )
 
     def test_an_upload_that_breaks_its_announcement_or_expired_is_refused(self):
         for announced, status in (

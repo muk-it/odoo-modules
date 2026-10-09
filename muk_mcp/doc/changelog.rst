@@ -1,3 +1,8 @@
+`4.2.0`
+-------
+
+- Text Uploads, File Links for Reports and Exports, Model Explanations
+
 `4.1.0`
 -------
 

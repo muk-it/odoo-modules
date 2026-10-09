@@ -186,12 +186,13 @@ Clients discover the tools through ``tools/list``. Read tools carry the
 
 Read tools:
 
-- ``list_models``, ``describe_model``: find models and read their fields, with
-  types, labels, relations and selection values.
+- ``list_models``, ``describe_model``: find models and what they are for,
+  and read their fields with types, labels, relations and selection values.
 - ``search_read``, ``read_records``, ``search_count``, ``read_group``: search,
   read, count and aggregate records.
 - ``get_messages``: the chatter of a record, with comments and tracking.
-- ``print_report``: render a report as PDF, HTML or text, returned as base64.
+- ``print_report``: render a report as PDF, HTML or text, as base64 or a
+  one-time download link.
 - ``export_records``: export records to CSV or XLSX through Odoo's export,
   with ``/`` field paths such as ``partner_id/name``.
 - ``read_resource``: read a file by its ``odoo://`` URI.
@@ -210,7 +211,7 @@ Write tools:
 - ``schedule_activity``: schedule an activity on a record, by type name,
   for a user and a due date.
 - ``upload_file``: put a file into a binary field or onto a record as an
-  attachment, from an ``authorize_upload`` file or as base64.
+  attachment, from an ``authorize_upload`` file, plain text or base64.
 - ``authorize_upload``: a one-time link the client sends the raw file to
   with an HTTP PUT, so the file never passes through the conversation.
 - ``call_method``: call a public method on a model or on records. Methods

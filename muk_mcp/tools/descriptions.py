@@ -26,6 +26,19 @@ HTTP_HINT = (
 )
 
 
+def delivery_field() -> dict[str, Any]:
+    """Return the JSON schema for how a tool hands over the file it produces."""
+    return {
+        'type': 'string',
+        'enum': ['inline', 'link'],
+        'default': 'inline',
+        'description': (
+            '"inline" returns the file as base64; "link" stores it and returns a '
+            'one-time download_url instead. ' + HTTP_HINT
+        ),
+    }
+
+
 def model_field() -> dict[str, Any]:
     """Return the JSON schema for a technical model-name parameter."""
     return {

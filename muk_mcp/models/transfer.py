@@ -64,7 +64,7 @@ class MCPTransfer(models.Model):
     attachment_id = fields.Many2one(
         comodel_name='ir.attachment',
         string='Attachment',
-        help='The attachment an upload fills.',
+        help='The attachment an upload fills or a produced file is served from.',
         ondelete='set null',
     )
 

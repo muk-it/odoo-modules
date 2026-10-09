@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import base64
 from typing import Any
 
 from odoo import api, models
@@ -9,6 +8,7 @@ from odoo.exceptions import UserError
 from odoo.addons.muk_mcp.core.tool import mcp_tool
 from odoo.addons.muk_mcp.tools.descriptions import (
     context_field,
+    delivery_field,
     domain_field,
     fields_field,
     ids_field,
@@ -59,7 +59,7 @@ class MCPMixin(models.AbstractModel):
     @mcp_tool(
         name='export_records',
         description=(
-            'Export records as CSV or XLSX, returned as base64. '
+            'Export records as CSV or XLSX. '
             'Field paths use "/" to traverse relations, e.g. '
             '"partner_id/name" or "order_line/product_id/default_code". '
             'Honours record rules and field access.'
@@ -99,6 +99,7 @@ class MCPMixin(models.AbstractModel):
                     'type': 'string',
                     'description': 'Sort order.',
                 },
+                'delivery': delivery_field(),
                 'context': context_field(),
             },
             'required': ['model', 'fields'],
@@ -114,6 +115,7 @@ class MCPMixin(models.AbstractModel):
         format: str = 'csv',
         limit: int = 1000,
         order: str | None = None,
+        delivery: str = 'inline',
     ) -> dict[str, Any]:
         """Export the selected records and return the encoded file payload.
 
@@ -136,13 +138,8 @@ class MCPMixin(models.AbstractModel):
         content = exporter.from_data(descriptors, list(fields), rows)
         if isinstance(content, str):
             content = content.encode('utf-8-sig')
+        filename = model.replace('.', '_') + exporter.extension
         return {
-            'filename': '%s%s'
-            % (
-                model.replace('.', '_'),
-                exporter.extension,
-            ),
-            'mimetype': exporter.content_type,
+            **self._mcp_file_result(filename, exporter.content_type, content, delivery),
             'row_count': len(rows),
-            'content_base64': base64.b64encode(content).decode(),
         }

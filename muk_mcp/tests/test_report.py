@@ -60,6 +60,7 @@ class TestMcpPrintReport(MCPToolCase):
     def test_report_is_rendered_by_any_reference(self):
         for report_ref, filename, mimetype in (
             (self.report.id, 'MCP_Test_Report.txt', 'text/plain'),
+            (str(self.report.id), 'MCP_Test_Report.txt', 'text/plain'),
             ('muk_mcp.test_action_report', 'MCP_Test_Report.txt', 'text/plain'),
             (' muk_mcp.test_report ', 'MCP_Test_Report.txt', 'text/plain'),
             (self.html_report.id, 'MCP_Web_Report.html', 'text/html'),
@@ -76,6 +77,11 @@ class TestMcpPrintReport(MCPToolCase):
                     'MCP Print Target|',
                     base64.b64decode(result['content_base64']).decode(),
                 )
+        self.report.print_report_name = "'Doc / %s' % object.name"
+        result = self.call_tool(
+            'print_report', {'report_ref': self.report.id, 'ids': [self.partner.id]}
+        )
+        self.assertEqual(result['filename'], 'Doc_MCP_Print_Target.txt')
 
     def test_unknown_reports_and_missing_ids_raise(self):
         for report_ref, ids in (
