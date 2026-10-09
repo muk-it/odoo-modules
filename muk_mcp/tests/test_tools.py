@@ -132,14 +132,17 @@ class TestMcpTool(common.TransactionCase):
             record.unlink()
 
     def test_read_handler(self):
-        partner = self.env['res.partner'].search([], limit=1)
-        self.assertTrue(partner)
-        result = self._call('read_records', {
-            'model': 'res.partner',
-            'ids': [partner.id],
-            'fields': ['name'],
-        })
-        self.assertEqual(result[0]['id'], partner.id)
+        partner = self.partner_a
+        for name, arguments in (
+            ('read_records', {'ids': [partner.id], 'fields': ['name']}),
+            ('read_records', {'ids': [partner.id]}),
+            ('search_read', {'domain': [['id', '=', partner.id]]}),
+        ):
+            with self.subTest(name=name, arguments=arguments):
+                result = self._call(
+                    name, {'model': 'res.partner', **arguments}, user=self.user,
+                )
+                self.assertEqual(result[0]['name'], partner.name)
 
     def test_read_tools_return_binary_size_not_content(self):
         image = (
