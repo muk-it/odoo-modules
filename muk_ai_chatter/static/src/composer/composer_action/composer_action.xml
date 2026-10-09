@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-inherit="mail.Composer" t-inherit-mode="extension">
+        <xpath expr="//button[@t-ref='emoji-button']" position="after">
+            <button
+                t-if="store.self?.user?.isInternalUser"
+                class="mk_composer_ai_write btn border-0 rounded-pill"
+                title="Write with AI"
+                aria-label="Write with AI"
+                t-on-click="onClickWriteWithAI"
+            >
+                <span class="mk_icon_ai fa-fw"/>
+            </button>
+        </xpath>
+    </t>
+</templates>
