@@ -108,9 +108,15 @@ class TestMcpPrintReport(common.TransactionCase):
             })
 
     def test_print_filename_sanitizes_spaces(self):
-        result = self._call('print_report', {
-            'report_ref': self.report.id,
-            'ids': [self.partner.id],
-        })
-        self.assertNotIn(' ', result['filename'])
-        self.assertIn('MCP_Test_Report', result['filename'])
+        for report_ref in (self.report.id, str(self.report.id)):
+            with self.subTest(report_ref=report_ref):
+                result = self._call('print_report', {
+                    'report_ref': report_ref,
+                    'ids': [self.partner.id],
+                })
+                self.assertEqual(result['filename'], 'MCP_Test_Report.txt')
+        self.report.print_report_name = "'Doc / %s' % object.name"
+        result = self._call(
+            'print_report', {'report_ref': self.report.id, 'ids': [self.partner.id]}
+        )
+        self.assertEqual(result['filename'], 'Doc_MCP_Print_Target.txt')

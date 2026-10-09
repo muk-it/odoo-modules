@@ -1,7 +1,19 @@
-import json
+from __future__ import annotations
 
+import base64
+import json
+from datetime import date, timedelta
+from typing import Any
+
+from odoo import fields, models
 from odoo.exceptions import UserError
 from odoo.tests import common
+from odoo.tests.common import new_test_user
+
+PNG = (
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQ'
+    'VQYV2NgAAIAAAUAAarVyFEAAAAASUVORK5CYII='
+)
 
 
 class TestMcpTool(common.TransactionCase):
@@ -14,13 +26,25 @@ class TestMcpTool(common.TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.tool_model = cls.env['muk_mcp.tool']
+        cls.user = new_test_user(
+            cls.env,
+            login='mcp_tool_user',
+            groups='base.group_user,base.group_partner_manager',
+        )
+        cls.partner_a, cls.partner_b = cls.env['res.partner'].create(
+            [{'name': 'MCP Tool Partner A'}, {'name': 'MCP Tool Partner B'}],
+        )
 
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
 
-    def _call(self, name, arguments):
-        text, _info = self.tool_model._call(name, arguments, self.env)
+    def _call(
+        self, name: str, arguments: dict[str, Any], user: models.BaseModel | None = None
+    ) -> Any:
+        """Run the ``name`` tool in-process, as ``user`` if given, and decode it."""
+        env = self.env(user=user) if user else self.env
+        text, _info = env['muk_mcp.tool']._call(name, arguments, env)
         return json.loads(text)
 
     # ----------------------------------------------------------
@@ -51,6 +75,22 @@ class TestMcpTool(common.TransactionCase):
         self.assertIn('name', result)
         self.assertIn('email', result)
         self.assertEqual(result['name']['type'], 'char')
+        self.assertNotIn('help', result['is_company'])
+        detail = self._call(
+            'describe_model', {'model': 'res.partner', 'fields': ['is_company']}
+        )
+        self.assertEqual(list(detail), ['is_company'])
+        self.assertIn('help', detail['is_company'])
+
+    def test_values_odoo_computes_itself_are_reported(self):
+        created = self._call('create_records', {
+            'model': 'res.partner',
+            'values': {'name': 'MCP Computed', 'commercial_company_name': 'Ignored'},
+        })
+        self.assertEqual(created['ignored_fields'], ['commercial_company_name'])
+        self.assertFalse(
+            self.env['res.partner'].browse(created['id']).commercial_company_name
+        )
 
     def test_search_read_handler(self):
         result = self._call('search_read', {
@@ -226,12 +266,185 @@ class TestMcpTool(common.TransactionCase):
         finally:
             archived.unlink()
 
-    def test_mail_tools_still_resolve_via_db(self):
-        tools = self.tool_model.get_tools()
-        names = {t['name'] for t in tools}
-        self.assertIn('get_messages', names)
-        self.assertIn('post_message', names)
-        db_records = self.tool_model.search([
-            ('name', 'in', ['get_messages', 'post_message']),
-        ])
-        self.assertEqual(len(db_records), 2)
+    def test_chatter_tools_post_and_read_back(self):
+        for kind, subtype in (
+            ('comment', 'mail.mt_comment'),
+            ('note', 'mail.mt_note'),
+        ):
+            with self.subTest(kind=kind):
+                result = self._call('post_message', {
+                    'model': 'res.partner',
+                    'id': self.partner_a.id,
+                    'body': f'<p>{kind}</p>',
+                    'type': kind,
+                }, user=self.user)
+                message = self.env['mail.message'].browse(result['id'])
+                self.assertEqual(message.subtype_id, self.env.ref(subtype))
+        messages = self._call(
+            'get_messages',
+            {'model': 'res.partner', 'id': self.partner_a.id},
+            user=self.user,
+        )
+        self.assertLessEqual(
+            {'<p>note</p>', '<p>comment</p>'},
+            {entry['body'] for entry in messages},
+        )
+
+    def test_schedule_activity_resolves_type_deadline_and_user(self):
+        today = fields.Date.context_today(self.partner_a)
+        todo = self.env.ref('mail.mail_activity_data_todo')
+        call = self.env.ref('mail.mail_activity_data_call')
+        other = new_test_user(self.env, login='mcp_tool_other')
+        for arguments, kind, deadline, user, summary in (
+            ({}, todo, today + timedelta(days=5), self.user, 'To Do'),
+            (
+                {
+                    'activity_type': 'call',
+                    'date_deadline': '2030-01-02',
+                    'user_id': other.id,
+                    'summary': 'Ring back',
+                    'note': '<p>About the offer</p>',
+                },
+                call,
+                date(2030, 1, 2),
+                other,
+                'Ring back',
+            ),
+            (
+                {'activity_type': 'mail.mail_activity_data_call'},
+                call,
+                today + timedelta(days=2),
+                self.user,
+                'Call',
+            ),
+            (
+                {'activity_type': todo.id},
+                todo,
+                today + timedelta(days=5),
+                self.user,
+                'To Do',
+            ),
+        ):
+            with self.subTest(arguments=arguments):
+                result = self._call(
+                    'schedule_activity',
+                    {'model': 'res.partner', 'id': self.partner_a.id, **arguments},
+                    user=self.user,
+                )
+                activity = self.env['mail.activity'].browse(result['id'])
+                self.assertEqual(
+                    (activity.res_model, activity.res_id, activity.activity_type_id),
+                    ('res.partner', self.partner_a.id, kind),
+                )
+                self.assertEqual(
+                    (activity.date_deadline, activity.user_id, result['summary']),
+                    (deadline, user, summary),
+                )
+        ring_back = self.partner_a.activity_ids.filtered(
+            lambda activity: activity.summary == 'Ring back'
+        )
+        self.assertEqual(str(ring_back.note), '<p>About the offer</p>')
+
+    def test_upload_file_writes_fields_and_attachments(self):
+        raw = base64.b64decode(PNG)
+        for extra, res_model, res_id in (
+            (
+                {'model': 'res.partner', 'id': self.partner_a.id},
+                'res.partner',
+                self.partner_a.id,
+            ),
+            ({}, False, 0),
+            ({'data': f'data:image/png;base64,{PNG}', 'name': 'pixel'}, False, 0),
+        ):
+            with self.subTest(extra=extra):
+                result = self._call(
+                    'upload_file',
+                    {'data': PNG, 'name': 'pixel.png', **extra},
+                    user=self.user,
+                )
+                attachment = self.env['ir.attachment'].browse(result['id'])
+                self.assertEqual(
+                    (attachment.raw, attachment.mimetype), (raw, 'image/png')
+                )
+                self.assertEqual(
+                    (attachment.res_model, attachment.res_id), (res_model, res_id)
+                )
+        result = self._call('upload_file', {
+            'data': PNG,
+            'name': 'pixel.png',
+            'model': 'res.partner',
+            'id': self.partner_b.id,
+            'field': 'image_1920',
+        }, user=self.user)
+        self.assertEqual(
+            result['uri'], f'odoo://record/res.partner/{self.partner_b.id}/image_1920'
+        )
+        self.assertTrue(self.partner_b.image_1920)
+        text = self._call('upload_file', {'text': 'Hello', 'name': 'hello.txt'})
+        self.assertEqual(self.env['ir.attachment'].browse(text['id']).raw, b'Hello')
+        self.env['ir.config_parameter'].sudo().set_param('web.max_file_upload_size', 10)
+        with self.assertRaisesRegex(UserError, 'upload limit'):
+            self._call('upload_file', {'data': PNG, 'name': 'pixel.png'})
+
+    def test_chatter_activity_and_upload_errors_guide_the_caller(self):
+        for name, arguments, message in (
+            ('schedule_activity', {'model': 'res.country', 'id': 1}, 'no activities'),
+            (
+                'schedule_activity',
+                {'model': 'res.partner', 'id': self.partner_a.id, 'user_id': 1},
+                'not an active user',
+            ),
+            (
+                'post_message',
+                {'model': 'res.country', 'id': 1, 'body': 'x'},
+                'no chatter',
+            ),
+            ('get_messages', {'model': 'res.partner', 'id': 999999999}, 'not found'),
+            ('get_messages', {'model': 'no.such.model', 'id': 1}, 'not found'),
+            (
+                'schedule_activity',
+                {'model': 'res.partner', 'id': 999999999},
+                'not found',
+            ),
+            (
+                'schedule_activity',
+                {
+                    'model': 'res.partner',
+                    'id': self.partner_a.id,
+                    'activity_type': 'Nope',
+                },
+                'not available.*To Do',
+            ),
+            ('upload_file', {'data': 'not base64!', 'name': 'x'}, 'not valid base64'),
+            ('upload_file', {'name': 'x'}, 'exactly one of file'),
+            (
+                'create_records',
+                {'model': 'res.partner', 'values': [{'name': 'x'}, {'name': 'y'}]},
+                'one JSON object',
+            ),
+            ('upload_file', {'data': PNG}, 'file name is required'),
+            (
+                'upload_file',
+                {'data': PNG, 'name': 'x', 'field': 'image_1920'},
+                'model and record ID are required',
+            ),
+            (
+                'upload_file',
+                {'data': PNG, 'name': 'x', 'model': 'res.partner'},
+                'record ID is required',
+            ),
+            (
+                'upload_file',
+                {
+                    'data': PNG,
+                    'name': 'x',
+                    'model': 'res.partner',
+                    'id': self.partner_a.id,
+                    'field': 'name',
+                },
+                'not a binary field',
+            ),
+        ):
+            with self.subTest(name=name, arguments=arguments):
+                with self.assertRaisesRegex(UserError, message):
+                    self._call(name, arguments, user=self.user)

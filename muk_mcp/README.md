@@ -197,10 +197,10 @@ pane to run the current tool.
 ## Usage
 
 Once connected, the AI client automatically discovers all available
-tools via the `tools/list` MCP method. The module ships with 17
+tools via the `tools/list` MCP method. The module ships with 22
 built-in tools organized into two categories:
 
-**Read Tools (12)**
+**Read Tools (14)**
 
 - `list_models` -- Discover available Odoo models by substring search.
 - `list_modules` -- List installed modules with versions and states.
@@ -219,14 +219,24 @@ built-in tools organized into two categories:
 - `get_messages` -- Retrieve chatter history, comments, and field
   tracking for a record.
 - `print_report` -- Render an `ir.actions.report` (PDF, text, HTML) for
-  one or more records and return the binary as base64. Accepts the
+  one or more records, as base64 or a one-time download link. Accepts the
   report xmlid, `report_name`, or numeric id.
-- `export_records` -- Export records to CSV or XLSX (base64). Field
+- `export_records` -- Export records to CSV or XLSX, as base64 or a
+  one-time download link. Field
   paths use `/` to traverse relations (e.g. `partner_id/name`,
   `order_line/product_id/default_code`). Honours record rules and
   field access through Odoo's `export_data`.
+- `read_resource` -- Fetch the bytes of a resource by `odoo://` URI
+  and return them as a typed MCP content block (`text` for textual
+  mimetypes, `image` / `audio` for media, `resource` with a base64
+  blob for everything else). Two URI shapes are supported:
+  `odoo://attachment/<id>` for an `ir.attachment` row, and
+  `odoo://record/<model>/<id>/<field>` for a Binary field on a
+  record. Mimetype is auto-detected when not stored.
+- `authorize_download` -- A one-time link to fetch a file with an HTTP
+  GET, so it never passes through the conversation.
 
-**Write Tools (5)**
+**Write Tools (8)**
 
 - `create_records` -- Create new records with support for relational
   field command tuples.
@@ -234,6 +244,12 @@ built-in tools organized into two categories:
 - `delete_records` -- Permanently delete records by ID.
 - `post_message` -- Post comments or internal notes on a record's
   chatter thread.
+- `schedule_activity` -- Schedule an activity on a record, by type name,
+  for a user and a due date.
+- `upload_file` -- Put a file into a binary field or onto a record as an
+  attachment, from an `authorize_upload` file, plain text or base64.
+- `authorize_upload` -- A one-time link the client sends the raw file to
+  with an HTTP PUT, so the file never passes through the conversation.
 - `call_method` -- Call any public method on a model or recordset
   (private methods starting with `_` are blocked for safety).
 

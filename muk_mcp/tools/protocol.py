@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 
 from . import common, version
@@ -144,3 +146,43 @@ def make_text_content(text):
         'type': 'text',
         'text': str(text),
     }
+
+
+def make_image_content(data: str, mime_type: str) -> dict:
+    """Build an MCP image content block from base64 ``data``."""
+    return {
+        'type': 'image',
+        'data': data,
+        'mimeType': mime_type,
+    }
+
+
+def make_audio_content(data: str, mime_type: str) -> dict:
+    """Build an MCP audio content block from base64 ``data``."""
+    return {
+        'type': 'audio',
+        'data': data,
+        'mimeType': mime_type,
+    }
+
+
+def make_resource_content(
+    uri: str, mime_type: str | None = None, *, blob: str | None = None,
+    name: str | None = None,
+) -> dict:
+    """Build an MCP embedded resource content block carrying a base64 ``blob``."""
+    resource = {'uri': uri}
+    if mime_type:
+        resource['mimeType'] = mime_type
+    if name:
+        resource['name'] = name
+    if blob is not None:
+        resource['blob'] = blob
+    return {
+        'type': 'resource',
+        'resource': resource,
+    }
+
+
+class ToolContent(list):
+    """Content blocks a tool returns as they are, instead of as JSON text."""

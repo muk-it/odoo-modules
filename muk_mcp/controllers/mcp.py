@@ -528,7 +528,7 @@ class MCPController(http.Controller):
             )
         enforce_scope = self._get_tool_enforce_scope()
         try:
-            text, _record_info = retrying(
+            result, _record_info = retrying(
                 partial(
                     request.env['muk_mcp.tool']._call,
                     tool_name,
@@ -553,8 +553,10 @@ class MCPController(http.Controller):
                 [protocol.make_text_content('Internal server error')],
                 is_error=True,
             )
+        if isinstance(result, protocol.ToolContent):
+            return protocol.make_tool_result(result)
         return protocol.make_tool_result(
-            [protocol.make_text_content(text)]
+            [protocol.make_text_content(result)]
         )
 
     def _handle_resources_read(self, params):
