@@ -1,10 +1,11 @@
-import base64
+import re
 
 from odoo import _, api, models
 from odoo.exceptions import UserError
+from odoo.tools.safe_eval import safe_eval, time
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
-from odoo.addons.muk_mcp.tools.descriptions import ids_field
+from odoo.addons.muk_mcp.tools.descriptions import delivery_field, ids_field
 
 
 class MCPMixin(models.AbstractModel):
@@ -17,11 +18,10 @@ class MCPMixin(models.AbstractModel):
 
     @api.model
     def _resolve_report(self, report_ref):
-        if isinstance(report_ref, int):
-            return self.env['ir.actions.report'].browse(
-                report_ref
-            )
-        if '.' in (ref := (report_ref or '').strip()):
+        ref = str(report_ref).strip()
+        if ref.isdigit():
+            return self.env['ir.actions.report'].browse(int(ref)).exists()
+        if '.' in ref:
             report = self.env.ref(ref, raise_if_not_found=False)
             if report and report._name == 'ir.actions.report':
                 return report
@@ -47,8 +47,8 @@ class MCPMixin(models.AbstractModel):
     @mcp_tool(
         name='print_report',
         description=(
-            "Render an Odoo report for one or more records and return the "
-            "binary as base64. Accepts a report xmlid (e.g. "
+            "Render an Odoo report for one or more records. Accepts a report "
+            "xmlid (e.g. "
             "'sale.action_report_saleorder'), a report_name "
             "(e.g. 'sale.report_saleorder'), or the numeric id of an "
             "ir.actions.report."
@@ -64,12 +64,17 @@ class MCPMixin(models.AbstractModel):
                     ),
                 },
                 'ids': ids_field('render'),
+                'delivery': delivery_field(),
             },
             'required': ['report_ref', 'ids'],
         },
         category='read',
     )
-    def _mcp_print_report(self, report_ref, ids):
+    def _mcp_print_report(self, report_ref, ids, delivery='inline'):
+        """Render the referenced report for ``ids`` and return the file.
+
+        :raise UserError: when ``ids`` is empty or the report cannot be resolved.
+        """
         if not (target_ids := self._normalize_ids(ids)):
             raise UserError(_('No record IDs provided'))
         if not (report := self._resolve_report(report_ref)):
@@ -79,10 +84,12 @@ class MCPMixin(models.AbstractModel):
         content, report_type = report._render(report.report_name, target_ids)
         mimetype, extension = self._report_mimetype(report_type)
         name = report.name or report.report_name or 'report'
+        if report.print_report_name and len(target_ids) == 1:
+            name = safe_eval(report.print_report_name, {
+                'object': self.env[report.model].browse(target_ids),
+                'time': time,
+            })
         if isinstance(content, str):
             content = content.encode()
-        return {
-            'filename': '%s.%s' % (name.replace(' ', '_'), extension),
-            'mimetype': mimetype,
-            'content_base64': base64.b64encode(content).decode(),
-        }
+        filename = '%s.%s' % (re.sub(r'[\s/\\]+', '_', name), extension)
+        return self._mcp_file_result(filename, mimetype, content, delivery)

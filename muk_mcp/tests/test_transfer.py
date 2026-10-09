@@ -94,6 +94,25 @@ class TestMcpTransfer(MCPHttpCase):
                 self.assertEqual(self.send(link['download_url']).content, content)
                 self.assertEqual(self.send(link['download_url']).status_code, 404)
 
+    def test_a_produced_file_is_linked_only_for_clients_over_http(self):
+        self.mcp_user.groups_id += self.env.ref('base.group_allow_export')
+        arguments = {
+            'model': 'res.partner',
+            'fields': ['name'],
+            'ids': [self.partner.id],
+            'delivery': 'link',
+        }
+        inline = self.call('export_records', arguments)
+        result = self.mcp_stateless_post(
+            'tools/call', {'name': 'export_records', 'arguments': arguments},
+        ).json()['result']
+        linked = json.loads(result['content'][0]['text'])
+        self.assertNotIn('content_base64', linked)
+        self.assertEqual(
+            self.send(linked['download_url']).content,
+            base64.b64decode(inline['content_base64']),
+        )
+
     def test_an_upload_that_breaks_its_announcement_or_expired_is_refused(self):
         for announced, status in (
             ({'size': len(PDF) + 1}, 400),

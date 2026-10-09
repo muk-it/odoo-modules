@@ -1,10 +1,9 @@
-import base64
-
 from odoo import _, api, models
 from odoo.exceptions import UserError
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
 from odoo.addons.muk_mcp.tools.descriptions import (
+    delivery_field,
     domain_field,
     fields_field,
     ids_field,
@@ -54,7 +53,7 @@ class MCPMixin(models.AbstractModel):
     @mcp_tool(
         name='export_records',
         description=(
-            "Export records as CSV or XLSX, returned as base64. "
+            "Export records as CSV or XLSX. "
             "Field paths use '/' to traverse relations, e.g. "
             "'partner_id/name' or 'order_line/product_id/default_code'. "
             "Honours record rules and field access."
@@ -90,6 +89,7 @@ class MCPMixin(models.AbstractModel):
                     'type': 'string',
                     'description': "Sort order.",
                 },
+                'delivery': delivery_field(),
             },
             'required': ['model', 'fields'],
         },
@@ -104,7 +104,9 @@ class MCPMixin(models.AbstractModel):
         format='csv',
         limit=1000,
         order=None,
+        delivery='inline',
     ):
+        """Export the selected records and return the file with its row count."""
         if not fields:
             raise UserError(_('No fields provided'))
         records = self._resolve_records(
@@ -117,11 +119,10 @@ class MCPMixin(models.AbstractModel):
         content = exporter.from_data(list(fields), rows)
         if isinstance(content, str):
             content = content.encode('utf-8-sig')
+        filename = model.replace('.', '_') + exporter.extension
         return {
-            'filename': '%s%s' % (
-                model.replace('.', '_'), exporter.extension,
+            **self._mcp_file_result(
+                filename, exporter.content_type, content, delivery,
             ),
-            'mimetype': exporter.content_type,
             'row_count': len(rows),
-            'content_base64': base64.b64encode(content).decode(),
         }

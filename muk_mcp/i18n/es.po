@@ -60,8 +60,8 @@ msgstr "<strong>Copie esta clave ahora.</strong>No volverá a mostrarse."
 #. odoo-python
 #: code:addons/muk_mcp/mcp/upload.py:0
 #, python-format
-msgid "A file name is required with data."
-msgstr "Con datos se necesita un nombre de archivo."
+msgid "A file name is required with text or data."
+msgstr "Con texto o datos se necesita un nombre de archivo."
 
 #. module: muk_mcp
 #. odoo-python
@@ -949,10 +949,17 @@ msgstr "Parámetros"
 
 #. module: muk_mcp
 #. odoo-python
+#: code:addons/muk_mcp/mcp/write.py:0
+#, python-format
+msgid "Pass \"values\" as one JSON object."
+msgstr "Pase \"values\" como un único objeto JSON."
+
+#. module: muk_mcp
+#. odoo-python
 #: code:addons/muk_mcp/mcp/upload.py:0
 #, python-format
-msgid "Pass either file or data."
-msgstr "Pase file o data."
+msgid "Pass exactly one of file, text or data."
+msgstr "Pase exactamente uno de file, text o data."
 
 #. module: muk_mcp
 #. odoo-javascript
@@ -1258,8 +1265,10 @@ msgstr "La clave API para la que se emitió el enlace."
 
 #. module: muk_mcp
 #: model:ir.model.fields,help:muk_mcp.field_muk_mcp_transfer__attachment_id
-msgid "The attachment an upload fills."
-msgstr "El adjunto que rellena una subida."
+msgid "The attachment an upload fills or a produced file is served from."
+msgstr ""
+"El adjunto que rellena una subida o desde el que se sirve un archivo "
+"generado."
 
 #. module: muk_mcp
 #. odoo-python
