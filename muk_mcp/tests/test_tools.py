@@ -168,19 +168,6 @@ class TestMcpTool(common.TransactionCase):
         finally:
             record.unlink()
 
-    def test_read_handler(self):
-        partner = self.partner_a
-        for name, arguments in (
-            ('read_records', {'ids': [partner.id], 'fields': ['name']}),
-            ('read_records', {'ids': [partner.id]}),
-            ('search_read', {'domain': [['id', '=', partner.id]]}),
-        ):
-            with self.subTest(name=name, arguments=arguments):
-                result = self._call(
-                    name, {'model': 'res.partner', **arguments}, user=self.user
-                )
-                self.assertEqual(result[0]['name'], partner.name)
-
     def test_whoami_handler(self):
         result = self._call('whoami', {})
         self.assertIn('uid', result)
@@ -243,55 +230,35 @@ class TestMcpTool(common.TransactionCase):
         self.assertEqual(result[0]['__count'], 3)
         self.assertEqual(result[0]['category_id'][0], category.id)
 
-    def test_read_records_swaps_binary_field_to_uri(self):
-        png_b64 = (
-            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQ'
-            'VQYV2NgAAIAAAUAAarVyFEAAAAASUVORK5CYII='
-        )
-        partner = self.env['res.partner'].create(
-            {
-                'name': 'Bin',
-                'image_1920': png_b64,
-            },
-        )
-        result = self._call(
+    def test_reads_return_binaries_as_uris_and_lean_defaults(self):
+        self.partner_a.image_1920 = PNG
+        rows = self._call(
             'read_records',
             {
                 'model': 'res.partner',
-                'ids': [partner.id],
+                'ids': [self.partner_a.id, self.partner_b.id],
                 'fields': ['name', 'image_1920'],
             },
         )
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]['name'], 'Bin')
         self.assertEqual(
-            result[0]['image_1920'],
-            'odoo://record/res.partner/%d/image_1920' % partner.id,
+            [row['image_1920'] for row in rows],
+            [f'odoo://record/res.partner/{self.partner_a.id}/image_1920', False],
         )
-
-    def test_search_read_swaps_binary_field_to_uri(self):
-        partner = self.env['res.partner'].create(
-            {
-                'name': 'Searchy',
-                'image_1920': (
-                    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQ'
-                    'VQYV2NgAAIAAAUAAarVyFEAAAAASUVORK5CYII='
-                ),
-            },
-        )
-        result = self._call(
+        found = self._call(
             'search_read',
-            {
-                'model': 'res.partner',
-                'domain': '[["id","=",%d]]' % partner.id,
-                'fields': ['name', 'image_1920'],
-            },
+            {'model': 'res.partner', 'domain': [['id', '=', self.partner_a.id]]},
+            user=self.user,
         )
-        self.assertEqual(len(result), 1)
         self.assertEqual(
-            result[0]['image_1920'],
-            'odoo://record/res.partner/%d/image_1920' % partner.id,
+            found, [{'id': self.partner_a.id, 'display_name': 'MCP Tool Partner A'}]
         )
+        [row] = self._call(
+            'read_records',
+            {'model': 'res.partner', 'ids': self.partner_a.ids},
+            user=self.user,
+        )
+        self.assertEqual(row['email'], self.partner_a.email)
+        self.assertFalse({'image_1920', 'child_ids', 'tz_offset'} & row.keys())
 
     def test_invalid_model_raises(self):
         with self.assertRaises(UserError):

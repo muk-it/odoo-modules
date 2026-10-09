@@ -33,20 +33,15 @@ class TestSchemaDescriptions(common.TransactionCase):
         field = descriptions.domain_field(extra_note="Used when 'ids' is absent.")
         self.assertTrue(field['description'].endswith("Used when 'ids' is absent."))
 
-    def test_fields_field_defaults(self):
+    def test_fields_field(self):
         field = descriptions.fields_field()
         self.assertEqual(field['type'], 'array')
         self.assertEqual(field['items'], {'type': 'string'})
-        self.assertIn('ALWAYS specify this', field['description'])
         self.assertIn('["name", "email", "state"]', field['description'])
-
-    def test_fields_field_without_required_hint(self):
         field = descriptions.fields_field(
-            required_hint=False,
             example=['name', 'partner_id/name'],
             extra_note="Use '/' to traverse relations.",
         )
-        self.assertNotIn('ALWAYS specify this', field['description'])
         self.assertIn("Use '/' to traverse relations.", field['description'])
         self.assertIn('partner_id/name', field['description'])
 

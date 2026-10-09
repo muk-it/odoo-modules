@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from odoo import _, api, models
-from odoo.exceptions import AccessError, UserError
+from odoo.exceptions import UserError
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
 from odoo.addons.muk_mcp.tools.descriptions import (
@@ -28,45 +28,23 @@ class MCPMixin(models.AbstractModel):
 
     @api.model
     def _mcp_read(
-        self,
-        records: models.BaseModel,
-        fields: list[str] | None,
+        self, records: models.BaseModel, fields: list[str]
     ) -> list[dict[str, Any]]:
-        """Read ``fields`` of ``records``, or every field the user may read without them."""
-        if fields:
-            return records.read(fields)
-        try:
-            return records.read()
-        except AccessError:
-            readable = []
-            for name in records.fields_get(attributes=()):
-                try:
-                    records.read([name])
-                except AccessError:
-                    continue
-                readable.append(name)
-            return records.read(readable)
-
-    @api.model
-    def _swap_binary_to_uri(
-        self,
-        model: str,
-        rows: list[dict[str, Any]],
-    ) -> list[dict[str, Any]]:
-        """Replace populated binary field values in ``rows`` with ``odoo://`` resource URIs in place."""
-        target = self.env[model]
-        binary_fields = [
-            name for name, field in target._fields.items() if field.type == 'binary'
+        """Read ``fields`` of ``records``, binary fields as resource URIs without their content."""
+        binary = [
+            name
+            for name in fields
+            if (field := records._fields.get(name)) and field.type == 'binary'
         ]
-        if not binary_fields:
-            return rows
-        for row in rows:
-            rid = row.get('id')
-            if not rid:
-                continue
-            for fname in binary_fields:
-                if row.get(fname):
-                    row[fname] = record_field_uri(model, rid, fname)
+        for name in binary:
+            records._check_field_access(records._fields[name], 'read')
+        rows = records.read([name for name in fields if name not in binary] or ['id'])
+        sized = records.with_context(bin_size=True)
+        for row, record in zip(rows, sized, strict=True):
+            for name in binary:
+                row[name] = (
+                    record[name] and record_field_uri(records._name, record.id, name)
+                ) or False
         return rows
 
     # ----------------------------------------------------------
@@ -110,8 +88,8 @@ class MCPMixin(models.AbstractModel):
         name='search_read',
         description=(
             'Search for records matching a domain filter and return their '
-            'field values. Always specify "fields" to avoid returning all '
-            'fields (which can be slow). Use "limit" to paginate large '
+            'field values. Without "fields" only id and display_name come '
+            'back; name the fields you need. Use "limit" to paginate large '
             'result sets.'
         ),
         input_schema={
@@ -119,7 +97,9 @@ class MCPMixin(models.AbstractModel):
             'properties': {
                 'model': model_field(),
                 'domain': domain_field(),
-                'fields': fields_field(),
+                'fields': fields_field(
+                    extra_note='Binary fields come back as a resource URI, or false when empty.'
+                ),
                 'limit': {
                     'type': 'integer',
                     'default': 80,
@@ -154,15 +134,14 @@ class MCPMixin(models.AbstractModel):
         offset: int = 0,
         order: str | None = None,
     ) -> list[dict[str, Any]]:
-        """Search records by ``domain`` and return their field values with binaries swapped to URIs."""
+        """Search records by ``domain`` and return ``fields``, by default their display name."""
         records = self._resolve_model(model).search(
             coerce_json_value(self._mcp_apply_domain(model, domain)) or [],
             limit=limit,
             offset=offset,
             order=order,
         )
-        rows = self._mcp_read(records, fields)
-        return self._swap_binary_to_uri(model, rows)
+        return self._mcp_read(records, fields or ['display_name'])
 
     @api.model
     @mcp_tool(
@@ -170,15 +149,18 @@ class MCPMixin(models.AbstractModel):
         description=(
             'Read specific records by their database IDs. Use this when '
             'you already know the exact record IDs (e.g. from a previous '
-            'search_read result or from a Many2one field value). Returns '
-            'all requested fields for each ID.'
+            'search_read result or from a Many2one field value). Without '
+            '"fields" it returns the stored base fields of each record; name '
+            'computed, one2many or many2many fields to get them.'
         ),
         input_schema={
             'type': 'object',
             'properties': {
                 'model': model_field(),
                 'ids': ids_field('read'),
-                'fields': fields_field(),
+                'fields': fields_field(
+                    extra_note='Binary fields come back as a resource URI, or false when empty.'
+                ),
                 'context': context_field(),
             },
             'required': ['model', 'ids'],
@@ -191,7 +173,7 @@ class MCPMixin(models.AbstractModel):
         ids,
         fields: list[str] | None = None,
     ) -> list[dict[str, Any]]:
-        """Read records by their database IDs with binaries swapped to URIs.
+        """Read ``fields`` of records by their IDs, by default their prefetched base fields.
 
         :raise UserError: when ``ids`` resolves to an empty list.
         """
@@ -199,8 +181,17 @@ class MCPMixin(models.AbstractModel):
         if not target_ids:
             raise UserError(_('No record IDs provided'))
         self._mcp_assert_records_allowed(model, target_ids)
-        rows = self._mcp_read(self._resolve_model(model).browse(target_ids), fields)
-        return self._swap_binary_to_uri(model, rows)
+        records = self._resolve_model(model).browse(target_ids)
+        return self._mcp_read(
+            records,
+            fields
+            or [
+                name
+                for name in records.fields_get(attributes=())
+                if (field := records._fields[name]).prefetch is True
+                and field.type not in ('one2many', 'many2many')
+            ],
+        )
 
     @api.model
     @mcp_tool(
