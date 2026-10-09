@@ -265,15 +265,15 @@ class TestMCPAccessModel(TransactionCase):
                 'domain': "[('ref', '=', 'MCP')]",
             }
         )
-        raised = False
-        try:
-            self.mixin._mcp_create_records(
-                'res.partner',
-                {'name': 'MCP_BOUNDARY', 'ref': 'OTHER'},
+        with self.assertRaises(AccessError):
+            self.env['muk_mcp.tool']._call(
+                'create_records',
+                {
+                    'model': 'res.partner',
+                    'values': {'name': 'MCP_BOUNDARY', 'ref': 'OTHER'},
+                },
+                self.env,
             )
-        except AccessError:
-            raised = True
-        self.assertTrue(raised)
         self.assertFalse(
             self.env['res.partner']
             .with_context(active_test=False)
@@ -466,10 +466,14 @@ class TestMCPAccessModel(TransactionCase):
             }
         )
         with self.assertRaises(AccessError):
-            self.mixin._mcp_call_method(
-                'res.partner',
-                'create',
-                args='[{"name": "MCP_CM_CREATE", "ref": "OTHER"}]',
+            self.env['muk_mcp.tool']._call(
+                'call_method',
+                {
+                    'model': 'res.partner',
+                    'method': 'create',
+                    'args': '[{"name": "MCP_CM_CREATE", "ref": "OTHER"}]',
+                },
+                self.env,
             )
         self.assertFalse(
             self.env['res.partner'].search_count(
