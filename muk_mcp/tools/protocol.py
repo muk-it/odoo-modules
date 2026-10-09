@@ -176,33 +176,11 @@ def make_discover_result(
     }
 
 
-def make_unsupported_version_error(
-    requested: Any,
-    request_id: Any = None,
-) -> dict[str, Any]:
-    """Build the JSON-RPC error returned for a protocol revision we do not serve."""
-    return make_jsonrpc_error(
-        common.MCP_UNSUPPORTED_PROTOCOL_VERSION,
-        f'Unsupported protocol version: {requested}',
-        data={
-            'supported': list(version.MCP_SUPPORTED_VERSIONS),
-            'requested': requested,
-        },
-        request_id=request_id,
-    )
-
-
-def make_tool_result(
-    content: Any,
-    is_error: bool = False,
-    structured_content: Any = None,
-) -> dict[str, Any]:
-    """Build an MCP tool result, optionally flagged as an error or structured."""
+def make_tool_result(content: Any, is_error: bool = False) -> dict[str, Any]:
+    """Build an MCP tool result, optionally flagged as an error."""
     result = {'content': content}
     if is_error:
         result['isError'] = True
-    if structured_content is not None:
-        result['structuredContent'] = structured_content
     return result
 
 
@@ -214,51 +192,10 @@ def make_text_content(text: Any) -> dict[str, Any]:
     }
 
 
-def make_prompt_message(role: str, text: Any) -> dict[str, Any]:
-    """Build a prompt message pairing ``role`` with a text content block."""
+def make_media_content(data: str, mime_type: str) -> dict[str, Any]:
+    """Build an image or audio content block from base64 ``data`` and its MIME type."""
     return {
-        'role': role,
-        'content': make_text_content(text),
-    }
-
-
-def make_image_content(data: str, mime_type: str) -> dict[str, Any]:
-    """Build an image content block from base64 ``data`` and its MIME type."""
-    return {
-        'type': 'image',
+        'type': mime_type.split('/', 1)[0],
         'data': data,
         'mimeType': mime_type,
-    }
-
-
-def make_audio_content(data: str, mime_type: str) -> dict[str, Any]:
-    """Build an audio content block from base64 ``data`` and its MIME type."""
-    return {
-        'type': 'audio',
-        'data': data,
-        'mimeType': mime_type,
-    }
-
-
-def make_resource_content(
-    uri: str,
-    mime_type: str | None = None,
-    *,
-    text: str | None = None,
-    blob: str | None = None,
-    name: str | None = None,
-) -> dict[str, Any]:
-    """Build a resource content block for ``uri`` with optional text or blob body."""
-    resource = {'uri': uri}
-    if mime_type:
-        resource['mimeType'] = mime_type
-    if name:
-        resource['name'] = name
-    if text is not None:
-        resource['text'] = text
-    if blob is not None:
-        resource['blob'] = blob
-    return {
-        'type': 'resource',
-        'resource': resource,
     }

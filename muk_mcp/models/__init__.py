@@ -2,6 +2,7 @@ from . import ir_http
 from . import key
 from . import log
 from . import mail_message
+from . import sandbox
 from . import tool
 from . import prompt
 from . import res_config_settings

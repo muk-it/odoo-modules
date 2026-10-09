@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Any
 
 from odoo import api, models
-from odoo.exceptions import UserError
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
 from odoo.addons.muk_mcp.tools.descriptions import (
@@ -11,7 +10,6 @@ from odoo.addons.muk_mcp.tools.descriptions import (
     ids_field,
     model_field,
 )
-from odoo.addons.muk_mcp.tools.parser import normalize_ids
 
 
 class MCPMixin(models.AbstractModel):
@@ -60,12 +58,10 @@ class MCPMixin(models.AbstractModel):
         """Create one record from ``values`` and return its id and display name.
 
         :raise AccessError: when the created record lies outside the
-            configured record domain; the savepoint rolls the insert back
-            so the forbidden record is never persisted.
+            configured record domain.
         """
-        with self.env.cr.savepoint():
-            record = self._resolve_model(model).create(values or {})
-            self._mcp_assert_records_allowed(model, [record.id])
+        record = self._resolve_model(model).create(values or {})
+        self._mcp_assert_records_allowed(model, record.ids)
         return {
             'id': record.id,
             'display_name': record.display_name,
@@ -106,12 +102,9 @@ class MCPMixin(models.AbstractModel):
 
         :raise UserError: when ``ids`` resolves to an empty list.
         """
-        target_ids = normalize_ids(ids)
-        if not target_ids:
-            raise UserError(self.env._('No record IDs provided'))
-        self._mcp_assert_records_allowed(model, target_ids)
-        self._resolve_model(model).browse(target_ids).write(values or {})
-        return {'success': True, 'ids': target_ids}
+        records = self._mcp_records(model, ids)
+        records.write(values or {})
+        return {'success': True, 'ids': records.ids}
 
     @api.model
     @mcp_tool(
@@ -139,9 +132,7 @@ class MCPMixin(models.AbstractModel):
 
         :raise UserError: when ``ids`` resolves to an empty list.
         """
-        target_ids = normalize_ids(ids)
-        if not target_ids:
-            raise UserError(self.env._('No record IDs provided'))
-        self._mcp_assert_records_allowed(model, target_ids)
-        self._resolve_model(model).browse(target_ids).unlink()
-        return {'success': True, 'deleted_ids': target_ids}
+        records = self._mcp_records(model, ids)
+        deleted_ids = records.ids
+        records.unlink()
+        return {'success': True, 'deleted_ids': deleted_ids}

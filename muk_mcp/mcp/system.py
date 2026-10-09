@@ -13,26 +13,6 @@ class MCPMixin(models.AbstractModel):
     _inherit = 'muk_mcp.mixin'
 
     # ----------------------------------------------------------
-    # Helper
-    # ----------------------------------------------------------
-
-    @api.model
-    def _system_info(self) -> dict[str, Any]:
-        """Return version, edition, and deployment facts about this Odoo server.
-
-        The edition comes from the release version marker
-        (``version_info[-1] == 'e'``), as in Odoo's own web client.
-        """
-        return {
-            'product': release.product_name,
-            'version': release.version,
-            'series': release.serie,
-            'edition': 'enterprise' if release.version_info[-1] == 'e' else 'community',
-            'database': self.env.cr.dbname,
-            'base_url': self.env['ir.config_parameter'].sudo().get_str('web.base.url'),
-        }
-
-    # ----------------------------------------------------------
     # Functions
     # ----------------------------------------------------------
 
@@ -55,8 +35,19 @@ class MCPMixin(models.AbstractModel):
         category='read',
     )
     def _mcp_system_info(self) -> dict[str, Any]:
-        """Report server version, edition, and deployment facts."""
-        return self._system_info()
+        """Report server version, edition, and deployment facts.
+
+        The edition comes from the release version marker, as in Odoo's own
+        web client.
+        """
+        return {
+            'product': release.product_name,
+            'version': release.version,
+            'series': release.serie,
+            'edition': 'enterprise' if release.version_info[-1] == 'e' else 'community',
+            'database': self.env.cr.dbname,
+            'base_url': self.env['ir.config_parameter'].sudo().get_str('web.base.url'),
+        }
 
     @api.model
     @mcp_tool(

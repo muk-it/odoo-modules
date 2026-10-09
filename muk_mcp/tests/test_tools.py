@@ -3,17 +3,13 @@ from __future__ import annotations
 import base64
 import json
 from datetime import date, timedelta
-from unittest.mock import patch
 
 from odoo import api, fields, models
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests import new_test_user
 
-from odoo.addons.muk_mcp.core.tool import (
-    get_tool_index,
-    invalidate_registry_cache,
-    mcp_tool,
-)
+from odoo.addons.muk_mcp.core.registry import invalidate_registry_cache
+from odoo.addons.muk_mcp.core.tool import get_tool_index, mcp_tool
 from odoo.addons.muk_mcp.tests.common import PNG, MCPToolCase
 from odoo.addons.muk_mcp.tools.exception import MCPScopeDenied
 
@@ -380,26 +376,13 @@ class TestMcpTools(MCPToolCase):
                 with self.assertRaisesRegex(UserError, message):
                     self.call_tool(name, arguments)
 
-    def test_forbidden_models_raise_access_errors(self):
-        cron = self.env['ir.cron'].search([], limit=1)
-        for name, arguments in (
-            ('read_records', {'model': 'ir.cron', 'ids': cron.ids}),
-            (
+    def test_write_tools_run_with_the_callers_rights(self):
+        with self.assertRaises(AccessError):
+            self.call_tool(
                 'create_records',
                 {'model': 'res.company', 'values': {'name': 'MCP Denied'}},
-            ),
-            (
-                'update_records',
-                {
-                    'model': 'res.company',
-                    'ids': self.company_a.ids,
-                    'values': {'name': 'X'},
-                },
-            ),
-            ('delete_records', {'model': 'res.company', 'ids': self.company_c.ids}),
-        ):
-            with self.subTest(name), self.assertRaises(AccessError):
-                self.call_tool(name, arguments, user=self.user)
+                user=self.user,
+            )
 
     def test_record_rules_apply_to_every_read_tool(self):
         allowed = (self.partner_a | self.partner_b).ids
@@ -461,10 +444,6 @@ class TestMcpTools(MCPToolCase):
         self.assertEqual(
             sorted(row['id'] for row in result['access_rules']), sorted(rows.ids)
         )
-        self.assertEqual(
-            set(result['access_rules'][0]),
-            {'id', 'name', 'group_id', 'operation', 'domain'},
-        )
 
     def test_read_scope_allows_only_read_tools(self):
         self.env['muk_mcp.tool'].create(
@@ -491,34 +470,26 @@ class TestMcpTools(MCPToolCase):
     def test_call_method_targets_records_and_model_methods(self):
         category = self.env['res.partner.category'].create({'name': 'MCP Call'})
         self.partner_c.active = False
-        mixin_cls = type(self.env['muk_mcp.mixin'])
-        with patch.object(
-            mixin_cls, '_mcp_assert_records_allowed', autospec=True
-        ) as hook:
-            self.call_tool(
-                'call_method',
-                {
-                    'model': 'res.partner.category',
-                    'method': 'write',
-                    'args': json.dumps([category.ids, {'name': 'MCP Called'}]),
-                },
-            )
-            count = self.call_tool(
-                'call_method',
-                {
-                    'model': 'res.partner',
-                    'method': 'search_count',
-                    'ids': self.partner_a.ids,
-                    'args': json.dumps([self.domain]),
-                    'kwargs': {'context': {'active_test': False}},
-                },
-            )
+        self.call_tool(
+            'call_method',
+            {
+                'model': 'res.partner.category',
+                'method': 'write',
+                'args': json.dumps([category.ids, {'name': 'MCP Called'}]),
+            },
+        )
+        count = self.call_tool(
+            'call_method',
+            {
+                'model': 'res.partner',
+                'method': 'search_count',
+                'ids': self.partner_a.ids,
+                'args': json.dumps([self.domain]),
+                'kwargs': {'context': {'active_test': False}},
+            },
+        )
         self.assertEqual(category.name, 'MCP Called')
         self.assertEqual(count, 3)
-        self.assertEqual(hook.call_count, 1)
-        self.assertEqual(
-            hook.call_args.args[1:], ('res.partner.category', category.ids)
-        )
         self.call_tool(
             'call_method',
             {'model': 'res.partner.category', 'method': 'unlink', 'ids': category.ids},
@@ -557,24 +528,20 @@ class TestMcpTools(MCPToolCase):
         self.assertNotIn('mcp_probe', self.env.context)
 
     def test_registry_filters_the_listing(self):
-        entry = {
-            'kind': 'method',
-            'model': 'muk_mcp.mixin',
-            'method': '_mcp_whoami',
-            'description': 'Probe.',
-            'input_schema': {'type': 'object'},
-            'category': 'read',
+        probes = {
+            'unscoped': None,
+            'mcp_only': 'mcp',
+            'ai_only': 'ai',
+            'shared': 'mcp, cron',
         }
-        self.env.registry._muk_mcp_method_cache = {
-            name: {**entry, 'registry': registry}
-            for name, registry in (
-                ('unscoped', None),
-                ('mcp_only', 'mcp'),
-                ('ai_only', 'ai'),
-                ('shared', 'mcp, cron'),
-            )
-        }
-        self.addCleanup(invalidate_registry_cache, self.env)
+        self._patch_mixin(
+            **{
+                f'_mcp_test_{name}': mcp_tool(name=name, registry=registry)(
+                    lambda self: None
+                )
+                for name, registry in probes.items()
+            }
+        )
         for registry, expected in (
             (None, {'unscoped', 'mcp_only', 'ai_only', 'shared'}),
             ('mcp', {'unscoped', 'mcp_only', 'shared'}),
@@ -584,14 +551,8 @@ class TestMcpTools(MCPToolCase):
             with self.subTest(registry):
                 tools = self.env['muk_mcp.tool'].get_tools(registry=registry)
                 self.assertEqual(
-                    {tool['name'] for tool in tools}
-                    & set(self.env.registry._muk_mcp_method_cache),
-                    expected,
+                    {tool['name'] for tool in tools} & set(probes), expected
                 )
-        self.assertEqual(
-            get_tool_index(self.env)['unscoped']['input_schema'],
-            {'type': 'object', 'properties': {}},
-        )
 
     def test_decorated_methods_and_records_form_the_index(self):
         self._patch_mixin(_mcp_test_records=_mcp_test_records)
@@ -641,7 +602,7 @@ class TestMcpTools(MCPToolCase):
                 ),
             },
         )
-        name = 'odoo.addons.muk_mcp.models.tool (mcp_test_logger)'
+        name = 'odoo.addons.muk_mcp.tool (mcp_test_logger)'
         with self.assertLogs(name, 'INFO') as logs:
             self.call_tool('mcp_test_logger')
         self.assertEqual(

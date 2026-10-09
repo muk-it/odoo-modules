@@ -5,11 +5,8 @@ import json
 from odoo.exceptions import UserError, ValidationError
 from odoo.tests import TransactionCase
 
-from odoo.addons.muk_mcp.core.prompt import (
-    get_prompt_index,
-    invalidate_prompt_cache,
-    mcp_prompt,
-)
+from odoo.addons.muk_mcp.core.prompt import get_prompt_index, mcp_prompt
+from odoo.addons.muk_mcp.core.registry import invalidate_registry_cache
 from odoo.addons.muk_mcp.core.tool import mcp_tool
 
 
@@ -193,8 +190,8 @@ class TestMcpPrompt(TransactionCase):
             )
         mixin_cls = type(self.env['muk_mcp.mixin'])
         mixin_cls._mcp_prompt_duplicate = _mcp_prompt_duplicate
-        self.addCleanup(invalidate_prompt_cache, self.env)
+        self.addCleanup(invalidate_registry_cache, self.env)
         self.addCleanup(delattr, mixin_cls, '_mcp_prompt_duplicate')
-        invalidate_prompt_cache(self.env)
+        invalidate_registry_cache(self.env)
         with self.assertRaisesRegex(ValueError, 'Duplicate'):
             get_prompt_index(self.env)

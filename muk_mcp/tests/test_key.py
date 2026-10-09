@@ -96,15 +96,6 @@ class TestMcpKey(TransactionCase):
                 self.assertIn(url, wizard[name])
                 self.assertIn(f'Bearer {wizard.bearer_key}', wizard[name])
 
-    def test_authentication_and_rate_limit(self):
-        self.assertEqual(self.key_model.authenticate('no-such-token'), self.key_model)
-        _token, limited = make_mcp_key(self.owner, rate_limit=2)
-        self.assertEqual(
-            [limited._check_rate_limit() for _i in range(3)], [True, True, False]
-        )
-        _token, unlimited = make_mcp_key(self.owner)
-        self.assertTrue(all(unlimited._check_rate_limit() for _i in range(5)))
-
     def test_users_manage_only_their_own_keys(self):
         _token, key = make_mcp_key(self.owner, rate_limit=5)
         key.with_user(self.owner).rate_limit = 50

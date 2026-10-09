@@ -54,7 +54,7 @@ class MCPLogMixin:
         """Remember the newest audit entry before the test runs."""
         super().setUp()
         self.log_floor = (
-            self.env['muk_mcp.log'].sudo().search([], order='id desc', limit=1).id
+            self.env['muk_mcp.log'].sudo().search([], order='id desc', limit=1).id or 0
         )
 
     def logs(self, domain: list) -> models.BaseModel:

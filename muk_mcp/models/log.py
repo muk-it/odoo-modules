@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Any
 
 from odoo import SUPERUSER_ID, api, fields, models, tools
+from odoo.http import request
 from odoo.modules.registry import Registry
 from odoo.tools.misc import mute_logger
 
@@ -128,6 +129,16 @@ class MCPLog(models.Model):
         )
         return fields.Datetime.subtract(fields.Datetime.now(), days=days)
 
+    @api.model
+    def _request_values(self) -> dict[str, Any]:
+        """Return the address and credential of the HTTP request being served."""
+        if not request:
+            return {}
+        values = {'ip_address': request.httprequest.remote_addr}
+        if key := getattr(request, '_mcp_key', None):
+            values.update(key_name=key.name, key_prefix=key.key_prefix)
+        return values
+
     # ----------------------------------------------------------
     # Actions
     # ----------------------------------------------------------
@@ -190,7 +201,11 @@ class MCPLog(models.Model):
 
     @api.model
     def log(self, **values: Any) -> None:
-        """Write an audit entry on an independent cursor, never raising."""
+        """Write an audit entry on an independent cursor, never raising.
+
+        The address and credential of the current request fill in what
+        ``values`` leaves out.
+        """
         with (
             contextlib.suppress(Exception),
             mute_logger('odoo.sql_db'),
@@ -199,7 +214,7 @@ class MCPLog(models.Model):
             ).cursor() as cr,
         ):
             env = api.Environment(cr, SUPERUSER_ID, {})
-            env['muk_mcp.log'].create(values)
+            env['muk_mcp.log'].create({**self._request_values(), **values})
 
     # ----------------------------------------------------------
     # Compute

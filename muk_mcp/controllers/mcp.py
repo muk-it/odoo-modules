@@ -38,14 +38,8 @@ class MCPController(http.Controller):
     def _log_request(self, method: str, **kwargs: Any) -> None:
         """Write an MCP audit-log row for the request when logging is enabled."""
         if config.get('mcp_logging', True):
-            key = getattr(request, '_mcp_key', None)
             request.env['muk_mcp.log'].log(
-                key_name=key.name if key else None,
-                key_prefix=key.key_prefix if key else None,
-                user_id=request.env.uid,
-                method=method,
-                ip_address=request.httprequest.remote_addr,
-                **kwargs,
+                user_id=request.env.uid, method=method, **kwargs
             )
 
     def _get_tool_enforce_scope(self) -> str | None:
@@ -108,8 +102,13 @@ class MCPController(http.Controller):
         if not requested:
             return version.MCP_HANDSHAKE_VERSIONS[0], None
         if requested not in version.MCP_SUPPORTED_VERSIONS:
-            return None, protocol.make_unsupported_version_error(
-                requested,
+            return None, protocol.make_jsonrpc_error(
+                common.MCP_UNSUPPORTED_PROTOCOL_VERSION,
+                f'Unsupported protocol version: {requested}',
+                data={
+                    'supported': list(version.MCP_SUPPORTED_VERSIONS),
+                    'requested': requested,
+                },
                 request_id=request_id,
             )
         if requested == version.MCP_STATELESS_VERSION and not header_version:

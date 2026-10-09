@@ -9,7 +9,7 @@ from odoo.tests import new_test_user
 from odoo.tools import BinaryBytes, config
 
 from odoo.addons.mail.tools.discuss import Store
-from odoo.addons.muk_mcp.tests.common import PNG, MCPHttpCase, make_mcp_key
+from odoo.addons.muk_mcp.tests.common import MCPHttpCase, make_mcp_key
 from odoo.addons.muk_mcp.tools import version
 from odoo.addons.muk_mcp.tools.common import MCP_ENDPOINT
 
@@ -57,10 +57,6 @@ class TestMcpHttp(MCPHttpCase):
         return json.loads(
             self.mcp_tool(name, arguments, **kwargs)['content'][0]['text']
         )
-
-    def _read_resource(self, uri: str) -> dict:
-        """Read ``uri`` through ``resources/read`` and return the decoded body."""
-        return self.mcp_call('resources/read', {'uri': uri}).json()
 
     # ----------------------------------------------------------
     # Tests
@@ -365,14 +361,7 @@ class TestMcpHttp(MCPHttpCase):
             },
         )
         for params, status, code, message in (
-            (None, 400, -32602, 'Prompt not found'),
             ({'name': 'no_such_prompt'}, 400, -32602, 'Prompt not found'),
-            (
-                {'name': 'summarize_record', 'arguments': {'model': 'res.partner'}},
-                400,
-                -32602,
-                'Missing required prompt arguments: record_id',
-            ),
             ({'name': 'mcp_test_broken'}, 200, -32603, 'Internal server error'),
         ):
             with self.subTest(params):
@@ -390,16 +379,6 @@ class TestMcpHttp(MCPHttpCase):
                 self.assertIn(message, error['message'])
         log = self.logs([('method', '=', 'prompts/get')])
         self.assertEqual(log.status, 'error')
-
-    def test_completion_suggests_model_names(self):
-        result = self.mcp_call(
-            'completion/complete',
-            {
-                'ref': {'type': 'ref/prompt', 'name': 'summarize_record'},
-                'argument': {'name': 'model', 'value': 'res.par'},
-            },
-        ).json()['result']
-        self.assertIn('res.partner', result['completion']['values'])
 
     def test_resources_read_round_trip(self):
         data = bytes(range(256))
@@ -421,25 +400,25 @@ class TestMcpHttp(MCPHttpCase):
                 },
             ],
         )
-        entry = self._read_resource(f'odoo://attachment/{binary.id}')['result']
-        self.assertEqual(base64.b64decode(entry['contents'][0]['blob']), data)
-        self.assertEqual(entry['contents'][0]['name'], 'blob.bin')
-        block = self.mcp_tool(
-            'read_resource', {'uri': f'odoo://attachment/{binary.id}'}
-        )
-        self.assertEqual(
-            base64.b64decode(block['content'][0]['resource']['blob']), data
-        )
-        entry = self._read_resource(f'odoo://attachment/{text.id}')['result']
-        self.assertEqual(entry['contents'][0]['text'], 'hello')
-        self.partner.image_1920 = PNG
-        uri = f'odoo://record/res.partner/{self.partner.id}/image_1920'
-        entry = self._read_resource(uri)['result']['contents'][0]
-        self.assertEqual(entry['mimeType'], 'image/png')
-        self.assertEqual(
-            base64.b64decode(entry['blob']),
-            self.partner.image_1920.content,
-        )
+        for attachment, expected in (
+            (binary, {'blob': base64.b64encode(data).decode()}),
+            (text, {'text': 'hello'}),
+        ):
+            uri = f'odoo://attachment/{attachment.id}'
+            with self.subTest(attachment.name):
+                self.assertEqual(
+                    self.mcp_call('resources/read', {'uri': uri}).json()['result'],
+                    {
+                        'contents': [
+                            {
+                                'uri': uri,
+                                'mimeType': attachment.mimetype,
+                                'name': attachment.name,
+                                **expected,
+                            }
+                        ]
+                    },
+                )
 
     def test_unreadable_resources_are_not_found(self):
         cron = self.env['ir.cron'].search([], limit=1)

@@ -1,26 +1,19 @@
 from __future__ import annotations
 
-import contextlib
 import inspect
 import json
 import time
 from typing import Any
 
-from markupsafe import Markup
-
 from odoo import api, fields, models
 from odoo.api import Environment
 from odoo.exceptions import AccessError, ConcurrencyError, UserError, ValidationError
-from odoo.http import request
 from odoo.sql_db import PG_CONCURRENCY_EXCEPTIONS_TO_RETRY
 from odoo.tools import config
-from odoo.tools.safe_eval import json as safe_json
-from odoo.tools.safe_eval import safe_eval, test_python_expr
 
 from odoo.addons.muk_mcp.core.tool import get_tool_index
-from odoo.addons.muk_mcp.tools.encoder import encode_request, encode_response
+from odoo.addons.muk_mcp.tools.encoder import encode_log
 from odoo.addons.muk_mcp.tools.exception import MCPScopeDenied
-from odoo.addons.muk_mcp.tools.logger import LoggerProxy
 from odoo.addons.muk_mcp.tools.protocol import (
     ToolContent,
     ToolResult,
@@ -35,33 +28,17 @@ class MCPTool(models.Model):
     """Tool definition exposed to MCP clients and executed on demand."""
 
     _name = 'muk_mcp.tool'
+    _inherit = 'muk_mcp.sandbox'
     _description = 'MCP Tool'
     _explanation = (
         'A tool MCP clients can call, defined in the database with an input '
         'schema and sandboxed Python code, next to the tools modules ship as '
         'methods. Read tools are open to read-only keys, write tools are not.'
     )
-    _order = 'sequence, name'
 
     # ----------------------------------------------------------
     # Fields
     # ----------------------------------------------------------
-
-    name = fields.Char(
-        string='Name',
-        required=True,
-        index=True,
-    )
-
-    active = fields.Boolean(
-        string='Active',
-        default=True,
-    )
-
-    sequence = fields.Integer(
-        string='Sequence',
-        default=10,
-    )
 
     category = fields.Selection(
         selection=[
@@ -79,11 +56,6 @@ class MCPTool(models.Model):
         ],
         string='Registry',
         help='Restrict the tool to a single surface.',
-    )
-
-    description = fields.Text(
-        string='Description',
-        required=True,
     )
 
     input_schema = fields.Text(
@@ -191,18 +163,14 @@ class MCPTool(models.Model):
         :return: the tool's text result and the extracted record info.
         :raise UserError: if ``arguments`` is neither ``None`` nor a JSON object.
         """
-        status, text, info, error = 'ok', None, {}, None
-        model_name = None
+        status, text, info, error, model_name = 'ok', None, {}, None, None
         start = time.monotonic()
         try:
             arguments = self._coerce_arguments(arguments)
             model_name = arguments.get('model')
             with env.cr.savepoint():
                 text, info, model_name = self._execute(
-                    name,
-                    arguments,
-                    env,
-                    enforce_scope,
+                    name, arguments, env, enforce_scope
                 )
             return text, info
         except Exception as exc:
@@ -215,7 +183,7 @@ class MCPTool(models.Model):
                     **self._tool_log_values(
                         name=name,
                         env=env,
-                        request_data=encode_request(arguments),
+                        arguments=arguments,
                         model_name=model_name,
                         status=status,
                         text=text,
@@ -244,14 +212,12 @@ class MCPTool(models.Model):
         if isinstance(context_override := arguments.pop('context', None), dict):
             env = env(context={**env.context, **context_override})
         if entry['kind'] == 'db':
-            text = self.sudo().browse(entry['id'])._run(arguments, env)
-            raw_result = None
+            result = self.sudo().browse(entry['id'])._run(arguments, env)
         else:
-            func = inspect.unwrap(
-                getattr(type(env[entry['model']]), entry['method']),
-            )
+            target = env[entry['model']]
+            func = inspect.unwrap(getattr(type(target), entry['method']))
             try:
-                inspect.signature(func).bind(env[entry['model']], **arguments)
+                inspect.signature(func).bind(target, **arguments)
             except TypeError as exc:
                 raise UserError(
                     self.env._(
@@ -262,11 +228,10 @@ class MCPTool(models.Model):
                         schema=json.dumps(entry['input_schema']),
                     ),
                 ) from exc
-            raw_result = func(env[entry['model']], **arguments)
-            text = self._serialize_result(raw_result)
+            result = func(target, **arguments)
         return (
-            text,
-            self._extract_record_info(arguments, raw_result),
+            self._serialize_result(result),
+            self._extract_record_info(arguments, result),
             arguments.get('model') or entry.get('model'),
         )
 
@@ -276,7 +241,7 @@ class MCPTool(models.Model):
         *,
         name: str,
         env: Environment,
-        request_data: Any,
+        arguments: Any,
         model_name: str | None,
         status: str,
         text: Any,
@@ -284,7 +249,7 @@ class MCPTool(models.Model):
         error: str | None,
         duration_ms: int,
     ) -> dict[str, Any]:
-        """Build the audit-log payload for a tool call, including request meta."""
+        """Build the audit-log values of a tool call."""
         values = {
             'method': 'tools/call',
             'tool_name': name,
@@ -292,20 +257,15 @@ class MCPTool(models.Model):
             'model_name': model_name,
             'status': status,
             'duration_ms': duration_ms,
-            'request_data': request_data,
+            'request_data': encode_log(arguments),
         }
         if status == 'ok':
-            values['response_data'] = encode_response(text)
+            values['response_data'] = encode_log(text)
             values['res_id'] = info.get('res_id')
             values['res_ids'] = info.get('res_ids')
         else:
             values['error_message'] = error
             values['response_data'] = error
-        with contextlib.suppress(Exception):
-            if key := getattr(request, '_mcp_key', None):
-                values['key_name'] = key.name
-                values['key_prefix'] = key.key_prefix
-            values['ip_address'] = request.httprequest.remote_addr if request else None
         return values
 
     @api.model
@@ -332,30 +292,6 @@ class MCPTool(models.Model):
             info['res_ids'] = [result['id']]
         return info
 
-    def _get_eval_context(
-        self,
-        arguments: dict[str, Any],
-        env: Environment,
-    ) -> dict[str, Any]:
-        """Build the sandbox namespace the tool code runs in."""
-        return {
-            'env': env,
-            'arguments': arguments,
-            'json': safe_json,
-            'Markup': Markup,
-            'callable': callable,
-            'getattr': getattr,
-            'hasattr': hasattr,
-            'UserError': UserError,
-            'logger': LoggerProxy(f'{__name__} ({self.name})'),
-        }
-
-    def _run(self, arguments: dict[str, Any], env: Environment) -> Any:
-        """Evaluate the tool code in the sandbox and serialize ``result``."""
-        eval_context = self._get_eval_context(arguments, env)
-        safe_eval(self.code.strip(), eval_context, mode='exec')
-        return self._serialize_result(eval_context.get('result'))
-
     # ----------------------------------------------------------
     # Functions
     # ----------------------------------------------------------
@@ -371,7 +307,7 @@ class MCPTool(models.Model):
                 'inputSchema': entry['input_schema'],
                 'annotations': {'readOnlyHint': entry['category'] == 'read'},
             }
-            if entry.get('meta'):
+            if entry['meta']:
                 tool['_meta'] = entry['meta']
             result.append(tool)
         return result
@@ -386,7 +322,7 @@ class MCPTool(models.Model):
                 'inputSchema': entry['input_schema'],
                 'category': entry['category'],
                 'kind': entry['kind'],
-                'registry': entry.get('registry') or None,
+                'registry': entry['registry'],
             }
             for name, entry in get_tool_index(self.env).items()
         ]
@@ -394,17 +330,6 @@ class MCPTool(models.Model):
     # ----------------------------------------------------------
     # Constraints
     # ----------------------------------------------------------
-
-    @api.constrains('code')
-    def _check_code(self) -> None:
-        """Validate that the tool code is a safe Python expression."""
-        for record in self.sudo().filtered('code'):
-            message = test_python_expr(
-                expr=record.code.strip(),
-                mode='exec',
-            )
-            if message:
-                raise ValidationError(message)
 
     @api.constrains('input_schema')
     def _check_input_schema(self) -> None:
@@ -419,4 +344,4 @@ class MCPTool(models.Model):
                         name=record.name,
                         error=exc,
                     ),
-                )
+                ) from exc

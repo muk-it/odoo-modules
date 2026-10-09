@@ -8,7 +8,12 @@ from odoo.exceptions import UserError
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
 from odoo.addons.muk_mcp.tools.descriptions import context_field, ids_field
-from odoo.addons.muk_mcp.tools.parser import normalize_ids
+
+REPORT_FORMATS = {
+    'pdf': ('application/pdf', 'pdf'),
+    'text': ('text/plain', 'txt'),
+    'html': ('text/html', 'html'),
+}
 
 
 class MCPMixin(models.AbstractModel):
@@ -35,17 +40,6 @@ class MCPMixin(models.AbstractModel):
             [('report_name', '=', ref)],
             limit=1,
         )
-
-    @api.model
-    def _report_mimetype(self, report_type: str) -> tuple[str, str]:
-        """Map a report output type to its (extension, mimetype) pair."""
-        if report_type == 'pdf':
-            return 'application/pdf', 'pdf'
-        if report_type == 'text':
-            return 'text/plain', 'txt'
-        if report_type == 'html':
-            return 'text/html', 'html'
-        return 'application/octet-stream', report_type
 
     # ----------------------------------------------------------
     # Functions
@@ -86,14 +80,13 @@ class MCPMixin(models.AbstractModel):
 
         :raise UserError: when ``ids`` is empty or the report cannot be resolved.
         """
-        if not (target_ids := normalize_ids(ids)):
-            raise UserError(self.env._('No record IDs provided'))
         if not (report := self._resolve_report(report_ref)):
             raise UserError(self.env._('Report %r not found.', report_ref))
-        self._resolve_model(report.model)
-        self._mcp_assert_records_allowed(report.model, target_ids)
-        content, report_type = report._render(report, target_ids)
-        mimetype, extension = self._report_mimetype(report_type)
+        records = self._mcp_records(report.model, ids)
+        content, report_type = report._render(report, records.ids)
+        mimetype, extension = REPORT_FORMATS.get(
+            report_type, ('application/octet-stream', report_type)
+        )
         name = report.name or report.report_name or 'report'
         if isinstance(content, str):
             content = content.encode()

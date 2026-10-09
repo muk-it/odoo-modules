@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import base64
 import mimetypes
 from collections.abc import Callable
 from typing import Any
@@ -8,10 +7,8 @@ from typing import Any
 from odoo import api, models
 from odoo.exceptions import AccessError, UserError
 
-from odoo.addons.muk_mcp.tools.content import (
-    is_textual_mimetype,
-    normalize_mimetype,
-)
+from odoo.addons.muk_mcp.tools.content import make_resource_entry, normalize_mimetype
+from odoo.addons.muk_mcp.tools.parser import normalize_ids
 from odoo.addons.muk_mcp.tools.uri import parse_uri
 
 
@@ -38,17 +35,27 @@ class MCPMixin(models.AbstractModel):
         return self.env[model]
 
     @api.model
+    def _mcp_records(self, model: str, ids) -> models.BaseModel:
+        """Return the records a tool targets by id, checked against the record hook.
+
+        :raise UserError: when the model is unknown or no id is given.
+        """
+        target = self._resolve_model(model)
+        if not (target_ids := normalize_ids(ids)):
+            raise UserError(self.env._('No record IDs provided'))
+        self._mcp_assert_records_allowed(model, target_ids)
+        return target.browse(target_ids)
+
+    @api.model
     def _mcp_record(self, model: str, res_id: int | None) -> models.BaseModel:
         """Return the existing record a tool targets, checked against the record hook.
 
         :raise UserError: when the model is unknown, the id is missing or the
             record does not exist.
         """
-        target = self._resolve_model(model)
         if not res_id:
             raise UserError(self.env._('A record ID is required with a model.'))
-        self._mcp_assert_records_allowed(model, [res_id])
-        if not (record := target.browse(res_id).exists()):
+        if not (record := self._mcp_records(model, res_id).exists()):
             raise UserError(
                 self.env._('Record %(model)s/%(id)s not found', model=model, id=res_id)
             )
@@ -146,34 +153,9 @@ class MCPMixin(models.AbstractModel):
 
     @api.model
     def _dispatch_resources_read(self, uri: str) -> dict[str, Any] | None:
-        """Build an MCP ``resources/read`` entry for a URI.
-
-        Resolves the URI, then returns the content inline as ``text`` for
-        textual mimetypes or as base64 ``blob`` otherwise. Returns ``None`` when
-        the URI is empty or cannot be resolved.
-        """
-        if not uri:
-            return None
+        """Build the ``resources/read`` entry of a URI, or ``None`` when unresolvable."""
         try:
-            mimetype, raw, name = self._resolve_resource_uri(
-                uri,
-            )
+            mimetype, raw, name = self._resolve_resource_uri(uri)
         except (UserError, AccessError):
             return None
-        raw = raw or b''
-        normalized = normalize_mimetype(mimetype)
-        entry = {'uri': uri}
-        if normalized:
-            entry['mimeType'] = normalized
-        if name:
-            entry['name'] = name
-        if is_textual_mimetype(normalized):
-            try:
-                entry['text'] = raw.decode('utf-8')
-                return entry
-            except UnicodeDecodeError:
-                pass
-        entry['blob'] = base64.b64encode(raw).decode(
-            'ascii',
-        )
-        return entry
+        return make_resource_entry(uri, mimetype, raw or b'', name)
