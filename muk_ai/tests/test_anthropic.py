@@ -500,14 +500,19 @@ class TestAiAnthropicProvider(AITestCommon):
         carry = result['carry_inputs'][0]
         self.assertEqual(carry['content'], [{'type': 'output_text', 'text': 'answer'}])
         self.assertEqual(
-            carry['provider_state']['anthropic']['thinking'],
-            [{'type': 'thinking', 'thinking': 'let me think', 'signature': 'sig-1'}],
+            carry['provider_state']['anthropic']['blocks'],
+            [
+                {'type': 'thinking', 'thinking': 'let me think', 'signature': 'sig-1'},
+                {'type': 'text', 'text': 'answer'},
+            ],
         )
 
-    def test_several_thinking_blocks_keep_their_order(self):
+    def test_thinking_and_server_tool_blocks_keep_their_order(self):
         body = self._anthropic_body('answer')
         body['content'] = [
             {'type': 'thinking', 'thinking': 'first', 'signature': 'sig-1'},
+            {'type': 'server_tool_use', 'id': 'srv_1', 'name': 'web_search'},
+            {'type': 'web_search_tool_result', 'tool_use_id': 'srv_1'},
             {'type': 'redacted_thinking', 'data': 'opaque'},
             {'type': 'thinking', 'thinking': 'second', 'signature': 'sig-2'},
             *body['content'],
@@ -516,10 +521,17 @@ class TestAiAnthropicProvider(AITestCommon):
             requests.Session, 'post', return_value=self._mock_http_response(body)
         ):
             result = self.provider._request_responses(inputs=[])
-        carried = result['carry_inputs'][0]['provider_state']['anthropic']['thinking']
+        carried = result['carry_inputs'][0]['provider_state']['anthropic']['blocks']
         self.assertEqual(
-            [block.get('thinking') or block.get('data') for block in carried],
-            ['first', 'opaque', 'second'],
+            [block['type'] for block in carried],
+            [
+                'thinking',
+                'server_tool_use',
+                'web_search_tool_result',
+                'redacted_thinking',
+                'thinking',
+                'text',
+            ],
         )
 
     def test_unsigned_thinking_is_dropped_rather_than_replayed(self):
@@ -545,7 +557,7 @@ class TestAiAnthropicProvider(AITestCommon):
         carry = result['carry_inputs'][0]
         self.assertEqual(carry['content'], [])
         self.assertEqual(
-            carry['provider_state']['anthropic']['thinking'][0]['signature'],
+            carry['provider_state']['anthropic']['blocks'][0]['signature'],
             'sig-1',
         )
         self.assertEqual(result['carry_inputs'][1]['type'], 'function_call')
@@ -558,11 +570,17 @@ class TestAiAnthropicProvider(AITestCommon):
             '',
             'data: {"type":"content_block_delta","index":0,"delta":{"type":"signature_delta","signature":"sig-1"}}',
             '',
-            'data: {"type":"content_block_start","index":1,"content_block":{"type":"redacted_thinking","data":"opaque"}}',
+            'data: {"type":"content_block_start","index":1,"content_block":{"type":"server_tool_use","id":"srv_1","name":"web_search","input":{}}}',
             '',
-            'data: {"type":"content_block_start","index":2,"content_block":{"type":"text","text":""}}',
+            'data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"{\\"query\\": \\"x\\"}"}}',
             '',
-            'data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"answer"}}',
+            'data: {"type":"content_block_start","index":2,"content_block":{"type":"web_search_tool_result","tool_use_id":"srv_1"}}',
+            '',
+            'data: {"type":"content_block_start","index":3,"content_block":{"type":"redacted_thinking","data":"opaque"}}',
+            '',
+            'data: {"type":"content_block_start","index":4,"content_block":{"type":"text","text":""}}',
+            '',
+            'data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"answer"}}',
             '',
             'data: {"type":"message_stop"}',
             '',
@@ -579,10 +597,18 @@ class TestAiAnthropicProvider(AITestCommon):
         carry = result['carry_inputs'][0]
         self.assertEqual(carry['content'], [{'type': 'output_text', 'text': 'answer'}])
         self.assertEqual(
-            carry['provider_state']['anthropic']['thinking'],
+            carry['provider_state']['anthropic']['blocks'],
             [
                 {'type': 'thinking', 'thinking': 'step', 'signature': 'sig-1'},
+                {
+                    'type': 'server_tool_use',
+                    'id': 'srv_1',
+                    'name': 'web_search',
+                    'input': {'query': 'x'},
+                },
+                {'type': 'web_search_tool_result', 'tool_use_id': 'srv_1'},
                 {'type': 'redacted_thinking', 'data': 'opaque'},
+                {'type': 'text', 'text': 'answer'},
             ],
         )
         self.assertEqual([p['delta'] for k, p in deltas if k == 'reasoning'], ['step'])
