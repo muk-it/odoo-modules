@@ -180,3 +180,11 @@ test('picked files are attached as cards that can be removed again', async () =>
     expect('.mk_att_card').toHaveCount(0);
     expect.verifySteps(['discard 31']);
 });
+
+test('a narrow composer keeps the usage ring in its row and the pills in the tools menu', async () => {
+    await mountComposer({}, { showMeta: false });
+    expect('.mk_composer_meta').toHaveCount(0);
+    expect('.mk_composer_usage .mk_usage_meter').toHaveCount(1);
+    await contains('.mk_tools_toggle').click();
+    expect('.mk_tools_menu [data-pill=approval] .mk_pill').toHaveCount(2);
+});

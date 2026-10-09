@@ -167,7 +167,10 @@ class TestToolLazy(AITestCommon):
                 ['another_rare: Also rare'],
             ),
             (
-                {'essential_tool_names': [*everything, 'bare_tool']},
+                {
+                    'essential_tool_names': [*everything, 'bare_tool'],
+                    'tool_filter': [*everything, 'bare_tool'],
+                },
                 {*everything, 'bare_tool', 'ask_user'},
                 [],
             ),

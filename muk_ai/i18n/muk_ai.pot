@@ -636,6 +636,8 @@ msgid "API Key"
 msgstr ""
 
 #. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session_tool.py:0
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
 msgid "Abilities"
 msgstr ""
@@ -793,6 +795,12 @@ msgstr ""
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
 msgid "Approval mode: {{ approval_mode }}."
+msgstr ""
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/pills/pills.js:0
+msgid "Approvals"
 msgstr ""
 
 #. module: muk_ai
@@ -1303,6 +1311,12 @@ msgstr ""
 
 #. module: muk_ai
 #. odoo-python
+#: code:addons/muk_ai/models/session_tool.py:0
+msgid "Code interpreter"
+msgstr ""
+
+#. module: muk_ai
+#. odoo-python
 #: code:addons/muk_ai/models/agent.py:0
 msgid ""
 "Code interpreter is enabled, but the model picked here runs no code-"
@@ -1532,6 +1546,12 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/tool_card/tool_labels.js:0
 msgid "Create %s"
+msgstr ""
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session_tool.py:0
+msgid "Create images from a description"
 msgstr ""
 
 #. module: muk_ai
@@ -1984,6 +2004,12 @@ msgstr ""
 
 #. module: muk_ai
 #. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/tools_menu/tools_menu.js:0
+msgid "Failed to change the tools"
+msgstr ""
+
+#. module: muk_ai
+#. odoo-javascript
 #: code:addons/muk_ai/static/src/core/session/session.js:0
 msgid "Failed to clear session"
 msgstr ""
@@ -2381,6 +2407,8 @@ msgid ""
 msgstr ""
 
 #. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session_tool.py:0
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
 msgid "Images"
 msgstr ""
@@ -2482,6 +2510,12 @@ msgstr ""
 msgid ""
 "Keep this system space in the sidebar while the automatic section is "
 "collapsed. Personal spaces are ordered by hand instead and cannot be pinned."
+msgstr ""
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_session__disabled_tool_sources
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_session_tool__disabled_tool_sources
+msgid "Keys of the tool sources switched off for this chat."
 msgstr ""
 
 #. module: muk_ai
@@ -3769,6 +3803,12 @@ msgstr ""
 
 #. module: muk_ai
 #. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/pills/pills.js:0
+msgid "Reasoning effort"
+msgstr ""
+
+#. module: muk_ai
+#. odoo-javascript
 #: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
 msgid "Recent sessions"
 msgstr ""
@@ -3999,6 +4039,12 @@ msgid "Run an action on %s"
 msgstr ""
 
 #. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session_tool.py:0
+msgid "Run code to calculate and analyse data"
+msgstr ""
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/pills/pills.js:0
 msgid "Run without asking"
@@ -4115,6 +4161,12 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/tool_card/tool_labels.js:0
 msgid "Search the web"
+msgstr ""
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session_tool.py:0
+msgid "Search the web for current information"
 msgstr ""
 
 #. module: muk_ai
@@ -4590,6 +4642,12 @@ msgid "Switch the active agent"
 msgstr ""
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__disabled_tool_sources
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_tool__disabled_tool_sources
+msgid "Switched Off Tools"
+msgstr ""
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/core/session/turns.js:0
 msgid "Switched to %s"
@@ -4862,8 +4920,16 @@ msgid ""
 msgstr ""
 
 #. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/tools_menu/tools_menu.xml:0
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
 msgid "Tools"
+msgstr ""
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/tools_menu/tools_menu.xml:0
+msgid "Tools of this connector"
 msgstr ""
 
 #. module: muk_ai
@@ -5007,6 +5073,12 @@ msgstr ""
 
 #. module: muk_ai
 #. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+msgid "Unknown tool source %(key)r."
+msgstr ""
+
+#. module: muk_ai
+#. odoo-python
 #: code:addons/muk_ai/mcp/window.py:0
 msgid "Unknown view_type %(value)r. Valid: %(valid)s."
 msgstr ""
@@ -5141,6 +5213,12 @@ msgstr ""
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__ai_search_url
 msgid "Web Search URL"
+msgstr ""
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session_tool.py:0
+msgid "Web search"
 msgstr ""
 
 #. module: muk_ai

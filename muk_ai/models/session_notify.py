@@ -29,6 +29,11 @@ class AISessionNotify(models.AbstractModel):
         copy=False,
     )
 
+    awaiting_user = fields.Boolean(
+        compute='_compute_awaiting_user',
+        string='Awaiting User',
+    )
+
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
@@ -39,7 +44,12 @@ class AISessionNotify(models.AbstractModel):
 
     def _list_payload(self) -> dict:
         """Return what a chat list shows of this session."""
-        return {'session_id': self.id, 'name': self.name, 'state': self.state}
+        return {
+            'session_id': self.id,
+            'name': self.name,
+            'state': self.state,
+            'awaiting_user': self.awaiting_user,
+        }
 
     def _notify_share_change(self, previous: models.BaseModel) -> None:
         """Tell the people a chat was just given to, or taken from.
@@ -273,3 +283,13 @@ class AISessionNotify(models.AbstractModel):
         ).notification_unread = False
         self._push_notification_badge(self.env.user)
         return True
+
+    # ----------------------------------------------------------
+    # Compute
+    # ----------------------------------------------------------
+
+    @api.depends('state')
+    def _compute_awaiting_user(self) -> None:
+        """Flag the chats that wait for their owner to answer or approve."""
+        for record in self:
+            record.awaiting_user = record.state == 'waiting'

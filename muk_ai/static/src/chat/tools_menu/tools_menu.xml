@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.ToolsMenu">
+        <Dropdown
+            t-if="this.sources.length or this.pills.length"
+            menuClass="'mk_tools_menu'"
+            position="'top-start'"
+        >
+            <button
+                type="button"
+                class="btn mk_attach mk_tools_toggle d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 border-0 rounded-circle transition-base"
+                title="Tools"
+            >
+                <i class="oi" data-icon="tune"/>
+            </button>
+            <t t-set-slot="content">
+                <div t-foreach="this.sections" t-as="section" t-key="section.label" class="mk_tools_section">
+                    <div class="mk_tools_title text-uppercase text-muted fw-semibold" t-out="section.label"/>
+                    <t t-foreach="section.sources" t-as="source" t-key="source.key">
+                        <t t-set="open" t-value="this.expanded() === source.key"/>
+                        <div class="mk_tools_source d-flex align-items-center gap-2" t-att-data-source="source.key">
+                            <button
+                                t-if="source.items?.length"
+                                type="button"
+                                class="btn btn-link mk_tools_icon mk_tools_expand p-0 text-muted"
+                                title="Tools of this connector"
+                                t-att-aria-expanded="open"
+                                t-on-click.stop="() => this.expanded.set(open ? '' : source.key)"
+                            >
+                                <i class="oi" t-att-data-icon="open ? 'expand_more' : 'chevron_right'"/>
+                            </button>
+                            <i t-else="" class="oi mk_tools_icon text-muted" t-att-data-icon="source.icon"/>
+                            <span class="flex-grow-1 min-w-0">
+                                <span class="mk_tools_label d-block fw-semibold text-truncate" t-out="source.label"/>
+                                <span t-if="source.hint" class="mk_tools_hint d-block text-muted text-truncate" t-out="source.hint"/>
+                            </span>
+                            <span class="form-switch m-0 p-0">
+                                <input
+                                    type="checkbox"
+                                    role="switch"
+                                    class="form-check-input m-0"
+                                    t-att-checked="source.enabled"
+                                    t-att-disabled="this.props.session.readonly"
+                                    t-att-aria-label="source.label"
+                                    t-on-change="() => this.toggle(source)"
+                                />
+                            </span>
+                        </div>
+                        <ul t-if="open" class="mk_tools_items list-unstyled mb-1">
+                            <li t-foreach="source.items" t-as="item" t-key="item_index" class="d-flex align-items-center gap-2 py-1">
+                                <span class="flex-grow-1 text-truncate" t-att-title="item.hint" t-out="item.label"/>
+                                <span class="badge rounded-pill" t-att-class="'text-bg-' + item.tone" t-out="item.badge"/>
+                            </li>
+                        </ul>
+                    </t>
+                </div>
+                <div t-foreach="this.pills" t-as="item" t-key="item.key" class="mk_tools_section" t-att-data-pill="item.key">
+                    <t t-set="current" t-value="this.current(item.pill)"/>
+                    <div class="mk_tools_title d-flex align-items-baseline gap-2 text-muted fw-semibold">
+                        <span class="text-uppercase" t-out="item.pill.title or item.pill.label"/>
+                        <span t-if="item.pill.slider" class="mk_tools_value ms-auto text-body text-truncate" t-out="current.label"/>
+                    </div>
+                    <div t-if="item.pill.slider" class="mk_tools_body">
+                        <input
+                            type="range"
+                            class="form-range"
+                            min="0"
+                            t-att-max="item.pill.options.length - 1"
+                            t-att-value="item.pill.options.indexOf(current)"
+                            t-att-disabled="this.props.session.readonly"
+                            t-att-aria-label="item.pill.title"
+                            t-on-change="(ev) => item.entry.onSelect(this.props.session, item.pill.options[ev.target.value].value)"
+                        />
+                        <div class="mk_tools_ticks d-flex justify-content-between">
+                            <span t-foreach="item.pill.options" t-as="option" t-key="option_index"/>
+                        </div>
+                        <div t-if="current.hint" class="mk_tools_hint text-muted" t-out="current.hint"/>
+                    </div>
+                    <div t-else="" class="mk_tools_body d-flex flex-wrap gap-1">
+                        <button
+                            t-foreach="item.pill.options"
+                            t-as="option"
+                            t-key="option_index"
+                            type="button"
+                            class="btn mk_pill rounded-pill border-0 text-nowrap"
+                            t-att-class="{ mk_pill_ask: option.active }"
+                            t-att-title="option.hint"
+                            t-att-disabled="this.props.session.readonly"
+                            t-on-click="() => item.entry.onSelect(this.props.session, option.value)"
+                            t-out="option.label"
+                        />
+                    </div>
+                </div>
+            </t>
+        </Dropdown>
+    </t>
+
+</templates>

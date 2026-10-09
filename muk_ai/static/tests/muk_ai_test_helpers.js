@@ -59,6 +59,7 @@ export class AISessionModel extends models.Model {
     agent_id = fields.Many2one({ relation: 'muk_ai.agent' });
     space_id = fields.Many2one({ relation: 'muk_ai.space' });
     notification_unread = fields.Boolean();
+    awaiting_user = fields.Boolean();
     _records = [
         { id: 1, name: 'Demo', state: 'done' },
         { id: 2, name: 'Other', state: 'done' },

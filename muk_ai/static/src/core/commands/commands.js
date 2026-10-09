@@ -2,7 +2,6 @@ import { usePlugin } from '@odoo/owl';
 
 import { _t } from '@web/core/l10n/translation';
 import { registry } from '@web/core/registry';
-import { user } from '@web/core/user';
 
 import { AIChatPlugin } from '@muk_ai/core/chat_plugin/chat_plugin';
 
@@ -23,10 +22,7 @@ registry.category('command_provider').add('muk_ai_sessions', {
         const needle = searchValue.trim();
         const sessions = await chat.orm.searchRead(
             'muk_ai.session',
-            [
-                ['user_id', '=', user.userId],
-                ...(needle ? [['name', 'ilike', needle]] : []),
-            ],
+            [...chat.chatDomain, ...(needle ? [['name', 'ilike', needle]] : [])],
             ['id', 'name'],
             { limit: 20, order: 'create_date DESC' },
         );

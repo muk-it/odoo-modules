@@ -338,7 +338,10 @@ class AISession(models.Model):
 
         Extension modules add the values of their own fields to the dict.
         """
-        return self.read(['name', 'user_id', 'share_user_ids', 'agent_id'])[0]
+        return {
+            **self.read(['name', 'user_id', 'share_user_ids', 'agent_id'])[0],
+            'tool_sources': self._tool_sources(),
+        }
 
     def _announce_agent_switch(self, previous: models.BaseModel) -> None:
         """Mark a change of agent on the chat surfaces and in a started transcript."""
@@ -361,6 +364,7 @@ class AISession(models.Model):
                 or False,
                 'reasoning_effort_options': self._reasoning_effort_options(),
                 'agent_reasoning_effort': agent.reasoning_effort or False,
+                'tool_sources': self._tool_sources(),
             },
         )
 
@@ -886,6 +890,19 @@ class AISession(models.Model):
             raise UserError(self.env._('Unknown approval mode %(mode)r.', mode=mode))
         self.write({'override_approval_mode': mode or False})
         self._publish_event('state', {'state': self.state})
+        return self.get_snapshot()
+
+    def set_tool_source(self, key: str, enabled: bool) -> dict:
+        """Switch a tool source of this chat on or off.
+
+        :raise AccessError: when the caller may only read the session
+        :raise UserError: when the chat has no tool source ``key``
+        """
+        self.check_access('write')
+        if key not in {source['key'] for source in self._tool_sources()}:
+            raise UserError(self.env._('Unknown tool source %(key)r.', key=key))
+        disabled = set(self.disabled_tool_sources or []) - {key}
+        self.disabled_tool_sources = sorted(disabled if enabled else disabled | {key})
         return self.get_snapshot()
 
     def set_reasoning_effort(self, effort: str | None) -> dict:

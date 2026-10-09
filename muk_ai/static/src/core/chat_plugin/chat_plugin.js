@@ -17,6 +17,7 @@ import { NotificationPlugin } from '@web/core/notifications/notification_plugin'
 import { ORM } from '@web/core/orm_plugin';
 import { registry } from '@web/core/registry';
 import { services } from '@web/core/services';
+import { user } from '@web/core/user';
 import { ActionPlugin } from '@web/webclient/actions/action_plugin';
 
 import { AISession } from '@muk_ai/core/session/session';
@@ -60,6 +61,14 @@ export class AIChatPlugin extends Plugin {
         for (const [type, handler] of Object.entries(handlers)) {
             onWillDestroy(this.bus.subscribe(type, handler));
         }
+    }
+    /**
+     * The chats of the user that the lists of this tab show, so an extension
+     * can narrow what counts as one.
+     * @returns {Array} a domain on `muk_ai.session`
+     */
+    get chatDomain() {
+        return [['user_id', '=', user.userId]];
     }
     get windowIds() {
         return this.windows.map((window) => window.id);
@@ -127,6 +136,7 @@ export class AIChatPlugin extends Plugin {
             if (this.rows[id]) {
                 Object.assign(this.rows[id], values.name ? { name: values.name } : {}, {
                     state: values.state || this.rows[id].state,
+                    awaiting_user: values.awaiting_user ?? this.rows[id].awaiting_user,
                 });
             }
             if (session) {

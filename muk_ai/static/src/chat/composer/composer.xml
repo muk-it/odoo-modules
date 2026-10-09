@@ -64,6 +64,10 @@
                                 t-on-change="this.onFileChange"
                             />
                         </label>
+                        <ToolsMenu session="session" withPills="!this.props.showMeta"/>
+                        <div t-if="!this.props.showMeta or this.ui.isSmall()" class="mk_composer_usage ms-auto">
+                            <UsageMeter session="session"/>
+                        </div>
                         <button
                             class="btn mk_send d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 border-0 rounded-circle ms-auto transition-base"
                             t-att-class="this.button.cls"
@@ -75,7 +79,7 @@
                         </button>
                     </div>
                 </div>
-                <div t-if="this.props.showMeta" class="mk_composer_meta d-flex align-items-center gap-2 mt-1 ps-1">
+                <div t-if="this.props.showMeta and !this.ui.isSmall()" class="mk_composer_meta d-flex align-items-center gap-2 mt-1 ps-1">
                     <div class="mk_composer_hint d-none d-md-flex gap-3 text-muted">
                         <span><kbd>Enter</kbd> to send</span>
                         <span><kbd>Shift</kbd>+<kbd>Enter</kbd> for newline</span>

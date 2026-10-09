@@ -34,6 +34,7 @@ const FIELDS = [
     'id',
     'name',
     'state',
+    'awaiting_user',
     'create_date',
     'space_id',
     'share_user_ids',
@@ -136,13 +137,6 @@ export class ChatSidebar extends Component {
             onDrop: ({ element }) => this.onChatDropped(element),
         });
     }
-    /**
-     * What counts as one of the user's chats, before any narrowing.
-     * @returns {Array} a domain on `muk_ai.session`
-     */
-    get baseDomain() {
-        return [['user_id', '=', user.userId]];
-    }
     get searchMode() {
         return !!this.state.query.trim();
     }
@@ -240,9 +234,9 @@ export class ChatSidebar extends Component {
         const seq = more ? this.seq : ++this.seq;
         const query = state.query.trim();
         const domain = query
-            ? [...this.baseDomain, ['name', 'ilike', query]]
+            ? [...this.chat.chatDomain, ['name', 'ilike', query]]
             : [
-                  ...this.baseDomain,
+                  ...this.chat.chatDomain,
                   ...(state.generalDomain ?? [['space_id', '=', false]]),
               ];
         const offset = more ? state.offset : 0;
@@ -321,7 +315,7 @@ export class ChatSidebar extends Component {
         const domain = [
             ['id', '=', id],
             ...(this.state.generalDomain ?? [['space_id', '=', false]]),
-            ...this.baseDomain,
+            ...this.chat.chatDomain,
         ];
         const [row] = await this.fetch(domain, 0, 1).finally(() =>
             this.fetching.delete(id),

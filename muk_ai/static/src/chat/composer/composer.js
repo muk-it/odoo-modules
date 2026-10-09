@@ -12,12 +12,14 @@ import {
 
 import { useFileViewer } from '@web/core/file_viewer/file_viewer_hook';
 import { _t } from '@web/core/l10n/translation';
+import { UIPlugin } from '@web/core/ui/ui_plugin';
 import { useAutoresize } from '@web/core/utils/autoresize';
 
 import { AttachmentCard, toFileModel } from '@muk_ai/core/attachment/attachment';
 import { AIChatPlugin } from '@muk_ai/core/chat_plugin/chat_plugin';
 import { slashCommands } from '@muk_ai/core/session/session';
 import { SessionPills } from '@muk_ai/chat/pills/pills';
+import { ToolsMenu } from '@muk_ai/chat/tools_menu/tools_menu';
 import { UsageMeter } from '@muk_ai/chat/usage/usage';
 
 const ACCEPT = [
@@ -39,13 +41,14 @@ const ACCEPT = [
  */
 export class ChatComposer extends Component {
     static template = 'muk_ai.ChatComposer';
-    static components = { AttachmentCard, SessionPills, UsageMeter };
+    static components = { AttachmentCard, SessionPills, ToolsMenu, UsageMeter };
     props = useProps({
         session: t.object(),
         placeholder: t.string().optional(''),
         showMeta: t.boolean().optional(true),
     });
     chat = usePlugin(AIChatPlugin);
+    ui = usePlugin(UIPlugin);
     fileViewer = useFileViewer();
     textarea = signal.ref();
     state = proxy({ active: 0 });

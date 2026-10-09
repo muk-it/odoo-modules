@@ -65,7 +65,11 @@ async function mountSidebar(props = {}) {
 test('the chats of the user group by day, show their state and select on click', async () => {
     AISessionModel._records = [
         chat(1, 'Morning', { state: 'running' }),
-        chat(2, 'Last night', { state: 'waiting', create_date: '2026-01-09 20:00:00' }),
+        chat(2, 'Last night', {
+            state: 'waiting',
+            awaiting_user: true,
+            create_date: '2026-01-09 20:00:00',
+        }),
         chat(3, 'Monday', { state: 'error', create_date: '2026-01-05 09:00:00' }),
         chat(4, 'Autumn', { create_date: '2025-10-01 09:00:00' }),
         chat(5, 'Of a colleague', { user_id: serverState.publicUserId }),

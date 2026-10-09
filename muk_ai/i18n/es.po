@@ -760,6 +760,8 @@ msgid "API Key"
 msgstr "Clave API"
 
 #. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session_tool.py:0
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
 msgid "Abilities"
 msgstr "Capacidades"
@@ -925,6 +927,12 @@ msgstr "Anulación del modo de aprobación"
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
 msgid "Approval mode: {{ approval_mode }}."
 msgstr "Modo de aprobación: {{ approval_mode }}."
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/pills/pills.js:0
+msgid "Approvals"
+msgstr "Aprobaciones"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -1450,6 +1458,12 @@ msgstr "Ejecutor del intérprete de código"
 
 #. module: muk_ai
 #. odoo-python
+#: code:addons/muk_ai/models/session_tool.py:0
+msgid "Code interpreter"
+msgstr "Intérprete de código"
+
+#. module: muk_ai
+#. odoo-python
 #: code:addons/muk_ai/models/agent.py:0
 msgid ""
 "Code interpreter is enabled, but the model picked here runs no code-"
@@ -1695,6 +1709,12 @@ msgstr "Contar %s"
 #: code:addons/muk_ai/static/src/chat/tool_card/tool_labels.js:0
 msgid "Create %s"
 msgstr "Crear %s"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session_tool.py:0
+msgid "Create images from a description"
+msgstr "Crear imágenes a partir de una descripción"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__create_uid
@@ -2162,6 +2182,12 @@ msgstr "No se pudo cambiar de agente"
 
 #. module: muk_ai
 #. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/tools_menu/tools_menu.js:0
+msgid "Failed to change the tools"
+msgstr "No se pudieron cambiar las herramientas"
+
+#. module: muk_ai
+#. odoo-javascript
 #: code:addons/muk_ai/static/src/core/session/session.js:0
 msgid "Failed to clear session"
 msgstr "No se pudo vaciar la sesión"
@@ -2581,6 +2607,8 @@ msgstr ""
 "llega al modelo. Añádala en la página Herramientas o vacíe el filtro."
 
 #. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session_tool.py:0
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
 msgid "Images"
 msgstr "Imágenes"
@@ -2686,6 +2714,12 @@ msgstr ""
 "Mantener este espacio de sistema en la barra lateral mientras la sección "
 "automática está plegada. Los espacios personales se ordenan a mano y no se "
 "pueden fijar."
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_session__disabled_tool_sources
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_session_tool__disabled_tool_sources
+msgid "Keys of the tool sources switched off for this chat."
+msgstr "Claves de las fuentes de herramientas desactivadas para este chat."
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_event__kind
@@ -4041,6 +4075,12 @@ msgstr "Anulación del esfuerzo de razonamiento"
 
 #. module: muk_ai
 #. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/pills/pills.js:0
+msgid "Reasoning effort"
+msgstr "Esfuerzo de razonamiento"
+
+#. module: muk_ai
+#. odoo-javascript
 #: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
 msgid "Recent sessions"
 msgstr "Sesiones recientes"
@@ -4283,6 +4323,12 @@ msgid "Run an action on %s"
 msgstr "Ejecutar una acción en %s"
 
 #. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session_tool.py:0
+msgid "Run code to calculate and analyse data"
+msgstr "Ejecutar código para calcular y analizar datos"
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/pills/pills.js:0
 msgid "Run without asking"
@@ -4407,6 +4453,12 @@ msgstr "Buscar chats..."
 #: code:addons/muk_ai/static/src/chat/tool_card/tool_labels.js:0
 msgid "Search the web"
 msgstr "Buscar en la web"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session_tool.py:0
+msgid "Search the web for current information"
+msgstr "Buscar información actual en la web"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -4898,6 +4950,12 @@ msgid "Switch the active agent"
 msgstr "Cambiar el agente activo"
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__disabled_tool_sources
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_tool__disabled_tool_sources
+msgid "Switched Off Tools"
+msgstr "Herramientas desactivadas"
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/core/session/turns.js:0
 msgid "Switched to %s"
@@ -5205,9 +5263,17 @@ msgstr ""
 "fuera del filtro de herramientas se descartan."
 
 #. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/tools_menu/tools_menu.xml:0
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
 msgid "Tools"
 msgstr "Herramientas"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/tools_menu/tools_menu.xml:0
+msgid "Tools of this connector"
+msgstr "Herramientas de este conector"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__total_cost
@@ -5363,6 +5429,12 @@ msgstr "Destino desconocido %(value)r. Válidos: %(valid)s."
 
 #. module: muk_ai
 #. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+msgid "Unknown tool source %(key)r."
+msgstr "Fuente de herramientas desconocida %(key)r."
+
+#. module: muk_ai
+#. odoo-python
 #: code:addons/muk_ai/mcp/window.py:0
 msgid "Unknown view_type %(value)r. Valid: %(valid)s."
 msgstr "view_type desconocido %(value)r. Válidos: %(valid)s."
@@ -5498,6 +5570,12 @@ msgstr "Backend de búsqueda web"
 #: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__ai_search_url
 msgid "Web Search URL"
 msgstr "URL de búsqueda web"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session_tool.py:0
+msgid "Web search"
+msgstr "Búsqueda web"
 
 #. module: muk_ai
 #. odoo-python

@@ -266,10 +266,9 @@ class AISessionLoop(models.AbstractModel):
                 model=model,
                 on_delta=lambda kind, data: self._on_stream_delta(kind, data, stream),
                 reasoning_effort=self._effective_reasoning_effort(),
-                enable_web_search=bool(agent)
-                and self.agent_id._web_search_route() == 'native',
+                enable_web_search=bool(agent) and self._web_search_route() == 'native',
                 enable_code_interpreter=bool(agent)
-                and self.agent_id._code_interpreter_route() == 'native',
+                and self._code_interpreter_route() == 'native',
                 cache_key=f'muk_ai.session:{self.id}',
                 cache=cache,
             )

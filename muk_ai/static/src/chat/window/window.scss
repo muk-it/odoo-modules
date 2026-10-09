@@ -37,21 +37,6 @@
             }
         }
     }
-    .mk_window_subheader {
-        gap: 0.3rem;
-        padding: 0.35rem 0.6rem;
-        border-bottom: 1px solid var(--border-color);
-        font-size: 0.72rem;
-        &:has(+ .mk_conversation > .mk_ctx_chip) {
-            border-bottom: 0;
-        }
-        .mk_pill:not(.mk_pill_ask) {
-            background: var(--secondary-bg);
-            &:hover {
-                background: var(--border-color);
-            }
-        }
-    }
     .mk_conversation_compact {
         .mk_composer_input textarea {
             padding: 0.3rem 0;

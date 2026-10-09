@@ -13,7 +13,6 @@ import { Dropdown } from '@web/core/dropdown/dropdown';
 import { DropdownItem } from '@web/core/dropdown/dropdown_item';
 import { useHotkey } from '@web/core/hotkeys/hotkey_hook';
 import { registry } from '@web/core/registry';
-import { user } from '@web/core/user';
 import { debounce } from '@web/core/utils/timing';
 
 import { AIChatPlugin } from '@muk_ai/core/chat_plugin/chat_plugin';
@@ -59,13 +58,6 @@ export class MukAISystray extends Component {
             bypassEditableProtection: true,
         });
     }
-    /**
-     * The chats this menu lists, so an extension can narrow what counts.
-     * @returns {Array} a domain on `muk_ai.session`
-     */
-    get sessionDomain() {
-        return [['user_id', '=', user.userId]];
-    }
     get rows() {
         return this.state.ids.map((id) => this.chat.rows[id]).filter(Boolean);
     }
@@ -88,8 +80,8 @@ export class MukAISystray extends Component {
                 },
             );
         const pages = await Promise.all([
-            read([...this.sessionDomain, ['notification_unread', '=', true]]),
-            read(this.sessionDomain),
+            read([...this.chat.chatDomain, ['notification_unread', '=', true]]),
+            read(this.chat.chatDomain),
         ]).catch(() => [[], []]);
         const rows = pages.flat();
         this.chat.setRows(rows);

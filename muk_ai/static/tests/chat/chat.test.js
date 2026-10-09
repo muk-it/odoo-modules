@@ -166,6 +166,7 @@ test('a new chat starts on the page, not on the record the chat shown is pinned 
     expect.verifySteps([]);
 });
 
+test.tags('desktop');
 test('what is typed while a new chat is created goes to the new chat', async () => {
     seedChats();
     const created = Promise.withResolvers();

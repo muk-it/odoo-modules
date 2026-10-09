@@ -66,8 +66,9 @@ class MistralProvider(ProviderBase):
     def headers(self):
         return {'Authorization': f'Bearer {self.api_key}'}
 
-    def request(self, inputs, tools_schema=None, on_delta=None, model=None, **kwargs):
-        ...
+    def request(
+        self, inputs, tools_schema=None, on_delta=None, model=None, **kwargs
+    ): ...
 
 
 REGISTRY[MistralProvider.name] = MistralProvider

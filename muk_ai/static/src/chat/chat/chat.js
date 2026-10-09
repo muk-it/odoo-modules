@@ -16,7 +16,6 @@ import { DropdownItem } from '@web/core/dropdown/dropdown_item';
 import { _t } from '@web/core/l10n/translation';
 import { registry } from '@web/core/registry';
 import { UIPlugin } from '@web/core/ui/ui_plugin';
-import { user } from '@web/core/user';
 
 import { AIChatPlugin, useAISession } from '@muk_ai/core/chat_plugin/chat_plugin';
 import { ArtifactsPanel } from '@muk_ai/chat/artifacts/artifacts';
@@ -127,7 +126,7 @@ export class AIChat extends Component {
     async selectFirst() {
         const [first] = await this.chat.orm.searchRead(
             'muk_ai.session',
-            [['user_id', '=', user.userId]],
+            this.chat.chatDomain,
             ['id'],
             { limit: 1, order: 'create_date DESC' },
         );

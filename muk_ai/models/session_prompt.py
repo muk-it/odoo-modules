@@ -124,7 +124,7 @@ class AISessionPrompt(models.AbstractModel):
         backend route ships ``web_search``, image generation its tool.
         """
         lines = []
-        route = self.agent_id._web_search_route()
+        route = self._web_search_route()
         if route == 'native':
             lines.append(
                 'Web search: provider built-in - search the web whenever '
@@ -139,7 +139,7 @@ class AISessionPrompt(models.AbstractModel):
             'generate_image'
         ):
             lines.append('Image generation: available through generate_image.')
-        if self.agent_id._code_interpreter_route():
+        if self._code_interpreter_route():
             lines.append(
                 'Code interpreter: provider-side sandboxed Python, for '
                 'analytics over data you already fetched.'
@@ -174,7 +174,21 @@ class AISessionPrompt(models.AbstractModel):
         The provider, the context window and every modality of the session
         resolve through it.
         """
+        if modality == 'image' and not self._tool_source_enabled('image_generation'):
+            return self.env['muk_ai.model']
         return self.agent_id._resolve_model_for(modality)
+
+    def _web_search_route(self) -> str | None:
+        """Return the agent's web search route, unless this chat switched it off."""
+        if not self._tool_source_enabled('web_search'):
+            return None
+        return self.agent_id._web_search_route()
+
+    def _code_interpreter_route(self) -> str | None:
+        """Return the agent's code interpreter route, unless this chat switched it off."""
+        if not self._tool_source_enabled('code_interpreter'):
+            return None
+        return self.agent_id._code_interpreter_route()
 
     def _resolve_provider(self) -> models.BaseModel:
         """Return the provider backing this session's chat model."""
@@ -311,7 +325,7 @@ class AISessionPrompt(models.AbstractModel):
             tools['muk_mcp.tool'].sudo().get_tools(registry='odoo')
         )
         hidden = set()
-        if self.agent_id._web_search_route() != 'tool':
+        if self._web_search_route() != 'tool':
             hidden.add('web_search')
         if not self._resolve_model_for('image'):
             hidden.add('generate_image')

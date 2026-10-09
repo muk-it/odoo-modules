@@ -37,6 +37,9 @@
             opacity: 0.35;
         }
     }
+    .mk_composer_usage + .mk_send {
+        margin-left: 0 !important;
+    }
     .mk_send {
         color: var(--white) !important;
         background: var(--primary) !important;

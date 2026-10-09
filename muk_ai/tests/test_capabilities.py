@@ -3,6 +3,7 @@ from __future__ import annotations
 from unittest.mock import patch
 
 from odoo import models
+from odoo.exceptions import UserError
 
 from odoo.addons.muk_ai.providers.openai import OpenAIProvider
 from odoo.addons.muk_ai.providers.region import CUSTOM, Region
@@ -147,6 +148,45 @@ class TestCapabilities(AITestCommon):
                 self.assertEqual('generate_image' in self._tools(request), drawing)
                 self.assertEqual('Image generation:' in system, drawing)
                 self._assert_warning(agent, warning)
+
+    def test_a_chat_switches_off_what_its_agent_can_do(self):
+        agent = self.env['muk_ai.agent'].create(
+            {
+                'name': 'Everything',
+                'web_search': 'auto',
+                'enable_code_interpreter': True,
+                'enable_image_generation': True,
+            }
+        )
+        session = self._session(agent_id=agent.id)
+        abilities = ['web_search', 'image_generation', 'code_interpreter']
+        sources = session.get_snapshot()['tool_sources']
+        self.assertEqual(
+            [source['key'] for source in sources if source['enabled']][:3], abilities
+        )
+        for key in abilities:
+            snapshot = session.set_tool_source(key, False)
+        self.assertFalse(
+            [
+                source['key']
+                for source in snapshot['tool_sources']
+                if source['key'] in abilities and source['enabled']
+            ]
+        )
+        with self._mock_responses([text_payload()]) as requests:
+            session.start('go')
+        system = self._system_prompt(requests[0])
+        self.assertFalse(requests[0]['enable_web_search'])
+        self.assertFalse(requests[0]['enable_code_interpreter'])
+        self.assertNotIn('generate_image', self._tools(requests[0]))
+        self.assertIn('Web search: unavailable', system)
+        self.assertNotIn('Code interpreter:', system)
+        session.set_tool_source('web_search', True)
+        self.assertEqual(
+            session.disabled_tool_sources, ['code_interpreter', 'image_generation']
+        )
+        with self.assertRaises(UserError):
+            session.set_tool_source('teleport', False)
 
     def test_a_region_withholds_the_capabilities_it_disables(self):
         with patch.object(OpenAIProvider, 'regions', (RESTRICTED, CUSTOM)):

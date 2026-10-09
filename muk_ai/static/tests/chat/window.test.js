@@ -48,7 +48,6 @@ test('fullscreen moves the chat from its window to the page, keeping the draft a
     }));
     await openWindow(1);
     expect('.mk_window .mk_conversation > .mk_ctx_chip').toHaveCount(1);
-    expect('.mk_window_subheader .mk_ctx_chip').toHaveCount(0);
     await contains('.mk_window textarea').edit('half written', { confirm: false });
     await contains('.mk_window_btn[title="Open fullscreen"]').click();
     await animationFrame();

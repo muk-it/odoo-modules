@@ -1,7 +1,12 @@
-`2.0.0`
+`1.24.0`
 -------
 
-- Shared Chat State Between Window and Page
+- Shared Chat State
+
+`1.23.0`
+-------
+
+- Tools in the Chat
 
 `1.22.0`
 -------

@@ -84,9 +84,63 @@ class AISessionTool(models.AbstractModel):
         readonly=True,
     )
 
+    disabled_tool_sources = fields.Json(
+        string='Switched Off Tools',
+        help='Keys of the tool sources switched off for this chat.',
+        readonly=True,
+    )
+
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
+
+    def _tool_source_enabled(self, key: str) -> bool:
+        """Return whether the tool source ``key`` is switched on for this chat."""
+        return key not in (self.disabled_tool_sources or [])
+
+    def _tool_sources(self) -> list[dict]:
+        """Return the tool sources a user can switch off for this chat.
+
+        A source is ``{key, section, icon, label, hint, enabled}``, a connector also
+        lists its ``items``; the abilities listed are those the agent has.
+        """
+        agent = self.agent_id
+        abilities = [
+            (
+                'web_search',
+                'explore',
+                self.env._('Web search'),
+                self.env._('Search the web for current information'),
+                agent._web_search_route(),
+            ),
+            (
+                'image_generation',
+                'image',
+                self.env._('Images'),
+                self.env._('Create images from a description'),
+                agent._resolve_model_for('image'),
+            ),
+            (
+                'code_interpreter',
+                'terminal',
+                self.env._('Code interpreter'),
+                self.env._('Run code to calculate and analyse data'),
+                agent._code_interpreter_route(),
+            ),
+        ]
+        section = self.env._('Abilities')
+        return [
+            {
+                'key': key,
+                'section': section,
+                'icon': icon,
+                'label': label,
+                'hint': hint,
+                'enabled': self._tool_source_enabled(key),
+            }
+            for key, icon, label, hint, available in abilities
+            if available
+        ]
 
     def _tool_dispatch_context(self) -> dict:
         """Return the context keys threaded through tool dispatch."""

@@ -7,9 +7,10 @@ import { registry } from '@web/core/registry';
 
 /**
  * The pills under the composer, as `{sequence, build(session), onSelect}`:
- * `build` returns `{label, icon, className, tooltip, options}` or nothing,
+ * `build` returns `{label, title, slider, icon, className, tooltip, options}` or nothing,
  * each option `{value, label, hint, active}`, and `onSelect(session, value)`
- * acts on the choice.
+ * acts on the choice. With `slider`, the tools menu draws the ordered options
+ * as a slider instead of chips.
  */
 export const sessionPills = registry.category('muk_ai.session_pills');
 
@@ -22,20 +23,25 @@ const EFFORTS = {
     max: [_t('Maximum'), _t('Everything the model has · slowest')],
 };
 
+/**
+ * Build the pills of a chat.
+ * @param {object} session the chat
+ * @returns {Array} `{key, entry, pill}` for every entry that builds a pill
+ */
+export function buildPills(session) {
+    return sessionPills
+        .getEntries()
+        .map(([key, entry]) => ({ key, entry, pill: entry.build(session) }))
+        .filter((item) => item.pill);
+}
+
 /** The pills of a chat: approval mode, reasoning effort and addon pills. */
 export class SessionPills extends Component {
     static template = 'muk_ai.SessionPills';
     static components = { Dropdown, DropdownItem };
     props = useProps({ session: t.object() });
     get pills() {
-        return sessionPills
-            .getEntries()
-            .map(([key, entry]) => ({
-                key,
-                entry,
-                pill: entry.build(this.props.session),
-            }))
-            .filter((item) => item.pill);
+        return buildPills(this.props.session);
     }
 }
 
@@ -49,6 +55,7 @@ sessionPills.add(
             const source = override ? _t('override') : _t('from agent');
             return {
                 label: off ? _t('Bypass') : _t('Ask'),
+                title: _t('Approvals'),
                 icon: off ? 'flash_on' : 'security',
                 className: `${off ? 'mk_pill_bypass' : 'mk_pill_ask'} ${override ? 'mk_pill_override' : ''}`,
                 tooltip: session.readonly
@@ -95,6 +102,8 @@ sessionPills.add(
                 label: data.effective_reasoning_effort
                     ? label(data.effective_reasoning_effort)
                     : _t('Default'),
+                title: _t('Reasoning effort'),
+                slider: true,
                 icon: 'speed',
                 className: override ? 'mk_pill_override' : '',
                 tooltip: override

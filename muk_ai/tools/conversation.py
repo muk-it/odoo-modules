@@ -35,13 +35,15 @@ def order_outputs(outputs: list) -> list:
 def is_counted_user_entry(item) -> bool:
     """Return whether the item is a user entry backed by a user_message event.
 
-    Answer-carried and tool-produced vision entries have no such event.
+    Answer-carried, tool-produced vision and system notice entries have no
+    such event.
     """
     return (
         isinstance(item, dict)
         and item.get('role') == 'user'
         and not item.get('_answer_entry')
         and not item.get('_vision_entry')
+        and not item.get('_notice_entry')
     )
 
 
