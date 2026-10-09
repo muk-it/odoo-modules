@@ -188,7 +188,11 @@ class TestToolVision(AITestCommon):
             session.start('render it')
         entry = self._vision_entry_after(session, self._outputs_for(session, 'c0')[0])
         materialized = self.provider._materialize_inputs([entry])
-        block = materialized[0]['content'][0]
+        [block] = [
+            block
+            for block in materialized[0]['content']
+            if block['type'] == 'muk_ai_attachment'
+        ]
         self.assertEqual(block['strategy'], 'image')
         self.assertEqual(base64.b64decode(block['data_b64']), base64.b64decode(PNG_B64))
 
