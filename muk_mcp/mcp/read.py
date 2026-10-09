@@ -1,5 +1,5 @@
 from odoo import _, api, models
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
 from odoo.addons.muk_mcp.tools.common import coerce_json_value
@@ -8,6 +8,27 @@ from odoo.addons.muk_mcp.tools.common import coerce_json_value
 class MCPMixin(models.AbstractModel):
 
     _inherit = 'muk_mcp.mixin'
+
+    # ----------------------------------------------------------
+    # Helper
+    # ----------------------------------------------------------
+
+    @api.model
+    def _mcp_read(self, records, fields):
+        records = records.with_context(bin_size=True)
+        if fields:
+            return records.read(fields)
+        try:
+            return records.read()
+        except AccessError:
+            readable = []
+            for name in records.fields_get(attributes=()):
+                try:
+                    records.read([name])
+                except AccessError:
+                    continue
+                readable.append(name)
+            return records.read(readable)
 
     # ----------------------------------------------------------
     # Functions
@@ -142,14 +163,13 @@ class MCPMixin(models.AbstractModel):
         offset=0,
         order=None,
     ):
-        records = self._resolve_model(model).with_context(bin_size=True)
-        return records.search_read(
+        records = self._resolve_model(model).search(
             coerce_json_value(domain) or [],
-            fields=fields,
             limit=limit,
             offset=offset,
             order=order,
         )
+        return self._mcp_read(records, fields)
 
     @api.model
     @mcp_tool(
@@ -196,7 +216,7 @@ class MCPMixin(models.AbstractModel):
         if not target_ids:
             raise UserError(_('No record IDs provided'))
         records = self._resolve_model(model).browse(target_ids)
-        return records.with_context(bin_size=True).read(fields)
+        return self._mcp_read(records, fields)
 
     @api.model
     @mcp_tool(
