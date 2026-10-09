@@ -85,8 +85,9 @@ class TestMCPAccessResource(common.TransactionCase):
             self.env.ref('base.fr').id,
             b'out of domain',
         )
-        with self.assertRaises(AccessError):
-            self.mixin._mcp_read_resource('odoo://attachment/%d' % attachment.id)
+        for read in (self.mixin._mcp_read_resource, self.mixin._mcp_authorize_download):
+            with self.subTest(tool=read.__name__), self.assertRaises(AccessError):
+                read('odoo://attachment/%d' % attachment.id)
 
     def test_attachment_on_an_exempt_model_is_returned(self):
         self._allow('res.partner')
