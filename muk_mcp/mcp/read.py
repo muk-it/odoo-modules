@@ -1,5 +1,5 @@
 from odoo import _, api, models
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
 from odoo.addons.muk_mcp.tools.descriptions import (
@@ -19,6 +19,22 @@ class MCPMixin(models.AbstractModel):
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
+
+    @api.model
+    def _mcp_read(self, records, fields):
+        if fields:
+            return records.read(fields)
+        try:
+            return records.read()
+        except AccessError:
+            readable = []
+            for name in records.fields_get(attributes=()):
+                try:
+                    records.read([name])
+                except AccessError:
+                    continue
+                readable.append(name)
+            return records.read(readable)
 
     @api.model
     def _swap_binary_to_uri(self, model, rows):
@@ -121,15 +137,15 @@ class MCPMixin(models.AbstractModel):
         offset=0,
         order=None,
     ):
-        rows = self._resolve_model(model).search_read(
+        records = self._resolve_model(model).search(
             self._coerce_json_value(
                 self._mcp_apply_domain(model, domain),
             ) or [],
-            fields=fields,
             limit=limit,
             offset=offset,
             order=order,
         )
+        rows = self._mcp_read(records, fields)
         return self._swap_binary_to_uri(model, rows)
 
     @api.model
@@ -158,7 +174,8 @@ class MCPMixin(models.AbstractModel):
         if not target_ids:
             raise UserError(_('No record IDs provided'))
         self._mcp_assert_records_allowed(model, target_ids)
-        rows = self._resolve_model(model).browse(target_ids).read(fields)
+        records = self._resolve_model(model).browse(target_ids)
+        rows = self._mcp_read(records, fields)
         return self._swap_binary_to_uri(model, rows)
 
     @api.model
