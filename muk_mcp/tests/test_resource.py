@@ -25,6 +25,7 @@ class TestReadResource(common.TransactionCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Create the partners and the user the resources are read as."""
         super().setUpClass()
         cls.tool_model = cls.env['muk_mcp.tool']
         cls.mixin = cls.env['muk_mcp.mixin']
@@ -340,19 +341,16 @@ class TestReadResource(common.TransactionCase):
         )
         self.acl_partner.with_user(self.acl_user).check_access('read')
         mixin = self.mixin.with_user(self.acl_user)
-        with self.assertRaises(AccessError):
-            mixin._resolve_resource_record_field(
-                'res.partner',
-                self.acl_partner.id,
-                'image_1920',
-            )
+        uri = 'odoo://record/res.partner/%d/image_1920' % self.acl_partner.id
+        for resolve in (mixin._resolve_resource_uri, mixin._mcp_authorize_download):
+            with self.subTest(resolve=resolve.__name__):
+                with self.assertRaises(AccessError):
+                    resolve(uri)
 
     def test_record_field_allows_ungrouped_field(self):
         mixin = self.mixin.with_user(self.acl_user)
-        mimetype, raw, _name = mixin._resolve_resource_record_field(
-            'res.partner',
-            self.acl_partner.id,
-            'image_1920',
+        mimetype, raw, _name = mixin._resolve_resource_uri(
+            'odoo://record/res.partner/%d/image_1920' % self.acl_partner.id,
         )
         self.assertTrue(mimetype.startswith('image/'))
         self.assertTrue(raw)

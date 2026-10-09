@@ -88,6 +88,14 @@
 	/>
 
 	<menuitem
+		id="menu_mcp_transfer"
+		name="File Transfers"
+		parent="menu_mcp_logging"
+		action="action_mcp_transfer"
+		sequence="15"
+	/>
+
+	<menuitem
 		id="menu_mcp_sessions"
 		name="Sessions"
 		parent="menu_mcp_logging"

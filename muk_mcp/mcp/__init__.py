@@ -5,7 +5,9 @@ from . import resource
 from . import export
 from . import identity
 from . import introspect
+from . import mail
 from . import read
 from . import report
 from . import system
+from . import upload
 from . import write

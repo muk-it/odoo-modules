@@ -34,7 +34,7 @@ specification in `2025-06-18`, is no longer accepted on any revision.
    (**Settings > Users > Preferences**).
 2. In the **Account Security** tab, click **Add MCP Key**.
 3. Enter a description (e.g. "Claude Code") and pick a **Scope**
-   (*Read Only* or *Read & Write*).
+   (_Read Only_ or _Read & Write_).
 4. Click **Generate Key** and copy the key immediately -- it will not
    be shown again.
 
@@ -50,8 +50,8 @@ Navigate to **Settings > General Settings > MCP Server** to configure:
 **API Key Scopes**
 
 Each MCP key has a scope that gates which tool categories it can
-call: *Read Only* keys can call tools declared with `category='read'`,
-*Read & Write* keys can call both. Scope enforcement happens before
+call: _Read Only_ keys can call tools declared with `category='read'`,
+_Read & Write_ keys can call both. Scope enforcement happens before
 the tool executes; Odoo's record rules and model ACLs still apply
 on top, so a key can never exceed the permissions of its owning user.
 
@@ -78,12 +78,12 @@ selected per request in one of two ways:
 
 - **`X-Odoo-Database` header** -- handled by Odoo core, works out of the box.
 - **`?db=<name>` query parameter** -- handled by this module. Because it must
-  resolve the database *before* one is selected, the module has to be loaded
+  resolve the database _before_ one is selected, the module has to be loaded
   **server-wide** so its request hook runs at server start (the same
   requirement as `muk_rest`):
 
-  Parameter: `--load=web,muk_mcp`
-  (or `server_wide_modules = web,muk_mcp` in the configuration file).
+    Parameter: `--load=web,muk_mcp`
+    (or `server_wide_modules = web,muk_mcp` in the configuration file).
 
 Without a selector on a multi-database host, the request falls through to
 Odoo's standard database handling. The selector name defaults to `db` and can
@@ -108,15 +108,15 @@ Or add it directly to your `claude_code_config.json`:
 
 ```json
 {
-  "mcpServers": {
-    "odoo": {
-      "type": "url",
-      "url": "https://your-odoo.com/mcp",
-      "headers": {
-        "Authorization": "Bearer YOUR_MCP_KEY"
-      }
+    "mcpServers": {
+        "odoo": {
+            "type": "url",
+            "url": "https://your-odoo.com/mcp",
+            "headers": {
+                "Authorization": "Bearer YOUR_MCP_KEY"
+            }
+        }
     }
-  }
 }
 ```
 
@@ -126,15 +126,15 @@ Add to your `claude_desktop_config.json`:
 
 ```json
 {
-  "mcpServers": {
-    "odoo": {
-      "type": "url",
-      "url": "https://your-odoo.com/mcp",
-      "headers": {
-        "Authorization": "Bearer YOUR_MCP_KEY"
-      }
+    "mcpServers": {
+        "odoo": {
+            "type": "url",
+            "url": "https://your-odoo.com/mcp",
+            "headers": {
+                "Authorization": "Bearer YOUR_MCP_KEY"
+            }
+        }
     }
-  }
 }
 ```
 
@@ -144,15 +144,15 @@ Add the server to your `.opencode/config.json` or `opencode.json`:
 
 ```json
 {
-  "mcp": {
-    "odoo": {
-      "type": "remote",
-      "url": "https://your-odoo.com/mcp",
-      "headers": {
-        "Authorization": "Bearer YOUR_MCP_KEY"
-      }
+    "mcp": {
+        "odoo": {
+            "type": "remote",
+            "url": "https://your-odoo.com/mcp",
+            "headers": {
+                "Authorization": "Bearer YOUR_MCP_KEY"
+            }
+        }
     }
-  }
 }
 ```
 
@@ -162,14 +162,14 @@ Add to your `.cursor/mcp.json`:
 
 ```json
 {
-  "mcpServers": {
-    "odoo": {
-      "url": "https://your-odoo.com/mcp",
-      "headers": {
-        "Authorization": "Bearer YOUR_MCP_KEY"
-      }
+    "mcpServers": {
+        "odoo": {
+            "url": "https://your-odoo.com/mcp",
+            "headers": {
+                "Authorization": "Bearer YOUR_MCP_KEY"
+            }
+        }
     }
-  }
 }
 ```
 
@@ -226,10 +226,10 @@ pane to run the current tool.
 ## Usage
 
 Once connected, the AI client automatically discovers all available
-tools via the `tools/list` MCP method. The module ships with 18
+tools via the `tools/list` MCP method. The module ships with 22
 built-in tools organized into two categories:
 
-**Read Tools (13)**
+**Read Tools (14)**
 
 - `list_models` -- Discover available Odoo models by substring search.
 - `list_modules` -- List installed modules with versions and states.
@@ -261,15 +261,17 @@ built-in tools organized into two categories:
   `odoo://attachment/<id>` for an `ir.attachment` row, and
   `odoo://record/<model>/<id>/<field>` for a Binary field on a
   record. Mimetype is auto-detected when not stored.
+- `authorize_download` -- A one-time link to fetch a file with an HTTP
+  GET, so it never passes through the conversation.
 
 > **Binary fields are returned as URIs.** Both `read_records` and
 > `search_read` substitute Binary field values with
 > `odoo://record/<model>/<id>/<field>` references rather than
 > shipping base64 inline — the LLM gets a small stable handle and
 > only materializes bytes (via `read_resource` or the protocol-level
-> `resources/read`) when it actually needs to *see* the file.
+> `resources/read`) when it actually needs to _see_ the file.
 
-**Write Tools (5)**
+**Write Tools (8)**
 
 - `create_records` -- Create new records with support for relational
   field command tuples.
@@ -277,6 +279,12 @@ built-in tools organized into two categories:
 - `delete_records` -- Permanently delete records by ID.
 - `post_message` -- Post comments or internal notes on a record's
   chatter thread.
+- `schedule_activity` -- Schedule an activity on a record, by type name,
+  for a user and a due date.
+- `upload_file` -- Put a file into a binary field or onto a record as an
+  attachment, from an `authorize_upload` file or as base64.
+- `authorize_upload` -- A one-time link the client sends the raw file to
+  with an HTTP PUT, so the file never passes through the conversation.
 - `call_method` -- Call any public method on a model or recordset
   (private methods starting with `_` are blocked for safety).
 

@@ -16,6 +16,20 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/upload.py:0
+msgid ""
+"%(field)s is not a binary field of %(model)s. Binary fields: %(fields)s"
+msgstr ""
+"%(field)s no es un campo binario de %(model)s. Campos binarios: %(fields)s"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/upload.py:0
+msgid "%s is empty: upload the file to its link first."
+msgstr "%s está vacío: suba primero el archivo a su enlace."
+
+#. module: muk_mcp
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
 msgid "<span class=\"col-auto ms-2\">in Days</span>"
 msgstr "<span class=\"col-auto ms-2\">en días</span>"
@@ -65,8 +79,34 @@ msgid "<strong>Copy this key now.</strong>It will not be shown again."
 msgstr "<strong>Copie esta clave ahora.</strong>No volverá a mostrarse."
 
 #. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid ""
+"<strong>Save</strong> this page and come back here to set up the feature."
+msgstr ""
+"<strong>Guarde</strong> esta página y vuelva aquí para configurar la "
+"función."
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/upload.py:0
+msgid "A file name is required with data."
+msgstr "Con datos se necesita un nombre de archivo."
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/upload.py:0
+msgid "A model and record ID are required with a field."
+msgstr "Con un campo se necesitan un modelo y un ID de registro."
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/mixin.py:0
+msgid "A record ID is required with a model."
+msgstr "Con un modelo se necesita un ID de registro."
+
+#. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key_show__key
-#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__key_id
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__key_name
 msgid "API Key"
 msgstr "Clave API"
 
@@ -84,11 +124,22 @@ msgstr "Acceso denegado: el alcance de la clave es de solo lectura"
 
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__active
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_prompt__active
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__active
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__active
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_prompt_search
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_tool_search
 msgid "Active"
 msgstr "Activo"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/mail.py:0
+msgid ""
+"Activity type %(type)r is not available on %(model)s. Available: %(types)s"
+msgstr ""
+"El tipo de actividad %(type)r no está disponible en %(model)s. Disponibles: "
+"%(types)s"
 
 #. module: muk_mcp
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_users_form
@@ -101,6 +152,27 @@ msgstr "Añadir clave MCP"
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
 msgid "Annotate Messages"
 msgstr "Anotar mensajes"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_transfer__sha256
+msgid "Announced SHA-256"
+msgstr "SHA-256 anunciado"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_transfer__file_size
+msgid "Announced Size"
+msgstr "Tamaño anunciado"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_prompt__arguments
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_prompt_form
+msgid "Arguments"
+msgstr "Argumentos"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_transfer__attachment_id
+msgid "Attachment"
+msgstr "Adjunto"
 
 #. module: muk_mcp
 #: model:ir.actions.act_window,name:muk_mcp.action_mcp_log
@@ -123,9 +195,31 @@ msgstr ""
 "automáticamente."
 
 #. module: muk_mcp
+#: model:ir.ui.menu,name:muk_mcp.menu_mcp_authentication
+msgid "Authentication"
+msgstr "Autenticación"
+
+#. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_connect__bearer_key
 msgid "Bearer Key"
 msgstr "Clave Bearer"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_prompt__body
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_prompt_form
+msgid "Body"
+msgstr "Cuerpo"
+
+#. module: muk_mcp
+#: model_terms:ir.actions.act_window,help:muk_mcp.action_mcp_prompt
+msgid ""
+"Built-in prompts ship with the module. You can add custom\n"
+"\t\t\t\tprompts here; a database prompt overrides a built-in one\n"
+"\t\t\t\twith the same name."
+msgstr ""
+"Los prompts integrados vienen con el módulo. Puede añadir prompts\n"
+"\t\t\t\tpersonalizados aquí; un prompt de la base de datos sustituye a uno\n"
+"\t\t\t\tintegrado con el mismo nombre."
 
 #. module: muk_mcp
 #. odoo-javascript
@@ -133,6 +227,11 @@ msgstr "Clave Bearer"
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_generate_key_form
 msgid "Cancel"
 msgstr "Cancelar"
+
+#. module: muk_mcp
+#: model:ir.ui.menu,name:muk_mcp.menu_mcp_catalog
+msgid "Catalog"
+msgstr "Catálogo"
 
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__category
@@ -174,6 +273,7 @@ msgstr "Haga clic en \"Probar\" para ejecutar la herramienta."
 
 #. module: muk_mcp
 #. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/prompts_panel.js:0
 #: code:addons/muk_mcp/static/src/playground/response_panel.js:0
 #: code:addons/muk_mcp/static/src/playground/tool_detail.js:0
 msgid "Clipboard unavailable"
@@ -242,8 +342,20 @@ msgstr "Copiar sin formato"
 #. module: muk_mcp
 #. odoo-javascript
 #: code:addons/muk_mcp/static/src/playground/playground.xml:0
-msgid "Copy result"
-msgstr "Copiar resultado"
+msgid "Copy text result"
+msgstr "Copiar resultado de texto"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/resource.py:0
+msgid ""
+"Could not extract text from %(n)s (%(m)s).\n"
+"The file may be scanned, encrypted, empty, or not a text-bearing format.\n"
+"Use format=\"resource\" or format=\"auto\" to get the raw blob."
+msgstr ""
+"No se pudo extraer texto de %(n)s (%(m)s).\n"
+"Es posible que el archivo esté escaneado, cifrado o vacío, o que no sea un formato con texto.\n"
+"Use format=\"resource\" o format=\"auto\" para obtener los datos sin procesar."
 
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__create_date
@@ -255,8 +367,10 @@ msgstr "Creado"
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_generate_key__create_uid
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__create_uid
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__create_uid
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_prompt__create_uid
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__create_uid
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__create_uid
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_transfer__create_uid
 msgid "Created by"
 msgstr "Creado por"
 
@@ -265,14 +379,17 @@ msgstr "Creado por"
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_generate_key__create_date
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__create_date
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__create_date
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_prompt__create_date
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__create_date
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__create_date
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_transfer__create_date
 msgid "Created on"
 msgstr "Creado el"
 
 #. module: muk_mcp
 #. odoo-javascript
 #: code:addons/muk_mcp/static/src/playground/playground.xml:0
+#: code:addons/muk_mcp/static/src/playground/prompts_panel.xml:0
 msgid "Ctrl"
 msgstr "Ctrl"
 
@@ -325,13 +442,20 @@ msgid "Denied"
 msgstr "Denegado"
 
 #. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_prompt_form
+msgid "Describe what this prompt does..."
+msgstr "Describa lo que hace este prompt..."
+
+#. module: muk_mcp
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_tool_form
 msgid "Describe what this tool does..."
 msgstr "Describa lo que hace esta herramienta..."
 
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_generate_key__name
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_prompt__description
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__description
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_prompt_form
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_tool_form
 msgid "Description"
 msgstr "Descripción"
@@ -346,8 +470,10 @@ msgstr "Descripción"
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__display_name
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_mixin__display_name
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__display_name
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_prompt__display_name
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__display_name
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__display_name
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_transfer__display_name
 #: model:ir.model.fields,field_description:muk_mcp.field_res_config_settings__display_name
 #: model:ir.model.fields,field_description:muk_mcp.field_res_users__display_name
 msgid "Display Name"
@@ -359,6 +485,18 @@ msgid "Done"
 msgstr "Hecho"
 
 #. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+#: model:ir.model.fields.selection,name:muk_mcp.selection__muk_mcp_transfer__operation__download
+msgid "Download"
+msgstr "Descargar"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_transfer_search
+msgid "Downloads"
+msgstr "Descargas"
+
+#. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__duration_ms
 msgid "Duration (ms)"
 msgstr "Duración (ms)"
@@ -366,6 +504,7 @@ msgstr "Duración (ms)"
 #. module: muk_mcp
 #. odoo-javascript
 #: code:addons/muk_mcp/static/src/playground/playground.xml:0
+#: code:addons/muk_mcp/static/src/playground/prompts_panel.xml:0
 msgid "Enter"
 msgstr "Intro"
 
@@ -374,6 +513,11 @@ msgstr "Intro"
 #: code:addons/muk_mcp/static/src/playground/playground.xml:0
 msgid "Enter JSON for this complex argument."
 msgstr "Introduzca JSON para este argumento complejo."
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Enterprise MCP auth via your IdP (ID-JAG / SEP-990)."
+msgstr "Autenticación MCP empresarial a través de su IdP (ID-JAG / SEP-990)."
 
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__error_message
@@ -393,10 +537,21 @@ msgid "Event ID"
 msgstr "ID de evento"
 
 #. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_transfer__expires_at
+msgid "Expires At"
+msgstr "Caduca el"
+
+#. module: muk_mcp
 #. odoo-javascript
 #: code:addons/muk_mcp/static/src/playground/key_bar.js:0
 msgid "Failed to generate key: %s"
 msgstr "Error al generar la clave: %s"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/prompts_panel.js:0
+msgid "Failed to load prompts: %s"
+msgstr "No se pudieron cargar los prompts: %s"
 
 #. module: muk_mcp
 #. odoo-javascript
@@ -405,9 +560,26 @@ msgid "Failed to load tools: %s"
 msgstr "Error al cargar herramientas: %s"
 
 #. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/mixin.py:0
+msgid "Field %(f)r is not a readable binary field on %(m)s."
+msgstr "El campo %(f)r no es un campo binario legible en %(m)s."
+
+#. module: muk_mcp
+#: model:ir.actions.act_window,name:muk_mcp.action_mcp_transfer
+#: model:ir.ui.menu,name:muk_mcp.menu_mcp_transfer
+msgid "File Transfers"
+msgstr "Transferencias de archivos"
+
+#. module: muk_mcp
 #: model:ir.model.fields,help:muk_mcp.field_muk_mcp_key__key_prefix
 msgid "First 8 characters of the key for identification."
 msgstr "Primeros 8 caracteres de la clave para identificación."
+
+#. module: muk_mcp
+#: model:ir.model.fields,help:muk_mcp.field_muk_mcp_log__key_prefix
+msgid "First characters of the API key used."
+msgstr "Primeros caracteres de la clave API utilizada."
 
 #. module: muk_mcp
 #. odoo-javascript
@@ -443,6 +615,7 @@ msgstr ""
 #. module: muk_mcp
 #. odoo-javascript
 #: code:addons/muk_mcp/static/src/playground/playground.xml:0
+#: code:addons/muk_mcp/static/src/playground/prompts_panel.xml:0
 msgid "HTTP"
 msgstr "HTTP"
 
@@ -461,8 +634,10 @@ msgstr "Enrutamiento HTTP"
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__id
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_mixin__id
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__id
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_prompt__id
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__id
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__id
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_transfer__id
 #: model:ir.model.fields,field_description:muk_mcp.field_res_config_settings__id
 #: model:ir.model.fields,field_description:muk_mcp.field_res_users__id
 msgid "ID"
@@ -495,14 +670,33 @@ msgid "Input Schema"
 msgstr "Esquema de entrada"
 
 #. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Interactive UI resources rendered inline by AI clients."
+msgstr ""
+"Recursos de interfaz interactivos que los clientes de IA muestran "
+"integrados."
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/models/prompt.py:0
+msgid "Invalid arguments for prompt %(name)s: %(error)s"
+msgstr "Argumentos no válidos para el prompt %(name)s: %(error)s"
+
+#. module: muk_mcp
 #. odoo-python
 #: code:addons/muk_mcp/models/tool.py:0
 msgid ""
 "Invalid arguments for tool %(name)s: %(error)s. Expected input schema: "
 "%(schema)s"
 msgstr ""
-"Argumentos no válidos para la herramienta %(name)s: %(error)s. Esquema de entrada esperado: "
-"%(schema)s"
+"Argumentos no válidos para la herramienta %(name)s: %(error)s. Esquema de "
+"entrada esperado: %(schema)s"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/tools/parser.py:0
+msgid "Invalid record ID: %r"
+msgstr "ID de registro no válido: %r"
 
 #. module: muk_mcp
 #: model:ir.model.fields,help:muk_mcp.field_muk_mcp_tool__input_schema
@@ -510,13 +704,24 @@ msgid "JSON Schema defining the tool parameters."
 msgstr "Esquema JSON que define los parámetros de la herramienta."
 
 #. module: muk_mcp
+#: model:ir.model.fields,help:muk_mcp.field_muk_mcp_prompt__arguments
+msgid ""
+"JSON array of argument definitions: [{\"name\": ..., \"description\": ..., "
+"\"required\": ...}]."
+msgstr ""
+"Array JSON de definiciones de argumentos: [{\"name\": ..., \"description\": "
+"..., \"required\": ...}]."
+
+#. module: muk_mcp
 #. odoo-javascript
 #: code:addons/muk_mcp/static/src/playground/playground.xml:0
+#: code:addons/muk_mcp/static/src/playground/prompts_panel.xml:0
 msgid "JSON-RPC"
 msgstr "JSON-RPC"
 
 #. module: muk_mcp
 #. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/prompts_panel.js:0
 #: code:addons/muk_mcp/static/src/playground/tool_detail.js:0
 msgid "JSON-RPC payload copied"
 msgstr "Carga JSON-RPC copiada"
@@ -528,12 +733,18 @@ msgid "JSON…"
 msgstr "JSON…"
 
 #. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_transfer__key_name
+msgid "Key"
+msgstr "Clave"
+
+#. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__key_hash
 msgid "Key Hash"
 msgstr "Hash de clave"
 
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__key_prefix
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__key_prefix
 msgid "Key Prefix"
 msgstr "Prefijo de clave"
 
@@ -577,6 +788,11 @@ msgid "Label"
 msgstr "Etiqueta"
 
 #. module: muk_mcp
+#: model:ir.model.fields,help:muk_mcp.field_muk_mcp_log__key_name
+msgid "Label of the API key used."
+msgstr "Etiqueta de la clave API utilizada."
+
+#. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__last_activity
 msgid "Last Activity"
 msgstr "Última actividad"
@@ -586,8 +802,10 @@ msgstr "Última actividad"
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_generate_key__write_uid
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__write_uid
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__write_uid
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_prompt__write_uid
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__write_uid
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__write_uid
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_transfer__write_uid
 msgid "Last Updated by"
 msgstr "Última actualización por"
 
@@ -596,8 +814,10 @@ msgstr "Última actualización por"
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_generate_key__write_date
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__write_date
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__write_date
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_prompt__write_date
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__write_date
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__write_date
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_transfer__write_date
 msgid "Last Updated on"
 msgstr "Última actualización el"
 
@@ -610,6 +830,12 @@ msgstr "Último uso"
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_session_kanban
 msgid "Last activity:"
 msgstr "Última actividad:"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/prompts_panel.xml:0
+msgid "Loading prompts…"
+msgstr "Cargando prompts…"
 
 #. module: muk_mcp
 #. odoo-javascript
@@ -628,6 +854,11 @@ msgid "Log Retention (days)"
 msgstr "Retención de registros (días)"
 
 #. module: muk_mcp
+#: model:ir.ui.menu,name:muk_mcp.menu_mcp_logging
+msgid "Logging"
+msgstr "Registros"
+
+#. module: muk_mcp
 #. odoo-javascript
 #: code:addons/muk_mcp/static/src/core/message.xml:0
 #: model:ir.model.fields.selection,name:muk_mcp.selection__muk_mcp_tool__registry__mcp
@@ -641,9 +872,37 @@ msgid "MCP API Key"
 msgstr "Clave API MCP"
 
 #. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_res_config_settings__module_muk_mcp_access
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "MCP Access"
+msgstr "Acceso MCP"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_res_config_settings__module_muk_mcp_apps
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "MCP Apps"
+msgstr ""
+
+#. module: muk_mcp
 #: model:ir.model,name:muk_mcp.model_muk_mcp_log
 msgid "MCP Audit Log"
 msgstr "Registro de auditoría MCP"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_res_config_settings__module_muk_mcp_enterprise
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "MCP Enterprise"
+msgstr ""
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "MCP Extensions"
+msgstr "Extensiones MCP"
+
+#. module: muk_mcp
+#: model:ir.model,name:muk_mcp.model_muk_mcp_transfer
+msgid "MCP File Transfer"
+msgstr "Transferencia de archivos MCP"
 
 #. module: muk_mcp
 #: model:ir.model,name:muk_mcp.model_muk_mcp_generate_key
@@ -677,9 +936,25 @@ msgid "MCP Notification"
 msgstr "Notificación MCP"
 
 #. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_res_config_settings__module_muk_mcp_oauth
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "MCP OAuth"
+msgstr ""
+
+#. module: muk_mcp
 #: model:ir.actions.client,name:muk_mcp.action_mcp_playground
 msgid "MCP Playground"
 msgstr "Playground MCP"
+
+#. module: muk_mcp
+#: model:ir.model,name:muk_mcp.model_muk_mcp_prompt
+msgid "MCP Prompt"
+msgstr "Prompt MCP"
+
+#. module: muk_mcp
+#: model:ir.actions.act_window,name:muk_mcp.action_mcp_prompt
+msgid "MCP Prompts"
+msgstr "Prompts MCP"
 
 #. module: muk_mcp
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
@@ -746,6 +1021,12 @@ msgid "Method"
 msgstr "Método"
 
 #. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/models/prompt.py:0
+msgid "Missing required prompt arguments: %s"
+msgstr "Faltan argumentos obligatorios del prompt: %s"
+
+#. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__model_name
 msgid "Model"
 msgstr "Modelo"
@@ -757,9 +1038,22 @@ msgid "Model %r not found"
 msgstr "Modelo %r no encontrado"
 
 #. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Model-level whitelist — restrict which models AI agents can reach."
+msgstr ""
+"Lista blanca a nivel de modelo: limite a qué modelos pueden acceder los "
+"agentes de IA."
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_prompt__name
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__name
 msgid "Name"
 msgstr "Nombre"
+
+#. module: muk_mcp
+#: model_terms:ir.actions.act_window,help:muk_mcp.action_mcp_prompt
+msgid "No MCP prompts configured."
+msgstr "No hay prompts MCP configurados."
 
 #. module: muk_mcp
 #: model_terms:ir.actions.act_window,help:muk_mcp.action_mcp_tool
@@ -774,9 +1068,21 @@ msgstr "No se proporcionaron campos"
 
 #. module: muk_mcp
 #. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/prompts_panel.xml:0
+msgid "No matching prompts."
+msgstr "No hay prompts coincidentes."
+
+#. module: muk_mcp
+#. odoo-javascript
 #: code:addons/muk_mcp/static/src/playground/playground.xml:0
 msgid "No matching tools."
 msgstr "No hay herramientas coincidentes."
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/prompts_panel.xml:0
+msgid "No messages returned."
+msgstr "No se devolvieron mensajes."
 
 #. module: muk_mcp
 #. odoo-python
@@ -790,6 +1096,11 @@ msgstr "No se proporcionaron IDs de registro"
 #: model:ir.ui.menu,name:muk_mcp.menu_mcp_notifications
 msgid "Notifications"
 msgstr "Notificaciones"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "OAuth 2.1 for MCP — connect Odoo to ChatGPT, Claude and more."
+msgstr "OAuth 2.1 para MCP: conecte Odoo con ChatGPT, Claude y más."
 
 #. module: muk_mcp
 #: model:ir.model.fields.selection,name:muk_mcp.selection__muk_mcp_log__status__ok
@@ -818,9 +1129,21 @@ msgid "OpenCode JSON"
 msgstr "JSON de OpenCode"
 
 #. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_transfer__operation
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_transfer_search
+msgid "Operation"
+msgstr "Operación"
+
+#. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_notification__params
 msgid "Params"
 msgstr "Parámetros"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/upload.py:0
+msgid "Pass either file or data."
+msgstr "Pase file o data."
 
 #. module: muk_mcp
 #. odoo-javascript
@@ -831,6 +1154,7 @@ msgstr "Pegar clave MCP (token Bearer)…"
 #. module: muk_mcp
 #. odoo-javascript
 #: code:addons/muk_mcp/static/src/playground/playground.xml:0
+#: code:addons/muk_mcp/static/src/playground/prompts_panel.xml:0
 msgid "Pick or generate an MCP key first."
 msgstr "Seleccione o genere primero una clave MCP."
 
@@ -849,6 +1173,41 @@ msgstr ""
 #: model:ir.ui.menu,name:muk_mcp.menu_mcp_playground
 msgid "Playground"
 msgstr "Playground"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/models/prompt.py:0
+msgid "Prompt %(name)s Arguments must be a JSON array."
+msgstr "Los argumentos del prompt %(name)s deben ser un array JSON."
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/models/prompt.py:0
+msgid "Prompt %(name)s has invalid Arguments JSON: %(error)s"
+msgstr "El prompt %(name)s tiene un JSON de argumentos no válido: %(error)s"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_prompt_form
+msgid "Prompt Name"
+msgstr "Nombre del prompt"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/models/prompt.py:0
+msgid "Prompt not found: %s"
+msgstr "Prompt no encontrado: %s"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/prompts_panel.js:0
+#: model:ir.ui.menu,name:muk_mcp.menu_mcp_prompts
+msgid "Prompts"
+msgstr ""
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__protocol_version
+msgid "Protocol Version"
+msgstr "Versión del protocolo"
 
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__code
@@ -881,6 +1240,7 @@ msgstr "Límite de velocidad"
 #. module: muk_mcp
 #. odoo-javascript
 #: code:addons/muk_mcp/static/src/playground/playground.xml:0
+#: code:addons/muk_mcp/static/src/playground/prompts_panel.xml:0
 msgid "Raw JSON-RPC response"
 msgstr "Respuesta JSON-RPC sin formato"
 
@@ -912,6 +1272,12 @@ msgid "Read Only"
 msgstr "Solo lectura"
 
 #. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/mixin.py:0
+msgid "Record %(model)s/%(id)s not found"
+msgstr "Registro %(model)s/%(id)s no encontrado"
+
+#. module: muk_mcp
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_form
 msgid "Record Data"
 msgstr "Datos del registro"
@@ -925,6 +1291,18 @@ msgstr "ID de registro"
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__res_ids
 msgid "Record IDs"
 msgstr "IDs de registro"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/mail.py:0
+msgid "Records of %s have no activities."
+msgstr "Los registros de %s no tienen actividades."
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/mail.py:0
+msgid "Records of %s have no chatter."
+msgstr "Los registros de %s no tienen chatter."
 
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__registry
@@ -947,8 +1325,21 @@ msgstr "Solicitud"
 #. module: muk_mcp
 #. odoo-javascript
 #: code:addons/muk_mcp/static/src/playground/playground.xml:0
+#: code:addons/muk_mcp/static/src/playground/prompts_panel.xml:0
 msgid "Reset args"
 msgstr "Restablecer argumentos"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/mixin.py:0
+msgid "Resource %s does not exist."
+msgstr "El recurso %s no existe."
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/mixin.py:0
+msgid "Resource %s is empty."
+msgstr "El recurso %s está vacío."
 
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__response_data
@@ -1008,9 +1399,21 @@ msgstr "Alcance:"
 
 #. module: muk_mcp
 #. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/prompts_panel.xml:0
+msgid "Search prompts…"
+msgstr "Buscar prompts…"
+
+#. module: muk_mcp
+#. odoo-javascript
 #: code:addons/muk_mcp/static/src/playground/playground.xml:0
 msgid "Search tools…"
 msgstr "Buscar herramientas…"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/prompts_panel.xml:0
+msgid "Select a prompt from the list on the left."
+msgstr "Seleccione un prompt de la lista de la izquierda."
 
 #. module: muk_mcp
 #. odoo-javascript
@@ -1025,6 +1428,7 @@ msgid "Select or generate an MCP key first."
 msgstr "Seleccione o genere primero una clave MCP."
 
 #. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_prompt__sequence
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_tool__sequence
 msgid "Sequence"
 msgstr "Secuencia"
@@ -1067,6 +1471,72 @@ msgid "Status"
 msgstr "Estado"
 
 #. module: muk_mcp
+#: model:ir.model.fields,help:muk_mcp.field_muk_mcp_transfer__key_name
+msgid "The API key the link was issued to."
+msgstr "La clave API para la que se emitió el enlace."
+
+#. module: muk_mcp
+#: model:ir.model.fields,help:muk_mcp.field_muk_mcp_transfer__attachment_id
+msgid "The attachment an upload fills."
+msgstr "El adjunto que rellena una subida."
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/upload.py:0
+msgid "The file data is not valid base64."
+msgstr "Los datos del archivo no son base64 válido."
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/upload.py:0
+msgid "The file is %(size)s bytes, more than the upload limit of %(limit)s."
+msgstr ""
+"El archivo tiene %(size)s bytes, más que el límite de subida de %(limit)s."
+
+#. module: muk_mcp
+#: model:ir.model.fields,help:muk_mcp.field_muk_mcp_transfer__uri
+msgid "The odoo:// resource a download serves."
+msgstr "El recurso odoo:// que sirve una descarga."
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/models/transfer.py:0
+msgid "The upload does not match the announced SHA-256."
+msgstr "La subida no coincide con el SHA-256 anunciado."
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/models/transfer.py:0
+msgid "The upload has %(got)s bytes, %(want)s were announced."
+msgstr "La subida tiene %(got)s bytes, se anunciaron %(want)s."
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/models/transfer.py:0
+msgid ""
+"The upload is empty: send the file as the raw request body (curl -T) or as a"
+" multipart file."
+msgstr ""
+"La subida está vacía: envíe el archivo como cuerpo de la petición (curl -T) "
+"o como archivo multipart."
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/tools/xlsx.py:0
+msgid ""
+"There are too many rows (%(count)s rows, limit: %(limit)s) to export as "
+"XLSX. Export as CSV instead, or narrow the selection."
+msgstr ""
+"Hay demasiadas filas (%(count)s filas, límite: %(limit)s) para exportar como"
+" XLSX. Exporte como CSV o reduzca la selección."
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/prompts_panel.xml:0
+msgid "This prompt takes no arguments."
+msgstr "Este prompt no acepta argumentos."
+
+#. module: muk_mcp
 #. odoo-javascript
 #: code:addons/muk_mcp/static/src/playground/playground.xml:0
 msgid "This tool takes no parameters."
@@ -1074,6 +1544,7 @@ msgstr "Esta herramienta no acepta parámetros."
 
 #. module: muk_mcp
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_list
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_transfer_list
 msgid "Time"
 msgstr "Hora"
 
@@ -1081,6 +1552,16 @@ msgstr "Hora"
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
 msgid "Timeout"
 msgstr "Tiempo de espera"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_prompt__title
+msgid "Title"
+msgstr "Título"
+
+#. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_transfer__token_hash
+msgid "Token Hash"
+msgstr "Hash del token"
 
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__tool_name
@@ -1104,10 +1585,20 @@ msgstr "Nombre de la herramienta"
 #. module: muk_mcp
 #. odoo-python
 #: code:addons/muk_mcp/models/tool.py:0
+msgid "Tool arguments must be a JSON object, got %(kind)s"
+msgstr ""
+"Los argumentos de la herramienta deben ser un objeto JSON, se recibió "
+"%(kind)s"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/models/tool.py:0
 msgid "Tool not found: %s"
 msgstr "Herramienta no encontrada: %s"
 
 #. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.js:0
 #: model:ir.ui.menu,name:muk_mcp.menu_mcp_tools
 msgid "Tools"
 msgstr "Herramientas"
@@ -1122,6 +1613,44 @@ msgstr ""
 "\t\t\t\tPuede añadir herramientas personalizadas aquí."
 
 #. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_transfer__uri
+msgid "URI"
+msgstr ""
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "Unknown content block type:"
+msgstr "Tipo de bloque de contenido desconocido:"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/resource.py:0
+msgid "Unsupported format %(f)r; expected one of: %(opts)s."
+msgstr "Formato %(f)r no compatible; se esperaba uno de: %(opts)s."
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/mixin.py:0
+msgid "Unsupported resource URI: %r"
+msgstr "URI de recurso no compatible: %r"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_transfer_search
+msgid "Unused"
+msgstr "Sin usar"
+
+#. module: muk_mcp
+#: model:ir.model.fields.selection,name:muk_mcp.selection__muk_mcp_transfer__operation__upload
+msgid "Upload"
+msgstr "Subir"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_transfer_search
+msgid "Uploads"
+msgstr "Subidas"
+
+#. module: muk_mcp
 #. odoo-javascript
 #: code:addons/muk_mcp/static/src/playground/playground.xml:0
 msgid "Use"
@@ -1134,13 +1663,27 @@ msgid "Use existing"
 msgstr "Usar existente"
 
 #. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_transfer__used
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_transfer_search
+msgid "Used"
+msgstr "Usado"
+
+#. module: muk_mcp
 #: model:ir.model,name:muk_mcp.model_res_users
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__user_id
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__user_id
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_session__user_id
+#: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_transfer__user_id
 #: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_log_search
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_mcp_transfer_search
 msgid "User"
 msgstr "Usuario"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/mail.py:0
+msgid "User %s is not an active user."
+msgstr "El usuario %s no es un usuario activo."
 
 #. module: muk_mcp
 #: model:ir.model.fields,help:muk_mcp.field_res_config_settings__mcp_annotate_messages
@@ -1159,11 +1702,19 @@ msgstr "Escribir"
 #. module: muk_mcp
 #. odoo-javascript
 #: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "audio ·"
+msgstr ""
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+#: code:addons/muk_mcp/static/src/playground/prompts_panel.xml:0
 msgid "curl"
 msgstr "curl"
 
 #. module: muk_mcp
 #. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/prompts_panel.js:0
 #: code:addons/muk_mcp/static/src/playground/tool_detail.js:0
 msgid "curl copied"
 msgstr "curl copiado"
@@ -1182,6 +1733,13 @@ msgstr "groupby es obligatorio"
 #. module: muk_mcp
 #. odoo-javascript
 #: code:addons/muk_mcp/static/src/playground/playground.xml:0
+msgid "image ·"
+msgstr "imagen ·"
+
+#. module: muk_mcp
+#. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/playground.xml:0
+#: code:addons/muk_mcp/static/src/playground/prompts_panel.xml:0
 msgid "ms"
 msgstr "ms"
 
@@ -1193,6 +1751,13 @@ msgstr "ninguno"
 
 #. module: muk_mcp
 #. odoo-javascript
+#: code:addons/muk_mcp/static/src/playground/prompts_panel.js:0
+msgid "prompts/get failed: %s"
+msgstr "prompts/get falló: %s"
+
+#. module: muk_mcp
+#. odoo-javascript
 #: code:addons/muk_mcp/static/src/playground/playground.xml:0
+#: code:addons/muk_mcp/static/src/playground/prompts_panel.xml:0
 msgid "to run"
 msgstr "para ejecutar"

@@ -224,10 +224,10 @@ Usage
 =====
 
 Once connected, the AI client automatically discovers all available
-tools via the ``tools/list`` MCP method. The module ships with 18
+tools via the ``tools/list`` MCP method. The module ships with 22
 built-in tools organized into two categories:
 
-**Read Tools (13)**
+**Read Tools (14)**
 
 - ``list_models`` — Discover available Odoo models by substring search.
 - ``list_modules`` — List installed modules with versions and states.
@@ -259,6 +259,8 @@ built-in tools organized into two categories:
   ``odoo://attachment/<id>`` for an ``ir.attachment`` row, and
   ``odoo://record/<model>/<id>/<field>`` for a Binary field on a
   record. Mimetype is auto-detected when not stored.
+- ``authorize_download`` — A one-time link to fetch a file with an HTTP
+  GET, so it never passes through the conversation.
 
 .. note::
 
@@ -269,7 +271,7 @@ built-in tools organized into two categories:
    only materializes bytes (via ``read_resource`` or the protocol-level
    ``resources/read``) when it actually needs to *see* the file.
 
-**Write Tools (5)**
+**Write Tools (8)**
 
 - ``create_records`` — Create new records with support for relational
   field command tuples.
@@ -277,6 +279,12 @@ built-in tools organized into two categories:
 - ``delete_records`` — Permanently delete records by ID.
 - ``post_message`` — Post comments or internal notes on a record's
   chatter thread.
+- ``schedule_activity`` — Schedule an activity on a record, by type name,
+  for a user and a due date.
+- ``upload_file`` — Put a file into a binary field or onto a record as an
+  attachment, from an ``authorize_upload`` file or as base64.
+- ``authorize_upload`` — A one-time link the client sends the raw file to
+  with an HTTP PUT, so the file never passes through the conversation.
 - ``call_method`` — Call any public method on a model or recordset
   (private methods starting with ``_`` are blocked for safety).
 

@@ -27,6 +27,7 @@ from . import test_registry
 from . import test_report
 from . import test_schema
 from . import test_tools
+from . import test_transfer
 from . import test_tour
 from . import test_transaction
 from . import test_uri
