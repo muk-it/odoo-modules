@@ -154,7 +154,12 @@ class TestSessionTurn(AITestCommon):
         self.assertIn('ask_user pending', self._outputs_for(session, 'c3')[0]['output'])
         [entry] = [item for item in session.conversation if item.get('_answer_entry')]
         self.assertEqual(
-            [block['attachment_id'] for block in entry['content']], [upload['id']]
+            [
+                block['attachment_id']
+                for block in entry['content']
+                if block['type'] == 'muk_ai_attachment'
+            ],
+            [upload['id']],
         )
         [event] = self._events(session, 'answer')
         self.assertEqual(

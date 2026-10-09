@@ -185,11 +185,15 @@ class TestMultimodal(AITestCommon):
             session.conversation[0]['content'],
             [
                 {
+                    'type': 'input_text',
+                    'text': f'Attached file loose.png: odoo://attachment/{loose.id}',
+                },
+                {
                     'type': 'muk_ai_attachment',
                     'attachment_id': loose.id,
                     'filename': 'loose.png',
                     'mimetype': 'image/png',
-                }
+                },
             ],
         )
 
