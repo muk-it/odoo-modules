@@ -1,3 +1,8 @@
+`3.2.0`
+-------
+
+- File Links for Reports and Exports
+
 `3.1.0`
 -------
 

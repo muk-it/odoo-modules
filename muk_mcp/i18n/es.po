@@ -89,12 +89,6 @@ msgstr ""
 #. module: muk_mcp
 #. odoo-python
 #: code:addons/muk_mcp/mcp/upload.py:0
-msgid "A file name is required with data."
-msgstr "Con datos se necesita un nombre de archivo."
-
-#. module: muk_mcp
-#. odoo-python
-#: code:addons/muk_mcp/mcp/upload.py:0
 msgid "A model and record ID are required with a field."
 msgstr "Con un campo se necesitan un modelo y un ID de registro."
 
@@ -1140,12 +1134,6 @@ msgid "Params"
 msgstr "Parámetros"
 
 #. module: muk_mcp
-#. odoo-python
-#: code:addons/muk_mcp/mcp/upload.py:0
-msgid "Pass either file or data."
-msgstr "Pase file o data."
-
-#. module: muk_mcp
 #. odoo-javascript
 #: code:addons/muk_mcp/static/src/playground/playground.xml:0
 msgid "Paste MCP key (Bearer token)…"
@@ -1476,11 +1464,6 @@ msgid "The API key the link was issued to."
 msgstr "La clave API para la que se emitió el enlace."
 
 #. module: muk_mcp
-#: model:ir.model.fields,help:muk_mcp.field_muk_mcp_transfer__attachment_id
-msgid "The attachment an upload fills."
-msgstr "El adjunto que rellena una subida."
-
-#. module: muk_mcp
 #. odoo-python
 #: code:addons/muk_mcp/mcp/upload.py:0
 msgid "The file data is not valid base64."
@@ -1761,3 +1744,28 @@ msgstr "prompts/get falló: %s"
 #: code:addons/muk_mcp/static/src/playground/prompts_panel.xml:0
 msgid "to run"
 msgstr "para ejecutar"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/upload.py:0
+msgid "A file name is required with text or data."
+msgstr "Con texto o datos se necesita un nombre de archivo."
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/write.py:0
+msgid "Pass \"values\" as one JSON object."
+msgstr "Pase \"values\" como un único objeto JSON."
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/upload.py:0
+msgid "Pass exactly one of file, text or data."
+msgstr "Pase exactamente uno de file, text o data."
+
+#. module: muk_mcp
+#: model:ir.model.fields,help:muk_mcp.field_muk_mcp_transfer__attachment_id
+msgid "The attachment an upload fills or a produced file is served from."
+msgstr ""
+"El adjunto que rellena una subida o desde el que se sirve un archivo "
+"generado."

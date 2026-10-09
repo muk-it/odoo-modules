@@ -90,12 +90,6 @@ msgstr ""
 #. module: muk_mcp
 #. odoo-python
 #: code:addons/muk_mcp/mcp/upload.py:0
-msgid "A file name is required with data."
-msgstr "Zu Daten wird ein Dateiname benötigt."
-
-#. module: muk_mcp
-#. odoo-python
-#: code:addons/muk_mcp/mcp/upload.py:0
 msgid "A model and record ID are required with a field."
 msgstr "Zu einem Feld werden ein Modell und eine Datensatz-ID benötigt."
 
@@ -1141,12 +1135,6 @@ msgid "Params"
 msgstr "Parameter"
 
 #. module: muk_mcp
-#. odoo-python
-#: code:addons/muk_mcp/mcp/upload.py:0
-msgid "Pass either file or data."
-msgstr "Übergeben Sie entweder file oder data."
-
-#. module: muk_mcp
 #. odoo-javascript
 #: code:addons/muk_mcp/static/src/playground/playground.xml:0
 msgid "Paste MCP key (Bearer token)…"
@@ -1477,11 +1465,6 @@ msgid "The API key the link was issued to."
 msgstr "Der API-Schlüssel, für den der Link ausgestellt wurde."
 
 #. module: muk_mcp
-#: model:ir.model.fields,help:muk_mcp.field_muk_mcp_transfer__attachment_id
-msgid "The attachment an upload fills."
-msgstr "Der Anhang, den ein Upload befüllt."
-
-#. module: muk_mcp
 #. odoo-python
 #: code:addons/muk_mcp/mcp/upload.py:0
 msgid "The file data is not valid base64."
@@ -1759,3 +1742,28 @@ msgstr "prompts/get fehlgeschlagen: %s"
 #: code:addons/muk_mcp/static/src/playground/prompts_panel.xml:0
 msgid "to run"
 msgstr "zum Ausführen"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/upload.py:0
+msgid "A file name is required with text or data."
+msgstr "Zu Text oder Daten wird ein Dateiname benötigt."
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/write.py:0
+msgid "Pass \"values\" as one JSON object."
+msgstr "Übergeben Sie \"values\" als ein JSON-Objekt."
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/upload.py:0
+msgid "Pass exactly one of file, text or data."
+msgstr "Übergeben Sie genau eines von file, text oder data."
+
+#. module: muk_mcp
+#: model:ir.model.fields,help:muk_mcp.field_muk_mcp_transfer__attachment_id
+msgid "The attachment an upload fills or a produced file is served from."
+msgstr ""
+"Der Anhang, den ein Upload befüllt oder aus dem eine erzeugte Datei "
+"geliefert wird."

@@ -89,12 +89,6 @@ msgstr ""
 #. module: muk_mcp
 #. odoo-python
 #: code:addons/muk_mcp/mcp/upload.py:0
-msgid "A file name is required with data."
-msgstr "Con i dati serve un nome file."
-
-#. module: muk_mcp
-#. odoo-python
-#: code:addons/muk_mcp/mcp/upload.py:0
 msgid "A model and record ID are required with a field."
 msgstr "Con un campo servono un modello e un ID record."
 
@@ -1138,12 +1132,6 @@ msgid "Params"
 msgstr "Parametri"
 
 #. module: muk_mcp
-#. odoo-python
-#: code:addons/muk_mcp/mcp/upload.py:0
-msgid "Pass either file or data."
-msgstr "Passa file oppure data."
-
-#. module: muk_mcp
 #. odoo-javascript
 #: code:addons/muk_mcp/static/src/playground/playground.xml:0
 msgid "Paste MCP key (Bearer token)…"
@@ -1474,11 +1462,6 @@ msgid "The API key the link was issued to."
 msgstr "La chiave API per cui è stato emesso il link."
 
 #. module: muk_mcp
-#: model:ir.model.fields,help:muk_mcp.field_muk_mcp_transfer__attachment_id
-msgid "The attachment an upload fills."
-msgstr "L'allegato che un caricamento riempie."
-
-#. module: muk_mcp
 #. odoo-python
 #: code:addons/muk_mcp/mcp/upload.py:0
 msgid "The file data is not valid base64."
@@ -1759,3 +1742,28 @@ msgstr "prompts/get non riuscito: %s"
 #: code:addons/muk_mcp/static/src/playground/prompts_panel.xml:0
 msgid "to run"
 msgstr "per eseguire"
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/upload.py:0
+msgid "A file name is required with text or data."
+msgstr "Con testo o dati serve un nome file."
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/write.py:0
+msgid "Pass \"values\" as one JSON object."
+msgstr "Passa \"values\" come un unico oggetto JSON."
+
+#. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/upload.py:0
+msgid "Pass exactly one of file, text or data."
+msgstr "Passa esattamente uno tra file, text o data."
+
+#. module: muk_mcp
+#: model:ir.model.fields,help:muk_mcp.field_muk_mcp_transfer__attachment_id
+msgid "The attachment an upload fills or a produced file is served from."
+msgstr ""
+"L'allegato che un caricamento riempie o da cui viene servito un file "
+"generato."

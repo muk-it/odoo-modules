@@ -248,9 +248,10 @@ built-in tools organized into two categories:
 - `get_messages` -- Retrieve chatter history, comments, and field
   tracking for a record.
 - `print_report` -- Render an `ir.actions.report` (PDF, text, HTML) for
-  one or more records and return the binary as base64. Accepts the
-  report xmlid, `report_name`, or numeric id.
-- `export_records` -- Export records to CSV or XLSX (base64). Field
+  one or more records, as base64 or a one-time download link. Accepts
+  the report xmlid, `report_name`, or numeric id.
+- `export_records` -- Export records to CSV or XLSX, as base64 or a
+  one-time download link. Field
   paths use `/` to traverse relations (e.g. `partner_id/name`,
   `order_line/product_id/default_code`). Honours record rules and
   field access through Odoo's `export_data`.
@@ -282,7 +283,7 @@ built-in tools organized into two categories:
 - `schedule_activity` -- Schedule an activity on a record, by type name,
   for a user and a due date.
 - `upload_file` -- Put a file into a binary field or onto a record as an
-  attachment, from an `authorize_upload` file or as base64.
+  attachment, from an `authorize_upload` file, plain text or base64.
 - `authorize_upload` -- A one-time link the client sends the raw file to
   with an HTTP PUT, so the file never passes through the conversation.
 - `call_method` -- Call any public method on a model or recordset
