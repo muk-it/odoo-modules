@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-inherit="mail.Composer" t-inherit-mode="extension">
+        <xpath expr="//button[hasclass('o_Composer_buttonEmojis')]" position="after">
+            <button
+                t-if="messaging.currentUser and messaging.currentUser.isInternalUser"
+                class="o_Composer_button o_Composer_toolButton mk_composer_ai_write btn btn-light border-0 rounded-pill"
+                t-att-class="{ 'o-isDeviceSmall': messaging.device.isSmall }"
+                t-attf-class="{{ composerView.messageViewInEditing ? 'my-1' : 'mx-1' }}"
+                type="button"
+                title="Write with AI"
+                aria-label="Write with AI"
+                t-on-click="onClickWriteWithAI"
+            >
+                <span class="mk_icon_ai fa-fw"/>
+            </button>
+        </xpath>
+    </t>
+</templates>

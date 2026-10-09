@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-inherit="mail.ChatterTopbar" t-inherit-mode="extension">
+        <xpath
+            expr="//t[@t-if='chatterTopbar.chatter.hasFollowers and chatterTopbar.chatter.thread']"
+            position="before"
+        >
+            <button
+                t-if="chatterTopbar.chatter.aiSessionTotal"
+                class="o_ChatterTopbar_button mk_chatter_ai_sessions btn btn-light btn-primary"
+                t-att-class="{ 'active': chatterTopbar.chatter.aiSessionsOpen }"
+                type="button"
+                aria-label="AI Sessions"
+                title="AI Sessions"
+                t-att-aria-expanded="chatterTopbar.chatter.aiSessionsOpen ? 'true' : 'false'"
+                t-on-click="chatterTopbar.chatter.onClickAISessions"
+            >
+                <span class="mk_icon_ai me-1"/>
+                <span class="o_ChatterTopbar_buttonCount" t-out="chatterTopbar.chatter.aiSessionTotal"/>
+            </button>
+        </xpath>
+    </t>
+    <t t-inherit="mail.Chatter" t-inherit-mode="extension">
+        <xpath expr="//t[@t-if='chatter.threadView']" position="before">
+            <AISessionBox
+                t-if="chatter.thread and !chatter.thread.isTemporary"
+                threadModel="chatter.thread.model"
+                threadId="chatter.thread.id"
+                open="chatter.aiSessionsOpen"
+                onLoaded="(total) => chatter.onAISessionsLoaded(total)"
+            />
+        </xpath>
+    </t>
+</templates>

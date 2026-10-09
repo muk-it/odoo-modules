@@ -1,0 +1,14 @@
+# coverage.py config for an Odoo addon (used by the CI test stage).
+[run]
+branch = True
+source = .
+omit =
+    */tests/*
+    */migrations/*
+    */__manifest__.py
+    */__init__.py
+
+[report]
+show_missing = True
+exclude_also =
+    raise NotImplementedError

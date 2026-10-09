@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="muk_ai_chatter.ComposePanel" owl="1">
+        <div class="mk_compose_panel d-flex flex-column">
+            <div class="mk_compose_panel_head d-flex align-items-center gap-2 px-3 py-2">
+                <span class="mk_compose_panel_mark d-flex align-items-center justify-content-center rounded-circle">
+                    <span class="mk_icon_ai"/>
+                </span>
+                <div class="d-flex flex-column lh-sm me-auto o-min-width-0">
+                    <span class="fw-bolder text-truncate" t-out="title"/>
+                    <small class="text-muted text-truncate" t-out="subtitle"/>
+                </div>
+                <button
+                    class="mk_compose_panel_head_btn mk_compose_panel_skills btn btn-sm btn-link text-muted p-0"
+                    title="Manage your quick actions: rename, share or delete them"
+                    t-on-click="onOpenSkillsOverview"
+                >
+                    <i class="fa fa-fw fa-cog"/>
+                </button>
+                <button
+                    class="mk_compose_panel_head_btn mk_compose_panel_chat btn btn-sm btn-link text-muted p-0"
+                    title="Continue in the AI chat, where you can talk it through"
+                    t-on-click="onOpenInChat"
+                >
+                    <i class="fa fa-fw fa-external-link"/>
+                </button>
+                <button
+                    class="mk_compose_panel_head_btn mk_compose_panel_close btn btn-sm btn-link text-muted p-0"
+                    title="Close (Esc)"
+                    t-on-click="() => this.props.close?.()"
+                >
+                    <i class="fa fa-fw fa-times"/>
+                </button>
+            </div>
+            <div class="mk_compose_panel_body p-3">
+                <div
+                    t-if="state.phase === 'error'"
+                    class="mk_compose_panel_error d-inline-flex align-items-center gap-1 mb-2 px-2 py-1 rounded-pill"
+                    t-att-title="state.error"
+                >
+                    <i class="fa fa-exclamation-circle"/>
+                    <span class="text-truncate" t-out="errorLabel"/>
+                </div>
+                <t t-if="state.phase === 'idle' or state.phase === 'error'">
+                    <div
+                        t-if="isRewrite"
+                        class="mk_compose_panel_quote mb-3 px-2 py-1 rounded small text-muted"
+                        t-out="quoted"
+                    />
+                    <div t-if="isRewrite" class="mk_compose_panel_actions d-flex gap-2">
+                        <button
+                            t-foreach="groups"
+                            t-as="group"
+                            t-key="group.category"
+                            class="mk_compose_panel_action btn d-flex flex-column align-items-center gap-1 flex-fill"
+                            t-att-class="{ 'mk_active': state.opened === group.category }"
+                            t-att-title="group.label"
+                            t-on-click="() => this.onGroupClick(group)"
+                        >
+                            <i class="fa" t-att-class="group.icon"/>
+                            <span class="text-truncate mw-100" t-out="group.label"/>
+                        </button>
+                    </div>
+                    <t t-if="openGroup">
+                        <div
+                            class="mk_compose_panel_chips d-flex flex-wrap gap-2"
+                            t-att-class="{ 'mt-2': isRewrite }"
+                        >
+                            <button
+                                t-foreach="openGroup.skills"
+                                t-as="skill"
+                                t-key="skill.name"
+                                class="mk_compose_panel_chip btn btn-sm rounded-pill d-flex align-items-center gap-1"
+                                t-att-title="skill.description"
+                                t-on-click="() => this.onSkillClick(skill)"
+                            >
+                                <i class="fa fa-fw" t-att-class="skill.icon"/>
+                                <span t-out="skill.label"/>
+                            </button>
+                        </div>
+                        <div
+                            t-if="openGroup.modifiers"
+                            class="mk_compose_panel_modifiers d-flex flex-column gap-2 mt-3"
+                        >
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="mk_compose_panel_label text-muted">Length</span>
+                                <div class="mk_compose_panel_segment d-flex flex-fill" role="group">
+                                    <button
+                                        t-foreach="lengths"
+                                        t-as="entry"
+                                        t-key="entry.id"
+                                        class="mk_compose_panel_length btn btn-sm flex-fill"
+                                        t-att-class="{ 'mk_active': state.length === entry.id }"
+                                        t-on-click="() => this.state.length = entry.id"
+                                        t-out="entry.label"
+                                    />
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="mk_compose_panel_label text-muted">Tone</span>
+                                <div class="mk_compose_panel_segment d-flex flex-fill" role="group">
+                                    <button
+                                        t-foreach="tones"
+                                        t-as="entry"
+                                        t-key="entry.id"
+                                        class="mk_compose_panel_tone btn btn-sm flex-fill"
+                                        t-att-class="{ 'mk_active': state.tone === entry.id }"
+                                        t-on-click="() => this.state.tone = entry.id"
+                                        t-out="entry.label"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                    <div t-if="!state.createOpen" class="mt-2">
+                        <button
+                            class="mk_compose_panel_new btn btn-sm btn-link d-flex align-items-center gap-1 px-0"
+                            title="Create a quick action of your own"
+                            t-on-click="onOpenCreate"
+                        >
+                            <i class="fa fa-fw fa-plus"/>
+                            <span>New quick action</span>
+                        </button>
+                    </div>
+                    <div t-else="" class="mk_compose_panel_create d-flex flex-column gap-1 mt-2">
+                        <input
+                            type="text"
+                            class="mk_compose_panel_create_label form-control form-control-sm"
+                            placeholder="Name the quick action..."
+                            t-ref="createLabel"
+                            t-model="state.createLabel"
+                            t-on-keydown="(ev) => this.onKeydown(ev, () => this.onCreateConfirm(), () => this.state.createOpen = false)"
+                        />
+                        <textarea
+                            class="mk_compose_panel_create_body form-control form-control-sm"
+                            rows="2"
+                            t-att-placeholder="customPlaceholder"
+                            t-model="state.createBody"
+                            t-on-keydown="(ev) => this.onKeydown(ev, () => this.onCreateConfirm(), () => this.state.createOpen = false)"
+                        />
+                        <div class="d-flex align-items-center gap-2">
+                            <button
+                                class="mk_compose_panel_create_confirm btn btn-sm btn-primary"
+                                t-att-disabled="!state.createLabel.trim() or !state.createBody.trim() or state.saving"
+                                t-on-click="onCreateConfirm"
+                            >
+                                Save
+                            </button>
+                            <button
+                                class="mk_compose_panel_create_cancel btn btn-sm btn-link text-muted"
+                                t-on-click="() => this.state.createOpen = false"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mk_compose_panel_ask d-flex align-items-center gap-1 mt-3 ps-3 pe-1 py-1">
+                        <input
+                            type="text"
+                            class="mk_compose_panel_custom form-control form-control-sm border-0 shadow-none p-0"
+                            t-att-placeholder="customPlaceholder"
+                            t-model="state.custom"
+                            t-on-keydown="(ev) => this.onKeydown(ev, () => this.onCustomSubmit())"
+                        />
+                        <button
+                            class="mk_compose_panel_send btn btn-sm btn-primary rounded-circle p-0"
+                            title="Ask"
+                            t-att-disabled="!state.custom.trim()"
+                            t-on-click="onCustomSubmit"
+                        >
+                            <i class="fa fa-paper-plane"/>
+                        </button>
+                    </div>
+                </t>
+                <t t-if="isRunning">
+                    <div class="mk_compose_panel_busy d-flex align-items-center gap-2 mb-2">
+                        <span class="mk_compose_panel_pulse"/>
+                        <span class="fw-medium" t-out="busyLabel"/>
+                        <button
+                            class="mk_compose_panel_cancel btn btn-sm btn-link text-muted ms-auto p-0"
+                            t-on-click="onCancel"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                    <div
+                        t-if="state.streaming"
+                        class="mk_compose_panel_stream rounded p-2"
+                        t-out="state.streaming"
+                    />
+                </t>
+                <t t-if="state.phase === 'preview'">
+                    <t t-if="diff">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <small class="text-uppercase text-muted">What changes</small>
+                            <small class="mk_compose_panel_legend text-muted ms-auto">
+                                <del class="mk_compose_panel_removed px-1">removed</del>
+                                <ins class="mk_compose_panel_added px-1 ms-1">added</ins>
+                            </small>
+                        </div>
+                        <div class="mk_compose_panel_diff rounded p-2 mb-3">
+                            <t t-foreach="diff" t-as="part" t-key="part_index">
+                                <span t-if="part.type === 'same'" t-out="part.value"/>
+                                <del
+                                    t-elif="part.type === 'removed'"
+                                    class="mk_compose_panel_removed"
+                                    t-out="part.value"
+                                />
+                                <ins t-else="" class="mk_compose_panel_added" t-out="part.value"/>
+                            </t>
+                        </div>
+                    </t>
+                    <div
+                        t-else=""
+                        class="mk_compose_panel_result rounded p-2 mb-3"
+                        t-out="state.result"
+                    />
+                    <div class="d-flex align-items-center gap-2">
+                        <button
+                            class="mk_compose_panel_accept btn btn-sm btn-primary d-flex align-items-center gap-1"
+                            t-on-click="onAccept"
+                        >
+                            <i class="fa fa-check"/>
+                            <span t-if="hasSelection">Replace selection</span>
+                            <span t-elif="isRewrite">Replace message</span>
+                            <span t-else="">Insert</span>
+                        </button>
+                        <button
+                            class="mk_compose_panel_retry btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
+                            title="Ask again for a different wording"
+                            t-on-click="onRetry"
+                        >
+                            <i class="fa fa-refresh"/>
+                            <span>Try again</span>
+                        </button>
+                        <button
+                            class="mk_compose_panel_discard btn btn-sm btn-link text-muted ms-auto"
+                            t-on-click="onDiscard"
+                        >
+                            Discard
+                        </button>
+                    </div>
+                    <t t-if="canOfferSave">
+                        <div
+                            t-if="!state.saveOpen"
+                            class="mt-2 d-flex align-items-center gap-1 small"
+                        >
+                            <span class="text-muted">Ask this often?</span>
+                            <button
+                                class="mk_compose_panel_save_open btn btn-sm btn-link p-0 d-inline-flex align-items-center gap-1"
+                                title="Keep this instruction as a quick action of this panel"
+                                t-on-click="onOpenSave"
+                            >
+                                <i class="fa fa-fw fa-bolt"/>
+                                <span>Save as quick action</span>
+                            </button>
+                        </div>
+                        <div t-else="" class="mk_compose_panel_save_row input-group input-group-sm mt-2">
+                            <input
+                                type="text"
+                                class="mk_compose_panel_save_label form-control"
+                                placeholder="Name the quick action..."
+                                t-ref="saveLabel"
+                                t-model="state.saveLabel"
+                                t-on-keydown="(ev) => this.onKeydown(ev, () => this.onSaveConfirm(), () => this.state.saveOpen = false)"
+                            />
+                            <button
+                                class="mk_compose_panel_save_confirm btn btn-primary"
+                                title="Save"
+                                t-att-disabled="!state.saveLabel.trim() or state.saving"
+                                t-on-click="onSaveConfirm"
+                            >
+                                <i class="fa fa-check"/>
+                            </button>
+                            <button
+                                class="mk_compose_panel_save_cancel btn btn-outline-secondary"
+                                title="Cancel"
+                                t-on-click="() => this.state.saveOpen = false"
+                            >
+                                <i class="fa fa-times"/>
+                            </button>
+                        </div>
+                    </t>
+                    <div
+                        t-if="state.savedLabel"
+                        class="mk_compose_panel_saved mt-2 small text-muted d-flex align-items-center gap-1"
+                    >
+                        <i class="fa fa-fw fa-check"/>
+                        <span>
+                            Saved: "<t t-out="state.savedLabel"/>" is now a quick action of this panel.
+                        </span>
+                    </div>
+                </t>
+            </div>
+        </div>
+    </t>
+</templates>
