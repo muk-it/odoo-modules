@@ -7,7 +7,7 @@ from odoo.tools import config
 
 from odoo.addons.muk_mcp.core.tool import get_tool_index
 from odoo.addons.muk_mcp.tools import protocol, version
-from odoo.addons.muk_mcp.tools.encoder import encode_request, encode_response
+from odoo.addons.muk_mcp.tools.encoder import encode_log
 from odoo.addons.muk_mcp.tools.exception import MCPScopeDenied
 
 
@@ -273,7 +273,7 @@ class TestMcpIntegration(common.TransactionCase):
         config['muk_logging_attribute_limit'] = 50
         try:
             data = {'long_field': 'x' * 500}
-            result = encode_request(data)
+            result = encode_log(data)
             self.assertLess(len(result), 600)
         finally:
             if old is None:
@@ -286,7 +286,7 @@ class TestMcpIntegration(common.TransactionCase):
         config['muk_logging_content_limit'] = 200
         try:
             data = {'data': list(range(10000))}
-            result = encode_request(data)
+            result = encode_log(data)
             self.assertLessEqual(len(result), 210)
             self.assertTrue(result.endswith('...'))
         finally:
@@ -296,8 +296,7 @@ class TestMcpIntegration(common.TransactionCase):
                 config['muk_logging_content_limit'] = old
 
     def test_encoder_handles_none(self):
-        self.assertIsNone(encode_request(None))
-        self.assertIsNone(encode_response(None))
+        self.assertIsNone(encode_log(None))
 
     # ----------------------------------------------------------
     # Tests: MCP chatter attribution

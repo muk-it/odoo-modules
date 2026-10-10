@@ -1,5 +1,3 @@
-import json
-
 from odoo.tests import common
 
 from odoo.addons.muk_mcp.core import tool as core_tool

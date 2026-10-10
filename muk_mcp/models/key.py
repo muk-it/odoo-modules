@@ -158,7 +158,14 @@ class MCPKey(models.Model):
                     f"""
                     UPDATE {self._table}
                     SET last_used = NOW() AT TIME ZONE 'UTC'
-                    WHERE id = %s
+                    WHERE id IN (
+                        SELECT id FROM {self._table}
+                        WHERE id = %s AND (
+                            last_used IS NULL OR
+                            last_used < NOW() AT TIME ZONE 'UTC' - INTERVAL '1 minute'
+                        )
+                        FOR NO KEY UPDATE SKIP LOCKED
+                    )
                     """,
                     (row[0],),
                 )

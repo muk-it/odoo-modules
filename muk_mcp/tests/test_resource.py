@@ -30,6 +30,18 @@ class TestReadResource(common.TransactionCase):
     # Tests
     # ----------------------------------------------------------
 
+    def test_untyped_attachment_takes_the_type_of_its_name(self):
+        raw = b'Read me.'
+        attachment = self.env['ir.attachment'].create({
+            'name': 'notes.txt',
+            'mimetype': 'application/octet-stream',
+            'raw': raw,
+        })
+        mimetype, content, name = self.env['muk_mcp.mixin']._resolve_resource_uri(
+            'odoo://attachment/%d' % attachment.id,
+        )
+        self.assertEqual((mimetype, content, name), ('text/plain', raw, 'notes.txt'))
+
     def test_record_field_enforces_field_groups(self):
         self.patch(
             self.env['res.partner']._fields['image_1920'],

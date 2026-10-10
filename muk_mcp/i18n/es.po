@@ -93,8 +93,8 @@ msgstr "Claves API"
 #. odoo-python
 #: code:addons/muk_mcp/models/tool.py:0
 #, python-format
-msgid "Access denied: key scope is read-only"
-msgstr "Acceso denegado: el alcance de la clave es de solo lectura"
+msgid "Access denied: this tool changes data, but the access is read-only"
+msgstr "Acceso denegado: esta herramienta modifica datos, pero el acceso es de solo lectura"
 
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__active

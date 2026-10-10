@@ -4,7 +4,6 @@ import datetime
 import io
 import json
 import zipfile
-from typing import Any
 
 from odoo.exceptions import UserError
 from odoo.tests import common, tagged
