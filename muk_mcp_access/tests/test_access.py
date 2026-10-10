@@ -256,7 +256,7 @@ class TestMCPAccessModel(TransactionCase):
         )
         self.assertEqual(rows[0]['code'], 'BE')
 
-    def test_create_out_of_domain_does_not_persist(self):
+    def test_a_write_outside_the_allowlist_does_not_persist(self):
         self.access_model.create(
             {
                 'model_id': self.partner_model.id,
@@ -265,20 +265,31 @@ class TestMCPAccessModel(TransactionCase):
                 'domain': "[('ref', '=', 'MCP')]",
             }
         )
-        with self.assertRaises(AccessError):
-            self.env['muk_mcp.tool']._call(
+        partner = self.env['res.partner'].create({'name': 'MCP_HOLDER', 'ref': 'MCP'})
+        bank = [[0, 0, {'account_number': 'MCP_BOUNDARY'}]]
+        for tool, arguments in (
+            ('create_records', {'values': {'name': 'MCP_BOUNDARY', 'ref': 'OTHER'}}),
+            (
                 'create_records',
-                {
-                    'model': 'res.partner',
-                    'values': {'name': 'MCP_BOUNDARY', 'ref': 'OTHER'},
-                },
-                self.env,
-            )
-        self.assertFalse(
-            self.env['res.partner']
-            .with_context(active_test=False)
-            .search([('name', '=', 'MCP_BOUNDARY')]),
-        )
+                {'values': {'name': 'MCP_BOUNDARY', 'ref': 'MCP', 'bank_ids': bank}},
+            ),
+            ('update_records', {'ids': [partner.id], 'values': {'bank_ids': bank}}),
+        ):
+            with self.subTest(tool=tool, arguments=arguments):
+                with self.assertRaises(AccessError):
+                    self.env['muk_mcp.tool']._call(
+                        tool, {'model': 'res.partner', **arguments}, self.env
+                    )
+                self.assertFalse(
+                    self.env['res.partner']
+                    .with_context(active_test=False)
+                    .search([('name', '=', 'MCP_BOUNDARY')]),
+                )
+                self.assertFalse(
+                    self.env['res.partner.bank'].search(
+                        [('account_number', '=', 'MCP_BOUNDARY')]
+                    ),
+                )
 
     def test_create_in_domain_succeeds(self):
         self.access_model.create(
@@ -341,12 +352,12 @@ class TestMCPAccessModel(TransactionCase):
                 'domain': "[('code', '=', 'BE')]",
             }
         )
-        with self.assertRaises(AccessError):
-            self.mixin._mcp_export_records(
-                'res.country',
-                fields=['code'],
-                ids=[self.env.ref('base.fr').id],
-            )
+        for fields, ids in (
+            (['code'], [self.env.ref('base.fr').id]),
+            (['currency_id/name'], [self.env.ref('base.be').id]),
+        ):
+            with self.subTest(fields=fields), self.assertRaises(AccessError):
+                self.mixin._mcp_export_records('res.country', fields=fields, ids=ids)
 
     def test_call_method_blocks_out_of_domain(self):
         self.access_model.create(

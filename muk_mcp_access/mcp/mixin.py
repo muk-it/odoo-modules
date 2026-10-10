@@ -150,3 +150,72 @@ class MCPMixin(models.AbstractModel):
             if res_id:
                 self._mcp_assert_records_allowed(model, [res_id])
         return record, field
+
+    @api.model
+    def _mcp_assert_commands_allowed(self, model: str, values: dict) -> None:
+        """Assert the x2many commands in ``values`` only change exposed models.
+
+        :raise AccessError: when a command creates, updates or deletes records
+            of a model that is not writable via MCP.
+        """
+        fields = self.env[model]._fields
+        for name, commands in (values or {}).items():
+            field = fields.get(name)
+            if not field or field.type not in ('one2many', 'many2many'):
+                continue
+            for command in commands if isinstance(commands, list) else []:
+                if isinstance(command, list | tuple) and command[:1] in ([0], [1], [2]):
+                    self._resolve_model(field.comodel_name)
+                    if len(command) > 2 and isinstance(command[2], dict):
+                        self._mcp_assert_commands_allowed(
+                            field.comodel_name, command[2]
+                        )
+
+    # ----------------------------------------------------------
+    # Functions
+    # ----------------------------------------------------------
+
+    @api.model
+    def _mcp_export_records(
+        self,
+        model: str,
+        fields: list[str],
+        ids=None,
+        domain: str | None = None,
+        format: str = 'csv',
+        limit: int = 1000,
+        order: str | None = None,
+        delivery: str = 'inline',
+    ) -> dict[str, Any]:
+        """Refuse an export whose field paths pass through an unexposed model."""
+        for path in fields or []:
+            target = self._resolve_model(model)
+            for name in path.split('/')[:-1]:
+                field = target._fields.get(name)
+                if not field or not field.relational:
+                    break
+                target = self._resolve_model(field.comodel_name)
+        return super()._mcp_export_records(
+            model,
+            fields,
+            ids=ids,
+            domain=domain,
+            format=format,
+            limit=limit,
+            order=order,
+            delivery=delivery,
+        )
+
+    @api.model
+    def _mcp_create_records(self, model: str, values: dict[str, Any]) -> dict[str, Any]:
+        """Refuse x2many commands that write to an unexposed model."""
+        if isinstance(values, dict):
+            self._mcp_assert_commands_allowed(model, values)
+        return super()._mcp_create_records(model, values)
+
+    @api.model
+    def _mcp_update_records(self, model: str, ids, values) -> dict[str, Any]:
+        """Refuse x2many commands that write to an unexposed model."""
+        if isinstance(values, dict):
+            self._mcp_assert_commands_allowed(model, values)
+        return super()._mcp_update_records(model, ids, values)

@@ -56,6 +56,7 @@ test('the access list keeps the standard buttons and adds Add Models', async () 
     expect('.o_control_panel_main_buttons .o_list_button_add').toHaveCount(1);
 });
 
+test.tags('desktop');
 test('the Add Models button opens the wizard and reloads the list when it closes', async () => {
     const actions = await mountAccessList();
     expect('.o_data_row').toHaveCount(1);
