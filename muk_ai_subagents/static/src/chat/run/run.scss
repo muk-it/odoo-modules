@@ -1,49 +1,23 @@
-.mk_chat {
-    --mk-agent-red: #d64545;
-    --mk-agent-blue: #2f6fed;
-    --mk-agent-green: #2e9e5b;
-    --mk-agent-yellow: #d9a400;
-    --mk-agent-purple: #7d4fd3;
-    --mk-agent-orange: #ec7a1c;
-    --mk-agent-pink: #d6479a;
-    --mk-agent-cyan: #1aa5b8;
-    .mk_agent_red {
-        --mk-agent-color: var(--mk-agent-red);
+$mk-agent-colors: (
+    blue: #3b82f6,
+    green: #16a34a,
+    orange: #ea580c,
+    purple: #9333ea,
+    red: #dc2626,
+    cyan: #0891b2,
+    pink: #db2777,
+    yellow: #ca8a04,
+);
+@each $name, $color in $mk-agent-colors {
+    .mk_agent_#{$name} {
+        --mk-agent: #{$color};
     }
-    .mk_agent_blue {
-        --mk-agent-color: var(--mk-agent-blue);
-    }
-    .mk_agent_green {
-        --mk-agent-color: var(--mk-agent-green);
-    }
-    .mk_agent_yellow {
-        --mk-agent-color: var(--mk-agent-yellow);
-    }
-    .mk_agent_purple {
-        --mk-agent-color: var(--mk-agent-purple);
-    }
-    .mk_agent_orange {
-        --mk-agent-color: var(--mk-agent-orange);
-    }
-    .mk_agent_pink {
-        --mk-agent-color: var(--mk-agent-pink);
-    }
-    .mk_agent_cyan {
-        --mk-agent-color: var(--mk-agent-cyan);
-    }
-    .mk_agent_dot {
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: var(--mk-agent-color);
-        flex: 0 0 auto;
-    }
-    .mk_agent_bar {
-        flex: 0 0 3px;
-        width: 3px;
-        align-self: stretch;
-        border-radius: 2px;
-        background: var(--mk-agent-color);
-    }
+}
+.mk_run_badge {
+    width: 22px;
+    height: 22px;
+    color: var(--white);
+    background: var(--mk-agent, var(--secondary));
+    font-size: 0.7rem;
+    line-height: 1;
 }

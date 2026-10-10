@@ -1,0 +1,101 @@
+.mk_run_card {
+    width: 100%;
+    max-width: 46rem;
+    margin: 0.25rem 0 1.25rem;
+    background: var(--body-bg);
+    .mk_run_card_head {
+        padding: 0.5rem 0.75rem;
+        border-bottom: 1px solid var(--border-color);
+        background: var(--tertiary-bg);
+        font-size: 0.85rem;
+    }
+    .mk_run_card_foot {
+        padding: 0.45rem 0.75rem;
+        border-top: 1px solid var(--border-color);
+    }
+}
+.mk_run_row {
+    border-left: 3px solid var(--mk-agent, var(--border-color));
+    & + .mk_run_row {
+        border-top: 1px solid var(--border-color);
+    }
+    .mk_run_row_head {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.82rem;
+        &:hover {
+            background: var(--tertiary-bg);
+        }
+    }
+    .mk_run_row_objective {
+        font-size: 0.78rem;
+    }
+    .mk_run_row_line {
+        color: var(--secondary-color);
+        font-size: 0.78rem;
+    }
+    .mk_run_row_status {
+        font-size: 1rem;
+        color: var(--secondary-color);
+    }
+    &.mk_run_row_needs_you {
+        background: rgba(var(--warning-rgb), 0.06);
+        .mk_run_row_status,
+        .mk_run_row_line {
+            color: var(--warning-text-emphasis);
+        }
+    }
+    &.mk_run_row_working .mk_run_row_status {
+        color: var(--mk-agent);
+    }
+    &.mk_run_row_failed .mk_run_row_status,
+    &.mk_run_row_failed .mk_run_row_line {
+        color: var(--danger-text-emphasis);
+    }
+    &.mk_run_row_done .mk_run_row_status {
+        color: var(--success);
+    }
+    .mk_run_row_body {
+        padding: 0 0.75rem 0.6rem 2.6rem;
+        font-size: 0.85rem;
+    }
+    .mk_run_row_report {
+        max-height: 18rem;
+        margin-bottom: 0.5rem;
+        overflow: auto;
+    }
+    .mk_run_row_warn {
+        margin-bottom: 0.5rem;
+        color: var(--warning-text-emphasis);
+    }
+    .mk_run_row_actions .btn {
+        font-size: 0.78rem;
+    }
+}
+.mk_run_ask {
+    .mk_turn {
+        margin-bottom: 0.5rem;
+    }
+    .mk_bubble {
+        max-width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    .mk_run_ask_answer {
+        margin-bottom: 0.5rem;
+    }
+}
+.mk_run_card.mk_run_card_docked {
+    max-width: none;
+    margin: 0 0 0.4rem;
+    .mk_run_card_rows {
+        max-height: 40vh;
+        overflow-y: auto;
+    }
+}
+.mk_conversation_compact .mk_run_card {
+    .mk_run_row_body {
+        padding-left: 0.75rem;
+    }
+    .mk_run_row_objective {
+        display: none;
+    }
+}

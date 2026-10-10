@@ -26,7 +26,7 @@
 			<xpath expr="//filter[@name='group_user']" position="after">
 				<filter
 					name="group_parent"
-					string="Parent Session"
+					string="Parent Chat"
 					context="{'group_by': 'parent_session_id'}"
 				/>
 				<filter
@@ -55,41 +55,18 @@
 		<field name="model">muk_ai.session</field>
 		<field name="inherit_id" ref="muk_ai.view_ai_session_form"/>
 		<field name="arch" type="xml">
-			<xpath expr="//sheet/div[hasclass('oe_title')]" position="before">
-				<div class="oe_button_box" name="button_box">
-					<button
-						name="action_open_children"
-						type="object"
-						class="oe_stat_button"
-						icon="fa-sitemap"
-						invisible="not child_session_count"
-					>
-						<field name="child_session_count" widget="statinfo" string="Subagents"/>
-					</button>
-				</div>
-			</xpath>
 			<xpath expr="//notebook/page[@name='conversation']" position="before">
-				<page
-					string="Delegation"
-					name="delegation"
-					invisible="not parent_session_id and not child_session_count"
-				>
+				<page string="Delegation" name="delegation" invisible="not parent_session_id">
 					<group>
-						<group string="Run">
+						<group>
 							<field name="parent_session_id"/>
 						</group>
-						<group string="Outcome">
+						<group>
 							<field name="stop_reason"/>
-							<field name="heartbeat_at"/>
 						</group>
 					</group>
-					<group string="Brief" invisible="not parent_session_id">
-						<field
-							name="delegation_brief"
-							widget="json_code"
-							nolabel="1"
-							colspan="2"
-						/>
+					<group string="Brief">
+						<field name="delegation_brief" widget="json_code" nolabel="1" colspan="2"/>
 					</group>
 				</page>
 			</xpath>

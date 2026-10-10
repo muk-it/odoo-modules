@@ -1,179 +1,207 @@
 from datetime import timedelta
 
-from odoo import fields
-from odoo.exceptions import UserError
-from odoo.tests.common import tagged
+from odoo.exceptions import AccessError, UserError
+from odoo.fields import Domain
+from odoo.tests import new_test_user
 
-from .common import SubagentTestCommon
-from odoo.addons.muk_ai_subagents.tools import CHILD_COLORS, STEER_MAX_QUEUED
+from odoo.addons.muk_ai_subagents.tests.common import (
+    SubagentCase,
+    text_payload,
+    tool_payload,
+)
 
 
-@tagged('post_install', '-at_install', 'muk_ai_subagents')
-class TestRun(SubagentTestCommon):
-    """Verify the run RPCs, the stall sweep and the subagent space."""
+class TestRun(SubagentCase):
+    """A lead waits for its subagents, which the user may answer, steer and stop."""
 
-    def test_run_snapshot_shape(self):
-        session = self._park()
-        snapshot = session.subagent_run_snapshot()
+    def test_a_waiting_lead_resumes_once_its_last_subagent_reported(self):
+        chat = self._park(2)
+        first, second = chat.child_session_ids.sorted('id')
         self.assertEqual(
-            set(snapshot), {'children', 'total_cost', 'cost_limit', 'root_id'}
+            (chat.state, chat.pending_ask['kind']), ('waiting', 'children')
         )
-        self.assertEqual(snapshot['root_id'], session.id)
-        self.assertEqual(snapshot['cost_limit'], 5.0)
-        self.assertEqual(len(snapshot['children']), 2)
-        entry = snapshot['children'][0]
+        self.assertTrue(chat._public_pending_ask()['queues_input'])
+        chat.send_message('And then?')
+        self.assertEqual(len(chat.pending_ids), 1)
+        with self._mock_responses([text_payload('r0')]):
+            first.answer('x')
+        self.assertEqual(chat.state, 'waiting')
+        with self._mock_responses(
+            [text_payload('r1'), text_payload('summary')]
+        ) as requests:
+            second.answer('y')
+        self.assertEqual((chat.state, chat.last_text), ('done', 'summary'))
+        self.assertEqual([r['report'] for r in self._reports(chat)], ['r0', 'r1'])
+        self.assertEqual(len(self._outputs_for(chat, 'd1')), 1)
+        self.assertEqual(requests[1]['inputs'][-1]['content'][0]['text'], 'And then?')
+        self.assertFalse(chat.pending_ids)
+
+    def test_stopping_a_run(self):
+        for stop in ('action_stop', 'action_stop_subagents'):
+            with self.subTest(stop):
+                chat = self._park(2)
+                with self._mock_responses([text_payload('partial')], repeat_last=True):
+                    getattr(chat, stop)()
+                children = chat.child_session_ids
+                self.assertEqual(set(children.mapped('state')), {'stopped'})
+                self.assertEqual(set(children.mapped('stop_reason')), {'stopped'})
+                expected = 'stopped' if stop == 'action_stop' else 'done'
+                self.assertEqual(chat.state, expected)
+
+    def test_a_subagent_waiting_for_approval_is_announced_through_its_lead(self):
+        self._mark_sensitive('res.partner')
+        partner = self.env['res.partner'].create({'name': 'Doomed'})
+        chat = self._lead_chat()
+        delete = tool_payload(
+            ('delete_records', {'model': 'res.partner', 'ids': partner.ids}, 'c1')
+        )
+        with (
+            self._capture_bus() as sent,
+            self._mock_responses([self._delegate('Delete it'), delete]),
+        ):
+            chat.start('go')
+        child = chat.child_session_ids
+        self.assertEqual(child.pending_ask['kind'], 'approval')
+        notes = [m for _t, kind, m in sent if kind == 'muk_ai.session_notification']
         self.assertEqual(
-            set(entry),
-            {
-                'id',
-                'name',
-                'agent_name',
-                'color',
-                'state',
-                'activity',
-                'elapsed',
-                'cost',
-                'stop_reason',
-                'stuck',
-                'waiting',
-                'waiting_since',
-                'summary',
-            },
+            [(n['session_id'], n['message']) for n in notes],
+            [(chat.id, 'Worker needs your approval before running a tool')],
         )
-        self.assertEqual(entry['state'], 'waiting')
-        self.assertEqual(entry['waiting']['kind'], 'question')
-        self.assertTrue(entry['waiting_since'])
-        self.assertFalse(entry['stuck'])
-        self.assertIn(entry['color'], CHILD_COLORS)
-        child = session.child_session_ids[0]
-        self.assertEqual(child.subagent_run_snapshot()['root_id'], session.id)
-
-    def test_roster_says_a_subagent_is_going_nowhere_while_it_still_runs(self):
-        session = self._park(count=1)
-        child = session.child_session_ids
-        self.assertFalse(child._roster_entry()['stuck'])
-        child.write(
-            {
-                'state': 'running',
-                'pending_ask': False,
-                'loop_state': {'withheld': {'search_read': 2}},
-            }
-        )
-        entry = child._roster_entry()
-        self.assertTrue(entry['stuck'])
-        self.assertFalse(entry['waiting_since'])
-        self.assertTrue(session.subagent_run_snapshot()['children'][0]['stuck'])
-
-    def test_direction_reaches_a_running_subagent_at_its_next_round(self):
-        session = self._park(count=1)
-        child = session.child_session_ids
-        child.write({'state': 'running', 'pending_ask': False})
-        session.subagent_steer(child.id, 'Only look at this quarter.')
-        self.assertEqual(len(child.pending_ids), 1)
-        steer = self._events(session, 'delegation_steer')
-        self.assertEqual(len(steer), 1)
-        payload = steer.payload or {}
-        self.assertEqual(payload.get('id'), child.id)
-        self.assertIn('this quarter', payload.get('text') or '')
-        before = len(child.conversation or [])
-        child.turn_cost_spent = 0.42
-        self.assertTrue(child._drain_pending_message())
-        self.assertFalse(child.pending_ids)
-        self.assertEqual(len(child.conversation or []), before + 1)
-        self.assertEqual(child.state, 'running')
-        self.assertEqual(child.turn_cost_spent, 0.42)
-
-    def test_direction_is_refused_once_a_subagent_has_ended(self):
-        session = self._park(count=1)
-        child = session.child_session_ids
-        child.write({'state': 'done', 'pending_ask': False})
-        with self.assertRaises(UserError):
-            child._accept_steer('too late')
-
-    def test_a_full_queue_refuses_more_direction(self):
-        session = self._park(count=1)
-        child = session.child_session_ids
-        child.write({'state': 'running', 'pending_ask': False})
-        for index in range(STEER_MAX_QUEUED):
-            child._accept_steer(f'note {index}')
-        with self.assertRaises(UserError):
-            child._accept_steer('one too many')
-
-    def test_peek_lists_the_recent_calls_oldest_first(self):
-        session = self._park(count=1)
-        child = session.child_session_ids
-        self.assertEqual(session.subagent_peek(child.id), [])
-        child._append_event(
-            {'kind': 'tool_call', 'name': 'search_read', 'arguments': {'model': 'x'}}
-        )
-        child._append_event({'kind': 'tool_call', 'name': 'read', 'arguments': {}})
         self.assertEqual(
-            session.subagent_peek(child.id),
+            (chat.notification_unread, child.notification_unread), (True, False)
+        )
+        with self._mock_responses([text_payload('deleted'), text_payload('synthesis')]):
+            child.approve_tool()
+        self.assertFalse(partner.exists())
+        self.assertEqual((chat.state, chat.last_text), ('done', 'synthesis'))
+
+    def test_a_subagent_never_has_more_rights_than_its_lead(self):
+        for lead_mode, worker_mode, expected in [
+            ('ask', 'off', 'ask'),
+            ('off', 'off', 'off'),
+            ('off', 'ask', 'ask'),
+        ]:
+            with self.subTest(lead=lead_mode, worker=worker_mode):
+                self.lead.approval_mode, self.worker.approval_mode = (
+                    lead_mode,
+                    worker_mode,
+                )
+                child = self._session(
+                    agent_id=self.worker.id, parent_session_id=self._lead_chat().id
+                )
+                self.assertEqual(child._effective_approval_mode(), expected)
+        self.lead.write(
+            {'read_only': True, 'tool_filter': ['search_read', 'search_count']}
+        )
+        child = self._session(
+            agent_id=self.worker.id, parent_session_id=self._lead_chat().id
+        )
+        self.assertEqual(child._enforce_tool_scope(), 'read')
+        self.assertEqual(child._available_client_kinds(), set())
+        names = {entry['name'] for entry in child._get_filtered_catalog()}
+        self.assertEqual(names, {'search_read', 'search_count'})
+
+    def test_a_subagent_ends_with_its_reason_when_a_limit_stops_it(self):
+        count = ('search_count', {'model': 'res.partner', 'domain': []})
+        requests = {}
+        for label, params, rounds, reason in [
+            ('rounds', {'muk_ai.max_iterations': 2}, 2, 'max_iterations'),
+            ('repeats', {'muk_ai.max_iterations': 20}, 5, 'no_progress'),
+            ('budget', {'muk_ai.turn_cost_limit': 1e-9}, 1, 'budget'),
+        ]:
+            with self.subTest(label):
+                self._set_params(params)
+                chat = self._lead_chat()
+                with self._mock_responses(
+                    [
+                        self._delegate('Count'),
+                        *[tool_payload(count)] * rounds,
+                        text_payload('lead'),
+                    ]
+                ) as requests[label]:
+                    chat.start('go')
+                child = chat.child_session_ids
+                self.assertEqual((child.state, child.stop_reason), ('error', reason))
+                self.assertEqual(self._reports(chat)[0]['stop_reason'], reason)
+        warned = [
+            item['output']
+            for item in requests['repeats'][4]['inputs']
+            if item.get('type') == 'function_call_output'
+        ]
+        self.assertIn('<loop_notice>', warned[2])
+        self.assertNotIn('<loop_notice>', warned[1])
+
+    def test_a_subagent_has_no_more_time_than_its_parent_has_left(self):
+        chat = self._lead_chat()
+        child = self._session(agent_id=self.worker.id, parent_session_id=chat.id)
+        chat.sudo().turn_wallclock_spent = 3590.0
+        self.assertEqual(child._turn_wallclock_seconds(), 30)
+
+    def test_a_run_is_handed_over_whole_and_only_when_idle(self):
+        colleague = new_test_user(self.env, 'colleague', groups='base.group_user')
+        chat = self._park(1)
+        with self.assertRaisesRegex(UserError, 'Stop the subagents'):
+            chat.action_handover(colleague.id)
+        with self.assertRaisesRegex(UserError, 'handed over with the chat'):
+            chat.child_session_ids.action_handover(colleague.id)
+        with self._mock_responses([text_payload('stopped')], repeat_last=True):
+            chat.action_stop_subagents()
+        chat.action_handover(colleague.id)
+        self.assertEqual(chat.child_session_ids.user_id, colleague)
+
+    def test_a_reader_of_the_run_sees_its_subagents_but_cannot_steer_them(self):
+        reader = new_test_user(self.env, 'reader', groups='base.group_user')
+        chat = self._park(1)
+        chat.share_user_ids = reader
+        child = chat.child_session_ids.with_user(reader)
+        roster = chat.with_user(reader).get_snapshot()['subagents']['children']
+        self.assertEqual(roster[0]['ask']['text'], 'Q0')
+        self.assertEqual(child.get_snapshot()['subagent_of']['parent_id'], chat.id)
+        with self.assertRaises(AccessError):
+            child.answer('mine')
+        stranger = new_test_user(self.env, 'stranger', groups='base.group_user')
+        self.assertFalse(child.with_user(stranger).has_access('read'))
+
+    def test_the_roster_says_what_a_working_subagent_does(self):
+        chat = self._park(1)
+        child = chat.child_session_ids
+        self.assertTrue(chat.awaiting_user)
+        child.state = 'running'
+        self.assertFalse(chat.awaiting_user)
+        small = {'model': 'sale.order'}
+        large = {'model': 'sale.order', 'note': 'x' * 3000}
+        for arguments, shown in [(small, small), (large, {})]:
+            with self.subTest(size=len(str(arguments))):
+                child._append_event(
+                    {
+                        'kind': 'tool_call',
+                        'name': 'search_read',
+                        'arguments': arguments,
+                        'call_id': 'x',
+                    }
+                )
+                [entry] = chat._run_payload()['children']
+                self.assertEqual(
+                    entry['activity'],
+                    {'kind': 'tool_call', 'name': 'search_read', 'arguments': shown},
+                )
+                self.assertFalse(entry['ask'])
+
+    def test_subagents_count_against_no_chat_limit_and_go_with_their_lead(self):
+        self.provider.rate_limit = 2
+        chat = self._lead_chat()
+        with self._mock_responses(
             [
-                {'name': 'search_read', 'arguments': '{"model": "x"}'},
-                {'name': 'read', 'arguments': '{}'},
-            ],
-        )
-        with self.assertRaises(UserError):
-            session.subagent_peek(session.id)
-
-    def test_stop_all_resumes_parent(self):
-        session = self._park()
-        with self._mock_responses([self._text('synthesis')]):
-            snapshot = session.subagent_stop_all()
-        self.assertEqual({c['state'] for c in snapshot['children']}, {'stopped'})
-        self.assertEqual(session.state, 'done')
-        results = self._delegate_outputs(session)[0]['results']
-        self.assertEqual({r['stop_reason'] for r in results}, {'stopped'})
-
-    def test_stall_sweep_stops_quiet_child_and_resumes_parent(self):
-        session = self._park(count=2)
-        quiet, busy = session.child_session_ids.sorted('id')
-        stale = fields.Datetime.now() - timedelta(hours=1)
-        now = fields.Datetime.now()
-        quiet.write({'state': 'running', 'claimed_at': stale, 'heartbeat_at': stale})
-        busy.write({'state': 'running', 'claimed_at': now, 'heartbeat_at': now})
-        self.Session._cron_sweep_stalled_children()
-        self.assertEqual(quiet.state, 'stopped')
-        self.assertEqual(quiet.stop_reason, 'stalled')
-        self.assertEqual(busy.state, 'running')
-        self.assertEqual(session.state, 'waiting')
-        busy.write({'claimed_at': stale, 'heartbeat_at': stale})
-        with self._mock_responses([self._text('synthesis')]):
-            self.Session._cron_sweep_stalled_children()
-        self.assertEqual(busy.stop_reason, 'stalled')
-        self.assertEqual(session.state, 'done')
-        results = self._delegate_outputs(session)[0]['results']
-        self.assertEqual({r['stop_reason'] for r in results}, {'stalled'})
-
-    def test_stall_sweep_spares_a_subagent_still_waiting_for_a_worker(self):
-        session = self._park(count=1)
-        child = session.child_session_ids
-        child.write(
-            {
-                'state': 'running',
-                'claimed_at': False,
-                'heartbeat_at': fields.Datetime.now() - timedelta(hours=1),
-            }
-        )
-        self.Session._cron_sweep_stalled_children()
-        self.assertEqual(child.state, 'running')
-        self.assertFalse(child.stop_reason)
-        self.assertEqual(session.state, 'waiting')
-
-    def test_children_collected_by_subagent_space_only(self):
-        session = self._park(count=1)
-        child = session.child_session_ids
-        space = self.env.ref('muk_ai_subagents.space_subagents')
-        self.assertIn(child, self.Session.search(space._session_domain()))
-        general = self.Session.search(self.env['muk_ai.space'].fetch_general_domain())
-        self.assertIn(session, general)
-        self.assertNotIn(child, general)
-
-    def test_children_stay_quiet_and_keep_their_name(self):
-        session = self._park(count=1)
-        child = session.child_session_ids
-        self.assertFalse(child._should_autoname())
-        self.assertFalse(child._should_notify_state())
-        self.assertTrue(child.name.startswith('Test Worker: Task 0'))
-        self.assertTrue(session._should_notify_state())
+                self._delegate('a', 'b', 'c'),
+                *[text_payload('r')] * 3,
+                text_payload('ok'),
+            ]
+        ):
+            chat.start('go')
+        self.assertEqual(len(chat.child_session_ids), 3)
+        self._lead_chat()
+        children = chat.child_session_ids
+        self._backdate(chat | children, timedelta(days=30))
+        swept, _due = self.env['muk_ai.session']._gc_sessions_older_than(1, Domain.TRUE)
+        self.assertEqual(swept, 1)
+        self.assertFalse(children.exists())

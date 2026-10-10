@@ -16,8 +16,22 @@
 						domain="[('id', '!=', id)]"
 						options="{'no_create': True}"
 						invisible="not allow_delegation"
+						required="allow_delegation"
 					/>
 				</group>
+			</xpath>
+			<xpath expr="//page[@name='system_prompt']" position="after">
+				<page
+					string="Delegation"
+					name="delegation"
+					invisible="not allow_delegation"
+				>
+					<field
+						name="delegation_instructions"
+						nolabel="1"
+						placeholder="When this agent hands work to its delegates..."
+					/>
+				</page>
 			</xpath>
 		</field>
 	</record>

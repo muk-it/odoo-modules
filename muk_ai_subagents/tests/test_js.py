@@ -1,45 +1,27 @@
 from __future__ import annotations
 
-import odoo.tests
-from odoo.tests.common import new_test_user, tagged
+from odoo.tests import HttpCase, no_retry, tagged
 
 
 @tagged('post_install', '-at_install')
-class TestHoot(odoo.tests.HttpCase):
+class TestHoot(HttpCase):
     """Run the muk_ai_subagents HOOT JavaScript test suite."""
-
-    # ----------------------------------------------------------
-    # Setup
-    # ----------------------------------------------------------
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        super().setUpClass()
-        cls.hoot_user = new_test_user(
-            cls.env,
-            login='hoot_muk_ai_subagents',
-            password='hoot_muk_ai_subagents',
-            groups='base.group_user',
-            context={
-                'mail_create_nosubscribe': True,
-                'mail_notrack': True,
-                'no_reset_password': True,
-            },
-        )
 
     # ----------------------------------------------------------
     # Tests
     # ----------------------------------------------------------
 
-    @odoo.tests.no_retry
+    @no_retry
     def test_hoot_muk_ai_subagents(self):
-        self.browser_js(
-            '/web/tests?headless&loglevel=2&preset=desktop&timeout=15000'
-            '&tag=muk_ai_subagents',
-            '',
-            '',
-            login=self.hoot_user.login,
-            timeout=1800,
-            success_signal='[HOOT] Test suite succeeded',
-            error_checker=lambda message: '[HOOT]' not in message,
-        )
+        for preset in ('desktop', 'mobile'):
+            with self.subTest(preset):
+                self.browser_js(
+                    f'/web/tests?headless&loglevel=2&preset={preset}'
+                    '&timeout=15000&tag=muk_ai_subagents',
+                    '',
+                    '',
+                    login='admin',
+                    timeout=1800,
+                    success_signal='[HOOT] Test suite succeeded',
+                    error_checker=lambda message: '[HOOT]' not in message,
+                )

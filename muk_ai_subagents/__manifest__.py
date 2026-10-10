@@ -1,17 +1,15 @@
 {
     'name': 'MuK AI Subagents',
-    'summary': 'Delegate work to focused child agents that run in parallel',
+    'summary': 'Delegate work to focused agents that run in parallel',
     'description': """
-        Lets an agent hand a focused task to another agent and carry on.
-        Children run as sessions of their own, in parallel, each with its
-        own context and its own agent configuration — so the permission
-        model is the one you already know. A child that needs an approval
-        or an answer asks in the conversation you are actually looking at.
-        One quiet line above the composer says what the subagents are
-        doing, every child is openable and keeps a permanent link, and a
-        child that starts repeating itself says so before it ends.
+        Lets an agent hand focused tasks to other agents and wait for their
+        reports. Each subagent runs as a chat of its own, in parallel, with
+        its own agent configuration and never with more rights than the
+        chat that started it. One live card in the conversation shows what
+        every subagent is doing, takes an approval or an answer in place,
+        and folds into the reports once the run ends.
     """,
-    'version': '19.0.1.0.6',
+    'version': '19.0.1.1.0',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -25,25 +23,15 @@
     ],
     'data': [
         'security/security.xml',
-        'data/space.xml',
-        'data/ir_cron.xml',
         'views/agent.xml',
         'views/session.xml',
-        'views/res_config_settings.xml',
     ],
     'assets': {
         'web.assets_backend': [
-            'muk_ai_subagents/static/src/chat/**/*',
-            ('remove', 'muk_ai_subagents/static/src/**/*.dark.scss'),
-        ],
-        'web.assets_web_dark': [
-            'muk_ai_subagents/static/src/**/*.dark.scss',
-        ],
-        'web.assets_tests': [
-            'muk_ai_subagents/static/tests/tours/subagents_tour.js',
+            'muk_ai_subagents/static/src/**/*',
         ],
         'web.assets_unit_tests': [
-            'muk_ai_subagents/static/tests/**/*.test.js',
+            'muk_ai_subagents/static/tests/**/*',
         ],
     },
     'images': [
