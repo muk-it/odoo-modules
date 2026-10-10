@@ -20,6 +20,7 @@ class TestMcpGarbageCollection(common.TransactionCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Keep handles on the models and parameters the cleanups use."""
         super().setUpClass()
         cls.log_model = cls.env['muk_mcp.log']
         cls.session_model = cls.env['muk_mcp.session']
@@ -94,10 +95,8 @@ class TestMcpGarbageCollection(common.TransactionCase):
     def _captured_commit(self) -> Iterator[MagicMock]:
         """Neutralise ``cr.commit`` and expose the recorded calls.
 
-        The batched autovacuums commit once per slice so that a cron hitting
-        ``limit_time_real`` keeps the batches it already deleted. ``TestCase``
-        replaces ``cr.commit`` with a guard that raises, so the call has to be
-        patched out here rather than removed from the model.
+        The batched autovacuums commit once per slice, and ``TestCase`` replaces
+        ``cr.commit`` with a guard that raises.
         """
         with patch.object(self.env.cr, 'commit') as commit:
             yield commit

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import base64
 import json
-from typing import Any
+from typing import Any, NoReturn
 
 from odoo import api, models
 from odoo.tests import tagged
@@ -21,7 +21,8 @@ from odoo.addons.muk_mcp.tools import version
     input_schema={'type': 'object', 'properties': {}},
     category='read',
 )
-def _mcp_http_boom(self):
+def _mcp_http_boom(self) -> NoReturn:
+    """Raise an unexpected error."""
     message = 'kaboom'
     raise ValueError(message)
 
@@ -36,6 +37,7 @@ class TestMcpHttpTransport(MCPHttpCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Register the failing tool on the MCP mixin."""
         super().setUpClass()
         cls.session_model = cls.env['muk_mcp.session']
         cls.notification_model = cls.env['muk_mcp.notification']
@@ -46,6 +48,7 @@ class TestMcpHttpTransport(MCPHttpCase):
 
     @classmethod
     def tearDownClass(cls) -> None:
+        """Remove the failing tool from the MCP mixin."""
         delattr(cls.mixin_cls, '_mcp_http_boom')
         invalidate_registry_cache(cls.env)
         super().tearDownClass()

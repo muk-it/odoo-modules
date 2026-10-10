@@ -18,6 +18,7 @@ class TestMcpKey(common.TransactionCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Create a rate limited key owned by the administrator."""
         super().setUpClass()
         cls.key_model = cls.env['muk_mcp.key']
         cls.key_user = cls.env.ref('base.user_admin')

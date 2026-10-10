@@ -15,6 +15,7 @@ class TestMcpToolTransaction(MCPHttpCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Grant partner rights and create a tool that writes, then raises."""
         super().setUpClass()
         cls.mcp_user.group_ids = [
             (4, cls.env.ref('base.group_partner_manager').id),

@@ -16,7 +16,8 @@ from odoo.addons.muk_mcp.core.tool import mcp_tool
     input_schema={'type': 'object', 'properties': {}},
     category='read',
 )
-def _mcp_test_ctx_probe(self):
+def _mcp_test_ctx_probe(self) -> dict:
+    """Return the probe flag from the context."""
     return {'flag': self.env.context.get('muk_mcp_probe')}
 
 
@@ -29,6 +30,7 @@ class TestMcpDispatch(common.TransactionCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Register the context probe tool on the MCP mixin."""
         super().setUpClass()
         cls.tool_model = cls.env['muk_mcp.tool']
         cls.mixin_cls = type(cls.env['muk_mcp.mixin'])
@@ -37,6 +39,7 @@ class TestMcpDispatch(common.TransactionCase):
 
     @classmethod
     def tearDownClass(cls) -> None:
+        """Remove the context probe tool from the MCP mixin."""
         delattr(cls.mixin_cls, '_mcp_test_ctx_probe')
         invalidate_registry_cache(cls.env)
         super().tearDownClass()

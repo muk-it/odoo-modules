@@ -44,11 +44,9 @@ def make_result_envelope(
 ) -> dict[str, Any]:
     """Add the result fields the negotiated revision requires.
 
-    Revision 2026-07-28 names the outcome kind on every result, carries the server
-    identity in ``_meta``, and requires caching hints on the operations it defines
-    as cacheable. The revisions before it define none of these, so their results
-    pass through untouched. The values are the transport's to set and override
-    anything a handler put under those keys.
+    Revision 2026-07-28 names the outcome kind, carries the server identity in
+    ``_meta`` and adds caching hints to cacheable operations; earlier revisions
+    pass through untouched. These values override a handler's own.
     """
     if not profile.result_type:
         return result
@@ -86,11 +84,9 @@ def parse_jsonrpc_request(
 ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
     """Validate a raw JSON-RPC request body.
 
-    Rejects array ``params``: JSON-RPC 2.0 permits them, but every MCP method
-    takes an object, and validating here lets each handler assume a mapping.
+    Rejects array ``params``: every MCP method takes an object.
 
-    :return: a ``(request, None)`` pair on success, or ``(None, error)`` with a
-        ready-to-send JSON-RPC error response on failure.
+    :return: ``(request, None)``, or ``(None, error)`` with a JSON-RPC error.
     """
     try:
         data = json.loads(raw_body) if isinstance(raw_body, (str, bytes)) else raw_body

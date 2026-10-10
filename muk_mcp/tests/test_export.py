@@ -24,6 +24,7 @@ class TestMcpExportRecords(common.TransactionCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Create the partners every export selects."""
         super().setUpClass()
         cls.tool_model = cls.env['muk_mcp.tool']
         cls.partner_a = cls.env['res.partner'].create(

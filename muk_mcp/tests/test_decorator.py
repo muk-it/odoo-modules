@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 
+from odoo import models
 from odoo.exceptions import AccessError, UserError
 from odoo.tests import common, tagged
 
@@ -10,11 +11,13 @@ from odoo.addons.muk_mcp.core.registry import invalidate_registry_cache
 from odoo.addons.muk_mcp.tests.common import cache_tools
 
 
-def _echo_tool(self, text='hello'):
+def _echo_tool(self, text='hello') -> dict:
+    """Echo back the provided text."""
     return {'echo': text}
 
 
-def _write_tool(self, value=0):
+def _write_tool(self, value=0) -> dict:
+    """Echo back the provided value as written."""
     return {'written': value}
 
 
@@ -58,6 +61,7 @@ class TestMcpDecoratorTool(common.TransactionCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Attach the echo and write test tools to the partner model."""
         super().setUpClass()
         cls.tool_model = cls.env['muk_mcp.tool']
         cls.partner_cls = type(cls.env['res.partner'])
@@ -66,16 +70,19 @@ class TestMcpDecoratorTool(common.TransactionCase):
 
     @classmethod
     def tearDownClass(cls) -> None:
+        """Detach the test tools from the partner model."""
         delattr(cls.partner_cls, '_mcp_test_echo')
         delattr(cls.partner_cls, '_mcp_test_write')
         invalidate_registry_cache(cls.env)
         super().tearDownClass()
 
     def setUp(self) -> None:
+        """Cache the test tool registry."""
         super().setUp()
         self.cached = cache_tools(self.env, TEST_REGISTRY)
 
     def tearDown(self) -> None:
+        """Drop the cached tool registry."""
         invalidate_registry_cache(self.env)
         super().tearDown()
 
@@ -85,7 +92,7 @@ class TestMcpDecoratorTool(common.TransactionCase):
 
     def test_decorator_infers_name_and_description_from_function(self):
         @core_tool.mcp_tool()
-        def auto_named(self):
+        def auto_named(self) -> None:
             """First line is the description.
 
             More detail ignored.
@@ -207,7 +214,8 @@ class TestMcpDecoratorTool(common.TransactionCase):
             },
             category='read',
         )
-        def _mcp_scanner_probe(self, value='ping'):
+        def _mcp_scanner_probe(self, value='ping') -> dict:
+            """Answer the given value back."""
             return {'pong': value}
 
         mixin_cls = type(self.env['muk_mcp.mixin'])
@@ -234,7 +242,8 @@ class TestMcpDecoratorTool(common.TransactionCase):
     def test_recordset_result_serialized_via_record_encoder(self):
         partner = self.env['res.partner'].create({'name': 'MCP Encoder Test'})
 
-        def _return_recordset(self):
+        def _return_recordset(self) -> models.BaseModel:
+            """Return the test partner as a recordset."""
             return self.env['res.partner'].browse(partner.id)
 
         self.partner_cls._mcp_test_record = _return_recordset

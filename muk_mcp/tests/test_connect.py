@@ -14,6 +14,7 @@ class TestConnect(common.TransactionCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Set the base URL and create the connect wizard."""
         super().setUpClass()
         cls.env['ir.config_parameter'].sudo().set_param(
             'web.base.url',

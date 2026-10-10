@@ -22,6 +22,7 @@ class TestMcpIntegration(common.TransactionCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Create the read-only key the scope tests use."""
         super().setUpClass()
         cls.key_model = cls.env['muk_mcp.key']
         cls.tool_model = cls.env['muk_mcp.tool']

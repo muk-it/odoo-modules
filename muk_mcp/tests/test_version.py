@@ -180,6 +180,7 @@ class TestVersionNegotiationHttp(MCPHttpCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Keep a handle on the session model."""
         super().setUpClass()
         cls.session_model = cls.env['muk_mcp.session']
 

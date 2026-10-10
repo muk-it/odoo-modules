@@ -111,7 +111,7 @@ class TestReadResource(common.TransactionCase):
         return buf.getvalue()
 
     # ----------------------------------------------------------
-    # Tests — attachment uri
+    # Tests: attachment uri
     # ----------------------------------------------------------
 
     def test_text_attachment_returns_text_block(self):
@@ -299,7 +299,7 @@ class TestReadResource(common.TransactionCase):
             self._call('not a uri')
 
     # ----------------------------------------------------------
-    # Tests — record-field uri
+    # Tests: record-field uri
     # ----------------------------------------------------------
 
     def test_record_field_image_returns_image_block(self):

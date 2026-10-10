@@ -118,9 +118,7 @@ class MCPMixin(models.AbstractModel):
     ) -> dict[str, Any]:
         """Export the selected records and return the encoded file payload.
 
-        Resolves records from ``ids`` or ``domain``, runs them through the
-        web export controller for the requested ``format``, and returns the
-        file with its row count.
+        Records come from ``ids`` or ``domain``.
 
         :raise UserError: if no ``fields`` are provided.
         """

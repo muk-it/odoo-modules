@@ -16,10 +16,7 @@ COLUMN_WIDTH = 30
 def build_xlsx(columns_headers: list[str], rows: list[list]) -> bytes:
     """Return an XLSX workbook holding ``rows`` under ``columns_headers``.
 
-    Built straight on ``xlsxwriter``, the way every server-side export in Odoo
-    is: the web controller's ``ExportXlsxWriter`` resolves ``request.env`` for
-    its currency precision and error messages, so it only works inside a web
-    request and raises ``object is not bound`` anywhere else.
+    Built on ``xlsxwriter`` because the web export writer needs a request.
 
     :raise UserError: when the row count exceeds the XLSX format limit
     """

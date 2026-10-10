@@ -16,10 +16,12 @@ class TestMcpRegistryFilter(common.TransactionCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Keep a handle on the tool model."""
         super().setUpClass()
         cls.tool_model = cls.env['muk_mcp.tool']
 
     def setUp(self) -> None:
+        """Cache a registry of tools with different targets."""
         super().setUp()
         cache_tools(
             self.env,
@@ -64,6 +66,7 @@ class TestMcpRegistryFilter(common.TransactionCase):
         )
 
     def tearDown(self) -> None:
+        """Drop the cached tool registry."""
         invalidate_registry_cache(self.env)
         super().tearDown()
 

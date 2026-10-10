@@ -37,6 +37,7 @@ class MCPHttpCase(HttpCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Create the internal user and the key every request authenticates with."""
         super().setUpClass()
         cls.mcp_user = new_test_user(
             cls.env,
@@ -87,10 +88,8 @@ class MCPHttpCase(HttpCase):
     ) -> dict[str, str]:
         """Build the headers for an ``/mcp`` call.
 
-        :param token: bearer token to send; ``None`` uses the default test key
-            and ``False`` omits the ``Authorization`` header entirely.
-        :param protocol_version: value for the ``MCP-Protocol-Version`` header.
-        :param headers: extra headers merged last, so they win over the defaults.
+        A ``token`` of ``None`` sends the default test key and ``False`` omits
+        ``Authorization``; ``headers`` are merged last and win over the defaults.
         """
         result = {}
         if content_type:

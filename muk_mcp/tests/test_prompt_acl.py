@@ -16,6 +16,7 @@ class TestMcpPromptAcl(MCPHttpCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Create the companies, the restricted user with its key and the partners."""
         super().setUpClass()
         cls.company_a = cls.env['res.company'].create({'name': 'MCP Prompt A'})
         cls.company_b = cls.env['res.company'].create({'name': 'MCP Prompt B'})

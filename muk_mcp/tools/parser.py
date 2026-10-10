@@ -18,8 +18,7 @@ _PY_LITERAL_MAP = {'true': 'True', 'false': 'False', 'null': 'None'}
 def normalize_ids(ids: int | str | Iterable[int] | None) -> list[int]:
     """Normalize a scalar, string, iterable, or ``None`` of ids into a list of ints.
 
-    A numeric string is a single id: iterating it would otherwise explode it
-    into one id per character.
+    A numeric string is a single id, not one id per character.
 
     :raise UserError: if ``ids`` is a string that is not a whole number.
     """

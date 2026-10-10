@@ -67,20 +67,20 @@
 					</group>
 					<notebook>
 						<page string="Description" name="description">
-							<field 
+							<field
 								name="description"
 								placeholder="Describe what this tool does..."
 							/>
 						</page>
 						<page string="Python Code" name="code">
-							<field 
+							<field
 								name="code"
 								widget="ace"
 								options="{'mode': 'python'}"
 							/>
 						</page>
 						<page string="Input Schema" name="schema">
-							<field 
+							<field
 								name="input_schema"
 								widget="ace"
 								options="{'mode': 'javascript'}"

@@ -20,7 +20,8 @@ from odoo.addons.muk_mcp.core.tool import mcp_tool
     input_schema={'type': 'object', 'properties': {}},
     category='read',
 )
-def _mcp_test_log_probe(self):
+def _mcp_test_log_probe(self) -> dict[str, Any]:
+    """Return a constant result."""
     return {'ok': True}
 
 
@@ -34,6 +35,7 @@ class TestMcpLog(common.TransactionCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Register the log probe tool on the MCP mixin."""
         super().setUpClass()
         cls.log_model = cls.env['muk_mcp.log']
         cls.tool_model = cls.env['muk_mcp.tool']
@@ -43,6 +45,7 @@ class TestMcpLog(common.TransactionCase):
 
     @classmethod
     def tearDownClass(cls) -> None:
+        """Remove the log probe tool from the MCP mixin."""
         delattr(cls.mixin_cls, '_mcp_test_log_probe')
         invalidate_registry_cache(cls.env)
         super().tearDownClass()
@@ -105,7 +108,8 @@ class TestMcpLog(common.TransactionCase):
         """Return the capture list and a patch recording every ``log`` call."""
         captured = []
 
-        def _capture(_self, **values):
+        def _capture(_self, **values) -> None:
+            """Record the values of one ``log`` call."""
             captured.append(values)
 
         return captured, patch.object(

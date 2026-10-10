@@ -19,16 +19,17 @@ class TestMcpPrompt(common.TransactionCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Keep a handle on the prompt model."""
         super().setUpClass()
         cls.prompt_model = cls.env['muk_mcp.prompt']
 
     # ----------------------------------------------------------
-    # Tests — decorator / registry
+    # Tests: decorator / registry
     # ----------------------------------------------------------
 
     def test_decorator_infers_name_and_description(self):
         @core_prompt.mcp_prompt()
-        def auto_named(self):
+        def auto_named(self) -> None:
             """First line is the description.
 
             More detail ignored.
@@ -45,7 +46,8 @@ class TestMcpPrompt(common.TransactionCase):
         mixin_cls = type(self.env['muk_mcp.mixin'])
 
         @core_prompt.mcp_prompt(name='summarize_record')
-        def _mcp_prompt_dupe(self):
+        def _mcp_prompt_dupe(self) -> str:
+            """Return a prompt whose name collides with a built-in one."""
             return 'dupe'
 
         mixin_cls._mcp_prompt_dupe = _mcp_prompt_dupe
@@ -58,7 +60,7 @@ class TestMcpPrompt(common.TransactionCase):
             invalidate_registry_cache(self.env)
 
     # ----------------------------------------------------------
-    # Tests — built-in (method) prompts
+    # Tests: built-in (method) prompts
     # ----------------------------------------------------------
 
     def test_get_playground_prompts_exposes_kind_and_arguments(self):
@@ -115,7 +117,7 @@ class TestMcpPrompt(common.TransactionCase):
             self.prompt_model.get_prompt('does_not_exist', {})
 
     # ----------------------------------------------------------
-    # Tests — completion
+    # Tests: completion
     # ----------------------------------------------------------
 
     def test_complete_argument_completes_model_names(self):
@@ -144,7 +146,7 @@ class TestMcpPrompt(common.TransactionCase):
         self.assertEqual(result['completion']['values'], [])
 
     # ----------------------------------------------------------
-    # Tests — database (UI) prompts
+    # Tests: database (UI) prompts
     # ----------------------------------------------------------
 
     def test_db_prompt_listed_and_run(self):

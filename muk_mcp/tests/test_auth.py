@@ -19,7 +19,8 @@ from odoo.addons.muk_mcp.tests.common import MCPHttpCase
     input_schema={'type': 'object', 'properties': {}},
     category='read',
 )
-def _mcp_auth_probe(self):
+def _mcp_auth_probe(self) -> dict[str, Any]:
+    """Return the authenticated user and the MCP context annotation."""
     return {
         'uid': self.env.uid,
         'login': self.env.user.login,
@@ -37,6 +38,7 @@ class TestMcpAuth(MCPHttpCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Register the auth probe tool on the MCP mixin."""
         super().setUpClass()
         cls.config = cls.env['ir.config_parameter'].sudo()
         cls.mixin_cls = type(cls.env['muk_mcp.mixin'])
@@ -45,6 +47,7 @@ class TestMcpAuth(MCPHttpCase):
 
     @classmethod
     def tearDownClass(cls) -> None:
+        """Remove the auth probe tool from the MCP mixin."""
         delattr(cls.mixin_cls, '_mcp_auth_probe')
         invalidate_registry_cache(cls.env)
         super().tearDownClass()

@@ -20,6 +20,7 @@ class TestMcpKeyLifecycle(common.TransactionCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Keep handles on the key and session models and the parameters."""
         super().setUpClass()
         cls.key_model = cls.env['muk_mcp.key']
         cls.session_model = cls.env['muk_mcp.session']

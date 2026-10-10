@@ -15,6 +15,7 @@ class TestLoggerProxy(common.TransactionCase):
     # ----------------------------------------------------------
 
     def setUp(self) -> None:
+        """Create the logger proxy under test."""
         super().setUp()
         self.proxy = LoggerProxy('muk_mcp.tests.logger_proxy')
 

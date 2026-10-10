@@ -18,6 +18,7 @@ class RateLimiterTestCase(common.TransactionCase):
     # ----------------------------------------------------------
 
     def setUp(self) -> None:
+        """Create a fresh rate limiter."""
         super().setUp()
         self.limiter = RateLimiter()
 
@@ -70,7 +71,8 @@ class RateLimiterTestCase(common.TransactionCase):
     def test_thread_safety(self):
         results = []
 
-        def hammer():
+        def hammer() -> None:
+            """Check the shared bucket fifty times."""
             for _ in range(50):
                 results.append(self.limiter.check('shared', 200, 60))
 

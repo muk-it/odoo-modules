@@ -79,13 +79,10 @@ def is_supported(version: str | None) -> bool:
 
 
 def negotiate_handshake(requested: str | None) -> str:
-    """Return the revision to negotiate on an ``initialize`` handshake.
+    """Return the revision to answer an ``initialize`` handshake with.
 
-    Only the session-based revisions can be negotiated this way: the stateless
-    one has no handshake, so answering it here would hand the client a session
-    for a revision that forbids sessions. A client naming it -- or naming a
-    revision we do not serve -- is answered the newest session-based one, as the
-    transport asks a server to offer its latest supported revision.
+    A client naming a revision without a handshake, or one this server does not
+    serve, is offered the newest handshake revision, as the lifecycle asks.
     """
     if is_supported(requested) and not get_profile(requested).stateless:
         return requested

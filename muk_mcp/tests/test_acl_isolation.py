@@ -21,6 +21,7 @@ class TestMcpAclIsolation(common.TransactionCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Create the companies, the restricted user, the partners and the report."""
         super().setUpClass()
         cls.tool_model = cls.env['muk_mcp.tool']
         cls.log_model = cls.env['muk_mcp.log']
@@ -344,7 +345,8 @@ class TestMcpAclIsolation(common.TransactionCase):
     def test_call_method_skips_the_record_hook_for_api_model_methods(self):
         seen = []
 
-        def _record(self, model, ids):
+        def _record(self, model, ids) -> None:
+            """Record the model and ids passed to the assertion hook."""
             seen.append((model, list(ids)))
 
         category = self.env['res.partner.category'].create({'name': 'MCP Call Hook'})

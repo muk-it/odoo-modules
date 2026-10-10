@@ -63,10 +63,9 @@ class MCPMixin(models.AbstractModel):
     ) -> list[dict[str, Any]]:
         """List registry models, optionally filtered by a name substring.
 
-        Matches ``search`` case-insensitively against the technical name,
-        drops models excluded by :meth:`_mcp_listable_model_names`, then
-        returns name + description pairs sorted by model name and capped at
-        ``limit``.
+        Matches ``search`` case-insensitively against the technical name, keeps only
+        :meth:`_mcp_listable_model_names` and returns name and description pairs
+        sorted by model name and capped at ``limit``.
         """
         needle = (search or '').lower()
         listable = self._mcp_listable_model_names()

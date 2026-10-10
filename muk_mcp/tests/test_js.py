@@ -14,6 +14,7 @@ class TestHoot(odoo.tests.HttpCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Create the internal user the HOOT suite runs as."""
         super().setUpClass()
         cls.hoot_user = new_test_user(
             cls.env,

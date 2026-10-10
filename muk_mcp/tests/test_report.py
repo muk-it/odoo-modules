@@ -18,6 +18,7 @@ class TestMcpPrintReport(common.TransactionCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Create a text report on partners and the partner it prints."""
         super().setUpClass()
         cls.tool_model = cls.env['muk_mcp.tool']
         cls.env['ir.ui.view'].create(

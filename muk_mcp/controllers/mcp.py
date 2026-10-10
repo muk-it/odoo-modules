@@ -57,11 +57,8 @@ class MCPController(http.Controller):
     def _get_allowed_origins(self) -> set[str]:
         """Return the origins accepted on MCP requests.
 
-        Deliberately built from server-side configuration only. Deriving an entry
-        from the request's own ``Host`` would defeat the check it feeds: under DNS
-        rebinding the browser sends the rebound name as both ``Host`` and
-        ``Origin``, so such an entry would match exactly the attack it is meant
-        to stop.
+        Built from server configuration only, never from the request's ``Host``,
+        because a DNS-rebound request carries the attacker's name as ``Host``.
         """
         param = request.env['ir.config_parameter'].sudo()
         configured = param.get_param('muk_mcp.allowed_origins', '') or ''
@@ -73,8 +70,7 @@ class MCPController(http.Controller):
     def _check_origin(self) -> Response | None:
         """Reject a browser request carrying a disallowed ``Origin``.
 
-        Guards against DNS-rebinding as required by the Streamable HTTP transport.
-        A request without an ``Origin`` header is not browser-initiated and passes.
+        Guards against DNS rebinding; a request without ``Origin`` passes.
 
         :return: a ``403`` response when the origin is rejected, otherwise ``None``.
         """
@@ -113,16 +109,11 @@ class MCPController(http.Controller):
         session: models.BaseModel | None = None,
         request_id: Any = None,
     ) -> tuple[ProtocolProfile | None, dict[str, Any] | None]:
-        """Resolve the protocol profile governing this request.
+        """Resolve the protocol profile from ``_meta``, the header or ``session``.
 
-        Takes the version from ``_meta`` first, then the ``MCP-Protocol-Version``
-        header, then the version stored on ``session``. When both ``_meta`` and the
-        header are present they must agree.
+        ``_meta`` and the ``MCP-Protocol-Version`` header must agree when both are set.
 
-        :param session: the session named by the request, already resolved so the
-            lookup is not repeated for every request.
-        :return: a ``(profile, None)`` pair, or ``(None, error)`` with a JSON-RPC
-            error when the version is contradictory or unsupported.
+        :return: ``(profile, None)``, or ``(None, error)`` with a JSON-RPC error.
         """
         meta_version = self._get_meta_version(params)
         header_version = request.httprequest.headers.get(
@@ -168,9 +159,7 @@ class MCPController(http.Controller):
     ) -> dict[str, Any] | None:
         """Verify a stateless request carries the ``_meta`` fields it must.
 
-        ``server/discover`` is held to the protocol version alone: it is the probe
-        a client uses before it knows what the server speaks, and demanding the
-        full block there would make discovery harder than the exchange it guards.
+        ``server/discover``, the client's first probe, needs only the protocol version.
 
         :return: a JSON-RPC error when a required field is absent, else ``None``.
         """
@@ -197,12 +186,7 @@ class MCPController(http.Controller):
     ) -> dict[str, Any] | None:
         """Verify the mirrored request headers agree with the body.
 
-        The transport mirrors the method and the tool, prompt or resource name into
-        ``Mcp-Method`` and ``Mcp-Name`` so an intermediary can route without parsing
-        the body; a value that disagrees would let that intermediary and this server
-        act on different requests. A header the client did not send is not faulted:
-        the revision asks clients to send them, but rejecting the clients that do
-        not would break exchanges that work today.
+        A sent ``Mcp-Method`` or ``Mcp-Name`` must match the body; a missing one passes.
 
         :return: a JSON-RPC error when a header contradicts the body, else ``None``.
         """
@@ -236,13 +220,9 @@ class MCPController(http.Controller):
     def _get_response_status(self, response_data: dict[str, Any]) -> int:
         """Return the HTTP status for a dispatched JSON-RPC response.
 
-        A request naming a session the server no longer holds is answered ``404``:
-        that is the transport's only signal telling a client to re-handshake, and
-        without it a terminated session looks like an ordinary error the client
-        has no mandate to recover from. Version faults are reported as ``400`` on
-        every revision. The stateless revision additionally requires ``404`` for an
-        unimplemented method; the stateful ones never did, so they keep answering
-        ``200`` there. Every other outcome, including tool errors, rides on ``200``.
+        An unknown session is ``404`` and version, header and parameter faults are
+        ``400``. The stateless revision also answers an unknown method with ``404``;
+        every other outcome, including tool errors, rides on ``200``.
         """
         error = response_data.get('error')
         if not isinstance(error, dict):
@@ -267,14 +247,10 @@ class MCPController(http.Controller):
         session: models.BaseModel | None = None,
         request_id: Any = None,
     ) -> tuple[models.BaseModel | None, dict[str, Any] | None]:
-        """Resolve the caller, by session for the stateful revisions or statelessly.
+        """Resolve the caller by session, or by the bearer key when stateless.
 
-        Stateless callers carry no session; they are identified by the bearer key
-        the ``mcp`` auth method already resolved onto the request.
-
-        :param session: the session named by the request, already resolved.
-        :return: a ``(session, None)`` pair with ``session`` empty for stateless
-            callers, or ``(None, error)`` with a JSON-RPC error.
+        :return: ``(session, None)`` with ``session`` empty for stateless callers,
+            or ``(None, error)`` with a JSON-RPC error.
         """
         if profile.stateless:
             return None, None
@@ -332,10 +308,8 @@ class MCPController(http.Controller):
     def _claim_notifications(self, session_id: int, after_id: int = 0) -> list[tuple]:
         """Atomically claim up to 50 undelivered notifications for a session.
 
-        Uses ``FOR UPDATE SKIP LOCKED`` so concurrent SSE readers never claim the same
-        rows, marking the selected rows delivered and returning them ordered by id.
-
-        :param after_id: only claim notifications with a higher id (for resume support).
+        ``FOR UPDATE SKIP LOCKED`` keeps concurrent SSE readers off the same rows;
+        claimed rows above ``after_id`` are marked delivered and returned by id.
         """
         table = SQL.identifier('muk_mcp_notification')
         request.env.cr.execute(
@@ -432,12 +406,9 @@ class MCPController(http.Controller):
     def _dispatch_method(self, data: dict[str, Any]) -> dict[str, Any] | None:
         """Route one parsed JSON-RPC request to its handler and wrap the outcome.
 
-        Resolves the protocol revision, then the caller — by session for the
-        stateful revisions, from the bearer key for the stateless one — and maps
-        handler exceptions to JSON-RPC errors.
+        Resolves the revision and the caller, and maps handler exceptions to errors.
 
-        :return: a JSON-RPC response or error dict, or ``None`` for notifications
-            (which produce no reply).
+        :return: a JSON-RPC response or error, or ``None`` for a notification.
         """
         method, params, request_id = (
             data.get('method'),
@@ -610,12 +581,8 @@ class MCPController(http.Controller):
     ) -> bool:
         """Report whether the client declared support for ``extension_id``.
 
-        On the session-based revisions a client that sends no extension map at all
-        predates extension negotiation and is treated as accepting everything, so
-        turning negotiation on never silently withdraws an extension from a client
-        already in the field. The stateless revision has no such history -- it
-        requires capabilities on every request and forbids inferring them -- so
-        there an extension must be asked for explicitly.
+        A handshake-era client without any extension map predates negotiation
+        and accepts everything; a stateless client must ask explicitly.
         """
         capabilities = self._get_client_capabilities(params)
         offered = (
@@ -736,14 +703,11 @@ class MCPController(http.Controller):
 
     @mcp_route('/mcp', methods=['POST'])
     def mcp_post(self, **kw: Any) -> Response:
-        """Serve a JSON-RPC request and return the reply.
-
-        JSON-RPC batching was removed from the protocol in 2025-06-18, so an array
-        body is rejected rather than dispatched.
+        """Serve a JSON-RPC request and return the reply; an array body is rejected.
 
         :return: a JSON response, a 202 for notifications, a 403 for a rejected
-            origin, or a 429 when rate limited; a freshly created session id is
-            echoed in the ``Mcp-Session-Id`` header.
+            origin, or a 429 when rate limited; a new session id is echoed in the
+            ``Mcp-Session-Id`` header.
         """
         if error := self._check_origin():
             return error
@@ -787,12 +751,10 @@ class MCPController(http.Controller):
 
     @mcp_route('/mcp', methods=['GET'])
     def mcp_get(self, **kw: Any) -> Response:
-        """Open the SSE notification stream for a session, supporting ``Last-Event-ID`` resume.
+        """Open the SSE notification stream for a session, with ``Last-Event-ID`` resume.
 
-        The stateless revision removes the GET endpoint entirely, so a client
-        declaring it is answered ``405`` rather than served a session stream.
-
-        :return: a ``text/event-stream`` response, or 405 when SSE is not requested.
+        :return: a ``text/event-stream`` response, or ``405`` when SSE is not
+            requested or the client speaks the stateless revision.
         """
         if error := self._check_origin():
             return error

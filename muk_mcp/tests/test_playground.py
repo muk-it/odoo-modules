@@ -14,6 +14,7 @@ class TestPlayground(common.TransactionCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Keep handles on the key and tool models."""
         super().setUpClass()
         cls.Key = cls.env['muk_mcp.key']
         cls.Tool = cls.env['muk_mcp.tool']

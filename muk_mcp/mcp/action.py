@@ -79,10 +79,9 @@ class MCPMixin(models.AbstractModel):
     ) -> Any:
         """Resolve the model, browse the target ids and invoke a public method.
 
-        Rejects private methods via :func:`get_public_method`. For non
-        ``@api.model`` methods the records to operate on come from ``ids``, or
-        else from the first positional argument. A ``context`` key inside
-        ``kwargs`` is applied to the recordset rather than passed through.
+        Private methods are rejected. Record methods run on ``ids``, or on the
+        first positional argument; a ``context`` key in ``kwargs`` is applied
+        to the recordset.
         """
         target = self._resolve_model(model)
         try:

@@ -142,12 +142,10 @@ class MCPKey(models.Model):
 
     @api.model
     def _authenticate_user_condition(self) -> SQL:
-        """Return the SQL predicate the key's owning user must satisfy.
+        """Return the SQL predicate the key's owning user ``u`` must satisfy.
 
-        Aliased ``u`` in :meth:`authenticate`. Defaults to requiring an
-        active user, mirroring Odoo core ``_check_apikey_credentials``.
-        Override to relax it, e.g. to authenticate keys owned by
-        intentionally inactive service users.
+        Requires an active user, as core ``_check_apikey_credentials`` does;
+        override it to accept keys of intentionally inactive service users.
         """
         return SQL('u.active = true')
 
@@ -195,14 +193,11 @@ class MCPKey(models.Model):
 
     @api.model
     def authenticate(self, token: str) -> MCPKey | None:
-        """Resolve a bearer token to its active key and stamp last use.
+        """Resolve a bearer token to its active key and stamp its last use.
 
-        The owning user must satisfy :meth:`_authenticate_user_condition`. The
-        stamp is written at most once a minute and skips a key another request
-        is stamping, so parallel requests on one key do not collide.
-
-        :return: the matching key, or ``None`` when no active key owned by an
-            eligible user matches
+        The owner must satisfy :meth:`_authenticate_user_condition`; the stamp is
+        written at most once a minute and skips a key another request is stamping.
+        Return the matching key, or ``None`` when no eligible key matches.
         """
         self.env['res.users'].flush_model(['active'])
         self.flush_model(['key_hash', 'active', 'user_id'])
