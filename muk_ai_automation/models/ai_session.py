@@ -65,7 +65,7 @@ class AISession(models.Model):
         record, records, previous = empty, empty, PreviousProxy(None)
         if self and self.id:
             linked = self._linked_record()
-            if linked is not None and self._owner_can_read(linked):
+            if linked is not None:
                 record = linked.with_user(self.user_id or self.env.user)
             previous = PreviousProxy(self.previous_session_id or None)
             action = self.action_server_id
