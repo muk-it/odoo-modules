@@ -582,6 +582,7 @@ export function useAiSession(options = {}) {
         _resetSessionState(sessionId);
         sessionNotification.markActive(sessionId);
         applyRecord(record);
+        state.toolSources = snapshot?.tool_sources || [];
         if (snapshot && snapshot.events !== undefined) {
             state.events = snapshot.events || [];
             state.oldestSequence = snapshot.oldest_sequence ?? null;
