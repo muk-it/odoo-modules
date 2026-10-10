@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from odoo import models
+from odoo.exceptions import UserError
 
 from odoo.addons.muk_ai.tests.common import ImageCase
 
@@ -97,3 +98,37 @@ class TestAgentCapabilities(ImageCase):
 
     def test_a_dormant_capability_is_not_stated(self):
         self.assertNotIn('Image generation:', self._runtime(self._agent()))
+
+    # ----------------------------------------------------------
+    # Tests: tool sources
+    # ----------------------------------------------------------
+
+    def test_a_chat_switches_off_what_its_agent_can_do(self):
+        self._backend('brave')
+        session = self._session(
+            self._agent(
+                web_search='tool',
+                enable_image_generation=True,
+                image_model_id=self.image.id,
+            )
+        )
+        sources = session.get_snapshot()['tool_sources']
+        self.assertEqual(
+            [source['key'] for source in sources if source['enabled']],
+            ['web_search', 'image_generation'],
+        )
+        for key in ('web_search', 'image_generation'):
+            snapshot = session.set_tool_source(key, False)
+        self.assertFalse([s for s in snapshot['tool_sources'] if s['enabled']])
+        names = session._get_essential_tool_names()
+        self.assertNotIn('web_search', names)
+        self.assertNotIn('generate_image', names)
+        self.assertFalse(session._resolve_model_for('image'))
+        runtime = session._build_runtime_block()
+        self.assertIn('Web search: unavailable', runtime)
+        self.assertNotIn('Image generation:', runtime)
+        session.set_tool_source('web_search', True)
+        self.assertEqual(session.disabled_tool_sources, ['image_generation'])
+        self.assertIn('web_search', session._get_essential_tool_names())
+        with self.assertRaises(UserError):
+            session.set_tool_source('teleport', False)

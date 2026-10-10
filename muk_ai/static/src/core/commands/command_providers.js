@@ -3,6 +3,7 @@
 import { _t } from '@web/core/l10n/translation';
 import { registry } from '@web/core/registry';
 
+import { chatLists } from '@muk_ai/chat/utils';
 import { seedSessionContext } from '@muk_ai/views/context';
 
 const providerRegistry = registry.category('command_provider');
@@ -19,7 +20,7 @@ providerRegistry.add('muk_ai_sessions', {
     namespace: '?',
     async provide(env, options) {
         const needle = (options.searchValue || '').trim();
-        const domain = [['user_id', '=', env.services.user.userId]];
+        const domain = [...chatLists.domain];
         if (needle) {
             domain.push(['name', 'ilike', needle]);
         }
