@@ -107,10 +107,23 @@ class TestHandover(TransactionCase):
         session.with_user(self.manager).action_handover(self.user_b.id)
         self.assertEqual(session.sudo().user_id, self.user_b)
 
-    def test_non_owner_cannot_hand_over(self):
+    def test_only_the_owner_hands_over_and_only_through_a_handover(self):
         session = self._owned_session(self.user_a)
-        with self.assertRaises(AccessError):
-            session.with_user(self.user_b).action_handover(self.manager.id)
+        for name, call in (
+            (
+                'foreign handover',
+                lambda: session.with_user(self.user_b).action_handover(self.manager.id),
+            ),
+            (
+                'write owner',
+                lambda: session.with_user(self.user_a).write(
+                    {'user_id': self.manager.id}
+                ),
+            ),
+        ):
+            with self.subTest(name), self.assertRaises(AccessError):
+                call()
+        self.assertEqual(session.sudo().user_id, self.user_a)
 
     def test_portal_target_rejected(self):
         session = self._owned_session(self.user_a)
