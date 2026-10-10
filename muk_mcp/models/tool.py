@@ -4,18 +4,20 @@ import json
 import time
 
 from odoo import _, api, fields, models
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
+from odoo.service.model import PG_CONCURRENCY_EXCEPTIONS_TO_RETRY
 from odoo.tools.safe_eval import safe_eval, test_python_expr
 from odoo.tools.safe_eval import json as safe_json
 from odoo.tools import config
-from odoo.http import request
 
 from odoo.addons.muk_mcp.core.tool import get_tool_index
 
-from odoo.addons.muk_mcp.tools.encoder import encode_request, encode_response, RecordEncoder
+from odoo.addons.muk_mcp.tools.encoder import encode_log, RecordEncoder
 from odoo.addons.muk_mcp.tools.exception import MCPScopeDenied
 from odoo.addons.muk_mcp.tools.logger import LoggerProxy
-from odoo.addons.muk_mcp.tools.protocol import ToolContent
+from odoo.addons.muk_mcp.tools.protocol import (
+    ToolContent, make_text_content, make_tool_result,
+)
 
 class MCPTool(models.Model):
 
@@ -104,7 +106,30 @@ class MCPTool(models.Model):
     @api.model
     def _check_scope(self, category, enforce_scope):
         if enforce_scope == 'read' and category != 'read':
-            raise MCPScopeDenied(_('Access denied: key scope is read-only'))
+            raise MCPScopeDenied(_(
+                'Access denied: this tool changes data, but the access is read-only'
+            ))
+
+    @api.model
+    def _call_result(self, name, arguments, env, enforce_scope=None):
+        """Run a tool and return its ``tools/call`` result.
+
+        Scope, access, user and unexpected errors become error results.
+        Concurrency failures propagate, so the request as a whole is retried.
+        """
+        try:
+            result, _info = self._call(name, arguments, env, enforce_scope)
+        except PG_CONCURRENCY_EXCEPTIONS_TO_RETRY:
+            raise
+        except (MCPScopeDenied, AccessError, UserError) as exc:
+            return make_tool_result([make_text_content(str(exc))], is_error=True)
+        except Exception:
+            return make_tool_result(
+                [make_text_content('Internal server error')], is_error=True,
+            )
+        if isinstance(result, ToolContent):
+            return make_tool_result(result)
+        return make_tool_result([make_text_content(result)])
 
     @api.model
     def _call(self, name, arguments, env, enforce_scope=None):
@@ -113,9 +138,10 @@ class MCPTool(models.Model):
         model_name = arguments.get('model')
         start = time.monotonic()
         try:
-            text, info, model_name = self._execute(
-                name, arguments, env, enforce_scope,
-            )
+            with env.cr.savepoint():
+                text, info, model_name = self._execute(
+                    name, arguments, env, enforce_scope,
+                )
             return text, info
         except Exception as exc:
             status = (
@@ -130,7 +156,7 @@ class MCPTool(models.Model):
                 self.env['muk_mcp.log'].log(**self._tool_log_values(
                     name=name,
                     env=env,
-                    request_data=encode_request(arguments),
+                    arguments=arguments,
                     model_name=model_name,
                     status=status,
                     text=text,
@@ -176,7 +202,7 @@ class MCPTool(models.Model):
         *,
         name,
         env,
-        request_data,
+        arguments,
         model_name,
         status,
         text,
@@ -191,22 +217,15 @@ class MCPTool(models.Model):
             'model_name': model_name,
             'status': status,
             'duration_ms': duration_ms,
-            'request_data': request_data,
+            'request_data': encode_log(arguments),
         }
         if status == 'ok':
-            values['response_data'] = encode_response(text)
+            values['response_data'] = encode_log(text)
             values['res_id'] = info.get('res_id')
             values['res_ids'] = info.get('res_ids')
         else:
             values['error_message'] = error
             values['response_data'] = error
-        with contextlib.suppress(Exception):
-            if key := getattr(request, '_mcp_key', None):
-                values['key_id'] = key.id
-            values['ip_address'] = (
-                request.httprequest.remote_addr
-                if request else None
-            )
         return values
 
     @api.model
@@ -272,6 +291,7 @@ class MCPTool(models.Model):
                 'name': name,
                 'description': entry['description'],
                 'inputSchema': entry['input_schema'],
+                'annotations': {'readOnlyHint': entry['category'] == 'read'},
             }
             if entry.get('meta'):
                 tool['_meta'] = entry['meta']

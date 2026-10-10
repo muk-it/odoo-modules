@@ -80,17 +80,9 @@ class LogEncoder(json.JSONEncoder):
         return _iterencode(o, 0)
 
 
-def encode_request(arguments):
-    if arguments is None:
+def encode_log(value):
+    if value is None:
         return None
     return limit_text_size(json.dumps(
-        arguments, indent=4, cls=LogEncoder, default=str,
-    ))
-
-
-def encode_response(result):
-    if result is None:
-        return None
-    return limit_text_size(json.dumps(
-        result, indent=4, cls=LogEncoder, default=str,
+        value, indent=4, cls=LogEncoder, default=str,
     ))

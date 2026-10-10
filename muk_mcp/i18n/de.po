@@ -88,8 +88,8 @@ msgstr "API-Schlüssel"
 #. module: muk_mcp
 #. odoo-python
 #: code:addons/muk_mcp/models/tool.py:0
-msgid "Access denied: key scope is read-only"
-msgstr "Zugriff verweigert: Schlüsselbereich ist schreibgeschützt"
+msgid "Access denied: this tool changes data, but the access is read-only"
+msgstr "Zugriff verweigert: Dieses Werkzeug ändert Daten, der Zugriff ist aber schreibgeschützt"
 
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_key__active

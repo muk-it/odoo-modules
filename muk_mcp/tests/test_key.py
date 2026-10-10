@@ -39,6 +39,16 @@ class TestMcpKey(common.TransactionCase):
         self.key_model.authenticate(self.raw_token)
         self.key.invalidate_recordset()
         self.assertTrue(self.key.last_used)
+        self.env.cr.execute(
+            "UPDATE muk_mcp_key SET last_used = last_used - INTERVAL '30 seconds' "
+            'WHERE id = %s',
+            [self.key.id],
+        )
+        self.key.invalidate_recordset()
+        recent = self.key.last_used
+        self.key_model.authenticate(self.raw_token)
+        self.key.invalidate_recordset()
+        self.assertEqual(self.key.last_used, recent)
 
     def test_scope_default_is_write(self):
         self.assertEqual(self.key.scope, 'write')

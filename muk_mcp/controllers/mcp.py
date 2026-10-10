@@ -19,10 +19,7 @@ from odoo.addons.muk_mcp.tools import common, protocol, version
 from odoo.addons.muk_mcp.tools.content import (
     is_textual_mimetype, normalize_mimetype
 )
-from odoo.addons.muk_mcp.tools.exception import (
-    MCPResourceNotFound,
-    MCPScopeDenied,
-)
+from odoo.addons.muk_mcp.tools.exception import MCPResourceNotFound
 from odoo.addons.muk_mcp.tools.version import ProtocolProfile
 
 class MCPController(http.Controller):
@@ -42,13 +39,8 @@ class MCPController(http.Controller):
 
     def _log_request(self, method, **kwargs):
         if config.get('mcp_logging', True):
-            key = getattr(request, '_mcp_key', None)
             request.env['muk_mcp.log'].log(
-                key_id=key.id if key else None,
-                user_id=request.env.uid,
-                method=method,
-                ip_address=request.httprequest.remote_addr,
-                **kwargs,
+                user_id=request.env.uid, method=method, **kwargs,
             )
 
     def _get_tool_enforce_scope(self) -> str | None:
@@ -604,37 +596,15 @@ class MCPController(http.Controller):
                 [protocol.make_text_content('Tool name is required')],
                 is_error=True,
             )
-        enforce_scope = self._get_tool_enforce_scope()
-        try:
-            result, _record_info = retrying(
-                partial(
-                    request.env['muk_mcp.tool']._call,
-                    tool_name,
-                    params.get('arguments', {}),
-                    request.env,
-                    enforce_scope=enforce_scope,
-                ),
+        return retrying(
+            partial(
+                request.env['muk_mcp.tool']._call_result,
+                tool_name,
+                params.get('arguments', {}),
                 request.env,
-            )
-        except MCPScopeDenied as exc:
-            return protocol.make_tool_result(
-                [protocol.make_text_content(str(exc))],
-                is_error=True,
-            )
-        except (AccessError, UserError) as exc:
-            return protocol.make_tool_result(
-                [protocol.make_text_content(str(exc))],
-                is_error=True,
-            )
-        except Exception:
-            return protocol.make_tool_result(
-                [protocol.make_text_content('Internal server error')],
-                is_error=True,
-            )
-        if isinstance(result, protocol.ToolContent):
-            return protocol.make_tool_result(result)
-        return protocol.make_tool_result(
-            [protocol.make_text_content(result)]
+                enforce_scope=self._get_tool_enforce_scope(),
+            ),
+            request.env,
         )
 
     def _handle_resources_read(self, params):
