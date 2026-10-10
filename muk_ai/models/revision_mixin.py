@@ -88,7 +88,7 @@ class AIRevisionMixin(models.AbstractModel):
                     field=field_label,
                     index=index + 1,
                 ),
-                'next': {'type': 'ir.actions.act_window_close'},
+                'next': {'type': 'ir.actions.client', 'tag': 'soft_reload'},
             },
         }
 

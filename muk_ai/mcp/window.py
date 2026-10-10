@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from odoo import _, api, models
 from odoo.exceptions import UserError
+from odoo.tools.safe_eval import safe_eval
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
 from odoo.addons.muk_mcp.tools.parser import coerce_json_value
@@ -34,19 +35,20 @@ class AIWindow(models.AbstractModel):
         ]
 
     @api.model
-    def _resolve_window_action(self, action_ref) -> models.BaseModel | None:
-        """Resolve an action reference (id or xmlid) to its record."""
-        if isinstance(action_ref, int):
-            return (
-                self.env['ir.actions.actions']
-                .sudo()
-                .browse(
-                    action_ref,
-                )
-            )
-        if isinstance(action_ref, str) and (ref := action_ref.strip()) and '.' in ref:
-            return self.env.ref(ref, raise_if_not_found=False)
-        return None
+    def _resolve_window_action(self, action_ref) -> models.BaseModel:
+        """Return the action an id or an xmlid names, as its concrete record.
+
+        :raise UserError: when the reference names no action
+        """
+        ref = str(action_ref).strip()
+        if ref.isdigit():
+            action = self.env['ir.actions.actions'].sudo().browse(int(ref)).exists()
+            action = action and self.env[action.type].sudo().browse(action.id)
+        else:
+            action = self.env.ref(ref, raise_if_not_found=False) if '.' in ref else None
+        if not action or not action._name.startswith('ir.actions.'):
+            raise UserError(_('No action matches %(ref)r.', ref=action_ref))
+        return action
 
     def _check_view_type(self, view_type) -> str:
         """Validate and normalize a view type, mapping ``tree`` to ``list``.
@@ -270,29 +272,32 @@ class AIWindow(models.AbstractModel):
         registry='odoo',
     )
     def _mcp_open_action(self, action_ref, additional_context=None) -> dict:
-        """Return the full descriptor of an existing Odoo action for the user."""
+        """Return the full descriptor of an existing Odoo action for the user.
+
+        Extra context is merged into the action's own, evaluated here when it
+        is stored as an expression.
+        :raise UserError: when the action context cannot be evaluated
+        """
         action = self._resolve_window_action(action_ref)
-        if (
-            action._name == 'ir.actions.actions'
-            and action.type
-            and action.type != 'ir.actions.actions'
-        ):
-            concrete = (
-                self.env[action.type]
-                .sudo()
-                .browse(
-                    action.id,
-                )
-            )
-            if concrete.exists():
-                action = concrete
         descriptor = action._get_action_dict()
-        if not descriptor.get('type'):
-            descriptor['type'] = action._name
         if additional_context:
-            merged = descriptor.get('context') or {}
-            if not isinstance(merged, dict):
-                merged = {}
-            merged = {**merged, **additional_context}
-            descriptor['context'] = merged
+            context = descriptor.get('context') or {}
+            if isinstance(context, str):
+                eval_context = {
+                    **self.env.context,
+                    **action._get_eval_context(),
+                    'context': self.env.context,
+                }
+                try:
+                    context = safe_eval(context, eval_context)
+                except ValueError as error:
+                    raise UserError(
+                        _(
+                            'The context of action %(ref)r cannot be extended: '
+                            '%(error)s',
+                            ref=action_ref,
+                            error=error,
+                        )
+                    ) from error
+            descriptor['context'] = {**context, **additional_context}
         return descriptor

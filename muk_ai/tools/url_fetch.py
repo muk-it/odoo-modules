@@ -55,7 +55,15 @@ FAVICON_CACHE_SECONDS = 7 * 24 * 60 * 60
 FAVICON_GC_BATCH = 1000
 
 FAVICON_MIMETYPES = frozenset(
-    {'image/bmp', 'image/gif', 'image/jpeg', 'image/png', 'image/webp', 'image/x-icon'}
+    {
+        'image/bmp',
+        'image/gif',
+        'image/jpeg',
+        'image/png',
+        'image/vnd.microsoft.icon',
+        'image/webp',
+        'image/x-icon',
+    }
 )
 
 # ----------------------------------------------------------

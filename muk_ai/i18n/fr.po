@@ -5865,3 +5865,89 @@ msgstr "· suivant"
 #: code:addons/muk_ai/static/src/chat/tools/tool_card.xml:0
 msgid "· run"
 msgstr "· exécuter"
+
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__awaiting_user
+msgid "Awaiting User"
+msgstr "En attente de l'utilisateur"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+msgid "Code interpreter"
+msgstr "Interpréteur de code"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+msgid "Create images from a description"
+msgstr "Créer des images à partir d'une description"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+msgid "Failed to change the tools: %s"
+msgstr "Impossible de modifier les outils : %s"
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_session__disabled_tool_sources
+msgid "Keys of the tool sources switched off for this chat."
+msgstr "Clés des sources d'outils désactivées pour ce chat."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/approval.py:0
+msgid "No"
+msgstr "Non"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/mcp/window.py:0
+msgid "No action matches %(ref)r."
+msgstr "Aucune action ne correspond à %(ref)r."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+msgid "Run code to calculate and analyse data"
+msgstr "Exécuter du code pour calculer et analyser des données"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+msgid "Search the web for current information"
+msgstr "Rechercher des informations actuelles sur le web"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__disabled_tool_sources
+msgid "Switched Off Tools"
+msgstr "Outils désactivés"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/mcp/window.py:0
+msgid "The context of action %(ref)r cannot be extended: %(error)s"
+msgstr "Le contexte de l'action %(ref)r ne peut pas être étendu : %(error)s"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/tools_menu/tools_menu.xml:0
+msgid "Tools of this connector"
+msgstr "Outils de ce connecteur"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+msgid "Unknown tool source %(key)r."
+msgstr "Source d'outils inconnue %(key)r."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+msgid "Web search"
+msgstr "Recherche web"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/approval.py:0
+msgid "Yes"
+msgstr "Oui"

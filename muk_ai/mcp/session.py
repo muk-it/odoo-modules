@@ -17,9 +17,11 @@ class AISessionToolContext(models.AbstractModel):
         """Return the AI session bound to the current MCP context.
 
         :param outside: what to tell the model when there is no session
-        :return: the session, empty when it no longer exists
         :raise UserError: when invoked outside an AI session
+        :raise AccessError: when the caller may not steer the session
         """
         if not (session_id := self.env.context.get('muk_mcp_session_id')):
             raise UserError(outside)
-        return self.env['muk_ai.session'].browse(session_id).exists()
+        session = self.env['muk_ai.session'].browse(session_id).exists()
+        session.check_access('write')
+        return session

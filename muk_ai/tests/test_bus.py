@@ -105,6 +105,18 @@ class TestSessionBus(TransactionCase):
             {self.owner.partner_id, self.reader.partner_id},
         )
 
+    def test_the_sidebar_state_says_whether_the_chat_awaits_its_owner(self):
+        for state, awaiting in (('waiting', True), ('running', False)):
+            with self.subTest(state=state), self._captured() as captured:
+                self.session.sudo()._transition_state(state)
+            states = [
+                message
+                for _target, ntype, message in captured
+                if ntype == 'muk_ai.session_state'
+            ]
+            self.assertTrue(states)
+            self.assertEqual({m['awaiting_user'] for m in states}, {awaiting})
+
     def test_a_deletion_reaches_the_readers_too(self):
         session = self.env['muk_ai.session'].with_user(self.owner).create({'name': 'X'})
         session.sudo().write({'share_user_ids': [(6, 0, self.reader.ids)]})

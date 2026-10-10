@@ -286,7 +286,7 @@ test('_onUserBusEvent updates an existing sidebar row in place', async () => {
     expect(chat.state.sessions[0].name).toBe('New');
 });
 
-test('_onUserBusEvent for the active session mirrors fields on session state', async () => {
+test('_onUserBusEvent mirrors the metrics of the active session, not its state', async () => {
     registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
     const chat = await mountWithCleanup(AIChat, { props: {} });
     await chat.onSelectSession(7);
@@ -299,7 +299,8 @@ test('_onUserBusEvent for the active session mirrors fields on session state', a
         last_input_tokens: 10,
         context_window: 8000,
     });
-    expect(chat.session.state.status).toBe('running');
+    expect(chat.session.state.status).toBe('done');
+    expect(chat.state.sessions[0].state).toBe('running');
     expect(chat.session.state.iterationCount).toBe(3);
     expect(chat.session.state.inputTokens).toBe(42);
     expect(chat.session.state.outputTokens).toBe(17);

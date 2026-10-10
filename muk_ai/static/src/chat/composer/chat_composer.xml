@@ -82,6 +82,7 @@
                             t-att-disabled="!props.canAttach ? 'disabled' : null"
                             t-on-change="(ev) => this.onFileInputChange(ev)"
                         />
+                        <ToolsMenu t-if="props.session" session="props.session"/>
                     </div>
                     <div class="mk_composer_right d-flex align-items-center gap-2">
                         <button

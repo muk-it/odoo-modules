@@ -1,6 +1,7 @@
 import { _t } from '@web/core/l10n/translation';
 import { formatDateTime } from '@web/core/l10n/dates';
 import { registry } from '@web/core/registry';
+import { user } from '@web/core/user';
 
 /**
  * Session pills an addon adds beside Approval and Effort.
@@ -11,6 +12,20 @@ import { registry } from '@web/core/registry';
  * full page and in the floating window.
  */
 export const sessionPills = registry.category('muk_ai.session_pills');
+
+/**
+ * The chats of the user that the lists of this tab show: the sidebar, its
+ * search, the systray and the command palette. An extension narrows what
+ * counts as one by patching `domain` once.
+ */
+export const chatLists = {
+    /**
+     * @returns {Array} a domain on `muk_ai.session`
+     */
+    get domain() {
+        return [['user_id', '=', user.userId]];
+    },
+};
 
 /**
  * Build the descriptors of the pills addons contribute for one session.
