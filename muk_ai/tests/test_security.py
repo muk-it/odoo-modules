@@ -150,3 +150,9 @@ class TestAiSecurity(TransactionCase):
         session = self._owned_session()
         with self.assertRaises(AccessError):
             session.with_user(self.user_b).action_stop()
+
+    def test_owner_cannot_reassign_the_chat(self):
+        session = self._owned_session()
+        with self.assertRaises(AccessError):
+            session.with_user(self.user_a).write({'user_id': self.manager.id})
+        self.assertEqual(session.user_id, self.user_a)

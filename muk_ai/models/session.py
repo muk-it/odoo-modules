@@ -4935,10 +4935,11 @@ class AISession(models.Model):
         chokepoint it covers the UI dropdown, the ``/agent`` command and the
         ``switch_agent`` MCP tool with one consistent marker.
 
-        Filing an unread chat also refreshes the badge, which carries the
-        per-space unread counts, and changing who a chat is shared with tells
-        the people it was given to or taken from.
+        Only a handover, run as superuser, changes the owner. Filing an unread
+        chat refreshes the badge, and a share change tells the people it concerns.
         """
+        if 'user_id' in vals and not self.env.su:
+            raise AccessError(_('Only a handover changes the owner of a chat.'))
         previous = (
             {record.id: record.agent_id for record in self}
             if 'agent_id' in vals
