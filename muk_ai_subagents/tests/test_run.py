@@ -138,15 +138,19 @@ class TestRun(SubagentCase):
         self.assertEqual(child._turn_wallclock_seconds(), 30)
 
     def test_a_run_is_handed_over_whole_and_only_when_idle(self):
-        colleague = new_test_user(self.env, 'colleague', groups='base.group_user')
+        owner, colleague = (
+            new_test_user(self.env, login, groups='base.group_user')
+            for login in ('owner', 'colleague')
+        )
         chat = self._park(1)
+        (chat | chat.child_session_ids).user_id = owner
         with self.assertRaisesRegex(UserError, 'Stop the subagents'):
             chat.action_handover(colleague.id)
         with self.assertRaisesRegex(UserError, 'handed over with the chat'):
             chat.child_session_ids.action_handover(colleague.id)
         with self._mock_responses([text_payload('stopped')], repeat_last=True):
             chat.action_stop_subagents()
-        chat.action_handover(colleague.id)
+        chat.with_user(owner).action_handover(colleague.id)
         self.assertEqual(chat.child_session_ids.user_id, colleague)
 
     def test_a_reader_of_the_run_sees_its_subagents_but_cannot_steer_them(self):
