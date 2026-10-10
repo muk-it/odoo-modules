@@ -10,6 +10,8 @@ def migrate(cr: Cursor, version: str | None) -> None:
         "UPDATE muk_ai_session SET stop_reason = 'error' WHERE stop_reason = 'stalled'"
     )
     env = api.Environment(cr, SUPERUSER_ID, {})
+    if space := env.ref('muk_ai_subagents.space_subagents', raise_if_not_found=False):
+        space.domain = False
     for xmlid in (
         'muk_ai_subagents.cron_sweep_stalled_children',
         'muk_ai_subagents.space_subagents',
