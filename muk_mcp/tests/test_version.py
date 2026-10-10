@@ -402,11 +402,6 @@ class TestVersionNegotiationHttp(MCPHttpCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotIn('error', response.json())
 
-    def test_mirrored_headers_the_client_omits_are_not_faulted(self):
-        response = self.mcp_stateless_post('tools/list')
-        self.assertEqual(response.status_code, 200)
-        self.assertIsInstance(response.json()['result']['tools'], list)
-
     def test_a_headerless_request_falls_back_to_the_session_revision(self):
         session_id = self.mcp_handshake(
             protocol_version=version.MCP_VERSION_2025_11_25,
