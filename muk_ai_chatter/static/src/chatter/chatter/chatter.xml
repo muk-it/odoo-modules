@@ -13,7 +13,7 @@
                 title="AI Sessions"
                 t-on-click="() => this.toggleAISessions()"
             >
-                <span class="mk_icon_ai mk_chatter_ai_sessions_icon me-1"/>
+                <span class="mk_icon_ai me-1"/>
                 <sup t-out="this.state.aiSessionTotal"/>
             </button>
         </xpath>
