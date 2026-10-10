@@ -136,7 +136,10 @@ class TestRun(SubagentCase):
 
     def test_a_run_is_handed_over_whole_and_only_when_idle(self):
         colleague = new_test_user(self.env, 'colleague', groups='base.group_user')
+        owner = new_test_user(self.env, 'owner', groups='base.group_user')
         chat = self._park(1)
+        (chat | chat.child_session_ids).user_id = owner
+        chat = chat.with_user(owner)
         with self.assertRaisesRegex(UserError, 'Stop the subagents'):
             chat.action_handover(colleague.id)
         with self.assertRaisesRegex(UserError, 'handed over with the chat'):

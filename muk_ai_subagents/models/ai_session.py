@@ -777,7 +777,7 @@ class AISession(models.Model):
                 self.env._('Stop the subagents before handing the chat over.')
             )
         result = super().action_handover(new_user_id)
-        self.child_session_ids.write(
+        self.child_session_ids.sudo().write(
             {'user_id': self.user_id.id, 'user_context': self.user_context}
         )
         return result
