@@ -629,23 +629,27 @@ class AISession(models.Model):
         self.ensure_one()
         self.check_access('write')
         self.flush_recordset()
-        self.env.cr.execute(
-            SQL('SELECT state FROM muk_ai_session WHERE id = %s FOR UPDATE', self.id)
-        )
-        state = self.env.cr.fetchone()[0]
-        self.invalidate_recordset(['state'])
-        if state not in ('running', 'waiting', 'compacting'):
-            return {**self.get_snapshot(), 'queue_rejected_state': state}
-        self.env['muk_ai.session.pending'].create(
-            {
-                'session_id': self.id,
-                'content': user_message or '',
-                'attachment_ids': list(attachment_ids or []),
-            }
-        )
-        self.invalidate_recordset(['pending_ids'])
-        self._publish_event('queue', {'pending': self._serialize_pending()})
-        return self.get_snapshot()
+        with self._read_committed() as session:
+            session.env.cr.execute(
+                SQL(
+                    'SELECT state FROM muk_ai_session WHERE id = %s FOR UPDATE',
+                    session.id,
+                )
+            )
+            state = session.env.cr.fetchone()[0]
+            session.invalidate_recordset(['state'])
+            if state not in ('running', 'waiting', 'compacting'):
+                return {**session.get_snapshot(), 'queue_rejected_state': state}
+            session.env['muk_ai.session.pending'].create(
+                {
+                    'session_id': session.id,
+                    'content': user_message or '',
+                    'attachment_ids': list(attachment_ids or []),
+                }
+            )
+            session.invalidate_recordset(['pending_ids'])
+            session._publish_event('queue', {'pending': session._serialize_pending()})
+            return session.get_snapshot()
 
     def cancel_queued(self, index: int) -> dict:
         """Remove a queued message by index and return the snapshot.

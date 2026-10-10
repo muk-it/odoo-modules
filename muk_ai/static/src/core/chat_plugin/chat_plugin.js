@@ -270,12 +270,15 @@ export class AIChatPlugin extends Plugin {
         this.events.trigger('created', { id });
         return id;
     }
-    openFullChat(id = null) {
-        return this.action.doAction({
-            type: 'ir.actions.client',
-            tag: 'muk_ai.chat',
-            params: id ? { session_id: id } : {},
-        });
+    openFullChat(id = null, options = {}) {
+        return this.action.doAction(
+            {
+                type: 'ir.actions.client',
+                tag: 'muk_ai.chat',
+                params: id ? { session_id: id } : {},
+            },
+            options,
+        );
     }
     /**
      * Open a chat in a floating window, pinning the current view to it.

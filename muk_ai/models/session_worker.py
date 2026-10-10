@@ -12,7 +12,7 @@ from odoo import SUPERUSER_ID, api, fields, models, modules
 from odoo.exceptions import UserError
 from odoo.fields import Domain
 from odoo.http import request
-from odoo.tools import config
+from odoo.tools import SQL, config
 
 from odoo.addons.muk_ai.tools.runtime import (
     CLIENT_ACTION_TIMEOUT_SECONDS,
@@ -62,6 +62,20 @@ class AISessionWorker(models.AbstractModel):
     def _commit_safe(self) -> None:
         """Commit outside tests, re-raising on serialization conflicts."""
         commit_safe(self.env)
+
+    @contextlib.contextmanager
+    def _read_committed(self) -> Iterator[models.BaseModel]:
+        """Yield the session in a transaction of its own that reads committed rows.
+
+        A row lock taken there waits for a busy worker's commit instead of
+        failing on it. A test runs in its own transaction instead.
+        """
+        if modules.module.current_test:
+            yield self
+            return
+        with self.env.registry.cursor() as cr:
+            cr.execute(SQL('SET TRANSACTION ISOLATION LEVEL READ COMMITTED'))
+            yield self.with_env(self.env(cr=cr))
 
     @contextlib.contextmanager
     def _session_lock(self) -> Iterator[None]:
