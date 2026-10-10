@@ -27,6 +27,7 @@ import { AIChatShareUsers } from '@muk_ai/chat/share/share_users';
 import { useNotificationBadge } from '@muk_ai/core/notification_badge';
 import {
     approvalPill,
+    chatLists,
     effortPill,
     extraPills,
     selectPill,
@@ -79,6 +80,7 @@ const SIDEBAR_SESSION_FIELDS = [
     'id',
     'name',
     'state',
+    'awaiting_user',
     'create_date',
     'space_id',
     'share_user_ids',
@@ -378,19 +380,9 @@ export class AIChat extends Component {
      *
      * @returns {Array} a search domain on `muk_ai.session`
      */
-    /**
-     * What counts as one of this user's chats, before any narrowing.
-     *
-     * The sidebar list and the sidebar search both start here, so an addon
-     * that hides a kind of session hides it from both by saying so once.
-     * @returns {Array} a search domain on `muk_ai.session`
-     */
-    get baseSessionsDomain() {
-        return [['user_id', '=', user.userId]];
-    }
     get ownSessionsDomain() {
         return [
-            ...this.baseSessionsDomain,
+            ...chatLists.domain,
             ...(this.state.generalDomain ?? [['space_id', '=', false]]),
         ];
     }
@@ -400,7 +392,7 @@ export class AIChat extends Component {
      * @returns {Array} a search domain on `muk_ai.session`
      */
     sessionSearchDomain(query) {
-        return [...this.baseSessionsDomain, ['name', 'ilike', query]];
+        return [...chatLists.domain, ['name', 'ilike', query]];
     }
     async _loadSessions() {
         if (this.state.sessionsSearchMode) {
@@ -936,6 +928,7 @@ export class AIChat extends Component {
         }
         const updated = { ...this.state.sessions[idx] };
         if (payload.state) updated.state = payload.state;
+        if ('awaiting_user' in payload) updated.awaiting_user = payload.awaiting_user;
         if (payload.name) updated.name = payload.name;
         this.state.sessions = [
             ...this.state.sessions.slice(0, idx),
@@ -944,7 +937,6 @@ export class AIChat extends Component {
         ];
         if (payload.session_id === this.session.state.sessionId) {
             if (payload.name) this.session.state.name = payload.name;
-            if (payload.state) this.session.state.status = payload.state;
             if (typeof payload.iteration_count === 'number') {
                 this.session.state.iterationCount = payload.iteration_count;
             }

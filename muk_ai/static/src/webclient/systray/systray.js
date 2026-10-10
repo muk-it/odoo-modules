@@ -2,7 +2,6 @@ import { Component, onWillStart, onWillUnmount, useRef, useState } from '@odoo/o
 
 import { _t } from '@web/core/l10n/translation';
 import { registry } from '@web/core/registry';
-import { user } from '@web/core/user';
 import { useService } from '@web/core/utils/hooks';
 import { useHotkey } from '@web/core/hotkeys/hotkey_hook';
 import { isMacOS } from '@web/core/browser/feature_detection';
@@ -10,6 +9,7 @@ import { debounce } from '@web/core/utils/timing';
 import { Dropdown } from '@web/core/dropdown/dropdown';
 import { DropdownItem } from '@web/core/dropdown/dropdown_item';
 
+import { chatLists } from '@muk_ai/chat/utils';
 import { useNotificationBadge } from '@muk_ai/core/notification_badge';
 
 const SYSTRAY_LIMIT = 8;
@@ -59,7 +59,7 @@ export class MukAISystray extends Component {
     async _load() {
         const seq = ++this._loadSeq;
         try {
-            const domain = this.sessionDomain;
+            const domain = chatLists.domain;
             const [recent, unread] = await Promise.all([
                 this.orm.searchRead('muk_ai.session', domain, ['id', 'name', 'state'], {
                     limit: SYSTRAY_LIMIT,
@@ -124,13 +124,6 @@ export class MukAISystray extends Component {
             updated,
             ...this.state.sessions.slice(idx + 1),
         ];
-    }
-    /**
-     * The chats this list offers, so an extension can narrow what counts.
-     * @returns {Array} a search domain over `muk_ai.session`
-     */
-    get sessionDomain() {
-        return [['user_id', '=', user.userId]];
     }
     get runningCount() {
         return this.state.sessions.filter(

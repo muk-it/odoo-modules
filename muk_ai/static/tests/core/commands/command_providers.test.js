@@ -1,7 +1,8 @@
 import { describe, expect, test } from '@odoo/hoot';
-import { patchTranslations } from '@web/../tests/web_test_helpers';
+import { patchTranslations, patchWithCleanup } from '@web/../tests/web_test_helpers';
 import { registry } from '@web/core/registry';
 
+import { chatLists } from '@muk_ai/chat/utils';
 import '@muk_ai/core/commands/command_providers';
 
 describe.current.tags('muk_ai');
@@ -60,6 +61,20 @@ test('provider filters sessions when a search value is given', async () => {
     expect(
         domain.some((d) => d[0] === 'name' && d[1] === 'ilike' && d[2] === 'rep'),
     ).toBe(true);
+});
+
+test('an extension narrows the listed chats once for every list', async () => {
+    patchWithCleanup(chatLists, {
+        get domain() {
+            return [...super.domain, ['parent_session_id', '=', false]];
+        },
+    });
+    const { env, seen } = makeEnv({ sessions: [] });
+    await getProvider().provide(env, { searchValue: 'rep' });
+    expect(seen.find((s) => s.op === 'search_read').domain.slice(1)).toEqual([
+        ['parent_session_id', '=', false],
+        ['name', 'ilike', 'rep'],
+    ]);
 });
 
 test('running a session command opens the chat via action service', async () => {

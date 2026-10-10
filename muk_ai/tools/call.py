@@ -126,15 +126,18 @@ ASK_USER_TOOL = {
         'before continuing. The session pauses in waiting state; the next '
         "session turn will contain the user's answer. Never call ask_user "
         'after calling other tools in the same round — ask before acting, '
-        'not after.\n\n'
+        'not after. Ask through this tool, never as a question at the end '
+        'of an answer, and pass the values the user picks from as '
+        '`options`.\n\n'
         'When you are about to perform an action you yourself judge as '
         'destructive, irreversible, or wide-impact (bulk update, mass '
         'delete, calling a state-changing method on financial records, '
-        'sending external messages, etc.) — even on a model the system '
-        'has not flagged as sensitive — ALWAYS pre-confirm by calling '
+        'sending external messages, etc.), ALWAYS pre-confirm by calling '
         "ask_user with `resolution='yesno'` and a structured `preview`. "
         'The UI then renders the rich diff card with Approve / Reject '
-        'buttons instead of a plain text question.'
+        'buttons instead of a plain text question. A write on a model the '
+        'runtime block lists under the approval gate is the exception: '
+        'call the write tool directly, the system asks the user for you.'
     ),
     'inputSchema': {
         'type': 'object',

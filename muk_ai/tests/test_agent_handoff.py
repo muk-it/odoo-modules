@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 
 from odoo import models
-from odoo.exceptions import UserError
-from odoo.tests import tagged
+from odoo.exceptions import AccessError, UserError
+from odoo.tests import new_test_user, tagged
 
 from odoo.addons.muk_ai.tests.common import AITestCommon
 
@@ -138,6 +138,28 @@ class TestAgentHandoff(AITestCommon):
             session.start('route me')
         self.assertEqual(session.agent_id, self.specialist)
         self.assertEqual(session.state, 'done')
+
+    def test_a_tool_call_never_binds_to_a_chat_it_may_not_steer(self):
+        session = self._session(self.router)
+        other = self._session(self.router)
+        stranger = new_test_user(self.env, login='handoff_stranger')
+        with self.assertRaises(AccessError):
+            self._mixin(session).with_user(stranger)._mcp_switch_agent(
+                self.specialist.id
+            )
+        arguments = {
+            'agent': self.specialist.id,
+            'context': {'muk_mcp_session_id': other.id},
+        }
+        with self._mock_responses(
+            [
+                self._tool_payload('switch_agent', arguments, 'c1'),
+                self._make_text_response('done'),
+            ]
+        ):
+            session.start('route me')
+        self.assertEqual(session.agent_id, self.specialist)
+        self.assertEqual(other.agent_id, self.router)
 
     # ----------------------------------------------------------
     # Agent-switch transcript marker (write() chokepoint)

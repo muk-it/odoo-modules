@@ -247,7 +247,13 @@ test('running and waiting states get visual indicators', async () => {
     const { Parent, props } = makeParent({
         sessions: [
             { id: 1, name: 'Running', state: 'running', create_date: isoDaysAgo(0) },
-            { id: 2, name: 'Waiting', state: 'waiting', create_date: isoDaysAgo(0) },
+            {
+                id: 2,
+                name: 'Waiting',
+                state: 'waiting',
+                awaiting_user: true,
+                create_date: isoDaysAgo(0),
+            },
             { id: 3, name: 'Error', state: 'error', create_date: isoDaysAgo(0) },
             { id: 4, name: 'Done', state: 'done', create_date: isoDaysAgo(0) },
         ],

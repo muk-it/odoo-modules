@@ -7,8 +7,8 @@ import random
 import re
 import threading
 import time
-from collections.abc import Container, Iterable
-from contextlib import suppress
+from collections.abc import Container, Iterable, Iterator
+from contextlib import contextmanager, suppress
 from datetime import timedelta
 
 import psycopg2
@@ -16,9 +16,10 @@ import urllib3
 from markupsafe import Markup, escape
 
 from odoo import SUPERUSER_ID, Command, _, api, fields, models, modules, release
-from odoo.exceptions import AccessError, UserError, ValidationError
+from odoo.exceptions import AccessError, ConcurrencyError, UserError, ValidationError
 from odoo.fields import Domain
 from odoo.http import request
+from odoo.service.model import PG_CONCURRENCY_EXCEPTIONS_TO_RETRY
 from odoo.tools import SQL, config
 
 from odoo.addons.muk_ai.tools import (
@@ -267,6 +268,11 @@ class AISession(models.Model):
         copy=False,
     )
 
+    awaiting_user = fields.Boolean(
+        compute='_compute_awaiting_user',
+        string='Awaiting User',
+    )
+
     event_ids = fields.One2many(
         comodel_name='muk_ai.session.event',
         string='Events',
@@ -336,6 +342,12 @@ class AISession(models.Model):
             'A signature in this list bypasses the approval gate on the '
             'next matching tool call. Scope is this session only.'
         ),
+        readonly=True,
+    )
+
+    disabled_tool_sources = fields.Json(
+        string='Switched Off Tools',
+        help='Keys of the tool sources switched off for this chat.',
         readonly=True,
     )
 
@@ -623,7 +635,11 @@ class AISession(models.Model):
         """
         agent = self.agent_id or self.env['muk_ai.agent']._get_default()
         lines = []
-        route = agent._web_search_route()
+        route = (
+            agent._web_search_route()
+            if self._tool_source_enabled('web_search')
+            else None
+        )
         if route == 'native':
             lines.append(
                 'Web search: provider built-in — search the web whenever '
@@ -634,9 +650,15 @@ class AISession(models.Model):
                 'Web search: unavailable — say so plainly instead of '
                 'guessing at facts that may have moved on.'
             )
-        if agent._resolve_model_for('image'):
+        if (
+            self._tool_source_enabled('image_generation')
+            and agent._resolve_model_for('image')
+            and agent._admits_tool('generate_image')
+        ):
             lines.append('Image generation: available through generate_image.')
-        if agent._code_interpreter_route():
+        if self._tool_source_enabled('code_interpreter') and (
+            agent._code_interpreter_route()
+        ):
             lines.append(
                 'Code interpreter: provider-side sandboxed Python, for '
                 'analytics over data you already fetched.'
@@ -654,6 +676,13 @@ class AISession(models.Model):
             f'Company: {self.env.company.name} (res.company,{self.env.company.id})',
             f'Approval mode: {self._effective_approval_mode() if self and self.id else "ask"}',
         ]
+        if (
+            self._effective_approval_mode() if self and self.id else 'ask'
+        ) == 'ask' and (
+            gated := self.env['ir.model'].sudo().search([('ai_sensitive', '=', True)])
+        ):
+            models_list = ', '.join(sorted(gated.mapped('model')))
+            lines.append(f'Approval gate (the system asks the user): {models_list}')
         if len(self.env.user.company_ids) > 1:
             names = ', '.join(self.env.user.company_ids.sorted('id').mapped('name'))
             lines.append(f'Companies accessible: {names}')
@@ -668,7 +697,69 @@ class AISession(models.Model):
         runtime resolves — provider, context window, every modality — reads
         through here, so an override placed on it reaches all of them.
         """
+        if modality == 'image' and not self._tool_source_enabled('image_generation'):
+            return self.env['muk_ai.model']
         return self.agent_id._resolve_model_for(modality)
+
+    def _tool_source_enabled(self, key: str) -> bool:
+        """Return whether the tool source ``key`` is switched on for this chat."""
+        return key not in (self.disabled_tool_sources or [])
+
+    def _tool_sources(self) -> list[dict]:
+        """Return the tool sources a user can switch off for this chat.
+
+        A source is ``{key, section, icon, label, hint, enabled}``, a connector also
+        lists its ``items``; the abilities listed are those the agent has.
+        """
+        agent = self.agent_id
+        abilities = [
+            (
+                'web_search',
+                'fa-globe',
+                _('Web search'),
+                _('Search the web for current information'),
+                agent._web_search_route(),
+            ),
+            (
+                'image_generation',
+                'fa-picture-o',
+                _('Images'),
+                _('Create images from a description'),
+                agent._resolve_model_for('image'),
+            ),
+            (
+                'code_interpreter',
+                'fa-terminal',
+                _('Code interpreter'),
+                _('Run code to calculate and analyse data'),
+                agent._code_interpreter_route(),
+            ),
+        ]
+        section = _('Abilities')
+        return [
+            {
+                'key': key,
+                'section': section,
+                'icon': icon,
+                'label': label,
+                'hint': hint,
+                'enabled': self._tool_source_enabled(key),
+            }
+            for key, icon, label, hint, available in abilities
+            if available
+        ]
+
+    def _web_search_route(self) -> str | None:
+        """Return the agent's web search route, unless this chat switched it off."""
+        if not self._tool_source_enabled('web_search'):
+            return None
+        return self.agent_id._web_search_route()
+
+    def _code_interpreter_route(self) -> str | None:
+        """Return the agent's code interpreter route, unless this chat switched it off."""
+        if not self._tool_source_enabled('code_interpreter'):
+            return None
+        return self.agent_id._code_interpreter_route()
 
     def _resolve_provider(self) -> models.BaseModel:
         """Return the provider backing this session's chat model."""
@@ -876,7 +967,7 @@ class AISession(models.Model):
             catalog = self.agent_id.apply_tool_filter(catalog)
         kinds = self._available_client_kinds()
         hidden = set()
-        if self.agent_id._web_search_route() != 'tool':
+        if self._web_search_route() != 'tool':
             hidden.add('web_search')
         if not self._resolve_model_for('image'):
             hidden.add('generate_image')
@@ -1017,6 +1108,7 @@ class AISession(models.Model):
                     'session_id': self.id,
                     'name': self.name,
                     'state': self.state,
+                    'awaiting_user': self.awaiting_user,
                 },
             )
 
@@ -1027,6 +1119,8 @@ class AISession(models.Model):
         opened it subscribes to; what belongs in a sidebar that is not open
         has to reach its people directly instead.
         """
+        if notification_type == 'muk_ai.session_state' and not message.get('deleted'):
+            message = {**message, 'awaiting_user': self.awaiting_user}
         for partner in self._audience_partners():
             self.env['bus.bus']._sendone(partner, notification_type, message)
 
@@ -1453,6 +1547,20 @@ class AISession(models.Model):
         """Commit outside tests, re-raising on serialization conflicts."""
         commit_safe(self.env)
 
+    @contextmanager
+    def _read_committed(self) -> Iterator[models.BaseModel]:
+        """Yield the session in a transaction of its own that reads committed rows.
+
+        A row lock taken there waits for a busy worker's commit instead of
+        failing on it. A test runs in its own transaction instead.
+        """
+        if modules.module.current_test:
+            yield self
+            return
+        with self.env.registry.cursor() as cr:
+            cr.execute(SQL('SET TRANSACTION ISOLATION LEVEL READ COMMITTED'))
+            yield self.with_env(self.env(cr=cr))
+
     def _transition_state(self, state: str, error: str | None = None) -> None:
         """Persist a new state and publish the matching state event."""
         self.write({'state': state} | ({'error_message': error} if error else {}))
@@ -1651,19 +1759,30 @@ class AISession(models.Model):
         return True
 
     def _dispatch_tool_call(self, name: str, arguments: dict, call_id: str) -> tuple:
-        """Execute a tool call and return its output and success flag."""
+        """Execute a tool call and return its output and success flag.
+
+        The chat's own context keys win over those of the tool arguments.
+        """
         if name == 'tool_load':
             output = self._dispatch_tool_load(arguments, parent_call_id=call_id)
             return output, 'error' not in output
         enforce_scope = self._enforce_tool_scope()
         arguments, resolved_refs = self._resolve_value_refs(arguments)
+        bound = self._tool_dispatch_context()
+        if isinstance(arguments, dict) and isinstance(
+            context := arguments.get('context'), dict
+        ):
+            arguments = {
+                **arguments,
+                'context': {k: v for k, v in context.items() if k not in bound},
+            }
         try:
-            tool_env = self.env(
-                context={**self.env.context, **self._tool_dispatch_context()}
-            )
+            tool_env = self.env(context={**self.env.context, **bound})
             text, _info = tool_env['muk_mcp.tool']._call(
                 name, arguments, tool_env, enforce_scope=enforce_scope
             )
+        except (*PG_CONCURRENCY_EXCEPTIONS_TO_RETRY, ConcurrencyError):
+            raise
         except Exception as error:
             return {'error': str(error)}, False
         self._maybe_publish_ui_action(text, name, call_id)
@@ -2103,10 +2222,10 @@ class AISession(models.Model):
                 ),
                 reasoning_effort=self._effective_reasoning_effort(),
                 enable_web_search=(
-                    bool(agent) and self.agent_id._web_search_route() == 'native'
+                    bool(agent) and self._web_search_route() == 'native'
                 ),
                 enable_code_interpreter=(
-                    bool(agent) and self.agent_id._code_interpreter_route() == 'native'
+                    bool(agent) and self._code_interpreter_route() == 'native'
                 ),
                 cache_key=f'muk_ai.session:{self.id}',
             )
@@ -3164,27 +3283,27 @@ class AISession(models.Model):
         self.ensure_one()
         self.check_access('write')
         self.flush_recordset()
-        self.env.cr.execute(
-            'SELECT state FROM muk_ai_session WHERE id = %s FOR UPDATE',
-            [self.id],
-        )
-        row = self.env.cr.fetchone()
-        state = row[0] if row else self.state
-        self.invalidate_recordset(['state'])
-        if state not in ('running', 'waiting', 'compacting'):
-            snapshot = self.get_snapshot()
-            snapshot['queue_rejected_state'] = state
-            return snapshot
-        self.env['muk_ai.session.pending'].create(
-            {
-                'session_id': self.id,
-                'content': user_message or '',
-                'attachment_ids': list(attachment_ids or []),
-            }
-        )
-        self.invalidate_recordset(['pending_ids'])
-        self._publish_event('queue', {'pending': self._serialize_pending()})
-        return self.get_snapshot()
+        with self._read_committed() as session:
+            session.env.cr.execute(
+                SQL(
+                    'SELECT state FROM muk_ai_session WHERE id = %s FOR UPDATE',
+                    session.id,
+                )
+            )
+            state = session.env.cr.fetchone()[0]
+            session.invalidate_recordset(['state'])
+            if state not in ('running', 'waiting', 'compacting'):
+                return {**session.get_snapshot(), 'queue_rejected_state': state}
+            session.env['muk_ai.session.pending'].create(
+                {
+                    'session_id': session.id,
+                    'content': user_message or '',
+                    'attachment_ids': list(attachment_ids or []),
+                }
+            )
+            session.invalidate_recordset(['pending_ids'])
+            session._publish_event('queue', {'pending': session._serialize_pending()})
+            return session.get_snapshot()
 
     def cancel_queued(self, index: int) -> dict:
         """Remove a queued message by index and return the snapshot.
@@ -3935,6 +4054,7 @@ class AISession(models.Model):
             'total_output_cost': self.total_output_cost,
             'pending_user_messages': self._serialize_pending(),
             'can_write': self.can_write,
+            'tool_sources': self._tool_sources(),
             **self._state_metrics(),
         }
         if include_conversation:
@@ -4391,6 +4511,19 @@ class AISession(models.Model):
         self._publish_event('state', {'state': self.state})
         return self.get_snapshot()
 
+    def set_tool_source(self, key: str, enabled: bool) -> dict:
+        """Switch a tool source of this chat on or off.
+
+        :raise AccessError: when the caller may only read the session
+        :raise UserError: when the chat has no tool source ``key``
+        """
+        self.check_access('write')
+        if key not in {source['key'] for source in self._tool_sources()}:
+            raise UserError(_('Unknown tool source %(key)r.', key=key))
+        disabled = set(self.disabled_tool_sources or []) - {key}
+        self.disabled_tool_sources = sorted(disabled if enabled else disabled | {key})
+        return self.get_snapshot()
+
     def set_reasoning_effort(self, effort: str | None) -> dict:
         """Override the effort tier the session's turns run on.
 
@@ -4625,6 +4758,12 @@ class AISession(models.Model):
         for record in self:
             record.can_write = record in allowed
 
+    @api.depends('state')
+    def _compute_awaiting_user(self) -> None:
+        """Flag the chats that wait for their owner to answer or approve."""
+        for record in self:
+            record.awaiting_user = record.state == 'waiting'
+
     @api.depends('agent_id', 'agent_id.model_id', 'agent_id.model_id.context_window')
     def _compute_context_window(self) -> None:
         """Resolve the effective context window for each session."""
@@ -4774,6 +4913,7 @@ class AISession(models.Model):
                         'agent_reasoning_effort': (
                             record.agent_reasoning_effort or False
                         ),
+                        'tool_sources': record._tool_sources(),
                     },
                 )
         return result

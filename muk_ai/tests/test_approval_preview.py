@@ -86,6 +86,60 @@ class TestApprovalPreview(AITestCommon):
         self.assertTrue(name_prop['label'])
         self.assertEqual(name_prop['value'], 'New Guy')
 
+    def test_preview_values_read_in_the_users_terms(self):
+        target = self.env['res.partner'].create({'name': 'Preview Target'})
+        other = self.env['res.partner'].create({'name': 'Second Target'})
+        tag = self.env['res.partner.category'].create({'name': 'Preview Tag'})
+        approval = self.env['muk_ai.approval']
+        for tool, values, expected in (
+            (
+                'update_records',
+                {'color': 24000, 'partner_latitude': 48.2, 'is_company': True},
+                [
+                    ('color', '24,000'),
+                    ('partner_latitude', '48.2000000'),
+                    ('is_company', 'Yes'),
+                ],
+            ),
+            (
+                'update_records',
+                {
+                    'category_id': [[6, 0, [tag.id]]],
+                    'child_ids': [
+                        [0, 0, {'name': 'Child', 'is_company': True}],
+                        [4, other.id],
+                        [3, other.id],
+                    ],
+                },
+                [
+                    ('category_id', 'Preview Tag'),
+                    (
+                        'child_ids',
+                        f'Child, Is a Company Yes\nSecond Target\n[3, {other.id}]',
+                    ),
+                ],
+            ),
+            (
+                'create_records',
+                [{'name': 'One'}, {'name': 'Two'}],
+                [('name', 'One'), ('name', 'Two')],
+            ),
+        ):
+            with self.subTest(tool=tool, values=values):
+                preview = approval._build_preview(
+                    tool, {'model': 'res.partner', 'ids': [target.id], 'values': values}
+                )
+                rows = preview.get('changes') or preview.get('properties')
+                self.assertEqual(
+                    [(row['field'], row.get('to', row.get('value'))) for row in rows],
+                    expected,
+                )
+        self.assertIsNone(
+            approval._build_preview(
+                'create_records', {'model': 'res.partner', 'values': ['name=X']}
+            )
+        )
+
     def test_preview_survives_missing_model_gracefully(self):
         preview = self.env['muk_ai.approval']._build_preview(
             'delete_records',

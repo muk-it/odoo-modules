@@ -6,6 +6,7 @@ import { _t } from '@web/core/l10n/translation';
 
 import { AttachmentCard } from '@muk_ai/core/attachment/attachment_card';
 import { allSlashCommands } from '@muk_ai/chat/session/use_ai_session';
+import { ToolsMenu } from '@muk_ai/chat/tools_menu/tools_menu';
 import { AIUsageMeter } from '@muk_ai/chat/usage/usage_meter';
 
 let fileInputCounter = 0;
@@ -30,7 +31,13 @@ const ACCEPT = [
  */
 export class ChatComposer extends Component {
     static template = 'muk_ai.ChatComposer';
-    static components = { AttachmentCard, Dropdown, DropdownItem, AIUsageMeter };
+    static components = {
+        AttachmentCard,
+        Dropdown,
+        DropdownItem,
+        AIUsageMeter,
+        ToolsMenu,
+    };
     static props = {
         value: { type: String },
         placeholder: { type: String },

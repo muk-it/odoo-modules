@@ -135,6 +135,7 @@ const WRITE_ACTIONS = [
     'setApprovalMode',
     'cycleApprovalMode',
     'setReasoningEffort',
+    'setToolSource',
     'approveTool',
     'approveForSession',
     'rejectTool',
@@ -225,6 +226,7 @@ export function useAiSession(options = {}) {
         effectiveReasoningEffort: false,
         reasoningEffortOptions: [],
         agentReasoningEffort: false,
+        toolSources: [],
         pendingMessages: [],
         streamIdle: false,
         resumeAt: '',
@@ -440,6 +442,9 @@ export function useAiSession(options = {}) {
                 state.reasoningEffortOptions = payload.reasoning_effort_options;
                 state.agentReasoningEffort = payload.agent_reasoning_effort;
             }
+            if (payload.tool_sources) {
+                state.toolSources = payload.tool_sources;
+            }
         } else if (event.type === 'ui_action') {
             handleUiAction(event.payload);
         } else if (event.type === 'view_context') {
@@ -597,6 +602,7 @@ export function useAiSession(options = {}) {
         state.readonly = !!sessionId;
         state.input = '';
         state.error = null;
+        state.toolSources = [];
         state.pendingAsk = null;
         state.events = [];
         state.oldestSequence = null;
@@ -620,6 +626,9 @@ export function useAiSession(options = {}) {
         state.effectiveReasoningEffort = payload.effective_reasoning_effort || false;
         state.reasoningEffortOptions = payload.reasoning_effort_options || [];
         state.agentReasoningEffort = payload.agent_reasoning_effort || false;
+        if ('tool_sources' in payload) {
+            state.toolSources = payload.tool_sources || [];
+        }
         state.error = payload.error_message || null;
         state.iterationCount = payload.iteration_count || 0;
         state.inputTokens = payload.total_input_tokens || 0;
@@ -1201,6 +1210,23 @@ export function useAiSession(options = {}) {
             );
         }
     }
+    async function setToolSource(key, enabled) {
+        if (!state.sessionId) {
+            return;
+        }
+        try {
+            const snapshot = await orm.call('muk_ai.session', 'set_tool_source', [
+                state.sessionId,
+                key,
+                enabled,
+            ]);
+            applySnapshot(snapshot);
+        } catch (error) {
+            notification.add(_t('Failed to change the tools: %s', formatError(error)), {
+                type: 'danger',
+            });
+        }
+    }
     async function setReasoningEffort(effort) {
         if (!state.sessionId) {
             return;
@@ -1728,6 +1754,7 @@ export function useAiSession(options = {}) {
         setApprovalMode,
         cycleApprovalMode,
         setReasoningEffort,
+        setToolSource,
         openPinnedContext,
         approveTool,
         approveForSession,
