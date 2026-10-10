@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai_subagents.SubagentBar">
+        <div
+            t-if="this.parent"
+            class="mk_run_bar d-flex align-items-center gap-2"
+            t-att-class="`mk_agent_${this.parent.color}`"
+        >
+            <span class="mk_run_badge d-inline-flex flex-shrink-0 align-items-center justify-content-center rounded-circle fw-semibold" t-out="this.parent.agent_name.charAt(0).toUpperCase()"/>
+            <span class="d-flex flex-column flex-grow-1 min-w-0">
+                <span class="text-truncate">
+                    Subagent of
+                    <button class="btn btn-link btn-sm mk_run_bar_parent p-0 align-baseline text-decoration-none" type="button" t-on-click="() => this.openParent()" t-out="this.parent.parent_name"/>
+                </span>
+                <span t-if="this.steerHint" class="mk_run_bar_hint small text-muted text-truncate" t-out="this.steerHint"/>
+            </span>
+        </div>
+        <SubagentRunCard t-elif="this.docked" turn="this.docked" session="this.props.session" docked="true"/>
+    </t>
+
+</templates>

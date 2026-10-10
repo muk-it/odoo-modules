@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai_subagents.SubagentRunCard">
+        <div
+            class="mk_run_card border rounded-3 overflow-hidden"
+            t-att-class="{ mk_run_card_live: this.live, mk_run_card_docked: this.props.docked }"
+            t-att-data-call-id="this.props.turn.callId"
+        >
+            <div class="mk_run_card_head d-flex align-items-center gap-2">
+                <i class="oi text-muted" data-icon="account_tree"/>
+                <span class="mk_run_card_title flex-grow-1 text-truncate fw-semibold" t-out="this.title"/>
+                <button
+                    t-if="this.props.docked and this.finishedToggle"
+                    class="btn btn-link btn-sm mk_run_card_finished p-0 text-nowrap text-decoration-none"
+                    type="button"
+                    t-on-click="() => this.showFinished.set(!this.showFinished())"
+                    t-out="this.finishedToggle"
+                />
+                <span class="mk_run_card_cost small text-muted text-nowrap" title="Cost of these subagents" t-out="this.cost"/>
+            </div>
+            <ul class="mk_run_card_rows list-unstyled mb-0">
+                <SubagentRow
+                    t-foreach="this.rows"
+                    t-as="child"
+                    t-key="child.id"
+                    child="child"
+                    run="this.run"
+                    session="this.props.session"
+                    now="this.now()"
+                />
+            </ul>
+            <div t-if="this.canStopAll" class="mk_run_card_foot d-flex align-items-center gap-2">
+                <span class="small text-muted flex-grow-1">Work already saved by a subagent is kept when it stops.</span>
+                <button class="btn btn-sm btn-outline-danger mk_run_card_stop_all text-nowrap" type="button" t-on-click="() => this.stopAll()">
+                    <i class="oi me-1" data-icon="stop"/>Stop all
+                </button>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="muk_ai_subagents.SubagentRow">
+        <t t-set="child" t-value="this.props.child"/>
+        <li
+            class="mk_run_row"
+            t-att-class="`mk_agent_${child.color} mk_run_row_${this.status}`"
+            t-att-data-child-id="child.id"
+        >
+            <button
+                class="mk_run_row_head d-flex align-items-center gap-2 w-100 border-0 bg-transparent text-start text-body"
+                type="button"
+                t-att-aria-expanded="this.open ? 'true' : 'false'"
+                t-on-click="() => this.toggle()"
+            >
+                <span class="mk_run_badge d-inline-flex flex-shrink-0 align-items-center justify-content-center rounded-circle fw-semibold" t-out="this.initial"/>
+                <span class="mk_run_row_text d-flex flex-column flex-grow-1 min-w-0">
+                    <span class="d-flex align-items-baseline gap-2 min-w-0">
+                        <span class="mk_run_row_agent fw-semibold text-nowrap" t-out="child.agent_name"/>
+                        <span class="mk_run_row_objective text-muted text-truncate" t-att-title="child.objective" t-out="child.objective"/>
+                    </span>
+                    <span class="mk_run_row_line text-truncate" t-att-title="this.line" t-out="this.line"/>
+                </span>
+                <span class="mk_run_row_elapsed small text-muted text-nowrap" t-out="this.elapsed"/>
+                <i
+                    class="oi mk_run_row_status flex-shrink-0"
+                    t-att-class="{ 'oi-spin': this.status === 'working' and !child.repeating }"
+                    t-att-data-icon="child.repeating ? 'repeat' : this.icon"
+                />
+            </button>
+            <div t-if="this.open" class="mk_run_row_body">
+                <SubagentAsk t-if="this.status === 'needs_you'" childId="child.id"/>
+                <div
+                    t-elif="child.report and this.status !== 'working'"
+                    class="mk_run_row_report mk_markdown"
+                    t-out="this.renderMarkdown(child.report)"
+                />
+                <div t-if="child.repeating" class="mk_run_row_warn small" role="alert">
+                    This subagent keeps making the same call. Give it new direction in its chat, or stop it.
+                </div>
+                <div class="mk_run_row_actions d-flex align-items-center gap-2">
+                    <button class="btn btn-sm btn-link mk_run_row_open p-0 text-decoration-none" type="button" t-on-click="() => this.onOpen()">
+                        <i class="oi me-1" data-icon="open_in_new"/>Open chat
+                    </button>
+                    <button
+                        t-if="this.canStop"
+                        class="btn btn-sm btn-link mk_run_row_stop p-0 ms-auto text-danger text-decoration-none"
+                        type="button"
+                        t-on-click="() => this.stop()"
+                    >
+                        <i class="oi me-1" data-icon="stop"/>Stop
+                    </button>
+                </div>
+            </div>
+        </li>
+    </t>
+
+    <t t-name="muk_ai_subagents.SubagentAsk">
+        <t t-set="session" t-value="this.session()"/>
+        <div class="mk_run_ask">
+            <div t-if="!session or session.state.loading" class="small text-muted py-1">
+                <i class="oi oi-spin me-1" data-icon="progress_activity"/>Loading...
+            </div>
+            <t t-elif="this.turn">
+                <ChatTurn turn="this.turn" session="session" compact="true" hideSources="true"/>
+                <div t-if="this.question" class="mk_run_ask_answer d-flex align-items-center gap-2">
+                    <input
+                        class="form-control form-control-sm"
+                        type="text"
+                        placeholder="Type your answer..."
+                        aria-label="Answer"
+                        t-model="this.answer"
+                        t-on-keydown="(ev) => this.onKeydown(ev)"
+                    />
+                    <button
+                        class="btn btn-sm btn-primary"
+                        type="button"
+                        title="Send the answer"
+                        t-att-disabled="!this.answer().trim()"
+                        t-on-click="() => this.send()"
+                    >
+                        <i class="oi" data-icon="arrow_upward"/>
+                    </button>
+                </div>
+            </t>
+        </div>
+    </t>
+
+</templates>
