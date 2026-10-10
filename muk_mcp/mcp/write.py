@@ -63,7 +63,9 @@ class MCPMixin(models.AbstractModel):
             and field.readonly
             and not field.precompute
         )
-        record = target.create(values)
+        with self.env.cr.savepoint():
+            record = target.create(values)
+            self._mcp_assert_records_allowed(model, [record.id])
         result = {'id': record.id, 'display_name': record.display_name}
         return {**result, 'ignored_fields': ignored} if ignored else result
 
@@ -107,6 +109,7 @@ class MCPMixin(models.AbstractModel):
         target_ids = self._normalize_ids(ids)
         if not target_ids:
             raise UserError(_('No record IDs provided'))
+        self._mcp_assert_records_allowed(model, target_ids)
         self._resolve_model(model).browse(target_ids).write(values or {})
         return {'success': True, 'ids': target_ids}
 
@@ -145,5 +148,6 @@ class MCPMixin(models.AbstractModel):
         target_ids = self._normalize_ids(ids)
         if not target_ids:
             raise UserError(_('No record IDs provided'))
+        self._mcp_assert_records_allowed(model, target_ids)
         self._resolve_model(model).browse(target_ids).unlink()
         return {'success': True, 'deleted_ids': target_ids}

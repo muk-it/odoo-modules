@@ -499,6 +499,58 @@ class MCPController(http.Controller):
             return {'tools': {'listChanged': False}}
         return {}
 
+    def _get_client_capabilities(
+        self, params: dict[str, Any]
+    ) -> dict[str, Any] | None:
+        """Return the capabilities the client declared, if it declared any."""
+        capabilities = params.get('capabilities')
+        if isinstance(capabilities, dict):
+            return capabilities
+        meta = params.get('_meta')
+        if isinstance(meta, dict):
+            declared = meta.get(version.META_CLIENT_CAPABILITIES)
+            if isinstance(declared, dict):
+                return declared
+        return None
+
+    def _get_client_extension(
+        self,
+        params: dict[str, Any],
+        extension_id: str,
+    ) -> dict[str, Any] | None:
+        """Return the settings the client declared for ``extension_id``."""
+        capabilities = self._get_client_capabilities(params)
+        if not isinstance(capabilities, dict):
+            return None
+        offered = capabilities.get('extensions')
+        if not isinstance(offered, dict):
+            return None
+        settings = offered.get(extension_id)
+        return settings if isinstance(settings, dict) else None
+
+    def _client_offers_extension(
+        self,
+        params: dict[str, Any],
+        extension_id: str,
+        profile: ProtocolProfile | None = None,
+    ) -> bool:
+        """Report whether the client declared support for ``extension_id``.
+
+        A session-based client that sends no extension map predates extension
+        negotiation and is treated as accepting everything. The stateless
+        revision forbids inferring capabilities, so there an extension must
+        be asked for explicitly.
+        """
+        capabilities = self._get_client_capabilities(params)
+        offered = (
+            capabilities.get('extensions')
+            if isinstance(capabilities, dict)
+            else None
+        )
+        if isinstance(offered, dict):
+            return extension_id in offered
+        return not (profile and profile.stateless)
+
     def _handle_initialized(self, params):
         session_id = request.httprequest.headers.get('Mcp-Session-Id')
         if session_id and (session := self._get_session(session_id)):

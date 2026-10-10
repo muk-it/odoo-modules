@@ -38,7 +38,7 @@ class MCPMixin(models.AbstractModel):
 
     @api.model
     def _mcp_record(self, model: str, res_id: int | None) -> models.BaseModel:
-        """Return the existing record a tool targets.
+        """Return the existing record a tool targets, checked against the record hook.
 
         :raise UserError: when the model is unknown, the id is missing or the
             record does not exist.
@@ -46,6 +46,7 @@ class MCPMixin(models.AbstractModel):
         target = self._resolve_model(model)
         if not res_id:
             raise UserError(_("A record ID is required with a model."))
+        self._mcp_assert_records_allowed(model, [res_id])
         if not (record := target.browse(res_id).exists()):
             raise UserError(_(
                 "Record %(model)s/%(id)s not found", model=model, id=res_id,
@@ -72,6 +73,36 @@ class MCPMixin(models.AbstractModel):
             'download', uri=uri, attachment_id=attachment.id
         )
         return {**result, 'file': uri, 'download_url': url}
+
+    @api.model
+    def _mcp_apply_domain(self, model: str, domain: Any) -> Any:
+        """Hook to merge a configured record domain into the caller domain."""
+        return domain
+
+    @api.model
+    def _mcp_assert_records_allowed(self, model: str, ids: list[int]) -> None:
+        """Hook to assert the records may be exposed via MCP."""
+
+    @api.model
+    def _mcp_call_model_method(
+        self, target: models.BaseModel, method: str, unbound, args: list, kwargs: dict
+    ) -> Any:
+        """Hook invoking an ``@api.model`` method reached through MCP.
+
+        Such a method carries no record ids, so the record hook never fires
+        for it and any narrowing has to happen around the call itself.
+        """
+        return unbound(target, *args, **kwargs)
+
+    @api.model
+    def _mcp_attachment_exempt_models(self) -> frozenset[str]:
+        """Return the models whose attachments are MCP payloads, not business documents.
+
+        Empty here. A module that parks the files it hands to the agent on
+        its own records adds those models, so that they stay readable when
+        another module layers access restrictions on top of MCP.
+        """
+        return frozenset()
 
     @api.model
     def _resolve_resource_target(self, uri: str) -> tuple[models.BaseModel, str]:

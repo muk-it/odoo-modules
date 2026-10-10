@@ -28,9 +28,12 @@ class MCPMixin(models.AbstractModel):
         target = self._resolve_model(model)
         target_ids = self._normalize_ids(ids)
         if target_ids:
+            self._mcp_assert_records_allowed(model, target_ids)
             return target.browse(target_ids).exists()
         return target.search(
-            domain or [], limit=limit or None, order=order or None,
+            self._mcp_apply_domain(model, domain) or [],
+            limit=limit or None,
+            order=order or None,
         )
 
     @api.model

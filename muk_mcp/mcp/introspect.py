@@ -8,6 +8,15 @@ class MCPMixin(models.AbstractModel):
     _inherit = 'muk_mcp.mixin'
 
     # ----------------------------------------------------------
+    # Helper
+    # ----------------------------------------------------------
+
+    @api.model
+    def _mcp_listable_model_names(self):
+        """Hook returning the listable model names, or ``None`` when unrestricted."""
+        return None
+
+    # ----------------------------------------------------------
     # Functions
     # ----------------------------------------------------------
 
@@ -45,9 +54,12 @@ class MCPMixin(models.AbstractModel):
     )
     def _mcp_list_models(self, search='', limit=100):
         needle = (search or '').lower()
+        listable = self._mcp_listable_model_names()
         models_data = []
         for model_name, model_cls in self.env.registry.items():
             if needle and needle not in model_name.lower():
+                continue
+            if listable is not None and model_name not in listable:
                 continue
             description = getattr(model_cls, '_description', None) or model_name
             models_data.append({
