@@ -228,8 +228,13 @@ class TestMultimodalAttachments(AITestCommon):
         blocks = user_entries[0]['content']
         text_blocks = [b for b in blocks if b['type'] == 'input_text']
         attachment_blocks = [b for b in blocks if b['type'] == 'muk_ai_attachment']
-        self.assertEqual(len(text_blocks), 1)
-        self.assertEqual(text_blocks[0]['text'], 'Describe this')
+        self.assertEqual(
+            [block['text'] for block in text_blocks],
+            [
+                'Describe this',
+                f'Attached file pic.png: odoo://attachment/{attachment.id}',
+            ],
+        )
         self.assertEqual(len(attachment_blocks), 1)
         self.assertEqual(attachment_blocks[0]['attachment_id'], attachment.id)
         self.assertIn(attachment, session.attachment_ids)
@@ -254,9 +259,10 @@ class TestMultimodalAttachments(AITestCommon):
             item for item in session.conversation or [] if item.get('role') == 'user'
         ]
         self.assertEqual(len(user_entries), 1)
-        blocks = user_entries[0]['content']
-        self.assertEqual(len(blocks), 1)
-        self.assertEqual(blocks[0]['type'], 'muk_ai_attachment')
+        self.assertEqual(
+            [block['type'] for block in user_entries[0]['content']],
+            ['input_text', 'muk_ai_attachment'],
+        )
 
     def test_resolve_rejects_unrelated_ids(self):
         session = self.env['muk_ai.session'].create({'name': 'Resolve'})

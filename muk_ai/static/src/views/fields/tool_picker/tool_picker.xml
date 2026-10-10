@@ -12,8 +12,7 @@
                     sources="autocompleteSources"
                     onSelect.bind="onSelectTool"
                     placeholder="state.selected.length ? '' : (props.placeholder || 'Add a tool...')"
-                    resetOnSelect="true"
-                    class="'o_input'"/>
+                    resetOnSelect="true"/>
             </div>
         </div>
     </t>

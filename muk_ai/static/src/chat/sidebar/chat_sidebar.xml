@@ -14,7 +14,7 @@
                 <t t-if="session.state === 'running'">
                     <i class="fa fa-circle-o-notch fa-spin" />
                 </t>
-                <t t-elif="session.state === 'waiting'">
+                <t t-elif="session.awaiting_user">
                     <i class="fa fa-question" />
                 </t>
                 <t t-elif="session.state === 'error'">
@@ -44,7 +44,7 @@
                     t-esc="session.space_id[1]"
                 />
                 <small class="mk_sidebar_sub text-muted" t-if="session.state === 'running'">thinking…</small>
-                <small class="mk_sidebar_sub text-muted" t-elif="session.state === 'waiting'">awaiting you</small>
+                <small class="mk_sidebar_sub text-muted" t-elif="session.awaiting_user">awaiting you</small>
             </div>
             <div class="mk_sidebar_actions" t-if="isOwn(session)">
                 <button

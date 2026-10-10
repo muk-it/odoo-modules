@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.ToolsMenu" owl="1">
+        <Dropdown
+            t-if="this.sources.length"
+            togglerClass="'btn mk_attach mk_tools_toggle rounded-circle mb-0'"
+            menuClass="'mk_tools_menu'"
+            position="'top-start'"
+            title="'Tools'"
+            showCaret="false"
+        >
+            <t t-set-slot="toggler">
+                <i class="fa fa-sliders"/>
+            </t>
+            <t t-set-slot="default">
+                <div t-foreach="this.sections" t-as="section" t-key="section.label" class="mk_tools_section">
+                    <div class="mk_tools_title text-uppercase text-muted fw-semibold" t-out="section.label"/>
+                    <t t-foreach="section.sources" t-as="source" t-key="source.key">
+                        <div class="mk_tools_source d-flex align-items-center gap-2" t-att-data-source="source.key">
+                            <button
+                                t-if="source.items and source.items.length"
+                                type="button"
+                                class="btn btn-link mk_tools_icon mk_tools_expand p-0 text-muted"
+                                title="Tools of this connector"
+                                t-att-aria-expanded="this.local.expanded === source.key"
+                                t-on-click.stop="() => this.toggleExpanded(source.key)"
+                            >
+                                <i class="fa" t-att-class="this.local.expanded === source.key ? 'fa-angle-down' : 'fa-angle-right'"/>
+                            </button>
+                            <i t-else="" class="fa mk_tools_icon text-muted" t-att-class="source.icon"/>
+                            <span class="flex-grow-1 min-w-0">
+                                <span class="mk_tools_label d-block fw-semibold text-truncate" t-out="source.label"/>
+                                <span t-if="source.hint" class="mk_tools_hint d-block text-muted text-truncate" t-out="source.hint"/>
+                            </span>
+                            <span class="form-switch m-0 p-0">
+                                <input
+                                    type="checkbox"
+                                    role="switch"
+                                    class="form-check-input m-0"
+                                    t-att-checked="source.enabled"
+                                    t-att-disabled="this.session.state.readonly"
+                                    t-att-aria-label="source.label"
+                                    t-on-change="() => this.toggle(source)"
+                                />
+                            </span>
+                        </div>
+                        <ul t-if="this.local.expanded === source.key" class="mk_tools_items list-unstyled mb-1">
+                            <li t-foreach="source.items" t-as="item" t-key="item_index" class="d-flex align-items-center gap-2 py-1">
+                                <span class="flex-grow-1 text-truncate" t-att-title="item.hint" t-out="item.label"/>
+                                <span class="badge rounded-pill" t-att-class="'text-bg-' + item.tone" t-out="item.badge"/>
+                            </li>
+                        </ul>
+                    </t>
+                </div>
+            </t>
+        </Dropdown>
+    </t>
+
+</templates>

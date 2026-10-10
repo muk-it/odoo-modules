@@ -82,6 +82,7 @@
                             t-att-disabled="!props.canAttach ? 'disabled' : null"
                             t-on-change="(ev) => this.onFileInputChange(ev)"
                         />
+                        <ToolsMenu t-if="props.session" session="props.session"/>
                     </div>
                     <div class="mk_composer_right d-flex align-items-center gap-2">
                         <button
@@ -119,18 +120,19 @@
     </t>
 
     <t t-name="muk_ai.SessionPills" owl="1">
-        <Dropdown t-if="approval" menuClass="'mk_pill_menu'">
-            <button
-                type="button"
-                class="btn btn-sm mk_approval_pill rounded-pill border-0 d-inline-flex align-items-center gap-1"
-                t-att-class="approval.className"
-                t-att-title="approval.tooltip"
-            >
+        <Dropdown
+            t-if="approval"
+            menuClass="'mk_pill_menu'"
+            togglerClass="'btn btn-sm mk_approval_pill rounded-pill border-0 d-inline-flex align-items-center gap-1 ' + (approval.className || '')"
+            title="approval.tooltip"
+            showCaret="false"
+        >
+            <t t-set-slot="toggler">
                 <i class="fa" t-att-class="approval.icon"/>
                 <span class="mk_pill_label" t-esc="approval.label"/>
                 <i class="fa fa-angle-down mk_pill_caret"/>
-            </button>
-            <t t-set-slot="content">
+            </t>
+            <t t-set-slot="default">
                 <t t-foreach="approval.options" t-as="opt" t-key="opt.mode">
                     <DropdownItem
                         class="'mk_pill_option'"
@@ -144,18 +146,18 @@
             </t>
         </Dropdown>
         <t t-foreach="extra or []" t-as="entry" t-key="entry.key">
-            <Dropdown menuClass="'mk_pill_menu'">
-                <button
-                    type="button"
-                    class="btn btn-sm mk_session_pill rounded-pill border-0 d-inline-flex align-items-center gap-1"
-                    t-att-class="entry.pill.className"
-                    t-att-title="entry.pill.tooltip"
-                >
+            <Dropdown
+                menuClass="'mk_pill_menu'"
+                togglerClass="'btn btn-sm mk_session_pill rounded-pill border-0 d-inline-flex align-items-center gap-1 ' + (entry.pill.className || '')"
+                title="entry.pill.tooltip"
+                showCaret="false"
+            >
+                <t t-set-slot="toggler">
                     <i class="fa" t-att-class="entry.pill.icon"/>
                     <span class="mk_pill_label" t-esc="entry.pill.label"/>
                     <i class="fa fa-angle-down mk_pill_caret"/>
-                </button>
-                <t t-set-slot="content">
+                </t>
+                <t t-set-slot="default">
                     <t t-foreach="entry.pill.options" t-as="opt" t-key="opt.value">
                         <DropdownItem
                             class="'mk_pill_option'"
@@ -169,18 +171,19 @@
                 </t>
             </Dropdown>
         </t>
-        <Dropdown t-if="effort" menuClass="'mk_pill_menu'">
-            <button
-                type="button"
-                class="btn btn-sm mk_session_pill rounded-pill border-0 d-inline-flex align-items-center gap-1"
-                t-att-class="effort.className"
-                t-att-title="effort.tooltip"
-            >
+        <Dropdown
+            t-if="effort"
+            menuClass="'mk_pill_menu'"
+            togglerClass="'btn btn-sm mk_session_pill rounded-pill border-0 d-inline-flex align-items-center gap-1 ' + (effort.className || '')"
+            title="effort.tooltip"
+            showCaret="false"
+        >
+            <t t-set-slot="toggler">
                 <i class="fa fa-tachometer"/>
                 <span class="mk_pill_label" t-esc="effort.label"/>
                 <i class="fa fa-angle-down mk_pill_caret"/>
-            </button>
-            <t t-set-slot="content">
+            </t>
+            <t t-set-slot="default">
                 <t t-foreach="effort.options" t-as="opt" t-key="opt_index">
                     <DropdownItem
                         class="'mk_pill_option'"

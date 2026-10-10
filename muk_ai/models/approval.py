@@ -6,6 +6,7 @@ import json
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, MissingError
 from odoo.fields import Field
+from odoo.tools import formatLang
 
 from odoo.addons.muk_ai.tools import coerce_ids
 
@@ -166,26 +167,25 @@ class AIApproval(models.Model):
     # ----------------------------------------------------------
 
     @api.model
-    def _fmt_scalar(self, value) -> str:
-        """Render a scalar value as display text, serializing containers."""
-        if isinstance(value, (dict, list)):
-            return json.dumps(value, ensure_ascii=False)
-        return str(value)
-
-    @api.model
     def _fmt_value(self, field: Field | None, value) -> str:
-        """Render a field value as human-readable text per its field type."""
+        """Render a field value as human-readable text per its field type.
+
+        Without a field the value is rendered as a scalar, containers as JSON.
+        """
+        kind = field.type if field is not None else None
         if value is False or value is None:
             return ''
-        if field is None:
-            return self._fmt_scalar(value)
-        if field.type == 'selection':
+        if kind == 'selection':
             return dict(field._description_selection(self.env) or []).get(
                 value, str(value)
             )
-        if field.type == 'boolean':
-            return 'Yes' if value else 'No'
-        if field.type == 'many2one':
+        if kind == 'boolean':
+            return _('Yes') if value else _('No')
+        if kind in ('integer', 'float', 'monetary') and isinstance(value, int | float):
+            digits = field.get_digits(self.env) if kind == 'float' else None
+            scale = digits[1] if digits else 0 if kind == 'integer' else 2
+            return formatLang(self.env, value, digits=scale)
+        if kind == 'many2one':
             if isinstance(value, (list, tuple)) and len(value) == 2:
                 return str(value[1])
             if isinstance(value, int):
@@ -197,11 +197,20 @@ class AIApproval(models.Model):
                 except (AccessError, MissingError):
                     return _('(no access)')
             return str(value)
-        if field.type in ('many2many', 'one2many'):
+        if kind in ('many2many', 'one2many'):
             if not isinstance(value, list) or not value:
                 return '' if value == [] else str(value)
             if isinstance(value[0], (list, tuple)):
-                return f'({len(value)} command(s))'
+                return '\n'.join(
+                    ', '.join(
+                        [line['title']]
+                        + [
+                            f'{item["label"]} {item["value"]}'
+                            for item in line['details']
+                        ]
+                    )
+                    for line in self._fmt_lines(field, value)
+                )
             try:
                 recs = self.env[field.comodel_name].browse(value).exists()
                 return ', '.join(r.display_name or f'#{r.id}' for r in recs)
@@ -209,7 +218,49 @@ class AIApproval(models.Model):
                 return str(value)
             except (AccessError, MissingError):
                 return _('(%(count)s record(s), no access)', count=len(value))
-        return self._fmt_scalar(value)
+        if isinstance(value, (dict, list)):
+            return json.dumps(value, ensure_ascii=False)
+        return str(value)
+
+    @api.model
+    def _fmt_lines(self, field: Field | None, value) -> list[dict] | None:
+        """Render x2many commands as lines of a title and details, else ``None``.
+
+        A new line is titled by its name and details its other values; a command
+        linking records is titled by the records it links.
+        """
+        if not (
+            field is not None
+            and field.type in ('many2many', 'one2many')
+            and isinstance(value, list)
+            and value
+            and isinstance(value[0], (list, tuple))
+        ):
+            return None
+        comodel = self.env[field.comodel_name]
+        lines = []
+        for command in value:
+            title, details = json.dumps(command, ensure_ascii=False), []
+            if len(command) == 3 and command[0] == 0 and isinstance(command[2], dict):
+                texts = {
+                    fname: text
+                    for fname, raw in command[2].items()
+                    if (text := self._fmt_value(comodel._fields.get(fname), raw))
+                }
+                title = texts.pop(comodel._rec_name, '') or next(
+                    iter(texts.values()), ''
+                )
+                details = [
+                    {'label': self._field_with_label(comodel, fname)[1], 'value': text}
+                    for fname, text in texts.items()
+                    if text != title
+                ]
+            elif len(command) == 3 and command[0] == 6:
+                title = self._fmt_value(field, command[2])
+            elif len(command) >= 2 and command[0] == 4:
+                title = self._fmt_value(field, [command[1]])
+            lines.append({'title': title, 'details': details})
+        return lines
 
     @api.model
     def _targets_display_names(self, model_name: str, ids: list[int]) -> list[dict]:
@@ -273,6 +324,7 @@ class AIApproval(models.Model):
             'label': label,
             'from': froms[0] if len(set(froms)) == 1 else '(varies)',
             'to': self._fmt_value(field, new_value),
+            'lines': self._fmt_lines(field, new_value),
         }
 
     @api.model
@@ -285,6 +337,7 @@ class AIApproval(models.Model):
             'field': fname,
             'label': label,
             'value': self._fmt_value(field, new_value),
+            'lines': self._fmt_lines(field, new_value),
         }
 
     @api.model
@@ -316,9 +369,29 @@ class AIApproval(models.Model):
                 'targets': targets(),
             }
         values = arguments.get('values')
+        model = self.env[model_name] if model_name in self.env else None
+        if tool_name == 'create_records':
+            records = values if isinstance(values, list) else [values]
+            if not records or not all(isinstance(vals, dict) for vals in records):
+                return None
+            several = len(records) > 1
+            return {
+                **base,
+                'kind': 'create',
+                'title': f'New {len(records)} {display} records'
+                if several
+                else f'New {display}',
+                'properties': [
+                    {
+                        **self._build_property(model, fname, new_value),
+                        **({'record': index} if several else {}),
+                    }
+                    for index, vals in enumerate(records, 1)
+                    for fname, new_value in vals.items()
+                ],
+            }
         if not isinstance(values, dict):
             return None
-        model = self.env[model_name] if model_name in self.env else None
         if tool_name == 'update_records':
             current = self._read_current(model, ids, list(values))
             return {
@@ -328,16 +401,6 @@ class AIApproval(models.Model):
                 'targets': targets(),
                 'changes': [
                     self._build_change(model, ids, current, fname, new_value)
-                    for fname, new_value in values.items()
-                ],
-            }
-        if tool_name == 'create_records':
-            return {
-                **base,
-                'kind': 'create',
-                'title': f'New {display}',
-                'properties': [
-                    self._build_property(model, fname, new_value)
                     for fname, new_value in values.items()
                 ],
             }

@@ -1,0 +1,33 @@
+.mk_tools_menu {
+    width: 320px;
+    max-width: calc(100vw - 2rem);
+    max-height: #{'min(70vh, 480px)'};
+    overflow-y: auto;
+    .mk_tools_section + .mk_tools_section {
+        margin-top: 0.35rem;
+        padding-top: 0.35rem;
+        border-top: 1px solid var(--border-color);
+    }
+    .mk_tools_title {
+        padding: 0.25rem 0.75rem;
+        font-size: 0.68rem;
+        letter-spacing: 0.04em;
+    }
+    .mk_tools_source {
+        padding: 0.35rem 0.75rem;
+        font-size: 0.82rem;
+        line-height: 1.35;
+    }
+    .mk_tools_icon {
+        width: 1.1rem;
+        font-size: 1rem;
+        text-align: center;
+    }
+    .mk_tools_hint {
+        font-size: 0.74rem;
+    }
+    .mk_tools_items {
+        padding: 0 0.75rem 0.25rem 2.6rem;
+        font-size: 0.78rem;
+    }
+}

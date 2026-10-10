@@ -11,6 +11,7 @@ import { debounce } from '@web/core/utils/timing';
 import { Dropdown } from '@web/core/dropdown/dropdown';
 import { DropdownItem } from '@web/core/dropdown/dropdown_item';
 
+import { chatLists } from '@muk_ai/chat/utils';
 import { useNotificationBadge } from '@muk_ai/core/notification_badge';
 import { busSubscribe, busUnsubscribe } from '@muk_ai/core/compat/bus';
 
@@ -25,7 +26,6 @@ export class MukAISystray extends Component {
     static props = {};
     setup() {
         this.orm = useService('orm');
-        this.user = useService('user');
         this.bus = this.env.services.bus_service;
         this.action = useService('action');
         this.chatWindow = useService('muk_ai.chat_window');
@@ -62,7 +62,7 @@ export class MukAISystray extends Component {
     async _load() {
         const seq = ++this._loadSeq;
         try {
-            const domain = this.sessionDomain;
+            const domain = chatLists.domain;
             const [recent, unread] = await Promise.all([
                 this.orm.searchRead('muk_ai.session', domain, ['id', 'name', 'state'], {
                     limit: SYSTRAY_LIMIT,
@@ -127,13 +127,6 @@ export class MukAISystray extends Component {
             updated,
             ...this.state.sessions.slice(idx + 1),
         ];
-    }
-    /**
-     * The chats this list offers, so an extension can narrow what counts.
-     * @returns {Array} a search domain over `muk_ai.session`
-     */
-    get sessionDomain() {
-        return [['user_id', '=', this.user.userId]];
     }
     get runningCount() {
         return this.state.sessions.filter(
