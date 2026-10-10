@@ -48,7 +48,17 @@ class MCPMixin(models.AbstractModel):
 
     @api.model
     def _mcp_apply_domain(self, model: str, domain) -> list:
-        """Combine the caller domain with the model's configured record domain."""
+        """Combine the caller domain with the model's configured record domain.
+
+        :raise AccessError: when a field path of the domain passes through a
+            model that is not readable via MCP.
+        """
+        for leaf in coerce_json_value(domain) or []:
+            if isinstance(leaf, list | tuple) and len(leaf) == 3:
+                path = str(leaf[0]).split('.')
+                self._mcp_assert_path_allowed(
+                    model, [*path, ''] if leaf[1] in ('any', 'not any') else path
+                )
         extra = self._mcp_record_domain(model)
         if extra is None:
             return domain
@@ -152,13 +162,28 @@ class MCPMixin(models.AbstractModel):
         return record, field
 
     @api.model
+    def _mcp_assert_path_allowed(self, model: str, path: list[str]) -> None:
+        """Assert every model a field path passes through is readable via MCP.
+
+        :raise AccessError: when a related model on the path is not exposed.
+        """
+        target = self._resolve_model(model)
+        for name in path[:-1]:
+            field = target._fields.get(name)
+            if not field or not field.relational:
+                return
+            target = self.with_context(mcp_tool_category='read')._resolve_model(
+                field.comodel_name
+            )
+
+    @api.model
     def _mcp_assert_commands_allowed(self, model: str, values: dict) -> None:
         """Assert the x2many commands in ``values`` only change exposed models.
 
         :raise AccessError: when a command creates, updates or deletes records
             of a model that is not writable via MCP.
         """
-        fields = self.env[model]._fields
+        fields = self._resolve_model(model)._fields
         for name, commands in (values or {}).items():
             field = fields.get(name)
             if not field or field.type not in ('one2many', 'many2many'):
@@ -189,12 +214,7 @@ class MCPMixin(models.AbstractModel):
     ) -> dict[str, Any]:
         """Refuse an export whose field paths pass through an unexposed model."""
         for path in fields or []:
-            target = self._resolve_model(model)
-            for name in path.split('/')[:-1]:
-                field = target._fields.get(name)
-                if not field or not field.relational:
-                    break
-                target = self._resolve_model(field.comodel_name)
+            self._mcp_assert_path_allowed(model, path.split('/'))
         return super()._mcp_export_records(
             model,
             fields,
@@ -219,3 +239,22 @@ class MCPMixin(models.AbstractModel):
         if isinstance(values, dict):
             self._mcp_assert_commands_allowed(model, values)
         return super()._mcp_update_records(model, ids, values)
+
+    @api.model
+    def _mcp_call_method(
+        self,
+        model: str,
+        method: str,
+        ids=None,
+        args: str | None = None,
+        kwargs: dict[str, Any] | None = None,
+    ) -> Any:
+        """Refuse x2many commands in the arguments that write to an unexposed model."""
+        keyword = coerce_json_value(kwargs) or {}
+        for value in [*(coerce_json_value(args) or []), *keyword.values()]:
+            for values in value if isinstance(value, list) else [value]:
+                if isinstance(values, dict):
+                    self._mcp_assert_commands_allowed(model, values)
+        return super()._mcp_call_method(
+            model, method, ids=ids, args=args, kwargs=kwargs
+        )

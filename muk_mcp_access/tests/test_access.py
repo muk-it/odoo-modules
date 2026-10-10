@@ -274,6 +274,13 @@ class TestMCPAccessModel(TransactionCase):
                 {'values': {'name': 'MCP_BOUNDARY', 'ref': 'MCP', 'bank_ids': bank}},
             ),
             ('update_records', {'ids': [partner.id], 'values': {'bank_ids': bank}}),
+            (
+                'call_method',
+                {
+                    'method': 'create',
+                    'args': [{'name': 'MCP_BOUNDARY', 'ref': 'MCP', 'bank_ids': bank}],
+                },
+            ),
         ):
             with self.subTest(tool=tool, arguments=arguments):
                 with self.assertRaises(AccessError):
@@ -352,12 +359,13 @@ class TestMCPAccessModel(TransactionCase):
                 'domain': "[('code', '=', 'BE')]",
             }
         )
-        for fields, ids in (
-            (['code'], [self.env.ref('base.fr').id]),
-            (['currency_id/name'], [self.env.ref('base.be').id]),
+        for arguments in (
+            {'fields': ['code'], 'ids': [self.env.ref('base.fr').id]},
+            {'fields': ['currency_id/name'], 'ids': [self.env.ref('base.be').id]},
+            {'fields': ['code'], 'domain': [('currency_id.name', '=', 'EUR')]},
         ):
-            with self.subTest(fields=fields), self.assertRaises(AccessError):
-                self.mixin._mcp_export_records('res.country', fields=fields, ids=ids)
+            with self.subTest(**arguments), self.assertRaises(AccessError):
+                self.mixin._mcp_export_records('res.country', **arguments)
 
     def test_call_method_blocks_out_of_domain(self):
         self.access_model.create(
