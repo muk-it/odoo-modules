@@ -6,6 +6,8 @@ from odoo.exceptions import AccessError, UserError
 from odoo.tests import common, tagged
 
 from odoo.addons.muk_mcp.core import tool as core_tool
+from odoo.addons.muk_mcp.core.registry import invalidate_registry_cache
+from odoo.addons.muk_mcp.tests.common import cache_tools
 
 
 def _echo_tool(self, text='hello'):
@@ -66,17 +68,15 @@ class TestMcpDecoratorTool(common.TransactionCase):
     def tearDownClass(cls) -> None:
         delattr(cls.partner_cls, '_mcp_test_echo')
         delattr(cls.partner_cls, '_mcp_test_write')
-        core_tool.invalidate_registry_cache(cls.env)
+        invalidate_registry_cache(cls.env)
         super().tearDownClass()
 
     def setUp(self) -> None:
         super().setUp()
-        registry = self.env.registry
-        registry._muk_mcp_method_cache = dict(TEST_REGISTRY)
-        registry._muk_mcp_method_cache_key = len(registry._init_modules or ())
+        self.cached = cache_tools(self.env, TEST_REGISTRY)
 
     def tearDown(self) -> None:
-        core_tool.invalidate_registry_cache(self.env)
+        invalidate_registry_cache(self.env)
         super().tearDown()
 
     # ----------------------------------------------------------
@@ -106,6 +106,9 @@ class TestMcpDecoratorTool(common.TransactionCase):
         self.assertIn('mcp_test_write', names)
         echo_entry = next(t for t in tools if t['name'] == 'mcp_test_echo')
         self.assertEqual(echo_entry['description'], 'Echo back the provided text.')
+        hints = {tool['name']: tool['annotations']['readOnlyHint'] for tool in tools}
+        self.assertTrue(hints['mcp_test_echo'])
+        self.assertFalse(hints['mcp_test_write'])
         self.assertEqual(
             echo_entry['inputSchema']['properties']['text']['type'],
             'string',
@@ -209,7 +212,7 @@ class TestMcpDecoratorTool(common.TransactionCase):
 
         mixin_cls = type(self.env['muk_mcp.mixin'])
         mixin_cls._mcp_scanner_probe = _mcp_scanner_probe
-        core_tool.invalidate_registry_cache(self.env)
+        invalidate_registry_cache(self.env)
         try:
             index = core_tool.get_tool_index(self.env)
             self.assertIn('mcp_scanner_probe', index)
@@ -226,7 +229,7 @@ class TestMcpDecoratorTool(common.TransactionCase):
             self.assertEqual(json.loads(text), {'pong': 'pong'})
         finally:
             delattr(mixin_cls, '_mcp_scanner_probe')
-            core_tool.invalidate_registry_cache(self.env)
+            invalidate_registry_cache(self.env)
 
     def test_recordset_result_serialized_via_record_encoder(self):
         partner = self.env['res.partner'].create({'name': 'MCP Encoder Test'})
@@ -235,7 +238,10 @@ class TestMcpDecoratorTool(common.TransactionCase):
             return self.env['res.partner'].browse(partner.id)
 
         self.partner_cls._mcp_test_record = _return_recordset
-        self.env.registry._muk_mcp_method_cache['mcp_test_record'] = {
+        self.cached['mcp_test_record'] = {
+            'name': 'mcp_test_record',
+            'registry': None,
+            'meta': {},
             'kind': 'method',
             'model': 'res.partner',
             'method': '_mcp_test_record',

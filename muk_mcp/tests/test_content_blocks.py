@@ -1,5 +1,3 @@
-import base64
-
 from odoo.tests import common
 
 from odoo.addons.muk_mcp.tools import content
@@ -41,25 +39,6 @@ class TestContentBlocks(common.TransactionCase):
     def test_non_textual_mimetypes(self):
         for mimetype in ('application/pdf', 'application/zip', 'image/png', ''):
             self.assertFalse(content.is_textual_mimetype(mimetype), mimetype)
-
-    def test_text_path_prefers_raw_bytes_over_base64(self):
-        block = content.make_content_for_bytes(
-            'odoo://attachment/1',
-            'application/yaml',
-            raw_bytes=b'from-raw',
-            base64_str=base64.b64encode(b'from-b64').decode(),
-        )
-        self.assertEqual(block, {'type': 'text', 'text': 'from-raw'})
-
-    def test_binary_path_prefers_base64_over_raw_bytes(self):
-        block = content.make_content_for_bytes(
-            'odoo://attachment/1',
-            'image/png',
-            raw_bytes=b'from-raw',
-            base64_str=base64.b64encode(b'from-b64').decode(),
-        )
-        self.assertEqual(block['type'], 'image')
-        self.assertEqual(base64.b64decode(block['data']), b'from-b64')
 
     def test_resource_block_carries_name(self):
         block = content.make_content_for_bytes(

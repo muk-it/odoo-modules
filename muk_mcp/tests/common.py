@@ -7,10 +7,25 @@ from typing import Any
 from requests import Response
 
 from odoo import models
+from odoo.api import Environment
 from odoo.tests import HttpCase
 from odoo.tests.common import new_test_user
 
+from odoo.addons.muk_mcp.core.registry import CACHE
 from odoo.addons.muk_mcp.tools import version
+
+
+def cache_tools(
+    env: Environment, entries: dict[str, dict[str, Any]]
+) -> dict[str, dict[str, Any]]:
+    """Replace the cached method tool scan with ``entries`` and return it."""
+    index = {
+        name: {'name': name, 'registry': None, 'meta': {}, **entry}
+        for name, entry in entries.items()
+    }
+    caches = vars(env.registry).setdefault(CACHE, {})
+    caches['__mcp_tool__'] = (len(env.registry._init_modules), index)
+    return index
 
 
 class MCPHttpCase(HttpCase):

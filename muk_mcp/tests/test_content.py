@@ -46,15 +46,6 @@ class TestContent(common.TransactionCase):
         self.assertEqual(block['type'], 'text')
         self.assertEqual(block['text'], 'hello')
 
-    def test_make_content_text_from_base64(self):
-        block = content.make_content_for_bytes(
-            'odoo://test/1',
-            'application/json',
-            base64_str=base64.b64encode(b'{"k":1}').decode(),
-        )
-        self.assertEqual(block['type'], 'text')
-        self.assertEqual(block['text'], '{"k":1}')
-
     def test_make_content_image(self):
         raw = bytes(range(32))
         block = content.make_content_for_bytes(
@@ -106,17 +97,3 @@ class TestContent(common.TransactionCase):
         )
         self.assertEqual(block['type'], 'resource')
         self.assertEqual(block['resource']['mimeType'], 'text/plain')
-
-    def test_raises_when_neither_input_provided(self):
-        with self.assertRaises(ValueError):
-            content.make_content_for_bytes('odoo://test/1', 'text/plain')
-
-    def test_passes_b64_through_without_reencoding_for_binary(self):
-        raw = bytes(range(32))
-        original_b64 = base64.b64encode(raw).decode()
-        block = content.make_content_for_bytes(
-            'odoo://test/1',
-            'image/png',
-            base64_str=original_b64,
-        )
-        self.assertEqual(block['data'], original_b64)

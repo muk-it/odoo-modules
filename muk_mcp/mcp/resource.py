@@ -9,7 +9,7 @@ from odoo.exceptions import UserError
 from odoo.addons.muk_mcp.core.tool import mcp_tool
 from odoo.addons.muk_mcp.models.transfer import TRANSFER_MINUTES
 from odoo.addons.muk_mcp.tools.content import (
-    is_textual_mimetype,
+    is_inline_mimetype,
     make_content_for_bytes,
     normalize_mimetype,
 )
@@ -19,6 +19,8 @@ from odoo.addons.muk_mcp.tools.protocol import (
     make_text_content,
 )
 
+READ_RESOURCE_FORMATS = ('auto', 'text', 'resource')
+
 
 class MCPMixin(models.AbstractModel):
     """Add the MCP resource-reading tools to the shared MCP mixin."""
@@ -26,24 +28,8 @@ class MCPMixin(models.AbstractModel):
     _inherit = 'muk_mcp.mixin'
 
     # ----------------------------------------------------------
-    # Properties
-    # ----------------------------------------------------------
-
-    @property
-    def READ_RESOURCE_FORMATS(self) -> tuple[str, ...]:
-        """Return the resource output formats this mixin can read."""
-        return ('auto', 'text', 'resource')
-
-    # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
-
-    @api.model
-    def _is_inline_block_mimetype(self, normalized: str) -> bool:
-        """Return whether the mimetype is emitted as an inline content block."""
-        return is_textual_mimetype(normalized) or normalized.startswith(
-            ('image/', 'audio/')
-        )
 
     @api.model
     def _mcp_read_resource_indexed(
@@ -152,19 +138,16 @@ class MCPMixin(models.AbstractModel):
 
         :raise UserError: when ``format`` is not one of ``READ_RESOURCE_FORMATS``.
         """
-        if format not in self.READ_RESOURCE_FORMATS:
+        if format not in READ_RESOURCE_FORMATS:
             raise UserError(
                 _(
                     'Unsupported format %(f)r; expected one of: %(opts)s.',
                     f=format,
-                    opts=', '.join(self.READ_RESOURCE_FORMATS),
+                    opts=', '.join(READ_RESOURCE_FORMATS),
                 ),
             )
-        mimetype, raw, name = self._resolve_resource_uri(
-            uri,
-        )
-        normalized = normalize_mimetype(mimetype)
-        if self._is_inline_block_mimetype(normalized):
+        mimetype, raw, name = self._resolve_resource_uri(uri)
+        if is_inline_mimetype(normalize_mimetype(mimetype)):
             return ToolContent(
                 [
                     make_content_for_bytes(

@@ -8,7 +8,8 @@ from odoo import api, models
 from odoo.tests import tagged
 from odoo.tests.common import new_test_user
 
-from odoo.addons.muk_mcp.core.tool import invalidate_registry_cache, mcp_tool
+from odoo.addons.muk_mcp.core.registry import invalidate_registry_cache
+from odoo.addons.muk_mcp.core.tool import mcp_tool
 from odoo.addons.muk_mcp.tests.common import MCPHttpCase
 from odoo.addons.muk_mcp.tools import version
 

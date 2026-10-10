@@ -166,6 +166,12 @@ class TestReadResource(common.TransactionCase):
         self.assertEqual(resource['name'], 'blob.bin')
         self.assertEqual(base64.b64decode(resource['blob']), raw)
 
+    def test_untyped_attachment_takes_the_type_of_its_name(self):
+        raw = b'# Guide\n\nRead me.'
+        att = self._make_attachment('guide.md', 'application/octet-stream', raw)
+        block = self._call(self._attachment_uri(att))
+        self.assertEqual(block, {'type': 'text', 'text': raw.decode()})
+
     def test_pdf_attachment_unparseable_returns_resource_only(self):
         raw = b'%PDF-1.4\n%not-really-a-pdf'
         att = self._make_attachment('doc.pdf', 'application/pdf', raw)

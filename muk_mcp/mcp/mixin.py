@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import mimetypes
 from collections.abc import Callable
 from typing import Any
 
@@ -9,10 +10,8 @@ from odoo.exceptions import AccessError, UserError
 from odoo.http import request
 from odoo.tools.mimetypes import guess_mimetype
 
-from odoo.addons.muk_mcp.tools.content import (
-    is_textual_mimetype,
-    normalize_mimetype,
-)
+from odoo.addons.muk_mcp.tools.content import make_resource_entry, normalize_mimetype
+from odoo.addons.muk_mcp.tools.parser import normalize_ids
 from odoo.addons.muk_mcp.tools.uri import parse_uri
 
 
@@ -34,17 +33,27 @@ class MCPMixin(models.AbstractModel):
         return self.env[model]
 
     @api.model
+    def _mcp_records(self, model: str, ids) -> models.BaseModel:
+        """Return the records a tool targets by id, checked against the record hook.
+
+        :raise UserError: when the model is unknown or no id is given.
+        """
+        target = self._resolve_model(model)
+        if not (target_ids := normalize_ids(ids)):
+            raise UserError(_('No record IDs provided'))
+        self._mcp_assert_records_allowed(model, target_ids)
+        return target.browse(target_ids)
+
+    @api.model
     def _mcp_record(self, model: str, res_id: int | None) -> models.BaseModel:
         """Return the existing record a tool targets, checked against the record hook.
 
         :raise UserError: when the model is unknown, the id is missing or the
             record does not exist.
         """
-        target = self._resolve_model(model)
         if not res_id:
             raise UserError(_('A record ID is required with a model.'))
-        self._mcp_assert_records_allowed(model, [res_id])
-        if not (record := target.browse(res_id).exists()):
+        if not (record := self._mcp_records(model, res_id).exists()):
             raise UserError(
                 _('Record %(model)s/%(id)s not found', model=model, id=res_id)
             )
@@ -142,7 +151,7 @@ class MCPMixin(models.AbstractModel):
 
     @api.model
     def _resolve_resource_uri(self, uri: str) -> tuple[str, bytes, str]:
-        """Load the file an ``odoo://`` URI names, guessing a missing mimetype.
+        """Load the file an ``odoo://`` URI names and refine its mimetype.
 
         :return: a ``(mimetype, raw_bytes, name)`` tuple.
         :raise UserError: as ``_resolve_resource_target``, or when a record's
@@ -150,8 +159,8 @@ class MCPMixin(models.AbstractModel):
         """
         record, field = self._resolve_resource_target(uri)
         if record._name == 'ir.attachment':
-            return record.mimetype or '', record.raw or b'', record.name or ''
-        attachment = (
+            mimetype, raw, name = record.mimetype, record.raw or b'', record.name or ''
+        elif attachment := (
             self.env['ir.attachment']
             .sudo()
             .search(
@@ -162,8 +171,7 @@ class MCPMixin(models.AbstractModel):
                 ],
                 limit=1,
             )
-        )
-        if attachment:
+        ):
             raw, mimetype, name = (
                 attachment.raw or b'',
                 attachment.mimetype,
@@ -178,39 +186,16 @@ class MCPMixin(models.AbstractModel):
                 raw = base64.b64decode(value)
             except (ValueError, TypeError):
                 raw = value
-            mimetype, name = None, field
-        return mimetype or guess_mimetype(raw), raw, name
+            mimetype, name = guess_mimetype(raw), field
+        if normalize_mimetype(mimetype) in ('', 'application/octet-stream'):
+            mimetype = mimetypes.guess_type(name)[0] or mimetype
+        return mimetype or '', raw, name
 
     @api.model
     def _dispatch_resources_read(self, uri: str) -> dict[str, Any] | None:
-        """Build an MCP ``resources/read`` entry for a URI.
-
-        Resolves the URI, then returns the content inline as ``text`` for
-        textual mimetypes or as base64 ``blob`` otherwise. Returns ``None`` when
-        the URI is empty or cannot be resolved.
-        """
-        if not uri:
-            return None
+        """Build the ``resources/read`` entry of a URI, or ``None`` when unresolvable."""
         try:
-            mimetype, raw, name = self._resolve_resource_uri(
-                uri,
-            )
+            mimetype, raw, name = self._resolve_resource_uri(uri)
         except (UserError, AccessError):
             return None
-        raw = raw or b''
-        normalized = normalize_mimetype(mimetype)
-        entry = {'uri': uri}
-        if normalized:
-            entry['mimeType'] = normalized
-        if name:
-            entry['name'] = name
-        if is_textual_mimetype(normalized):
-            try:
-                entry['text'] = raw.decode('utf-8')
-                return entry
-            except UnicodeDecodeError:
-                pass
-        entry['blob'] = base64.b64encode(raw).decode(
-            'ascii',
-        )
-        return entry
+        return make_resource_entry(uri, mimetype, raw or b'', name)

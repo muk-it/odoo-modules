@@ -175,27 +175,3 @@ class TestProtocol(common.TransactionCase):
         content = [protocol.make_text_content('failed')]
         result = protocol.make_tool_result(content, is_error=True)
         self.assertTrue(result['isError'])
-
-    def test_make_resource_content_with_blob(self):
-        content = protocol.make_resource_content(
-            'odoo://attachment/1',
-            mime_type='application/pdf',
-            blob='CCCC',
-        )
-        self.assertEqual(content['type'], 'resource')
-        self.assertEqual(content['resource']['uri'], 'odoo://attachment/1')
-        self.assertEqual(
-            content['resource']['mimeType'],
-            'application/pdf',
-        )
-        self.assertEqual(content['resource']['blob'], 'CCCC')
-        self.assertNotIn('text', content['resource'])
-
-    def test_make_resource_content_with_text(self):
-        content = protocol.make_resource_content(
-            'odoo://thing/1',
-            mime_type='text/plain',
-            text='hi',
-        )
-        self.assertEqual(content['resource']['text'], 'hi')
-        self.assertNotIn('blob', content['resource'])

@@ -43,21 +43,13 @@ class MCPMixin(models.AbstractModel):
         :meth:`exists`; otherwise the ``domain`` is searched with ``limit`` and
         ``order``.
         """
-        target = self._resolve_model(model)
-        target_ids = normalize_ids(ids)
-        if target_ids:
-            self._mcp_assert_records_allowed(model, target_ids)
-            return target.browse(target_ids).exists()
-        return target.search(
+        if normalize_ids(ids):
+            return self._mcp_records(model, ids).exists()
+        return self._resolve_model(model).search(
             self._mcp_apply_domain(model, domain) or [],
             limit=limit or None,
             order=order or None,
         )
-
-    @api.model
-    def _build_exporter(self, format: str) -> XlsxExport | CSVExport:
-        """Return the export handler for the requested format (xlsx or csv)."""
-        return XlsxExport() if format == 'xlsx' else CSVExport()
 
     # ----------------------------------------------------------
     # Functions
@@ -141,7 +133,7 @@ class MCPMixin(models.AbstractModel):
             limit,
             order,
         )
-        exporter = self._build_exporter(format)
+        exporter = XlsxExport() if format == 'xlsx' else CSVExport()
         rows = records.export_data(list(fields)).get('datas') or []
         descriptors = [{'name': f, 'label': f, 'type': 'char'} for f in fields]
         content = exporter.from_data(descriptors, list(fields), rows)

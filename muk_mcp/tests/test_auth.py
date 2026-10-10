@@ -7,7 +7,8 @@ from odoo import api
 from odoo.tests import tagged
 from odoo.tests.common import new_test_user
 
-from odoo.addons.muk_mcp.core.tool import invalidate_registry_cache, mcp_tool
+from odoo.addons.muk_mcp.core.registry import invalidate_registry_cache
+from odoo.addons.muk_mcp.core.tool import mcp_tool
 from odoo.addons.muk_mcp.tests.common import MCPHttpCase
 
 
@@ -72,6 +73,7 @@ class TestMcpAuth(MCPHttpCase):
             {'jsonrpc': '2.0', 'id': 1, 'method': 'ping'}, token=False
         )
         self.assertEqual(response.status_code, 401)
+        self.assertRegex(response.headers['WWW-Authenticate'], '(?i)^bearer')
 
     def test_basic_authorization_scheme_is_unauthorized(self):
         response = self.mcp_post(

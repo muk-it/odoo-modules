@@ -141,16 +141,6 @@ class TestMcpExportRecords(common.TransactionCase):
         self.assertIn('MCP Export A', shared)
         self.assertIn('a@example.com', shared)
 
-    def test_build_exporter_selects_the_format_handler(self):
-        mixin = self.env['muk_mcp.mixin']
-        xlsx = mixin._build_exporter('xlsx')
-        self.assertEqual(xlsx.extension, '.xlsx')
-        self.assertIn('spreadsheetml', xlsx.content_type)
-        for fmt in ('csv', '', 'bogus'):
-            csv_exporter = mixin._build_exporter(fmt)
-            self.assertEqual(csv_exporter.extension, '.csv', fmt)
-            self.assertIn('csv', csv_exporter.content_type, fmt)
-
     def test_export_no_fields_raises(self):
         with self.assertRaises(UserError):
             self._call(

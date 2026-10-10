@@ -13,7 +13,7 @@ from odoo.addons.muk_mcp.tools.descriptions import (
     ids_field,
     model_field,
 )
-from odoo.addons.muk_mcp.tools.parser import coerce_json_value, normalize_ids
+from odoo.addons.muk_mcp.tools.parser import coerce_json_value
 from odoo.addons.muk_mcp.tools.uri import record_field_uri
 
 
@@ -177,11 +177,7 @@ class MCPMixin(models.AbstractModel):
 
         :raise UserError: when ``ids`` resolves to an empty list.
         """
-        target_ids = normalize_ids(ids)
-        if not target_ids:
-            raise UserError(_('No record IDs provided'))
-        self._mcp_assert_records_allowed(model, target_ids)
-        records = self._resolve_model(model).browse(target_ids)
+        records = self._mcp_records(model, ids)
         return self._mcp_read(
             records,
             fields

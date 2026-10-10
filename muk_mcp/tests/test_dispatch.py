@@ -5,7 +5,8 @@ import json
 from odoo import api
 from odoo.tests import common
 
-from odoo.addons.muk_mcp.core.tool import invalidate_registry_cache, mcp_tool
+from odoo.addons.muk_mcp.core.registry import invalidate_registry_cache
+from odoo.addons.muk_mcp.core.tool import mcp_tool
 
 
 @api.model

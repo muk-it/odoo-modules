@@ -1,58 +1,32 @@
 from __future__ import annotations
 
-import contextlib
 import inspect
 import json
 from typing import Any
 
-from odoo import _, api, fields, models
+from odoo import api, fields, models
 from odoo.api import Environment
 from odoo.exceptions import UserError, ValidationError
-from odoo.tools.safe_eval import json as safe_json
-from odoo.tools.safe_eval import safe_eval, test_python_expr
 
 from odoo.addons.muk_mcp.core.prompt import get_prompt_index
-from odoo.addons.muk_mcp.tools.logger import LoggerProxy
-from odoo.addons.muk_mcp.tools.protocol import (
-    make_prompt_message,
-    make_text_content,
-)
+from odoo.addons.muk_mcp.tools.protocol import make_text_content
 
 
 class MCPPrompt(models.Model):
     """Prompt definition exposed to MCP clients and resolved on demand."""
 
     _name = 'muk_mcp.prompt'
+    _inherit = 'muk_mcp.sandbox'
     _description = 'MCP Prompt'
-    _order = 'sequence, name'
+    _code_field = 'body'
+    _list_changed = 'notifications/prompts/list_changed'
 
     # ----------------------------------------------------------
     # Fields
     # ----------------------------------------------------------
 
-    name = fields.Char(
-        string='Name',
-        required=True,
-        index=True,
-    )
-
-    active = fields.Boolean(
-        string='Active',
-        default=True,
-    )
-
-    sequence = fields.Integer(
-        string='Sequence',
-        default=10,
-    )
-
     title = fields.Char(
         string='Title',
-        required=True,
-    )
-
-    description = fields.Text(
-        string='Description',
         required=True,
     )
 
@@ -99,7 +73,7 @@ class MCPPrompt(models.Model):
         ]
         if missing:
             raise UserError(
-                _(
+                self.env._(
                     'Missing required prompt arguments: %s',
                     ', '.join(missing),
                 ),
@@ -109,7 +83,7 @@ class MCPPrompt(models.Model):
     def _normalize_prompt_messages(self, raw) -> list[dict[str, Any]]:
         """Coerce a string or message list into MCP prompt messages."""
         if isinstance(raw, str):
-            return [make_prompt_message('user', raw)]
+            return [{'role': 'user', 'content': make_text_content(raw)}]
         messages = []
         for item in raw or []:
             if isinstance(item, dict) and 'role' in item:
@@ -120,82 +94,29 @@ class MCPPrompt(models.Model):
         return messages
 
     @api.model
-    def _complete_prompt_argument(
-        self,
-        prompt_name: str,
-        arg_name: str,
-        value: str,
-    ) -> list[str]:
-        """Return autocompletion candidates for a prompt argument value."""
-        if arg_name == 'model':
-            records = (
-                self.env['ir.model']
-                .sudo()
-                .search_read(
-                    [('model', '=ilike', '%s%%' % (value or ''))],
-                    fields=['model'],
-                    limit=101,
-                    order='model asc',
-                )
-            )
-            return [record['model'] for record in records]
-        return []
-
-    @api.model
     def _run_method_prompt(
         self,
         entry: dict[str, Any],
         arguments: dict[str, Any],
+        env: Environment,
     ) -> Any:
-        """Invoke a code-defined prompt method on the MCP mixin."""
-        mixin = self.env['muk_mcp.mixin']
+        """Invoke a code-defined prompt method on the MCP mixin.
+
+        :raise UserError: when the arguments do not fit the method.
+        """
+        mixin = env[entry['model']]
         func = inspect.unwrap(getattr(type(mixin), entry['method']))
         try:
-            return func(mixin, **arguments)
+            inspect.signature(func).bind(mixin, **arguments)
         except TypeError as exc:
             raise UserError(
-                _(
+                self.env._(
                     'Invalid arguments for prompt %(name)s: %(error)s',
-                    name=entry.get('method'),
+                    name=entry['name'],
                     error=exc,
                 ),
-            )
-
-    def _get_eval_context(
-        self,
-        arguments: dict[str, Any],
-        env: Environment,
-    ) -> dict[str, Any]:
-        """Build the sandbox namespace, applying any caller context override.
-
-        Pops ``context`` from ``arguments`` and folds it into the environment.
-        """
-        context = arguments.pop('context', None)
-        if context and isinstance(context, dict):
-            env = env(context={**env.context, **context})
-        return {
-            'env': env,
-            'arguments': arguments,
-            'json': safe_json,
-            'callable': callable,
-            'getattr': getattr,
-            'hasattr': hasattr,
-            'UserError': UserError,
-            'logger': LoggerProxy(f'{__name__} ({self.name})'),
-        }
-
-    def _run(self, arguments: dict[str, Any], env: Environment) -> Any:
-        """Evaluate the prompt body in the sandbox and return ``result``."""
-        eval_context = self._get_eval_context(arguments, env)
-        safe_eval(self.body.strip(), eval_context, mode='exec')
-        return eval_context.get('result')
-
-    def _notify_prompts_changed(self) -> None:
-        """Invalidate the prompt registry cache so clients see the change."""
-        with contextlib.suppress(Exception):
-            self.env['muk_mcp.notification'].push_to_all_sessions(
-                'notifications/prompts/list_changed',
-            )
+            ) from exc
+        return func(mixin, **arguments)
 
     # ----------------------------------------------------------
     # Functions
@@ -228,13 +149,16 @@ class MCPPrompt(models.Model):
         :raise UserError: if no prompt with that name exists.
         """
         if not (entry := get_prompt_index(self.env).get(name)):
-            raise UserError(_('Prompt not found: %s', name))
+            raise UserError(self.env._('Prompt not found: %s', name))
         arguments = dict(arguments or {})
         self._validate_prompt_arguments(entry, arguments)
+        env = self.env
+        if isinstance(context := arguments.pop('context', None), dict):
+            env = env(context={**env.context, **context})
         if entry['kind'] == 'db':
-            raw = self.sudo().browse(entry['id'])._run(arguments, self.env)
+            raw = self.sudo().browse(entry['id'])._run(arguments, env)
         else:
-            raw = self._run_method_prompt(entry, arguments)
+            raw = self._run_method_prompt(entry, arguments, env)
         result = {'messages': self._normalize_prompt_messages(raw)}
         if entry.get('description'):
             result['description'] = entry['description']
@@ -260,16 +184,25 @@ class MCPPrompt(models.Model):
         ref: dict[str, Any] | None,
         argument: dict[str, Any] | None,
     ) -> dict[str, Any]:
-        """Return an MCP completion response for a prompt argument."""
-        ref = ref or {}
-        argument = argument or {}
+        """Return an MCP completion response, suggesting model names for ``model``."""
+        ref, argument = ref or {}, argument or {}
         values = []
-        if ref.get('type') == 'ref/prompt' and ref.get('name'):
-            values = self._complete_prompt_argument(
-                ref['name'],
-                argument.get('name'),
-                argument.get('value') or '',
+        if (
+            ref.get('type') == 'ref/prompt'
+            and ref.get('name')
+            and argument.get('name') == 'model'
+        ):
+            records = (
+                self.env['ir.model']
+                .sudo()
+                .search_read(
+                    [('model', '=ilike', '%s%%' % (argument.get('value') or ''))],
+                    fields=['model'],
+                    limit=101,
+                    order='model asc',
+                )
             )
+            values = [record['model'] for record in records]
         return {
             'completion': {
                 'values': values[:100],
@@ -282,17 +215,6 @@ class MCPPrompt(models.Model):
     # Constraints
     # ----------------------------------------------------------
 
-    @api.constrains('body')
-    def _check_body(self) -> None:
-        """Validate that the prompt body is a safe Python expression."""
-        for record in self.sudo().filtered('body'):
-            message = test_python_expr(
-                expr=record.body.strip(),
-                mode='exec',
-            )
-            if message:
-                raise ValidationError(message)
-
     @api.constrains('arguments')
     def _check_arguments(self) -> None:
         """Validate that the arguments field is a JSON array."""
@@ -301,39 +223,16 @@ class MCPPrompt(models.Model):
                 parsed = json.loads(record.arguments)
             except (TypeError, ValueError) as exc:
                 raise ValidationError(
-                    _(
+                    self.env._(
                         'Prompt %(name)s has invalid Arguments JSON: %(error)s',
                         name=record.name,
                         error=exc,
                     ),
-                )
+                ) from exc
             if not isinstance(parsed, list):
                 raise ValidationError(
-                    _(
+                    self.env._(
                         'Prompt %(name)s Arguments must be a JSON array.',
                         name=record.name,
                     ),
                 )
-
-    # ----------------------------------------------------------
-    # ORM
-    # ----------------------------------------------------------
-
-    @api.model_create_multi
-    def create(self, vals_list: list[dict[str, Any]]) -> MCPPrompt:
-        """Create prompts and notify sessions that the listing changed."""
-        records = super().create(vals_list)
-        self._notify_prompts_changed()
-        return records
-
-    def write(self, vals: dict[str, Any]) -> bool:
-        """Write prompts and notify sessions that the listing changed."""
-        result = super().write(vals)
-        self._notify_prompts_changed()
-        return result
-
-    def unlink(self) -> bool:
-        """Delete prompts and notify sessions that the listing changed."""
-        result = super().unlink()
-        self._notify_prompts_changed()
-        return result

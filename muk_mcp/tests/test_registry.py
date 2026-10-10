@@ -3,6 +3,8 @@ from __future__ import annotations
 from odoo.tests import common
 
 from odoo.addons.muk_mcp.core import tool as core_tool
+from odoo.addons.muk_mcp.core.registry import invalidate_registry_cache
+from odoo.addons.muk_mcp.tests.common import cache_tools
 
 
 class TestMcpRegistryFilter(common.TransactionCase):
@@ -19,47 +21,50 @@ class TestMcpRegistryFilter(common.TransactionCase):
 
     def setUp(self) -> None:
         super().setUp()
-        self.env.registry._muk_mcp_method_cache = {
-            'tool_unscoped': {
-                'kind': 'method',
-                'model': 'res.partner',
-                'method': '_x',
-                'description': 'Visible to all callers.',
-                'input_schema': {'type': 'object', 'properties': {}},
-                'category': 'read',
-                'registry': None,
+        cache_tools(
+            self.env,
+            {
+                'tool_unscoped': {
+                    'kind': 'method',
+                    'model': 'res.partner',
+                    'method': '_x',
+                    'description': 'Visible to all callers.',
+                    'input_schema': {'type': 'object', 'properties': {}},
+                    'category': 'read',
+                    'registry': None,
+                },
+                'tool_mcp_only': {
+                    'kind': 'method',
+                    'model': 'res.partner',
+                    'method': '_x',
+                    'description': 'MCP only.',
+                    'input_schema': {'type': 'object', 'properties': {}},
+                    'category': 'read',
+                    'registry': 'mcp',
+                },
+                'tool_ai_only': {
+                    'kind': 'method',
+                    'model': 'res.partner',
+                    'method': '_x',
+                    'description': 'AI only.',
+                    'input_schema': {'type': 'object', 'properties': {}},
+                    'category': 'read',
+                    'registry': 'ai',
+                },
+                'tool_multi': {
+                    'kind': 'method',
+                    'model': 'res.partner',
+                    'method': '_x',
+                    'description': 'Shared between mcp and cron.',
+                    'input_schema': {'type': 'object', 'properties': {}},
+                    'category': 'read',
+                    'registry': 'mcp,cron',
+                },
             },
-            'tool_mcp_only': {
-                'kind': 'method',
-                'model': 'res.partner',
-                'method': '_x',
-                'description': 'MCP only.',
-                'input_schema': {'type': 'object', 'properties': {}},
-                'category': 'read',
-                'registry': 'mcp',
-            },
-            'tool_ai_only': {
-                'kind': 'method',
-                'model': 'res.partner',
-                'method': '_x',
-                'description': 'AI only.',
-                'input_schema': {'type': 'object', 'properties': {}},
-                'category': 'read',
-                'registry': 'ai',
-            },
-            'tool_multi': {
-                'kind': 'method',
-                'model': 'res.partner',
-                'method': '_x',
-                'description': 'Shared between mcp and cron.',
-                'input_schema': {'type': 'object', 'properties': {}},
-                'category': 'read',
-                'registry': 'mcp,cron',
-            },
-        }
+        )
 
     def tearDown(self) -> None:
-        core_tool.invalidate_registry_cache(self.env)
+        invalidate_registry_cache(self.env)
         super().tearDown()
 
     # ----------------------------------------------------------

@@ -13,29 +13,6 @@ class MCPMixin(models.AbstractModel):
     _inherit = 'muk_mcp.mixin'
 
     # ----------------------------------------------------------
-    # Helper
-    # ----------------------------------------------------------
-
-    @api.model
-    def _system_info(self) -> dict[str, Any]:
-        """Return version, edition, and deployment facts about this Odoo server.
-
-        Single source of truth for server-level identity so any client (or a
-        prompt runtime block) reports the same version and edition. Edition is
-        read from the release version marker — the same signal Odoo's own web
-        client uses (``version_info[-1] == 'e'``) — not from a module lookup.
-        """
-        return {
-            'product': release.product_name,
-            'version': release.version,
-            'series': release.serie,
-            'edition': 'enterprise' if release.version_info[-1] == 'e' else 'community',
-            'database': self.env.cr.dbname,
-            'base_url': self.env['ir.config_parameter'].sudo().get_param('web.base.url')
-            or '',
-        }
-
-    # ----------------------------------------------------------
     # Functions
     # ----------------------------------------------------------
 
@@ -58,8 +35,20 @@ class MCPMixin(models.AbstractModel):
         category='read',
     )
     def _mcp_system_info(self) -> dict[str, Any]:
-        """Report server version, edition, and deployment facts."""
-        return self._system_info()
+        """Report server version, edition, and deployment facts.
+
+        The edition comes from the release version marker, as in Odoo's own
+        web client.
+        """
+        return {
+            'product': release.product_name,
+            'version': release.version,
+            'series': release.serie,
+            'edition': 'enterprise' if release.version_info[-1] == 'e' else 'community',
+            'database': self.env.cr.dbname,
+            'base_url': self.env['ir.config_parameter'].sudo().get_param('web.base.url')
+            or '',
+        }
 
     @api.model
     @mcp_tool(

@@ -6,6 +6,7 @@ from odoo.exceptions import UserError, ValidationError
 from odoo.tests import common, tagged
 
 from odoo.addons.muk_mcp.core import prompt as core_prompt
+from odoo.addons.muk_mcp.core.registry import invalidate_registry_cache
 
 
 @tagged('post_install', '-at_install')
@@ -48,13 +49,13 @@ class TestMcpPrompt(common.TransactionCase):
             return 'dupe'
 
         mixin_cls._mcp_prompt_dupe = _mcp_prompt_dupe
-        core_prompt.invalidate_prompt_cache(self.env)
+        invalidate_registry_cache(self.env)
         try:
             with self.assertRaises(ValueError):
                 core_prompt.get_prompt_index(self.env)
         finally:
             delattr(mixin_cls, '_mcp_prompt_dupe')
-            core_prompt.invalidate_prompt_cache(self.env)
+            invalidate_registry_cache(self.env)
 
     # ----------------------------------------------------------
     # Tests — built-in (method) prompts

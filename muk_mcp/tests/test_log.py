@@ -9,7 +9,8 @@ from unittest.mock import MagicMock, patch
 from odoo import api
 from odoo.tests import common, tagged
 
-from odoo.addons.muk_mcp.core.tool import invalidate_registry_cache, mcp_tool
+from odoo.addons.muk_mcp.core.registry import invalidate_registry_cache
+from odoo.addons.muk_mcp.core.tool import mcp_tool
 
 
 @api.model
@@ -65,6 +66,7 @@ class TestMcpLog(common.TransactionCase):
         self.assertEqual(record.method, 'tools/call')
         self.assertEqual(record.status, 'ok')
         self.assertEqual(record.user_id, self.env.user)
+        self.assertEqual(record.display_name, 'tools/call - mcp_test_log_probe')
 
     def test_log_persists_payload_fields(self):
         with self.enter_registry_test_mode():

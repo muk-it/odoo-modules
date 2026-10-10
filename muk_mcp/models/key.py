@@ -197,10 +197,9 @@ class MCPKey(models.Model):
     def authenticate(self, token: str) -> MCPKey | None:
         """Resolve a bearer token to its active key and stamp last use.
 
-        Requires the key to be active and its owning user to satisfy
-        :meth:`_authenticate_user_condition` (by default an active user,
-        mirroring Odoo core ``_check_apikey_credentials``), so archiving a
-        user immediately revokes their MCP keys.
+        The owning user must satisfy :meth:`_authenticate_user_condition`. The
+        stamp is written at most once a minute and skips a key another request
+        is stamping, so parallel requests on one key do not collide.
 
         :return: the matching key, or ``None`` when no active key owned by an
             eligible user matches
@@ -228,13 +227,13 @@ class MCPKey(models.Model):
             with mute_logger('odoo.sql_db'), self.env.cr.savepoint():
                 self.env.cr.execute(
                     SQL(
-                        """
-                    UPDATE %s
-                    SET last_used = NOW() AT TIME ZONE 'UTC'
-                    WHERE id = %s
-                    """,
-                        table,
-                        row[0],
+                        "UPDATE %(table)s SET last_used = NOW() AT TIME ZONE 'UTC' "
+                        'WHERE id IN (SELECT id FROM %(table)s WHERE id = %(id)s '
+                        'AND (last_used IS NULL OR last_used < '
+                        "NOW() AT TIME ZONE 'UTC' - INTERVAL '1 minute') "
+                        'FOR NO KEY UPDATE SKIP LOCKED)',
+                        table=table,
+                        id=row[0],
                     ),
                 )
         except psycopg2.Error:

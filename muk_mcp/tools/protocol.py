@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import json
+import traceback
 from typing import Any
+
+from odoo.tools import config
 
 from odoo.addons.muk_mcp.tools import common, version
 
@@ -12,6 +15,14 @@ class ToolContent(list):
 
 class ToolResult(dict):
     """Dict marker type for a structured MCP tool result."""
+
+
+def format_internal_error(exc: Exception) -> str:
+    """Build an error message, appending the traceback when ``mcp_debug`` is set."""
+    message = f'Internal server error: {exc}'
+    if config.get('mcp_debug', False):
+        message += '\n\n' + ''.join(traceback.format_exception(exc))
+    return message
 
 
 def make_jsonrpc_response(
@@ -200,51 +211,10 @@ def make_text_content(text: Any) -> dict[str, Any]:
     }
 
 
-def make_prompt_message(role: str, text: Any) -> dict[str, Any]:
-    """Build a prompt message pairing ``role`` with a text content block."""
+def make_media_content(data: str, mime_type: str) -> dict[str, Any]:
+    """Build an image or audio content block from base64 ``data`` and its MIME type."""
     return {
-        'role': role,
-        'content': make_text_content(text),
-    }
-
-
-def make_image_content(data: str, mime_type: str) -> dict[str, Any]:
-    """Build an image content block from base64 ``data`` and its MIME type."""
-    return {
-        'type': 'image',
+        'type': mime_type.split('/', 1)[0],
         'data': data,
         'mimeType': mime_type,
-    }
-
-
-def make_audio_content(data: str, mime_type: str) -> dict[str, Any]:
-    """Build an audio content block from base64 ``data`` and its MIME type."""
-    return {
-        'type': 'audio',
-        'data': data,
-        'mimeType': mime_type,
-    }
-
-
-def make_resource_content(
-    uri: str,
-    mime_type: str | None = None,
-    *,
-    text: str | None = None,
-    blob: str | None = None,
-    name: str | None = None,
-) -> dict[str, Any]:
-    """Build a resource content block for ``uri`` with optional text or blob body."""
-    resource = {'uri': uri}
-    if mime_type:
-        resource['mimeType'] = mime_type
-    if name:
-        resource['name'] = name
-    if text is not None:
-        resource['text'] = text
-    if blob is not None:
-        resource['blob'] = blob
-    return {
-        'type': 'resource',
-        'resource': resource,
     }

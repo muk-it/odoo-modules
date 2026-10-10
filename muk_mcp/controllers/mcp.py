@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import json
 import time
-import traceback
 from functools import partial
 from typing import Any
 
 from odoo import http, models
-from odoo.exceptions import AccessError, UserError
+from odoo.exceptions import AccessError
 from odoo.http import Response, request
 from odoo.service.model import retrying
 from odoo.tools import SQL, config
@@ -17,7 +16,6 @@ from odoo.addons.muk_mcp.core.route import mcp_route
 from odoo.addons.muk_mcp.tools import common, protocol, version
 from odoo.addons.muk_mcp.tools.exception import (
     MCPResourceNotFound,
-    MCPScopeDenied,
 )
 from odoo.addons.muk_mcp.tools.version import ProtocolProfile
 
@@ -47,29 +45,9 @@ class MCPController(http.Controller):
     def _log_request(self, method: str, **kwargs: Any) -> None:
         """Write an MCP audit-log row for the request when logging is enabled."""
         if config.get('mcp_logging', True):
-            key = getattr(request, '_mcp_key', None)
             request.env['muk_mcp.log'].log(
-                key_name=key.name if key else None,
-                key_prefix=key.key_prefix if key else None,
-                user_id=request.env.uid,
-                method=method,
-                ip_address=request.httprequest.remote_addr,
-                **kwargs,
+                user_id=request.env.uid, method=method, **kwargs
             )
-
-    def _format_internal_error(self, exc: Exception) -> str:
-        """Build an error message, appending the traceback when ``mcp_debug`` is set."""
-        message = f'Internal server error: {exc}'
-        if config.get('mcp_debug', False):
-            trace = ''.join(
-                traceback.format_exception(
-                    exc.__class__,
-                    exc,
-                    exc.__traceback__,
-                ),
-            )
-            message += f'\n\n{trace}'
-        return message
 
     def _get_tool_enforce_scope(self) -> str | None:
         """Return the scope to enforce on tool calls, derived from the API key."""
@@ -532,7 +510,7 @@ class MCPController(http.Controller):
                 )
             return protocol.make_jsonrpc_error(
                 common.JSONRPC_INTERNAL_ERROR,
-                self._format_internal_error(exc),
+                protocol.format_internal_error(exc),
                 request_id=request_id,
             )
         if method.startswith('notifications/'):
@@ -667,52 +645,22 @@ class MCPController(http.Controller):
     def _handle_tools_call(self, params: dict[str, Any]) -> dict[str, Any]:
         """Handle ``tools/call``: run the named tool, enforcing the API key scope.
 
-        Executes the tool under ``retrying`` for serialization-failure safety and converts
-        scope, access, user and unexpected errors into MCP tool error results rather than
-        protocol-level errors.
+        The tool runs under ``retrying``, so a serialization failure reruns it.
         """
         if not (tool_name := params.get('name')):
             return protocol.make_tool_result(
                 [protocol.make_text_content('Tool name is required')],
                 is_error=True,
             )
-        enforce_scope = self._get_tool_enforce_scope()
-        try:
-            result, _record_info = retrying(
-                partial(
-                    request.env['muk_mcp.tool']._call,
-                    tool_name,
-                    params.get('arguments', {}),
-                    request.env,
-                    enforce_scope=enforce_scope,
-                ),
+        return retrying(
+            partial(
+                request.env['muk_mcp.tool']._call_result,
+                tool_name,
+                params.get('arguments', {}),
                 request.env,
-            )
-        except MCPScopeDenied as exc:
-            return protocol.make_tool_result(
-                [protocol.make_text_content(str(exc))],
-                is_error=True,
-            )
-        except (AccessError, UserError) as exc:
-            return protocol.make_tool_result(
-                [protocol.make_text_content(str(exc))],
-                is_error=True,
-            )
-        except Exception as exc:
-            return protocol.make_tool_result(
-                [
-                    protocol.make_text_content(
-                        self._format_internal_error(exc),
-                    ),
-                ],
-                is_error=True,
-            )
-        if isinstance(result, protocol.ToolResult):
-            return dict(result)
-        if isinstance(result, protocol.ToolContent):
-            return protocol.make_tool_result(result)
-        return protocol.make_tool_result(
-            [protocol.make_text_content(result)],
+                enforce_scope=self._get_tool_enforce_scope(),
+            ),
+            request.env,
         )
 
     def _handle_resources_list(self, params: dict[str, Any]) -> dict[str, Any]:
