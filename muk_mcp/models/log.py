@@ -1,6 +1,7 @@
 import contextlib
 
 from odoo import api, tools, fields, models, SUPERUSER_ID
+from odoo.http import request
 from odoo.modules.registry import Registry
 from odoo.tools.misc import mute_logger
 
@@ -108,6 +109,16 @@ class MCPLog(models.Model):
         ))
         return fields.Datetime.subtract(fields.Datetime.now(), days=days)
 
+    @api.model
+    def _request_values(self):
+        """Return the address and credential of the HTTP request being served."""
+        if not request:
+            return {}
+        values = {'ip_address': request.httprequest.remote_addr}
+        if key := getattr(request, '_mcp_key', None):
+            values['key_id'] = key.id
+        return values
+
     # ----------------------------------------------------------
     # Actions
     # ----------------------------------------------------------
@@ -154,7 +165,18 @@ class MCPLog(models.Model):
                 self.env.cr.dbname
             ).cursor() as cr:
             env = api.Environment(cr, SUPERUSER_ID, {})
-            env['muk_mcp.log'].create(values)
+            env['muk_mcp.log'].create({**self._request_values(), **values})
+
+    # ----------------------------------------------------------
+    # Compute
+    # ----------------------------------------------------------
+
+    @api.depends('method', 'tool_name')
+    def _compute_display_name(self):
+        """Name each entry after its method and, for a tool call, the tool."""
+        for record in self:
+            parts = (record.method, record.tool_name)
+            record.display_name = ' - '.join(part for part in parts if part)
 
     # ----------------------------------------------------------
     # Cron

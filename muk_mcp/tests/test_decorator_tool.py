@@ -114,6 +114,9 @@ class TestMcpDecoratorTool(common.TransactionCase):
         self.assertIn('mcp_test_write', names)
         echo_entry = next(t for t in tools if t['name'] == 'mcp_test_echo')
         self.assertEqual(echo_entry['description'], 'Echo back the provided text.')
+        hints = {tool['name']: tool['annotations']['readOnlyHint'] for tool in tools}
+        self.assertTrue(hints['mcp_test_echo'])
+        self.assertFalse(hints['mcp_test_write'])
         self.assertEqual(
             echo_entry['inputSchema']['properties']['text']['type'], 'string',
         )

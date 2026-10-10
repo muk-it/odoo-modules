@@ -1,5 +1,6 @@
 import base64
 import json
+import mimetypes
 from typing import Any
 
 from odoo import _, api, models
@@ -8,6 +9,7 @@ from odoo.http import request
 from odoo.tools.mimetypes import guess_mimetype
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
+from odoo.addons.muk_mcp.tools.content import normalize_mimetype
 from odoo.addons.muk_mcp.tools.uri import attachment_uri, parse_uri
 
 
@@ -149,21 +151,22 @@ class MCPMixin(models.AbstractModel):
     def _resolve_resource_uri(self, uri):
         """Load the file an ``odoo://`` URI names as ``(mimetype, raw, name)``.
 
+        A missing or generic mimetype is refined from the content or the name.
+
         :raise UserError: as ``_resolve_resource_target``, or when a record's
             binary field is empty.
         """
         record, field = self._resolve_resource_target(uri)
         if record._name == 'ir.attachment':
-            return record.mimetype or '', record.raw or b'', record.name or ''
-        attachment = self.env['ir.attachment'].sudo().search(
+            mimetype, raw, name = record.mimetype, record.raw or b'', record.name or ''
+        elif attachment := self.env['ir.attachment'].sudo().search(
             [
                 ('res_model', '=', record._name),
                 ('res_id', '=', record.id),
                 ('res_field', '=', field),
             ],
             limit=1
-        )
-        if attachment:
+        ):
             raw, mimetype, name = (
                 attachment.raw or b'',
                 attachment.mimetype,
@@ -178,8 +181,10 @@ class MCPMixin(models.AbstractModel):
                 raw = base64.b64decode(value)
             except (ValueError, TypeError):
                 raw = value
-            mimetype, name = None, field
-        return mimetype or guess_mimetype(raw), raw, name
+            mimetype, name = guess_mimetype(raw), field
+        if normalize_mimetype(mimetype) in ('', 'application/octet-stream'):
+            mimetype = mimetypes.guess_type(name)[0] or mimetype
+        return mimetype or '', raw, name
 
     # ----------------------------------------------------------
     # Functions

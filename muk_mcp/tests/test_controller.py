@@ -33,7 +33,8 @@ class TestMcpController(HttpCase):
             'method': 'initialize',
             'params': {},
         })
-        self.assertNotEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 401)
+        self.assertRegex(response.headers['WWW-Authenticate'], '(?i)^bearer')
 
     def test_mcp_get_without_auth_is_rejected(self):
         response = self.url_open('/mcp', headers={

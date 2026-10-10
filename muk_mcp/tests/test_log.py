@@ -71,6 +71,7 @@ class TestMcpLog(common.TransactionCase):
         self.assertEqual(record.status, 'ok')
         self.assertEqual(record.duration_ms, 42)
         self.assertEqual(record.tool_name, 'search_read')
+        self.assertEqual(record.display_name, 'tools/call - search_read')
 
     def test_create_error_log(self):
         record = self.log_model.sudo().create({
