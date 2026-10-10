@@ -124,8 +124,7 @@ class MCPMixin(models.AbstractModel):
         records the call returns stay inside it.
 
         :raise AccessError: when the call returns records outside the
-            configured domain; the savepoint rolls the call back so a
-            forbidden record is never persisted.
+            configured domain.
         """
         model = target._name
         if self._mcp_record_domain(model) is None:
@@ -137,16 +136,9 @@ class MCPMixin(models.AbstractModel):
                 kwargs,
             )
         args, kwargs = self._mcp_merge_method_domain(model, unbound, args, kwargs)
-        with self.env.cr.savepoint():
-            result = super()._mcp_call_model_method(
-                target,
-                method,
-                unbound,
-                args,
-                kwargs,
-            )
-            if isinstance(result, models.BaseModel) and result._name == model:
-                self._mcp_assert_records_allowed(model, result.ids)
+        result = super()._mcp_call_model_method(target, method, unbound, args, kwargs)
+        if isinstance(result, models.BaseModel) and result._name == model:
+            self._mcp_assert_records_allowed(model, result.ids)
         return result
 
     @api.model
