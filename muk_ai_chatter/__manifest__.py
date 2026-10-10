@@ -9,7 +9,7 @@
         drafts the message being written. Chats linked to a record are listed
         in its chatter and collected in a Records space.
     """,
-    'version': '17.0.1.1.3',
+    'version': '17.0.1.1.4',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',
