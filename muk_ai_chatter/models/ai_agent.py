@@ -47,7 +47,7 @@ class AIAgent(models.Model):
         for agent in self:
             values = {'name': agent.name, 'email': False, 'active': False}
             if agent.partner_id:
-                agent.partner_id.write(values)
+                agent.partner_id.sudo().write(values)
             else:
                 agent.partner_id = partners.create(values)
 
