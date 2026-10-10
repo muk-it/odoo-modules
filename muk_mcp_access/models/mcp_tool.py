@@ -27,13 +27,9 @@ class MCPTool(models.Model):
     ) -> tuple[Any, dict[str, Any]]:
         """Pin the tool's category in the environment the tool body receives.
 
-        The category travels in the context instead of on the HTTP request so
-        it also applies when no request is bound (cron jobs, direct ORM calls)
-        and so nested tool calls cannot downgrade their caller. A caller
-        supplied ``mcp_tool_category`` in the tool ``context`` argument is
-        dropped, since :meth:`_execute` merges that override on top. A payload
-        that is not a JSON object is passed through untouched so the base
-        implementation can reject and audit it.
+        The context carries it without a bound request and through nested
+        calls; a caller supplied ``mcp_tool_category`` is dropped. A payload
+        that is not a JSON object passes untouched for the base to reject.
         """
         if entry := get_tool_index(env).get(name):
             if isinstance(arguments, dict):

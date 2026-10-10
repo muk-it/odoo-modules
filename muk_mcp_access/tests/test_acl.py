@@ -15,6 +15,7 @@ class TestMCPAccessACL(common.TransactionCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Create the plain user and a partner allowlist entry."""
         super().setUpClass()
         cls.access_model = cls.env['muk_mcp_access.model']
         cls.wizard_model = cls.env['muk_mcp_access.model.selection']

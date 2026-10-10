@@ -119,12 +119,8 @@ class MCPMixin(models.AbstractModel):
     ) -> Any:
         """Restrict an ``@api.model`` call to the model's configured record domain.
 
-        Merges the domain into the method's ``domain`` argument so queries
-        such as ``search_read`` cannot reach outside it, and asserts the
-        records the call returns stay inside it.
-
-        :raise AccessError: when the call returns records outside the
-            configured domain.
+        Merges the domain into the ``domain`` argument and raises
+        ``AccessError`` when the call returns records outside it.
         """
         model = target._name
         if self._mcp_record_domain(model) is None:

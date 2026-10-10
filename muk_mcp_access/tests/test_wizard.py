@@ -17,6 +17,7 @@ class TestModelSelectionWizard(common.TransactionCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Resolve the access and wizard models and the target models."""
         super().setUpClass()
         cls.access_model = cls.env['muk_mcp_access.model']
         cls.wizard_model = cls.env['muk_mcp_access.model.selection']

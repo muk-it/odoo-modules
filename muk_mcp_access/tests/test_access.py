@@ -15,6 +15,7 @@ class TestMCPAccessModel(common.TransactionCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Resolve the access, mixin and model records the tests use."""
         super().setUpClass()
         cls.access_model = cls.env['muk_mcp_access.model']
         cls.mixin = cls.env['muk_mcp.mixin']

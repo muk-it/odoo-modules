@@ -16,6 +16,7 @@ class TestMCPAccessMultiCompany(common.TransactionCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Create the two companies, their partners and a user in both."""
         super().setUpClass()
         cls.access_model = cls.env['muk_mcp_access.model']
         cls.mixin = cls.env['muk_mcp.mixin']

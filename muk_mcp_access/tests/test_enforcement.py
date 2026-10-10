@@ -38,6 +38,7 @@ class TestMCPAccessEnforcement(common.TransactionCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Resolve the models and register the nested write probe tool."""
         super().setUpClass()
         cls.access_model = cls.env['muk_mcp_access.model']
         cls.tool_model = cls.env['muk_mcp.tool']
