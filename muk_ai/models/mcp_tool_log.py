@@ -56,6 +56,6 @@ class MCPLog(models.Model):
     def log(self, **values) -> None:
         """Persist a log entry, creating it synchronously during tests."""
         if modules.module.current_test:
-            self.sudo().create(values)
+            self.sudo().create({**self._request_values(), **values})
             return
         super().log(**values)
