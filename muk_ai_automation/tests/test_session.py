@@ -1,0 +1,74 @@
+from odoo.addons.muk_ai.tests.common import text_payload, tool_payload
+from odoo.addons.muk_ai_automation.tests.common import AutomationTestCommon
+
+
+class TestSession(AutomationTestCommon):
+    """Chats an action starts know their record, their predecessor and their trigger."""
+
+    def test_chats_continue_per_record_only_when_asked(self):
+        self.agent.system_prompt = 'About {{ record.name }}.'
+        for strategy, linked in (('per_record', True), ('none', False)):
+            with self.subTest(strategy=strategy):
+                action = self._make_action(
+                    agent_dispatch_mode='per_record',
+                    agent_chain_strategy=strategy,
+                    agent_record_domain=self._domain_for(self.partners[0]),
+                    agent_prompt=(
+                        'Before: {{ previous_session.last_text }} '
+                        "{{ previous_session.tool_log[0]['name'] "
+                        "if previous_session.tool_log else '' }}"
+                    ),
+                )
+                with (
+                    self._mock_responses(
+                        [
+                            tool_payload(('search_read', {'model': 'res.partner'})),
+                            text_payload('first answer'),
+                        ]
+                    ),
+                    self._patch_tool(),
+                ):
+                    action.run()
+                _result, sent = self._run(action)
+                first, second = self._sessions_of(action)
+                self.assertIn('About Partner 0.', sent[0])
+                self.assertEqual(
+                    second.previous_session_id,
+                    first if linked else self.env['muk_ai.session'],
+                )
+                self.assertEqual('Before: first answer search_read' in sent[0], linked)
+
+    def test_action_chats_offer_no_browser_tools(self):
+        action = self._make_action()
+        self._run(action)
+        chats = self._session(agent_id=self.agent.id) | self._sessions_of(action)
+        with self._as_client_tool('open_view'):
+            offered = [
+                'open_view' in {tool['name'] for tool in chat._get_filtered_catalog()}
+                for chat in chats
+            ]
+        self.assertEqual(offered, [True, False])
+
+    def test_automation_rule_starts_a_chat_on_the_new_record(self):
+        action = self._make_action(
+            agent_dispatch_mode='per_record',
+            agent_prompt='Welcome {{ record.name }}.',
+        )
+        self.env['base.automation'].create(
+            {
+                'name': 'Welcome new partners',
+                'model_id': action.model_id.id,
+                'trigger': 'on_create',
+                'action_server_ids': [(6, 0, action.ids)],
+            }
+        )
+        with self._mock_responses([text_payload('ok')]) as sent:
+            partner = self.env['res.partner'].create({'name': 'Newcomer'})
+        session = self._sessions_of(action)
+        self.assertEqual(
+            (session.res_model, session.res_id), ('res.partner', partner.id)
+        )
+        self.assertIn('Welcome Newcomer.', str(sent[0]['inputs']))
+        self.assertIn(
+            'started for this record', ''.join(partner.message_ids.mapped('body'))
+        )
