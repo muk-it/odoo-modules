@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+    <menuitem
+        id="menu_mcp_access_model"
+        name="Access"
+        parent="muk_mcp.menu_mcp_root"
+        action="action_mcp_access_model"
+        sequence="15"
+    />
+
+</odoo>

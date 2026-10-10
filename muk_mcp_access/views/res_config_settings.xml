@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_res_config_settings_access" model="ir.ui.view">
+		<field name="name">res.config.settings.muk_mcp_access</field>
+		<field name="model">res.config.settings</field>
+		<field name="inherit_id" ref="muk_mcp.view_res_config_settings_form"/>
+		<field name="arch" type="xml">
+			<xpath expr="//div[@name='mcp_settings']" position="inside">
+				<div class="col-12 col-lg-6 o_setting_box" id="mcp_access_models_setting">
+					<div class="o_setting_right_pane">
+						<span class="o_form_label">Model Access</span>
+						<div class="text-muted">
+							Restrict which models AI agents can reach via MCP.
+						</div>
+						<div class="content-group">
+							<button
+								name="%(muk_mcp_access.action_mcp_access_model)d"
+								type="action"
+								string="Manage Model Access"
+								icon="fa-arrow-right"
+								class="btn-link mt-3"
+							/>
+						</div>
+					</div>
+				</div>
+			</xpath>
+		</field>
+	</record>
+
+</odoo>

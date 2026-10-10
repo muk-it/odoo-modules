@@ -1,0 +1,116 @@
+target-version = "py310"
+line-length = 88
+
+[format]
+quote-style = "single"
+skip-magic-trailing-comma = false
+
+[lint]
+preview = true
+external = ["OLS"]  # Odoo Language Server noqa codes (e.g. # noqa: OLS001)
+select = [
+    "BLE",        # flake8-blind-except
+    "C",          # flake8-comprehensions
+    "COM",        # flake8-commas
+    "D200",       # pydocstyle: one-line docstring should fit on one line
+    "D201",       # pydocstyle: no blank lines before docstring
+    "D202",       # pydocstyle: no blank lines after docstring
+    "D205",       # pydocstyle: 1 blank line between summary and description
+    "D207",       # pydocstyle: docstring under-indented
+    "D208",       # pydocstyle: docstring over-indented
+    "D209",       # pydocstyle: multi-line docstring closing quotes on own line
+    "D210",       # pydocstyle: no whitespace surrounding docstring text
+    "D212",       # pydocstyle: multi-line docstring summary on the first line
+    "D300",       # pydocstyle: use triple double quotes
+    "D400",       # pydocstyle: first line ends with a period
+    "D403",       # pydocstyle: first word capitalized
+    "D419",       # pydocstyle: docstring is empty
+    "E",          # pycodestyle Error
+    "EM",         # flake8-errmsg
+    "EXE",        # flake8-executable
+    "F",          # Pyflakes
+    "FA",         # flake8-future-annotations
+    "FLY",        # flynt
+    "G",          # flake8-logging-format
+    "I",          # isort
+    "ICN",        # flake8-import-conventions
+    "INT",        # flake8-gettext
+    "ISC",        # flake8-implicit-str-concat
+    "LOG",        # flake8-logging
+    "PGH",        # pygrep-hooks
+    "PIE",        # flake8-pie
+    "PLC",        # Pylint Convention
+    "PLE",        # Pylint Error
+    "PLW",        # Pylint Warning
+    "PYI",        # flake8-pyi
+    "RET",        # flake8-return
+    "RUF",        # Ruff-specific rules
+    "S",          # flake8-bandit (security; replaces standalone bandit)
+    "SIM",        # flake8-simplify
+    "SLOT",       # flake8-slots
+    "T",          # flake8-print
+    "TC",         # flake8-type-checking
+    "TID",        # flake8-tidy-imports
+    "TRY",        # tryceratops
+    "UP",         # pyupgrade
+    "W",          # pycodestyle Warning
+    "YTT",        # flake8-2020
+]
+ignore = [
+    "C408",       # unnecessary-collection-call
+    "C420",       # unnecessary-dict-comprehension-for-iterable
+    "C901",       # complex-structure
+    "COM812",     # missing-trailing-comma (conflicts with ruff-format)
+    "E266",       # multiple-leading-hashes-for-block-comment
+    "E501",       # line-too-long (formatter wraps; un-wrappable URLs/SQL stay) — matches Odoo core
+    "E713",       # not-in-test
+    "EM102",      # f-string-in-exception
+    "FA100",      # future-rewritable-type-annotation
+    "PGH003",     # blanket-type-ignore
+    "PIE808",     # unnecessary-range-start
+    "PLC2701",    # import-private-name
+    "PLW2901",    # redefined-loop-name
+    "RUF001",     # ambiguous-unicode-character-string
+    "RUF005",     # collection-literal-concatenation
+    "RUF012",     # mutable-class-default
+    "RUF067",     # non-empty-init-module (Odoo hooks live in __init__) — matches Odoo core
+    "RUF100",     # unused-noqa
+    "S101",       # assert (used defensively; stripped from optimized bytecode)
+    "S105",       # hardcoded-password-string: Odoo fields/vars named password/token/secret
+    "S106",       # hardcoded-password-func-arg: same, as keyword arguments
+    "S110",       # try-except-pass: legit best-effort blocks (blind-except caught by BLE001)
+    "S311",       # non-cryptographic-random: crypto paths use the secrets module
+    "S704",       # unsafe-markupsafe-use: Odoo wraps trusted HTML in markupsafe.Markup
+    # NOTE: S310 (suspicious-url-open / SSRF) is intentionally NOT ignored — review or
+    # `# noqa: S310` any urllib.urlopen call rather than disabling the check globally.
+    "SIM102",     # collapsible-if
+    "SIM108",     # if-else-block-instead-of-if-exp
+    "SIM117",     # multiple-with-statements
+    "TC001",      # typing-only-first-party-import (we import directly, not under TYPE_CHECKING)
+    "TC002",      # typing-only-third-party-import
+    "TC003",      # typing-only-standard-library-import
+    "TID252",     # relative-imports
+    "TRY003",     # raise-vanilla-args
+    "TRY300",     # try-consider-else
+    "TRY400",     # error-instead-of-exception
+    "UP031",      # printf-string-formatting
+]
+
+[lint.per-file-ignores]
+"**/__init__.py" = [
+    "F401",       # unused-import
+    "I001",       # unsorted-imports (Odoo __init__ order == model load order; do NOT sort)
+]
+"**/tests/**" = [
+    "S",          # security rules are noise in tests (asserts, fixtures, fake creds)
+    "D",          # tests use a light convention: class docstring only, no method docstrings
+]
+"**/controllers/**/*.py" = [
+    "BLE001",     # blind-except (RPC boundaries convert any error to a protocol response)
+]
+
+[lint.isort]
+split-on-trailing-comma = true
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+known-first-party = ["odoo"]
+known-local-folder = ["odoo.addons"]

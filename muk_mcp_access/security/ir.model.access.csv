@@ -1,0 +1,5 @@
+id,name,model_id/id,group_id/id,perm_read,perm_write,perm_create,perm_unlink
+
+access_muk_mcp_access_model_admin,access_muk_mcp_access_model_admin,model_muk_mcp_access_model,base.group_system,1,1,1,1
+access_muk_mcp_access_model_user,access_muk_mcp_access_model_user,model_muk_mcp_access_model,base.group_user,1,0,0,0
+access_muk_mcp_access_model_selection,access_muk_mcp_access_model_selection,model_muk_mcp_access_model_selection,base.group_system,1,1,1,1
