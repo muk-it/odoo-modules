@@ -7,7 +7,8 @@ from odoo import models
 from odoo.exceptions import AccessError
 from odoo.tests import common, tagged
 
-from odoo.addons.muk_mcp.core.tool import invalidate_registry_cache, mcp_tool
+from odoo.addons.muk_mcp.core.registry import invalidate_registry_cache
+from odoo.addons.muk_mcp.core.tool import mcp_tool
 
 
 @mcp_tool(

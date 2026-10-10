@@ -21,7 +21,7 @@ Each entry controls:
 - **Write** -- model is writable via `create_records`,
   `update_records`, `delete_records`, and `call_method`.
 
-Use the *Add Models* button to bulk-enable multiple models at once.
+Use the _Add Models_ button to bulk-enable multiple models at once.
 The wizard excludes transient models and models already in the
 access list.
 
