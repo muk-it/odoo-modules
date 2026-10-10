@@ -249,7 +249,7 @@ class TestSpace(AITestCommon):
                     self.assertNotIn('<space_instructions>', system)
                     continue
                 start = system.index('<space_instructions>')
-                block = system[start : system.index('\n<runtime>\n')]
+                block = system[start : system.index('</space_instructions>')]
                 self.assertIn('Q3 Budget', block)
                 self.assertIn(expected, block)
 

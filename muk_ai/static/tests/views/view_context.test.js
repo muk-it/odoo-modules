@@ -60,6 +60,7 @@ test('an opened record pins the record, a new one the model', async () => {
     expect.verifySteps([{ kind: 'list', model: MODEL, view_type: 'form' }]);
 });
 
+test.tags('desktop');
 test('a pivot and a graph pin their measures and groupings', async () => {
     trackPins();
     await openWindowOverLeads();

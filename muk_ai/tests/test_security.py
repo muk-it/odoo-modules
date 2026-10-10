@@ -117,6 +117,7 @@ class TestSecurity(AITestCommon):
             ('action_open', foreign.action_open),
             ('action_stop', foreign.action_stop),
             ('action_handover', lambda: foreign.action_handover(self.user_b.id)),
+            ('write owner', lambda: session.write({'user_id': self.manager.id})),
         ):
             with self.subTest(name), self.assertRaises(AccessError):
                 call()

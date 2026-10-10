@@ -390,15 +390,6 @@ msgstr "1 Quelle"
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
 msgid ""
-"<code>approval_mode</code> - <code>ask</code> or <code>off</code>, resolved "
-"per session (agent default + session override)."
-msgstr ""
-"<code>approval_mode</code> - <code>ask</code> oder <code>off</code>, je "
-"Session aufgelöst (Agent-Standard + Session-Override)."
-
-#. module: muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
-msgid ""
 "<code>company</code> - the current <code>res.company</code> record. Common: "
 "<code>{{ company.name }}</code>."
 msgstr ""
@@ -417,20 +408,20 @@ msgstr ""
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
 msgid ""
-"<code>today</code> - today's date as ISO <code>YYYY-MM-DD</code>, rendered "
-"once when the session starts."
+"<code>odoo_version</code> / <code>odoo_series</code> - the Odoo release, "
+"e.g. <code>20.0+e</code> / <code>20.0</code>."
 msgstr ""
-"<code>today</code> - heutiges Datum als ISO <code>YYYY-MM-DD</code>, "
-"einmalig beim Session-Start gerendert."
+"<code>odoo_version</code> / <code>odoo_series</code> - die Odoo-Version, z. "
+"B. <code>20.0+e</code> / <code>20.0</code>."
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
 msgid ""
 "<code>user</code> - the current <code>res.users</code> record. Common: "
-"<code>{{ user.name }}</code>, <code>{{ user.lang }}</code>."
+"<code>{{ user.name }}</code>, <code>{{ user.email }}</code>."
 msgstr ""
 "<code>user</code> - der aktuelle <code>res.users</code>-Datensatz. Üblich: "
-"<code>{{ user.name }}</code>, <code>{{ user.lang }}</code>."
+"<code>{{ user.name }}</code>, <code>{{ user.email }}</code>."
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_kanban
@@ -646,6 +637,11 @@ msgstr "KI-Modelle"
 #: model:ir.model,name:muk_ai.model_muk_ai_prompt_mixin
 msgid "AI Prompt Renderer"
 msgstr "KI-Prompt-Renderer"
+
+#. module: muk_ai
+#: model:ir.model,name:muk_ai.model_muk_ai_prompt_variables
+msgid "AI Prompt Variables"
+msgstr "KI-Prompt-Variablen"
 
 #. module: muk_ai
 #. odoo-python
@@ -904,8 +900,8 @@ msgstr "Antwortet sofort, denkt kaum nach"
 #. module: muk_ai
 #: model:ir.actions.act_window,name:muk_ai.action_ai_approval
 #: model:ir.ui.menu,name:muk_ai.menu_ai_approval
-msgid "Approval Log"
-msgstr "Freigabeprotokoll"
+msgid "Approval Logs"
+msgstr "Freigabe-Logs"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__approval_mode
@@ -916,11 +912,6 @@ msgstr "Freigabemodus"
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__override_approval_mode
 msgid "Approval Mode Override"
 msgstr "Freigabemodus-Override"
-
-#. module: muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
-msgid "Approval mode: {{ approval_mode }}."
-msgstr "Freigabemodus: {{ approval_mode }}."
 
 #. module: muk_ai
 #. odoo-javascript
@@ -1512,6 +1503,7 @@ msgstr ""
 
 #. module: muk_ai
 #: model:ir.model,name:muk_ai.model_res_company
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_prompt_variables__company
 msgid "Company"
 msgstr "Unternehmen"
 
@@ -1965,6 +1957,7 @@ msgstr "Verwerfen"
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_approval__display_name
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_model__display_name
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_prompt_mixin__display_name
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_prompt_variables__display_name
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_provider__display_name
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_revision_mixin__display_name
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__display_name
@@ -2461,6 +2454,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_approval__id
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_model__id
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_prompt_mixin__id
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_prompt_variables__id
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_provider__id
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_revision_mixin__id
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__id
@@ -3168,6 +3162,7 @@ msgid "Mode"
 msgstr "Modus"
 
 #. module: muk_ai
+#: code:addons/muk_ai/static/src/views/fields/prompt/prompt.js:0
 #: model:ir.model,name:muk_ai.model_ir_model
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_approval__res_model
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
@@ -3191,6 +3186,12 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
 msgid "Model Default"
 msgstr "Modellstandard"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/views/fields/prompt/prompt.js:0
+msgid "Model field"
+msgstr "Modellfeld"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_provider__model_modalities
@@ -3624,6 +3625,16 @@ msgid "Odoo"
 msgstr "Odoo"
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_prompt_variables__odoo_series
+msgid "Odoo Series"
+msgstr "Odoo-Serie"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_prompt_variables__odoo_version
+msgid "Odoo Version"
+msgstr "Odoo-Version"
+
+#. module: muk_ai
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_agent__web_search__off
 msgid "Off"
 msgstr "Aus"
@@ -3645,6 +3656,12 @@ msgstr "Ollama, vLLM, OpenRouter und jedes OpenAI-kompatible LLM."
 #: code:addons/muk_ai/models/session.py:0
 msgid "One or more attachments could not be found."
 msgstr "Ein oder mehrere Anhänge konnten nicht gefunden werden."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+msgid "Only a handover changes the owner of a chat."
+msgstr "Nur eine Übergabe ändert den Besitzer eines Chats."
 
 #. module: muk_ai
 #. odoo-python
@@ -3802,6 +3819,7 @@ msgstr "Angeheftet"
 
 #. module: muk_ai
 #: model:muk_ai.agent.suggestion,label:muk_ai.agent_general_suggestion_summarize
+#: model:muk_ai.agent.suggestion,label:muk_ai.agent_read_only_suggestion_pipeline
 msgid "Pipeline"
 msgstr "Pipeline"
 
@@ -3872,6 +3890,7 @@ msgid "Private To"
 msgstr "Privat für"
 
 #. module: muk_ai
+#: code:addons/muk_ai/static/src/views/fields/prompt/prompt.js:0
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent_suggestion__prompt
 msgid "Prompt"
 msgstr "Prompt"
@@ -5038,10 +5057,29 @@ msgid "The context of action %(ref)r cannot be extended: %(error)s"
 msgstr "Der Kontext der Aktion %(ref)r kann nicht erweitert werden: %(error)s"
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_prompt_variables__company
+msgid "The current company of the chat."
+msgstr "Das aktuelle Unternehmen des Chats."
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
+msgid ""
+"The date, the user, the language, the company and the approval mode are stated in a runtime block that follows the prompt.\n"
+"\t\t\t\t\t\t\t\t\tA value that differs per user or per day keeps the text after it from being cached, so place such values late in the prompt."
+msgstr ""
+"Datum, Benutzer, Sprache, Unternehmen und Freigabemodus stehen in einem Laufzeitblock, der auf den Prompt folgt.\n"
+"\t\t\t\t\t\t\t\t\tEin Wert, der sich je Benutzer oder je Tag unterscheidet, verhindert, dass der Text danach zwischengespeichert wird; setzen Sie solche Werte deshalb ans Ende des Prompts."
+
+#. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/space.py:0
 msgid "The domain of \"%(name)s\" is not a valid session domain: %(error)s"
 msgstr "Die Domain von \"%(name)s\" ist keine gültige Sitzungs-Domain: %(error)s"
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_prompt_variables__odoo_version
+msgid "The full Odoo release, for example 20.0+e."
+msgstr "Die vollständige Odoo-Version, zum Beispiel 20.0+e."
 
 #. module: muk_ai
 #. odoo-python
@@ -5058,15 +5096,22 @@ msgstr ""
 "kann."
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_prompt_variables__odoo_series
+msgid "The Odoo series, for example 20.0."
+msgstr "Die Odoo-Serie, zum Beispiel 20.0."
+
+#. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
 msgid ""
 "The prompt is rendered with Odoo's inline-template engine (same as mail templates) when the conversation starts\n"
 "\t\t\t\t\t\t\t\t\tand again on <code>/compact</code>. Each <code>{{ expr }}</code> is evaluated against the session's render context.\n"
-"\t\t\t\t\t\t\t\t\tUse <code>{{ expr ||| fallback }}</code> to provide a default when <code>expr</code> is empty."
+"\t\t\t\t\t\t\t\t\tUse <code>{{ expr ||| fallback }}</code> to provide a default when <code>expr</code> is empty.\n"
+"\t\t\t\t\t\t\t\t\tThe Insert Field button adds a field of a variable at the cursor."
 msgstr ""
 "Der Prompt wird beim Start der Unterhaltung mit Odoos Inline-Template-Engine gerendert (wie bei E-Mail-Vorlagen)\n"
 "\t\t\t\t\t\t\t\t\tund erneut bei <code>/compact</code>. Jeder <code>{{ expr }}</code>-Ausdruck wird gegen den Render-Kontext der Sitzung ausgewertet.\n"
-"\t\t\t\t\t\t\t\t\tVerwenden Sie <code>{{ expr ||| fallback }}</code>, um einen Standardwert anzugeben, wenn <code>expr</code> leer ist."
+"\t\t\t\t\t\t\t\t\tVerwenden Sie <code>{{ expr ||| fallback }}</code>, um einen Standardwert anzugeben, wenn <code>expr</code> leer ist.\n"
+"\t\t\t\t\t\t\t\t\tDie Schaltfläche Feld einfügen fügt ein Feld einer Variablen an der Cursorposition ein."
 
 #. module: muk_ai
 #. odoo-python
@@ -5121,6 +5166,11 @@ msgstr ""
 #: code:addons/muk_ai/models/space.py:0
 msgid "The system space \"%s\" cannot carry instructions."
 msgstr "Der System-Space \"%s\" kann keine Anweisungen tragen."
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_prompt_variables__user
+msgid "The user of the chat."
+msgstr "Der Benutzer des Chats."
 
 #. module: muk_ai
 #. odoo-python
@@ -5206,11 +5256,6 @@ msgstr ""
 #: model:muk_ai.agent.suggestion,label:muk_ai.agent_general_suggestion_explore
 msgid "Today"
 msgstr "Heute"
-
-#. module: muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
-msgid "Today is {{ today }}. Respond in {{ user.lang ||| en_US }}."
-msgstr "Heute ist {{ today }}. Antworten Sie auf {{ user.lang ||| en_US }}."
 
 #. module: muk_ai
 #. odoo-javascript
@@ -5499,6 +5544,7 @@ msgid "Used"
 msgstr "Verwendet"
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_prompt_variables__user
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_muk_ai_approval_search
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_users_kanban_handover
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_users_search_handover
@@ -5521,6 +5567,12 @@ msgstr "Der Benutzer hat den Aufruf abgelehnt."
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_users_list_handover
 msgid "Users"
 msgstr "Benutzer"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/views/fields/prompt/prompt.js:0
+msgid "Variable"
+msgstr ""
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__view_context
@@ -5941,3 +5993,26 @@ msgstr "view_context.id muss eine positive Ganzzahl sein."
 #: model:ir.model,name:muk_ai.model_ir_websocket
 msgid "websocket message handling"
 msgstr "Websocket-Nachrichtbearbeitung"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Automation"
+msgstr "Automatisierung"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_automation
+msgid "MuK AI Automation"
+msgstr ""
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Run agents from server actions, automation rules and schedules."
+msgstr ""
+"Agenten aus Serveraktionen, Automatisierungsregeln und Zeitplänen ausführen."
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_automation
+msgid "Run AI agents from server actions, automation rules and schedules."
+msgstr ""
+"KI-Agenten aus Serveraktionen, Automatisierungsregeln und Zeitplänen "
+"ausführen."

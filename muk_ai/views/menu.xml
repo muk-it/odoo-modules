@@ -26,7 +26,7 @@
 		<menuitem
 			id="menu_ai_report"
 			name="Reports"
-			sequence="50"
+			sequence="88"
 			groups="base.group_system"
 		>
 			<menuitem
@@ -43,7 +43,7 @@
 			/>
 			<menuitem
 				id="menu_ai_approval"
-				name="Approval Log"
+				name="Approval Logs"
 				action="action_ai_approval"
 				sequence="30"
 			/>

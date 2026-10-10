@@ -87,8 +87,13 @@ An agent is a named preset under *MuK AI > Agents*. A *General Assistant* is
 installed with the module.
 
 - **System Prompt**: the instructions, rendered with placeholders such as
-  ``{{ user.name }}``, ``{{ company.name }}`` and ``{{ today }}``. Every edit
-  is kept, and the **Prompt History** button restores an earlier version.
+  ``{{ user.name }}`` and ``{{ company.name }}``. The **Insert Field**
+  button picks a field of a variable and adds its placeholder at the cursor.
+  The date, the user, the language, the company and the approval mode are
+  stated in a runtime block that follows the prompt; a value that differs per
+  user or per day keeps the text after it from being cached, so it belongs
+  late in the prompt. Every edit is kept, and the **Prompt History** button
+  restores an earlier version.
 - **Provider** and **Chat Model**: pin the agent to a vendor, a model, or
   both. Empty follows the defaults, and the field shows which model that is.
   The **Image**, **TTS** and **STT** models follow the same rule.
@@ -160,7 +165,7 @@ a sensitive model, the chat stops on a card that shows the record and every
 field before and after. **Approve** runs the call once; **Allow for session**
 runs it and lets the same kind of call through for the rest of this chat;
 **Reject** tells the agent the call was refused, so it can look for another
-way. Every decision is recorded under *MuK AI > Reports > Approval Log*. A new
+way. Every decision is recorded under *MuK AI > Reports > Approval Logs*. A new
 chat starts with nothing allowed. Agents set to *Never ask* skip the card.
 
 **Questions from the agent**

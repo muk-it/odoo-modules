@@ -1038,9 +1038,13 @@ class AISession(models.Model):
     def write(self, vals: dict) -> bool:
         """Mark agent switches, share changes and names a user chose.
 
-        Filing an unread chat also refreshes the badge, and changing who a chat
-        is shared with tells the people it was given to or taken from.
+        Only a handover, run as superuser, changes the owner. Filing an unread
+        chat refreshes the badge, and a share change tells the people it concerns.
         """
+        if 'user_id' in vals and not self.env.su:
+            raise AccessError(
+                self.env._('Only a handover changes the owner of a chat.')
+            )
         if 'name' in vals and 'user_named' not in vals:
             vals = {**vals, 'user_named': True}
         agents = {r.id: r.agent_id for r in self} if 'agent_id' in vals else None

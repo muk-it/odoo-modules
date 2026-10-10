@@ -17,7 +17,7 @@ import {
     preloadBundle,
 } from '@web/../tests/web_test_helpers';
 
-import { defineAIModels } from '@muk_ai/../tests/muk_ai_test_helpers';
+import { defineAIModels, LeadModel } from '@muk_ai/../tests/muk_ai_test_helpers';
 
 class AgentModel extends models.Model {
     _name = 'muk_ai.test_agent';
@@ -34,6 +34,9 @@ class AgentModel extends models.Model {
     });
     effort_options = fields.Json();
     icon = fields.Char();
+    prompt = fields.Text();
+    notes = fields.Text();
+    prompt_model = fields.Char();
     events = fields.Json();
     _records = [
         {
@@ -50,6 +53,7 @@ class AgentModel extends models.Model {
             effort: 'low',
             effort_options: ['low', 'high'],
             icon: 'sell',
+            prompt_model: 'muk_ai.test_lead',
             events: [
                 { kind: 'user_message', content: 'Hello', event_id: 1 },
                 {
@@ -64,7 +68,7 @@ class AgentModel extends models.Model {
     ];
 }
 
-defineAIModels(AgentModel);
+defineAIModels(AgentModel, LeadModel);
 preloadBundle('web.ace_lib');
 
 function trackWrites() {
@@ -162,4 +166,32 @@ test('the events of a session are drawn as its read-only transcript without its 
     expect(
         '.mk_session_events .mk_msg_fork, .mk_session_events .mk_sources_chip',
     ).toHaveCount(0);
+});
+
+test('a prompt inserts a field of its variable from the button, never on #', async () => {
+    onRpc('has_group', () => true);
+    onRpc('mail_allowed_qweb_expressions', () => []);
+    trackWrites();
+    await mountForm(`
+        <field name="prompt" widget="prompt" options="{'variable': 'record', 'res_model_field': 'prompt_model'}"/>
+        <field name="notes" widget="prompt" options="{'res_model': 'muk_ai.test_lead'}"/>
+    `);
+    await contains('.o_field_widget[name=prompt] textarea').edit('# Hi ', {
+        confirm: false,
+    });
+    expect('.o_model_field_selector_popover').toHaveCount(0);
+    await contains('.o_field_widget[name=prompt] button[data-icon=wand_stars]').click();
+    await contains('.o_model_field_selector_popover_item_name:contains(Stage)').click();
+    await contains('.o_model_field_selector_default_value_input input').edit('new', {
+        confirm: false,
+    });
+    await contains('.o_model_field_selector_popover button:contains(Insert)').click();
+    await contains('.o_field_widget[name=notes] textarea').click();
+    await contains('.o_field_widget[name=notes] button[data-icon=wand_stars]').click();
+    await contains('.o_model_field_selector_popover_item_name:contains(Stage)').click();
+    await contains('.o_model_field_selector_popover button:contains(Insert)').click();
+    await clickSave();
+    expect.verifySteps([
+        { prompt: '# Hi {{record.stage ||| new}}', notes: '{{stage}}' },
+    ]);
 });

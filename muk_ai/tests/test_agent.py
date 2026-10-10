@@ -61,6 +61,10 @@ class TestAgent(AITestCommon):
                 if prompt == expected:
                     self.assertEqual(rendered, prompt)
                     self.assertIn('__class__', error)
+        self.assertTrue(variables := self.env['muk_ai.prompt.variables'].fields_get())
+        for name in variables:
+            with self.subTest(variable=name):
+                self.assertIsNone(agent._render_prompt_safe(f'{{{{ {name} }}}}')[1])
 
     def test_the_runtime_block_states_the_facts_of_the_session(self):
         company = self.env.company
@@ -88,6 +92,7 @@ class TestAgent(AITestCommon):
                     f'Odoo: {release.version}',
                     f'Date: {fields.Date.context_today(session).isoformat()}',
                     f'User: {user.name} (res.users,{user.id}) - tz Europe/Vienna',
+                    f'Language: {user.lang}',
                     f'Company: {company.name} (res.company,{company.id})',
                     'Approval mode: ask',
                 ):

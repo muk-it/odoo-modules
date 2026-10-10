@@ -1,3 +1,9 @@
+`1.25.0`
+-------
+
+- Insert Field in Prompts
+- Prompt Caching across Chats
+
 `1.24.0`
 -------
 

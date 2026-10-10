@@ -269,7 +269,7 @@ class AISessionLoop(models.AbstractModel):
                 enable_web_search=bool(agent) and self._web_search_route() == 'native',
                 enable_code_interpreter=bool(agent)
                 and self._code_interpreter_route() == 'native',
-                cache_key=f'muk_ai.session:{self.id}',
+                cache_key=f'muk_ai.agent:{self.agent_id.id}:{self.user_id.id}',
                 cache=cache,
             )
         finally:

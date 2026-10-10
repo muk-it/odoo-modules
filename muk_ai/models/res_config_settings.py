@@ -144,14 +144,14 @@ class ResConfigSettings(models.TransientModel):
         help='Ollama, vLLM, OpenRouter and every OpenAI-compatible LLM.',
     )
 
-    module_muk_ai_mcp = fields.Boolean(
-        string='MuK AI MCP',
-        help='Connect remote MCP servers whose tools AI agents can call.',
-    )
-
     module_muk_ai_mistral = fields.Boolean(
         string='MuK AI Mistral',
         help='Use Mistral AI as a provider.',
+    )
+
+    module_muk_ai_automation = fields.Boolean(
+        string='MuK AI Automation',
+        help='Run AI agents from server actions, automation rules and schedules.',
     )
 
     module_muk_ai_schedule = fields.Boolean(
@@ -162,6 +162,11 @@ class ResConfigSettings(models.TransientModel):
     module_muk_ai_skills = fields.Boolean(
         string='MuK AI Skills',
         help='Pre-built agent skills the user or LLM can switch into.',
+    )
+
+    module_muk_ai_mcp = fields.Boolean(
+        string='MuK AI MCP',
+        help='Connect remote MCP servers whose tools AI agents can call.',
     )
 
     module_muk_ai_voice = fields.Boolean(

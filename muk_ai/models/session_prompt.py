@@ -155,6 +155,7 @@ class AISessionPrompt(models.AbstractModel):
             f'Odoo: {release.version}',
             f'Date: {fields.Date.context_today(self).isoformat()}',
             f'User: {user.name} (res.users,{user.id}) - tz {user.tz or "UTC"}',
+            f'Language: {user.lang}',
             f'Company: {company.name} (res.company,{company.id})',
             f'Approval mode: {self._effective_approval_mode()}',
         ]
@@ -278,14 +279,18 @@ class AISessionPrompt(models.AbstractModel):
         }
 
     def _system_message(self) -> dict:
-        """Return the system message rebuilt from the current agent and context."""
+        """Return the system message rebuilt from the current agent and context.
+
+        The parts run from the most to the least widely shared, so a provider
+        can reuse the longest cached prefix: the runtime facts come last.
+        """
         parts = [
             self._effective_system_prompt(),
+            FILES_BLOCK,
+            self._build_available_tools_block(),
             self._build_space_block(),
             *self._system_prompt_addenda(),
             self._build_runtime_block(),
-            FILES_BLOCK,
-            self._build_available_tools_block(),
         ]
         text = '\n\n'.join(part for part in parts if part)
         return {'role': 'system', 'content': [{'type': 'input_text', 'text': text}]}
