@@ -125,28 +125,16 @@ class TestAiSecurity(TransactionCase):
         self.assertFalse(result['has_more_older'])
         self.assertEqual(result['oldest_sequence'], 0)
 
-    def test_fetch_events_denied_cross_user(self):
+    def test_a_foreign_chat_refuses_every_call(self):
         session = self._owned_session()
-        self._seed_events(session, ['user_message'])
-        with self.assertRaises(AccessError):
-            session.with_user(self.user_b).fetch_events()
-
-    def test_get_snapshot_denied_cross_user(self):
-        session = self._owned_session()
-        with self.assertRaises(AccessError):
-            session.with_user(self.user_b).get_snapshot()
-
-    def test_discard_attachments_denied_cross_user(self):
-        session = self._owned_session()
-        with self.assertRaises(AccessError):
-            session.with_user(self.user_b).discard_attachments([1])
-
-    def test_action_open_denied_cross_user(self):
-        session = self._owned_session()
-        with self.assertRaises(AccessError):
-            session.with_user(self.user_b).action_open()
-
-    def test_action_stop_denied_cross_user(self):
-        session = self._owned_session()
-        with self.assertRaises(AccessError):
-            session.with_user(self.user_b).action_stop()
+        foreign = session.with_user(self.user_b)
+        for name, call in (
+            ('fetch_events', foreign.fetch_events),
+            ('get_snapshot', foreign.get_snapshot),
+            ('discard_attachments', lambda: foreign.discard_attachments([1])),
+            ('action_open', foreign.action_open),
+            ('action_stop', foreign.action_stop),
+            ('write owner', lambda: session.write({'user_id': self.manager.id})),
+        ):
+            with self.subTest(name), self.assertRaises(AccessError):
+                call()
