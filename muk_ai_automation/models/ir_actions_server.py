@@ -240,26 +240,6 @@ class IrActionsServer(models.Model):
             session.start(prompt)
         return session
 
-    # ----------------------------------------------------------
-    # Actions
-    # ----------------------------------------------------------
-
-    def action_open_agent_sessions(self) -> dict:
-        """Open the chats this action started."""
-        self.ensure_one()
-        action = self.env['ir.actions.act_window']._for_xml_id(
-            'muk_ai.action_ai_session'
-        )
-        return {
-            **action,
-            'domain': [('action_server_id', '=', self.id)],
-            'context': {},
-        }
-
-    # ----------------------------------------------------------
-    # Functions
-    # ----------------------------------------------------------
-
     def _run_action_ai_agent_multi(self, eval_context: dict) -> dict | bool:
         """Start one chat for the target records, or one per record.
 
@@ -301,6 +281,22 @@ class IrActionsServer(models.Model):
                 'message': message,
                 'next': {'type': 'ir.actions.client', 'tag': 'soft_reload'},
             },
+        }
+
+    # ----------------------------------------------------------
+    # Actions
+    # ----------------------------------------------------------
+
+    def action_open_agent_sessions(self) -> dict:
+        """Open the chats this action started."""
+        self.ensure_one()
+        action = self.env['ir.actions.act_window']._for_xml_id(
+            'muk_ai.action_ai_session'
+        )
+        return {
+            **action,
+            'domain': [('action_server_id', '=', self.id)],
+            'context': {},
         }
 
     # ----------------------------------------------------------
