@@ -1,0 +1,566 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* muk_ai_subagents
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 16.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-10 03:43+0000\n"
+"PO-Revision-Date: 2026-10-10 03:43+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run_card/run_card.js:0
+msgid "%(reported)s in %(time)s"
+msgstr "%(reported)s en %(time)s"
+
+#. module: muk_ai_subagents
+#. odoo-python
+#: code:addons/muk_ai_subagents/models/ai_session.py:0
+msgid "%s is asking you a question"
+msgstr "%s le hace una pregunta"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run_card/run_card.js:0
+msgid "%s need you"
+msgstr "%s le necesitan"
+
+#. module: muk_ai_subagents
+#. odoo-python
+#: code:addons/muk_ai_subagents/models/ai_session.py:0
+msgid "%s needs your approval before running a tool"
+msgstr "%s necesita su aprobación antes de ejecutar una herramienta"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run_card/run_card.js:0
+msgid "%s of %s working"
+msgstr "%s de %s trabajando"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run_card/run_card.js:0
+msgid "%s subagents reported"
+msgstr "%s subagentes han informado"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run/run.js:0
+msgid "%sh %sm"
+msgstr "%sh %sm"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run/run.js:0
+msgid "%sm %ss"
+msgstr "%sm %ss"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run/run.js:0
+msgid "%ss"
+msgstr "%ss"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run_card/run_card.js:0
+msgid "1 needs you"
+msgstr "1 le necesita"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run_card/run_card.js:0
+msgid "1 subagent reported"
+msgstr "1 subagente ha informado"
+
+#. module: muk_ai_subagents
+#. odoo-python
+#: code:addons/muk_ai_subagents/models/ai_session.py:0
+msgid "A subagent is handed over with the chat it works for."
+msgstr "Un subagente se traspasa junto con el chat para el que trabaja."
+
+#. module: muk_ai_subagents
+#: model:ir.model,name:muk_ai_subagents.model_muk_ai_agent
+msgid "AI Agent"
+msgstr "Agente IA"
+
+#. module: muk_ai_subagents
+#: model:ir.model,name:muk_ai_subagents.model_muk_ai_session
+msgid "AI Session"
+msgstr "Sesión IA"
+
+#. module: muk_ai_subagents
+#. odoo-python
+#: code:addons/muk_ai_subagents/models/ai_session.py:0
+msgid "AI session needs approval"
+msgstr "La sesión de IA necesita aprobación"
+
+#. module: muk_ai_subagents
+#. odoo-python
+#: code:addons/muk_ai_subagents/models/ai_session.py:0
+msgid "AI session needs your input"
+msgstr "La sesión IA necesita su intervención"
+
+#. module: muk_ai_subagents
+#: model:ir.model.fields,field_description:muk_ai_subagents.field_muk_ai_agent__allow_delegation
+msgid "Allow Delegation"
+msgstr "Permitir la delegación"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run_card/run_card.xml:0
+msgid "Allow for session"
+msgstr "Permitir durante la sesión"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run_card/run_card.xml:0
+msgid "Answer"
+msgstr "Responder"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run_card/run_card.xml:0
+msgid "Approve"
+msgstr "Aprobar"
+
+#. module: muk_ai_subagents
+#. odoo-python
+#: code:addons/muk_ai_subagents/mcp/delegate.py:0
+msgid "At most %(max)s subagents may run at once; %(live)s are still running."
+msgstr ""
+"Como mucho pueden ejecutarse %(max)s subagentes a la vez; %(live)s siguen en"
+" ejecución."
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run_card/run_card.xml:0
+msgid "Auto-approve matching calls for the rest of this subagent's work"
+msgstr ""
+"Aprobar automáticamente las llamadas coincidentes durante el resto del "
+"trabajo de este subagente"
+
+#. module: muk_ai_subagents
+#: model_terms:ir.ui.view,arch_db:muk_ai_subagents.view_ai_session_form_inherit_subagents
+msgid "Brief"
+msgstr "Encargo"
+
+#. module: muk_ai_subagents
+#: model:ir.model.fields.selection,name:muk_ai_subagents.selection__muk_ai_session__stop_reason__budget
+msgid "Budget Exhausted"
+msgstr "Presupuesto agotado"
+
+#. module: muk_ai_subagents
+#. odoo-python
+#: code:addons/muk_ai_subagents/mcp/delegate.py:0
+msgid ""
+"Call the subagent tools directly from your tools array, never through "
+"tool_load."
+msgstr ""
+"Llame a las herramientas de subagentes directamente desde su lista de "
+"herramientas, nunca a través de tool_load."
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run_card/run_card.xml:0
+msgid "Cost of these subagents"
+msgstr "Coste de estos subagentes"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run/run.js:0
+msgid "Delegate"
+msgstr "Delegar"
+
+#. module: muk_ai_subagents
+#: model:ir.model.fields,field_description:muk_ai_subagents.field_muk_ai_agent__delegate_agent_ids
+msgid "Delegates"
+msgstr "Delegados"
+
+#. module: muk_ai_subagents
+#: model_terms:ir.ui.view,arch_db:muk_ai_subagents.view_ai_agent_form_inherit_subagents
+#: model_terms:ir.ui.view,arch_db:muk_ai_subagents.view_ai_session_form_inherit_subagents
+msgid "Delegation"
+msgstr "Delegación"
+
+#. module: muk_ai_subagents
+#: model:ir.model.fields,field_description:muk_ai_subagents.field_muk_ai_session__delegation_brief
+msgid "Delegation Brief"
+msgstr "Encargo de la delegación"
+
+#. module: muk_ai_subagents
+#: model:ir.model.fields,field_description:muk_ai_subagents.field_muk_ai_agent__delegation_instructions
+msgid "Delegation Instructions"
+msgstr "Instrucciones de delegación"
+
+#. module: muk_ai_subagents
+#: model:ir.model.fields,field_description:muk_ai_subagents.field_muk_ai_agent__display_name
+#: model:ir.model.fields,field_description:muk_ai_subagents.field_muk_ai_session__display_name
+#: model:ir.model.fields,field_description:muk_ai_subagents.field_muk_mcp_mixin__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: muk_ai_subagents
+#: model:ir.model.fields.selection,name:muk_ai_subagents.selection__muk_ai_session__stop_reason__done
+msgid "Done"
+msgstr "Hecho"
+
+#. module: muk_ai_subagents
+#. odoo-python
+#: code:addons/muk_ai_subagents/mcp/delegate.py:0
+msgid "Each task must be an object with agent and objective."
+msgstr "Cada tarea debe ser un objeto con agent y objective."
+
+#. module: muk_ai_subagents
+#. odoo-python
+#: code:addons/muk_ai_subagents/mcp/delegate.py:0
+msgid "Each task needs a non-empty objective."
+msgstr "Cada tarea necesita un objective no vacío."
+
+#. module: muk_ai_subagents
+#: model:ir.model.fields.selection,name:muk_ai_subagents.selection__muk_ai_session__stop_reason__error
+msgid "Error"
+msgstr "Error"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run/run.js:0
+msgid "Failed"
+msgstr "Fallido"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run_card/run_card.js:0
+msgid "Failed to stop the subagents: %s"
+msgstr "No se pudieron detener los subagentes: %s"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run_card/run_card.js:0
+msgid "Hide finished"
+msgstr "Ocultar terminados"
+
+#. module: muk_ai_subagents
+#: model:ir.model.fields,field_description:muk_ai_subagents.field_muk_ai_agent__id
+#: model:ir.model.fields,field_description:muk_ai_subagents.field_muk_ai_session__id
+#: model:ir.model.fields,field_description:muk_ai_subagents.field_muk_mcp_mixin__id
+msgid "ID"
+msgstr "ID"
+
+#. module: muk_ai_subagents
+#: model:ir.model.fields,field_description:muk_ai_subagents.field_muk_ai_session__loop_state
+msgid "Loop State"
+msgstr "Estado del bucle"
+
+#. module: muk_ai_subagents
+#: model:ir.model,name:muk_ai_subagents.model_muk_mcp_mixin
+msgid "MCP Tool Mixin"
+msgstr "Mixin de herramienta MCP"
+
+#. module: muk_ai_subagents
+#: model:ir.model.fields.selection,name:muk_ai_subagents.selection__muk_ai_session__stop_reason__max_iterations
+msgid "Max Iterations"
+msgstr "Iteraciones máximas"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run_bar/run_bar.js:0
+msgid "Messages reach %s after its current step"
+msgstr "Los mensajes llegan a %s tras su paso actual"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run/run.js:0
+msgid "Needs your answer"
+msgstr "Necesita su respuesta"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run/run.js:0
+msgid "Needs your approval"
+msgstr "Necesita su aprobación"
+
+#. module: muk_ai_subagents
+#: model:ir.model.fields.selection,name:muk_ai_subagents.selection__muk_ai_session__stop_reason__no_progress
+msgid "No Progress"
+msgstr "Sin progreso"
+
+#. module: muk_ai_subagents
+#. odoo-python
+#: code:addons/muk_ai_subagents/mcp/delegate.py:0
+msgid "No agent named %(agent)r may be delegated to; pick one of %(names)s."
+msgstr ""
+"No se puede delegar en ningún agente llamado %(agent)r; elige uno de "
+"%(names)s."
+
+#. module: muk_ai_subagents
+#. odoo-python
+#: code:addons/muk_ai_subagents/models/ai_session.py:0
+msgid "No progress: %(tool)s returned the same result %(count)s times."
+msgstr "Sin progreso: %(tool)s devolvió el mismo resultado %(count)s veces."
+
+#. module: muk_ai_subagents
+#. odoo-python
+#: code:addons/muk_ai_subagents/mcp/delegate.py:0
+msgid "No subagent %s belongs to this chat."
+msgstr "Ningún subagente %s pertenece a este chat."
+
+#. module: muk_ai_subagents
+#: model:ir.model.fields,help:muk_ai_subagents.field_muk_ai_agent__allow_delegation
+msgid ""
+"Offer the delegate tool, which hands focused tasks to the agents listed "
+"below. Each task runs as a chat of its own under that agent, with its tools "
+"and approval mode, never with more rights than this agent has."
+msgstr ""
+"Ofrece la herramienta delegar, que entrega tareas concretas a los agentes "
+"indicados abajo. Cada tarea se ejecuta como un chat propio bajo ese agente, "
+"con sus herramientas y su modo de aprobación, nunca con más derechos que "
+"este agente."
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run_card/run_card.xml:0
+msgid "Open chat"
+msgstr "Abrir chat"
+
+#. module: muk_ai_subagents
+#: model:ir.model.fields,field_description:muk_ai_subagents.field_muk_ai_session__parent_session_id
+#: model_terms:ir.ui.view,arch_db:muk_ai_subagents.view_ai_session_search_inherit_subagents
+msgid "Parent Chat"
+msgstr "Chat principal"
+
+#. module: muk_ai_subagents
+#. odoo-python
+#: code:addons/muk_ai_subagents/mcp/delegate.py:0
+msgid "Pass between 1 and %s tasks."
+msgstr "Pase entre 1 y %s tareas."
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run_card/run_card.xml:0
+msgid "Reject"
+msgstr "Rechazar"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run/run.js:0
+msgid "Repeating the same call"
+msgstr "Repite la misma llamada"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run_card/run_card.xml:0
+msgid "Send the answer"
+msgstr "Enviar la respuesta"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run_card/run_card.js:0
+msgid "Show %s finished"
+msgstr "Mostrar %s terminados"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run_card/run_card.xml:0
+msgid "Stop"
+msgstr "Detener"
+
+#. module: muk_ai_subagents
+#: model:ir.model.fields,field_description:muk_ai_subagents.field_muk_ai_session__stop_reason
+#: model_terms:ir.ui.view,arch_db:muk_ai_subagents.view_ai_session_search_inherit_subagents
+msgid "Stop Reason"
+msgstr "Motivo de la detención"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run_card/run_card.xml:0
+msgid "Stop all"
+msgstr "Detener todo"
+
+#. module: muk_ai_subagents
+#. odoo-python
+#: code:addons/muk_ai_subagents/models/ai_session.py:0
+msgid "Stop the subagents before handing the chat over."
+msgstr "Detenga los subagentes antes de traspasar el chat."
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run/run.js:0
+#: model:ir.model.fields.selection,name:muk_ai_subagents.selection__muk_ai_session__stop_reason__stopped
+msgid "Stopped"
+msgstr "Detenido"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run/run.js:0
+msgid "Stopped at the budget"
+msgstr "Detenido por el presupuesto"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run/run.js:0
+msgid "Stopped at the round limit"
+msgstr "Detenido por el límite de rondas"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run/run.js:0
+msgid "Stopped for repeating itself"
+msgstr "Detenido por repetirse"
+
+#. module: muk_ai_subagents
+#: model:ir.model.fields,field_description:muk_ai_subagents.field_muk_ai_session__subagent_of
+msgid "Subagent Of"
+msgstr "Subagente de"
+
+#. module: muk_ai_subagents
+#: model:ir.model.fields,field_description:muk_ai_subagents.field_muk_ai_session__subagents
+msgid "Subagent Run"
+msgstr "Ejecución de subagentes"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run_bar/run_bar.xml:0
+msgid "Subagent of"
+msgstr "Subagente de"
+
+#. module: muk_ai_subagents
+#: model:ir.model.fields,field_description:muk_ai_subagents.field_muk_ai_session__child_session_ids
+#: model_terms:ir.ui.view,arch_db:muk_ai_subagents.view_ai_session_search_inherit_subagents
+msgid "Subagents"
+msgstr "Subagentes"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run/run.js:0
+msgid "Subagents are working, a message waits for their reports..."
+msgstr "Los subagentes están trabajando, un mensaje espera sus informes..."
+
+#. module: muk_ai_subagents
+#: model:ir.model.fields,help:muk_ai_subagents.field_muk_ai_agent__delegate_agent_ids
+msgid "The agents this one may delegate to."
+msgstr "Los agentes en los que este puede delegar."
+
+#. module: muk_ai_subagents
+#: model:ir.model.fields,help:muk_ai_subagents.field_muk_ai_session__subagent_of
+msgid "The chat a subagent works for, and how the run names it."
+msgstr ""
+"El chat para el que trabaja un subagente y cómo lo nombra la ejecución."
+
+#. module: muk_ai_subagents
+#: model:ir.model.fields,help:muk_ai_subagents.field_muk_ai_session__parent_session_id
+msgid "The chat whose delegate call started this subagent."
+msgstr "El chat cuya llamada a delegar inició este subagente."
+
+#. module: muk_ai_subagents
+#. odoo-python
+#: code:addons/muk_ai_subagents/mcp/delegate.py:0
+msgid "The message is empty."
+msgstr "El mensaje está vacío."
+
+#. module: muk_ai_subagents
+#: model:ir.model.fields,help:muk_ai_subagents.field_muk_ai_session__loop_state
+msgid "The recent tool calls of the subagent, to tell when it repeats itself."
+msgstr ""
+"Las últimas llamadas a herramientas del subagente, para detectar cuándo se "
+"repite."
+
+#. module: muk_ai_subagents
+#: model:ir.model.fields,help:muk_ai_subagents.field_muk_ai_session__subagents
+msgid "The roster of the subagents of a delegating chat."
+msgstr "La lista de los subagentes de un chat que delega."
+
+#. module: muk_ai_subagents
+#. odoo-python
+#: code:addons/muk_ai_subagents/mcp/delegate.py:0
+msgid "The subagent tools can only be called inside an AI session."
+msgstr ""
+"Las herramientas de subagentes solo se pueden llamar dentro de una sesión de"
+" IA."
+
+#. module: muk_ai_subagents
+#: model:ir.model.fields,help:muk_ai_subagents.field_muk_ai_session__delegation_brief
+msgid ""
+"The task the parent handed over, with the colour and call it belongs to."
+msgstr ""
+"La tarea que entregó el chat principal, con el color y la llamada a la que "
+"pertenece."
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run/run.js:0
+msgid "Thinking"
+msgstr "Pensando"
+
+#. module: muk_ai_subagents
+#. odoo-python
+#: code:addons/muk_ai_subagents/mcp/delegate.py:0
+msgid "This session may not delegate tasks to other agents."
+msgstr "Esta sesión no puede delegar tareas en otros agentes."
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run_card/run_card.xml:0
+msgid ""
+"This subagent keeps making the same call. Give it new direction in its chat,"
+" or stop it."
+msgstr ""
+"Este subagente repite la misma llamada. Dele nuevas indicaciones en su chat "
+"o deténgalo."
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run_card/run_card.xml:0
+msgid "Type your answer..."
+msgstr "Escriba su respuesta..."
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run_card/run_card.xml:0
+msgid "Waiting for the owner to answer."
+msgstr "Esperando a que responda el propietario."
+
+#. module: muk_ai_subagents
+#: model:ir.model.fields,help:muk_ai_subagents.field_muk_ai_agent__delegation_instructions
+msgid ""
+"When this agent hands work to its delegates, in words it follows. How the "
+"delegation tools work is told to the agent apart from this."
+msgstr ""
+"Cuándo este agente entrega trabajo a sus delegados, en palabras que sigue. "
+"Cómo funcionan las herramientas de delegación se le indica aparte."
+
+#. module: muk_ai_subagents
+#: model_terms:ir.ui.view,arch_db:muk_ai_subagents.view_ai_agent_form_inherit_subagents
+msgid "When this agent hands work to its delegates..."
+msgstr "Cuándo este agente entrega trabajo a sus delegados..."
+
+#. module: muk_ai_subagents
+#: model:ir.model.fields,help:muk_ai_subagents.field_muk_ai_session__stop_reason
+msgid "Why the subagent ended."
+msgstr "Por qué terminó el subagente."
+
+#. module: muk_ai_subagents
+#: model_terms:ir.ui.view,arch_db:muk_ai_subagents.view_ai_session_search_inherit_subagents
+msgid "With Subagents"
+msgstr "Con subagentes"
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run_card/run_card.xml:0
+msgid "Work already saved by a subagent is kept when it stops."
+msgstr "Lo que un subagente ya guardó se conserva cuando se detiene."
+
+#. module: muk_ai_subagents
+#. odoo-javascript
+#: code:addons/muk_ai_subagents/static/src/chat/run/run.js:0
+msgid "Writing the report"
+msgstr "Redactando el informe"

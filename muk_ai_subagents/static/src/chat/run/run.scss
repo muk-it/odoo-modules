@@ -1,0 +1,23 @@
+$mk-agent-colors: (
+    blue: #3b82f6,
+    green: #16a34a,
+    orange: #ea580c,
+    purple: #9333ea,
+    red: #dc2626,
+    cyan: #0891b2,
+    pink: #db2777,
+    yellow: #ca8a04,
+);
+@each $name, $color in $mk-agent-colors {
+    .mk_agent_#{$name} {
+        --mk-agent: #{$color};
+    }
+}
+.mk_run_badge {
+    width: 22px;
+    height: 22px;
+    color: var(--white);
+    background: var(--mk-agent, var(--secondary));
+    font-size: 0.7rem;
+    line-height: 1;
+}
