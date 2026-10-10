@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from contextlib import closing
+from unittest.mock import patch
 
 from psycopg2.errors import UniqueViolation
 
@@ -110,12 +111,16 @@ class TestProvider(AITestCommon):
             .with_user(admin)
             .create({'name': 'openai', 'code': 'disposable'})
         )
-        for caller, provider, deleted in (
-            (self.env.user, self.provider, False),
-            (admin, self.provider_google, False),
-            (admin, added, True),
+        for caller, provider, uninstalling, deleted in (
+            (self.env.user, self.provider, set(), False),
+            (admin, self.provider_google, {'muk_ai_compat'}, False),
+            (admin, added, set(), True),
+            (self.env.user, self.provider_anthropic, {'muk_ai'}, True),
         ):
-            with self.subTest(caller=caller.login, provider=provider.display_name):
+            with (
+                self.subTest(caller=caller.login, provider=provider.display_name),
+                patch.object(self.registry, 'uninstalling_modules', uninstalling),
+            ):
                 if deleted:
                     provider.with_user(caller).unlink()
                 else:

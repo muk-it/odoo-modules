@@ -67,7 +67,7 @@ class TestToolLog(AITestCommon):
         session = (
             self.env['muk_ai.session'].with_user(self.user).create({'name': 'Log'})
         )
-        last = self.env['muk_mcp.log'].search([], order='id desc', limit=1).id
+        last = self.env['muk_mcp.log'].search([], order='id desc', limit=1).id or 0
         with (
             self._patch_tool({'read_records': UserError('no such record')}),
             self._mock_responses(

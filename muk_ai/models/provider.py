@@ -437,6 +437,11 @@ class AIProvider(models.Model):
     # Constraints
     # ----------------------------------------------------------
 
+    _unique_name = models.Constraint(
+        'unique(name, code)',
+        'A provider with this name and code already exists.',
+    )
+
     @api.constrains('name', 'api_region', 'api_url')
     def _check_api_region(self) -> None:
         """Reject a region the implementation lacks or a custom region without URL.
@@ -463,17 +468,9 @@ class AIProvider(models.Model):
                     )
                 )
 
-    _unique_name = models.Constraint(
-        'unique(name, code)',
-        'A provider with this name and code already exists.',
-    )
-
-    # ----------------------------------------------------------
-    # ORM
-    # ----------------------------------------------------------
-
-    def unlink(self) -> bool:
-        """Delete the providers, refusing the ones an addon ships.
+    @api.ondelete(at_uninstall=True)
+    def _unlink_except_shipped(self) -> None:
+        """Refuse to delete a provider an addon ships, unless that addon is uninstalled.
 
         :raise UserError: when a record carries an external identifier, since
             its implementation stays registered and no upgrade recreates the
@@ -483,6 +480,7 @@ class AIProvider(models.Model):
             self.env['ir.model.data']
             .sudo()
             .search([('model', '=', self._name), ('res_id', 'in', self.ids)])
+            .filtered(lambda data: data.module not in self.pool.uninstalling_modules)
         )
         if shipped:
             raise UserError(
@@ -494,4 +492,3 @@ class AIProvider(models.Model):
                     ),
                 )
             )
-        return super().unlink()
