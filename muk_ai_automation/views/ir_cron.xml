@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+    <record id="view_ai_agent_cron_list" model="ir.ui.view">
+        <field name="name">ir.cron.list.muk_ai_automation</field>
+        <field name="model">ir.cron</field>
+        <field name="mode">primary</field>
+        <field name="inherit_id" ref="base.ir_cron_view_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="attributes">
+                <attribute name="sample">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='model_id']" position="after">
+                <field name="agent_id"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_ir_cron_form" model="ir.ui.view">
+        <field name="name">ir.cron.form.muk_ai_automation</field>
+        <field name="model">ir.cron</field>
+        <field name="inherit_id" ref="base.ir_cron_view_form"/>
+        <field name="arch" type="xml">
+            <xpath
+                expr="//button[@name='action_open_agent_sessions']"
+                position="replace"
+            />
+        </field>
+    </record>
+
+    <record id="view_ai_agent_cron_form" model="ir.ui.view">
+        <field name="name">ir.cron.form.muk_ai_automation.agent</field>
+        <field name="model">ir.cron</field>
+        <field name="mode">primary</field>
+        <field name="priority">50</field>
+        <field name="inherit_id" ref="base.ir_cron_view_form"/>
+        <field name="arch" type="xml">
+            <xpath
+                expr="//button[@name='method_direct_trigger']"
+                position="attributes"
+            >
+                <attribute name="invisible">not model_id</attribute>
+            </xpath>
+            <xpath expr="//field[@name='name']" position="attributes">
+                <attribute name="placeholder">e.g. Weekly Contact Review</attribute>
+            </xpath>
+            <xpath expr="(//field[@name='model_id'])[1]/.." position="attributes">
+                <attribute name="string">Target</attribute>
+            </xpath>
+            <xpath expr="//field[@name='group_ids']/.." position="attributes">
+                <attribute name="string">Access</attribute>
+            </xpath>
+            <xpath expr="(//field[@name='model_id'])[1]" position="attributes">
+                <attribute name="placeholder">e.g. Contact</attribute>
+            </xpath>
+            <xpath expr="(//field[@name='model_id'])[2]" position="attributes">
+                <attribute name="placeholder">e.g. Contact</attribute>
+            </xpath>
+            <xpath expr="//field[@name='user_id']/../.." position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//notebook" position="before">
+                <group>
+                    <group string="Schedule" name="agent_schedule">
+                        <label for="interval_number" string="Execute Every"/>
+                        <div class="o_row">
+                            <field name="interval_number"/>
+                            <field name="interval_type"/>
+                        </div>
+                        <field name="nextcall"/>
+                    </group>
+                    <group string="Execution" name="agent_execution">
+                        <field name="user_id" widget="many2one_avatar_user"/>
+                        <field name="active" widget="boolean_toggle"/>
+                        <field name="priority"/>
+                    </group>
+                </group>
+            </xpath>
+            <xpath expr="//label[@for='interval_number']" position="replace"/>
+            <xpath expr="//field[@name='interval_number']/.." position="replace"/>
+            <xpath expr="//field[@name='nextcall']" position="replace"/>
+            <xpath expr="//field[@name='user_id']" position="replace"/>
+            <xpath expr="//field[@name='active']" position="replace"/>
+            <xpath expr="//field[@name='priority']" position="replace"/>
+        </field>
+    </record>
+
+    <record id="action_ai_scheduled_actions" model="ir.actions.act_window">
+        <field name="name">Scheduled Actions</field>
+        <field name="path">ai-scheduled-actions</field>
+        <field name="res_model">ir.cron</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state', '=', 'ai_agent')]</field>
+        <field name="context">{'default_state': 'ai_agent', 'default_usage': 'ir_cron'}</field>
+        <field
+            name="view_ids"
+            eval="[
+                (5, 0, 0),
+                (0, 0, {'view_mode': 'list', 'view_id': ref('view_ai_agent_cron_list')}),
+                (0, 0, {'view_mode': 'form', 'view_id': ref('view_ai_agent_cron_form')}),
+            ]"
+        />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Schedule an AI agent
+            </p>
+            <p>
+                A scheduled action runs an AI agent at a regular interval on the
+                records its domain or code selects.
+            </p>
+        </field>
+    </record>
+
+</odoo>

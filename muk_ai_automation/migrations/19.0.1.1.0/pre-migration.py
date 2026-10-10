@@ -14,7 +14,7 @@ def migrate(cr: Cursor, version: str) -> None:
     ``res_model`` and ``res_id`` are now declared by ``muk_ai_chatter``, which
     reflects them under its own external ids while this module still owns the
     original rows. Left in place, those rows would be stale by the end of this
-    module's update and Odoo would delete the fields — and their columns — with
+    module's update and Odoo would delete the fields, and their columns, with
     every linked session on them. Removing the external id only unhooks the
     bookkeeping; the fields themselves stay, now owned by ``muk_ai_chatter``.
     """

@@ -3,17 +3,17 @@
     'summary': 'Run AI agents as server actions and automation rule steps',
     'description': """
         Extends MuK AI with an ir.actions.server state ``ai_agent`` so admins
-        can fire an AI agent from any server action or base.automation
-        rule. Supports single dispatch as well as per-record dispatch
-        across a domain or a Python-evaluated recordset, chains sessions
-        per record so the agent can recall the previous run, and exposes
-        per-action caps for resumes, lifetime, tokens, and cost.
+        can run an AI agent from any server action, automation rule or
+        scheduled action. Starts one chat for all target records or one per
+        record, selected by the trigger, a domain or Python code, and lets
+        each chat recall the previous run for the same record.
     """,
-    'version': '19.0.1.1.2',
+    'version': '19.0.1.1.3',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',
     'website': 'http://www.mukit.at',
+    'live_test_url': 'https://youtu.be/XULLGbxdwtQ',
     'contributors': [
         'Mathias Markl <mathias.markl@mukit.at>',
     ],
@@ -22,10 +22,10 @@
         'muk_ai_chatter',
     ],
     'data': [
-        'security/ir.model.access.csv',
-        'data/ir_actions.xml',
         'views/ir_actions_server.xml',
+        'views/ir_cron.xml',
         'views/base_automation.xml',
+        'views/ai_session.xml',
         'views/res_config_settings.xml',
         'views/menu.xml',
     ],
