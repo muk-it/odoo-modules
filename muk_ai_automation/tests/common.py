@@ -1,50 +1,15 @@
 from __future__ import annotations
 
-import json
 from collections.abc import Iterator
 from contextlib import contextmanager
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from odoo import models
-
-from odoo.addons.muk_ai.tests.common import AITestCommon
-
-
-def text_payload(text: str = 'ok') -> dict:
-    """Build the provider result of a round that answers with plain text."""
-    return {
-        'text': text,
-        'tool_calls': [],
-        'carry_inputs': [
-            {
-                'type': 'message',
-                'role': 'assistant',
-                'content': [{'type': 'output_text', 'text': text}],
-            }
-        ],
-        'usage': {'input_tokens': 3, 'output_tokens': 1},
-    }
+from odoo.tests.common import TransactionCase
 
 
-def tool_payload(name: str, arguments: dict) -> dict:
-    """Build the provider result of a round that calls one tool."""
-    return {
-        'text': '',
-        'tool_calls': [{'call_id': 'call_1', 'name': name, 'arguments': arguments}],
-        'carry_inputs': [
-            {
-                'type': 'function_call',
-                'name': name,
-                'arguments': json.dumps(arguments),
-                'call_id': 'call_1',
-            }
-        ],
-        'usage': {'input_tokens': 4, 'output_tokens': 2},
-    }
-
-
-class AutomationTestCommon(AITestCommon):
-    """An agent, partners to run it on and helpers to run ``ai_agent`` actions."""
+class AutomationTestCommon(TransactionCase):
+    """Shared fixtures for the ``ai_agent`` server-action test suites."""
 
     # ----------------------------------------------------------
     # Setup
@@ -52,73 +17,79 @@ class AutomationTestCommon(AITestCommon):
 
     @classmethod
     def setUpClass(cls) -> None:
-        """Create the agent and three partners."""
+        """Set up the stubbed provider, the agent, and the partner model."""
         super().setUpClass()
-        cls.agent = cls.env['muk_ai.agent'].create({'name': 'Automation Agent'})
-        cls.partners = cls.env['res.partner'].create(
-            [{'name': f'Partner {index}'} for index in range(3)]
-        )
+        cls.provider = cls.env.ref('muk_ai.provider_openai')
+        cls.provider.sudo().write({'api_key': 'test-key', 'rate_limit': 0})
+        cls.env.company.default_ai_provider_id = cls.provider
+        cls.agent = cls.env['muk_ai.agent'].create({'name': 'Automation Test Agent'})
+        cls.partner_model = cls.env['ir.model']._get('res.partner')
 
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
 
     @contextmanager
-    def _mock_responses(
-        self, payloads: list[dict], repeat_last: bool = False
-    ) -> Iterator[list[dict]]:
-        """Answer each provider round with the next payload, in order.
+    def _mock_provider(self, text: str = 'ok') -> Iterator[MagicMock]:
+        """Patch the provider request to return a canned response payload."""
+        payload = {
+            'text': text,
+            'tool_calls': [],
+            'carry_inputs': [],
+            'usage': {'input_tokens': 1, 'output_tokens': 1, 'cached_tokens': 0},
+        }
 
-        Yields the keyword arguments of every request, ``inputs`` included.
-        """
-        remaining = list(payloads)
-        captured = []
-
-        def fake(self_arg, inputs=None, **kwargs) -> dict:
-            """Record the request and return the next scripted payload."""
-            captured.append({**kwargs, 'inputs': inputs})
-            if not remaining:
-                msg = 'No more mocked provider responses'
-                raise AssertionError(msg)
-            if repeat_last and len(remaining) == 1:
-                return remaining[0]
-            return remaining.pop(0)
+        def fake(self_arg, *args, **kwargs):
+            return payload
 
         with patch.object(
-            type(self.provider), '_request_responses', autospec=True, side_effect=fake
-        ):
-            yield captured
+            type(self.provider),
+            '_request_responses',
+            autospec=True,
+            side_effect=fake,
+        ) as mock:
+            yield mock
+
+    def _action_vals(self, **vals) -> dict:
+        """Return the create values of an ``ai_agent`` server action."""
+        defaults = {
+            'name': 'Agent Action',
+            'state': 'ai_agent',
+            'model_id': self.partner_model.id,
+            'agent_id': self.agent.id,
+            'agent_prompt': 'Hello.',
+            'agent_dispatch_mode': 'single',
+            'agent_record_source': 'domain',
+            'agent_record_domain': '[]',
+        }
+        defaults.update(vals)
+        return defaults
+
+    def _make_action(self, **vals) -> models.BaseModel:
+        """Create an ``ai_agent`` server action with overridable defaults."""
+        return self.env['ir.actions.server'].create(self._action_vals(**vals))
+
+    @classmethod
+    def _make_partners(cls, count: int, prefix: str = 'Partner') -> models.BaseModel:
+        """Create ``count`` partners named after ``prefix``."""
+        return cls.env['res.partner'].create(
+            [{'name': '%s %d' % (prefix, index)} for index in range(count)]
+        )
+
+    def _partner_field(self, name: str) -> models.BaseModel:
+        """Return the ``ir.model.fields`` record of a ``res.partner`` field.
+
+        :param name: the technical field name to look up
+        """
+        return self.env['ir.model.fields']._get('res.partner', name)
 
     def _domain_for(self, records: models.BaseModel) -> str:
         """Return a domain string matching ``records`` by id."""
-        return f"[('id', 'in', {records.ids})]"
-
-    def _make_action(self, **values) -> models.BaseModel:
-        """Create an ``ai_agent`` action on partners running over ``self.partners``."""
-        return self.env['ir.actions.server'].create(
-            {
-                'name': 'Agent Action',
-                'state': 'ai_agent',
-                'model_id': self.env['ir.model']._get_id('res.partner'),
-                'agent_id': self.agent.id,
-                'agent_prompt': 'Hello.',
-                'agent_record_domain': self._domain_for(self.partners),
-                **values,
-            }
-        )
-
-    def _run(
-        self, action: models.BaseModel, answer: str = 'done', **context
-    ) -> tuple[dict | bool, list[str]]:
-        """Run ``action`` against a provider answering ``answer``.
-
-        :return: the result of the run and each request sent, as JSON text
-        """
-        with self._mock_responses([text_payload(answer)], repeat_last=True) as sent:
-            result = action.with_context(**context).run()
-        return result, [json.dumps(request['inputs'], default=str) for request in sent]
+        return "[('id', 'in', %s)]" % str(records.ids)
 
     def _sessions_of(self, action: models.BaseModel) -> models.BaseModel:
-        """Return the chats the action's stat button lists, oldest first."""
-        domain = action.action_open_agent_sessions()['domain']
-        return self.env['muk_ai.session'].search(domain, order='id')
+        """Return the sessions spawned by ``action``, oldest first."""
+        return self.env['muk_ai.session'].search(
+            [('action_server_id', '=', action.id)],
+            order='id',
+        )

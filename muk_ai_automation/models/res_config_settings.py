@@ -14,5 +14,5 @@ class ResConfigSettings(models.TransientModel):
 
     module_muk_ai_automation = fields.Boolean(
         string='MuK AI Automation',
-        help='Run agents from server actions, automation rules and schedules.',
+        help='Run AI agents as server actions and automation rule steps.',
     )

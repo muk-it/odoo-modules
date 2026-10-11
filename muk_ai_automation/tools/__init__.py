@@ -1,3 +1,4 @@
 from __future__ import annotations
 
-from . import prompt
+from . import constants
+from . import dispatch
