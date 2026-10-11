@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo noupdate="1">
+
+	<record id="provider_typesafe" model="muk_ai.provider">
+		<field name="name">systemone</field>
+		<field name="code">typesafe</field>
+		<field name="active" eval="False"/>
+		<field name="sequence">40</field>
+		<field name="api_url">https://api.typesafe.ai</field>
+		<field name="request_timeout">10</field>
+	</record>
+
+	<record id="provider_decis" model="muk_ai.provider">
+		<field name="name">systemone</field>
+		<field name="code">decis</field>
+		<field name="active" eval="False"/>
+		<field name="sequence">41</field>
+		<field name="api_url">http://localhost:8000</field>
+		<field name="request_timeout">60</field>
+		<field name="decision_parallel">1</field>
+	</record>
+
+</odoo>

@@ -1,0 +1,47 @@
+{
+    'name': 'MuK AI Decision',
+    'summary': 'Fast typed decisions for MuK AI: choices, scores and yes/no answers',
+    'description': """
+        Adds decision models to the MuK AI assistant. A decision model reads
+        a text or a record and answers typed questions: one choice out of a
+        list, a score on a scale, or the probability of a yes, each with its
+        confidence. One service answers them for every module, through any
+        server speaking the System One API, TypeSafe Jev in the cloud or a
+        self-hosted Laya, or a small chat model of an existing provider.
+        Every decision is logged with its model, answers, duration and cost.
+        A Decide with AI server action fills fields, routes records to other
+        actions and flags unsure ones from any automation rule or scheduled
+        action, an agent action can run only for the records a yes/no gate
+        lets through, and agents decide about texts or records through the
+        decide tool.
+    """,
+    'version': '20.0.1.1.0',
+    'category': 'Productivity',
+    'license': 'LGPL-3',
+    'author': 'MuK IT',
+    'website': 'http://www.mukit.at',
+    'live_test_url': 'https://youtu.be/05VsEYsSOT4',
+    'contributors': [
+        'Mathias Markl <mathias.markl@mukit.at>',
+    ],
+    'depends': [
+        'muk_ai_automation',
+    ],
+    'data': [
+        'security/ir.access.csv',
+        'data/provider.xml',
+        'data/model.xml',
+        'views/ai_model.xml',
+        'views/ai_provider.xml',
+        'views/decision_log.xml',
+        'views/ir_actions_server.xml',
+        'views/menu.xml',
+        'views/res_config_settings.xml',
+    ],
+    'images': [
+        'static/description/banner.png',
+    ],
+    'installable': True,
+    'application': False,
+    'auto_install': False,
+}
