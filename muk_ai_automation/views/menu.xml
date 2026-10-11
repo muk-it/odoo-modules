@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+    <menuitem
+        id="menu_ai_automation"
+        name="Automation"
+        parent="muk_ai.menu_ai_root"
+        sequence="85"
+        groups="base.group_system"
+    >
+        <menuitem
+            id="menu_ai_agent_actions"
+            name="Agent Actions"
+            action="action_ai_agent_actions"
+            sequence="10"
+        />
+        <menuitem
+            id="menu_ai_automation_rules"
+            name="Automation Rules"
+            action="action_ai_automation_rules"
+            sequence="20"
+        />
+        <menuitem
+            id="menu_ai_scheduled_actions"
+            name="Scheduled Actions"
+            action="action_ai_scheduled_actions"
+            sequence="30"
+        />
+    </menuitem>
+
+</odoo>

@@ -1,0 +1,530 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-11 00:08+0000\n"
+"PO-Revision-Date: 2026-10-10 23:36+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: muk_ai_automation
+#. odoo-python
+#: code:addons/muk_ai_automation/models/ir_actions_server.py:0
+msgid "%(name)s started %(count)s AI chats."
+msgstr "%(name)s hat %(count)s KI-Chats gestartet."
+
+#. module: muk_ai_automation
+#. odoo-python
+#: code:addons/muk_ai_automation/models/ir_actions_server.py:0
+msgid "%(name)s started an AI chat."
+msgstr "%(name)s hat einen KI-Chat gestartet."
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
+msgid ""
+"<code>previous_session.last_text</code>: the last answer of the previous "
+"chat for the record, when the action continues per record"
+msgstr ""
+"<code>previous_session.last_text</code>: die letzte Antwort des vorherigen "
+"Chats für den Datensatz, wenn die Aktion pro Datensatz fortsetzt"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
+msgid ""
+"<code>previous_session.tool_log</code>: the tools that chat called, with "
+"their arguments and results"
+msgstr ""
+"<code>previous_session.tool_log</code>: die Werkzeuge, die dieser Chat "
+"aufgerufen hat, mit ihren Argumenten und Ergebnissen"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
+msgid "<code>record</code>: the record of the chat, with one chat per record"
+msgstr ""
+"<code>record</code>: der Datensatz des Chats, bei einem Chat pro Datensatz"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
+msgid "<code>records</code>: the records of the run, with one chat for all"
+msgstr ""
+"<code>records</code>: die Datensätze des Laufs, bei einem Chat für alle"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
+msgid ""
+"<code>user</code>, <code>company</code>, <code>env</code>, "
+"<code>today</code>"
+msgstr ""
+
+#. module: muk_ai_automation
+#: model_terms:ir.actions.act_window,help:muk_ai_automation.action_ai_scheduled_actions
+msgid ""
+"A scheduled action runs an AI agent at a regular interval on the\n"
+"                records its domain or code selects."
+msgstr ""
+"Eine geplante Aktion führt einen KI-Agenten in regelmäßigen Abständen für "
+"die Datensätze aus, die ihre Domain oder ihr Code auswählt."
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__agent_session_count
+#: model:ir.model.fields,field_description:muk_ai_automation.field_ir_cron__agent_session_count
+msgid "AI Chats"
+msgstr "KI-Chats"
+
+#. module: muk_ai_automation
+#: model:ir.model,name:muk_ai_automation.model_muk_ai_session
+msgid "AI Session"
+msgstr "KI-Sitzung"
+
+#. module: muk_ai_automation
+#: model:base.automation,name:muk_ai_automation.demo_rule_partner_on_create
+msgid "AI summarize on partner create"
+msgstr "KI-Zusammenfassung beim Anlegen eines Kontakts"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_action_list
+msgid "Actions Menu"
+msgstr "Aktionsmenü"
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__agent_id
+#: model:ir.model.fields,field_description:muk_ai_automation.field_ir_cron__agent_id
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
+msgid "Agent"
+msgstr "Agent"
+
+#. module: muk_ai_automation
+#: model:ir.actions.act_window,name:muk_ai_automation.action_ai_agent_actions
+#: model:ir.ui.menu,name:muk_ai_automation.menu_ai_agent_actions
+msgid "Agent Actions"
+msgstr "Agentenaktionen"
+
+#. module: muk_ai_automation
+#: model_terms:ir.actions.act_window,help:muk_ai_automation.action_ai_agent_actions
+msgid ""
+"An agent action hands records to an AI agent with a prompt. Run it\n"
+"                from the Actions menu of a list, an automation rule or a schedule."
+msgstr ""
+"Eine Agentenaktion übergibt Datensätze mit einem Prompt an einen KI-Agenten."
+" Starten Sie sie aus dem Aktionsmenü einer Liste, über eine "
+"Automatisierungsregel oder einen Zeitplan."
+
+#. module: muk_ai_automation
+#: model_terms:ir.actions.act_window,help:muk_ai_automation.action_ai_automation_rules
+msgid ""
+"An automation rule starts an AI agent whenever it triggers: when\n"
+"                records are created, changed or reach a date."
+msgstr ""
+"Eine Automatisierungsregel startet einen KI-Agenten, sobald sie auslöst: wenn\n"
+"                Datensätze erstellt, geändert werden oder ein Datum erreichen."
+
+#. module: muk_ai_automation
+#: model:ir.ui.menu,name:muk_ai_automation.menu_ai_automation
+msgid "Automation"
+msgstr "Automatisierung"
+
+#. module: muk_ai_automation
+#: model:ir.actions.act_window,name:muk_ai_automation.action_ai_automation_rules
+#: model:ir.ui.menu,name:muk_ai_automation.menu_ai_automation_rules
+msgid "Automation Rules"
+msgstr "Automatisierungsregeln"
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,help:muk_ai_automation.field_muk_ai_session__previous_session_id
+msgid "Chat the same action ran for the same record before this one."
+msgstr ""
+"Chat, den dieselbe Aktion zuvor für denselben Datensatz ausgeführt hat."
+
+#. module: muk_ai_automation
+#: model:ir.model.fields.selection,name:muk_ai_automation.selection__ir_actions_server__agent_chain_strategy__per_record
+msgid "Continue per Record"
+msgstr "Pro Datensatz fortsetzen"
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,help:muk_ai_automation.field_ir_actions_server__agent_chain_strategy
+#: model:ir.model.fields,help:muk_ai_automation.field_ir_cron__agent_chain_strategy
+msgid ""
+"Continue per Record hands each chat the previous chat of this action for the"
+" same record, as previous_session in the prompt."
+msgstr ""
+"Pro Datensatz fortsetzen übergibt jedem Chat den vorherigen Chat dieser "
+"Aktion für denselben Datensatz, als previous_session im Prompt."
+
+#. module: muk_ai_automation
+#: model_terms:ir.actions.act_window,help:muk_ai_automation.action_ai_agent_actions
+msgid "Create an agent action"
+msgstr "Agentenaktion anlegen"
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__agent_dispatch_mode
+#: model:ir.model.fields,field_description:muk_ai_automation.field_ir_cron__agent_dispatch_mode
+msgid "Dispatch"
+msgstr "Verteilung"
+
+#. module: muk_ai_automation
+#: model:ir.model.fields.selection,name:muk_ai_automation.selection__ir_actions_server__agent_record_source__domain
+msgid "Domain"
+msgstr "Domain"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
+msgid ""
+"Each chat runs as the user who created the action, with that\n"
+"                            user's access rights. A chat per record is listed in the AI\n"
+"                            Sessions of its record."
+msgstr ""
+"Jeder Chat läuft als der Benutzer, der die Aktion angelegt hat, mit dessen "
+"Zugriffsrechten. Ein Chat pro Datensatz erscheint in den KI-Sitzungen seines"
+" Datensatzes."
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_form
+msgid "Execute Every"
+msgstr "Ausführen alle"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_form
+msgid "Execution"
+msgstr "Ausführung"
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,help:muk_ai_automation.field_ir_actions_server__agent_record_domain
+#: model:ir.model.fields,help:muk_ai_automation.field_ir_cron__agent_record_domain
+msgid "Filter selecting the target records of the action model."
+msgstr "Filter, der die Zieldatensätze des Aktionsmodells auswählt."
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
+msgid "Help"
+msgstr "Hilfe"
+
+#. module: muk_ai_automation
+#: model_terms:ir.actions.act_window,help:muk_ai_automation.action_ai_automation_rules
+msgid "Let an AI agent react to your records"
+msgstr "Lassen Sie einen KI-Agenten auf Ihre Datensätze reagieren"
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__agent_chain_strategy
+#: model:ir.model.fields,field_description:muk_ai_automation.field_ir_cron__agent_chain_strategy
+msgid "Memory"
+msgstr "Gedächtnis"
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,help:muk_ai_automation.field_ir_actions_server__agent_prompt
+#: model:ir.model.fields,help:muk_ai_automation.field_ir_cron__agent_prompt
+msgid ""
+"Message sent to the agent on each run, rendered as an inline template with "
+"record, records, previous_session, env, user and today."
+msgstr ""
+"Nachricht, die bei jedem Lauf an den Agenten gesendet wird, gerendert als "
+"Inline-Vorlage mit record, records, previous_session, env, user und today."
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,help:muk_ai_automation.field_ir_actions_server__agent_max_records_per_fire
+#: model:ir.model.fields,help:muk_ai_automation.field_ir_cron__agent_max_records_per_fire
+msgid "Most records one run starts a chat for. Zero means no limit."
+msgstr ""
+"Höchstzahl der Datensätze, für die ein Lauf einen Chat startet. Null "
+"bedeutet keine Begrenzung."
+
+#. module: muk_ai_automation
+#: model:ir.model.fields.selection,name:muk_ai_automation.selection__ir_actions_server__agent_dispatch_mode__single
+msgid "One Chat"
+msgstr "Ein Chat"
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,help:muk_ai_automation.field_ir_actions_server__agent_dispatch_mode
+#: model:ir.model.fields,help:muk_ai_automation.field_ir_cron__agent_dispatch_mode
+msgid ""
+"One Chat hands all target records to a single chat; One Chat per Record "
+"starts a chat for each record, linked to it."
+msgstr ""
+"Ein Chat übergibt alle Zieldatensätze an einen einzigen Chat; Ein Chat pro "
+"Datensatz startet für jeden Datensatz einen eigenen, mit ihm verknüpften "
+"Chat."
+
+#. module: muk_ai_automation
+#: model:ir.model.fields.selection,name:muk_ai_automation.selection__ir_actions_server__agent_dispatch_mode__per_record
+msgid "One Chat per Record"
+msgstr "Ein Chat pro Datensatz"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_action_form
+msgid "Per Record"
+msgstr "Pro Datensatz"
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_muk_ai_session__previous_session_id
+msgid "Previous Chat"
+msgstr "Vorheriger Chat"
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__agent_prompt
+#: model:ir.model.fields,field_description:muk_ai_automation.field_ir_cron__agent_prompt
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
+msgid "Prompt"
+msgstr ""
+
+#. module: muk_ai_automation
+#: model:ir.model.fields.selection,name:muk_ai_automation.selection__ir_actions_server__agent_record_source__code
+msgid "Python Code"
+msgstr "Python-Code"
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,help:muk_ai_automation.field_ir_actions_server__agent_record_code
+#: model:ir.model.fields,help:muk_ai_automation.field_ir_cron__agent_record_code
+msgid ""
+"Python code assigning the target recordset to \"records\", with env, now, "
+"today, datetime, date, time, timedelta and relativedelta."
+msgstr ""
+"Python-Code, der die Zieldatensätze \"records\" zuweist, mit env, now, "
+"today, datetime, date, time, timedelta und relativedelta."
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__agent_record_code
+#: model:ir.model.fields,field_description:muk_ai_automation.field_ir_cron__agent_record_code
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
+msgid "Record Code"
+msgstr "Datensatz-Code"
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__agent_record_domain
+#: model:ir.model.fields,field_description:muk_ai_automation.field_ir_cron__agent_record_domain
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_automation_form
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
+msgid "Record Domain"
+msgstr "Datensatz-Domain"
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__agent_max_records_per_fire
+#: model:ir.model.fields,field_description:muk_ai_automation.field_ir_cron__agent_max_records_per_fire
+msgid "Record Limit"
+msgstr "Datensatzlimit"
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__agent_record_source
+#: model:ir.model.fields,field_description:muk_ai_automation.field_ir_cron__agent_record_source
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
+msgid "Records"
+msgstr "Datensätze"
+
+#. module: muk_ai_automation
+#: model:ir.actions.server,name:muk_ai_automation.demo_agent_action_partner_summary
+#: model:ir.model.fields.selection,name:muk_ai_automation.selection__ir_actions_server__state__ai_agent
+msgid "Run AI Agent"
+msgstr "KI-Agent ausführen"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_form
+msgid "Schedule"
+msgstr "Zeitplan"
+
+#. module: muk_ai_automation
+#: model_terms:ir.actions.act_window,help:muk_ai_automation.action_ai_scheduled_actions
+msgid "Schedule an AI agent"
+msgstr "KI-Agenten planen"
+
+#. module: muk_ai_automation
+#: model:ir.actions.act_window,name:muk_ai_automation.action_ai_scheduled_actions
+#: model:ir.ui.menu,name:muk_ai_automation.menu_ai_scheduled_actions
+msgid "Scheduled Actions"
+msgstr "Geplante Aktionen"
+
+#. module: muk_ai_automation
+#: model:ir.model,name:muk_ai_automation.model_ir_actions_server
+msgid "Server Action"
+msgstr "Serveraktion"
+
+#. module: muk_ai_automation
+#. odoo-python
+#: code:addons/muk_ai_automation/models/ir_actions_server.py:0
+msgid ""
+"Server action %(name)s cannot run: the user who created it is archived. Re-"
+"create it under an active user to resume it."
+msgstr ""
+"Serveraktion %(name)s kann nicht ausgeführt werden: Der Benutzer, der sie "
+"angelegt hat, ist archiviert. Legen Sie sie unter einem aktiven Benutzer neu"
+" an, um sie fortzusetzen."
+
+#. module: muk_ai_automation
+#. odoo-python
+#: code:addons/muk_ai_automation/models/ir_actions_server.py:0
+msgid "Server action %(name)s has no active agent."
+msgstr "Serveraktion %(name)s hat keinen aktiven Agenten."
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,help:muk_ai_automation.field_muk_ai_session__action_server_id
+msgid "Server action that started this chat."
+msgstr "Serveraktion, die diesen Chat gestartet hat."
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
+msgid "Source"
+msgstr "Quelle"
+
+#. module: muk_ai_automation
+#: model:ir.model.fields.selection,name:muk_ai_automation.selection__ir_actions_server__agent_chain_strategy__none
+msgid "Start Fresh"
+msgstr "Neu beginnen"
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_muk_ai_session__action_server_id
+msgid "Started By"
+msgstr "Gestartet von"
+
+#. module: muk_ai_automation
+#: model:ir.actions.server,agent_prompt:muk_ai_automation.demo_agent_action_partner_summary
+msgid ""
+"Summarize this new partner: {{ record.display_name }} ({{ record.email }})"
+msgstr ""
+"Fasse diesen neuen Kontakt zusammen: {{ record.display_name }} ({{ "
+"record.email }})"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_action_form
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_automation_form
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_form
+msgid "Target"
+msgstr "Ziel"
+
+#. module: muk_ai_automation
+#. odoo-python
+#: code:addons/muk_ai_automation/models/ir_actions_server.py:0
+msgid "The prompt could not be rendered: %s"
+msgstr "Der Prompt konnte nicht gerendert werden: %s"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
+msgid ""
+"The prompt is a template. Write a value as <code>{{ expression }}</code>,\n"
+"                            with:"
+msgstr ""
+"Der Prompt ist eine Vorlage. Schreiben Sie einen Wert als <code>{{ expression }}</code>,\n"
+"                            mit:"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
+msgid ""
+"The records come from the trigger of the run: those selected in a\n"
+"                            list, the records of an automation rule, or the domain or the code of\n"
+"                            a scheduled action."
+msgstr ""
+"Die Datensätze kommen vom Auslöser des Laufs: die in einer\n"
+"                            Liste ausgewählten, die Datensätze einer Automatisierungsregel oder die Domain oder der Code\n"
+"                            einer geplanten Aktion."
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_automation_form
+msgid "Trigger"
+msgstr "Auslöser"
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__state
+#: model:ir.model.fields,field_description:muk_ai_automation.field_ir_cron__state
+msgid "Type"
+msgstr "Typ"
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,help:muk_ai_automation.field_ir_actions_server__state
+#: model:ir.model.fields,help:muk_ai_automation.field_ir_cron__state
+msgid ""
+"Type of server action. The following values are available:\n"
+"- 'Update a Record': update the values of a record\n"
+"- 'Create Activity': create an activity (Discuss)\n"
+"- 'Send Email': post a message, a note or send an email (Discuss)\n"
+"- 'Send SMS': send SMS, log them on documents (SMS)- 'Add/Remove Followers': add or remove followers to a record (Discuss)\n"
+"- 'Create Record': create a new record with new values\n"
+"- 'Execute Code': a block of Python code that will be executed\n"
+"- 'Send Webhook Notification': send a POST request to an external system, also known as a Webhook\n"
+"- 'Execute Existing Actions': define an action that triggers several other server actions\n"
+msgstr ""
+"Art der Serveraktion. Die folgenden Werte sind verfügbar:\n"
+"- „Einen Datensatz aktualisieren“: Aktualisieren Sie die Werte eines Datensatzes.\n"
+"- „Aktivität erstellen“: Erstellen Sie eine Aktivität (Dialog)\n"
+"- „E-Mail versenden“: Hinterlassen Sie eine Nachricht, oder Notiz oder senden Sie eine E-Mail (Dialog)\n"
+"- „SMS versenden“: Senden Sie eine SMS, protokollieren Sie diese in Dokumenten (SMS),\n"
+"- „Follower hinzufügen/entfernen“: Fügen Sie einem Datensatz Follower hinzu oder entfernen Sie sie (Dialog)\n"
+"- „Datensatz erstellen“: Erstellen Sie einen neuen Datensatz mit neuen Werten\n"
+"- „Code ausführen“: ein Block Python-Code, der ausgeführt wird\n"
+"- „Webhook-Benachrichtigung versenden“: Senden Sie eine Anfrage zur VERÖFFENTLICHUNG an ein externes System, auch bekannt als Webhook\n"
+"- „Vorhandene Aktionen ausführen“: Legen Sie eine Aktion fest, die mehrere andere Serveraktionen auslöst\n"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_automation_form
+msgid "Webhook"
+msgstr ""
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,help:muk_ai_automation.field_ir_actions_server__agent_record_source
+#: model:ir.model.fields,help:muk_ai_automation.field_ir_cron__agent_record_source
+msgid ""
+"Where the target records come from when the trigger provides none, as on a "
+"scheduled or manual run."
+msgstr ""
+"Woher die Zieldatensätze kommen, wenn der Auslöser keine liefert, wie bei "
+"einem geplanten oder manuellen Lauf."
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
+msgid ""
+"e.g. Check {{ record.display_name }} for missing contact details and post a "
+"note listing them."
+msgstr ""
+"z. B. Prüfe {{ record.display_name }} auf fehlende Kontaktdaten und schreibe"
+" eine Notiz, die sie auflistet."
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_action_form
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_form
+msgid "e.g. Contact"
+msgstr "z. B. Kontakt"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_action_form
+msgid "e.g. Review Contact Details"
+msgstr "z. B. Kontaktdaten prüfen"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_automation_form
+msgid "e.g. Review New Contacts"
+msgstr "z. B. Neue Kontakte prüfen"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_form
+msgid "e.g. Weekly Contact Review"
+msgstr "z. B. Wöchentliche Kontaktprüfung"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
+msgid "records = env['res.partner'].search([('email', '=', False)], limit=10)"
+msgstr ""
+
+#. module: muk_ai_automation
+#: model:ir.module.module,description:base.module_muk_ai_automation
+msgid ""
+"\n"
+"Extends MuK AI with an ir.actions.server state ``ai_agent`` so admins\n"
+"can run an AI agent from any server action, automation rule or\n"
+"scheduled action. Starts one chat for all target records or one per\n"
+"record, selected by the trigger, a domain or Python code, and lets\n"
+"each chat recall the previous run for the same record.\n"
+msgstr ""
+"Erweitert MuK AI um den Serveraktionstyp ``ai_agent``, damit Administratoren"
+" einen KI-Agenten aus jeder Serveraktion, Automatisierungsregel oder "
+"geplanten Aktion starten können. Startet einen Chat für alle Zieldatensätze "
+"oder einen pro Datensatz, ausgewählt durch den Auslöser, eine Domain oder "
+"Python-Code, und lässt jeden Chat auf den vorherigen Lauf für denselben "
+"Datensatz zurückgreifen."
+
+#. module: muk_ai_automation
+#: model:ir.module.module,summary:base.module_muk_ai_automation
+msgid "Run AI agents as server actions and automation rule steps"
+msgstr ""
+"KI-Agenten als Serveraktionen und Schritte von Automatisierungsregeln "
+"ausführen"
