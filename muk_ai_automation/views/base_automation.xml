@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+    <record id="view_ai_agent_automation_list" model="ir.ui.view">
+        <field name="name">base.automation.list.muk_ai_automation</field>
+        <field name="model">base.automation</field>
+        <field name="mode">primary</field>
+        <field name="priority">20</field>
+        <field name="inherit_id" ref="base_automation.view_base_automation_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//tree" position="attributes">
+                <attribute name="sample">1</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_base_automation_form" model="ir.ui.view">
+        <field name="name">base.automation.form.muk_ai_automation.icon</field>
+        <field name="model">base.automation</field>
+        <field name="inherit_id" ref="base_automation.view_base_automation_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//i[@data-name='server_action_icon']" position="attributes">
+                <attribute name="t-if">record.state.raw_value !== 'ai_agent'</attribute>
+            </xpath>
+            <xpath expr="//i[@data-name='server_action_icon']" position="after">
+                <i t-else="" t-att-title="record.state.value" class="mk_icon_ai"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_ai_agent_automation_form" model="ir.ui.view">
+        <field name="name">base.automation.form.muk_ai_automation</field>
+        <field name="model">base.automation</field>
+        <field name="mode">primary</field>
+        <field name="priority">20</field>
+        <field name="inherit_id" ref="base_automation.view_base_automation_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="attributes">
+                <attribute name="placeholder">e.g. Review New Contacts</attribute>
+            </xpath>
+            <xpath expr="(//field[@name='model_id'])[1]/../.." position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="(//field[@name='model_id'])[2]/../.." position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="(//field[@name='model_id'])[1]" position="attributes">
+                <attribute name="groups">!base.group_no_one</attribute>
+                <attribute name="invisible">context.get('default_model_id')</attribute>
+            </xpath>
+            <xpath expr="(//field[@name='model_id'])[2]" position="attributes">
+                <attribute name="groups">base.group_no_one</attribute>
+            </xpath>
+            <xpath expr="//label[@for='trigger']/../.." position="attributes">
+                <attribute name="invisible"/>
+            </xpath>
+            <xpath expr="//label[@for='trigger']/.." position="attributes">
+                <attribute name="string">Trigger</attribute>
+                <attribute name="invisible">not model_id</attribute>
+            </xpath>
+            <xpath expr="//label[@for='trigger']/.." position="before">
+                <group string="Target" name="agent_rule_target"/>
+            </xpath>
+            <xpath expr="//group[@name='agent_rule_target']" position="inside">
+                <xpath expr="(//field[@name='model_id'])[1]" position="move"/>
+                <xpath expr="(//field[@name='model_id'])[1]" position="move"/>
+            </xpath>
+            <xpath expr="//page[@name='actions']" position="after">
+                <page string="Record Domain" name="agent_rule_domain">
+                    <group name="agent_rule_domain_fields"/>
+                </page>
+            </xpath>
+            <xpath expr="//group[@name='agent_rule_domain_fields']" position="inside">
+                <xpath expr="//field[@name='filter_pre_domain']" position="move"/>
+                <xpath expr="(//field[@name='filter_domain'])[1]" position="move"/>
+                <xpath expr="(//field[@name='filter_domain'])[1]" position="move"/>
+            </xpath>
+            <xpath expr="//field[@name='record_getter']/../.." position="attributes">
+                <attribute name="string">Webhook</attribute>
+                <attribute name="invisible">trigger != 'on_webhook'</attribute>
+            </xpath>
+            <xpath expr="//field[@name='action_server_ids']" position="attributes">
+                <attribute name="context">
+                    {
+                        'is_modal': 1,
+                        'default_model_id': model_id,
+                        'default_state': 'ai_agent',
+                        'default_agent_dispatch_mode': 'per_record',
+                        'form_view_ref': 'muk_ai_automation.view_ai_agent_action_form',
+                    }
+                </attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_ai_automation_rules" model="ir.actions.act_window">
+        <field name="name">Automation Rules</field>
+        <field name="res_model">base.automation</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[('action_server_ids.state', '=', 'ai_agent')]</field>
+        <field
+            name="view_ids"
+            eval="[
+                (5, 0, 0),
+                (0, 0, {'view_mode': 'tree', 'view_id': ref('view_ai_agent_automation_list')}),
+                (0, 0, {'view_mode': 'form', 'view_id': ref('view_ai_agent_automation_form')}),
+            ]"
+        />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Let an AI agent react to your records
+            </p>
+            <p>
+                An automation rule starts an AI agent whenever it triggers: when
+                records are created, changed or reach a date.
+            </p>
+        </field>
+    </record>
+
+</odoo>
