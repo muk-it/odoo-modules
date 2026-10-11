@@ -30,8 +30,7 @@ clicking on the upgrade button.
 Configuration
 =============
 
-Switch on Automation under Settings > MuK AI > Extensions, or install the
-module from the Apps menu; Manage Agent Actions then opens the agent actions.
+Install the module from the Apps menu.
 MuK AI > Automation holds three lists, for administrators: Agent Actions,
 the Automation Rules and the Scheduled Actions that run an agent. Their forms
 show only what an agent needs, and what is created there runs an agent.

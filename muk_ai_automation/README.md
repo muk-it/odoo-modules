@@ -35,8 +35,7 @@ them, or one for each.
 
 ## Getting started
 
-1. Switch on **Automation** under **Settings > MuK AI > Extensions** and save;
-   it needs **MuK AI Assistant** with a provider set up.
+1. Install **MuK AI Automation** from the Apps menu; it needs **MuK AI Assistant** with a provider set up.
 2. Under **MuK AI > Automation > Agent Actions**, create an action: model,
    agent, dispatch and prompt.
 3. Click **Create Contextual Action**, select records in a list and run it from
