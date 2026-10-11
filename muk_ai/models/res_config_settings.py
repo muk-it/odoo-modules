@@ -154,6 +154,11 @@ class ResConfigSettings(models.TransientModel):
         help='Run AI agents from server actions, automation rules and schedules.',
     )
 
+    module_muk_ai_decision = fields.Boolean(
+        string='MuK AI Decision',
+        help='Typed choices, scores and yes/no answers from fast decision models.',
+    )
+
     module_muk_ai_schedule = fields.Boolean(
         string='MuK AI Schedule',
         help='Run agents on a schedule; let them pause and resume.',

@@ -10,6 +10,7 @@ from odoo.tests import new_test_user
 from odoo.tools import mute_logger
 
 from odoo.addons.muk_ai import _post_init_hook
+from odoo.addons.muk_ai.providers import REGISTRY
 from odoo.addons.muk_ai.tests.common import AITestCommon, sse_response
 
 PROMPT = [{'role': 'user', 'content': [{'type': 'input_text', 'text': 'hi'}]}]
@@ -147,6 +148,21 @@ class TestProvider(AITestCommon):
         )
         chat.active = False
         self.assertEqual(second.model_modalities, ['image'])
+
+    def test_a_provider_without_chat_never_becomes_the_chat_default(self):
+        providers = self.env['muk_ai.provider']
+        self.env.company.default_ai_provider_id = self.provider_google
+        self.provider_google.sequence = 1
+        with patch.object(REGISTRY['google'], 'modalities', frozenset({'decision'})):
+            self.provider_google.invalidate_recordset(['serves_chat'])
+            self.assertFalse(self.provider_google.serves_chat)
+            self.assertEqual(providers._get_default(), self.provider)
+            self.assertNotIn(
+                self.provider_google, providers.search([('serves_chat', '=', True)])
+            )
+            self.assertIn(
+                self.provider_google, providers.search([('serves_chat', '=', False)])
+            )
 
     def test_the_install_hook_seeds_only_missing_company_defaults(self):
         general = self.env.ref('muk_ai.agent_general')

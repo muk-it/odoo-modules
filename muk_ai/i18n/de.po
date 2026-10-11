@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 20.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-07 00:08+0000\n"
+"POT-Creation-Date: 2026-10-11 11:59+0000\n"
 "PO-Revision-Date: 2026-10-07 00:08+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -1133,6 +1133,11 @@ msgid "Automatic"
 msgstr "Automatisch"
 
 #. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Automation"
+msgstr "Automatisierung"
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__reasoning_effort_options
 msgid "Available Effort Options"
 msgstr "Verfügbare Aufwandsstufen"
@@ -1151,6 +1156,12 @@ msgstr "Verfügbare Tool-Optionen"
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
 msgid "Available variables"
 msgstr "Verfügbare Variablen"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__awaiting_user
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_notify__awaiting_user
+msgid "Awaiting User"
+msgstr "Wartet auf Benutzer"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__ai_search_needs_key
@@ -1801,6 +1812,11 @@ msgstr "Entschieden von"
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_muk_ai_approval_search
 msgid "Decision"
 msgstr "Entscheidung"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Decision Models"
+msgstr "Entscheidungsmodelle"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -3162,6 +3178,7 @@ msgid "Mode"
 msgstr "Modus"
 
 #. module: muk_ai
+#. odoo-javascript
 #: code:addons/muk_ai/static/src/views/fields/prompt/prompt.js:0
 #: model:ir.model,name:muk_ai.model_ir_model
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_approval__res_model
@@ -3188,12 +3205,6 @@ msgid "Model Default"
 msgstr "Modellstandard"
 
 #. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/views/fields/prompt/prompt.js:0
-msgid "Model field"
-msgstr "Modellfeld"
-
-#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_provider__model_modalities
 msgid "Model Modalities"
 msgstr "Modellmodalitäten"
@@ -3202,6 +3213,12 @@ msgstr "Modellmodalitäten"
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__model_placeholder
 msgid "Model Placeholder"
 msgstr "Platzhalter für Modell"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/views/fields/prompt/prompt.js:0
+msgid "Model field"
+msgstr "Modellfeld"
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_provider__default_image_model_id
@@ -3255,6 +3272,11 @@ msgid "MuK AI Assistant"
 msgstr ""
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_automation
+msgid "MuK AI Automation"
+msgstr ""
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat/chat.js:0
 #: code:addons/muk_ai/static/src/chat/chat/chat.xml:0
@@ -3266,6 +3288,11 @@ msgstr "MuK AI Chat"
 #: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_compat
 msgid "MuK AI Compatible Providers"
 msgstr "MuK AI Kompatible Anbieter"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_decision
+msgid "MuK AI Decision"
+msgstr ""
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_mcp
@@ -3890,6 +3917,7 @@ msgid "Private To"
 msgstr "Privat für"
 
 #. module: muk_ai
+#. odoo-javascript
 #: code:addons/muk_ai/static/src/views/fields/prompt/prompt.js:0
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent_suggestion__prompt
 msgid "Prompt"
@@ -3952,11 +3980,12 @@ msgstr ""
 #: model:ir.model.fields,help:muk_ai.field_res_config_settings__ai_provider_id
 msgid ""
 "Provider whose default models serve an agent that picks none, before the "
-"other providers in list order. Falls back to the first active provider if "
-"unset."
+"other providers in list order. Falls back to the first active provider "
+"serving chat if unset."
 msgstr ""
-"Anbieter, der verwendet wird, wenn ein Agent keinen angibt. Fällt auf den "
-"ersten aktiven Anbieter zurück, falls leer."
+"Anbieter, dessen Standardmodelle einen Agenten bedienen, der keines "
+"auswählt, vor den übrigen Anbietern in Listenreihenfolge. Fällt auf den "
+"ersten aktiven Anbieter mit Chat zurück, falls leer."
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_model__technical_name
@@ -4328,6 +4357,19 @@ msgid "Risk Reason"
 msgstr "Risikogrund"
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_automation
+msgid "Run AI agents from server actions, automation rules and schedules."
+msgstr ""
+"KI-Agenten aus Serveraktionen, Automatisierungsregeln und Zeitplänen "
+"ausführen."
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Run agents from server actions, automation rules and schedules."
+msgstr ""
+"Agenten aus Serveraktionen, Automatisierungsregeln und Zeitplänen ausführen."
+
+#. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_schedule
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "Run agents on a schedule; let them pause and resume."
@@ -4555,6 +4597,11 @@ msgstr "Sequenz"
 #: model:ir.model,name:muk_ai.model_ir_actions_server
 msgid "Server Action"
 msgstr "Serveraktion"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_provider__serves_chat
+msgid "Serves Chat"
+msgstr "Bedient Chat"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -5045,6 +5092,11 @@ msgid "That AI session no longer exists."
 msgstr "Diese KI-Sitzung existiert nicht mehr."
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_prompt_variables__odoo_series
+msgid "The Odoo series, for example 20.0."
+msgstr "Die Odoo-Serie, zum Beispiel 20.0."
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat/chat.js:0
 msgid "The agent of a shared chat cannot be changed"
@@ -5094,11 +5146,6 @@ msgid "The model is warned shortly before the limit so it can wrap up."
 msgstr ""
 "Das Modell wird kurz vor dem Limit gewarnt, damit es zum Abschluss kommen "
 "kann."
-
-#. module: muk_ai
-#: model:ir.model.fields,help:muk_ai.field_muk_ai_prompt_variables__odoo_series
-msgid "The Odoo series, for example 20.0."
-msgstr "Die Odoo-Serie, zum Beispiel 20.0."
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
@@ -5455,6 +5502,14 @@ msgstr "Typ der Ausnahmeaktivität im Datensatz."
 #: code:addons/muk_ai/static/src/chat/composer/composer.js:0
 msgid "Type your answer..."
 msgstr "Geben Sie Ihre Antwort ein..."
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Typed choices, scores and yes/no answers from fast decision models."
+msgstr ""
+"Typisierte Auswahl, Bewertungen und Ja/Nein-Antworten von schnellen "
+"Entscheidungsmodellen."
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_kanban
@@ -5993,26 +6048,3 @@ msgstr "view_context.id muss eine positive Ganzzahl sein."
 #: model:ir.model,name:muk_ai.model_ir_websocket
 msgid "websocket message handling"
 msgstr "Websocket-Nachrichtbearbeitung"
-
-#. module: muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "Automation"
-msgstr "Automatisierung"
-
-#. module: muk_ai
-#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_automation
-msgid "MuK AI Automation"
-msgstr ""
-
-#. module: muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "Run agents from server actions, automation rules and schedules."
-msgstr ""
-"Agenten aus Serveraktionen, Automatisierungsregeln und Zeitplänen ausführen."
-
-#. module: muk_ai
-#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_automation
-msgid "Run AI agents from server actions, automation rules and schedules."
-msgstr ""
-"KI-Agenten aus Serveraktionen, Automatisierungsregeln und Zeitplänen "
-"ausführen."

@@ -187,17 +187,23 @@ class AIProvider(models.Model):
         string='Supports Vision',
     )
 
+    serves_chat = fields.Boolean(
+        compute='_compute_serves_chat',
+        search='_search_serves_chat',
+        string='Serves Chat',
+    )
+
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
 
     @api.model
     def _get_default(self) -> AIProvider:
-        """Return the company default provider, or the first active one."""
+        """Return the company default provider, or the first active one serving chat."""
         preferred = self.env.company.default_ai_provider_id
-        if preferred and preferred.active:
+        if preferred and preferred.active and preferred.serves_chat:
             return preferred
-        return self.search([('active', '=', True)], limit=1)
+        return self.search([('active', '=', True), ('serves_chat', '=', True)], limit=1)
 
     def _get_client(self) -> ProviderBase:
         """Instantiate the provider client from the registry.
@@ -432,6 +438,25 @@ class AIProvider(models.Model):
                 and 'code_interpreter' not in disabled
             )
             record.supports_vision = bool(impl and impl.supports_vision)
+
+    @api.depends('name')
+    def _compute_serves_chat(self) -> None:
+        """Reflect whether the registered implementation answers chat requests."""
+        for record in self:
+            impl = REGISTRY.get(record.name)
+            record.serves_chat = bool(impl and 'chat' in impl.modalities)
+
+    def _search_serves_chat(self, operator: str, value) -> list:
+        """Search providers by whether their implementation answers chat requests."""
+        if operator != 'in':
+            return NotImplemented
+        return [
+            (
+                'name',
+                'in',
+                [n for n, impl in REGISTRY.items() if 'chat' in impl.modalities],
+            )
+        ]
 
     # ----------------------------------------------------------
     # Constraints

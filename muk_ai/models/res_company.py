@@ -18,9 +18,9 @@ class ResCompany(models.Model):
         help=(
             'Provider whose default models serve an agent that picks none, '
             'before the other providers in list order. Falls back to the '
-            'first active provider if unset.'
+            'first active provider serving chat if unset.'
         ),
-        domain=[('active', '=', True)],
+        domain=[('active', '=', True), ('serves_chat', '=', True)],
     )
 
     default_ai_agent_id = fields.Many2one(

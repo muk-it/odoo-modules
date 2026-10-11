@@ -96,24 +96,25 @@
                             />
 						</group>
 						<group string="Limits">
-							<field name="max_tokens"/>
+							<field name="serves_chat" invisible="1"/>
+							<field name="max_tokens" invisible="not serves_chat"/>
 							<label for="request_timeout"/>
 							<div class="d-flex align-items-center gap-2">
 								<field name="request_timeout" class="flex-grow-1"/>
 								<span>Seconds</span>
 							</div>
-							<label for="idle_timeout"/>
-							<div class="d-flex align-items-center gap-2">
+							<label for="idle_timeout" invisible="not serves_chat"/>
+							<div class="d-flex align-items-center gap-2" invisible="not serves_chat">
 								<field name="idle_timeout" class="flex-grow-1"/>
 								<span>Seconds</span>
 							</div>
-							<label for="image_timeout"/>
-							<div class="d-flex align-items-center gap-2">
+							<label for="image_timeout" invisible="not serves_chat"/>
+							<div class="d-flex align-items-center gap-2" invisible="not serves_chat">
 								<field name="image_timeout" class="flex-grow-1"/>
 								<span>Seconds</span>
 							</div>
-							<label for="rate_limit"/>
-							<div class="d-flex align-items-center gap-2">
+							<label for="rate_limit" invisible="not serves_chat"/>
+							<div class="d-flex align-items-center gap-2" invisible="not serves_chat">
 								<field name="rate_limit" class="flex-grow-1"/>
 								<span class="text-nowrap">/ Minute</span>
 							</div>
