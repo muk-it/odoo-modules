@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+    <record id="view_ai_agent_automation_list" model="ir.ui.view">
+        <field name="name">base.automation.list.muk_ai_automation</field>
+        <field name="model">base.automation</field>
+        <field name="mode">primary</field>
+        <field name="priority">20</field>
+        <field name="inherit_id" ref="base_automation.view_base_automation_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//tree" position="attributes">
+                <attribute name="sample">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='model_id']" position="after">
+                <field name="agent_id"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_ai_agent_automation_form" model="ir.ui.view">
+        <field name="name">base.automation.form.muk_ai_automation</field>
+        <field name="model">base.automation</field>
+        <field name="mode">primary</field>
+        <field name="priority">20</field>
+        <field name="inherit_id" ref="base_automation.view_base_automation_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='action_open_agent_sessions']/.." position="replace"/>
+            <xpath expr="//field[@name='name']" position="attributes">
+                <attribute name="placeholder">e.g. Review New Contacts</attribute>
+            </xpath>
+            <xpath expr="//group[@name='action_content']" position="attributes">
+                <attribute name="string">Trigger</attribute>
+            </xpath>
+            <xpath expr="//field[@name='model_id']" position="attributes">
+                <attribute name="placeholder">e.g. Contact</attribute>
+            </xpath>
+            <xpath expr="//field[@name='state']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//group[@name='agent_records']" position="replace">
+                <group
+                    string="Per Record"
+                    name="agent_per_record"
+                    attrs="{'invisible': [('agent_dispatch_mode', '!=', 'per_record')]}"
+                >
+                    <field
+                        name="agent_chain_strategy"
+                        widget="radio"
+                        options="{'horizontal': True}"
+                    />
+                    <field name="agent_max_records_per_fire"/>
+                </group>
+            </xpath>
+            <xpath expr="//group[@name='agent_settings']/field[@name='agent_chain_strategy']" position="replace"/>
+            <xpath expr="//group[@name='agent_settings']/field[@name='agent_max_records_per_fire']" position="replace"/>
+            <xpath expr="//page[@name='agent_record_domain']" position="replace"/>
+            <xpath expr="//page[@name='agent_record_code']" position="replace"/>
+        </field>
+    </record>
+
+    <record id="action_ai_automation_rules" model="ir.actions.act_window">
+        <field name="name">Automation Rules</field>
+        <field name="res_model">base.automation</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[('state', '=', 'ai_agent')]</field>
+        <field name="context">{'default_state': 'ai_agent', 'default_agent_dispatch_mode': 'per_record'}</field>
+        <field
+            name="view_ids"
+            eval="[
+                (5, 0, 0),
+                (0, 0, {'view_mode': 'tree', 'view_id': ref('view_ai_agent_automation_list')}),
+                (0, 0, {'view_mode': 'form', 'view_id': ref('view_ai_agent_automation_form')}),
+            ]"
+        />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Let an AI agent react to your records
+            </p>
+            <p>
+                An automation rule starts an AI agent whenever it triggers: when
+                records are created, changed or reach a date.
+            </p>
+        </field>
+    </record>
+
+</odoo>

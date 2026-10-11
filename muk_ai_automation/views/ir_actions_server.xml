@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+    <record id="view_ai_agent_action_list" model="ir.ui.view">
+        <field name="name">ir.actions.server.list.muk_ai_automation</field>
+        <field name="model">ir.actions.server</field>
+        <field name="arch" type="xml">
+            <tree sample="1">
+                <field name="name"/>
+                <field name="model_id"/>
+                <field name="agent_id"/>
+                <field name="agent_dispatch_mode"/>
+                <field name="binding_model_id" string="Actions Menu"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_ir_actions_server_form" model="ir.ui.view">
+        <field name="name">ir.actions.server.form.muk_ai_automation</field>
+        <field name="model">ir.actions.server</field>
+        <field name="inherit_id" ref="base.view_server_action_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header/button[@name='run']" position="attributes">
+                <attribute name="attrs">
+                    {
+                        'invisible': [
+                            ('state', '!=', 'ai_agent'),
+                            '|',
+                            ('model_name', '!=', 'ir.actions.server'),
+                            ('state', '!=', 'code'),
+                        ],
+                    }
+                </attribute>
+            </xpath>
+            <xpath expr="//div[hasclass('oe_title')]" position="before">
+                <div class="oe_button_box" name="button_box">
+                    <button
+                        name="action_open_agent_sessions"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-comments"
+                        attrs="{'invisible': ['|', ('state', '!=', 'ai_agent'), ('id', '=', False)]}"
+                    >
+                        <field name="agent_session_count" widget="statinfo"/>
+                    </button>
+                </div>
+            </xpath>
+            <xpath expr="//group[@name='action_wrapper']" position="after">
+                <group
+                    name="agent_wrapper"
+                    attrs="{'invisible': [('state', '!=', 'ai_agent')]}"
+                >
+                    <group string="Agent" name="agent_settings">
+                        <field
+                            name="agent_id"
+                            options="{'no_create': True}"
+                            attrs="{'required': [('state', '=', 'ai_agent')]}"
+                        />
+                        <field
+                            name="agent_dispatch_mode"
+                            widget="radio"
+                            options="{'horizontal': True}"
+                        />
+                        <field
+                            name="agent_chain_strategy"
+                            widget="radio"
+                            options="{'horizontal': True}"
+                            attrs="{'invisible': [('agent_dispatch_mode', '!=', 'per_record')]}"
+                        />
+                        <field
+                            name="agent_max_records_per_fire"
+                            attrs="{'invisible': [('agent_dispatch_mode', '!=', 'per_record')]}"
+                        />
+                    </group>
+                    <group
+                        string="Records"
+                        name="agent_records"
+                        attrs="{'invisible': [('usage', '=', 'base_automation')]}"
+                    >
+                        <field
+                            name="agent_record_source"
+                            string="Source"
+                            widget="radio"
+                            options="{'horizontal': True}"
+                        />
+                        <field name="usage" invisible="1"/>
+                    </group>
+                </group>
+            </xpath>
+            <xpath expr="//page[@name='security']" position="before">
+                <page
+                    string="Prompt"
+                    name="agent_prompt"
+                    attrs="{'invisible': [('state', '!=', 'ai_agent')]}"
+                >
+                    <field
+                        name="agent_prompt"
+                        nolabel="1"
+                        placeholder="e.g. Check {{ record.display_name }} for missing contact details and post a note listing them."
+                    />
+                </page>
+                <page
+                    string="Record Domain"
+                    name="agent_record_domain"
+                    attrs="{'invisible': ['|', '|', ('state', '!=', 'ai_agent'), ('usage', '=', 'base_automation'), ('agent_record_source', '!=', 'domain')]}"
+                >
+                    <field
+                        name="agent_record_domain"
+                        widget="domain"
+                        options="{'model': 'model_name', 'in_dialog': True}"
+                    />
+                </page>
+                <page
+                    string="Record Code"
+                    name="agent_record_code"
+                    attrs="{'invisible': ['|', '|', ('state', '!=', 'ai_agent'), ('usage', '=', 'base_automation'), ('agent_record_source', '!=', 'code')]}"
+                >
+                    <field
+                        name="agent_record_code"
+                        widget="ace"
+                        options="{'mode': 'python'}"
+                        placeholder="records = env['res.partner'].search([('email', '=', False)], limit=10)"
+                    />
+                </page>
+                <page
+                    string="Help"
+                    name="agent_help"
+                    attrs="{'invisible': [('state', '!=', 'ai_agent')]}"
+                >
+                    <p>
+                        The prompt is a template. Write a value as <code>{{ expression }}</code>,
+                        with:
+                    </p>
+                    <ul>
+                        <li><code>record</code>: the record of the chat, with one chat per record</li>
+                        <li><code>records</code>: the records of the run, with one chat for all</li>
+                        <li><code>previous_session.last_text</code>: the last answer of the previous chat for the record, when the action continues per record</li>
+                        <li><code>previous_session.tool_log</code>: the tools that chat called, with their arguments and results</li>
+                        <li><code>user</code>, <code>company</code>, <code>env</code>, <code>today</code></li>
+                    </ul>
+                    <p>
+                        The records come from the trigger of the run: those selected in a
+                        list, the records of an automation rule, or the domain or the code of
+                        a scheduled action.
+                    </p>
+                    <p>
+                        Each chat runs as the user who created the action, with that
+                        user's access rights. A chat per record is listed in the AI
+                        Sessions of its record.
+                    </p>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_ai_agent_action_form" model="ir.ui.view">
+        <field name="name">ir.actions.server.form.muk_ai_automation.agent</field>
+        <field name="model">ir.actions.server</field>
+        <field name="mode">primary</field>
+        <field name="priority">50</field>
+        <field name="inherit_id" ref="view_ir_actions_server_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header/button[@name='create_action']" position="attributes">
+                <attribute name="attrs">
+                    {'invisible': ['|', ('binding_model_id', '!=', False), ('model_id', '=', False)]}
+                </attribute>
+            </xpath>
+            <xpath expr="//header/button[@name='run']" position="replace"/>
+            <xpath expr="//field[@name='name']" position="attributes">
+                <attribute name="placeholder">e.g. Review Contact Details</attribute>
+            </xpath>
+            <xpath expr="//group[@name='action_content']" position="attributes">
+                <attribute name="string">Target</attribute>
+            </xpath>
+            <xpath expr="//field[@name='model_id']" position="attributes">
+                <attribute name="placeholder">e.g. Contact</attribute>
+            </xpath>
+            <xpath expr="//field[@name='state']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//group[@name='agent_records']" position="replace">
+                <group
+                    string="Per Record"
+                    name="agent_per_record"
+                    attrs="{'invisible': [('agent_dispatch_mode', '!=', 'per_record')]}"
+                >
+                    <field
+                        name="agent_chain_strategy"
+                        widget="radio"
+                        options="{'horizontal': True}"
+                    />
+                    <field name="agent_max_records_per_fire"/>
+                    <field name="usage" invisible="1"/>
+                </group>
+            </xpath>
+            <xpath expr="//group[@name='agent_settings']/field[@name='agent_chain_strategy']" position="replace"/>
+            <xpath expr="//group[@name='agent_settings']/field[@name='agent_max_records_per_fire']" position="replace"/>
+            <xpath expr="//page[@name='agent_record_domain']" position="replace"/>
+            <xpath expr="//page[@name='agent_record_code']" position="replace"/>
+        </field>
+    </record>
+
+    <record id="action_ai_agent_actions" model="ir.actions.act_window">
+        <field name="name">Agent Actions</field>
+        <field name="res_model">ir.actions.server</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[('state', '=', 'ai_agent'), ('usage', '=', 'ir_actions_server')]</field>
+        <field name="context">{'default_state': 'ai_agent', 'default_usage': 'ir_actions_server'}</field>
+        <field
+            name="view_ids"
+            eval="[
+                (5, 0, 0),
+                (0, 0, {'view_mode': 'tree', 'view_id': ref('view_ai_agent_action_list')}),
+                (0, 0, {'view_mode': 'form', 'view_id': ref('view_ai_agent_action_form')}),
+            ]"
+        />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create an agent action
+            </p>
+            <p>
+                An agent action hands records to an AI agent with a prompt. Run it
+                from the Actions menu of a list, an automation rule or a schedule.
+            </p>
+        </field>
+    </record>
+
+</odoo>

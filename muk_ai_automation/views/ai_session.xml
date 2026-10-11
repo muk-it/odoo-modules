@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+    <record id="view_ai_session_form" model="ir.ui.view">
+        <field name="name">muk_ai.session.form.muk_ai_automation</field>
+        <field name="model">muk_ai.session</field>
+        <field name="inherit_id" ref="muk_ai.view_ai_session_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='agent_id']" position="after">
+                <field name="action_server_id" attrs="{'invisible': [('action_server_id', '=', False)]}"/>
+                <field name="previous_session_id" attrs="{'invisible': [('previous_session_id', '=', False)]}"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
