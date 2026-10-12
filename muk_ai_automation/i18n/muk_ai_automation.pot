@@ -355,6 +355,11 @@ msgid ""
 msgstr ""
 
 #. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_base_automation__agent_user_id
+msgid "Run Agents As"
+msgstr ""
+
+#. module: muk_ai_automation
 #: model:ir.model.fields.selection,name:muk_ai_automation.selection__ir_actions_server__state__ai_agent
 msgid "Run AI Agent"
 msgstr ""
@@ -389,6 +394,14 @@ msgstr ""
 #: model:ir.model,name:muk_ai_automation.model_ir_actions_server
 #: model:ir.model.fields,field_description:muk_ai_automation.field_muk_ai_session__action_server_id
 msgid "Server Action"
+msgstr ""
+
+#. module: muk_ai_automation
+#. odoo-python
+#: code:addons/muk_ai_automation/tools/dispatch.py:0
+msgid ""
+"Server action %(name)s cannot run: the user it runs as is archived or not "
+"set."
 msgstr ""
 
 #. module: muk_ai_automation
@@ -465,6 +478,13 @@ msgstr ""
 msgid ""
 "Upper bound on the number of records processed in a single per-record fire. "
 "Excess records are skipped. Zero means no limit."
+msgstr ""
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,help:muk_ai_automation.field_base_automation__agent_user_id
+msgid ""
+"User whose access rights the chats of the AI agent steps run with, whoever "
+"triggers the rule."
 msgstr ""
 
 #. module: muk_ai_automation

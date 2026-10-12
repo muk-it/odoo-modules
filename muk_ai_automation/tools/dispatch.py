@@ -5,7 +5,7 @@ from datetime import date, datetime, time, timedelta
 
 from dateutil.relativedelta import relativedelta
 
-from odoo import fields, models
+from odoo import SUPERUSER_ID, fields, models
 from odoo.exceptions import UserError
 from odoo.tools import safe_eval
 from odoo.tools.translate import LazyTranslate
@@ -206,26 +206,21 @@ def _build_prompt(
 
 
 def _spawn_user(action: models.BaseModel) -> models.BaseModel:
-    """Return the active user the spawned sessions run as.
+    """Return the user the sessions run as: the user of its rule, else the runner.
 
-    Archiving a user is how an administrator revokes their access, so an
-    action authored by an archived user must not keep firing under another
-    identity: its stored prompt would run with rights its author never had
-    and the audit trail would name the wrong actor. The superuser is the
-    one author that denotes no person — it owns the actions shipped as
-    module data — and its sessions run as the administrator, which is
-    narrower than the rights the author already holds.
+    The administrator stands in for the superuser.
 
-    :raise UserError: when the author of the action is archived or gone
+    :raise UserError: when that user is archived or not set
     """
-    user = action.create_uid
-    if user and user._is_superuser():
+    rule = action.sudo().base_automation_id
+    user = rule.agent_user_id if rule else action.env.user
+    if user.id == SUPERUSER_ID:
         return action.env.ref('base.user_admin')
-    if not user or not user.active:
+    if not user.active:
         raise UserError(
             _lt(
-                'Server action %(name)s cannot run: the user who created it '
-                'is archived. Re-create it under an active user to resume it.',
+                'Server action %(name)s cannot run: the user it runs as is '
+                'archived or not set.',
                 name=action.display_name,
             )
         )

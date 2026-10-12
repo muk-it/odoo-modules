@@ -119,26 +119,30 @@ class TestDispatchHelper(AutomationTestCommon):
         self.assertEqual(session.action_server_id, action)
         self.assertEqual(session.agent_id, self.agent)
 
-    def test_spawn_user_refuses_an_archived_author(self):
-        author = new_test_user(
-            self.env,
-            login='dispatch_author',
-            groups='base.group_user,base.group_system',
+    def test_chats_run_as_the_runner_unless_a_rule_sets_the_user(self):
+        runner, rule_user = (
+            new_test_user(self.env, login=login, groups='base.group_system')
+            for login in ('automation_runner', 'automation_rule_user')
         )
-        authored = (
-            self.env['ir.actions.server']
-            .with_user(author)
-            .create(self._action_vals(name='Authored Action'))
-        )
-        author.sudo().active = False
-        action = self.env['ir.actions.server'].browse(authored.id)
-        with self.assertRaises(UserError):
-            _spawn_user(action)
-        with self._mock_provider(), self.assertRaises(UserError):
-            _create_session(action, 'Hello.', None)
-        self.assertFalse(self._sessions_of(action))
-
-    def test_spawn_user_falls_back_to_admin_for_a_module_data_author(self):
         action = self._make_action()
-        self.assertTrue(action.create_uid._is_superuser())
         self.assertEqual(_spawn_user(action), self.env.ref('base.user_admin'))
+        with self._mock_provider():
+            action.with_user(runner).run()
+        self.env['base.automation'].create(
+            {
+                'name': 'Rule',
+                'model_id': action.model_id.id,
+                'trigger': 'on_create',
+                'action_server_ids': [(6, 0, action.ids)],
+                'agent_user_id': rule_user.id,
+            }
+        )
+        with self._mock_provider():
+            action.with_user(runner).run()
+        self.assertEqual(
+            self._sessions_of(action).user_id.ids, [runner.id, rule_user.id]
+        )
+        rule_user.active = False
+        with self._mock_provider(), self.assertRaises(UserError):
+            action.with_user(runner).run()
+        self.assertEqual(len(self._sessions_of(action)), 2)

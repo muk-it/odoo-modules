@@ -58,6 +58,12 @@ class AISession(models.Model):
             kinds.discard('webclient')
         return kinds
 
+    def _should_notify_state(self, state: str) -> bool:
+        """Stay quiet about a chat a server action finished, report the rest."""
+        if self.action_server_id and state == 'done':
+            return False
+        return super()._should_notify_state(state)
+
     def _session_prompt_extras(self) -> dict:
         """Add record, records, previous-session, and now to the prompt scope."""
         extras = super()._session_prompt_extras()

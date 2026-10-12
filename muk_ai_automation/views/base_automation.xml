@@ -16,4 +16,21 @@
         </field>
     </record>
 
+    <record id="view_ai_agent_automation_form" model="ir.ui.view">
+        <field name="name">base.automation.form.muk_ai_automation</field>
+        <field name="model">base.automation</field>
+        <field name="mode">primary</field>
+        <field name="priority">20</field>
+        <field name="inherit_id" ref="base_automation.view_base_automation_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//label[@for='trigger']/.." position="inside">
+                <field
+                    name="agent_user_id"
+                    options="{'no_create': True}"
+                    required="1"
+                />
+            </xpath>
+        </field>
+    </record>
+
 </odoo>

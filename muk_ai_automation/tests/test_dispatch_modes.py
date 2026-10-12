@@ -21,6 +21,10 @@ class TestDispatchModes(AutomationTestCommon):
         with self._mock_provider():
             spawned = fire_action(action, {})
         self.assertEqual(len(spawned), 1)
+        self.assertEqual(spawned.state, 'done')
+        self.assertFalse(spawned.notification_unread)
+        spawned._notify_state_transition({'state': 'error', 'error': 'boom'})
+        self.assertTrue(spawned.notification_unread)
 
     def test_per_record_mode_one_per_record(self):
         partners = self.partners[:3]
