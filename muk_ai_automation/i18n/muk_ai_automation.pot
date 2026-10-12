@@ -382,13 +382,12 @@ msgstr ""
 
 #. module: muk_ai_automation
 #: model:ir.actions.server,name:muk_ai_automation.demo_rule_partner_on_create_ir_actions_server
-msgid "Summarize New Partner"
+msgid "Summarize Tagged Contacts"
 msgstr ""
 
 #. module: muk_ai_automation
 #: model:ir.actions.server,agent_prompt:muk_ai_automation.demo_rule_partner_on_create_ir_actions_server
-msgid ""
-"Summarize this new partner: {{ record.display_name }} ({{ record.email }})"
+msgid "Summarize this contact: {{ record.display_name }} ({{ record.email }})"
 msgstr ""
 
 #. module: muk_ai_automation
@@ -488,4 +487,9 @@ msgstr ""
 #. module: muk_ai_automation
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
 msgid "records = env['res.partner'].search([('email', '=', False)], limit=10)"
+msgstr ""
+
+#. module: muk_ai_automation
+#: model:res.partner.category,name:muk_ai_automation.demo_category_ai_summary
+msgid "AI Summary"
 msgstr ""
