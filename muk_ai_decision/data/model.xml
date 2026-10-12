@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo noupdate="1">
+
+	<record id="model_jev" model="muk_ai.model">
+		<field name="name">Jev</field>
+		<field name="provider_id" ref="provider_typesafe"/>
+		<field name="technical_name">jev-latest</field>
+		<field name="modality">decision</field>
+		<field name="input_rate">0.042</field>
+		<field name="output_rate">0.0</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="provider_typesafe" model="muk_ai.provider">
+		<field name="default_decision_model_id" ref="model_jev"/>
+	</record>
+
+	<record id="model_laya" model="muk_ai.model">
+		<field name="name">Laya Multilingual</field>
+		<field name="provider_id" ref="provider_decis"/>
+		<field name="technical_name">laya-multilingual</field>
+		<field name="modality">decision</field>
+		<field name="input_rate">0.0</field>
+		<field name="output_rate">0.0</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="provider_decis" model="muk_ai.provider">
+		<field name="default_decision_model_id" ref="model_laya"/>
+	</record>
+
+	<record id="model_gpt_5_6_luna_decision" model="muk_ai.model">
+		<field name="name">GPT-5.6 Luna</field>
+		<field name="provider_id" ref="muk_ai.provider_openai"/>
+		<field name="technical_name">gpt-5.6-luna</field>
+		<field name="modality">decision</field>
+		<field name="input_rate">0.2</field>
+		<field name="output_rate">1.2</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="muk_ai.provider_openai" model="muk_ai.provider">
+		<field name="default_decision_model_id" ref="model_gpt_5_6_luna_decision"/>
+	</record>
+
+	<record id="model_claude_haiku_4_5_decision" model="muk_ai.model">
+		<field name="name">Claude Haiku 4.5</field>
+		<field name="provider_id" ref="muk_ai.provider_anthropic"/>
+		<field name="technical_name">claude-haiku-4-5</field>
+		<field name="modality">decision</field>
+		<field name="input_rate">1.0</field>
+		<field name="output_rate">5.0</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="muk_ai.provider_anthropic" model="muk_ai.provider">
+		<field name="default_decision_model_id" ref="model_claude_haiku_4_5_decision"/>
+	</record>
+
+	<record id="model_gemini_3_5_flash_lite_decision" model="muk_ai.model">
+		<field name="name">Gemini 3.5 Flash Lite</field>
+		<field name="provider_id" ref="muk_ai.provider_google"/>
+		<field name="technical_name">gemini-3.5-flash-lite</field>
+		<field name="modality">decision</field>
+		<field name="input_rate">0.3</field>
+		<field name="output_rate">2.5</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="muk_ai.provider_google" model="muk_ai.provider">
+		<field name="default_decision_model_id" ref="model_gemini_3_5_flash_lite_decision"/>
+	</record>
+
+</odoo>
