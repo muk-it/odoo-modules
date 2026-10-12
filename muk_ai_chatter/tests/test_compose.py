@@ -106,12 +106,12 @@ class TestCompose(ChatterTestCommon):
         self.assertFalse(self.session._can_ask_user())
         self.assertEqual(self.session._effective_approval_mode(), 'off')
         self.assertFalse(self.session._available_client_kinds())
-        self.assertFalse(self.session._should_notify_state())
+        self.assertFalse(self.session._should_notify_state('done'))
         self.session.detach_from_composer()
         self.assertFalse(self.session.compose_interface)
         self.assertTrue(self.session._can_ask_user())
         self.assertIn('webclient', self.session._available_client_kinds())
-        self.assertTrue(self.session._should_notify_state())
+        self.assertTrue(self.session._should_notify_state('done'))
         self.assertIn('Dear customer', self.session.compose_draft)
 
     def test_every_request_reminds_the_helper_what_to_answer_with(self):
