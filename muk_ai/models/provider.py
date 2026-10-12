@@ -232,12 +232,15 @@ class AIProvider(models.Model):
         return client.serves_builtin_tools(client.model_for(technical_name))
 
     def _can_serve(self) -> bool:
-        """Return whether this account can actually reach its vendor.
+        """Return whether this account has an endpoint and the credentials it needs.
 
-        The adapter owns the answer: an OpenAI-compatible endpoint configured
+        The adapter owns the credentials: an OpenAI-compatible endpoint configured
         for no authentication — a local Ollama — serves without a key.
         """
-        return self.name in REGISTRY and self._get_client().authenticated
+        if self.name not in REGISTRY:
+            return False
+        client = self._get_client()
+        return client.authenticated and bool(client.api_url)
 
     def _default_model(self, modality: str) -> models.BaseModel:
         """Return the default model of the modality, empty unless it is set and active.
@@ -453,7 +456,7 @@ class AIProvider(models.Model):
 
     @api.constrains('name', 'api_region', 'api_url')
     def _check_api_region(self) -> None:
-        """Reject a region the implementation lacks or a custom region without URL.
+        """Reject a region the implementation lacks.
 
         A provider whose addon has not registered its implementation yet
         (its module loads after this one during an upgrade) has nothing to
@@ -469,10 +472,6 @@ class AIProvider(models.Model):
                         region=record.api_region,
                         provider=record.name,
                     )
-                )
-            if record.api_region == 'custom' and not record.api_url:
-                raise ValidationError(
-                    _('A custom URL is required when the region is set to Custom URL.')
                 )
 
     _sql_constraints = [
