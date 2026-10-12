@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<menuitem
+		id="menu_ai_decision_log"
+		name="Decision Logs"
+		parent="muk_ai.menu_ai_report"
+		action="action_muk_ai_decision_log"
+		sequence="40"
+	/>
+
+	<menuitem
+		id="menu_ai_decision_actions"
+		name="Decision Actions"
+		parent="muk_ai_automation.menu_ai_automation"
+		action="action_ai_decision_actions"
+		sequence="15"
+	/>
+
+</odoo>

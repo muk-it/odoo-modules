@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_ai_decision_action_list" model="ir.ui.view">
+		<field name="name">ir.actions.server.list.muk_ai_decision</field>
+		<field name="model">ir.actions.server</field>
+		<field name="arch" type="xml">
+			<tree sample="1">
+				<field name="name"/>
+				<field name="model_id"/>
+				<field name="decision_log_count"/>
+				<field name="binding_model_id" string="Actions Menu"/>
+			</tree>
+		</field>
+	</record>
+
+	<record id="view_ir_actions_server_form_decision" model="ir.ui.view">
+		<field name="name">ir.actions.server.form.muk_ai_decision</field>
+		<field name="model">ir.actions.server</field>
+		<field name="inherit_id" ref="muk_ai_automation.view_ir_actions_server_form"/>
+		<field name="arch" type="xml">
+			<xpath expr="//header/button[@name='run']" position="attributes">
+				<attribute name="attrs">
+					{
+						'invisible': [
+							('state', 'not in', ['ai_agent', 'ai_decision']),
+							'|',
+							('model_name', '!=', 'ir.actions.server'),
+							('state', '!=', 'code'),
+						],
+					}
+				</attribute>
+			</xpath>
+			<xpath expr="//div[@name='button_box']" position="inside">
+				<button
+					name="action_open_decision_logs"
+					type="object"
+					class="oe_stat_button"
+					icon="fa-check-square-o"
+					attrs="{'invisible': [('decision_log_count', '=', 0)]}"
+				>
+					<field name="decision_log_count" widget="statinfo" string="Decisions"/>
+				</button>
+			</xpath>
+			<xpath expr="//notebook" position="before">
+				<group attrs="{'invisible': [('state', '!=', 'ai_decision')]}">
+					<group string="Reads" name="decision_reads">
+						<field
+							name="decision_input_source"
+							string="Source"
+							widget="radio"
+							options="{'horizontal': True}"
+						/>
+						<field
+							name="decision_field_ids"
+							string="Fields"
+							widget="many2many_tags"
+							placeholder="Name and list columns"
+							attrs="{'invisible': [('decision_input_source', '=', 'code')]}"
+						/>
+					</group>
+					<group
+						string="Message"
+						name="decision_message"
+						attrs="{'invisible': [('decision_input_source', '=', 'code')]}"
+					>
+						<field name="decision_message_count"/>
+						<field
+							name="decision_message_external"
+							widget="boolean_toggle"
+							attrs="{'invisible': [('decision_message_count', '=', 0)]}"
+						/>
+					</group>
+					<group
+						string="Records"
+						name="decision_records"
+						attrs="{'invisible': [('usage', '=', 'base_automation')]}"
+					>
+						<field
+							name="agent_record_source"
+							string="Source"
+							widget="radio"
+							options="{'horizontal': True}"
+						/>
+						<field name="agent_max_records_per_fire"/>
+					</group>
+				</group>
+			</xpath>
+			<xpath expr="//notebook/page[@name='agent_record_domain']" position="before">
+				<page
+					string="Questions"
+					name="decision_questions"
+					attrs="{'invisible': [('state', '!=', 'ai_decision')]}"
+				>
+					<field
+						name="decision_question_ids"
+						add-label="Add a Question"
+						context="{'default_action_id': id}"
+					>
+						<tree>
+							<field name="sequence" widget="handle"/>
+							<field name="name"/>
+							<field name="field_id"/>
+							<field name="kind" widget="badge"/>
+							<field name="min_confidence" widget="percentage"/>
+							<field name="route_answer"/>
+							<field name="route_action_id"/>
+						</tree>
+						<form>
+							<field name="action_id" invisible="1"/>
+							<field name="model_id" invisible="1"/>
+							<field name="field_type" invisible="1"/>
+							<field name="field_relation" invisible="1"/>
+							<div class="d-flex flex-column pb-2">
+								<label for="kind" string="What should the AI do?"/>
+								<field
+									name="kind"
+									widget="radio"
+									options="{'horizontal': True}"
+								/>
+								<div
+									class="text-muted mt-2"
+									attrs="{'invisible': [('kind', '!=', 'field')]}"
+								>
+									Writes the answer into a field of the record: a yes/no, a selection, a related record or the tags that apply.
+								</div>
+								<div
+									class="text-muted mt-2"
+									attrs="{'invisible': [('kind', '!=', 'choice')]}"
+								>
+									Picks one of your own categories, e.g. to run a different action for each one.
+								</div>
+								<div
+									class="text-muted mt-2"
+									attrs="{'invisible': [('kind', '!=', 'noul')]}"
+								>
+									Answers a yes or no question, e.g. to run an action only for the records that need it.
+								</div>
+								<div
+									class="text-muted mt-2"
+									attrs="{'invisible': [('kind', '!=', 'score')]}"
+								>
+									Rates the record on your own levels from lowest to highest, e.g. urgency or completeness.
+								</div>
+							</div>
+							<group>
+								<group string="Question">
+									<field
+										name="field_id"
+										options="{'no_create': True}"
+										placeholder="e.g. Tags, Team or Priority"
+										attrs="{'invisible': [('kind', '!=', 'field')], 'required': [('kind', '=', 'field')]}"
+									/>
+									<field
+										name="tag_operation"
+										widget="radio"
+										options="{'horizontal': True}"
+										attrs="{'invisible': ['|', ('kind', '!=', 'field'), ('field_type', '!=', 'many2many')]}"
+									/>
+									<field
+										name="field_scale"
+										widget="boolean_toggle"
+										attrs="{'invisible': ['|', ('kind', '!=', 'field'), ('field_type', '!=', 'selection')]}"
+									/>
+									<field
+										name="name"
+										placeholder="e.g. Which team should handle this ticket?"
+										attrs="{'required': [('kind', '!=', 'field')]}"
+									/>
+									<field name="min_confidence" widget="percentage"/>
+								</group>
+								<group string="Then">
+									<field
+										name="route_noul"
+										widget="radio"
+										options="{'horizontal': True}"
+										attrs="{'invisible': [('kind', '!=', 'noul')]}"
+									/>
+									<field
+										name="route_answer"
+										string="When the Answer Is"
+										placeholder="e.g. a category"
+										attrs="{'invisible': ['|', ('kind', '=', 'noul'), ('route_answer', '=', False)]}"
+									/>
+									<field
+										name="route_action_id"
+										options="{'no_create': True}"
+										attrs="{'required': ['|', ('route_answer', '!=', False), ('route_noul', '!=', False)], 'invisible': [('kind', '!=', 'noul'), ('route_answer', '=', False)]}"
+									/>
+									<field
+										name="unsure_action_id"
+										options="{'no_create': True}"
+									/>
+								</group>
+							</group>
+							<group
+								string="Candidates"
+								attrs="{'invisible': ['|', ('kind', '!=', 'field'), ('field_type', 'not in', ['many2one', 'many2many'])]}"
+							>
+								<field
+									name="candidate_domain"
+									nolabel="1"
+									colspan="2"
+									widget="domain"
+									options="{'model': 'field_relation', 'in_dialog': True}"
+								/>
+								<field
+									name="candidate_names"
+									nolabel="1"
+									colspan="2"
+									class="text-muted"
+								/>
+							</group>
+							<group
+								string="Options"
+								attrs="{'invisible': [('kind', 'not in', ['choice', 'score'])]}"
+							>
+								<field name="option_ids" nolabel="1" colspan="2">
+									<tree editable="bottom">
+										<field name="sequence" widget="handle"/>
+										<field name="name" placeholder="e.g. billing"/>
+										<field name="description" placeholder="e.g. payments and invoices"/>
+										<field
+											name="action_id"
+											domain="[('model_id', '=', parent.model_id), ('id', '!=', parent.action_id)]"
+											options="{'no_create': True}"
+											optional="show"
+										/>
+									</tree>
+								</field>
+							</group>
+						</form>
+					</field>
+				</page>
+				<page
+					string="Input Code"
+					name="decision_input_code"
+					attrs="{'invisible': ['|', ('state', '!=', 'ai_decision'), ('decision_input_source', '!=', 'code')]}"
+				>
+					<field
+						name="decision_input_code"
+						widget="ace"
+						options="{'mode': 'python'}"
+					/>
+					<div class="text-muted mt-3">
+						<p>
+							The code runs once per record and assigns the text the decision
+							model reads to <code>text</code>. Keep it short: only what the
+							questions need.
+						</p>
+						<ul>
+							<li><code>record</code>: the record decided about</li>
+							<li><code>env</code>: the environment, to read related records</li>
+							<li><code>html2plaintext</code>: turns an HTML field into plain text</li>
+						</ul>
+						<p>For example:</p>
+						<pre>text = '\n'.join([
+    'Name: ' + record.name,
+    'Tags: ' + ', '.join(record.category_id.mapped('name')),
+    'Notes: ' + html2plaintext(record.comment or '')[:500],
+    'Last message: ' + html2plaintext(record.message_ids.filtered(
+        lambda message: message.message_type in ('email', 'comment')
+    )[:1].body or '')[:500],
+])</pre>
+					</div>
+				</page>
+				<page
+					string="Preview"
+					name="decision_preview"
+					attrs="{'invisible': [('state', '!=', 'ai_decision')]}"
+				>
+					<group>
+						<field
+							name="decision_preview_ref"
+							options="{'model_field': 'model_id', 'no_create': True, 'no_open': True}"
+						/>
+					</group>
+					<field name="decision_preview" nolabel="1" class="font-monospace"/>
+				</page>
+			</xpath>
+			<xpath expr="//page[@name='agent_record_domain']" position="attributes">
+				<attribute name="attrs">
+					{
+						'invisible': [
+							'|',
+							'|',
+							('state', 'not in', ['ai_agent', 'ai_decision']),
+							('usage', '=', 'base_automation'),
+							('agent_record_source', '!=', 'domain'),
+						],
+					}
+				</attribute>
+			</xpath>
+			<xpath expr="//page[@name='agent_record_code']" position="attributes">
+				<attribute name="attrs">
+					{
+						'invisible': [
+							'|',
+							'|',
+							('state', 'not in', ['ai_agent', 'ai_decision']),
+							('usage', '=', 'base_automation'),
+							('agent_record_source', '!=', 'code'),
+						],
+					}
+				</attribute>
+			</xpath>
+		</field>
+	</record>
+
+	<record id="view_ai_decision_action_form" model="ir.ui.view">
+		<field name="name">ir.actions.server.form.muk_ai_decision.decision</field>
+		<field name="model">ir.actions.server</field>
+		<field name="mode">primary</field>
+		<field name="priority">50</field>
+		<field name="inherit_id" ref="muk_ai_automation.view_ai_agent_action_form"/>
+		<field name="arch" type="xml">
+			<xpath expr="//field[@name='name']" position="attributes">
+				<attribute name="placeholder">e.g. Ticket Triage</attribute>
+			</xpath>
+			<xpath expr="(//field[@name='model_id'])[1]" position="attributes">
+				<attribute name="placeholder">e.g. Helpdesk Ticket</attribute>
+			</xpath>
+			<xpath expr="//group[@name='decision_records']" position="replace"/>
+		</field>
+	</record>
+
+	<record id="action_ai_decision_actions" model="ir.actions.act_window">
+		<field name="name">Decision Actions</field>
+		<field name="res_model">ir.actions.server</field>
+		<field name="view_mode">tree,form</field>
+		<field name="domain">[('state', '=', 'ai_decision'), ('usage', '=', 'ir_actions_server')]</field>
+		<field name="context">{'default_state': 'ai_decision', 'default_usage': 'ir_actions_server'}</field>
+		<field
+			name="view_ids"
+			eval="[
+				(5, 0, 0),
+				(0, 0, {'view_mode': 'tree', 'view_id': ref('view_ai_decision_action_list')}),
+				(0, 0, {'view_mode': 'form', 'view_id': ref('view_ai_decision_action_form')}),
+			]"
+		/>
+	</record>
+
+	<record id="muk_ai_automation.action_ai_automation_rules" model="ir.actions.act_window">
+		<field name="domain">[('state', 'in', ['ai_agent', 'ai_decision'])]</field>
+		<field name="context">{'default_state': 'ai_agent', 'default_agent_dispatch_mode': 'per_record', 'ai_steps': 1}</field>
+	</record>
+
+	<record id="muk_ai_automation.action_ai_scheduled_actions" model="ir.actions.act_window">
+		<field name="domain">[('state', 'in', ['ai_agent', 'ai_decision'])]</field>
+		<field name="context">{'default_state': 'ai_agent', 'default_usage': 'ir_cron', 'ai_steps': 1}</field>
+	</record>
+
+	<record id="view_ir_cron_form_decision" model="ir.ui.view">
+		<field name="name">ir.cron.form.muk_ai_decision.logs</field>
+		<field name="model">ir.cron</field>
+		<field name="inherit_id" ref="base.ir_cron_view_form"/>
+		<field name="arch" type="xml">
+			<xpath expr="//button[@name='action_open_decision_logs']" position="replace"/>
+		</field>
+	</record>
+
+	<record id="view_ai_decision_cron_form" model="ir.ui.view">
+		<field name="name">ir.cron.form.muk_ai_decision</field>
+		<field name="model">ir.cron</field>
+		<field name="inherit_id" ref="muk_ai_automation.view_ai_agent_cron_form"/>
+		<field name="arch" type="xml">
+			<field name="state" position="attributes">
+				<attribute name="invisible"/>
+				<attribute name="widget">filtered_selection</attribute>
+				<attribute name="options">{'options_field': 'allowed_states'}</attribute>
+			</field>
+			<field name="state" position="after">
+				<field name="allowed_states" invisible="1"/>
+			</field>
+		</field>
+	</record>
+
+</odoo>

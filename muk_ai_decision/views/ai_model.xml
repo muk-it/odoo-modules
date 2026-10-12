@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_muk_ai_model_search_decision" model="ir.ui.view">
+		<field name="name">muk_ai.model.search.muk_ai_decision</field>
+		<field name="model">muk_ai.model</field>
+		<field name="inherit_id" ref="muk_ai.view_muk_ai_model_search"/>
+		<field name="arch" type="xml">
+			<filter name="image" position="after">
+				<filter
+					name="decision"
+					string="Decision"
+					domain="[('modality', '=', 'decision')]"
+				/>
+			</filter>
+		</field>
+	</record>
+
+</odoo>

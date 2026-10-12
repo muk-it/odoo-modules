@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_ai_decision_log_admin,muk_ai.decision.log.admin,model_muk_ai_decision_log,base.group_system,1,0,0,1
+access_ai_decision_question_admin,muk_ai.decision.question.admin,model_muk_ai_decision_question,base.group_system,1,1,1,1
+access_ai_decision_option_admin,muk_ai.decision.option.admin,model_muk_ai_decision_option,base.group_system,1,1,1,1

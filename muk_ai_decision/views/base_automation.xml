@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_ai_decision_automation_form" model="ir.ui.view">
+		<field name="name">base.automation.form.muk_ai_decision</field>
+		<field name="model">base.automation</field>
+		<field name="inherit_id" ref="muk_ai_automation.view_ai_agent_automation_form"/>
+		<field name="arch" type="xml">
+			<xpath expr="//field[@name='state']" position="attributes">
+				<attribute name="invisible"/>
+				<attribute name="widget">filtered_selection</attribute>
+				<attribute name="options">{'options_field': 'allowed_states'}</attribute>
+			</xpath>
+			<xpath expr="//field[@name='state']" position="after">
+				<field name="allowed_states" invisible="1"/>
+			</xpath>
+			<xpath expr="//group[@name='decision_records']" position="replace"/>
+		</field>
+	</record>
+
+</odoo>

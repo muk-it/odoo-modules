@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo noupdate="1">
+
+	<record id="demo_log_partner_wood_corner" model="muk_ai.decision.log">
+		<field name="action_id" ref="demo_decision_partner_classify"/>
+		<field name="model_id" ref="model_jev"/>
+		<field name="served_model">jev-latest</field>
+		<field name="origin">Classify Contacts</field>
+		<field name="res_model">res.partner</field>
+		<field name="res_id" ref="base.res_partner_1"/>
+		<field name="confident" eval="True"/>
+		<field name="duration">840</field>
+		<field name="total_cost">0.0004</field>
+		<field name="currency">USD</field>
+		<field
+			name="answers"
+			eval="{
+				'industry_id': {'type': 'choice', 'choice': 'Manufacturing', 'confidence': 0.94, 'confident': True},
+				'category_id:%d' % ref('base.res_partner_category_0'): {'type': 'noul', 'noul': 0.91, 'confident': True},
+				'category_id:%d' % ref('base.res_partner_category_2'): {'type': 'noul', 'noul': 0.12, 'confident': True},
+				'category_id:%d' % ref('base.res_partner_category_8'): {'type': 'noul', 'noul': 0.04, 'confident': True},
+				'category_id:%d' % ref('base.res_partner_category_11'): {'type': 'noul', 'noul': 0.09, 'confident': True},
+				'is_company': {'type': 'noul', 'noul': 0.99, 'confident': True},
+				'q%d' % ref('demo_question_partner_size'): {'type': 'choice', 'choice': 'medium', 'confidence': 0.88, 'confident': True},
+				'q%d' % ref('demo_question_partner_reseller'): {'type': 'noul', 'noul': 0.06, 'confident': True},
+				'q%d' % ref('demo_question_partner_complete'): {'type': 'score', 'score': 1.2, 'confidence': 0.81, 'confident': True},
+			}"
+		/>
+		<field
+			name="applied"
+			eval="{
+				'industry_id': 'Manufacturing',
+				'category_id': {'add': ['Vendor'], 'remove': ['Prospects', 'Consulting Services', 'Services']},
+				'is_company': 'yes',
+			}"
+		/>
+	</record>
+
+	<record id="demo_log_partner_lumber" model="muk_ai.decision.log">
+		<field name="action_id" ref="demo_decision_partner_classify"/>
+		<field name="model_id" ref="model_jev"/>
+		<field name="served_model">jev-latest</field>
+		<field name="origin">Classify Contacts</field>
+		<field name="res_model">res.partner</field>
+		<field name="res_id" ref="base.res_partner_18"/>
+		<field name="confident" eval="False"/>
+		<field name="duration">910</field>
+		<field name="total_cost">0.0004</field>
+		<field name="currency">USD</field>
+		<field
+			name="answers"
+			eval="{
+				'industry_id': {'type': 'choice', 'choice': 'Wholesale/Retail', 'confidence': 0.62, 'confident': False},
+				'category_id:%d' % ref('base.res_partner_category_0'): {'type': 'noul', 'noul': 0.18, 'confident': True},
+				'category_id:%d' % ref('base.res_partner_category_2'): {'type': 'noul', 'noul': 0.89, 'confident': True},
+				'category_id:%d' % ref('base.res_partner_category_8'): {'type': 'noul', 'noul': 0.05, 'confident': True},
+				'category_id:%d' % ref('base.res_partner_category_11'): {'type': 'noul', 'noul': 0.11, 'confident': True},
+				'is_company': {'type': 'noul', 'noul': 0.98, 'confident': True},
+				'q%d' % ref('demo_question_partner_size'): {'type': 'choice', 'choice': 'small', 'confidence': 0.9, 'confident': True},
+				'q%d' % ref('demo_question_partner_reseller'): {'type': 'noul', 'noul': 0.95, 'confident': True},
+				'q%d' % ref('demo_question_partner_complete'): {'type': 'score', 'score': 0.9, 'confidence': 0.77, 'confident': True},
+			}"
+		/>
+		<field
+			name="applied"
+			eval="{
+				'category_id': {'add': ['Prospects'], 'remove': ['Vendor', 'Consulting Services', 'Services']},
+				'is_company': 'yes',
+			}"
+		/>
+	</record>
+
+</odoo>
