@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import psycopg2
 
 from odoo import models
@@ -7,6 +9,7 @@ from odoo.exceptions import UserError, ValidationError
 from odoo.tools import mute_logger
 from odoo.tools.safe_eval import safe_eval
 
+from odoo.addons.muk_ai.providers import REGISTRY
 from odoo.addons.muk_ai.tests.common import AITestCommon
 
 
@@ -185,6 +188,21 @@ class TestModality(AITestCommon):
             self.env['muk_ai.model']._default_for('chat', configured=False),
             self.provider.default_chat_model_id,
         )
+
+    def test_a_provider_without_chat_never_becomes_the_chat_default(self):
+        providers = self.env['muk_ai.provider']
+        self.env.company.default_ai_provider_id = self.provider_google
+        self.provider_google.sequence = 1
+        with patch.object(REGISTRY['google'], 'modalities', frozenset({'decision'})):
+            self.provider_google.invalidate_recordset(['serves_chat'])
+            self.assertFalse(self.provider_google.serves_chat)
+            self.assertEqual(providers._get_default(), self.provider)
+            self.assertNotIn(
+                self.provider_google, providers.search([('serves_chat', '=', True)])
+            )
+            self.assertIn(
+                self.provider_google, providers.search([('serves_chat', '=', False)])
+            )
 
     def test_an_explicit_pick_is_never_swapped_for_another_vendor(self):
         agent = self.env['muk_ai.agent'].create(

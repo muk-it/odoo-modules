@@ -461,12 +461,6 @@ msgid "@url: too many redirects for %s."
 msgstr ""
 
 #. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/models/provider.py:0
-msgid "A custom URL is required when the region is set to Custom URL."
-msgstr ""
-
-#. module: muk_ai
 #: model:ir.model.constraint,message:muk_ai.constraint_muk_ai_model_unique_provider_model
 msgid "A model with this provider, name and modality already exists."
 msgstr ""
@@ -1653,6 +1647,11 @@ msgstr ""
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_approval__decision
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_muk_ai_approval_search
 msgid "Decision"
+msgstr ""
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Decision Models"
 msgstr ""
 
 #. module: muk_ai
@@ -2982,6 +2981,11 @@ msgid "MuK AI Compatible Providers"
 msgstr ""
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_decision
+msgid "MuK AI Decision"
+msgstr ""
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_mcp
 msgid "MuK AI MCP"
 msgstr ""
@@ -3346,6 +3350,12 @@ msgstr ""
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+msgid "Only a handover changes the owner of a chat."
+msgstr ""
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
 msgid "Only the session owner can continue this chat."
 msgstr ""
 
@@ -3612,8 +3622,8 @@ msgstr ""
 #: model:ir.model.fields,help:muk_ai.field_res_config_settings__ai_provider_id
 msgid ""
 "Provider whose default models serve an agent that picks none, before the "
-"other providers in list order. Falls back to the first active provider if "
-"unset."
+"other providers in list order. Falls back to the first active provider "
+"serving chat if unset."
 msgstr ""
 
 #. module: muk_ai
@@ -4180,6 +4190,11 @@ msgstr ""
 #. module: muk_ai
 #: model:ir.model,name:muk_ai.model_ir_actions_server
 msgid "Server Action"
+msgstr ""
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_provider__serves_chat
+msgid "Serves Chat"
 msgstr ""
 
 #. module: muk_ai
@@ -4945,6 +4960,12 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
 msgid "Type your answer…"
+msgstr ""
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Typed choices, scores and yes/no answers from fast decision models."
 msgstr ""
 
 #. module: muk_ai

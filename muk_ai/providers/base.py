@@ -28,6 +28,7 @@ class ProviderBase:
     default_model = ''
     default_url = ''
     regions: tuple[Region, ...] = ()
+    modalities: frozenset[str] = frozenset({'chat', 'image'})
 
     supports_vision = True
     supports_web_search = False

@@ -594,14 +594,6 @@ msgid "@url: too many redirects for %s."
 msgstr "@url: troppi reindirizzamenti per %s."
 
 #. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/models/provider.py:0
-msgid "A custom URL is required when the region is set to Custom URL."
-msgstr ""
-"È richiesto un URL personalizzato quando la regione è impostata su URL "
-"personalizzato."
-
-#. module: muk_ai
 #: model:ir.model.constraint,message:muk_ai.constraint_muk_ai_model_unique_provider_model
 msgid "A model with this provider, name and modality already exists."
 msgstr "Esiste già un modello con questo provider e nome."
@@ -1862,6 +1854,11 @@ msgid "Decision"
 msgstr "Decisione"
 
 #. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Decision Models"
+msgstr "Modelli decisionali"
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
 msgid "Default"
@@ -2551,7 +2548,9 @@ msgstr "Input"
 msgid ""
 "Input and output tokens, provider rounds and cost of the most recent user "
 "turn. Reset when a new turn starts."
-msgstr "Token di input e output, round del provider e costo dell'ultimo turno dell'utente. Azzerato all'inizio di un nuovo turno."
+msgstr ""
+"Token di input e output, round del provider e costo dell'ultimo turno "
+"dell'utente. Azzerato all'inizio di un nuovo turno."
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_model__currency
@@ -3280,6 +3279,11 @@ msgid "MuK AI Compatible Providers"
 msgstr "Provider compatibili MuK AI"
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_decision
+msgid "MuK AI Decision"
+msgstr ""
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_mcp
 msgid "MuK AI MCP"
 msgstr "MuK AI MCP"
@@ -3651,6 +3655,12 @@ msgstr "Uno o più allegati non sono stati trovati."
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+msgid "Only a handover changes the owner of a chat."
+msgstr "Solo un passaggio di consegne cambia il proprietario di una chat."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
 msgid "Only the session owner can continue this chat."
 msgstr "Solo il proprietario della sessione può continuare questa chat."
 
@@ -3937,11 +3947,12 @@ msgstr ""
 #: model:ir.model.fields,help:muk_ai.field_res_config_settings__ai_provider_id
 msgid ""
 "Provider whose default models serve an agent that picks none, before the "
-"other providers in list order. Falls back to the first active provider if "
-"unset."
+"other providers in list order. Falls back to the first active provider "
+"serving chat if unset."
 msgstr ""
-"Provider usato quando un agente non ne specifica uno. Ripiega sul primo "
-"provider attivo se non impostato."
+"Provider i cui modelli predefiniti servono un agente che non ne sceglie "
+"nessuno, prima degli altri provider nell'ordine dell'elenco. Ripiega sul "
+"primo provider attivo che serve la chat se non impostato."
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_model__technical_name
@@ -4570,6 +4581,11 @@ msgstr ""
 #: model:ir.model,name:muk_ai.model_ir_actions_server
 msgid "Server Action"
 msgstr "Azione server"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_provider__serves_chat
+msgid "Serves Chat"
+msgstr "Serve la chat"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -5410,6 +5426,13 @@ msgstr "Tipo dell'attività eccezionale nel record."
 #: code:addons/muk_ai/static/src/chat/utils.js:0
 msgid "Type your answer…"
 msgstr "Scrivi la tua risposta…"
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Typed choices, scores and yes/no answers from fast decision models."
+msgstr ""
+"Scelte tipizzate, punteggi e risposte sì/no da modelli decisionali rapidi."
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_kanban

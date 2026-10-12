@@ -66,7 +66,7 @@ class AIAgent(models.Model):
             'Leave empty to follow the company default provider, else the '
             'first provider in the list.'
         ),
-        domain=[('active', '=', True)],
+        domain=[('active', '=', True), ('serves_chat', '=', True)],
         ondelete='set null',
         tracking=True,
     )
