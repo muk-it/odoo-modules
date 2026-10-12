@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_res_config_settings_form" model="ir.ui.view">
+		<field name="name">res.config.settings.form.muk_ai_decision</field>
+		<field name="model">res.config.settings</field>
+		<field name="inherit_id" ref="muk_ai.view_res_config_settings_form"/>
+		<field name="arch" type="xml">
+			<xpath expr="//div[@id='msg_module_muk_ai_decision']" position="replace">
+				<div
+					class="content-group"
+					invisible="not module_muk_ai_decision"
+					id="msg_module_muk_ai_decision"
+				>
+					<div class="mt16">
+						<button
+							name="%(action_ai_decision_actions)d"
+							type="action"
+							string="Manage Decision Actions"
+							icon="oi-arrow-right"
+							class="btn-link"
+						/>
+					</div>
+				</div>
+			</xpath>
+		</field>
+	</record>
+
+</odoo>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_muk_ai_provider_form_decision" model="ir.ui.view">
+		<field name="name">muk_ai.provider.form.muk_ai_decision</field>
+		<field name="model">muk_ai.provider</field>
+		<field name="inherit_id" ref="muk_ai.view_muk_ai_provider_form"/>
+		<field name="arch" type="xml">
+			<field name="default_image_model_id" position="after">
+				<field
+					name="default_decision_model_id"
+					options="{'no_create': True}"
+					invisible="'decision' not in (model_modalities or [])"
+				/>
+				<field
+					name="decision_parallel"
+					invisible="'decision' not in (model_modalities or [])"
+				/>
+			</field>
+		</field>
+	</record>
+
+</odoo>

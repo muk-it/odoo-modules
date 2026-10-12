@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_ai_decision_automation_form" model="ir.ui.view">
+		<field name="name">base.automation.form.muk_ai_decision</field>
+		<field name="model">base.automation</field>
+		<field name="inherit_id" ref="muk_ai_automation.view_ai_agent_automation_form"/>
+		<field name="arch" type="xml">
+			<xpath expr="//field[@name='action_server_ids']" position="attributes">
+				<attribute name="context">
+					{
+						'is_modal': 1,
+						'ai_steps': 1,
+						'default_model_id': model_id,
+						'default_state': 'ai_agent',
+						'default_agent_dispatch_mode': 'per_record',
+					}
+				</attribute>
+			</xpath>
+		</field>
+	</record>
+
+	<record id="view_base_automation_search_decision" model="ir.ui.view">
+		<field name="name">base.automation.search.muk_ai_decision</field>
+		<field name="model">base.automation</field>
+		<field name="inherit_id" ref="muk_ai_automation.view_base_automation_search_agent"/>
+		<field name="arch" type="xml">
+			<filter name="filter_action_agent" position="attributes">
+				<attribute name="domain">[('action_server_ids.state', 'in', ['ai_agent', 'ai_decision'])]</attribute>
+			</filter>
+		</field>
+	</record>
+
+</odoo>
