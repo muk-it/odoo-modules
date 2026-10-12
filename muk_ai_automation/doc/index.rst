@@ -78,11 +78,15 @@ chats. A chat started for one record is linked to it: a note in the record's
 chatter links to the chat, and its AI Sessions button lists every run for the
 record.
 
-Each chat runs as the user who created the action, with that user's access
-rights. An action shipped with a module runs as the administrator. When the
-author is archived, the action refuses to run; re-create it under an active
-user. A prompt that does not render fails its chat with the reason, and an
-action whose agent is archived refuses to run.
+Each chat runs with the access rights of a user: a run from the Actions menu
+or the Run button as the user who starts it, a scheduled action as its
+Scheduler User, and an automation rule as its Run Agents As user, whoever
+triggers it. A chat finished by an action stays out of the unread chats; one
+that stops with an error or waits for an answer is flagged. The superuser is
+replaced by the administrator, and an archived user makes the action refuse to
+run. A prompt
+that does not render fails its chat with the reason, and an action whose agent
+is archived refuses to run.
 
 Credits
 =======

@@ -188,6 +188,7 @@ msgid "Dispatch"
 msgstr "Distribuzione"
 
 #. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_base_automation__display_name
 #: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__display_name
 #: model:ir.model.fields,field_description:muk_ai_automation.field_muk_ai_session__display_name
 msgid "Display Name"
@@ -203,17 +204,6 @@ msgstr "Dominio"
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_form
 msgid "e.g. Contact"
 msgstr "es. Contatto"
-
-#. module: muk_ai_automation
-#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
-msgid ""
-"Each chat runs as the user who created the action, with that\n"
-"                        user's access rights. A chat per record is listed in the AI\n"
-"                        Sessions of its record."
-msgstr ""
-"Ogni chat viene eseguita come l'utente che ha creato l'azione, con i suoi "
-"diritti di accesso. Una chat per record compare nelle sessioni IA del suo "
-"record."
 
 #. module: muk_ai_automation
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_form
@@ -238,6 +228,7 @@ msgid "Help"
 msgstr "Aiuto"
 
 #. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_base_automation__id
 #: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__id
 #: model:ir.model.fields,field_description:muk_ai_automation.field_muk_ai_session__id
 msgid "ID"
@@ -397,16 +388,6 @@ msgstr "Azione server"
 #. module: muk_ai_automation
 #. odoo-python
 #: code:addons/muk_ai_automation/models/ir_actions_server.py:0
-msgid ""
-"Server action %(name)s cannot run: the user who created it is archived. Re-"
-"create it under an active user to resume it."
-msgstr ""
-"L'azione server %(name)s non può essere eseguita: l'utente che l'ha creata è"
-" archiviato. Ricreala con un utente attivo per riprenderla."
-
-#. module: muk_ai_automation
-#. odoo-python
-#: code:addons/muk_ai_automation/models/ir_actions_server.py:0
 msgid "Server action %(name)s has no active agent."
 msgstr "L'azione server %(name)s non ha un agente attivo."
 
@@ -554,3 +535,45 @@ msgstr "es. Revisione settimanale dei contatti"
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
 msgid "records = env['res.partner'].search([('email', '=', False)], limit=10)"
 msgstr ""
+
+#. module: muk_ai_automation
+#: model:ir.model,name:muk_ai_automation.model_base_automation
+msgid "Automation Rule"
+msgstr "Regola di automazione"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
+msgid ""
+"Each chat runs with the access rights of the user who runs the\n"
+"                        action, of the user of its scheduled action, or of the user its\n"
+"                        automation rule runs AI agents as. A chat per record is listed in\n"
+"                        the AI Sessions of its record."
+msgstr ""
+"Ogni chat viene eseguita con i diritti di accesso dell'utente che esegue "
+"l'azione, dell'utente della sua azione pianificata o dell'utente con cui la "
+"sua regola di automazione esegue gli agenti IA. Una chat per record compare "
+"nelle sessioni IA del suo record."
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_base_automation__agent_user_id
+msgid "Run Agents As"
+msgstr "Esegui agenti come"
+
+#. module: muk_ai_automation
+#. odoo-python
+#: code:addons/muk_ai_automation/models/ir_actions_server.py:0
+msgid ""
+"Server action %(name)s cannot run: the user it runs as is archived or not "
+"set."
+msgstr ""
+"L'azione server %(name)s non può essere eseguita: l'utente con cui viene "
+"eseguita è archiviato o non impostato."
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,help:muk_ai_automation.field_base_automation__agent_user_id
+msgid ""
+"User whose access rights the chats of the AI agent steps run with, whoever "
+"triggers the rule."
+msgstr ""
+"Utente con i cui diritti di accesso vengono eseguite le chat dei passaggi "
+"dell'agente IA, chiunque attivi la regola."

@@ -28,8 +28,9 @@ them, or one for each.
   domain or from Python code, with a record limit per run.
 - **Memory per record**: a chat can be handed the last answer of the previous
   chat for the same record.
-- **The rights of its author**: every chat runs as the user who created the
-  action; an archived author stops the action.
+- **The rights of a real user**: a chat runs as the user who runs the action,
+  the user of its scheduled action, or the user its automation rule runs AI
+  agents as; an archived user stops the action.
 
 ![A chat started by the action, with the agent's answer](static/description/screenshot_chat.png)
 

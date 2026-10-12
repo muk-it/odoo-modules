@@ -28,6 +28,7 @@ class TestDispatch(AutomationTestCommon):
                 self.assertEqual(len(sessions), count)
                 self.assertEqual(action.agent_session_count, count)
                 self.assertEqual(set(sessions.mapped('state')), {'done'})
+                self.assertFalse(any(sessions.mapped('notification_unread')))
                 self.assertEqual(sessions.user_id, self.env.ref('base.user_admin'))
                 self.assertIn(last_prompt, sent[-1])
                 self.assertEqual(
@@ -113,17 +114,30 @@ class TestDispatch(AutomationTestCommon):
                 self.assertTrue(default)
                 self.assertEqual(action.agent_id, agent)
 
-    def test_chats_run_as_the_active_author(self):
-        author = new_test_user(
-            self.env, login='automation_author', groups='base.group_system'
+    def test_chats_run_as_the_runner_unless_a_rule_sets_the_user(self):
+        runner, rule_user = (
+            new_test_user(self.env, login=login, groups='base.group_system')
+            for login in ('automation_runner', 'automation_rule_user')
         )
-        action = self._make_action().with_user(author).copy()
-        self._run(action)
-        self.assertEqual(self._sessions_of(action).user_id, author)
-        author.active = False
+        action = self._make_action()
+        self._run(action.with_user(runner))
+        self.env['base.automation'].create(
+            {
+                'name': 'Rule',
+                'model_id': action.model_id.id,
+                'trigger': 'on_create',
+                'action_server_ids': [(6, 0, action.ids)],
+                'agent_user_id': rule_user.id,
+            }
+        )
+        self._run(action.with_user(runner))
+        self.assertEqual(
+            self._sessions_of(action).user_id.ids, [runner.id, rule_user.id]
+        )
+        rule_user.active = False
         with self.assertRaises(UserError):
-            self._run(action)
-        self.assertEqual(len(self._sessions_of(action)), 1)
+            self._run(action.with_user(runner))
+        self.assertEqual(len(self._sessions_of(action)), 2)
 
     def test_prompt_failures(self):
         action = self._make_action(agent_prompt='{{ "x" * 5000 }}')
@@ -135,6 +149,7 @@ class TestDispatch(AutomationTestCommon):
         session = self._sessions_of(broken)
         self.assertFalse(sent)
         self.assertEqual(session.state, 'error')
+        self.assertTrue(session.notification_unread)
         self.assertIn('could not be rendered', session.error_message)
 
     def test_removing_the_agent_type_deletes_its_actions_and_schedules(self):

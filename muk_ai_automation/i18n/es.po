@@ -188,6 +188,7 @@ msgid "Dispatch"
 msgstr "Distribución"
 
 #. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_base_automation__display_name
 #: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__display_name
 #: model:ir.model.fields,field_description:muk_ai_automation.field_muk_ai_session__display_name
 msgid "Display Name"
@@ -203,16 +204,6 @@ msgstr "Dominio"
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_form
 msgid "e.g. Contact"
 msgstr "p. ej. Contacto"
-
-#. module: muk_ai_automation
-#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
-msgid ""
-"Each chat runs as the user who created the action, with that\n"
-"                        user's access rights. A chat per record is listed in the AI\n"
-"                        Sessions of its record."
-msgstr ""
-"Cada chat se ejecuta como el usuario que creó la acción, con sus derechos de"
-" acceso. Un chat por registro aparece en las sesiones de IA de su registro."
 
 #. module: muk_ai_automation
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_form
@@ -237,6 +228,7 @@ msgid "Help"
 msgstr "Ayuda"
 
 #. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_base_automation__id
 #: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__id
 #: model:ir.model.fields,field_description:muk_ai_automation.field_muk_ai_session__id
 msgid "ID"
@@ -397,16 +389,6 @@ msgstr "Acción de servidor"
 #. module: muk_ai_automation
 #. odoo-python
 #: code:addons/muk_ai_automation/models/ir_actions_server.py:0
-msgid ""
-"Server action %(name)s cannot run: the user who created it is archived. Re-"
-"create it under an active user to resume it."
-msgstr ""
-"La acción de servidor %(name)s no puede ejecutarse: el usuario que la creó "
-"está archivado. Vuelva a crearla con un usuario activo para reanudarla."
-
-#. module: muk_ai_automation
-#. odoo-python
-#: code:addons/muk_ai_automation/models/ir_actions_server.py:0
 msgid "Server action %(name)s has no active agent."
 msgstr "La acción de servidor %(name)s no tiene un agente activo."
 
@@ -553,3 +535,45 @@ msgstr "p. ej. Revisión semanal de contactos"
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
 msgid "records = env['res.partner'].search([('email', '=', False)], limit=10)"
 msgstr ""
+
+#. module: muk_ai_automation
+#: model:ir.model,name:muk_ai_automation.model_base_automation
+msgid "Automation Rule"
+msgstr "Regla de automatización"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
+msgid ""
+"Each chat runs with the access rights of the user who runs the\n"
+"                        action, of the user of its scheduled action, or of the user its\n"
+"                        automation rule runs AI agents as. A chat per record is listed in\n"
+"                        the AI Sessions of its record."
+msgstr ""
+"Cada chat se ejecuta con los derechos de acceso del usuario que ejecuta la "
+"acción, del usuario de su acción planificada o del usuario con el que su "
+"regla de automatización ejecuta los agentes de IA. Un chat por registro "
+"aparece en las sesiones de IA de su registro."
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_base_automation__agent_user_id
+msgid "Run Agents As"
+msgstr "Ejecutar agentes como"
+
+#. module: muk_ai_automation
+#. odoo-python
+#: code:addons/muk_ai_automation/models/ir_actions_server.py:0
+msgid ""
+"Server action %(name)s cannot run: the user it runs as is archived or not "
+"set."
+msgstr ""
+"La acción de servidor %(name)s no puede ejecutarse: el usuario con el que se"
+" ejecuta está archivado o no está definido."
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,help:muk_ai_automation.field_base_automation__agent_user_id
+msgid ""
+"User whose access rights the chats of the AI agent steps run with, whoever "
+"triggers the rule."
+msgstr ""
+"Usuario con cuyos derechos de acceso se ejecutan los chats de los pasos de "
+"agente de IA, sea quien sea quien active la regla."
