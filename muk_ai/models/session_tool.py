@@ -915,6 +915,8 @@ class AISessionTool(models.AbstractModel):
         has_ask_user = any(call.get('name') == 'ask_user' for call in tool_calls)
         waiting = False
         client_names = self._client_tool_names()
+        offered = {entry.get('name') for entry in self._get_filtered_catalog()}
+        offered |= client_names | {TOOL_LOAD_TOOL['name']}
         for index in range(start_index, len(tool_calls)):
             call = tool_calls[index]
             name, log_result, skip = call['name'], None, None
@@ -931,6 +933,8 @@ class AISessionTool(models.AbstractModel):
                     self._register_ask_user(call)
                     waiting = True
                     continue
+            elif name not in offered:
+                skip = 'tool_not_offered'
             elif name in client_names and not has_ask_user and not has_terminating:
                 if waiting and (self.pending_ask or {}).get('kind') == 'client_action':
                     skip = self._client_action_deferred(call)

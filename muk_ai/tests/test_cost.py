@@ -203,7 +203,6 @@ class TestCost(AITestCommon):
             (self.painter, 'generate_image', [one], 0),
             (self.painter, 'generate_image', IMAGE, 0),
             (self.painter, 'web_fetch', one, 0),
-            (self.agent, 'generate_image', one, 0),
         ):
             with self.subTest(agent=agent.name, tool=name, result=result):
                 session = self._session(agent_id=agent.id)

@@ -222,13 +222,13 @@ class TestToolResults(AITestCommon):
         for client in (False, True):
             with self.subTest(client=client):
                 session = self._session()
-                calls = [('render', {}, 'c1')]
+                calls = [('search_read', {}, 'c1')]
                 if not client:
                     calls.append(('search_count', {'model': 'res.partner'}, 'c2'))
                 with (
-                    self._as_client_tool('render') if client else nullcontext(),
+                    self._as_client_tool('search_read') if client else nullcontext(),
                     self._patch_tool(
-                        {'render': ToolResult(text='Captured', images=[SHOT])}
+                        {'search_read': ToolResult(text='Captured', images=[SHOT])}
                     ),
                     self._mock_responses(
                         [tool_payload(*calls), text_payload()]
@@ -277,7 +277,7 @@ class TestToolResults(AITestCommon):
                     if isinstance(images, ToolContent)
                     else ToolResult(text='Captured', images=images)
                 )
-                _session, output, requests = self._run('render', result)
+                _session, output, requests = self._run('search_read', result)
                 blocks = self._vision(requests[1])
                 self.assertEqual(
                     {base64.b64decode(block['data_b64']) for block in blocks},

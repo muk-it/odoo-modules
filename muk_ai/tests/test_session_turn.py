@@ -431,3 +431,16 @@ class TestSessionTurn(AITestCommon):
         self.assertEqual(
             (second['last_input_tokens'], second['iteration_count']), (120, 3)
         )
+
+    def test_process_tool_round_refuses_a_tool_outside_the_filter(self):
+        agent = self.env['muk_ai.agent'].create(
+            {'name': 'Narrow', 'tool_filter': ['search_count']}
+        )
+        session = self.env['muk_ai.session'].create(
+            {'name': 'narrow', 'agent_id': agent.id}
+        )
+        outputs = []
+        session._process_tool_round(
+            [{'call_id': 'c1', 'name': 'read_records', 'arguments': {}}], outputs, 0
+        )
+        self.assertIn('tool_not_offered', outputs[0]['output'])
