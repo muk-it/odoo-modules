@@ -4,7 +4,7 @@ from datetime import date, datetime, time, timedelta
 
 from dateutil.relativedelta import relativedelta
 
-from odoo import _, api, fields, models
+from odoo import SUPERUSER_ID, _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 from odoo.tools.misc import clean_context
 from odoo.tools.safe_eval import safe_eval, test_python_expr
@@ -129,24 +129,25 @@ class IrActionsServer(models.Model):
         self.exists().unlink()
 
     def _agent_user(self) -> models.BaseModel:
-        """Return the user the chats run as: the author of the action.
+        """Return the user the chats run as: the user of its rule, else the runner.
 
-        An action shipped as module data runs as the administrator.
+        The administrator stands in for the superuser.
 
-        :raise UserError: when the author is archived or deleted
+        :raise UserError: when that user is archived or not set
         """
-        author = self.create_uid
-        if author._is_superuser():
+        rule = self.sudo().base_automation_id
+        user = rule.agent_user_id if rule else self.env.user
+        if user.id == SUPERUSER_ID:
             return self.env.ref('base.user_admin')
-        if not author.active:
+        if not user.active:
             raise UserError(
                 _(
-                    'Server action %(name)s cannot run: the user who created it '
-                    'is archived. Re-create it under an active user to resume it.',
+                    'Server action %(name)s cannot run: the user it runs as is '
+                    'archived or not set.',
                     name=self.display_name,
                 )
             )
-        return author
+        return user
 
     def _agent_records(self, eval_context: dict) -> models.BaseModel:
         """Return the records of the trigger, else those of the domain or code."""

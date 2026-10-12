@@ -59,6 +59,13 @@
                 <attribute name="string">Trigger</attribute>
                 <attribute name="invisible">not model_id</attribute>
             </xpath>
+            <xpath expr="//label[@for='trigger']/.." position="inside">
+                <field
+                    name="agent_user_id"
+                    options="{'no_create': True}"
+                    required="1"
+                />
+            </xpath>
             <xpath expr="//label[@for='trigger']/.." position="before">
                 <group string="Target" name="agent_rule_target"/>
             </xpath>

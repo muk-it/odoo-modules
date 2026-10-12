@@ -42,6 +42,12 @@ class AISession(models.Model):
             kinds.discard('webclient')
         return kinds
 
+    def _should_notify_state(self, state: str) -> bool:
+        """Stay quiet about a chat a server action finished, report the rest."""
+        if self.action_server_id and state == 'done':
+            return False
+        return super()._should_notify_state(state)
+
     def _should_autoname(self) -> bool:
         """Keep the name of a chat a server action started."""
         return not self.action_server_id and super()._should_autoname()
