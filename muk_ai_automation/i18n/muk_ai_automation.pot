@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-28 15:47+0000\n"
-"PO-Revision-Date: 2026-06-28 15:47+0000\n"
+"POT-Creation-Date: 2026-10-12 23:18+0000\n"
+"PO-Revision-Date: 2026-10-12 23:18+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -37,42 +37,19 @@ msgid "AI Automation Rules"
 msgstr ""
 
 #. module: muk_ai_automation
-#. odoo-javascript
-#: code:addons/muk_ai_automation/static/src/chatter/ai_session_box.js:0
-msgid "AI Chat"
-msgstr ""
-
-#. module: muk_ai_automation
 #: model:ir.actions.act_window,name:muk_ai_automation.action_ai_scheduled_actions
 #: model:ir.ui.menu,name:muk_ai_automation.menu_ai_scheduled_actions
 msgid "AI Scheduled Actions"
 msgstr ""
 
 #. module: muk_ai_automation
-#. odoo-javascript
-#. odoo-python
-#: code:addons/muk_ai_automation/models/ai_session.py:0
-#: code:addons/muk_ai_automation/static/src/chatter/ai_session_box.js:0
 #: model:ir.model,name:muk_ai_automation.model_muk_ai_session
 msgid "AI Session"
 msgstr ""
 
 #. module: muk_ai_automation
-#. odoo-javascript
-#: code:addons/muk_ai_automation/static/src/chatter/ai_session_box.js:0
-#: code:addons/muk_ai_automation/static/src/chatter/ai_session_box.xml:0
-msgid "AI Sessions"
-msgstr ""
-
-#. module: muk_ai_automation
-#. odoo-python
-#: code:addons/muk_ai_automation/models/ai_session.py:0
-msgid "AI session %(link)s started for this record."
-msgstr ""
-
-#. module: muk_ai_automation
-#: model:base.automation,name:muk_ai_automation.demo_rule_partner_on_create
-msgid "AI summarize on partner create"
+#: model:res.partner.category,name:muk_ai_automation.demo_category_ai_summary
+msgid "AI Summary"
 msgstr ""
 
 #. module: muk_ai_automation
@@ -155,6 +132,7 @@ msgid ""
 msgstr ""
 
 #. module: muk_ai_automation
+#: model:ir.model,name:muk_ai_automation.model_base_automation
 #: model:ir.model.fields,field_description:muk_ai_automation.field_muk_ai_session__base_automation_id
 msgid "Automation Rule"
 msgstr ""
@@ -162,12 +140,6 @@ msgstr ""
 #. module: muk_ai_automation
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form_agent
 msgid "Caps"
-msgstr ""
-
-#. module: muk_ai_automation
-#. odoo-javascript
-#: code:addons/muk_ai_automation/static/src/chatter/ai_session_box.js:0
-msgid "Compacting"
 msgstr ""
 
 #. module: muk_ai_automation
@@ -184,8 +156,8 @@ msgid ""
 msgstr ""
 
 #. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_base_automation__display_name
 #: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__display_name
-#: model:ir.model.fields,field_description:muk_ai_automation.field_mail_thread__display_name
 #: model:ir.model.fields,field_description:muk_ai_automation.field_muk_ai_session__display_name
 #: model:ir.model.fields,field_description:muk_ai_automation.field_res_config_settings__display_name
 msgid "Display Name"
@@ -197,23 +169,6 @@ msgid "Domain"
 msgstr ""
 
 #. module: muk_ai_automation
-#. odoo-javascript
-#: code:addons/muk_ai_automation/static/src/chatter/ai_session_box.js:0
-msgid "Done"
-msgstr ""
-
-#. module: muk_ai_automation
-#: model:ir.model,name:muk_ai_automation.model_mail_thread
-msgid "Email Thread"
-msgstr ""
-
-#. module: muk_ai_automation
-#. odoo-javascript
-#: code:addons/muk_ai_automation/static/src/chatter/ai_session_box.js:0
-msgid "Error"
-msgstr ""
-
-#. module: muk_ai_automation
 #: model:ir.model.fields,help:muk_ai_automation.field_ir_actions_server__agent_record_source
 #: model:ir.model.fields,help:muk_ai_automation.field_ir_cron__agent_record_source
 msgid ""
@@ -222,16 +177,11 @@ msgid ""
 msgstr ""
 
 #. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_base_automation__id
 #: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__id
-#: model:ir.model.fields,field_description:muk_ai_automation.field_mail_thread__id
 #: model:ir.model.fields,field_description:muk_ai_automation.field_muk_ai_session__id
 #: model:ir.model.fields,field_description:muk_ai_automation.field_res_config_settings__id
 msgid "ID"
-msgstr ""
-
-#. module: muk_ai_automation
-#: model:ir.model.fields,help:muk_ai_automation.field_muk_ai_session__res_id
-msgid "Identifier of the linked business record."
 msgstr ""
 
 #. module: muk_ai_automation
@@ -240,66 +190,51 @@ msgstr ""
 msgid ""
 "Initial prompt sent to the agent on each fire. Rendered as an inline "
 "template with the evaluation context of the action (record, records, env, "
-"user)."
-msgstr ""
-
-#. module: muk_ai_automation
-#: model:ir.model.fields,field_description:muk_ai_automation.field_muk_ai_session__res_model
-msgid "Linked Model"
-msgstr ""
-
-#. module: muk_ai_automation
-#: model:ir.model.fields,field_description:muk_ai_automation.field_muk_ai_session__res_id
-msgid "Linked Record"
+"user), plus previous_session (previous_session.last_text and "
+"previous_session.tool_log) when the action chains after an earlier agent "
+"run."
 msgstr ""
 
 #. module: muk_ai_automation
 #: model:ir.model.fields,help:muk_ai_automation.field_ir_actions_server__agent_max_cost_eur
 #: model:ir.model.fields,help:muk_ai_automation.field_ir_cron__agent_max_cost_eur
 msgid ""
-"Maximum cumulative cost in EUR a spawned session may incur before it is "
-"aborted. Zero falls back to the module-wide default."
+"Maximum cumulative cost in EUR a spawned session may incur. Enforced when "
+"the session resumes through MuK AI Schedule; zero falls back to the module-"
+"wide default."
 msgstr ""
 
 #. module: muk_ai_automation
 #: model:ir.model.fields,help:muk_ai_automation.field_ir_actions_server__agent_max_resumes
 #: model:ir.model.fields,help:muk_ai_automation.field_ir_cron__agent_max_resumes
 msgid ""
-"Maximum number of times a spawned session may resume before it is aborted. "
-"Zero falls back to the module-wide default."
+"Maximum number of times a spawned session may resume. Enforced when the "
+"session resumes through MuK AI Schedule; zero falls back to the module-wide "
+"default."
 msgstr ""
 
 #. module: muk_ai_automation
 #: model:ir.model.fields,help:muk_ai_automation.field_ir_actions_server__agent_max_total_tokens
 #: model:ir.model.fields,help:muk_ai_automation.field_ir_cron__agent_max_total_tokens
 msgid ""
-"Maximum total tokens a spawned session may consume before it is aborted. "
-"Zero falls back to the module-wide default."
+"Maximum total tokens a spawned session may consume. Enforced when the "
+"session resumes through MuK AI Schedule; zero falls back to the module-wide "
+"default."
 msgstr ""
 
 #. module: muk_ai_automation
 #: model:ir.model.fields,help:muk_ai_automation.field_ir_actions_server__agent_max_lifetime_hours
 #: model:ir.model.fields,help:muk_ai_automation.field_ir_cron__agent_max_lifetime_hours
 msgid ""
-"Maximum wall-clock lifetime of a spawned session in hours before it is "
-"aborted. Zero falls back to the module-wide default."
-msgstr ""
-
-#. module: muk_ai_automation
-#: model:ir.model.fields,help:muk_ai_automation.field_muk_ai_session__res_model
-msgid "Model of the business record this session is linked to."
+"Maximum wall-clock lifetime of a spawned session in hours. Enforced when the"
+" session resumes through MuK AI Schedule; zero falls back to the module-wide"
+" default."
 msgstr ""
 
 #. module: muk_ai_automation
 #: model:ir.model.fields,field_description:muk_ai_automation.field_res_config_settings__module_muk_ai_automation
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_res_config_settings_form
 msgid "MuK AI Automation"
-msgstr ""
-
-#. module: muk_ai_automation
-#. odoo-javascript
-#: code:addons/muk_ai_automation/static/src/chatter/ai_session_box.js:0
-msgid "New"
 msgstr ""
 
 #. module: muk_ai_automation
@@ -355,11 +290,6 @@ msgid ""
 msgstr ""
 
 #. module: muk_ai_automation
-#: model:ir.model.fields,field_description:muk_ai_automation.field_base_automation__agent_user_id
-msgid "Run Agents As"
-msgstr ""
-
-#. module: muk_ai_automation
 #: model:ir.model.fields.selection,name:muk_ai_automation.selection__ir_actions_server__state__ai_agent
 msgid "Run AI Agent"
 msgstr ""
@@ -371,15 +301,8 @@ msgid "Run AI agents as server actions and automation rule steps."
 msgstr ""
 
 #. module: muk_ai_automation
-#. odoo-javascript
-#: code:addons/muk_ai_automation/static/src/chatter/ai_session_box.js:0
-msgid "Running"
-msgstr ""
-
-#. module: muk_ai_automation
-#. odoo-javascript
-#: code:addons/muk_ai_automation/static/src/chatter/ai_session_box.js:0
-msgid "Scheduled"
+#: model:ir.model.fields,field_description:muk_ai_automation.field_base_automation__agent_user_id
+msgid "Run Agents As"
 msgstr ""
 
 #. module: muk_ai_automation
@@ -436,19 +359,18 @@ msgid ""
 msgstr ""
 
 #. module: muk_ai_automation
-#. odoo-javascript
-#: code:addons/muk_ai_automation/static/src/chatter/ai_session_box.js:0
-msgid "Stopped"
+#: model:ir.actions.server,name:muk_ai_automation.demo_agent_action_partner_summary
+msgid "Summarize Contact"
 msgstr ""
 
 #. module: muk_ai_automation
-#: model:ir.actions.server,name:muk_ai_automation.demo_agent_action_partner_summary
-msgid "Summarize New Partner"
+#: model:base.automation,name:muk_ai_automation.demo_rule_partner_on_create
+msgid "Summarize Tagged Contacts"
 msgstr ""
 
 #. module: muk_ai_automation
 #: model:ir.actions.server,agent_prompt:muk_ai_automation.demo_agent_action_partner_summary
-msgid "Summarize this new partner: ${record.display_name} (${record.email})"
+msgid "Summarize this contact: {{ record.display_name }} ({{ record.email }})"
 msgstr ""
 
 #. module: muk_ai_automation
@@ -485,18 +407,6 @@ msgstr ""
 msgid ""
 "User whose access rights the chats of the AI agent steps run with, whoever "
 "triggers the rule."
-msgstr ""
-
-#. module: muk_ai_automation
-#. odoo-javascript
-#: code:addons/muk_ai_automation/static/src/chatter/ai_session_box.xml:0
-msgid "View all ("
-msgstr ""
-
-#. module: muk_ai_automation
-#. odoo-javascript
-#: code:addons/muk_ai_automation/static/src/chatter/ai_session_box.js:0
-msgid "Waiting"
 msgstr ""
 
 #. module: muk_ai_automation
