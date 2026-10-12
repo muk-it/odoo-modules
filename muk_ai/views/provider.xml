@@ -63,7 +63,7 @@
 							<field name="code" placeholder="default"/>
 						</h3>
 					</div>
-					<group>
+					<group class="o_label_nowrap">
 						<group string="Connection">
 							<field name="api_key" password="True"/>
 							<field name="model_modalities" invisible="1"/>

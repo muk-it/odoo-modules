@@ -567,14 +567,6 @@ msgid "@url: too many redirects for %s."
 msgstr "@url : trop de redirections pour %s."
 
 #. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/models/provider.py:0
-msgid "A custom URL is required when the region is set to Custom URL."
-msgstr ""
-"Une URL personnalisée est requise lorsque la région est définie sur URL "
-"personnalisée."
-
-#. module: muk_ai
 #: model:ir.model.constraint,message:muk_ai.constraint_muk_ai_model_unique_provider_model
 msgid "A model with this provider, name and modality already exists."
 msgstr "Un modèle avec ce fournisseur et ce nom existe déjà."
