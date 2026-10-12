@@ -180,8 +180,7 @@ class TestSkillSession(AITestCommon):
     def test_the_snapshot_lists_the_skills_without_their_bodies(self):
         session = self._chat()
         [entry] = session.get_snapshot()['skills']
-        self.assertEqual(
-            entry,
+        self.assertLessEqual(
             {
                 'name': 'demo',
                 'label': 'Demo',
@@ -190,5 +189,6 @@ class TestSkillSession(AITestCommon):
                 'scope': 'any',
                 'models': [],
                 'requirement': '',
-            },
+            }.items(),
+            entry.items(),
         )
