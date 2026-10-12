@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 16.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-11 00:27+0000\n"
-"PO-Revision-Date: 2026-10-11 00:27+0000\n"
+"POT-Creation-Date: 2026-10-12 16:24+0000\n"
+"PO-Revision-Date: 2026-10-12 16:24+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -120,6 +120,11 @@ msgid ""
 msgstr ""
 
 #. module: muk_ai_automation
+#: model:ir.model,name:muk_ai_automation.model_base_automation
+msgid "Automated Action"
+msgstr ""
+
+#. module: muk_ai_automation
 #: model:ir.ui.menu,name:muk_ai_automation.menu_ai_automation
 msgid "Automation"
 msgstr ""
@@ -169,9 +174,10 @@ msgstr ""
 #. module: muk_ai_automation
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
 msgid ""
-"Each chat runs as the user who created the action, with that\n"
-"                        user's access rights. A chat per record is listed in the AI\n"
-"                        Sessions of its record."
+"Each chat runs with the access rights of the user who runs the\n"
+"                        action, of the user of its scheduled action, or of the user its\n"
+"                        automation rule runs AI agents as. A chat per record is listed in\n"
+"                        the AI Sessions of its record."
 msgstr ""
 
 #. module: muk_ai_automation
@@ -313,6 +319,11 @@ msgid "Run AI Agent"
 msgstr ""
 
 #. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_base_automation__agent_user_id
+msgid "Run Agents As"
+msgstr ""
+
+#. module: muk_ai_automation
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_form
 msgid "Schedule"
 msgstr ""
@@ -338,8 +349,8 @@ msgstr ""
 #: code:addons/muk_ai_automation/models/ir_actions_server.py:0
 #, python-format
 msgid ""
-"Server action %(name)s cannot run: the user who created it is archived. Re-"
-"create it under an active user to resume it."
+"Server action %(name)s cannot run: the user it runs as is archived or not "
+"set."
 msgstr ""
 
 #. module: muk_ai_automation
@@ -427,6 +438,13 @@ msgid ""
 "- 'Add Followers': add followers to a record (Discuss)\n"
 "- 'Create Next Activity': create an activity (Discuss)\n"
 "- 'Send SMS Text Message': send SMS, log them on documents (SMS)"
+msgstr ""
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,help:muk_ai_automation.field_base_automation__agent_user_id
+msgid ""
+"User whose access rights the chats of the AI agent steps run with, whoever "
+"triggers the rule."
 msgstr ""
 
 #. module: muk_ai_automation

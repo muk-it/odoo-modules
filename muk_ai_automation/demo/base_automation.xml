@@ -6,6 +6,7 @@
         <field name="name">Summarize New Partner</field>
         <field name="model_id" ref="base.model_res_partner"/>
         <field name="trigger">on_create</field>
+        <field name="agent_user_id" ref="base.user_admin"/>
         <field name="active" eval="False"/>
         <field name="state">ai_agent</field>
         <field name="agent_id" ref="muk_ai.agent_general"/>

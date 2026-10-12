@@ -145,9 +145,10 @@
                         a scheduled action.
                     </p>
                     <p>
-                        Each chat runs as the user who created the action, with that
-                        user's access rights. A chat per record is listed in the AI
-                        Sessions of its record.
+                        Each chat runs with the access rights of the user who runs the
+                        action, of the user of its scheduled action, or of the user its
+                        automation rule runs AI agents as. A chat per record is listed in
+                        the AI Sessions of its record.
                     </p>
                 </page>
             </xpath>

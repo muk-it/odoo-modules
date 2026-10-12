@@ -32,6 +32,13 @@
             <xpath expr="//group[@name='action_content']" position="attributes">
                 <attribute name="string">Trigger</attribute>
             </xpath>
+            <xpath expr="//group[@name='action_content']" position="inside">
+                <field
+                    name="agent_user_id"
+                    options="{'no_create': True}"
+                    required="1"
+                />
+            </xpath>
             <xpath expr="//field[@name='model_id']" position="attributes">
                 <attribute name="placeholder">e.g. Contact</attribute>
             </xpath>
