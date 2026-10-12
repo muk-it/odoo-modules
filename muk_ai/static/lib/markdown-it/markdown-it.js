@@ -1,6 +1,6 @@
 /*! markdown-it 14.1.1 https://github.com/markdown-it/markdown-it @license MIT */
 (function(global, factory) {
-  typeof exports === "object" && typeof module !== "undefined" ? module.exports = factory() : typeof define === "function" && define.amd ? define(factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self, 
+  typeof exports === "object" && typeof module !== "undefined" ? module.exports = factory() : typeof define === "function" && define.amd ? define(factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self,
   global.markdownit = factory());
 })(this, function() {
   "use strict";
@@ -22,7 +22,7 @@
     return cache;
   }
   // Decode percent-encoded string.
-  
+
     function decode$1(string, exclude) {
     if (typeof exclude !== "string") {
       exclude = decode$1.defaultChars;
@@ -92,7 +92,7 @@
   const encodeCache = {};
   // Create a lookup array where anything but characters in `chars` string
   // and alphanumeric chars is percent-encoded.
-  
+
     function getEncodeCache(exclude) {
     let cache = encodeCache[exclude];
     if (cache) {
@@ -115,11 +115,11 @@
   }
   // Encode unsafe characters with percent-encoding, skipping already
   // encoded sequences.
-  
+
   //  - string       - string to encode
   //  - exclude      - list of characters to ignore (in addition to a-zA-Z0-9)
   //  - keepEscaped  - don't encode '%' in a correct escape sequence (default: true)
-  
+
     function encode$1(string, exclude, keepEscaped) {
     if (typeof exclude !== "string") {
       // encode(string, keepEscaped)
@@ -180,7 +180,7 @@
     return result;
   }
   // Copyright Joyent, Inc. and other Node contributors.
-  
+
   // Permission is hereby granted, free of charge, to any person obtaining a
   // copy of this software and associated documentation files (the
   // "Software"), to deal in the Software without restriction, including
@@ -188,10 +188,10 @@
   // distribute, sublicense, and/or sell copies of the Software, and to permit
   // persons to whom the Software is furnished to do so, subject to the
   // following conditions:
-  
+
   // The above copyright notice and this permission notice shall be included
   // in all copies or substantial portions of the Software.
-  
+
   // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
   // OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
   // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
@@ -199,26 +199,26 @@
   // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
   // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
   // USE OR OTHER DEALINGS IN THE SOFTWARE.
-  
+
   // Changes from joyent/node:
-  
+
   // 1. No leading slash in paths,
   //    e.g. in `url.parse('http://foo?bar')` pathname is ``, not `/`
-  
+
   // 2. Backslashes are not replaced with slashes,
   //    so `http:\\example.org\` is treated like a relative path
-  
+
   // 3. Trailing colon is treated like a part of the path,
   //    i.e. in `http://example.org:foo` pathname is `:foo`
-  
+
   // 4. Nothing is URL-encoded in the resulting object,
   //    (in joyent/node some chars in auth and paths are encoded)
-  
+
   // 5. `url.parse()` does not have `parseQueryString` argument
-  
+
   // 6. Removed extraneous result properties: `host`, `path`, `query`, etc.,
   //    which can be constructed using other parts of the url.
-  
+
     function Url() {
     this.protocol = null;
     this.slashes = null;
@@ -487,12 +487,12 @@
   "\u0200aglq\t\x15\x18\x1b\u026d\x0f\0\0\x12p;\u4026os;\u4027t;\u403et;\u403cuot;\u4022".split("").map(c => c.charCodeAt(0)));
   // Adapted from https://github.com/mathiasbynens/he/blob/36afe179392226cf1b6ccdb16ebbb7a5a844d93a/src/he.js#L106-L134
     var _a;
-  const decodeMap = new Map([ [ 0, 65533 ], 
+  const decodeMap = new Map([ [ 0, 65533 ],
   // C1 Unicode control character reference replacements
   [ 128, 8364 ], [ 130, 8218 ], [ 131, 402 ], [ 132, 8222 ], [ 133, 8230 ], [ 134, 8224 ], [ 135, 8225 ], [ 136, 710 ], [ 137, 8240 ], [ 138, 352 ], [ 139, 8249 ], [ 140, 338 ], [ 142, 381 ], [ 145, 8216 ], [ 146, 8217 ], [ 147, 8220 ], [ 148, 8221 ], [ 149, 8226 ], [ 150, 8211 ], [ 151, 8212 ], [ 152, 732 ], [ 153, 8482 ], [ 154, 353 ], [ 155, 8250 ], [ 156, 339 ], [ 158, 382 ], [ 159, 376 ] ]);
   /**
    * Polyfill for `String.fromCodePoint`. It is used to create a string from a Unicode code point.
-   */  const fromCodePoint$1 = 
+   */  const fromCodePoint$1 =
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, node/no-unsupported-features/es-builtins
   (_a = String.fromCodePoint) !== null && _a !== void 0 ? _a : function(codePoint) {
     let output = "";
@@ -573,7 +573,7 @@
    * Token decoder with support of writing partial entities.
    */  class EntityDecoder {
     constructor(/** The tree used to decode entities. */
-    decodeTree, 
+    decodeTree,
     /**
      * The function that is called when a codepoint is decoded.
      *
@@ -774,11 +774,11 @@
         const char = str.charCodeAt(offset);
         this.treeIndex = determineBranch(decodeTree, current, this.treeIndex + Math.max(1, valueLength), char);
         if (this.treeIndex < 0) {
-          return this.result === 0 || 
+          return this.result === 0 ||
           // If we are parsing an attribute
           this.decodeMode === DecodingMode.Attribute && (
           // We shouldn't have consumed any characters after the entity,
-          valueLength === 0 || 
+          valueLength === 0 ||
           // And there should be no invalid characters.
           isEntityInAttributeInvalidEnd(char)) ? 0 : this.emitNotTerminatedNamedEntity();
         }
@@ -883,7 +883,7 @@
       while ((offset = str.indexOf("&", offset)) >= 0) {
         ret += str.slice(lastIndex, offset);
         decoder.startEntity(decodeMode);
-        const len = decoder.write(str, 
+        const len = decoder.write(str,
         // Skip the "&"
         offset + 1);
         if (len < 0) {
@@ -950,7 +950,7 @@
     return htmlDecoder(str, mode);
   }
   // Utilities
-  
+
     function _class$1(obj) {
     return Object.prototype.toString.call(obj);
   }
@@ -962,7 +962,7 @@
     return _hasOwnProperty.call(object, key);
   }
   // Merge objects
-  
+
     function assign$1(obj /* from1, from2, from3, ... */) {
     const sources = Array.prototype.slice.call(arguments, 1);
     sources.forEach(function(source) {
@@ -1119,18 +1119,18 @@
     }
     return false;
   }
-   
+
   // Currently without astral characters support.
     function isPunctChar(ch) {
     return P.test(ch) || regex.test(ch);
   }
   // Markdown ASCII punctuation characters.
-  
+
   // !, ", #, $, %, &, ', (, ), *, +, ,, -, ., /, :, ;, <, =, >, ?, @, [, \, ], ^, _, `, {, |, }, or ~
   // http://spec.commonmark.org/0.15/#ascii-punctuation-character
-  
+
   // Don't confuse with unicode punctuation !!! It lacks some chars in ascii range.
-  
+
     function isMdAsciiPunct(ch) {
     switch (ch) {
      case 33 /* ! */ :
@@ -1172,57 +1172,57 @@
     }
   }
   // Hepler to unify [reference labels].
-  
+
     function normalizeReference(str) {
     // Trim and collapse whitespace
     str = str.trim().replace(/\s+/g, " ");
     // In node v10 'ẞ'.toLowerCase() === 'Ṿ', which is presumed to be a bug
     // fixed in v12 (couldn't find any details).
-    
+
     // So treat this one as a special case
     // (remove this when node v10 is no longer supported).
-    
+
         if ("\u1e9e".toLowerCase() === "\u1e7e") {
       str = str.replace(/\u1e9e/g, "\xdf");
     }
     // .toLowerCase().toUpperCase() should get rid of all differences
     // between letter variants.
-    
+
     // Simple .toLowerCase() doesn't normalize 125 code points correctly,
     // and .toUpperCase doesn't normalize 6 of them (list of exceptions:
     // İ, ϴ, ẞ, Ω, K, Å - those are already uppercased, but have differently
     // uppercased versions).
-    
+
     // Here's an example showing how it happens. Lets take greek letter omega:
     // uppercase U+0398 (Θ), U+03f4 (ϴ) and lowercase U+03b8 (θ), U+03d1 (ϑ)
-    
+
     // Unicode entries:
     // 0398;GREEK CAPITAL LETTER THETA;Lu;0;L;;;;;N;;;;03B8;
     // 03B8;GREEK SMALL LETTER THETA;Ll;0;L;;;;;N;;;0398;;0398
     // 03D1;GREEK THETA SYMBOL;Ll;0;L;<compat> 03B8;;;;N;GREEK SMALL LETTER SCRIPT THETA;;0398;;0398
     // 03F4;GREEK CAPITAL THETA SYMBOL;Lu;0;L;<compat> 0398;;;;N;;;;03B8;
-    
+
     // Case-insensitive comparison should treat all of them as equivalent.
-    
+
     // But .toLowerCase() doesn't change ϑ (it's already lowercase),
     // and .toUpperCase() doesn't change ϴ (already uppercase).
-    
+
     // Applying first lower then upper case normalizes any character:
     // '\u0398\u03f4\u03b8\u03d1'.toLowerCase().toUpperCase() === '\u0398\u0398\u0398\u0398'
-    
+
     // Note: this is equivalent to unicode case folding; unicode normalization
     // is a different step that is not required here.
-    
+
     // Final result should be uppercased, because it's later stored in an object
     // (this avoid a conflict with Object.prototype members,
     // most notably, `__proto__`)
-    
+
         return str.toLowerCase().toUpperCase();
   }
   // Re-export libraries commonly used in both markdown-it and its plugins,
   // so plugins won't have to depend on them explicitly, which reduces their
   // bundled size (e.g. a browser build).
-  
+
     const lib = {
     mdurl: mdurl,
     ucmicro: ucmicro
@@ -1247,10 +1247,10 @@
     unescapeMd: unescapeMd
   });
   // Parse link label
-  
+
   // this function assumes that first character ("[") already matches;
   // returns the end of the label
-  
+
     function parseLinkLabel(state, start, disableNested) {
     let level, found, marker, prevPos;
     const max = state.posMax;
@@ -1287,7 +1287,7 @@
     return labelEnd;
   }
   // Parse link destination
-  
+
     function parseLinkDestination(str, start, max) {
     let code;
     let pos = start;
@@ -1365,10 +1365,10 @@
     return result;
   }
   // Parse link title
-  
+
   // Parse link title within `str` in [start, max] range,
   // or continue previous parsing if `prev_state` is defined (equal to result of last execution).
-  
+
     function parseLinkTitle(str, start, max, prev_state) {
     let code;
     let pos = start;
@@ -1489,7 +1489,7 @@
     const token = tokens[idx];
     // "alt" attr MUST be set, even if empty. Because it's mandatory and
     // should be placed on proper position for tests.
-    
+
     // Replace content with actual value
         token.attrs[token.attrIndex("alt")][1] = slf.renderInlineAsText(token.children, options, env);
     return slf.renderToken(tokens, idx, options);
@@ -1576,11 +1576,11 @@
     }
     // Insert a newline between hidden paragraph and subsequent opening
     // block-level tag.
-    
+
     // For example, here we should insert a newline before blockquote:
     //  - a
     //    >
-    
+
         if (token.block && token.nesting !== -1 && idx && tokens[idx - 1].hidden) {
       result += "\n";
     }
@@ -1719,15 +1719,15 @@
     // }
     this.__rules__ = [];
     // Cached rule chains.
-    
+
     // First level - chain name, '' for default.
     // Second level - diginal anchor for fast filtering by charcodes.
-    
+
         this.__cache__ = null;
   }
   // Helper methods, should not be used directly
   // Find rule index by name
-  
+
     Ruler.prototype.__find__ = function(name) {
     for (let i = 0; i < this.__rules__.length; i++) {
       if (this.__rules__[i].name === name) {
@@ -1737,7 +1737,7 @@
     return -1;
   };
   // Build rules lookup cache
-  
+
     Ruler.prototype.__compile__ = function() {
     const self = this;
     const chains = [ "" ];
@@ -2154,7 +2154,7 @@
     }
   };
   // Core state object
-  
+
     function StateCore(src, md, env) {
     this.src = src;
     this.env = env;
@@ -2200,9 +2200,9 @@
     }
   }
   // Replace link-like texts with link nodes.
-  
+
   // Currently restricted by `md.validateLink()` to http/https/ftp
-  
+
     function isLinkOpen$1(str) {
     return /^<a[>\s]/i.test(str);
   }
@@ -2267,7 +2267,7 @@
             // Linkifier might send raw hostnames like "example.com", where url
             // starts with domain name. So we prepend http:// in those cases,
             // and remove it afterwards.
-            
+
                         if (!links[ln].schema) {
               urlText = state.md.normalizeLinkText("http://" + urlText).replace(/^http:\/\//, "");
             } else if (links[ln].schema === "mailto:" && !/^mailto:/i.test(urlText)) {
@@ -2312,7 +2312,7 @@
     }
   }
   // Simple typographic replacements
-  
+
   // (c) (C) → ©
   // (tm) (TM) → ™
   // (r) (R) → ®
@@ -2320,7 +2320,7 @@
   // ... → … (also ?.... → ?.., !.... → !..)
   // ???????? → ???, !!!!! → !!!, `,,` → `,`
   // -- → &ndash;, --- → &mdash;
-  
+
   // TODO:
   // - fractionals 1/2, 1/4, 3/4 -> ½, ¼, ¾
   // - multiplications 2 x 4 -> 2 × 4
@@ -2387,7 +2387,7 @@
     }
   }
   // Convert straight quotation marks to typographic ones
-  
+
     const QUOTE_TEST_RE = /['"]/;
   const QUOTE_RE = /['"]/g;
   const APOSTROPHE = "\u2019";
@@ -2424,7 +2424,7 @@
         const isSingle = t[0] === "'";
         // Find previous character,
         // default to space if it's the beginning of the line
-        
+
                 let lastChar = 32;
         if (t.index - 1 >= 0) {
           lastChar = text.charCodeAt(t.index - 1);
@@ -2440,7 +2440,7 @@
         }
         // Find next character,
         // default to space if it's the end of the line
-        
+
                 let nextChar = 32;
         if (pos < max) {
           nextChar = text.charCodeAt(pos);
@@ -2554,12 +2554,12 @@
     }
   }
   // Join raw text tokens with the rest of the text
-  
+
   // This is set as a separate rule to provide an opportunity for plugins
   // to run text replacements after text join, but before escape join.
-  
+
   // For example, `\:)` shouldn't be replaced with an emoji.
-  
+
     function text_join(state) {
     let curr, last;
     const blockTokens = state.tokens;
@@ -2594,7 +2594,7 @@
    *
    * Top-level rules executor. Glues block/inline parsers and does intermediate
    * transformations.
-   **/  const _rules$2 = [ [ "normalize", normalize ], [ "block", block ], [ "inline", inline ], [ "linkify", linkify$1 ], [ "replacements", replace ], [ "smartquotes", smartquotes ], 
+   **/  const _rules$2 = [ [ "normalize", normalize ], [ "block", block ], [ "inline", inline ], [ "linkify", linkify$1 ], [ "replacements", replace ], [ "smartquotes", smartquotes ],
   // `text_join` finds `text_special` tokens (for escape sequences)
   // and joins them with the rest of the text
   [ "text_join", text_join ] ];
@@ -2628,9 +2628,9 @@
     // link to parser instance
         this.md = md;
     this.env = env;
-    
+
     // Internal state vartiables
-    
+
         this.tokens = tokens;
     this.bMarks = [];
  // line begin offsets for fast jumps
@@ -2642,14 +2642,14 @@
  // indents for each line (tabs expanded)
     // An amount of virtual spaces (tabs expanded) between beginning
     // of each line (bMarks) and real beginning of that line.
-    
+
     // It exists only as a hack because blockquotes override bMarks
     // losing information in the process.
-    
+
     // It's used only when expanding tabs, you can think about it as
     // an initial tab length, e.g. bsCount=21 applied to string `\t123`
     // means first tab should be expanded to 4-21%4 === 3 spaces.
-    
+
         this.bsCount = [];
     // block parser variables
     // required block content indent (for example, if we are
@@ -2712,7 +2712,7 @@
  // don't count last fake line
     }
   // Push new token to "stream".
-  
+
     StateBlock.prototype.push = function(type, tag, nesting) {
     const token = new Token(type, tag, nesting);
     token.block = true;
@@ -2826,7 +2826,7 @@
   // GFM table, https://github.github.com/gfm/#tables-extension-
   // Limit the amount of empty autocompleted cells in a table,
   // see https://github.com/markdown-it/markdown-it/issues/1000,
-  
+
   // Both pulldown-cmark and commonmark-hs limit the number of cells this way to ~200k.
   // We set it to 65k, which can expand user input by a factor of x370
   // (256x256 square is 1.8kB expanded into 650kB).
@@ -3170,12 +3170,12 @@
     let lastLineEmpty = false;
     let nextLine;
     // Search the end of the block
-    
+
     // Block ends with either:
     //  1. an empty line outside:
     //     ```
     //     > test
-    
+
     //     ```
     //  2. an empty line inside:
     //     ```
@@ -3293,7 +3293,7 @@
       oldTShift.push(state.tShift[nextLine]);
       oldSCount.push(state.sCount[nextLine]);
       // A negative indentation means that this is a paragraph continuation
-      
+
             state.sCount[nextLine] = -1;
     }
     const oldIndent = state.blkIndent;
@@ -3496,9 +3496,9 @@
     const listLines = [ nextLine, 0 ];
     token.map = listLines;
     token.markup = String.fromCharCode(markerCharCode);
-    
+
     // Iterate list items
-    
+
         let prevEmptyEnd = false;
     const terminatorRules = state.md.block.ruler.getRules("list");
     const oldParentType = state.parentType;
@@ -3550,7 +3550,7 @@
       //  - example list
       // ^ listIndent position will be here
       //   ^ blkIndent position will be here
-      
+
             const oldListIndent = state.listIndent;
       state.listIndent = state.blkIndent;
       state.blkIndent = indent;
@@ -3587,9 +3587,9 @@
       if (nextLine >= endLine) {
         break;
       }
-      
+
       // Try to check if list is terminated or continued.
-      
+
             if (state.sCount[nextLine] < state.blkIndent) {
         break;
       }
@@ -3859,7 +3859,7 @@
   // HTML block
   // An array of opening and corresponding closing sequences for html tags,
   // last argument defines whether it can terminate a paragraph or not
-  
+
     const HTML_SEQUENCES = [ [ /^<(script|pre|style|textarea)(?=(\s|>|$))/i, /<\/(script|pre|style|textarea)>/i, true ], [ /^<!--/, /-->/, true ], [ /^<\?/, /\?>/, true ], [ /^<![A-Z]/, />/, true ], [ /^<!\[CDATA\[/, /\]\]>/, true ], [ new RegExp("^</?(" + block_names.join("|") + ")(?=(\\s|/?>|$))", "i"), /^$/, true ], [ new RegExp(HTML_OPEN_CLOSE_TAG_RE.source + "\\s*$"), /^$/, false ] ];
   function html_block(state, startLine, endLine, silent) {
     let pos = state.bMarks[startLine] + state.tShift[startLine];
@@ -3977,9 +3977,9 @@
       if (state.sCount[nextLine] - state.blkIndent > 3) {
         continue;
       }
-      
+
       // Check for underline in setext header
-      
+
             if (state.sCount[nextLine] >= state.blkIndent) {
         let pos = state.bMarks[nextLine] + state.tShift[nextLine];
         const max = state.eMarks[nextLine];
@@ -4074,7 +4074,7 @@
    * class ParserBlock
    *
    * Block-level tokenizer.
-   **/  const _rules$1 = [ 
+   **/  const _rules$1 = [
   // First 2 params - rule name & source. Secondary array - list of rules,
   // which can be terminated by this one.
   [ "table", table, [ "paragraph", "reference" ] ], [ "code", code ], [ "fence", fence, [ "paragraph", "reference", "blockquote", "list" ] ], [ "blockquote", blockquote, [ "paragraph", "reference", "blockquote", "list" ] ], [ "hr", hr, [ "paragraph", "reference", "blockquote", "list" ] ], [ "list", list, [ "paragraph", "reference", "blockquote" ] ], [ "reference", reference ], [ "html_block", html_block, [ "paragraph", "reference", "blockquote" ] ], [ "heading", heading, [ "paragraph", "reference", "blockquote" ] ], [ "lheading", lheading ], [ "paragraph", paragraph ] ];
@@ -4094,7 +4094,7 @@
     }
   }
   // Generate tokens for input range
-  
+
     ParserBlock.prototype.tokenize = function(state, startLine, endLine) {
     const rules = this.ruler.getRules("");
     const len = rules.length;
@@ -4119,7 +4119,7 @@
       }
       // Try all possible rules.
       // On success, rule should:
-      
+
       // - update `state.line`
       // - update `state.tokens`
       // - return true
@@ -4190,7 +4190,7 @@
         this.linkLevel = 0;
   }
   // Flush pending text
-  
+
     StateInline.prototype.pushPending = function() {
     const token = new Token("text", "", 0);
     token.content = this.pending;
@@ -4201,7 +4201,7 @@
   };
   // Push new token to "stream".
   // If pending text exists - flush it as text token
-  
+
     StateInline.prototype.push = function(type, tag, nesting) {
     if (this.pending) {
       this.pushPending();
@@ -4230,10 +4230,10 @@
   };
   // Scan a sequence of emphasis-like markers, and determine whether
   // it can start an emphasis sequence or end an emphasis sequence.
-  
+
   //  - start - position to scan from (it should point at a valid marker);
   //  - canSplitWord - determine if these markers can be found inside a word
-  
+
     StateInline.prototype.scanDelims = function(start, canSplitWord) {
     const max = this.posMax;
     const marker = this.src.charCodeAt(start);
@@ -4315,7 +4315,7 @@
     return true;
   }
   // Alternative implementation, for memory.
-  
+
   // It costs 10% of performance, but allows extend terminators list, if place it
   // to `ParserInline` property. Probably, will switch to it sometime, such
   // flexibility required.
@@ -4528,9 +4528,9 @@
     return true;
   }
   // ~~strike through~~
-  
+
   // Insert each marker as a separate text token, and add it to delimiter list
-  
+
     function strikethrough_tokenize(state, silent) {
     const start = state.pos;
     const marker = state.src.charCodeAt(start);
@@ -4600,9 +4600,9 @@
     // If a marker sequence has an odd number of characters, it's splitted
     // like this: `~~~~~` -> `~` + `~~` + `~~`, leaving one marker at the
     // start of the sequence.
-    
+
     // So, we have to move all those markers after subsequent s_close tags.
-    
+
         while (loneMarkers.length) {
       const i = loneMarkers.pop();
       let j = i + 1;
@@ -4618,7 +4618,7 @@
     }
   }
   // Walk through delimiter list and replace text tokens with tags
-  
+
     function strikethrough_postProcess(state) {
     const tokens_meta = state.tokens_meta;
     const max = state.tokens_meta.length;
@@ -4634,9 +4634,9 @@
     postProcess: strikethrough_postProcess
   };
   // Process *this* and _that_
-  
+
   // Insert each marker as a separate text token, and add it to delimiter list
-  
+
     function emphasis_tokenize(state, silent) {
     const start = state.pos;
     const marker = state.src.charCodeAt(start);
@@ -4683,12 +4683,12 @@
       const endDelim = delimiters[startDelim.end];
       // If the previous delimiter has the same marker and is adjacent to this one,
       // merge those into one strong delimiter.
-      
+
       // `<em><em>whatever</em></em>` -> `<strong>whatever</strong>`
-      
-            const isStrong = i > 0 && delimiters[i - 1].end === startDelim.end + 1 && 
+
+            const isStrong = i > 0 && delimiters[i - 1].end === startDelim.end + 1 &&
       // check that first two markers match and adjacent
-      delimiters[i - 1].marker === startDelim.marker && delimiters[i - 1].token === startDelim.token - 1 && 
+      delimiters[i - 1].marker === startDelim.marker && delimiters[i - 1].token === startDelim.token - 1 &&
       // check that last two markers are adjacent (we can safely assume they match)
       delimiters[startDelim.end + 1].token === endDelim.token + 1;
       const ch = String.fromCharCode(startDelim.marker);
@@ -4712,7 +4712,7 @@
     }
   }
   // Walk through delimiter list and replace text tokens with tags
-  
+
     function emphasis_post_process(state) {
     const tokens_meta = state.tokens_meta;
     const max = state.tokens_meta.length;
@@ -4833,10 +4833,10 @@
       href = ref.href;
       title = ref.title;
     }
-    
+
     // We found the end of the link, and know for a fact it's a valid link;
     // so all that's left to do is to call tokenizer.
-    
+
         if (!silent) {
       state.pos = labelStart;
       state.posMax = labelEnd;
@@ -4960,10 +4960,10 @@
       href = ref.href;
       title = ref.title;
     }
-    
+
     // We found the end of the link, and know for a fact it's a valid link;
     // so all that's left to do is to call tokenizer.
-    
+
         if (!silent) {
       content = state.src.slice(labelStart, labelEnd);
       const tokens = [];
@@ -5120,7 +5120,7 @@
     return false;
   }
   // For each opening emphasis-like marker find a matching closing one
-  
+
     function processDelimiters(delimiters) {
     const openersBottom = {};
     const max = delimiters.length;
@@ -5136,7 +5136,7 @@
       // markers belong to same delimiter run if:
       //  - they have adjacent tokens
       //  - AND markers are the same
-      
+
             if (delimiters[headerIdx].marker !== closer.marker || lastTokenIdx !== closer.token - 1) {
         headerIdx = closerIdx;
       }
@@ -5144,7 +5144,7 @@
       // Length is only used for emphasis-specific "rule of 3",
       // if it's not defined (in strikethrough or 3rd party plugins),
       // we can default it to 0 to disable those checks.
-      
+
             closer.length = closer.length || 0;
       if (!closer.close) continue;
       // Previously calculated lower bounds (previous fails)
@@ -5163,12 +5163,12 @@
         if (opener.open && opener.end < 0) {
           let isOddMatch = false;
           // from spec:
-          
+
           // If one of the delimiters can both open and close emphasis, then the
           // sum of the lengths of the delimiter runs containing the opening and
           // closing delimiters must not be a multiple of 3 unless both lengths
           // are multiples of 3.
-          
+
                     if (opener.close || closer.open) {
             if ((opener.length + closer.length) % 3 === 0) {
               if (opener.length % 3 !== 0 || closer.length % 3 !== 0) {
@@ -5216,12 +5216,12 @@
   }
   // Clean up tokens after emphasis and strikethrough postprocessing:
   // merge adjacent text nodes into one and re-calculate all token levels
-  
+
   // This is necessary because initially emphasis delimiter markers (*, _, ~)
   // are treated as their own separate text tokens. Then emphasis rule either
   // leaves them as text (needed to merge with adjacent text) or turns them
   // into opening/closing tags (which messes up levels inside).
-  
+
     function fragments_join(state) {
     let curr, last;
     let level = 0;
@@ -5258,10 +5258,10 @@
     const _rules = [ [ "text", text ], [ "linkify", linkify ], [ "newline", newline ], [ "escape", escape ], [ "backticks", backtick ], [ "strikethrough", r_strikethrough.tokenize ], [ "emphasis", r_emphasis.tokenize ], [ "link", link ], [ "image", image ], [ "autolink", autolink ], [ "html_inline", html_inline ], [ "entity", entity ] ];
   // `rule2` ruleset was created specifically for emphasis/strikethrough
   // post-processing and may be changed in the future.
-  
+
   // Don't use this for anything except pairs (plugins working with `balance_pairs`).
-  
-    const _rules2 = [ [ "balance_pairs", link_pairs ], [ "strikethrough", r_strikethrough.postProcess ], [ "emphasis", r_emphasis.postProcess ], 
+
+    const _rules2 = [ [ "balance_pairs", link_pairs ], [ "strikethrough", r_strikethrough.postProcess ], [ "emphasis", r_emphasis.postProcess ],
   // rules for pairs separate '**' into its own text tokens, which may be left unused,
   // rule below merges unused segments back with the rest of the text
   [ "fragments_join", fragments_join ] ];
@@ -5289,7 +5289,7 @@
   }
   // Skip single token by running all rules in validation mode;
   // returns `true` if any rule reported success
-  
+
     ParserInline.prototype.skipToken = function(state) {
     const pos = state.pos;
     const rules = this.ruler.getRules("");
@@ -5332,7 +5332,7 @@
     cache[pos] = state.pos;
   };
   // Generate tokens for input range
-  
+
     ParserInline.prototype.tokenize = function(state) {
     const rules = this.ruler.getRules("");
     const len = rules.length;
@@ -5408,9 +5408,9 @@
         re.src_auth = "(?:(?:(?!" + re.src_ZCc + "|[@/\\[\\]()]).)+@)?";
     re.src_port = "(?::(?:6(?:[0-4]\\d{3}|5(?:[0-4]\\d{2}|5(?:[0-2]\\d|3[0-5])))|[1-5]?\\d{1,4}))?";
     re.src_host_terminator = "(?=$|" + text_separators + "|" + re.src_ZPCc + ")" + "(?!" + (opts["---"] ? "-(?!--)|" : "-|") + "_|:\\d|\\.-|\\.(?!$|" + re.src_ZPCc + "))";
-    re.src_path = "(?:" + "[/?#]" + "(?:" + "(?!" + re.src_ZCc + "|" + text_separators + "|[()[\\]{}.,\"'?!\\-;]).|" + "\\[(?:(?!" + re.src_ZCc + "|\\]).)*\\]|" + "\\((?:(?!" + re.src_ZCc + "|[)]).)*\\)|" + "\\{(?:(?!" + re.src_ZCc + "|[}]).)*\\}|" + '\\"(?:(?!' + re.src_ZCc + '|["]).)+\\"|' + "\\'(?:(?!" + re.src_ZCc + "|[']).)+\\'|" + 
+    re.src_path = "(?:" + "[/?#]" + "(?:" + "(?!" + re.src_ZCc + "|" + text_separators + "|[()[\\]{}.,\"'?!\\-;]).|" + "\\[(?:(?!" + re.src_ZCc + "|\\]).)*\\]|" + "\\((?:(?!" + re.src_ZCc + "|[)]).)*\\)|" + "\\{(?:(?!" + re.src_ZCc + "|[}]).)*\\}|" + '\\"(?:(?!' + re.src_ZCc + '|["]).)+\\"|' + "\\'(?:(?!" + re.src_ZCc + "|[']).)+\\'|" +
     // allow `I'm_king` if no pair found
-    "\\'(?=" + re.src_pseudo_letter + "|[-])|" + 
+    "\\'(?=" + re.src_pseudo_letter + "|[-])|" +
     // google has many dots in "google search" links (#66, #81).
     // github has ... in commit range links,
     // Restrict to
@@ -5419,11 +5419,11 @@
     // - parts of file path
     // - params separator
     // until more examples found.
-    "\\.{2,}[a-zA-Z0-9%/&]|" + "\\.(?!" + re.src_ZCc + "|[.]|$)|" + (opts["---"] ? "\\-(?!--(?:[^-]|$))(?:-*)|" : "\\-+|") + 
+    "\\.{2,}[a-zA-Z0-9%/&]|" + "\\.(?!" + re.src_ZCc + "|[.]|$)|" + (opts["---"] ? "\\-(?!--(?:[^-]|$))(?:-*)|" : "\\-+|") +
     // allow `,,,` in paths
-    ",(?!" + re.src_ZCc + "|$)|" + 
+    ",(?!" + re.src_ZCc + "|$)|" +
     // allow `;` if not followed by space-like char
-    ";(?!" + re.src_ZCc + "|$)|" + 
+    ";(?!" + re.src_ZCc + "|$)|" +
     // allow `!!!` in paths, but not at the end
     "\\!+(?!" + re.src_ZCc + "|[!]|$)|" + "\\?(?!" + re.src_ZCc + "|[?]|$)" + ")+" + "|\\/" + ")?";
     // Allow anything in markdown spec, forbid quote (") at the first position
@@ -5432,11 +5432,11 @@
     re.src_xn = "xn--[a-z0-9\\-]{1,59}";
     // More to read about domain names
     // http://serverfault.com/questions/638260/
-        re.src_domain_root = 
+        re.src_domain_root =
     // Allow letters & digits (http://test1)
     "(?:" + re.src_xn + "|" + re.src_pseudo_letter + "{1,63}" + ")";
     re.src_domain = "(?:" + re.src_xn + "|" + "(?:" + re.src_pseudo_letter + ")" + "|" + "(?:" + re.src_pseudo_letter + "(?:-|" + re.src_pseudo_letter + "){0,61}" + re.src_pseudo_letter + ")" + ")";
-    re.src_host = "(?:" + 
+    re.src_host = "(?:" +
     // Don't need IP check, because digits are already allowed in normal domain names
     //   src_ip4 +
     // '|' +
@@ -5448,27 +5448,27 @@
     re.src_host_port_strict = re.src_host + re.src_port + re.src_host_terminator;
     re.tpl_host_port_fuzzy_strict = re.tpl_host_fuzzy + re.src_port + re.src_host_terminator;
     re.tpl_host_port_no_ip_fuzzy_strict = re.tpl_host_no_ip_fuzzy + re.src_port + re.src_host_terminator;
-    
+
     // Main rules
-    
+
     // Rude test fuzzy links by host, for quick deny
         re.tpl_host_fuzzy_test = "localhost|www\\.|\\.\\d{1,3}\\.|(?:\\.(?:%TLDS%)(?:" + re.src_ZPCc + "|>|$))";
     re.tpl_email_fuzzy = "(^|" + text_separators + '|"|\\(|' + re.src_ZCc + ")" + "(" + re.src_email_name + "@" + re.tpl_host_fuzzy_strict + ")";
-    re.tpl_link_fuzzy = 
+    re.tpl_link_fuzzy =
     // Fuzzy link can't be prepended with .:/\- and non punctuation.
     // but can start with > (markdown blockquote)
     "(^|(?![.:/\\-_@])(?:[$+<=>^`|\uff5c]|" + re.src_ZPCc + "))" + "((?![$+<=>^`|\uff5c])" + re.tpl_host_port_fuzzy_strict + re.src_path + ")";
-    re.tpl_link_no_ip_fuzzy = 
+    re.tpl_link_no_ip_fuzzy =
     // Fuzzy link can't be prepended with .:/\- and non punctuation.
     // but can start with > (markdown blockquote)
     "(^|(?![.:/\\-_@])(?:[$+<=>^`|\uff5c]|" + re.src_ZPCc + "))" + "((?![$+<=>^`|\uff5c])" + re.tpl_host_port_no_ip_fuzzy_strict + re.src_path + ")";
     return re;
   }
-  
+
   // Helpers
-  
+
   // Merge objects
-  
+
     function assign(obj /* from1, from2, from3, ... */) {
     const sources = Array.prototype.slice.call(arguments, 1);
     sources.forEach(function(source) {
@@ -5499,7 +5499,7 @@
   function escapeRE(str) {
     return str.replace(/[.?*+^$[\]\\(){}|-]/g, "\\$&");
   }
-  
+
     const defaultOptions = {
     fuzzyLink: true,
     fuzzyEmail: true,
@@ -5532,7 +5532,7 @@
         const tail = text.slice(pos);
         if (!self.re.no_http) {
           // compile lazily, because "host"-containing variables can change on tlds update.
-          self.re.no_http = new RegExp("^" + self.re.src_auth + 
+          self.re.no_http = new RegExp("^" + self.re.src_auth +
           // Don't allow single-level domains, because of false positives like '//test'
           // with code comments
           "(?:localhost|(?:(?:" + self.re.src_domain + ")\\.)+" + self.re.src_domain_root + ")" + self.re.src_port + self.re.src_host_terminator + self.re.src_path, "i");
@@ -5586,7 +5586,7 @@
     };
   }
   // Schemas compiler. Build regexps.
-  
+
     function compile(self) {
     // Load & clone RE patterns.
     const re = self.re = reFactory(self.__opts__);
@@ -5605,9 +5605,9 @@
     re.link_fuzzy = RegExp(untpl(re.tpl_link_fuzzy), "i");
     re.link_no_ip_fuzzy = RegExp(untpl(re.tpl_link_no_ip_fuzzy), "i");
     re.host_fuzzy_test = RegExp(untpl(re.tpl_host_fuzzy_test), "i");
-    
+
     // Compile each schema
-    
+
         const aliases = [];
     self.__compiled__ = {};
  // Reset compiled data
@@ -5648,9 +5648,9 @@
       }
       schemaError(name, val);
     });
-    
+
     // Compile postponed aliases
-    
+
         aliases.forEach(function(alias) {
       if (!self.__compiled__[self.__schemas__[alias]]) {
         // Silently fail on missed schemas to avoid errons on disable.
@@ -5660,16 +5660,16 @@
       self.__compiled__[alias].validate = self.__compiled__[self.__schemas__[alias]].validate;
       self.__compiled__[alias].normalize = self.__compiled__[self.__schemas__[alias]].normalize;
     });
-    
+
     // Fake record for guessed links
-    
+
         self.__compiled__[""] = {
       validate: null,
       normalize: createNormalizer()
     };
-    
+
     // Build schema condition
-    
+
         const slist = Object.keys(self.__compiled__).filter(function(name) {
       // Filter disabled & fake schemas
       return name.length > 0 && self.__compiled__[name];
@@ -5679,9 +5679,9 @@
     self.re.schema_search = RegExp("(^|(?!_)(?:[><\uff5c]|" + re.src_ZPCc + "))(" + slist + ")", "ig");
     self.re.schema_at_start = RegExp("^" + self.re.schema_search.source, "i");
     self.re.pretest = RegExp("(" + self.re.schema_test.source + ")|(" + self.re.host_fuzzy_test.source + ")|@", "i");
-    
+
     // Cleanup
-    
+
         resetScanCache(self);
   }
   /**
@@ -6489,13 +6489,13 @@
     zero: cfg_zero,
     commonmark: cfg_commonmark
   };
-  
+
   // This validator can prohibit more than really needed to prevent XSS. It's a
   // tradeoff to keep code simple and to be secure by default.
-  
+
   // If you need different setup - override validator method as you wish. Or
   // replace it with dummy function and use external sanitizer.
-  
+
     const BAD_PROTO_RE = /^(vbscript|javascript|file|data):/;
   const GOOD_DATA_RE = /^data:image\/(gif|png|jpeg|webp);/;
   function validateLink(url) {

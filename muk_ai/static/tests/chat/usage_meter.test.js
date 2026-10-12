@@ -17,7 +17,12 @@ function usageState(values = {}) {
         outputTokens: 900,
         iterationCount: 6,
         totalCost: 0.5,
-        turnUsage: { input_tokens: 4000, output_tokens: 300, iterations: 2, cost: 0.12 },
+        turnUsage: {
+            input_tokens: 4000,
+            output_tokens: 300,
+            iterations: 2,
+            cost: 0.12,
+        },
         ...values,
     };
 }

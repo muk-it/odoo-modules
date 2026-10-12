@@ -1239,8 +1239,8 @@ class AISession(models.Model):
         """
         return True
 
-    def _should_notify_state(self) -> bool:
-        """Return whether a terminal state is worth telling the owner about.
+    def _should_notify_state(self, state: str) -> bool:
+        """Return whether reaching ``state`` is worth telling the owner about.
 
         True for a session somebody started and walked away from. A surface
         that shows the run as it happens overrides this: it has already told
@@ -1251,7 +1251,7 @@ class AISession(models.Model):
     def _notify_state_transition(self, payload: dict) -> None:
         """Emit bus and inbox notifications for terminal state transitions."""
         new_state = (payload or {}).get('state')
-        if not self._should_notify_state():
+        if not self._should_notify_state(new_state):
             return
         if self.env.context.get('muk_ai_state_unchanged'):
             return
