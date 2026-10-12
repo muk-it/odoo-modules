@@ -172,11 +172,11 @@ class AISession(models.Model):
             return set()
         return super()._available_client_kinds()
 
-    def _should_notify_state(self) -> bool:
+    def _should_notify_state(self, state: str) -> bool:
         """Stay quiet about a writing helper, whose panel shows the run."""
         if self.compose_interface:
             return False
-        return super()._should_notify_state()
+        return super()._should_notify_state(state)
 
     def _system_prompt_addenda(self) -> list[str]:
         """Append the mention rules, the composer context and the snapshot."""
