@@ -275,9 +275,13 @@ msgstr "Azioni decisionali"
 
 #. module: muk_ai_decision
 #: model:ir.actions.act_window,name:muk_ai_decision.action_muk_ai_decision_log
+#: model:ir.ui.menu,name:muk_ai_decision.menu_ai_decision_log
+msgid "Decision Logs"
+msgstr "Log delle decisioni"
+
+#. module: muk_ai_decision
 #: model:ir.model.fields,field_description:muk_ai_decision.field_ir_actions_server__decision_log_count
 #: model:ir.model.fields,field_description:muk_ai_decision.field_ir_cron__decision_log_count
-#: model:ir.ui.menu,name:muk_ai_decision.menu_ai_decision_log
 msgid "Decisions"
 msgstr "Decisioni"
 

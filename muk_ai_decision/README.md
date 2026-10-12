@@ -43,7 +43,7 @@ where one is needed.
 2. Under **MuK AI > Automation > Decision Actions**, create an action for a
    model and add its questions.
 3. Run it from the **Actions** menu of a list, an automation rule or a schedule,
-   and read every answer under **MuK AI > Reports > Decisions**.
+   and read every answer under **MuK AI > Reports > Decision Logs**.
 
 ## Support
 

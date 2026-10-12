@@ -117,7 +117,7 @@ AI agents call the ``decide`` tool about the texts they were given, the
 records they name, or every record a domain selects; a question can name a field
 to take its options from, and the result groups the texts or records by answer
 with the value to write. Its cost counts against the budget of the chat. *MuK AI > Reports
-> Decisions* lists every decision with its answers, served model version,
+> Decision Logs* lists every decision with its answers, served model version,
 duration and cost.
 
 Credits

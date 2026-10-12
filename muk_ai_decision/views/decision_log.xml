@@ -113,7 +113,7 @@
 	</record>
 
 	<record id="action_muk_ai_decision_log" model="ir.actions.act_window">
-		<field name="name">Decisions</field>
+		<field name="name">Decision Logs</field>
 		<field name="res_model">muk_ai.decision.log</field>
 		<field name="view_mode">list,pivot,form</field>
 		<field name="path">ai-decisions</field>

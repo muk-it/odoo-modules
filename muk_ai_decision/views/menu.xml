@@ -4,7 +4,7 @@
 
 	<menuitem
 		id="menu_ai_decision_log"
-		name="Decisions"
+		name="Decision Logs"
 		parent="muk_ai.menu_ai_report"
 		action="action_muk_ai_decision_log"
 		sequence="40"
