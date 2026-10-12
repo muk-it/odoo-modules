@@ -20,7 +20,7 @@ class MCPTransferController(http.Controller):
         csrf=False,
         save_session=False,
     )
-    def transfer(self, token: str) -> Response:
+    def transfer(self, token: str, **kwargs) -> Response:
         """Stream a download on GET, take the request body or its file on PUT.
 
         :raise werkzeug.exceptions.NotFound: when the link is unknown, used or expired.
