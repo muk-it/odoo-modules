@@ -30,15 +30,9 @@ class AIDecisionLog(models.Model):
         ondelete='set null',
     )
 
-    shadow = fields.Boolean(
-        string='Shadow',
-        help='Decided in shadow mode: logged, never written.',
-        readonly=True,
-    )
-
     applied = fields.Json(
         string='Written Values',
-        help='Field values the decision wrote, or would have written in shadow mode.',
+        help='Field values the decision wrote, with the answers they came from.',
         readonly=True,
     )
 

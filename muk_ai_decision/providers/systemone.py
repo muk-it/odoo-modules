@@ -34,6 +34,7 @@ class SystemOneProvider(ProviderBase):
     name = 'systemone'
     label = 'System One Compatible'
     default_model = 'jev-latest'
+    default_url = 'https://api.typesafe.ai'
     regions = (CUSTOM,)
     modalities = frozenset({'decision'})
 
@@ -45,8 +46,8 @@ class SystemOneProvider(ProviderBase):
 
     @property
     def authenticated(self) -> bool:
-        """Report the account as ready, since a self-hosted server may need no key."""
-        return True
+        """Report the account ready with a key, or as a self-hosted server."""
+        return super().authenticated or self.provider.sudo().api_region == CUSTOM.code
 
     # ----------------------------------------------------------
     # Functions

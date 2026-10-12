@@ -33,6 +33,22 @@ msgstr "%(question)s « %(tag)s » s'applique-t-il ?"
 
 #. module: muk_ai_decision
 #: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
+msgid "<code>env</code>: the environment, to read related records"
+msgstr ""
+"<code>env</code> : l'environnement, pour lire les enregistrements liés"
+
+#. module: muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
+msgid "<code>html2plaintext</code>: turns an HTML field into plain text"
+msgstr "<code>html2plaintext</code> : convertit un champ HTML en texte brut"
+
+#. module: muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
+msgid "<code>record</code>: the record decided about"
+msgstr "<code>record</code> : l'enregistrement sur lequel on décide"
+
+#. module: muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
 msgid "<i class=\"oi oi-fw mx-1\" data-icon=\"arrow_forward\" title=\"Runs\"/>"
 msgstr "<i class=\"oi oi-fw mx-1\" data-icon=\"arrow_forward\" title=\"Exécute\"/>"
 
@@ -46,6 +62,12 @@ msgstr "<span class=\"o_stat_text\">Décisions</span>"
 #: code:addons/muk_ai_decision/models/decision.py:0
 msgid "A decision needs at least one question."
 msgstr "Une décision nécessite au moins une question."
+
+#. module: muk_ai_decision
+#. odoo-python
+#: code:addons/muk_ai_decision/models/decision_question.py:0
+msgid "A question that fills a field needs one."
+msgstr "Une question qui remplit un champ a besoin d'un champ."
 
 #. module: muk_ai_decision
 #. odoo-python
@@ -70,6 +92,11 @@ msgid "AI Decision Log"
 msgstr "Journal des décisions IA"
 
 #. module: muk_ai_decision
+#: model:ir.model,name:muk_ai_decision.model_muk_ai_decision_option
+msgid "AI Decision Option"
+msgstr "Option de décision IA"
+
+#. module: muk_ai_decision
 #: model:ir.model,name:muk_ai_decision.model_muk_ai_decision_question
 msgid "AI Decision Question"
 msgstr "Question de décision IA"
@@ -90,6 +117,11 @@ msgid "AI Session"
 msgstr "Session IA"
 
 #. module: muk_ai_decision
+#: model:res.partner.category,name:muk_ai_decision.demo_category_ai_triage
+msgid "AI Triage"
+msgstr "Triage IA"
+
+#. module: muk_ai_decision
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_question__action_id
 msgid "Action"
 msgstr ""
@@ -100,15 +132,33 @@ msgid "Actions Menu"
 msgstr "Menu Actions"
 
 #. module: muk_ai_decision
+#: model:ir.model.fields.selection,name:muk_ai_decision.selection__muk_ai_decision_question__tag_operation__add
+msgid "Add"
+msgstr "Ajouter"
+
+#. module: muk_ai_decision
 #: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
 msgid "Add a Question"
 msgstr "Ajouter une question"
 
 #. module: muk_ai_decision
-#: model:ir.model.fields,help:muk_ai_decision.field_ir_actions_server__decision_include_message
-#: model:ir.model.fields,help:muk_ai_decision.field_ir_cron__decision_include_message
-msgid "Also read the last email or comment of the record."
-msgstr "Lire aussi le dernier e-mail ou commentaire de l'enregistrement."
+#: model:ir.model.fields.selection,name:muk_ai_decision.selection__muk_ai_decision_question__tag_operation__set
+msgid "Add and Remove"
+msgstr "Ajouter et retirer"
+
+#. module: muk_ai_decision
+#: model:ir.model.fields,help:muk_ai_decision.field_muk_ai_decision_question__tag_operation
+msgid ""
+"Add the values that apply, or also remove the candidates that confidently do"
+" not."
+msgstr ""
+"Ajouter les valeurs qui s'appliquent, ou aussi retirer les candidats qui ne "
+"s'appliquent sûrement pas."
+
+#. module: muk_ai_decision
+#: model:ir.model.fields,field_description:muk_ai_decision.field_ir_cron__allowed_states
+msgid "Allowed States"
+msgstr "États autorisés"
 
 #. module: muk_ai_decision
 #: model:ir.model.fields,help:muk_ai_decision.field_muk_ai_decision_question__route_answer
@@ -120,14 +170,33 @@ msgstr ""
 " d'étiquette, ou « yes » ou « no »."
 
 #. module: muk_ai_decision
+#: model:ir.model.fields,help:muk_ai_decision.field_muk_ai_decision_option__name
+msgid "Answer the decision model gives, e.g. \"billing\"."
+msgstr "Réponse que donne le modèle de décision, p. ex. \"billing\"."
+
+#. module: muk_ai_decision
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_log__answers
 msgid "Answers"
 msgstr "Réponses"
 
 #. module: muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
+msgid ""
+"Answers a yes or no question, e.g. to run an action only for the records "
+"that need it."
+msgstr ""
+"Répond à une question oui/non, p. ex. pour exécuter une action seulement "
+"pour les enregistrements qui en ont besoin."
+
+#. module: muk_ai_decision
 #: model:ir.model.fields,help:muk_ai_decision.field_muk_ai_decision_log__origin
 msgid "Caller that asked for the decision."
 msgstr "Appelant qui a demandé la décision."
+
+#. module: muk_ai_decision
+#: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_question__candidate_names
+msgid "Candidate Names"
+msgstr "Noms des candidats"
 
 #. module: muk_ai_decision
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_question__candidate_domain
@@ -136,22 +205,14 @@ msgid "Candidates"
 msgstr "Candidats"
 
 #. module: muk_ai_decision
-#: model:ir.model.fields.selection,name:muk_ai_decision.selection__muk_ai_decision_question__kind__choice
-msgid "Choice"
-msgstr "Choix"
+#: model:ir.actions.server,name:muk_ai_decision.demo_action_partner_check
+msgid "Check AI Classification"
+msgstr "Vérifier la classification IA"
 
 #. module: muk_ai_decision
-#: model:ir.model.fields,help:muk_ai_decision.field_muk_ai_decision_question__kind
-msgid "Choice picks one option, Score rates on ordered levels."
-msgstr "Choix sélectionne une option, Note évalue sur des niveaux ordonnés."
-
-#. module: muk_ai_decision
-#: model:ir.model.fields,help:muk_ai_decision.field_ir_actions_server__agent_gate_min_confidence
-#: model:ir.model.fields,help:muk_ai_decision.field_ir_cron__agent_gate_min_confidence
-msgid "Confidence a \"no\" needs before a record is skipped."
-msgstr ""
-"Confiance qu'un « non » doit atteindre avant qu'un enregistrement soit "
-"ignoré."
+#: model:ir.actions.server,name:muk_ai_decision.demo_decision_partner_classify
+msgid "Classify Contacts"
+msgstr "Classer les contacts"
 
 #. module: muk_ai_decision
 #: model:ir.model.fields,help:muk_ai_decision.field_muk_ai_decision_question__min_confidence
@@ -173,12 +234,14 @@ msgstr "Coût"
 
 #. module: muk_ai_decision
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_log__create_uid
+#: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_option__create_uid
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_question__create_uid
 msgid "Created by"
 msgstr "Créé par"
 
 #. module: muk_ai_decision
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_log__create_date
+#: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_option__create_date
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_question__create_date
 msgid "Created on"
 msgstr "Créé le"
@@ -194,29 +257,12 @@ msgid "Day"
 msgstr "Jour"
 
 #. module: muk_ai_decision
-#: model:ir.model.fields,help:muk_ai_decision.field_ir_actions_server__decision_shadow
-#: model:ir.model.fields,help:muk_ai_decision.field_ir_cron__decision_shadow
-msgid ""
-"Decide and log only: nothing is written, routed or scheduled. The log still "
-"shows how often the decision matches what people set."
-msgstr ""
-"Décider et journaliser uniquement : rien n'est écrit, orienté ni planifié. "
-"Le journal montre tout de même à quelle fréquence la décision correspond à "
-"ce que les personnes saisissent."
-
-#. module: muk_ai_decision
 #: model:ir.model.fields.selection,name:muk_ai_decision.selection__ir_actions_server__state__ai_decision
 msgid "Decide with AI"
 msgstr "Décider avec l'IA"
 
 #. module: muk_ai_decision
-#: model:ir.model.fields,help:muk_ai_decision.field_muk_ai_decision_log__shadow
-msgid "Decided in shadow mode: logged, never written."
-msgstr "Décidé en mode fantôme : journalisé, jamais écrit."
-
-#. module: muk_ai_decision
 #: model:ir.model.fields.selection,name:muk_ai_decision.selection__muk_ai_model__modality__decision
-#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
 #: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_muk_ai_decision_log_form
 #: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_muk_ai_model_search_decision
 msgid "Decision"
@@ -225,7 +271,6 @@ msgstr "Décision"
 #. module: muk_ai_decision
 #: model:ir.actions.act_window,name:muk_ai_decision.action_ai_decision_actions
 #: model:ir.ui.menu,name:muk_ai_decision.menu_ai_decision_actions
-#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_res_config_settings_form
 msgid "Decision Actions"
 msgstr "Actions de décision"
 
@@ -254,9 +299,16 @@ msgid "Default Decision Model"
 msgstr "Modèle de décision par défaut"
 
 #. module: muk_ai_decision
+#: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_option__description
+msgid "Description"
+msgstr ""
+
+#. module: muk_ai_decision
 #: model:ir.model.fields,field_description:muk_ai_decision.field_ir_actions_server__display_name
+#: model:ir.model.fields,field_description:muk_ai_decision.field_ir_cron__display_name
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision__display_name
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_log__display_name
+#: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_option__display_name
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_question__display_name
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_model__display_name
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_provider__display_name
@@ -264,6 +316,11 @@ msgstr "Modèle de décision par défaut"
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_mcp_mixin__display_name
 msgid "Display Name"
 msgstr "Nom d'affichage"
+
+#. module: muk_ai_decision
+#: model:muk_ai.decision.question,name:muk_ai_decision.demo_question_partner_reseller
+msgid "Does this contact resell our products?"
+msgstr "Ce contact revend-il nos produits ?"
 
 #. module: muk_ai_decision
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_log__duration
@@ -286,6 +343,12 @@ msgstr "Chaque réponse a atteint la confiance demandée par l'appelant."
 msgid "Exact model version the provider reported for this decision."
 msgstr ""
 "Version exacte du modèle indiquée par le fournisseur pour cette décision."
+
+#. module: muk_ai_decision
+#: model:ir.model.fields,field_description:muk_ai_decision.field_ir_actions_server__decision_message_external
+#: model:ir.model.fields,field_description:muk_ai_decision.field_ir_cron__decision_message_external
+msgid "External Only"
+msgstr "Externes uniquement"
 
 #. module: muk_ai_decision
 #: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_muk_ai_decision_log_search
@@ -340,20 +403,32 @@ msgstr ""
 
 #. module: muk_ai_decision
 #: model:ir.model.fields,help:muk_ai_decision.field_muk_ai_decision_log__applied
-msgid "Field values the decision wrote, or would have written in shadow mode."
+msgid "Field values the decision wrote, with the answers they came from."
 msgstr ""
-"Valeurs de champ écrites par la décision, ou qu'elle aurait écrites en mode "
-"fantôme."
+"Valeurs de champ écrites par la décision, avec les réponses dont elles "
+"proviennent."
+
+#. module: muk_ai_decision
+#: model:ir.model.fields.selection,name:muk_ai_decision.selection__ir_actions_server__decision_input_source__fields
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
+msgid "Fields"
+msgstr "Champs"
 
 #. module: muk_ai_decision
 #: model:ir.model.fields,help:muk_ai_decision.field_ir_actions_server__decision_field_ids
 #: model:ir.model.fields,help:muk_ai_decision.field_ir_cron__decision_field_ids
 msgid ""
-"Fields of the record the decision model reads. Empty, it reads the name and "
-"the text fields."
+"Fields of the record the decision model reads, each with its label and "
+"readable value, preset to the name and the list columns."
 msgstr ""
-"Champs de l'enregistrement que lit le modèle de décision. Vide, il lit le "
-"nom et les champs texte."
+"Champs de l'enregistrement que lit le modèle de décision, chacun avec son "
+"libellé et sa valeur lisible, préremplis avec le nom et les colonnes de la "
+"liste."
+
+#. module: muk_ai_decision
+#: model:ir.model.fields.selection,name:muk_ai_decision.selection__muk_ai_decision_question__kind__field
+msgid "Fill a Field"
+msgstr "Remplir un champ"
 
 #. module: muk_ai_decision
 #: model:ir.model.fields,help:muk_ai_decision.field_muk_ai_decision_question__candidate_domain
@@ -363,20 +438,48 @@ msgstr ""
 "prendre."
 
 #. module: muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
+msgid "For example:"
+msgstr "Par exemple :"
+
+#. module: muk_ai_decision
 #: model:ir.model.fields,help:muk_ai_decision.field_muk_ai_decision_question__field_relation
 msgid "For relationship fields, the technical name of the target model"
 msgstr "Pour les champs de relation, le nom technique du modèle cible"
 
 #. module: muk_ai_decision
-#: model:ir.model.fields,field_description:muk_ai_decision.field_ir_actions_server__agent_gate_min_confidence
-#: model:ir.model.fields,field_description:muk_ai_decision.field_ir_cron__agent_gate_min_confidence
-msgid "Gate Confidence"
-msgstr "Confiance du filtre"
+#: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_question__kind
+msgid "Goal"
+msgstr "Objectif"
+
+#. module: muk_ai_decision
+#: model:ir.model.fields,help:muk_ai_decision.field_muk_ai_decision_option__description
+msgid "Hint what the option means, e.g. \"payments and invoices\"."
+msgstr "Indication de ce que signifie l'option, p. ex. \"paiements et factures\"."
+
+#. module: muk_ai_decision
+#: model:muk_ai.decision.question,name:muk_ai_decision.demo_question_partner_size
+msgid "How big is the business?"
+msgstr "Quelle est la taille de l'entreprise ?"
+
+#. module: muk_ai_decision
+#: model:muk_ai.decision.question,name:muk_ai_decision.demo_question_partner_complete
+msgid "How complete are the contact details?"
+msgstr "Les coordonnées sont-elles complètes ?"
+
+#. module: muk_ai_decision
+#: model:ir.model.fields,help:muk_ai_decision.field_ir_actions_server__decision_message_count
+#: model:ir.model.fields,help:muk_ai_decision.field_ir_cron__decision_message_count
+msgid "How many of the last emails and comments of the record to read."
+msgstr ""
+"Combien des derniers e-mails et commentaires de l'enregistrement lire."
 
 #. module: muk_ai_decision
 #: model:ir.model.fields,field_description:muk_ai_decision.field_ir_actions_server__id
+#: model:ir.model.fields,field_description:muk_ai_decision.field_ir_cron__id
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision__id
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_log__id
+#: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_option__id
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_question__id
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_model__id
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_provider__id
@@ -386,10 +489,28 @@ msgid "ID"
 msgstr ""
 
 #. module: muk_ai_decision
+#: model:ir.model.fields,field_description:muk_ai_decision.field_ir_actions_server__decision_input_source
+#: model:ir.model.fields,field_description:muk_ai_decision.field_ir_cron__decision_input_source
+msgid "Input"
+msgstr "Entrée"
+
+#. module: muk_ai_decision
+#: model:ir.model.fields,field_description:muk_ai_decision.field_ir_actions_server__decision_input_code
+#: model:ir.model.fields,field_description:muk_ai_decision.field_ir_cron__decision_input_code
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
+msgid "Input Code"
+msgstr "Code d'entrée"
+
+#. module: muk_ai_decision
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_log__input_tokens
 #: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_muk_ai_decision_log_list
 msgid "Input Tokens"
 msgstr "Tokens d'entrée"
+
+#. module: muk_ai_decision
+#: model:muk_ai.decision.question,name:muk_ai_decision.demo_question_partner_company
+msgid "Is this contact a company rather than a person?"
+msgstr "Ce contact est-il une entreprise plutôt qu'une personne ?"
 
 #. module: muk_ai_decision
 #: model:ir.model.fields,help:muk_ai_decision.field_muk_ai_model__modality
@@ -404,13 +525,21 @@ msgstr ""
 "séparément."
 
 #. module: muk_ai_decision
+#. odoo-python
+#: code:addons/muk_ai_decision/models/decision.py:0
+msgid "Last Messages"
+msgstr "Derniers messages"
+
+#. module: muk_ai_decision
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_log__write_uid
+#: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_option__write_uid
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_question__write_uid
 msgid "Last Updated by"
 msgstr "Dernière mise à jour par"
 
 #. module: muk_ai_decision
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_log__write_date
+#: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_option__write_date
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_question__write_date
 msgid "Last Updated on"
 msgstr "Dernière mise à jour le"
@@ -419,6 +548,11 @@ msgstr "Dernière mise à jour le"
 #: model:ir.model,name:muk_ai_decision.model_muk_mcp_mixin
 msgid "MCP Tool Mixin"
 msgstr "Mixin d'outil MCP"
+
+#. module: muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
+msgid "Message"
+msgstr "Message"
 
 #. module: muk_ai_decision
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_question__min_confidence
@@ -450,8 +584,13 @@ msgstr ""
 
 #. module: muk_ai_decision
 #: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
-msgid "Name and text fields"
-msgstr "Nom et champs texte"
+msgid "Name and list columns"
+msgstr "Nom et colonnes de la liste"
+
+#. module: muk_ai_decision
+#: model:ir.model.fields.selection,name:muk_ai_decision.selection__muk_ai_decision_question__route_noul__no
+msgid "No"
+msgstr "Non"
 
 #. module: muk_ai_decision
 #. odoo-python
@@ -464,28 +603,30 @@ msgstr ""
 "par défaut sur un fournisseur disposant d'une clé API."
 
 #. module: muk_ai_decision
-#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
-msgid ""
-"One option per line, lowest level first for a score:\n"
-"billing: payments and invoices\n"
-"technical: errors and outages\n"
-"sales"
+#: model:ir.actions.server,name:muk_ai_decision.demo_action_partner_reseller
+msgid "Note Possible Reseller"
+msgstr "Noter un revendeur possible"
+
+#. module: muk_ai_decision
+#: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_question__tag_operation
+msgid "Operation"
+msgstr "Opération"
+
+#. module: muk_ai_decision
+#: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_option__name
+msgid "Option"
 msgstr ""
-"Une option par ligne, le niveau le plus bas en premier pour une note :\n"
-"facturation : paiements et factures\n"
-"technique : erreurs et pannes\n"
-"ventes"
 
 #. module: muk_ai_decision
-#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
-msgid "Optional: the field the answer fills"
-msgstr "Facultatif : le champ que la réponse remplit"
-
-#. module: muk_ai_decision
-#: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_question__options
+#: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_question__option_ids
 #: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
 msgid "Options"
 msgstr ""
+
+#. module: muk_ai_decision
+#: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_question__field_scale
+msgid "Ordered Levels"
+msgstr "Niveaux ordonnés"
 
 #. module: muk_ai_decision
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_log__origin
@@ -500,6 +641,11 @@ msgid "Output Tokens"
 msgstr "Tokens de sortie"
 
 #. module: muk_ai_decision
+#: model:ir.model.fields.selection,name:muk_ai_decision.selection__muk_ai_decision_question__kind__choice
+msgid "Own Categories"
+msgstr "Catégories propres"
+
+#. module: muk_ai_decision
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_provider__decision_parallel
 msgid "Parallel Decisions"
 msgstr "Décisions parallèles"
@@ -511,6 +657,44 @@ msgid "Pass texts, or a model with ids or a domain."
 msgstr "Transmettez des textes, ou un modèle avec des IDs ou un domaine."
 
 #. module: muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
+msgid ""
+"Picks one of your own categories, e.g. to run a different action for each "
+"one."
+msgstr ""
+"Choisit une de vos propres catégories, p. ex. pour exécuter une action "
+"différente pour chacune."
+
+#. module: muk_ai_decision
+#: model:ir.model.fields,field_description:muk_ai_decision.field_ir_actions_server__decision_preview
+#: model:ir.model.fields,field_description:muk_ai_decision.field_ir_cron__decision_preview
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
+msgid "Preview"
+msgstr "Aperçu"
+
+#. module: muk_ai_decision
+#: model:ir.model.fields,field_description:muk_ai_decision.field_ir_actions_server__decision_preview_ref
+#: model:ir.model.fields,field_description:muk_ai_decision.field_ir_cron__decision_preview_ref
+msgid "Preview Record"
+msgstr "Enregistrement d'aperçu"
+
+#. module: muk_ai_decision
+#: model:ir.model.fields.selection,name:muk_ai_decision.selection__ir_actions_server__decision_input_source__code
+msgid "Python Code"
+msgstr "Code Python"
+
+#. module: muk_ai_decision
+#: model:ir.model.fields,help:muk_ai_decision.field_ir_actions_server__decision_input_code
+#: model:ir.model.fields,help:muk_ai_decision.field_ir_cron__decision_input_code
+msgid ""
+"Python code assigning the text the decision model reads to \"text\", with "
+"record, env and html2plaintext."
+msgstr ""
+"Code Python qui affecte à \"text\" le texte que lit le modèle de décision, "
+"avec record, env et html2plaintext."
+
+#. module: muk_ai_decision
+#: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_option__question_id
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_question__name
 #: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
 msgid "Question"
@@ -525,8 +709,8 @@ msgstr "La question « %(key)s » %(problem)s."
 #. module: muk_ai_decision
 #. odoo-python
 #: code:addons/muk_ai_decision/models/decision_question.py:0
-msgid "Question \"%(question)s\" needs at least two options."
-msgstr "La question « %(question)s » nécessite au moins deux options."
+msgid "Question \"%(question)s\" %(error)s."
+msgstr ""
 
 #. module: muk_ai_decision
 #: model:ir.model.fields,field_description:muk_ai_decision.field_ir_actions_server__decision_question_ids
@@ -537,19 +721,47 @@ msgid "Questions"
 msgstr ""
 
 #. module: muk_ai_decision
-#: model:ir.model.fields,field_description:muk_ai_decision.field_ir_actions_server__decision_include_message
-#: model:ir.model.fields,field_description:muk_ai_decision.field_ir_cron__decision_include_message
-msgid "Read Last Message"
-msgstr "Lire le dernier message"
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
+msgid ""
+"Rates the record on your own levels from lowest to highest, e.g. urgency or "
+"completeness."
+msgstr ""
+"Note l'enregistrement sur vos propres niveaux du plus bas au plus haut, p. "
+"ex. urgence ou complétude."
+
+#. module: muk_ai_decision
+#: model:ir.model.fields,field_description:muk_ai_decision.field_ir_actions_server__decision_message_count
+#: model:ir.model.fields,field_description:muk_ai_decision.field_ir_cron__decision_message_count
+msgid "Read Last Messages"
+msgstr "Lire les derniers messages"
+
+#. module: muk_ai_decision
+#: model:ir.model.fields,help:muk_ai_decision.field_ir_actions_server__decision_input_source
+#: model:ir.model.fields,help:muk_ai_decision.field_ir_cron__decision_input_source
+msgid ""
+"Read the chosen fields, or the text Python code builds for each record."
+msgstr ""
+"Lire les champs choisis, ou le texte que le code Python construit pour "
+"chaque enregistrement."
+
+#. module: muk_ai_decision
+#: model:ir.model.fields,help:muk_ai_decision.field_muk_ai_decision_question__field_scale
+msgid ""
+"Read the values of the selection field as levels from lowest to highest, as "
+"for a priority, rather than as separate choices."
+msgstr ""
+"Lire les valeurs du champ de sélection comme des niveaux du plus bas au plus"
+" haut, comme pour une priorité, plutôt que comme des choix séparés."
 
 #. module: muk_ai_decision
 #: model:ir.model.fields,field_description:muk_ai_decision.field_ir_actions_server__decision_field_ids
 #: model:ir.model.fields,field_description:muk_ai_decision.field_ir_cron__decision_field_ids
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
 msgid "Reads"
 msgstr "Lit"
 
 #. module: muk_ai_decision
-#: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_log__res_id
+#: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_log__res_name
 msgid "Record"
 msgstr "Enregistrement"
 
@@ -558,6 +770,12 @@ msgstr "Enregistrement"
 #: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_muk_ai_decision_log_search
 msgid "Record Model"
 msgstr "Modèle de l'enregistrement"
+
+#. module: muk_ai_decision
+#: model:ir.model.fields,help:muk_ai_decision.field_ir_actions_server__decision_preview_ref
+#: model:ir.model.fields,help:muk_ai_decision.field_ir_cron__decision_preview_ref
+msgid "Record whose input the preview shows."
+msgstr "Enregistrement dont l'aperçu montre l'entrée."
 
 #. module: muk_ai_decision
 #: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
@@ -590,15 +808,15 @@ msgstr ""
 "%(question)s ». Utilisez l'une de : %(answers)s."
 
 #. module: muk_ai_decision
+#: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_option__action_id
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_question__route_action_id
 msgid "Run Action"
 msgstr "Exécuter l'action"
 
 #. module: muk_ai_decision
-#: model:ir.model.fields,field_description:muk_ai_decision.field_ir_actions_server__agent_gate
-#: model:ir.model.fields,field_description:muk_ai_decision.field_ir_cron__agent_gate
-msgid "Run Only When"
-msgstr "Exécuter seulement si"
+#: model:ir.model,name:muk_ai_decision.model_ir_cron
+msgid "Scheduled Action"
+msgstr "Action planifiée"
 
 #. module: muk_ai_decision
 #: model:ir.model.fields.selection,name:muk_ai_decision.selection__muk_ai_decision_question__kind__score
@@ -606,6 +824,7 @@ msgid "Score"
 msgstr "Note"
 
 #. module: muk_ai_decision
+#: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_option__sequence
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_question__sequence
 msgid "Sequence"
 msgstr "Séquence"
@@ -630,27 +849,28 @@ msgstr ""
 "réponse d'orientation."
 
 #. module: muk_ai_decision
-#: model:ir.model.fields,help:muk_ai_decision.field_ir_actions_server__decision_unsure_action_id
-#: model:ir.model.fields,help:muk_ai_decision.field_ir_cron__decision_unsure_action_id
+#: model:ir.model.fields,help:muk_ai_decision.field_muk_ai_decision_option__action_id
+msgid "Server action run once on all records answered with this option."
+msgstr ""
+"Action serveur exécutée une fois sur tous les enregistrements ayant cette "
+"option pour réponse."
+
+#. module: muk_ai_decision
+#: model:ir.model.fields,help:muk_ai_decision.field_muk_ai_decision_question__unsure_action_id
 msgid ""
-"Server action run once on all records with an answer below its confidence, "
-"e.g. one that schedules an activity to check them."
+"Server action run once on all records whose answer to this question stays "
+"below its confidence, e.g. one that schedules a check."
 msgstr ""
 "Action serveur exécutée une fois sur tous les enregistrements dont la "
-"réponse est sous sa confiance, par ex. une qui planifie une activité pour "
-"les vérifier."
+"réponse à cette question reste sous sa confiance, p. ex. une qui planifie "
+"une vérification."
 
 #. module: muk_ai_decision
-#: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_log__shadow
-#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_muk_ai_decision_log_search
-msgid "Shadow"
-msgstr "Fantôme"
-
-#. module: muk_ai_decision
-#: model:ir.model.fields,field_description:muk_ai_decision.field_ir_actions_server__decision_shadow
-#: model:ir.model.fields,field_description:muk_ai_decision.field_ir_cron__decision_shadow
-msgid "Shadow Mode"
-msgstr "Mode fantôme"
+#: model:ir.model.fields,help:muk_ai_decision.field_ir_actions_server__decision_message_external
+#: model:ir.model.fields,help:muk_ai_decision.field_ir_cron__decision_message_external
+msgid "Skip internal notes, read only the messages sent or received."
+msgstr ""
+"Ignorer les notes internes, lire seulement les messages envoyés ou reçus."
 
 #. module: muk_ai_decision
 #: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
@@ -674,9 +894,45 @@ msgid "Text or record the decision was about."
 msgstr "Texte ou enregistrement sur lequel portait la décision."
 
 #. module: muk_ai_decision
+#: model:ir.model.fields,help:muk_ai_decision.field_muk_ai_decision_question__option_ids
+msgid "The categories, or the levels of a score from lowest to highest."
+msgstr "Les catégories, ou les niveaux d'un score du plus bas au plus haut."
+
+#. module: muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
+msgid ""
+"The code runs once per record and assigns the text the decision\n"
+"\t\t\t\t\t\t\tmodel reads to <code>text</code>. Keep it short: only what the\n"
+"\t\t\t\t\t\t\tquestions need."
+msgstr ""
+"Le code s'exécute une fois par enregistrement et affecte à <code>text</code> le texte\n"
+"\t\t\t\t\t\t\tque lit le modèle de décision. Restez bref : seulement ce dont les\n"
+"\t\t\t\t\t\t\tquestions ont besoin."
+
+#. module: muk_ai_decision
+#. odoo-python
+#: code:addons/muk_ai_decision/models/ir_actions_server.py:0
+msgid "The input code assigns no text for %(record)s."
+msgstr "Le code d'entrée n'affecte aucun texte pour %(record)s."
+
+#. module: muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
+msgid "Then"
+msgstr "Ensuite"
+
+#. module: muk_ai_decision
+#: model:ir.actions.server,name:muk_ai_decision.demo_decision_partner_on_create
+msgid "Triage Contact"
+msgstr "Trier le contact"
+
+#. module: muk_ai_decision
+#: model:base.automation,name:muk_ai_decision.demo_rule_partner_tag_on_create
+msgid "Triage Tagged Contacts"
+msgstr "Trier les contacts étiquetés"
+
+#. module: muk_ai_decision
 #: model:ir.model.fields,field_description:muk_ai_decision.field_ir_actions_server__state
 #: model:ir.model.fields,field_description:muk_ai_decision.field_ir_cron__state
-#: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_question__kind
 msgid "Type"
 msgstr ""
 
@@ -706,24 +962,50 @@ msgstr ""
 "- 'Multi-Action' : définir une action qui déclenche plusieurs autres actions serveur.\n"
 
 #. module: muk_ai_decision
+#. odoo-python
+#: code:addons/muk_ai_decision/models/decision.py:0
+msgid "Unknown fields of %(model)s: %(fields)s"
+msgstr "Champs inconnus de %(model)s : %(fields)s"
+
+#. module: muk_ai_decision
 #: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_muk_ai_decision_log_search
 msgid "Unsure"
 msgstr "Incertain"
 
 #. module: muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
+msgid "What should the AI do?"
+msgstr "Que doit faire l'IA ?"
+
+#. module: muk_ai_decision
+#: model:ir.model.fields,help:muk_ai_decision.field_muk_ai_decision_question__kind
+msgid ""
+"What the answer does: fill a yes/no, selection, many2one or tags field, pick"
+" one of own categories, check a yes/no question, or rate on ordered levels."
+msgstr ""
+"Ce que fait la réponse : remplir un champ oui/non, de sélection, many2one ou"
+" d'étiquettes, choisir une catégorie propre, vérifier une question oui/non, "
+"ou noter sur des niveaux ordonnés."
+
+#. module: muk_ai_decision
 #: model:ir.model.fields,help:muk_ai_decision.field_muk_ai_decision_question__name
 msgid ""
 "What the decision model is asked, e.g. \"Which team should handle this "
-"ticket?\". Optional with a target field, which names it."
+"ticket?\". Optional with a field, which names it."
 msgstr ""
-"Ce qui est demandé au modèle de décision, par ex. « Quelle équipe doit "
-"traiter ce ticket ? ». Facultatif avec un champ cible, qui la nomme."
+"Ce qui est demandé au modèle de décision, p. ex. \"Quelle équipe doit "
+"traiter ce ticket ?\". Facultatif avec un champ, qui la nomme."
 
 #. module: muk_ai_decision
-#: model:ir.model.fields,field_description:muk_ai_decision.field_ir_actions_server__decision_unsure_action_id
-#: model:ir.model.fields,field_description:muk_ai_decision.field_ir_cron__decision_unsure_action_id
+#: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_question__unsure_action_id
 msgid "When Unsure"
 msgstr "En cas de doute"
+
+#. module: muk_ai_decision
+#: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_question__route_noul
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
+msgid "When the Answer Is"
+msgstr "Quand la réponse est"
 
 #. module: muk_ai_decision
 #. odoo-python
@@ -732,13 +1014,23 @@ msgid "Which %(field)s fits?"
 msgstr "Quel %(field)s convient ?"
 
 #. module: muk_ai_decision
-#: model:ir.model.fields,help:muk_ai_decision.field_muk_ai_decision_question__options
+#: model:muk_ai.decision.question,name:muk_ai_decision.demo_question_partner_industry
+msgid "Which industry does this company work in?"
+msgstr "Dans quel secteur travaille cette entreprise ?"
+
+#. module: muk_ai_decision
+#: model:muk_ai.decision.question,name:muk_ai_decision.demo_question_partner_tags
+msgid "Which of these tags describe this contact?"
+msgstr "Quelles étiquettes décrivent ce contact ?"
+
+#. module: muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
 msgid ""
-"Without a target field: one option per line, or one level per line from "
-"lowest to highest for a score. \"label: description\" adds a hint."
+"Writes the answer into a field of the record: a yes/no, a selection, a "
+"related record or the tags that apply."
 msgstr ""
-"Sans champ cible : une option par ligne, ou un niveau par ligne du plus bas "
-"au plus haut pour une note. « libellé : description » ajoute une indication."
+"Écrit la réponse dans un champ de l'enregistrement : un oui/non, une "
+"sélection, un enregistrement lié ou les étiquettes qui s'appliquent."
 
 #. module: muk_ai_decision
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_log__applied
@@ -746,37 +1038,39 @@ msgid "Written Values"
 msgstr "Valeurs écrites"
 
 #. module: muk_ai_decision
+#: model:ir.model.fields.selection,name:muk_ai_decision.selection__muk_ai_decision_question__route_noul__yes
+msgid "Yes"
+msgstr "Oui"
+
+#. module: muk_ai_decision
 #: model:ir.model.fields.selection,name:muk_ai_decision.selection__muk_ai_decision_question__kind__noul
-msgid "Yes/No"
-msgstr "Oui/Non"
-
-#. module: muk_ai_decision
-#: model:ir.model.fields,help:muk_ai_decision.field_ir_actions_server__agent_gate
-#: model:ir.model.fields,help:muk_ai_decision.field_ir_cron__agent_gate
-msgid ""
-"Yes/no question asked about each record first, e.g. \"Does this ticket still"
-" need a reply from us?\". Records confidently answered no are skipped; "
-"unsure ones still run."
-msgstr ""
-"Question oui/non posée d'abord sur chaque enregistrement, par ex. « Ce "
-"ticket attend-il encore une réponse de notre part ? ». Les enregistrements "
-"ayant reçu un non confiant sont ignorés ; les incertains s'exécutent quand "
-"même."
+msgid "Yes/No Check"
+msgstr "Vérification oui/non"
 
 #. module: muk_ai_decision
 #: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
-msgid "e.g. Billing, or yes"
-msgstr "par ex. Facturation, ou yes"
-
-#. module: muk_ai_decision
-#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
-msgid "e.g. Does this ticket still need a reply from us?"
-msgstr "par ex. Ce ticket attend-il encore une réponse de notre part ?"
+msgid "e.g. Tags, Team or Priority"
+msgstr "p. ex. Étiquettes, Équipe ou Priorité"
 
 #. module: muk_ai_decision
 #: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
 msgid "e.g. Which team should handle this ticket?"
 msgstr "par ex. Quelle équipe doit traiter ce ticket ?"
+
+#. module: muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
+msgid "e.g. a category"
+msgstr "p. ex. une catégorie"
+
+#. module: muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
+msgid "e.g. billing"
+msgstr "p. ex. facturation"
+
+#. module: muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
+msgid "e.g. payments and invoices"
+msgstr "p. ex. paiements et factures"
 
 #. module: muk_ai_decision
 #. odoo-python
@@ -836,6 +1130,11 @@ msgid "Manage Decision Actions"
 msgstr "Gérer les actions de décision"
 
 #. module: muk_ai_decision
+#: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_log__res_id
+msgid "Record ID"
+msgstr "ID de l'enregistrement"
+
+#. module: muk_ai_decision
 #: model:ir.module.module,description:base.module_muk_ai_decision
 msgid ""
 "\n"
@@ -848,9 +1147,9 @@ msgid ""
 "Every decision is logged with its model, answers, duration and cost.\n"
 "A Decide with AI server action fills fields, routes records to other\n"
 "actions and flags unsure ones from any automation rule or scheduled\n"
-"action, an agent action can run only for the records a yes/no gate\n"
-"lets through, and agents decide about texts or records through the\n"
-"decide tool.\n"
+"action, a decision step in front of an agent starts its chats only\n"
+"where they are needed, and agents decide about texts or records\n"
+"through the decide tool.\n"
 msgstr ""
 "\n"
 "Ajoute des modèles de décision à l'assistant MuK AI. Un modèle de décision lit\n"
@@ -862,11 +1161,19 @@ msgstr ""
 "est journalisée avec son modèle, ses réponses, sa durée et son coût. Une action\n"
 "serveur « Décider avec l'IA » remplit des champs, oriente les enregistrements vers\n"
 "d'autres actions et signale les incertains depuis toute règle d'automatisation ou\n"
-"action planifiée, une action d'agent peut ne s'exécuter que pour les enregistrements\n"
-"qu'un filtre oui/non laisse passer, et les agents décident sur des textes ou des\n"
+"action planifiée, une étape de décision devant un agent ne lance ses chats que là où ils\n"
+"sont utiles, et les agents décident sur des textes ou des\n"
 "enregistrements avec l'outil decide.\n"
 
 #. module: muk_ai_decision
-#: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_log__res_id
-msgid "Record ID"
-msgstr "ID de l'enregistrement"
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
+msgid ""
+"text = '\\n'.join([\n"
+"    'Name: ' + record.name,\n"
+"    'Tags: ' + ', '.join(record.category_id.mapped('name')),\n"
+"    'Notes: ' + html2plaintext(record.comment or '')[:500],\n"
+"    'Last message: ' + html2plaintext(record.message_ids.filtered(\n"
+"        lambda message: message.message_type in ('email', 'comment')\n"
+"    )[:1].body or '')[:500],\n"
+"])"
+msgstr ""

@@ -6,7 +6,7 @@ FIELD_TYPES = ('boolean', 'selection', 'many2one', 'many2many')
 MAX_CANDIDATES = 50
 MAX_CHOICES = 255
 MAX_LEVELS = 10
-MAX_STATE_FIELDS = 6
+MAX_VALUE_CHARS = 1000
 
 
 class FieldQuestion(NamedTuple):

@@ -91,7 +91,7 @@ class TestDecision(AITestCommon):
 
     def _decide(self, state=STATE, questions=None, **kwargs) -> dict:
         """Run the decision service with the shared questions by default."""
-        return self.env['muk_ai.decision'].decide(
+        return self.env['muk_ai.decision']._decide(
             state, QUESTIONS if questions is None else questions, **kwargs
         )
 
@@ -210,7 +210,7 @@ class TestDecision(AITestCommon):
             ) as rounds,
             release_test_lock(),
         ):
-            results = self.env['muk_ai.decision'].decide_batch(
+            results = self.env['muk_ai.decision']._decide_batch(
                 ['one', 'two', 'three'], QUESTIONS, model=luna
             )
         self.assertEqual(len(rounds), 3)
@@ -293,7 +293,7 @@ class TestDecision(AITestCommon):
 
         def by_record(request: dict) -> requests.Response:
             """Answer Ada surely, Cyd unsurely, and fail Bob, in any thread order."""
-            name = json.loads(request['json']['state'])['name']
+            name = json.loads(request['json']['state'])['Name']
             if name == 'Bob':
                 return json_response({'error': 'down'}, 500)
             sure = name == 'Ada'
@@ -312,6 +312,7 @@ class TestDecision(AITestCommon):
             result = call(
                 model='res.partner',
                 domain=json.dumps([['id', 'in', [ada.id, bob.id, cyd.id]]]),
+                fields=['name', 'comment'],
             )
         sent = posts[0][1]['json']
         self.assertEqual(
@@ -319,7 +320,7 @@ class TestDecision(AITestCommon):
         )
         self.assertIn(f'Does "{vip.name}" apply?', str(sent['questions']))
         self.assertEqual(
-            {json.loads(post['json']['state'])['name'] for _url, post in posts},
+            {json.loads(post['json']['state'])['Name'] for _url, post in posts},
             {'Ada', 'Bob', 'Cyd'},
         )
         self.assertIn(
@@ -363,7 +364,12 @@ class TestDecision(AITestCommon):
         with self._capture_post(json_response(answers(0.9, (0.9, 0.9), 0.1))) as posts:
             session._dispatch_tool_call(
                 'decide',
-                {'questions': questions[2:3], 'model': 'res.partner', 'ids': [ada.id]},
+                {
+                    'questions': questions[2:3],
+                    'model': 'res.partner',
+                    'ids': [ada.id],
+                    'fields': ['name', 'comment'],
+                },
                 'c1',
             )
         self.assertIn('software house', posts[0][1]['json']['state'])
@@ -406,6 +412,12 @@ class TestDecision(AITestCommon):
         self.env['muk_ai.decision.log']._autovacuum_logs()
         self.assertEqual(self._logs(), recent)
         self.typesafe.api_key = False
+        decis = self.env.ref('muk_ai_decision.provider_decis')
+        self.assertEqual(
+            [self.typesafe._can_serve(), decis._can_serve()], [False, False]
+        )
+        decis.api_url = 'http://decis.test'
+        self.assertTrue(decis._can_serve())
         with self._capture_post(json_response(SYSTEM_ONE)) as posts:
             self.typesafe.action_test_connection()
         self.assertEqual(posts[0][1]['json']['questions']['ok']['type'], 'noul')

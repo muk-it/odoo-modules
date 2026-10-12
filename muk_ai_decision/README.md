@@ -15,7 +15,7 @@ one choice out of a list, a score on a scale, or the chance of a yes, each with
 its confidence. Use it to fill fields, route records and start an AI agent only
 where one is needed.
 
-![A decision action with three question cards for helpdesk tickets](static/description/screenshot.png)
+![A decision action with four question cards for helpdesk tickets](static/description/screenshot.png)
 
 ## Features
 
@@ -24,9 +24,9 @@ where one is needed.
 - **Written only when sure**: below its confidence an answer is never written,
   and the action for unsure decisions takes the record over.
 - **Answers that route**: an answer runs another action on the records that
-  gave it; shadow mode decides without writing, to try it first.
-- **Agents only where needed**: Run Only When asks a yes or no question before
-  an agent action starts a chat.
+  gave it, or that the model was unsure about.
+- **Agents only where needed**: a yes or no decision step in front of an agent
+  starts its chats only for the records that need one.
 - **The decide tool**: agents check texts, records or a whole domain in one
   call: spam or not, which tags, which team.
 - **Hosted, local or what you have**: any System One server, TypeSafe Jev in the
@@ -37,9 +37,9 @@ where one is needed.
 
 ## Getting started
 
-1. Under **MuK AI > Configuration > Providers**, activate _TypeSafe_ with its
-   API key or _Decis_ with the address of your server, or set a **Default
-   Decision Model** on a chat provider.
+1. Under **MuK AI > Configuration > Providers**, give _TypeSafe_ its API key or
+   _Decis_ the address of your server, or set a **Default Decision Model** on a
+   chat provider.
 2. Under **MuK AI > Automation > Decision Actions**, create an action for a
    model and add its questions.
 3. Run it from the **Actions** menu of a list, an automation rule or a schedule,

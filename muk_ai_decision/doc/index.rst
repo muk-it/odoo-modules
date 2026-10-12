@@ -9,9 +9,9 @@ answers them for every module, through any server speaking the System One API,
 TypeSafe Jev in the cloud or a self-hosted Laya, or a small chat model of an
 existing provider. Every decision is logged with its model, answers, duration
 and cost. A Decide with AI server action fills fields, routes records to other
-actions and flags unsure ones from any automation rule or scheduled action, an
-agent action can run only for the records a yes/no gate lets through, and
-agents decide about texts or records through the decide tool.
+actions and flags unsure ones from any automation rule or scheduled action, a
+decision step in front of an agent starts its chats only where they are
+needed, and agents decide about texts or records through the decide tool.
 
 Installation
 ============
@@ -40,10 +40,11 @@ Decision Model**; the decision providers are asked first, then the chat
 providers, each in list order, and the next one takes over when one fails:
 
 - **System One Compatible**: any server speaking the System One decision API.
-  Two accounts ship archived: *typesafe* decides with *Jev* in the TypeSafe
-  cloud once its API key is set, *decis* with *Laya* on a self-hosted Decis
-  server at its **Custom URL**, which needs a key only when the server asks
-  for one. Activate the one you use; **Test Connection** answers one question.
+  Two accounts ship ready to fill in: *typesafe* decides with *Jev* in the
+  TypeSafe cloud once its API key is set, *decis* with *Laya* on a self-hosted
+  Decis server once its **Custom URL** is set, with a key only when the server
+  asks for one. An account without either is skipped; **Test Connection**
+  answers one question.
 - **OpenAI**, **Anthropic** and **Google**: their smallest chat model answers
   decisions through structured output when no System One account is active.
   The model reports its own confidence, which is less reliable than the
@@ -60,29 +61,40 @@ Usage
 for any model, run from an automation rule, a scheduled action or the Action
 menu of a list:
 
-- **Questions**: each fills a **Target Field**, whose values are the options: a
-  selection, the **Candidates** of a many2one, one yes/no per tag of a tags
-  field, or a yes/no field. A question without a target field lists its own
-  options. An answer is written only above its **Min. Confidence**; tags are
-  only added, never removed.
-- **Route Answer** and **Run Action**: run another server action on all
-  records answered that way, for example an AI agent action for complaints.
-- **When Unsure**: an action run on the records with an answer below its
-  confidence, for example one that schedules an activity to check them.
-- **Reads**: the fields the decision model reads, by default the name and the
-  text fields, and with **Read Last Message** the last email or comment.
-- **Shadow Mode**: decide and log only, to try a configuration before it writes.
+- **Questions**: **What should the AI do?** sets the goal. **Fill a Field**
+  fills a yes/no, selection, many2one or tags field, limited to its
+  **Candidates**; a tags field asks one yes/no per tag and its **Operation**
+  either adds the tags that apply, or adds them and also removes the tags that
+  confidently do not apply. **Own Categories** and **Score** list their own options or levels,
+  and **Yes/No Check** asks a question to route on. An answer is written only
+  above its **Min. Confidence**.
+- **Options**: a table of the categories, or the levels of a score from
+  lowest to highest, each with a description as a hint and a **Run Action**
+  for the records answered with it, for example an AI agent action for
+  complaints. A **Yes/No Check** runs its action on the answer yes or no.
+- **When Unsure**: per question, an action run on the records whose answer
+  stays below its confidence, for example one that schedules an activity to
+  check them.
+- **Reads**: the fields the decision model reads, of any type, each with its
+  label and readable value and long texts cut short, preset to the name and
+  the list columns, with **Read Last Messages** that many of the last emails
+  and comments, with **External Only** without the internal notes; or
+  **Python Code** that builds the text itself. **Preview** shows it for a
+  record.
 
-The log notes the values each decision wrote, or would have written in
-shadow mode.
+The log notes the values each decision wrote.
 
-On a **Run AI Agent** action, **Run Only When** asks a yes/no question about
-each record first: only the records confidently answered no are skipped, so an
-agent chat starts only where it is needed.
+To start an agent chat only where it is needed, put a decision in front of
+the agent action: a **Yes/No Check** whose answer **yes** and **When Unsure**
+both run the agent action.
+
+A step of an AI automation rule (*MuK AI > Automation > Automation Rules*) is a
+decision or an agent run: a decision step sets the tags of a new record, an
+agent step after it works with them.
 
 A module asks for a decision in Python::
 
-    result = env['muk_ai.decision'].decide(
+    result = env['muk_ai.decision']._decide(
         mail.body,
         {
             'team': {

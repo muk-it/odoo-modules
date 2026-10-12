@@ -23,11 +23,6 @@
 					domain="[('confident', '=', False), ('error', '=', False)]"
 				/>
 				<filter
-					name="filter_shadow"
-					string="Shadow"
-					domain="[('shadow', '=', True)]"
-				/>
-				<filter
 					name="filter_failed"
 					string="Failed"
 					domain="[('error', '!=', False)]"
@@ -55,7 +50,6 @@
 				<field name="model_id"/>
 				<field name="served_model" optional="hide"/>
 				<field name="confident"/>
-				<field name="shadow" optional="hide"/>
 				<field name="duration" optional="show"/>
 				<field name="input_tokens" optional="hide" sum="Input Tokens"/>
 				<field name="output_tokens" optional="hide" sum="Output Tokens"/>
@@ -96,10 +90,9 @@
 						<field name="error" nolabel="1" colspan="2"/>
 					</group>
 					<group string="Decision">
-						<field name="questions" widget="json_code"/>
+						<field name="questions" widget="json_code" invisible="not questions"/>
 						<field name="answers" widget="json_code" invisible="error"/>
 						<field name="applied" widget="json_code" invisible="not applied"/>
-						<field name="shadow" invisible="not shadow"/>
 						<field name="state_payload" widget="json_code" invisible="not state_payload"/>
 					</group>
 				</sheet>

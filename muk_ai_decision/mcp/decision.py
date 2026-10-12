@@ -214,8 +214,8 @@ class AIDecisionTool(models.AbstractModel):
                 'fields': fields_field(
                     example=['name', 'description'],
                     extra_note=(
-                        'What the decision model reads per record; the name and '
-                        'the text fields by default.'
+                        'What the decision model reads per record, as labels and '
+                        'readable values; the name and the list columns by default.'
                     ),
                 ),
                 'limit': {
@@ -263,15 +263,12 @@ class AIDecisionTool(models.AbstractModel):
                 )
             )
             states = decision._state_texts(
-                records,
-                self._mcp_read(
-                    records, fields or decision._default_state_fields(model)
-                ),
+                records, fields or decision._default_state_fields(model)
             )
             targets = records.ids
         else:
             raise UserError(self.env._('Pass texts, or a model with ids or a domain.'))
-        results = decision.decide_batch(
+        results = decision._decide_batch(
             states, keyed, min_confidence=min_confidence, records=records, origin='mcp'
         )
         return {

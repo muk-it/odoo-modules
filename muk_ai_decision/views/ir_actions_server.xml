@@ -9,10 +9,20 @@
 			<list sample="1">
 				<field name="name"/>
 				<field name="model_id"/>
-				<field name="decision_shadow"/>
 				<field name="decision_log_count"/>
 				<field name="binding_model_id" string="Actions Menu"/>
 			</list>
+		</field>
+	</record>
+
+	<record id="view_ir_actions_server_kanban_decision" model="ir.ui.view">
+		<field name="name">ir.actions.server.kanban.muk_ai_decision</field>
+		<field name="model">ir.actions.server</field>
+		<field name="inherit_id" ref="muk_ai_automation.view_ir_actions_server_kanban"/>
+		<field name="arch" type="xml">
+			<xpath expr="//i[@data-name='server_action_icon']" position="attributes">
+				<attribute name="t-if">!['ai_agent', 'ai_decision'].includes(record.state.raw_value)</attribute>
+			</xpath>
 		</field>
 	</record>
 
@@ -40,30 +50,33 @@
 					</div>
 				</button>
 			</xpath>
-			<xpath expr="//group[@name='agent_settings']" position="inside">
-				<field
-					name="agent_gate"
-					placeholder="e.g. Does this ticket still need a reply from us?"
-				/>
-				<field
-					name="agent_gate_min_confidence"
-					widget="percentage"
-					invisible="not agent_gate"
-				/>
-			</xpath>
 			<xpath expr="//notebook" position="before">
 				<group invisible="state != 'ai_decision'">
-					<group string="Decision" name="decision_settings">
+					<group string="Reads" name="decision_reads">
+						<field
+							name="decision_input_source"
+							string="Source"
+							widget="radio"
+							options="{'horizontal': True}"
+						/>
 						<field
 							name="decision_field_ids"
+							string="Fields"
 							widget="many2many_tags"
-							placeholder="Name and text fields"
+							placeholder="Name and list columns"
+							invisible="decision_input_source == 'code'"
 						/>
-						<field name="decision_include_message"/>
-						<field name="decision_shadow"/>
+					</group>
+					<group
+						string="Message"
+						name="decision_message"
+						invisible="decision_input_source == 'code'"
+					>
+						<field name="decision_message_count"/>
 						<field
-							name="decision_unsure_action_id"
-							options="{'no_create': True}"
+							name="decision_message_external"
+							widget="boolean_toggle"
+							invisible="not decision_message_count"
 						/>
 					</group>
 					<group
@@ -95,7 +108,6 @@
 					>
 						<kanban>
 							<field name="field_id"/>
-							<field name="field_type"/>
 							<templates>
 								<t t-name="card" class="gap-2">
 									<div class="d-flex align-items-start gap-2">
@@ -105,15 +117,11 @@
 											invisible="name"
 											class="fw-bold flex-grow-1"
 										/>
-										<field
-											name="kind"
-											widget="badge"
-											invisible="field_type and field_type != 'selection'"
-										/>
+										<field name="kind" widget="badge"/>
 									</div>
 									<div class="d-flex flex-wrap align-items-center gap-3 text-muted">
 										<span
-											invisible="not field_id"
+											invisible="not field_id or kind != 'field' or not name"
 											class="d-inline-flex align-items-center"
 											title="Target Field"
 										>
@@ -143,46 +151,77 @@
 							<field name="model_id" invisible="1"/>
 							<field name="field_type" invisible="1"/>
 							<field name="field_relation" invisible="1"/>
+							<div class="d-flex flex-column pb-2">
+								<label for="kind" string="What should the AI do?"/>
+								<field name="kind" widget="badges_selection"/>
+								<div class="text-muted mt-2" invisible="kind != 'field'">
+									Writes the answer into a field of the record: a yes/no, a selection, a related record or the tags that apply.
+								</div>
+								<div class="text-muted mt-2" invisible="kind != 'choice'">
+									Picks one of your own categories, e.g. to run a different action for each one.
+								</div>
+								<div class="text-muted mt-2" invisible="kind != 'noul'">
+									Answers a yes or no question, e.g. to run an action only for the records that need it.
+								</div>
+								<div class="text-muted mt-2" invisible="kind != 'score'">
+									Rates the record on your own levels from lowest to highest, e.g. urgency or completeness.
+								</div>
+							</div>
 							<group>
 								<group string="Question">
 									<field
-										name="name"
-										placeholder="e.g. Which team should handle this ticket?"
-										required="not field_id"
-									/>
-									<field
 										name="field_id"
 										options="{'no_create': True}"
-										placeholder="Optional: the field the answer fills"
+										placeholder="e.g. Tags, Team or Priority"
+										invisible="kind != 'field'"
+										required="kind == 'field'"
 									/>
 									<field
-										name="kind"
+										name="tag_operation"
 										widget="radio"
 										options="{'horizontal': True}"
-										invisible="field_type and field_type != 'selection'"
+										invisible="kind != 'field' or field_type != 'many2many'"
+									/>
+									<field
+										name="field_scale"
+										widget="boolean_toggle"
+										invisible="kind != 'field' or field_type != 'selection'"
+									/>
+									<field
+										name="name"
+										placeholder="e.g. Which team should handle this ticket?"
+										required="kind != 'field'"
 									/>
 									<field name="min_confidence" widget="percentage"/>
 								</group>
-								<group string="Route">
-									<field name="route_answer" placeholder="e.g. Billing, or yes"/>
+								<group string="Then">
+									<field
+										name="route_noul"
+										widget="radio"
+										options="{'horizontal': True}"
+										invisible="kind != 'noul'"
+									/>
+									<field
+										name="route_answer"
+										string="When the Answer Is"
+										placeholder="e.g. a category"
+										invisible="kind == 'noul' or not route_answer"
+									/>
 									<field
 										name="route_action_id"
 										options="{'no_create': True}"
-										required="route_answer"
+										required="route_answer or route_noul"
+										invisible="kind != 'noul' and not route_answer"
+									/>
+									<field
+										name="unsure_action_id"
+										options="{'no_create': True}"
 									/>
 								</group>
 							</group>
-							<group string="Options" invisible="field_id or kind == 'noul'">
-								<field
-									name="options"
-									nolabel="1"
-									colspan="2"
-									placeholder="One option per line, lowest level first for a score:&#10;billing: payments and invoices&#10;technical: errors and outages&#10;sales"
-								/>
-							</group>
 							<group
 								string="Candidates"
-								invisible="field_type not in ('many2one', 'many2many')"
+								invisible="kind != 'field' or field_type not in ('many2one', 'many2many')"
 							>
 								<field
 									name="candidate_domain"
@@ -191,9 +230,78 @@
 									widget="domain"
 									options="{'model': 'field_relation', 'in_dialog': True}"
 								/>
+								<field
+									name="candidate_names"
+									nolabel="1"
+									colspan="2"
+									class="text-muted"
+								/>
+							</group>
+							<group
+								string="Options"
+								invisible="kind not in ('choice', 'score')"
+							>
+								<field name="option_ids" nolabel="1" colspan="2">
+									<list editable="bottom">
+										<field name="sequence" widget="handle"/>
+										<field name="name" placeholder="e.g. billing"/>
+										<field name="description" placeholder="e.g. payments and invoices"/>
+										<field
+											name="action_id"
+											domain="[('model_id', '=', parent.model_id), ('id', '!=', parent.action_id)]"
+											options="{'no_create': True}"
+											optional="show"
+										/>
+									</list>
+								</field>
 							</group>
 						</form>
 					</field>
+				</page>
+				<page
+					string="Input Code"
+					name="decision_input_code"
+					invisible="state != 'ai_decision' or decision_input_source != 'code'"
+				>
+					<field
+						name="decision_input_code"
+						widget="code"
+						options="{'mode': 'python'}"
+					/>
+					<div class="text-muted mt-3">
+						<p>
+							The code runs once per record and assigns the text the decision
+							model reads to <code>text</code>. Keep it short: only what the
+							questions need.
+						</p>
+						<ul>
+							<li><code>record</code>: the record decided about</li>
+							<li><code>env</code>: the environment, to read related records</li>
+							<li><code>html2plaintext</code>: turns an HTML field into plain text</li>
+						</ul>
+						<p>For example:</p>
+						<pre>text = '\n'.join([
+    'Name: ' + record.name,
+    'Tags: ' + ', '.join(record.category_id.mapped('name')),
+    'Notes: ' + html2plaintext(record.comment or '')[:500],
+    'Last message: ' + html2plaintext(record.message_ids.filtered(
+        lambda message: message.message_type in ('email', 'comment')
+    )[:1].body or '')[:500],
+])</pre>
+					</div>
+				</page>
+				<page
+					string="Preview"
+					name="decision_preview"
+					invisible="state != 'ai_decision'"
+				>
+					<group>
+						<field
+							name="decision_preview_ref"
+							options="{'model_field': 'model_id', 'no_create': True, 'no_open': True}"
+						/>
+					</group>
+					<field name="decision_preview" nolabel="1" class="font-monospace"/>
 				</page>
 			</xpath>
 			<xpath expr="//page[@name='agent_record_domain']" position="attributes">
@@ -219,6 +327,9 @@
 				<attribute name="placeholder">e.g. Helpdesk Ticket</attribute>
 			</xpath>
 			<xpath expr="//group[@name='decision_records']" position="replace"/>
+			<xpath expr="//field[@name='state']/.." position="attributes">
+				<attribute name="invisible">not context.get('ai_steps')</attribute>
+			</xpath>
 		</field>
 	</record>
 
@@ -246,6 +357,27 @@
 
 	<record id="muk_ai_automation.action_ai_scheduled_actions" model="ir.actions.act_window">
 		<field name="domain">[('state', 'in', ['ai_agent', 'ai_decision'])]</field>
+		<field name="context">{'default_state': 'ai_agent', 'default_usage': 'ir_cron', 'ai_steps': 1}</field>
+	</record>
+
+	<record id="view_ir_cron_form_decision" model="ir.ui.view">
+		<field name="name">ir.cron.form.muk_ai_decision.logs</field>
+		<field name="model">ir.cron</field>
+		<field name="inherit_id" ref="base.ir_cron_view_form"/>
+		<field name="arch" type="xml">
+			<xpath expr="//button[@name='action_open_decision_logs']" position="replace"/>
+		</field>
+	</record>
+
+	<record id="view_ai_decision_cron_form" model="ir.ui.view">
+		<field name="name">ir.cron.form.muk_ai_decision</field>
+		<field name="model">ir.cron</field>
+		<field name="inherit_id" ref="muk_ai_automation.view_ai_agent_cron_form"/>
+		<field name="arch" type="xml">
+			<field name="state" position="attributes">
+				<attribute name="invisible">not context.get('ai_steps')</attribute>
+			</field>
+		</field>
 	</record>
 
 </odoo>

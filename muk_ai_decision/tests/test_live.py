@@ -40,7 +40,7 @@ class TestLiveDecision(TransactionCase):
         )
 
     def test_a_real_server_answers_every_question_type(self):
-        result = self.env['muk_ai.decision'].decide(
+        result = self.env['muk_ai.decision']._decide(
             'I was charged twice for invoice 2026/0042, please refund it today!',
             QUESTIONS,
             model=self.env.ref('muk_ai_decision.model_laya'),

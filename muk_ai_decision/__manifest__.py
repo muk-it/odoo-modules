@@ -11,11 +11,11 @@
         Every decision is logged with its model, answers, duration and cost.
         A Decide with AI server action fills fields, routes records to other
         actions and flags unsure ones from any automation rule or scheduled
-        action, an agent action can run only for the records a yes/no gate
-        lets through, and agents decide about texts or records through the
-        decide tool.
+        action, a decision step in front of an agent starts its chats only
+        where they are needed, and agents decide about texts or records
+        through the decide tool.
     """,
-    'version': '20.0.1.1.0',
+    'version': '20.0.1.2.0',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -33,10 +33,17 @@
         'data/model.xml',
         'views/ai_model.xml',
         'views/ai_provider.xml',
+        'views/base_automation.xml',
         'views/decision_log.xml',
         'views/ir_actions_server.xml',
         'views/menu.xml',
         'views/res_config_settings.xml',
+    ],
+    'demo': [
+        'demo/res_partner.xml',
+        'demo/ir_actions_server.xml',
+        'demo/base_automation.xml',
+        'demo/decision_log.xml',
     ],
     'images': [
         'static/description/banner.png',

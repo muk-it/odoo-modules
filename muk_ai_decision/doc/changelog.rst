@@ -1,3 +1,8 @@
+`1.2.0`
+-------
+
+- Readable Input from Any Fields
+
 `1.1.0`
 -------
 

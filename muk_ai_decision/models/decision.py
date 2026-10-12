@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 
+from lxml import etree
+
 from odoo import api, models
 from odoo.exceptions import UserError
 from odoo.tools import html2plaintext
@@ -12,7 +14,7 @@ from odoo.addons.muk_ai_decision.tools.field_question import (
     MAX_CANDIDATES,
     MAX_CHOICES,
     MAX_LEVELS,
-    MAX_STATE_FIELDS,
+    MAX_VALUE_CHARS,
     FieldQuestion,
 )
 
@@ -254,40 +256,84 @@ class AIDecision(models.AbstractModel):
 
     @api.model
     def _default_state_fields(self, model_name: str) -> list[str]:
-        """Return the fields a decision reads by default: the name and the text fields."""
+        """Return the fields a decision reads by default: the name and the list columns."""
         model = self.env[model_name]
+        arch = etree.fromstring(model.get_view(view_type='list')['arch'])
         names = [model._rec_name] if model._rec_name in model._fields else []
         names += [
-            name
-            for name, field in model._fields.items()
-            if field.type in ('text', 'html') and field.store and name not in names
+            node.get('name')
+            for node in arch.iter('field')
+            if node.get('name') in model._fields
+            and node.get('name') not in names
+            and node.get('column_invisible') not in ('1', 'True')
+            and node.get('optional') != 'hide'
+            and model._fields[node.get('name')].type not in ('binary', 'one2many')
         ]
-        return names[:MAX_STATE_FIELDS] or ['display_name']
+        return names or ['display_name']
+
+    @api.model
+    def _display_value(
+        self, record: models.BaseModel, name: str
+    ) -> str | int | float | bool:
+        """Return the value of a field as a person reads it, a long text cut short."""
+        field, value = record._fields[name], record[name]
+        if field.type in ('boolean', 'integer', 'float', 'monetary'):
+            return value
+        if field.type in ('many2one', 'one2many', 'many2many'):
+            text = ', '.join(value.mapped('display_name'))
+        elif field.type == 'selection':
+            text = dict(field._description_selection(self.env)).get(value) or ''
+        elif field.type == 'html':
+            text = html2plaintext(value or '')
+        else:
+            text = str(value or '')
+        return text[:MAX_VALUE_CHARS]
 
     @api.model
     def _state_texts(
-        self, records: models.BaseModel, rows: list, include_message: bool = False
+        self,
+        records: models.BaseModel,
+        names: list[str],
+        message_count: int = 0,
+        external_only: bool = False,
     ) -> list[str]:
-        """Render read rows as the JSON a decision model reads, HTML as plain text.
+        """Render each record as JSON of the labels and readable values of its fields.
 
-        :param include_message: add the last email or comment of each record
+        :param message_count: add that many of the last emails and comments
+        :param external_only: skip internal notes among them
         """
+        if unknown := [name for name in names if name not in records._fields]:
+            raise UserError(
+                self.env._(
+                    'Unknown fields of %(model)s: %(fields)s',
+                    model=records._name,
+                    fields=', '.join(unknown),
+                )
+            )
+        labels = {}
+        for name in names:
+            label = records._fields[name]._description_string(self.env)
+            labels[name] = f'{label} ({name})' if label in labels.values() else label
         states = []
-        for record, row in zip(records, rows, strict=True):
+        for record in records:
             state = {
-                name: html2plaintext(value or '')
-                if records._fields[name].type == 'html'
-                else value
-                for name, value in row.items()
-                if name != 'id'
+                label: self._display_value(record, name)
+                for name, label in labels.items()
             }
-            if include_message and 'message_ids' in records._fields:
-                message = record.message_ids.filtered(
+            if message_count and 'message_ids' in records._fields:
+                messages = record.message_ids.filtered(
                     lambda message: (
-                        message.message_type in ('email', 'comment') and message.body
+                        message.message_type in ('email', 'comment')
+                        and message.body
+                        and not (external_only and message.subtype_id.internal)
                     )
-                )[:1]
-                state['last_message'] = html2plaintext(message.body or '')
+                )[:message_count]
+                state[self.env._('Last Messages')] = [
+                    f'{message.author_id.display_name or message.email_from} '
+                    f'({message.date:%Y-%m-%d}): '
+                    f'{html2plaintext(message.body)[:MAX_VALUE_CHARS]}'
+                    for message in messages
+                ]
             states.append(json.dumps(state, default=str, ensure_ascii=False))
         return states
 
@@ -296,7 +342,7 @@ class AIDecision(models.AbstractModel):
     # ----------------------------------------------------------
 
     @api.model
-    def decide_batch(
+    def _decide_batch(
         self,
         states: list,
         questions: dict,
@@ -376,7 +422,7 @@ class AIDecision(models.AbstractModel):
         return results
 
     @api.model
-    def decide(
+    def _decide(
         self,
         state,
         questions: dict,
@@ -390,7 +436,7 @@ class AIDecision(models.AbstractModel):
         :return: the served ``model``, the ``answers`` and the ``log_id``
         :raise UserError: on invalid questions, no usable model, or when all fail
         """
-        (result,) = self.decide_batch(
+        (result,) = self._decide_batch(
             [state], questions, model, min_confidence, record or None, origin
         )
         if isinstance(result, UserError):

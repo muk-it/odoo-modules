@@ -1,3 +1,4 @@
 id,name,model_id,group_id/id,operation,domain
 access_ai_decision_log_admin,muk_ai.decision.log.admin,muk_ai.decision.log,base.group_system,rd,
 access_ai_decision_question_admin,muk_ai.decision.question.admin,muk_ai.decision.question,base.group_system,crud,
+access_ai_decision_option_admin,muk_ai.decision.option.admin,muk_ai.decision.option,base.group_system,crud,
