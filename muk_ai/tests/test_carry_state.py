@@ -247,7 +247,7 @@ class TestCarryState(AITestCommon):
 
     def test_a_stored_conversation_keeps_the_state_but_no_internals(self):
         conversation = [
-            {**self._google_carry(), '_internal': 'gone'},
+            {**self._google_carry(), '_leak_sentinel': 'gone'},
             self._tool_output(),
         ]
         inputs = self._session_inputs(self.agent_google, conversation)
@@ -257,10 +257,10 @@ class TestCarryState(AITestCommon):
             'sig-a',
         )
         body = self._sent_body(self.provider_google, inputs)
-        self.assertNotIn('_internal', json.dumps(body))
+        self.assertNotIn('_leak_sentinel', json.dumps(body))
         self.assertIn('sig-a', json.dumps(body))
         self.assertNotIn(
-            '_internal', json.dumps(self._sent_body(self.provider, inputs))
+            '_leak_sentinel', json.dumps(self._sent_body(self.provider, inputs))
         )
 
     def test_a_handoff_hands_the_next_vendor_a_clean_request(self):
