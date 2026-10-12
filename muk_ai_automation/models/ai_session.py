@@ -46,6 +46,12 @@ class AISession(models.Model):
         """Keep the name of a chat a server action started."""
         return not self.action_server_id and super()._should_autoname()
 
+    def _should_notify_state(self, state: str) -> bool:
+        """Stay quiet about a chat a server action finished, report the rest."""
+        if self.action_server_id and state == 'done':
+            return False
+        return super()._should_notify_state(state)
+
     def _session_prompt_extras(self) -> dict:
         """Expose the linked record, the previous chat and the time to the prompt."""
         record = self._linked_record()

@@ -129,6 +129,11 @@ msgid "Automation"
 msgstr "Automazione"
 
 #. module: muk_ai_automation
+#: model:ir.model,name:muk_ai_automation.model_base_automation
+msgid "Automation Rule"
+msgstr "Regola di automazione"
+
+#. module: muk_ai_automation
 #: model:ir.actions.act_window,name:muk_ai_automation.action_ai_automation_rules
 #: model:ir.ui.menu,name:muk_ai_automation.menu_ai_automation_rules
 msgid "Automation Rules"
@@ -173,13 +178,15 @@ msgstr "Dominio"
 #. module: muk_ai_automation
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
 msgid ""
-"Each chat runs as the user who created the action, with that\n"
-"                            user's access rights. A chat per record is listed in the AI\n"
-"                            Sessions of its record."
+"Each chat runs with the access rights of the user who runs the\n"
+"                            action, of the user of its scheduled action, or of the user its\n"
+"                            automation rule runs AI agents as. A chat per record is listed in\n"
+"                            the AI Sessions of its record."
 msgstr ""
-"Ogni chat viene eseguita come l'utente che ha creato l'azione, con i suoi "
-"diritti di accesso. Una chat per record compare nelle sessioni IA del suo "
-"record."
+"Ogni chat viene eseguita con i diritti di accesso dell'utente che esegue "
+"l'azione, dell'utente della sua azione pianificata o dell'utente con cui la "
+"sua regola di automazione esegue gli agenti IA. Una chat per record compare "
+"nelle sessioni IA del suo record."
 
 #. module: muk_ai_automation
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_form
@@ -319,6 +326,11 @@ msgid "Run AI Agent"
 msgstr "Esegui agente IA"
 
 #. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_base_automation__agent_user_id
+msgid "Run Agents As"
+msgstr "Esegui agenti come"
+
+#. module: muk_ai_automation
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_form
 msgid "Schedule"
 msgstr "Pianificazione"
@@ -343,11 +355,11 @@ msgstr "Azione server"
 #. odoo-python
 #: code:addons/muk_ai_automation/models/ir_actions_server.py:0
 msgid ""
-"Server action %(name)s cannot run: the user who created it is archived. Re-"
-"create it under an active user to resume it."
+"Server action %(name)s cannot run: the user it runs as is archived or not "
+"set."
 msgstr ""
-"L'azione server %(name)s non può essere eseguita: l'utente che l'ha creata è"
-" archiviato. Ricreala con un utente attivo per riprenderla."
+"L'azione server %(name)s non può essere eseguita: l'utente con cui viene "
+"eseguita è archiviato o non impostato."
 
 #. module: muk_ai_automation
 #. odoo-python
@@ -450,6 +462,15 @@ msgstr ""
 "- 'Esegui codice': un blocco di codice Python che verrà eseguito\n"
 "- 'Invia notifica Webhook': invia una richiesta di PUBBLICAZIONE, conosciuta anche come Webhook\n"
 "- 'Esegui azioni esistenti': definisci un'azione che attiva diverse altre azioni del server\n"
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,help:muk_ai_automation.field_base_automation__agent_user_id
+msgid ""
+"User whose access rights the chats of the AI agent steps run with, whoever "
+"triggers the rule."
+msgstr ""
+"Utente con i cui diritti di accesso vengono eseguite le chat dei passaggi "
+"dell'agente IA, chiunque attivi la regola."
 
 #. module: muk_ai_automation
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_automation_form
