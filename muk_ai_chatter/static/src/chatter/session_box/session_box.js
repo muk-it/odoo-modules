@@ -3,7 +3,7 @@
 import {
     Component,
     onWillStart,
-    onWillUnmount,
+    onWillDestroy,
     onWillUpdateProps,
     useState,
 } from '@odoo/owl';
@@ -65,7 +65,7 @@ export class AISessionBox extends Component {
             }
         };
         busSubscribe(this.bus, 'muk_ai.session_state', onSessionState);
-        onWillUnmount(() => {
+        onWillDestroy(() => {
             busUnsubscribe(this.bus, 'muk_ai.session_state', onSessionState);
             this.props.onLoaded?.(0);
         });
