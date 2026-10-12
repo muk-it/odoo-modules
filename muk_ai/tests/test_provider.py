@@ -49,15 +49,17 @@ class TestProvider(AITestCommon):
                 self.assertEqual(posts[0][0], f'{endpoint}/responses')
                 self.assertEqual(result['text'], 'pong')
 
+    def test_an_account_serves_only_with_an_endpoint_and_a_key(self):
+        self.assertTrue(self.provider._can_serve())
+        self.provider.write({'api_region': 'custom', 'api_url': ''})
+        self.assertFalse(self.provider._can_serve())
+        self.provider.write({'api_url': 'https://proxy.test/v1', 'api_key': False})
+        self.assertFalse(self.provider._can_serve())
+
     def test_inconsistent_settings_are_refused(self):
         provider = self.env['muk_ai.provider']
         other = self.provider_anthropic
         for label, change, error in (
-            (
-                'custom region without a URL',
-                lambda: self.provider.write({'api_region': 'custom', 'api_url': ''}),
-                ValidationError,
-            ),
             (
                 'region the vendor does not offer',
                 lambda: other.write({'api_region': 'eu'}),
