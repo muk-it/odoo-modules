@@ -3019,6 +3019,8 @@ class AISession(models.Model):
         has_ask_user = any(c.get('name') == 'ask_user' for c in tool_calls)
         wait_for_user, paused = False, False
         client_names = self._client_tool_names()
+        offered = {entry.get('name') for entry in self._get_filtered_catalog()}
+        offered |= client_names | {TOOL_LOAD_TOOL['name']}
         for index in range(start_index, len(tool_calls)):
             call = tool_calls[index]
             if index >= MAX_TOOL_CALLS_PER_ROUND:
@@ -3055,6 +3057,10 @@ class AISession(models.Model):
                     continue
                 self._register_ask_user(call)
                 wait_for_user = True
+                continue
+            if call['name'] not in offered:
+                self._record_tool_call(call)
+                self._skip_tool_call(outputs, call, 'tool_not_offered')
                 continue
             if (
                 not has_ask_user
