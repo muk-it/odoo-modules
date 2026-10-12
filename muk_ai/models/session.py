@@ -20,7 +20,7 @@ from odoo.exceptions import AccessError, ConcurrencyError, UserError, Validation
 from odoo.fields import Domain
 from odoo.http import request
 from odoo.service.model import PG_CONCURRENCY_EXCEPTIONS_TO_RETRY
-from odoo.tools import SQL, config
+from odoo.tools import SQL, config, mute_logger
 
 from odoo.addons.muk_ai.tools import (
     ADVISORY_LOCK_NAMESPACE,
@@ -1372,7 +1372,7 @@ class AISession(models.Model):
         sequence = self.env.cr.fetchone()[0]
         for _attempt in range(5):
             try:
-                with self.env.cr.savepoint():
+                with self.env.cr.savepoint(), mute_logger('odoo.sql_db'):
                     event = (
                         self.env['muk_ai.session.event']
                         .sudo()
