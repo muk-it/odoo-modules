@@ -4,7 +4,7 @@ import psycopg2
 from markupsafe import Markup, escape
 
 from odoo import api, fields, models
-from odoo.tools import SQL
+from odoo.tools import SQL, mute_logger
 
 from odoo.addons.muk_ai.tools.conversation import cap_log_payload, short_error_reason
 
@@ -129,7 +129,7 @@ class AISessionNotify(models.AbstractModel):
         sequence = self.env.cr.fetchone()[0]
         for _attempt in range(5):
             try:
-                with self.env.cr.savepoint():
+                with self.env.cr.savepoint(), mute_logger('odoo.sql_db'):
                     event = event.create(
                         {
                             'session_id': self.id,
