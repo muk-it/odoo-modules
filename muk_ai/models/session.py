@@ -19,7 +19,7 @@ from odoo import SUPERUSER_ID, Command, _, api, fields, models, modules, release
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.http import request
 from odoo.osv import expression
-from odoo.tools import SQL, config, create_index
+from odoo.tools import SQL, config, create_index, mute_logger
 
 from odoo.addons.muk_ai.tools import (
     ADVISORY_LOCK_NAMESPACE,
@@ -1425,7 +1425,7 @@ class AISession(models.Model):
             )
             sequence = self.env.cr.fetchone()[0]
             try:
-                with self.env.cr.savepoint():
+                with self.env.cr.savepoint(), mute_logger('odoo.sql_db'):
                     event = (
                         self.env['muk_ai.session.event']
                         .sudo()
