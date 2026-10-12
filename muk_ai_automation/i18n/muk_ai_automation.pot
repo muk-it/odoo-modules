@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 18.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-11 00:08+0000\n"
-"PO-Revision-Date: 2026-10-11 00:08+0000\n"
+"POT-Creation-Date: 2026-10-12 23:19+0000\n"
+"PO-Revision-Date: 2026-10-12 23:19+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -77,8 +77,8 @@ msgid "AI Session"
 msgstr ""
 
 #. module: muk_ai_automation
-#: model:base.automation,name:muk_ai_automation.demo_rule_partner_on_create
-msgid "AI summarize on partner create"
+#: model:res.partner.category,name:muk_ai_automation.demo_category_ai_summary
+msgid "AI Summary"
 msgstr ""
 
 #. module: muk_ai_automation
@@ -361,9 +361,13 @@ msgid "Started By"
 msgstr ""
 
 #. module: muk_ai_automation
+#: model:base.automation,name:muk_ai_automation.demo_rule_partner_on_create
+msgid "Summarize Tagged Contacts"
+msgstr ""
+
+#. module: muk_ai_automation
 #: model:ir.actions.server,agent_prompt:muk_ai_automation.demo_agent_action_partner_summary
-msgid ""
-"Summarize this new partner: {{ record.display_name }} ({{ record.email }})"
+msgid "Summarize this contact: {{ record.display_name }} ({{ record.email }})"
 msgstr ""
 
 #. module: muk_ai_automation

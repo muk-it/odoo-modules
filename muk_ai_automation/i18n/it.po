@@ -82,9 +82,9 @@ msgid "AI Session"
 msgstr "Sessione IA"
 
 #. module: muk_ai_automation
-#: model:base.automation,name:muk_ai_automation.demo_rule_partner_on_create
-msgid "AI summarize on partner create"
-msgstr "Riepilogo IA alla creazione di un contatto"
+#: model:res.partner.category,name:muk_ai_automation.demo_category_ai_summary
+msgid "AI Summary"
+msgstr "Riepilogo IA"
 
 #. module: muk_ai_automation
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_action_list
@@ -388,12 +388,16 @@ msgid "Started By"
 msgstr "Avviata da"
 
 #. module: muk_ai_automation
+#: model:base.automation,name:muk_ai_automation.demo_rule_partner_on_create
+msgid "Summarize Tagged Contacts"
+msgstr "Riepiloga i contatti etichettati"
+
+#. module: muk_ai_automation
 #: model:ir.actions.server,agent_prompt:muk_ai_automation.demo_agent_action_partner_summary
 msgid ""
-"Summarize this new partner: {{ record.display_name }} ({{ record.email }})"
+"Summarize this contact: {{ record.display_name }} ({{ record.email }})"
 msgstr ""
-"Riepiloga questo nuovo contatto: {{ record.display_name }} ({{ record.email "
-"}})"
+"Riepiloga questo contatto: {{ record.display_name }} ({{ record.email }})"
 
 #. module: muk_ai_automation
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_action_form
