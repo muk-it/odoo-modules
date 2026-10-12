@@ -80,9 +80,12 @@ class TestAiProviderRegion(AITestCommon):
             'https://gateway.test/openai/v1',
         )
 
-    def test_custom_region_requires_a_url(self):
-        with self.assertRaises(ValidationError):
-            self.provider.write({'api_region': 'custom', 'api_url': False})
+    def test_an_account_serves_only_with_an_endpoint_and_a_key(self):
+        self.assertTrue(self.provider._can_serve())
+        self.provider.write({'api_region': 'custom', 'api_url': ''})
+        self.assertFalse(self.provider._can_serve())
+        self.provider.write({'api_url': 'https://proxy.test/v1', 'api_key': False})
+        self.assertFalse(self.provider._can_serve())
 
     def test_region_outside_the_options_is_rejected(self):
         with self.assertRaises(ValidationError):
