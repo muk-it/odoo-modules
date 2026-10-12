@@ -152,8 +152,8 @@ class AISessionNotify(models.AbstractModel):
             self._publish_event('log', payload)
         return event
 
-    def _should_notify_state(self) -> bool:
-        """Return whether a terminal state is worth telling the owner about.
+    def _should_notify_state(self, state: str) -> bool:
+        """Return whether reaching ``state`` is worth telling the owner about.
 
         True for a session somebody started and walked away from. A surface
         that shows the run as it happens overrides this: it already told them.
@@ -166,7 +166,7 @@ class AISessionNotify(models.AbstractModel):
         context = self.env.context
         if (
             state not in ('done', 'waiting', 'error')
-            or not self._should_notify_state()
+            or not self._should_notify_state(state)
             or context.get('muk_ai_state_unchanged')
             or (
                 state == 'done'
