@@ -139,7 +139,7 @@ class TestCarryState(ProviderTestCase):
                     )
 
     def test_a_handoff_hands_the_next_vendor_a_clean_request(self):
-        signed = [USER, {**SIGNED_CALL, '_internal': 'gone'}, OUTPUT]
+        signed = [USER, {**SIGNED_CALL, '_leak_sentinel': 'gone'}, OUTPUT]
         foreign = [
             USER,
             {**CALL, 'call_id': 'call_openai_1'},
@@ -150,15 +150,15 @@ class TestCarryState(ProviderTestCase):
                 'openai',
                 signed,
                 ['call_google_1'],
-                ['provider_state', 'sig-a', '_internal'],
+                ['provider_state', 'sig-a', '_leak_sentinel'],
             ),
             (
                 'anthropic',
                 signed,
                 ['call_google_1'],
-                ['provider_state', 'sig-a', '_internal'],
+                ['provider_state', 'sig-a', '_leak_sentinel'],
             ),
-            ('google', signed, ['sig-a'], ['provider_state', '_internal']),
+            ('google', signed, ['sig-a'], ['provider_state', '_leak_sentinel']),
             (
                 'google',
                 foreign,
