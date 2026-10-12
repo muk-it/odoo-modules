@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_muk_ai_decision_log_search" model="ir.ui.view">
+		<field name="name">muk_ai.decision.log.search</field>
+		<field name="model">muk_ai.decision.log</field>
+		<field name="arch" type="xml">
+			<search>
+				<field name="origin"/>
+				<field name="res_model"/>
+				<field name="model_id"/>
+				<field name="served_model"/>
+				<field name="action_id"/>
+				<filter
+					name="filter_confident"
+					string="Confident"
+					domain="[('confident', '=', True), ('error', '=', False)]"
+				/>
+				<filter
+					name="filter_unsure"
+					string="Unsure"
+					domain="[('confident', '=', False), ('error', '=', False)]"
+				/>
+				<filter
+					name="filter_failed"
+					string="Failed"
+					domain="[('error', '!=', False)]"
+				/>
+				<group>
+					<filter name="group_action" string="Server Action" context="{'group_by': 'action_id'}"/>
+					<filter name="group_origin" string="Origin" context="{'group_by': 'origin'}"/>
+					<filter name="group_model" string="Model" context="{'group_by': 'model_id'}"/>
+					<filter name="group_record_model" string="Record Model" context="{'group_by': 'res_model'}"/>
+					<filter name="group_day" string="Day" context="{'group_by': 'create_date:day'}"/>
+				</group>
+			</search>
+		</field>
+	</record>
+
+	<record id="view_muk_ai_decision_log_list" model="ir.ui.view">
+		<field name="name">muk_ai.decision.log.list</field>
+		<field name="model">muk_ai.decision.log</field>
+		<field name="arch" type="xml">
+			<tree decoration-danger="error" decoration-warning="not error and not confident">
+				<field name="create_date"/>
+				<field name="origin"/>
+				<field name="res_name"/>
+				<field name="res_model" optional="hide"/>
+				<field name="model_id"/>
+				<field name="served_model" optional="hide"/>
+				<field name="confident"/>
+				<field name="duration" optional="show"/>
+				<field name="input_tokens" optional="hide" sum="Input Tokens"/>
+				<field name="output_tokens" optional="hide" sum="Output Tokens"/>
+				<field name="total_cost" sum="Cost"/>
+				<field name="currency" optional="hide"/>
+				<field name="error" column_invisible="True"/>
+			</tree>
+		</field>
+	</record>
+
+	<record id="view_muk_ai_decision_log_form" model="ir.ui.view">
+		<field name="name">muk_ai.decision.log.form</field>
+		<field name="model">muk_ai.decision.log</field>
+		<field name="arch" type="xml">
+			<form create="false" edit="false">
+				<sheet>
+					<group>
+						<group>
+							<field name="origin"/>
+							<field name="action_id"/>
+							<field name="res_name" invisible="not res_model"/>
+							<field name="res_model"/>
+							<field name="create_date"/>
+							<field name="create_uid"/>
+						</group>
+						<group>
+							<field name="model_id"/>
+							<field name="served_model"/>
+							<field name="confident"/>
+							<field name="duration"/>
+							<field name="input_tokens"/>
+							<field name="output_tokens"/>
+							<field name="total_cost"/>
+							<field name="currency"/>
+						</group>
+					</group>
+					<group string="Error" invisible="not error">
+						<field name="error" nolabel="1" colspan="2"/>
+					</group>
+					<group string="Decision">
+						<field name="questions" widget="json_code" invisible="not questions"/>
+						<field name="answers" widget="json_code" invisible="error"/>
+						<field name="applied" widget="json_code" invisible="not applied"/>
+						<field name="state_payload" widget="json_code" invisible="not state_payload"/>
+					</group>
+				</sheet>
+			</form>
+		</field>
+	</record>
+
+	<record id="view_muk_ai_decision_log_pivot" model="ir.ui.view">
+		<field name="name">muk_ai.decision.log.pivot</field>
+		<field name="model">muk_ai.decision.log</field>
+		<field name="arch" type="xml">
+			<pivot>
+				<field name="action_id" type="row"/>
+				<field name="total_cost" type="measure"/>
+				<field name="duration" type="measure"/>
+			</pivot>
+		</field>
+	</record>
+
+	<record id="action_muk_ai_decision_log" model="ir.actions.act_window">
+		<field name="name">Decision Logs</field>
+		<field name="res_model">muk_ai.decision.log</field>
+		<field name="view_mode">tree,pivot,form</field>
+	</record>
+
+</odoo>

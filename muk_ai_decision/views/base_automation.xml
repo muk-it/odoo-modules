@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_base_automation_form_decision" model="ir.ui.view">
+		<field name="name">base.automation.form.muk_ai_decision.icon</field>
+		<field name="model">base.automation</field>
+		<field name="inherit_id" ref="muk_ai_automation.view_base_automation_form"/>
+		<field name="arch" type="xml">
+			<xpath expr="//i[@data-name='server_action_icon']" position="attributes">
+				<attribute name="t-if">!['ai_agent', 'ai_decision'].includes(record.state.raw_value)</attribute>
+			</xpath>
+		</field>
+	</record>
+
+	<record id="view_ai_decision_automation_form" model="ir.ui.view">
+		<field name="name">base.automation.form.muk_ai_decision</field>
+		<field name="model">base.automation</field>
+		<field name="inherit_id" ref="muk_ai_automation.view_ai_agent_automation_form"/>
+		<field name="arch" type="xml">
+			<xpath expr="//field[@name='action_server_ids']" position="attributes">
+				<attribute name="context">
+					{
+						'is_modal': 1,
+						'ai_steps': 1,
+						'default_model_id': model_id,
+						'default_state': 'ai_agent',
+						'default_agent_dispatch_mode': 'per_record',
+						'form_view_ref': 'muk_ai_decision.view_ai_decision_action_form',
+					}
+				</attribute>
+			</xpath>
+		</field>
+	</record>
+
+</odoo>

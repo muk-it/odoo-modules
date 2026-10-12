@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo noupdate="1">
+
+	<record id="demo_category_ai_triage" model="res.partner.category">
+		<field name="name">AI Triage</field>
+	</record>
+
+	<record id="demo_rule_partner_tag_on_create" model="base.automation">
+		<field name="name">Triage Tagged Contacts</field>
+		<field name="model_id" ref="base.model_res_partner"/>
+		<field name="trigger">on_create_or_write</field>
+		<field name="trigger_field_ids" eval="[(6, 0, [ref('base.field_res_partner__category_id')])]"/>
+		<field name="filter_pre_domain" eval="str([('category_id', 'not in', [ref('demo_category_ai_triage')])])"/>
+		<field name="filter_domain" eval="str([('category_id', 'in', [ref('demo_category_ai_triage')])])"/>
+		<field name="agent_user_id" ref="base.user_admin"/>
+		<field name="action_server_ids" eval="[(4, ref('demo_decision_partner_on_create'))]"/>
+	</record>
+
+</odoo>

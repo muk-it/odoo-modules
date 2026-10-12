@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo noupdate="1">
+
+	<record id="demo_action_partner_reseller" model="ir.actions.server">
+		<field name="name">Note Possible Reseller</field>
+		<field name="model_id" ref="base.model_res_partner"/>
+		<field name="state">code</field>
+		<field name="code">records.message_post(body='The AI thinks this contact resells our products: check its price list.')</field>
+	</record>
+
+	<record id="demo_action_partner_check" model="ir.actions.server">
+		<field name="name">Check AI Classification</field>
+		<field name="model_id" ref="base.model_res_partner"/>
+		<field name="state">code</field>
+		<field name="code">for record in records:
+    record.activity_schedule('mail.mail_activity_data_todo', summary='Check the AI classification')</field>
+	</record>
+
+	<record id="demo_decision_partner_classify" model="ir.actions.server">
+		<field name="name">Classify Contacts</field>
+		<field name="model_id" ref="base.model_res_partner"/>
+		<field name="binding_model_id" ref="base.model_res_partner"/>
+		<field name="state">ai_decision</field>
+		<field name="decision_message_count">3</field>
+		<field name="decision_message_external" eval="True"/>
+		<field
+			name="decision_field_ids"
+			eval="[(6, 0, [ref('base.field_res_partner__name'), ref('base.field_res_partner__function'), ref('base.field_res_partner__email'), ref('base.field_res_partner__website'), ref('base.field_res_partner__city'), ref('base.field_res_partner__country_id'), ref('base.field_res_partner__comment')])]"
+		/>
+		<field name="agent_record_domain">[('is_company', '=', True)]</field>
+	</record>
+
+	<record id="demo_question_partner_industry" model="muk_ai.decision.question">
+		<field name="action_id" ref="demo_decision_partner_classify"/>
+		<field name="sequence">10</field>
+		<field name="kind">field</field>
+		<field name="field_id" ref="base.field_res_partner__industry_id"/>
+		<field name="unsure_action_id" ref="demo_action_partner_check"/>
+		<field name="name">Which industry does this company work in?</field>
+		<field name="candidate_domain">[('name', 'in', ['Manufacturing', 'Construction', 'Wholesale/Retail', 'IT/Communication', 'Finance/Insurance'])]</field>
+	</record>
+
+	<record id="demo_question_partner_tags" model="muk_ai.decision.question">
+		<field name="action_id" ref="demo_decision_partner_classify"/>
+		<field name="sequence">20</field>
+		<field name="kind">field</field>
+		<field name="field_id" ref="base.field_res_partner__category_id"/>
+		<field name="tag_operation">set</field>
+		<field name="name">Which of these tags describe this contact?</field>
+		<field name="candidate_domain">[('name', 'in', ['Vendor', 'Prospects', 'Consulting Services', 'Services'])]</field>
+	</record>
+
+	<record id="demo_question_partner_company" model="muk_ai.decision.question">
+		<field name="action_id" ref="demo_decision_partner_classify"/>
+		<field name="sequence">30</field>
+		<field name="kind">field</field>
+		<field name="field_id" ref="base.field_res_partner__is_company"/>
+		<field name="name">Is this contact a company rather than a person?</field>
+		<field name="min_confidence">0.9</field>
+	</record>
+
+	<record id="demo_question_partner_size" model="muk_ai.decision.question">
+		<field name="action_id" ref="demo_decision_partner_classify"/>
+		<field name="sequence">40</field>
+		<field name="kind">choice</field>
+		<field name="name">How big is the business?</field>
+		<field
+			name="option_ids"
+			eval="[
+				(0, 0, {'sequence': 10, 'name': 'small', 'description': 'up to 50 people'}),
+				(0, 0, {'sequence': 20, 'name': 'medium', 'description': '50 to 250 people'}),
+				(0, 0, {'sequence': 30, 'name': 'large', 'description': 'more than 250 people'}),
+			]"
+		/>
+	</record>
+
+	<record id="demo_question_partner_reseller" model="muk_ai.decision.question">
+		<field name="action_id" ref="demo_decision_partner_classify"/>
+		<field name="sequence">50</field>
+		<field name="kind">noul</field>
+		<field name="name">Does this contact resell our products?</field>
+		<field name="route_answer">yes</field>
+		<field name="route_action_id" ref="demo_action_partner_reseller"/>
+	</record>
+
+	<record id="demo_question_partner_complete" model="muk_ai.decision.question">
+		<field name="action_id" ref="demo_decision_partner_classify"/>
+		<field name="sequence">60</field>
+		<field name="kind">score</field>
+		<field name="name">How complete are the contact details?</field>
+		<field name="min_confidence">0.7</field>
+		<field
+			name="option_ids"
+			eval="[
+				(0, 0, {'sequence': 10, 'name': 'poor', 'description': 'name only'}),
+				(0, 0, {'sequence': 20, 'name': 'partial', 'description': 'some of email, phone, address and website'}),
+				(0, 0, {'sequence': 30, 'name': 'complete', 'description': 'email, phone, address and website'}),
+			]"
+		/>
+	</record>
+
+	<record id="demo_decision_partner_on_create" model="ir.actions.server">
+		<field name="name">Triage Contact</field>
+		<field name="model_id" ref="base.model_res_partner"/>
+		<field name="usage">base_automation</field>
+		<field name="state">ai_decision</field>
+		<field
+			name="decision_field_ids"
+			eval="[(6, 0, [ref('base.field_res_partner__name'), ref('base.field_res_partner__function'), ref('base.field_res_partner__email'), ref('base.field_res_partner__website'), ref('base.field_res_partner__city'), ref('base.field_res_partner__country_id'), ref('base.field_res_partner__comment')])]"
+		/>
+	</record>
+
+	<record id="demo_question_partner_on_create_tags" model="muk_ai.decision.question">
+		<field name="action_id" ref="demo_decision_partner_on_create"/>
+		<field name="kind">field</field>
+		<field name="field_id" ref="base.field_res_partner__category_id"/>
+		<field name="candidate_domain">[('name', 'in', ['Vendor', 'Prospects', 'Consulting Services', 'Services'])]</field>
+	</record>
+
+</odoo>
