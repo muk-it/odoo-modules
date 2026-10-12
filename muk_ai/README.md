@@ -29,11 +29,11 @@ Everything lives under **MuK AI** in the app menu:
 - **Chat** — the main client action (also reachable at `/odoo/ai`)
 - **Agents** — named presets (system prompt, model, tool filter,
   approval mode, suggestions)
-- **Reports** *(system)* — Sessions, Tool Logs, Approval Log
-- **MCP** *(system)* — the underlying tool Registry and Playground
+- **Reports** _(system)_ — Sessions, Tool Logs, Approval Log
+- **MCP** _(system)_ — the underlying tool Registry and Playground
   from `muk_mcp`
-- **Configuration** *(system)* — Providers, Models, Spaces
-- **Settings** *(system)* — one-line defaults under the standard
+- **Configuration** _(system)_ — Providers, Models, Spaces
+- **Settings** _(system)_ — one-line defaults under the standard
   General Settings page
 
 ## Configuration
@@ -99,7 +99,7 @@ callable rather than historical. Each record carries:
   so prompt-cached turns are billed at their real (much lower) cost; the
   rates drive the per-session cost display and the usage pivot.
 - **Supported Reasoning Efforts** / **Default Reasoning Effort** — the
-  thinking tiers this model accepts (see *Reasoning effort* under Agents);
+  thinking tiers this model accepts (see _Reasoning effort_ under Agents);
   models without a thinking knob leave these empty.
 
 **Access Groups**
@@ -129,7 +129,7 @@ you navigate other views.
 **Spaces**
 
 Chats pile up fast, so the sidebar groups them into **spaces**. Create
-one with the `+` next to *Spaces*, drag chats into it to file them and
+one with the `+` next to _Spaces_, drag chats into it to file them and
 drag them out to loosen them again, and drag a space by its grip to
 reorder the list. The pencil opens an editor for the space name, its
 Font Awesome icon (searchable grid) and an optional **default agent**
@@ -140,7 +140,7 @@ paginates on its own, so opening a space with hundreds of chats costs
 one page.
 
 Modules can ship **system spaces** whose membership comes from a stored
-domain instead of manual filing — `muk_ai_schedule` ships a *Scheduled*
+domain instead of manual filing — `muk_ai_schedule` ships a _Scheduled_
 space collecting every chat a schedule started. They belong to nobody,
 are visible to everyone, and cannot be renamed, reordered or dropped
 into; one record serves the whole database, so nothing is duplicated
@@ -170,16 +170,16 @@ you started stays visible.
 **Source citations**
 
 When the assistant reads data to answer, what it relied on is
-collected as *sources* and shown as a chip under the reply. Expand it
+collected as _sources_ and shown as a chip under the reply. Expand it
 to see each source — an Odoo record (with its model and a one-click
 link that opens it) or, when the agent used `web_fetch`, the external
-web page it read. The same list is mirrored in the *Artifacts* side
+web page it read. The same list is mirrored in the _Artifacts_ side
 rail, so every figure is traceable to its origin.
 
 **Tool groups**
 
 When a turn fires several tool calls back to back, they collapse into
-a single *Used N tools* card instead of stacking many. The header
+a single _Used N tools_ card instead of stacking many. The header
 shows the tool-name chips and aggregate status — a green check with
 the success count and a red × with the error count — and expands to
 reveal each individual call. Each card fills its arguments live as the
@@ -199,9 +199,9 @@ already folded into compacted history.
 **Artifacts panel**
 
 A collapsible **Artifacts** rail (paperclip icon in the header)
-gathers everything a conversation produced. An *Attachments* tab lists
+gathers everything a conversation produced. An _Attachments_ tab lists
 every uploaded file and every AI-**generated image** as a card you can
-open full-size in Odoo's file viewer; a *Sources* tab lists the cited
+open full-size in Odoo's file viewer; a _Sources_ tab lists the cited
 records and web pages. Tabs appear only when they have content.
 
 **In-chat search**
@@ -217,7 +217,7 @@ Sessions that finish or need you while you are elsewhere signal you.
 The MuK AI systray icon carries a live running dot whenever a session
 is running or waiting, plus a red count of sessions awaiting your
 attention; unread sessions are marked and sorted to the top in both
-the systray dropdown and the chat sidebar. Users on the *inbox*
+the systray dropdown and the chat sidebar. Users on the _inbox_
 notification preference also get completion notices as web push and
 Enterprise mobile (OCN) push. Opening the session clears the flag.
 
@@ -233,7 +233,7 @@ proposed JSON arguments, and three buttons:
 - **Approve once** — dispatches this call and logs the decision.
 - **Allow for Session** — same, plus adds a signature to the session
   so matching calls (same tool, same model, same sensitive fields)
-  auto-approve for the rest of *this* session.
+  auto-approve for the rest of _this_ session.
 - **Reject** — returns a `rejected_by_user` tool output so the model
   can recover (clarify, propose a safer alternative).
 
@@ -258,10 +258,10 @@ without an extra tool call. Type `/unpin` to clear it.
 **Reshape views from chat**
 
 Ask the assistant to change the list, kanban, pivot or graph you are
-looking at — *"group these orders by salesperson"*, *"only show
-drafts"*, *"switch to a bar chart"* — and it reshapes that view **in
+looking at — _"group these orders by salesperson"_, _"only show
+drafts"_, _"switch to a bar chart"_ — and it reshapes that view **in
 place** rather than opening a new one. The `adjust_search` tool is a
-*client tool*: instead of running on the server it runs in your
+_client tool_: instead of running on the server it runs in your
 browser tab and drives the live search view — activating filters and
 group-bys (with `date_order:month`-style intervals), applying field
 searches and custom-domain facets, removing facets, switching view
@@ -353,15 +353,15 @@ Open **MuK AI > Agents**. An agent is a named preset:
   (empty = all tools allowed).
 - **Essential Tools** — names that ship with full schemas at session
   start. Empty falls back to a sensible default (read-side primitives
-  + UI helpers + `ask_user`) and turns lazy loading on; populate it
-  to opt into a custom essentials set, or set it to every catalog
-  name to ship the full eager-mode tool array. Names outside the tool
-  filter are silently dropped.
+    - UI helpers + `ask_user`) and turns lazy loading on; populate it
+      to opt into a custom essentials set, or set it to every catalog
+      name to ship the full eager-mode tool array. Names outside the tool
+      filter are silently dropped.
 - **Approval Mode** — `Ask on writes` (default) or `Never ask` for
   unattended agents.
 - **Allow Handoff** — expose this agent as a delegation target so the
   Router (and other agents) can hand a conversation to it mid-session
-  (see *Agent handoff* below).
+  (see _Agent handoff_ below).
 - **Suggestions** — starter prompts shown in the empty chat, editable
   as a one2many kanban inside the agent form.
 
@@ -377,7 +377,7 @@ A single chat can be served by more than one agent. Turn on **Allow
 Handoff** to make an agent a delegation target; the built-in **Router**
 agent then reads the opening request, calls `list_agents`, and hands
 the conversation to the best specialist with `switch_agent`. From the
-next turn that agent's prompt, tools and model take over the *same*
+next turn that agent's prompt, tools and model take over the _same_
 session, and a specialist can hand back or across later on its own. The
 switch is recorded inline in the transcript as an `A → B` marker. Use
 `/agent` to switch the active agent yourself at any time.
@@ -413,7 +413,7 @@ demand through a built-in meta-tool:
   catalog. The names are appended to the session's
   `expanded_tool_names` list and stay loaded for the rest of the
   session.
-- `tool_load(names=[...], call={name, arguments})` — load *and*
+- `tool_load(names=[...], call={name, arguments})` — load _and_
   execute one of the just-loaded tools in the same round-trip; the
   schemas plus the inline tool result come back in a single
   `function_call_output`, no follow-up turn needed. This is the
@@ -423,7 +423,7 @@ demand through a built-in meta-tool:
 
 Names are resolved tolerating a namespace prefix (`functions.foo` →
 `foo`). A load with some misses succeeds and returns the misses under
-an `unknown` key so the model can recover; a load where *every* name is
+an `unknown` key so the model can recover; a load where _every_ name is
 unknown comes back as an explicit error telling the model to use exact
 `<available_tools>` names. `ask_user` is auto-injected when approvals
 are enabled, regardless of the essentials list. Leaving **Essential
@@ -448,15 +448,15 @@ plus stored configuration records (`muk_ai.provider`). Each provider
 class declares `name / label / default_model / default_url / supports_*`,
 implements `headers()` and `request()`, and inherits shared HTTP + SSE
 streaming plumbing from `ProviderBase`. A client is constructed from
-the provider *record* itself — API key, timeouts, max tokens,
+the provider _record_ itself — API key, timeouts, max tokens,
 environment and default model are all read off the record — so there
 is one source of truth and no config drift.
 
-| Provider      | Streaming | Notes                                                                         |
-|---------------|-----------|-------------------------------------------------------------------------------|
-| `openai`      | SSE       | OpenAI Responses API; skips `temperature` for reasoning models                |
-| `anthropic`   | SSE       | Messages API; in-dispatcher adapter for `tool_use` / `tool_result`            |
-| `google`      | SSE       | Gemini `streamGenerateContent`; grounding; image models via `generateContent` |
+| Provider    | Streaming | Notes                                                                         |
+| ----------- | --------- | ----------------------------------------------------------------------------- |
+| `openai`    | SSE       | OpenAI Responses API; skips `temperature` for reasoning models                |
+| `anthropic` | SSE       | Messages API; in-dispatcher adapter for `tool_use` / `tool_result`            |
+| `google`    | SSE       | Gemini `streamGenerateContent`; grounding; image models via `generateContent` |
 
 All three providers emit the same on-delta events (`text`,
 `tool_start`, `tool_args`), so the chat UI feels identical regardless
@@ -488,8 +488,8 @@ of UI-specific tools are registered there for the in-Odoo agent only:
 - `show_notification` — toast a message in the Odoo web client.
 - `ask_user` — pause the session for clarification.
 - `adjust_search` — reshape the list/kanban/pivot/graph the user is
-  currently looking at (see *Reshape views from chat*). This is a
-  *client tool*: it runs in the user's browser tab rather than on the
+  currently looking at (see _Reshape views from chat_). This is a
+  _client tool_: it runs in the user's browser tab rather than on the
   server, and only the tab holding the chat answers.
 - `web_fetch` — fetch a public web page and return its main content as
   clean Markdown (boilerplate stripped, links and headings kept), or as
@@ -524,14 +524,14 @@ class MistralProvider(ProviderBase):
         }
 
     def request(
-        self, 
-        inputs, 
-        tools_schema=None, 
-        text_schema=None, 
-        on_delta=None, 
+        self,
+        inputs,
+        tools_schema=None,
+        text_schema=None,
+        on_delta=None,
         model=None,
-        enable_web_search=False, 
-        enable_code_interpreter=False, 
+        enable_web_search=False,
+        enable_code_interpreter=False,
         extra=None,
     ):
         ...
@@ -577,7 +577,7 @@ gracefully so resumed sessions do not get stuck.
 Long turns are sliced across cron ticks instead of dying. Each worker
 run gets a wallclock budget bounded below the cron process limit
 (`limit_time_real_cron`, falling back to `limit_time_real`) so it yields
-*before* Odoo kills the worker; at the boundary the session stays
+_before_ Odoo kills the worker; at the boundary the session stays
 `running` and re-triggers a worker, resuming from its persisted
 conversation on the next tick — the same batch-cron pattern Odoo uses
 elsewhere. A per-turn wallclock budget and an optional per-turn cost
