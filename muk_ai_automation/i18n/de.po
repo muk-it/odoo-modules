@@ -88,6 +88,11 @@ msgstr ""
 "die Datensätze aus, die ihre Domain oder ihr Code auswählt."
 
 #. module: muk_ai_automation
+#: model:res.partner.category,name:muk_ai_automation.demo_category_ai_summary
+msgid "AI Summary"
+msgstr "KI-Zusammenfassung"
+
+#. module: muk_ai_automation
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_action_form
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_form
 msgid "Access"
@@ -103,11 +108,6 @@ msgstr "KI-Chats"
 #: model:ir.model,name:muk_ai_automation.model_muk_ai_session
 msgid "AI Session"
 msgstr "KI-Sitzung"
-
-#. module: muk_ai_automation
-#: model:base.automation,name:muk_ai_automation.demo_rule_partner_on_create
-msgid "AI summarize on partner create"
-msgstr "KI-Zusammenfassung beim Anlegen eines Kontakts"
 
 #. module: muk_ai_automation
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_action_list
@@ -200,6 +200,23 @@ msgstr "Anzeigename"
 #: model:ir.model.fields.selection,name:muk_ai_automation.selection__ir_actions_server__agent_record_source__domain
 msgid "Domain"
 msgstr "Domain"
+
+#. module: muk_ai_automation
+#: model:ir.actions.server,name:muk_ai_automation.demo_agent_action_partner_summary
+msgid "Summarize Contact"
+msgstr "Kontakt zusammenfassen"
+
+#. module: muk_ai_automation
+#: model:base.automation,name:muk_ai_automation.demo_rule_partner_on_create
+msgid "Summarize Tagged Contacts"
+msgstr "Markierte Kontakte zusammenfassen"
+
+#. module: muk_ai_automation
+#: model:ir.actions.server,agent_prompt:muk_ai_automation.demo_agent_action_partner_summary
+msgid "Summarize this contact: {{ record.display_name }} ({{ record.email }})"
+msgstr ""
+"Fasse diesen Kontakt zusammen: {{ record.display_name }} ({{ record.email "
+"}})"
 
 #. module: muk_ai_automation
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_action_form
@@ -413,19 +430,6 @@ msgstr "Neu beginnen"
 #: model:ir.model.fields,field_description:muk_ai_automation.field_muk_ai_session__action_server_id
 msgid "Started By"
 msgstr "Gestartet von"
-
-#. module: muk_ai_automation
-#: model:ir.actions.server,name:muk_ai_automation.demo_agent_action_partner_summary
-msgid "Summarize New Partner"
-msgstr "Neuen Kontakt zusammenfassen"
-
-#. module: muk_ai_automation
-#: model:ir.actions.server,agent_prompt:muk_ai_automation.demo_agent_action_partner_summary
-msgid ""
-"Summarize this new partner: {{ record.display_name }} ({{ record.email }})"
-msgstr ""
-"Fasse diesen neuen Kontakt zusammen: {{ record.display_name }} ({{ "
-"record.email }})"
 
 #. module: muk_ai_automation
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_action_form

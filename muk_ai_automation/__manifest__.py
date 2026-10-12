@@ -8,7 +8,7 @@
         record, selected by the trigger, a domain or Python code, and lets
         each chat recall the previous run for the same record.
     """,
-    'version': '20.0.1.2.1',
+    'version': '20.0.1.2.2',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',

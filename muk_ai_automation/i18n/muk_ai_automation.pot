@@ -77,12 +77,6 @@ msgid ""
 msgstr ""
 
 #. module: muk_ai_automation
-#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_action_form
-#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_form
-msgid "Access"
-msgstr ""
-
-#. module: muk_ai_automation
 #: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__agent_session_count
 #: model:ir.model.fields,field_description:muk_ai_automation.field_ir_cron__agent_session_count
 msgid "AI Chats"
@@ -94,8 +88,14 @@ msgid "AI Session"
 msgstr ""
 
 #. module: muk_ai_automation
-#: model:base.automation,name:muk_ai_automation.demo_rule_partner_on_create
-msgid "AI summarize on partner create"
+#: model:res.partner.category,name:muk_ai_automation.demo_category_ai_summary
+msgid "AI Summary"
+msgstr ""
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_action_form
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_form
+msgid "Access"
 msgstr ""
 
 #. module: muk_ai_automation
@@ -133,6 +133,11 @@ msgstr ""
 #. module: muk_ai_automation
 #: model:ir.ui.menu,name:muk_ai_automation.menu_ai_automation
 msgid "Automation"
+msgstr ""
+
+#. module: muk_ai_automation
+#: model:ir.model,name:muk_ai_automation.model_base_automation
+msgid "Automation Rule"
 msgstr ""
 
 #. module: muk_ai_automation
@@ -183,9 +188,12 @@ msgid "Domain"
 msgstr ""
 
 #. module: muk_ai_automation
-#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_action_form
-#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_form
-msgid "e.g. Contact"
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
+msgid ""
+"Each chat runs with the access rights of the user who runs the\n"
+"                        action, of the user of its scheduled action, or of the user its\n"
+"                        automation rule runs AI agents as. A chat per record is listed in\n"
+"                        the AI Sessions of its record."
 msgstr ""
 
 #. module: muk_ai_automation
@@ -338,6 +346,11 @@ msgid "Run AI agents as server actions and automation rule steps"
 msgstr ""
 
 #. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_base_automation__agent_user_id
+msgid "Run Agents As"
+msgstr ""
+
+#. module: muk_ai_automation
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_form
 msgid "Schedule"
 msgstr ""
@@ -356,6 +369,14 @@ msgstr ""
 #. module: muk_ai_automation
 #: model:ir.model,name:muk_ai_automation.model_ir_actions_server
 msgid "Server Action"
+msgstr ""
+
+#. module: muk_ai_automation
+#. odoo-python
+#: code:addons/muk_ai_automation/models/ir_actions_server.py:0
+msgid ""
+"Server action %(name)s cannot run: the user it runs as is archived or not "
+"set."
 msgstr ""
 
 #. module: muk_ai_automation
@@ -386,13 +407,17 @@ msgstr ""
 
 #. module: muk_ai_automation
 #: model:ir.actions.server,name:muk_ai_automation.demo_agent_action_partner_summary
-msgid "Summarize New Partner"
+msgid "Summarize Contact"
+msgstr ""
+
+#. module: muk_ai_automation
+#: model:base.automation,name:muk_ai_automation.demo_rule_partner_on_create
+msgid "Summarize Tagged Contacts"
 msgstr ""
 
 #. module: muk_ai_automation
 #: model:ir.actions.server,agent_prompt:muk_ai_automation.demo_agent_action_partner_summary
-msgid ""
-"Summarize this new partner: {{ record.display_name }} ({{ record.email }})"
+msgid "Summarize this contact: {{ record.display_name }} ({{ record.email }})"
 msgstr ""
 
 #. module: muk_ai_automation
@@ -450,6 +475,13 @@ msgid ""
 msgstr ""
 
 #. module: muk_ai_automation
+#: model:ir.model.fields,help:muk_ai_automation.field_base_automation__agent_user_id
+msgid ""
+"User whose access rights the chats of the AI agent steps run with, whoever "
+"triggers the rule."
+msgstr ""
+
+#. module: muk_ai_automation
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_automation_form
 msgid "Webhook"
 msgstr ""
@@ -471,6 +503,12 @@ msgstr ""
 
 #. module: muk_ai_automation
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_action_form
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_form
+msgid "e.g. Contact"
+msgstr ""
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_action_form
 msgid "e.g. Review Contact Details"
 msgstr ""
 
@@ -487,38 +525,4 @@ msgstr ""
 #. module: muk_ai_automation
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
 msgid "records = env['res.partner'].search([('email', '=', False)], limit=10)"
-msgstr ""
-
-#. module: muk_ai_automation
-#: model:ir.model,name:muk_ai_automation.model_base_automation
-msgid "Automation Rule"
-msgstr ""
-
-#. module: muk_ai_automation
-#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
-msgid ""
-"Each chat runs with the access rights of the user who runs the\n"
-"                        action, of the user of its scheduled action, or of the user its\n"
-"                        automation rule runs AI agents as. A chat per record is listed in\n"
-"                        the AI Sessions of its record."
-msgstr ""
-
-#. module: muk_ai_automation
-#: model:ir.model.fields,field_description:muk_ai_automation.field_base_automation__agent_user_id
-msgid "Run Agents As"
-msgstr ""
-
-#. module: muk_ai_automation
-#. odoo-python
-#: code:addons/muk_ai_automation/models/ir_actions_server.py:0
-msgid ""
-"Server action %(name)s cannot run: the user it runs as is archived or not "
-"set."
-msgstr ""
-
-#. module: muk_ai_automation
-#: model:ir.model.fields,help:muk_ai_automation.field_base_automation__agent_user_id
-msgid ""
-"User whose access rights the chats of the AI agent steps run with, whoever "
-"triggers the rule."
 msgstr ""
