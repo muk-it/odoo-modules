@@ -77,6 +77,7 @@ msgstr ""
 #. module: muk_ai_automation
 #: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__agent_session_count
 #: model:ir.model.fields,field_description:muk_ai_automation.field_ir_cron__agent_session_count
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_action_kanban
 msgid "AI Chats"
 msgstr "Chats IA"
 
@@ -98,6 +99,8 @@ msgstr "Menu Actions"
 #. module: muk_ai_automation
 #: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__agent_id
 #: model:ir.model.fields,field_description:muk_ai_automation.field_ir_cron__agent_id
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_action_kanban
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_kanban
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
 msgid "Agent"
 msgstr "Agent"
@@ -129,6 +132,7 @@ msgstr ""
 
 #. module: muk_ai_automation
 #: model:ir.ui.menu,name:muk_ai_automation.menu_ai_automation
+#: model:muk_ai.space,name:muk_ai_automation.space_automation
 msgid "Automation"
 msgstr "Automatisation"
 
@@ -557,3 +561,88 @@ msgid "Run AI agents as server actions and automation rule steps"
 msgstr ""
 "Exécutez des agents IA comme actions serveur et étapes de règles "
 "d'automatisation"
+
+#. module: muk_ai_automation
+#: model:ir.model,name:muk_ai_automation.model_muk_ai_space
+msgid "AI Space"
+msgstr "Espace IA"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
+msgid "Automatic"
+msgstr "Automatique"
+
+#. module: muk_ai_automation
+#: model:muk_ai.space,name:muk_ai_automation.space_scheduled
+msgid "Scheduled"
+msgstr "Planifiés"
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__agent_space_id
+#: model:ir.model.fields,field_description:muk_ai_automation.field_ir_cron__agent_space_id
+msgid "Space"
+msgstr "Espace"
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,help:muk_ai_automation.field_ir_actions_server__agent_space_id
+#: model:ir.model.fields,help:muk_ai_automation.field_ir_cron__agent_space_id
+msgid ""
+"System space that lists the chats of this action. Leave empty to list them "
+"under Automation, or under Scheduled for a scheduled action."
+msgstr ""
+"Espace système qui liste les chats de cette action. Laissez vide pour les "
+"lister sous Automatisation, ou sous Planifiés pour une action planifiée."
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_action_kanban
+msgid ""
+"<i class=\"fa fa-bars me-1\" aria-hidden=\"true\"/>\n"
+"                                <span>Actions Menu</span>"
+msgstr ""
+"<i class=\"fa fa-bars me-1\" aria-hidden=\"true\"/>\n"
+"                                <span>Menu Actions</span>"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_kanban
+msgid "<span>Every</span>"
+msgstr "<span>Tous les</span>"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_kanban
+msgid "Daily"
+msgstr "Quotidien"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_kanban
+msgid "Every minute"
+msgstr "Chaque minute"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_kanban
+msgid "Hourly"
+msgstr "Toutes les heures"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_kanban
+msgid "Monthly"
+msgstr "Mensuel"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_kanban
+msgid "Next run"
+msgstr "Prochaine exécution"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_action_kanban
+msgid "No AI chats yet"
+msgstr "Aucun chat IA pour le moment"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_kanban
+msgid "Paused"
+msgstr "En pause"
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_kanban
+msgid "Weekly"
+msgstr "Hebdomadaire"
