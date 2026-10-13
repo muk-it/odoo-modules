@@ -1,3 +1,8 @@
+`1.3.0`
+-------
+
+- Spaces for Automation and Scheduled Chats
+
 `1.2.0`
 -------
 

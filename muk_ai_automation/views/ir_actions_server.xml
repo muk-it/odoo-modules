@@ -13,6 +13,9 @@
                         <field name="agent_id"
                                options="{'no_create': True}"
                                required="state == 'ai_agent'"/>
+                        <field name="agent_space_id"
+                               options="{'no_create': True}"
+                               placeholder="Automatic"/>
                         <field name="agent_dispatch_mode"/>
                         <field name="agent_record_source"/>
                         <field name="agent_record_domain"

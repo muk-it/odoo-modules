@@ -9,7 +9,7 @@
         per record so the agent can recall the previous run, and exposes
         per-action caps for resumes, lifetime, tokens, and cost.
     """,
-    'version': '19.0.1.2.1',
+    'version': '19.0.1.3.1',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -23,7 +23,9 @@
     ],
     'data': [
         'security/ir.model.access.csv',
+        'views/ir_cron.xml',
         'data/ir_actions.xml',
+        'data/space.xml',
         'views/ir_actions_server.xml',
         'views/base_automation.xml',
         'views/res_config_settings.xml',

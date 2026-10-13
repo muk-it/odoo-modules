@@ -77,6 +77,9 @@ Create an ``ir.actions.server`` and set its **Action To Do** to
 - **Agent** — required when the state is ``ai_agent``. The agent that
   runs every spawned session; approval mode, system prompt, tool
   filter, model and read-only flag all come from the agent record.
+- **Space** - the system space whose sidebar entry lists the chats of
+  the action. Empty lists them under Automation, or under Scheduled for
+  a scheduled action.
 - **Agent Dispatch Mode**:
 
   - ``Single`` — one session per fire. The prompt template receives

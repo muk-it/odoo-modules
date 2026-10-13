@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+    <record id="view_ai_agent_cron_kanban" model="ir.ui.view">
+        <field name="name">ir.cron.kanban.muk_ai_automation</field>
+        <field name="model">ir.cron</field>
+        <field name="arch" type="xml">
+            <kanban sample="1" quick_create="false">
+                <field name="agent_id"/>
+                <field name="model_id"/>
+                <field name="interval_number"/>
+                <field name="interval_type"/>
+                <field name="active"/>
+                <templates>
+                    <t t-name="card">
+                        <widget name="web_ribbon" title="Paused" bg_color="text-bg-warning" invisible="active"/>
+                        <div class="d-flex align-items-center">
+                            <img
+                                t-if="record.agent_id.raw_value"
+                                t-attf-src="/web/image/muk_ai.agent/{{record.agent_id.raw_value}}/image_128"
+                                alt="Agent"
+                                class="rounded flex-shrink-0"
+                                style="width: 44px; height: 44px; object-fit: cover;"
+                            />
+                            <main class="ms-3 flex-grow-1 overflow-hidden">
+                                <div class="fs-5 fw-semibold text-truncate">
+                                    <field name="cron_name"/>
+                                </div>
+                                <div class="small text-muted text-truncate">
+                                    <t t-if="record.agent_id.raw_value">
+                                        <t t-out="record.agent_id.value"/>
+                                        <span class="mx-1" t-out="'\u00b7'"/>
+                                    </t>
+                                    <t t-out="record.model_id.value"/>
+                                </div>
+                            </main>
+                        </div>
+                        <div class="mt-3 d-flex flex-wrap gap-1">
+                            <span class="badge rounded-pill border text-body fw-normal px-2 py-1" style="font-size: 0.8rem;">
+                                <i class="fa fa-clock-o me-1" aria-hidden="true"/>
+                                <t t-if="record.interval_number.raw_value === 1">
+                                    <t t-if="record.interval_type.raw_value === 'minutes'">Every minute</t>
+                                    <t t-elif="record.interval_type.raw_value === 'hours'">Hourly</t>
+                                    <t t-elif="record.interval_type.raw_value === 'days'">Daily</t>
+                                    <t t-elif="record.interval_type.raw_value === 'weeks'">Weekly</t>
+                                    <t t-else="">Monthly</t>
+                                </t>
+                                <t t-else="">
+                                    <span>Every</span>&#160;<t t-out="record.interval_number.value"/>&#160;<t t-out="record.interval_type.value.toLowerCase()"/>
+                                </t>
+                            </span>
+                        </div>
+                        <footer class="mt-3 pt-2 border-top small d-flex align-items-center justify-content-between">
+                            <span class="text-muted text-truncate">
+                                Next run
+                                <field name="nextcall"/>
+                            </span>
+                            <field name="active" widget="boolean_toggle"/>
+                        </footer>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+</odoo>
