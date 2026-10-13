@@ -100,8 +100,7 @@ export class ChatSidebar extends Component {
         this.branchSeq = {};
         onWillStart(() =>
             Promise.all([
-                this.loadSpaces(),
-                this.loadSessions(),
+                this.loadSpaces().then(() => this.loadSessions()),
                 this.chat.loadBadge(),
             ]),
         );
@@ -419,7 +418,8 @@ export class ChatSidebar extends Component {
             confirm: async () => {
                 await this.chat.orm.unlink('muk_ai.space', [space.id]);
                 delete this.state.branches[space.id];
-                await Promise.all([this.loadSpaces(), this.loadSessions()]);
+                await this.loadSpaces();
+                await this.loadSessions();
             },
             cancel: () => {},
         });

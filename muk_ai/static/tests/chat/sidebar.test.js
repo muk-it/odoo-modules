@@ -45,7 +45,9 @@ function trackWrites() {
             model.startsWith('muk_ai.')
         ) {
             expect.step(
-                `${model} ${method} ${JSON.stringify(method === 'create' ? args[0] : args)}`,
+                `${model} ${method} ${JSON.stringify(
+                    method === 'create' ? args[0] : args,
+                )}`,
             );
         }
     });
@@ -155,7 +157,12 @@ test('a space unfolds into its chats page by page, its unread badge narrows them
     expect('.mk_space_branch').toHaveCount(0);
 });
 
-test('system spaces are pinned or folded under Automatic, which counts their unread chats', async () => {
+test('system spaces are pinned or folded under Automatic, which counts their unread chats, and keep the chats they collect out of the loose ones', async () => {
+    AISessionModel._records = [
+        chat(1, 'Loose'),
+        chat(2, 'Collected', { state: 'error' }),
+    ];
+    onRpc('muk_ai.space', 'fetch_general_domain', () => [['state', '!=', 'error']]);
     AISpaceModel._records = [
         { id: 6, name: 'Inbox', system: true, pinned: true },
         { id: 7, name: 'Scheduled', system: true },
@@ -167,6 +174,7 @@ test('system spaces are pinned or folded under Automatic, which counts their unr
         space_unread: { 7: 2, 8: 1 },
     }));
     await mountSidebar();
+    expect(queryAllTexts('.mk_loose_group .mk_sidebar_name')).toEqual(['Loose']);
     expect('.mk_sidebar_list').toHaveText(/No space yet\. Create a new space\./);
     expect(queryAllTexts('.mk_space_name')).toEqual(['Inbox']);
     expect(queryAllTexts('.mk_space_auto .mk_space_count')).toEqual(['3', '2']);
