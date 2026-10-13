@@ -10,6 +10,7 @@ from odoo.exceptions import UserError, ValidationError
 from odoo.tests.common import new_test_user
 from odoo.tools import mute_logger
 
+from odoo.addons.base.models.ir_model import MODULE_UNINSTALL_FLAG
 from odoo.addons.muk_ai.providers import REGISTRY
 from odoo.addons.muk_ai.providers.openai import OpenAIProvider
 from odoo.addons.muk_ai.providers.region import CUSTOM, Region
@@ -137,11 +138,13 @@ class TestAiProviderRegion(AITestCommon):
         with mute_logger('odoo.sql_db'), self.assertRaises(UniqueViolation):
             self.env['muk_ai.provider'].create({'name': 'openai', 'code': 'second'})
 
-    def test_a_shipped_provider_cannot_be_deleted(self):
+    def test_a_shipped_provider_is_deleted_only_with_its_addon(self):
         shipped = self.env.ref('muk_ai.provider_openai')
         with self.assertRaises(UserError):
             shipped.unlink()
         self.assertTrue(shipped.exists())
+        shipped.with_context(**{MODULE_UNINSTALL_FLAG: True}).unlink()
+        self.assertFalse(shipped.exists())
 
     def test_a_user_created_provider_can_be_deleted(self):
         provider = self.env['muk_ai.provider'].create(

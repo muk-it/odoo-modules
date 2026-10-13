@@ -504,12 +504,9 @@ class AIProvider(models.Model):
         'A provider with this name and code already exists.',
     )
 
-    # ----------------------------------------------------------
-    # ORM methods
-    # ----------------------------------------------------------
-
-    def unlink(self) -> bool:
-        """Delete the providers, refusing the ones an addon ships.
+    @api.ondelete(at_uninstall=False)
+    def _unlink_except_shipped(self) -> None:
+        """Refuse to delete a provider an addon ships, unless that addon is uninstalled.
 
         :raise UserError: when a record carries an external identifier, since
             its implementation stays registered and no upgrade recreates the
@@ -530,4 +527,3 @@ class AIProvider(models.Model):
                     ),
                 )
             )
-        return super().unlink()
