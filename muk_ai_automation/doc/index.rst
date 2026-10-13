@@ -76,6 +76,11 @@ chats. A chat started for one record is linked to it: a note in the record's
 chatter links to the chat, and its AI Sessions button lists every run for the
 record.
 
+In the chat sidebar, the chats of agent actions and automation rules are
+listed under the Automation space, and those of scheduled actions under
+Scheduled. Set Space on an action to list its chats in a system space of
+your own instead.
+
 Each chat runs with the access rights of a user: a run from the Actions menu
 or the Run button as the user who starts it, a scheduled action as its
 Scheduler User, and an automation rule as its Run Agents As user, whoever

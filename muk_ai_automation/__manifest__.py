@@ -8,7 +8,7 @@
         record, selected by the trigger, a domain or Python code, and lets
         each chat recall the previous run for the same record.
     """,
-    'version': '17.0.1.2.1',
+    'version': '17.0.1.3.1',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -22,6 +22,7 @@
         'muk_ai_chatter',
     ],
     'data': [
+        'data/space.xml',
         'views/ir_actions_server.xml',
         'views/ir_cron.xml',
         'views/base_automation.xml',

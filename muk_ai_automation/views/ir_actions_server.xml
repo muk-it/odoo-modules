@@ -16,6 +16,67 @@
         </field>
     </record>
 
+    <record id="view_ai_agent_action_kanban" model="ir.ui.view">
+        <field name="name">ir.actions.server.kanban.ai_agent.muk_ai_automation</field>
+        <field name="model">ir.actions.server</field>
+        <field name="arch" type="xml">
+            <kanban sample="1" quick_create="false">
+                <field name="agent_id"/>
+                <field name="model_id"/>
+                <field name="agent_dispatch_mode"/>
+                <field name="binding_model_id"/>
+                <field name="agent_space_id"/>
+                <field name="agent_session_count"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_global_click d-flex flex-column">
+                            <div class="d-flex align-items-center">
+                                <img
+                                    t-if="record.agent_id.raw_value"
+                                    t-attf-src="/web/image/muk_ai.agent/{{record.agent_id.raw_value}}/image_128"
+                                    alt="Agent"
+                                    class="rounded flex-shrink-0"
+                                    style="width: 44px; height: 44px; object-fit: cover;"
+                                />
+                                <div class="ms-3 flex-grow-1 overflow-hidden">
+                                    <div class="fs-5 text-truncate" style="font-weight: 600;">
+                                        <field name="name"/>
+                                    </div>
+                                    <div class="small text-muted text-truncate">
+                                        <t t-out="record.agent_id.value"/>
+                                        <span class="mx-1" t-out="'\u00b7'"/>
+                                        <t t-out="record.model_id.value"/>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3 d-flex flex-wrap gap-1">
+                                <span class="badge rounded-pill border text-body fw-normal px-2 py-1" style="font-size: 0.8rem;">
+                                    <i class="fa fa-comments me-1" aria-hidden="true"/>
+                                    <t t-out="record.agent_dispatch_mode.value"/>
+                                </span>
+                                <span t-if="record.binding_model_id.raw_value" class="badge rounded-pill border text-body fw-normal px-2 py-1" style="font-size: 0.8rem;">
+                                    <i class="fa fa-bars me-1" aria-hidden="true"/>
+                                    <span>Actions Menu</span>
+                                </span>
+                                <span t-if="record.agent_space_id.raw_value" class="badge rounded-pill border text-body fw-normal px-2 py-1" style="font-size: 0.8rem;">
+                                    <i class="fa fa-folder-o me-1" aria-hidden="true"/>
+                                    <t t-out="record.agent_space_id.value"/>
+                                </span>
+                            </div>
+                            <div class="mt-3 pt-2 border-top small">
+                                <a t-if="record.agent_session_count.raw_value" name="action_open_agent_sessions" type="object">
+                                    <t t-out="record.agent_session_count.value"/>
+                                    AI Chats
+                                </a>
+                                <span t-else="" class="text-muted">No AI chats yet</span>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
     <record id="view_ir_actions_server_form" model="ir.ui.view">
         <field name="name">ir.actions.server.form.muk_ai_automation</field>
         <field name="model">ir.actions.server</field>
@@ -44,6 +105,11 @@
                             name="agent_id"
                             options="{'no_create': True}"
                             required="state == 'ai_agent'"
+                        />
+                        <field
+                            name="agent_space_id"
+                            options="{'no_create': True}"
+                            placeholder="Automatic"
                         />
                         <field
                             name="agent_dispatch_mode"
@@ -203,13 +269,14 @@
     <record id="action_ai_agent_actions" model="ir.actions.act_window">
         <field name="name">Agent Actions</field>
         <field name="res_model">ir.actions.server</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">kanban,tree,form</field>
         <field name="domain">[('state', '=', 'ai_agent'), ('usage', '=', 'ir_actions_server')]</field>
         <field name="context">{'default_state': 'ai_agent', 'default_usage': 'ir_actions_server'}</field>
         <field
             name="view_ids"
             eval="[
                 (5, 0, 0),
+                (0, 0, {'view_mode': 'kanban', 'view_id': ref('view_ai_agent_action_kanban')}),
                 (0, 0, {'view_mode': 'tree', 'view_id': ref('view_ai_agent_action_list')}),
                 (0, 0, {'view_mode': 'form', 'view_id': ref('view_ai_agent_action_form')}),
             ]"

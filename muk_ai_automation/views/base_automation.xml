@@ -104,12 +104,13 @@
     <record id="action_ai_automation_rules" model="ir.actions.act_window">
         <field name="name">Automation Rules</field>
         <field name="res_model">base.automation</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">kanban,tree,form</field>
         <field name="domain">[('action_server_ids.state', '=', 'ai_agent')]</field>
         <field
             name="view_ids"
             eval="[
                 (5, 0, 0),
+                (0, 0, {'view_mode': 'kanban', 'view_id': ref('base_automation.view_base_automation_kanban')}),
                 (0, 0, {'view_mode': 'tree', 'view_id': ref('view_ai_agent_automation_list')}),
                 (0, 0, {'view_mode': 'form', 'view_id': ref('view_ai_agent_automation_form')}),
             ]"

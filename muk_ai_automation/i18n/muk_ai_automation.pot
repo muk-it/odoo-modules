@@ -4,10 +4,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server 17.0\n"
+"Project-Id-Version: Odoo Server 17.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-12 16:22+0000\n"
-"PO-Revision-Date: 2026-10-12 16:22+0000\n"
+"POT-Creation-Date: 2026-10-13 20:39+0000\n"
+"PO-Revision-Date: 2026-10-13 20:39+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -61,6 +61,18 @@ msgid ""
 msgstr ""
 
 #. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_action_kanban
+msgid ""
+"<i class=\"fa fa-bars me-1\" aria-hidden=\"true\"/>\n"
+"                                    <span>Actions Menu</span>"
+msgstr ""
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_kanban
+msgid "<span>Every</span>"
+msgstr ""
+
+#. module: muk_ai_automation
 #: model_terms:ir.actions.act_window,help:muk_ai_automation.action_ai_scheduled_actions
 msgid ""
 "A scheduled action runs an AI agent at a regular interval on the\n"
@@ -70,12 +82,18 @@ msgstr ""
 #. module: muk_ai_automation
 #: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__agent_session_count
 #: model:ir.model.fields,field_description:muk_ai_automation.field_ir_cron__agent_session_count
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_action_kanban
 msgid "AI Chats"
 msgstr ""
 
 #. module: muk_ai_automation
 #: model:ir.model,name:muk_ai_automation.model_muk_ai_session
 msgid "AI Session"
+msgstr ""
+
+#. module: muk_ai_automation
+#: model:ir.model,name:muk_ai_automation.model_muk_ai_space
+msgid "AI Space"
 msgstr ""
 
 #. module: muk_ai_automation
@@ -91,6 +109,8 @@ msgstr ""
 #. module: muk_ai_automation
 #: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__agent_id
 #: model:ir.model.fields,field_description:muk_ai_automation.field_ir_cron__agent_id
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_action_kanban
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_kanban
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
 msgid "Agent"
 msgstr ""
@@ -116,7 +136,13 @@ msgid ""
 msgstr ""
 
 #. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
+msgid "Automatic"
+msgstr ""
+
+#. module: muk_ai_automation
 #: model:ir.ui.menu,name:muk_ai_automation.menu_ai_automation
+#: model:muk_ai.space,name:muk_ai_automation.space_automation
 msgid "Automation"
 msgstr ""
 
@@ -155,6 +181,11 @@ msgid "Create an agent action"
 msgstr ""
 
 #. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_kanban
+msgid "Daily"
+msgstr ""
+
+#. module: muk_ai_automation
 #: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__agent_dispatch_mode
 #: model:ir.model.fields,field_description:muk_ai_automation.field_ir_cron__agent_dispatch_mode
 msgid "Dispatch"
@@ -172,6 +203,11 @@ msgid ""
 "                            action, of the user of its scheduled action, or of the user its\n"
 "                            automation rule runs AI agents as. A chat per record is listed in\n"
 "                            the AI Sessions of its record."
+msgstr ""
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_kanban
+msgid "Every minute"
 msgstr ""
 
 #. module: muk_ai_automation
@@ -196,6 +232,11 @@ msgid "Help"
 msgstr ""
 
 #. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_kanban
+msgid "Hourly"
+msgstr ""
+
+#. module: muk_ai_automation
 #: model_terms:ir.actions.act_window,help:muk_ai_automation.action_ai_automation_rules
 msgid "Let an AI agent react to your records"
 msgstr ""
@@ -215,9 +256,24 @@ msgid ""
 msgstr ""
 
 #. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_kanban
+msgid "Monthly"
+msgstr ""
+
+#. module: muk_ai_automation
 #: model:ir.model.fields,help:muk_ai_automation.field_ir_actions_server__agent_max_records_per_fire
 #: model:ir.model.fields,help:muk_ai_automation.field_ir_cron__agent_max_records_per_fire
 msgid "Most records one run starts a chat for. Zero means no limit."
+msgstr ""
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_kanban
+msgid "Next run"
+msgstr ""
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_action_kanban
+msgid "No AI chats yet"
 msgstr ""
 
 #. module: muk_ai_automation
@@ -236,6 +292,11 @@ msgstr ""
 #. module: muk_ai_automation
 #: model:ir.model.fields.selection,name:muk_ai_automation.selection__ir_actions_server__agent_dispatch_mode__per_record
 msgid "One Chat per Record"
+msgstr ""
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_kanban
+msgid "Paused"
 msgstr ""
 
 #. module: muk_ai_automation
@@ -318,6 +379,11 @@ msgid "Schedule an AI agent"
 msgstr ""
 
 #. module: muk_ai_automation
+#: model:muk_ai.space,name:muk_ai_automation.space_scheduled
+msgid "Scheduled"
+msgstr ""
+
+#. module: muk_ai_automation
 #: model:ir.actions.act_window,name:muk_ai_automation.action_ai_scheduled_actions
 #: model:ir.ui.menu,name:muk_ai_automation.menu_ai_scheduled_actions
 msgid "Scheduled Actions"
@@ -355,6 +421,12 @@ msgid "Source"
 msgstr ""
 
 #. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__agent_space_id
+#: model:ir.model.fields,field_description:muk_ai_automation.field_ir_cron__agent_space_id
+msgid "Space"
+msgstr ""
+
+#. module: muk_ai_automation
 #: model:ir.model.fields.selection,name:muk_ai_automation.selection__ir_actions_server__agent_chain_strategy__none
 msgid "Start Fresh"
 msgstr ""
@@ -371,8 +443,15 @@ msgstr ""
 
 #. module: muk_ai_automation
 #: model:ir.actions.server,agent_prompt:muk_ai_automation.demo_agent_action_partner_summary
+msgid "Summarize this contact: {{ record.display_name }} ({{ record.email }})"
+msgstr ""
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,help:muk_ai_automation.field_ir_actions_server__agent_space_id
+#: model:ir.model.fields,help:muk_ai_automation.field_ir_cron__agent_space_id
 msgid ""
-"Summarize this contact: {{ record.display_name }} ({{ record.email }})"
+"System space that lists the chats of this action. Leave empty to list them "
+"under Automation, or under Scheduled for a scheduled action."
 msgstr ""
 
 #. module: muk_ai_automation
@@ -440,6 +519,11 @@ msgstr ""
 #. module: muk_ai_automation
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_automation_form
 msgid "Webhook"
+msgstr ""
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_kanban
+msgid "Weekly"
 msgstr ""
 
 #. module: muk_ai_automation
