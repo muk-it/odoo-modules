@@ -15,7 +15,7 @@
         where they are needed, and agents decide about texts or records
         through the decide tool.
     """,
-    'version': '17.0.1.2.0',
+    'version': '17.0.1.2.1',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',

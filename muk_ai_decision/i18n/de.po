@@ -286,6 +286,7 @@ msgstr "Entscheidungsprotokolle"
 #. module: muk_ai_decision
 #: model:ir.model.fields,field_description:muk_ai_decision.field_ir_actions_server__decision_log_count
 #: model:ir.model.fields,field_description:muk_ai_decision.field_ir_cron__decision_log_count
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ai_decision_action_kanban
 msgid "Decisions"
 msgstr "Entscheidungen"
 
@@ -716,6 +717,7 @@ msgstr "Frage \"%(question)s\" %(error)s."
 #: model:ir.model.fields,field_description:muk_ai_decision.field_ir_actions_server__decision_question_ids
 #: model:ir.model.fields,field_description:muk_ai_decision.field_ir_cron__decision_question_ids
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_log__questions
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ai_decision_action_kanban
 #: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
 msgid "Questions"
 msgstr "Fragen"
@@ -1185,3 +1187,22 @@ msgstr ""
 "an andere Aktionen weiter und markiert unsichere aus jeder Automatisierungsregel oder\n"
 "geplanten Aktion, ein Entscheidungsschritt vor einem Agenten startet dessen Chats nur dort,\n"
 "wo sie nötig sind, und Agenten entscheiden mit dem Werkzeug decide über Texte oder Datensätze.\n"
+
+#. module: muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ai_decision_action_kanban
+msgid ""
+"<i class=\"fa fa-bars me-1\" aria-hidden=\"true\"/>\n"
+"\t\t\t\t\t\t\t\t\t<span>Actions Menu</span>"
+msgstr ""
+"<i class=\"fa fa-bars me-1\" aria-hidden=\"true\"/>\n"
+"\t\t\t\t\t\t\t\t\t<span>Aktionsmenü</span>"
+
+#. module: muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ai_decision_action_kanban
+msgid "<span>Decide with AI</span>"
+msgstr "<span>Mit KI entscheiden</span>"
+
+#. module: muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ai_decision_action_kanban
+msgid "No decisions yet"
+msgstr "Noch keine Entscheidungen"
