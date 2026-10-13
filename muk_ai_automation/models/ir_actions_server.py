@@ -112,6 +112,17 @@ class IrActionsServer(models.Model):
         default='none',
     )
 
+    agent_space_id = fields.Many2one(
+        comodel_name='muk_ai.space',
+        string='Space',
+        help=(
+            'System space that lists the chats of this action. Leave empty to '
+            'list them under Automation, or under Scheduled for a scheduled action.'
+        ),
+        domain=[('user_id', '=', False)],
+        ondelete='set null',
+    )
+
     agent_session_count = fields.Integer(
         compute='_compute_agent_session_count',
         string='AI Chats',

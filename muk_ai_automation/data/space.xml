@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo noupdate="1">
+
+    <record id="space_automation" model="muk_ai.space">
+        <field name="name">Automation</field>
+        <field name="sequence">4</field>
+        <field name="icon">fa-bolt</field>
+        <field name="user_id" eval="False"/>
+        <field name="domain">[('action_server_id', '!=', False), ('action_server_id.usage', '!=', 'ir_cron'), ('action_server_id.agent_space_id', '=', False)]</field>
+    </record>
+
+    <record id="space_scheduled" model="muk_ai.space">
+        <field name="name">Scheduled</field>
+        <field name="sequence">5</field>
+        <field name="icon">fa-clock-o</field>
+        <field name="user_id" eval="False"/>
+        <field name="domain">[('action_server_id.usage', '=', 'ir_cron'), ('action_server_id.agent_space_id', '=', False)]</field>
+    </record>
+</odoo>
