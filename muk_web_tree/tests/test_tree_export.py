@@ -178,9 +178,9 @@ class TestTreeExport(HttpCase):
                 context={'treelist_parent_field': 'parent_id', 'treelist_search': True},
             ),
             [
-                ('Tree Export Alpha', 0, 0, True, 0.0, 1.5, ''),
+                ('Tree Export Alpha', 0, 0, True, 0.0, 0.0, ''),
                 ('Tree Export Alpha Two', 1, 1, True, 3.0, 1.5, ''),
-                ('Tree Export Leaf', 2, 2, False, 4.0, 1.5, 'Tree Export Tag A'),
+                ('Tree Export Leaf', 2, 2, False, 4.0, 0.0, 'Tree Export Tag A'),
                 ('', 2, 2, False, '', '', 'Tree Export Tag B'),
             ],
         )

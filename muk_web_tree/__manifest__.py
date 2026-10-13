@@ -9,7 +9,7 @@
         what a list view offers: inline editing, optional columns, sums,
         widgets and decorations.
     """,
-    'version': '20.0.1.0.7',
+    'version': '20.0.1.0.8',
     'category': 'Tools/UI',
     'license': 'LGPL-3',
     'author': 'MuK IT',
