@@ -300,13 +300,6 @@
             >
                 <i class="fa fa-spinner fa-spin"/>
             </span>
-            <span
-                t-if="session.state.status === 'waiting_schedule' and session.state.resumeAt"
-                class="mk_chat_header_resume text-muted small"
-                t-att-title="formatTimestamp(session.state.resumeAt)"
-            >
-                <t t-esc="resumeRelativeText"/>
-            </span>
             <div class="mk_tokens ms-auto d-flex align-items-center gap-2" t-if="session.state.sessionId">
                 <button
                     class="btn btn-link btn-sm mk_search_toggle"

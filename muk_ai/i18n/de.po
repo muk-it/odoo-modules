@@ -333,32 +333,14 @@ msgstr "%sT"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
-msgid "%sd %sh"
-msgstr "%sT %sStd"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/utils.js:0
 msgid "%sh"
 msgstr "%sStd"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
-msgid "%sh %sm"
-msgstr "%sStd %sMin"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/utils.js:0
 msgid "%sm"
 msgstr "%sMin"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/utils.js:0
-msgid "%sm %ss"
-msgstr "%sMin %sSek"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -4329,18 +4311,6 @@ msgstr "Zeitplan"
 
 #. module: muk_ai
 #. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/utils.js:0
-msgid "Scheduled"
-msgstr "Geplant"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/utils.js:0
-msgid "Scheduled. Type to wake the agent…"
-msgstr "Geplant. Tippen Sie, um den Agenten zu wecken…"
-
-#. module: muk_ai
-#. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
 #: code:addons/muk_ai/static/src/chat/window/chat_window.xml:0
 msgid "Scroll to latest"
@@ -5742,13 +5712,6 @@ msgstr "keine Bilddaten zurückgegeben"
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
 msgid "on"
 msgstr "an"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/chat.js:0
-#: code:addons/muk_ai/static/src/chat/window/chat_window.js:0
-msgid "resumes in %s"
-msgstr "wird in %s fortgesetzt"
 
 #. module: muk_ai
 #. odoo-javascript

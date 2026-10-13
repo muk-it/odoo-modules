@@ -1,5 +1,4 @@
 import { describe, expect, test } from '@odoo/hoot';
-import { freezeTime, mockDate } from '@odoo/hoot-mock';
 import { patchTranslations } from '@web/../tests/web_test_helpers';
 
 import {
@@ -8,25 +7,12 @@ import {
     effortPill,
     formatCost,
     formatDurationSeconds,
-    formatRelativeTime,
     inputPlaceholder,
     statusLabel,
 } from '@muk_ai/chat/utils';
 
 describe.current.tags('muk_ai');
 patchTranslations();
-
-/**
- * Pin the clock so that ``Date.now()`` and ``DateTime.now()`` cannot drift apart.
- *
- * Without freezing, hoot's mocked date still tracks the real performance clock,
- * so the instant a test computes is already a millisecond in the past by the
- * time the formatter reads the clock again.
- */
-function freezeClock() {
-    mockDate('2026-07-01T12:00:00.000Z');
-    freezeTime();
-}
 
 test('statusLabel maps known statuses to translated label', () => {
     expect(statusLabel('running').toString()).toMatch(/Running/i);
@@ -180,37 +166,6 @@ test('inputPlaceholder overrides default when running', () => {
 test('inputPlaceholder returns default when idle', () => {
     const text = inputPlaceholder({ status: 'done' }, 'default text');
     expect(text).toBe('default text');
-});
-
-test('inputPlaceholder overrides default for waiting_schedule', () => {
-    const text = inputPlaceholder({ status: 'waiting_schedule' }, 'default text');
-    expect(text.toString()).toMatch(/Scheduled/i);
-});
-
-test('formatRelativeTime returns empty string for falsy or past', () => {
-    expect(formatRelativeTime(null)).toBe('');
-    expect(formatRelativeTime('')).toBe('');
-    expect(formatRelativeTime('2000-01-01T00:00:00Z')).toBe('');
-});
-
-test('formatRelativeTime renders future minutes/seconds', () => {
-    freezeClock();
-    const future = new Date(Date.now() + 5 * 60 * 1000 + 12 * 1000).toISOString();
-    expect(formatRelativeTime(future).toString()).toBe('5m 12s');
-});
-
-test('formatRelativeTime renders sub-minute distances in seconds', () => {
-    freezeClock();
-    const future = new Date(Date.now() + 42 * 1000).toISOString();
-    expect(formatRelativeTime(future).toString()).toBe('42s');
-});
-
-test('formatRelativeTime renders future hours/minutes', () => {
-    freezeClock();
-    const future = new Date(
-        Date.now() + 3 * 3600 * 1000 + 12 * 60 * 1000,
-    ).toISOString();
-    expect(formatRelativeTime(future).toString()).toBe('3h 12m');
 });
 
 test('formatDurationSeconds picks the right unit', () => {

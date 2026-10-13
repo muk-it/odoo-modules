@@ -324,13 +324,6 @@ test('popping out on a small screen opens the full-page action instead', async (
     expect(actions[0][1].additionalContext).toEqual({ default_session_id: 7 });
 });
 
-test('the resume countdown is empty until a resume time is known', async () => {
-    const { chat } = await mountChat();
-    expect(chat.resumeRelativeText).toBe('');
-    chat.session.state.resumeAt = new Date(Date.now() + 120000).toISOString();
-    expect(String(chat.resumeRelativeText)).toMatch(/resumes in/);
-});
-
 test('a registered builder and renderer draw an event kind the core does not know', async () => {
     turnBuilders.add('probe', (entry) => ({ role: 'probe', label: entry.label }), {
         force: true,
