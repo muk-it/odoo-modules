@@ -1,48 +1,21 @@
-from odoo import api, models
+from __future__ import annotations
 
-CHATTER_SESSION_LIMIT = 10
+from odoo import models
 
 
 class MailThread(models.AbstractModel):
+    """Wake the AI chats that wait for a message on a record."""
 
     _inherit = 'mail.thread'
-
-    # ----------------------------------------------------------
-    # Helper
-    # ----------------------------------------------------------
-
-    @api.model
-    def _ai_session_chatter_fields(self):
-        return [
-            'id', 'name', 'state', 'create_date', 'user_id', 'agent_id',
-            'schedule_id', 'previous_session_id', 'resume_at',
-            'iteration_count', 'error_message',
-        ]
-
-    def _get_ai_sessions_for_chatter(self):
-        sessions = self.env['muk_ai.session'].sudo().search(
-            [('res_model', '=', self._name), ('res_id', '=', self.id)],
-            order='create_date desc',
-            limit=CHATTER_SESSION_LIMIT,
-        )
-        return sessions.with_user(self.env.user).filtered(
-            lambda session: session.has_access('read')
-        )
 
     # ----------------------------------------------------------
     # Functions
     # ----------------------------------------------------------
 
-    def get_ai_sessions_summary(self):
-        Session = self.env['muk_ai.session'].sudo()
-        names = self._ai_session_chatter_fields()
-        result = {}
-        for thread in self:
-            sessions = thread._get_ai_sessions_for_chatter()
-            result[thread.id] = {
-                'entries': sessions.sudo().read(names),
-                'total': Session.search_count(
-                    [('res_model', '=', thread._name), ('res_id', '=', thread.id)],
-                ),
-            }
-        return result
+    def _message_post_after_hook(
+        self, message: models.BaseModel, msg_values: dict
+    ) -> None:
+        """Hand a posted comment or email to the chats waiting for one."""
+        super()._message_post_after_hook(message, msg_values)
+        if message.message_type in ('comment', 'email'):
+            self.env['muk_ai.session']._wake_on_message(message)

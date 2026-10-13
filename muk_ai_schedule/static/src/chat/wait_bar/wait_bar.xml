@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai_schedule.WaitBar">
+        <div t-if="plan" class="mk_wait_bar d-flex align-items-center gap-2">
+            <i class="fa fa-clock-o flex-shrink-0 text-primary"/>
+            <span class="d-flex flex-column flex-grow-1 min-w-0">
+                <span class="mk_wait_bar_line text-truncate" t-esc="line"/>
+                <span class="mk_wait_bar_note small text-muted text-truncate" t-esc="plan.note"/>
+            </span>
+            <t t-if="props.session.canWrite()">
+                <button
+                    class="btn btn-sm btn-primary text-nowrap mk_wait_bar_wake"
+                    type="button"
+                    t-on-click="() => this.wake()"
+                >
+                    Wake now
+                </button>
+                <button
+                    class="btn btn-sm btn-secondary text-nowrap mk_wait_bar_stop"
+                    type="button"
+                    t-on-click="() => props.session.onStop()"
+                >
+                    Stop
+                </button>
+            </t>
+        </div>
+    </t>
+
+</templates>

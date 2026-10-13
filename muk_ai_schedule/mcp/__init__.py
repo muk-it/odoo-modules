@@ -1,1 +1,1 @@
-from . import schedule
+from . import wait
