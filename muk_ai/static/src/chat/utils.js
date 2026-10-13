@@ -162,7 +162,6 @@ const STATUS_BADGE_CLASSES = {
     running: 'mk_state_running',
     compacting: 'mk_state_running',
     waiting: 'mk_state_waiting',
-    waiting_schedule: 'mk_state_waiting',
     done: 'mk_state_done',
     error: 'mk_state_error',
     stopped: 'mk_state_stopped',
@@ -173,7 +172,6 @@ const STATUS_ICONS = {
     running: 'fa-spinner fa-spin',
     compacting: 'fa-spinner fa-spin',
     waiting: 'fa-hourglass-half',
-    waiting_schedule: 'fa-clock-o',
     done: 'fa-check',
     error: 'fa-exclamation',
     stopped: 'fa-stop',
@@ -191,7 +189,6 @@ export function statusLabel(status) {
             running: _t('Running'),
             compacting: _t('Compacting'),
             waiting: _t('Waiting'),
-            waiting_schedule: _t('Scheduled'),
             done: _t('Done'),
             error: _t('Error'),
             stopped: _t('Stopped'),
@@ -382,9 +379,6 @@ export function inputPlaceholder(state, defaultText) {
         return kind === 'approval'
             ? _t('Approve or reject to continue…')
             : _t('Type your answer…');
-    }
-    if (state.status === 'waiting_schedule') {
-        return _t('Scheduled. Type to wake the agent…');
     }
     if (state.status === 'running') {
         return _t('Stop to interrupt…');

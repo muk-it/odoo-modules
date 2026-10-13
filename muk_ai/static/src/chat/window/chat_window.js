@@ -23,7 +23,6 @@ import {
     effortPill,
     extraPills,
     selectPill,
-    formatRelativeTime,
     formatTimestamp,
     inputPlaceholder,
     statusBadgeClass,
@@ -95,10 +94,8 @@ export class ChatWindow extends Component {
         this.session.setScrollCallback(scrollToBottom);
         this.windowState = useState({
             askViews: {},
-            resumeTick: 0,
             sourcesExpanded: {},
         });
-        this._resumeTickInterval = null;
         onScrollUpNearTop(scrollRef, () =>
             preserveAnchor(scrollRef, () => this.session.loadMoreEvents()),
         );
@@ -129,21 +126,9 @@ export class ChatWindow extends Component {
         );
         onMounted(() => {
             this._installRootPasteHandler();
-            this._resumeTickInterval = window.setInterval(() => {
-                if (
-                    this.session.state.status === 'waiting_schedule' &&
-                    this.session.state.resumeAt
-                ) {
-                    this.windowState.resumeTick += 1;
-                }
-            }, 5000);
         });
         onWillUnmount(() => {
             this._uninstallRootPasteHandler();
-            if (this._resumeTickInterval !== null) {
-                window.clearInterval(this._resumeTickInterval);
-                this._resumeTickInterval = null;
-            }
         });
     }
     _installRootPasteHandler() {
@@ -247,14 +232,6 @@ export class ChatWindow extends Component {
     }
     statusLabel(status) {
         return statusLabel(status);
-    }
-    get resumeRelativeText() {
-        void this.windowState.resumeTick;
-        const relative = formatRelativeTime(this.session.state.resumeAt);
-        if (!relative) {
-            return '';
-        }
-        return _t('resumes in %s', relative);
     }
     onInputChange(value) {
         this.session.onInputChange(value);

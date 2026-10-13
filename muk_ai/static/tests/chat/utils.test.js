@@ -182,11 +182,6 @@ test('inputPlaceholder returns default when idle', () => {
     expect(text).toBe('default text');
 });
 
-test('inputPlaceholder overrides default for waiting_schedule', () => {
-    const text = inputPlaceholder({ status: 'waiting_schedule' }, 'default text');
-    expect(text.toString()).toMatch(/Scheduled/i);
-});
-
 test('formatRelativeTime returns empty string for falsy or past', () => {
     expect(formatRelativeTime(null)).toBe('');
     expect(formatRelativeTime('')).toBe('');

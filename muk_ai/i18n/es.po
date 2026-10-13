@@ -4434,18 +4434,6 @@ msgstr "Planificación"
 
 #. module: muk_ai
 #. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/utils.js:0
-msgid "Scheduled"
-msgstr "Programado"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/utils.js:0
-msgid "Scheduled. Type to wake the agent…"
-msgstr "Programado. Escriba para despertar al agente…"
-
-#. module: muk_ai
-#. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
 #: code:addons/muk_ai/static/src/chat/window/chat_window.xml:0
 msgid "Scroll to latest"
@@ -5835,13 +5823,6 @@ msgstr "no se devolvieron datos de imagen"
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
 msgid "on"
 msgstr "activado"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/chat.js:0
-#: code:addons/muk_ai/static/src/chat/window/chat_window.js:0
-msgid "resumes in %s"
-msgstr "se reanuda en %s"
 
 #. module: muk_ai
 #. odoo-javascript
