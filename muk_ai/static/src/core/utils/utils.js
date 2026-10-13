@@ -3,10 +3,6 @@ import { _t } from '@web/core/l10n/translation';
 
 const { DateTime } = luxon;
 
-const MINUTE_S = 60;
-const HOUR_S = 60 * MINUTE_S;
-const DAY_S = 24 * HOUR_S;
-
 /**
  * Label, Material Symbols icon and colour class of every session state.
  */
@@ -25,11 +21,6 @@ const STATUS = {
         spin: true,
     },
     waiting: { label: _t('Waiting'), icon: 'hourglass_top', cls: 'mk_state_waiting' },
-    waiting_schedule: {
-        label: _t('Scheduled'),
-        icon: 'schedule',
-        cls: 'mk_state_waiting',
-    },
     done: { label: _t('Done'), icon: 'check', cls: 'mk_state_done' },
     error: { label: _t('Error'), icon: 'priority_high', cls: 'mk_state_error' },
     stopped: { label: _t('Stopped'), icon: 'stop', cls: 'mk_state_stopped' },
@@ -76,33 +67,6 @@ function parseDateTime(at) {
 export function formatTimestamp(at) {
     const value = parseDateTime(at);
     return value ? formatDateTime(value) : '';
-}
-
-/**
- * Format the time left until a server timestamp, in its two largest units.
- * @param {string} at ISO or SQL timestamp in UTC
- * @returns {string} e.g. `5m 3s`, empty when past or unparseable
- */
-export function formatRelativeTime(at) {
-    const value = parseDateTime(at);
-    const left = value ? Math.round((value.toMillis() - Date.now()) / 1000) : 0;
-    if (left <= 0) {
-        return '';
-    }
-    if (left < MINUTE_S) {
-        return _t('%ss', left);
-    }
-    if (left < HOUR_S) {
-        return _t('%sm %ss', Math.floor(left / MINUTE_S), left % MINUTE_S);
-    }
-    if (left < DAY_S) {
-        return _t(
-            '%sh %sm',
-            Math.floor(left / HOUR_S),
-            Math.floor((left % HOUR_S) / MINUTE_S),
-        );
-    }
-    return _t('%sd %sh', Math.floor(left / DAY_S), Math.floor((left % DAY_S) / HOUR_S));
 }
 
 /**

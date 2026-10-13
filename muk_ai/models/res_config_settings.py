@@ -161,7 +161,7 @@ class ResConfigSettings(models.TransientModel):
 
     module_muk_ai_schedule = fields.Boolean(
         string='MuK AI Schedule',
-        help='Run agents on a schedule; let them pause and resume.',
+        help='Let agents wait for a time, a record change or a reply, then carry on.',
     )
 
     module_muk_ai_skills = fields.Boolean(

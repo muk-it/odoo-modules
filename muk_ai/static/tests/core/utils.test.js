@@ -8,7 +8,6 @@ import {
 import {
     formatCost,
     formatError,
-    formatRelativeTime,
     formatTimestamp,
     statusInfo,
 } from '@muk_ai/core/utils/utils';
@@ -23,7 +22,7 @@ test('every session state has a label, an icon and a colour, unknown ones read a
         cls: 'mk_state_running',
         spin: true,
     });
-    expect(statusInfo('waiting_schedule').cls).toBe('mk_state_waiting');
+    expect(statusInfo('waiting').cls).toBe('mk_state_waiting');
     expect(statusInfo('archived')).toMatchObject({
         label: 'archived',
         cls: 'mk_state_new',
@@ -39,19 +38,9 @@ test('costs keep a precision matching their magnitude', () => {
     ]);
 });
 
-test('the time left until a timestamp shows in its two largest units', async () => {
+test("a timestamp shows in the user's format", async () => {
     mockDate('2026-01-01 10:00:00', 0);
     await getChat();
-    expect(
-        [
-            '2026-01-01 10:00:30',
-            '2026-01-01 10:05:03',
-            '2026-01-01T12:30:00',
-            '2026-01-03 13:00:00',
-            '2026-01-01 09:00:00',
-            'not a date',
-        ].map(formatRelativeTime),
-    ).toEqual(['30s', '5m 3s', '2h 30m', '2d 3h', '', '']);
     expect(formatTimestamp('2026-01-01 10:00:00')).toInclude('10:00');
     expect(formatTimestamp('')).toBe('');
 });

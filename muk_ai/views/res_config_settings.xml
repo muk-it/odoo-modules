@@ -243,7 +243,7 @@
 						<setting
 							id="muk_ai_addon_schedule"
 							string="Schedule"
-							help="Run agents on a schedule; let them pause and resume."
+							help="Let agents wait for a time, a record change or a reply, then carry on."
 						>
 							<field
 								name="module_muk_ai_schedule"

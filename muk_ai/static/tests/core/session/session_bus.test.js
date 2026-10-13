@@ -82,13 +82,6 @@ test('the events of a chat land in its data and its stream', async () => {
             [null, 'boom'],
         ],
         ['state', { state: 'running' }, () => session.data.error_message, null],
-        [
-            'state',
-            { state: 'waiting_schedule', resume_at: '2030-01-01 10:00:00' },
-            () => session.data.resume_at,
-            '2030-01-01 10:00:00',
-        ],
-        ['state', { state: 'done' }, () => session.data.resume_at, ''],
     ];
     for (const [type, payload, read, expected] of cases) {
         await emitEvent(1, type, payload);

@@ -145,9 +145,6 @@ const HANDLERS = {
         Object.assign(data, values);
         if (state) {
             data.state = state;
-            if (!('resume_at' in payload) && state !== 'waiting_schedule') {
-                data.resume_at = '';
-            }
             if (state === 'running') {
                 data.error_message = null;
                 session.bumpStream();
@@ -242,7 +239,6 @@ export class AISession {
             pending_user_messages: [],
             reasoning_effort_options: [],
             turn_usage: {},
-            resume_at: '',
         });
         this.state = proxy({
             loading: true,

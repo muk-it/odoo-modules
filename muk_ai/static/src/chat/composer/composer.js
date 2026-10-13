@@ -75,7 +75,6 @@ export class ChatComposer extends Component {
                     data.pending_ask?.kind === 'approval'
                         ? _t('Approve or reject to continue...')
                         : _t('Type your answer...'),
-                waiting_schedule: _t('Scheduled. Type to wake the agent...'),
                 running: _t('Stop to interrupt...'),
                 compacting: _t('Compacting in background, the message will queue...'),
             }[data.state] || this.props.placeholder

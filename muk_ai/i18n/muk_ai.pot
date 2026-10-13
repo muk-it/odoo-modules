@@ -240,30 +240,6 @@ msgid "%s: History"
 msgstr ""
 
 #. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/core/utils/utils.js:0
-msgid "%sd %sh"
-msgstr ""
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/core/utils/utils.js:0
-msgid "%sh %sm"
-msgstr ""
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/core/utils/utils.js:0
-msgid "%sm %ss"
-msgstr ""
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/core/utils/utils.js:0
-msgid "%ss"
-msgstr ""
-
-#. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/approval.py:0
 msgid "(%(count)s record(s), no access)"
@@ -4082,7 +4058,7 @@ msgstr ""
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_schedule
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "Run agents on a schedule; let them pause and resume."
+msgid "Let agents wait for a time, a record change or a reply, then carry on."
 msgstr ""
 
 #. module: muk_ai
@@ -4144,18 +4120,6 @@ msgstr ""
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "Schedule"
-msgstr ""
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/core/utils/utils.js:0
-msgid "Scheduled"
-msgstr ""
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/composer/composer.js:0
-msgid "Scheduled. Type to wake the agent..."
 msgstr ""
 
 #. module: muk_ai
@@ -5579,12 +5543,6 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/pills/pills.js:0
 msgid "override"
-msgstr ""
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/status/status.js:0
-msgid "resumes in %s"
 msgstr ""
 
 #. module: muk_ai

@@ -9,12 +9,6 @@
         >
             <i class="oi" t-att-class="{ 'oi-spin': this.info.spin }" t-att-data-icon="this.info.icon"/>
         </span>
-        <span
-            t-if="this.countdown"
-            class="mk_resume small text-nowrap"
-            t-att-title="this.formatTimestamp(this.scheduled)"
-            t-out="this.countdown"
-        />
     </t>
 
 </templates>

@@ -140,7 +140,7 @@ export class AIChatPlugin extends Plugin {
                 });
             }
             if (session) {
-                const { state, ...rest } = values;
+                const { state: _state, ...rest } = values;
                 Object.assign(session.data, session.holders ? rest : values);
             }
         }

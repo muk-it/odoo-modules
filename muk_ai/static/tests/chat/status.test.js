@@ -1,11 +1,4 @@
-import {
-    advanceTime,
-    animationFrame,
-    expect,
-    freezeTime,
-    mockDate,
-    test,
-} from '@odoo/hoot';
+import { animationFrame, expect, test } from '@odoo/hoot';
 import { Component, t, useProps, xml } from '@odoo/owl';
 import {
     contains,
@@ -39,27 +32,13 @@ async function mountHeader(values = {}) {
     return session;
 }
 
-test('the status names the agent and the state, a scheduled chat counts down to its resume', async () => {
-    mockDate('2026-01-01 10:00:00', 0);
-    freezeTime();
+test('the status names the agent and the state', async () => {
     const session = await mountHeader({ state: 'running', agent_id: [1, 'General'] });
     expect('.mk_avatar.mk_state_running .oi-spin').toHaveCount(1);
     expect('.mk_avatar').toHaveAttribute('title', 'General · Running');
-    Object.assign(session.data, {
-        state: 'waiting_schedule',
-        resume_at: '2026-01-01 10:02:00',
-    });
+    session.data.state = 'waiting';
     await animationFrame();
-    expect('.mk_avatar.mk_state_waiting').toHaveAttribute(
-        'title',
-        'General · Scheduled',
-    );
-    expect('.mk_resume').toHaveText('resumes in 2m 0s');
-    await advanceTime(5000);
-    expect('.mk_resume').toHaveText('resumes in 1m 55s');
-    session.data.state = 'done';
-    await animationFrame();
-    expect('.mk_resume').toHaveCount(0);
+    expect('.mk_avatar.mk_state_waiting').toHaveAttribute('title', 'General · Waiting');
 });
 
 test('the pinned view shows as a chip named after its model that opens it, and its owner unpins it', async () => {

@@ -144,7 +144,6 @@ test('the placeholder tells what the chat waits for', async () => {
             { state: 'waiting', pending_ask: { kind: 'question' } },
             'Type your answer...',
         ],
-        [{ state: 'waiting_schedule' }, 'Scheduled. Type to wake the agent...'],
     ]) {
         Object.assign(session.data, values);
         await animationFrame();

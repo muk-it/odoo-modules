@@ -340,30 +340,6 @@ msgid "%s: History"
 msgstr "%s: Verlauf"
 
 #. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/core/utils/utils.js:0
-msgid "%sd %sh"
-msgstr "%sT %sStd"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/core/utils/utils.js:0
-msgid "%sh %sm"
-msgstr "%sStd %sMin"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/core/utils/utils.js:0
-msgid "%sm %ss"
-msgstr "%sMin %sSek"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/core/utils/utils.js:0
-msgid "%ss"
-msgstr "%sSek"
-
-#. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/approval.py:0
 msgid "(%(count)s record(s), no access)"
@@ -4364,10 +4340,10 @@ msgstr ""
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_schedule
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "Run agents on a schedule; let them pause and resume."
+msgid "Let agents wait for a time, a record change or a reply, then carry on."
 msgstr ""
-"Lassen Sie Agenten nach Zeitplan laufen und sich selbst pausieren und "
-"fortsetzen."
+"Lassen Sie Agenten auf eine Uhrzeit, eine Datensatzänderung oder eine "
+"Antwort warten und dann weitermachen."
 
 #. module: muk_ai
 #. odoo-javascript
@@ -4429,18 +4405,6 @@ msgstr "Geben Sie an, wie viele Tage \"%(name)s\" seine Chats aufbewahrt."
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "Schedule"
 msgstr "Zeitplan"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/core/utils/utils.js:0
-msgid "Scheduled"
-msgstr "Geplant"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/composer/composer.js:0
-msgid "Scheduled. Type to wake the agent..."
-msgstr "Geplant. Tippen Sie, um den Agenten zu wecken..."
 
 #. module: muk_ai
 #. odoo-javascript
@@ -5975,12 +5939,6 @@ msgstr "an"
 #: code:addons/muk_ai/static/src/chat/pills/pills.js:0
 msgid "override"
 msgstr "Override"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/status/status.js:0
-msgid "resumes in %s"
-msgstr "wird in %s fortgesetzt"
 
 #. module: muk_ai
 #. odoo-javascript
