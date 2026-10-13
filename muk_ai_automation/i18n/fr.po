@@ -151,6 +151,7 @@ msgstr ""
 
 #. module: muk_ai_automation
 #: model:ir.ui.menu,name:muk_ai_automation.menu_ai_automation
+#: model:muk_ai.space,name:muk_ai_automation.space_automation
 msgid "Automation"
 msgstr "Automatisation"
 
@@ -197,6 +198,7 @@ msgstr "Répartition"
 #: model:ir.model.fields,field_description:muk_ai_automation.field_base_automation__display_name
 #: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__display_name
 #: model:ir.model.fields,field_description:muk_ai_automation.field_muk_ai_session__display_name
+#: model:ir.model.fields,field_description:muk_ai_automation.field_muk_ai_space__display_name
 msgid "Display Name"
 msgstr "Nom d'affichage"
 
@@ -252,6 +254,7 @@ msgstr "Aide"
 #: model:ir.model.fields,field_description:muk_ai_automation.field_base_automation__id
 #: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__id
 #: model:ir.model.fields,field_description:muk_ai_automation.field_muk_ai_session__id
+#: model:ir.model.fields,field_description:muk_ai_automation.field_muk_ai_space__id
 msgid "ID"
 msgstr ""
 
@@ -588,3 +591,34 @@ msgid ""
 msgstr ""
 "Utilisateur dont les droits d'accès s'appliquent aux chats des étapes "
 "d'agent IA, quel que soit l'utilisateur qui déclenche la règle."
+
+#. module: muk_ai_automation
+#: model:ir.model,name:muk_ai_automation.model_muk_ai_space
+msgid "AI Space"
+msgstr "Espace IA"
+
+#. module: muk_ai_automation
+#: model:muk_ai.space,name:muk_ai_automation.space_scheduled
+msgid "Scheduled"
+msgstr "Planifiés"
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__agent_space_id
+#: model:ir.model.fields,field_description:muk_ai_automation.field_ir_cron__agent_space_id
+msgid "Space"
+msgstr "Espace"
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,help:muk_ai_automation.field_ir_actions_server__agent_space_id
+#: model:ir.model.fields,help:muk_ai_automation.field_ir_cron__agent_space_id
+msgid ""
+"System space that lists the chats of this action. Leave empty to list them "
+"under Automation, or under Scheduled for a scheduled action."
+msgstr ""
+"Espace système qui liste les chats de cette action. Laissez vide pour les "
+"lister sous Automatisation, ou sous Planifiés pour une action planifiée."
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
+msgid "Automatic"
+msgstr "Automatique"

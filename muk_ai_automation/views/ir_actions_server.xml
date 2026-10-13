@@ -58,6 +58,11 @@
                             required="state == 'ai_agent'"
                         />
                         <field
+                            name="agent_space_id"
+                            options="{'no_create': True}"
+                            placeholder="Automatic"
+                        />
+                        <field
                             name="agent_dispatch_mode"
                             widget="radio"
                             options="{'horizontal': True}"

@@ -28,6 +28,8 @@ them, or one for each.
   domain or from Python code, with a record limit per run.
 - **Memory per record**: a chat can be handed the last answer of the previous
   chat for the same record.
+- **Spaces of their own**: the chat sidebar lists action and rule chats under
+  Automation and scheduled ones under Scheduled, or in a space the action sets.
 - **The rights of a real user**: a chat runs as the user who runs the action,
   the user of its scheduled action, or the user its automation rule runs AI
   agents as; an archived user stops the action.

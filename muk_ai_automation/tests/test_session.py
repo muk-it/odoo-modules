@@ -72,3 +72,41 @@ class TestSession(AutomationTestCommon):
         self.assertIn(
             'started for this record', ''.join(partner.message_ids.mapped('body'))
         )
+
+    def test_action_chats_land_in_their_space(self):
+        custom = (
+            self.env['muk_ai.space']
+            .sudo()
+            .create({'name': 'Partner Review', 'domain': "[('id', '=', 0)]"})
+        )
+        cron = self.env['ir.cron'].create(
+            {
+                'name': 'Weekly Review',
+                'model_id': self.env['ir.model']._get_id('res.partner'),
+                'state': 'ai_agent',
+                'agent_id': self.agent.id,
+                'agent_prompt': 'Hello.',
+                'agent_record_domain': self._domain_for(self.partners),
+            }
+        )
+        actions = (
+            self._make_action(),
+            cron.ir_actions_server_id,
+            self._make_action(agent_space_id=custom.id),
+        )
+        for action in actions:
+            self._run(action)
+        spaces = (
+            self.env.ref('muk_ai_automation.space_automation'),
+            self.env.ref('muk_ai_automation.space_scheduled'),
+            custom,
+        )
+        started = self.env['muk_ai.session'].concat(*map(self._sessions_of, actions))
+        for action, space in zip(actions, spaces, strict=True):
+            with self.subTest(space=space.name):
+                self.assertEqual(
+                    started.filtered_domain(space._session_domain()),
+                    self._sessions_of(action),
+                )
+        unclaimed = self.env['muk_ai.space']._unclaimed_session_domain()
+        self.assertFalse(started.filtered_domain(unclaimed))
