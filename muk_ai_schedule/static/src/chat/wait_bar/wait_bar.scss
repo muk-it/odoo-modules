@@ -1,0 +1,9 @@
+.mk_wait_bar {
+    margin-bottom: 0.4rem;
+    padding: 0.35rem 0.6rem;
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--primary);
+    border-radius: 8px;
+    background: var(--body-bg);
+    font-size: 0.8rem;
+}

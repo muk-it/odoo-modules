@@ -1,0 +1,378 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* muk_ai_schedule
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 17.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-28 15:09+0000\n"
+"PO-Revision-Date: 2026-06-28 15:09+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: muk_ai_schedule
+#: model:ir.module.module,description:base.module_muk_ai_schedule
+msgid ""
+"\n"
+"Gives every MuK AI chat a wait tool. An agent pauses itself until a\n"
+"time, until a record reaches a state or until a message is posted on\n"
+"a record, and carries on by itself when that happens, with the note\n"
+"it left for itself. Conditions are checked without calling the\n"
+"model, every wait has a timeout, and the chat shows what it waits\n"
+"for with a button to wake it at once.\n"
+msgstr ""
+"\n"
+"Dà a ogni chat MuK IA uno strumento di attesa. Un agente si mette in pausa fino\n"
+"a un orario, finché un record non raggiunge uno stato o finché non viene\n"
+"pubblicato un messaggio su un record, e riprende da solo quando succede, con la\n"
+"nota che si è lasciato. Le condizioni sono verificate senza chiamare il\n"
+"modello, ogni attesa ha un limite di tempo e la chat mostra cosa attende, con\n"
+"un pulsante per svegliarla subito.\n"
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/wait.py:0
+msgid "%(model)s %(id)s does not exist."
+msgstr "%(model)s %(id)s non esiste."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/wait.py:0
+msgid ""
+"'condition' and 'on_message' need the 'model' and 'record_id' of the record "
+"to watch."
+msgstr ""
+"'condition' e 'on_message' richiedono 'model' e 'record_id' del record da "
+"osservare."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/wait.py:0
+msgid "'note' must say what to do on waking, in at most %s characters."
+msgstr "'note' deve dire cosa fare al risveglio, in al massimo %s caratteri."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/wait.py:0
+msgid "'until' must be an ISO 8601 time, not %r."
+msgstr "'until' deve essere un orario ISO 8601, non %r."
+
+#. module: muk_ai_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_res_config_settings_form
+msgid "<span class=\"col-auto ms-2\">per Chat</span>"
+msgstr "<span class=\"col-auto ms-2\">per chat</span>"
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/wait.py:0
+msgid "A wait lasts between %(min)s seconds and %(max)s days."
+msgstr "Un'attesa dura tra %(min)s secondi e %(max)s giorni."
+
+#. module: muk_ai_schedule
+#: model:ir.model,name:muk_ai_schedule.model_muk_ai_session
+msgid "AI Session"
+msgstr "Sessione IA"
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/wait.py:0
+msgid "Call wait directly from your tools array, never through tool_load."
+msgstr ""
+"Chiama wait direttamente dal tuo elenco di strumenti, mai tramite tool_load."
+
+#. module: muk_ai_schedule
+#: model:ir.model,name:muk_ai_schedule.model_res_config_settings
+msgid "Config Settings"
+msgstr "Impostazioni di configurazione"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_mail_thread__display_name
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_session__display_name
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_mcp_mixin__display_name
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_res_config_settings__display_name
+msgid "Display Name"
+msgstr "Nome visualizzato"
+
+#. module: muk_ai_schedule
+#: model:ir.model,name:muk_ai_schedule.model_mail_thread
+msgid "Email Thread"
+msgstr "Discussione e-mail"
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/wait.py:0
+msgid "Give a 'condition', 'on_message' or both for the record."
+msgstr "Indica 'condition', 'on_message' o entrambi per il record."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/wait.py:0
+msgid "Give exactly one of 'seconds' or 'until'."
+msgstr "Indica esattamente uno tra 'seconds' e 'until'."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,help:muk_ai_schedule.field_res_config_settings__ai_max_waits
+msgid ""
+"How many times one chat may pause itself to wait before it has to finish."
+msgstr ""
+"Quante volte una chat può mettersi in pausa per attendere prima di dover "
+"finire."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,help:muk_ai_schedule.field_muk_ai_session__wake_count
+msgid "How many times the chat paused itself to wait."
+msgstr "Quante volte la chat si è messa in pausa per attendere."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_mail_thread__id
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_session__id
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_mcp_mixin__id
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_res_config_settings__id
+msgid "ID"
+msgstr ""
+
+#. module: muk_ai_schedule
+#: model:ir.module.module,summary:base.module_muk_ai_schedule
+msgid "Let agents wait for a time, a record change or a reply, then carry on"
+msgstr ""
+"Lascia che gli agenti attendano un orario, una modifica di un record o una "
+"risposta, poi proseguano"
+
+#. module: muk_ai_schedule
+#: model:ir.model,name:muk_ai_schedule.model_muk_mcp_mixin
+msgid "MCP Tool Mixin"
+msgstr "Mixin strumento MCP"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_res_config_settings__ai_max_waits
+msgid "Max Waits"
+msgstr "Attese max."
+
+#. module: muk_ai_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_res_config_settings_form
+msgid "Max waits"
+msgstr "Attese max."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/wait.py:0
+msgid "Messages cannot be posted on %s."
+msgstr "Non è possibile pubblicare messaggi su %s."
+
+#. module: muk_ai_schedule
+#: model:ir.module.module,shortdesc:base.module_muk_ai_schedule
+msgid "MuK AI Schedule"
+msgstr ""
+
+#. module: muk_ai_schedule
+#: model:ir.actions.server,name:muk_ai_schedule.cron_wake_sessions_ir_actions_server
+msgid "MuK AI: Wake Waiting Chats"
+msgstr "MuK IA: sveglia le chat in attesa"
+
+#. module: muk_ai_schedule
+#. odoo-javascript
+#: code:addons/muk_ai_schedule/static/src/chat/wait_bar/wait_bar.xml:0
+msgid "Stop"
+msgstr "Ferma"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,help:muk_ai_schedule.field_muk_ai_session__wake_res_model
+msgid "The model of the record a waiting chat watches."
+msgstr "Il modello del record che una chat in attesa osserva."
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,help:muk_ai_schedule.field_muk_ai_session__wake_res_id
+msgid "The record a waiting chat watches."
+msgstr "Il record che una chat in attesa osserva."
+
+#. module: muk_ai_schedule
+#. odoo-javascript
+#: code:addons/muk_ai_schedule/static/src/chat/wait_card/wait_card.js:0
+msgid "The record was ready already"
+msgstr "Il record era già pronto"
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/wait.py:0
+msgid "The wait tool can only be called inside an AI chat."
+msgstr "Lo strumento di attesa può essere chiamato solo in una chat IA."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/models/ai_session.py:0
+msgid "This chat is not waiting."
+msgstr "Questa chat non è in attesa."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/wait.py:0
+msgid ""
+"This chat may wait %s times and has used them all. Finish the task now."
+msgstr ""
+"Questa chat può attendere %s volte e le ha usate tutte. Completa ora "
+"l'attività."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/mcp/wait.py:0
+msgid "Unknown model %s."
+msgstr "Modello sconosciuto %s."
+
+#. module: muk_ai_schedule
+#. odoo-javascript
+#: code:addons/muk_ai_schedule/static/src/chat/wait_card/wait_card.js:0
+msgid "Wait"
+msgstr "Attendi"
+
+#. module: muk_ai_schedule
+#. odoo-javascript
+#: code:addons/muk_ai_schedule/static/src/chat/wait_card/wait_card.js:0
+msgid "Wait for %s"
+msgstr "Attendi %s"
+
+#. module: muk_ai_schedule
+#. odoo-javascript
+#: code:addons/muk_ai_schedule/static/src/chat/wait_bar/wait_bar.js:0
+msgid "Waiting for %s to be ready or for a message, until %s"
+msgstr "In attesa che %s sia pronto o arrivi un messaggio, fino al %s"
+
+#. module: muk_ai_schedule
+#. odoo-javascript
+#: code:addons/muk_ai_schedule/static/src/chat/wait_bar/wait_bar.js:0
+msgid "Waiting for %s to be ready, until %s"
+msgstr "In attesa che %s sia pronto, fino al %s"
+
+#. module: muk_ai_schedule
+#. odoo-javascript
+#: code:addons/muk_ai_schedule/static/src/chat/wait_bar/wait_bar.js:0
+msgid "Waiting for a message on %s, until %s"
+msgstr "In attesa di un messaggio su %s, fino al %s"
+
+#. module: muk_ai_schedule
+#. odoo-javascript
+#: code:addons/muk_ai_schedule/static/src/chat/wait_bar/wait_bar.js:0
+msgid "Waiting until %s"
+msgstr "In attesa fino al %s"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_session__wake_count
+msgid "Waits"
+msgstr "Attese"
+
+#. module: muk_ai_schedule
+#. odoo-javascript
+#: code:addons/muk_ai_schedule/static/src/chat/wait_bar/wait_bar.xml:0
+msgid "Wake now"
+msgstr "Sveglia ora"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_session__wake_at
+msgid "Wakes At"
+msgstr "Si sveglia alle"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_session__wake_res_model
+msgid "Watched Model"
+msgstr "Modello osservato"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,field_description:muk_ai_schedule.field_muk_ai_session__wake_res_id
+msgid "Watched Record"
+msgstr "Record osservato"
+
+#. module: muk_ai_schedule
+#: model:ir.model.fields,help:muk_ai_schedule.field_muk_ai_session__wake_at
+msgid "When a waiting chat carries on at the latest."
+msgstr "Quando una chat in attesa riprende al più tardi."
+
+#. module: muk_ai_schedule
+#. odoo-javascript
+#: code:addons/muk_ai_schedule/static/src/chat/wait_card/wait_card.js:0
+msgid "Woke up on time"
+msgstr "Svegliata in orario"
+
+#. module: muk_ai_schedule
+#. odoo-javascript
+#: code:addons/muk_ai_schedule/static/src/chat/wait_card/wait_card.js:0
+msgid "Woke up: %s wrote a message"
+msgstr "Svegliata: %s ha scritto un messaggio"
+
+#. module: muk_ai_schedule
+#. odoo-javascript
+#: code:addons/muk_ai_schedule/static/src/chat/wait_card/wait_card.js:0
+msgid "Woke up: the condition no longer works"
+msgstr "Svegliata: la condizione non funziona più"
+
+#. module: muk_ai_schedule
+#. odoo-javascript
+#: code:addons/muk_ai_schedule/static/src/chat/wait_card/wait_card.js:0
+msgid "Woke up: the record is gone"
+msgstr "Svegliata: il record non esiste più"
+
+#. module: muk_ai_schedule
+#. odoo-javascript
+#: code:addons/muk_ai_schedule/static/src/chat/wait_card/wait_card.js:0
+msgid "Woke up: the record is ready"
+msgstr "Svegliata: il record è pronto"
+
+#. module: muk_ai_schedule
+#. odoo-javascript
+#: code:addons/muk_ai_schedule/static/src/chat/wait_card/wait_card.js:0
+msgid "Woke up: the wait timed out"
+msgstr "Svegliata: l'attesa è scaduta"
+
+#. module: muk_ai_schedule
+#. odoo-javascript
+#: code:addons/muk_ai_schedule/static/src/chat/wait_card/wait_card.js:0
+msgid "Woken up by a message"
+msgstr "Svegliata da un messaggio"
+
+#. module: muk_ai_schedule
+#. odoo-javascript
+#: code:addons/muk_ai_schedule/static/src/chat/wait_card/wait_card.js:0
+msgid "Woken up by hand"
+msgstr "Svegliata a mano"
+
+#. module: muk_ai_schedule
+#. odoo-javascript
+#: code:addons/muk_ai_schedule/static/src/chat/wait_card/wait_card.js:0
+msgid "Stopped while waiting"
+msgstr "Interrotto durante l'attesa"
+
+#. module: muk_ai_schedule
+#. odoo-javascript
+#: code:addons/muk_ai_schedule/static/src/chat/composer/composer.js:0
+msgid "Waiting. Type to wake the agent..."
+msgstr "In attesa. Scrivi per svegliare l'agente..."
+
+#. module: muk_ai_schedule
+#. odoo-javascript
+#: code:addons/muk_ai_schedule/static/src/chat/wait_bar/wait_bar.js:0
+#, python-format
+msgid "Failed to wake the chat: %s"
+msgstr "Impossibile risvegliare la chat: %s"
+
+#. module: muk_ai_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_res_config_settings_form
+msgid "How often one chat may pause itself to wait before it has to finish."
+msgstr ""
+"Quante volte una chat può mettersi in pausa per attendere prima di dover "
+"terminare."
+
+#. module: muk_ai_schedule
+#. odoo-python
+#: code:addons/muk_ai_schedule/models/ai_session.py:0
+#: code:addons/muk_ai_schedule/models/ai_session.py:0
+#, python-format
+msgid "The session is currently busy. Please try again."
+msgstr "La sessione è al momento occupata. Riprova."
+
+#. module: muk_ai_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai_schedule.view_res_config_settings_form
+msgid "Wait Limit"
+msgstr "Limite di attese"
