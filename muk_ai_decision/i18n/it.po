@@ -282,6 +282,7 @@ msgstr "Log delle decisioni"
 #. module: muk_ai_decision
 #: model:ir.model.fields,field_description:muk_ai_decision.field_ir_actions_server__decision_log_count
 #: model:ir.model.fields,field_description:muk_ai_decision.field_ir_cron__decision_log_count
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ai_decision_action_kanban
 msgid "Decisions"
 msgstr "Decisioni"
 
@@ -714,6 +715,7 @@ msgstr "Domanda \"%(question)s\" %(error)s."
 #: model:ir.model.fields,field_description:muk_ai_decision.field_ir_cron__decision_question_ids
 #: model:ir.model.fields,field_description:muk_ai_decision.field_muk_ai_decision_log__questions
 #: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ai_decision_action_kanban
 msgid "Questions"
 msgstr "Domande"
 
@@ -1171,3 +1173,22 @@ msgid ""
 "    )[:1].body or '')[:500],\n"
 "])"
 msgstr ""
+
+#. module: muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ai_decision_action_kanban
+msgid ""
+"<i class=\"oi me-1\" data-icon=\"menu\" aria-hidden=\"true\"/>\n"
+"\t\t\t\t\t\t\t\t<span>Actions Menu</span>"
+msgstr ""
+"<i class=\"oi me-1\" data-icon=\"menu\" aria-hidden=\"true\"/>\n"
+"\t\t\t\t\t\t\t\t<span>Menu Azioni</span>"
+
+#. module: muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ai_decision_action_kanban
+msgid "<span>Decide with AI</span>"
+msgstr "<span>Decidi con l'IA</span>"
+
+#. module: muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ai_decision_action_kanban
+msgid "No decisions yet"
+msgstr "Ancora nessuna decisione"
