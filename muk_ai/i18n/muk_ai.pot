@@ -238,31 +238,13 @@ msgstr ""
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
-msgid "%sd %sh"
-msgstr ""
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/utils.js:0
 msgid "%sh"
 msgstr ""
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
-msgid "%sh %sm"
-msgstr ""
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/utils.js:0
 msgid "%sm"
-msgstr ""
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/utils.js:0
-msgid "%sm %ss"
 msgstr ""
 
 #. module: muk_ai
@@ -4046,18 +4028,6 @@ msgstr ""
 
 #. module: muk_ai
 #. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/utils.js:0
-msgid "Scheduled"
-msgstr ""
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/utils.js:0
-msgid "Scheduled. Type to wake the agent…"
-msgstr ""
-
-#. module: muk_ai
-#. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
 #: code:addons/muk_ai/static/src/chat/window/chat_window.xml:0
 msgid "Scroll to latest"
@@ -5316,13 +5286,6 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
 msgid "on"
-msgstr ""
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/chat.js:0
-#: code:addons/muk_ai/static/src/chat/window/chat_window.js:0
-msgid "resumes in %s"
 msgstr ""
 
 #. module: muk_ai

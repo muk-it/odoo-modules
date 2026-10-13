@@ -12,13 +12,6 @@
                     <i class="fa" t-att-class="statusIcon(session.state.status)"/>
                 </span>
                 <span class="mk_window_title" t-esc="session.state.name || 'MuK AI'"/>
-                <span
-                    t-if="session.state.status === 'waiting_schedule' and session.state.resumeAt"
-                    class="mk_chat_header_resume small ms-1 opacity-75"
-                    t-att-title="formatTimestamp(session.state.resumeAt)"
-                >
-                    <t t-esc="resumeRelativeText"/>
-                </span>
                 <span class="mk_window_actions">
                     <span
                         class="mk_window_btn"
