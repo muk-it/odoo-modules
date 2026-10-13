@@ -56,11 +56,6 @@ export function selectPill(key, session, value) {
 
 const { DateTime } = luxon;
 
-const SECOND_MS = 1000;
-const MINUTE_MS = 60 * SECOND_MS;
-const HOUR_MS = 60 * MINUTE_MS;
-const DAY_MS = 24 * HOUR_MS;
-
 /**
  * Extract a human-readable message from an RPC or JS error.
  * @param {*} error error object or value
@@ -104,39 +99,6 @@ export function formatTimestamp(at) {
 }
 
 /**
- * Format the time until a future timestamp as a compact relative string.
- * @param {*} at ISO/SQL string or Luxon DateTime
- * @returns {string} relative time (e.g. '5m 3s'), or '' when past/invalid
- */
-export function formatRelativeTime(at) {
-    const dt = parseDateTime(at);
-    if (!dt) {
-        return '';
-    }
-    const diffMs = dt.toMillis() - DateTime.now().toMillis();
-    if (diffMs <= 0) {
-        return '';
-    }
-    if (diffMs < MINUTE_MS) {
-        const s = Math.max(1, Math.round(diffMs / SECOND_MS));
-        return _t('%ss', s);
-    }
-    if (diffMs < HOUR_MS) {
-        const m = Math.floor(diffMs / MINUTE_MS);
-        const s = Math.floor((diffMs % MINUTE_MS) / SECOND_MS);
-        return _t('%sm %ss', m, s);
-    }
-    if (diffMs < DAY_MS) {
-        const h = Math.floor(diffMs / HOUR_MS);
-        const m = Math.floor((diffMs % HOUR_MS) / MINUTE_MS);
-        return _t('%sh %sm', h, m);
-    }
-    const d = Math.floor(diffMs / DAY_MS);
-    const h = Math.floor((diffMs % DAY_MS) / HOUR_MS);
-    return _t('%sd %sh', d, h);
-}
-
-/**
  * Format a duration in seconds as the largest whole unit (d/h/m/s).
  * @param {*} seconds duration in seconds
  * @returns {string} formatted duration, or '' for non-positive/invalid input
@@ -164,7 +126,6 @@ const STATUS_BADGE_CLASSES = {
     running: 'mk_state_running',
     compacting: 'mk_state_running',
     waiting: 'mk_state_waiting',
-    waiting_schedule: 'mk_state_waiting',
     done: 'mk_state_done',
     error: 'mk_state_error',
     stopped: 'mk_state_stopped',
@@ -175,7 +136,6 @@ const STATUS_ICONS = {
     running: 'fa-spinner fa-spin',
     compacting: 'fa-spinner fa-spin',
     waiting: 'fa-hourglass-half',
-    waiting_schedule: 'fa-clock-o',
     done: 'fa-check',
     error: 'fa-exclamation',
     stopped: 'fa-stop',
@@ -193,7 +153,6 @@ export function statusLabel(status) {
             running: _t('Running'),
             compacting: _t('Compacting'),
             waiting: _t('Waiting'),
-            waiting_schedule: _t('Scheduled'),
             done: _t('Done'),
             error: _t('Error'),
             stopped: _t('Stopped'),
@@ -384,9 +343,6 @@ export function inputPlaceholder(state, defaultText) {
         return kind === 'approval'
             ? _t('Approve or reject to continue…')
             : _t('Type your answer…');
-    }
-    if (state.status === 'waiting_schedule') {
-        return _t('Scheduled. Type to wake the agent…');
     }
     if (state.status === 'running') {
         return _t('Stop to interrupt…');

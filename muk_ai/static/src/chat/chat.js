@@ -31,7 +31,6 @@ import {
     effortPill,
     extraPills,
     selectPill,
-    formatRelativeTime,
     formatTimestamp,
     inputPlaceholder,
     statusBadgeClass,
@@ -176,11 +175,9 @@ export class AIChat extends Component {
             scrollTarget: null,
             askViews: {},
             sourcesExpanded: {},
-            resumeTick: 0,
         });
         this._sessionsSearchSeq = 0;
         this._sessionsSearchTimer = null;
-        this._resumeTickInterval = null;
         this.rootRef = useRef('root');
         const {
             scrollRef,
@@ -244,14 +241,6 @@ export class AIChat extends Component {
         onMounted(() => {
             this._installImageClickHandler();
             this._installRootPasteHandler();
-            this._resumeTickInterval = window.setInterval(() => {
-                if (
-                    this.session.state.status === 'waiting_schedule' &&
-                    this.session.state.resumeAt
-                ) {
-                    this.state.resumeTick += 1;
-                }
-            }, 5000);
         });
         onPatched(() => {
             this._handleScrollTarget();
@@ -270,10 +259,6 @@ export class AIChat extends Component {
             if (this._sessionsSearchTimer !== null) {
                 window.clearTimeout(this._sessionsSearchTimer);
                 this._sessionsSearchTimer = null;
-            }
-            if (this._resumeTickInterval !== null) {
-                window.clearInterval(this._resumeTickInterval);
-                this._resumeTickInterval = null;
             }
         });
     }
@@ -589,7 +574,8 @@ export class AIChat extends Component {
     async onSpaceDelete(spaceId) {
         await this.orm.unlink('muk_ai.space', [spaceId]);
         delete this.state.spaceSessions[spaceId];
-        await Promise.all([this._loadSpaces(), this._loadSessions()]);
+        await this._loadSpaces();
+        await this._loadSessions();
     }
     /**
      * Persist the new order of the personal spaces after a drag.
@@ -1056,14 +1042,6 @@ export class AIChat extends Component {
     }
     statusIcon(status) {
         return statusIcon(status);
-    }
-    get resumeRelativeText() {
-        void this.state.resumeTick;
-        const relative = formatRelativeTime(this.session.state.resumeAt);
-        if (!relative) {
-            return '';
-        }
-        return _t('resumes in %s', relative);
     }
     askArgsText(block) {
         return askArgsText(block);

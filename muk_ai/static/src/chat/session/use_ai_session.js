@@ -233,7 +233,6 @@ export function useAiSession(options = {}) {
         toolSources: [],
         pendingMessages: [],
         streamIdle: false,
-        resumeAt: '',
         artifactsFocus: null,
     });
     let eventKeys = new Set();
@@ -421,14 +420,6 @@ export function useAiSession(options = {}) {
             }
             if (typeof event.payload.total_cost === 'number') {
                 state.totalCost = event.payload.total_cost;
-            }
-            if (event.payload.resume_at !== undefined) {
-                state.resumeAt = normalizeResumeAt(event.payload.resume_at);
-            } else if (
-                event.payload.state &&
-                event.payload.state !== 'waiting_schedule'
-            ) {
-                state.resumeAt = '';
             }
         } else if (event.type === 'rename') {
             if (event.payload && event.payload.name) {
@@ -618,7 +609,6 @@ export function useAiSession(options = {}) {
         state.streamingTools = [];
         state.pendingAttachments = [];
         state.streamIdle = false;
-        state.resumeAt = '';
         eventKeys = new Set();
     }
     function applySessionFields(payload) {
@@ -641,7 +631,6 @@ export function useAiSession(options = {}) {
         state.lastInputTokens = payload.last_input_tokens || 0;
         state.turnUsage = payload.turn_usage || {};
         state.pendingMessages = payload.pending_user_messages || [];
-        state.resumeAt = normalizeResumeAt(payload.resume_at);
         if (typeof payload.total_cost === 'number') {
             state.totalCost = payload.total_cost;
         }
@@ -655,23 +644,6 @@ export function useAiSession(options = {}) {
                 entry.apply(state, payload);
             }
         }
-    }
-    function normalizeResumeAt(value) {
-        if (!value) {
-            return '';
-        }
-        if (typeof value === 'string') {
-            return value;
-        }
-        if (value && typeof value === 'object' && value.isLuxonDateTime) {
-            try {
-                const utc = value.toUTC();
-                return utc.isValid ? utc.toISO() : '';
-            } catch {
-                return '';
-            }
-        }
-        return String(value);
     }
     function applyRecord(record) {
         applySessionFields(record);
