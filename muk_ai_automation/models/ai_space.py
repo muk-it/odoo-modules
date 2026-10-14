@@ -18,6 +18,6 @@ class AISpace(models.Model):
         return expression.OR(
             [
                 super()._parsed_domain(),
-                [('action_server_id.agent_space_id', '=', self.id)],
+                [('action_space_id', '=', self.id)],
             ]
         )
