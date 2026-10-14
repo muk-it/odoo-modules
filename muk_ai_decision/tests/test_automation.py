@@ -178,13 +178,13 @@ class TestDecisionAutomation(AutomationTestCommon):
         answer = system_one(
             {f'q{action.decision_question_ids.id}': {'type': 'noul', 'noul': 0.9}}
         )
-        pages = {'https://track.test/a': (200, {}, b'Delivered')}
+        pages = {'https://track.test/a': (302, {'Location': 'https://cdn.test/a'}, b'')}
         for page, runs, message in (
             (b'Delivered', 1, '1 records: 0 written, 0 unsure, 2 skipped'),
             (b'Delivered', 0, '0 records: 0 written, 0 unsure, 3 skipped'),
             (b'In Transit', 1, '1 records: 0 written, 0 unsure, 2 skipped'),
         ):
-            pages['https://track.test/a'] = (200, {}, page)
+            pages['https://cdn.test/a'] = (200, {}, page)
             with serve_web(pages) as connections, self._capture_post(answer) as posts:
                 result = action.run()
             self.assertEqual(len(posts), runs)
@@ -192,7 +192,9 @@ class TestDecisionAutomation(AutomationTestCommon):
         self.assertEqual(
             posts[0][1]['json']['state'], '{"Name": "Partner 0"}\nIn Transit'
         )
-        self.assertEqual(connections[0]['headers']['X-Api-Key'], 'key')
+        self.assertEqual(
+            [c['headers'].get('X-Api-Key') for c in connections], ['key', None, 'key']
+        )
 
     def test_decide_with_ai_fills_routes_and_hands_over_the_unsure(self):
         p0, p1, _p2 = self.partners
