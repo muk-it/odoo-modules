@@ -19,6 +19,7 @@ from odoo.addons.muk_ai.tools.url_fetch import (
     URL_FETCH_MAX_BYTES,
     WEB_FETCH_MAX_CHARS,
     FetchResult,
+    fetch_url,
     page_icon,
 )
 
@@ -250,3 +251,14 @@ class TestWebFetch(AITestCommon):
         )
         self.assertEqual(len(cached), 1)
         self.assertFalse(cached.raw)
+
+    def test_extra_headers_reach_only_the_requested_host(self):
+        pages = {
+            'https://api.test/track': (302, {'Location': 'https://cdn.test/x'}, b''),
+            'https://cdn.test/x': (200, {'Content-Type': 'application/json'}, b'{}'),
+        }
+        with serve_web(pages) as connections:
+            fetch_url('https://api.test/track', headers={'X-Api-Key': 'secret'})
+        self.assertEqual(
+            [c['headers'].get('X-Api-Key') for c in connections], ['secret', None]
+        )

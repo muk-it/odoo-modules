@@ -122,7 +122,7 @@ def serve_web(pages: dict, dns: dict | None = None) -> Iterator[list[dict]]:
 
     :param pages: URL mapped to ``(status, headers, body)``, any other 404s
     :param dns: host mapped to its addresses, ``None`` failing the lookup
-    :return: every opened connection as ``{'ip', 'host', 'timeout', 'url'}``
+    :return: every opened connection with its ip, host, timeout, url and headers
     """
     dns = dns or {}
     connections = []
@@ -145,6 +145,7 @@ def serve_web(pages: dict, dns: dict | None = None) -> Iterator[list[dict]]:
         def urlopen(method, path, headers, **options) -> SimpleNamespace:
             """Answer the request from ``pages``."""
             connection['url'] = f'https://{headers["Host"]}{path}'
+            connection['headers'] = headers
             status, answer, body = pages.get(connection['url'], (404, {}, b''))
             chunks = body if isinstance(body, list) else [body]
             return SimpleNamespace(
