@@ -20,10 +20,10 @@ msgstr ""
 #: code:addons/muk_ai_decision/models/ir_actions_server.py:0
 msgid ""
 "%(name)s decided about %(count)s records: %(written)s written, %(unsure)s "
-"unsure."
+"unsure, %(skipped)s skipped without new input."
 msgstr ""
 "%(name)s hat über %(count)s Datensätze entschieden: %(written)s geschrieben,"
-" %(unsure)s unsicher."
+" %(unsure)s unsicher, %(skipped)s ohne neue Eingabe übersprungen."
 
 #. module: muk_ai_decision
 #. odoo-python
@@ -912,17 +912,23 @@ msgstr ""
 msgid ""
 "The code runs once per record and assigns the text the decision\n"
 "\t\t\t\t\t\t\tmodel reads to <code>text</code>. Keep it short: only what the\n"
-"\t\t\t\t\t\t\tquestions need."
+"\t\t\t\t\t\t\tquestions need. A record without text is skipped, and so is a\n"
+"\t\t\t\t\t\t\trecord whose text and questions are the same as at its last\n"
+"\t\t\t\t\t\t\tdecision by this action."
 msgstr ""
 "Der Code läuft einmal pro Datensatz und weist den Text, den das Entscheidungsmodell\n"
 "\t\t\t\t\t\t\tliest, <code>text</code> zu. Halte ihn kurz: nur, was die Fragen\n"
-"\t\t\t\t\t\t\tbrauchen."
+"\t\t\t\t\t\t\tbrauchen. Ein Datensatz ohne Text wird übersprungen, ebenso ein\n"
+"\t\t\t\t\t\t\tDatensatz, dessen Text und Fragen dieselben sind wie bei seiner\n"
+"\t\t\t\t\t\t\tletzten Entscheidung durch diese Aktion."
 
 #. module: muk_ai_decision
 #. odoo-python
 #: code:addons/muk_ai_decision/models/ir_actions_server.py:0
-msgid "The input code assigns no text for %(record)s."
-msgstr "Der Eingabe-Code weist für %(record)s keinen Text zu."
+msgid "The input code assigns no text, so the record is skipped."
+msgstr ""
+"Der Eingabe-Code weist keinen Text zu, daher wird der Datensatz "
+"übersprungen."
 
 #. module: muk_ai_decision
 #: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
@@ -1174,14 +1180,8 @@ msgstr ""
 #. module: muk_ai_decision
 #: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
 msgid ""
-"text = '\\n'.join([\n"
-"    'Name: ' + record.name,\n"
-"    'Tags: ' + ', '.join(record.category_id.mapped('name')),\n"
-"    'Notes: ' + html2plaintext(record.comment or '')[:500],\n"
-"    'Last message: ' + html2plaintext(record.message_ids.filtered(\n"
-"        lambda message: message.message_type in ('email', 'comment')\n"
-"    )[:1].body or '')[:500],\n"
-"])"
+"page = web_fetch(record.carrier_tracking_url)\n"
+"text = page and record_text(record, ['name', 'carrier_id']) + '\\n' + page"
 msgstr ""
 
 #. module: muk_ai_decision
@@ -1202,3 +1202,21 @@ msgstr "<span>Mit KI entscheiden</span>"
 #: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ai_decision_action_kanban
 msgid "No decisions yet"
 msgstr "Noch keine Entscheidungen"
+
+#. module: muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
+msgid ""
+"<code>record_text(records, fields)</code>: the labelled fields of\n"
+"\t\t\t\t\t\t\t\trecords, by default their list columns"
+msgstr ""
+"<code>record_text(records, fields)</code>: die beschrifteten Felder von\n"
+"\t\t\t\t\t\t\t\tDatensätzen, standardmäßig ihre Listenspalten"
+
+#. module: muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
+msgid ""
+"<code>web_fetch(url, headers)</code>: a web page or an API answer\n"
+"\t\t\t\t\t\t\t\tas text, empty when it cannot be fetched"
+msgstr ""
+"<code>web_fetch(url, headers)</code>: eine Webseite oder eine API-Antwort\n"
+"\t\t\t\t\t\t\t\tals Text, leer, wenn sie nicht abgerufen werden kann"

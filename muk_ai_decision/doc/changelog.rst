@@ -1,3 +1,8 @@
+`1.3.0`
+-------
+
+- Web Pages and Records as Input, Skip Unchanged Input
+
 `1.2.0`
 -------
 

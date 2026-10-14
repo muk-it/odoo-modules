@@ -272,6 +272,17 @@ class AIDecision(models.AbstractModel):
         return names or ['display_name']
 
     @api.model
+    def _record_text(
+        self, records: models.BaseModel, names: list[str] | None = None
+    ) -> str:
+        """Render ``records`` one per line as the labelled fields a decision reads."""
+        return '\n'.join(
+            self._state_texts(
+                records, names or self._default_state_fields(records._name)
+            )
+        )
+
+    @api.model
     def _display_value(
         self, record: models.BaseModel, name: str
     ) -> str | int | float | bool:

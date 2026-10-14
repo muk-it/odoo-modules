@@ -6,7 +6,7 @@ import requests
 from odoo import Command, models
 from odoo.exceptions import ValidationError
 
-from odoo.addons.muk_ai.tests.common import json_response
+from odoo.addons.muk_ai.tests.common import json_response, serve_web
 from odoo.addons.muk_ai_automation.tests.common import AutomationTestCommon
 
 
@@ -142,18 +142,57 @@ class TestDecisionAutomation(AutomationTestCommon):
         )
         self.assertEqual(action._decision_states(partner), ['Partner 0 / Tech'])
         self.assertEqual(action.decision_preview, 'Partner 0 / Tech')
-        for code, message in (
-            ('text = record.no_such_field', 'no_such_field'),
-            ('name = record.name', 'assigns no text'),
+        for code, kind, message in (
+            ('text = record.no_such_field', 'warning', 'no_such_field'),
+            ('name = record.name', 'success', 'decided about 0 records'),
         ):
             with self.subTest(code=code):
                 action.decision_input_code = code
-                self.assertIn(message, action.decision_preview)
                 result = action.run()
-                self.assertEqual(result['params']['type'], 'warning')
+                self.assertEqual(result['params']['type'], kind)
                 self.assertIn(message, result['params']['message'])
+        self.assertIn('skipped', action.decision_preview)
         with self.assertRaises(ValidationError):
             action.decision_input_code = 'text = ('
+
+    def test_input_code_reads_the_web_and_skips_records_without_new_input(self):
+        p0, p1, _p2 = self.partners
+        p0.website = 'https://track.test/a'
+        p1.website = 'https://track.test/b'
+        action = self.env['ir.actions.server'].create(
+            {
+                'name': 'Track',
+                'state': 'ai_decision',
+                'model_id': self.env['ir.model']._get_id('res.partner'),
+                'agent_record_domain': self._domain_for(self.partners),
+                'decision_input_source': 'code',
+                'decision_input_code': (
+                    "page = web_fetch(record.website, {'X-Api-Key': 'key'})\n"
+                    "text = page and record_text(record, ['name']) + '\\n' + page"
+                ),
+                'decision_question_ids': [
+                    Command.create({'name': 'Delivered?', 'kind': 'noul'})
+                ],
+            }
+        )
+        answer = system_one(
+            {f'q{action.decision_question_ids.id}': {'type': 'noul', 'noul': 0.9}}
+        )
+        pages = {'https://track.test/a': (200, {}, b'Delivered')}
+        for page, runs, message in (
+            (b'Delivered', 1, '1 records: 0 written, 0 unsure, 2 skipped'),
+            (b'Delivered', 0, '0 records: 0 written, 0 unsure, 3 skipped'),
+            (b'In Transit', 1, '1 records: 0 written, 0 unsure, 2 skipped'),
+        ):
+            pages['https://track.test/a'] = (200, {}, page)
+            with serve_web(pages) as connections, self._capture_post(answer) as posts:
+                result = action.run()
+            self.assertEqual(len(posts), runs)
+            self.assertIn(message, result['params']['message'])
+        self.assertEqual(
+            posts[0][1]['json']['state'], '{"Name": "Partner 0"}\nIn Transit'
+        )
+        self.assertEqual(connections[0]['headers']['X-Api-Key'], 'key')
 
     def test_decide_with_ai_fills_routes_and_hands_over_the_unsure(self):
         p0, p1, _p2 = self.partners

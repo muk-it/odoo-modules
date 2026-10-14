@@ -320,22 +320,26 @@
 						<p>
 							The code runs once per record and assigns the text the decision
 							model reads to <code>text</code>. Keep it short: only what the
-							questions need.
+							questions need. A record without text is skipped, and so is a
+							record whose text and questions are the same as at its last
+							decision by this action.
 						</p>
 						<ul>
 							<li><code>record</code>: the record decided about</li>
 							<li><code>env</code>: the environment, to read related records</li>
 							<li><code>html2plaintext</code>: turns an HTML field into plain text</li>
+							<li>
+								<code>record_text(records, fields)</code>: the labelled fields of
+								records, by default their list columns
+							</li>
+							<li>
+								<code>web_fetch(url, headers)</code>: a web page or an API answer
+								as text, empty when it cannot be fetched
+							</li>
 						</ul>
 						<p>For example:</p>
-						<pre>text = '\n'.join([
-    'Name: ' + record.name,
-    'Tags: ' + ', '.join(record.category_id.mapped('name')),
-    'Notes: ' + html2plaintext(record.comment or '')[:500],
-    'Last message: ' + html2plaintext(record.message_ids.filtered(
-        lambda message: message.message_type in ('email', 'comment')
-    )[:1].body or '')[:500],
-])</pre>
+						<pre>page = web_fetch(record.carrier_tracking_url)
+text = page and record_text(record, ['name', 'carrier_id']) + '\n' + page</pre>
 					</div>
 				</page>
 				<page

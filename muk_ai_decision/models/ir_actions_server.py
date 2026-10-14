@@ -8,6 +8,8 @@ from odoo.exceptions import UserError, ValidationError
 from odoo.tools import html2plaintext
 from odoo.tools.safe_eval import safe_eval, test_python_expr
 
+from odoo.addons.muk_ai_decision.tools.web_fetch import web_fetch
+
 
 class IrActionsServer(models.Model):
     """Decide about records with a decision model."""
@@ -99,8 +101,9 @@ class IrActionsServer(models.Model):
     # Helper
     # ----------------------------------------------------------
 
-    def _decision_states(self, records: models.BaseModel) -> list[str]:
-        """Render each record as the text the decision model reads."""
+    def _decision_states(self, records: models.BaseModel) -> list[str | None]:
+        """Render each record as the text the decision model reads, ``None`` for none."""
+        decision = self.env['muk_ai.decision']
         if self.decision_input_source == 'code':
             states = []
             for record in records:
@@ -108,24 +111,52 @@ class IrActionsServer(models.Model):
                     'record': record,
                     'env': self.env,
                     'html2plaintext': html2plaintext,
+                    'web_fetch': web_fetch,
+                    'record_text': decision._record_text,
                 }
                 safe_eval(self.decision_input_code or '', scope, mode='exec')
-                if not scope.get('text'):
-                    raise UserError(
-                        self.env._(
-                            'The input code assigns no text for %(record)s.',
-                            record=record.display_name,
-                        )
-                    )
-                states.append(str(scope['text']))
+                states.append(str(scope['text']) if scope.get('text') else None)
             return states
-        decision = self.env['muk_ai.decision']
         return decision._state_texts(
             records,
             self.decision_field_ids.mapped('name')
             or decision._default_state_fields(records._name),
             self.decision_message_count,
             self.decision_message_external,
+        )
+
+    def _decision_pending(
+        self, records: models.BaseModel, states: list, questions: dict
+    ) -> tuple[models.BaseModel, list[str]]:
+        """Keep the records with an input and questions not yet decided by this action."""
+        logs = self.env['muk_ai.decision.log'].sudo()
+        last = logs.browse(
+            log_id
+            for _res_id, log_id in logs._read_group(
+                [
+                    ('action_id', '=', self.id),
+                    ('res_model', '=', records._name),
+                    ('res_id', 'in', records.ids),
+                    ('error', '=', False),
+                ],
+                ['res_id'],
+                ['id:max'],
+            )
+        )
+        questions = json.loads(json.dumps(questions))
+        decided = {
+            (log.res_id, log.state_payload)
+            for log in last
+            if log.questions == questions
+        }
+        pending = [
+            (record, state)
+            for record, state in zip(records, states, strict=True)
+            if state and (record.id, state) not in decided
+        ]
+        return (
+            records.browse(record.id for record, _state in pending),
+            [state for _record, state in pending],
         )
 
     def _decision_outcome(self, answers: dict, specs: list) -> tuple:
@@ -169,13 +200,15 @@ class IrActionsServer(models.Model):
     def _run_action_ai_decision_multi(self, eval_context: dict) -> dict | bool:
         """Decide about the target records, then write, route and flag the unsure.
 
-        :return: a notification counting the decided, written and unsure records
+        :return: a notification counting the decided, written, unsure and skipped
+            records
         """
         records = self._agent_records(eval_context)
         if self.agent_max_records_per_fire > 0:
             records = records[: self.agent_max_records_per_fire]
         if not records:
             return False
+        targeted = len(records)
         try:
             specs = [
                 (question, question._spec()) for question in self.decision_question_ids
@@ -183,8 +216,11 @@ class IrActionsServer(models.Model):
             questions = {
                 key: q for _line, spec in specs for key, q in spec.questions.items()
             }
-            results = self.env['muk_ai.decision']._decide_batch(
-                self._decision_states(records),
+            records, states = self._decision_pending(
+                records, self._decision_states(records), questions
+            )
+            results = records.ids and self.env['muk_ai.decision']._decide_batch(
+                states,
                 questions,
                 min_confidence={
                     key: line.min_confidence
@@ -235,11 +271,13 @@ class IrActionsServer(models.Model):
                     [
                         self.env._(
                             '%(name)s decided about %(count)s records: %(written)s '
-                            'written, %(unsure)s unsure.',
+                            'written, %(unsure)s unsure, %(skipped)s skipped without '
+                            'new input.',
                             name=self.name,
                             count=len(records),
                             written=len(written),
                             unsure=len(unsure),
+                            skipped=targeted - len(records),
                         ),
                         *errors,
                     ]
@@ -344,6 +382,11 @@ class IrActionsServer(models.Model):
                 state = action._decision_states(record)[0]
             except (UserError, ValueError) as error:
                 action.decision_preview = str(error)
+                continue
+            if not state:
+                action.decision_preview = self.env._(
+                    'The input code assigns no text, so the record is skipped.'
+                )
                 continue
             try:
                 action.decision_preview = json.dumps(
