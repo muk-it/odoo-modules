@@ -171,17 +171,16 @@ def fetch_url(
     url: str,
     max_bytes: int = URL_FETCH_MAX_BYTES,
     deadline: float | None = None,
+    headers: dict | None = None,
 ) -> FetchResult:
-    """Fetch an ``https://`` URL, following redirects with SSRF guards.
-
-    Every hop is re-validated and IP-pinned, so a public URL cannot bounce the
-    fetch to an internal address.
+    """Fetch an ``https://`` URL, re-validating and IP-pinning every redirect.
 
     :param deadline: seconds the whole fetch may take, redirects included
-    :raise UserError: on validation failure, an HTTP error status, too many
-        redirects, a body over ``max_bytes``, or the deadline running out
+    :param headers: request headers sent only to the host of ``url``
+    :raise UserError: on a refused address, an HTTP error or an exceeded limit
     """
     current = _normalize_url(url)
+    origin = urlparse(current).hostname
     expires = monotonic() + deadline if deadline else None
     for _ in range(MAX_REDIRECTS + 1):
         connect_timeout, read_timeout = CONNECT_TIMEOUT, READ_TIMEOUT
@@ -208,10 +207,11 @@ def fetch_url(
                 'GET',
                 path,
                 headers={
-                    'Host': host,
                     'User-Agent': USER_AGENT,
                     'Accept': ACCEPT,
                     'Accept-Language': 'en-US,en;q=0.9',
+                    **(headers if headers and host == origin else {}),
+                    'Host': host,
                 },
                 preload_content=False,
                 redirect=False,

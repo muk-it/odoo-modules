@@ -1,16 +1,21 @@
 from __future__ import annotations
 
 import base64
+import socket
 from collections.abc import Iterator
 from contextlib import AbstractContextManager, contextmanager
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import requests
+import urllib3
 
 from odoo import models
 from odoo.tests.common import TransactionCase, tagged
 
 from odoo.addons.muk_ai.tools.url_fetch import FetchResult
+
+PUBLIC_IP = '93.184.215.14'
 
 HTML_PAGE = (
     b'<!doctype html><html><head><title>  Hello   World </title>'
@@ -47,6 +52,54 @@ class FakeRequest:
     def __bool__(self) -> bool:
         """Report whether a request is bound, as the werkzeug proxy does."""
         return self.bound
+
+
+@contextmanager
+def serve_web(pages: dict, dns: dict | None = None) -> Iterator[list[dict]]:
+    """Serve ``pages`` at the DNS and connection pool boundary of a fetch.
+
+    :param pages: URL mapped to ``(status, headers, body)``, any other 404s
+    :param dns: host mapped to its addresses, ``None`` failing the lookup
+    :return: every opened connection with its ip, host, timeout, url and headers
+    """
+    dns = dns or {}
+    connections = []
+
+    def getaddrinfo(host, *args, **kwargs) -> list[tuple]:
+        """Resolve ``host`` through the ``dns`` table."""
+        if (ips := dns.get(host, (PUBLIC_IP,))) is None:
+            raise socket.gaierror(host)
+        return [(0, 0, 0, '', (ip, 0)) for ip in ips]
+
+    def pool(**kwargs) -> SimpleNamespace:
+        """Open a connection pool pinned to the address it was given."""
+        connection = {
+            'ip': kwargs['host'],
+            'host': kwargs['assert_hostname'],
+            'timeout': kwargs['timeout'],
+        }
+        connections.append(connection)
+
+        def urlopen(method, path, headers, **options) -> SimpleNamespace:
+            """Answer the request from ``pages``."""
+            connection['url'] = f'https://{headers["Host"]}{path}'
+            connection['headers'] = headers
+            status, answer, body = pages.get(connection['url'], (404, {}, b''))
+            chunks = body if isinstance(body, list) else [body]
+            return SimpleNamespace(
+                status=status,
+                headers=answer,
+                stream=lambda size: iter(chunks),
+                release_conn=lambda: None,
+            )
+
+        return SimpleNamespace(urlopen=urlopen, close=lambda: None)
+
+    with (
+        patch.object(socket, 'getaddrinfo', side_effect=getaddrinfo),
+        patch.object(urllib3, 'HTTPSConnectionPool', side_effect=pool),
+    ):
+        yield connections
 
 
 @tagged('post_install', '-at_install')
