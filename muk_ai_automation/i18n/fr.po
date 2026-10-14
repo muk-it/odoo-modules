@@ -650,3 +650,13 @@ msgstr "En pause"
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_kanban
 msgid "Weekly"
 msgstr "Hebdomadaire"
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_muk_ai_session__action_space_id
+msgid "Space of the Action"
+msgstr "Espace de l'action"
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_muk_ai_session__action_server_usage
+msgid "Started By Usage"
+msgstr "Usage de l'action de départ"
