@@ -20,10 +20,10 @@ msgstr ""
 #: code:addons/muk_ai_decision/models/ir_actions_server.py:0
 msgid ""
 "%(name)s decided about %(count)s records: %(written)s written, %(unsure)s "
-"unsure."
+"unsure, %(skipped)s skipped without new input."
 msgstr ""
 "%(name)s ha deciso su %(count)s record: %(written)s scritti, %(unsure)s "
-"incerti."
+"incerti, %(skipped)s saltati senza nuovo input."
 
 #. module: muk_ai_decision
 #. odoo-python
@@ -910,17 +910,21 @@ msgstr "Le categorie, o i livelli di un punteggio dal più basso al più alto."
 msgid ""
 "The code runs once per record and assigns the text the decision\n"
 "\t\t\t\t\t\t\tmodel reads to <code>text</code>. Keep it short: only what the\n"
-"\t\t\t\t\t\t\tquestions need."
+"\t\t\t\t\t\t\tquestions need. A record without text is skipped, and so is a\n"
+"\t\t\t\t\t\t\trecord whose text and questions are the same as at its last\n"
+"\t\t\t\t\t\t\tdecision by this action."
 msgstr ""
 "Il codice viene eseguito una volta per record e assegna a <code>text</code> il testo\n"
 "\t\t\t\t\t\t\tletto dal modello di decisione. Mantienilo breve: solo ciò che serve\n"
-"\t\t\t\t\t\t\talle domande."
+"\t\t\t\t\t\t\talle domande. Un record senza testo viene saltato, così come un record il\n"
+"\t\t\t\t\t\t\tcui testo e le cui domande sono uguali alla sua ultima decisione\n"
+"\t\t\t\t\t\t\tdi questa azione."
 
 #. module: muk_ai_decision
 #. odoo-python
 #: code:addons/muk_ai_decision/models/ir_actions_server.py:0
-msgid "The input code assigns no text for %(record)s."
-msgstr "Il codice di input non assegna testo per %(record)s."
+msgid "The input code assigns no text, so the record is skipped."
+msgstr "Il codice di input non assegna testo, quindi il record viene saltato."
 
 #. module: muk_ai_decision
 #: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
@@ -1116,12 +1120,24 @@ msgstr ""
 #. module: muk_ai_decision
 #: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
 msgid ""
-"text = '\\n'.join([\n"
-"    'Name: ' + record.name,\n"
-"    'Tags: ' + ', '.join(record.category_id.mapped('name')),\n"
-"    'Notes: ' + html2plaintext(record.comment or '')[:500],\n"
-"    'Last message: ' + html2plaintext(record.message_ids.filtered(\n"
-"        lambda message: message.message_type in ('email', 'comment')\n"
-"    )[:1].body or '')[:500],\n"
-"])"
+"page = web_fetch(record.carrier_tracking_url)\n"
+"text = page and record_text(record, ['name', 'carrier_id']) + '\\n' + page"
 msgstr ""
+
+#. module: muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
+msgid ""
+"<code>record_text(records, fields)</code>: the labelled fields of\n"
+"\t\t\t\t\t\t\t\trecords, by default their list columns"
+msgstr ""
+"<code>record_text(records, fields)</code>: i campi etichettati dei\n"
+"\t\t\t\t\t\t\t\trecord, per impostazione predefinita le colonne della lista"
+
+#. module: muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
+msgid ""
+"<code>web_fetch(url, headers)</code>: a web page or an API answer\n"
+"\t\t\t\t\t\t\t\tas text, empty when it cannot be fetched"
+msgstr ""
+"<code>web_fetch(url, headers)</code>: una pagina web o una risposta API\n"
+"\t\t\t\t\t\t\t\tcome testo, vuoto se non può essere recuperata"
