@@ -21,7 +21,7 @@ msgstr ""
 #, python-format
 msgid ""
 "%(name)s decided about %(count)s records: %(written)s written, %(unsure)s "
-"unsure."
+"unsure, %(skipped)s skipped without new input."
 msgstr ""
 
 #. module: muk_ai_decision
@@ -893,14 +893,16 @@ msgstr ""
 msgid ""
 "The code runs once per record and assigns the text the decision\n"
 "\t\t\t\t\t\t\tmodel reads to <code>text</code>. Keep it short: only what the\n"
-"\t\t\t\t\t\t\tquestions need."
+"\t\t\t\t\t\t\tquestions need. A record without text is skipped, and so is a\n"
+"\t\t\t\t\t\t\trecord whose text and questions are the same as at its last\n"
+"\t\t\t\t\t\t\tdecision by this action."
 msgstr ""
 
 #. module: muk_ai_decision
 #. odoo-python
 #: code:addons/muk_ai_decision/models/ir_actions_server.py:0
 #, python-format
-msgid "The input code assigns no text for %(record)s."
+msgid "The input code assigns no text, so the record is skipped."
 msgstr ""
 
 #. module: muk_ai_decision
@@ -1083,12 +1085,20 @@ msgstr ""
 #. module: muk_ai_decision
 #: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
 msgid ""
-"text = '\\n'.join([\n"
-"    'Name: ' + record.name,\n"
-"    'Tags: ' + ', '.join(record.category_id.mapped('name')),\n"
-"    'Notes: ' + html2plaintext(record.comment or '')[:500],\n"
-"    'Last message: ' + html2plaintext(record.message_ids.filtered(\n"
-"        lambda message: message.message_type in ('email', 'comment')\n"
-"    )[:1].body or '')[:500],\n"
-"])"
+"page = web_fetch(record.carrier_tracking_url)\n"
+"text = page and record_text(record, ['name', 'carrier_id']) + '\\n' + page"
+msgstr ""
+
+#. module: muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
+msgid ""
+"<code>record_text(records, fields)</code>: the labelled fields of\n"
+"\t\t\t\t\t\t\t\trecords, by default their list columns"
+msgstr ""
+
+#. module: muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai_decision.view_ir_actions_server_form_decision
+msgid ""
+"<code>web_fetch(url, headers)</code>: a web page or an API answer\n"
+"\t\t\t\t\t\t\t\tas text, empty when it cannot be fetched"
 msgstr ""
