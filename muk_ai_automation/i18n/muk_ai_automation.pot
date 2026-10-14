@@ -423,6 +423,16 @@ msgid "Space"
 msgstr ""
 
 #. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_muk_ai_session__action_space_id
+msgid "Space of the Action"
+msgstr ""
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_muk_ai_session__action_server_usage
+msgid "Started By Usage"
+msgstr ""
+
+#. module: muk_ai_automation
 #: model:ir.actions.server,name:muk_ai_automation.demo_agent_action_partner_summary
 msgid "Summarize Contact"
 msgstr ""

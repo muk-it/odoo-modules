@@ -26,6 +26,19 @@ class AISession(models.Model):
         ondelete='set null',
     )
 
+    action_server_usage = fields.Selection(
+        related='action_server_id.usage',
+        string='Started By Usage',
+        store=True,
+    )
+
+    action_space_id = fields.Many2one(
+        related='action_server_id.agent_space_id',
+        string='Space of the Action',
+        store=True,
+        index=True,
+    )
+
     base_automation_id = fields.Many2one(
         comodel_name='base.automation',
         related='action_server_id.base_automation_id',
