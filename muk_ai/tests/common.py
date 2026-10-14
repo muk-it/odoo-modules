@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import base64
+import socket
 from collections.abc import Iterator
 from contextlib import AbstractContextManager, contextmanager
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import requests
+import urllib3
 
 from odoo import models
 from odoo.tests.common import TransactionCase, tagged
@@ -35,6 +38,41 @@ PNG_1x1 = base64.b64encode(
 def html_result(url: str = 'https://example.com/page') -> FetchResult:
     """Build a fetch result serving the shared HTML fixture page."""
     return FetchResult(url=url, body=HTML_PAGE, content_type='text/html', charset=None)
+
+
+@contextmanager
+def serve_web(pages: dict) -> Iterator[list[dict]]:
+    """Serve ``pages`` at the DNS and connection pool boundary of a fetch.
+
+    :param pages: URL mapped to ``(status, headers, body)``, any other 404s
+    :return: every opened connection with its url and request headers
+    """
+    connections = []
+
+    def urlopen(method, path, headers, **options) -> SimpleNamespace:
+        """Answer the request from ``pages``."""
+        connections.append(
+            {'url': f'https://{headers["Host"]}{path}', 'headers': headers}
+        )
+        status, answer, body = pages.get(connections[-1]['url'], (404, {}, b''))
+        return SimpleNamespace(
+            status=status,
+            headers=answer,
+            stream=lambda size: iter([body]),
+            release_conn=lambda: None,
+        )
+
+    with (
+        patch.object(
+            socket, 'getaddrinfo', return_value=[(0, 0, 0, '', ('93.184.215.14', 0))]
+        ),
+        patch.object(
+            urllib3,
+            'HTTPSConnectionPool',
+            return_value=SimpleNamespace(urlopen=urlopen, close=lambda: None),
+        ),
+    ):
+        yield connections
 
 
 class FakeRequest:
