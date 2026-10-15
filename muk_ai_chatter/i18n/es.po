@@ -967,3 +967,8 @@ msgstr "eliminado"
 #: code:addons/muk_ai_chatter/static/src/chatter/session_box/session_box.xml:0
 msgid "sessions"
 msgstr "sesiones"
+
+#. module: muk_ai_chatter
+#: model_terms:ir.ui.view,arch_db:muk_ai_chatter.view_res_config_settings_form
+msgid "Manage AI Agents"
+msgstr "Gestionar agentes de IA"
