@@ -505,3 +505,8 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form_agent
 msgid "records = env['res.partner'].search([], limit=10)"
 msgstr ""
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_kanban
+msgid "Interval"
+msgstr ""
