@@ -534,3 +534,8 @@ msgstr "Quanto un subagente ha già salvato resta quando si ferma."
 #: code:addons/muk_ai_subagents/static/src/chat/run/run.js:0
 msgid "Writing the report"
 msgstr "Scrive il resoconto"
+
+#. module: muk_ai_subagents
+#: model_terms:ir.ui.view,arch_db:muk_ai_subagents.view_res_config_settings_form
+msgid "Manage AI Agents"
+msgstr "Gestisci agenti IA"

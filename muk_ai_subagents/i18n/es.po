@@ -531,3 +531,8 @@ msgstr "Lo que un subagente ya guardó se conserva cuando se detiene."
 #: code:addons/muk_ai_subagents/static/src/chat/run/run.js:0
 msgid "Writing the report"
 msgstr "Redactando el informe"
+
+#. module: muk_ai_subagents
+#: model_terms:ir.ui.view,arch_db:muk_ai_subagents.view_res_config_settings_form
+msgid "Manage AI Agents"
+msgstr "Gestionar agentes de IA"
