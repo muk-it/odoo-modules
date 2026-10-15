@@ -564,3 +564,8 @@ msgstr "Ce qu'un sous-agent a déjà enregistré est conservé quand il s'arrêt
 #: code:addons/muk_ai_subagents/static/src/chat/run/run.js:0
 msgid "Writing the report"
 msgstr "Rédige le rapport"
+
+#. module: muk_ai_subagents
+#: model_terms:ir.ui.view,arch_db:muk_ai_subagents.view_res_config_settings_form
+msgid "Manage AI Agents"
+msgstr "Gérer les agents IA"
