@@ -609,9 +609,11 @@ class MistralProvider(ProviderBase):
             'tool_calls': {},
             'tool_files': [],
             'usage': self._usage(),
+            'complete': False,
         }
         for event in self._post_stream('/conversations', body):
             self._handle_stream_event(event, state, tracked)
+        self._raise_unless_complete(state['complete'])
 
         text = ''.join(state['text'])
         for chunk in state['tool_files']:
@@ -696,6 +698,7 @@ class MistralProvider(ProviderBase):
         elif event_type == 'function.call':
             self._accumulate_function_call(event, state, on_delta, complete=True)
         elif event_type == 'conversation.response.done':
+            state['complete'] = True
             usage = event.get('usage') or {}
             state['usage'] = self._usage(
                 input_tokens=usage.get('prompt_tokens'),
