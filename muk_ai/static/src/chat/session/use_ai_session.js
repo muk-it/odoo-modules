@@ -10,6 +10,7 @@ import { SelectCreateDialog } from '@web/views/view_dialogs/select_create_dialog
 import { fileToBase64 } from '@muk_ai/core/attachment/file_helpers';
 import { renderMarkdown as renderMarkdownToHtml } from '@muk_ai/core/markdown/markdown';
 import { formatError } from '@muk_ai/chat/utils';
+import { formatContext } from '@muk_ai/chat/usage/usage_meter';
 
 import { buildRenderedTurns } from '@muk_ai/chat/session/turns';
 import { useOpenSession } from '@muk_ai/chat/session/open_sessions';
@@ -34,6 +35,7 @@ export const SESSION_READ_FIELDS = [
     'iteration_count',
     'total_input_tokens',
     'total_output_tokens',
+    'total_cached_tokens',
     'last_input_tokens',
     'turn_usage',
     'context_window',
@@ -59,6 +61,10 @@ export const SLASH_COMMANDS = [
     {
         name: '/compact',
         hint: 'Summarize and collapse older turns to free context',
+    },
+    {
+        name: '/context',
+        hint: 'Show what the next turn sends and how full the context window is',
     },
     {
         name: '/clear',
@@ -201,6 +207,7 @@ export function useAiSession(options = {}) {
         iterationCount: 0,
         inputTokens: 0,
         outputTokens: 0,
+        cachedTokens: 0,
         totalCost: 0,
         lastInputTokens: 0,
         turnUsage: {},
@@ -624,6 +631,7 @@ export function useAiSession(options = {}) {
         state.iterationCount = payload.iteration_count || 0;
         state.inputTokens = payload.total_input_tokens || 0;
         state.outputTokens = payload.total_output_tokens || 0;
+        state.cachedTokens = payload.total_cached_tokens || 0;
         state.lastInputTokens = payload.last_input_tokens || 0;
         state.turnUsage = payload.turn_usage || {};
         state.pendingMessages = payload.pending_user_messages || [];
@@ -1108,6 +1116,10 @@ export function useAiSession(options = {}) {
             await runCompact({ silent: false });
             return;
         }
+        if (slash.name === '/context') {
+            await runContext();
+            return;
+        }
         if (slash.name === '/unpin') {
             await runUnpin();
             return;
@@ -1145,6 +1157,21 @@ export function useAiSession(options = {}) {
             return;
         }
         await onSetAgent(target.id);
+    }
+    async function runContext() {
+        if (!state.sessionId) {
+            return;
+        }
+        try {
+            const context = await orm.call('muk_ai.session', 'get_context', [
+                state.sessionId,
+            ]);
+            appendLocalCommandLog('/context', { summary: formatContext(context) });
+        } catch (error) {
+            notification.add(_t('Failed to read the context: %s', formatError(error)), {
+                type: 'danger',
+            });
+        }
     }
     async function runUnpin() {
         if (!state.sessionId) {

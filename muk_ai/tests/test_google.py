@@ -111,10 +111,14 @@ class TestAiGoogleProvider(AITestCommon):
         parts.extend(self._function_call_part(*call) for call in function_calls)
         return self._parts_body(parts)
 
-    def _sse_lines(self, payloads: Sequence[dict]) -> list[str]:
-        """Render the payloads as the ``data:`` lines of an SSE stream."""
+    def _sse_lines(self, payloads: Sequence[dict], complete: bool = True) -> list[str]:
+        """Render the payloads as the ``data:`` lines of an SSE stream.
+
+        :param complete: whether the stream ends with Gemini's final chunk
+        """
+        end = {'candidates': [{'finishReason': 'STOP', 'content': {'parts': []}}]}
         lines = []
-        for payload in payloads:
+        for payload in [*payloads, end] if complete else payloads:
             lines.append('data: ' + json.dumps(payload))
             lines.append('')
         return lines

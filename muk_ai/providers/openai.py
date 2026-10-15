@@ -257,7 +257,7 @@ class OpenAIProvider(ProviderBase):
         tool_calls_by_index = {}
         carry_inputs = []
         usage = {}
-        truncation = None
+        truncation, complete = None, False
         rendered_item_ids = set()
         for event in self._post_stream('/responses', body):
             event_type = event.get('type') or ''
@@ -323,6 +323,7 @@ class OpenAIProvider(ProviderBase):
                         text_parts.append(snippet)
                         self._call_on_delta(on_delta, 'text', {'delta': snippet})
             elif event_type in ('response.completed', 'response.incomplete'):
+                complete = True
                 resp = event.get('response') or {}
                 usage = resp.get('usage') or {}
                 if event_type == 'response.incomplete':
@@ -357,7 +358,7 @@ class OpenAIProvider(ProviderBase):
                 if code := error.get('code') or error.get('type'):
                     message = f'{message} (code: {code})'
                 self._raise(message)
-
+        self._raise_unless_complete(complete)
         tool_calls = []
         for entry in tool_calls_by_index.values():
             args, parse_error = self._parse_tool_arguments(entry['arguments'])

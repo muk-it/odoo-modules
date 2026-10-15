@@ -932,6 +932,9 @@ export class AIChat extends Component {
             if (typeof payload.total_output_tokens === 'number') {
                 this.session.state.outputTokens = payload.total_output_tokens;
             }
+            if (typeof payload.total_cached_tokens === 'number') {
+                this.session.state.cachedTokens = payload.total_cached_tokens;
+            }
             if (typeof payload.last_input_tokens === 'number') {
                 this.session.state.lastInputTokens = payload.last_input_tokens;
             }

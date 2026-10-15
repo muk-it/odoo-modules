@@ -497,6 +497,16 @@ class ProviderBase:
         result['text'] = f'{result["text"]}\n\n{notice}'.strip()
         return result
 
+    def _raise_unless_complete(self, complete: bool) -> None:
+        """Fail a stream that closed before the vendor's end-of-response event.
+
+        :raise UserError: when the stream broke off before the end of the response
+        """
+        if not complete:
+            self._raise(
+                self.env._('The connection closed before the answer was complete.')
+            )
+
     def _raise(self, error) -> None:
         """Wrap a provider error into a user-facing :class:`UserError`.
 

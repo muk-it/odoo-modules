@@ -4,8 +4,6 @@ import re
 
 from odoo import models
 
-SESSION_CHANNEL_RE = re.compile(r'^muk_ai\.session_(\d+)$')
-
 
 class IrWebsocket(models.AbstractModel):
     """Let a client follow the chats it is allowed to read."""
@@ -27,7 +25,9 @@ class IrWebsocket(models.AbstractModel):
         channels = list(channels)
         session_ids = []
         for channel in list(channels):
-            match = isinstance(channel, str) and SESSION_CHANNEL_RE.match(channel)
+            match = isinstance(channel, str) and re.match(
+                r'^muk_ai\.session_(\d+)$', channel
+            )
             if match:
                 channels.remove(channel)
                 session_ids.append(int(match.group(1)))

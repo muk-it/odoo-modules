@@ -435,6 +435,7 @@ class AnthropicProvider(ProviderBase):
         meta = {}
         for event in self._post_stream('/messages', body):
             self._handle_stream_event(event, on_delta, blocks_by_index, raw_usage, meta)
+        self._raise_unless_complete('stop_reason' in meta)
 
         text_parts = []
         tool_calls = []

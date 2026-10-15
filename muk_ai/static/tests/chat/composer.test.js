@@ -1,6 +1,6 @@
 import { describe, expect, test } from '@odoo/hoot';
 import { animationFrame } from '@odoo/hoot-mock';
-import { click, queryAll, queryFirst } from '@odoo/hoot-dom';
+import { click, queryAll, queryAllTexts, queryFirst } from '@odoo/hoot-dom';
 import { Component, useState, xml } from '@odoo/owl';
 import { mountWithCleanup } from '@web/../tests/web_test_helpers';
 import { defineMailModels } from '@mail/../tests/mail_test_helpers';
@@ -263,8 +263,8 @@ test('typing / shows slash command menu', async () => {
     expect(items[0].textContent).toMatch(/\/help|\/clear|\/compact|\/unpin/);
 });
 
-test('typing /co filters slash menu to /compact', async () => {
-    const { Parent, props } = makeInteractiveParent({ value: '/co' });
+test('typing /com filters slash menu to /compact', async () => {
+    const { Parent, props } = makeInteractiveParent({ value: '/com' });
     await mountWithCleanup(Parent, { props });
     const items = queryAll('.mk_slash_item');
     expect(items.length).toBe(1);
@@ -512,12 +512,10 @@ function mountedComposer(cmp) {
     return cmp.__owl__.children[Object.keys(cmp.__owl__.children)[0]]?.component;
 }
 
-test('typing /c lists /compact before /clear', async () => {
+test('typing /c lists /compact, /context and /clear in order', async () => {
     const { Parent, props } = makeInteractiveParent({ value: '/c' });
     await mountWithCleanup(Parent, { props });
-    const items = queryAll('.mk_slash_name');
-    expect(items[0].textContent).toMatch(/\/compact/);
-    expect(items[1].textContent).toMatch(/\/clear/);
+    expect(queryAllTexts('.mk_slash_name')).toEqual(['/compact', '/context', '/clear']);
 });
 
 test('Enter on a partial /clear prefix completes but does not auto-send', async () => {

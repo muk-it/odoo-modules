@@ -140,27 +140,12 @@ class ResConfigSettings(models.TransientModel):
 
     module_muk_ai_compat = fields.Boolean(
         string='MuK AI Compatible Providers',
-        help='Ollama, vLLM, OpenRouter and every OpenAI-compatible LLM.',
-    )
-
-    module_muk_ai_decision = fields.Boolean(
-        string='MuK AI Decision',
-        help='Typed choices, scores and yes/no answers from fast decision models.',
-    )
-
-    module_muk_ai_mcp = fields.Boolean(
-        string='MuK AI MCP',
-        help='Connect remote MCP servers whose tools AI agents can call.',
+        help='Ollama, vLLM, OpenRouter and any OpenAI-compatible LLM.',
     )
 
     module_muk_ai_mistral = fields.Boolean(
         string='MuK AI Mistral',
-        help='Use Mistral AI as a provider.',
-    )
-
-    module_muk_ai_schedule = fields.Boolean(
-        string='MuK AI Schedule',
-        help='Run agents on a schedule; let them pause and resume.',
+        help='Mistral Large, Medium, Small, Ministral and Codestral.',
     )
 
     module_muk_ai_skills = fields.Boolean(
@@ -168,9 +153,49 @@ class ResConfigSettings(models.TransientModel):
         help='Pre-built agent skills the user or LLM can switch into.',
     )
 
+    module_muk_ai_subagents = fields.Boolean(
+        string='MuK AI Subagents',
+        help='Delegate work to focused agents that run in parallel.',
+    )
+
+    module_muk_ai_mcp = fields.Boolean(
+        string='MuK AI MCP',
+        help='Connect remote MCP servers whose tools agents can call.',
+    )
+
     module_muk_ai_voice = fields.Boolean(
         string='MuK AI Voice',
-        help='Talk to the assistant: realtime STT and spoken replies via TTS.',
+        help='Talk to the assistant and hear it answer.',
+    )
+
+    module_muk_ai_chatter = fields.Boolean(
+        string='MuK AI Chatter',
+        help='Mention agents in Discuss and write messages with AI.',
+    )
+
+    module_muk_ai_decision = fields.Boolean(
+        string='MuK AI Decision',
+        help='Typed choices, scores and yes/no answers in a second.',
+    )
+
+    module_muk_ai_automation = fields.Boolean(
+        string='MuK AI Automation',
+        help='Run agents from server actions and automation rules.',
+    )
+
+    module_muk_ai_schedule = fields.Boolean(
+        string='MuK AI Schedule',
+        help='Let agents wait for a time, a change or a reply.',
+    )
+
+    module_muk_ai_rag = fields.Boolean(
+        string='MuK AI Knowledge',
+        help='Agents answer from your documents and cite their sources.',
+    )
+
+    module_muk_ai_memory = fields.Boolean(
+        string='MuK AI Memory',
+        help='The assistant remembers how you work, and shows it.',
     )
 
     module_muk_ai_workflows = fields.Boolean(

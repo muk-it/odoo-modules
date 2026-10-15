@@ -390,3 +390,29 @@ class TestAiStreaming(AITestCommon):
         with patch.object(requests.Session, 'post', return_value=response):
             payloads = list(client._post_stream('/responses', {}))
         self.assertEqual(payloads, [{'type': 'ok', 'text': text}])
+
+    def test_a_stream_that_closes_before_the_answer_ends_fails(self):
+        for provider, event in (
+            (self.provider, {'type': 'response.output_text.delta', 'delta': 'Hel'}),
+            (
+                self.provider_anthropic,
+                {
+                    'type': 'content_block_start',
+                    'index': 0,
+                    'content_block': {'type': 'text', 'text': 'Hel'},
+                },
+            ),
+            (
+                self.provider_google,
+                {'candidates': [{'content': {'parts': [{'text': 'Hel'}]}}]},
+            ),
+        ):
+            with self.subTest(provider=provider.name):
+                response = self._sse_response(iter([f'data: {json.dumps(event)}']))
+                with (
+                    patch.object(requests.Session, 'post', return_value=response),
+                    self.assertRaisesRegex(
+                        UserError, 'closed before the answer was complete'
+                    ),
+                ):
+                    provider._request_responses(inputs=[], on_delta=lambda *_: None)

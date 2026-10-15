@@ -3,6 +3,7 @@ from __future__ import annotations
 from unittest.mock import patch
 
 from odoo import models, release
+from odoo.tests import new_test_user
 
 from odoo.addons.muk_ai.providers.anthropic import AnthropicProvider
 from odoo.addons.muk_ai.tests.common import AITestCommon
@@ -70,6 +71,38 @@ class TestAiAgent(AITestCommon):
         )
         self.assertFalse(agent.model_id)
         self.assertEqual(agent.reasoning_effort_options, ['low', 'high'])
+
+    def test_the_context_shows_what_the_next_turn_sends_and_the_prompt_to_editors(self):
+        agent = self.env['muk_ai.agent'].create(
+            {'name': 'Context Agent', 'system_prompt': 'Answer in rhymes.'}
+        )
+        addenda = ['<house_rules>\nQuote net prices.', 'Plain guidance.']
+        with patch.object(
+            type(self.env['muk_ai.session']),
+            '_system_prompt_addenda',
+            return_value=addenda,
+        ):
+            for group, editor in (
+                ('base.group_system', True),
+                ('base.group_user', False),
+            ):
+                with self.subTest(group=group):
+                    user = new_test_user(self.env, login=group, groups=group)
+                    session = (
+                        self.env['muk_ai.session']
+                        .with_user(user)
+                        .create({'name': 'Context', 'agent_id': agent.id})
+                    )
+                    context = session.get_context()
+                    labels = [part['label'] for part in context['parts']]
+                    self.assertEqual(labels[0], 'Agent prompt')
+                    self.assertIn('House rules', labels)
+                    self.assertIn('Extension', labels)
+                    self.assertEqual(labels[-2:], ['Tool schemas', 'Conversation'])
+                    self.assertEqual(
+                        context['system_prompt'],
+                        editor and session._system_message()['content'][0]['text'],
+                    )
 
     def test_apply_tool_filter_empty_allows_all(self):
         agent = self.env['muk_ai.agent'].create(

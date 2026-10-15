@@ -219,7 +219,6 @@ class AIProvider(models.Model):
 
     def _valid_regions(self) -> list[str]:
         """Return the region codes the provider implementation accepts."""
-        self.ensure_one()
         if (impl := REGISTRY.get(self.name)) is None:
             return []
         codes = ['default'] if impl.default_url else []
@@ -231,7 +230,6 @@ class AIProvider(models.Model):
         Combining built-in connectors with function calling is a per-model
         property, so the adapter answers it.
         """
-        self.ensure_one()
         if self.name not in REGISTRY:
             return False
         client = self._get_client()

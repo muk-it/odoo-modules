@@ -347,6 +347,26 @@ class TestAiSession(AITestCommon):
         self.assertEqual(snapshot['state'], 'error')
         self.assertIn('provider down', self.session.error_message or '')
 
+    def test_only_a_silent_reply_to_the_user_ends_a_turn_without_an_answer(self):
+        silent = self._make_text_response('')
+        for payloads, outcome in (
+            ([silent], ('done', False)),
+            (
+                [self._tool_payload('list_modules', {}), silent],
+                ('error', 'AI returned no output.'),
+            ),
+        ):
+            with self.subTest(outcome=outcome):
+                session = self.env['muk_ai.session'].create({'name': 'silent'})
+                with (
+                    self._patch_provider(payloads),
+                    self._patch_tool_call({'list_modules': '{}'}),
+                ):
+                    snapshot = session.start('Thanks, that is all.')
+                self.assertEqual(
+                    (snapshot['state'], snapshot['error_message']), outcome
+                )
+
     def test_max_iterations_marks_error(self):
         payloads = [
             self._tool_payload('list_modules', {}, f'call_{i}')
@@ -793,19 +813,25 @@ class TestAiSession(AITestCommon):
     def test_turn_usage_counts_only_the_latest_turn(self):
         session = self.env['muk_ai.session'].create({'name': 'turn meter'})
 
-        def make_payload(tokens):
+        def make_payload(tokens, cached):
             return {
                 'text': 'ok',
                 'tool_calls': [],
                 'carry_inputs': [],
-                'usage': {'input_tokens': tokens, 'output_tokens': 3},
+                'usage': {
+                    'input_tokens': tokens,
+                    'output_tokens': 3,
+                    'cache_read_tokens': cached,
+                },
             }
 
-        with self._patch_provider([make_payload(42)]):
+        with self._patch_provider([make_payload(42, 30)]):
             session.start('hi')
-        with self._patch_provider([make_payload(120)]):
+        with self._patch_provider([make_payload(120, 100)]):
             session.send_message('again')
         self.assertEqual(session.turn_usage['input_tokens'], 120)
+        self.assertEqual(session.turn_usage['cached_tokens'], 100)
+        self.assertEqual(session.get_snapshot()['total_cached_tokens'], 130)
         self.assertEqual(session.turn_usage['output_tokens'], 3)
         self.assertEqual(session.turn_usage['iterations'], 1)
         self.assertEqual(session.get_snapshot()['turn_usage'], session.turn_usage)

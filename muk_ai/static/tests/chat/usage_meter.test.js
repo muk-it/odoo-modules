@@ -15,10 +15,12 @@ function usageState(values = {}) {
         lastInputTokens: 2000,
         inputTokens: 12000,
         outputTokens: 900,
+        cachedTokens: 9000,
         iterationCount: 6,
         totalCost: 0.5,
         turnUsage: {
             input_tokens: 4000,
+            cached_tokens: 3000,
             output_tokens: 300,
             iterations: 2,
             cost: 0.12,
@@ -50,6 +52,8 @@ test('the popover lists the last turn next to the session', async () => {
     expect(queryAllTexts('.mk_usage_num')).toEqual([
         '4,000',
         '12,000',
+        '3,000',
+        '9,000',
         '300',
         '900',
         '2',
@@ -68,6 +72,8 @@ test('a session without a finished turn reads zero for the turn', async () => {
     expect(queryAllTexts('.mk_usage_num')).toEqual([
         '0',
         '12,000',
+        '0',
+        '9,000',
         '0',
         '900',
         '0',

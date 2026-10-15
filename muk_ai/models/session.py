@@ -444,6 +444,13 @@ class AISession(models.Model):
         default=0,
     )
 
+    total_cached_tokens = fields.Integer(
+        string='Cached Input Tokens',
+        help='Input tokens the provider read from its prompt cache, billed at the cache rate.',
+        readonly=True,
+        default=0,
+    )
+
     total_input_cost = fields.Float(
         string='Input Cost (USD)',
         help=(
@@ -903,25 +910,35 @@ class AISession(models.Model):
             ]
         return {'role': 'user', 'content': content} if content else None
 
+    def _system_prompt_parts(self) -> list[tuple[str, str]]:
+        """Return the labelled parts of the system message, empty ones left out.
+
+        An addendum is labelled by the tag it opens with, written as words.
+        """
+        parts = [
+            (self.env._('Agent prompt'), self._effective_system_prompt()),
+            (self.env._('Workspace'), self._build_space_block()),
+            *(
+                (
+                    text[1:].split('>', 1)[0].replace('_', ' ').capitalize()
+                    if text.startswith('<')
+                    else '',
+                    text,
+                )
+                for text in self._system_prompt_addenda()
+            ),
+            (self.env._('Runtime'), self._build_runtime_block()),
+            (self.env._('Files'), self._build_files_block()),
+            (self.env._('Tool catalog'), self._build_available_tools_block()),
+        ]
+        return [
+            (label or self.env._('Extension'), text) for label, text in parts if text
+        ]
+
     def _system_message(self) -> dict:
         """Return the system message rebuilt from the current agent and context."""
-        parts = [
-            self._effective_system_prompt(),
-            self._build_space_block(),
-            *self._system_prompt_addenda(),
-            self._build_runtime_block(),
-            self._build_files_block(),
-            self._build_available_tools_block(),
-        ]
-        return {
-            'role': 'system',
-            'content': [
-                {
-                    'type': 'input_text',
-                    'text': '\n\n'.join(part for part in parts if part),
-                }
-            ],
-        }
+        text = '\n\n'.join(text for _label, text in self._system_prompt_parts())
+        return {'role': 'system', 'content': [{'type': 'input_text', 'text': text}]}
 
     def _build_initial_inputs(
         self,
@@ -1167,6 +1184,7 @@ class AISession(models.Model):
             'iteration_count': self.iteration_count,
             'total_input_tokens': self.total_input_tokens,
             'total_output_tokens': self.total_output_tokens,
+            'total_cached_tokens': self.total_cached_tokens,
             'last_input_tokens': self.last_input_tokens,
             'turn_usage': self.turn_usage or {},
             'context_window': self._resolve_context_window(),
@@ -2681,6 +2699,7 @@ class AISession(models.Model):
         usage = usage or {}
         round_input_tokens = usage.get('input_tokens')
         round_output_tokens = usage.get('output_tokens', 0)
+        round_cached_tokens = usage.get('cache_read_tokens') or 0
         costs = self._accrue_cost_deltas(usage)
         turn = costs.pop('turn_usage', self.turn_usage or {})
         self.write(
@@ -2689,6 +2708,7 @@ class AISession(models.Model):
                 'total_input_tokens': self.total_input_tokens
                 + (round_input_tokens or 0),
                 'total_output_tokens': self.total_output_tokens + round_output_tokens,
+                'total_cached_tokens': self.total_cached_tokens + round_cached_tokens,
                 'last_input_tokens': (
                     self.last_input_tokens
                     if round_input_tokens is None
@@ -2699,6 +2719,7 @@ class AISession(models.Model):
                     'input_tokens': turn.get('input_tokens', 0)
                     + (round_input_tokens or 0),
                     'output_tokens': turn.get('output_tokens', 0) + round_output_tokens,
+                    'cached_tokens': turn.get('cached_tokens', 0) + round_cached_tokens,
                     'iterations': turn.get('iterations', 0) + 1,
                 },
                 **costs,
@@ -2723,8 +2744,11 @@ class AISession(models.Model):
         )
 
     def _finalize_round(self, payload: dict) -> None:
-        """Transition to done or error based on the round's text output."""
-        if payload.get('text'):
+        """Transition to done or error based on the round's text output.
+
+        A round answering the user's own message may end silently.
+        """
+        if payload.get('text') or payload.get('replies_to_user'):
             self._transition_state('done')
         else:
             self._transition_state('error', error=_('AI returned no output.'))
@@ -3244,9 +3268,10 @@ class AISession(models.Model):
             except UserError as error:
                 self._transition_state('error', error=str(error))
                 return
+            replies_to_user = (self.conversation or [{}])[-1].get('role') == 'user'
             self._accrue_round_payload(payload)
             if not (tool_calls := payload.get('tool_calls') or []):
-                self._finalize_round(payload)
+                self._finalize_round({**payload, 'replies_to_user': replies_to_user})
                 return
             result = self._process_tool_round(
                 tool_calls, [], 0, has_terminating=has_terminating
@@ -4043,6 +4068,29 @@ class AISession(models.Model):
             'events': [],
             'has_more_older': False,
             'oldest_sequence': None,
+        }
+
+    def get_context(self) -> dict:
+        """Return what the next turn sends, part by part, with estimated tokens.
+
+        The assembled system prompt is only returned to a user who may edit
+        the agent, so a chat never reveals a prompt its user cannot open.
+        """
+        self.check_access('read')
+        parts = [
+            *self._system_prompt_parts(),
+            (self.env._('Tool schemas'), json.dumps(self._get_tool_schema())),
+            (self.env._('Conversation'), json.dumps(self.conversation or [])),
+        ]
+        agent = self.agent_id or self.env['muk_ai.agent']._get_default()
+        return {
+            'parts': [
+                {'label': label, 'tokens': len(text) // 4} for label, text in parts
+            ],
+            'context_window': self._resolve_context_window(),
+            'last_input_tokens': self.last_input_tokens,
+            'system_prompt': agent.has_access('write')
+            and self._system_message()['content'][0]['text'],
         }
 
     def get_snapshot(self, include_conversation: bool = False) -> dict:

@@ -540,6 +540,7 @@ class GoogleProvider(ProviderBase):
         meta = {}
         for event in self._post_stream(path, body):
             self._handle_stream_event(event, turn, on_delta, raw_usage, meta)
+        self._raise_unless_complete('finish' in meta)
         return self._turn_result(
             turn,
             self._usage_from_google(raw_usage),
@@ -571,7 +572,8 @@ class GoogleProvider(ProviderBase):
         candidates = event.get('candidates') or []
         if candidates:
             first = candidates[0]
-            finish = first.get('finishReason')
+            if finish := first.get('finishReason'):
+                meta['finish'] = finish
             if finish == 'MAX_TOKENS':
                 meta['truncated'] = True
             elif finish and finish not in ('STOP', 'FINISH_REASON_UNSPECIFIED'):

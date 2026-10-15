@@ -606,6 +606,42 @@ test('slash command /compact calls compact and skips send_message', async () => 
     expect(sent).toBe(false);
 });
 
+test('slash command /context logs what the next turn sends', async () => {
+    onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
+    onRpc('muk_ai.session', 'get_context', ({ args }) => {
+        expect(args).toEqual([7]);
+        return {
+            parts: [
+                { label: 'Agent prompt', tokens: 1000 },
+                { label: 'Conversation', tokens: 1000 },
+            ],
+            context_window: 8000,
+            last_input_tokens: 1800,
+            system_prompt: 'Answer in rhymes.',
+        };
+    });
+    makeBusMock();
+    mockService('notification', { add: () => {} });
+    const session = await mountAndLoad(makeHarness());
+    session.onInputChange('/context');
+    await session.onSend();
+    const { name, summary } = session.state.events.at(-1);
+    expect(name).toBe('/context');
+    expect(summary.split('\n')).toEqual([
+        'About 2,000 of 8,000 tokens. Last turn sent 1,800.',
+        '',
+        '| Part | Tokens | Share |',
+        '| --- | ---: | ---: |',
+        '| Agent prompt | 1,000 | 13% |',
+        '| Conversation | 1,000 | 13% |',
+        '| Free | 6,000 | 75% |',
+        '',
+        '````',
+        'Answer in rhymes.',
+        '````',
+    ]);
+});
+
 test('onSetAgent writes agent_id and updates state', async () => {
     onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
     onRpc('muk_ai.agent', 'search_read', () => AGENTS);
