@@ -53,7 +53,7 @@
                         </div>
                         <div class="mt-3 d-flex flex-wrap gap-1">
                             <span class="badge rounded-pill border text-body fw-normal px-2 py-1" style="font-size: 0.8rem;">
-                                <i class="fa fa-clock-o me-1" aria-hidden="true"/>
+                                <i class="fa fa-clock-o me-1" title="Interval"/>
                                 <t t-if="record.interval_number.raw_value === 1">
                                     <t t-if="record.interval_type.raw_value === 'minutes'">Every minute</t>
                                     <t t-elif="record.interval_type.raw_value === 'hours'">Hourly</t>
