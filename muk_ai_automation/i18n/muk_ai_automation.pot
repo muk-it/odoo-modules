@@ -576,3 +576,8 @@ msgstr ""
 #: model:ir.model.fields,field_description:muk_ai_automation.field_muk_ai_session__action_server_usage
 msgid "Started By Usage"
 msgstr ""
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_kanban
+msgid "Interval"
+msgstr ""
