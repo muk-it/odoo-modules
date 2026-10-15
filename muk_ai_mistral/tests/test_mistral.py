@@ -92,6 +92,7 @@ MISTRAL = ProviderCase(
         done(),
     ],
     truncated=[delta('partial'), done(7, 4096)],
+    end=[done()],
     reply={},
     error=lambda message: {
         'type': 'conversation.response.error',

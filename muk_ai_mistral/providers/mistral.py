@@ -277,7 +277,7 @@ class MistralProvider(ProviderBase):
         no finish reason, so an answer that used the whole output budget is
         taken as cut at the cap.
         """
-        text, calls, files, usage = [], {}, [], {}
+        text, calls, files, usage, complete = [], {}, [], {}, False
 
         def emit(snippet: str) -> None:
             """Add a snippet to the answer and forward it."""
@@ -303,7 +303,7 @@ class MistralProvider(ProviderBase):
             elif kind == 'function.call.delta':
                 self._call_event(event, calls, on_delta)
             elif kind == 'conversation.response.done':
-                usage = event.get('usage') or {}
+                usage, complete = event.get('usage') or {}, True
             elif kind in ('conversation.response.error', 'error'):
                 self._raise_stream_error(event, 'code')
         for chunk in files:
@@ -324,6 +324,7 @@ class MistralProvider(ProviderBase):
             on_delta,
             bool(limit) and output_tokens >= limit,
             limit,
+            complete=complete,
         )
 
     def _call_event(self, event: dict, calls: dict, on_delta: Callable | None) -> None:

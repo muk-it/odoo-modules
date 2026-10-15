@@ -18,7 +18,7 @@
 							name="%(muk_ai.action_muk_ai_provider)d"
 							type="action"
 							string="Manage AI Providers"
-							icon="oi-arrow-right"
+							icon="arrow_forward"
 							class="btn-link"
 						/>
 					</div>
