@@ -49,13 +49,13 @@ async function mountComposer(values = {}, props = {}) {
 
 test('the slash menu filters, walks with the arrows, completes with Tab and clears with Escape', async () => {
     await mountComposer();
-    await contains('.mk_composer textarea').edit('/c', { confirm: false });
-    expect(queryAllTexts('.mk_slash_name')).toEqual(['/compact', '/clear']);
+    await contains('.mk_composer textarea').edit('/co', { confirm: false });
+    expect(queryAllTexts('.mk_slash_name')).toEqual(['/compact', '/context']);
     expect('.mk_slash_item.active .mk_slash_name').toHaveText('/compact');
     for (const [key, active] of [
-        ['ArrowDown', '/clear'],
+        ['ArrowDown', '/context'],
         ['ArrowDown', '/compact'],
-        ['ArrowUp', '/clear'],
+        ['ArrowUp', '/context'],
     ]) {
         await press(key);
         await animationFrame();
@@ -63,7 +63,7 @@ test('the slash menu filters, walks with the arrows, completes with Tab and clea
     }
     await press('Tab');
     await animationFrame();
-    expect('.mk_composer textarea').toHaveValue('/clear');
+    expect('.mk_composer textarea').toHaveValue('/context');
     await press('Escape');
     await animationFrame();
     expect('.mk_composer textarea').toHaveValue('');

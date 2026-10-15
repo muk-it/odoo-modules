@@ -211,7 +211,9 @@ class TestAnthropicProvider(ProviderTestCase):
             ),
         ):
             with self.subTest(thinking=label):
-                result, _deltas, _sent = self._stream('anthropic', events)
+                result, _deltas, _sent = self._stream(
+                    'anthropic', [*events, *CASES['anthropic'].end]
+                )
                 self.assertEqual(result['carry_inputs'], carried)
 
     def test_legacy_thinking_budgets_leave_room_for_the_answer(self):

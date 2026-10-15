@@ -277,3 +277,15 @@ def build_tool_call_output(call_id: str, output) -> dict:
         'call_id': call_id,
         'output': serialized,
     }
+
+
+IMAGE_OPTIONS = {
+    'quality': {
+        'description': 'Rendering quality. Omit for the model default.',
+        'enum': ('low', 'medium', 'high'),
+    },
+    'background': {
+        'description': 'Background handling. Omit for the model default.',
+        'enum': ('transparent', 'opaque'),
+    },
+}

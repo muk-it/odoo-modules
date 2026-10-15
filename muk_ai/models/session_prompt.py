@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 from odoo import api, fields, models, release
 
 from odoo.addons.muk_ai.tools.call import (
@@ -278,21 +280,36 @@ class AISessionPrompt(models.AbstractModel):
             'attachments': [attachment._ai_describe() for attachment in attachments],
         }
 
-    def _system_message(self) -> dict:
-        """Return the system message rebuilt from the current agent and context.
+    def _system_prompt_parts(self) -> list[tuple[str, str]]:
+        """Return the labelled parts of the system message, empty ones left out.
 
         The parts run from the most to the least widely shared, so a provider
-        can reuse the longest cached prefix: the runtime facts come last.
+        can reuse the longest cached prefix: the runtime facts come last. An
+        addendum is labelled by the tag it opens with, written as words.
         """
         parts = [
-            self._effective_system_prompt(),
-            FILES_BLOCK,
-            self._build_available_tools_block(),
-            self._build_space_block(),
-            *self._system_prompt_addenda(),
-            self._build_runtime_block(),
+            (self.env._('Agent prompt'), self._effective_system_prompt()),
+            (self.env._('Files'), FILES_BLOCK),
+            (self.env._('Tool catalog'), self._build_available_tools_block()),
+            (self.env._('Workspace'), self._build_space_block()),
+            *(
+                (
+                    text[1:].split('>', 1)[0].replace('_', ' ').capitalize()
+                    if text.startswith('<')
+                    else '',
+                    text,
+                )
+                for text in self._system_prompt_addenda()
+            ),
+            (self.env._('Runtime'), self._build_runtime_block()),
         ]
-        text = '\n\n'.join(part for part in parts if part)
+        return [
+            (label or self.env._('Extension'), text) for label, text in parts if text
+        ]
+
+    def _system_message(self) -> dict:
+        """Return the system message rebuilt from the current agent and context."""
+        text = '\n\n'.join(text for _label, text in self._system_prompt_parts())
         return {'role': 'system', 'content': [{'type': 'input_text', 'text': text}]}
 
     def _build_request_inputs(self) -> list[dict]:
@@ -403,3 +420,30 @@ class AISessionPrompt(models.AbstractModel):
         if 'ask_user' not in loaded:
             schema.append(self._tool_entry_to_schema(ASK_USER_TOOL))
         return schema
+
+    # ----------------------------------------------------------
+    # Functions
+    # ----------------------------------------------------------
+
+    def get_context(self) -> dict:
+        """Return what the next turn sends, part by part, with estimated tokens.
+
+        The assembled system prompt is only returned to a user who may edit
+        the agent, so a chat never reveals a prompt its user cannot open.
+        """
+        self.check_access('read')
+        parts = [
+            *self._system_prompt_parts(),
+            (self.env._('Tool schemas'), json.dumps(self._get_tool_schema())),
+            (self.env._('Conversation'), json.dumps(self.conversation or [])),
+        ]
+        agent = self.agent_id or self.env['muk_ai.agent']._get_default()
+        return {
+            'parts': [
+                {'label': label, 'tokens': len(text) // 4} for label, text in parts
+            ],
+            'context_window': self._resolve_context_window(),
+            'last_input_tokens': self.last_input_tokens,
+            'system_prompt': agent.has_access('write')
+            and self._system_message()['content'][0]['text'],
+        }

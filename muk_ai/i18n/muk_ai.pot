@@ -1370,12 +1370,6 @@ msgid "Connect AI"
 msgstr ""
 
 #. module: muk_ai
-#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_mcp
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "Connect remote MCP servers whose tools AI agents can call."
-msgstr ""
-
-#. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_muk_ai_provider_form
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "Connection"
@@ -2901,11 +2895,6 @@ msgid "Mistral"
 msgstr ""
 
 #. module: muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "Mistral Large, Medium, Small, Ministral, Codestral and GLM."
-msgstr ""
-
-#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_model__modality
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_muk_ai_model_search
 msgid "Modality"
@@ -3392,12 +3381,6 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/sidebar.js:0
 msgid "Older"
-msgstr ""
-
-#. module: muk_ai
-#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_compat
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "Ollama, vLLM, OpenRouter and every OpenAI-compatible LLM."
 msgstr ""
 
 #. module: muk_ai
@@ -4046,22 +4029,6 @@ msgid "Risk Reason"
 msgstr ""
 
 #. module: muk_ai
-#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_automation
-msgid "Run AI agents from server actions, automation rules and schedules."
-msgstr ""
-
-#. module: muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "Run agents from server actions, automation rules and schedules."
-msgstr ""
-
-#. module: muk_ai
-#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_schedule
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "Let agents wait for a time, a record change or a reply, then carry on."
-msgstr ""
-
-#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/tool_card/tool_labels.js:0
 msgid "Run an action on %s"
@@ -4692,12 +4659,6 @@ msgid "System Space"
 msgstr ""
 
 #. module: muk_ai
-#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_voice
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "Talk to the assistant: realtime STT and spoken replies via TTS."
-msgstr ""
-
-#. module: muk_ai
 #: model:muk_ai.agent.suggestion,label:muk_ai.agent_general_suggestion_draft
 msgid "Tasks"
 msgstr ""
@@ -5088,12 +5049,6 @@ msgid "Type your answer..."
 msgstr ""
 
 #. module: muk_ai
-#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_decision
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "Typed choices, scores and yes/no answers from fast decision models."
-msgstr ""
-
-#. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_kanban
 msgid "Unarchive"
 msgstr ""
@@ -5167,11 +5122,6 @@ msgstr ""
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_session_form
 msgid "Usage"
-msgstr ""
-
-#. module: muk_ai
-#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_mistral
-msgid "Use Mistral AI as a provider."
 msgstr ""
 
 #. module: muk_ai
@@ -5602,4 +5552,208 @@ msgstr ""
 #. module: muk_ai
 #: model:ir.model,name:muk_ai.model_ir_websocket
 msgid "websocket message handling"
+msgstr ""
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/providers/base.py:0
+msgid "The connection closed before the answer was complete."
+msgstr ""
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/usage/usage.js:0
+msgid "About %(total)s of %(window)s tokens. Last turn sent %(last)s."
+msgstr ""
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session_prompt.py:0
+msgid "Agent prompt"
+msgstr ""
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/usage/usage.js:0
+msgid "Cached"
+msgstr ""
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__total_cached_tokens
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_loop__total_cached_tokens
+msgid "Cached Input Tokens"
+msgstr ""
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session_prompt.py:0
+msgid "Extension"
+msgstr ""
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session_prompt.py:0
+msgid "Files"
+msgstr ""
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/usage/usage.js:0
+msgid "Free"
+msgstr ""
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/usage/usage.js:0
+msgid "Part"
+msgstr ""
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session_prompt.py:0
+msgid "Runtime"
+msgstr ""
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/usage/usage.js:0
+msgid "Tokens"
+msgstr ""
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session_prompt.py:0
+msgid "Tool catalog"
+msgstr ""
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session_prompt.py:0
+msgid "Tool schemas"
+msgstr ""
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session_prompt.py:0
+msgid "Workspace"
+msgstr ""
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/usage/usage.js:0
+msgid "Show what the next turn sends and how full the context window is"
+msgstr ""
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_session__total_cached_tokens
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_session_loop__total_cached_tokens
+msgid ""
+"Input tokens the provider read from its prompt cache, billed at the cache "
+"rate."
+msgstr ""
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_rag
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Agents answer from your documents and cite their sources."
+msgstr ""
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Chatter"
+msgstr ""
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_mcp
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Connect remote MCP servers whose tools agents can call."
+msgstr ""
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_subagents
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Delegate work to focused agents that run in parallel."
+msgstr ""
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Knowledge"
+msgstr ""
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_schedule
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Let agents wait for a time, a change or a reply."
+msgstr ""
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Memory"
+msgstr ""
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_chatter
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Mention agents in Discuss and write messages with AI."
+msgstr ""
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_mistral
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Mistral Large, Medium, Small, Ministral and Codestral."
+msgstr ""
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_chatter
+msgid "MuK AI Chatter"
+msgstr ""
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_rag
+msgid "MuK AI Knowledge"
+msgstr ""
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_memory
+msgid "MuK AI Memory"
+msgstr ""
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_subagents
+msgid "MuK AI Subagents"
+msgstr ""
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_compat
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Ollama, vLLM, OpenRouter and any OpenAI-compatible LLM."
+msgstr ""
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Run agents from server actions and automation rules."
+msgstr ""
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Subagents"
+msgstr ""
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_voice
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Talk to the assistant and hear it answer."
+msgstr ""
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_memory
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "The assistant remembers how you work, and shows it."
+msgstr ""
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_decision
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Typed choices, scores and yes/no answers in a second."
 msgstr ""

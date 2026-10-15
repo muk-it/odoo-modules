@@ -170,9 +170,9 @@ def deltas_of(deltas: list[tuple[str, dict]], kind: str) -> list[str]:
 class ProviderCase:
     """Hold the recorded wire of one vendor and how to read what it is sent.
 
-    Streams: ``text`` says "Hello" with cache usage, ``tool_call`` calls
-    ``do_x({"a": 1})``, ``reasoning`` thinks before it answers, ``truncated``
-    stops at 4096 tokens; ``reply`` is a plain "ok" answer.
+    Streams: ``text`` says "Hello", ``tool_call`` calls ``do_x({"a": 1})``,
+    ``reasoning`` thinks first, ``truncated`` stops at 4096 tokens, ``end``
+    closes without a word; ``reply`` is a plain "ok" answer.
     """
 
     xmlid: str
@@ -186,6 +186,7 @@ class ProviderCase:
     tool_call: list
     reasoning: list
     truncated: list
+    end: list
     reply: dict
     error: Callable[[str], dict]
     wire: Callable[[str, dict], dict]
@@ -247,6 +248,7 @@ CASES = {
                 usage={'input_tokens': 20, 'output_tokens': 4096},
             ),
         ],
+        end=[openai_end()],
         reply={'output': [openai_message('ok')]},
         error=lambda message: openai_event('error', error={'message': message}),
         wire=_openai_wire,
@@ -297,6 +299,7 @@ CASES = {
             *anthropic_text(0, 'partial'),
             anthropic_stop('max_tokens', 4096),
         ],
+        end=[anthropic_stop('end_turn')],
         reply={'content': [{'type': 'text', 'text': 'ok'}], 'stop_reason': 'end_turn'},
         error=lambda message: {'type': 'error', 'error': {'message': message}},
         wire=_anthropic_wire,
@@ -315,7 +318,9 @@ CASES = {
             ),
         ],
         usage=_usage(44, 747, 12),
-        tool_call=[gemini({'functionCall': {'name': 'do_x', 'args': {'a': 1}}})],
+        tool_call=[
+            gemini({'functionCall': {'name': 'do_x', 'args': {'a': 1}}}, finish='STOP')
+        ],
         reasoning=[
             gemini({'thought': True, 'text': 'weighing it'}),
             gemini({'text': 'answer'}, finish='STOP'),
@@ -324,6 +329,7 @@ CASES = {
             gemini({'text': 'partial'}),
             gemini(finish='MAX_TOKENS', usage=_gemini_usage(7, 4096)),
         ],
+        end=[gemini(finish='STOP')],
         reply={'candidates': [{'content': {'parts': [{'text': 'ok'}]}}]},
         error=lambda message: {'error': {'message': message, 'status': 'INTERNAL'}},
         wire=_google_wire,

@@ -20,8 +20,6 @@ from odoo.addons.muk_ai.tools.runtime import REASONING_EFFORT_SELECTION
 
 _logger = logging.getLogger(__name__)
 
-CONVERSATION_RESET = {'pending_ask': False, 'last_text': False, 'error_message': False}
-
 
 class AISession(models.Model):
     """Stateful agent conversation: runtime, streaming, tools, and approvals."""
@@ -44,6 +42,15 @@ class AISession(models.Model):
         'or review a chat.'
     )
     _order = 'create_date desc'
+
+    # ----------------------------------------------------------
+    # Properties
+    # ----------------------------------------------------------
+
+    @property
+    def CONVERSATION_RESET(self) -> dict:
+        """Return the values that clear a turn's leftovers when the conversation is replaced."""
+        return {'pending_ask': False, 'last_text': False, 'error_message': False}
 
     # ----------------------------------------------------------
     # Fields
@@ -728,7 +735,7 @@ class AISession(models.Model):
         self._transition_state(
             'new',
             values={
-                **CONVERSATION_RESET,
+                **self.CONVERSATION_RESET,
                 'conversation': [],
                 'approved_signatures': [],
                 'iteration_count': 0,
@@ -804,7 +811,7 @@ class AISession(models.Model):
         ).unlink()
         self._transition_state(
             'done' if conversation else 'new',
-            values={**CONVERSATION_RESET, 'conversation': conversation},
+            values={**self.CONVERSATION_RESET, 'conversation': conversation},
         )
         return self.get_snapshot()
 
@@ -822,7 +829,7 @@ class AISession(models.Model):
         conversation = list(self.conversation or [])[:cut]
         fork = self.copy(
             {
-                **CONVERSATION_RESET,
+                **self.CONVERSATION_RESET,
                 'name': self.env._('%s (fork)', self.name),
                 'conversation': conversation,
                 'state': 'done' if conversation else 'new',

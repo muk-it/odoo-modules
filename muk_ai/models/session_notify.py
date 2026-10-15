@@ -79,6 +79,7 @@ class AISessionNotify(models.AbstractModel):
             'iteration_count': self.iteration_count,
             'total_input_tokens': self.total_input_tokens,
             'total_output_tokens': self.total_output_tokens,
+            'total_cached_tokens': self.total_cached_tokens,
             'last_input_tokens': self.last_input_tokens,
             'turn_usage': self.turn_usage or {},
             'context_window': self._resolve_context_window(),

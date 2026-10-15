@@ -293,6 +293,7 @@ class AnthropicProvider(ProviderBase):
             on_delta,
             meta.get('stop_reason') == 'max_tokens',
             body['max_tokens'],
+            complete='stop_reason' in meta,
         )
 
     def _handle_stream_event(

@@ -196,6 +196,7 @@ class TestProviders(ProviderTestCase):
                     'connection refused',
                 ),
                 ('stream', [[case.error('Overloaded')]], 'Overloaded'),
+                ('cut', [case.text[:1]], 'closed before the answer was complete'),
                 ('key', [], 'API key is not configured'),
             ):
                 with self.subTest(provider=name, failure=failure):
@@ -219,7 +220,7 @@ class TestProviders(ProviderTestCase):
                 self.assertEqual(len(sent), 1)
                 self.assertEqual(action['params']['type'], 'success')
                 with (
-                    self._wire(self._either([], {})),
+                    self._wire(self._either(case.end, {})),
                     self.assertRaisesRegex(UserError, 'empty response'),
                 ):
                     provider.action_test_connection()

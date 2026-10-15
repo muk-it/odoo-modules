@@ -4,7 +4,7 @@ import { Dropdown } from '@web/core/dropdown/dropdown';
 import { _t } from '@web/core/l10n/translation';
 import { formatInteger } from '@web/views/fields/formatters';
 
-import { COMPACT_AUTO_RATIO } from '@muk_ai/core/session/session';
+import { COMPACT_AUTO_RATIO, slashCommands } from '@muk_ai/core/session/session';
 import { formatCost } from '@muk_ai/core/utils/utils';
 
 /**
@@ -58,6 +58,12 @@ export class UsageMeter extends Component {
                 count(data.total_input_tokens),
             ],
             [
+                'cached',
+                _t('Cached'),
+                count(turn.cached_tokens),
+                count(data.total_cached_tokens),
+            ],
+            [
                 'logout',
                 _t('Output'),
                 count(turn.output_tokens),
@@ -78,3 +84,44 @@ export class UsageMeter extends Component {
         ];
     }
 }
+
+/**
+ * Render what the next turn sends as a Markdown table of its parts, with the
+ * assembled system prompt below it when the user may read it.
+ * @param {object} context the result of `muk_ai.session.get_context`
+ * @returns {string} the Markdown summary
+ */
+export function formatContext(context) {
+    const window = context.context_window || 1;
+    const share = (tokens) => `${Math.round((tokens / window) * 100)}%`;
+    const total = context.parts.reduce((sum, part) => sum + part.tokens, 0);
+    const table = [
+        `| ${_t('Part')} | ${_t('Tokens')} | ${_t('Share')} |`,
+        '| --- | ---: | ---: |',
+        ...[
+            ...context.parts.map((part) => [part.label, part.tokens]),
+            [_t('Free'), Math.max(0, window - total)],
+        ].map(
+            ([label, tokens]) =>
+                `| ${label} | ${formatInteger(tokens)} | ${share(tokens)} |`,
+        ),
+    ];
+    const summary = _t(
+        'About %(total)s of %(window)s tokens. Last turn sent %(last)s.',
+        {
+            total: formatInteger(total),
+            window: formatInteger(window),
+            last: formatInteger(context.last_input_tokens || 0),
+        },
+    );
+    const prompt = context.system_prompt && ['````', context.system_prompt, '````'];
+    return [summary, '', ...table, ...(prompt ? ['', ...prompt] : [])].join('\n');
+}
+
+slashCommands.add('/context', {
+    hint: _t('Show what the next turn sends and how full the context window is'),
+    run: async (session) =>
+        session.appendCommand('/context', {
+            summary: formatContext(await session.callSession('get_context')),
+        }),
+});

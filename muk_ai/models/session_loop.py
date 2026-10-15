@@ -22,8 +22,6 @@ from odoo.addons.muk_ai.tools.runtime import (
 )
 from odoo.addons.muk_ai.tools.stream import StreamBuffer
 
-STATE_CHECK_SECONDS = 0.3
-
 
 class AISessionLoop(models.AbstractModel):
     """Turn engine of a chat: provider rounds, streaming, budgets and usage."""
@@ -34,6 +32,15 @@ class AISessionLoop(models.AbstractModel):
         'The part of a chat that runs a turn: it streams the model answer, '
         'counts tokens and cost, and stops at the turn budgets.'
     )
+
+    # ----------------------------------------------------------
+    # Properties
+    # ----------------------------------------------------------
+
+    @property
+    def STATE_CHECK_SECONDS(self) -> float:
+        """Return how often a streaming turn checks whether it was stopped."""
+        return 0.3
 
     # ----------------------------------------------------------
     # Fields
@@ -74,6 +81,13 @@ class AISessionLoop(models.AbstractModel):
 
     total_output_tokens = fields.Integer(
         string='Output Tokens',
+        readonly=True,
+        default=0,
+    )
+
+    total_cached_tokens = fields.Integer(
+        string='Cached Input Tokens',
+        help='Input tokens the provider read from its prompt cache, billed at the cache rate.',
         readonly=True,
         default=0,
     )
@@ -194,7 +208,7 @@ class AISessionLoop(models.AbstractModel):
             answer kept
         :raise TurnSuperseded: when a newer turn replaced the one streamed
         """
-        if (now := time.monotonic()) - stream.checked < STATE_CHECK_SECONDS:
+        if (now := time.monotonic()) - stream.checked < self.STATE_CHECK_SECONDS:
             return
         stream.checked = now
         self.invalidate_recordset(['state', 'turn_seq'])
@@ -290,10 +304,12 @@ class AISessionLoop(models.AbstractModel):
             record = self._resolve_model_for('chat')
             input_tokens = usage.get('input_tokens')
             output_tokens = usage.get('output_tokens', 0)
+            cached_tokens = usage.get('cache_read_tokens') or 0
             values = {
                 'iteration_count': self.iteration_count + 1,
                 'total_input_tokens': self.total_input_tokens + (input_tokens or 0),
                 'total_output_tokens': self.total_output_tokens + output_tokens,
+                'total_cached_tokens': self.total_cached_tokens + cached_tokens,
                 'last_input_tokens': (
                     self.last_input_tokens if input_tokens is None else input_tokens
                 ),
@@ -301,6 +317,7 @@ class AISessionLoop(models.AbstractModel):
             turn.update(
                 input_tokens=turn.get('input_tokens', 0) + (input_tokens or 0),
                 output_tokens=turn.get('output_tokens', 0) + output_tokens,
+                cached_tokens=turn.get('cached_tokens', 0) + cached_tokens,
                 iterations=turn.get('iterations', 0) + 1,
             )
         if record:
@@ -497,9 +514,10 @@ class AISessionLoop(models.AbstractModel):
             except UserError as error:
                 self._transition_state('error', error=str(error))
                 return
+            replies_to_user = (self.conversation or [{}])[-1].get('role') == 'user'
             self._accrue_round_payload(payload)
             if not (tool_calls := payload.get('tool_calls')):
-                if payload.get('text'):
+                if payload.get('text') or replies_to_user:
                     self._transition_state('done')
                 else:
                     self._transition_state(

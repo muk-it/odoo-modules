@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from contextlib import closing
+from unittest.mock import patch
 
 from odoo import Command, fields, models, release
 from odoo.exceptions import UserError
@@ -106,6 +107,34 @@ class TestAgent(AITestCommon):
         system = self._system_prompt(self._request(session))
         self.assertIn('Approval mode: off', system)
         self.assertNotIn('Approval gate', system)
+
+    def test_the_context_shows_what_the_next_turn_sends_and_the_prompt_to_editors(self):
+        agent = self._agent(system_prompt='Answer in rhymes.')
+        addenda = ['<house_rules>\nQuote net prices.', 'Plain guidance.']
+        with patch.object(
+            type(self.env['muk_ai.session']),
+            '_system_prompt_addenda',
+            return_value=addenda,
+        ):
+            for group, editor in (
+                ('base.group_system', True),
+                ('base.group_user', False),
+            ):
+                with self.subTest(group=group):
+                    user = new_test_user(self.env, login=group, groups=group)
+                    session = (
+                        self.env['muk_ai.session']
+                        .with_user(user)
+                        .create({'name': 'Context', 'agent_id': agent.id})
+                    )
+                    context = session.get_context()
+                    labels = [part['label'] for part in context['parts']]
+                    self.assertEqual(labels[0], 'Agent prompt')
+                    self.assertIn('House rules', labels)
+                    self.assertIn('Extension', labels)
+                    self.assertEqual(labels[-2:], ['Tool schemas', 'Conversation'])
+                    sent = self._system_prompt(self._request(session))
+                    self.assertEqual(context['system_prompt'], editor and sent)
 
     def test_a_new_chat_takes_the_default_agent(self):
         first = self._agent(sequence=0, system_prompt='First prompt.')

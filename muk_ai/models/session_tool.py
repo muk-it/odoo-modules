@@ -38,21 +38,6 @@ from odoo.addons.muk_ai.tools.vision import (
 )
 from odoo.addons.muk_mcp.core.tool import get_tool_index
 
-PRIVATE_ASK_KEYS = (
-    'arguments',
-    'tool_calls',
-    'outputs',
-    'resume_index',
-    'has_terminating',
-    'results',
-)
-
-SKIP_REASONS = {
-    'ask_user': 'skipped: ask_user pending, call again after user answer',
-    'client': 'skipped: client action pending, call again after the client responds',
-    'terminating': 'skipped: terminating tool already ran; emit a short summary and stop',
-}
-
 
 class AISessionTool(models.AbstractModel):
     """Tool rounds of a chat: dispatch, approvals, client actions and results."""
@@ -63,6 +48,35 @@ class AISessionTool(models.AbstractModel):
         'The part of a chat that runs the tools the model calls, pauses for '
         'approvals, questions and client actions, and records the results.'
     )
+
+    # ----------------------------------------------------------
+    # Properties
+    # ----------------------------------------------------------
+
+    @property
+    def PRIVATE_ASK_KEYS(self) -> tuple[str, ...]:
+        """Return the keys of a pending ask that never reach the client."""
+        return (
+            'arguments',
+            'tool_calls',
+            'outputs',
+            'resume_index',
+            'has_terminating',
+            'results',
+        )
+
+    @property
+    def SKIP_REASONS(self) -> dict[str, str]:
+        """Return what a tool call skipped behind a pausing call is answered with."""
+        return {
+            'ask_user': 'skipped: ask_user pending, call again after user answer',
+            'client': (
+                'skipped: client action pending, call again after the client responds'
+            ),
+            'terminating': (
+                'skipped: terminating tool already ran; emit a short summary and stop'
+            ),
+        }
 
     # ----------------------------------------------------------
     # Fields
@@ -173,7 +187,9 @@ class AISessionTool(models.AbstractModel):
         if not pending:
             return None
         public = {
-            key: value for key, value in pending.items() if key not in PRIVATE_ASK_KEYS
+            key: value
+            for key, value in pending.items()
+            if key not in self.PRIVATE_ASK_KEYS
         }
         if isinstance(public.get('actions'), list):
             results = pending.get('results') or {}
@@ -945,7 +961,7 @@ class AISessionTool(models.AbstractModel):
                     waiting = True
                     continue
             elif has_ask_user or waiting or has_terminating:
-                skip = SKIP_REASONS[
+                skip = self.SKIP_REASONS[
                     'ask_user'
                     if has_ask_user
                     else 'client'

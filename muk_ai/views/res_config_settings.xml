@@ -191,7 +191,7 @@
 						<setting
 							id="muk_ai_addon_compat"
 							string="Compatible Providers"
-							help="Ollama, vLLM, OpenRouter and every OpenAI-compatible LLM."
+							help="Ollama, vLLM, OpenRouter and any OpenAI-compatible LLM."
 						>
 							<field
 								name="module_muk_ai_compat"
@@ -204,52 +204,13 @@
 						<setting
 							id="muk_ai_addon_mistral"
 							string="Mistral"
-							help="Mistral Large, Medium, Small, Ministral, Codestral and GLM."
+							help="Mistral Large, Medium, Small, Ministral and Codestral."
 						>
 							<field
 								name="module_muk_ai_mistral"
 								widget="module_link"
 							/>
 							<div class="content-group" invisible="not module_muk_ai_mistral" id="msg_module_muk_ai_mistral">
-								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
-							</div>
-						</setting>
-						<setting
-							id="muk_ai_addon_automation"
-							string="Automation"
-							help="Run agents from server actions, automation rules and schedules."
-						>
-							<field
-								name="module_muk_ai_automation"
-								widget="module_link"
-							/>
-							<div class="content-group" invisible="not module_muk_ai_automation" id="msg_module_muk_ai_automation">
-								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
-							</div>
-						</setting>
-						<setting
-							id="muk_ai_addon_decision"
-							string="Decision Models"
-							help="Typed choices, scores and yes/no answers from fast decision models."
-						>
-							<field
-								name="module_muk_ai_decision"
-								widget="module_link"
-							/>
-							<div class="content-group" invisible="not module_muk_ai_decision" id="msg_module_muk_ai_decision">
-								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
-							</div>
-						</setting>
-						<setting
-							id="muk_ai_addon_schedule"
-							string="Schedule"
-							help="Let agents wait for a time, a record change or a reply, then carry on."
-						>
-							<field
-								name="module_muk_ai_schedule"
-								widget="module_link"
-							/>
-							<div class="content-group" invisible="not module_muk_ai_schedule" id="msg_module_muk_ai_schedule">
 								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
 							</div>
 						</setting>
@@ -267,9 +228,22 @@
 							</div>
 						</setting>
 						<setting
+							id="muk_ai_addon_subagents"
+							string="Subagents"
+							help="Delegate work to focused agents that run in parallel."
+						>
+							<field
+								name="module_muk_ai_subagents"
+								widget="module_link"
+							/>
+							<div class="content-group" invisible="not module_muk_ai_subagents" id="msg_module_muk_ai_subagents">
+								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+							</div>
+						</setting>
+						<setting
 							id="muk_ai_addon_mcp"
 							string="MCP"
-							help="Connect remote MCP servers whose tools AI agents can call."
+							help="Connect remote MCP servers whose tools agents can call."
 						>
 							<field
 								name="module_muk_ai_mcp"
@@ -282,13 +256,91 @@
 						<setting
 							id="muk_ai_addon_voice"
 							string="Voice"
-							help="Talk to the assistant: realtime STT and spoken replies via TTS."
+							help="Talk to the assistant and hear it answer."
 						>
 							<field
 								name="module_muk_ai_voice"
 								widget="module_link"
 							/>
 							<div class="content-group" invisible="not module_muk_ai_voice" id="msg_module_muk_ai_voice">
+								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+							</div>
+						</setting>
+						<setting
+							id="muk_ai_addon_chatter"
+							string="Chatter"
+							help="Mention agents in Discuss and write messages with AI."
+						>
+							<field
+								name="module_muk_ai_chatter"
+								widget="module_link"
+							/>
+							<div class="content-group" invisible="not module_muk_ai_chatter" id="msg_module_muk_ai_chatter">
+								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+							</div>
+						</setting>
+						<setting
+							id="muk_ai_addon_decision"
+							string="Decision Models"
+							help="Typed choices, scores and yes/no answers in a second."
+						>
+							<field
+								name="module_muk_ai_decision"
+								widget="module_link"
+							/>
+							<div class="content-group" invisible="not module_muk_ai_decision" id="msg_module_muk_ai_decision">
+								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+							</div>
+						</setting>
+						<setting
+							id="muk_ai_addon_automation"
+							string="Automation"
+							help="Run agents from server actions and automation rules."
+						>
+							<field
+								name="module_muk_ai_automation"
+								widget="module_link"
+							/>
+							<div class="content-group" invisible="not module_muk_ai_automation" id="msg_module_muk_ai_automation">
+								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+							</div>
+						</setting>
+						<setting
+							id="muk_ai_addon_schedule"
+							string="Schedule"
+							help="Let agents wait for a time, a change or a reply."
+						>
+							<field
+								name="module_muk_ai_schedule"
+								widget="module_link"
+							/>
+							<div class="content-group" invisible="not module_muk_ai_schedule" id="msg_module_muk_ai_schedule">
+								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+							</div>
+						</setting>
+						<setting
+							id="muk_ai_addon_rag"
+							string="Knowledge"
+							help="Agents answer from your documents and cite their sources."
+						>
+							<field
+								name="module_muk_ai_rag"
+								widget="module_link"
+							/>
+							<div class="content-group" invisible="not module_muk_ai_rag" id="msg_module_muk_ai_rag">
+								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+							</div>
+						</setting>
+						<setting
+							id="muk_ai_addon_memory"
+							string="Memory"
+							help="The assistant remembers how you work, and shows it."
+						>
+							<field
+								name="module_muk_ai_memory"
+								widget="module_link"
+							/>
+							<div class="content-group" invisible="not module_muk_ai_memory" id="msg_module_muk_ai_memory">
 								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
 							</div>
 						</setting>

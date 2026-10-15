@@ -289,6 +289,7 @@ class GoogleProvider(ProviderBase):
             on_delta,
             bool(meta.get('truncated')),
             self.provider.max_tokens,
+            complete='finish' in meta,
         )
 
     def _handle_stream_event(
@@ -309,7 +310,8 @@ class GoogleProvider(ProviderBase):
         if block := (event.get('promptFeedback') or {}).get('blockReason'):
             self._raise(f'Prompt blocked by safety filter (reason: {block})')
         if candidates := event.get('candidates') or []:
-            finish = candidates[0].get('finishReason')
+            if finish := candidates[0].get('finishReason'):
+                meta['finish'] = finish
             if finish == 'MAX_TOKENS':
                 meta['truncated'] = True
             elif finish and finish not in ('STOP', 'FINISH_REASON_UNSPECIFIED'):

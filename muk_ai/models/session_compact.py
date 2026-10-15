@@ -16,8 +16,6 @@ from odoo.addons.muk_ai.tools.runtime import (
 )
 from odoo.addons.muk_ai.tools.stream import StreamBuffer
 
-PROGRESS_SAVE_SECONDS = 0.5
-
 
 class AISessionCompact(models.AbstractModel):
     """Compaction of a chat: its history summarized into a shorter one."""
@@ -28,6 +26,15 @@ class AISessionCompact(models.AbstractModel):
         'The part of a chat that summarizes its older messages once the '
         'conversation nears the context window of the model.'
     )
+
+    # ----------------------------------------------------------
+    # Properties
+    # ----------------------------------------------------------
+
+    @property
+    def PROGRESS_SAVE_SECONDS(self) -> float:
+        """Return how often a running compaction saves its streamed progress."""
+        return 0.5
 
     # ----------------------------------------------------------
     # Helper
@@ -172,7 +179,7 @@ class AISessionCompact(models.AbstractModel):
                 return
             stream.text += delta
             stream.add('compact_delta', delta, event_id=event.id)
-            if (now := time.monotonic()) - stream.checked >= PROGRESS_SAVE_SECONDS:
+            if (now := time.monotonic()) - stream.checked >= self.PROGRESS_SAVE_SECONDS:
                 stream.checked = now
                 event.payload = {**(event.payload or {}), 'streamed_text': stream.text}
                 self._commit_safe()

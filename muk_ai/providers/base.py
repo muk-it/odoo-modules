@@ -319,11 +319,19 @@ class ProviderBase:
         on_delta: Callable | None = None,
         truncated: bool = False,
         limit: int | None = None,
+        *,
+        complete: bool,
     ) -> dict:
         """Assemble the result of a request, noting an answer cut at the token cap.
 
         :param limit: the output-token cap that was hit, when known
+        :param complete: whether the stream reached the vendor's end-of-response event
+        :raise UserError: when the stream broke off before the end of the response
         """
+        if not complete:
+            self._raise(
+                self.env._('The connection closed before the answer was complete.')
+            )
         result = {
             'text': text.strip(),
             'tool_calls': tool_calls,

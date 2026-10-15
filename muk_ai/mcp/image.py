@@ -3,18 +3,8 @@ from __future__ import annotations
 from odoo import api, models
 from odoo.exceptions import UserError
 
+from odoo.addons.muk_ai.tools.call import IMAGE_OPTIONS
 from odoo.addons.muk_mcp.core.tool import mcp_tool
-
-IMAGE_OPTIONS = {
-    'quality': {
-        'description': 'Rendering quality. Omit for the model default.',
-        'enum': ('low', 'medium', 'high'),
-    },
-    'background': {
-        'description': 'Background handling. Omit for the model default.',
-        'enum': ('transparent', 'opaque'),
-    },
-}
 
 
 class AIImage(models.AbstractModel):

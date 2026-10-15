@@ -356,17 +356,22 @@ class TestSessionTurn(AITestCommon):
                     session.send_message('Second topic')
                 self.assertEqual(session.name, name)
 
-    def test_a_turn_without_an_answer_ends_in_error(self):
-        for answer, error in (
-            (text_payload(''), 'AI returned no output.'),
-            (UserError('provider down'), 'provider down'),
+    def test_only_a_silent_reply_to_the_user_ends_a_turn_without_an_answer(self):
+        partners = {'model': 'res.partner', 'domain': []}
+        for answers, outcome in (
+            ([text_payload('')], ('done', False)),
+            (
+                [tool_payload(('search_count', partners)), text_payload('')],
+                ('error', 'AI returned no output.'),
+            ),
+            ([UserError('provider down')], ('error', 'provider down')),
         ):
-            with self.subTest(error=error):
+            with self.subTest(outcome=outcome):
                 session = self._session()
-                with self._mock_responses([answer]):
-                    snapshot = session.start('hello')
+                with self._mock_responses(answers):
+                    snapshot = session.start('Thanks, that is all.')
                 self.assertEqual(
-                    (snapshot['state'], snapshot['error_message']), ('error', error)
+                    (snapshot['state'], snapshot['error_message']), outcome
                 )
 
     def test_a_turn_starts_and_stops_from_a_fitting_state_only(self):
@@ -409,10 +414,20 @@ class TestSessionTurn(AITestCommon):
                 [
                     tool_payload(
                         ('search_count', {}),
-                        usage={'input_tokens': 40, 'output_tokens': 2},
+                        usage={
+                            'input_tokens': 40,
+                            'output_tokens': 2,
+                            'cache_read_tokens': 30,
+                        },
                     ),
                     text_payload(usage={'input_tokens': 42, 'output_tokens': 3}),
-                    text_payload(usage={'input_tokens': 120, 'output_tokens': 5}),
+                    text_payload(
+                        usage={
+                            'input_tokens': 120,
+                            'output_tokens': 5,
+                            'cache_read_tokens': 100,
+                        }
+                    ),
                 ]
             ),
         ):
@@ -420,13 +435,23 @@ class TestSessionTurn(AITestCommon):
             second = session.send_message('second')
         self.assertEqual(
             [
-                (usage['input_tokens'], usage['output_tokens'], usage['iterations'])
+                (
+                    usage['input_tokens'],
+                    usage['cached_tokens'],
+                    usage['output_tokens'],
+                    usage['iterations'],
+                )
                 for usage in (first, second['turn_usage'])
             ],
-            [(82, 5, 2), (120, 5, 1)],
+            [(82, 30, 5, 2), (120, 100, 5, 1)],
         )
         self.assertEqual(
-            (second['total_input_tokens'], second['total_output_tokens']), (202, 10)
+            (
+                second['total_input_tokens'],
+                second['total_cached_tokens'],
+                second['total_output_tokens'],
+            ),
+            (202, 130, 10),
         )
         self.assertEqual(
             (second['last_input_tokens'], second['iteration_count']), (120, 3)

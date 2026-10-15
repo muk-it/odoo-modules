@@ -163,7 +163,7 @@ class OpenAIProvider(ProviderBase):
         request has to replay them to the vendor.
         """
         text, calls, carry, rendered = [], {}, [], set()
-        usage, truncated, limit = {}, False, None
+        usage, truncated, limit, complete = {}, False, None, False
 
         def render(item: dict) -> None:
             """Add a code-interpreter call to the answer once."""
@@ -214,6 +214,7 @@ class OpenAIProvider(ProviderBase):
                 elif item.get('type') == 'code_interpreter_call':
                     render(item)
             elif kind in ('response.completed', 'response.incomplete'):
+                complete = True
                 response = event.get('response') or {}
                 usage = response.get('usage') or {}
                 if kind == 'response.incomplete':
@@ -254,4 +255,5 @@ class OpenAIProvider(ProviderBase):
             on_delta,
             truncated,
             limit,
+            complete=complete,
         )

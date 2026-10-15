@@ -84,7 +84,9 @@ class TestGoogleProvider(ProviderTestCase):
             ),
         ):
             with self.subTest(calls=label):
-                result, _deltas, _sent = self._stream('google', [gemini(*parts)])
+                result, _deltas, _sent = self._stream(
+                    'google', [gemini(*parts, finish='STOP')]
+                )
                 carry = result['carry_inputs']
                 self.assertEqual(
                     [item['provider_state']['google']['parts'] for item in carry],
@@ -134,7 +136,9 @@ class TestGoogleProvider(ProviderTestCase):
             ),
         ):
             with self.subTest(turn=label):
-                result, _deltas, _sent = self._stream('google', chunks)
+                result, _deltas, _sent = self._stream(
+                    'google', [*chunks, *CASES['google'].end]
+                )
                 self.assertEqual(result['text'], text)
                 self.assertEqual(
                     [
@@ -223,7 +227,7 @@ class TestGoogleProvider(ProviderTestCase):
             self._builtin('toolResponse'),
         ]
         first, _deltas, _sent = self._stream(
-            'google', [gemini(*parts[:2]), gemini(parts[2])]
+            'google', [gemini(*parts[:2]), gemini(parts[2], finish='STOP')]
         )
         call_id = first['tool_calls'][0]['call_id']
         _result, _deltas, sent = self._stream(
