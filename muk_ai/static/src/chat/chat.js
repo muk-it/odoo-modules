@@ -568,6 +568,19 @@ export class AIChat extends Component {
         await this.orm.write('muk_ai.space', [spaceId], values);
         await this._loadSpaces();
     }
+    /**
+     * Mark the unread chats of the given spaces as read, and widen the
+     * branches that showed only unread chats.
+     * @param {number[]} spaceIds
+     */
+    async onSpaceMarkRead(spaceIds) {
+        this.badge.apply(await this.orm.call('muk_ai.space', 'mark_read', [spaceIds]));
+        for (const spaceId of spaceIds) {
+            if (this.state.spaceSessions[spaceId]?.unreadOnly) {
+                await this._loadSpaceSessions(spaceId, false, false);
+            }
+        }
+    }
     async onSpaceDelete(spaceId) {
         await this.orm.unlink('muk_ai.space', [spaceId]);
         delete this.state.spaceSessions[spaceId];

@@ -248,6 +248,23 @@ class AISpace(models.Model):
             for space in self._sidebar_spaces()
         ]
 
+    def mark_read(self) -> dict:
+        """Mark the unread chats of the current user in these spaces as read.
+
+        :return: the notification badge as it stands afterwards
+        """
+        sessions = self.env['muk_ai.session'].search(
+            expression.AND(
+                [
+                    expression.OR([space._session_domain() for space in self]),
+                    [('user_id', '=', self.env.uid)],
+                    [('notification_unread', '=', True)],
+                ]
+            )
+        )
+        sessions.dismiss_notifications()
+        return self.env['muk_ai.session'].notification_badge()
+
     @api.model
     def reorder(self, space_ids: list[int]) -> bool:
         """Store the given order on the spaces, first id first."""
@@ -359,7 +376,14 @@ class AISpace(models.Model):
         for record in self.filtered('domain'):
             try:
                 self.env['muk_ai.session']._where_calc(record._parsed_domain())
-            except (SyntaxError, TypeError, ValueError, KeyError, NameError) as error:
+            except (
+                AssertionError,
+                SyntaxError,
+                TypeError,
+                ValueError,
+                KeyError,
+                NameError,
+            ) as error:
                 raise ValidationError(
                     _(
                         'The domain of "%(name)s" is not a valid session domain: %(error)s',

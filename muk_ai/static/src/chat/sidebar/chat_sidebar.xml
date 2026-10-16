@@ -94,28 +94,38 @@
             >
                 <t t-esc="spaceUnread(space.id)"/>
             </button>
-            <div class="mk_space_actions" t-if="!space.system">
+            <div class="mk_space_actions" t-if="spaceUnread(space.id) or !space.system">
                 <button
-                    class="btn btn-link btn-sm"
-                    title="New chat here"
-                    t-on-click="(ev) => this.onSpaceNewClick(space, ev)"
+                    t-if="spaceUnread(space.id)"
+                    class="btn btn-link btn-sm mk_space_read"
+                    title="Mark all as read"
+                    t-on-click="(ev) => this.onMarkReadClick([space], ev)"
                 >
-                    <i class="fa fa-plus" />
+                    <i class="fa fa-check" />
                 </button>
-                <button
-                    class="btn btn-link btn-sm"
-                    title="Edit"
-                    t-on-click="(ev) => this.onSpaceEditClick(space, ev)"
-                >
-                    <i class="fa fa-pencil" />
-                </button>
-                <button
-                    class="btn btn-link btn-sm text-danger"
-                    title="Delete"
-                    t-on-click="(ev) => this.onSpaceDeleteClick(space, ev)"
-                >
-                    <i class="fa fa-trash" />
-                </button>
+                <t t-if="!space.system">
+                    <button
+                        class="btn btn-link btn-sm"
+                        title="New chat here"
+                        t-on-click="(ev) => this.onSpaceNewClick(space, ev)"
+                    >
+                        <i class="fa fa-plus" />
+                    </button>
+                    <button
+                        class="btn btn-link btn-sm mk_space_edit"
+                        title="Edit"
+                        t-on-click="(ev) => this.onSpaceEditClick(space, ev)"
+                    >
+                        <i class="fa fa-pencil" />
+                    </button>
+                    <button
+                        class="btn btn-link btn-sm text-danger"
+                        title="Delete"
+                        t-on-click="(ev) => this.onSpaceDeleteClick(space, ev)"
+                    >
+                        <i class="fa fa-trash" />
+                    </button>
+                </t>
             </div>
         </div>
         <t t-if="isExpanded(space.id)">
@@ -253,6 +263,14 @@
                                         t-esc="foldedSystemSpaces.length"
                                     />
                                 </t>
+                                <button
+                                    t-if="foldedUnread"
+                                    class="btn btn-link btn-sm mk_space_read"
+                                    title="Mark all as read"
+                                    t-on-click="(ev) => this.onMarkReadClick(foldedSystemSpaces, ev)"
+                                >
+                                    <i class="fa fa-check" />
+                                </button>
                             </div>
                             <t t-if="state.automaticOpen">
                                 <t t-foreach="foldedSystemSpaces" t-as="space" t-key="space.id">

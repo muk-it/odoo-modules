@@ -34,7 +34,7 @@ const SPACES = [
     space(4, 'My Notes', { system: false }),
 ];
 
-async function mountSidebar(spaceUnread = {}) {
+async function mountSidebar(spaceUnread = {}, onSpaceMarkRead = () => {}) {
     class Parent extends Component {
         static components = { ChatSidebar };
         static props = {};
@@ -48,14 +48,18 @@ async function mountSidebar(spaceUnread = {}) {
                 onRename="() => {}"
                 onDelete="() => {}"
                 onSpaceCreate="() => {}"
+                onSpaceMarkRead="props.onSpaceMarkRead"
             />
         `;
     }
     Parent.props = {
         spaces: { type: Array },
         spaceUnread: { type: Object },
+        onSpaceMarkRead: { type: Function },
     };
-    await mountWithCleanup(Parent, { props: { spaces: SPACES, spaceUnread } });
+    await mountWithCleanup(Parent, {
+        props: { spaces: SPACES, spaceUnread, onSpaceMarkRead },
+    });
 }
 
 /** @returns {string[]} the space names the sidebar currently renders */
@@ -109,7 +113,20 @@ test('unread inside the fold rolls up to the header', async () => {
 test('the header carries no unread badge when the fold is quiet', async () => {
     browser.localStorage.removeItem(AUTOMATIC_KEY);
     await mountSidebar();
-    expect(queryFirst('.mk_space_auto_unread')).toBe(null);
+    expect('.mk_space_auto_unread, .mk_space_read').toHaveCount(0);
+});
+
+test('unread spaces and the fold are marked read from their own button', async () => {
+    browser.localStorage.removeItem(AUTOMATIC_KEY);
+    const marked = [];
+    await mountSidebar({ 2: 7, 3: 2, 4: 1 }, (ids) => marked.push(ids));
+    await contains('.mk_space_auto .mk_space_read', { visible: false }).click();
+    expect(renderedSpaces()).toEqual(['My Notes', 'Shared with Me']);
+    await contains('.mk_space_auto').click();
+    expect('.mk_space_system .mk_space_read').toHaveCount(2);
+    expect('.mk_space_system .mk_space_edit').toHaveCount(0);
+    await contains('.mk_space_personal .mk_space_read', { visible: false }).click();
+    expect(marked).toEqual([[2, 3], [4]]);
 });
 
 test('the section reopens the way it was left', async () => {

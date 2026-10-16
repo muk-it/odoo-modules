@@ -727,6 +727,7 @@ class TestAiOpenAIProvider(AITestCommon):
             )
         self.assertEqual(result['usage']['input_tokens'], 20)
         self.assertEqual(result['usage']['output_tokens'], 4096)
+        self.assertTrue(result['usage']['truncated'])
         self.assertIn('partial', result['text'])
         self.assertIn('Max Tokens', result['text'])
         self.assertIn('4096', result['text'])

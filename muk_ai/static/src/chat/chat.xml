@@ -27,6 +27,7 @@
                 onSpaceCreate.bind="onSpaceCreate"
                 onSpaceEdit.bind="onSpaceEdit"
                 onSpaceDelete.bind="onSpaceDelete"
+                onSpaceMarkRead.bind="onSpaceMarkRead"
                 onSpaceReorder.bind="onSpaceReorder"
                 onSpaceNew.bind="onSpaceNew"
                 onSpaceLoadMore.bind="onSpaceLoadMore"

@@ -66,6 +66,7 @@ export class ChatSidebar extends Component {
         onSpaceCreate: { type: Function, optional: true },
         onSpaceEdit: { type: Function, optional: true },
         onSpaceDelete: { type: Function, optional: true },
+        onSpaceMarkRead: { type: Function, optional: true },
         onSpaceReorder: { type: Function, optional: true },
         onSpaceNew: { type: Function, optional: true },
         onSpaceLoadMore: { type: Function, optional: true },
@@ -238,6 +239,16 @@ export class ChatSidebar extends Component {
         this.state.expanded[spaceId] = open;
         if (open && this.props.onSpaceOpen) {
             this.props.onSpaceOpen(spaceId);
+        }
+    }
+    /**
+     * Mark every unread chat of the given spaces as read.
+     * @param {object[]} spaces the spaces
+     */
+    onMarkReadClick(spaces, ev) {
+        ev.stopPropagation();
+        if (this.props.onSpaceMarkRead) {
+            this.props.onSpaceMarkRead(spaces.map((space) => space.id));
         }
     }
     /** Open or close the automatic section, remembering it per browser. */

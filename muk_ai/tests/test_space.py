@@ -213,6 +213,27 @@ class TestSpace(AITestCommon):
         with self.assertRaises(ValidationError):
             self._space('Broken', user_id=False, domain="[('nope_no_field', '=', 1)]")
 
+    def test_mark_read_clears_the_own_unread_chats_of_the_spaces(self):
+        filed = self._space('Q3 Budget')
+        system = self._space(
+            'By name', user_id=False, domain="[('name', '=', 'Collected')]"
+        )
+        in_filed = self._session('Filed', space_id=filed.id, notification_unread=True)
+        collected = self._session('Collected', notification_unread=True)
+        elsewhere = self._session('Elsewhere', notification_unread=True)
+        other = new_test_user(self.env, login='space_reader')
+        theirs = self._session('Collected', user_id=other.id, notification_unread=True)
+        badge = (filed | system).mark_read()
+        self.assertEqual(
+            [
+                session.notification_unread
+                for session in (in_filed, collected, elsewhere, theirs)
+            ],
+            [False, False, True, True],
+        )
+        self.assertIn(elsewhere.id, badge['session_ids'])
+        self.assertNotIn(collected.id, badge['session_ids'])
+
     def test_reorder_stores_the_given_order(self):
         first = self._space('First')
         second = self._space('Second')
