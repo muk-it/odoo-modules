@@ -16,7 +16,14 @@ export const OPEN_EVENT = 'muk-ai-compose-open';
  */
 export class ComposeAIPlugin extends Plugin {
     static id = 'mukAiCompose';
-    static dependencies = ['overlay', 'selection', 'dom', 'history'];
+    static dependencies = [
+        'baseContainer',
+        'dom',
+        'history',
+        'overlay',
+        'sanitize',
+        'selection',
+    ];
     resources = {
         user_commands: [
             {

@@ -135,6 +135,16 @@ msgid "Answer Mentions"
 msgstr "Rispondi alle menzioni"
 
 #. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel/compose_panel.js:0
+msgid ""
+"Answer cut off at the output limit: ask for a shorter text, or raise Max "
+"Tokens on the AI provider."
+msgstr ""
+"Risposta troncata al limite di output: chiedi un testo più breve o aumenta "
+"\"Token max\" sul provider IA."
+
+#. module: muk_ai_chatter
 #: model:muk_ai.skill,description:muk_ai_chatter.skill_compose_reply
 msgid "Answer the most recent message in the conversation."
 msgstr "Risponde all'ultimo messaggio della conversazione."
