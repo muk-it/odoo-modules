@@ -30,6 +30,7 @@
                 onSpaceReorder.bind="onSpaceReorder"
                 onSpaceNew.bind="onSpaceNew"
                 onSpaceLoadMore.bind="onSpaceLoadMore"
+                onSpaceMarkRead.bind="onSpaceMarkRead"
                 onSessionFile.bind="onSessionFile"
             />
             <div

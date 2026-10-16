@@ -339,6 +339,7 @@ class TestAiAnthropicProvider(AITestCommon):
         self.assertIn('partial answer', result['text'])
         self.assertIn('Max Tokens', result['text'])
         self.assertEqual(result['usage']['output_tokens'], 2)
+        self.assertTrue(result['usage']['truncated'])
 
     def test_anthropic_stream_max_tokens_stop_appends_truncation_notice(self):
         sse = [

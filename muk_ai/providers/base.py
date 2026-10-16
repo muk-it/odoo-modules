@@ -466,12 +466,9 @@ class ProviderBase:
     ) -> dict:
         """Append a truncation notice to a token-capped result and forward it.
 
-        Truncation is an honest outcome, not a failure: the partial text and
-        the captured usage are kept so cost still accrues, and the notice
-        names the output-token cap to raise instead of surfacing a generic
-        empty-output error.
+        The partial text and usage are kept, the usage flagged ``truncated``.
 
-        :param limit: the output-token cap that was hit, when known.
+        :param limit: the output-token cap that was hit, when known
         """
         if limit:
             notice = _(
@@ -490,6 +487,7 @@ class ProviderBase:
         notice = f'_{notice}_'
         self._call_on_delta(on_delta, 'text', {'delta': f'\n\n{notice}'})
         result['text'] = f'{result["text"]}\n\n{notice}'.strip()
+        result['usage'] = {**result['usage'], 'truncated': True}
         return result
 
     def _raise(self, error) -> None:

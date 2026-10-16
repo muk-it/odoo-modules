@@ -29,6 +29,7 @@ class TestRetention(AITestCommon):
         session = self.env['muk_ai.session'].create(
             {'name': name, 'state': 'done', **values}
         )
+        self.env.flush_all()
         self.env.cr.execute(
             'UPDATE muk_ai_session SET write_date = %s WHERE id = %s',
             (fields.Datetime.now() - timedelta(days=days), session.id),

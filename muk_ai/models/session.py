@@ -2753,6 +2753,7 @@ class AISession(models.Model):
                     + (round_input_tokens or 0),
                     'output_tokens': turn.get('output_tokens', 0) + round_output_tokens,
                     'iterations': turn.get('iterations', 0) + 1,
+                    **({'truncated': True} if usage.get('truncated') else {}),
                 },
                 **costs,
             }

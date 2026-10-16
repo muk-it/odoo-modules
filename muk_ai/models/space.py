@@ -130,7 +130,10 @@ class AISpace(models.Model):
         somebody, and the domain is stored once for everyone, so it is read
         per user rather than taken literally.
         """
-        return safe_eval(self.domain, {'uid': self.env.uid})
+        domain = safe_eval(self.domain, {'uid': self.env.uid})
+        if not isinstance(domain, list):
+            raise TypeError(f'a domain is a list, not {type(domain).__name__}')
+        return domain
 
     def _session_domain(self) -> list:
         """Return the domain selecting the sessions of this space.
@@ -247,6 +250,25 @@ class AISpace(models.Model):
             }
             for space in self._sidebar_spaces()
         ]
+
+    def mark_read(self) -> dict:
+        """Mark the unread chats of the current user in these spaces as read.
+
+        :return: the notification badge as it stands afterwards
+        """
+        sessions = self.env['muk_ai.session'].search(
+            expression.AND(
+                [
+                    expression.OR([space._session_domain() for space in self]),
+                    [
+                        ('user_id', '=', self.env.uid),
+                        ('notification_unread', '=', True),
+                    ],
+                ]
+            )
+        )
+        sessions.dismiss_notifications()
+        return self.env['muk_ai.session'].notification_badge()
 
     @api.model
     def reorder(self, space_ids: list[int]) -> bool:
