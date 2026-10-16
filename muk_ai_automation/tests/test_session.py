@@ -90,7 +90,7 @@ class TestSession(AutomationTestCommon):
             }
         )
         actions = (
-            self._make_action(),
+            self._make_action(agent_dispatch_mode='per_record'),
             cron.ir_actions_server_id,
             self._make_action(agent_space_id=custom.id),
         )
@@ -101,12 +101,15 @@ class TestSession(AutomationTestCommon):
             self.env.ref('muk_ai_automation.space_scheduled'),
             custom,
         )
-        started = self.env['muk_ai.session'].concat(*map(self._sessions_of, actions))
+        started = self.env['muk_ai.session'].concat(map(self._sessions_of, actions))
         for action, space in zip(actions, spaces, strict=True):
             with self.subTest(space=space.name):
                 self.assertEqual(
                     started.filtered_domain(space._session_domain()),
                     self._sessions_of(action),
                 )
+        records = self.env.ref('muk_ai_chatter.space_records')
+        self.assertTrue(started.filtered('res_id'))
+        self.assertFalse(started.filtered_domain(records._session_domain()))
         unclaimed = self.env['muk_ai.space']._unclaimed_session_domain()
         self.assertFalse(started.filtered_domain(unclaimed))
