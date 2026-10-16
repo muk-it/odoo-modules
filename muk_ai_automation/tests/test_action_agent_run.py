@@ -63,7 +63,10 @@ class TestActionAgentRun(AutomationTestCommon):
             }
         )
         actions = (
-            self._make_action(),
+            self._make_action(
+                agent_dispatch_mode='per_record',
+                agent_record_domain=self._domain_for(self._make_partners(2)),
+            ),
             cron.ir_actions_server_id,
             self._make_action(agent_space_id=custom.id),
         )
@@ -87,3 +90,6 @@ class TestActionAgentRun(AutomationTestCommon):
             sessions.search(sessions.env['muk_ai.space']._unclaimed_session_domain())
             & self._sessions_of(actions[0])
         )
+        records = self.env.ref('muk_ai_chatter.space_records')
+        self.assertEqual(len(self._sessions_of(actions[0]).filtered('res_id')), 2)
+        self.assertFalse(sessions.search(records._session_domain()) & chats)

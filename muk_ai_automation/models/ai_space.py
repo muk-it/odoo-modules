@@ -5,21 +5,33 @@ from odoo.fields import Domain
 
 
 class AISpace(models.Model):
-    """Let a system space also collect the chats of the actions that name it."""
+    """File the chats of agent actions only where those actions send them."""
 
     _inherit = 'muk_ai.space'
+
+    # ----------------------------------------------------------
+    # Properties
+    # ----------------------------------------------------------
+
+    @property
+    def ACTION_SPACE_XMLIDS(self) -> tuple[str, ...]:
+        """Return the system spaces that collect the chats of agent actions."""
+        return (
+            'muk_ai_automation.space_automation',
+            'muk_ai_automation.space_scheduled',
+        )
 
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
 
     def _parsed_domain(self) -> list:
-        """Add the chats of the agent actions that file into this space."""
-        return list(
-            Domain.OR(
-                [
-                    super()._parsed_domain(),
-                    [('action_space_id', '=', self.id)],
-                ]
-            )
-        )
+        """Keep action chats out of other spaces, add those filed into this one."""
+        domain = Domain(super()._parsed_domain())
+        action_space_ids = {
+            self.env['ir.model.data']._xmlid_to_res_id(xmlid, raise_if_not_found=False)
+            for xmlid in self.ACTION_SPACE_XMLIDS
+        }
+        if self.id not in action_space_ids:
+            domain &= Domain('action_server_id', '=', False)
+        return list(domain | Domain('action_space_id', '=', self.id))

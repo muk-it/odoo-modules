@@ -3,7 +3,7 @@
 <odoo>
 
     <record id="action_ai_automation_rules" model="ir.actions.act_window">
-        <field name="name">AI Automation Rules</field>
+        <field name="name">Automation Rules</field>
         <field name="path">ai-automation-rules</field>
         <field name="res_model">base.automation</field>
         <field name="view_mode">kanban,list,form</field>
@@ -32,7 +32,7 @@
     </record>
 
     <record id="action_ai_scheduled_actions" model="ir.actions.act_window">
-        <field name="name">AI Scheduled Actions</field>
+        <field name="name">Scheduled Actions</field>
         <field name="path">ai-scheduled-actions</field>
         <field name="res_model">ir.cron</field>
         <field name="view_mode">kanban,list,form</field>
