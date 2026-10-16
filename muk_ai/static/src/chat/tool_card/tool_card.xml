@@ -13,7 +13,7 @@
                     <i t-if="this.props.streaming" class="oi oi-spin" data-icon="progress_activity"/>
                     <i t-else="" class="oi" t-att-data-icon="this.props.block.icon or 'build'"/>
                 </span>
-                <span class="mk_tool_name fw-medium" t-out="this.props.block.label or this.props.block.name"/>
+                <span class="mk_tool_name fw-medium text-nowrap flex-shrink-0" t-out="this.props.block.label or this.props.block.name"/>
                 <span
                     t-if="this.props.block.band"
                     class="mk_tool_band text-truncate text-muted ms-2"
