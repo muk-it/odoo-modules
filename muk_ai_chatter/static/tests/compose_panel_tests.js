@@ -1,6 +1,6 @@
 /** @odoo-module */
 
-import { Component, useState, xml } from '@odoo/owl';
+import { Component, markup, useState, xml } from '@odoo/owl';
 
 import { hotkeyService } from '@web/core/hotkeys/hotkey_service';
 import { registry } from '@web/core/registry';
@@ -66,6 +66,7 @@ async function setup() {
         openFails: false,
         state: 'done',
         answer: 'A better sentence.',
+        truncated: false,
         emit: async (type, payload) => {
             handlers.forEach((handler) => handler({ session_id: 1, type, payload }));
             await nextTick();
@@ -117,6 +118,7 @@ async function setup() {
                 last_text: calls.answer,
                 state: calls.state,
                 error_message: 'Boom: x',
+                turn_usage: { truncated: calls.truncated },
             },
         ],
         'muk_ai.skill.save_composer_prompt': ({ args: [label, body, category] }) => {
@@ -134,11 +136,12 @@ async function setup() {
  * Build an adapter standing in for a composer, recording what is applied.
  * @param {string} [selection] the text the user had selected
  * @param {string} [draft] everything already written in the composer
+ * @param {boolean} [rich] whether it stands in for a rich editor writing HTML
  * @returns {object} the adapter, with an `applied` log
  */
-function makeAdapter(selection = '', draft = '') {
+function makeAdapter(selection = '', draft = '', rich = false) {
     return {
-        interfaceKey: 'mail_composer',
+        interfaceKey: rich ? 'html_field' : 'mail_composer',
         applied: [],
         getDraft: () => draft,
         getSelection: () => selection,
@@ -151,6 +154,8 @@ function makeAdapter(selection = '', draft = '') {
         replaceDraft(text) {
             this.applied.push(['replaced', text]);
         },
+        toHtml: (text) => (rich ? markup(text) : text),
+        toText: (text) => (rich ? text.replace(/<[^>]+>/g, ' ').trim() : text),
         getRecord: () => ({ resModel: 'res.partner', resId: 7 }),
         isAlive: () => true,
     };
@@ -181,10 +186,11 @@ class PanelHolder extends Component {
  * @param {object} env the test environment
  * @param {string} [selection] the text the user had selected
  * @param {string} [draft] everything already written in the composer
+ * @param {boolean} [rich] whether the composer is a rich editor
  * @returns {Promise<{holder: PanelHolder, adapter: object, target: HTMLElement}>} the fixture
  */
-async function mountPanel(env, selection = '', draft = '') {
-    const adapter = makeAdapter(selection, draft);
+async function mountPanel(env, selection = '', draft = '', rich = false) {
+    const adapter = makeAdapter(selection, draft, rich);
     const target = document.createElement('div');
     getFixture().append(target);
     const holder = await mount(PanelHolder, target, { env });
@@ -273,7 +279,7 @@ QUnit.test(
             },
         ]);
         await pickFirst(target);
-        assert.deepEqual(calls.context, [{ draft: DRAFT, selection: DRAFT }]);
+        assert.deepEqual(calls.context, [{ draft: DRAFT, selection: '' }]);
         assert.deepEqual(calls.sent, ['Fix it.']);
     },
 );
@@ -297,14 +303,28 @@ QUnit.test(
     'the answer streams in, and is put where the user was writing once accepted',
     async (assert) => {
         const { calls, env } = await setup();
-        for (const [selection, draft, answer, applied, text = answer] of [
+        for (const [selection, draft, answer, applied, text = answer, rich = false] of [
             [SELECTION, DRAFT, 'thank you for your order', 'selection'],
             [` ${SELECTION} `, DRAFT, 'thank you', 'selection', ' thank you '],
             ['', DRAFT, 'Dear customer, thank you.', 'replaced'],
             ['', '', 'A fresh message.', 'draft'],
+            ['', '', '<p>A <b>fresh</b> message.</p>', 'draft', undefined, true],
+            [
+                '',
+                `<p>${DRAFT}</p>`,
+                '<p>Dear customer, thank you.</p>',
+                'replaced',
+                undefined,
+                true,
+            ],
         ]) {
             calls.answer = answer;
-            const { holder, adapter, target } = await mountPanel(env, selection, draft);
+            const { holder, adapter, target } = await mountPanel(
+                env,
+                selection,
+                draft,
+                rich,
+            );
             await pickFirst(target);
             await calls.emit('text_delta', { delta: 'Half ' });
             assert.strictEqual(
@@ -313,6 +333,14 @@ QUnit.test(
             );
             await calls.emit('state', { state: 'done' });
             assert.containsN(target, '.mk_compose_panel_diff', draft ? 1 : 0);
+            assert.notOk(
+                texts(target, '.mk_compose_panel_diff').join('').includes('<'),
+            );
+            assert.containsN(
+                target,
+                '.mk_compose_panel_result b',
+                rich && !draft ? 1 : 0,
+            );
             assert.deepEqual(adapter.applied, []);
             await click(target, '.mk_compose_panel_accept');
             assert.deepEqual(adapter.applied, [[applied, text]]);
@@ -331,24 +359,31 @@ QUnit.test('a discarded answer never reaches the composer', async (assert) => {
     assert.deepEqual(adapter.applied, []);
 });
 
-QUnit.test('a run that fails or answers nothing says so', async (assert) => {
-    const { calls, env } = await setup();
-    const { target } = await mountPanel(env, SELECTION, DRAFT);
-    calls.state = 'error';
-    await pickFirst(target);
-    await calls.emit('state', { state: 'error' });
-    assert.strictEqual(
-        target.querySelector('.mk_compose_panel_error').textContent.trim(),
-        'Boom',
-    );
-    Object.assign(calls, { state: 'done', answer: '' });
-    await pickFirst(target);
-    await calls.emit('state', { state: 'done' });
-    assert.strictEqual(
-        target.querySelector('.mk_compose_panel_error').textContent.trim(),
-        'The agent returned nothing.',
-    );
-});
+QUnit.test(
+    'a run that fails, answers nothing or is cut off says so and inserts nothing',
+    async (assert) => {
+        const { calls, env } = await setup();
+        const { adapter, target } = await mountPanel(env, SELECTION, DRAFT);
+        for (const [values, label] of [
+            [{ state: 'error' }, 'Boom'],
+            [{ state: 'done', answer: '' }, 'The agent returned nothing.'],
+            [
+                { answer: 'A partial', truncated: true },
+                'Answer cut off at the output limit',
+            ],
+        ]) {
+            Object.assign(calls, values);
+            await pickFirst(target);
+            await calls.emit('state', { state: calls.state });
+            assert.strictEqual(
+                target.querySelector('.mk_compose_panel_error').textContent.trim(),
+                label,
+            );
+            assert.containsNone(target, '.mk_compose_panel_accept');
+        }
+        assert.deepEqual(adapter.applied, []);
+    },
+);
 
 QUnit.test(
     'a done announced from the middle of a run is not taken as the answer',

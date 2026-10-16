@@ -39,7 +39,7 @@ function makeFixture(range = null, text = DRAFT) {
 QUnit.test('the selection is the part of the draft the user had picked', (assert) => {
     const { adapter } = makeFixture([15, 35]);
     assert.strictEqual(adapter.getSelection(), SELECTION);
-    assert.strictEqual(adapter.getDraft(), DRAFT);
+    assert.strictEqual(adapter.getDraft(), 'Dear customer, [[thanks for you order]].');
     assert.deepEqual(adapter.getRecord(), { resModel: 'res.partner', resId: 7 });
 });
 
@@ -90,54 +90,124 @@ QUnit.test('a rewritten draft replaces everything that was written', (assert) =>
 
 /**
  * Open a real editor over the given content and drive the helper's adapter.
- * @param {string} html what the editor holds
- * @param {Function} [select] puts the cursor where the user left it
+ * @param {string} html what the editor holds, `[` and `]` marking the selection
  * @returns {{adapter: object, editor: OdooEditor}} the adapter and its editor
  */
-function editorFixture(html, select = null) {
+function editorFixture(html) {
     const editable = document.createElement('div');
     editable.innerHTML = html;
     getFixture().append(editable);
     const editor = new OdooEditor(editable, { document });
     registerCleanup(() => editor.destroy());
-    select?.(editable);
+    const points = [];
+    const walker = document.createTreeWalker(editable, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+        const node = walker.currentNode;
+        for (const mark of '[]') {
+            const at = node.textContent.indexOf(mark);
+            if (at !== -1) {
+                node.textContent = node.textContent.replace(mark, '');
+                points.push([node, at]);
+            }
+        }
+    }
+    if (points.length === 2) {
+        setSelection(...points[0], ...points[1]);
+    }
     const adapter = makeEditorAdapter(editor, { resModel: 'res.partner', resId: 7 });
     return { adapter, editor };
 }
 
 QUnit.test(
-    'a rewritten message replaces the whole draft in one undoable step',
+    'the draft of a rich composer is its cleaned HTML, the selection marked',
     (assert) => {
-        const { adapter, editor } = editorFixture('<p>Hello there</p><p>Bye</p>');
-        assert.strictEqual(adapter.getDraft(), 'Hello thereBye');
-        adapter.replaceDraft('Good day to you.\n\nKind regards');
-        assert.strictEqual(
-            editor.editable.innerHTML,
-            '<p>Good day to you.</p><p>Kind regards</p>',
-        );
-        editor.historyUndo();
-        assert.strictEqual(adapter.getDraft(), 'Hello thereBye');
+        for (const [html, draft, selected] of [
+            ['<p>Hello <b>there</b></p>', '<p>Hello <b>there</b></p>', ''],
+            ['<p><br></p><p><br></p>', '', ''],
+            [
+                '<table><tbody><tr><td style="text-align: right;">40</td></tr></tbody></table>',
+                '<table><tbody><tr><td style="text-align: right;">40</td></tr></tbody></table>',
+                '',
+            ],
+            [
+                '<p>Hi <b>An[na</b> and <a href="https://x.example">Jo]e</a></p>',
+                '<p>Hi <b>An[[na</b> and <a href="https://x.example">Jo]]e</a></p>',
+                'na and Jo',
+            ],
+            [
+                '<table><tbody><tr><td>[black mesh]</td><td>40</td></tr></tbody></table>',
+                '<table><tbody><tr><td>[[black mesh]]</td><td>40</td></tr></tbody></table>',
+                'black mesh',
+            ],
+        ]) {
+            const { adapter } = editorFixture(html);
+            assert.strictEqual(adapter.getDraft(), draft);
+            assert.strictEqual(adapter.getSelection(), selected);
+            assert.strictEqual(
+                adapter.interfaceKey,
+                selected ? 'text_select' : 'html_field',
+            );
+            document.getSelection().removeAllRanges();
+        }
     },
 );
 
 QUnit.test(
-    'an answer lands at the cursor, or at the end when there was none',
+    'an answer replaces the draft unfenced and sanitized, in one undoable step',
     (assert) => {
-        const { adapter: atCursor, editor } = editorFixture(
-            '<p>Hi friend</p>',
-            (editable) => {
-                const text = editable.firstChild.firstChild;
-                setSelection(text, 3, text, 9);
-            },
+        const { adapter, editor } = editorFixture(
+            '<p>Hello there</p><ol><li>old</li></ol>',
         );
-        assert.strictEqual(atCursor.getSelection(), 'friend');
-        assert.strictEqual(atCursor.interfaceKey, 'text_select');
-        atCursor.applySelection('there');
-        assert.strictEqual(editor.editable.textContent.replace(' ', ' '), 'Hi there');
-        document.getSelection().removeAllRanges();
-        const { adapter: atEnd, editor: other } = editorFixture('<p>Hi</p>');
-        assert.strictEqual(atEnd.interfaceKey, 'html_field');
-        atEnd.applyDraft(' you');
-        assert.strictEqual(other.editable.textContent, 'Hi you');
+        adapter.replaceDraft(
+            '```html\n<html><body><p>Hi <b>Anna</b><img src="x" onerror="alert(1)">' +
+                '<script>alert(2)</script></p><ul><li>one</li></ul></body></html>\n```',
+        );
+        const { editable } = editor;
+        assert.strictEqual(editable.querySelector('b').textContent, 'Anna');
+        assert.strictEqual(editable.querySelector('ul li').textContent, 'one');
+        assert.containsNone(editable, 'ol, script, [onerror]');
+        assert.notOk(/```|html>/.test(editable.textContent));
+        editor.historyUndo();
+        assert.strictEqual(
+            editable.innerHTML,
+            '<p>Hello there</p><ol><li>old</li></ol>',
+        );
     },
 );
+
+QUnit.test(
+    'a one-paragraph answer fills the selection inside its paragraph',
+    (assert) => {
+        const { adapter, editor } = editorFixture('<p>Dear [customer], thanks</p>');
+        adapter.applySelection(' <p><b>valued</b> client</p>');
+        assert.containsOnce(editor.editable, 'p');
+        assert.strictEqual(
+            editor.editable.querySelector('p').innerHTML,
+            'Dear <b>valued</b> client, thanks',
+        );
+    },
+);
+
+QUnit.test(
+    'an answer lands at the end of the last paragraph without a cursor',
+    (assert) => {
+        document.getSelection().removeAllRanges();
+        const { adapter, editor } = editorFixture('<p>Hi</p>');
+        assert.strictEqual(adapter.interfaceKey, 'html_field');
+        adapter.applyDraft(' you');
+        assert.strictEqual(editor.editable.childNodes.length, 1);
+        assert.strictEqual(editor.editable.firstChild.textContent, 'Hi you');
+    },
+);
+
+QUnit.test('an answer is previewed sanitized and compared as words', (assert) => {
+    const { adapter } = editorFixture('<p>Hello</p>');
+    assert.strictEqual(
+        String(adapter.toHtml('<p>Hi<img src="x" onerror="alert(1)"></p><p>you</p>')),
+        '<p>Hi<img src="x"></p><p>you</p>',
+    );
+    assert.strictEqual(
+        adapter.toText('<p>Dear Anna,</p><ul><li>one</li><li>two</li></ul>'),
+        'Dear Anna, one two',
+    );
+});

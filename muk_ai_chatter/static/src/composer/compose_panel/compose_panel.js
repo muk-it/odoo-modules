@@ -148,6 +148,9 @@ export class ComposePanel extends Component {
     get target() {
         return this.state.selection || this.state.draft;
     }
+    get targetText() {
+        return this.props.adapter.toText(this.target).trim();
+    }
     get isRewrite() {
         return Boolean(this.target);
     }
@@ -189,7 +192,7 @@ export class ComposePanel extends Component {
         if (!this.isRewrite || this.state.phase !== 'preview') {
             return null;
         }
-        return wordDiff(this.target, this.state.result);
+        return wordDiff(this.targetText, this.props.adapter.toText(this.state.result));
     }
     get errorLabel() {
         const first = (this.state.error || '').split(/[:(]/)[0].trim();
@@ -216,7 +219,7 @@ export class ComposePanel extends Component {
         if (!this.isRewrite) {
             return _t('Written from this record');
         }
-        const words = this.target.trim().split(/\s+/).length;
+        const words = this.targetText.split(/\s+/).length;
         if (this.hasSelection) {
             return words === 1 ? _t('1 selected word') : _t('%s selected words', words);
         }
@@ -225,7 +228,7 @@ export class ComposePanel extends Component {
             : _t('%s words in your draft', words);
     }
     get quoted() {
-        const target = this.target.trim();
+        const target = this.targetText;
         return target.length > 180 ? `${target.slice(0, 180)}...` : target;
     }
     get canOfferSave() {
@@ -306,7 +309,7 @@ export class ComposePanel extends Component {
             [values] = await this.orm.read(
                 'muk_ai.session',
                 [this.state.sessionId],
-                ['last_text', 'state', 'error_message'],
+                ['last_text', 'state', 'error_message', 'turn_usage'],
             );
         } catch (error) {
             return this.reportError(error);
@@ -315,6 +318,12 @@ export class ComposePanel extends Component {
             return;
         }
         const text = (values.last_text || '').trim();
+        if (values.turn_usage?.truncated) {
+            values.state = 'error';
+            values.error_message = _t(
+                'Answer cut off at the output limit: ask for a shorter text, or raise Max Tokens on the AI provider.',
+            );
+        }
         if (values.state === 'error' || !text) {
             this.state.phase = 'error';
             this.state.error =
@@ -351,7 +360,7 @@ export class ComposePanel extends Component {
             await this.orm.call('muk_ai.session', 'update_compose_context', [
                 ids,
                 this.props.adapter.getDraft(),
-                this.isRewrite ? this.target : '',
+                this.state.selection,
             ]);
             await this.orm.call('muk_ai.session', 'send_message', [
                 ids,
