@@ -28,9 +28,8 @@ class AISpace(models.Model):
     def _parsed_domain(self) -> list:
         """Keep action chats out of other spaces, add those filed into this one."""
         domain = Domain(super()._parsed_domain())
-        data = self.env['ir.model.data']
         action_space_ids = {
-            data._xmlid_to_res_id(xmlid, raise_if_not_found=False)
+            self.env['ir.model.data']._xmlid_to_res_id(xmlid, raise_if_not_found=False)
             for xmlid in self.ACTION_SPACE_XMLIDS
         }
         if self.id not in action_space_ids:
