@@ -67,6 +67,11 @@ msgstr ""
 
 #. module: muk_ai_automation
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_kanban
+msgid "<i class=\"fa fa-clock-o me-1\" title=\"Interval\"/>"
+msgstr ""
+
+#. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_kanban
 msgid "<span>Every</span>"
 msgstr ""
 
@@ -423,6 +428,11 @@ msgid "Space"
 msgstr ""
 
 #. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_muk_ai_session__action_space_id
+msgid "Space of the Action"
+msgstr ""
+
+#. module: muk_ai_automation
 #: model:ir.model.fields.selection,name:muk_ai_automation.selection__ir_actions_server__agent_chain_strategy__none
 msgid "Start Fresh"
 msgstr ""
@@ -430,6 +440,11 @@ msgstr ""
 #. module: muk_ai_automation
 #: model:ir.model.fields,field_description:muk_ai_automation.field_muk_ai_session__action_server_id
 msgid "Started By"
+msgstr ""
+
+#. module: muk_ai_automation
+#: model:ir.model.fields,field_description:muk_ai_automation.field_muk_ai_session__action_server_usage
+msgid "Started By Usage"
 msgstr ""
 
 #. module: muk_ai_automation
@@ -445,6 +460,7 @@ msgstr ""
 #. module: muk_ai_automation
 #: model:ir.model.fields,help:muk_ai_automation.field_ir_actions_server__agent_space_id
 #: model:ir.model.fields,help:muk_ai_automation.field_ir_cron__agent_space_id
+#: model:ir.model.fields,help:muk_ai_automation.field_muk_ai_session__action_space_id
 msgid ""
 "System space that lists the chats of this action. Leave empty to list them "
 "under Automation, or under Scheduled for a scheduled action."
@@ -560,19 +576,4 @@ msgstr ""
 #. module: muk_ai_automation
 #: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ir_actions_server_form
 msgid "records = env['res.partner'].search([('email', '=', False)], limit=10)"
-msgstr ""
-
-#. module: muk_ai_automation
-#: model:ir.model.fields,field_description:muk_ai_automation.field_muk_ai_session__action_space_id
-msgid "Space of the Action"
-msgstr ""
-
-#. module: muk_ai_automation
-#: model:ir.model.fields,field_description:muk_ai_automation.field_muk_ai_session__action_server_usage
-msgid "Started By Usage"
-msgstr ""
-
-#. module: muk_ai_automation
-#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_kanban
-msgid "Interval"
 msgstr ""
