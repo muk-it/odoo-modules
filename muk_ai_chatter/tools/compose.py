@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from odoo import models
+
 from odoo.addons.muk_ai_chatter.tools.chatter import PLAIN_TEXT_RULE, fenced
 
 COMPOSE_INTERFACES = [
@@ -8,7 +10,7 @@ COMPOSE_INTERFACES = [
     ('html_field', 'Writing in a Field'),
 ]
 
-COMPOSE_MAX_CHARS = 12000
+COMPOSE_MAX_CHARS = 120000
 
 SELECTION_OPEN = '[['
 
@@ -27,8 +29,15 @@ COMPOSE_RULES = (
     'come from the draft, the conversation or the record. Nobody can answer a '
     'question here, so never call ask_user. If something is missing, write '
     'the message with a clearly marked gap the user can fill in. '
-    f'{PLAIN_TEXT_RULE}\n'
+    '%s\n'
     '</compose_rules>'
+)
+
+HTML_RULE = (
+    'Your answer is an HTML fragment that is inserted into a rich-text editor as '
+    'it stands: no html, head or body wrapper and no code fence. The draft is '
+    'shown as HTML too: keep every tag, attribute, class and inline style of it '
+    'that you are not asked to change.'
 )
 
 COMPOSE_TURN_REMINDER = {
@@ -66,21 +75,13 @@ def compose_text_values(draft: str | None, selection: str | None) -> dict:
     }
 
 
-def mark_selection(draft: str, selection: str) -> str:
-    """Return ``draft`` with the part to rewrite marked where it sits."""
-    if not selection or not draft or selection not in draft:
-        return ''
-    return draft.replace(selection, f'{SELECTION_OPEN}{selection}{SELECTION_CLOSE}', 1)
-
-
-def compose_addenda(draft: str, selection: str) -> list[str]:
-    """Return what the agent is told about the composer it writes in."""
-    addenda = [COMPOSE_RULES]
-    if selection:
+def compose_addenda(session: models.BaseModel) -> list[str]:
+    """Return what a writing helper is told about the composer it writes in."""
+    plain = session.compose_interface == 'mail_composer'
+    addenda = [COMPOSE_RULES % (PLAIN_TEXT_RULE if plain else HTML_RULE)]
+    if selection := session.compose_selection:
         addenda.append(COMPOSE_SELECTION_RULES)
         addenda.append(fenced('selected_text', selection))
-    if marked := mark_selection(draft, selection):
-        addenda.append(fenced('draft_with_selection', marked))
-    elif draft:
-        addenda.append(fenced('draft', draft))
+    if session.compose_draft:
+        addenda.append(fenced('draft', session.compose_draft))
     return addenda

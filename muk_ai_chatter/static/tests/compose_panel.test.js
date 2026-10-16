@@ -1,6 +1,6 @@
 import { animationFrame, describe, expect, test } from '@odoo/hoot';
 import { click, press, queryAllTexts, queryFirst } from '@odoo/hoot-dom';
-import { Component, proxy, xml } from '@odoo/owl';
+import { Component, markup, proxy, xml } from '@odoo/owl';
 import {
     contains,
     getService,
@@ -60,6 +60,7 @@ function mockServer() {
         openFails: false,
         state: 'done',
         answer: 'A better sentence.',
+        truncated: false,
     };
     onRpc('muk_ai.skill', 'fetch_skills', () => SKILLS);
     onRpc('muk_ai.session', 'open_for_composer', ({ kwargs }) => {
@@ -85,6 +86,7 @@ function mockServer() {
             last_text: calls.answer,
             state: calls.state,
             error_message: 'Boom: x',
+            turn_usage: { truncated: calls.truncated },
         },
     ]);
     onRpc(
@@ -102,11 +104,12 @@ function mockServer() {
  * Build an adapter standing in for a composer, recording what is applied.
  * @param {string} [selection] the text the user had selected
  * @param {string} [draft] everything already written in the composer
+ * @param {boolean} [rich] whether it stands in for a rich editor writing HTML
  * @returns {object} the adapter, with an `applied` log
  */
-function makeAdapter(selection = '', draft = '') {
+function makeAdapter(selection = '', draft = '', rich = false) {
     return {
-        interfaceKey: 'mail_composer',
+        interfaceKey: rich ? 'html_field' : 'mail_composer',
         applied: [],
         getDraft: () => draft,
         getSelection: () => selection,
@@ -119,6 +122,8 @@ function makeAdapter(selection = '', draft = '') {
         replaceDraft(text) {
             this.applied.push(['replaced', text]);
         },
+        toHtml: (text) => (rich ? markup(text) : text),
+        toText: (text) => (rich ? text.replace(/<[^>]+>/g, ' ').trim() : text),
         getRecord: () => ({ resModel: 'res.partner', resId: 7 }),
         isAlive: () => true,
     };
@@ -145,10 +150,11 @@ class PanelHolder extends Component {
  * Mount a panel over an adapter.
  * @param {string} [selection] the text the user had selected
  * @param {string} [draft] everything already written in the composer
+ * @param {boolean} [rich] whether the composer is a rich editor
  * @returns {Promise<{holder: PanelHolder, adapter: object}>} the fixture
  */
-async function mountPanel(selection = '', draft = '') {
-    const adapter = makeAdapter(selection, draft);
+async function mountPanel(selection = '', draft = '', rich = false) {
+    const adapter = makeAdapter(selection, draft, rich);
     const holder = await mountWithCleanup(PanelHolder);
     holder.state.panels.push({ id: 1, adapter });
     await animationFrame();
@@ -213,7 +219,7 @@ test('the session opens with the text and the record, and a whole draft is the t
         },
     ]);
     await pickFirst();
-    expect(calls.context).toEqual([{ draft: DRAFT, selection: DRAFT }]);
+    expect(calls.context).toEqual([{ draft: DRAFT, selection: '' }]);
     expect(calls.sent).toEqual(['Fix it.']);
 });
 
@@ -231,19 +237,30 @@ test('the chosen length and tone are carried into a message written from nothing
 
 test('the answer streams in, and is put where the user was writing once accepted', async () => {
     const calls = mockServer();
-    for (const [selection, draft, answer, applied, text = answer] of [
+    for (const [selection, draft, answer, applied, text = answer, rich = false] of [
         [SELECTION, DRAFT, 'thank you for your order', 'selection'],
         [` ${SELECTION} `, DRAFT, 'thank you', 'selection', ' thank you '],
         ['', DRAFT, 'Dear customer, thank you.', 'replaced'],
         ['', '', 'A fresh message.', 'draft'],
+        ['', '', '<p>A <b>fresh</b> message.</p>', 'draft', undefined, true],
+        [
+            '',
+            `<p>${DRAFT}</p>`,
+            '<p>Dear customer, thank you.</p>',
+            'replaced',
+            undefined,
+            true,
+        ],
     ]) {
         calls.answer = answer;
-        const { holder, adapter } = await mountPanel(selection, draft);
+        const { holder, adapter } = await mountPanel(selection, draft, rich);
         await pickFirst();
         await emitEvent(1, 'text_delta', { delta: 'Half ' });
         expect('.mk_compose_panel_stream').toHaveText('Half');
         await endRun();
         expect('.mk_compose_panel_diff').toHaveCount(draft ? 1 : 0);
+        expect(queryAllTexts('.mk_compose_panel_diff').join('')).not.toInclude('<');
+        expect('.mk_compose_panel_result b').toHaveCount(rich && !draft ? 1 : 0);
         expect(adapter.applied).toEqual([]);
         await click('.mk_compose_panel_accept');
         await animationFrame();
@@ -263,17 +280,24 @@ test('a discarded answer never reaches the composer', async () => {
     expect(adapter.applied).toEqual([]);
 });
 
-test('a run that fails or answers nothing says so', async () => {
+test('a run that fails, answers nothing or is cut off says so and inserts nothing', async () => {
     const calls = mockServer();
-    await mountPanel(SELECTION, DRAFT);
-    calls.state = 'error';
-    await pickFirst();
-    await endRun('error');
-    expect('.mk_compose_panel_error').toHaveText('Boom');
-    Object.assign(calls, { state: 'done', answer: '' });
-    await pickFirst();
-    await endRun();
-    expect('.mk_compose_panel_error').toHaveText('The agent returned nothing.');
+    const { adapter } = await mountPanel(SELECTION, DRAFT);
+    for (const [values, label] of [
+        [{ state: 'error' }, 'Boom'],
+        [{ state: 'done', answer: '' }, 'The agent returned nothing.'],
+        [
+            { answer: 'A partial', truncated: true },
+            'Answer cut off at the output limit',
+        ],
+    ]) {
+        Object.assign(calls, values);
+        await pickFirst();
+        await endRun(calls.state);
+        expect('.mk_compose_panel_error').toHaveText(label);
+        expect('.mk_compose_panel_accept').toHaveCount(0);
+    }
+    expect(adapter.applied).toEqual([]);
 });
 
 test('a done announced from the middle of a run is not taken as the answer', async () => {

@@ -972,3 +972,13 @@ msgstr "sesiones"
 #: model_terms:ir.ui.view,arch_db:muk_ai_chatter.view_res_config_settings_form
 msgid "Manage AI Agents"
 msgstr "Gestionar agentes de IA"
+
+#. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel/compose_panel.js:0
+msgid ""
+"Answer cut off at the output limit: ask for a shorter text, or raise Max "
+"Tokens on the AI provider."
+msgstr ""
+"Respuesta cortada en el límite de salida: pida un texto más corto o aumente "
+"\"Tokens máx.\" en el proveedor IA."

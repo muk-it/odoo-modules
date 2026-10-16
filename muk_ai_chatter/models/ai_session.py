@@ -184,7 +184,7 @@ class AISession(models.Model):
         if self.is_mention:
             addenda.append(MENTION_RULES)
         if self.compose_interface:
-            addenda.extend(compose_addenda(self.compose_draft, self.compose_selection))
+            addenda.extend(compose_addenda(self))
         if self.mention_context:
             addenda.append(fenced('thread_context', self.mention_context))
         return addenda

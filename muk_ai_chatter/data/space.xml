@@ -5,7 +5,7 @@
         <field name="sequence">2</field>
         <field name="icon">link</field>
         <field name="user_id" eval="False"/>
-        <field name="domain">[('res_model', '!=', False)]</field>
+        <field name="domain">[('res_model', '!=', False), ('compose_interface', '=', False)]</field>
     </record>
     <record id="space_writing" model="muk_ai.space">
         <field name="name">Chatter</field>

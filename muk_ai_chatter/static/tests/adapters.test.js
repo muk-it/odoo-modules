@@ -39,7 +39,7 @@ function makeFixture(range = null, text = DRAFT) {
 test('the selection is the part of the draft the user had picked', () => {
     const { adapter } = makeFixture([15, 35]);
     expect(adapter.getSelection()).toBe(SELECTION);
-    expect(adapter.getDraft()).toBe(DRAFT);
+    expect(adapter.getDraft()).toBe('Dear customer, [[thanks for you order]].');
 });
 
 test('the rewrite replaces the selection after the caret moved away', () => {
@@ -100,25 +100,79 @@ async function editorFixture(html, after = '') {
     return { adapter, el };
 }
 
-test('the draft of a rich composer ends at the signature', async () => {
+test('the draft of a rich composer is its cleaned HTML, up to the signature', async () => {
     for (const [html, draft] of [
-        ['<p>Hello there</p>', 'Hello there'],
-        ['<p><br></p>', ''],
+        ['<p>Hello <b>there</b></p>', '<p>Hello <b>there</b></p>'],
+        ['<p><br></p><p><br></p>', ''],
+        [
+            '<table><tbody><tr><td style="text-align: right;">40</td></tr></tbody></table>',
+            '<table><tbody><tr><td style="text-align: right;">40</td></tr></tbody></table>',
+        ],
     ]) {
         const { adapter } = await editorFixture(html, '<p>On Monday you wrote...</p>');
-        expect(adapter.getDraft().trim()).toBe(draft);
+        expect(adapter.interfaceKey).toBe('html_field');
+        expect(adapter.getDraft()).toBe(draft);
     }
 });
 
-test('a rewritten message replaces the draft and keeps the signature under it', async () => {
+test('the selection is marked where it sits, across formatting and in a cell', async () => {
+    for (const [html, marked, selected] of [
+        [
+            '<p>Hi <b>An[na</b> and <a href="https://x.example">Jo]e</a></p>',
+            '<p>Hi <b>An[[na</b> and <a href="https://x.example">Jo]]e</a></p>',
+            'na and Jo',
+        ],
+        [
+            '<table><tbody><tr><td>[black mesh]</td><td>40</td></tr></tbody></table>',
+            '<table><tbody><tr><td>[[black mesh]]</td><td>40</td></tr></tbody></table>',
+            'black mesh',
+        ],
+    ]) {
+        const { plugins } = await setupEditor(html, {
+            config: { includePlugins: [ComposeAIPlugin] },
+        });
+        const adapter = makeEditorAdapter(plugins.get('mukAiCompose'), {});
+        expect(adapter.interfaceKey).toBe('text_select');
+        expect(adapter.getDraft()).toBe(marked);
+        expect(adapter.getSelection()).toBe(selected);
+    }
+});
+
+test('an answer replaces the draft unfenced and sanitized, the signature kept', async () => {
     const { adapter, el } = await editorFixture(
-        '<p>Hello there</p><p><br></p>',
+        '<p>Hello there</p><ol><li>old</li></ol>',
         '<p>On Monday you wrote...</p>',
     );
-    adapter.replaceDraft('Good day to you.\n\nKind regards');
-    expect(adapter.getDraft()).toBe('Good day to you.Kind regards');
-    const signature = el.querySelector('.o-signature-container');
-    expect(signature).toHaveText(/--\s*Mitchell Admin/);
-    expect(signature.previousElementSibling).toHaveText('Kind regards');
+    adapter.replaceDraft(
+        '```html\n<html><body><p>Hi <b>Anna</b><img src="x" onerror="alert(1)">' +
+            '<script>alert(2)</script></p><ul><li>one</li></ul></body></html>\n```',
+    );
+    expect('b').toHaveText('Anna');
+    expect('ul li').toHaveText('one');
+    expect('ol').toHaveCount(0);
+    expect('script').toHaveCount(0);
+    expect('[onerror]').toHaveCount(0);
+    expect(el).not.toHaveText(/```|html>/);
+    expect('.o-signature-container').toHaveText(/^--\s*Mitchell Admin$/);
     expect(el.lastElementChild).toHaveText('On Monday you wrote...');
+});
+
+test('a one-paragraph answer fills the selection inside its paragraph', async () => {
+    const { el, plugins } = await setupEditor('<p>Dear [customer], thanks</p>', {
+        config: { includePlugins: [ComposeAIPlugin] },
+    });
+    const adapter = makeEditorAdapter(plugins.get('mukAiCompose'), {});
+    adapter.applySelection(' <p><b>valued</b> client</p>');
+    expect(el.querySelectorAll('p')).toHaveCount(1);
+    expect(el.querySelector('p')).toHaveInnerHTML('Dear <b>valued</b> client, thanks');
+});
+
+test('an answer is previewed sanitized and compared as words', async () => {
+    const { adapter } = await editorFixture('<p>Hello</p>');
+    expect(
+        String(adapter.toHtml('<p>Hi<img src="x" onerror="alert(1)"></p><p>you</p>')),
+    ).toBe('<p>Hi<img src="x"></p><p>you</p>');
+    expect(adapter.toText('<p>Dear Anna,</p><ul><li>one</li><li>two</li></ul>')).toBe(
+        'Dear Anna, one two',
+    );
 });

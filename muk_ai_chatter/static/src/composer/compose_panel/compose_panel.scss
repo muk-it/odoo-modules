@@ -75,7 +75,9 @@
         }
     }
     .mk_compose_panel_chip {
+        padding: 0.4rem 0.6rem;
         border: 1px solid transparent;
+        border-radius: 0.5rem;
         background-color: $gray-100;
         color: $body-color;
         transition:
@@ -114,20 +116,24 @@
             color: $primary;
         }
     }
-    .mk_compose_panel_ask {
+    .mk_compose_panel_ask,
+    .mk_compose_panel_create .form-control {
         border: 1px solid var(--border-color, #{$border-color});
-        border-radius: 1.25rem;
+        border-radius: 0.5rem;
         background-color: $o-view-background-color;
         &:focus-within {
             border-color: rgba($primary, 0.6);
             box-shadow: 0 0 0 0.2rem rgba($primary, 0.12);
         }
+    }
+    .mk_compose_panel_ask {
         .mk_compose_panel_custom {
             background-color: transparent;
         }
         .mk_compose_panel_send {
             width: 1.85rem;
             height: 1.85rem;
+            border-radius: 0.4rem;
             flex: 0 0 auto;
             display: flex;
             align-items: center;
@@ -150,6 +156,9 @@
         line-height: 1.45;
         border: 1px solid var(--border-color, #{$border-color});
         background-color: $o-view-background-color;
+    }
+    .mk_compose_panel_rendered {
+        white-space: normal;
     }
     .mk_compose_panel_stream::after {
         content: '';
