@@ -69,6 +69,7 @@ export class ChatSidebar extends Component {
         onSpaceReorder: { type: Function, optional: true },
         onSpaceNew: { type: Function, optional: true },
         onSpaceLoadMore: { type: Function, optional: true },
+        onSpaceMarkRead: { type: Function, optional: true },
         onSessionFile: { type: Function, optional: true },
     };
     setup() {
@@ -223,6 +224,10 @@ export class ChatSidebar extends Component {
         if (this.props.onSpaceOpen) {
             this.props.onSpaceOpen(spaceId, next);
         }
+    }
+    markRead(spaces, ev) {
+        ev.stopPropagation();
+        this.props.onSpaceMarkRead?.(spaces.map((space) => space.id));
     }
     onSpaceLoadMoreClick(spaceId, ev) {
         ev.stopPropagation();

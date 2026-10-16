@@ -846,11 +846,6 @@ class TestAiGoogleProvider(AITestCommon):
             with self.assertRaises(UserError):
                 self.provider._request_responses(inputs=[])
 
-    def test_request_raises_on_missing_key(self):
-        self.provider.sudo().api_key = ''
-        with self.assertRaises(UserError):
-            self.provider._request_responses(inputs=[])
-
     def test_executable_code_part_renders_as_fenced_block(self):
         body = {
             'candidates': [

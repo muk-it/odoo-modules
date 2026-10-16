@@ -259,6 +259,33 @@ class TestSpace(AITestCommon):
             session.space_id = space
         self.assertIn('muk_ai.notification_badge', captured)
 
+    def test_mark_read_clears_the_own_unread_chats_of_the_spaces(self):
+        filed_space = self._space('Q3 Budget')
+        system = self._space(
+            'By Name', user_id=False, domain="[('name', '=', 'Collected')]"
+        )
+        filed = self._session(
+            'Filed', space_id=filed_space.id, notification_unread=True
+        )
+        collected = self._session('Collected', notification_unread=True)
+        elsewhere = self._session('Elsewhere', notification_unread=True)
+        other = new_test_user(self.env, login='mark_read_other')
+        theirs = (
+            self.env['muk_ai.session']
+            .with_user(other)
+            .create({'name': 'Collected', 'notification_unread': True})
+        )
+        badge = (filed_space | system).mark_read()
+        self.assertEqual(
+            [
+                session.sudo().notification_unread
+                for session in (filed, collected, elsewhere, theirs)
+            ],
+            [False, False, True, True],
+        )
+        self.assertIn(elsewhere.id, badge['session_ids'])
+        self.assertNotIn(collected.id, badge['session_ids'])
+
     def test_a_malformed_domain_is_refused(self):
         with self.assertRaises(ValidationError):
             self._space('Broken', user_id=False, domain='not a domain')

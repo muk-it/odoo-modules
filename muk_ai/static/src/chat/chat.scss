@@ -316,6 +316,18 @@
         &:hover {
             background: rgba(var(--mk-primary-rgb), 0.06);
             color: var(--mk-text);
+            .mk_space_read {
+                display: inline-flex;
+            }
+        }
+        .mk_space_read {
+            display: none;
+            padding: 0 4px;
+            color: var(--mk-text-muted);
+            line-height: 1;
+            &:hover {
+                color: var(--mk-text);
+            }
         }
         .mk_space_caret {
             width: 10px;
@@ -2529,6 +2541,9 @@
         .mk_space_auto {
             padding-top: 0.6rem;
             padding-bottom: 0.6rem;
+            .mk_space_read {
+                display: inline-flex;
+            }
         }
         .mk_space_filter {
             padding: 0.4rem 0.5rem;

@@ -937,6 +937,7 @@ class TestAiOpenAIProvider(AITestCommon):
         self.assertIn('partial', result['text'])
         self.assertIn('Max Tokens', result['text'])
         self.assertEqual(result['usage']['output_tokens'], 4096)
+        self.assertTrue(result['usage']['truncated'])
 
     def test_parse_captures_bare_text_on_line(self):
         response = self._mock_http_response(

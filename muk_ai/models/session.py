@@ -2702,6 +2702,8 @@ class AISession(models.Model):
         round_cached_tokens = usage.get('cache_read_tokens') or 0
         costs = self._accrue_cost_deltas(usage)
         turn = costs.pop('turn_usage', self.turn_usage or {})
+        if usage.get('truncated'):
+            turn = {**turn, 'truncated': True}
         self.write(
             {
                 'iteration_count': self.iteration_count + 1,

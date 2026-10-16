@@ -813,7 +813,7 @@ class TestAiSession(AITestCommon):
     def test_turn_usage_counts_only_the_latest_turn(self):
         session = self.env['muk_ai.session'].create({'name': 'turn meter'})
 
-        def make_payload(tokens, cached):
+        def make_payload(tokens, cached, **extra):
             return {
                 'text': 'ok',
                 'tool_calls': [],
@@ -822,11 +822,13 @@ class TestAiSession(AITestCommon):
                     'input_tokens': tokens,
                     'output_tokens': 3,
                     'cache_read_tokens': cached,
+                    **extra,
                 },
             }
 
-        with self._patch_provider([make_payload(42, 30)]):
+        with self._patch_provider([make_payload(42, 30, truncated=True)]):
             session.start('hi')
+        self.assertTrue(session.turn_usage['truncated'])
         with self._patch_provider([make_payload(120, 100)]):
             session.send_message('again')
         self.assertEqual(session.turn_usage['input_tokens'], 120)
@@ -834,6 +836,7 @@ class TestAiSession(AITestCommon):
         self.assertEqual(session.get_snapshot()['total_cached_tokens'], 130)
         self.assertEqual(session.turn_usage['output_tokens'], 3)
         self.assertEqual(session.turn_usage['iterations'], 1)
+        self.assertNotIn('truncated', session.turn_usage)
         self.assertEqual(session.get_snapshot()['turn_usage'], session.turn_usage)
         session.clear()
         self.assertFalse(session.turn_usage)

@@ -34,7 +34,7 @@ const SPACES = [
     space(4, 'My Notes', { system: false }),
 ];
 
-async function mountSidebar(spaceUnread = {}) {
+async function mountSidebar(spaceUnread = {}, onSpaceMarkRead = () => {}) {
     class Parent extends Component {
         static components = { ChatSidebar };
         static props = {};
@@ -48,14 +48,18 @@ async function mountSidebar(spaceUnread = {}) {
                 onRename="() => {}"
                 onDelete="() => {}"
                 onSpaceCreate="() => {}"
+                onSpaceMarkRead="props.onSpaceMarkRead"
             />
         `;
     }
     Parent.props = {
         spaces: { type: Array },
         spaceUnread: { type: Object },
+        onSpaceMarkRead: { type: Function },
     };
-    await mountWithCleanup(Parent, { props: { spaces: SPACES, spaceUnread } });
+    await mountWithCleanup(Parent, {
+        props: { spaces: SPACES, spaceUnread, onSpaceMarkRead },
+    });
 }
 
 /** @returns {string[]} the space names the sidebar currently renders */
@@ -117,4 +121,17 @@ test('the section reopens the way it was left', async () => {
     await mountSidebar();
     expect(renderedSpaces()).toHaveLength(4);
     browser.localStorage.removeItem(AUTOMATIC_KEY);
+});
+
+test('the header and an unread space mark their chats as read', async () => {
+    browser.localStorage.removeItem(AUTOMATIC_KEY);
+    await mountSidebar({ 2: 7, 3: 2 }, (ids) => expect.step(`read ${ids}`));
+    expect('.mk_space_row .mk_space_read').toHaveCount(0);
+    expect('.mk_space_auto .mk_space_auto_count ~ .mk_space_read').toHaveCount(1);
+    await contains('.mk_space_auto .mk_space_read', { visible: false }).click();
+    expect(renderedSpaces()).toEqual(['My Notes', 'Shared with Me']);
+    await contains('.mk_space_auto').click();
+    await contains('.mk_space_row .mk_space_read', { visible: false }).click();
+    expect('.mk_space_row .mk_space_read').toHaveCount(2);
+    expect.verifySteps(['read 2,3', 'read 2']);
 });

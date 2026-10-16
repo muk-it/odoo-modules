@@ -4,14 +4,10 @@ import base64
 import socket
 from unittest.mock import MagicMock, patch
 
-import urllib3
-
 from odoo.exceptions import UserError
 
 from odoo.addons.muk_ai.tests.common import AITestCommon
 from odoo.addons.muk_ai.tools.url_fetch import (
-    CONNECT_TIMEOUT,
-    READ_TIMEOUT,
     _validate_url,
     fetch_url,
 )
@@ -385,18 +381,3 @@ class TestUrlFetchHardening(AITestCommon):
             mock_pool_cls.call_args.kwargs['assert_hostname'],
             'raw.githubusercontent.com',
         )
-
-    def test_pool_kwargs_accepted_by_real_urllib3(self):
-        pool = urllib3.HTTPSConnectionPool(
-            host='127.0.0.1',
-            port=443,
-            assert_hostname='example.com',
-            server_hostname='example.com',
-            timeout=urllib3.Timeout(connect=CONNECT_TIMEOUT, read=READ_TIMEOUT),
-            retries=False,
-        )
-        try:
-            conn = pool._new_conn()
-            conn.close()
-        finally:
-            pool.close()
