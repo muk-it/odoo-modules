@@ -65,6 +65,11 @@ msgid ""
 msgstr ""
 
 #. module: muk_ai_automation
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_cron_kanban
+msgid "<i class=\"fa fa-clock-o me-1\" title=\"Interval\"/>"
+msgstr "<i class=\"fa fa-clock-o me-1\" title=\"Intervall\"/>"
+
+#. module: muk_ai_automation
 #: model_terms:ir.actions.act_window,help:muk_ai_automation.action_ai_scheduled_actions
 msgid ""
 "A scheduled action runs an AI agent at a regular interval on the\n"
