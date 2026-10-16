@@ -251,13 +251,13 @@ class AISpace(models.Model):
 
         :return: the notification badge as it stands afterwards
         """
-        sessions = self.env['muk_ai.session']
-        sessions.search(
+        sessions = self.env['muk_ai.session'].search(
             Domain.OR(space._session_domain() for space in self)
             & Domain('user_id', '=', self.env.uid)
             & Domain('notification_unread', '=', True)
-        ).dismiss_notifications()
-        return sessions.notification_badge()
+        )
+        sessions.dismiss_notifications()
+        return self.env['muk_ai.session'].notification_badge()
 
     @api.model
     def reorder(self, space_ids: list[int]) -> bool:
