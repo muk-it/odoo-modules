@@ -638,7 +638,7 @@ class AIAgent(models.Model):
                         'pick a model that has one.'
                     )
                 )
-            record.capability_warning = '\n'.join(warnings)
+            record.capability_warning = '\n'.join(warnings) or False
 
     @api.depends('provider_id', 'model_id', 'model_id.reasoning_efforts')
     def _compute_reasoning_effort_options(self) -> None:
