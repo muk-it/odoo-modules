@@ -1,3 +1,9 @@
+import { markup } from '@odoo/owl';
+
+const ZERO_WIDTH = /[\u200B\uFEFF]/g;
+
+const FENCE = /^\s*```[^\n]*\n?|\n?```\s*$/g;
+
 /**
  * @typedef {object} ComposerAdapter
  * @property {string} interfaceKey which composer is asking, for the prompt
@@ -8,6 +14,8 @@
  * @property {(text: string) => void} replaceDraft put the text in place of it all
  * @property {() => {resModel: string|false, resId: number|false}} getRecord
  * @property {() => boolean} isAlive whether the composer is still on screen
+ * @property {(text: string) => object|string} toHtml an answer as what it inserts
+ * @property {(text: string) => string} toText an answer or draft as plain words
  */
 
 /**
@@ -32,6 +40,8 @@ export function makeTextComposerAdapter(composer, textarea) {
         const held = draft.slice(picked.start, picked.start + picked.text.length);
         return held === picked.text ? picked.start : draft.indexOf(picked.text);
     };
+    const around = (draft, at, middle) =>
+        draft.slice(0, at) + middle + draft.slice(at + picked.text.length);
     const setText = (text, caret) => {
         composer.composerText = text;
         if (textarea) {
@@ -43,7 +53,11 @@ export function makeTextComposerAdapter(composer, textarea) {
     };
     return {
         interfaceKey: 'mail_composer',
-        getDraft: draftOf,
+        getDraft() {
+            const draft = draftOf();
+            const at = locate(draft);
+            return at === -1 ? draft : around(draft, at, `[[${picked.text}]]`);
+        },
         getSelection: () => picked?.text || '',
         applySelection(text) {
             const draft = draftOf();
@@ -51,10 +65,7 @@ export function makeTextComposerAdapter(composer, textarea) {
             if (at === -1) {
                 return this.applyDraft(text);
             }
-            setText(
-                draft.slice(0, at) + text + draft.slice(at + picked.text.length),
-                at + text.length,
-            );
+            setText(around(draft, at, text), at + text.length);
         },
         applyDraft(text) {
             const draft = draftOf();
@@ -65,6 +76,8 @@ export function makeTextComposerAdapter(composer, textarea) {
             );
         },
         replaceDraft: (text) => setText(text, text.length),
+        toHtml: (text) => text,
+        toText: (text) => text,
         getRecord: () => ({
             resModel: composer.targetThread?.model || false,
             resId: composer.targetThread?.id || false,
@@ -76,29 +89,72 @@ export function makeTextComposerAdapter(composer, textarea) {
 /**
  * Drive a rich-text editor: the full mail composer, or a mail html field.
  *
- * Draft and selection are read when the helper opens, since the panel takes
- * the focus. The draft ends at the signature, so a reply's quoted history and
- * the sender's signature are neither read nor replaced. Every insertion is one
- * undoable step, replacing the selection the cursor was restored to.
+ * The draft is read as cleaned HTML when the helper opens, the selection marked
+ * where it sits, and ends at the signature, so a reply's quoted history and the
+ * sender's signature are neither read nor replaced. An answer is sanitized and
+ * inserted as one undoable step, replacing the selection the cursor was
+ * restored to.
  *
  * @param {object} plugin the editor plugin offering the helper
  * @param {{resModel: string|false, resId: number|false}} record what is written about
  * @returns {ComposerAdapter} the adapter the writing helper drives
  */
 export function makeEditorAdapter(plugin, record) {
-    const { selection, dom, history } = plugin.dependencies;
-    const selected = plugin.document.getSelection()?.toString() || '';
+    const { baseContainer, dom, history, sanitize, selection } = plugin.dependencies;
+    const picked = selection.getEditableSelection();
     const cursor = selection.preserveSelection();
-    const draftEnd = () => {
-        const nodes = [...(plugin.editable?.childNodes || [])];
-        let signature = plugin.editable?.querySelector('.o-signature-container');
-        while (signature && signature.parentNode !== plugin.editable) {
+    const draftEnd = (root) => {
+        const nodes = [...root.childNodes];
+        let signature = root.querySelector('.o-signature-container');
+        while (signature && signature.parentNode !== root) {
             signature = signature.parentNode;
         }
         return { nodes, end: signature ? nodes.indexOf(signature) : nodes.length };
     };
+    const clean = (root) => {
+        plugin.dispatchTo('clean_for_save_handlers', { root });
+        return root.innerHTML.trim();
+    };
+    const twin = (node) =>
+        node === plugin.editable
+            ? draft
+            : twin(node.parentNode).childNodes[
+                  [...node.parentNode.childNodes].indexOf(node)
+              ];
+    const range = new Range();
+    range.setStart(picked.startContainer, picked.startOffset);
+    range.setEnd(picked.endContainer, picked.endOffset);
+    const quoted = range.toString().replace(ZERO_WIDTH, '');
+    const draft = plugin.editable.cloneNode(true);
+    if (quoted) {
+        for (const [node, offset, mark] of [
+            [picked.endContainer, picked.endOffset, ']]'],
+            [picked.startContainer, picked.startOffset, '[['],
+        ]) {
+            const at = new Range();
+            at.setStart(twin(node), offset);
+            at.insertNode(new Text(mark));
+        }
+    }
+    const { nodes, end } = draftEnd(draft);
+    nodes.slice(end).forEach((node) => node.remove());
+    const marked = draft.textContent.trim() ? clean(draft) : '';
+    const fragmentOf = (text) => {
+        const { body } = new DOMParser().parseFromString(
+            `<body>${text.replace(FENCE, '')}`,
+            'text/html',
+        );
+        sanitize.sanitize(body);
+        const only = body.children.length === 1 && body.firstElementChild;
+        if (only?.tagName === 'P') {
+            only.replaceWith(...only.childNodes);
+        }
+        const fragment = plugin.document.createDocumentFragment();
+        fragment.append(...body.childNodes);
+        return fragment;
+    };
     const insert = (text) => {
-        dom.insert(asFragment(plugin.document, text));
+        dom.insert(fragmentOf(text));
         history.addStep();
     };
     const atCursor = (text) => {
@@ -106,57 +162,32 @@ export function makeEditorAdapter(plugin, record) {
         insert(text);
     };
     return {
-        interfaceKey: selected ? 'text_select' : 'html_field',
-        getDraft() {
-            const { nodes, end } = draftEnd();
-            return nodes
-                .slice(0, end)
-                .map((node) => node.textContent || '')
-                .join('');
-        },
-        getSelection: () => selected,
+        interfaceKey: quoted ? 'text_select' : 'html_field',
+        getDraft: () => marked,
+        getSelection: () => quoted,
         applySelection: atCursor,
         applyDraft: atCursor,
         replaceDraft(text) {
-            const { nodes, end } = draftEnd();
-            const last = nodes[end - 1];
-            selection.setSelection({
-                anchorNode: plugin.editable,
-                anchorOffset: 0,
-                focusNode: last || plugin.editable,
-                focusOffset: last ? last.childNodes.length || last.length || 0 : 0,
-            });
+            const { nodes, end } = draftEnd(plugin.editable);
+            const container = baseContainer.createBaseContainer();
+            plugin.editable.insertBefore(container, nodes[end] || null);
+            nodes.slice(0, end).forEach((node) => node.remove());
+            selection.setSelection({ anchorNode: container, anchorOffset: 0 });
             insert(text);
+        },
+        toHtml(text) {
+            const holder = plugin.document.createElement('div');
+            holder.append(fragmentOf(text));
+            return markup(holder.innerHTML);
+        },
+        toText(text) {
+            const fragment = fragmentOf(text);
+            fragment.querySelectorAll('p, div, li, td, th, br').forEach((node) => {
+                node.append(' ');
+            });
+            return fragment.textContent.replace(/\s+/g, ' ').trim();
         },
         getRecord: () => record,
         isAlive: () => Boolean(plugin.editable?.isConnected),
     };
-}
-
-/**
- * Turn generated text into paragraphs: a blank line starts one, a single
- * newline breaks the line inside it.
- * @param {Document} document the editor's document
- * @param {string} text what the agent wrote
- * @returns {DocumentFragment|string} nodes to insert, or the text when it is one line
- */
-function asFragment(document, text) {
-    if (!text.includes('\n')) {
-        return text;
-    }
-    const fragment = document.createDocumentFragment();
-    for (const block of text.split(/\n{2,}/).filter((block) => block.trim())) {
-        const paragraph = document.createElement('p');
-        block
-            .trim()
-            .split('\n')
-            .forEach((line, index) => {
-                if (index) {
-                    paragraph.append(document.createElement('br'));
-                }
-                paragraph.append(document.createTextNode(line));
-            });
-        fragment.append(paragraph);
-    }
-    return fragment;
 }
