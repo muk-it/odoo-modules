@@ -120,6 +120,7 @@
     :is(
             .mk_sidebar_actions,
             .mk_space_actions,
+            .mk_space_auto,
             .mk_sidebar_search_clear,
             .mk_space_head
         )
@@ -195,8 +196,14 @@
     }
     .mk_space_auto {
         padding: 0.4rem 0.6rem;
+        .mk_space_read {
+            display: none;
+        }
         &:hover {
             color: var(--body-color);
+            .mk_space_read {
+                display: inline-flex;
+            }
         }
     }
     .mk_space_divider {
@@ -303,6 +310,9 @@
         }
         .mk_space_auto {
             padding-block: 0.6rem;
+            .mk_space_read {
+                display: inline-flex;
+            }
         }
     }
 }

@@ -269,6 +269,28 @@ class TestSpace(AITestCommon):
                     badges,
                 )
 
+    def test_mark_read_clears_the_own_unread_chats_of_the_spaces(self):
+        filed = self._space('Q3 Budget')
+        system = self._system('By name', "[('name', '=', 'Collected')]")
+        in_filed = self._session(space_id=filed.id, notification_unread=True)
+        collected = self._session(name='Collected', notification_unread=True)
+        elsewhere = self._session(notification_unread=True)
+        theirs = (
+            self.env['muk_ai.session']
+            .with_user(self.other)
+            .create({'name': 'Collected', 'notification_unread': True})
+        )
+        badge = (filed | system).mark_read()
+        self.assertEqual(
+            [
+                session.sudo().notification_unread
+                for session in (in_filed, collected, elsewhere, theirs)
+            ],
+            [False, False, True, True],
+        )
+        self.assertIn(elsewhere.id, badge['session_ids'])
+        self.assertNotIn(collected.id, badge['session_ids'])
+
     def test_reorder_stores_the_given_order(self):
         first, second, third = (self._space(name) for name in ('A', 'B', 'C'))
         self.env['muk_ai.space'].reorder([third.id, first.id, second.id])

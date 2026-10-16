@@ -153,6 +153,15 @@ test('a space unfolds into its chats page by page, its unread badge narrows them
     expect(`${row(5)}.mk_unread .mk_sidebar_unread`).toHaveCount(1);
     await contains('.mk_space_filter button').click();
     expect('.mk_space_branch .mk_sidebar_item').toHaveCount(10);
+    await contains('.mk_space_badge').click();
+    onRpc('muk_ai.space', 'mark_read', ({ args }) => {
+        expect.step(`mark_read ${JSON.stringify(args[0])}`);
+        return { count: 0, session_ids: [], space_unread: {} };
+    });
+    await contains('.mk_space_row .mk_space_read', { visible: false }).click();
+    expect.verifySteps(['mark_read [5]']);
+    expect('.mk_space_badge, .mk_space_filter, .mk_unread').toHaveCount(0);
+    expect('.mk_space_branch .mk_sidebar_item').toHaveCount(10);
     await contains('.mk_space_row').click();
     expect('.mk_space_branch').toHaveCount(0);
 });
@@ -178,13 +187,19 @@ test('system spaces are pinned or folded under Automatic, which counts their unr
     expect('.mk_sidebar_list').toHaveText(/No space yet\. Create a new space\./);
     expect(queryAllTexts('.mk_space_name')).toEqual(['Inbox']);
     expect(queryAllTexts('.mk_space_auto .mk_space_count')).toEqual(['3', '2']);
+    expect('.mk_space_auto .mk_space_count ~ .mk_space_read').toHaveCount(1);
     await contains('.mk_space_auto').click();
     expect(queryAllTexts('.mk_space_name')).toEqual(['Inbox', 'Scheduled', 'Mail']);
     expect(queryAllTexts('.mk_space_system .mk_space_badge')).toEqual(['2', '1']);
-    expect(
-        '.mk_space_system .mk_space_grip, .mk_space_system .mk_space_actions',
-    ).toHaveCount(0);
+    expect('.mk_space_system :is(.mk_space_grip, [title="Edit"])').toHaveCount(0);
     expect(browser.localStorage.getItem('muk_ai.sidebar_automatic_open')).toBe('1');
+    onRpc('muk_ai.space', 'mark_read', ({ args }) => {
+        expect.step(`mark_read ${JSON.stringify(args[0])}`);
+        return { count: 0, session_ids: [], space_unread: {} };
+    });
+    await contains('.mk_space_auto .mk_space_read', { visible: false }).click();
+    expect.verifySteps(['mark_read [7,8]']);
+    expect('.mk_space_badge, .mk_space_read').toHaveCount(0);
 });
 
 test('a space is created from its inline field on Enter, Escape drops the name', async () => {

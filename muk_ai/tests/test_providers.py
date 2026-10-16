@@ -142,6 +142,7 @@ class TestProviders(ProviderTestCase):
                 self.assertIn('Max Tokens limit of 4096 tokens', notice)
                 self.assertEqual(result['text'], f'partial{notice}')
                 self.assertEqual(result['usage']['output_tokens'], 4096)
+                self.assertTrue(result['usage']['truncated'])
 
     def test_built_in_tools_follow_their_flags(self):
         for name, case in self.cases.items():

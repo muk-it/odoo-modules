@@ -356,6 +356,21 @@ export class ChatSidebar extends Component {
         this.state.expanded[space.id] = true;
         this.loadBranch(space.id, false, !this.branch(space).unreadOnly);
     }
+    /**
+     * Mark every unread chat of the given spaces as read.
+     * @param {object[]} spaces the spaces
+     */
+    async markRead(spaces) {
+        this.chat.applyBadge(
+            await this.chat.orm.call('muk_ai.space', 'mark_read', [
+                spaces.map((space) => space.id),
+            ]),
+            true,
+        );
+        for (const space of spaces.filter((space) => this.branch(space).unreadOnly)) {
+            this.loadBranch(space.id, false, false);
+        }
+    }
     toggleAutomatic() {
         this.state.automaticOpen = !this.state.automaticOpen;
         browser.localStorage.setItem(

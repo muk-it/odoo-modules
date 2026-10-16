@@ -66,16 +66,21 @@
                     t-on-click.stop="() => this.toggleUnread(space)"
                     t-out="this.unread(space)"
                 />
-                <span t-if="!space.system" class="mk_space_actions">
-                    <button class="btn btn-link btn-sm px-1 py-0 lh-1" title="New chat here" t-on-click.stop="() => this.newChatIn(space)">
-                        <i class="oi" data-icon="add"/>
+                <span t-if="this.unread(space) or !space.system" class="mk_space_actions">
+                    <button t-if="this.unread(space)" class="btn btn-link btn-sm px-1 py-0 lh-1 mk_space_read" title="Mark all as read" t-on-click.stop="() => this.markRead([space])">
+                        <i class="oi" data-icon="check"/>
                     </button>
-                    <button class="btn btn-link btn-sm px-1 py-0 lh-1" title="Edit" t-on-click.stop="() => this.editSpace(space)">
-                        <i class="oi" data-icon="edit"/>
-                    </button>
-                    <button class="btn btn-link btn-sm px-1 py-0 lh-1 text-danger mk_delete" title="Delete" t-on-click.stop="() => this.deleteSpace(space)">
-                        <i class="oi" data-icon="delete"/>
-                    </button>
+                    <t t-if="!space.system">
+                        <button class="btn btn-link btn-sm px-1 py-0 lh-1" title="New chat here" t-on-click.stop="() => this.newChatIn(space)">
+                            <i class="oi" data-icon="add"/>
+                        </button>
+                        <button class="btn btn-link btn-sm px-1 py-0 lh-1" title="Edit" t-on-click.stop="() => this.editSpace(space)">
+                            <i class="oi" data-icon="edit"/>
+                        </button>
+                        <button class="btn btn-link btn-sm px-1 py-0 lh-1 text-danger mk_delete" title="Delete" t-on-click.stop="() => this.deleteSpace(space)">
+                            <i class="oi" data-icon="delete"/>
+                        </button>
+                    </t>
                 </span>
             </div>
             <div t-if="open" class="mk_space_branch border-start">
@@ -169,6 +174,9 @@
                                 <span t-if="this.foldedUnread" class="mk_space_count mk_space_count_unread rounded-pill fw-semibold lh-1" title="Unread chats in here" t-out="this.foldedUnread"/>
                                 <span class="mk_space_count rounded-pill fw-semibold lh-1" t-out="this.foldedSpaces.length"/>
                             </t>
+                            <button t-if="this.foldedUnread" class="btn btn-link btn-sm px-1 py-0 lh-1 mk_space_read" title="Mark all as read" t-on-click.stop="() => this.markRead(this.foldedSpaces)">
+                                <i class="oi" data-icon="check"/>
+                            </button>
                         </div>
                         <t t-if="this.state.automaticOpen">
                             <t t-foreach="this.foldedSpaces" t-as="space" t-key="space.id">

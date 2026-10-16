@@ -426,6 +426,7 @@ class TestSessionTurn(AITestCommon):
                             'input_tokens': 120,
                             'output_tokens': 5,
                             'cache_read_tokens': 100,
+                            'truncated': True,
                         }
                     ),
                 ]
@@ -440,10 +441,11 @@ class TestSessionTurn(AITestCommon):
                     usage['cached_tokens'],
                     usage['output_tokens'],
                     usage['iterations'],
+                    usage.get('truncated', False),
                 )
                 for usage in (first, second['turn_usage'])
             ],
-            [(82, 30, 5, 2), (120, 100, 5, 1)],
+            [(82, 30, 5, 2, False), (120, 100, 5, 1, True)],
         )
         self.assertEqual(
             (

@@ -320,6 +320,8 @@ class AISessionLoop(models.AbstractModel):
                 cached_tokens=turn.get('cached_tokens', 0) + cached_tokens,
                 iterations=turn.get('iterations', 0) + 1,
             )
+            if usage.get('truncated'):
+                turn['truncated'] = True
         if record:
             cost = record._compute_usage_cost(usage)
             turn['cost'] = turn.get('cost', 0.0) + cost['total_cost']
