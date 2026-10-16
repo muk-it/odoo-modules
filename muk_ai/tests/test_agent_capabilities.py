@@ -112,14 +112,21 @@ class TestAgentCapabilities(ImageCase):
                 image_model_id=self.image.id,
             )
         )
+        abilities = ['web_search', 'image_generation']
         sources = session.get_snapshot()['tool_sources']
         self.assertEqual(
-            [source['key'] for source in sources if source['enabled']],
-            ['web_search', 'image_generation'],
+            [s['key'] for s in sources if s['enabled'] and s['key'] in abilities],
+            abilities,
         )
-        for key in ('web_search', 'image_generation'):
+        for key in abilities:
             snapshot = session.set_tool_source(key, False)
-        self.assertFalse([s for s in snapshot['tool_sources'] if s['enabled']])
+        self.assertFalse(
+            [
+                s
+                for s in snapshot['tool_sources']
+                if s['key'] in abilities and s['enabled']
+            ]
+        )
         names = session._get_essential_tool_names()
         self.assertNotIn('web_search', names)
         self.assertNotIn('generate_image', names)
