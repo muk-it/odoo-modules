@@ -321,8 +321,8 @@ export class ComposePanel extends Component {
         Object.assign(this.state, { result: text, phase: 'preview' });
     }
     /**
-     * Ask for one rewrite or one draft, the target sent as the selection even
-     * when nothing was selected.
+     * Ask for one rewrite or one draft, after handing the session the draft
+     * and the selection, empty when nothing is selected.
      * @param {string} label wording shown while it runs
      * @param {string} prompt the instruction the chip carries
      */
