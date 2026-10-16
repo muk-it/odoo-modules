@@ -1824,6 +1824,8 @@
             font-family: var(--mk-mono);
             font-weight: 500;
             color: var(--mk-text);
+            white-space: nowrap;
+            flex-shrink: 0;
         }
         .mk_tool_preview {
             color: var(--mk-text-muted);
