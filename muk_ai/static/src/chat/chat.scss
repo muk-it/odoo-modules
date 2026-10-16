@@ -345,6 +345,18 @@
             background: var(--mk-bg-soft);
             color: var(--mk-text-muted);
         }
+        .mk_space_read {
+            display: none;
+            padding: 0 4px;
+            line-height: 1;
+            color: var(--mk-text-muted);
+            &:hover {
+                color: var(--mk-text);
+            }
+        }
+        &:hover .mk_space_read {
+            display: inline-flex;
+        }
     }
     .mk_space_row {
         position: relative;
@@ -2508,7 +2520,7 @@
             .mk_space_actions {
                 flex: 1 0 100%;
                 justify-content: flex-start;
-                .btn:nth-child(2) {
+                .btn:nth-last-child(2) {
                     margin-left: auto;
                 }
             }
@@ -2529,6 +2541,9 @@
         .mk_space_auto {
             padding-top: 0.6rem;
             padding-bottom: 0.6rem;
+            .mk_space_read {
+                display: inline-flex;
+            }
         }
         .mk_space_filter {
             padding: 0.4rem 0.5rem;
