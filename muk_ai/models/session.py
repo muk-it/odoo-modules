@@ -83,6 +83,15 @@ class AISession(models.Model):
     _order = 'create_date desc'
 
     # ----------------------------------------------------------
+    # Properties
+    # ----------------------------------------------------------
+
+    @property
+    def CONVERSATION_RESET(self) -> dict:
+        """Return the values that clear a turn's leftovers when the conversation is replaced."""
+        return {'pending_ask': False, 'last_text': False, 'error_message': False}
+
+    # ----------------------------------------------------------
     # Fields Identity
     # ----------------------------------------------------------
 
@@ -4349,11 +4358,9 @@ class AISession(models.Model):
             self.invalidate_recordset(['pending_ids'])
         self.write(
             {
+                **self.CONVERSATION_RESET,
                 'conversation': [],
-                'pending_ask': False,
                 'approved_signatures': [],
-                'last_text': False,
-                'error_message': False,
                 'iteration_count': 0,
                 'last_input_tokens': 0,
                 'turn_usage': False,
@@ -4441,10 +4448,8 @@ class AISession(models.Model):
         new_conv = list(self.conversation or [])[:cut_index]
         self.write(
             {
+                **self.CONVERSATION_RESET,
                 'conversation': new_conv,
-                'pending_ask': False,
-                'last_text': False,
-                'error_message': False,
                 'state': 'done' if new_conv else 'new',
             }
         )
@@ -4465,12 +4470,10 @@ class AISession(models.Model):
         new_conv = list(self.conversation or [])[:cut_index]
         fork = self.copy(
             {
+                **self.CONVERSATION_RESET,
                 'name': _('%s (fork)', self.name),
                 'conversation': new_conv,
                 'state': 'done' if new_conv else 'new',
-                'pending_ask': False,
-                'last_text': False,
-                'error_message': False,
                 'iteration_count': 0,
                 'event_ids': [(5, 0, 0)],
                 'pending_ids': [(5, 0, 0)],
