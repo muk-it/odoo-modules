@@ -137,6 +137,15 @@ msgid "Answer"
 msgstr "Risposta"
 
 #. module: muk_ai_chatter
+#. odoo-javascript
+#: code:addons/muk_ai_chatter/static/src/composer/compose_panel/compose_panel.js:0
+#, python-format
+msgid ""
+"Answer cut off at the output limit: ask for a shorter text, or raise Max "
+"Tokens on the AI provider."
+msgstr "Risposta troncata al limite di output: chiedi un testo più breve o aumenta \"Token max\" sul provider IA."
+
+#. module: muk_ai_chatter
 #: model:ir.model.fields,field_description:muk_ai_chatter.field_muk_ai_agent__mention_enabled
 msgid "Answer Mentions"
 msgstr "Rispondi alle menzioni"
