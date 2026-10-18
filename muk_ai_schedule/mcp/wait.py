@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError
@@ -71,7 +71,7 @@ class AIWaitTools(models.AbstractModel):
                     self.env._("'until' must be an ISO 8601 time, not %r.", until)
                 ) from None
             if moment.tzinfo:
-                moment = moment.astimezone(UTC).replace(tzinfo=None)
+                moment = moment.astimezone(timezone.utc).replace(tzinfo=None)
         if not MIN_DELAY_SECONDS <= (moment - now).total_seconds() <= MAX_DELAY_SECONDS:
             raise UserError(
                 self.env._(
