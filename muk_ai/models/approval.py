@@ -181,7 +181,7 @@ class AIApproval(models.Model):
             )
         if kind == 'boolean':
             return _('Yes') if value else _('No')
-        if kind in ('integer', 'float', 'monetary') and isinstance(value, int | float):
+        if kind in ('integer', 'float', 'monetary') and isinstance(value, (int, float)):
             digits = field.get_digits(self.env) if kind == 'float' else None
             scale = digits[1] if digits else 0 if kind == 'integer' else 2
             return formatLang(self.env, value, digits=scale)

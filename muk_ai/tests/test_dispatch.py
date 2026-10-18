@@ -75,7 +75,7 @@ class TestTurnDispatch(AITestCommon):
             ):
                 return getattr(self.env['muk_ai.session'], method)()
         finally:
-            for name, value in zip(('type', 'start_time'), previous, strict=True):
+            for name, value in zip(('type', 'start_time'), previous):
                 if value is None:
                     if hasattr(thread, name):
                         delattr(thread, name)
