@@ -83,7 +83,7 @@ export class IconSelectorField extends Component {
 // ``(staticInfo, dynamicInfo)`` signature both arrived in 17.0.
 IconSelectorField.extractProps = ({ attrs }) => ({
     placeholder: attrs.placeholder,
-    requiredModifier: attrs.modifiers.required,
+    requiredModifier: attrs.modifiers?.required,
 });
 IconSelectorField.supportedTypes = ['char'];
 IconSelectorField.displayName = _t('Icon Selector');
