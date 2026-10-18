@@ -88,7 +88,7 @@ class AISession(models.Model):
                 record = linked.with_user(self.user_id or self.env.user)
             previous = PreviousProxy(self.previous_session_id or None)
             action = self.action_server_id
-            if action and action.agent_dispatch_mode == 'single':
+            if action.has_access('read') and action.agent_dispatch_mode == 'single':
                 records = _resolve_records(action, {})
         extras.update(
             {
