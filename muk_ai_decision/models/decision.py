@@ -381,7 +381,7 @@ class AIDecision(models.AbstractModel):
                 questions,
             )
             failed = []
-            for index, (outcome, duration) in zip(pending, outcomes, strict=True):
+            for index, (outcome, duration) in zip(pending, outcomes):
                 record = records[index]
                 values = {
                     **(log_values or {}),

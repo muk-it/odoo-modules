@@ -121,7 +121,7 @@ class AIDecisionTool(models.AbstractModel):
         groups = {spec.field: {} for spec in specs}
         unsure = {spec.field: [] for spec in specs}
         errors = []
-        for target, result in zip(targets, results, strict=True):
+        for target, result in zip(targets, results):
             if isinstance(result, UserError):
                 errors.append({'target': target, 'error': str(result)})
                 continue

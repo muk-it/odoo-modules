@@ -159,7 +159,7 @@ class IrActionsServer(models.Model):
         }
         pending = [
             (record, state)
-            for record, state in zip(records, states, strict=True)
+            for record, state in zip(records, states)
             if state and (record.id, state) not in decided
         ]
         return (
@@ -247,7 +247,7 @@ class IrActionsServer(models.Model):
         logs = self.env['muk_ai.decision.log'].sudo()
         routed = defaultdict(records.browse)
         unsure, written = records.browse(), records.browse()
-        for record, result in zip(records, results, strict=True):
+        for record, result in zip(records, results):
             if isinstance(result, UserError):
                 unsure |= record
                 for action in self.decision_question_ids.unsure_action_id:
