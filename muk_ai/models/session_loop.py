@@ -93,21 +93,21 @@ class AISessionLoop(models.AbstractModel):
     )
 
     total_input_cost = fields.Float(
-        string='Input Cost (USD)',
+        string='Input Cost',
         readonly=True,
         default=0.0,
         digits=(12, 6),
     )
 
     total_output_cost = fields.Float(
-        string='Output Cost (USD)',
+        string='Output Cost',
         readonly=True,
         default=0.0,
         digits=(12, 6),
     )
 
     total_cost = fields.Float(
-        string='Total Cost (USD)',
+        string='Total Cost',
         help='Cumulative USD for this session (input + output).',
         readonly=True,
         default=0.0,

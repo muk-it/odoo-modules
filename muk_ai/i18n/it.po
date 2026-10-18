@@ -2594,8 +2594,8 @@ msgstr "Input"
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__total_input_cost
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_loop__total_input_cost
-msgid "Input Cost (USD)"
-msgstr "Costo input (USD)"
+msgid "Input Cost"
+msgstr "Costo input"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_model__input_rate
@@ -3734,8 +3734,8 @@ msgstr "Output"
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__total_output_cost
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_loop__total_output_cost
-msgid "Output Cost (USD)"
-msgstr "Costo output (USD)"
+msgid "Output Cost"
+msgstr "Costo output"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_model__output_rate
@@ -5290,8 +5290,8 @@ msgstr "Strumenti di questo connettore"
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__total_cost
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_loop__total_cost
-msgid "Total Cost (USD)"
-msgstr "Costo totale (USD)"
+msgid "Total Cost"
+msgstr "Costo totale"
 
 #. module: muk_ai
 #. odoo-javascript

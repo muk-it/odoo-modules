@@ -285,6 +285,12 @@ class AnthropicProvider(ProviderBase):
                 replay.append(
                     {**block, **({'input': json.loads(partial)} if partial else {})}
                 )
+        answered = {block.get('tool_use_id') for block in replay}
+        replay = [
+            block
+            for block in replay
+            if block['type'] != 'server_tool_use' or block.get('id') in answered
+        ]
         return self._result(
             ''.join(text),
             calls,
@@ -321,7 +327,14 @@ class AnthropicProvider(ProviderBase):
         elif kind == 'content_block_start':
             block = event.get('content_block') or {}
             if block.get('type') == 'text':
-                blocks[event.get('index', 0)] = {'type': 'text', 'text': ''}
+                index = event.get('index', 0)
+                gap = blocks.get(index - 1, {}).get('type') != 'text' and any(
+                    entry['type'] == 'text' and entry['text']
+                    for entry in blocks.values()
+                )
+                blocks[index] = {'type': 'text', 'text': '\n\n' if gap else ''}
+                if gap:
+                    self._call_on_delta(on_delta, 'text', {'delta': '\n\n'})
             elif block.get('type') in THINKING_BLOCK_TYPES:
                 blocks[event.get('index', 0)] = {
                     'thinking': '',

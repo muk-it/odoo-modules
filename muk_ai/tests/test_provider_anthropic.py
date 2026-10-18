@@ -186,6 +186,29 @@ class TestAnthropicProvider(ProviderTestCase):
                 [{'role': 'assistant', 'content': [ANSWER]}],
             ),
             (
+                'with a search the call stopped',
+                [
+                    *anthropic_block(
+                        0,
+                        {**search, 'input': {}},
+                        {'type': 'input_json_delta', 'partial_json': '{"query": "x"}'},
+                    ),
+                    *anthropic_block(
+                        1,
+                        {'type': 'tool_use', 'id': 'toolu_1', 'name': 'do_x'},
+                        {'type': 'input_json_delta', 'partial_json': '{}'},
+                    ),
+                ],
+                [
+                    {
+                        'type': 'function_call',
+                        'name': 'do_x',
+                        'arguments': '{}',
+                        'call_id': 'toolu_1',
+                    }
+                ],
+            ),
+            (
                 'before a tool call',
                 [
                     *self._thinking(0, 'first', 'sig-1'),
@@ -215,6 +238,30 @@ class TestAnthropicProvider(ProviderTestCase):
                     'anthropic', [*events, *CASES['anthropic'].end]
                 )
                 self.assertEqual(result['carry_inputs'], carried)
+
+    def test_text_after_a_server_tool_starts_a_new_paragraph(self):
+        result, deltas, _sent = self._stream(
+            'anthropic',
+            [
+                *anthropic_text(0, 'Searching now.'),
+                *anthropic_block(
+                    1,
+                    {'type': 'server_tool_use', 'id': 'srv_1', 'name': 'web_search'},
+                    {'type': 'input_json_delta', 'partial_json': '{"query": "x"}'},
+                ),
+                *anthropic_block(
+                    2, {'type': 'web_search_tool_result', 'tool_use_id': 'srv_1'}
+                ),
+                *anthropic_text(3, 'Summary'),
+                *anthropic_text(4, ' with a citation.'),
+                *CASES['anthropic'].end,
+            ],
+        )
+        text = 'Searching now.\n\nSummary with a citation.'
+        self.assertEqual(result['text'], text)
+        self.assertEqual(
+            ''.join(data['delta'] for kind, data in deltas if kind == 'text'), text
+        )
 
     def test_legacy_thinking_budgets_leave_room_for_the_answer(self):
         for max_tokens, effort, budget, sent_max in (
