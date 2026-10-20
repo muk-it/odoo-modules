@@ -24,6 +24,7 @@ from odoo.addons.muk_ai.tools import (
     WORKER_STALE_THRESHOLD,
     format_ui_ctx_tag,
     render_ui_ctx,
+    with_ui_ctx,
 )
 
 
@@ -558,12 +559,15 @@ class TestAiSession(AITestCommon):
         self.assertFalse(self._session_inbox_messages(session))
         self.assertTrue(session.notification_unread)
 
-    def test_skipped_done_transition_leaves_session_unflagged(self):
-        self.session.notification_unread = False
-        self.session.with_context(
-            muk_ai_skip_done_notification=True
-        )._notify_state_transition({'state': 'done'})
-        self.assertFalse(self.session.notification_unread)
+    def test_skipped_transitions_leave_session_unflagged(self):
+        for context, payload in (
+            ({'muk_ai_skip_done_notification': True}, {'state': 'done'}),
+            ({}, {'state': 'waiting', 'ask': {'kind': 'client_action'}}),
+        ):
+            with self.subTest(payload=payload):
+                self.session.notification_unread = False
+                self.session.with_context(**context)._notify_state_transition(payload)
+                self.assertFalse(self.session.notification_unread)
 
     def test_notification_badge_counts_unread_sessions(self):
         Session = self.env['muk_ai.session']
@@ -1262,6 +1266,35 @@ class TestAiSession(AITestCommon):
             session.set_view_context({'kind': 'banana'})
         with self.assertRaises(UserError):
             session.set_view_context({'kind': 'record', 'model': 'm', 'id': -1})
+
+    def test_an_addon_kind_is_pinned_checked_and_told_to_the_model(self):
+        session = self.env['muk_ai.session'].create({'name': 'addon kind'})
+        board = {'kind': 'board', 'model': 'res.partner', 'id': 3, 'tags': ['a', 'b']}
+        with patch.object(
+            type(session),
+            '_view_kinds',
+            autospec=True,
+            return_value={'board': {'id': int, 'tags': [str]}},
+        ):
+            session.set_view_context({**board, 'other': 1})
+            with self.assertRaisesRegex(UserError, 'tags must be a list of strings'):
+                session.set_view_context({**board, 'tags': 'a'})
+            [message] = with_ui_ctx([], session.view_context, session._view_kinds())
+        self.assertEqual(session.view_context, board)
+        self.assertEqual(
+            message['content'][0]['text'],
+            '<ui_ctx>res.partner · board · id=3 · tags=a,b</ui_ctx>',
+        )
+
+    def test_pinning_the_view_already_pinned_writes_nothing(self):
+        session = self.env['muk_ai.session'].create({'name': 'same view'})
+        record = {'kind': 'record', 'model': 'res.partner', 'id': 3}
+        with patch.object(type(session), '_publish_event', autospec=True) as publish:
+            for _repeat in range(2):
+                session.set_view_context(record)
+        self.assertEqual(
+            [call.args[1] for call in publish.call_args_list], ['view_context']
+        )
 
     def test_unpin_view_context(self):
         session = self.env['muk_ai.session'].create({'name': 'unpin'})

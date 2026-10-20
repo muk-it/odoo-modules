@@ -6,6 +6,7 @@ import {
     makeListContextDispatch,
     makePivotContextDispatch,
     probeCurrentView,
+    registerContextTarget,
     seedSessionContext,
 } from '@muk_ai/views/context';
 
@@ -288,6 +289,25 @@ test('probeCurrentView builds a record payload with display_name', async () => {
         id: 5,
         display_name: 'Acme',
     });
+});
+
+test('an editor on top of a view pins its context while it has one', async () => {
+    const record = { kind: 'record', model: 'res.partner', id: 5 };
+    const env = {
+        services: {
+            action: {
+                currentController: { props: { resModel: 'res.partner', resId: 5 } },
+            },
+            orm: { read: async () => [] },
+        },
+    };
+    let element = null;
+    const unregister = registerContextTarget({ build: () => element });
+    expect(await probeCurrentView(env)).toEqual(record);
+    element = { kind: 'element', model: 'res.partner', id: 5, tag: 'p' };
+    expect(await probeCurrentView(env)).toBe(element);
+    unregister();
+    expect(await probeCurrentView(env)).toEqual(record);
 });
 
 test('probeCurrentView falls back to a list payload without resId', async () => {

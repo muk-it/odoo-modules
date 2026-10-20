@@ -25,6 +25,17 @@ test('viewContextLabel renders a record with display_name', () => {
     ).toBe('res.partner · Acme');
 });
 
+test('viewContextLabel names the record of a kind an addon adds', () => {
+    expect(
+        viewContextLabel({
+            kind: 'dashboard',
+            model: 'spreadsheet.dashboard',
+            display_name: 'Sales',
+            id: 2,
+        }),
+    ).toBe('spreadsheet.dashboard · Sales');
+});
+
 test('viewContextLabel falls back to #id when display_name missing', () => {
     expect(
         viewContextLabel({

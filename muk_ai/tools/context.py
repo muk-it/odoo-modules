@@ -8,17 +8,31 @@ from odoo.tools.translate import LazyTranslate
 _lt = LazyTranslate('muk_ai')
 
 
-def _format_ctx_tag(payload, tag_name: str) -> str | None:
-    """Render a context payload into a ``<tag_name>...</tag_name>`` string."""
+TYPE_NAMES = {
+    str: _lt('a string'),
+    list: _lt('a list'),
+    int: _lt('an integer'),
+}
+
+
+def _format_ctx_tag(payload, tag_name: str, kinds: dict | None = None) -> str | None:
+    """Render a context payload into a ``<tag_name>...</tag_name>`` string.
+
+    :param kinds: the kinds an addon adds, with the type of each value
+    """
     payload = payload or {}
-    builder = _SEGMENT_BUILDERS.get(payload.get('kind'))
-    if not builder:
+    kind = payload.get('kind')
+    if builder := _SEGMENT_BUILDERS.get(kind):
+        segments = builder(payload)
+    elif kind in (kinds or {}):
+        segments = _typed_segments(payload, kinds[kind])
+    else:
         return None
-    body = ' · '.join(s for s in builder(payload) if s)
+    body = ' · '.join(s for s in segments if s)
     return f'<{tag_name}>{body}</{tag_name}>' if body else None
 
 
-def _render_ctx(payload, tag_name: str) -> dict | None:
+def _render_ctx(payload, tag_name: str, kinds: dict | None = None) -> dict | None:
     """Wrap a rendered context tag into a user input message, if any.
 
     The message is marked ``_cache_volatile`` because it is re-appended at
@@ -26,7 +40,7 @@ def _render_ctx(payload, tag_name: str) -> dict | None:
     cache-aware providers anchor their breakpoint before it and strip the
     marker before it reaches the wire.
     """
-    if not (tag := _format_ctx_tag(payload, tag_name)):
+    if not (tag := _format_ctx_tag(payload, tag_name, kinds)):
         return None
     return {
         'role': 'user',
@@ -35,9 +49,9 @@ def _render_ctx(payload, tag_name: str) -> dict | None:
     }
 
 
-def _with_ctx(inputs, payload, tag_name: str) -> list:
+def _with_ctx(inputs, payload, tag_name: str, kinds: dict | None = None) -> list:
     """Append the rendered context message for ``payload`` to ``inputs``."""
-    if not (item := _render_ctx(payload, tag_name)):
+    if not (item := _render_ctx(payload, tag_name, kinds)):
         return inputs
     return list(inputs or []) + [item]
 
@@ -52,9 +66,9 @@ def render_ui_ctx(payload) -> dict | None:
     return _render_ctx(payload, 'ui_ctx')
 
 
-def with_ui_ctx(inputs, payload) -> list:
+def with_ui_ctx(inputs, payload, kinds: dict | None = None) -> list:
     """Append the ``ui_ctx`` message for ``payload`` to ``inputs``."""
-    return _with_ctx(inputs, payload, 'ui_ctx')
+    return _with_ctx(inputs, payload, 'ui_ctx', kinds)
 
 
 def format_record_ctx_tag(payload) -> str | None:
@@ -125,6 +139,17 @@ def _graph_segments(p) -> list[str]:
     return segments
 
 
+def _typed_segments(p, types: dict) -> list[str]:
+    """Build the display segments for a payload of a kind an addon adds."""
+    segments = [p.get('model') or '', p.get('kind')]
+    for key in types:
+        if value := p.get(key):
+            segments.append(
+                f'{key}={",".join(value) if isinstance(value, list) else value}'
+            )
+    return segments
+
+
 _SEGMENT_BUILDERS = {
     'record': _record_segments,
     'list': _list_segments,
@@ -139,9 +164,10 @@ _SEGMENT_BUILDERS = {
 # ----------------------------------------------------------
 
 
-def clean_view_context_payload(kind, payload) -> dict:
+def clean_view_context_payload(kind, payload, kinds: dict | None = None) -> dict:
     """Validate and normalize a view-context payload for the given kind.
 
+    :param kinds: the kinds an addon adds, with the type of each value
     :raise UserError: when the kind is invalid or unsupported.
     """
     if not isinstance(kind, str) or not kind.isidentifier() or kind.startswith('_'):
@@ -151,15 +177,16 @@ def clean_view_context_payload(kind, payload) -> dict:
                 kind=kind,
             )
         )
-    cleaner = _CLEANERS.get(kind)
-    if not cleaner:
-        raise UserError(
-            _lt(
-                'Invalid view context payload (kind=%(kind)r).',
-                kind=kind,
-            )
+    if cleaner := _CLEANERS.get(kind):
+        return cleaner(payload)
+    if kind in (kinds or {}):
+        return _clean_typed(kind, payload, kinds[kind])
+    raise UserError(
+        _lt(
+            'Invalid view context payload (kind=%(kind)r).',
+            kind=kind,
         )
-    return cleaner(payload)
+    )
 
 
 def _base_payload(payload, kind: str) -> dict:
@@ -284,6 +311,33 @@ def _clean_graph(payload) -> dict:
         cleaned['graph_groupbys'] = groupbys
     if domain := _payload_domain(payload):
         cleaned['domain'] = domain
+    return cleaned
+
+
+def _clean_typed(kind: str, payload, types: dict) -> dict:
+    """Validate and normalize a payload of a kind an addon adds.
+
+    :raise UserError: when a value does not have its type
+    """
+    cleaned = _base_payload(payload, kind)
+    for key, expected in types.items():
+        if not (value := payload.get(key)):
+            continue
+        if isinstance(expected, list):
+            valid = isinstance(value, list) and all(isinstance(v, str) for v in value)
+        else:
+            valid = isinstance(value, expected)
+        if not valid:
+            raise UserError(
+                _lt(
+                    'view_context.%(key)s must be %(type)s.',
+                    key=key,
+                    type=_lt('a list of strings')
+                    if isinstance(expected, list)
+                    else TYPE_NAMES[expected],
+                )
+            )
+        cleaned[key] = value
     return cleaned
 
 

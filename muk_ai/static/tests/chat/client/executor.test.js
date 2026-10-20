@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from '@odoo/hoot';
 import { waitUntil } from '@odoo/hoot-dom';
+import { animationFrame } from '@odoo/hoot-mock';
 
 import { makeClientToolListener, parseArguments } from '@muk_ai/chat/client/executor';
 import {
@@ -145,4 +146,35 @@ test('a tab showing no chat for the session stays out of it', async () => {
     await waitUntil(() => true);
     expect(executed).toHaveLength(0);
     expect(calls).toHaveLength(0);
+});
+
+test('the results of one batch reach the session one after the other', async () => {
+    openChats([11]);
+    const steps = [];
+    let executed = 0;
+    let release;
+    const listener = makeClientToolListener({
+        orm: {
+            call: async (model, method, [, callId]) => {
+                steps.push(`start ${callId}`);
+                if (callId === 'b1') {
+                    await new Promise((resolve) => (release = resolve));
+                }
+                steps.push(`end ${callId}`);
+            },
+        },
+        contains: () => true,
+        execute: async () => {
+            executed++;
+            return { ok: true };
+        },
+    });
+    listener(actionEvent(undefined, { call_id: 'b1' }));
+    listener(actionEvent(undefined, { call_id: 'b2' }));
+    await waitUntil(() => executed === 2 && steps.length === 1);
+    await animationFrame();
+    expect(steps).toEqual(['start b1']);
+    release();
+    await waitUntil(() => steps.length === 4);
+    expect(steps).toEqual(['start b1', 'end b1', 'start b2', 'end b2']);
 });

@@ -471,13 +471,19 @@ class ProviderBase:
     ) -> dict:
         """Append a truncation notice to a token-capped result and forward it.
 
-        Truncation is an honest outcome, not a failure: the partial text and
-        the captured usage are kept, the usage flagged ``truncated``, and the
-        notice names the output-token cap to raise instead of surfacing a
-        generic empty-output error.
-
-        :param limit: the output-token cap that was hit, when known.
+        A tool call the cap cut off is told to the model instead. Otherwise the
+        partial text is kept, the usage flagged ``truncated``, and the notice
+        names the output-token cap (``limit``, when known) to raise.
         """
+        cut = [call for call in result['tool_calls'] if call.get('_parse_error')]
+        for call in cut:
+            call['_parse_error'] = (
+                'The answer reached the output token limit while writing this '
+                'call, so its arguments are incomplete. Do the work in smaller '
+                'calls, each well below the limit.'
+            )
+        if cut:
+            return result
         if limit:
             notice = self.env._(
                 'Response truncated: the output hit the configured Max Tokens '

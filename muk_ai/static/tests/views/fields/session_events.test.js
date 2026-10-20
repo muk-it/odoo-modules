@@ -1,5 +1,5 @@
 import { describe, expect, test } from '@odoo/hoot';
-import { queryAll, queryAllTexts } from '@odoo/hoot-dom';
+import { queryAll, queryAllProperties, queryAllTexts } from '@odoo/hoot-dom';
 import { animationFrame } from '@odoo/hoot-mock';
 import {
     defineModels,
@@ -45,6 +45,24 @@ class SessionStub extends models.Model {
         { id: 1, name: 'Full', log: LOG },
         { id: 2, name: 'Empty', log: [] },
         { id: 3, name: 'Broken', log: false },
+        {
+            id: 4,
+            name: 'Images',
+            log: [
+                { event_id: 1, kind: 'user_message', content: 'Show me' },
+                { event_id: 2, kind: 'tool_call', call_id: 'c1', name: 'render' },
+                { event_id: 3, kind: 'tool_result', call_id: 'c1', result: '{}' },
+                {
+                    event_id: 4,
+                    kind: 'tool_images',
+                    call_id: 'c1',
+                    images: [
+                        { url: '/web/image/7', name: 'desktop.png' },
+                        { url: '/web/image/8', name: 'mobile.png' },
+                    ],
+                },
+            ],
+        },
     ];
 }
 defineModels([SessionStub]);
@@ -88,6 +106,15 @@ test('an empty or missing log renders no turn at all', async () => {
     expect(empty.turns).toEqual([]);
     const broken = await mountField(3);
     expect(broken.turns).toEqual([]);
+});
+
+test('the images a tool returns show in the chat beside its card', async () => {
+    await mountField(4);
+    expect(queryAllProperties('.mk_tool_images img', 'alt')).toEqual([
+        'desktop.png',
+        'mobile.png',
+    ]);
+    expect('.mk_tool_images a[href="/web/image/8"]').toHaveCount(1);
 });
 
 test('tool cards expand and collapse per call id', async () => {

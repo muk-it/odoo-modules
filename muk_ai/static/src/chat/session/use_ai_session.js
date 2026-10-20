@@ -1316,7 +1316,7 @@ export function useAiSession(options = {}) {
             type: 'ir.actions.act_window',
             res_model: ctx.model,
         };
-        if (ctx.kind === 'record' && ctx.id) {
+        if (ctx.id) {
             action.res_id = ctx.id;
             action.view_mode = 'form';
             action.views = [[false, 'form']];

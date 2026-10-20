@@ -144,6 +144,15 @@ class TestToolVision(AITestCommon):
                 return item
         return None
 
+    def _shown_images(self, session: models.Model) -> list:
+        """Return the image names of the session's ``tool_images`` events."""
+        return [
+            [image['name'] for image in event.payload['images']]
+            for event in self.env['muk_ai.session.event'].search(
+                [('session_id', '=', session.id), ('kind', '=', 'tool_images')]
+            )
+        ]
+
     # ----------------------------------------------------------
     # Tests: server tool result path
     # ----------------------------------------------------------
@@ -173,6 +182,7 @@ class TestToolVision(AITestCommon):
         self.assertEqual(attachment.mimetype, 'image/png')
         self.assertEqual(attachment.res_model, 'muk_ai.session')
         self.assertEqual(attachment.res_id, session.id)
+        self.assertEqual(self._shown_images(session), [['desktop']])
 
     def test_vision_entry_materializes_to_image_block(self):
         session = self._new_session()
@@ -215,6 +225,7 @@ class TestToolVision(AITestCommon):
         self.assertIn('cannot be shown to this model', cleaned['text'])
         self.assertNotIn('images', cleaned)
         self.assertIsNone(self._vision_entry_after(session, outputs[0]))
+        self.assertEqual(self._shown_images(session), [['desktop']])
 
     # ----------------------------------------------------------
     # Tests: client action result path

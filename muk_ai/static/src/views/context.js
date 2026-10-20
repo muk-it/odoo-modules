@@ -25,11 +25,37 @@ export function captureViewContext(env, payload) {
 }
 
 /**
- * Probe the current action controller and build its view-context payload.
+ * What the user looks at on top of the views, newest last: `{build}` objects.
+ */
+export const contextTargets = [];
+
+/**
+ * Register what the user looks at on top of the current view, such as an
+ * editor, whose context wins while its `build()` returns one.
+ * @param {object} target `{build, ...}`
+ * @returns {Function} the unregister function
+ */
+export function registerContextTarget(target) {
+    contextTargets.push(target);
+    return () => {
+        const index = contextTargets.indexOf(target);
+        if (index >= 0) {
+            contextTargets.splice(index, 1);
+        }
+    };
+}
+
+/**
+ * Probe what the user looks at: a registered target, or else the current
+ * action controller, and build its view-context payload.
  * @param {object} env component environment
  * @returns {Promise<object|null>} view context payload, or null when none
  */
 export async function probeCurrentView(env) {
+    const pinned = contextTargets.findLast((target) => target.build())?.build();
+    if (pinned) {
+        return pinned;
+    }
     try {
         const current = env.services?.action?.currentController;
         if (!current) {

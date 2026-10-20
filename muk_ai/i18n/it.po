@@ -5695,6 +5695,24 @@ msgstr ""
 "disabilita completamente le approvazioni."
 
 #. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/tools/context.py:0
+msgid "a list"
+msgstr "un elenco"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/tools/context.py:0
+msgid "a list of strings"
+msgstr "un elenco di stringhe"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/tools/context.py:0
+msgid "a string"
+msgstr "una stringa"
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/composer/chat_composer.xml:0
 msgid "active"
@@ -5705,6 +5723,12 @@ msgstr "attivo"
 #: code:addons/muk_ai/models/agent.py:0
 msgid "agent_id"
 msgstr "agent_id"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/tools/context.py:0
+msgid "an integer"
+msgstr "un numero intero"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -5827,6 +5851,12 @@ msgstr "strumenti"
 #: code:addons/muk_ai/models/session.py:0
 msgid "unknown error"
 msgstr "errore sconosciuto"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/tools/context.py:0
+msgid "view_context.%(key)s must be %(type)s."
+msgstr "view_context.%(key)s deve essere %(type)s."
 
 #. module: muk_ai
 #. odoo-python

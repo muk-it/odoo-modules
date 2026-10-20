@@ -176,7 +176,7 @@ class TestSessionLimits(AITestCommon):
         session = self._session()
         specs = self._image_specs(TOOL_VISION_MAX_IMAGES + 2)
         attachments, cleaned = session._extract_tool_vision(
-            {'text': 'shots', 'images': specs}
+            {'text': 'shots', 'images': specs}, 'c0'
         )
         self.assertEqual(len(attachments), TOOL_VISION_MAX_IMAGES)
         self.assertEqual(

@@ -9,7 +9,7 @@ export function viewContextLabel(ctx) {
     if (!ctx) {
         return '';
     }
-    if (ctx.kind === 'record') {
+    if (ctx.kind === 'record' || ctx.id) {
         const name = ctx.display_name || (ctx.id ? `#${ctx.id}` : '');
         return name ? `${ctx.model} · ${name}` : ctx.model;
     }

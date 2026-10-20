@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import json
 from collections.abc import Sequence
 from unittest.mock import MagicMock, patch
 
@@ -369,6 +370,52 @@ class TestAiAnthropicProvider(AITestCommon):
         self.assertEqual(result['usage']['output_tokens'], 4096)
         text_deltas = [p['delta'] for (k, p) in deltas if k == 'text']
         self.assertTrue(any('Max Tokens' in d for d in text_deltas))
+
+    def test_anthropic_call_cut_at_the_token_cap_asks_for_smaller_calls(self):
+        for stop, error in (
+            ('max_tokens', 'output token limit'),
+            ('tool_use', 'Malformed JSON'),
+        ):
+            with self.subTest(stop=stop):
+                response = MagicMock()
+                events = [
+                    {'type': 'message_start', 'message': {'usage': {}}},
+                    {
+                        'type': 'content_block_start',
+                        'index': 0,
+                        'content_block': {
+                            'type': 'tool_use',
+                            'id': 'c1',
+                            'name': 'w',
+                            'input': {},
+                        },
+                    },
+                    {
+                        'type': 'content_block_delta',
+                        'index': 0,
+                        'delta': {
+                            'type': 'input_json_delta',
+                            'partial_json': '{"html": "<',
+                        },
+                    },
+                    {'type': 'content_block_stop', 'index': 0},
+                    {
+                        'type': 'message_delta',
+                        'delta': {'stop_reason': stop},
+                        'usage': {'output_tokens': 4096},
+                    },
+                    {'type': 'message_stop'},
+                ]
+                response.iter_lines.return_value = iter(
+                    [f'data: {json.dumps(event)}' for event in events]
+                )
+                response.raise_for_status.return_value = None
+                with patch.object(requests.Session, 'post', return_value=response):
+                    result = self.provider._request_responses(
+                        inputs=[], on_delta=lambda k, p: None
+                    )
+                self.assertIn(error, result['tool_calls'][0]['_parse_error'])
+                self.assertNotIn('Max Tokens', result['text'])
 
     def test_anthropic_injects_web_search_tool(self):
         captured = {}
