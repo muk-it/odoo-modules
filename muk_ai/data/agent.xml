@@ -7,6 +7,8 @@
 		<field name="sequence">10</field>
 		<field name="web_search">auto</field>
 		<field name="allow_handoff" eval="True"/>
+		<field name="enable_image_generation" eval="True"/>
+		<field name="enable_code_interpreter" eval="True"/>
 		<field name="description">Default agent with full tool access.</field>
 		<field name="essential_tool_names" eval="[
             'describe_model',

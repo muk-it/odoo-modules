@@ -204,6 +204,21 @@ class ResConfigSettings(models.TransientModel):
         help='Multi-step AI playbooks and stateful business processes.',
     )
 
+    module_muk_ai_spreadsheets = fields.Boolean(
+        string='MuK AI Dashboard',
+        help='Build and edit spreadsheet dashboards in a chat.',
+    )
+
+    module_muk_ai_website = fields.Boolean(
+        string='MuK AI Website Designer',
+        help='Build website pages live in the builder, in a chat.',
+    )
+
+    module_muk_ai_mass_mailing = fields.Boolean(
+        string='MuK AI Email Designer',
+        help='Design newsletters that render in every mail client.',
+    )
+
     # ----------------------------------------------------------
     # Compute
     # ----------------------------------------------------------

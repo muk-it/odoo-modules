@@ -358,6 +358,47 @@
 							</div>
 						</setting>
 					</block>
+					<block title="Integrations" name="muk_ai_integrations">
+						<setting
+							id="muk_ai_addon_spreadsheets"
+							string="Dashboards"
+							help="Build and edit spreadsheet dashboards in a chat."
+						>
+							<field
+								name="module_muk_ai_spreadsheets"
+								widget="module_link"
+							/>
+							<div class="content-group" invisible="not module_muk_ai_spreadsheets" id="msg_module_muk_ai_spreadsheets">
+								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+							</div>
+						</setting>
+						<setting
+							id="muk_ai_addon_website"
+							string="Website"
+							help="Build website pages live in the builder, in a chat."
+						>
+							<field
+								name="module_muk_ai_website"
+								widget="module_link"
+							/>
+							<div class="content-group" invisible="not module_muk_ai_website" id="msg_module_muk_ai_website">
+								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+							</div>
+						</setting>
+						<setting
+							id="muk_ai_addon_mass_mailing"
+							string="Email Marketing"
+							help="Design newsletters that render in every mail client."
+						>
+							<field
+								name="module_muk_ai_mass_mailing"
+								widget="module_link"
+							/>
+							<div class="content-group" invisible="not module_muk_ai_mass_mailing" id="msg_module_muk_ai_mass_mailing">
+								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+							</div>
+						</setting>
+					</block>
 				</app>
 			</xpath>
 		</field>
