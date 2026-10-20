@@ -5768,50 +5768,8 @@ msgstr "unbekannter Fehler"
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/tools/context.py:0
-msgid "view_context.%s must be a list of strings."
-msgstr "view_context.%s muss eine Liste von Strings sein."
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/tools/context.py:0
-msgid "view_context.%s must be a string."
-msgstr "view_context.%s muss ein String sein."
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/tools/context.py:0
-msgid "view_context.action_id must be an integer."
-msgstr "view_context.action_id muss eine Ganzzahl sein."
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/tools/context.py:0
-msgid "view_context.display_name must be a string."
-msgstr "view_context.display_name muss ein String sein."
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/tools/context.py:0
-msgid "view_context.domain must be a list."
-msgstr "view_context.domain muss eine Liste sein."
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/tools/context.py:0
-msgid "view_context.ee_init_context must be a list of strings."
-msgstr "view_context.ee_init_context muss eine Liste von Strings sein."
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/tools/context.py:0
 msgid "view_context.id must be a positive integer."
 msgstr "view_context.id muss eine positive Ganzzahl sein."
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/tools/context.py:0
-msgid "view_context.model must be a string."
-msgstr "view_context.model muss ein String sein."
 
 #. module: muk_ai
 #: model:ir.model,name:muk_ai.model_ir_websocket
@@ -5842,3 +5800,33 @@ msgstr ""
 "- „Code ausführen“: ein Block Python-Code, der ausgeführt wird\n"
 "- „Webhook-Benachrichtigung versenden“: Senden Sie eine Anfrage zur VERÖFFENTLICHUNG an ein externes System, auch bekannt als Webhook\n"
 "- „Mehrere Aktionen ausführen“: Legen Sie eine Aktion fest, die mehrere andere Serveraktionen auslöst\n"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/tools/context.py:0
+msgid "a list"
+msgstr "eine Liste"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/tools/context.py:0
+msgid "a list of strings"
+msgstr "eine Liste von Strings"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/tools/context.py:0
+msgid "a string"
+msgstr "ein String"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/tools/context.py:0
+msgid "an integer"
+msgstr "eine Ganzzahl"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/tools/context.py:0
+msgid "view_context.%(key)s must be %(type)s."
+msgstr "view_context.%(key)s muss %(type)s sein."

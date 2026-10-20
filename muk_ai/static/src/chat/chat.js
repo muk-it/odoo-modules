@@ -26,6 +26,7 @@ import { AttachmentCard } from '@muk_ai/core/attachment/attachment_card';
 import { AIChatShareUsers } from '@muk_ai/chat/share/share_users';
 import { useNotificationBadge } from '@muk_ai/core/notification_badge';
 import {
+    agentSuggestions,
     approvalPill,
     chatLists,
     effortPill,
@@ -90,18 +91,6 @@ export const SPACE_PAGE_SIZE = 10;
 const SESSION_SEARCH_LIMIT = 100;
 const SESSION_SEARCH_DEBOUNCE_MS = 250;
 
-function normalizeSuggestions(raw) {
-    if (!Array.isArray(raw)) {
-        return [];
-    }
-    return raw
-        .filter((s) => s && typeof s.prompt === 'string' && s.prompt.trim())
-        .map((s) => ({
-            label: (typeof s.label === 'string' && s.label) || s.prompt,
-            prompt: s.prompt,
-        }));
-}
-
 /** Full-page AI chat client: sidebar, conversation, and composer. */
 export class AIChat extends Component {
     static template = 'muk_ai.Chat';
@@ -121,10 +110,7 @@ export class AIChat extends Component {
     };
     static props = ['*'];
     get suggestions() {
-        const agents = this.session.state.agents || [];
-        const agent =
-            agents.find((a) => a.id === this.session.state.agentId) || agents[0];
-        return normalizeSuggestions(agent && agent.suggestions);
+        return agentSuggestions(this.session.state);
     }
     setup() {
         this.orm = useService('orm');

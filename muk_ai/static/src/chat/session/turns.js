@@ -265,6 +265,15 @@ export function buildRenderedTurns(log) {
             if (current) {
                 addTurnAttachments(current, toolResultFiles(entry.result));
             }
+        } else if (entry.kind === 'tool_images') {
+            if (!current) {
+                current = withEventId(
+                    withAt({ role: 'assistant', blocks: [] }, at),
+                    eventId,
+                );
+                turns.push(current);
+            }
+            current.blocks.push(withAt({ type: 'images', images: entry.images }, at));
         } else if (entry.kind === 'text') {
             if (!current) {
                 current = withEventId(

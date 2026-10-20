@@ -1,4 +1,5 @@
 import { describe, expect, test } from '@odoo/hoot';
+import { click, queryAllProperties } from '@odoo/hoot-dom';
 import { animationFrame } from '@odoo/hoot-mock';
 import {
     mockService,
@@ -166,6 +167,67 @@ test('renderedTurns reads from the session log', async () => {
     ];
     const turns = window_.renderedTurns;
     expect(turns.map((t) => t.role)).toEqual(['user', 'assistant']);
+});
+
+test('an empty chat names its agent and sends the suggestion picked', async () => {
+    registerMocks();
+    const window_ = await mountWithCleanup(ChatWindow, {
+        props: {
+            sessionId: 11,
+            minimized: false,
+            onClose: () => {},
+            onToggleMinimized: () => {},
+        },
+    });
+    Object.assign(window_.session.state, {
+        agentId: 1,
+        agentName: 'General',
+        agents: [
+            {
+                id: 1,
+                name: 'General',
+                suggestions: [{ label: 'pipeline', prompt: 'Show my pipeline' }],
+            },
+        ],
+    });
+    const sent = [];
+    window_.session.onSend = () => sent.push(window_.session.state.input);
+    await animationFrame();
+    expect('.mk_empty_inline').toHaveText(/^General/);
+    expect('.mk_suggestion_preview').toHaveText('Show my pipeline');
+    await click('.mk_suggestion');
+    expect(sent).toEqual(['Show my pipeline']);
+});
+
+test('the images a tool returns show in the chat beside its card', async () => {
+    registerMocks();
+    const window_ = await mountWithCleanup(ChatWindow, {
+        props: {
+            sessionId: 11,
+            minimized: false,
+            onClose: () => {},
+            onToggleMinimized: () => {},
+        },
+    });
+    window_.session.state.events = [
+        { kind: 'user_message', content: 'Show me', attachments: [] },
+        { kind: 'tool_call', call_id: 'c1', name: 'render_preview', arguments: '{}' },
+        { kind: 'tool_result', call_id: 'c1', result: '{"text": "Captured"}' },
+        {
+            kind: 'tool_images',
+            call_id: 'c1',
+            images: [
+                { url: '/web/image/7', name: 'desktop.png' },
+                { url: '/web/image/8', name: 'mobile.png' },
+            ],
+        },
+    ];
+    await animationFrame();
+    expect(queryAllProperties('.mk_tool_images img', 'alt')).toEqual([
+        'desktop.png',
+        'mobile.png',
+    ]);
+    expect('.mk_tool_images a[href="/web/image/8"]').toHaveCount(1);
 });
 
 test('viewContextLabel falls back to empty when no pinned context', async () => {

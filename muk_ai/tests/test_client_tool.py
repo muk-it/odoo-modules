@@ -273,12 +273,25 @@ class TestClientToolSeam(AITestCommon):
                 self._text_payload('Done clicking.'),
             ]
         )
-        with provider, self._as_client_tool('browser_click'):
+        bus = type(self.env['bus.bus'])
+        with (
+            provider,
+            self._as_client_tool('browser_click'),
+            patch.object(bus, '_sendone', autospec=True) as sendone,
+        ):
             session.start('Click the button.')
             snapshot = session.submit_client_result('c0', {'ok': True})
         self.assertEqual(snapshot['state'], 'done')
         self.assertIsNone(snapshot['pending_ask'])
         self.assertEqual(snapshot['last_text'], 'Done clicking.')
+        self.assertEqual(
+            [
+                call.args[3]['state']
+                for call in sendone.call_args_list
+                if call.args[2] == 'muk_ai.session_notification'
+            ],
+            ['done'],
+        )
         outputs = self._outputs_for(session, 'c0')
         self.assertEqual(len(outputs), 1)
         self.assertEqual(json.loads(outputs[0]['output']), {'ok': True})

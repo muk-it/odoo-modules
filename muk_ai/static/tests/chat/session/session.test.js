@@ -4,6 +4,7 @@ import { Component, xml } from '@odoo/owl';
 import { mockService, mountWithCleanup, onRpc } from '@web/../tests/web_test_helpers';
 import { defineMailModels } from '@mail/../tests/mail_test_helpers';
 
+import { describeToolBlock, toolBlockDecorators } from '@muk_ai/chat/session/turns';
 import { useAiSession } from '@muk_ai/chat/session/use_ai_session';
 
 describe.current.tags('muk_ai');
@@ -515,8 +516,11 @@ test('bus text_delta appends to streamingText without touching the log', async (
     expect(session.state.events.length).toBe(logSize);
 });
 
-test('tool_call_start registers a streaming tool and log kind tool_call clears it', async () => {
+test('tool_call_start registers a decorated streaming tool and log kind tool_call clears it', async () => {
     onRpc('muk_ai.session', 'read', () => [SESSION_RECORD]);
+    toolBlockDecorators.add('test_label', (block) =>
+        describeToolBlock(block, { label: () => `Run ${block.name}` }),
+    );
     const bus = makeBusMock();
     const harness = makeHarness();
     const session = await mountAndLoad(harness);
@@ -525,8 +529,10 @@ test('tool_call_start registers a streaming tool and log kind tool_call clears i
         type: 'tool_call_start',
         payload: { call_id: 'c1', name: 'search_read' },
     });
+    toolBlockDecorators.remove('test_label');
     expect(session.state.streamingTools).toHaveLength(1);
     expect(session.state.streamingTools[0].callId).toBe('c1');
+    expect(session.state.streamingTools[0].label).toBe('Run search_read');
     bus.emit({
         session_id: 7,
         type: 'log',
@@ -1266,7 +1272,7 @@ test('bus tool_call_args_delta accumulates on the matching streaming tool', asyn
         type: 'tool_call_args_delta',
         payload: { call_id: 'c9', delta: '1}' },
     });
-    expect(session.state.streamingTools[0].argsBuffer).toBe('{"a":1}');
+    expect(session.state.streamingTools[0].arguments).toBe('{"a":1}');
 });
 
 test('bus ui_action dispatches via action service', async () => {

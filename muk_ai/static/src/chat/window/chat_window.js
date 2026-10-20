@@ -19,6 +19,7 @@ import { toFileModel } from '@muk_ai/core/attachment/attachment';
 import { AttachmentCard } from '@muk_ai/core/attachment/attachment_card';
 import { SourceIcon, SourceList } from '@muk_ai/chat/artifacts/types/sources_tab';
 import {
+    agentSuggestions,
     approvalPill,
     effortPill,
     extraPills,
@@ -179,6 +180,9 @@ export class ChatWindow extends Component {
     get renderedTurns() {
         return this.session.renderedTurns();
     }
+    get suggestions() {
+        return agentSuggestions(this.session.state);
+    }
     turnRenderer(turn) {
         return turnRendererFor(turn);
     }
@@ -237,6 +241,11 @@ export class ChatWindow extends Component {
         this.session.onInputChange(value);
     }
     onSend() {
+        return this.session.onSend();
+    }
+    onSubmitSuggestion(prompt) {
+        this.session.state.input = prompt;
+        this.session.state.focusToken += 1;
         return this.session.onSend();
     }
     onStop() {

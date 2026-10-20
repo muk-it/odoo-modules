@@ -19,11 +19,11 @@ from odoo.addons.muk_ai.tests.common import AITestCommon
 from odoo.addons.muk_ai.tools import (
     ADVISORY_LOCK_NAMESPACE,
     MAX_ITERATIONS,
+    VIEW_KINDS,
     WALLCLOCK_MIN_SECONDS,
     WALLCLOCK_SAFETY_MARGIN,
     WORKER_STALE_THRESHOLD,
-    format_ui_ctx_tag,
-    render_ui_ctx,
+    with_ui_ctx,
 )
 
 
@@ -1217,6 +1217,16 @@ class TestAiSession(AITestCommon):
         self.assertEqual(session.view_context.get('id'), 99)
         self.assertEqual(snapshot['view_context']['model'], 'res.partner')
 
+    def test_pinning_the_view_already_pinned_writes_nothing(self):
+        session = self.env['muk_ai.session'].create({'name': 'repin'})
+        payload = {'kind': 'record', 'model': 'res.partner', 'id': 7}
+        with patch.object(type(session), '_publish_event', autospec=True) as publish:
+            for _repeat in range(2):
+                session.set_view_context(payload)
+        self.assertEqual(
+            [call.args[1] for call in publish.call_args_list], ['view_context']
+        )
+
     def test_set_view_context_clears_on_none(self):
         session = self.env['muk_ai.session'].create({'name': 'clear-ctx'})
         session.view_context = {
@@ -1252,20 +1262,20 @@ class TestAiSession(AITestCommon):
         self.assertEqual(last_entry.get('kind'), 'command')
         self.assertEqual(last_entry.get('name'), '/unpin')
 
-    def test_render_ui_ctx_returns_none_when_empty(self):
-        self.assertIsNone(render_ui_ctx(None))
-        self.assertIsNone(render_ui_ctx({}))
-        self.assertIsNone(format_ui_ctx_tag({}))
-
-    def test_render_ui_ctx_formats_list(self):
-        tag = format_ui_ctx_tag(
+    def test_with_ui_ctx_appends_only_a_known_view(self):
+        for payload in (None, {}, {'kind': 'banana', 'model': 'sale.order'}):
+            self.assertEqual(with_ui_ctx([], payload, VIEW_KINDS), [])
+        [message] = with_ui_ctx(
+            [],
             {
                 'kind': 'list',
                 'model': 'sale.order',
                 'view_type': 'kanban',
                 'domain': [['state', '=', 'sale']],
-            }
+            },
+            VIEW_KINDS,
         )
+        tag = message['content'][0]['text']
         self.assertTrue(tag.startswith('<ui_ctx>'))
         self.assertIn('sale.order', tag)
         self.assertIn('kanban', tag)

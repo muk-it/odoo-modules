@@ -135,6 +135,14 @@ class TestToolVision(AITestCommon):
             and item.get('call_id') == call_id
         ]
 
+    def _shown_images(self, session: models.Model) -> list[int]:
+        """Return how many images each ``tool_images`` event shows in the chat."""
+        return [
+            len(event['images'])
+            for event in session.fetch_events(limit=500)['events']
+            if event.get('kind') == 'tool_images'
+        ]
+
     def _vision_entry_after(self, session: models.Model, output: dict) -> dict | None:
         """Return the first user entry following the given output item."""
         conversation = session.conversation or []
@@ -173,6 +181,7 @@ class TestToolVision(AITestCommon):
         self.assertEqual(attachment.mimetype, 'image/png')
         self.assertEqual(attachment.res_model, 'muk_ai.session')
         self.assertEqual(attachment.res_id, session.id)
+        self.assertEqual(self._shown_images(session), [1])
 
     def test_vision_entry_materializes_to_image_block(self):
         session = self._new_session()
@@ -215,6 +224,7 @@ class TestToolVision(AITestCommon):
         self.assertIn('cannot be shown to this model', cleaned['text'])
         self.assertNotIn('images', cleaned)
         self.assertIsNone(self._vision_entry_after(session, outputs[0]))
+        self.assertEqual(self._shown_images(session), [1])
 
     # ----------------------------------------------------------
     # Tests: client action result path
