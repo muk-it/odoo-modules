@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo noupdate="1">
+
+	<record id="agent_writer" model="muk_ai.agent">
+		<field name="name">Writing Assistant</field>
+		<field name="sequence">20</field>
+		<field
+			name="image_1920"
+			type="bytes"
+			file="muk_ai_chatter/static/description/icon.png"
+		/>
+		<field name="description">Drafts and rewrites messages and texts in the composer. Give it a fast, small model.</field>
+		<field name="web_search">off</field>
+		<field name="read_only" eval="True"/>
+		<field name="mention_enabled" eval="False"/>
+		<field name="reasoning_effort">low</field>
+		<field name="tool_filter" eval="['read_records', 'search_read']"/>
+		<field name="system_prompt">You are a writing assistant. You write and rewrite the text the user is working on: messages, notes, emails and descriptions. Write clearly and briefly, in the tone the draft already has, and in the language the user writes in. Read the record or its thread only when the text needs a fact from it.</field>
+	</record>
+
+</odoo>

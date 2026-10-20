@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from odoo import api, fields, models
+from odoo.exceptions import UserError
 
 
 class AIAgent(models.Model):
@@ -54,6 +55,19 @@ class AIAgent(models.Model):
     # ----------------------------------------------------------
     # ORM
     # ----------------------------------------------------------
+
+    @api.ondelete(at_uninstall=False)
+    def _unlink_except_writing_assistant(self) -> None:
+        """Refuse to delete the Writing Assistant, it can be archived instead.
+
+        :raise UserError: when the set holds the Writing Assistant
+        """
+        if self.env.ref('muk_ai_chatter.agent_writer') in self:
+            raise UserError(
+                self.env._(
+                    'The Writing Assistant cannot be deleted, archive it instead.'
+                )
+            )
 
     @api.model_create_multi
     def create(self, vals_list: list[dict]) -> AIAgent:

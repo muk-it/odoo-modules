@@ -175,10 +175,15 @@ class TestCompose(ChatterTestCommon):
         self.assertEqual(self._open('nonsense').compose_interface, 'mail_composer')
         self.assertEqual(self._open('html_field').compose_interface, 'html_field')
 
-    def test_the_composer_space_names_the_agent_of_the_helpers(self):
-        writer = self.env['muk_ai.agent'].create({'name': 'Writer'})
-        self.env.ref('muk_ai_chatter.space_writing').agent_id = writer
+    def test_the_writing_assistant_writes_until_it_is_archived(self):
+        writer = self.env.ref('muk_ai_chatter.agent_writer')
         self.assertEqual(self._open('html_field').agent_id, writer)
+        with self.assertRaisesRegex(UserError, 'archive it'):
+            writer.unlink()
+        writer.active = False
+        self.assertEqual(
+            self.Session._compose_agent(), self.env['muk_ai.agent']._get_default()
+        )
 
     def test_the_helper_says_so_when_no_agent_can_answer(self):
         self.env['muk_ai.agent'].search([]).write({'active': False})
