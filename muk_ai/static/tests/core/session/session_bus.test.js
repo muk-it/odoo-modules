@@ -1,5 +1,6 @@
 import { advanceTime, expect, runAllTimers, test } from '@odoo/hoot';
 import {
+    contains,
     getService,
     mountWebClient,
     onRpc,
@@ -39,7 +40,7 @@ test('the events of a chat land in its data and its stream', async () => {
         [
             'tool_call_args_delta',
             { call_id: 'c1', delta: '{"a"' },
-            () => session.state.streamingTools[0].args,
+            () => session.state.streamingTools[0].arguments,
             '{"a"',
         ],
         ['rename', { name: 'Renamed' }, () => session.data.name, 'Renamed'],
@@ -180,7 +181,7 @@ test('the state notifications of the user channel keep a shown chat current', as
     });
 });
 
-test('a write on the pinned record reloads its chatter when its form is on screen', async () => {
+test('a write on the pinned record reloads its chatter, and its form unless edited', async () => {
     await mountWebClient();
     await getService(ActionPlugin).doAction({
         type: 'ir.actions.act_window',
@@ -190,6 +191,9 @@ test('a write on the pinned record reloads its chatter when its form is on scree
     });
     await openSession(1);
     await runAllTimers();
+    onRpc('res.partner', 'web_read', () => {
+        expect.step('reload');
+    });
     onRpc('/mail/store', async (request) => {
         const { params } = await request.json();
         for (const [name, values] of params.fetch_params) {
@@ -206,5 +210,15 @@ test('a write on the pinned record reloads its chatter when its form is on scree
         id: serverState.partnerId,
     });
     await runAllTimers();
+    expect.verifySteps(['reload', `res.partner ${serverState.partnerId}`]);
+    await contains('.o_field_widget[name=name] input').edit('Unsaved', {
+        confirm: false,
+    });
+    await emitEvent(1, 'record_written', {
+        model: 'res.partner',
+        id: serverState.partnerId,
+    });
+    await runAllTimers();
     expect.verifySteps([`res.partner ${serverState.partnerId}`]);
+    expect('.o_field_widget[name=name] input').toHaveValue('Unsaved');
 });

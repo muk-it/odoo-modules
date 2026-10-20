@@ -332,13 +332,22 @@ class ProviderBase:
             self._raise(
                 self.env._('The connection closed before the answer was complete.')
             )
+        cut = [call for call in tool_calls if truncated and call['_parse_error']]
+        for call in cut:
+            call['_parse_error'] = (
+                'The answer reached the output token limit while writing this '
+                'call, so its arguments are incomplete. Do the work in smaller '
+                'calls, each well below the limit.'
+            )
         result = {
             'text': text.strip(),
             'tool_calls': tool_calls,
             'carry_inputs': carry,
             'usage': usage,
         }
-        return self._apply_truncation(result, on_delta, limit) if truncated else result
+        if truncated and not cut:
+            return self._apply_truncation(result, on_delta, limit)
+        return result
 
     @classmethod
     def _tool_call(cls, call_id: str, name: str, arguments) -> dict:

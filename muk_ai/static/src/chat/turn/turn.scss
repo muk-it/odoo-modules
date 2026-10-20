@@ -269,3 +269,10 @@
 .mk_turn_sources_list {
     max-width: 720px;
 }
+.mk_tool_images {
+    .mk_tool_image {
+        max-height: 220px;
+        max-width: 100%;
+        object-fit: contain;
+    }
+}

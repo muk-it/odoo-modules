@@ -64,6 +64,11 @@
                         onToggle.bind="this.toggleTool"
                     />
                     <t t-elif="item.type === 'ask'" t-call="muk_ai.AskCard"/>
+                    <div t-elif="item.type === 'images'" class="mk_tool_images d-flex flex-wrap align-items-start gap-2">
+                        <a t-foreach="block.images" t-as="image" t-key="image.url" t-att-href="image.url" target="_blank" t-att-title="image.name">
+                            <img class="mk_tool_image border rounded" t-att-src="image.url" t-att-alt="image.name"/>
+                        </a>
+                    </div>
                 </t>
                 <div t-if="turn.attachments.length" class="d-flex flex-wrap gap-2 mt-2">
                     <AttachmentCard

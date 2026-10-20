@@ -165,8 +165,11 @@ class AISessionNotify(models.AbstractModel):
         """Toast and badge a terminal state; a wait for the owner also reaches the inbox."""
         state = payload.get('state')
         context = self.env.context
+        ask = payload.get('ask') or self.pending_ask or {}
+        ask_kind = ask.get('kind') if isinstance(ask, dict) else None
         if (
             state not in ('done', 'waiting', 'error')
+            or (state == 'waiting' and ask_kind == 'client_action')
             or not self._should_notify_state(state)
             or context.get('muk_ai_state_unchanged')
             or (
@@ -175,8 +178,6 @@ class AISessionNotify(models.AbstractModel):
             )
         ):
             return
-        ask = payload.get('ask') or self.pending_ask or {}
-        ask_kind = ask.get('kind') if isinstance(ask, dict) else None
         message = self._notification_message(state, payload, ask_kind)
         self.notification_unread = True
         self.user_id._bus_send(

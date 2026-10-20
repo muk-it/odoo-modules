@@ -401,7 +401,7 @@ class AISessionTool(models.AbstractModel):
         """Tell the screens showing the pinned record that a write tool ran."""
         pinned = self.view_context or {}
         if (
-            pinned.get('kind') == 'record'
+            pinned.get('id')
             and get_tool_index(self.env).get(name, {}).get('category') == 'write'
         ):
             self._publish_event(
@@ -504,33 +504,44 @@ class AISessionTool(models.AbstractModel):
     ) -> object:
         """Append a tool output, holding its images back until the round ends.
 
-        File payloads are stored first; a result longer than the context window
-        reaches the model cut to it, with a marker saying so.
+        Files and images are stored, the images shown in the chat and passed to
+        a model with vision; a result over the context window is cut, marked.
         :return: the cleaned, text-only result for event logging
         """
         result = self._persist_tool_file(result)
         cleaned = strip_images(result)
         attachments = self.env['ir.attachment']
-        if specs := image_specs(result):
-            if self._resolve_provider().supports_vision:
-                for spec in specs[:TOOL_VISION_MAX_IMAGES]:
-                    data = spec['data']
-                    if data.startswith('data:'):
-                        data = data.partition(',')[2]
-                    if spec['mimetype'] not in IMAGE_MIMETYPES or not (
-                        0 < len(data) <= TOOL_VISION_MAX_B64_CHARS
-                    ):
-                        continue
-                    with contextlib.suppress(UserError):
-                        attachments |= (
-                            self.env['ir.attachment']
-                            .sudo()
-                            ._ai_create_from_upload(
-                                spec['name'], spec['mimetype'], data, res_id=self.id
-                            )
-                        )
-            if not attachments:
-                cleaned = note_vision_unavailable(cleaned)
+        specs = image_specs(result)
+        for spec in specs[:TOOL_VISION_MAX_IMAGES]:
+            data = spec['data']
+            if data.startswith('data:'):
+                data = data.partition(',')[2]
+            if spec['mimetype'] not in IMAGE_MIMETYPES or not (
+                0 < len(data) <= TOOL_VISION_MAX_B64_CHARS
+            ):
+                continue
+            with contextlib.suppress(UserError):
+                attachments |= (
+                    self.env['ir.attachment']
+                    .sudo()
+                    ._ai_create_from_upload(
+                        spec['name'], spec['mimetype'], data, res_id=self.id
+                    )
+                )
+        if attachments:
+            self._append_event(
+                {
+                    'kind': 'tool_images',
+                    'call_id': call_id,
+                    'images': [
+                        {'url': f'/web/image/{image.id}', 'name': image.name}
+                        for image in attachments
+                    ],
+                }
+            )
+        vision = bool(attachments) and self._resolve_provider().supports_vision
+        if specs and not vision:
+            cleaned = note_vision_unavailable(cleaned)
         output = build_tool_call_output(call_id, cleaned)
         text = output['output']
         if len(text) > (limit := self._resolve_context_window()):
@@ -541,7 +552,7 @@ class AISessionTool(models.AbstractModel):
                 'to retrieve the rest.]'
             )
         outputs.append(output)
-        if attachments:
+        if vision:
             self.deferred_vision_attachment_ids = list(
                 dict.fromkeys(
                     [*(self.deferred_vision_attachment_ids or []), *attachments.ids]

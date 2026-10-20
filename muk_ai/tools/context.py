@@ -35,7 +35,6 @@ SEGMENT_LABELS = {
     'graph_measure': 'measure',
     'graph_groupbys': 'groupbys',
     'graph_order': 'order',
-    'domain': 'domain',
 }
 
 TYPE_NAMES = {
@@ -45,10 +44,10 @@ TYPE_NAMES = {
 }
 
 
-def _segments(payload: dict) -> list[str]:
+def _segments(payload: dict, kinds: dict) -> list[str]:
     """Return the text segments describing a view or record context."""
     kind = payload.get('kind')
-    if kind not in VIEW_KINDS:
+    if kind not in kinds:
         return []
     model = payload.get('model') or ''
     if kind == 'record':
@@ -56,20 +55,22 @@ def _segments(payload: dict) -> list[str]:
         head = [f'{model}/{res_id}' if res_id else model]
         return [*head, f'"{name}"'] if name and str(name) != str(res_id) else head
     segments = [model, payload.get('view_type') or kind]
-    for key, label in SEGMENT_LABELS.items():
-        if not (value := payload.get(key)):
+    for key in kinds[kind]:
+        if key == 'view_type' or not (value := payload.get(key)):
             continue
         if key == 'domain':
             value = json.dumps(value, separators=(',', ':'))
         elif isinstance(value, list):
             value = ','.join(value)
-        segments.append(f'{label}={value}')
+        segments.append(f'{SEGMENT_LABELS.get(key, key)}={value}')
     return segments
 
 
-def _with_tag(inputs: list, payload: dict | None, tag: str) -> list:
+def _with_tag(
+    inputs: list, payload: dict | None, tag: str, kinds: dict = VIEW_KINDS
+) -> list:
     """Append a volatile user message carrying the context in ``<tag>``."""
-    if not (body := ' · '.join(filter(None, _segments(payload or {})))):
+    if not (body := ' · '.join(filter(None, _segments(payload or {}, kinds)))):
         return inputs
     message = {
         'role': 'user',
@@ -79,9 +80,9 @@ def _with_tag(inputs: list, payload: dict | None, tag: str) -> list:
     return [*(inputs or []), message]
 
 
-def with_ui_ctx(inputs: list, payload: dict | None) -> list:
+def with_ui_ctx(inputs: list, payload: dict | None, kinds: dict) -> list:
     """Append the ``<ui_ctx>`` message describing the pinned view."""
-    return _with_tag(inputs, payload, 'ui_ctx')
+    return _with_tag(inputs, payload, 'ui_ctx', kinds)
 
 
 def with_record_ctx(inputs: list, payload: dict | None) -> list:
@@ -89,19 +90,19 @@ def with_record_ctx(inputs: list, payload: dict | None) -> list:
     return _with_tag(inputs, payload, 'linked_record')
 
 
-def clean_view_context_payload(kind, payload: dict) -> dict:
+def clean_view_context_payload(kind, payload: dict, kinds: dict) -> dict:
     """Validate and normalize a view-context payload for the given kind.
 
     :raise UserError: when the kind is unknown or a value has the wrong type
     """
-    if not isinstance(kind, str) or kind not in VIEW_KINDS:
+    if not isinstance(kind, str) or kind not in kinds:
         raise UserError(_lt('Invalid view context payload (kind=%(kind)r).', kind=kind))
     cleaned = {'kind': kind}
     if kind == 'record':
         if not isinstance(res_id := payload.get('id'), int) or res_id <= 0:
             raise UserError(_lt('view_context.id must be a positive integer.'))
         cleaned['id'] = res_id
-    for key, expected in {'model': str, **VIEW_KINDS[kind]}.items():
+    for key, expected in {'model': str, **kinds[kind]}.items():
         if not (value := payload.get(key)):
             continue
         if isinstance(expected, list):

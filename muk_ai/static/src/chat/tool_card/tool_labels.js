@@ -155,6 +155,7 @@ export const toolLabels = {
         ({ args }) => URL.parse(args.url || '')?.hostname || '',
     ),
     generate_image: tool('image', () => _t('Generate an image')),
+    ask_user: tool('help', () => _t('Ask you')),
     list_agents: tool('group', () => _t('List the agents')),
     switch_agent: tool(
         'swap_horiz',

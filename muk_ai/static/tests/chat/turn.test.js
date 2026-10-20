@@ -36,6 +36,27 @@ async function mountTranscript(events, values = {}, props = {}) {
     return session;
 }
 
+test('the images a tool returns show in the chat beside its card', async () => {
+    await mountTranscript([
+        { kind: 'user_message', content: 'Show me', event_id: 1 },
+        { kind: 'tool_call', call_id: 'c1', name: 'render_preview', arguments: '{}' },
+        { kind: 'tool_result', call_id: 'c1', result: '{"text": "Captured"}' },
+        {
+            kind: 'tool_images',
+            call_id: 'c1',
+            images: [
+                { url: '/web/image/7', name: 'desktop.png' },
+                { url: '/web/image/8', name: 'mobile.png' },
+            ],
+        },
+    ]);
+    expect(queryAllProperties('.mk_tool_images img', 'alt')).toEqual([
+        'desktop.png',
+        'mobile.png',
+    ]);
+    expect('.mk_tool_images a[href="/web/image/8"]').toHaveCount(1);
+});
+
 test('tool calls draw as cards opening on click, a run of them as one group counting its errors', async () => {
     await mountTranscript([
         { kind: 'user_message', content: 'Go', event_id: 1 },

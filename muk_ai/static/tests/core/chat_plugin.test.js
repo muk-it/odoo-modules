@@ -6,6 +6,7 @@ import { ActionPlugin } from '@web/webclient/actions/action_plugin';
 import {
     defineAIModels,
     emit,
+    emitEvent,
     getChat,
     openSession,
     recordNotifications,
@@ -64,6 +65,11 @@ test('windows open once, minimize, close and pin the view shown to their chat', 
     expect(chat.windowIds).toEqual([5]);
     expect.verifySteps(['pin 4 res.partner', 'pin 5 res.partner']);
     chat.pushContext(target.build());
+    chat.pushContext(target.build());
+    await animationFrame();
+    expect.verifySteps(['pin 5 res.partner']);
+    chat.acquire(5);
+    await emitEvent(5, 'view_context', { view_context: null });
     chat.pushContext(target.build());
     await animationFrame();
     expect.verifySteps(['pin 5 res.partner']);
@@ -145,6 +151,19 @@ test('a message of an AI chat opens the AI chat instead of the record', async ()
         tag: 'muk_ai.chat',
         params: { session_id: 9 },
     });
+});
+
+test('an editor on top of a view pins its element while it has one', async () => {
+    const chat = await getChat();
+    const record = { kind: 'record', model: 'res.partner', id: 1 };
+    let element = null;
+    chat.registerTarget({ viewType: 'form', build: () => record });
+    const unregister = chat.registerTarget({ build: () => element });
+    expect(chat.probeContext()).toBe(record);
+    element = { kind: 'element', model: 'res.partner', id: 1, tag: 'p' };
+    expect(chat.probeContext()).toBe(element);
+    unregister();
+    expect(chat.probeContext()).toBe(record);
 });
 
 test('a new chat is created, pinned to the view and announced', async () => {

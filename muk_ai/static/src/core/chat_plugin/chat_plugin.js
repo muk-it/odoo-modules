@@ -327,17 +327,23 @@ export class AIChatPlugin extends Plugin {
         }
     }
     /**
-     * Reload the chatter of a record, should the form on screen show it.
+     * Reload a record the agent wrote, and its chatter, should the form on
+     * screen show it without unsaved changes.
      * @param {string} model the model of the record
      * @param {number} id the record
      */
-    reloadThread(model, id) {
+    async reloadRecord(model, id) {
         const form = this.targets.findLast((target) => target.viewType === 'form');
+        const { root } = form?.controller.model || {};
+        if (root?.resModel === model && root.resId === id && !(await root.isDirty())) {
+            await form.controller.model.load();
+        }
         form?.controller.env.bus.trigger('MAIL:RELOAD-THREAD', { model, id });
     }
     /**
-     * Register a mounted view controller as the view the user looks at.
-     * @param {object} target `{controller, viewType, build}`
+     * Register what the user looks at: a mounted view controller, or an editor
+     * on top of one, whose context wins while its `build()` returns one.
+     * @param {object} target `{controller?, viewType?, build}`
      * @returns {Function} the unregister function
      */
     registerTarget(target) {
@@ -349,9 +355,8 @@ export class AIChatPlugin extends Plugin {
      * @returns {object|null} the view context, null outside a model's view
      */
     probeContext() {
-        const target = this.targets.at(-1);
-        if (target) {
-            return target.build();
+        if (this.targets.length) {
+            return this.targets.findLast((target) => target.build())?.build() || null;
         }
         const controller = this.action.currentController;
         const props = controller?.props || {};
@@ -398,7 +403,7 @@ export class AIChatPlugin extends Plugin {
     async adjustTarget() {
         for (let waited = 0; waited <= TARGET_TIMEOUT_MS; waited += TARGET_POLL_MS) {
             const target = this.targets.at(-1);
-            if (target && target.viewType !== 'form') {
+            if (target?.viewType && target.viewType !== 'form') {
                 return target;
             }
             await new Promise((resolve) => setTimeout(resolve, TARGET_POLL_MS));

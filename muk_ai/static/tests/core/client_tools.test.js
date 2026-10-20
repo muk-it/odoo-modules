@@ -54,6 +54,25 @@ test('a client action runs its tool once and posts the outcome back', async () =
     ]);
 });
 
+test('the results of one batch reach the session one after the other', async () => {
+    clientTools.add('probe', { execute: async (args) => args.x });
+    let release;
+    onRpc('muk_ai.session', 'submit_client_result', async ({ args }) => {
+        expect.step(`start ${args[1]}`);
+        if (args[1] === 'b1') {
+            await new Promise((resolve) => (release = resolve));
+        }
+        expect.step(`end ${args[1]}`);
+        return snapshot();
+    });
+    await openSession(1);
+    await emitEvent(1, 'log', action('b1'));
+    await emitEvent(1, 'log', action('b2'));
+    await expect.waitForSteps(['start b1']);
+    release();
+    await expect.waitForSteps(['end b1', 'start b2', 'end b2']);
+});
+
 test('a tool asking for a delay runs after it', async () => {
     trackAnswers();
     clientTools.add('slow', { execute: async () => 'late', defer: () => 500 });

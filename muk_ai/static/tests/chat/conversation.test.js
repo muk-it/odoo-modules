@@ -54,7 +54,7 @@ test('a running chat draws its stream, its tools and its queue', async () => {
     await emitEvent(1, 'reasoning_delta', { delta: 'Checking the ledger' });
     expect('.mk_streaming .mk_thinking').toHaveText('Checking the ledger');
     await emitEvent(1, 'tool_call_start', { call_id: 'c1', name: 'read_group' });
-    expect('.mk_tool.mk_tool_streaming .mk_tool_name').toHaveText('read_group');
+    expect('.mk_tool.mk_tool_streaming .mk_tool_name').toHaveText('Summarize');
     await emitEvent(1, 'text_delta', { delta: '**Half**' });
     expect('.mk_streaming strong').toHaveText('Half');
     expect('.mk_streaming .mk_thinking').toHaveCount(0);
@@ -77,16 +77,16 @@ test('an error is shown with the way to regenerate the answer', async () => {
     expect('.alert-danger').toHaveCount(0);
 });
 
-test('an empty chat offers the suggestions of its agent, previewed without markdown', async () => {
+test('an empty chat, in a window too, names its agent and offers its suggestions', async () => {
     onRpc('muk_ai.session', 'start', ({ args }) => {
         expect.step(args[1]);
         return snapshot({ state: 'running' });
     });
-    await mountConversation({
-        events: [],
-        iteration_count: 0,
-        agent_id: [1, 'General'],
-    });
+    await mountConversation(
+        { events: [], iteration_count: 0, agent_id: [1, 'General'] },
+        { compact: true },
+    );
+    expect('.mk_empty_inline').toHaveText(/^General/);
     expect('.mk_suggestion_label').toHaveText(/^pipeline$/i);
     expect('.mk_suggestion_preview').toHaveText('Show my pipeline');
     await contains('.mk_suggestion').click();

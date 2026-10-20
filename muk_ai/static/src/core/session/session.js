@@ -7,7 +7,7 @@ import { SelectCreateDialog } from '@web/views/view_dialogs/select_create_dialog
 
 import { fileToBase64 } from '@muk_ai/core/attachment/attachment';
 import { runClientAction } from '@muk_ai/core/client_tools/client_tools';
-import { buildRenderedTurns } from '@muk_ai/core/session/turns';
+import { buildRenderedTurns, toolBlockDecorators } from '@muk_ai/core/session/turns';
 import { formatError } from '@muk_ai/core/utils/utils';
 
 const BUSY = ['running', 'compacting'];
@@ -78,7 +78,9 @@ function canonical(value) {
         return `[${value.map(canonical).join(',')}]`;
     }
     const keys = Object.keys(value).sort();
-    return `{${keys.map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(',')}}`;
+    return `{${keys
+        .map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`)
+        .join(',')}}`;
 }
 
 /**
@@ -126,7 +128,17 @@ const HANDLERS = {
     tool_call_start({ call_id, name }, session) {
         const tools = session.state.streamingTools;
         if (call_id && !tools.some((tool) => tool.callId === call_id)) {
-            tools.push({ callId: call_id, name: name || '', args: '' });
+            const block = {
+                type: 'tool',
+                name: name || '',
+                arguments: '',
+                callId: call_id,
+                result: null,
+            };
+            for (const decorate of toolBlockDecorators.getAll()) {
+                decorate(block, {});
+            }
+            tools.push(block);
             session.bumpStream();
         }
     },
@@ -135,7 +147,7 @@ const HANDLERS = {
             (item) => item.callId === call_id,
         );
         if (tool && delta) {
-            tool.args += delta;
+            tool.arguments += delta;
             session.bumpStream();
         }
     },
@@ -177,10 +189,11 @@ const HANDLERS = {
         }
     },
     record_written({ model, id }, session) {
-        session.chat.reloadThread(model, id);
+        session.chat.reloadRecord(model, id);
     },
     view_context({ view_context }, session) {
         session.data.view_context = view_context || null;
+        session.chat.lastContext = null;
     },
     queue({ pending }, session) {
         session.data.pending_user_messages = pending || [];
@@ -1004,7 +1017,7 @@ export class AISession {
         if (!context?.model) {
             return;
         }
-        const record = context.kind === 'record';
+        const record = Boolean(context.id);
         const action = {
             type: 'ir.actions.act_window',
             res_model: context.model,

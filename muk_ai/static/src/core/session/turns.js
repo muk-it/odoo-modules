@@ -241,6 +241,10 @@ export function buildRenderedTurns(log) {
             }
             addUnique(turn.sources, entry.sources || []);
             addUnique(turn.attachments, toolResultFiles(entry.result));
+        } else if (entry.kind === 'tool_images') {
+            assistant(entry).blocks.push(
+                stamp({ type: 'images', images: entry.images }, entry),
+            );
         } else if (entry.kind === 'text') {
             const blocks = assistant(entry).blocks;
             const last = blocks.at(-1);

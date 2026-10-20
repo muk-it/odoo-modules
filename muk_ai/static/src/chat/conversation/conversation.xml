@@ -48,12 +48,13 @@
                             <i class="oi oi-spin me-1" data-icon="progress_activity"/>Loading...
                         </div>
                         <div
-                            t-elif="!this.props.compact and !session.turns.length and !session.busy and !session.data.pending_user_messages.length"
+                            t-elif="!session.turns.length and !session.busy and !session.data.pending_user_messages.length"
                             class="mk_empty_inline d-flex flex-column align-items-center text-center text-muted py-5"
                         >
                             <div class="mk_empty_badge d-inline-flex align-items-center justify-content-center rounded-circle shadow-sm mb-3 text-white bg-primary lh-1">
                                 <i class="oi" data-icon="forum"/>
                             </div>
+                            <p t-if="session.agentName" class="fw-semibold text-body mb-1" t-out="session.agentName"/>
                             <p t-if="this.suggestions.length" class="mb-3">Type a message below or pick a suggestion.</p>
                             <p t-else="" class="mb-3">Type a message below to begin.</p>
                             <t t-call="muk_ai.Suggestions" suggestions="this.suggestions" onPick="(prompt) => this.onSuggestion(prompt)"/>
@@ -72,7 +73,7 @@
                                 t-foreach="session.state.streamingTools"
                                 t-as="tool"
                                 t-key="tool.callId"
-                                block="{ name: tool.name, arguments: tool.args, callId: tool.callId }"
+                                block="tool"
                                 streaming="true"
                             />
                             <div

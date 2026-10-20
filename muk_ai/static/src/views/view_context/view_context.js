@@ -75,7 +75,7 @@ export function useViewContext(controller, viewType) {
     };
     const dispatch = () => {
         if (chat.windows.length) {
-            chat.pushContext(target.build());
+            chat.pushContext(chat.probeContext());
         }
         waiting.splice(0).forEach((resolve) => resolve());
     };

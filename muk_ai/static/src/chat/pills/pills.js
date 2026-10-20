@@ -57,7 +57,9 @@ sessionPills.add(
                 label: off ? _t('Bypass') : _t('Ask'),
                 title: _t('Approvals'),
                 icon: off ? 'flash_on' : 'security',
-                className: `${off ? 'mk_pill_bypass' : 'mk_pill_ask'} ${override ? 'mk_pill_override' : ''}`,
+                className: `${off ? 'mk_pill_bypass' : 'mk_pill_ask'} ${
+                    override ? 'mk_pill_override' : ''
+                }`,
                 tooltip: session.readonly
                     ? _t('Approvals of a shared chat cannot be changed')
                     : off

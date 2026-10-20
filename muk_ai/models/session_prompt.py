@@ -326,7 +326,10 @@ class AISessionPrompt(models.AbstractModel):
             for item in self.conversation or []
             if not (isinstance(item, dict) and item.get('role') == 'system')
         ]
-        return [self._system_message(), *with_ui_ctx(history, self.view_context)]
+        return [
+            self._system_message(),
+            *with_ui_ctx(history, self.view_context, self._view_kinds()),
+        ]
 
     def _available_client_kinds(self) -> set[str]:
         """Return the client kinds whose executor can currently answer.

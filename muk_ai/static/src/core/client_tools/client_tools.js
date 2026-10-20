@@ -11,6 +11,29 @@ export const clientTools = registry.category('muk_ai.client_tools');
 
 const handled = new Set();
 
+const posting = new Map();
+
+/**
+ * Post a call to a session after the calls posted to it before: the session
+ * lock turns a concurrent call away, and tools of one batch finish together.
+ * @param {object} chat the AI chat plugin
+ * @param {number} sessionId the paused session
+ * @param {string} method the session method
+ * @param {Array} args its arguments after the session id
+ * @param {object} [kwargs] its keyword arguments
+ * @returns {Promise} the call's outcome
+ */
+function post(chat, sessionId, method, args, kwargs) {
+    const next = (posting.get(sessionId) || Promise.resolve()).then(() =>
+        chat.orm.silent.call('muk_ai.session', method, [sessionId, ...args], kwargs),
+    );
+    posting.set(
+        sessionId,
+        next.catch(() => {}),
+    );
+    return next;
+}
+
 /**
  * Run a registered tool and post its outcome back to the session.
  * @param {object} chat the AI chat plugin
@@ -19,12 +42,7 @@ const handled = new Set();
  */
 async function execute(chat, sessionId, entry) {
     const call = (method, args, kwargs) =>
-        chat.orm.silent.call(
-            'muk_ai.session',
-            method,
-            [sessionId, entry.call_id, ...args],
-            kwargs,
-        );
+        post(chat, sessionId, method, [entry.call_id, ...args], kwargs);
     const args = toolPayload(entry.arguments || {});
     if (!args || typeof args !== 'object') {
         await call('reject_client_action', [], {

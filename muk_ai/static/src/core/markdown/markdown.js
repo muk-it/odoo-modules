@@ -34,7 +34,9 @@ markdownPlugins.addEventListener('UPDATE', () => {
  * @returns {Promise<void>} resolved when both are available
  */
 export function loadMarkdown() {
-    const prism = `html_editor.assets_prism${cookie.get('color_scheme') === 'dark' ? '_dark' : ''}`;
+    const prism = `html_editor.assets_prism${
+        cookie.get('color_scheme') === 'dark' ? '_dark' : ''
+    }`;
     loading ||= Promise.all([
         window.markdownit || loadBundle('muk_ai.assets_markdown'),
         window.Prism || loadBundle(prism),
@@ -118,7 +120,9 @@ function taskLists(state) {
         if (match) {
             first.content = first.content.slice(match[0].length);
             const box = new state.Token('html_inline', '', 0);
-            box.content = `<input type="checkbox" disabled${match[1] === ' ' ? '' : ' checked'}> `;
+            box.content = `<input type="checkbox" disabled${
+                match[1] === ' ' ? '' : ' checked'
+            }> `;
             token.children.unshift(box);
             state.tokens[index - 2].attrJoin('class', 'mk_md_task');
         }
@@ -138,7 +142,9 @@ function buildRenderer() {
         const body = (lang && highlightCode(code, lang)) || htmlEscape(code);
         const cls = lang ? ` class="language-${htmlEscape(lang)}"` : '';
         const data = lang ? ` data-lang="${htmlEscape(lang)}"` : '';
-        const copy = `<button type="button" class="mk_code_copy">${_t('Copy')}</button>`;
+        const copy = `<button type="button" class="mk_code_copy">${_t(
+            'Copy',
+        )}</button>`;
         return `<pre${data}${cls}>${copy}<code${cls}>${body}</code></pre>`;
     };
     md.renderer.rules.table_open = () => '<div class="mk_md_table"><table>';

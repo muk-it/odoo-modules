@@ -9,7 +9,7 @@ from odoo.fields import Domain
 from odoo.tools import SQL
 
 from odoo.addons.muk_ai.tools.call import build_tool_call_output
-from odoo.addons.muk_ai.tools.context import clean_view_context_payload
+from odoo.addons.muk_ai.tools.context import VIEW_KINDS, clean_view_context_payload
 from odoo.addons.muk_ai.tools.conversation import (
     chat_title,
     is_counted_user_entry,
@@ -281,14 +281,20 @@ class AISession(models.Model):
         """
         return not self.user_named
 
+    def _view_kinds(self) -> dict:
+        """Return the view-context kinds a client may pin, with their value types."""
+        return VIEW_KINDS
+
     def _enrich_view_context(self, payload: dict) -> dict:
         """Return the view-context payload, optionally enriched by subclasses."""
         return payload
 
     def _write_view_context(self, payload: dict | None) -> None:
-        """Persist the view context and broadcast its change."""
+        """Persist the view context and broadcast its change, when it changed."""
         if payload:
             payload = self._enrich_view_context(payload)
+        if (payload or None) == (self.view_context or None):
+            return
         self.write({'view_context': payload or False})
         self._publish_event('view_context', {'view_context': payload or None})
 
@@ -873,7 +879,7 @@ class AISession(models.Model):
         self._write_view_context(
             None
             if payload is None or kind == 'none'
-            else clean_view_context_payload(kind, payload)
+            else clean_view_context_payload(kind, payload, self._view_kinds())
         )
         return self.get_snapshot()
 

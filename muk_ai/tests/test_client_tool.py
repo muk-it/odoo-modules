@@ -47,7 +47,10 @@ class TestClientTool(AITestCommon):
     # ----------------------------------------------------------
 
     def test_a_client_tool_pauses_the_turn_until_every_action_is_answered(self):
-        with self._paused(self._click('c0'), self._click('c1')) as (session, executed):
+        with (
+            self._capture_bus() as sent,
+            self._paused(self._click('c0'), self._click('c1')) as (session, executed),
+        ):
             snapshot = session.get_snapshot()
             ask = snapshot['pending_ask']
             self.assertEqual(
@@ -71,6 +74,14 @@ class TestClientTool(AITestCommon):
             ('done', 'done', None),
         )
         self.assertEqual(executed, [])
+        self.assertEqual(
+            [
+                body['state']
+                for _target, kind, body in sent
+                if kind == 'muk_ai.session_notification'
+            ],
+            ['done'],
+        )
         self.assertEqual(
             [
                 item['call_id']

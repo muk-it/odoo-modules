@@ -259,14 +259,14 @@ class TestToolResults(AITestCommon):
                 {'type': 'image', 'data': PNG_1x1, 'mimeType': 'image/png'},
             ]
         )
-        for images, vision, shown in (
-            (many, True, TOOL_VISION_MAX_IMAGES),
-            ([{**SHOT, 'data': f'data:image/png;base64,{PNG_1x1}'}], True, 1),
-            ([{**SHOT, 'data': 'A' * (TOOL_VISION_MAX_B64_CHARS + 1)}], True, 0),
-            ([{**SHOT, 'mimetype': 'application/pdf'}], True, 0),
-            ([SHOT], False, 0),
-            (blocks, True, 1),
-            (blocks, False, 0),
+        for images, vision, shown, listed in (
+            (many, True, TOOL_VISION_MAX_IMAGES, TOOL_VISION_MAX_IMAGES),
+            ([{**SHOT, 'data': f'data:image/png;base64,{PNG_1x1}'}], True, 1, 1),
+            ([{**SHOT, 'data': 'A' * (TOOL_VISION_MAX_B64_CHARS + 1)}], True, 0, 0),
+            ([{**SHOT, 'mimetype': 'application/pdf'}], True, 0, 0),
+            ([SHOT], False, 0, 1),
+            (blocks, True, 1, 1),
+            (blocks, False, 0, 1),
         ):
             with (
                 self.subTest(images=len(images), vision=vision, shown=shown),
@@ -277,8 +277,15 @@ class TestToolResults(AITestCommon):
                     if isinstance(images, ToolContent)
                     else ToolResult(text='Captured', images=images)
                 )
-                _session, output, requests = self._run('search_read', result)
+                session, output, requests = self._run('search_read', result)
                 blocks = self._vision(requests[1])
+                self.assertEqual(
+                    [
+                        len(event['images'])
+                        for event in self._events(session, 'tool_images')
+                    ],
+                    [listed] if listed else [],
+                )
                 self.assertEqual(
                     {base64.b64decode(block['data_b64']) for block in blocks},
                     {PNG_BYTES} if shown else set(),

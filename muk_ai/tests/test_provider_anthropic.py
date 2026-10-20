@@ -11,6 +11,7 @@ from odoo.addons.muk_ai.tests.providers import (
     USER,
     ProviderTestCase,
     anthropic_block,
+    anthropic_stop,
     anthropic_text,
 )
 
@@ -262,6 +263,26 @@ class TestAnthropicProvider(ProviderTestCase):
         self.assertEqual(
             ''.join(data['delta'] for kind, data in deltas if kind == 'text'), text
         )
+
+    def test_a_call_cut_at_the_token_cap_asks_for_smaller_calls(self):
+        for stop, error in (
+            ('max_tokens', 'output token limit'),
+            ('tool_use', 'Malformed JSON'),
+        ):
+            with self.subTest(stop=stop):
+                result, _deltas, _sent = self._stream(
+                    'anthropic',
+                    [
+                        *anthropic_block(
+                            0,
+                            {'type': 'tool_use', 'id': 'c1', 'name': 'w', 'input': {}},
+                            {'type': 'input_json_delta', 'partial_json': '{"html": "<'},
+                        ),
+                        anthropic_stop(stop),
+                    ],
+                )
+                self.assertIn(error, result['tool_calls'][0]['_parse_error'])
+                self.assertNotIn('Max Tokens', result['text'])
 
     def test_legacy_thinking_budgets_leave_room_for_the_answer(self):
         for max_tokens, effort, budget, sent_max in (

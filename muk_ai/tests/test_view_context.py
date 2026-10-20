@@ -144,6 +144,13 @@ class TestViewContext(AITestCommon):
                 session.set_view_context(payload)
         self.assertEqual(session.view_context, RECORD)
 
+    def test_pinning_the_view_already_pinned_writes_nothing(self):
+        session = self._session()
+        with self._capture_bus() as bus:
+            for _repeat in range(2):
+                session.set_view_context(RECORD)
+        self.assertEqual(self._view_context_events(bus), [RECORD])
+
     def test_unpinning_clears_the_view_and_says_so(self):
         session = self._session()
         session.set_view_context(RECORD)
