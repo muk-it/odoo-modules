@@ -1006,6 +1006,12 @@ msgid "Ask the user a question."
 msgstr "Hacer una pregunta al usuario."
 
 #. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/tool_card/tool_labels.js:0
+msgid "Ask you"
+msgstr "Preguntarle"
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_event__at
 msgid "At"
 msgstr "En"
@@ -1177,6 +1183,18 @@ msgstr "Comportamiento"
 #: code:addons/muk_ai/static/src/chat/turn/turn.xml:0
 msgid "Branch: open a new session with the history up to this message"
 msgstr "Ramificar: abrir una nueva sesión con el historial hasta este mensaje"
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_spreadsheets
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Build and edit spreadsheet dashboards in a chat."
+msgstr "Cree y edite tableros de hoja de cálculo en un chat."
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_website
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Build website pages live in the builder, in a chat."
+msgstr "Cree páginas web en vivo en el editor, en un chat."
 
 #. module: muk_ai
 #. odoo-javascript
@@ -1579,6 +1597,8 @@ msgid "Context window: %s"
 msgstr "Ventana de contexto: %s"
 
 #. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session_prompt.py:0
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__conversation
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_session_form
 msgid "Conversation"
@@ -1754,6 +1774,11 @@ msgid "Custom URL"
 msgstr "URL personalizada"
 
 #. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Dashboards"
+msgstr "Tableros"
+
+#. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_space__retention_days
 msgid ""
 "Days a finished chat in this space is kept before the scheduled cleanup "
@@ -1921,6 +1946,12 @@ msgid "Description"
 msgstr "Descripción"
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_mass_mailing
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Design newsletters that render in every mail client."
+msgstr "Diseñe boletines que se ven bien en cualquier cliente de correo."
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/share/share.xml:0
 msgid "Discard"
@@ -1989,6 +2020,11 @@ msgstr "Editar"
 #: code:addons/muk_ai/static/src/chat/sidebar_dialogs/sidebar_dialogs.xml:0
 msgid "Edit space"
 msgstr "Editar espacio"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Email Marketing"
+msgstr "Marketing por correo electrónico"
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
@@ -2619,6 +2655,11 @@ msgstr "URL de la instancia"
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_space_form
 msgid "Instructions"
 msgstr "Instrucciones"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Integrations"
+msgstr "Integraciones"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -3255,8 +3296,18 @@ msgid "MuK AI Compatible Providers"
 msgstr "Proveedores compatibles de MuK AI"
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_spreadsheets
+msgid "MuK AI Dashboard"
+msgstr ""
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_decision
 msgid "MuK AI Decision"
+msgstr ""
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_mass_mailing
+msgid "MuK AI Email Designer"
 msgstr ""
 
 #. module: muk_ai
@@ -3289,6 +3340,11 @@ msgstr "MuK AI Skills"
 #: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_voice
 msgid "MuK AI Voice"
 msgstr "MuK AI Voice"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_website
+msgid "MuK AI Website Designer"
+msgstr ""
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_workflows
@@ -3803,7 +3859,6 @@ msgstr "Fijado"
 
 #. module: muk_ai
 #: model:muk_ai.agent.suggestion,label:muk_ai.agent_general_suggestion_summarize
-#: model:muk_ai.agent.suggestion,label:muk_ai.agent_read_only_suggestion_pipeline
 msgid "Pipeline"
 msgstr "Embudo"
 
@@ -4604,6 +4659,7 @@ msgstr "Configuración"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/share/share.xml:0
+#: code:addons/muk_ai/static/src/chat/usage/usage.js:0
 msgid "Share"
 msgstr "Compartir"
 
@@ -5653,6 +5709,11 @@ msgstr ""
 "filtro de herramientas de este agente no incluye \"web_search\", por lo que "
 "la herramienta nunca llega al modelo. Añádala en la página Herramientas o "
 "vacíe el filtro."
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Website"
+msgstr "Sitio web"
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_space__retention_mode
