@@ -328,6 +328,15 @@ msgid "Draft"
 msgstr "Entwurf"
 
 #. module: muk_ai_chatter
+#: model:muk_ai.agent,description:muk_ai_chatter.agent_writer
+msgid ""
+"Drafts and rewrites messages and texts in the composer. Give it a fast, "
+"small model."
+msgstr ""
+"Entwirft und überarbeitet Nachrichten und Texte im Editor. Geben Sie ihm ein"
+" schnelles, kleines Modell."
+
+#. module: muk_ai_chatter
 #: model:ir.model,name:muk_ai_chatter.model_mail_thread
 msgid "Email Thread"
 msgstr "E-Mail-Thread"
@@ -758,6 +767,14 @@ msgstr "System"
 
 #. module: muk_ai_chatter
 #. odoo-python
+#: code:addons/muk_ai_chatter/models/ai_agent.py:0
+msgid "The Writing Assistant cannot be deleted, archive it instead."
+msgstr ""
+"Der Schreibassistent kann nicht gelöscht werden, archivieren Sie ihn "
+"stattdessen."
+
+#. module: muk_ai_chatter
+#. odoo-python
 #: code:addons/muk_ai_chatter/models/ai_session.py:0
 msgid "The agent could not answer. The run says why."
 msgstr "Der Agent konnte nicht antworten. Der Lauf zeigt, warum."
@@ -928,6 +945,11 @@ msgstr "Mit KI schreiben"
 #: code:addons/muk_ai_chatter/static/src/composer/compose_panel/compose_panel.js:0
 msgid "Writing"
 msgstr "Schreiben"
+
+#. module: muk_ai_chatter
+#: model:muk_ai.agent,name:muk_ai_chatter.agent_writer
+msgid "Writing Assistant"
+msgstr "Schreibassistent"
 
 #. module: muk_ai_chatter
 #: model:ir.model.fields.selection,name:muk_ai_chatter.selection__muk_ai_session__compose_interface__mail_composer
