@@ -127,7 +127,12 @@ export function describeToolBlock(block, parts) {
     Object.defineProperties(block, descriptors);
 }
 
-function decorateToolBlock(block, entry) {
+/**
+ * Let the registered decorators describe a tool block: its icon, label and band.
+ * @param {object} block the tool block
+ * @param {object} entry the event it is built from, empty while it streams
+ */
+export function decorateToolBlock(block, entry) {
     for (const [, decorate] of toolBlockDecorators.getEntries()) {
         decorate(block, entry);
     }
@@ -267,6 +272,15 @@ export function buildRenderedTurns(log) {
             if (current) {
                 addTurnAttachments(current, toolResultFiles(entry.result));
             }
+        } else if (entry.kind === 'tool_images') {
+            if (!current) {
+                current = withEventId(
+                    withAt({ role: 'assistant', blocks: [] }, at),
+                    eventId,
+                );
+                turns.push(current);
+            }
+            current.blocks.push(withAt({ type: 'images', images: entry.images }, at));
         } else if (entry.kind === 'text') {
             if (!current) {
                 current = withEventId(

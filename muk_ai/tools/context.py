@@ -6,17 +6,16 @@ from odoo import _
 from odoo.exceptions import UserError
 
 
-def _format_ctx_tag(payload, tag_name: str) -> str | None:
+def _format_ctx_tag(payload, tag_name: str, kinds: dict) -> str | None:
     """Render a context payload into a ``<tag_name>...</tag_name>`` string."""
     payload = payload or {}
-    builder = _SEGMENT_BUILDERS.get(payload.get('kind'))
-    if not builder:
+    if not (kind := kinds.get(payload.get('kind'))):
         return None
-    body = ' · '.join(s for s in builder(payload) if s)
+    body = ' · '.join(s for s in kind[1](payload) if s)
     return f'<{tag_name}>{body}</{tag_name}>' if body else None
 
 
-def _render_ctx(payload, tag_name: str) -> dict | None:
+def _render_ctx(payload, tag_name: str, kinds: dict) -> dict | None:
     """Wrap a rendered context tag into a user input message, if any.
 
     The message is marked ``_cache_volatile`` because it is re-appended at
@@ -24,7 +23,7 @@ def _render_ctx(payload, tag_name: str) -> dict | None:
     cache-aware providers anchor their breakpoint before it and strip the
     marker before it reaches the wire.
     """
-    if not (tag := _format_ctx_tag(payload, tag_name)):
+    if not (tag := _format_ctx_tag(payload, tag_name, kinds)):
         return None
     return {
         'role': 'user',
@@ -33,36 +32,36 @@ def _render_ctx(payload, tag_name: str) -> dict | None:
     }
 
 
-def _with_ctx(inputs, payload, tag_name: str) -> list:
+def _with_ctx(inputs, payload, tag_name: str, kinds: dict) -> list:
     """Append the rendered context message for ``payload`` to ``inputs``."""
-    if not (item := _render_ctx(payload, tag_name)):
+    if not (item := _render_ctx(payload, tag_name, kinds)):
         return inputs
     return list(inputs or []) + [item]
 
 
 def format_ui_ctx_tag(payload) -> str | None:
     """Render the ``ui_ctx`` tag for a view-context payload."""
-    return _format_ctx_tag(payload, 'ui_ctx')
+    return _format_ctx_tag(payload, 'ui_ctx', VIEW_KINDS)
 
 
 def render_ui_ctx(payload) -> dict | None:
     """Render the ``ui_ctx`` payload as a user input message."""
-    return _render_ctx(payload, 'ui_ctx')
+    return _render_ctx(payload, 'ui_ctx', VIEW_KINDS)
 
 
-def with_ui_ctx(inputs, payload) -> list:
+def with_ui_ctx(inputs, payload, kinds: dict) -> list:
     """Append the ``ui_ctx`` message for ``payload`` to ``inputs``."""
-    return _with_ctx(inputs, payload, 'ui_ctx')
+    return _with_ctx(inputs, payload, 'ui_ctx', kinds)
 
 
 def format_record_ctx_tag(payload) -> str | None:
     """Render the ``linked_record`` tag for a record-context payload."""
-    return _format_ctx_tag(payload, 'linked_record')
+    return _format_ctx_tag(payload, 'linked_record', VIEW_KINDS)
 
 
 def with_record_ctx(inputs, payload) -> list:
     """Append the ``linked_record`` message for ``payload`` to ``inputs``."""
-    return _with_ctx(inputs, payload, 'linked_record')
+    return _with_ctx(inputs, payload, 'linked_record', VIEW_KINDS)
 
 
 def _record_segments(p) -> list[str]:
@@ -123,41 +122,25 @@ def _graph_segments(p) -> list[str]:
     return segments
 
 
-_SEGMENT_BUILDERS = {
-    'record': _record_segments,
-    'list': _list_segments,
-    'action': _action_segments,
-    'pivot': _pivot_segments,
-    'graph': _graph_segments,
-}
-
-
 # ----------------------------------------------------------
 # View context cleaners
 # ----------------------------------------------------------
 
 
-def clean_view_context_payload(kind, payload) -> dict:
+def clean_view_context_payload(kind, payload, kinds: dict) -> dict:
     """Validate and normalize a view-context payload for the given kind.
 
+    :param kinds: the kinds a client may pin, each ``(cleaner, segments)``
     :raise UserError: when the kind is invalid or unsupported.
     """
-    if not isinstance(kind, str) or not kind.isidentifier() or kind.startswith('_'):
+    if not isinstance(kind, str) or kind not in kinds:
         raise UserError(
             _(
                 'Invalid view context payload (kind=%(kind)r).',
                 kind=kind,
             )
         )
-    cleaner = _CLEANERS.get(kind)
-    if not cleaner:
-        raise UserError(
-            _(
-                'Invalid view context payload (kind=%(kind)r).',
-                kind=kind,
-            )
-        )
-    return cleaner(payload)
+    return kinds[kind][0](payload)
 
 
 def _base_payload(payload, kind: str) -> dict:
@@ -285,10 +268,10 @@ def _clean_graph(payload) -> dict:
     return cleaned
 
 
-_CLEANERS = {
-    'record': _clean_record,
-    'list': _clean_list,
-    'action': _clean_action,
-    'pivot': _clean_pivot,
-    'graph': _clean_graph,
+VIEW_KINDS = {
+    'record': (_clean_record, _record_segments),
+    'list': (_clean_list, _list_segments),
+    'action': (_clean_action, _action_segments),
+    'pivot': (_clean_pivot, _pivot_segments),
+    'graph': (_clean_graph, _graph_segments),
 }

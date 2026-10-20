@@ -1216,6 +1216,21 @@ class TestAiSession(AITestCommon):
         self.assertEqual(session.view_context.get('id'), 99)
         self.assertEqual(snapshot['view_context']['model'], 'res.partner')
 
+    def test_pinning_the_view_already_pinned_publishes_nothing(self):
+        session = self.env['muk_ai.session'].create({'name': 'twice'})
+        record = {'kind': 'record', 'model': 'res.partner', 'id': 3}
+        published = []
+        spy = patch.object(
+            type(session),
+            '_publish_event',
+            autospec=True,
+            side_effect=lambda self_arg, kind, payload: published.append(kind),
+        )
+        with spy:
+            for _repeat in range(2):
+                session.set_view_context(record)
+        self.assertEqual(published, ['view_context'])
+
     def test_set_view_context_clears_on_none(self):
         session = self.env['muk_ai.session'].create({'name': 'clear-ctx'})
         session.view_context = {

@@ -394,11 +394,26 @@ class TestClientToolSeam(AITestCommon):
                 self._text_payload('Both clicked.'),
             ]
         )
-        with provider, self._as_client_tool('browser_click'):
+        sent = []
+        bus = patch.object(
+            type(self.env['bus.bus']),
+            '_sendone',
+            autospec=True,
+            side_effect=lambda *args, **kwargs: sent.append((args[2], args[3])),
+        )
+        with provider, bus, self._as_client_tool('browser_click'):
             session.start('Click both buttons.')
             session.submit_client_result('c1', {'ok': 2})
             snapshot = session.submit_client_result('c0', {'ok': 1})
         self.assertEqual(snapshot['state'], 'done')
+        self.assertEqual(
+            [
+                body['state']
+                for kind, body in sent
+                if kind == 'muk_ai.session_notification'
+            ],
+            ['done'],
+        )
         ordered = [
             item['call_id']
             for item in (session.conversation or [])

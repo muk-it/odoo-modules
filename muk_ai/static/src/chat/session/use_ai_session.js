@@ -13,7 +13,7 @@ import { renderMarkdown as renderMarkdownToHtml } from '@muk_ai/core/markdown/ma
 import { busSubscribe, busUnsubscribe } from '@muk_ai/core/compat/bus';
 import { formatError } from '@muk_ai/chat/utils';
 
-import { buildRenderedTurns } from '@muk_ai/chat/session/turns';
+import { buildRenderedTurns, decorateToolBlock } from '@muk_ai/chat/session/turns';
 import { useOpenSession } from '@muk_ai/chat/session/open_sessions';
 import { useSessionChannel } from '@muk_ai/chat/session/session_channel';
 
@@ -360,10 +360,16 @@ export function useAiSession(options = {}) {
                 return;
             }
             if (!state.streamingTools.some((t) => t.callId === callId)) {
-                state.streamingTools = [
-                    ...state.streamingTools,
-                    { callId, name: event.payload?.name || '', argsBuffer: '' },
-                ];
+                const block = {
+                    type: 'tool',
+                    name: event.payload?.name || '',
+                    arguments: '',
+                    callId,
+                    result: null,
+                    done: false,
+                };
+                decorateToolBlock(block, {});
+                state.streamingTools = [...state.streamingTools, block];
                 bumpStreamActivity();
                 requestScroll();
             }
@@ -372,11 +378,10 @@ export function useAiSession(options = {}) {
             if (!callId || !delta) {
                 return;
             }
-            state.streamingTools = state.streamingTools.map((t) =>
-                t.callId === callId
-                    ? { ...t, argsBuffer: (t.argsBuffer || '') + delta }
-                    : t,
-            );
+            const tool = state.streamingTools.find((t) => t.callId === callId);
+            if (tool) {
+                tool.arguments += delta;
+            }
             bumpStreamActivity();
             requestScroll();
         } else if (event.type === 'tool_call_result') {
@@ -384,11 +389,13 @@ export function useAiSession(options = {}) {
             if (!callId) {
                 return;
             }
-            state.streamingTools = state.streamingTools.map((t) =>
-                t.callId === callId
-                    ? { ...t, done: true, result: result === undefined ? null : result }
-                    : t,
-            );
+            const tool = state.streamingTools.find((t) => t.callId === callId);
+            if (tool) {
+                Object.assign(tool, {
+                    done: true,
+                    result: result === undefined ? null : result,
+                });
+            }
             bumpStreamActivity();
             requestScroll();
         } else if (event.type === 'state') {
@@ -1293,7 +1300,7 @@ export function useAiSession(options = {}) {
             type: 'ir.actions.act_window',
             res_model: ctx.model,
         };
-        if (ctx.kind === 'record' && ctx.id) {
+        if (ctx.id) {
             action.res_id = ctx.id;
             action.view_mode = 'form';
             action.views = [[false, 'form']];

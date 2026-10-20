@@ -21,6 +21,7 @@ import { toFileModel } from '@muk_ai/core/attachment/attachment';
 import { AttachmentCard } from '@muk_ai/core/attachment/attachment_card';
 import { SourceIcon, SourceList } from '@muk_ai/chat/artifacts/types/sources_tab';
 import {
+    agentSuggestions,
     approvalPill,
     effortPill,
     extraPills,
@@ -219,6 +220,14 @@ export class ChatWindow extends Component {
     }
     get isCompact() {
         return true;
+    }
+    get suggestions() {
+        return agentSuggestions(this.session.state);
+    }
+    async onSubmitSuggestion(prompt) {
+        this.session.state.input = prompt;
+        this.session.state.focusToken += 1;
+        await this.session.onSend();
     }
     get isQueueing() {
         return this.session.isQueueing();

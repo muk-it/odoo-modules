@@ -2737,3 +2737,10 @@ button.mk_note {
     background: rgba(255, 193, 7, 0.16);
     color: var(--mk-warning, #9a5c06);
 }
+.mk_tool_images {
+    .mk_tool_image {
+        max-height: 220px;
+        max-width: 100%;
+        object-fit: contain;
+    }
+}

@@ -135,6 +135,14 @@ class TestToolVision(AITestCommon):
             and item.get('call_id') == call_id
         ]
 
+    def _shown_images(self, session: models.Model) -> list:
+        """Return the image names of each ``tool_images`` event of the session."""
+        return [
+            [image['name'] for image in event['images']]
+            for event in session.fetch_events(limit=500)['events']
+            if event.get('kind') == 'tool_images'
+        ]
+
     def _vision_entry_after(self, session: models.Model, output: dict) -> dict | None:
         """Return the first user entry following the given output item."""
         conversation = session.conversation or []
@@ -215,6 +223,7 @@ class TestToolVision(AITestCommon):
         self.assertIn('cannot be shown to this model', cleaned['text'])
         self.assertNotIn('images', cleaned)
         self.assertIsNone(self._vision_entry_after(session, outputs[0]))
+        self.assertEqual(self._shown_images(session), [['desktop']])
 
     # ----------------------------------------------------------
     # Tests: client action result path
@@ -240,6 +249,7 @@ class TestToolVision(AITestCommon):
         self.assertIsNotNone(entry)
         blocks = [b for b in entry['content'] if b['type'] == 'muk_ai_attachment']
         self.assertEqual(len(blocks), 1)
+        self.assertEqual(self._shown_images(session), [['desktop']])
 
     def test_undo_after_vision_flush_preserves_prior_turn(self):
         session = self._new_session()

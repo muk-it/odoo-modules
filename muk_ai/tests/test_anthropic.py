@@ -341,6 +341,32 @@ class TestAiAnthropicProvider(AITestCommon):
         self.assertEqual(result['usage']['output_tokens'], 2)
         self.assertTrue(result['usage']['truncated'])
 
+    def test_a_call_cut_at_the_token_cap_asks_for_smaller_calls(self):
+        for stop, error in (
+            ('max_tokens', 'output token limit'),
+            ('tool_use', 'Malformed JSON'),
+        ):
+            sse = [
+                'data: {"type":"message_start","message":{"usage":{"input_tokens":7}}}',
+                'data: {"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"c1","name":"w","input":{}}}',
+                'data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\\"html\\": \\"<"}}',
+                'data: {"type":"message_delta","delta":{"stop_reason":"%s"},"usage":{"output_tokens":4096}}'
+                % stop,
+                'data: {"type":"message_stop"}',
+            ]
+            response = MagicMock()
+            response.iter_lines.return_value = iter(sse)
+            response.raise_for_status.return_value = None
+            with (
+                self.subTest(stop=stop),
+                patch.object(requests.Session, 'post', return_value=response),
+            ):
+                result = self.provider._request_responses(
+                    inputs=[], on_delta=lambda kind, payload: None
+                )
+                self.assertIn(error, result['tool_calls'][0]['_parse_error'])
+                self.assertNotIn('Max Tokens', result['text'])
+
     def test_anthropic_stream_max_tokens_stop_appends_truncation_notice(self):
         sse = [
             'data: {"type":"message_start","message":{"usage":{"input_tokens":7}}}',

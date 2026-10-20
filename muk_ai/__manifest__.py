@@ -10,7 +10,7 @@
         muk_mcp tool registry your external AI clients use — one source
         of truth, one permission model, one audit trail.
     """,
-    'version': '17.0.1.24.13',
+    'version': '17.0.1.24.14',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -71,6 +71,12 @@
         ],
         'web.assets_web_dark': [
             'muk_ai/static/src/**/*.dark.scss',
+        ],
+        'muk_ai.assets_html2canvas': [
+            'muk_ai/static/lib/html2canvas/html2canvas-pro.min.js',
+        ],
+        'web.qunit_suite_tests': [
+            'muk_ai/static/tests/*_tests.js',
         ],
     },
     'images': [

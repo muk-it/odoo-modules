@@ -69,6 +69,7 @@ from odoo.addons.muk_ai.tools import (
     tool_file_payload,
     with_ui_ctx,
 )
+from odoo.addons.muk_ai.tools.context import VIEW_KINDS
 from odoo.addons.muk_ai.tools.runtime import PG_CONCURRENCY_EXCEPTIONS_TO_RETRY
 
 _logger = logging.getLogger(__name__)
@@ -1123,7 +1124,7 @@ class AISession(models.Model):
         ]
         return [
             self._system_message(),
-            *with_ui_ctx(history, self.view_context),
+            *with_ui_ctx(history, self.view_context, self._view_kinds()),
         ]
 
     # ----------------------------------------------------------
@@ -1309,9 +1310,11 @@ class AISession(models.Model):
             self.pending_ids or self.env.context.get('muk_ai_skip_done_notification')
         ):
             return
+        ask = (payload or {}).get('ask') or self.pending_ask or {}
+        ask_kind = ask.get('kind') if isinstance(ask, dict) else None
+        if new_state == 'waiting' and ask_kind == 'client_action':
+            return
         if new_state in ('done', 'waiting', 'error'):
-            ask = (payload or {}).get('ask') or self.pending_ask or {}
-            ask_kind = ask.get('kind') if isinstance(ask, dict) else None
             title, message = self._notification_summary(new_state, payload, ask_kind)
             self.notification_unread = True
             with suppress(Exception):
@@ -2041,14 +2044,20 @@ class AISession(models.Model):
                 return payload
         return None
 
+    def _view_kinds(self) -> dict:
+        """Return the view-context kinds a client may pin: ``(cleaner, segments)``."""
+        return VIEW_KINDS
+
     def _enrich_view_context(self, payload: dict) -> dict:
         """Return the view-context payload, optionally enriched by subclasses."""
         return payload
 
     def _write_view_context(self, payload: dict | None) -> None:
-        """Persist the view context and broadcast its change."""
+        """Persist the view context and broadcast its change, when it changed."""
         if payload:
             payload = self._enrich_view_context(payload)
+        if (payload or None) == (self.view_context or None):
+            return
         self.write({'view_context': payload or False})
         self._publish_event('view_context', {'view_context': payload or None})
 
@@ -2517,24 +2526,35 @@ class AISession(models.Model):
         except UserError:
             return empty
 
-    def _extract_tool_vision(self, result) -> tuple[models.BaseModel, object]:
-        """Pop image payloads from a tool result and persist them as attachments.
+    def _extract_tool_vision(
+        self, call_id: str, result
+    ) -> tuple[models.BaseModel, object]:
+        """Pop image payloads from a tool result, store them and show them in the chat.
 
-        :return: the created attachments and the text-only result to send back
-            as the ``function_call_output``
+        :return: the attachments a model with vision is shown and the text-only
+            result to send back as the ``function_call_output``
         """
         empty = self.env['ir.attachment']
         specs = self._collect_tool_image_specs(result)
         if not specs:
             return empty, result
-        if not self._vision_enabled():
-            return empty, self._note_vision_unavailable(self._strip_tool_images(result))
         attachments = empty
         for spec in specs[:TOOL_VISION_MAX_IMAGES]:
             attachments |= self._persist_tool_image(spec)
+        if attachments:
+            self._append_event(
+                {
+                    'kind': 'tool_images',
+                    'call_id': call_id,
+                    'images': [
+                        {'url': f'/web/image/{image.id}', 'name': image.name}
+                        for image in attachments
+                    ],
+                }
+            )
         cleaned = self._strip_tool_images(result)
-        if not attachments:
-            cleaned = self._note_vision_unavailable(cleaned)
+        if not (attachments and self._vision_enabled()):
+            return empty, self._note_vision_unavailable(cleaned)
         return attachments, cleaned
 
     @staticmethod
@@ -2635,7 +2655,7 @@ class AISession(models.Model):
         :return: the cleaned, text-only result for event logging
         """
         attachments, cleaned = self._extract_tool_vision(
-            self._persist_tool_file(result)
+            call_id, self._persist_tool_file(result)
         )
         outputs.append(
             self._bound_tool_output(build_tool_call_output(call_id, cleaned))
@@ -4548,7 +4568,7 @@ class AISession(models.Model):
         self._write_view_context(
             None
             if payload is None or kind == 'none'
-            else clean_view_context_payload(kind, payload)
+            else clean_view_context_payload(kind, payload, self._view_kinds())
         )
         return self.get_snapshot()
 

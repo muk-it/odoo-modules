@@ -65,6 +65,25 @@ export function formatError(error) {
     return error?.data?.message || error?.message || String(error);
 }
 
+/**
+ * Return the prompt suggestions of a chat's agent, the first agent's when none.
+ * @param {object} state the session state, with its `agents` and `agentId`
+ * @returns {object[]} the suggestions, `{label, prompt}`
+ */
+export function agentSuggestions(state) {
+    const agents = state.agents || [];
+    const agent = agents.find((a) => a.id === state.agentId) || agents[0];
+    if (!Array.isArray(agent?.suggestions)) {
+        return [];
+    }
+    return agent.suggestions
+        .filter((s) => s && typeof s.prompt === 'string' && s.prompt.trim())
+        .map((s) => ({
+            label: (typeof s.label === 'string' && s.label) || s.prompt,
+            prompt: s.prompt,
+        }));
+}
+
 function parseDateTime(at) {
     if (!at) {
         return null;
