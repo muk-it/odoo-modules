@@ -19,11 +19,11 @@ from odoo.addons.muk_ai.tests.common import AITestCommon
 from odoo.addons.muk_ai.tools import (
     ADVISORY_LOCK_NAMESPACE,
     MAX_ITERATIONS,
+    VIEW_KINDS,
     WALLCLOCK_MIN_SECONDS,
     WALLCLOCK_SAFETY_MARGIN,
     WORKER_STALE_THRESHOLD,
-    format_ui_ctx_tag,
-    render_ui_ctx,
+    with_ui_ctx,
 )
 
 
@@ -1198,6 +1198,9 @@ class TestAiSession(AITestCommon):
         )
         self.assertEqual(session.view_context.get('id'), 99)
         self.assertEqual(snapshot['view_context']['model'], 'res.partner')
+        with patch.object(type(session), '_publish_event') as publish:
+            session.set_view_context(dict(session.view_context))
+        publish.assert_not_called()
 
     def test_set_view_context_clears_on_none(self):
         session = self.env['muk_ai.session'].create({'name': 'clear-ctx'})
@@ -1234,24 +1237,23 @@ class TestAiSession(AITestCommon):
         self.assertEqual(last_entry.get('kind'), 'command')
         self.assertEqual(last_entry.get('name'), '/unpin')
 
-    def test_render_ui_ctx_returns_none_when_empty(self):
-        self.assertIsNone(render_ui_ctx(None))
-        self.assertIsNone(render_ui_ctx({}))
-        self.assertIsNone(format_ui_ctx_tag({}))
-
-    def test_render_ui_ctx_formats_list(self):
-        tag = format_ui_ctx_tag(
+    def test_ui_ctx_describes_the_view_and_is_left_out_without_one(self):
+        for payload in (None, {}, {'kind': 'banana', 'model': 'm'}):
+            self.assertEqual(with_ui_ctx([], payload, VIEW_KINDS), [])
+        [message] = with_ui_ctx(
+            [],
             {
                 'kind': 'list',
                 'model': 'sale.order',
                 'view_type': 'kanban',
                 'domain': [['state', '=', 'sale']],
-            }
+            },
+            VIEW_KINDS,
         )
-        self.assertTrue(tag.startswith('<ui_ctx>'))
-        self.assertIn('sale.order', tag)
-        self.assertIn('kanban', tag)
-        self.assertIn('domain=', tag)
+        self.assertEqual(
+            message['content'][0]['text'],
+            '<ui_ctx>sale.order · kanban · domain=[["state","=","sale"]]</ui_ctx>',
+        )
 
     # ----------------------------------------------------------
     # Tests: regenerate

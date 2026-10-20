@@ -2525,7 +2525,9 @@ msgstr "Eingabe"
 msgid ""
 "Input and output tokens, provider rounds and cost of the most recent user "
 "turn. Reset when a new turn starts."
-msgstr "Eingabe- und Ausgabe-Tokens, Anbieterrunden und Kosten der letzten Benutzerrunde. Wird beim Start einer neuen Runde zurückgesetzt."
+msgstr ""
+"Eingabe- und Ausgabe-Tokens, Anbieterrunden und Kosten der letzten "
+"Benutzerrunde. Wird beim Start einer neuen Runde zurückgesetzt."
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_model__currency
@@ -5913,3 +5915,38 @@ msgstr "Websuche"
 #: code:addons/muk_ai/models/approval.py:0
 msgid "Yes"
 msgstr "Ja"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/tools/context.py:0
+#, python-format
+msgid "a list"
+msgstr "eine Liste"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/tools/context.py:0
+#, python-format
+msgid "a list of strings"
+msgstr "eine Liste von Strings"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/tools/context.py:0
+#, python-format
+msgid "a string"
+msgstr "ein String"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/tools/context.py:0
+#, python-format
+msgid "an integer"
+msgstr "eine Ganzzahl"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/tools/context.py:0
+#, python-format
+msgid "view_context.%(key)s must be %(type)s."
+msgstr "view_context.%(key)s muss %(type)s sein."

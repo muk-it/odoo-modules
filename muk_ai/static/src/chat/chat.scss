@@ -918,6 +918,11 @@
         margin-top: 0.45rem;
         max-width: 720px;
     }
+    .mk_tool_images .mk_tool_image {
+        max-height: 220px;
+        max-width: 100%;
+        object-fit: contain;
+    }
     .mk_turn_command {
         align-items: stretch;
         margin: 1rem 0 1.25rem;
