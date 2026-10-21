@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 from collections.abc import Callable
 
 from odoo import _, api, fields, models
@@ -620,11 +621,18 @@ class AISession(models.Model):
         agent: models.BaseModel,
         cache: dict | None = None,
         notice: dict | None = None,
+        stop_at: float = math.inf,
     ) -> dict:
         """Hand the lead the reports that arrived before it answers again."""
         self._take_reports()
         return super()._stream_provider_round(
-            provider, tool_schema, model, agent, cache=cache, notice=notice
+            provider,
+            tool_schema,
+            model,
+            agent,
+            cache=cache,
+            notice=notice,
+            stop_at=stop_at,
         )
 
     def _drain_pending_message(self) -> bool:
