@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import threading
 import time
 from contextlib import ExitStack, nullcontext
 from datetime import datetime, timedelta
@@ -219,7 +220,7 @@ class TestWorker(AITestCommon):
                 self.assertEqual(session.state, state)
                 self.assertEqual(self._reasons(session), [reason] if reason else [])
 
-    def test_a_held_session_lock_blocks_the_worker_and_steering(self):
+    def test_a_held_session_lock_blocks_the_worker_and_holds_up_steering(self):
         self._mark_sensitive('res.partner')
         queued = self._session(state='running', conversation=[USER])
         with self._hold_lock(queued.id):
@@ -252,6 +253,7 @@ class TestWorker(AITestCommon):
             ):
                 with self.subTest(steer=steer):
                     with (
+                        patch.object(type(session), 'SESSION_LOCK_WAIT_SECONDS', 0.3),
                         self._hold_lock(session.id),
                         self.assertRaisesRegex(UserError, 'busy'),
                     ):
@@ -260,7 +262,9 @@ class TestWorker(AITestCommon):
                         (session.state, self._outputs_for(session, call_id)),
                         ('waiting', []),
                     )
-                    self.assertEqual(steer(session)['state'], 'done')
+                    with self._hold_lock(session.id) as release:
+                        threading.Timer(0.2, release).start()
+                        self.assertEqual(steer(session)['state'], 'done')
                     with self._hold_lock(session.id):
                         self.assertEqual(len(self._outputs_for(session, call_id)), 1)
         self.assertEqual([call['name'] for call in calls], ['delete_records'])

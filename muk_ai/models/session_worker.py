@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import json
 import random
+import time
 from collections.abc import Iterator
 from datetime import timedelta
 
@@ -37,6 +38,15 @@ class AISessionWorker(models.AbstractModel):
         'The part of a chat that hands its turns to a worker, keeps two '
         'workers off the same chat and cleans up what they left behind.'
     )
+
+    # ----------------------------------------------------------
+    # Properties
+    # ----------------------------------------------------------
+
+    @property
+    def SESSION_LOCK_WAIT_SECONDS(self) -> float:
+        """Return how long a call waits for a worker to release the session."""
+        return 5.0
 
     # ----------------------------------------------------------
     # Fields
@@ -81,12 +91,17 @@ class AISessionWorker(models.AbstractModel):
     def _session_lock(self) -> Iterator[None]:
         """Hold the advisory lock of the session for the duration of a call.
 
-        :raise UserError: when a worker or another call holds it
+        It waits briefly for a worker still committing its round to free it.
+
+        :raise UserError: when a worker or another call keeps holding it
         """
-        if not try_advisory_lock(self.env.cr, self.id):
-            raise UserError(
-                self.env._('The session is currently busy. Please try again.')
-            )
+        deadline = time.monotonic() + self.SESSION_LOCK_WAIT_SECONDS
+        while not try_advisory_lock(self.env.cr, self.id):
+            if time.monotonic() > deadline:
+                raise UserError(
+                    self.env._('The session is currently busy. Please try again.')
+                )
+            time.sleep(0.1)
         try:
             yield
         finally:

@@ -3,6 +3,7 @@ from __future__ import annotations
 import http.client
 import io
 import json
+import ssl
 from collections.abc import Callable
 from unittest.mock import patch
 
@@ -102,8 +103,13 @@ class TestHttp(ProviderTestCase):
             ConnectionResetError(10054, 'reset by peer'),
             http.client.RemoteDisconnected('closed without response'),
             BrokenPipeError(32, 'broken pipe'),
+            ssl.SSLEOFError(8, 'EOF occurred in violation of protocol'),
         ):
-            dropped = urllib3.exceptions.ProtocolError('Connection aborted.', reason)
+            dropped = (
+                urllib3.exceptions.SSLError(reason)
+                if isinstance(reason, ssl.SSLError)
+                else urllib3.exceptions.ProtocolError('Connection aborted.', reason)
+            )
             with self.subTest(reason=type(reason).__name__):
                 self.assertEqual(
                     retry.increment('POST', '/v1/responses', error=dropped).connect,
@@ -118,6 +124,12 @@ class TestHttp(ProviderTestCase):
                 self.assertRaises(type(error)),
             ):
                 retry.increment('POST', '/v1/responses', error=error)
+        with self.assertRaises(urllib3.exceptions.MaxRetryError):
+            retry.increment(
+                'POST',
+                '/v1/responses',
+                error=urllib3.exceptions.SSLError(ssl.SSLCertVerificationError()),
+            )
 
     def test_the_stream_reader_keeps_only_whole_data_events(self):
         for label, body in (

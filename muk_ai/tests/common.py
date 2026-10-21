@@ -4,7 +4,7 @@ import base64
 import io
 import json
 import socket
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from datetime import timedelta
 from types import SimpleNamespace
@@ -374,9 +374,13 @@ class AITestCommon(TransactionCase):
             yield captured
 
     @contextmanager
-    def _hold_lock(self, key: int) -> Iterator[None]:
-        """Hold the advisory lock of a session or dispatch slot on another connection."""
+    def _hold_lock(self, key: int) -> Iterator[Callable[[], None]]:
+        """Hold the advisory lock of a session or dispatch slot on another connection.
+
+        It yields a callable that releases the lock early.
+        """
         cursor = sql_db.db_connect(self.env.cr.dbname).cursor()
+        unlock = SQL('SELECT pg_advisory_unlock(%s, %s)', ADVISORY_LOCK_NAMESPACE, key)
         try:
             cursor.execute(
                 SQL(
@@ -388,15 +392,9 @@ class AITestCommon(TransactionCase):
             if not cursor.fetchone()[0]:
                 msg = f'lock {key} is already held'
                 raise AssertionError(msg)
-            yield
+            yield lambda: cursor.execute(unlock)
         finally:
-            cursor.execute(
-                SQL(
-                    'SELECT pg_advisory_unlock(%s, %s)',
-                    ADVISORY_LOCK_NAMESPACE,
-                    key,
-                )
-            )
+            cursor.execute(unlock)
             cursor.close()
 
     def _backdate(

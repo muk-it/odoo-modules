@@ -11,23 +11,19 @@ export const clientTools = registry.category('muk_ai.client_tools');
 
 const handled = new Set();
 
-const posting = new Map();
+const running = new Map();
 
 /**
- * Post a call to a session after the calls posted to it before: the session
- * lock turns a concurrent call away, and tools of one batch finish together.
- * @param {object} chat the AI chat plugin
+ * Run a session's client actions one after the other, in the order the
+ * model called them: the tools of one batch work on the same page, and the
+ * session lock turns a concurrent post away.
  * @param {number} sessionId the paused session
- * @param {string} method the session method
- * @param {Array} args its arguments after the session id
- * @param {object} [kwargs] its keyword arguments
- * @returns {Promise} the call's outcome
+ * @param {Function} task `async () => void` the action to run
+ * @returns {Promise} the action's outcome
  */
-function post(chat, sessionId, method, args, kwargs) {
-    const next = (posting.get(sessionId) || Promise.resolve()).then(() =>
-        chat.orm.silent.call('muk_ai.session', method, [sessionId, ...args], kwargs),
-    );
-    posting.set(
+function inTurn(sessionId, task) {
+    const next = (running.get(sessionId) || Promise.resolve()).then(task);
+    running.set(
         sessionId,
         next.catch(() => {}),
     );
@@ -42,7 +38,12 @@ function post(chat, sessionId, method, args, kwargs) {
  */
 async function execute(chat, sessionId, entry) {
     const call = (method, args, kwargs) =>
-        post(chat, sessionId, method, [entry.call_id, ...args], kwargs);
+        chat.orm.silent.call(
+            'muk_ai.session',
+            method,
+            [sessionId, entry.call_id, ...args],
+            kwargs,
+        );
     const args = toolPayload(entry.arguments || {});
     if (!args || typeof args !== 'object') {
         await call('reject_client_action', [], {
@@ -82,14 +83,14 @@ export function runClientAction(chat, sessionId, entry) {
     handled.add(entry.call_id);
     const run = () => {
         if (!navigator.locks?.request) {
-            return execute(chat, sessionId, entry);
+            return inTurn(sessionId, () => execute(chat, sessionId, entry));
         }
         navigator.locks.request(
             `muk_ai.client_action.${entry.call_id}`,
             { ifAvailable: true },
             async (lock) => {
                 if (lock !== null) {
-                    await execute(chat, sessionId, entry);
+                    await inTurn(sessionId, () => execute(chat, sessionId, entry));
                     await new Promise(() => {});
                 }
             },

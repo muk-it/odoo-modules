@@ -3,6 +3,7 @@ from __future__ import annotations
 import time
 from collections.abc import Callable
 from contextlib import suppress
+from unittest.mock import patch
 
 from odoo import models
 
@@ -11,7 +12,7 @@ from odoo.addons.muk_ai.tests.common import (
     text_payload,
     tool_payload,
 )
-from odoo.addons.muk_ai.tools.runtime import TurnSuperseded
+from odoo.addons.muk_ai.tools.runtime import STREAM_STOP_MARGIN, TurnSuperseded
 
 STREAMED = ('text_delta', 'reasoning_delta', 'tool_call_start', 'tool_call_args_delta')
 
@@ -144,6 +145,27 @@ class TestStreaming(AITestCommon):
             },
             {'c1'},
         )
+
+    def test_a_stream_at_the_worker_time_limit_runs_again_in_the_next_slice(self):
+        session = self._session()
+        with (
+            patch.object(
+                type(session),
+                '_worker_hard_limit_seconds',
+                return_value=STREAM_STOP_MARGIN - 1,
+            ),
+            self._mock_responses(
+                [self._replay([('text', {'delta': 'cut'})], text_payload('cut'))]
+            ),
+        ):
+            session.start('question')
+        self.assertEqual(
+            (session.state, session.last_text, session.iteration_count),
+            ('running', False, 0),
+        )
+        with self._mock_responses([text_payload('whole answer')]):
+            session._run_to_completion()
+        self.assertEqual((session.state, session.last_text), ('done', 'whole answer'))
 
     def test_a_stop_mid_stream_settles_the_partial_answer(self):
         for steps, state, texts, last, iterations in (

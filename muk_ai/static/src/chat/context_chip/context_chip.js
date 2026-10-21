@@ -18,7 +18,7 @@ export class ContextChip extends Component {
         if (context.kind === 'list') {
             return `${model} · ${context.view_type || 'list'}`;
         }
-        return model || _t('Action');
+        return context.display_name || model || _t('Action');
     }
     get tooltip() {
         const context = this.props.session.data.view_context;

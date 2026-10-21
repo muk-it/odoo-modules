@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import time
 from collections.abc import Callable
 
@@ -10,16 +11,21 @@ FLUSH_SECONDS = 0.1
 class StreamBuffer:
     """Coalesce streamed deltas into events of 80 characters or 0.1 seconds.
 
-    ``text`` holds the answer streamed so far; ``turn``, ``checked`` and
-    ``beat`` belong to the caller, which polls the session while it streams.
+    ``text`` holds the answer streamed so far; ``turn``, ``stop_at``,
+    ``checked`` and ``beat`` belong to the caller, which polls the session
+    while it streams.
     """
 
     def __init__(
-        self, publish: Callable[[str, dict], None], turn: int | None = None
+        self,
+        publish: Callable[[str, dict], None],
+        turn: int | None = None,
+        stop_at: float = math.inf,
     ) -> None:
         """Send each coalesced delta through ``publish(event_type, payload)``."""
         self.publish = publish
         self.turn = turn
+        self.stop_at = stop_at
         self.text = ''
         self.checked = self.beat = 0.0
         self.pending: dict[tuple, list] = {}

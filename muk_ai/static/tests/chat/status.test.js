@@ -41,7 +41,7 @@ test('the status names the agent and the state', async () => {
     expect('.mk_avatar.mk_state_waiting').toHaveAttribute('title', 'General · Waiting');
 });
 
-test('the pinned view shows as a chip named after its model that opens it, and its owner unpins it', async () => {
+test('the pinned view shows as a chip named after its model or name that opens it, and its owner unpins it', async () => {
     onRpc('muk_ai.session', 'unpin_view_context', () => {
         expect.step('unpin');
         return snapshot();
@@ -59,6 +59,14 @@ test('the pinned view shows as a chip named after its model that opens it, and i
             'Partner · kanban',
         ],
         [{ kind: 'pivot', model: 'crm.lead' }, 'Lead'],
+        [
+            {
+                kind: 'dashboard',
+                model: 'spreadsheet.dashboard',
+                display_name: 'Sales',
+            },
+            'Sales',
+        ],
     ]) {
         session.data.view_context = context;
         await animationFrame();

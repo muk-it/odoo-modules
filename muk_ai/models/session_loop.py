@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import re
 import threading
 import time
@@ -13,6 +14,7 @@ from odoo.addons.muk_ai.tools.runtime import (
     ITERATION_WARNING_ROUNDS,
     MAX_ITERATIONS,
     MAX_WALLCLOCK_SECONDS,
+    STREAM_STOP_MARGIN,
     TURN_WALLCLOCK_SECONDS,
     WALLCLOCK_MIN_SECONDS,
     WALLCLOCK_SAFETY_MARGIN,
@@ -205,7 +207,7 @@ class AISessionLoop(models.AbstractModel):
         """Poll the session while it streams, keeping its worker claim fresh.
 
         :raise StreamCancelled: when the session was stopped, its partial
-            answer kept
+            answer kept, or the stream ran past its ``stop_at``
         :raise TurnSuperseded: when a newer turn replaced the one streamed
         """
         if (now := time.monotonic()) - stream.checked < self.STATE_CHECK_SECONDS:
@@ -221,6 +223,8 @@ class AISessionLoop(models.AbstractModel):
         if stream.turn is not None and stream.turn != self.turn_seq:
             stream.pending.clear()
             raise TurnSuperseded()
+        if now > stream.stop_at:
+            raise StreamCancelled()
         if now - stream.beat >= WORKER_HEARTBEAT_INTERVAL:
             stream.beat = now
             self.claimed_at = fields.Datetime.now()
@@ -265,13 +269,15 @@ class AISessionLoop(models.AbstractModel):
         agent: models.BaseModel,
         cache: dict | None = None,
         notice: dict | None = None,
+        stop_at: float = math.inf,
     ) -> dict:
         """Run one streaming provider round, flushing the buffered deltas after it.
 
         :param agent: the agent whose built-in tools the round serves, if any
+        :param stop_at: monotonic time the stream is cut at, to yield the slice
         :raise StreamCancelled: when the session is cancelled mid-stream
         """
-        stream = StreamBuffer(self._publish_now, self.turn_seq)
+        stream = StreamBuffer(self._publish_now, self.turn_seq, stop_at)
         inputs = self._build_request_inputs()
         try:
             return provider._request_responses(
@@ -455,11 +461,13 @@ class AISessionLoop(models.AbstractModel):
         deadline = slice_start + min(
             self._slice_wallclock_seconds(), turn_budget - spent_before
         )
+        hard = self._worker_hard_limit_seconds()
+        stop_at = slice_start + hard - STREAM_STOP_MARGIN if hard else math.inf
         while True:
             self._maybe_auto_compact()
             if self.state != 'running':
                 return
-            self._run_iterations(deadline, has_terminating=has_terminating)
+            self._run_iterations(deadline, stop_at, has_terminating=has_terminating)
             if self.state == 'running' and time.monotonic() > deadline:
                 spent = min(spent_before, self.turn_wallclock_spent or 0.0)
                 spent += time.monotonic() - slice_start
@@ -477,8 +485,14 @@ class AISessionLoop(models.AbstractModel):
             self._transition_state('running')
             has_terminating = False
 
-    def _run_iterations(self, deadline: float, has_terminating: bool = False) -> None:
-        """Run provider rounds until completion, deadline, or budget limits."""
+    def _run_iterations(
+        self, deadline: float, stop_at: float, has_terminating: bool = False
+    ) -> None:
+        """Run provider rounds until completion, deadline, or budget limits.
+
+        A round still streaming at ``stop_at``, shortly before the worker's
+        time limit, is cut and the slice yielded, to run it again later.
+        """
         cache = {}
         max_iterations = self._max_iterations()
         for iteration in range(max_iterations):
@@ -506,6 +520,7 @@ class AISessionLoop(models.AbstractModel):
                     notice=self._round_limit_notice(
                         remaining if remaining <= ITERATION_WARNING_ROUNDS else None
                     ),
+                    stop_at=stop_at,
                 )
             except TurnSuperseded:
                 raise
