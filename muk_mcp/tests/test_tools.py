@@ -307,6 +307,19 @@ class TestMcpTool(common.TransactionCase):
             [self.env['res.partner'].search_count([])],
         )
 
+    def test_read_group_orders_by_plain_field_names(self):
+        result = self._call(
+            'read_group',
+            {
+                'model': 'res.partner',
+                'groupby': ['create_date:day'],
+                'aggregates': ['color:sum'],
+                'order': 'create_date desc, color desc',
+            },
+        )
+        days = [group['create_date:day'] for group in result]
+        self.assertEqual(days, sorted(days, reverse=True))
+
     def test_invalid_arguments_return_input_schema(self):
         with self.assertRaisesRegex(
             UserError, "unexpected keyword argument 'fields'"

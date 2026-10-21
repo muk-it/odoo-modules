@@ -234,9 +234,8 @@ class MCPMixin(models.AbstractModel):
                 'order': {
                     'type': 'string',
                     'description': (
-                        'Sort order for groups. Must reference a groupby field '
-                        'or a computed aggregate spec — never an invented name '
-                        '(e.g. "amount_total:sum desc", "partner_id asc").'
+                        'Sort order for groups by groupby or aggregated fields, '
+                        'e.g. "amount_total desc", "date_order desc".'
                     ),
                 },
                 'context': context_field(),
@@ -254,13 +253,25 @@ class MCPMixin(models.AbstractModel):
         limit: int | None = None,
         order: str | None = None,
     ) -> list[dict[str, Any]]:
-        """Group records by one or more fields and return aggregate values, always including ``__count``."""
+        """Group records and return aggregate values, always including ``__count``.
+
+        Plain field names in ``order`` sort by their groupby or aggregate spec.
+        """
         aggregates = list(aggregates or [])
         if '__count' not in aggregates:
             aggregates.append('__count')
+        groupby = groupby or []
+        if order:
+            specs = {spec.split(':')[0]: spec for spec in [*aggregates, *groupby]}
+            order = ','.join(
+                ' '.join([specs.get(name, name), *direction])
+                for name, *direction in (
+                    term.split() for term in order.split(',') if term.strip()
+                )
+            )
         return self._resolve_model(model).formatted_read_group(
             coerce_json_value(self._mcp_apply_domain(model, domain)) or [],
-            groupby=groupby or (),
+            groupby=groupby,
             aggregates=aggregates,
             limit=limit,
             order=order or None,
