@@ -148,33 +148,31 @@ test('a tab showing no chat for the session stays out of it', async () => {
     expect(calls).toHaveLength(0);
 });
 
-test('the results of one batch reach the session one after the other', async () => {
+test('the actions of one batch run one after the other', async () => {
     openChats([11]);
     const steps = [];
-    let executed = 0;
     let release;
     const listener = makeClientToolListener({
         orm: {
             call: async (model, method, [, callId]) => {
-                steps.push(`start ${callId}`);
+                steps.push(`post ${callId}`);
                 if (callId === 'b1') {
                     await new Promise((resolve) => (release = resolve));
                 }
-                steps.push(`end ${callId}`);
             },
         },
         contains: () => true,
-        execute: async () => {
-            executed++;
+        execute: async (name, { ref }) => {
+            steps.push(`run ${ref}`);
             return { ok: true };
         },
     });
-    listener(actionEvent(undefined, { call_id: 'b1' }));
-    listener(actionEvent(undefined, { call_id: 'b2' }));
-    await waitUntil(() => executed === 2 && steps.length === 1);
+    listener(actionEvent(undefined, { call_id: 'b1', arguments: { ref: 'b1' } }));
+    listener(actionEvent(undefined, { call_id: 'b2', arguments: { ref: 'b2' } }));
+    await waitUntil(() => steps.length === 2);
     await animationFrame();
-    expect(steps).toEqual(['start b1']);
+    expect(steps).toEqual(['run b1', 'post b1']);
     release();
     await waitUntil(() => steps.length === 4);
-    expect(steps).toEqual(['start b1', 'end b1', 'start b2', 'end b2']);
+    expect(steps).toEqual(['run b1', 'post b1', 'run b2', 'post b2']);
 });

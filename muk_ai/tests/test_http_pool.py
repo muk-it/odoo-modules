@@ -1,4 +1,5 @@
 import http.client
+import ssl
 
 import urllib3
 
@@ -37,12 +38,20 @@ class TestAiHttpPool(AITestCommon):
             .get_adapter('https://api.openai.com')
             .max_retries
         )
+        bad_record_mac = ssl.SSLError(1, 'sslv3 alert bad record mac')
+        bad_record_mac.reason = 'SSLV3_ALERT_BAD_RECORD_MAC'
         for reason in (
             ConnectionResetError(10054, 'reset by peer'),
             http.client.RemoteDisconnected('closed without response'),
             BrokenPipeError(32, 'broken pipe'),
+            ssl.SSLEOFError(8, 'EOF occurred in violation of protocol'),
+            bad_record_mac,
         ):
-            dropped = urllib3.exceptions.ProtocolError('Connection aborted.', reason)
+            dropped = (
+                urllib3.exceptions.SSLError(reason)
+                if isinstance(reason, ssl.SSLError)
+                else urllib3.exceptions.ProtocolError('Connection aborted.', reason)
+            )
             with self.subTest(reason=type(reason).__name__):
                 self.assertEqual(
                     retry.increment('POST', '/v1/responses', error=dropped).connect,
@@ -57,3 +66,9 @@ class TestAiHttpPool(AITestCommon):
                 self.assertRaises(type(error)),
             ):
                 retry.increment('POST', '/v1/responses', error=error)
+        with self.assertRaises(urllib3.exceptions.MaxRetryError):
+            retry.increment(
+                'POST',
+                '/v1/responses',
+                error=urllib3.exceptions.SSLError(ssl.SSLCertVerificationError()),
+            )
