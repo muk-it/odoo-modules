@@ -1673,6 +1673,20 @@ class AISession(models.Model):
         return self.env.cr.fetchone()[0]
 
     @api.model
+    def _wait_session_lock(self, session_id: int) -> bool:
+        """Take the session lock, waiting a few seconds for it to free up.
+
+        An answer to a pending ask can arrive while the worker that published
+        the ask is still committing its round and has yet to release the lock.
+        """
+        deadline = time.monotonic() + 5
+        while not self._try_session_lock(session_id):
+            if time.monotonic() > deadline:
+                return False
+            time.sleep(0.1)
+        return True
+
+    @api.model
     def _release_session_lock(self, session_id: int) -> None:
         """Release the session advisory lock, retrying once after rollback."""
         statement = (
@@ -3517,7 +3531,7 @@ class AISession(models.Model):
 
         :raise UserError: when the session lock cannot be acquired
         """
-        if not self._try_session_lock(self.id):
+        if not self._wait_session_lock(self.id):
             raise UserError(_('The session is currently busy. Please try again.'))
         try:
             call = {
@@ -4677,7 +4691,7 @@ class AISession(models.Model):
             client action
         """
         check_access(self, 'write')
-        if not self._try_session_lock(self.id):
+        if not self._wait_session_lock(self.id):
             raise UserError(_('The session is currently busy. Please try again.'))
         try:
             pending = self._require_pending_client_action(call_id)
@@ -4699,7 +4713,7 @@ class AISession(models.Model):
             client action
         """
         check_access(self, 'write')
-        if not self._try_session_lock(self.id):
+        if not self._wait_session_lock(self.id):
             raise UserError(_('The session is currently busy. Please try again.'))
         try:
             pending = self._require_pending_client_action(call_id)
