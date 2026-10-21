@@ -216,13 +216,17 @@ class TestMcpTool(common.TransactionCase):
                 'ids': [],
             })
 
-    def test_read_group_without_groupby_raises(self):
-        with self.assertRaisesRegex(UserError, 'groupby is required'):
-            self._call('read_group', {
-                'model': 'res.partner',
-                'fields': ['is_company'],
-                'groupby': [],
-            })
+    def test_read_group_without_groupby_returns_the_totals(self):
+        result = self._call('read_group', {
+            'model': 'res.partner',
+            'fields': ['__count', 'color'],
+            'groupby': [],
+        })
+        partners = self.env['res.partner'].search([])
+        self.assertEqual(
+            result,
+            [{'color:sum': sum(partners.mapped('color')), '__count': len(partners)}],
+        )
 
     def test_invalid_arguments_return_input_schema(self):
         with self.assertRaisesRegex(

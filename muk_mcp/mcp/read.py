@@ -271,7 +271,8 @@ class MCPMixin(models.AbstractModel):
                     'items': {'type': 'string'},
                     'description': (
                         "Fields to group by. Examples: ['state'], "
-                        "['partner_id', 'state'], ['date_order:month']."
+                        "['partner_id', 'state'], ['date_order:month']; [] "
+                        "for the totals of all matching records."
                     ),
                 },
                 'limit': {
@@ -306,8 +307,6 @@ class MCPMixin(models.AbstractModel):
         limit=None,
         order=None,
     ):
-        if not groupby:
-            raise UserError(_('groupby is required'))
         target = self._resolve_model(model)
         aggregates = []
         numeric_types = {'integer', 'float', 'monetary'}
@@ -344,6 +343,7 @@ class MCPMixin(models.AbstractModel):
             for agg_spec in aggregates:
                 base = agg_spec.split(':')[0]
                 entry[agg_spec] = group.get(agg_spec, group.get(base))
-            entry['%s_count' % groupby[0].split(':')[0]] = group.get('__count', 0)
+            count = '%s_count' % groupby[0].split(':')[0] if groupby else '__count'
+            entry[count] = group.get('__count', 0)
             data.append(entry)
         return data
