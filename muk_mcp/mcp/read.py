@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from odoo import _, api, models
-from odoo.exceptions import UserError
+from odoo import api, models
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
 from odoo.addons.muk_mcp.tools.descriptions import (
@@ -212,7 +211,8 @@ class MCPMixin(models.AbstractModel):
                         'Fields to group by. Examples: '
                         '["state"], ["partner_id", "state"], '
                         '["date_order:month"] (granularity suffixes: '
-                        ':year, :quarter, :month, :week, :day, :hour).'
+                        ':year, :quarter, :month, :week, :day, :hour); '
+                        'empty for the totals of all matching records.'
                     ),
                 },
                 'aggregates': {
@@ -241,31 +241,26 @@ class MCPMixin(models.AbstractModel):
                 },
                 'context': context_field(),
             },
-            'required': ['model', 'groupby'],
+            'required': ['model'],
         },
         category='read',
     )
     def _mcp_read_group(
         self,
         model: str,
-        groupby: list[str],
+        groupby: list[str] | None = None,
         aggregates: list[str] | None = None,
         domain=None,
         limit: int | None = None,
         order: str | None = None,
     ) -> list[dict[str, Any]]:
-        """Group records by one or more fields and return aggregate values, always including ``__count``.
-
-        :raise UserError: when ``groupby`` is empty.
-        """
-        if not groupby:
-            raise UserError(_('groupby is required'))
+        """Group records by one or more fields and return aggregate values, always including ``__count``."""
         aggregates = list(aggregates or [])
         if '__count' not in aggregates:
             aggregates.append('__count')
         return self._resolve_model(model).formatted_read_group(
             coerce_json_value(self._mcp_apply_domain(model, domain)) or [],
-            groupby=groupby,
+            groupby=groupby or (),
             aggregates=aggregates,
             limit=limit,
             order=order or None,

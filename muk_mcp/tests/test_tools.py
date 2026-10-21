@@ -300,15 +300,12 @@ class TestMcpTool(common.TransactionCase):
                 },
             )
 
-    def test_read_group_without_groupby_raises(self):
-        with self.assertRaisesRegex(UserError, 'groupby is required'):
-            self._call(
-                'read_group',
-                {
-                    'model': 'res.partner',
-                    'groupby': [],
-                },
-            )
+    def test_read_group_without_groupby_returns_the_totals(self):
+        result = self._call('read_group', {'model': 'res.partner', 'groupby': []})
+        self.assertEqual(
+            [group['__count'] for group in result],
+            [self.env['res.partner'].search_count([])],
+        )
 
     def test_invalid_arguments_return_input_schema(self):
         with self.assertRaisesRegex(
