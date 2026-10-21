@@ -172,13 +172,21 @@ class TestMcpTool(common.TransactionCase):
         self.assertIn('read', result['current_user_rights'])
 
     def test_read_group_handler(self):
-        result = self._call('read_group', {
-            'model': 'res.partner',
-            'domain': [],
-            'fields': ['is_company'],
-            'groupby': ['is_company'],
-        })
-        self.assertIsInstance(result, list)
+        for fields, groupby in (
+            (['is_company'], ['is_company']),
+            (['create_date:month', '__count'], ['create_date:month']),
+        ):
+            result = self._call('read_group', {
+                'model': 'res.partner',
+                'domain': [],
+                'fields': fields,
+                'groupby': groupby,
+            })
+            count = '%s_count' % groupby[0].split(':')[0]
+            self.assertEqual(
+                sum(group[count] for group in result),
+                self.env['res.partner'].search_count([]),
+            )
 
     def test_invalid_model_raises(self):
         with self.assertRaises(UserError):
