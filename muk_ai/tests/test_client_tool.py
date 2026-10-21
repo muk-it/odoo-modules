@@ -274,13 +274,17 @@ class TestClientToolSeam(AITestCommon):
             ]
         )
         bus = type(self.env['bus.bus'])
+        finishing = patch.object(
+            type(session), '_try_session_lock', side_effect=[False, True]
+        )
         with (
             provider,
             self._as_client_tool('browser_click'),
             patch.object(bus, '_sendone', autospec=True) as sendone,
         ):
             session.start('Click the button.')
-            snapshot = session.submit_client_result('c0', {'ok': True})
+            with finishing:
+                snapshot = session.submit_client_result('c0', {'ok': True})
         self.assertEqual(snapshot['state'], 'done')
         self.assertIsNone(snapshot['pending_ask'])
         self.assertEqual(snapshot['last_text'], 'Done clicking.')

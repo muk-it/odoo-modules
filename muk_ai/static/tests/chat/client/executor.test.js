@@ -80,7 +80,7 @@ test('executes a matching action and submits the result', async () => {
     expect(calls[0].args).toEqual([11, 'c1', { ok: true }]);
 });
 
-test('the results of one batch reach the session one after the other', async () => {
+test('the actions of one batch run and reach the session one after the other', async () => {
     const steps = [];
     let release;
     openChats([11]);
@@ -96,15 +96,25 @@ test('the results of one batch reach the session one after the other', async () 
             },
         },
         contains: () => true,
-        execute: async () => ({ ok: true }),
+        execute: async (name, { step }) => {
+            steps.push(`run ${step}`);
+            return { ok: true };
+        },
     });
-    listener(actionEvent({}, { call_id: 'b1' }));
-    listener(actionEvent({}, { call_id: 'b2' }));
+    listener(actionEvent({}, { call_id: 'b1', arguments: { step: 'b1' } }));
+    listener(actionEvent({}, { call_id: 'b2', arguments: { step: 'b2' } }));
     await waitUntil(() => release);
-    expect(steps).toEqual(['start b1']);
+    expect(steps).toEqual(['run b1', 'start b1']);
     release();
-    await waitUntil(() => steps.length === 4);
-    expect(steps).toEqual(['start b1', 'end b1', 'start b2', 'end b2']);
+    await waitUntil(() => steps.length === 6);
+    expect(steps).toEqual([
+        'run b1',
+        'start b1',
+        'end b1',
+        'run b2',
+        'start b2',
+        'end b2',
+    ]);
 });
 
 test('ignores events for sessions this tab does not hold', async () => {
