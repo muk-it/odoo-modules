@@ -164,6 +164,27 @@ class TestMcpTool(common.TransactionCase):
         })
         self.assertIsInstance(result, list)
 
+    def test_read_group_takes_fields_and_order_by_their_names(self):
+        for groupby, fields, order in (
+            (['is_company'], ['is_company', 'color'], 'color desc'),
+            (
+                ['create_date:month'],
+                ['create_date:month', 'color'],
+                'create_date asc, color desc',
+            ),
+        ):
+            with self.subTest(groupby=groupby):
+                result = self._call('read_group', {
+                    'model': 'res.partner',
+                    'fields': fields,
+                    'groupby': groupby,
+                    'order': order,
+                })
+                self.assertEqual(
+                    list(result[0]),
+                    [*groupby, 'color:sum', '%s_count' % groupby[0]],
+                )
+
     def test_invalid_model_raises(self):
         with self.assertRaises(UserError):
             self._call('search_read', {

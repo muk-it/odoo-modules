@@ -212,9 +212,7 @@ class MCPMixin(models.AbstractModel):
                 'order': {
                     'type': 'string',
                     'description': (
-                        'Sort order for groups. Must reference a groupby field '
-                        'or an aggregate spec (e.g. "amount_total:sum desc", '
-                        '"partner_id asc").'
+                        "Sort order for groups. Example: 'amount_total desc'."
                     ),
                 },
                 'context': context_field(),
@@ -235,13 +233,14 @@ class MCPMixin(models.AbstractModel):
         if not groupby:
             raise UserError(_('groupby is required'))
         target = self._resolve_model(model)
+        grouped = {spec.split(':')[0]: spec for spec in groupby}
         aggregates = []
         numeric_types = {'integer', 'float', 'monetary'}
         for field_spec in (fields or []):
+            if field_spec.split(':')[0] in grouped:
+                continue
             if ':' in field_spec:
                 aggregates.append(field_spec)
-                continue
-            if field_spec in groupby:
                 continue
             field = target._fields.get(field_spec)
             if field is not None and field.type in numeric_types:
@@ -250,6 +249,14 @@ class MCPMixin(models.AbstractModel):
                 aggregates.append('%s:count_distinct' % field_spec)
         if '__count' not in aggregates:
             aggregates.append('__count')
+        specs = {spec.split(':')[0]: spec for spec in aggregates} | grouped
+        if order:
+            order = ','.join(
+                ' '.join([specs.get(name, name), *direction])
+                for name, *direction in (
+                    term.split() for term in order.split(',') if term.strip()
+                )
+            )
         rows = target._read_group(
             self._coerce_json_value(
                 self._mcp_apply_domain(model, domain),
