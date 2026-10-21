@@ -14,12 +14,6 @@ from odoo.addons.muk_mcp.tools.descriptions import (
     ids_field,
 )
 
-REPORT_FORMATS = {
-    'pdf': ('application/pdf', 'pdf'),
-    'text': ('text/plain', 'txt'),
-    'html': ('text/html', 'html'),
-}
-
 
 class MCPMixin(models.AbstractModel):
     """Add the MCP report-printing tool to the shared MCP mixin."""
@@ -89,9 +83,11 @@ class MCPMixin(models.AbstractModel):
             raise UserError(self.env._('Report %r not found.', report_ref))
         records = self._mcp_records(report.model, ids)
         content, report_type = report._render(report, records.ids)
-        mimetype, extension = REPORT_FORMATS.get(
-            report_type, ('application/octet-stream', report_type)
-        )
+        mimetype, extension = {
+            'pdf': ('application/pdf', 'pdf'),
+            'text': ('text/plain', 'txt'),
+            'html': ('text/html', 'html'),
+        }.get(report_type, ('application/octet-stream', report_type))
         name = report.name or report.report_name or 'report'
         if report.print_report_name and len(records) == 1:
             name = safe_eval(

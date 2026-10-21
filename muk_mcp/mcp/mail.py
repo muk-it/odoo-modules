@@ -8,9 +8,11 @@ from odoo import api, fields, models
 from odoo.exceptions import UserError
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
-from odoo.addons.muk_mcp.tools.descriptions import context_field, model_field
-
-RECORD_ID = {'type': 'integer', 'description': 'The record ID.'}
+from odoo.addons.muk_mcp.tools.descriptions import (
+    RECORD_ID,
+    context_field,
+    model_field,
+)
 
 
 class MCPMixin(models.AbstractModel):

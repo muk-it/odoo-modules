@@ -11,11 +11,9 @@ from odoo.http.requestlib import DEFAULT_MAX_CONTENT_LENGTH
 from odoo.tools import BinaryBytes
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
-from odoo.addons.muk_mcp.models.transfer import TRANSFER_MINUTES
+from odoo.addons.muk_mcp.tools.common import TRANSFER_MINUTES
 from odoo.addons.muk_mcp.tools.descriptions import HTTP_HINT, context_field
 from odoo.addons.muk_mcp.tools.uri import record_field_uri
-
-DATA_URI = re.compile(r'^data:(?P<mimetype>[\w.+-]+/[\w.+-]+)?(?:;[^,]*)?;base64,')
 
 
 class MCPMixin(models.AbstractModel):
@@ -54,7 +52,9 @@ class MCPMixin(models.AbstractModel):
         :raise UserError: when the data is not base64 or exceeds the upload limit.
         """
         mimetype = None
-        if match := DATA_URI.match(data):
+        if match := re.match(
+            r'^data:(?P<mimetype>[\w.+-]+/[\w.+-]+)?(?:;[^,]*)?;base64,', data
+        ):
             mimetype = match['mimetype']
             data = data[match.end() :]
         try:

@@ -8,7 +8,7 @@ from odoo.exceptions import UserError
 from odoo.tools import BinaryBytes
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
-from odoo.addons.muk_mcp.models.transfer import TRANSFER_MINUTES
+from odoo.addons.muk_mcp.tools.common import TRANSFER_MINUTES
 from odoo.addons.muk_mcp.tools.content import (
     is_inline_mimetype,
     make_content_for_bytes,
@@ -19,8 +19,6 @@ from odoo.addons.muk_mcp.tools.protocol import (
     ToolContent,
     make_text_content,
 )
-
-READ_RESOURCE_FORMATS = ('auto', 'text', 'resource')
 
 
 class MCPMixin(models.AbstractModel):
@@ -134,14 +132,14 @@ class MCPMixin(models.AbstractModel):
     def _mcp_read_resource(self, uri: str, format: str = 'auto') -> ToolContent:
         """Fetch the resource at ``uri`` and return it as typed content blocks, dispatching by mimetype.
 
-        :raise UserError: when ``format`` is not one of ``READ_RESOURCE_FORMATS``.
+        :raise UserError: when ``format`` is not auto, text or resource.
         """
-        if format not in READ_RESOURCE_FORMATS:
+        if format not in (formats := ('auto', 'text', 'resource')):
             raise UserError(
                 self.env._(
                     'Unsupported format %(f)r; expected one of: %(opts)s.',
                     f=format,
-                    opts=', '.join(READ_RESOURCE_FORMATS),
+                    opts=', '.join(formats),
                 ),
             )
         mimetype, raw, name = self._resolve_resource_uri(uri)

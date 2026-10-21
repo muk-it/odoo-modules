@@ -19,6 +19,7 @@ _CONTEXT_EXAMPLES = (
     f'{json.dumps({"allowed_company_ids": [1]})} (target a company)'
 )
 
+RECORD_ID = {'type': 'integer', 'description': 'The record ID.'}
 
 HTTP_HINT = (
     'Clients that can run HTTP requests (a shell, curl, a script) should use '

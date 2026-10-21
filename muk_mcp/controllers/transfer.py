@@ -6,7 +6,7 @@ from odoo import http
 from odoo.exceptions import AccessError, UserError
 from odoo.http import Response, request
 
-from odoo.addons.muk_mcp.models.transfer import TRANSFER_PATH
+from odoo.addons.muk_mcp.tools.common import TRANSFER_PATH
 
 
 class MCPTransferController(http.Controller):

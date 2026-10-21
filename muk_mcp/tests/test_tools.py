@@ -182,6 +182,10 @@ class TestMcpTools(MCPToolCase):
             },
         )
         self.assertEqual([group['__count'] for group in groups], [1, 1, 1])
+        totals = self.call_tool(
+            'read_group', {'model': 'res.partner', 'domain': self.domain}
+        )
+        self.assertEqual([group['__count'] for group in totals], [3])
         deleted = self.call_tool('delete_records', {'model': model, 'ids': [record.id]})
         self.assertEqual(deleted, {'success': True, 'deleted_ids': [record.id]})
         self.assertFalse(record.exists())
@@ -346,11 +350,6 @@ class TestMcpTools(MCPToolCase):
                 'No record IDs',
             ),
             ('delete_records', {'model': 'res.partner', 'ids': []}, 'No record IDs'),
-            (
-                'read_group',
-                {'model': 'res.partner', 'groupby': []},
-                'groupby is required',
-            ),
             (
                 'read_group',
                 {'model': 'res.partner', 'groupby': ['type'], 'fields': ['type']},

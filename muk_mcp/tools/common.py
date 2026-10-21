@@ -1,5 +1,8 @@
 MCP_ENDPOINT = '/api/mcp'
 
+TRANSFER_PATH = '/mcp/transfer'
+TRANSFER_MINUTES = 15
+
 MCP_SERVER_NAME = 'odoo-mcp-server'
 MCP_SERVER_VERSION = '1.0.0'
 

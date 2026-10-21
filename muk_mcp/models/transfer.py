@@ -10,10 +10,7 @@ from odoo.exceptions import UserError
 from odoo.http import Response, request
 from odoo.tools import BinaryBytes
 
-TRANSFER_PATH = '/mcp/transfer'
-TRANSFER_MINUTES = 15
-TRANSFER_TTL = timedelta(minutes=TRANSFER_MINUTES)
-STAGED_RETENTION = timedelta(days=1)
+from odoo.addons.muk_mcp.tools.common import TRANSFER_MINUTES, TRANSFER_PATH
 
 
 class MCPTransfer(models.Model):
@@ -100,7 +97,6 @@ class MCPTransfer(models.Model):
         :raise UserError: when the data is empty or does not match the announced
             size or digest.
         """
-        self.ensure_one()
         if not data:
             raise UserError(
                 self.env._(
@@ -131,7 +127,6 @@ class MCPTransfer(models.Model):
 
     def _download(self) -> Response:
         """Stream the download's resource, read as the link's user."""
-        self.ensure_one()
         env = self.env(user=self.user_id)
         record, field = env['muk_mcp.mixin']._resolve_resource_target(self.uri)
         return (
@@ -158,7 +153,8 @@ class MCPTransfer(models.Model):
                 'token_hash': self.env['muk_mcp.key']._hash_key(token),
                 'user_id': self.env.uid,
                 'key_name': key.name if key else False,
-                'expires_at': fields.Datetime.now() + TRANSFER_TTL,
+                'expires_at': fields.Datetime.now()
+                + timedelta(minutes=TRANSFER_MINUTES),
             },
         )
         return transfer, f'{self.get_base_url()}{TRANSFER_PATH}/{token}'
@@ -189,7 +185,7 @@ class MCPTransfer(models.Model):
         transfers = self.sudo()
         transfers.search(
             [
-                ('expires_at', '<', fields.Datetime.now() - STAGED_RETENTION),
+                ('expires_at', '<', fields.Datetime.now() - timedelta(days=1)),
                 ('attachment_id.res_model', '=', False),
             ],
         ).attachment_id.unlink()
