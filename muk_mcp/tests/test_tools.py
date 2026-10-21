@@ -171,6 +171,17 @@ class TestMcpTool(common.TransactionCase):
         })
         self.assertIsInstance(result, list)
 
+    def test_read_group_counts_and_orders_by_field_names(self):
+        result = self._call('read_group', {
+            'model': 'res.partner',
+            'fields': ['__count', 'color'],
+            'groupby': ['create_date:month'],
+            'order': 'create_date desc, color desc',
+        })
+        months = [row['create_date:month'] for row in result]
+        self.assertEqual(months, sorted(months, reverse=True))
+        self.assertTrue(all('color:sum' in row for row in result))
+
     def test_invalid_model_raises(self):
         with self.assertRaises(UserError):
             self._call('search_read', {
@@ -199,13 +210,17 @@ class TestMcpTool(common.TransactionCase):
                 'ids': [],
             })
 
-    def test_read_group_without_groupby_raises(self):
-        with self.assertRaisesRegex(UserError, 'groupby is required'):
-            self._call('read_group', {
-                'model': 'res.partner',
-                'fields': ['is_company'],
-                'groupby': [],
-            })
+    def test_read_group_without_groupby_returns_the_totals(self):
+        result = self._call('read_group', {
+            'model': 'res.partner',
+            'fields': ['__count', 'color'],
+            'groupby': [],
+        })
+        partners = self.env['res.partner'].search([])
+        self.assertEqual(
+            result,
+            [{'color:sum': sum(partners.mapped('color')), '__count': len(partners)}],
+        )
 
     def test_invalid_arguments_return_input_schema(self):
         with self.assertRaisesRegex(

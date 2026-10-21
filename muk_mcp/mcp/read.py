@@ -200,7 +200,8 @@ class MCPMixin(models.AbstractModel):
                     'items': {'type': 'string'},
                     'description': (
                         "Fields to group by. Examples: ['state'], "
-                        "['partner_id', 'state'], ['date_order:month']."
+                        "['partner_id', 'state'], ['date_order:month']; [] "
+                        "for the totals of all matching records."
                     ),
                 },
                 'limit': {
@@ -228,8 +229,6 @@ class MCPMixin(models.AbstractModel):
         limit=None,
         order=None,
     ):
-        if not groupby:
-            raise UserError(_('groupby is required'))
         target = self._resolve_model(model)
         aggregates = []
         numeric_types = {'integer', 'float', 'monetary'}
@@ -237,7 +236,7 @@ class MCPMixin(models.AbstractModel):
             if ':' in field_spec:
                 aggregates.append(field_spec)
                 continue
-            if field_spec in groupby:
+            if field_spec == '__count' or field_spec in groupby:
                 continue
             field = target._fields.get(field_spec)
             if field is not None and field.type in numeric_types:
@@ -246,6 +245,12 @@ class MCPMixin(models.AbstractModel):
                 aggregates.append('%s:count_distinct' % field_spec)
         if '__count' not in aggregates:
             aggregates.append('__count')
+        if order:
+            specs = {spec.split(':')[0]: spec for spec in [*aggregates, *groupby]}
+            order = ', '.join(
+                ' '.join([specs.get(name, name), *rest])
+                for name, *rest in (term.split() for term in order.split(','))
+            )
         rows = target._read_group(
             self._coerce_json_value(
                 self._mcp_apply_domain(model, domain),
@@ -267,7 +272,7 @@ class MCPMixin(models.AbstractModel):
                         entry[key] = [(r.id, r.display_name) for r in value]
                 else:
                     entry[key] = value
-            if '__count' in entry:
+            if '__count' in entry and groupby:
                 entry['%s_count' % groupby[0]] = entry.pop('__count')
             data.append(entry)
         return data
