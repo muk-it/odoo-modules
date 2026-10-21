@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import json
 import logging
+import math
 import random
 import re
 import threading
@@ -45,6 +46,7 @@ from odoo.addons.muk_ai.tools import (
     MAX_TOOL_CALLS_PER_ROUND,
     MAX_WALLCLOCK_SECONDS,
     REASONING_EFFORT_SELECTION,
+    STREAM_STOP_MARGIN,
     TERMINATING_TOOLS,
     TOOL_LOAD_TOOL,
     TOOL_VISION_MAX_B64_CHARS,
@@ -2038,7 +2040,7 @@ class AISession(models.Model):
         more. The turn the round started under settles which of the two it
         is, so an answer to a replaced question is dropped, never persisted.
 
-        :raise StreamCancelled: when the session was stopped
+        :raise StreamCancelled: when the session was stopped or ``stop_at`` passed
         :raise TurnSuperseded: when a newer turn replaced this one
         """
         last = buffer_state.get('last_state_check', 0)
@@ -2054,6 +2056,8 @@ class AISession(models.Model):
             if self._turn_superseded(buffer_state):
                 buffer_state.clear()
                 raise TurnSuperseded()
+            if now > buffer_state.get('stop_at', math.inf):
+                raise StreamCancelled()
             last_beat = buffer_state.get('last_heartbeat', 0)
             if now - last_beat >= WORKER_HEARTBEAT_INTERVAL:
                 buffer_state['last_heartbeat'] = now
@@ -2233,15 +2237,18 @@ class AISession(models.Model):
         agent: models.BaseModel,
         cache: dict | None = None,
         notice: dict | None = None,
+        stop_at: float = math.inf,
     ) -> dict:
         """Run one streaming provider round, flushing buffers on completion.
 
+        :param stop_at: monotonic time the stream is cut at, to yield the slice
         :raise StreamCancelled: when the session is cancelled mid-stream
         """
         buffer_state = {
             'text': '',
             'last_text_flush': time.monotonic(),
             'turn': self.turn_seq,
+            'stop_at': stop_at,
         }
         try:
             payload = provider._request_responses(
@@ -3250,8 +3257,14 @@ class AISession(models.Model):
     def _run_iterations(
         self, has_terminating: bool = False, deadline: float | None = None
     ) -> None:
-        """Run provider rounds until completion, deadline, or budget limits."""
+        """Run provider rounds until completion, deadline, or budget limits.
+
+        A round still streaming shortly before the worker's time limit is cut
+        and the slice yielded, so the round runs again in a later slice.
+        """
         deadline = deadline or time.monotonic() + self._slice_wallclock_seconds()
+        hard = self._worker_hard_limit_seconds()
+        stop_at = time.monotonic() + hard - STREAM_STOP_MARGIN if hard else math.inf
         materialize_cache, provider_key = {}, None
         max_iterations = self._max_iterations()
         for iteration in range(max_iterations):
@@ -3288,6 +3301,7 @@ class AISession(models.Model):
                     notice=self._round_limit_notice(
                         remaining if remaining <= ITERATION_WARNING_ROUNDS else None
                     ),
+                    stop_at=stop_at,
                 )
             except TurnSuperseded:
                 raise

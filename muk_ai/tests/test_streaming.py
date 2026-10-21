@@ -287,6 +287,9 @@ class TestAiStreaming(AITestCommon):
         buffer_state = {'turn': 4, 'last_state_check': 0}
         session._check_cancelled(buffer_state)
         self.assertEqual(buffer_state['turn'], 4)
+        buffer_state.update(last_state_check=0, stop_at=time.monotonic() - 1)
+        with self.assertRaises(StreamCancelled):
+            session._check_cancelled(buffer_state)
 
     def test_a_replaced_turn_keeps_its_half_answer_to_itself(self):
         session = self.env['muk_ai.session'].create({'name': 'stream-dropped'})
