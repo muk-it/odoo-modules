@@ -174,7 +174,7 @@ class TestMcpTool(common.TransactionCase):
     def test_read_group_counts_and_orders_by_field_names(self):
         result = self._call('read_group', {
             'model': 'res.partner',
-            'fields': ['__count', 'color'],
+            'fields': ['create_date:month', '__count', 'color'],
             'groupby': ['create_date:month'],
             'order': 'create_date desc, color desc',
         })

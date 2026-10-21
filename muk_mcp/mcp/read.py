@@ -232,11 +232,12 @@ class MCPMixin(models.AbstractModel):
         target = self._resolve_model(model)
         aggregates = []
         numeric_types = {'integer', 'float', 'monetary'}
+        grouped = {spec.split(':')[0] for spec in groupby}
         for field_spec in (fields or []):
+            if field_spec == '__count' or field_spec.split(':')[0] in grouped:
+                continue
             if ':' in field_spec:
                 aggregates.append(field_spec)
-                continue
-            if field_spec == '__count' or field_spec in groupby:
                 continue
             field = target._fields.get(field_spec)
             if field is not None and field.type in numeric_types:
