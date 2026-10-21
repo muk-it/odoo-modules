@@ -284,7 +284,11 @@ class TestAiStreaming(AITestCommon):
     def test_the_turn_being_streamed_is_left_alone(self):
         session = self.env['muk_ai.session'].create({'name': 'stream-current'})
         session.write({'state': 'running', 'turn_seq': 4})
-        session._check_cancelled({'turn': 4, 'last_state_check': 0})
+        buffer_state = {'turn': 4, 'last_state_check': 0}
+        session._check_cancelled(buffer_state)
+        buffer_state.update(last_state_check=0, stop_at=time.monotonic() - 1)
+        with self.assertRaises(StreamCancelled):
+            session._check_cancelled(buffer_state)
 
     def test_a_replaced_turn_keeps_its_half_answer_to_itself(self):
         session = self.env['muk_ai.session'].create({'name': 'stream-dropped'})

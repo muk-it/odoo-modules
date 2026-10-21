@@ -43,29 +43,33 @@ QUnit.module('client_tools', {
 });
 
 QUnit.test(
-    'the results of one batch reach the session one after the other',
+    'the client actions of one batch run and report one after the other',
     async (assert) => {
         let release;
+        let runs = 0;
         const orm = {
             async call(model, method, [, callId]) {
-                assert.step(`start ${callId}`);
-                if (callId === 'b1') {
-                    await new Promise((resolve) => (release = resolve));
-                }
-                assert.step(`end ${callId}`);
+                assert.step(`post ${callId}`);
             },
         };
         const onEvent = makeClientToolListener({
             orm,
             contains: () => true,
-            execute: async () => 'ok',
+            async execute() {
+                const run = ++runs;
+                assert.step(`run ${run}`);
+                if (run === 1) {
+                    await new Promise((resolve) => (release = resolve));
+                }
+                return 'ok';
+            },
         });
         onEvent(action('b1'));
         onEvent(action('b2'));
         await flush();
-        assert.verifySteps(['start b1']);
+        assert.verifySteps(['run 1']);
         release();
         await flush();
-        assert.verifySteps(['end b1', 'start b2', 'end b2']);
+        assert.verifySteps(['post b1', 'run 2', 'post b2']);
     },
 );
