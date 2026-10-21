@@ -19,7 +19,7 @@ export function viewContextLabel(ctx) {
     if (ctx.kind === 'action') {
         return ctx.model || _t('Action');
     }
-    return ctx.model || '';
+    return ctx.display_name || ctx.model || '';
 }
 
 /**

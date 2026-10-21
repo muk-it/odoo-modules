@@ -62,7 +62,10 @@ test('viewContextLabel for action falls back to "Action" when model is empty', (
     expect(viewContextLabel({ kind: 'action', model: 'crm.lead' })).toBe('crm.lead');
 });
 
-test('viewContextLabel uses model when kind is unknown', () => {
+test('viewContextLabel uses the name, else the model, when kind is unknown', () => {
+    expect(
+        viewContextLabel({ kind: 'mystery', model: 'res.users', display_name: 'Ann' }),
+    ).toBe('Ann');
     expect(viewContextLabel({ kind: 'mystery', model: 'res.users' })).toBe('res.users');
     expect(viewContextLabel({ kind: 'mystery' })).toBe('');
 });
