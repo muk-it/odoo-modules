@@ -193,7 +193,6 @@ class AIDecisionQuestion(models.Model):
 
     def _spec(self) -> FieldQuestion:
         """Return the questions this line asks and the value of each answer."""
-        self.ensure_one()
         if self._fills_field():
             return self.env['muk_ai.decision']._field_question(
                 self.action_id.model_name,
