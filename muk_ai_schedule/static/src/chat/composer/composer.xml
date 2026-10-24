@@ -6,7 +6,7 @@
             <WaitBar t-if="props.session" session="props.session"/>
         </xpath>
         <xpath expr="//textarea" position="attributes">
-            <attribute name="t-att-placeholder">composerPlaceholder</attribute>
+            <attribute name="t-att-placeholder">composerPlaceholder()</attribute>
         </xpath>
     </t>
 

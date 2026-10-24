@@ -1,7 +1,11 @@
 // @odoo-module
 
+import { reactive } from '@odoo/owl';
+
+import { hotkeyService } from '@web/core/hotkeys/hotkey_service';
 import { ormService } from '@web/core/orm_service';
 import { registry } from '@web/core/registry';
+import { uiService } from '@web/core/ui/ui_service';
 import { makeTestEnv } from '@web/../tests/helpers/mock_env';
 import { click, getFixture, mount, nextTick } from '@web/../tests/helpers/utils';
 
@@ -35,11 +39,32 @@ QUnit.module('muk_ai_schedule', {}, function () {
      */
     function waitingSession(pendingAsk, steps, writable = true) {
         return {
-            state: { status: 'waiting', pendingAsk, sessionId: 1 },
+            state: reactive({ status: 'waiting', pendingAsk, sessionId: 1 }),
             canWrite: () => writable,
             applySnapshot: () => steps.push('applySnapshot'),
             onStop: () => steps.push('onStop'),
         };
+    }
+
+    /**
+     * Build the environment of a chat with its services.
+     * @param {Array} steps collects the server calls
+     * @returns {Promise<object>} the environment
+     */
+    async function chatEnv(steps) {
+        const services = registry.category('services');
+        services.add('orm', ormService, { force: true });
+        services.add(
+            'notification',
+            { start: () => ({ add: () => {} }) },
+            { force: true },
+        );
+        return makeTestEnv({
+            mockRPC: (route, { method }) => {
+                steps.push(method);
+                return {};
+            },
+        });
     }
 
     /**
@@ -49,21 +74,8 @@ QUnit.module('muk_ai_schedule', {}, function () {
      * @returns {Promise<HTMLElement>} the fixture
      */
     async function mountBar(session, steps) {
-        const services = registry.category('services');
-        services.add('orm', ormService, { force: true });
-        services.add(
-            'notification',
-            { start: () => ({ add: () => {} }) },
-            { force: true },
-        );
-        const env = await makeTestEnv({
-            mockRPC: (route, { method }) => {
-                steps.push(method);
-                return {};
-            },
-        });
         const target = getFixture();
-        await mount(WaitBar, target, { env, props: { session } });
+        await mount(WaitBar, target, { env: await chatEnv(steps), props: { session } });
         return target;
     }
 
@@ -71,7 +83,8 @@ QUnit.module('muk_ai_schedule', {}, function () {
         'a waiting chat says what it waits for and is woken or stopped from the bar',
         async (assert) => {
             const steps = [];
-            const target = await mountBar(waitingSession(PLAN, steps), steps);
+            const session = waitingSession(PLAN, steps);
+            const target = await mountBar(session, steps);
             assert.strictEqual(
                 target.querySelector('.mk_wait_bar_note').textContent,
                 'Remind the customer',
@@ -85,6 +98,9 @@ QUnit.module('muk_ai_schedule', {}, function () {
             await nextTick();
             await click(target, '.mk_wait_bar_stop');
             assert.deepEqual(steps, ['action_wake_now', 'applySnapshot', 'onStop']);
+            session.state.status = 'running';
+            await nextTick();
+            assert.containsNone(target, '.mk_wait_bar');
         },
     );
 
@@ -123,22 +139,37 @@ QUnit.module('muk_ai_schedule', {}, function () {
 
     QUnit.test(
         'the composer of a waiting chat says typing wakes the agent',
-        (assert) => {
-            const { get } = Object.getOwnPropertyDescriptor(
-                ChatComposer.prototype,
-                'composerPlaceholder',
-            );
-            const placeholder = (session) =>
-                get.call({ props: { session, placeholder: 'Message' } });
-            assert.strictEqual(
-                String(placeholder(waitingSession(PLAN, []))),
+        async (assert) => {
+            const services = registry.category('services');
+            services.add('ui', uiService, { force: true });
+            services.add('hotkey', hotkeyService, { force: true });
+            const env = await chatEnv([]);
+            const target = getFixture();
+            const placeholders = [];
+            for (const session of [
+                waitingSession(PLAN, []),
+                waitingSession({ kind: 'approval' }, []),
+                undefined,
+            ]) {
+                await mount(ChatComposer, target, {
+                    env,
+                    props: {
+                        session,
+                        value: '',
+                        placeholder: 'Message',
+                        effortPill: { label: 'Default', options: [] },
+                        onInput: () => {},
+                        onSend: () => {},
+                    },
+                });
+                const inputs = target.querySelectorAll('textarea');
+                placeholders.push(inputs[inputs.length - 1].placeholder);
+            }
+            assert.deepEqual(placeholders, [
                 'Waiting. Type to wake the agent...',
-            );
-            assert.strictEqual(
-                placeholder(waitingSession({ kind: 'approval' }, [])),
                 'Message',
-            );
-            assert.strictEqual(placeholder(undefined), 'Message');
+                'Message',
+            ]);
         },
     );
 

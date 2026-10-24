@@ -6,6 +6,7 @@ import { _t } from '@muk_ai/core/compat/translation';
 import { useService } from '@web/core/utils/hooks';
 
 import { formatError, formatTimestamp } from '@muk_ai/chat/utils';
+import { useSessionState } from '@muk_ai/chat/session/use_ai_session';
 
 /**
  * Return the plan of the wait call a chat is paused on.
@@ -48,15 +49,16 @@ export class WaitBar extends Component {
     setup() {
         this.orm = useService('orm');
         this.notification = useService('notification');
+        this.session = useSessionState(this.props.session);
     }
     get plan() {
-        return wakeupPlan(this.props.session.state);
+        return wakeupPlan(this.session.state);
     }
     get line() {
         return waitLine(this.plan);
     }
     async wake() {
-        const session = this.props.session;
+        const session = this.session;
         try {
             session.applySnapshot(
                 await this.orm.call('muk_ai.session', 'action_wake_now', [

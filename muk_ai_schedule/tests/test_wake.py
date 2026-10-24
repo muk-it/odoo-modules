@@ -82,6 +82,9 @@ class TestWake(WaitCase):
         other = self._waiting_chat(**self._watch(condition=[['email', '!=', False]]))
         self.partner.message_post(body='Logged', message_type='notification')
         self.partner.copy().message_post(body='Elsewhere', message_type='comment')
+        self.env['mail.channel'].create({'name': 'Team'}).message_post(
+            body='Elsewhere', message_type='comment'
+        )
         self._run_cron()
         self.assertEqual(chat.state, 'waiting')
         self.partner.message_post(

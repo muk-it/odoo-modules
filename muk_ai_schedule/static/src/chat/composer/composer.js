@@ -9,7 +9,7 @@ import { WaitBar, wakeupPlan } from '@muk_ai_schedule/chat/wait_bar/wait_bar';
 ChatComposer.components = { ...ChatComposer.components, WaitBar };
 
 patch(ChatComposer.prototype, 'muk_ai_schedule.composer', {
-    get composerPlaceholder() {
+    composerPlaceholder() {
         return this.props.session && wakeupPlan(this.props.session.state)
             ? _t('Waiting. Type to wake the agent...')
             : this.props.placeholder;
