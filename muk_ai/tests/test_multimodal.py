@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 import base64
+import io
 import json
+import zipfile
+
+from openpyxl import Workbook
 
 from odoo import models
 from odoo.exceptions import AccessError, UserError
@@ -24,6 +28,41 @@ PDF_BYTES = (
 )
 
 INLINE_LIMIT = 256 * 1024
+PAGE = b'<h1>Hi</h1><script>alert(1)</script><p>x</p>'
+NEWSLETTER = (
+    b'Subject: Brew\r\nFrom: a@example.com\r\nMIME-Version: 1.0\r\n'
+    b'Content-Type: text/html; charset=utf-8\r\n\r\n' + PAGE + b'\r\n'
+)
+
+SNIFFED = {'': 'text/plain', 'application/vnd.ms-excel': 'text/plain'}
+WORD = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+EXCEL = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+
+
+def docx(*paragraphs: str) -> bytes:
+    """Return a minimal Word document holding ``paragraphs``."""
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, 'w') as archive:
+        archive.writestr(
+            'word/document.xml',
+            '<w:document xmlns:w="http://schemas.openxmlformats.org/'
+            'wordprocessingml/2006/main"><w:body>'
+            + ''.join(f'<w:p><w:r><w:t>{text}</w:t></w:r></w:p>' for text in paragraphs)
+            + '</w:body></w:document>',
+        )
+    return out.getvalue()
+
+
+def xlsx(*rows: tuple) -> bytes:
+    """Return a workbook whose sheet "Beans" holds ``rows``."""
+    book = Workbook()
+    book.active.title = 'Beans'
+    for row in rows:
+        book.active.append(row)
+    out = io.BytesIO()
+    book.save(out)
+    return out.getvalue()
+
 
 REPLY = [
     {'type': 'response.output_text.delta', 'delta': 'ok'},
@@ -79,6 +118,32 @@ class TestMultimodal(AITestCommon):
             ('doc.pdf', 'application/pdf', PDF_BYTES, 'file', b64(PDF_BYTES)),
             ('rows.csv', 'text/csv', rows, 'inline_text', rows.decode()),
             ('big.txt', 'text/plain', big, 'inline_text', big[:INLINE_LIMIT].decode()),
+            ('page.html', 'text/html', PAGE, 'inline_text', '<h1>Hi</h1><p>x</p>'),
+            ('data.json', 'application/json', b'{"a": 1}', 'inline_text', '{"a": 1}'),
+            ('main.py', '', b'print(1)\n', 'inline_text', 'print(1)\n'),
+            (
+                'excel.csv',
+                'application/vnd.ms-excel',
+                'Name\nM\u00fcller\n'.encode('cp1252'),
+                'inline_text',
+                'Name\nM\u00fcller\n',
+            ),
+            ('blank.docx', WORD, docx(), 'inline_text', ''),
+            ('notes.docx', WORD, docx('Brew at 94 C'), 'inline_text', 'Brew at 94 C\n'),
+            (
+                'beans.xlsx',
+                EXCEL,
+                xlsx(('Origin', 'Price'), ('Kenya', 12)),
+                'inline_text',
+                'Beans,Origin,Price\nBeans,Kenya,12',
+            ),
+            (
+                'news.eml',
+                'message/rfc822',
+                NEWSLETTER,
+                'inline_text',
+                'Subject: Brew\nFrom: a@example.com\n\n<h1>Hi</h1><p>x</p>\r\n',
+            ),
         ):
             with self.subTest(filename=filename):
                 [descriptor] = session.upload_attachments(
@@ -96,7 +161,7 @@ class TestMultimodal(AITestCommon):
                     {
                         'id': attachment.id,
                         'filename': filename,
-                        'mimetype': mimetype,
+                        'mimetype': SNIFFED.get(mimetype, mimetype),
                         'size': len(data),
                     },
                 )
@@ -111,7 +176,8 @@ class TestMultimodal(AITestCommon):
         self._set_params({'web.max_file_upload_size': 1024})
         session = self._session()
         for filename, mimetype, data_b64, accepted in (
-            ('tool.exe', 'application/x-msdownload', b64(b'MZ'), False),
+            ('tool.exe', 'application/x-msdownload', b64(b'MZ\x90\x00\x03'), False),
+            ('archive.zip', 'application/zip', b64(b'PK\x03\x04\x00'), False),
             ('clip.mp4', 'video/mp4', b64(b'\x00'), False),
             ('pic.png', 'image/png', 'not-base64!!!', False),
             ('fits.txt', 'text/plain', b64(b'a' * 1024), True),

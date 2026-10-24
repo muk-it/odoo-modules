@@ -364,7 +364,7 @@ EFFORT = [
     ('google', 'gemini-9-uncatalogued', 'xhigh', 'high'),
 ]
 
-FILE_TEXT = '--- File: note.txt (text/plain) ---\nhello body'
+FILE_TEXT = '--- File: note.txt (text/plain, attachment 7) ---\nhello body'
 
 
 def _attached(**block) -> list[dict]:
@@ -395,6 +395,7 @@ TEXT_FILE = {
     'mimetype': 'text/plain',
     'inline_text': 'hello body',
     'filename': 'note.txt',
+    'attachment_id': 7,
 }
 
 ATTACHMENTS = [

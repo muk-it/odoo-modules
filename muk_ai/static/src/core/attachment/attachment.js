@@ -3,13 +3,6 @@ import { Component, t, useProps } from '@odoo/owl';
 import { FileModel } from '@web/core/file_viewer/file_model';
 import { humanSize } from '@web/core/utils/binary';
 
-const EXTENSION_MIMETYPES = {
-    md: 'text/markdown',
-    markdown: 'text/markdown',
-    txt: 'text/plain',
-    csv: 'text/csv',
-};
-
 /** A file shown from a data or image URL rather than from an attachment. */
 class InlineImageFile extends FileModel {
     get defaultSource() {
@@ -55,15 +48,13 @@ export function toInlineImageFile(src) {
  * @returns {Promise<object>} `{filename, mimetype, data_b64}`
  */
 export function fileToBase64(file) {
-    const extension = file.name.includes('.') ? file.name.split('.').pop() : '';
-    const mimetype = file.type || EXTENSION_MIMETYPES[extension.toLowerCase()] || '';
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => {
             const result = reader.result || '';
             resolve({
                 filename: file.name,
-                mimetype,
+                mimetype: file.type,
                 data_b64: result.slice(result.indexOf(',') + 1),
             });
         };

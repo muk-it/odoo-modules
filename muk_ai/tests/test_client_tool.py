@@ -238,6 +238,14 @@ class TestClientTool(AITestCommon):
                 )
                 self.assertIn(reason, self._tool_output(session, 'c1')['error'])
                 self.assertNotIn(calls[1][0], [call['name'] for call in executed])
+                [event] = [
+                    event
+                    for event in self._events(session, 'tool_result')
+                    if event.get('call_id') == 'c1'
+                ]
+                self.assertEqual(
+                    'error' in event['result'], name == 'client tool an addon defers'
+                )
 
     def test_only_client_kinds_someone_answers_are_offered(self):
         session_class = type(self.env['muk_ai.session'])

@@ -38,7 +38,7 @@
                             onRemove="(item) => session.detach(item.id)"
                         />
                     </div>
-                    <div class="mk_composer_input overflow-auto">
+                    <div class="mk_composer_input">
                         <textarea
                             class="form-control border-0 shadow-none bg-transparent text-body lh-base"
                             rows="1"
@@ -59,7 +59,6 @@
                                 type="file"
                                 class="d-none"
                                 multiple="multiple"
-                                t-att-accept="this.accept"
                                 t-att-disabled="!session.canAttach"
                                 t-on-change="this.onFileChange"
                             />

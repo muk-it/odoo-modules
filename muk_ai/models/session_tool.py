@@ -13,7 +13,6 @@ from odoo.sql_db import PG_CONCURRENCY_EXCEPTIONS_TO_RETRY
 from odoo.tools import config
 
 from odoo.addons.muk_ai.tools.attachment import (
-    ALLOWED_MIMETYPES,
     ATTACHMENT_REF_MAX_BYTES,
     ATTACHMENT_REF_RE,
     IMAGE_MIMETYPES,
@@ -230,7 +229,7 @@ class AISessionTool(models.AbstractModel):
                     and attachment.file_size <= ATTACHMENT_REF_MAX_BYTES
                     and (
                         not attachment.mimetype
-                        or attachment.mimetype in ALLOWED_MIMETYPES
+                        or attachment._ai_strategy_for(attachment.mimetype)
                     )
                 ):
                     previews.append(f'/web/image/{attachment.id}')
@@ -979,7 +978,7 @@ class AISessionTool(models.AbstractModel):
                     if waiting
                     else 'terminating'
                 ]
-                log_result = {'error': 'skipped'}
+                log_result = {'skipped': True}
             else:
                 outcome = self._execute_tool_call(
                     call, tool_calls, outputs, index, has_terminating

@@ -22,18 +22,6 @@ import { SessionPills } from '@muk_ai/chat/pills/pills';
 import { ToolsMenu } from '@muk_ai/chat/tools_menu/tools_menu';
 import { UsageMeter } from '@muk_ai/chat/usage/usage';
 
-const ACCEPT = [
-    'image/png',
-    'image/jpeg',
-    'image/webp',
-    'image/gif',
-    'application/pdf',
-    'text/plain',
-    'text/csv',
-    'text/markdown',
-    '.md',
-].join(',');
-
 /**
  * Message box of a chat: text, attachments, slash commands and the agent
  * picker, send, queue and stop. On a chat the user may only read it states
@@ -52,7 +40,6 @@ export class ChatComposer extends Component {
     fileViewer = useFileViewer();
     textarea = signal.ref();
     state = proxy({ active: 0 });
-    accept = ACCEPT;
     setup() {
         useAutoresize(this.textarea);
         useOnChange(

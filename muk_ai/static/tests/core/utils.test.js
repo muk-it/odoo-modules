@@ -55,18 +55,12 @@ test('an error message is read from an RPC error, an exception or a value', () =
     ).toEqual(['rpc', 'plain', 'text']);
 });
 
-test('files read as base64 payloads with a mimetype guessed from their name', async () => {
-    const payloads = await Promise.all([
-        fileToBase64(new File(['# hi'], 'notes.md')),
-        fileToBase64(new File(['a,b'], 'table.CSV')),
-        fileToBase64(new File(['x'], 'shot', { type: 'image/png' })),
-    ]);
-    expect(payloads.map((payload) => [payload.filename, payload.mimetype])).toEqual([
-        ['notes.md', 'text/markdown'],
-        ['table.CSV', 'text/csv'],
-        ['shot', 'image/png'],
-    ]);
-    expect(atob(payloads[0].data_b64)).toBe('# hi');
+test('files read as base64 payloads with the type the browser gives', async () => {
+    expect(await fileToBase64(new File(['# hi'], 'notes.md'))).toEqual({
+        filename: 'notes.md',
+        mimetype: '',
+        data_b64: btoa('# hi'),
+    });
     const transfer = new DataTransfer();
     transfer.items.add(new File(['x'], 'a.txt'));
     transfer.items.add('just text', 'text/plain');

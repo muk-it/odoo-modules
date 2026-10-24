@@ -433,6 +433,8 @@ class ProviderBase:
             text += '\n[truncated]'
         filename = block.get('filename') or 'attachment'
         mimetype = block.get('mimetype') or 'application/octet-stream'
+        if key := block.get('attachment_id'):
+            mimetype = f'{mimetype}, attachment {key}'
         return f'--- File: {filename} ({mimetype}) ---\n{text}'
 
     @staticmethod
