@@ -282,6 +282,8 @@ class AnthropicProvider(ProviderBase):
                 },
             }
         text = block.get('inline_text') or ''
+        if key := block.get('attachment_id'):
+            mimetype = f'{mimetype}, attachment {key}'
         prefix = f'--- File: {filename} ({mimetype}) ---\n'
         if block.get('truncated'):
             text += '\n[truncated]'
@@ -336,9 +338,16 @@ class AnthropicProvider(ProviderBase):
     def _assistant_carry(cls, content: list, blocks: list) -> list:
         """Return the assistant carry of a turn: one item, or none when it is empty.
 
-        A turn with thinking or server tool blocks keeps all its Anthropic
-        blocks in order in this provider's private state, to replay unchanged.
+        A turn with thinking or server tool blocks keeps its Anthropic blocks
+        in order in this provider's private state, to replay unchanged; a server
+        tool call the turn holds no result for is left out.
         """
+        answered = {block.get('tool_use_id') for block in blocks}
+        blocks = [
+            block
+            for block in blocks
+            if block['type'] != 'server_tool_use' or block.get('id') in answered
+        ]
         if not content and not blocks:
             return []
         carry = {'role': 'assistant', 'content': content}
@@ -524,7 +533,13 @@ class AnthropicProvider(ProviderBase):
             block = event.get('content_block') or {}
             block_type = block.get('type')
             if block_type == 'text':
-                blocks_by_index[index] = {'type': 'text', 'text': ''}
+                gap = blocks_by_index.get(index - 1, {}).get('type') != 'text' and any(
+                    entry.get('type') == 'text' and entry['text']
+                    for entry in blocks_by_index.values()
+                )
+                blocks_by_index[index] = {'type': 'text', 'text': '\n\n' if gap else ''}
+                if gap:
+                    self._call_on_delta(on_delta, 'text', {'delta': '\n\n'})
             elif block_type in THINKING_BLOCK_TYPES:
                 blocks_by_index[index] = {'thinking': '', 'signature': '', **block}
             elif block_type == 'tool_use':

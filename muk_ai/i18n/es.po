@@ -16,46 +16,40 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: muk_ai
-#: model:muk_ai.agent,system_prompt:muk_ai.agent_router
+#: model:muk_ai.agent.suggestion,prompt:muk_ai.agent_read_only_suggestion_overdue
 msgid ""
 "\n"
-"# Role\n"
+"List all overdue open customer invoices.\n"
 "\n"
-"You are the Router — a dispatcher, not a specialist. Send the user to the right agent, fast.\n"
+"Scope: `account.move`, type `out_invoice`, state `posted`, `payment_state` not `paid`, `invoice_date_due` in the past.\n"
 "\n"
-"# How to route\n"
+"Table columns:\n"
+"- Customer as `[Display Name](res.partner,id)`\n"
+"- Invoice number\n"
+"- Due date (ISO)\n"
+"- Amount due (residual)\n"
+"- Days past due\n"
 "\n"
-"1. Read the request. Call `list_agents` to see the available specialists and what each does.\n"
-"2. Pick the single best specialist and call `switch_agent` with its id — from the next turn that agent takes over the conversation.\n"
-"3. If nothing fits, answer briefly yourself with the read tools, or ask one clarifying question with `ask_user`.\n"
-"4. You only route the opening request; a specialist hands back or over later on its own.\n"
-"\n"
-"# Rules\n"
-"\n"
-"- Route on the first clear signal — don't interrogate. At most one `ask_user`, only when the domain is genuinely unclear.\n"
-"- Never do specialist work yourself (building pages, writing emails, deep analysis) — hand off instead.\n"
-"- After `switch_agent`, one short sentence naming who is taking over, then stop.\n"
-"- Terse. No filler.\n"
+"Sort by days past due, most overdue first. After the table:\n"
+"- Aging buckets (count and sum of amount due): `<30`, `30–60`, `60–90`, `90+` days.\n"
+"- Grand total amount due across all overdue invoices.\n"
 "        "
 msgstr ""
 "\n"
-"# Rol\n"
+"Enumera todas las facturas de cliente abiertas y vencidas.\n"
 "\n"
-"Eres el Router — un distribuidor, no un especialista. Envía al usuario al agente adecuado, rápido.\n"
+"Alcance: `account.move`, tipo `out_invoice`, estado `posted`, `payment_state` distinto de `paid`, `invoice_date_due` en el pasado.\n"
 "\n"
-"# Cómo enrutar\n"
+"Columnas de la tabla:\n"
+"- Cliente como `[Display Name](res.partner,id)`\n"
+"- Número de factura\n"
+"- Fecha de vencimiento (ISO)\n"
+"- Importe pendiente (residual)\n"
+"- Días de retraso\n"
 "\n"
-"1. Lee la petición. Llama a `list_agents` para ver los especialistas disponibles y qué hace cada uno.\n"
-"2. Elige el mejor especialista, uno solo, y llama a `switch_agent` con su id — a partir del siguiente turno ese agente se hace cargo de la conversación.\n"
-"3. Si nada encaja, responde brevemente tú mismo con las herramientas de lectura, o haz una única pregunta aclaratoria con `ask_user`.\n"
-"4. Solo enrutas la petición inicial; un especialista devuelve o traspasa el control más adelante por su cuenta.\n"
-"\n"
-"# Reglas\n"
-"\n"
-"- Enruta a la primera señal clara — no interrogues. Como mucho un `ask_user`, y solo cuando el dominio sea realmente poco claro.\n"
-"- Nunca hagas tú el trabajo del especialista (crear páginas, redactar correos, análisis profundo) — transfiere en su lugar.\n"
-"- Tras `switch_agent`, una frase corta nombrando quién toma el relevo, y luego detente.\n"
-"- Conciso. Sin relleno.\n"
+"Ordena por días de retraso, las más vencidas primero. Después de la tabla:\n"
+"- Tramos de antigüedad (número y suma del importe pendiente): `<30`, `30–60`, `60–90`, `90+` días.\n"
+"- Total general del importe pendiente de todas las facturas vencidas.\n"
 "        "
 
 #. module: muk_ai
@@ -202,6 +196,37 @@ msgstr ""
 "        "
 
 #. module: muk_ai
+#: model:muk_ai.agent.suggestion,prompt:muk_ai.agent_read_only_suggestion_pipeline
+msgid ""
+"\n"
+"Summarize the open CRM pipeline (all owners, not won/lost).\n"
+"\n"
+"For each stage in pipeline order:\n"
+"- Stage name, opportunity count, sum of expected revenue.\n"
+"- Top 3 by expected revenue: customer, amount, salesperson, expected close date.\n"
+"\n"
+"Then:\n"
+"- **Slipping**: open opps whose expected close date is already in the past — customer, amount, salesperson, days slipped.\n"
+"- **Stale**: open opps with no activity in the last 14 days — customer, amount, salesperson, days since last activity.\n"
+"\n"
+"End with two totals on one line: total open opportunities and total expected revenue.\n"
+"    "
+msgstr ""
+"\n"
+"Resume el pipeline de CRM abierto (todos los propietarios, ni ganadas ni perdidas).\n"
+"\n"
+"Para cada etapa en el orden del pipeline:\n"
+"- Nombre de la etapa, número de oportunidades, suma de ingresos esperados.\n"
+"- Las 3 principales por ingresos esperados: cliente, importe, comercial, fecha de cierre prevista.\n"
+"\n"
+"Después:\n"
+"- **Retrasadas**: oportunidades abiertas cuya fecha de cierre prevista ya ha pasado — cliente, importe, comercial, días de retraso.\n"
+"- **Estancadas**: oportunidades abiertas sin actividad en los últimos 14 días — cliente, importe, comercial, días desde la última actividad.\n"
+"\n"
+"Termina con dos totales en una línea: total de oportunidades abiertas y total de ingresos esperados.\n"
+"    "
+
+#. module: muk_ai
 #: model:muk_ai.agent.suggestion,prompt:muk_ai.agent_general_suggestion_explore
 msgid ""
 "\n"
@@ -245,12 +270,14 @@ msgstr ""
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/revision_mixin.py:0
+#, python-format
 msgid "%(field)s restored from revision %(index)d."
 msgstr "%(field)s restaurado desde la revisión %(index)d."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/agent.py:0
+#, python-format
 msgid ""
 "%(label)s %(model)s is archived, so this agent falls back to the default "
 "model. Pick an active model here, or restore %(model)s."
@@ -261,6 +288,7 @@ msgstr ""
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/agent.py:0
+#, python-format
 msgid ""
 "%(label)s %(model)s runs on %(provider)s, which has no API key configured. A"
 " model picked here is never served by another vendor instead: set the key on"
@@ -274,12 +302,14 @@ msgstr ""
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "%(name)s handed you the chat \"%(chat)s\"."
 msgstr "%(name)s le ha transferido el chat \"%(chat)s\"."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/mcp/image.py:0
+#, python-format
 msgid ""
 "%(option)s \"%(value)s\" is not supported and was ignored. Supported values "
 "are: %(allowed)s."
@@ -290,125 +320,130 @@ msgstr ""
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/providers/base.py:0
+#, python-format
 msgid "%(provider)s API key is not configured."
 msgstr "La clave API de %(provider)s no está configurada."
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/usage/usage_meter.js:0
+#, python-format
 msgid "%(tokens)s / %(window)s tokens"
 msgstr "%(tokens)s / %(window)s tokens"
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "%s (fork)"
 msgstr "%s (bifurcación)"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/share/share_users.js:0
+#, python-format
 msgid "%s people can read this chat"
 msgstr "%s personas pueden leer este chat"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/components/prompt_history_dialog/prompt_history_dialog.js:0
+#, python-format
 msgid "%s — History"
 msgstr "%s — Historial"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/turns.js:0
+#, python-format
 msgid "%s → %s"
 msgstr "%s → %s"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "%sd"
 msgstr "%sd"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "%sh"
 msgstr "%sh"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "%sm"
 msgstr "%smin"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "%ss"
 msgstr "%ss"
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/approval.py:0
+#, python-format
 msgid "(%(count)s record(s), no access)"
 msgstr "(%(count)s registro(s), sin acceso)"
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/approval.py:0
+#: code:addons/muk_ai/models/approval.py:0
+#, python-format
 msgid "(no access)"
 msgstr "(sin acceso)"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/share/share_users.js:0
+#, python-format
 msgid "1 person can read this chat"
 msgstr "1 persona puede leer este chat"
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
 msgid ""
-"<code>approval_mode</code> — <code>ask</code> or <code>off</code>, resolved "
-"per session (agent default + session override)."
-msgstr ""
-"<code>approval_mode</code> — <code>ask</code> u <code>off</code>, resuelto "
-"por sesión (predeterminado del agente + anulación de sesión)."
-
-#. module: muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
-msgid ""
-"<code>company</code> — the current <code>res.company</code> record. Common: "
+"<code>company</code> - the current <code>res.company</code> record. Common: "
 "<code>{{ company.name }}</code>."
 msgstr ""
-"<code>company</code> — el registro actual de <code>res.company</code>. "
+"<code>company</code> - el registro actual de <code>res.company</code>. "
 "Común: <code>{{ company.name }}</code>."
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
 msgid ""
-"<code>env</code> / <code>ctx</code> — advanced: the current environment and "
+"<code>env</code> / <code>ctx</code> - advanced: the current environment and "
 "context for custom expressions."
 msgstr ""
-"<code>env</code> / <code>ctx</code> — avanzado: el entorno y contexto "
+"<code>env</code> / <code>ctx</code> - avanzado: el entorno y contexto "
 "actuales para expresiones personalizadas."
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
 msgid ""
-"<code>today</code> — today's date as ISO <code>YYYY-MM-DD</code>, rendered "
-"once when the session starts."
+"<code>odoo_version</code> / <code>odoo_series</code> - the Odoo release, "
+"e.g. <code>16.0+e</code> / <code>16.0</code>."
 msgstr ""
-"<code>today</code> — la fecha de hoy en ISO <code>YYYY-MM-DD</code>, "
-"renderizada una vez al iniciar la sesión."
+"<code>odoo_version</code> / <code>odoo_series</code> - la versión de Odoo, "
+"p. ej. <code>16.0+e</code> / <code>16.0</code>."
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
 msgid ""
-"<code>user</code> — the current <code>res.users</code> record. Common: "
-"<code>{{ user.name }}</code>, <code>{{ user.lang }}</code>."
+"<code>user</code> - the current <code>res.users</code> record. Common: "
+"<code>{{ user.name }}</code>, <code>{{ user.email }}</code>."
 msgstr ""
-"<code>user</code> — el registro actual de <code>res.users</code>. Común: "
-"<code>{{ user.name }}</code>, <code>{{ user.lang }}</code>."
+"<code>user</code> - el registro actual de <code>res.users</code>. Común: "
+"<code>{{ user.name }}</code>, <code>{{ user.email }}</code>."
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_kanban
@@ -483,70 +518,72 @@ msgid "<span>Seconds</span>"
 msgstr "<span>Segundos</span>"
 
 #. module: muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid ""
-"<strong>Save</strong> this page and come back here to set up the feature."
-msgstr ""
-"<strong>Guarde</strong> esta página y vuelva aquí para configurar la "
-"función."
-
-#. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/tools/url_fetch.py:0
+#, python-format
 msgid "@url: %s took longer than allowed."
 msgstr "@url: %s tardó más de lo permitido."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/tools/url_fetch.py:0
+#, python-format
 msgid "@url: DNS lookup failed for %s: %s"
 msgstr "@url: falló la resolución DNS de %s: %s"
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/tools/url_fetch.py:0
+#, python-format
 msgid "@url: DNS lookup returned no addresses for %s."
 msgstr "@url: la resolución DNS no devolvió direcciones para %s."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/tools/url_fetch.py:0
+#, python-format
 msgid "@url: HTTP %(status)s for %(url)s."
 msgstr "@url: HTTP %(status)s para %(url)s."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/tools/url_fetch.py:0
+#, python-format
 msgid "@url: missing hostname."
 msgstr "@url: falta el nombre de host."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/tools/url_fetch.py:0
+#, python-format
 msgid "@url: only accepts https:// URLs."
 msgstr "@url: solo acepta URLs https://."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/tools/url_fetch.py:0
+#, python-format
 msgid "@url: redirect from %s had no Location."
 msgstr "@url: la redirección desde %s no tenía Location."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/tools/url_fetch.py:0
+#, python-format
 msgid "@url: refusing to fetch %s — %s is not publicly routable."
 msgstr "@url: se rechaza descargar %s — %s no es enrutable públicamente."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/tools/url_fetch.py:0
+#, python-format
 msgid "@url: response from %(url)s exceeds the %(cap)s byte cap."
 msgstr "@url: la respuesta de %(url)s supera el límite de %(cap)s bytes."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/tools/url_fetch.py:0
+#, python-format
 msgid "@url: too many redirects for %s."
 msgstr "@url: demasiadas redirecciones para %s."
 
@@ -578,6 +615,7 @@ msgstr ""
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/core/commands/command_setup.js:0
+#, python-format
 msgid "AI"
 msgstr "IA"
 
@@ -604,6 +642,7 @@ msgstr "Auditoría de aprobación IA"
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "AI Chat"
 msgstr "Chat IA"
 
@@ -623,9 +662,15 @@ msgid "AI Prompt Renderer"
 msgstr "Renderizador de prompts de IA"
 
 #. module: muk_ai
+#: model:ir.model,name:muk_ai.model_muk_ai_prompt_variables
+msgid "AI Prompt Variables"
+msgstr "Variables de prompt de IA"
+
+#. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/provider.py:0
 #: model:ir.model,name:muk_ai.model_muk_ai_provider
+#, python-format
 msgid "AI Provider"
 msgstr "Proveedor IA"
 
@@ -645,6 +690,7 @@ msgstr "Mixin de revisión IA"
 #: code:addons/muk_ai/models/session.py:0
 #: code:addons/muk_ai/static/src/webclient/notification/session_notification_service.js:0
 #: model:ir.model,name:muk_ai.model_muk_ai_session
+#, python-format
 msgid "AI Session"
 msgstr "Sesión IA"
 
@@ -656,6 +702,7 @@ msgstr "Evento de sesión IA"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/views/fields/session_events/session_events.js:0
+#, python-format
 msgid "AI Session Events"
 msgstr "Eventos de sesión IA"
 
@@ -677,6 +724,7 @@ msgstr "Espacio de IA"
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/provider.py:0
+#, python-format
 msgid ""
 "AI provider %(provider)s is not supported. Install an addon that registers "
 "it."
@@ -687,12 +735,14 @@ msgstr ""
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/providers/base.py:0
+#, python-format
 msgid "AI provider %(provider)s request failed: %(error)s"
 msgstr "La solicitud al proveedor de IA %(provider)s ha fallado: %(error)s"
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/providers/base.py:0
+#, python-format
 msgid "AI provider returned an empty response during the connection test."
 msgstr ""
 "El proveedor de IA devolvió una respuesta vacía durante la prueba de "
@@ -701,36 +751,42 @@ msgstr ""
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "AI returned no output."
 msgstr "La IA no devolvió ningún resultado."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "AI session error"
 msgstr "Error de sesión IA"
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "AI session finished"
 msgstr "Sesión IA finalizada"
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "AI session needs approval"
 msgstr "La sesión IA necesita aprobación"
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "AI session needs your input"
 msgstr "La sesión IA necesita su respuesta"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/webclient/notification/session_notification_service.js:0
+#, python-format
 msgid "AI session updated"
 msgstr "Sesión IA actualizada"
 
@@ -741,13 +797,17 @@ msgid "API Key"
 msgstr "Clave API"
 
 #. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
+#, python-format
 msgid "Abilities"
 msgstr "Capacidades"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/view_context_format.js:0
+#, python-format
 msgid "Action"
 msgstr "Acción"
 
@@ -755,6 +815,12 @@ msgstr "Acción"
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__message_needaction
 msgid "Action Needed"
 msgstr "Acción necesaria"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_ir_actions_server__state
+#: model:ir.model.fields,field_description:muk_ai.field_ir_cron__state
+msgid "Action To Do"
+msgstr "Acción pendiente"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__active
@@ -805,12 +871,14 @@ msgstr "Esfuerzo de razonamiento del agente"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "Agent default"
 msgstr "Predeterminado del agente"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "Agent default — %s"
 msgstr "Predeterminado del agente — %s"
 
@@ -856,6 +924,7 @@ msgstr "Permitir para la sesión"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Allow for session"
 msgstr "Permitir para la sesión"
 
@@ -876,14 +945,15 @@ msgstr ""
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "Answers immediately, barely thinks"
 msgstr "Responde de inmediato, apenas razona"
 
 #. module: muk_ai
 #: model:ir.actions.act_window,name:muk_ai.action_ai_approval
 #: model:ir.ui.menu,name:muk_ai.menu_ai_approval
-msgid "Approval Log"
-msgstr "Registro de aprobación"
+msgid "Approval Logs"
+msgstr "Registros de aprobación"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__approval_mode
@@ -896,25 +966,23 @@ msgid "Approval Mode Override"
 msgstr "Anulación del modo de aprobación"
 
 #. module: muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
-msgid "Approval mode: {{ approval_mode }}."
-msgstr "Modo de aprobación: {{ approval_mode }}."
-
-#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "Approvals of a shared chat cannot be changed"
 msgstr "Las aprobaciones de un chat compartido no se pueden cambiar"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Approve"
 msgstr "Aprobar"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "Approve or reject to continue…"
 msgstr "Apruebe o rechace para continuar…"
 
@@ -953,42 +1021,49 @@ msgstr "Archivado"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/tools/tool_card.xml:0
+#, python-format
 msgid "Arguments"
 msgstr "Argumentos"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/artifacts/chat_artifacts_panel.xml:0
+#, python-format
 msgid "Artifacts"
 msgstr "Artefactos"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "Ask"
 msgstr "Preguntar"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "Ask before risky writes"
 msgstr "Preguntar antes de escrituras arriesgadas"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "Ask before risky writes (from agent)"
 msgstr "Preguntar antes de escrituras arriesgadas (del agente)"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "Ask before risky writes (override)"
 msgstr "Preguntar antes de escrituras arriesgadas (anulación)"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "Ask first"
 msgstr "Preguntar primero"
 
@@ -1001,6 +1076,7 @@ msgstr "Preguntar al escribir"
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/agent.py:0
+#, python-format
 msgid "Ask the user a question."
 msgstr "Hacer una pregunta al usuario."
 
@@ -1012,12 +1088,14 @@ msgstr "En"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/usage/usage_meter.xml:0
+#, python-format
 msgid "At 100% the conversation is compacted automatically"
 msgstr "Al 100 % la conversación se compacta automáticamente"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/composer/chat_composer.xml:0
+#, python-format
 msgid "Attach file"
 msgstr "Adjuntar archivo"
 
@@ -1039,12 +1117,14 @@ msgstr "IDs de adjuntos"
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/ir_attachment.py:0
+#, python-format
 msgid "Attachment data is not valid base64: %s"
 msgstr "Los datos del adjunto no son base64 válido: %s"
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/ir_attachment.py:0
+#, python-format
 msgid "Attachment exceeds the %(limit)s MiB size limit."
 msgstr "El adjunto supera el límite de tamaño de %(limit)s MiB."
 
@@ -1063,13 +1143,18 @@ msgstr ""
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/ir_attachment.py:0
-msgid "Attachment type %(mime)s is not supported. Allowed: %(allowed)s."
+#, python-format
+msgid ""
+"Attachment type %s is not supported. Attach an image, a PDF, a text file or "
+"an Office document."
 msgstr ""
-"El tipo de adjunto %(mime)s no es compatible. Permitidos: %(allowed)s."
+"El tipo de adjunto %s no es compatible. Adjunte una imagen, un PDF, un "
+"archivo de texto o un documento de Office."
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Attachment upload failed: %s"
 msgstr "Falló la subida del adjunto: %s"
 
@@ -1078,6 +1163,7 @@ msgstr "Falló la subida del adjunto: %s"
 #: code:addons/muk_ai/static/src/chat/artifacts/types/attachments_type.js:0
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__attachment_ids
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_session_form
+#, python-format
 msgid "Attachments"
 msgstr "Adjuntos"
 
@@ -1096,6 +1182,7 @@ msgstr "Token de autenticación para este proveedor."
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Auto-approve matching calls for the rest of this conversation"
 msgstr ""
 "Aprobar automáticamente las llamadas coincidentes durante el resto de esta "
@@ -1104,6 +1191,7 @@ msgstr ""
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Auto-compacted: context window was %s%% full."
 msgstr "Compactado automáticamente: la ventana de contexto estaba al %s%%."
 
@@ -1111,6 +1199,7 @@ msgstr "Compactado automáticamente: la ventana de contexto estaba al %s%%."
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_agent__web_search__auto
+#, python-format
 msgid "Automatic"
 msgstr "Automático"
 
@@ -1136,6 +1225,11 @@ msgid "Available variables"
 msgstr "Variables disponibles"
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__awaiting_user
+msgid "Awaiting User"
+msgstr "Esperando al usuario"
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__ai_search_needs_key
 msgid "Backend Needs a Key"
 msgstr "El backend necesita una clave"
@@ -1148,6 +1242,7 @@ msgstr "El backend necesita una URL"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "Balanced"
 msgstr "Equilibrado"
 
@@ -1170,6 +1265,7 @@ msgstr "Comportamiento"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Branch — open a new session with the history up to this message"
 msgstr ""
 "Ramificar — abrir una nueva sesión con el historial hasta este mensaje"
@@ -1177,18 +1273,22 @@ msgstr ""
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "Bypass"
 msgstr "Omitir"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "Bypass (from agent)"
 msgstr "Omitir (del agente)"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "Bypass (override)"
 msgstr "Omitir (anulación)"
 
@@ -1196,6 +1296,13 @@ msgstr "Omitir (anulación)"
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_approval__decision__bypassed
 msgid "Bypassed"
 msgstr "Omitido"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/core/compat/binary.js:0
+#, python-format
+msgid "Bytes"
+msgstr ""
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_model__cache_read_rate
@@ -1213,10 +1320,16 @@ msgid "Can Edit Domain"
 msgstr "Puede editar el dominio"
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__can_write
+msgid "Can Steer"
+msgstr "Puede dirigir"
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
 #: code:addons/muk_ai/static/src/chat/sidebar/rename_dialog.xml:0
 #: code:addons/muk_ai/static/src/chat/sidebar/space_dialog.xml:0
+#, python-format
 msgid "Cancel"
 msgstr "Cancelar"
 
@@ -1224,12 +1337,14 @@ msgstr "Cancelar"
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
 #: code:addons/muk_ai/static/src/chat/window/chat_window.xml:0
+#, python-format
 msgid "Cancel queued message"
 msgstr "Cancelar el mensaje en cola"
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Cannot clear the conversation while the session is running."
 msgstr ""
 "No se puede vaciar la conversación mientras la sesión está en ejecución."
@@ -1237,6 +1352,7 @@ msgstr ""
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Cannot compact while the session is running. Stop first."
 msgstr ""
 "No se puede compactar mientras la sesión está en ejecución. Deténgala "
@@ -1245,6 +1361,7 @@ msgstr ""
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Cannot compact while the session is waiting for user input."
 msgstr ""
 "No se puede compactar mientras la sesión espera la respuesta del usuario."
@@ -1252,12 +1369,14 @@ msgstr ""
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Cannot fork while the session is running."
 msgstr "No se puede bifurcar mientras la sesión está en ejecución."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid ""
 "Cannot regenerate while the session is running, compacting, or waiting."
 msgstr ""
@@ -1267,12 +1386,14 @@ msgstr ""
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Cannot rewind while the session is running."
 msgstr "No se puede rebobinar mientras la sesión está en ejecución."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Cannot rewind while the session is waiting for input."
 msgstr "No se puede rebobinar mientras la sesión espera una respuesta."
 
@@ -1294,7 +1415,9 @@ msgstr "Chat"
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.js:0
 #: code:addons/muk_ai/static/src/core/commands/command_providers.js:0
+#: code:addons/muk_ai/static/src/core/commands/command_providers.js:0
 #: code:addons/muk_ai/static/src/webclient/systray/systray.js:0
+#, python-format
 msgid "Chat %s"
 msgstr "Chat %s"
 
@@ -1317,18 +1440,21 @@ msgstr "Sesión de chat"
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Chat handed over to you"
 msgstr "Chat transferido a usted"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Chat handed over."
 msgstr "Chat transferido."
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/rename_dialog.js:0
+#, python-format
 msgid "Chat name"
 msgstr "Nombre del chat"
 
@@ -1340,12 +1466,14 @@ msgstr "Chats"
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Chats cannot be filed into the system space \"%s\"."
 msgstr "Los chats no se pueden archivar en el espacio de sistema \"%s\"."
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+#, python-format
 msgid "Clear"
 msgstr "Vaciar"
 
@@ -1357,6 +1485,7 @@ msgstr "Borrado en"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/view_context_format.js:0
+#, python-format
 msgid "Click to open · /unpin to clear"
 msgstr "Haga clic para abrir · /unpin para quitar"
 
@@ -1368,6 +1497,7 @@ msgstr "Tiempo de espera de acciones de cliente (s)"
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Client action call id does not match a pending action."
 msgstr ""
 "El id de llamada de la acción de cliente no coincide con ninguna acción "
@@ -1378,18 +1508,21 @@ msgstr ""
 #: code:addons/muk_ai/static/src/chat/share/share_dialog.xml:0
 #: code:addons/muk_ai/static/src/chat/window/chat_window.xml:0
 #: code:addons/muk_ai/static/src/components/prompt_history_dialog/prompt_history_dialog.xml:0
+#, python-format
 msgid "Close"
 msgstr "Cerrar"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/artifacts/chat_artifacts_panel.xml:0
+#, python-format
 msgid "Close artifacts panel"
 msgstr "Cerrar el panel de artefactos"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/search/chat_search.xml:0
+#, python-format
 msgid "Close search (Esc)"
 msgstr "Cerrar la búsqueda (Esc)"
 
@@ -1410,7 +1543,15 @@ msgstr "Ejecutor del intérprete de código"
 
 #. module: muk_ai
 #. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+#, python-format
+msgid "Code interpreter"
+msgstr "Intérprete de código"
+
+#. module: muk_ai
+#. odoo-python
 #: code:addons/muk_ai/models/agent.py:0
+#, python-format
 msgid ""
 "Code interpreter is enabled, but the model picked here runs no code-"
 "execution tool. No setting can add one: pick a model that has one."
@@ -1423,42 +1564,49 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_session__state__compacting
+#, python-format
 msgid "Compacting"
 msgstr "Compactando"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "Compacting in background — message will queue…"
 msgstr "Compactando en segundo plano — el mensaje se pondrá en cola…"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Compaction boundary"
 msgstr "Límite de compactación"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Compaction cancelled"
 msgstr "Compactación cancelada"
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Compaction cancelled by user."
 msgstr "Compactación cancelada por el usuario."
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Compaction failed"
 msgstr "La compactación ha fallado"
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid ""
 "Compaction failed (%(error)s) — dropped %(dropped)s oldest message(s) "
 "without summary as a fallback."
@@ -1469,6 +1617,7 @@ msgstr ""
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Compaction skipped: provider returned no summary."
 msgstr "Compactación omitida: el proveedor no devolvió ningún resumen."
 
@@ -1478,9 +1627,9 @@ msgid "Companies"
 msgstr "Compañías"
 
 #. module: muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "Compatible Providers"
-msgstr "Proveedores compatibles"
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_prompt_variables__company
+msgid "Company"
+msgstr "Compañía"
 
 #. module: muk_ai
 #: model:ir.model,name:muk_ai.model_res_config_settings
@@ -1495,6 +1644,7 @@ msgstr "Configuración"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Confirmation required"
 msgstr "Confirmación requerida"
 
@@ -1502,14 +1652,6 @@ msgstr "Confirmación requerida"
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "Connect AI"
 msgstr "Conectar IA"
-
-#. module: muk_ai
-#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_mcp
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "Connect remote MCP servers whose tools AI agents can call."
-msgstr ""
-"Conecta servidores MCP remotos cuyas herramientas puedan invocar los agentes"
-" de IA."
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_muk_ai_provider_form
@@ -1520,6 +1662,7 @@ msgstr "Conexión"
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/provider.py:0
+#, python-format
 msgid "Connection to %(provider)s succeeded."
 msgstr "Conexión con %(provider)s correcta."
 
@@ -1531,6 +1674,7 @@ msgstr "Contenido"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/usage/usage_meter.xml:0
+#, python-format
 msgid "Context"
 msgstr "Contexto"
 
@@ -1543,30 +1687,35 @@ msgstr "Ventana de contexto"
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/model.py:0
+#, python-format
 msgid "Context Window must be a positive integer."
 msgstr "La ventana de contexto debe ser un entero positivo."
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/space_dialog.xml:0
+#, python-format
 msgid "Context and preferences for every chat in this space..."
 msgstr "Contexto y preferencias para todos los chats de este espacio..."
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Context boundary"
 msgstr "Límite de contexto"
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Context cleared."
 msgstr "Contexto vaciado."
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Context window at %s%%. Type /compact to free room before continuing."
 msgstr ""
 "Ventana de contexto al %s%%. Escriba /compact para liberar espacio antes de "
@@ -1575,6 +1724,7 @@ msgstr ""
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/usage/usage_meter.js:0
+#, python-format
 msgid "Context window: %(tokens)s / %(window)s tokens"
 msgstr "Ventana de contexto: %(tokens)s / %(window)s tokens"
 
@@ -1593,6 +1743,7 @@ msgstr "Eventos de conversación"
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
 #: code:addons/muk_ai/static/src/views/fields/session_events/session_events.js:0
+#, python-format
 msgid "Copied to clipboard"
 msgstr "Copiado al portapapeles"
 
@@ -1600,18 +1751,21 @@ msgstr "Copiado al portapapeles"
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
 #: code:addons/muk_ai/static/src/views/fields/session_events/session_events.js:0
+#, python-format
 msgid "Copy failed"
 msgstr "Error al copiar"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Copy message"
 msgstr "Copiar mensaje"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/usage/usage_meter.js:0
+#, python-format
 msgid "Cost"
 msgstr "Coste"
 
@@ -1664,6 +1818,13 @@ msgstr ""
 " el número que leyó y se detiene en cuanto la sesión lleva otro, de modo que"
 " la respuesta a una pregunta cancelada o reemplazada nunca puede llegar como"
 " respuesta a la siguiente."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+#, python-format
+msgid "Create images from a description"
+msgstr "Crear imágenes a partir de una descripción"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__create_uid
@@ -1763,6 +1924,7 @@ msgstr "Moneda"
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/revision_mixin.py:0
+#, python-format
 msgid "Current"
 msgstr "Actual"
 
@@ -1777,19 +1939,9 @@ msgid "Custom URL"
 msgstr "URL personalizada"
 
 #. module: muk_ai
-#: model:ir.model.fields,help:muk_ai.field_muk_ai_space__retention_days
-msgid ""
-"Days a finished chat in this space is kept before the scheduled cleanup "
-"deletes it."
-msgstr ""
-"Días que se conserva un chat finalizado de este espacio antes de que la "
-"limpieza programada lo elimine."
-
-#. module: muk_ai
-#: model:ir.model.fields,help:muk_ai.field_res_config_settings__ai_session_retention_days
-msgid "Days a finished chat is kept before the cleanup deletes it."
-msgstr ""
-"Días que se conserva un chat finalizado antes de que la limpieza lo elimine."
+#: model:muk_ai.agent.suggestion,label:muk_ai.agent_read_only_suggestion_top_customers
+msgid "Customers"
+msgstr "Clientes"
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_space__retention_days
@@ -1820,6 +1972,7 @@ msgstr "Decisión"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "Default"
 msgstr "Predeterminado"
 
@@ -1865,6 +2018,7 @@ msgstr "Esfuerzo de razonamiento predeterminado"
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/space_dialog.js:0
 #: code:addons/muk_ai/static/src/chat/sidebar/space_dialog.xml:0
+#, python-format
 msgid "Default agent"
 msgstr "Agente predeterminado"
 
@@ -1883,6 +2037,7 @@ msgstr ""
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/agent.py:0
+#, python-format
 msgid "Default: %(model)s"
 msgstr "Predeterminado: %(model)s"
 
@@ -1899,19 +2054,24 @@ msgstr "Adjuntos de visión diferidos"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
+#: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+#: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+#, python-format
 msgid "Delete"
 msgstr "Eliminar"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
+#, python-format
 msgid "Delete \"%s\"? Its chats are kept and become loose."
 msgstr "¿Eliminar \"%s\"? Sus chats se conservan y quedan sueltos."
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
+#, python-format
 msgid "Delete \"%s\"? This cannot be undone."
 msgstr "¿Eliminar \"%s\"? Esta acción no se puede deshacer."
 
@@ -1923,6 +2083,7 @@ msgstr "Eliminar chats antiguos"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
+#, python-format
 msgid "Delete chat"
 msgstr "Eliminar chat"
 
@@ -1938,6 +2099,7 @@ msgstr ""
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
+#, python-format
 msgid "Delete space"
 msgstr "Eliminar espacio"
 
@@ -1947,34 +2109,15 @@ msgid "Description"
 msgstr "Descripción"
 
 #. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/share/share_dialog.xml:0
-msgid "Discard"
-msgstr "Descartar"
-
-#. module: muk_ai
-#: model:ir.model.fields,field_description:muk_ai.field_ir_actions_server__display_name
-#: model:ir.model.fields,field_description:muk_ai.field_ir_attachment__display_name
-#: model:ir.model.fields,field_description:muk_ai.field_ir_http__display_name
-#: model:ir.model.fields,field_description:muk_ai.field_ir_model__display_name
-#: model:ir.model.fields,field_description:muk_ai.field_ir_websocket__display_name
-#: model:ir.model.fields,field_description:muk_ai.field_mail_message__display_name
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__display_name
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent_suggestion__display_name
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_approval__display_name
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_model__display_name
-#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_prompt_mixin__display_name
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_provider__display_name
-#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_revision_mixin__display_name
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__display_name
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_event__display_name
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_pending__display_name
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_space__display_name
-#: model:ir.model.fields,field_description:muk_ai.field_muk_mcp_log__display_name
-#: model:ir.model.fields,field_description:muk_ai.field_muk_mcp_mixin__display_name
-#: model:ir.model.fields,field_description:muk_ai.field_muk_mcp_tool__display_name
-#: model:ir.model.fields,field_description:muk_ai.field_res_company__display_name
-#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__display_name
 msgid "Display Name"
 msgstr "Nombre para mostrar"
 
@@ -1989,36 +2132,41 @@ msgstr "Dominio"
 #: code:addons/muk_ai/static/src/chat/utils.js:0
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_session__state__done
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_session_search
+#, python-format
 msgid "Done"
 msgstr "Hecho"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/core/attachment/attachment_card.xml:0
+#, python-format
 msgid "Download"
 msgstr "Descargar"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+#, python-format
 msgid "Drag to resize"
 msgstr "Arrastre para redimensionar"
 
 #. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/tools/tool_card.xml:0
-msgid "Each fire asks:"
-msgstr "Cada ejecución pregunta:"
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_kanban
+msgid "Dropdown menu"
+msgstr "Menú desplegable"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+#, python-format
 msgid "Edit"
 msgstr "Editar"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/space_dialog.js:0
+#: code:addons/muk_ai/static/src/chat/sidebar/space_dialog.js:0
+#, python-format
 msgid "Edit space"
 msgstr "Editar espacio"
 
@@ -2067,6 +2215,8 @@ msgstr "URL base del endpoint usada cuando la región es URL personalizada."
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/composer/chat_composer.xml:0
+#: code:addons/muk_ai/static/src/chat/composer/chat_composer.xml:0
+#, python-format
 msgid "Enter"
 msgstr "Intro"
 
@@ -2077,6 +2227,7 @@ msgstr "Intro"
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__error_message
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_session__state__error
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_session_search
+#, python-format
 msgid "Error"
 msgstr "Error"
 
@@ -2084,6 +2235,7 @@ msgstr "Error"
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
 #: code:addons/muk_ai/static/src/chat/window/chat_window.xml:0
+#, python-format
 msgid "Error:"
 msgstr "Error:"
 
@@ -2095,6 +2247,7 @@ msgstr "Herramientas esenciales"
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Event not found in this session."
 msgstr "Evento no encontrado en esta sesión."
 
@@ -2106,22 +2259,7 @@ msgstr "Eventos"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
-msgid "Everything the model has · slowest"
-msgstr "Todo lo que el modelo puede dar · lo más lento"
-
-#. module: muk_ai
-#: model:ir.model.fields,help:muk_ai.field_muk_ai_agent__model_id
-msgid ""
-"Exact model this agent talks to, overriding the pinned provider. Leave empty"
-" to use the default chat model of the pinned provider, else of the company "
-"default provider, else of the first provider in the list that has one."
-msgstr ""
-"Modelo utilizado por este agente. Deje vacío para usar el modelo "
-"predeterminado de la empresa."
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "Everything the model has · slowest"
 msgstr "Todo lo que el modelo puede dar · lo más lento"
 
@@ -2156,16 +2294,12 @@ msgstr ""
 "entregarle la conversación."
 
 #. module: muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "Extensions"
-msgstr "Extensiones"
-
-#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_agent__reasoning_effort__xhigh
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_model__reasoning_effort_default__xhigh
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_session__override_reasoning_effort__xhigh
+#, python-format
 msgid "Extra High"
 msgstr "Muy alto"
 
@@ -2181,127 +2315,157 @@ msgstr ""
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Failed to approve tool: %s"
 msgstr "No se pudo aprobar la herramienta: %s"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Failed to cancel queued message: %s"
 msgstr "No se pudo cancelar el mensaje en cola: %s"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Failed to change agent: %s"
 msgstr "No se pudo cambiar de agente: %s"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
+msgid "Failed to change the tools: %s"
+msgstr "No se pudieron cambiar las herramientas: %s"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Failed to clear session: %s"
 msgstr "No se pudo vaciar la sesión: %s"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Failed to clear view context: %s"
 msgstr "No se pudo vaciar el contexto de vista: %s"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Failed to compact conversation: %s"
 msgstr "No se pudo compactar la conversación: %s"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Failed to execute UI action: %s"
 msgstr "No se pudo ejecutar la acción de interfaz: %s"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Failed to fork: %s"
 msgstr "No se pudo bifurcar: %s"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Failed to hand over: %s"
 msgstr "No se pudo transferir: %s"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Failed to open view: %s"
 msgstr "No se pudo abrir la vista: %s"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Failed to queue message: %s"
 msgstr "No se pudo poner el mensaje en cola: %s"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Failed to regenerate: %s"
 msgstr "No se pudo regenerar: %s"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Failed to reject tool: %s"
 msgstr "No se pudo rechazar la herramienta: %s"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Failed to rewind: %s"
 msgstr "No se pudo rebobinar: %s"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Failed to set approval mode: %s"
 msgstr "No se pudo establecer el modo de aprobación: %s"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Failed to set reasoning effort: %s"
 msgstr "No se pudo establecer el esfuerzo de razonamiento: %s"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Failed to stop compaction: %s"
 msgstr "No se pudo detener la compactación: %s"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Failed to stop session: %s"
 msgstr "No se pudo detener la sesión: %s"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "Fastest, everyday questions"
 msgstr "Lo más rápido, preguntas cotidianas"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
 #: code:addons/muk_ai/static/src/components/prompt_history_dialog/prompt_history_dialog.js:0
+#, python-format
 msgid "Field"
 msgstr "Campo"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/views/fields/filtered_selection/filtered_selection.js:0
+#, python-format
 msgid "Filtered Selection"
 msgstr "Selección filtrada"
 
@@ -2344,12 +2508,14 @@ msgstr "Icono de Font Awesome p. ej. fa-tasks"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Forked into a new session."
 msgstr "Bifurcado en una nueva sesión."
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "From"
 msgstr "De"
 
@@ -2366,6 +2532,7 @@ msgstr "Abandonar acciones obsoletas"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/rename_dialog.xml:0
+#, python-format
 msgid "Give this chat a descriptive name."
 msgstr "Dé a este chat un nombre descriptivo."
 
@@ -2377,18 +2544,21 @@ msgstr "Enrutamiento HTTP"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Hand over chat to…"
 msgstr "Transferir el chat a…"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Hand over this chat to another user"
 msgstr "Transferir este chat a otro usuario"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "Hard analysis · costs more"
 msgstr "Análisis exigente · cuesta más"
 
@@ -2414,12 +2584,14 @@ msgstr ""
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_agent__reasoning_effort__high
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_model__reasoning_effort_default__high
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_session__override_reasoning_effort__high
+#, python-format
 msgid "High"
 msgstr "Alto"
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/revision_mixin.py:0
+#, python-format
 msgid "History"
 msgstr "Historial"
 
@@ -2431,18 +2603,21 @@ msgstr "Mantenimiento"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "How can I help you today?"
 msgstr "¿En qué puedo ayudarle hoy?"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "How hard the model thinks (from agent)"
 msgstr "Cuánto razona el modelo (del agente)"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "How hard the model thinks (override)"
 msgstr "Cuánto razona el modelo (anulación)"
 
@@ -2491,45 +2666,17 @@ msgstr ""
 "por qué."
 
 #. module: muk_ai
-#: model:ir.model.fields,field_description:muk_ai.field_ir_actions_server__id
-#: model:ir.model.fields,field_description:muk_ai.field_ir_attachment__id
-#: model:ir.model.fields,field_description:muk_ai.field_ir_http__id
-#: model:ir.model.fields,field_description:muk_ai.field_ir_model__id
-#: model:ir.model.fields,field_description:muk_ai.field_ir_websocket__id
-#: model:ir.model.fields,field_description:muk_ai.field_mail_message__id
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__id
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent_suggestion__id
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_approval__id
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_model__id
-#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_prompt_mixin__id
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_provider__id
-#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_revision_mixin__id
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__id
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_event__id
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_pending__id
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_space__id
-#: model:ir.model.fields,field_description:muk_ai.field_muk_mcp_log__id
-#: model:ir.model.fields,field_description:muk_ai.field_muk_mcp_mixin__id
-#: model:ir.model.fields,field_description:muk_ai.field_muk_mcp_tool__id
-#: model:ir.model.fields,field_description:muk_ai.field_res_company__id
-#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__id
 msgid "ID"
 msgstr "ID"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/usage/usage_meter.js:0
-msgid "Input"
-msgstr "Entrada"
-
-#. module: muk_ai
-#: model:ir.model.fields,help:muk_ai.field_muk_ai_session__turn_usage
-msgid ""
-"Input and output tokens, provider rounds and cost of the most recent user "
-"turn. Reset when a new turn starts."
-msgstr ""
-"Tokens de entrada y salida, rondas del proveedor y coste del último turno "
-"del usuario. Se restablece al empezar un turno nuevo."
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_model__currency
@@ -2541,12 +2688,14 @@ msgstr "Código ISO de la moneda de precio."
 #: code:addons/muk_ai/static/src/chat/sidebar/space_dialog.xml:0
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__activity_exception_icon
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_space__icon
+#, python-format
 msgid "Icon"
 msgstr "Icono"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/views/fields/icon_selector/icon_selector.js:0
+#, python-format
 msgid "Icon Selector"
 msgstr "Selector de iconos"
 
@@ -2572,6 +2721,7 @@ msgstr "Si está marcado, los mensajes nuevos requieren su atención."
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_agent__message_has_error
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_agent__message_has_sms_error
 msgid "If checked, some messages have a delivery error."
 msgstr "Si está marcado, algunos mensajes tienen un error de entrega."
 
@@ -2620,6 +2770,7 @@ msgstr "Tiempo de espera de imagen"
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/agent.py:0
+#, python-format
 msgid ""
 "Image generation is enabled, but no image model resolves. Set a Default "
 "Image Model on a provider, or pick one here."
@@ -2631,6 +2782,7 @@ msgstr ""
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/agent.py:0
+#, python-format
 msgid ""
 "Image generation is enabled, but the image model it would draw with runs on "
 "%(provider)s, which has no API key configured. Set the key there, or pick a "
@@ -2644,6 +2796,7 @@ msgstr ""
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/agent.py:0
+#, python-format
 msgid ""
 "Image generation is enabled, but the tool filter of this agent does not list"
 " \"generate_image\", so the tool never reaches the model. Add it on the "
@@ -2654,7 +2807,10 @@ msgstr ""
 "llega al modelo. Añádala en la página Herramientas o vacíe el filtro."
 
 #. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
+#, python-format
 msgid "Images"
 msgstr "Imágenes"
 
@@ -2664,9 +2820,16 @@ msgid "Inactive sessions are cleaned up after this period."
 msgstr "Las sesiones inactivas se limpian después de este período."
 
 #. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/usage/usage_meter.js:0
+#, python-format
+msgid "Input"
+msgstr "Entrada"
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__total_input_cost
-msgid "Input Cost (USD)"
-msgstr "Costo de entrada (USD)"
+msgid "Input Cost"
+msgstr "Costo de entrada"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_model__input_rate
@@ -2679,6 +2842,15 @@ msgid "Input Tokens"
 msgstr "Tokens de entrada"
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_session__turn_usage
+msgid ""
+"Input and output tokens, provider rounds and cost of the most recent user "
+"turn. Reset when a new turn starts."
+msgstr ""
+"Tokens de entrada y salida, rondas del proveedor y coste del último turno "
+"del usuario. Se restablece al empezar un turno nuevo."
+
+#. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_session__last_input_tokens
 msgid ""
 "Input tokens consumed by the most recent provider round. Drives the context-"
@@ -2686,6 +2858,13 @@ msgid ""
 msgstr ""
 "Tokens de entrada consumidos por la ronda más reciente del proveedor. "
 "Alimenta el medidor de uso de la ventana de contexto."
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/views/fields/prompt/prompt.xml:0
+#, python-format
+msgid "Insert Field"
+msgstr "Insertar campo"
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
@@ -2697,18 +2876,21 @@ msgstr "URL de la instancia"
 #: code:addons/muk_ai/static/src/chat/sidebar/space_dialog.xml:0
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_space__instructions
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_space_form
+#, python-format
 msgid "Instructions"
 msgstr "Instrucciones"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/views/fields/json_code/json_code.js:0
+#, python-format
 msgid "Invalid JSON in %(field)s: %(error)s"
 msgstr "JSON no válido en %(field)s: %(error)s"
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/tools/context.py:0
+#, python-format
 msgid "Invalid view context payload (kind=%(kind)r)."
 msgstr "Contenido de contexto de vista no válido (kind=%(kind)r)."
 
@@ -2726,12 +2908,14 @@ msgstr "Límite de iteraciones"
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/usage/usage_meter.js:0
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__iteration_count
+#, python-format
 msgid "Iterations"
 msgstr "Iteraciones"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/views/fields/json_code/json_code.js:0
+#, python-format
 msgid "JSON Code Editor"
 msgstr "Editor de código JSON"
 
@@ -2766,6 +2950,11 @@ msgstr ""
 "pueden fijar."
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_session__disabled_tool_sources
+msgid "Keys of the tool sources switched off for this chat."
+msgstr "Claves de las fuentes de herramientas desactivadas para este chat."
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_event__kind
 msgid "Kind"
 msgstr "Tipo"
@@ -2798,10 +2987,17 @@ msgid "Last Input Tokens"
 msgstr "Últimos tokens de entrada"
 
 #. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/usage/usage_meter.xml:0
-msgid "Last turn"
-msgstr "Último turno"
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent____last_update
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent_suggestion____last_update
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_approval____last_update
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_model____last_update
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_provider____last_update
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session____last_update
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_event____last_update
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_pending____last_update
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_space____last_update
+msgid "Last Modified on"
+msgstr "Última modificación el"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__write_uid
@@ -2828,6 +3024,13 @@ msgstr "Última actualización por"
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_space__write_date
 msgid "Last Updated on"
 msgstr "Última actualización el"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/usage/usage_meter.xml:0
+#, python-format
+msgid "Last turn"
+msgstr "Último turno"
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_agent__enable_image_generation
@@ -2882,6 +3085,8 @@ msgstr ""
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+#: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+#, python-format
 msgid "Load more"
 msgstr "Cargar más"
 
@@ -2889,6 +3094,7 @@ msgstr "Cargar más"
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
 #: code:addons/muk_ai/static/src/chat/window/chat_window.xml:0
+#, python-format
 msgid "Load older messages"
 msgstr "Cargar mensajes anteriores"
 
@@ -2900,15 +3106,19 @@ msgstr "Herramientas cargadas"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Loading session"
 msgstr "Cargando la sesión"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
 #: code:addons/muk_ai/static/src/chat/window/chat_window.xml:0
+#: code:addons/muk_ai/static/src/chat/window/chat_window.xml:0
 #: code:addons/muk_ai/static/src/components/prompt_history_dialog/prompt_history_dialog.xml:0
+#, python-format
 msgid "Loading…"
 msgstr "Cargando…"
 
@@ -2920,6 +3130,7 @@ msgstr "Retención de registros"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "Long chains of reasoning · costs much more"
 msgstr "Cadenas largas de razonamiento · cuesta mucho más"
 
@@ -2929,22 +3140,14 @@ msgstr "Cadenas largas de razonamiento · cuesta mucho más"
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_agent__reasoning_effort__low
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_model__reasoning_effort_default__low
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_session__override_reasoning_effort__low
+#, python-format
 msgid "Low"
 msgstr "Bajo"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
-#: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
-#, python-format
-msgid "Mark all as read"
-msgstr "Marcar todo como leído"
 
 #. module: muk_ai
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_mcp_log__source__mcp
 #: model:ir.ui.menu,name:muk_ai.menu_ai_mcp
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_mcp_log_search_inherit_muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "MCP"
 msgstr "MCP"
 
@@ -2969,10 +3172,24 @@ msgid "MCP Tool Mixin"
 msgstr "Mixin de herramienta MCP"
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__message_main_attachment_id
+msgid "Main Attachment"
+msgstr "Archivo adjunto principal"
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/share/share_users.xml:0
+#, python-format
 msgid "Manage"
 msgstr "Gestionar"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+#: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+#, python-format
+msgid "Mark all as read"
+msgstr "Marcar todo como leído"
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
@@ -3016,6 +3233,7 @@ msgstr "Gasto máximo"
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_agent__reasoning_effort__max
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_model__reasoning_effort_default__max
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_session__override_reasoning_effort__max
+#, python-format
 msgid "Maximum"
 msgstr "Máximo"
 
@@ -3044,6 +3262,7 @@ msgstr "Tokens de entrada máximos que el proveedor acepta para este modelo."
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Maximum iterations reached."
 msgstr "Se ha alcanzado el máximo de iteraciones."
 
@@ -3090,6 +3309,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_agent__reasoning_effort__medium
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_model__reasoning_effort_default__medium
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_session__override_reasoning_effort__medium
+#, python-format
 msgid "Medium"
 msgstr "Medio"
 
@@ -3106,12 +3326,14 @@ msgstr "Error de entrega del mensaje"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.js:0
+#, python-format
 msgid "Message the assistant…"
 msgstr "Escriba al asistente…"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.js:0
+#, python-format
 msgid "Message the assistant… (Enter to send, Shift+Enter for newline)"
 msgstr ""
 "Escriba al asistente… (Intro para enviar, Mayús+Intro para salto de línea)"
@@ -3124,6 +3346,7 @@ msgstr "Mensajes"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/window/chat_window.js:0
+#, python-format
 msgid "Message…"
 msgstr "Mensaje…"
 
@@ -3148,30 +3371,15 @@ msgstr "Míos"
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_agent__reasoning_effort__minimal
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_model__reasoning_effort_default__minimal
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_session__override_reasoning_effort__minimal
+#, python-format
 msgid "Minimal"
 msgstr "Mínimo"
-
-#. module: muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "Mistral"
-msgstr "Mistral"
-
-#. module: muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "Mistral Large, Medium, Small, Ministral, Codestral and GLM."
-msgstr "Mistral Large, Medium, Small, Ministral, Codestral y GLM."
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_model__modality
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_muk_ai_model_search
 msgid "Modality"
 msgstr "Modalidad"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/views/fields/json_code/json_code.js:0
-msgid "Mode"
-msgstr "Modo"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_approval__res_model
@@ -3183,6 +3391,7 @@ msgstr "Modelo"
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/agent.py:0
+#, python-format
 msgid ""
 "Model %(model)s runs on %(vendor)s, so it overrides the pinned provider "
 "%(provider)s for chat. Pick a model of %(provider)s, or clear the model to "
@@ -3248,8 +3457,10 @@ msgstr "Modelos"
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/core/commands/command_setup.js:0
 #: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
+#: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
 #: model:ir.ui.menu,name:muk_ai.menu_ai_root
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+#, python-format
 msgid "MuK AI"
 msgstr "MuK AI"
 
@@ -3259,71 +3470,34 @@ msgid "MuK AI Chat"
 msgstr "MuK AI Chat"
 
 #. module: muk_ai
-#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_compat
-msgid "MuK AI Compatible Providers"
-msgstr "Proveedores compatibles de MuK AI"
-
-#. module: muk_ai
-#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_mcp
-msgid "MuK AI MCP"
-msgstr "MuK AI MCP"
-
-#. module: muk_ai
-#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_mistral
-msgid "MuK AI Mistral"
-msgstr "MuK AI Mistral"
-
-#. module: muk_ai
-#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_schedule
-msgid "MuK AI Schedule"
-msgstr "MuK AI Schedule"
-
-#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_mail_mail__muk_ai_session_id
 #: model:ir.model.fields,field_description:muk_ai.field_mail_message__muk_ai_session_id
 msgid "MuK AI Session"
 msgstr "MuK AI Session"
 
 #. module: muk_ai
-#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_skills
-msgid "MuK AI Skills"
-msgstr "MuK AI Skills"
-
-#. module: muk_ai
-#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_voice
-msgid "MuK AI Voice"
-msgstr "MuK AI Voice"
-
-#. module: muk_ai
-#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_workflows
-msgid "MuK AI Workflows"
-msgstr "MuK AI Workflows"
-
-#. module: muk_ai
 #: model:ir.actions.server,name:muk_ai.cron_run_pending_sessions_1_ir_actions_server
+#: model:ir.cron,cron_name:muk_ai.cron_run_pending_sessions_1
 msgid "MuK AI: Session Worker 1"
 msgstr "MuK AI: Worker de sesión 1"
 
 #. module: muk_ai
 #: model:ir.actions.server,name:muk_ai.cron_run_pending_sessions_2_ir_actions_server
+#: model:ir.cron,cron_name:muk_ai.cron_run_pending_sessions_2
 msgid "MuK AI: Session Worker 2"
 msgstr "MuK AI: Worker de sesión 2"
 
 #. module: muk_ai
 #: model:ir.actions.server,name:muk_ai.cron_run_pending_sessions_3_ir_actions_server
+#: model:ir.cron,cron_name:muk_ai.cron_run_pending_sessions_3
 msgid "MuK AI: Session Worker 3"
 msgstr "MuK AI: Worker de sesión 3"
 
 #. module: muk_ai
 #: model:ir.actions.server,name:muk_ai.cron_run_pending_sessions_4_ir_actions_server
+#: model:ir.cron,cron_name:muk_ai.cron_run_pending_sessions_4
 msgid "MuK AI: Session Worker 4"
 msgstr "MuK AI: Worker de sesión 4"
-
-#. module: muk_ai
-#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_workflows
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "Multi-step AI playbooks and stateful business processes."
-msgstr "Playbooks de IA de varios pasos y procesos de negocio con estado."
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__my_activity_date_deadline
@@ -3337,6 +3511,7 @@ msgstr "Plazo de mi actividad"
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_approval__name
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__name
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_space__name
+#, python-format
 msgid "Name"
 msgstr "Nombre"
 
@@ -3351,6 +3526,7 @@ msgstr "Nunca preguntar"
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
 #: code:addons/muk_ai/static/src/chat/utils.js:0
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_session__state__new
+#, python-format
 msgid "New"
 msgstr "Nuevo"
 
@@ -3359,18 +3535,21 @@ msgstr "Nuevo"
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
 #: code:addons/muk_ai/static/src/core/commands/command_providers.js:0
 #: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
+#, python-format
 msgid "New Chat"
 msgstr "Nuevo chat"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+#, python-format
 msgid "New chat here"
 msgstr "Nuevo chat aquí"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+#, python-format
 msgid "New space"
 msgstr "Nuevo espacio"
 
@@ -3392,30 +3571,49 @@ msgstr "Tipo próxima actividad"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/search/chat_search.xml:0
+#, python-format
 msgid "Next match (Enter)"
 msgstr "Coincidencia siguiente (Intro)"
 
 #. module: muk_ai
 #. odoo-python
+#: code:addons/muk_ai/models/approval.py:0
+#, python-format
+msgid "No"
+msgstr ""
+
+#. module: muk_ai
+#. odoo-python
 #: code:addons/muk_ai/models/agent.py:0
+#, python-format
 msgid "No %(modality)s model available"
 msgstr "No hay ningún modelo de %(modality)s disponible"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/core/commands/command_setup.js:0
+#, python-format
 msgid "No AI chat or agent found."
 msgstr "No se encontró ningún chat ni agente de IA."
 
 #. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/mcp/window.py:0
+#, python-format
+msgid "No action matches %(ref)r."
+msgstr "Ninguna acción coincide con %(ref)r."
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "No agent (defaults)"
 msgstr "Sin agente (predeterminados)"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "No agent matches \"%s\". Type /agent to pick from the list."
 msgstr ""
 "Ningún agente coincide con \"%s\". Escriba /agent para elegir de la lista."
@@ -3423,30 +3621,35 @@ msgstr ""
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "No agents available to switch to."
 msgstr "No hay agentes disponibles a los que cambiar."
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/artifacts/chat_artifacts_panel.xml:0
+#, python-format
 msgid "No artifacts in this conversation yet."
 msgstr "Todavía no hay artefactos en esta conversación."
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/artifacts/types/attachments_tab.xml:0
+#, python-format
 msgid "No attachments in this conversation yet."
 msgstr "Todavía no hay adjuntos en esta conversación."
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+#, python-format
 msgid "No chats here yet."
 msgstr "Todavía no hay chats aquí."
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+#, python-format
 msgid "No chats match"
 msgstr "Ningún chat coincide"
 
@@ -3454,30 +3657,35 @@ msgstr "Ningún chat coincide"
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
 #: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
+#, python-format
 msgid "No chats yet."
 msgstr "Todavía no hay chats."
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/space_dialog.js:0
+#, python-format
 msgid "No default agent"
 msgstr "Sin agente predeterminado"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/components/prompt_history_dialog/prompt_history_dialog.js:0
+#, python-format
 msgid "No differences."
 msgstr "Sin diferencias."
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/views/fields/session_events/session_events.xml:0
+#, python-format
 msgid "No entries yet."
 msgstr "Todavía no hay entradas."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/mcp/agent.py:0
+#, python-format
 msgid ""
 "No handoff-enabled agent matches %(agent)r; call list_agents to see the "
 "available targets."
@@ -3488,12 +3696,14 @@ msgstr ""
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/components/prompt_history_dialog/prompt_history_dialog.xml:0
+#, python-format
 msgid "No history yet."
 msgstr "Todavía no hay historial."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/mcp/image.py:0
+#, python-format
 msgid ""
 "No image model is available to this session. Set a Default Image Model on a "
 "provider, or pick one on the agent."
@@ -3504,42 +3714,56 @@ msgstr ""
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/views/fields/tool_picker/tool_picker.js:0
+#, python-format
 msgid "No matching tool"
 msgstr "Ninguna herramienta coincidente"
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/agent.py:0
+#, python-format
 msgid "No provider runs code here"
 msgstr "Aquí ningún proveedor ejecuta código"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "No records resolved."
 msgstr "No se resolvió ningún registro."
 
 #. module: muk_ai
 #. odoo-javascript
+#: code:addons/muk_ai/static/src/core/compat/select_menu.xml:0
+#, python-format
+msgid "No results"
+msgstr "Sin resultados"
+
+#. module: muk_ai
+#. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/artifacts/types/sources_tab.xml:0
+#, python-format
 msgid "No sources in this conversation yet."
 msgstr "Todavía no hay fuentes en esta conversación."
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+#, python-format
 msgid "No space yet. Create a new space."
 msgstr "Todavía no hay espacios. Cree uno nuevo."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "No user turn to regenerate from."
 msgstr "No hay ningún turno de usuario desde el que regenerar."
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "No view context is pinned."
 msgstr "No hay ningún contexto de vista fijado."
 
@@ -3557,18 +3781,21 @@ msgstr "Notas sobre este modelo — p. ej. fecha de vigencia, fuente."
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Nothing to compact yet — the conversation is empty."
 msgstr "Todavía no hay nada que compactar — la conversación está vacía."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Nothing to compact — conversation too short."
 msgstr "Nada que compactar — la conversación es demasiado corta."
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+#, python-format
 msgid "Nothing unread here."
 msgstr "Aquí no hay nada sin leer."
 
@@ -3603,6 +3830,16 @@ msgid "Odoo"
 msgstr "Odoo"
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_prompt_variables__odoo_series
+msgid "Odoo Series"
+msgstr "Serie de Odoo"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_prompt_variables__odoo_version
+msgid "Odoo Version"
+msgstr "Versión de Odoo"
+
+#. module: muk_ai
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_agent__web_search__off
 msgid "Off"
 msgstr "Desactivado"
@@ -3610,30 +3847,36 @@ msgstr "Desactivado"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
+#, python-format
 msgid "Older"
 msgstr "Anteriores"
 
 #. module: muk_ai
-#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_compat
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "Ollama, vLLM, OpenRouter and every OpenAI-compatible LLM."
-msgstr "Ollama, vLLM, OpenRouter y cualquier LLM compatible con OpenAI."
-
-#. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "One or more attachments could not be found."
 msgstr "No se ha encontrado uno o más adjuntos."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
+msgid "Only a handover changes the owner of a chat."
+msgstr "Solo una entrega cambia el propietario de un chat."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Only the session owner can continue this chat."
 msgstr "Solo el propietario de la sesión puede continuar este chat."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Only the session owner or an administrator can hand over this chat."
 msgstr ""
 "Solo el propietario de la sesión o un administrador puede transferir este "
@@ -3642,6 +3885,7 @@ msgstr ""
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Only the session owner or an administrator can stop this session."
 msgstr ""
 "Solo el propietario de la sesión o un administrador puede detener esta "
@@ -3650,6 +3894,7 @@ msgstr ""
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/share/share_users.js:0
+#, python-format
 msgid "Only you can read this chat"
 msgstr "Solo usted puede leer este chat"
 
@@ -3662,38 +3907,35 @@ msgstr "Abrir"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/webclient/notification/session_notification_service.js:0
+#, python-format
 msgid "Open Chat"
 msgstr "Abrir chat"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
+#, python-format
 msgid "Open Full Chat"
 msgstr "Abrir el chat completo"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/window/chat_window.xml:0
+#, python-format
 msgid "Open fullscreen"
 msgstr "Abrir en pantalla completa"
 
 #. module: muk_ai
 #. odoo-javascript
-#: code:addons/muk_ai/static/src/views/fields/filtered_selection/filtered_selection.js:0
-#: code:addons/muk_ai/static/src/views/fields/tool_picker/tool_picker.js:0
-msgid "Options field"
-msgstr "Campo de opciones"
-
-#. module: muk_ai
-#. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/usage/usage_meter.js:0
+#, python-format
 msgid "Output"
 msgstr "Salida"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__total_output_cost
-msgid "Output Cost (USD)"
-msgstr "Costo de salida (USD)"
+msgid "Output Cost"
+msgstr "Costo de salida"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_model__output_rate
@@ -3704,6 +3946,11 @@ msgstr "Salida $/M tokens"
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__total_output_tokens
 msgid "Output Tokens"
 msgstr "Tokens de salida"
+
+#. module: muk_ai
+#: model:muk_ai.agent.suggestion,label:muk_ai.agent_read_only_suggestion_overdue
+msgid "Overdue"
+msgstr "Vencidas"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__user_id
@@ -3721,12 +3968,6 @@ msgid ""
 msgstr ""
 "Propietario de un espacio personal. Déjalo vacío para un espacio de sistema:"
 " lo ven todos los usuarios y recopila sus chats mediante su dominio."
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/tools/tool_card.xml:0
-msgid "Paused — resumes"
-msgstr "En pausa — se reanuda"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_event__payload
@@ -3798,6 +4039,7 @@ msgstr "Fijado"
 
 #. module: muk_ai
 #: model:muk_ai.agent.suggestion,label:muk_ai.agent_general_suggestion_summarize
+#: model:muk_ai.agent.suggestion,label:muk_ai.agent_read_only_suggestion_pipeline
 msgid "Pipeline"
 msgstr "Embudo"
 
@@ -3809,38 +4051,35 @@ msgstr "Área de pruebas"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Pop out chat to a floating window"
 msgstr "Desacoplar el chat en una ventana flotante"
 
 #. module: muk_ai
-#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_skills
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "Pre-built agent skills the user or LLM can switch into."
-msgstr ""
-"Habilidades de agente preconstruidas a las que el usuario o el LLM puede "
-"cambiar."
-
-#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
+#, python-format
 msgid "Previous 30 days"
 msgstr "Últimos 30 días"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
+#, python-format
 msgid "Previous 7 days"
 msgstr "Últimos 7 días"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/search/chat_search.xml:0
+#, python-format
 msgid "Previous match (Shift+Enter)"
 msgstr "Coincidencia anterior (Mayús+Intro)"
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Previous turn timed out after %(idle)s seconds with no activity."
 msgstr "El turno anterior expiró tras %(idle)s segundos sin actividad."
 
@@ -3855,7 +4094,10 @@ msgid "Private To"
 msgstr "Privado para"
 
 #. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/views/fields/prompt/prompt.js:0
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent_suggestion__prompt
+#, python-format
 msgid "Prompt"
 msgstr "Prompt"
 
@@ -3894,6 +4136,7 @@ msgstr "Integrada del proveedor"
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/provider.py:0
+#, python-format
 msgid "Provider Default"
 msgstr "Predeterminado del proveedor"
 
@@ -3936,6 +4179,7 @@ msgstr "Proveedores"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Question"
 msgstr "Pregunta"
 
@@ -3948,6 +4192,37 @@ msgstr "En cola desde"
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__pending_user_messages
 msgid "Queued User Messages"
 msgstr "Mensajes de usuario en cola"
+
+#. module: muk_ai
+#: model:muk_ai.agent.suggestion,prompt:muk_ai.agent_read_only_suggestion_top_customers
+msgid ""
+"Rank the top 10 customers by total invoiced amount this calendar year.\n"
+"\n"
+"Scope: `account.move` of type `out_invoice`, state `posted`, within the current year. Subtract matching `out_refund` credit notes from the totals.\n"
+"\n"
+"Table columns:\n"
+"- Customer as `[Display Name](res.partner,id)`\n"
+"- Total invoiced (tax-excluded)\n"
+"- Number of invoices\n"
+"- Average invoice amount\n"
+"- Most recent invoice date (ISO)\n"
+"\n"
+"Sort descending by total invoiced. End with a one-line grand total across the top 10 and the share of total company revenue that represents.\n"
+"        "
+msgstr ""
+"Clasifica los 10 principales clientes por importe total facturado en este año natural.\n"
+"\n"
+"Alcance: `account.move` de tipo `out_invoice`, estado `posted`, dentro del año en curso. Resta de los totales las notas de crédito `out_refund` correspondientes.\n"
+"\n"
+"Columnas de la tabla:\n"
+"- Cliente como `[Display Name](res.partner,id)`\n"
+"- Total facturado (sin impuestos)\n"
+"- Número de facturas\n"
+"- Importe medio por factura\n"
+"- Fecha de la factura más reciente (ISO)\n"
+"\n"
+"Ordena de forma descendente por total facturado. Termina con una línea con el total general de los 10 principales y la parte de los ingresos totales de la empresa que representa.\n"
+"        "
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_provider__rate_limit
@@ -3967,6 +4242,7 @@ msgstr "Unidad de tarifa"
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid ""
 "Rate limit reached: at most %(limit)s chats may be started per minute. You "
 "started %(count)s in the last minute and asked for %(batch)s more. Try again"
@@ -3984,12 +4260,14 @@ msgstr "Sin procesar"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/composer/chat_composer.js:0
+#, python-format
 msgid "Read only — %s shared this chat with you."
 msgstr "Solo lectura — %s ha compartido este chat con usted."
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/composer/chat_composer.js:0
+#, python-format
 msgid "Read only — you cannot write in this chat."
 msgstr "Solo lectura — no puede escribir en este chat."
 
@@ -4000,9 +4278,9 @@ msgid "Read-only"
 msgstr "Solo lectura"
 
 #. module: muk_ai
-#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__read_only
-msgid "Read-only Mode"
-msgstr "Restringir a herramientas de solo lectura"
+#: model:muk_ai.agent,name:muk_ai.agent_read_only
+msgid "Read-only Analyst"
+msgstr "Analista de solo lectura"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__read_only
@@ -4027,6 +4305,7 @@ msgstr "Anulación del esfuerzo de razonamiento"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
+#, python-format
 msgid "Recent sessions"
 msgstr "Sesiones recientes"
 
@@ -4039,13 +4318,16 @@ msgstr "IDs de registro"
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
 #: code:addons/muk_ai/static/src/chat/window/chat_window.xml:0
+#, python-format
 msgid "Regenerate"
 msgstr "Regenerar"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
 #: code:addons/muk_ai/static/src/chat/window/chat_window.xml:0
+#, python-format
 msgid "Regenerate this answer"
 msgstr "Regenerar esta respuesta"
 
@@ -4057,6 +4339,7 @@ msgstr "Región"
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/provider.py:0
+#, python-format
 msgid "Region %(region)s is not available for provider %(provider)s."
 msgstr ""
 "La región %(region)s no está disponible para el proveedor %(provider)s."
@@ -4074,6 +4357,7 @@ msgstr "Registro"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Reject"
 msgstr "Rechazar"
 
@@ -4091,12 +4375,14 @@ msgstr "Motivo de rechazo"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/core/attachment/attachment_card.xml:0
+#, python-format
 msgid "Remove"
 msgstr "Quitar"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid ""
 "Remove this message and the %s event(s) that follow from the conversation? "
 "This cannot be undone."
@@ -4108,6 +4394,7 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
 #: code:addons/muk_ai/static/src/chat/sidebar/rename_dialog.xml:0
+#, python-format
 msgid "Rename"
 msgstr "Renombrar"
 
@@ -4115,8 +4402,44 @@ msgstr "Renombrar"
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
 #: code:addons/muk_ai/static/src/chat/sidebar/rename_dialog.js:0
+#, python-format
 msgid "Rename chat"
 msgstr "Renombrar chat"
+
+#. module: muk_ai
+#: model:muk_ai.agent.suggestion,prompt:muk_ai.agent_read_only_suggestion_revenue
+msgid ""
+"Report invoiced revenue for the last 6 full calendar months (exclude the current partial month).\n"
+"\n"
+"Scope: posted customer invoices (`account.move`, type `out_invoice`, state `posted`), minus credit notes (`out_refund`).\n"
+"\n"
+"Per month table:\n"
+"- Month (YYYY-MM)\n"
+"- Total invoiced (untaxed and tax-included)\n"
+"- Number of invoices\n"
+"- Top 3 customers contributing and their share\n"
+"- Month-over-month % change on the tax-excluded total\n"
+"\n"
+"End with:\n"
+"- 6-month total (untaxed and tax-included)\n"
+"- Average monthly revenue\n"
+"- Use the default company currency; do not convert."
+msgstr ""
+"Informa de los ingresos facturados de los últimos 6 meses naturales completos (excluye el mes actual parcial).\n"
+"\n"
+"Alcance: facturas de cliente publicadas (`account.move`, tipo `out_invoice`, estado `posted`), menos las notas de crédito (`out_refund`).\n"
+"\n"
+"Tabla por mes:\n"
+"- Mes (YYYY-MM)\n"
+"- Total facturado (sin impuestos y con impuestos)\n"
+"- Número de facturas\n"
+"- Los 3 principales clientes que contribuyen y su parte\n"
+"- Variación % mes contra mes del total sin impuestos\n"
+"\n"
+"Termina con:\n"
+"- Total de 6 meses (sin impuestos y con impuestos)\n"
+"- Ingresos mensuales medios\n"
+"- Usa la moneda predeterminada de la empresa; no conviertas."
 
 #. module: muk_ai
 #: model:ir.ui.menu,name:muk_ai.menu_ai_report
@@ -4131,12 +4454,14 @@ msgstr "Tiempo de espera de solicitud"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Resolved."
 msgstr "Resuelto."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/providers/base.py:0
+#, python-format
 msgid ""
 "Response truncated: the model reached its maximum output token limit before "
 "finishing."
@@ -4147,6 +4472,7 @@ msgstr ""
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/providers/base.py:0
+#, python-format
 msgid ""
 "Response truncated: the output hit the configured Max Tokens limit of "
 "%(limit)s tokens (including any reasoning). Raise the Max Tokens setting on "
@@ -4164,6 +4490,7 @@ msgstr "Usuario responsable"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/components/prompt_history_dialog/prompt_history_dialog.xml:0
+#, python-format
 msgid "Restore This Version"
 msgstr "Restaurar esta versión"
 
@@ -4180,8 +4507,14 @@ msgstr ""
 "(aplicado mediante el ámbito MCP)."
 
 #. module: muk_ai
+#: model:muk_ai.agent,description:muk_ai.agent_read_only
+msgid "Restricted to read-only tools."
+msgstr "Restringido a herramientas de solo lectura."
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/tools/tool_card.xml:0
+#, python-format
 msgid "Result"
 msgstr "Resultado"
 
@@ -4198,14 +4531,21 @@ msgid "Retention Days"
 msgstr "Días de conservación"
 
 #. module: muk_ai
+#: model:muk_ai.agent.suggestion,label:muk_ai.agent_read_only_suggestion_revenue
+msgid "Revenue"
+msgstr "Ingresos"
+
+#. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/revision_mixin.py:0
+#, python-format
 msgid "Revision %d"
 msgstr "Revisión %d"
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/revision_mixin.py:0
+#, python-format
 msgid "Revision not found."
 msgstr "Revisión no encontrada."
 
@@ -4218,18 +4558,21 @@ msgstr "Revisiones"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Rewind"
 msgstr "Rebobinar"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Rewind conversation"
 msgstr "Rebobinar la conversación"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Rewind — remove this message and everything after"
 msgstr "Rebobinar — quitar este mensaje y todo lo posterior"
 
@@ -4265,16 +4608,16 @@ msgid "Routes the conversation to the best specialist agent."
 msgstr "Dirige la conversación al agente especialista más adecuado."
 
 #. module: muk_ai
-#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_schedule
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "Run agents on a schedule; let them pause and resume."
-msgstr ""
-"Ejecute agentes según un cronograma, permítales pausarse y reanudarse a sí "
-"mismos."
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+#, python-format
+msgid "Run code to calculate and analyse data"
+msgstr "Ejecutar código para calcular y analizar datos"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "Run without asking"
 msgstr "Ejecutar sin preguntar"
 
@@ -4284,18 +4627,21 @@ msgstr "Ejecutar sin preguntar"
 #: code:addons/muk_ai/static/src/chat/utils.js:0
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_session__state__running
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_session_search
+#, python-format
 msgid "Running"
 msgstr "En ejecución"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/tools/tool_card.xml:0
+#, python-format
 msgid "Running…"
 msgstr "Ejecutando…"
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/agent.py:0
+#, python-format
 msgid "Runs on %(provider)s"
 msgstr "Se ejecuta en %(provider)s"
 
@@ -4308,24 +4654,22 @@ msgstr "Ventas"
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/share/share_dialog.xml:0
 #: code:addons/muk_ai/static/src/chat/sidebar/space_dialog.xml:0
+#, python-format
 msgid "Save"
 msgstr "Guardar"
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/space.py:0
+#, python-format
 msgid "Say how many days \"%(name)s\" keeps its chats for."
 msgstr "Indique cuántos días conserva \"%(name)s\" sus chats."
-
-#. module: muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "Schedule"
-msgstr "Planificación"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
 #: code:addons/muk_ai/static/src/chat/window/chat_window.xml:0
+#, python-format
 msgid "Scroll to latest"
 msgstr "Ir a lo más reciente"
 
@@ -4361,6 +4705,7 @@ msgstr "Backend de búsqueda"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/core/commands/command_setup.js:0
+#, python-format
 msgid "Search MuK AI chats and agents…"
 msgstr "Buscar chats y agentes de MuK AI…"
 
@@ -4368,30 +4713,42 @@ msgstr "Buscar chats y agentes de MuK AI…"
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/space_dialog.js:0
 #: code:addons/muk_ai/static/src/views/fields/icon_selector/icon_selector.js:0
+#, python-format
 msgid "Search an icon..."
 msgstr "Buscar un icono..."
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+#, python-format
 msgid "Search chats…"
 msgstr "Buscar chats…"
 
 #. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+#, python-format
+msgid "Search the web for current information"
+msgstr "Buscar información actual en la web"
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Search this chat"
 msgstr "Buscar en este chat"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/search/chat_search.xml:0
+#, python-format
 msgid "Search this chat…"
 msgstr "Buscar en este chat…"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+#, python-format
 msgid "Searching…"
 msgstr "Buscando…"
 
@@ -4414,6 +4771,7 @@ msgstr "Segundos sin un fragmento transmitido antes de abortar la conexión."
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Select an active internal user to hand over to."
 msgstr "Seleccione un usuario interno activo al que transferirlo."
 
@@ -4464,14 +4822,9 @@ msgstr "Acción de servidor"
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_event__session_id
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_pending__session_id
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_session_form
+#, python-format
 msgid "Session"
 msgstr "Sesión"
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/mcp/agent.py:0
-msgid "Session %(sid)s no longer exists."
-msgstr "La sesión %(sid)s ya no existe."
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
@@ -4495,42 +4848,49 @@ msgstr "La secuencia de eventos de sesión debe ser única por sesión."
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Session is not in a startable state."
 msgstr "La sesión no está en un estado que permita iniciarla."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Session is not waiting for a client action."
 msgstr "La sesión no está esperando una acción de cliente."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Session is not waiting for approval."
 msgstr "La sesión no está esperando aprobación."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Session is not waiting for user input."
 msgstr "La sesión no está esperando la respuesta del usuario."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Session “%(name)s” has finished."
 msgstr "La sesión “%(name)s” ha finalizado."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Session “%(name)s” is waiting for your answer."
 msgstr "La sesión “%(name)s” está esperando su respuesta."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Session “%(name)s” is waiting for your approval before running a tool."
 msgstr ""
 "La sesión “%(name)s” está esperando su aprobación antes de ejecutar una "
@@ -4539,6 +4899,7 @@ msgstr ""
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Session “%(name)s” stopped: %(reason)s"
 msgstr "La sesión “%(name)s” se detuvo: %(reason)s"
 
@@ -4549,6 +4910,7 @@ msgstr "La sesión “%(name)s” se detuvo: %(reason)s"
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__session_count
 #: model:ir.ui.menu,name:muk_ai.menu_ai_session
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
+#, python-format
 msgid "Sessions"
 msgstr "Sesiones"
 
@@ -4562,6 +4924,17 @@ msgstr ""
 "abre la sesión; controla la insignia de atención de la bandeja del sistema."
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_session_event__private_user_id
+msgid ""
+"Set when this line carries something about one person rather than something "
+"said in the chat. Nobody else is shown it, not a reader the chat was shared "
+"with and not a later owner."
+msgstr ""
+"Se establece cuando esta línea contiene algo sobre una persona y no algo "
+"dicho en el chat. No se muestra a nadie más, ni a un lector con quien se "
+"compartió el chat ni a un propietario posterior."
+
+#. module: muk_ai
 #: model:ir.actions.act_window,name:muk_ai.action_muk_ai_config_settings
 #: model:ir.ui.menu,name:muk_ai.menu_ai_settings
 msgid "Settings"
@@ -4570,12 +4943,14 @@ msgstr "Configuración"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/share/share_users.xml:0
+#, python-format
 msgid "Share"
 msgstr "Compartir"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/share/share_dialog.js:0
+#, python-format
 msgid "Share this chat"
 msgstr "Compartir este chat"
 
@@ -4587,6 +4962,7 @@ msgstr "Compartido con"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
+#, python-format
 msgid "Shared with %s person(s) — they can read it"
 msgstr "Compartido con %s persona(s) — pueden leerlo"
 
@@ -4598,6 +4974,7 @@ msgstr "Compartido conmigo"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/composer/chat_composer.xml:0
+#, python-format
 msgid "Shift"
 msgstr "Mayús"
 
@@ -4615,24 +4992,28 @@ msgstr "Título breve mostrado en el botón de sugerencia (p. ej. 'Explorar')."
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+#, python-format
 msgid "Show all chats"
 msgstr "Mostrar todos los chats"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/artifacts/types/sources_tab.xml:0
+#, python-format
 msgid "Show less"
 msgstr "Mostrar menos"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
+#, python-format
 msgid "Show only unread"
 msgstr "Mostrar solo los no leídos"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Show summary"
 msgstr "Mostrar el resumen"
 
@@ -4640,11 +5021,6 @@ msgstr "Mostrar el resumen"
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_approval__signature
 msgid "Signature"
 msgstr "Firma"
-
-#. module: muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "Skills"
-msgstr "Habilidades"
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
@@ -4677,6 +5053,7 @@ msgstr "Fuente"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/artifacts/types/sources_type.js:0
+#, python-format
 msgid "Sources"
 msgstr "Fuentes"
 
@@ -4691,6 +5068,7 @@ msgstr "Espacio"
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
 #: code:addons/muk_ai/static/src/chat/sidebar/space_dialog.xml:0
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_space_form
+#, python-format
 msgid "Space name"
 msgstr "Nombre del espacio"
 
@@ -4699,18 +5077,21 @@ msgstr "Nombre del espacio"
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
 #: model:ir.actions.act_window,name:muk_ai.action_ai_space
 #: model:ir.ui.menu,name:muk_ai.menu_ai_space
+#, python-format
 msgid "Spaces"
 msgstr "Espacios"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Start a new chat or pick a suggestion to begin."
 msgstr "Inicie un nuevo chat o elija una sugerencia para empezar."
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Start a new chat to begin."
 msgstr "Inicie un nuevo chat para empezar."
 
@@ -4763,24 +5144,28 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_session_form
+#, python-format
 msgid "Stop"
 msgstr "Detener"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Stop the running session before clearing."
 msgstr "Detenga la sesión en ejecución antes de vaciarla."
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Stop the running session before compacting."
 msgstr "Detenga la sesión en ejecución antes de compactarla."
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Stop the session before forking."
 msgstr "Detenga la sesión antes de bifurcarla."
 
@@ -4789,18 +5174,21 @@ msgstr "Detenga la sesión antes de bifurcarla."
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Stop the session before handing it over."
 msgstr "Detenga la sesión antes de transferirla."
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
+#, python-format
 msgid "Stop the session before rewinding."
 msgstr "Detenga la sesión antes de rebobinarla."
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "Stop to interrupt…"
 msgstr "Detener para interrumpir…"
 
@@ -4810,12 +5198,14 @@ msgstr "Detener para interrumpir…"
 #: code:addons/muk_ai/static/src/chat/utils.js:0
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_session__state__stopped
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_session_search
+#, python-format
 msgid "Stopped"
 msgstr "Detenido"
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/providers/base.py:0
+#, python-format
 msgid "Stream idle for %ss — aborted"
 msgstr "Flujo inactivo durante %ss — abortado"
 
@@ -4833,6 +5223,7 @@ msgstr "Sugerencias (JSON)"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Summarizing conversation…"
 msgstr "Resumiendo la conversación…"
 
@@ -4859,12 +5250,19 @@ msgstr "Soporta búsqueda web"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Switch agent"
 msgstr "Cambiar de agente"
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__disabled_tool_sources
+msgid "Switched Off Tools"
+msgstr "Herramientas desactivadas"
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/session/turns.js:0
+#, python-format
 msgid "Switched to %s"
 msgstr "Se ha cambiado a %s"
 
@@ -4883,14 +5281,6 @@ msgstr "Prompt del sistema"
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_space_form
 msgid "System Space"
 msgstr "Espacio de sistema"
-
-#. module: muk_ai
-#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_voice
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "Talk to the assistant: realtime STT and spoken replies via TTS."
-msgstr ""
-"Hable con el asistente: STT en tiempo real y respuestas habladas mediante "
-"TTS."
 
 #. module: muk_ai
 #: model:muk_ai.agent.suggestion,label:muk_ai.agent_general_suggestion_draft
@@ -4922,24 +5312,59 @@ msgstr ""
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.js:0
+#, python-format
 msgid "That AI session no longer exists."
 msgstr "Esa sesión IA ya no existe."
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_prompt_variables__odoo_series
+msgid "The Odoo series, for example 16.0."
+msgstr "La serie de Odoo, por ejemplo 16.0."
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "The agent of a shared chat cannot be changed"
 msgstr "El agente de un chat compartido no se puede cambiar"
 
 #. module: muk_ai
 #. odoo-python
+#: code:addons/muk_ai/mcp/window.py:0
+#, python-format
+msgid "The context of action %(ref)r cannot be extended: %(error)s"
+msgstr "El contexto de la acción %(ref)r no se puede ampliar: %(error)s"
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_prompt_variables__company
+msgid "The current company of the chat."
+msgstr "La empresa actual del chat."
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
+msgid ""
+"The date, the user, the language, the company and the approval mode are stated in a runtime block that follows the prompt.\n"
+"\t\t\t\t\t\t\t\t\tA value that differs per user or per day keeps the text after it from being cached, so place such values late in the prompt."
+msgstr ""
+"La fecha, el usuario, el idioma, la empresa y el modo de aprobación se indican en un bloque de ejecución que sigue al prompt.\n"
+"\t\t\t\t\t\t\t\t\tUn valor que cambia por usuario o por día impide que el texto posterior se almacene en caché, así que coloque esos valores al final del prompt."
+
+#. module: muk_ai
+#. odoo-python
 #: code:addons/muk_ai/models/space.py:0
+#, python-format
 msgid "The domain of \"%(name)s\" is not a valid session domain: %(error)s"
 msgstr "El dominio de \"%(name)s\" no es un dominio de sesión válido: %(error)s"
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_prompt_variables__odoo_version
+msgid "The full Odoo release, for example 16.0+e."
+msgstr "La versión completa de Odoo, por ejemplo 16.0+e."
+
+#. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/mcp/agent.py:0
+#, python-format
 msgid "The handoff tools can only be invoked from inside an AI session."
 msgstr ""
 "Las herramientas de transferencia solo se pueden invocar desde dentro de una"
@@ -4956,39 +5381,48 @@ msgstr ""
 msgid ""
 "The prompt is rendered with Odoo's inline-template engine (same as mail templates) when the conversation starts\n"
 "\t\t\t\t\t\t\t\t\tand again on <code>/compact</code>. Each <code>{{ expr }}</code> is evaluated against the session's render context.\n"
-"\t\t\t\t\t\t\t\t\tUse <code>{{ expr ||| fallback }}</code> to provide a default when <code>expr</code> is empty."
+"\t\t\t\t\t\t\t\t\tUse <code>{{ expr ||| fallback }}</code> to provide a default when <code>expr</code> is empty.\n"
+"\t\t\t\t\t\t\t\t\tThe Insert Field button adds a field of a variable at the cursor."
 msgstr ""
 "El prompt se renderiza con el motor de plantillas en línea de Odoo (el mismo que las plantillas de correo) al iniciarse la conversación\n"
 "\t\t\t\t\t\t\t\t\ty de nuevo con <code>/compact</code>. Cada <code>{{ expr }}</code> se evalúa contra el contexto de renderizado de la sesión.\n"
-"\t\t\t\t\t\t\t\t\tUse <code>{{ expr ||| fallback }}</code> para proporcionar un valor predeterminado cuando <code>expr</code> esté vacío."
+"\t\t\t\t\t\t\t\t\tUse <code>{{ expr ||| fallback }}</code> para proporcionar un valor predeterminado cuando <code>expr</code> esté vacío.\n"
+"\t\t\t\t\t\t\t\t\tEl botón Insertar campo añade un campo de una variable en el cursor."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#: code:addons/muk_ai/models/session.py:0
+#: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "The session is currently busy. Please try again."
 msgstr "La sesión está ocupada en este momento. Inténtelo de nuevo."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "The space \"%s\" belongs to another user."
 msgstr "El espacio \"%s\" pertenece a otro usuario."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/space.py:0
+#, python-format
 msgid "The space \"%s\" is maintained by its module and cannot be deleted."
 msgstr "El espacio \"%s\" lo mantiene su módulo y no se puede eliminar."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/space.py:0
+#, python-format
 msgid "The space \"%s\" is yours to order by hand and cannot be pinned."
 msgstr "El espacio \"%s\" lo ordena usted a mano y no se puede fijar."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/space.py:0
+#, python-format
 msgid ""
 "The space \"%s\" must belong to you and cannot collect chats through a "
 "domain."
@@ -4999,6 +5433,7 @@ msgstr ""
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/space.py:0
+#, python-format
 msgid ""
 "The space \"%s\" must either belong to a user or collect its chats through a"
 " domain."
@@ -5009,12 +5444,19 @@ msgstr ""
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/space.py:0
+#, python-format
 msgid "The system space \"%s\" cannot carry instructions."
 msgstr "El espacio de sistema \"%s\" no puede llevar instrucciones."
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_prompt_variables__user
+msgid "The user of the chat."
+msgstr "El usuario del chat."
+
+#. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/provider.py:0
+#, python-format
 msgid ""
 "These providers ship with their addon and cannot be deleted: %(providers)s. "
 "Archive them instead."
@@ -5025,6 +5467,7 @@ msgstr ""
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/share/share_dialog.xml:0
+#, python-format
 msgid ""
 "They see the whole transcript, including what the tools returned.\n"
 "                    They cannot reply, rename or re-share it."
@@ -5035,6 +5478,7 @@ msgstr ""
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/agent.py:0
+#, python-format
 msgid ""
 "This agent is pinned to %(provider)s, which has no API key configured. A "
 "pinned provider is never swapped for another vendor: set the key on "
@@ -5047,8 +5491,16 @@ msgstr ""
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/revision_mixin.py:0
+#, python-format
 msgid "This record has no prompt field."
 msgstr "Este registro no tiene campo de prompt."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/mcp/agent.py:0
+#, python-format
+msgid "This session no longer exists."
+msgstr "Esta sesión ya no existe."
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_model__reasoning_effort_default
@@ -5080,6 +5532,7 @@ msgstr ""
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "To"
 msgstr "A"
 
@@ -5087,23 +5540,21 @@ msgstr "A"
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
 #: model:muk_ai.agent.suggestion,label:muk_ai.agent_general_suggestion_explore
+#, python-format
 msgid "Today"
 msgstr "Hoy"
 
 #. module: muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
-msgid "Today is {{ today }}. Respond in {{ user.lang ||| en_US }}."
-msgstr "Hoy es {{ today }}. Responda en {{ user.lang ||| en_US }}."
-
-#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Toggle artifacts panel"
 msgstr "Alternar el panel de artefactos"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Toggle sidebar"
 msgstr "Alternar la barra lateral"
 
@@ -5131,12 +5582,14 @@ msgstr "Registros de herramientas"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/views/fields/tool_picker/tool_picker.js:0
+#, python-format
 msgid "Tool Picker"
 msgstr "Selector de herramientas"
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/mcp/search.py:0
+#, python-format
 msgid ""
 "Tool adjust_search is client-executed and must run in the webclient tab "
 "holding the chat window, not on the server."
@@ -5175,9 +5628,16 @@ msgid "Tools"
 msgstr "Herramientas"
 
 #. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/tools_menu/tools_menu.xml:0
+#, python-format
+msgid "Tools of this connector"
+msgstr "Herramientas de este conector"
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__total_cost
-msgid "Total Cost (USD)"
-msgstr "Costo total (USD)"
+msgid "Total Cost"
+msgstr "Costo total"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__turn_seq
@@ -5217,6 +5677,7 @@ msgstr "Tiempo real gastado en el turno"
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid ""
 "Turn cost budget reached (%(amount).2f %(currency)s). Send a new message to "
 "continue."
@@ -5227,6 +5688,7 @@ msgstr ""
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid ""
 "Turn wallclock budget reached (%(s)s s). Send a new message to continue."
 msgstr ""
@@ -5234,20 +5696,16 @@ msgstr ""
 "mensaje para continuar."
 
 #. module: muk_ai
-#: model:ir.model.fields,field_description:muk_ai.field_ir_actions_server__state
-#: model:ir.model.fields,field_description:muk_ai.field_ir_cron__state
-msgid "Type"
-msgstr "Tipo"
-
-#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Type a message below or pick a suggestion."
 msgstr "Escriba un mensaje abajo o elija una sugerencia."
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Type a message below to begin."
 msgstr "Escriba un mensaje abajo para empezar."
 
@@ -5256,24 +5714,15 @@ msgstr "Escriba un mensaje abajo para empezar."
 #: model:ir.model.fields,help:muk_ai.field_ir_cron__state
 msgid ""
 "Type of server action. The following values are available:\n"
+"- 'Execute Python Code': a block of python code that will be executed\n"
+"- 'Create a new Record': create a new record with new values\n"
 "- 'Update a Record': update the values of a record\n"
-"- 'Create Activity': create an activity (Discuss)\n"
+"- 'Execute several actions': define an action that triggers several other server actions\n"
 "- 'Send Email': post a message, a note or send an email (Discuss)\n"
-"- 'Send SMS': send SMS, log them on documents (SMS)- 'Add/Remove Followers': add or remove followers to a record (Discuss)\n"
-"- 'Create Record': create a new record with new values\n"
-"- 'Execute Code': a block of Python code that will be executed\n"
-"- 'Send Webhook Notification': send a POST request to an external system, also known as a Webhook\n"
-"- 'Multi Actions': define an action that triggers several other server actions\n"
+"- 'Add Followers': add followers to a record (Discuss)\n"
+"- 'Create Next Activity': create an activity (Discuss)\n"
+"- 'Send SMS Text Message': send SMS, log them on documents (SMS)"
 msgstr ""
-"Tipo de acción de servidor. Los siguientes valores están disponibles:\n"
-"- 'Actualizar un registro': actualizar los valores de un registro\n"
-"- 'Crear actividad': crear una actividad (conversaciones)\n"
-"- 'Enviar correo electrónico': publicar un mensaje, una nota o enviar un correo electrónico (Conversaciones)\n"
-"- 'Enviar SMS': enviar SMS y registrarlos en los documentos (SMS)- 'Añadir o eliminar seguidores': añadir o eliminar seguidores de un registro (Conversaciones)\n"
-"- 'Crear registro': crear un nuevo registro con nuevos valores\n"
-"- 'Ejecutar código': un bloque de código Python que se ejecutará\n"
-"- 'Enviar notificación webhook': enviar una solicitud POST a un sistema externo, también conocido como Webhook\n"
-"- 'Ejecutar varias acciones': definir una acción que activa otras acciones de servidor\n"
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_agent__activity_exception_decoration
@@ -5283,6 +5732,7 @@ msgstr "Tipo de la actividad excepcional en el registro."
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#, python-format
 msgid "Type your answer…"
 msgstr "Escriba su respuesta…"
 
@@ -5294,24 +5744,35 @@ msgstr "Desarchivar"
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Unknown approval mode %(mode)r."
 msgstr "Modo de aprobación desconocido %(mode)r."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Unknown reasoning effort %(effort)r."
 msgstr "Esfuerzo de razonamiento desconocido %(effort)r."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/mcp/window.py:0
+#, python-format
 msgid "Unknown target %(value)r. Valid: %(valid)s."
 msgstr "Destino desconocido %(value)r. Válidos: %(valid)s."
 
 #. module: muk_ai
 #. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+#, python-format
+msgid "Unknown tool source %(key)r."
+msgstr "Fuente de herramientas desconocida %(key)r."
+
+#. module: muk_ai
+#. odoo-python
 #: code:addons/muk_ai/mcp/window.py:0
+#, python-format
 msgid "Unknown view_type %(value)r. Valid: %(valid)s."
 msgstr "view_type desconocido %(value)r. Válidos: %(valid)s."
 
@@ -5319,24 +5780,28 @@ msgstr "view_type desconocido %(value)r. Válidos: %(valid)s."
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
 #: code:addons/muk_ai/static/src/chat/window/chat_window.xml:0
+#, python-format
 msgid "Unpin view context"
 msgstr "Quitar la fijación del contexto de vista"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+#, python-format
 msgid "Unread"
 msgstr "No leídos"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+#, python-format
 msgid "Unread chats in here"
 msgstr "Chats sin leer aquí"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+#, python-format
 msgid "Unread only"
 msgstr "Solo sin leer"
 
@@ -5346,17 +5811,14 @@ msgid "Usage"
 msgstr "Uso"
 
 #. module: muk_ai
-#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_mistral
-msgid "Use Mistral AI as a provider."
-msgstr "Usar Mistral AI como proveedor."
-
-#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/tools/tool_group.xml:0
+#, python-format
 msgid "Used"
 msgstr "Usado"
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_prompt_variables__user
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_muk_ai_approval_search
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_users_kanban_handover
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_users_search_handover
@@ -5371,6 +5833,7 @@ msgstr "Contexto del usuario"
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "User rejected the call."
 msgstr "El usuario rechazó la llamada."
 
@@ -5393,6 +5856,7 @@ msgstr ""
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Value"
 msgstr "Valor"
 
@@ -5404,13 +5868,9 @@ msgstr "Contexto de vista"
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "View context cleared."
 msgstr "Contexto de vista vaciado."
-
-#. module: muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "Voice"
-msgstr "Voz"
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
@@ -5423,12 +5883,14 @@ msgstr "Esperar"
 #: code:addons/muk_ai/static/src/chat/utils.js:0
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_session__state__waiting
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_session_search
+#, python-format
 msgid "Waiting"
 msgstr "Esperando"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
 msgid "Waiting for the owner to answer."
 msgstr "Esperando la respuesta del propietario."
 
@@ -5460,25 +5922,37 @@ msgstr "URL de búsqueda web"
 
 #. module: muk_ai
 #. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+#, python-format
+msgid "Web search"
+msgstr "Búsqueda web"
+
+#. module: muk_ai
+#. odoo-python
 #: code:addons/muk_ai/tools/web_search.py:0
+#: code:addons/muk_ai/tools/web_search.py:0
+#, python-format
 msgid "Web search (%s) failed: %s"
 msgstr "La búsqueda web (%s) ha fallado: %s"
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/tools/web_search.py:0
+#, python-format
 msgid "Web search backend %s needs a URL."
 msgstr "El backend de búsqueda web %s necesita una URL."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/tools/web_search.py:0
+#, python-format
 msgid "Web search backend %s needs an API key."
 msgstr "El backend de búsqueda web %s necesita una clave API."
 
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/agent.py:0
+#, python-format
 msgid ""
 "Web search is enabled, but the model this agent runs on serves no built-in "
 "search and no Web Search Backend is set. Set one in the MuK AI settings, or "
@@ -5492,6 +5966,7 @@ msgstr ""
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/agent.py:0
+#, python-format
 msgid ""
 "Web search is set to \"Provider Built-in\", but the model this agent runs on"
 " serves no built-in search. Pick a model that has one, or switch to \"Search"
@@ -5504,6 +5979,7 @@ msgstr ""
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/agent.py:0
+#, python-format
 msgid ""
 "Web search is set to \"Search Backend\", but no Web Search Backend is "
 "configured. Set one in the MuK AI settings, or switch to \"Provider Built-"
@@ -5516,6 +5992,7 @@ msgstr ""
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/agent.py:0
+#, python-format
 msgid ""
 "Web search would run through the Web Search Backend, but the tool filter of "
 "this agent does not list \"web_search\", so the tool never reaches the "
@@ -5551,14 +6028,9 @@ msgstr ""
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/share/share_dialog.xml:0
+#, python-format
 msgid "Who may read it"
 msgstr "Quién puede leerlo"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/tools/tool_card.xml:0
-msgid "Will ask:"
-msgstr "Preguntará:"
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__claimed_at
@@ -5568,17 +6040,21 @@ msgstr "Worker reclamado en"
 #. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session.py:0
+#, python-format
 msgid "Worker abandoned the session — please retry."
 msgstr "El worker abandonó la sesión — inténtelo de nuevo."
 
 #. module: muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "Workflows"
-msgstr "Flujos de trabajo"
+#. odoo-python
+#: code:addons/muk_ai/models/approval.py:0
+#, python-format
+msgid "Yes"
+msgstr "Sí"
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
+#, python-format
 msgid "Yesterday"
 msgstr "Ayer"
 
@@ -5605,307 +6081,6 @@ msgstr ""
 "`off` desactiva las aprobaciones por completo."
 
 #. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/composer/chat_composer.xml:0
-msgid "active"
-msgstr "activo"
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/models/agent.py:0
-msgid "agent_id"
-msgstr "agent_id"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
-msgid "awaiting you"
-msgstr "esperándole"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/chat.xml:0
-msgid "compacted"
-msgstr "compactado"
-
-#. module: muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_muk_ai_provider_form
-msgid "default"
-msgstr "predeterminado"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/session/turns.js:0
-msgid "default agent"
-msgstr "agente predeterminado"
-
-#. module: muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
-msgid "e.g. Explore"
-msgstr "p. ej. Explorar"
-
-#. module: muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
-msgid "e.g. Sales Assistant"
-msgstr "p. ej. Asistente de ventas"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/composer/chat_composer.xml:0
-msgid "for newline"
-msgstr "para salto de línea"
-
-#. module: muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "http://searxng:8080"
-msgstr "http://searxng:8080"
-
-#. module: muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_muk_ai_provider_form
-msgid "https://my-resource.openai.azure.com/openai/v1"
-msgstr "https://my-resource.openai.azure.com/openai/v1"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/composer/chat_composer.xml:0
-msgid "for newline"
-msgstr "para salto de línea"
-
-#. module: muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "http://searxng:8080"
-msgstr "http://searxng:8080"
-
-#. module: muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_muk_ai_provider_form
-msgid "https://my-resource.openai.azure.com/openai/v1"
-msgstr "https://my-resource.openai.azure.com/openai/v1"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/artifacts/types/sources_tab.xml:0
-msgid "more"
-msgstr "más"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/chat.xml:0
-msgid "msgs"
-msgstr "msjs"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/chat.xml:0
-msgid "msgs /"
-msgstr "msjs /"
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/providers/base.py:0
-#: code:addons/muk_ai/providers/google.py:0
-msgid "no image data returned"
-msgstr "no se devolvieron datos de imagen"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/chat.xml:0
-msgid "on"
-msgstr "activado"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
-msgid "running"
-msgstr "en ejecución"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/tools/tool_card.xml:0
-msgid "running…"
-msgstr "en ejecución…"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
-msgid "thinking…"
-msgstr "pensando…"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/composer/chat_composer.xml:0
-msgid "to send"
-msgstr "para enviar"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/chat.xml:0
-msgid "tokens"
-msgstr "tokens"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/tools/tool_group.xml:0
-msgid "tools"
-msgstr "herramientas"
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/models/session.py:0
-msgid "unknown error"
-msgstr "error desconocido"
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/tools/context.py:0
-msgid "view_context.%s must be a list of strings."
-msgstr "view_context.%s debe ser una lista de cadenas."
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/tools/context.py:0
-msgid "view_context.%s must be a string."
-msgstr "view_context.%s debe ser una cadena."
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/tools/context.py:0
-msgid "view_context.action_id must be an integer."
-msgstr "view_context.action_id debe ser un entero."
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/tools/context.py:0
-msgid "view_context.display_name must be a string."
-msgstr "view_context.display_name debe ser una cadena."
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/tools/context.py:0
-msgid "view_context.domain must be a list."
-msgstr "view_context.domain debe ser una lista."
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/tools/context.py:0
-msgid "view_context.ee_init_context must be a list of strings."
-msgstr "view_context.ee_init_context debe ser una lista de cadenas."
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/tools/context.py:0
-msgid "view_context.id must be a positive integer."
-msgstr "view_context.id debe ser un entero positivo."
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/tools/context.py:0
-msgid "view_context.model must be a string."
-msgstr "view_context.model debe ser una cadena."
-
-#. module: muk_ai
-#: model:ir.model,name:muk_ai.model_ir_websocket
-msgid "websocket message handling"
-msgstr "gestión de mensajes de WebSocket"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/tools/tool_card.xml:0
-msgid "· next"
-msgstr "· siguiente"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/tools/tool_card.xml:0
-msgid "· run"
-msgstr "· ejecutar"
-
-#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__awaiting_user
-msgid "Awaiting User"
-msgstr "Esperando al usuario"
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/models/session.py:0
-msgid "Code interpreter"
-msgstr "Intérprete de código"
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/models/session.py:0
-msgid "Create images from a description"
-msgstr "Crear imágenes a partir de una descripción"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/session/use_ai_session.js:0
-msgid "Failed to change the tools: %s"
-msgstr "No se pudieron cambiar las herramientas: %s"
-
-#. module: muk_ai
-#: model:ir.model.fields,help:muk_ai.field_muk_ai_session__disabled_tool_sources
-msgid "Keys of the tool sources switched off for this chat."
-msgstr "Claves de las fuentes de herramientas desactivadas para este chat."
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/models/approval.py:0
-msgid "No"
-msgstr ""
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/mcp/window.py:0
-msgid "No action matches %(ref)r."
-msgstr "Ninguna acción coincide con %(ref)r."
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/models/session.py:0
-msgid "Run code to calculate and analyse data"
-msgstr "Ejecutar código para calcular y analizar datos"
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/models/session.py:0
-msgid "Search the web for current information"
-msgstr "Buscar información actual en la web"
-
-#. module: muk_ai
-#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__disabled_tool_sources
-msgid "Switched Off Tools"
-msgstr "Herramientas desactivadas"
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/mcp/window.py:0
-msgid "The context of action %(ref)r cannot be extended: %(error)s"
-msgstr "El contexto de la acción %(ref)r no se puede ampliar: %(error)s"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/tools_menu/tools_menu.xml:0
-msgid "Tools of this connector"
-msgstr "Herramientas de este conector"
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/models/session.py:0
-msgid "Unknown tool source %(key)r."
-msgstr "Fuente de herramientas desconocida %(key)r."
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/models/session.py:0
-msgid "Web search"
-msgstr "Búsqueda web"
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/models/approval.py:0
-msgid "Yes"
-msgstr "Sí"
-
-#. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/tools/context.py:0
 #, python-format
@@ -5927,6 +6102,13 @@ msgid "a string"
 msgstr "una cadena"
 
 #. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/composer/chat_composer.xml:0
+#, python-format
+msgid "active"
+msgstr "activo"
+
+#. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/tools/context.py:0
 #, python-format
@@ -5934,8 +6116,163 @@ msgid "an integer"
 msgstr "un entero"
 
 #. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+#, python-format
+msgid "awaiting you"
+msgstr "esperándole"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
+msgid "compacted"
+msgstr "compactado"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_muk_ai_provider_form
+msgid "default"
+msgstr "predeterminado"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/session/turns.js:0
+#, python-format
+msgid "default agent"
+msgstr "agente predeterminado"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
+msgid "e.g. Explore"
+msgstr "p. ej. Explorar"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
+msgid "e.g. Sales Assistant"
+msgstr "p. ej. Asistente de ventas"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/composer/chat_composer.xml:0
+#, python-format
+msgid "for newline"
+msgstr "para salto de línea"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "http://searxng:8080"
+msgstr "http://searxng:8080"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_muk_ai_provider_form
+msgid "https://my-resource.openai.azure.com/openai/v1"
+msgstr "https://my-resource.openai.azure.com/openai/v1"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/artifacts/types/sources_tab.xml:0
+#, python-format
+msgid "more"
+msgstr "más"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
+msgid "msgs"
+msgstr "msjs"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
+msgid "msgs /"
+msgstr "msjs /"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/providers/base.py:0
+#: code:addons/muk_ai/providers/google.py:0
+#, python-format
+msgid "no image data returned"
+msgstr "no se devolvieron datos de imagen"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
+msgid "on"
+msgstr "activado"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
+#: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
+#, python-format
+msgid "running"
+msgstr "en ejecución"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/tools/tool_card.xml:0
+#, python-format
+msgid "running…"
+msgstr "en ejecución…"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+#, python-format
+msgid "thinking…"
+msgstr "pensando…"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/composer/chat_composer.xml:0
+#, python-format
+msgid "to send"
+msgstr "para enviar"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
+msgid "tokens"
+msgstr "tokens"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/tools/tool_group.xml:0
+#, python-format
+msgid "tools"
+msgstr "herramientas"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+#, python-format
+msgid "unknown error"
+msgstr "error desconocido"
+
+#. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/tools/context.py:0
 #, python-format
 msgid "view_context.%(key)s must be %(type)s."
 msgstr "view_context.%(key)s debe ser %(type)s."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/tools/context.py:0
+#, python-format
+msgid "view_context.id must be a positive integer."
+msgstr "view_context.id debe ser un entero positivo."
+
+#. module: muk_ai
+#: model:ir.model,name:muk_ai.model_ir_websocket
+msgid "websocket message handling"
+msgstr "gestión de mensajes de WebSocket"

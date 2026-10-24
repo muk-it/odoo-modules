@@ -162,9 +162,14 @@ class TestAiAgent(AITestCommon):
         self.assertEqual(session._effective_system_prompt(), '')
 
     def test_render_eval_context_exposes_odoo_version(self):
-        ctx = self.env['muk_ai.agent']._get_default()._prompt_eval_context()
+        agent = self.env['muk_ai.agent']._get_default()
+        ctx = agent._prompt_eval_context()
         self.assertEqual(ctx['odoo_version'], release.version)
         self.assertEqual(ctx['odoo_series'], release.series)
+        self.assertTrue(variables := self.env['muk_ai.prompt.variables'].fields_get())
+        for name in variables:
+            with self.subTest(variable=name):
+                self.assertIsNone(agent._render_prompt_safe(f'{{{{ {name} }}}}')[1])
 
     def test_system_prompt_renders_odoo_version_template(self):
         agent = self.env['muk_ai.agent'].create(
@@ -191,6 +196,7 @@ class TestAiAgent(AITestCommon):
         self.assertIn(f'Odoo: {release.version}', block)
         self.assertIn('Date: ', block)
         self.assertIn(f'(res.users,{self.env.user.id})', block)
+        self.assertIn(f'Language: {self.env.user.lang}', block)
         self.assertIn(f'(res.company,{self.env.company.id})', block)
         self.assertIn('Approval mode:', block)
 
@@ -235,8 +241,8 @@ class TestAiAgent(AITestCommon):
             }
         )
         system_text = session._system_message()['content'][0]['text']
-        self.assertIn('Be concise.', system_text)
-        self.assertIn('<runtime>', system_text)
+        self.assertTrue(system_text.startswith('Be concise.'))
+        self.assertTrue(system_text.endswith('</runtime>'))
         self.assertIn(f'Odoo: {release.version}', system_text)
 
     def test_effective_system_prompt_excludes_runtime_block(self):
