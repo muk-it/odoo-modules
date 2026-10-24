@@ -28,3 +28,15 @@ class IrActionsServer(models.Model):
     def _run_action_ai_session_multi(self, eval_context=None) -> None:
         """Run pending AI sessions for a multi-record server action."""
         self.env['muk_ai.session']._cron_run_pending_sessions()
+
+    # ----------------------------------------------------------
+    # Compute
+    # ----------------------------------------------------------
+
+    def _compute_allowed_states(self) -> None:
+        """Keep the worker state off the action types a user can choose."""
+        super()._compute_allowed_states()
+        for action in self:
+            action.allowed_states = [
+                state for state in action.allowed_states if state != 'ai_session'
+            ]

@@ -322,6 +322,8 @@ class GoogleProvider(ProviderBase):
                 },
             }
         text = block.get('inline_text') or ''
+        if key := block.get('attachment_id'):
+            mimetype = f'{mimetype}, attachment {key}'
         prefix = f'--- File: {filename} ({mimetype}) ---\n'
         if block.get('truncated'):
             text += '\n[truncated]'

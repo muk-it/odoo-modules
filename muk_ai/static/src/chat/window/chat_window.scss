@@ -18,10 +18,10 @@
     max-width: calc(100vw - 32px);
     height: var(--mk-window-height);
     background: var(--body-bg, #ffffff);
-    border: 1px solid var(--o-input-border-color, #e7e9ed);
-    border-bottom: 0;
     border-radius: 10px 10px 0 0;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.08),
+        0 10px 30px rgba(0, 0, 0, 0.15);
     display: flex;
     flex-direction: column;
     overflow: hidden;

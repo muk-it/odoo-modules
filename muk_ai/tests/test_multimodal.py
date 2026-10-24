@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import base64
 import io
+import zipfile
 
+from openpyxl import Workbook
 from PIL import Image
 
 from odoo import models
@@ -29,6 +31,41 @@ PDF_BYTES = (
     b'trailer<</Root 1 0 R>>\n'
     b'%%EOF\n'
 )
+
+PAGE = b'<h1>Hi</h1><script>alert(1)</script><p>x</p>'
+NEWSLETTER = (
+    b'Subject: Brew\r\nFrom: a@example.com\r\nMIME-Version: 1.0\r\n'
+    b'Content-Type: text/html; charset=utf-8\r\n\r\n' + PAGE + b'\r\n'
+)
+
+SNIFFED = {'': 'text/plain', 'application/vnd.ms-excel': 'text/plain'}
+WORD = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+EXCEL = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+
+
+def docx(*paragraphs: str) -> bytes:
+    """Return a minimal Word document holding ``paragraphs``."""
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, 'w') as archive:
+        archive.writestr(
+            'word/document.xml',
+            '<w:document xmlns:w="http://schemas.openxmlformats.org/'
+            'wordprocessingml/2006/main"><w:body>'
+            + ''.join(f'<w:p><w:r><w:t>{text}</w:t></w:r></w:p>' for text in paragraphs)
+            + '</w:body></w:document>',
+        )
+    return out.getvalue()
+
+
+def xlsx(*rows: tuple) -> bytes:
+    """Return a workbook whose sheet "Beans" holds ``rows``."""
+    book = Workbook()
+    book.active.title = 'Beans'
+    for row in rows:
+        book.active.append(row)
+    out = io.BytesIO()
+    book.save(out)
+    return out.getvalue()
 
 
 class TestMultimodalAttachments(AITestCommon):
@@ -155,6 +192,51 @@ class TestMultimodalAttachments(AITestCommon):
         self.assertEqual(attachment.res_model, 'muk_ai.session')
         self.assertEqual(attachment.res_id, self.session.id)
 
+    def test_upload_reads_text_office_html_and_email(self):
+        for filename, mimetype, data, expected in (
+            ('page.html', 'text/html', PAGE, '<h1>Hi</h1><p>x</p>'),
+            ('data.json', 'application/json', b'{"a": 1}', '{"a": 1}'),
+            ('main.py', '', b'print(1)\n', 'print(1)\n'),
+            (
+                'excel.csv',
+                'application/vnd.ms-excel',
+                'Name\nM\u00fcller\n'.encode('cp1252'),
+                'Name\nM\u00fcller\n',
+            ),
+            ('blank.docx', WORD, docx(), ''),
+            ('notes.docx', WORD, docx('Brew at 94 C'), 'Brew at 94 C\n'),
+            (
+                'beans.xlsx',
+                EXCEL,
+                xlsx(('Origin', 'Price'), ('Kenya', 12)),
+                'Beans,Origin,Price\nBeans,Kenya,12',
+            ),
+            (
+                'news.eml',
+                'message/rfc822',
+                NEWSLETTER,
+                'Subject: Brew\nFrom: a@example.com\n\n<h1>Hi</h1><p>x</p>\r\n',
+            ),
+        ):
+            with self.subTest(filename=filename):
+                [descriptor] = self.session.upload_attachments(
+                    [
+                        {
+                            'filename': filename,
+                            'mimetype': mimetype,
+                            'data_b64': base64.b64encode(data).decode('ascii'),
+                        }
+                    ]
+                )
+                self.assertEqual(
+                    descriptor['mimetype'], SNIFFED.get(mimetype, mimetype)
+                )
+                block = (
+                    self.env['ir.attachment'].browse(descriptor['id'])._ai_materialize()
+                )
+                self.assertEqual(block['strategy'], 'inline_text')
+                self.assertEqual(block['inline_text'], expected)
+
     def test_action_upload_rejects_bad_mimetype(self):
         with self.assertRaises(UserError):
             self.session.upload_attachments(
@@ -162,7 +244,7 @@ class TestMultimodalAttachments(AITestCommon):
                     {
                         'filename': 'nope.exe',
                         'mimetype': 'application/x-msdownload',
-                        'data_b64': base64.b64encode(b'MZ').decode('ascii'),
+                        'data_b64': base64.b64encode(b'MZ\x90\x00\x03').decode('ascii'),
                     }
                 ]
             )
@@ -455,6 +537,7 @@ class TestMultimodalAttachments(AITestCommon):
                         'strategy': 'inline_text',
                         'mimetype': 'text/markdown',
                         'filename': 'note.md',
+                        'attachment_id': 7,
                         'inline_text': '# header\nhi',
                         'truncated': True,
                     }
@@ -464,6 +547,6 @@ class TestMultimodalAttachments(AITestCommon):
         _, messages, _anchor = AnthropicProvider._inputs_to_messages(inputs)
         block = messages[0]['content'][0]
         self.assertEqual(block['type'], 'text')
-        self.assertIn('note.md', block['text'])
+        self.assertIn('note.md (text/markdown, attachment 7)', block['text'])
         self.assertIn('# header', block['text'])
         self.assertIn('[truncated]', block['text'])

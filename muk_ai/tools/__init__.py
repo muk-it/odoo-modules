@@ -51,7 +51,6 @@ from .runtime import (
     sanitize_json_schema,
 )
 from .attachment import (
-    ALLOWED_MIMETYPES,
     ATTACHMENT_REF_MAX_BYTES,
     ATTACHMENT_REF_RE,
     DEFAULT_MAX_UPLOAD_BYTES,

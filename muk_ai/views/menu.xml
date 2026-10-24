@@ -43,7 +43,7 @@
 			/>
 			<menuitem
 				id="menu_ai_approval"
-				name="Approval Log"
+				name="Approval Logs"
 				action="action_ai_approval"
 				sequence="30"
 			/>

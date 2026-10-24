@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import base64
+import email
+import email.policy
 import re
 
 from odoo.addons.muk_mcp.tools.content import normalize_mimetype
@@ -34,13 +37,28 @@ IMAGE_MIMETYPES = frozenset(
 )
 TEXT_MIMETYPES = frozenset(
     {
-        'text/plain',
-        'text/csv',
-        'text/markdown',
+        'application/javascript',
+        'application/json',
+        'application/sql',
+        'application/toml',
+        'application/x-sh',
+        'application/x-yaml',
+        'application/xml',
+        'application/yaml',
+        'message/rfc822',
+    }
+)
+OFFICE_MIMETYPES = frozenset(
+    {
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'application/vnd.oasis.opendocument.text',
+        'application/vnd.oasis.opendocument.spreadsheet',
+        'application/vnd.oasis.opendocument.presentation',
     }
 )
 PDF_MIMETYPE = 'application/pdf'
-ALLOWED_MIMETYPES = IMAGE_MIMETYPES | TEXT_MIMETYPES | {PDF_MIMETYPE}
 
 # ----------------------------------------------------------
 # Reference Patterns
@@ -49,8 +67,50 @@ ALLOWED_MIMETYPES = IMAGE_MIMETYPES | TEXT_MIMETYPES | {PDF_MIMETYPE}
 INLINE_IMAGE_RE = re.compile(
     r'!\[([^\]]*)\]\(data:(image/[a-zA-Z0-9.+-]+);base64,([A-Za-z0-9+/=\s]+)\)'
 )
+SCRIPT_RE = re.compile(r'<script\b.*?</script\s*>', re.IGNORECASE | re.DOTALL)
 ATTACHMENT_REF_RE = re.compile(r'^@attachment:(\d+)$')
 URL_REF_RE = re.compile(r'^@url:(https://\S+)$')
+
+
+def email_parts(raw: bytes) -> tuple[str, str]:
+    """Return the subject and sender lines of an email and its body, HTML first."""
+    message = email.message_from_bytes(raw, policy=email.policy.default)
+    body = message.get_body(('html', 'plain'))
+    head = f'Subject: {message["subject"] or ""}\nFrom: {message["from"] or ""}'
+    return head, body.get_content() if body else ''
+
+
+def is_text(mimetype: str) -> bool:
+    """Return whether a mimetype names a text format the model reads as text."""
+    return (
+        mimetype.startswith('text/')
+        or mimetype in TEXT_MIMETYPES
+        or mimetype.endswith(('+json', '+xml'))
+    )
+
+
+def looks_like_text(data_b64: str) -> bool:
+    """Return whether a base64 payload is text: not empty, without NUL bytes."""
+    try:
+        head = base64.b64decode(data_b64 or '', validate=True)[:65536]
+    except ValueError:
+        return False
+    return bool(head) and b'\0' not in head
+
+
+def readable_text(raw: bytes, mimetype: str) -> str:
+    """Return the text a model reads of a text attachment, scripts left out.
+
+    An email reads as its subject, its sender and its body.
+    """
+    if mimetype == 'message/rfc822':
+        head, body = email_parts(raw)
+        return f'{head}\n\n{SCRIPT_RE.sub("", body)}'
+    try:
+        text = raw.decode('utf-8')
+    except UnicodeDecodeError:
+        text = raw.decode('cp1252', errors='replace')
+    return SCRIPT_RE.sub('', text) if mimetype == 'text/html' else text
 
 
 def tool_file_payload(result) -> dict | None:

@@ -78,7 +78,6 @@
                             t-ref="fileInput"
                             t-att-id="fileInputId"
                             multiple="multiple"
-                            t-att-accept="accept"
                             t-att-disabled="!props.canAttach ? 'disabled' : null"
                             t-on-change="(ev) => this.onFileInputChange(ev)"
                         />

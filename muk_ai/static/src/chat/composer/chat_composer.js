@@ -11,18 +11,6 @@ import { AIUsageMeter } from '@muk_ai/chat/usage/usage_meter';
 
 let fileInputCounter = 0;
 
-const ACCEPT = [
-    'image/png',
-    'image/jpeg',
-    'image/webp',
-    'image/gif',
-    'application/pdf',
-    'text/plain',
-    'text/csv',
-    'text/markdown',
-    '.md',
-].join(',');
-
 /**
  * Message composer: text input, attachments, slash commands, and send/stop.
  *
@@ -83,7 +71,6 @@ export class ChatComposer extends Component {
         canAttach: false,
         agents: [],
     };
-    accept = ACCEPT;
     setup() {
         this.inputRef = useRef('input');
         this.fileInputRef = useRef('fileInput');
