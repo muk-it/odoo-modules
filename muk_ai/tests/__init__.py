@@ -58,3 +58,4 @@ from . import test_session_seam
 from . import test_agent_form
 from . import test_agent_capabilities
 from . import test_assets
+from . import test_js
