@@ -1,11 +1,40 @@
 // @odoo-module
 
+const targets = [];
+
 /**
- * Push a view-context payload to every open chat window's session.
+ * Register what the user looks at on top of the current view, e.g. an editor
+ * or a designer: its context wins while its `build()` returns one.
+ * @param {Function} build `() => payload|null`
+ * @returns {Function} the unregister function
+ */
+export function registerViewTarget(build) {
+    targets.push(build);
+    return () => targets.splice(targets.indexOf(build), 1);
+}
+
+/**
+ * Return the context of the topmost registered target that has one.
+ * @returns {object|null} its payload
+ */
+function targetPayload() {
+    for (const build of [...targets].reverse()) {
+        const payload = build();
+        if (payload) {
+            return payload;
+        }
+    }
+    return null;
+}
+
+/**
+ * Push a view-context payload to every open chat window's session, the
+ * context of a registered target in its place while one has it.
  * @param {object} env component environment
  * @param {object} payload view context payload
  */
 export function captureViewContext(env, payload) {
+    payload = targetPayload() || payload;
     const chatWindow = env.services?.['muk_ai.chat_window'];
     if (!chatWindow) {
         return;
@@ -27,11 +56,15 @@ export function captureViewContext(env, payload) {
 }
 
 /**
- * Probe the current action controller and build its view-context payload.
+ * Probe what the user looks at and build its view-context payload.
  * @param {object} env component environment
  * @returns {Promise<object|null>} view context payload, or null when none
  */
 export async function probeCurrentView(env) {
+    const target = targetPayload();
+    if (target) {
+        return target;
+    }
     try {
         const current = env.services?.action?.currentController;
         if (!current) {
