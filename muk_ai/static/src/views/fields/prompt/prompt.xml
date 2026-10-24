@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.PromptField" t-inherit="web.TextField" t-inherit-mode="primary">
+        <xpath expr="//div[@t-ref='div']" position="attributes">
+            <attribute name="class">position-relative</attribute>
+        </xpath>
+        <xpath expr="//textarea" position="attributes">
+            <attribute name="t-on-blur">onBlur</attribute>
+        </xpath>
+        <xpath expr="//textarea" position="after">
+            <button
+                t-if="resModel"
+                class="btn btn-link position-absolute top-0 end-0 m-0 py-1 px-2 fa fa-magic"
+                title="Insert Field"
+                t-on-click="onDynamicPlaceholderOpen"
+            />
+        </xpath>
+    </t>
+
+</templates>

@@ -24,7 +24,6 @@ from odoo.tools import SQL, config, create_index, mute_logger
 
 from odoo.addons.muk_ai.tools import (
     ADVISORY_LOCK_NAMESPACE,
-    ALLOWED_MIMETYPES,
     ASK_USER_TOOL,
     ATTACHMENT_REF_MAX_BYTES,
     ATTACHMENT_REF_RE,
@@ -499,7 +498,7 @@ class AISession(models.Model):
     )
 
     total_input_cost = fields.Float(
-        string='Input Cost (USD)',
+        string='Input Cost',
         help=(
             'Cumulative USD spent on input tokens for this session. '
             'Frozen at accrual time against the model record that was '
@@ -511,7 +510,7 @@ class AISession(models.Model):
     )
 
     total_output_cost = fields.Float(
-        string='Output Cost (USD)',
+        string='Output Cost',
         help='Cumulative USD spent on output tokens for this session.',
         readonly=True,
         default=0.0,
@@ -519,7 +518,7 @@ class AISession(models.Model):
     )
 
     total_cost = fields.Float(
-        string='Total Cost (USD)',
+        string='Total Cost',
         help='Cumulative USD for this session (input + output).',
         readonly=True,
         default=0.0,
@@ -725,6 +724,7 @@ class AISession(models.Model):
             f'Odoo: {release.version}',
             f'Date: {fields.Date.context_today(self).isoformat()}',
             f'User: {self.env.user.name} (res.users,{self.env.user.id}) — tz {self.env.user.tz or "UTC"}',
+            f'Language: {self.env.user.lang}',
             f'Company: {self.env.company.name} (res.company,{self.env.company.id})',
             f'Approval mode: {self._effective_approval_mode() if self and self.id else "ask"}',
         ]
@@ -956,14 +956,18 @@ class AISession(models.Model):
         return {'role': 'user', 'content': content} if content else None
 
     def _system_message(self) -> dict:
-        """Return the system message rebuilt from the current agent and context."""
+        """Return the system message rebuilt from the current agent and context.
+
+        The parts run from the most to the least widely shared, so a provider
+        can reuse the longest cached prefix: the runtime facts come last.
+        """
         parts = [
             self._effective_system_prompt(),
+            self._build_files_block(),
+            self._build_available_tools_block(),
             self._build_space_block(),
             *self._system_prompt_addenda(),
             self._build_runtime_block(),
-            self._build_files_block(),
-            self._build_available_tools_block(),
         ]
         return {
             'role': 'system',
@@ -2318,7 +2322,7 @@ class AISession(models.Model):
                 enable_code_interpreter=(
                     bool(agent) and self._code_interpreter_route() == 'native'
                 ),
-                cache_key=f'muk_ai.session:{self.id}',
+                cache_key=f'muk_ai.agent:{self.agent_id.id}:{self.user_id.id}',
             )
             self._flush_stream_buffer(buffer_state)
             return payload
@@ -2750,7 +2754,7 @@ class AISession(models.Model):
                             and attachment.file_size <= ATTACHMENT_REF_MAX_BYTES
                             and (
                                 not attachment.mimetype
-                                or attachment.mimetype in ALLOWED_MIMETYPES
+                                or attachment._ai_strategy_for(attachment.mimetype)
                             )
                         ):
                             refs.append(
@@ -3153,9 +3157,7 @@ class AISession(models.Model):
                 has_ask_user, has_terminating, has_client_action=wait_for_user
             ):
                 self._record_tool_call(call)
-                self._skip_tool_call(
-                    outputs, call, skip, log_result={'error': 'skipped'}
-                )
+                self._skip_tool_call(outputs, call, skip, log_result={'skipped': True})
                 continue
             outcome = self._execute_tool_call(
                 call, tool_calls, outputs, index, has_terminating
