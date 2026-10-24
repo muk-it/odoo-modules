@@ -1,7 +1,7 @@
 import { describe, expect, test } from '@odoo/hoot';
 import { click, queryAllTexts } from '@odoo/hoot-dom';
 import { animationFrame } from '@odoo/hoot-mock';
-import { Component, xml } from '@odoo/owl';
+import { Component, reactive, xml } from '@odoo/owl';
 import { mockService, mountWithCleanup } from '@web/../tests/web_test_helpers';
 import { defineMailModels } from '@mail/../tests/mail_test_helpers';
 
@@ -48,6 +48,7 @@ class Card extends Component {
  * Show the composer of a chat and record the actions asked of it.
  * @param {object} pendingAsk what the chat waits for
  * @param {boolean} writable whether the viewer may act on the chat
+ * @returns {object} the session shown
  */
 async function mountComposer(pendingAsk, writable = true) {
     mockService('orm', {
@@ -57,16 +58,17 @@ async function mountComposer(pendingAsk, writable = true) {
         },
     });
     const session = {
-        state: { status: 'waiting', pendingAsk, sessionId: 1 },
+        state: reactive({ status: 'waiting', pendingAsk, sessionId: 1 }),
         canWrite: () => writable,
         applySnapshot: () => expect.step('applySnapshot'),
         onStop: () => expect.step('onStop'),
     };
     await mountWithCleanup(Composer, { props: { session } });
+    return session;
 }
 
 test('a waiting chat says what it waits for and is woken or stopped from the bar', async () => {
-    await mountComposer(PLAN);
+    const session = await mountComposer(PLAN);
     expect('.mk_wait_bar_note').toHaveText('Remind the customer');
     expect('.mk_wait_bar_line').toHaveText(/^Waiting until /);
     expect('.mk_composer_host textarea').toHaveAttribute(
@@ -77,6 +79,9 @@ test('a waiting chat says what it waits for and is woken or stopped from the bar
     await animationFrame();
     await click('.mk_wait_bar_stop');
     expect.verifySteps(['action_wake_now', 'applySnapshot', 'onStop']);
+    session.state.status = 'running';
+    await animationFrame();
+    expect('.mk_wait_bar').toHaveCount(0);
 });
 
 test('the bar names the record and what it waits for on it', async () => {
