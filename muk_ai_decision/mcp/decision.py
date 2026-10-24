@@ -3,7 +3,11 @@ from __future__ import annotations
 from odoo import api, models
 from odoo.exceptions import UserError
 
-from odoo.addons.muk_ai_decision.tools.field_question import FieldQuestion
+from odoo.addons.muk_ai_decision.tools.field_question import (
+    MAX_RECORDS,
+    QUESTION_SCHEMA,
+    FieldQuestion,
+)
 from odoo.addons.muk_mcp.core.tool import mcp_tool
 from odoo.addons.muk_mcp.tools.descriptions import (
     domain_field,
@@ -12,55 +16,6 @@ from odoo.addons.muk_mcp.tools.descriptions import (
     model_field,
 )
 from odoo.addons.muk_mcp.tools.parser import coerce_json_value
-
-MAX_RECORDS = 100
-
-QUESTION_SCHEMA = {
-    'type': 'object',
-    'properties': {
-        'field': {
-            'type': 'string',
-            'description': (
-                'Field of "model" the question fills: a yes/no, selection, '
-                'many2one or tags field. Its values become the options, so no '
-                'ids need to be looked up. Omit for a free question.'
-            ),
-        },
-        'key': {
-            'type': 'string',
-            'description': 'Id the answer comes back under; the field name by default.',
-        },
-        'type': {
-            'type': 'string',
-            'enum': ['choice', 'score', 'noul'],
-            'description': (
-                '"choice" picks one of "options", "score" rates on "levels", '
-                '"noul" returns the probability of yes. Derived from "field".'
-            ),
-        },
-        'instructions': {
-            'type': 'string',
-            'description': 'The question, e.g. "Which team should handle this?".',
-        },
-        'options': {
-            'type': 'array',
-            'items': {'type': 'string'},
-            'description': 'choice without field: 2 to 255 option names.',
-        },
-        'levels': {
-            'type': 'array',
-            'items': {'type': 'string'},
-            'description': 'score: 2 to 10 levels, lowest first, e.g. ["Low", "High"].',
-        },
-        'candidates': {
-            'type': 'string',
-            'description': (
-                'many2one or tags field: JSON domain on the records it may be set '
-                'to, when it has more than 50.'
-            ),
-        },
-    },
-}
 
 
 class AIDecisionTool(models.AbstractModel):

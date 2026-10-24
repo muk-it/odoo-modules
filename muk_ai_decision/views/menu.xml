@@ -13,10 +13,9 @@
 	<menuitem
 		id="menu_ai_decision_actions"
 		name="Decision Actions"
-		parent="muk_ai.menu_ai_root"
+		parent="muk_ai_automation.menu_ai_automation"
 		action="action_ai_decision_actions"
-		sequence="42"
-		groups="base.group_system"
+		sequence="15"
 	/>
 
 </odoo>

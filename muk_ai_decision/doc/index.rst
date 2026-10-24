@@ -57,7 +57,7 @@ Decisions are deleted after the **Log Retention** of the MCP audit logs under
 Usage
 =====
 
-**Decide with AI** (*MuK AI > Decision Actions*) is a server action
+**Decide with AI** (*MuK AI > Automation > Decision Actions*) is a server action
 for any model, run from an automation rule, a scheduled action or the Action
 menu of a list:
 
