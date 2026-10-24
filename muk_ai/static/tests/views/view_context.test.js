@@ -1,4 +1,4 @@
-import { animationFrame, expect, test } from '@odoo/hoot';
+import { after, animationFrame, expect, test } from '@odoo/hoot';
 import {
     contains,
     getService,
@@ -58,6 +58,26 @@ test('an opened record pins the record, a new one the model', async () => {
     expect.verifySteps([{ kind: 'list', model: MODEL, view_type: 'list' }]);
     await contains('.o_list_button_add').click();
     expect.verifySteps([{ kind: 'list', model: MODEL, view_type: 'form' }]);
+});
+
+test('an editor over a form keeps the chats pinned to its element while the form renders', async () => {
+    trackPins();
+    await openWindowOverLeads();
+    await contains('.o_data_row:first .o_data_cell').click();
+    expect.verifySteps([
+        { kind: 'list', model: MODEL, view_type: 'list' },
+        { kind: 'record', model: MODEL, id: 1, display_name: 'Acme' },
+    ]);
+    const chat = getService(AIChatPlugin);
+    const element = { kind: 'element', model: MODEL, id: 1, tag: 'p' };
+    let editing = true;
+    after(chat.registerTarget({ build: () => editing && element }));
+    await chat.pushContext(chat.probeContext());
+    await contains('.o_pager_next').click();
+    expect.verifySteps([element]);
+    editing = false;
+    await contains('.o_pager_next').click();
+    expect.verifySteps([{ kind: 'record', model: MODEL, id: 1, display_name: 'Acme' }]);
 });
 
 test.tags('desktop');
