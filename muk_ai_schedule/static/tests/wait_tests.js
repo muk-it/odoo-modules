@@ -1,5 +1,7 @@
 // @odoo-module
 
+import { reactive } from '@odoo/owl';
+
 import { registry } from '@web/core/registry';
 import { makeTestEnv } from '@web/../tests/helpers/mock_env';
 import { click, getFixture, mount, nextTick } from '@web/../tests/helpers/utils';
@@ -33,7 +35,7 @@ const PLAN = {
  */
 function waitingSession(pendingAsk, steps, writable = true) {
     return {
-        state: { status: 'waiting', pendingAsk, sessionId: 1 },
+        state: reactive({ status: 'waiting', pendingAsk, sessionId: 1 }),
         canWrite: () => writable,
         applySnapshot: () => steps.push('applySnapshot'),
         onStop: () => steps.push('onStop'),
@@ -65,7 +67,8 @@ QUnit.test(
     'a waiting chat says what it waits for and is woken or stopped from the bar',
     async (assert) => {
         const steps = [];
-        const target = await mountBar(waitingSession(PLAN, steps), steps);
+        const session = waitingSession(PLAN, steps);
+        const target = await mountBar(session, steps);
         assert.strictEqual(
             target.querySelector('.mk_wait_bar_note').textContent,
             'Remind the customer',
@@ -79,6 +82,9 @@ QUnit.test(
         await nextTick();
         await click(target, '.mk_wait_bar_stop');
         assert.deepEqual(steps, ['action_wake_now', 'applySnapshot', 'onStop']);
+        session.state.status = 'running';
+        await nextTick();
+        assert.containsNone(target, '.mk_wait_bar');
     },
 );
 
