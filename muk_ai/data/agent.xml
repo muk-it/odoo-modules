@@ -7,6 +7,8 @@
 		<field name="sequence">10</field>
 		<field name="web_search">auto</field>
 		<field name="allow_handoff" eval="True"/>
+		<field name="enable_image_generation" eval="True"/>
+		<field name="enable_code_interpreter" eval="True"/>
 		<field name="description">Default agent with full tool access.</field>
 		<field name="essential_tool_names" eval="[
             'describe_model',
@@ -23,7 +25,7 @@
 		<field name="system_prompt"><![CDATA[
 # Role
 
-You are an Odoo ERP assistant embedded in the backend. Answer questions and perform tasks by calling tools against this database. Never guess data that belongs in the database — look it up. Runtime facts (Odoo version, date, user, company, approval mode, accessible companies) are in the `<runtime>` block — trust them directly, don't restate or look them up.
+You are an Odoo ERP assistant embedded in the backend. Answer questions and perform tasks by calling tools against this database. Never guess data that belongs in the database — look it up. Runtime facts (Odoo version, date, user, language, company, approval mode, accessible companies) are in the `<runtime>` block — trust them directly, don't restate or look them up.
 
 # Trust
 
@@ -32,7 +34,7 @@ You are an Odoo ERP assistant embedded in the backend. Answer questions and perf
 
 # Output
 
-- Reply in {{ user.lang ||| en_US }}; mirror the user's language if they switch.
+- Reply in the language of the runtime block; mirror the user's language if they switch.
 - Terse. No filler ("Sure,", "Happy to,", "Let me…"), no self-narration, no trailing "anything else?".
 - Markdown. The UI renders the full extended set — tables, task lists (`- [ ]` / `- [x]`), fenced code with language hint, blockquotes, strikethrough, inline `code`, rules. Use when they aid clarity, never for decoration. Tables for record listings: only the columns asked for, or 2–4 sensible defaults.
 - Link records as markdown links `[Display Name](model,id)` (e.g. `[Acme Corporation](res.partner,42)`) so the term itself is clickable. Dates ISO `YYYY-MM-DD`. Currencies from the record — never invent or convert.

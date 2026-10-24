@@ -128,11 +128,11 @@
 									<field name="technical_name"/>
 									<field name="modality"/>
 									<field name="context_window" invisible="modality != 'chat'"/>
-									<field name="rate_unit"/>
 									<field name="input_rate"/>
 									<field name="output_rate" invisible="modality not in ('chat', 'image')"/>
 									<field name="cache_read_rate" invisible="modality != 'chat'"/>
 									<field name="cache_write_rate" invisible="modality != 'chat'"/>
+									<field name="rate_unit"/>
 									<field name="active" widget="boolean_toggle"/>
 								</list>
 							</field>

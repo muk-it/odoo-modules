@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="muk_ai.PromptField" t-inherit="web.TextField" t-inherit-mode="primary">
+        <xpath expr="//textarea" position="attributes">
+            <attribute name="t-att-class">{
+                'o_field_translate': isTranslatable,
+                'o_field_placeholder': resModel,
+            }</attribute>
+        </xpath>
+        <xpath expr="//button[hasclass('fa-magic')]" position="attributes">
+            <attribute name="t-if">resModel</attribute>
+        </xpath>
+    </t>
+
+</templates>

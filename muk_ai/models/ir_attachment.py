@@ -6,12 +6,14 @@ from odoo import _, api, models
 from odoo.exceptions import UserError
 
 from odoo.addons.muk_ai.tools.attachment import (
-    ALLOWED_MIMETYPES,
     DEFAULT_MAX_UPLOAD_BYTES,
     DEFAULT_TEXT_INLINE_LIMIT_KB,
     IMAGE_MIMETYPES,
+    OFFICE_MIMETYPES,
     PDF_MIMETYPE,
-    TEXT_MIMETYPES,
+    is_text,
+    looks_like_text,
+    readable_text,
 )
 
 
@@ -45,22 +47,22 @@ class IrAttachment(models.Model):
             return 'image'
         if mimetype == PDF_MIMETYPE:
             return 'file'
-        if mimetype in TEXT_MIMETYPES:
+        if is_text(mimetype or '') or mimetype in OFFICE_MIMETYPES:
             return 'inline_text'
         return None
 
     @api.model
     def _ai_check_mimetype(self, mimetype: str) -> None:
-        """Raise when the mimetype is not in the allow-list.
+        """Raise when the model cannot read the mimetype.
 
         :raise UserError: when the mimetype is unsupported
         """
-        if mimetype not in ALLOWED_MIMETYPES:
+        if not self._ai_strategy_for(mimetype):
             raise UserError(
                 _(
-                    'Attachment type %(mime)s is not supported. Allowed: %(allowed)s.',
-                    mime=mimetype or '(unknown)',
-                    allowed=', '.join(sorted(ALLOWED_MIMETYPES)),
+                    'Attachment type %s is not supported. Attach an image, a PDF, '
+                    'a text file or an Office document.',
+                    mimetype or '(unknown)',
                 )
             )
 
@@ -121,8 +123,12 @@ class IrAttachment(models.Model):
     ) -> IrAttachment:
         """Create a session attachment from an uploaded base64 payload.
 
-        :raise UserError: when the mimetype is not one the model can ingest
+        A file of a type the model cannot read is kept as plain text when its
+        content is text, such as source code with no registered type.
+        :raise UserError: when the model cannot read the file
         """
+        if not self._ai_strategy_for(mimetype) and looks_like_text(data_b64):
+            mimetype = 'text/plain'
         self._ai_check_mimetype(mimetype)
         return self._ai_store_binary(filename, mimetype, data_b64, res_id=res_id)
 
@@ -156,11 +162,13 @@ class IrAttachment(models.Model):
         }
         if strategy == 'inline_text':
             limit = self._ai_text_inline_limit_bytes()
-            truncated = len(raw) > limit
-            if truncated:
-                raw = raw[:limit]
-            block['inline_text'] = raw.decode('utf-8', errors='replace')
-            block['truncated'] = truncated
+            text = (
+                self._index(raw, None) or ''
+                if self.mimetype in OFFICE_MIMETYPES
+                else readable_text(raw, self.mimetype)
+            )
+            block['inline_text'] = text[:limit]
+            block['truncated'] = len(text) > limit
         else:
             block['data_b64'] = base64.b64encode(raw).decode('ascii')
         return block

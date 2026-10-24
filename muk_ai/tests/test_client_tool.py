@@ -141,6 +141,15 @@ class TestClientToolSeam(AITestCommon):
         """Return all persisted events for the session."""
         return session.fetch_events(limit=500)['events']
 
+    def _result_event(self, session: models.Model, call_id: str) -> dict:
+        """Return the result the tool result event of a call records."""
+        [event] = [
+            event
+            for event in self._events(session)
+            if event.get('kind') == 'tool_result' and event.get('call_id') == call_id
+        ]
+        return event['result']
+
     def _outputs_for(self, session: models.Model, call_id: str) -> list:
         """Return the conversation tool outputs recorded for the call id."""
         return [
@@ -506,6 +515,7 @@ class TestClientToolSeam(AITestCommon):
         self.assertIn(
             'client action pending', json.loads(outputs[0]['output'])['error']
         )
+        self.assertEqual(self._result_event(session, 'c1'), {'skipped': True})
 
     def test_client_tool_after_terminating_is_skipped(self):
         session = self._new_session('terminating')
@@ -610,6 +620,7 @@ class TestClientToolSeam(AITestCommon):
             json.loads(self._outputs_for(session, 'c1')[0]['output']),
             {'error': 'skipped: gated'},
         )
+        self.assertEqual(self._result_event(session, 'c1'), {'error': 'skipped: gated'})
 
     # ----------------------------------------------------------
     # Timeout
