@@ -1,9 +1,11 @@
 /**
- * Push a view-context payload to every open chat window's session.
+ * Push a view-context payload to every open chat window's session, the
+ * context of a registered target in its place while one has it.
  * @param {object} env component environment
  * @param {object} payload view context payload
  */
 export function captureViewContext(env, payload) {
+    payload = targetContext() || payload;
     const chatWindow = env.services?.['muk_ai.chat_window'];
     if (!chatWindow) {
         return;
@@ -46,13 +48,21 @@ export function registerContextTarget(target) {
 }
 
 /**
+ * Return the context of the newest registered target that has one.
+ * @returns {object|undefined} its view context
+ */
+function targetContext() {
+    return contextTargets.findLast((target) => target.build())?.build();
+}
+
+/**
  * Probe what the user looks at: a registered target, or else the current
  * action controller, and build its view-context payload.
  * @param {object} env component environment
  * @returns {Promise<object|null>} view context payload, or null when none
  */
 export async function probeCurrentView(env) {
-    const pinned = contextTargets.findLast((target) => target.build())?.build();
+    const pinned = targetContext();
     if (pinned) {
         return pinned;
     }

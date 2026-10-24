@@ -1,5 +1,6 @@
-import { describe, expect, test } from '@odoo/hoot';
+import { after, describe, expect, test } from '@odoo/hoot';
 import {
+    contains,
     defineModels,
     fields,
     mockService,
@@ -9,6 +10,7 @@ import {
 } from '@web/../tests/web_test_helpers';
 import { defineMailModels } from '@mail/../tests/mail_test_helpers';
 
+import { registerContextTarget } from '@muk_ai/views/context';
 import '@muk_ai/views/form/form_controller';
 
 describe.current.tags('muk_ai');
@@ -94,4 +96,33 @@ test('form controller dispatches a list payload while creating a new record', as
         model: 'muk_ai.form_partner',
         view_type: 'form',
     });
+});
+
+test('an editor target keeps the chats pinned to its element across a form render', async () => {
+    const pinned = [];
+    mockChatWindow(7);
+    onRpc('muk_ai.session', 'set_view_context', ({ args }) => {
+        pinned.push(args[1]);
+        return {};
+    });
+    await mountView({
+        resModel: 'muk_ai.form_partner',
+        resId: 1,
+        resIds: [1, 2],
+        type: 'form',
+        arch: `<form><field name="name"/></form>`,
+    });
+    const element = { kind: 'element', model: 'muk_ai.form_partner', id: 1, tag: 'p' };
+    let editing = true;
+    after(registerContextTarget({ build: () => editing && element }));
+    await contains('.o_pager_next').click();
+    editing = false;
+    await contains('.o_pager_next').click();
+    const acme = {
+        kind: 'record',
+        model: 'muk_ai.form_partner',
+        id: 1,
+        display_name: 'Acme',
+    };
+    expect(pinned).toEqual([acme, element, acme]);
 });
