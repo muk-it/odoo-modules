@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo noupdate="1">
+
+	<record id="cron_wake_sessions" model="ir.cron">
+		<field name="name">MuK AI: Wake Waiting Chats</field>
+		<field name="model_id" ref="muk_ai.model_muk_ai_session"/>
+		<field name="state">code</field>
+		<field name="code">model._cron_wake_sessions()</field>
+		<field name="interval_number">1</field>
+		<field name="interval_type">minutes</field>
+		<field name="user_id" ref="base.user_root"/>
+	</record>
+
+</odoo>

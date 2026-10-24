@@ -14,12 +14,13 @@ class TestHoot(odoo.tests.HttpCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Create the user the suite runs as."""
         super().setUpClass()
         cls.hoot_user = new_test_user(
             cls.env,
             login='hoot_muk_ai_schedule',
             password='hoot_muk_ai_schedule',
-            groups='base.group_user',
+            groups='base.group_user,base.group_system',
             context={
                 'mail_create_nosubscribe': True,
                 'mail_notrack': True,
@@ -34,8 +35,7 @@ class TestHoot(odoo.tests.HttpCase):
     @odoo.tests.no_retry
     def test_hoot_muk_ai_schedule(self):
         self.browser_js(
-            '/web/tests?headless&loglevel=2&preset=desktop&timeout=15000'
-            '&tag=muk_ai_schedule',
+            '/web/tests?headless&loglevel=2&preset=desktop&timeout=15000&tag=muk_ai_schedule',
             '',
             '',
             login=self.hoot_user.login,

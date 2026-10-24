@@ -1,23 +1,21 @@
 from __future__ import annotations
 
-from datetime import timedelta
+import json
 
-from odoo import _, api, fields, models
-from odoo.tools import config
+from odoo import SUPERUSER_ID, api, fields, models
+from odoo.exceptions import UserError
+from odoo.fields import Domain
+from odoo.tools import html2plaintext
 
-from odoo.addons.muk_ai_automation.tools.dispatch import post_session_event
 from odoo.addons.muk_ai_schedule.tools.constants import (
-    DEFAULT_MAX_COST_EUR,
-    DEFAULT_MAX_LIFETIME_HOURS,
-    DEFAULT_MAX_RESUMES,
-    DEFAULT_MAX_TOTAL_TOKENS,
-    SCHEDULE_PICKUP_LIMIT,
-    SCHEDULE_TERMINATING_TOOLS,
+    MESSAGE_PREVIEW_CHARS,
+    WAIT_TOOL,
+    WAKE_RESET,
 )
 
 
 class AISession(models.Model):
-    """Add scheduled resume, recurrence, and chain navigation to sessions."""
+    """Let a chat pause itself with the wait tool and carry on when woken."""
 
     _inherit = 'muk_ai.session'
 
@@ -25,339 +23,324 @@ class AISession(models.Model):
     # Fields
     # ----------------------------------------------------------
 
-    schedule_id = fields.Many2one(
-        comodel_name='muk_ai.schedule',
-        string='Schedule',
-        help='Schedule that spawned this session (null for interactive sessions).',
-        index=True,
-        copy=False,
-        ondelete='set null',
-    )
-
-    resume_at = fields.Datetime(
-        string='Resume At',
-        help='Wall-clock time at which the session is due to resume.',
+    wake_at = fields.Datetime(
+        string='Wakes At',
+        help='When a waiting chat carries on at the latest.',
         readonly=True,
         index=True,
         copy=False,
     )
 
-    recur_config = fields.Json(
-        string='Recurrence Config',
-        help='Persisted schedule_recurring args: {every, until, max_runs}.',
+    wake_res_model = fields.Char(
+        string='Watched Model',
+        help='The model of the record a waiting chat watches.',
         readonly=True,
         copy=False,
     )
 
-    recur_runs_done = fields.Integer(
-        string='Recurrence Runs Done',
-        help='How many recur fires this session has executed.',
+    wake_res_id = fields.Many2oneReference(
+        model_field='wake_res_model',
+        string='Watched Record',
+        help='The record a waiting chat watches.',
         readonly=True,
-        default=0,
+        index='btree_not_null',
         copy=False,
     )
 
-    resume_prompt = fields.Text(
-        string='Resume Prompt',
-        help='Synthetic user message injected on next resume.',
+    wake_count = fields.Integer(
+        string='Waits',
+        help='How many times the chat paused itself to wait.',
         readonly=True,
         copy=False,
-    )
-
-    state = fields.Selection(
-        selection_add=[
-            ('schedule', 'Scheduled'),
-        ],
-        ondelete={'schedule': 'set default'},
-    )
-
-    chain_session_count = fields.Integer(
-        compute='_compute_chain_session_count',
-        string='Chain Sessions',
     )
 
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
 
-    def _chain_session_ids(self) -> set[int]:
-        """Return the ids of every session linked to this one, both directions."""
-        if not self.id:
-            return set()
-        Session = self.sudo()
-        visited, stack = set(), [self.id]
-        while stack:
-            sid = stack.pop()
-            if sid in visited:
-                continue
-            record = Session.browse(sid)
-            if not record.exists():
-                continue
-            visited.add(sid)
-            if (
-                record.previous_session_id
-                and record.previous_session_id.id not in visited
-            ):
-                stack.append(record.previous_session_id.id)
-            stack.extend(
-                child.id
-                for child in Session.search([('previous_session_id', '=', sid)])
-                if child.id not in visited
-            )
-        return visited
+    def _waits_for_wakeup(self) -> bool:
+        """Return whether the chat is paused by the wait tool."""
+        return (
+            self.state == 'waiting' and (self.pending_ask or {}).get('kind') == 'wakeup'
+        )
 
-    def _schedule_effective_caps(self) -> dict:
-        """Return the per-session caps from the schedule, action, or defaults."""
-        self.ensure_one()
-        if self.schedule_id:
-            return self.schedule_id._effective_caps()
-        if action := self.action_server_id:
-            return action._agent_effective_caps()
-        return {
-            'max_resumes': DEFAULT_MAX_RESUMES,
-            'max_lifetime_hours': DEFAULT_MAX_LIFETIME_HOURS,
-            'max_total_tokens': DEFAULT_MAX_TOTAL_TOKENS,
-            'max_cost_eur': DEFAULT_MAX_COST_EUR,
-        }
-
-    def _schedule_abort_with_cap(self, cap: str, limit: float, observed: float) -> None:
-        """Move the session to error and record the exceeded cap as an event."""
-        self.ensure_one()
-        post_session_event(
-            self,
-            'cap_exceeded',
+    def _wait_for(self, plan: dict, paused: dict) -> None:
+        """Pause the round of a wait call until the plan of the tool wakes the chat."""
+        record = plan['record'] or {}
+        pending = {'kind': 'wakeup', **paused, **plan}
+        self.write(
             {
-                'cap': cap,
-                'limit': limit,
-                'observed': observed,
-            },
+                'state': 'waiting',
+                'wake_at': plan['resume_at'],
+                'wake_res_model': record.get('model') or False,
+                'wake_res_id': record.get('id') or False,
+                'wake_count': self.wake_count + 1,
+                'pending_ask': pending,
+            }
+        )
+        self._publish_event(
+            'state', {'state': 'waiting', 'ask': self._public_pending_ask(pending)}
+        )
+        self.env.ref('muk_ai_schedule.cron_wake_sessions')._trigger(self.wake_at)
+
+    def _wake_reason(self) -> str | None:
+        """Return why the waiting chat wakes up now, ``None`` while it keeps waiting.
+
+        A condition is checked with the rights of the chat's owner.
+        """
+        pending = self.pending_ask or {}
+        if pending.get('message'):
+            return 'message'
+        if self.wake_res_model:
+            if (
+                self.wake_res_model not in self.env
+                or not self.env[self.wake_res_model].browse(self.wake_res_id).exists()
+            ):
+                return 'record_deleted'
+            if condition := pending.get('condition'):
+                watched = self.env[self.wake_res_model].with_user(self.user_id)
+                try:
+                    if watched.search_count(
+                        Domain('id', '=', self.wake_res_id) & Domain(condition),
+                        limit=1,
+                    ):
+                        return 'condition_met'
+                except ValueError:
+                    return 'condition_invalid'
+        if self.wake_at <= fields.Datetime.now():
+            return 'timeout' if self.wake_res_model else 'time'
+        return None
+
+    def _wake(self, reason: str) -> None:
+        """Answer the paused wait call with why the chat woke and carry on with the round.
+
+        A chat that waits without a paused call takes its note as the next message.
+        The caller starts the worker once its own changes are in.
+        """
+        pending = dict(self.pending_ask or {})
+        result = {
+            'status': 'woken',
+            'reason': reason,
+            'woken_at': fields.Datetime.to_string(fields.Datetime.now()),
+            'note': pending.get('note'),
+        }
+        if message := pending.get('message'):
+            result['message'] = message
+        if not pending.get('call_id'):
+            self.pending_ask = False
+            self._enqueue_user_turn(pending.get('note'), self.env['ir.attachment'])
+            return
+        outputs = list(pending['outputs'])
+        self._record_tool_result(
+            outputs,
+            pending['call_id'],
+            pending['name'],
+            result,
+            arguments=pending['arguments'],
         )
         self.write(
             {
-                'state': 'error',
-                'error_message': _(
-                    'Cap exceeded (%(cap)s: %(observed)s/%(limit)s).',
-                    cap=cap,
-                    observed=observed,
-                    limit=limit,
-                ),
+                'pending_ask': False,
+                'claimed_at': False,
+                'turn_wallclock_spent': 0.0,
+                'turn_cost_spent': 0.0,
             }
         )
-
-    def _schedule_check_caps(self, runs_done: int) -> bool:
-        """Return whether the session is still within all effective caps.
-
-        Enforced on every path that re-arms a session — the MCP tools when the
-        agent asks for a resume and the automatic recurrence redefer — since
-        the caps are cumulative over the whole session lifetime.
-
-        Aborts the session and returns ``False`` on the first cap breached.
-        """
-        self.ensure_one()
-        caps = self._schedule_effective_caps()
-        elapsed = (
-            (fields.Datetime.now() - self.create_date).total_seconds() / 3600.0
-            if self.create_date
-            else 0.0
+        self._transition_state('running')
+        self._process_tool_round(
+            list(pending['tool_calls']),
+            outputs,
+            pending['resume_index'] + 1,
+            has_terminating=bool(pending['has_terminating']),
         )
-        used_tokens = (self.total_input_tokens or 0) + (self.total_output_tokens or 0)
-        used_cost = self.total_cost or 0.0
-        checks = [
-            ('max_resumes', DEFAULT_MAX_RESUMES, runs_done, runs_done),
-            (
-                'max_lifetime_hours',
-                DEFAULT_MAX_LIFETIME_HOURS,
-                elapsed,
-                round(elapsed, 2),
-            ),
-            ('max_total_tokens', DEFAULT_MAX_TOTAL_TOKENS, used_tokens, used_tokens),
-            ('max_cost_eur', DEFAULT_MAX_COST_EUR, used_cost, round(used_cost, 4)),
-        ]
-        for cap, default, observed, reported in checks:
-            limit = caps.get(cap) or default
-            if observed >= limit:
-                self._schedule_abort_with_cap(cap, limit, reported)
-                return False
-        return True
+
+    @api.model
+    def _wake_in_worker(self, session_id: int, reason: str) -> None:
+        """Wake one chat as its owner, under its advisory lock, in a fresh cursor."""
+        with self.pool.cursor() as cr:
+            sessions = api.Environment(cr, SUPERUSER_ID, {})['muk_ai.session']
+            if not sessions._try_session_lock(session_id):
+                return
+            try:
+                owner = sessions.browse(session_id).exists()
+                if not owner._waits_for_wakeup():
+                    return
+                env = api.Environment(cr, owner.user_id.id, owner.user_context or {})
+                try:
+                    session = env['muk_ai.session'].browse(session_id)
+                    session._wake(reason)
+                    session._trigger_worker()
+                    cr.commit()
+                except Exception as error:
+                    cr.rollback()
+                    self._mark_session_error(session_id, str(error))
+            finally:
+                sessions._release_session_lock(session_id)
+
+    @api.model
+    def _wake_on_message(self, message: models.BaseModel) -> None:
+        """Wake the chats waiting for a message on the record it was posted on."""
+        sessions = (
+            self.sudo()
+            .search(
+                [
+                    ('state', '=', 'waiting'),
+                    ('wake_res_model', '=', message.model),
+                    ('wake_res_id', '=', message.res_id),
+                ]
+            )
+            .filtered(lambda session: (session.pending_ask or {}).get('on_message'))
+        )
+        for session in sessions:
+            session.pending_ask = {
+                **session.pending_ask,
+                'message': {
+                    'id': message.id,
+                    'author': message.author_id.display_name
+                    or message.email_from
+                    or '',
+                    'date': fields.Datetime.to_string(message.date),
+                    'subject': message.subject or '',
+                    'body': html2plaintext(message.body or '')[:MESSAGE_PREVIEW_CHARS],
+                },
+            }
+        if sessions:
+            self.env.ref('muk_ai_schedule.cron_wake_sessions')._trigger()
+
+    @api.model
+    def _eager_tool_name_registry(self) -> set[str]:
+        """Add the wait tool to the tools a chat may load upfront."""
+        return super()._eager_tool_name_registry() | {WAIT_TOOL}
+
+    def _eager_tool_names(self) -> set[str]:
+        """Load the wait tool upfront in every chat."""
+        return super()._eager_tool_names() | {WAIT_TOOL}
+
+    def _execute_tool_call(
+        self,
+        call: dict,
+        tool_calls: list,
+        outputs: list,
+        index: int,
+        has_terminating: bool,
+    ) -> bool | None:
+        """Pause the round on a wait call until the chat is woken."""
+        if call['name'] != WAIT_TOOL:
+            return super()._execute_tool_call(
+                call, tool_calls, outputs, index, has_terminating
+            )
+        self._record_tool_call(call)
+        result, ok = self.with_context(
+            muk_ai_wait_call_id=call['call_id']
+        )._dispatch_tool_call(call['name'], call['arguments'], call['call_id'])
+        plan = json.loads(result) if ok and isinstance(result, str) else {}
+        if plan.get('status') == 'waiting':
+            self._wait_for(
+                plan,
+                {
+                    'call_id': call['call_id'],
+                    'name': call['name'],
+                    'arguments': call['arguments'],
+                    'tool_calls': tool_calls,
+                    'outputs': outputs,
+                    'resume_index': index,
+                    'has_terminating': has_terminating,
+                },
+            )
+            return None
+        self._record_tool_result(
+            outputs, call['call_id'], call['name'], result, arguments=call['arguments']
+        )
+        return False
+
+    def _notify_state_transition(self, payload: dict) -> None:
+        """Keep a chat that waits for its wake-up out of the owner's inbox."""
+        if not (
+            payload.get('state') == 'waiting'
+            and (payload.get('ask') or {}).get('kind') == 'wakeup'
+        ):
+            super()._notify_state_transition(payload)
 
     # ----------------------------------------------------------
     # Actions
     # ----------------------------------------------------------
 
-    def action_open_chain(self) -> dict:
-        """Return a window action listing every session in this chain."""
-        self.ensure_one()
-        return {
-            'type': 'ir.actions.act_window',
-            'name': _('Session Chain'),
-            'res_model': 'muk_ai.session',
-            'view_mode': 'list,form',
-            'domain': [('id', 'in', sorted(self._chain_session_ids()))],
-            'context': {},
-        }
+    def action_wake_now(self) -> dict:
+        """Wake the waiting chat at once and return its snapshot.
 
-    # ----------------------------------------------------------
-    # Functions
-    # ----------------------------------------------------------
-
-    @api.model
-    def _get_terminating_tools(self) -> set[str]:
-        """Add the schedule tools to the set that ends an agent turn."""
-        return super()._get_terminating_tools() | SCHEDULE_TERMINATING_TOOLS
-
-    def _available_client_kinds(self) -> set[str]:
-        """Drop the webclient kind for schedule-spawned sessions.
-
-        A scheduled session runs headless — no tab hosts its chat window, so
-        webclient-served tools would only pend until the stale-action sweep.
+        :raise AccessError: when the caller may only read the chat
+        :raise UserError: when the chat does not wait for a wake-up or is busy
         """
-        kinds = super()._available_client_kinds()
-        if self.id and self.schedule_id:
-            kinds.discard('webclient')
-        return kinds
-
-    def _run_to_completion(self, has_terminating: bool = False) -> None:
-        """Run to completion, then re-defer any recurring sessions."""
-        super()._run_to_completion(has_terminating=has_terminating)
-        for record in self:
-            record._auto_redefer_recurring()
-
-    def _auto_redefer_recurring(self) -> None:
-        """Re-arm a recurring session for its next fire when still within bounds."""
-        self.ensure_one()
-        if self.state != 'done':
-            return
-        cfg = self.recur_config or {}
-        try:
-            every_seconds = int(cfg.get('every') or 0)
-            max_runs = int(cfg['max_runs']) if cfg.get('max_runs') else None
-            until_dt = (
-                fields.Datetime.from_string(cfg['until']) if cfg.get('until') else None
+        self.check_access('write')
+        if not self._waits_for_wakeup():
+            raise UserError(self.env._('This chat is not waiting.'))
+        if not self._wait_session_lock(self.id):
+            raise UserError(
+                self.env._('The session is currently busy. Please try again.')
             )
-        except (TypeError, ValueError):
-            return
-        runs_done = self.recur_runs_done or 0
-        if every_seconds <= 0 or (max_runs and runs_done >= max_runs):
-            return
-        now = fields.Datetime.now()
-        new_resume_at = now + timedelta(seconds=every_seconds)
-        if until_dt and (now >= until_dt or new_resume_at > until_dt):
-            return
-        if not self._schedule_check_caps(runs_done):
-            return
-        next_runs = runs_done + 1
-        self.write(
-            {
-                'state': 'schedule',
-                'resume_at': new_resume_at,
-                'recur_runs_done': next_runs,
-            }
-        )
-        self._publish_event(
-            'state',
-            {
-                'state': 'schedule',
-                'resume_at': fields.Datetime.to_string(new_resume_at),
-                'recur_runs_done': next_runs,
-            },
-        )
-
-    def _resolve_resume_prompt(self) -> str:
-        """Return the prompt to inject on resume, rendering recurrence placeholders."""
-        self.ensure_one()
-        if self.resume_prompt:
-            return self.resume_prompt
-        cfg = self.recur_config or {}
-        if not (recur_prompt := cfg.get('prompt') or ''):
-            return ''
         try:
-            total = str(int(cfg['max_runs'])) if cfg.get('max_runs') else '∞'
-        except (TypeError, ValueError):
-            total = '∞'
-        run = str(self.recur_runs_done or 1)
-        return recur_prompt.replace('{run}', run).replace('{total}', total)
+            self._wake('manual')
+            self._trigger_worker()
+        finally:
+            self._release_session_lock(self.id)
+        return self.get_snapshot()
+
+    def send_message(
+        self, user_message: str, attachment_ids: list[int] | None = None
+    ) -> dict:
+        """Wake a waiting chat and hand it the message as the next turn.
+
+        :raise UserError: when the chat is busy
+        """
+        if not self._waits_for_wakeup():
+            return super().send_message(user_message, attachment_ids=attachment_ids)
+        self.check_access('write')
+        if not self._wait_session_lock(self.id):
+            raise UserError(
+                self.env._('The session is currently busy. Please try again.')
+            )
+        try:
+            self._wake('user_message')
+            self._enqueue_user_turn(
+                user_message, self._resolve_attachments(attachment_ids)
+            )
+            self._trigger_worker()
+        finally:
+            self._release_session_lock(self.id)
+        return self.get_snapshot()
 
     # ----------------------------------------------------------
     # Compute
     # ----------------------------------------------------------
 
-    def _compute_chain_session_count(self) -> None:
-        """Count every session reachable in each record's chain."""
+    @api.depends('state', 'pending_ask')
+    def _compute_awaiting_user(self) -> None:
+        """Leave a chat that waits for its wake-up out of the chats awaiting the owner."""
+        super()._compute_awaiting_user()
         for record in self:
-            record.chain_session_count = len(record._chain_session_ids())
+            if record._waits_for_wakeup():
+                record.awaiting_user = False
 
     # ----------------------------------------------------------
     # ORM
     # ----------------------------------------------------------
 
-    @api.model_create_multi
-    def create(self, vals_list: list[dict]) -> AISession:
-        """Cross-link sessions to their schedule and inherited owned action."""
-        Schedule = self.env['muk_ai.schedule'].sudo()
-        for vals in vals_list:
-            if vals.get('schedule_id') and not vals.get('action_server_id'):
-                schedule = Schedule.browse(vals['schedule_id'])
-                if schedule.action_server_id:
-                    vals['action_server_id'] = schedule.action_server_id.id
-                continue
-            if vals.get('schedule_id') or not vals.get('action_server_id'):
-                continue
-            schedule = Schedule.search(
-                [('action_server_id', '=', vals['action_server_id'])],
-                limit=1,
-            )
-            if schedule:
-                vals['schedule_id'] = schedule.id
-        return super().create(vals_list)
+    def write(self, vals: dict) -> bool:
+        """Clear what a chat waits for when it leaves the waiting state."""
+        if vals.get('state', 'waiting') != 'waiting':
+            vals = {**WAKE_RESET, **vals}
+        return super().write(vals)
 
     # ----------------------------------------------------------
     # Cron
     # ----------------------------------------------------------
 
     @api.model
-    def _cron_run_pending_sessions(self) -> None:
-        """Reactivate due scheduled sessions before the base cron sweep."""
-        self._reactivate_due_schedules()
-        return super()._cron_run_pending_sessions()
-
-    @api.model
-    def _reactivate_due_schedules(self) -> None:
-        """Wake every scheduled session whose resume time has elapsed."""
-        due = self.sudo().search(
-            [
-                ('state', '=', 'schedule'),
-                ('resume_at', '!=', False),
-                ('resume_at', '<=', fields.Datetime.now()),
-            ]
+    def _cron_wake_sessions(self) -> None:
+        """Wake every waiting chat whose time came or whose record is ready."""
+        waiting = self.sudo().search(
+            [('state', '=', 'waiting'), ('wake_at', '!=', False)], order='wake_at'
         )
-        for session in due:
-            prompt = session._resolve_resume_prompt()
-            session.write(
-                {'resume_at': False, 'claimed_at': False, 'resume_prompt': False}
-            )
-            if prompt:
-                session._enqueue_user_turn(prompt, [])
-            else:
-                session.write(session._turn_start_values())
-                session._publish_event('state', {'state': 'running'})
-        if due and not config['test_enable']:
-            self.env.cr.commit()
-
-    @api.model
-    def _find_pending_session_ids(self, limit: int | None = None) -> list[int]:
-        """Extend the pending pickup set with due scheduled sessions."""
-        super_kwargs = {} if limit is None else {'limit': limit}
-        ids = list(super()._find_pending_session_ids(**super_kwargs))
-        due = self.sudo().search(
-            [
-                ('state', '=', 'schedule'),
-                ('resume_at', '!=', False),
-                ('resume_at', '<=', fields.Datetime.now()),
-            ],
-            order='resume_at',
-            limit=SCHEDULE_PICKUP_LIMIT,
-        )
-        for sid in due.ids:
-            if sid not in ids:
-                ids.append(sid)
-        return ids
+        for session in waiting:
+            if reason := session._wake_reason():
+                self._wake_in_worker(session.id, reason)
