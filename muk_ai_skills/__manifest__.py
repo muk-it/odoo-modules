@@ -9,7 +9,7 @@
         can invoke them directly with a /<name> slash command or from
         the skills panel in the chat composer.
     """,
-    'version': '17.0.1.4.8',
+    'version': '17.0.1.4.9',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -33,6 +33,9 @@
     'assets': {
         'web.assets_backend': [
             'muk_ai_skills/static/src/**/*',
+        ],
+        'web.qunit_suite_tests': [
+            'muk_ai_skills/static/tests/*_tests.js',
         ],
     },
     'images': [
