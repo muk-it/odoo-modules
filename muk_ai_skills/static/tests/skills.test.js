@@ -91,7 +91,7 @@ test('a pinned record unlocks a chatter skill, a list does not', async () => {
     }
 });
 
-test('the skills menu lists recent skills first, greys out the rest and runs the picked one', async () => {
+test('the skills menu lists recent skills first, greys out the rest and puts the picked one before the text', async () => {
     const key = `muk_ai_skills.recent.${serverState.userId}`;
     browser.localStorage.setItem(key, JSON.stringify(['summary']));
     await mountChat();
@@ -112,9 +112,30 @@ test('the skills menu lists recent skills first, greys out the rest and runs the
     expect(queryAllTexts('.mk_skills_panel .mk_skill_label')).toEqual(['Brief']);
     await press('Enter');
     await animationFrame();
-    expect.verifySteps(['invoke brief false']);
     expect('.mk_skills_panel').toHaveCount(0);
+    expect('.mk_composer textarea').toHaveValue('/brief ');
+    expect('.mk_composer textarea').toBeFocused();
+    expect.verifySteps([]);
+    await contains('.mk_composer textarea').edit('/brief for the board', {
+        confirm: false,
+    });
+    await press('Enter');
+    await animationFrame();
+    expect.verifySteps(['invoke brief for the board']);
     expect(JSON.parse(browser.localStorage.getItem(key))).toEqual(['brief', 'summary']);
+    for (const [label, value, steps] of [
+        ['Summary', '/summary only the totals', []],
+        ['Help', '', ['invoke help only the totals']],
+    ]) {
+        await contains('.mk_composer textarea').edit('only the totals', {
+            confirm: false,
+        });
+        await contains('.mk_skills_toggle').click();
+        await contains(`.mk_skills_panel .mk_skill_label:contains('${label}')`).click();
+        await animationFrame();
+        expect('.mk_composer textarea').toHaveValue(value);
+        expect.verifySteps(steps);
+    }
     await contains('.mk_skills_toggle').click();
     await press('Escape');
     await animationFrame();

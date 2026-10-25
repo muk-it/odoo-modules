@@ -73,7 +73,7 @@
 
     <t t-inherit="muk_ai.ChatComposer" t-inherit-mode="extension">
         <xpath expr="//label[hasclass('mk_attach')]" position="after">
-            <SkillsMenu session="session"/>
+            <SkillsMenu session="session" onPick.bind="this.focus"/>
         </xpath>
     </t>
 

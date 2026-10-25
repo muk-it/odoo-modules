@@ -5,8 +5,6 @@ import re
 from odoo import Command, api, fields, models
 from odoo.exceptions import ValidationError
 
-NAME_PATTERN = re.compile(r'^[a-z][a-z0-9_]*$')
-
 
 class Skill(models.Model):
     """Store a reusable AI skill with a body, description and resources."""
@@ -458,7 +456,7 @@ class Skill(models.Model):
         :raise ValidationError: when the name does not match [a-z][a-z0-9_]*
         """
         for record in self:
-            if not NAME_PATTERN.match(record.name or ''):
+            if not re.fullmatch(r'[a-z][a-z0-9_]*', record.name or ''):
                 raise ValidationError(
                     self.env._(
                         'Skill name %(name)r must match [a-z][a-z0-9_]*.',
