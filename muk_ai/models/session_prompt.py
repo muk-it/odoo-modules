@@ -149,8 +149,12 @@ class AISessionPrompt(models.AbstractModel):
         return lines
 
     def _build_runtime_block(self) -> str:
-        """Build the prompt block stating runtime facts about the session."""
-        user, company = self.env.user, self.env.company
+        """Build the prompt block stating runtime facts about the session.
+
+        The user is the one the tools act for, who is not always the owner.
+        """
+        env = self._tool_dispatch_env()
+        user, company = env.user, env.company
         lines = [
             '<runtime>',
             'Facts about this session. Use them directly; do not look them up.',
@@ -413,14 +417,15 @@ class AISessionPrompt(models.AbstractModel):
     def _get_tool_schema(self) -> list[dict]:
         """Build the function schema list for currently loaded tools.
 
-        ``ask_user`` always rides along: asking is not approving.
+        ``ask_user`` rides along wherever somebody can answer: asking is not
+        approving.
         """
         catalog = {entry['name']: entry for entry in self._get_filtered_catalog()}
         loaded = set(self._loaded_tool_names()) & set(catalog)
         schema = [self._tool_entry_to_schema(catalog[name]) for name in sorted(loaded)]
         if set(catalog) - loaded:
             schema.append(self._tool_entry_to_schema(TOOL_LOAD_TOOL))
-        if 'ask_user' not in loaded:
+        if self._can_ask_user():
             schema.append(self._tool_entry_to_schema(ASK_USER_TOOL))
         return schema
 

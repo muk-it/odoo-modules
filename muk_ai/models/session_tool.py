@@ -8,6 +8,7 @@ from collections.abc import Container
 import urllib3
 
 from odoo import fields, models
+from odoo.api import Environment
 from odoo.exceptions import ConcurrencyError, UserError
 from odoo.sql_db import PG_CONCURRENCY_EXCEPTIONS_TO_RETRY
 from odoo.tools import config
@@ -25,6 +26,7 @@ from odoo.addons.muk_ai.tools.call import (
     TOOL_LOAD_TOOL,
     build_tool_call_output,
     clean_ask_preview,
+    schema_type_mismatches,
 )
 from odoo.addons.muk_ai.tools.conversation import order_outputs
 from odoo.addons.muk_ai.tools.runtime import MAX_TOOL_CALLS_PER_ROUND
@@ -159,6 +161,14 @@ class AISessionTool(models.AbstractModel):
         """Return the context keys threaded through tool dispatch."""
         return {'muk_mcp_session_id': self.id}
 
+    def _tool_dispatch_env(self) -> Environment:
+        """Return the environment tool calls run in: the chat's own, with its keys.
+
+        Extension modules narrow it: a chat run on behalf of someone else calls
+        its tools with that person's rights.
+        """
+        return self.env(context={**self.env.context, **self._tool_dispatch_context()})
+
     def _enforce_tool_scope(self) -> str | None:
         """Return the MCP scope tool calls are capped at, or ``None`` for all.
 
@@ -206,9 +216,12 @@ class AISessionTool(models.AbstractModel):
     def _resolve_value_refs(self, arguments: dict) -> tuple[dict, list[str]]:
         """Inline the attachment and URL references found in tool arguments.
 
+        An attachment is inlined only when the tools may read it.
+
         :return: the resolved arguments and the preview URL of each reference
         """
         previews = []
+        env = self._tool_dispatch_env()
 
         def resolve(value) -> object:
             """Return the value with every reference it holds inlined as base64."""
@@ -219,7 +232,7 @@ class AISessionTool(models.AbstractModel):
             if not isinstance(value, str):
                 return value
             if match := ATTACHMENT_REF_RE.match(value):
-                attachment = self.env['ir.attachment'].browse(int(match.group(1)))
+                attachment = env['ir.attachment'].browse(int(match.group(1)))
                 attachment = attachment.exists()
                 if not attachment or not attachment.has_access('read'):
                     return value
@@ -263,7 +276,7 @@ class AISessionTool(models.AbstractModel):
                 'context': {k: v for k, v in context.items() if k not in bound},
             }
         try:
-            tool_env = self.env(context={**self.env.context, **bound})
+            tool_env = self._tool_dispatch_env()
             text, _info = tool_env['muk_mcp.tool']._call(
                 name, arguments, tool_env, enforce_scope=self._enforce_tool_scope()
             )
@@ -365,6 +378,15 @@ class AISessionTool(models.AbstractModel):
             }
         if not isinstance(arguments, dict):
             return {'error': '`call.arguments` must be an object.'}
+        if mismatches := schema_type_mismatches(
+            arguments, loaded[target].get('inputSchema')
+        ):
+            return {
+                'error': (
+                    f'not run: {", ".join(mismatches)}. Call {target} again with '
+                    'arguments of its schema in `loaded`.'
+                )
+            }
         call = {
             'name': target,
             'arguments': arguments,
@@ -657,6 +679,15 @@ class AISessionTool(models.AbstractModel):
             outputs, call['call_id'], call['name'], result, log_result=log_result
         )
 
+    def _load_mistyped_tool(self, name: str, mismatches: list[str]) -> str:
+        """Load the schema of an unloaded tool called with wrong types, asking for a retry."""
+        loaded = self._dispatch_tool_load({'names': [name]}, '')['loaded']
+        return (
+            f'not run: {", ".join(mismatches)}. {name} is loaded now: call it '
+            'again with arguments of this schema: '
+            f'{json.dumps(loaded[name]["inputSchema"])}'
+        )
+
     def _client_action_deferred(self, call: dict) -> str | None:
         """Return a skip reason when the call cannot join the open action batch.
 
@@ -941,8 +972,9 @@ class AISessionTool(models.AbstractModel):
         has_ask_user = any(call.get('name') == 'ask_user' for call in tool_calls)
         waiting = False
         client_names = self._client_tool_names()
-        offered = {entry.get('name') for entry in self._get_filtered_catalog()}
-        offered |= client_names | {TOOL_LOAD_TOOL['name']}
+        catalog = {entry.get('name'): entry for entry in self._get_filtered_catalog()}
+        offered = set(catalog) | client_names | {TOOL_LOAD_TOOL['name']}
+        loaded = set(self._loaded_tool_names())
         for index in range(start_index, len(tool_calls)):
             call = tool_calls[index]
             name, log_result, skip = call['name'], None, None
@@ -961,6 +993,12 @@ class AISessionTool(models.AbstractModel):
                     continue
             elif name not in offered:
                 skip = 'tool_not_offered'
+            elif name not in loaded and (
+                mismatches := schema_type_mismatches(
+                    call.get('arguments'), catalog.get(name, {}).get('inputSchema')
+                )
+            ):
+                skip = self._load_mistyped_tool(name, mismatches)
             elif name in client_names and not has_ask_user and not has_terminating:
                 if waiting and (self.pending_ask or {}).get('kind') == 'client_action':
                     skip = self._client_action_deferred(call)

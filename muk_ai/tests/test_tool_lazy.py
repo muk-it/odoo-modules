@@ -235,6 +235,7 @@ class TestToolLazy(AITestCommon):
             ({'name': 'list_models', 'arguments': {}}, ['rare_tool'], []),
             ({'arguments': {'x': '3'}}, ['rare_tool'], []),
             ({'name': 'rare_tool', 'arguments': 'x=4'}, ['rare_tool'], []),
+            ({'name': 'rare_tool', 'arguments': {'x': 5}}, ['rare_tool'], []),
             ('rare_tool', ['rare_tool'], []),
         ):
             with self.subTest(call=call):
