@@ -6,7 +6,7 @@
         <field name="skill_type">composer</field>
         <field name="category">fix</field>
         <field name="sequence">10</field>
-        <field name="icon">spellcheck</field>
+        <field name="icon">check</field>
         <field name="description">Correct spelling, grammar and punctuation, changing nothing else.</field>
         <field name="user_ids" eval="[(5, 0, 0)]"/>
         <field name="body">Correct the spelling, grammar and punctuation of the selected text. Change nothing else: keep the wording, the tone and the language it is written in.</field>
@@ -39,7 +39,7 @@
         <field name="skill_type">composer</field>
         <field name="category">rewrite</field>
         <field name="sequence">40</field>
-        <field name="icon">business_center</field>
+        <field name="icon">work</field>
         <field name="description">Say it in a more formal register.</field>
         <field name="user_ids" eval="[(5, 0, 0)]"/>
         <field name="body">Rewrite the selected text in a more formal register, as a professional would write to a customer. Keep the content unchanged.</field>
