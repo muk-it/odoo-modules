@@ -124,17 +124,21 @@ async function mountRoutedWindow(sessionId = 31) {
     return window_;
 }
 
-test('a skill picked in the panel is dispatched through the same server call', async () => {
+test('a skill picked in the panel is sent with the text after it', async () => {
     const captured = registerMocks({ skills: [{ name: 'alpha', label: 'Alpha' }] });
-    await mountRoutedWindow();
+    const window_ = await mountRoutedWindow();
+    window_.session.state.input = 'for the board';
+    await animationFrame();
     await click('.mk_skill_btn');
     await animationFrame();
     await click('.mk_skill');
     await animationFrame();
-    expect(captured.invocations.length).toBe(1);
+    expect(captured.invocations.length).toBe(0);
+    expect(window_.session.state.input).toBe('/alpha for the board');
+    await window_.session.onSend();
+    await animationFrame();
     expect(captured.invocations[0].args).toEqual([31, 'alpha']);
-    expect(captured.invocations[0].kwargs.user_input).toBe(false);
-    expect('.mk_skills_panel').toHaveCount(0);
+    expect(captured.invocations[0].kwargs.user_input).toBe('for the board');
 });
 
 test('a cached skill head is dispatched server-side with its parsed arguments', async () => {

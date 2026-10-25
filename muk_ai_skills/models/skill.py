@@ -532,9 +532,8 @@ class Skill(models.Model):
 
         :raise ValidationError: when the name does not match [a-z][a-z0-9_]*
         """
-        name_check = re.compile(r'^[a-z][a-z0-9_]*$')
         for record in self:
-            if not record.name or not name_check.match(record.name):
+            if not re.fullmatch(r'[a-z][a-z0-9_]*', record.name or ''):
                 raise ValidationError(
                     _(
                         'Skill name %(name)r must match [a-z][a-z0-9_]*.',
