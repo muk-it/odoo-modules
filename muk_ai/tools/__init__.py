@@ -10,6 +10,7 @@ from .call import (
     build_tool_call_output,
     clean_ask_preview,
     format_tool_signature,
+    schema_type_mismatches,
     summarize_tool_description,
 )
 from .context import (

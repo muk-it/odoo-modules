@@ -2297,6 +2297,39 @@ class TestAiSession(AITestCommon):
         )
         self.assertIn('tool_not_offered', outputs[0]['output'])
 
+    def test_an_unloaded_tool_called_with_wrong_types_is_loaded_not_run(self):
+        agent = self.env['muk_ai.agent'].create(
+            {
+                'name': 'Deferred',
+                'tool_filter': ['search_count', 'read_records'],
+                'essential_tool_names': ['search_count'],
+            }
+        )
+        partner = self.env['res.partner'].create({'name': 'Deferred Partner'})
+        arguments = {'model': 'res.partner', 'fields': ['name']}
+        for ids, expected, loaded in (
+            ([partner.id], 'Deferred Partner', []),
+            (f'[{partner.id}]', 'ids must be array', ['read_records']),
+        ):
+            with self.subTest(ids=ids):
+                session = self.env['muk_ai.session'].create(
+                    {'name': 'deferred', 'agent_id': agent.id}
+                )
+                outputs = []
+                session._process_tool_round(
+                    [
+                        {
+                            'call_id': 'c1',
+                            'name': 'read_records',
+                            'arguments': {**arguments, 'ids': ids},
+                        }
+                    ],
+                    outputs,
+                    0,
+                )
+                self.assertIn(expected, outputs[0]['output'])
+                self.assertEqual(session.expanded_tool_names or [], loaded)
+
     # ----------------------------------------------------------
     # Tests: turn limit warnings and cost budget
     # ----------------------------------------------------------

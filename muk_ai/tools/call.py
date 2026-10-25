@@ -254,6 +254,34 @@ def format_tool_signature(name: str, schema) -> str:
     return f'{name}({args})'
 
 
+def _is_json_type(value, kind) -> bool:
+    """Tell whether a value has a JSON schema type; an unknown type allows any."""
+    if isinstance(value, bool):
+        return kind == 'boolean'
+    return {
+        'string': isinstance(value, str),
+        'integer': isinstance(value, int),
+        'number': isinstance(value, (int, float)),
+        'array': isinstance(value, list),
+        'object': isinstance(value, dict),
+        'null': value is None,
+    }.get(kind, True)
+
+
+def schema_type_mismatches(arguments, schema) -> list[str]:
+    """Return ``name must be <type>`` for each argument of a type the schema refuses."""
+    properties = schema.get('properties') if isinstance(schema, dict) else None
+    if not isinstance(arguments, dict) or not isinstance(properties, dict):
+        return []
+    mismatches = []
+    for name, value in arguments.items():
+        declared = (properties.get(name) or {}).get('type')
+        kinds = declared if isinstance(declared, list) else [declared]
+        if declared and not any(_is_json_type(value, kind) for kind in kinds):
+            mismatches.append(f'{name} must be {" or ".join(map(str, kinds))}')
+    return mismatches
+
+
 def build_tool_call_output(call_id: str, output) -> dict:
     """Build a ``function_call_output`` item, serializing non-string output as JSON."""
     serialized = output if isinstance(output, str) else json.dumps(output, default=str)

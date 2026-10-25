@@ -67,6 +67,7 @@ from odoo.addons.muk_ai.tools import (
     format_tool_signature,
     is_unmaterialized_attachment,
     sanitize_json_schema,
+    schema_type_mismatches,
     summarize_tool_description,
     tool_file_payload,
     with_ui_ctx,
@@ -1969,6 +1970,15 @@ class AISession(models.Model):
             }
         if not isinstance(target_args, dict):
             return {'error': '`call.arguments` must be an object.'}
+        if mismatches := schema_type_mismatches(
+            target_args, loaded[target].get('inputSchema')
+        ):
+            return {
+                'error': (
+                    f'not run: {", ".join(mismatches)}. Call {target} again with '
+                    'arguments of its schema in `loaded`.'
+                )
+            }
         inline_call_id = f'{parent_call_id or "tool_load"}__{target}'
         call = {'name': target, 'arguments': target_args, 'call_id': inline_call_id}
         self._record_tool_call(call)
@@ -2869,6 +2879,15 @@ class AISession(models.Model):
             outputs, call['call_id'], call['name'], result, log_result=log_result
         )
 
+    def _load_mistyped_tool(self, name: str, mismatches: list[str]) -> str:
+        """Load the schema of an unloaded tool called with wrong types, asking for a retry."""
+        loaded = self._dispatch_tool_load({'names': [name]}, '')['loaded']
+        return (
+            f'not run: {", ".join(mismatches)}. {name} is loaded now: call it '
+            'again with arguments of this schema: '
+            f'{json.dumps(loaded[name]["inputSchema"])}'
+        )
+
     def _client_tool_names(self) -> set[str]:
         """Return the catalog tool names the client must execute.
 
@@ -3075,8 +3094,9 @@ class AISession(models.Model):
         has_ask_user = any(c.get('name') == 'ask_user' for c in tool_calls)
         wait_for_user, paused = False, False
         client_names = self._client_tool_names()
-        offered = {entry.get('name') for entry in self._get_filtered_catalog()}
-        offered |= client_names | {TOOL_LOAD_TOOL['name']}
+        catalog = {entry.get('name'): entry for entry in self._get_filtered_catalog()}
+        offered = set(catalog) | client_names | {TOOL_LOAD_TOOL['name']}
+        loaded = set(self._loaded_tool_names())
         for index in range(start_index, len(tool_calls)):
             call = tool_calls[index]
             if index >= MAX_TOOL_CALLS_PER_ROUND:
@@ -3117,6 +3137,17 @@ class AISession(models.Model):
             if call['name'] not in offered:
                 self._record_tool_call(call)
                 self._skip_tool_call(outputs, call, 'tool_not_offered')
+                continue
+            if call['name'] not in loaded and (
+                mismatches := schema_type_mismatches(
+                    call.get('arguments'),
+                    catalog.get(call['name'], {}).get('inputSchema'),
+                )
+            ):
+                self._record_tool_call(call)
+                self._skip_tool_call(
+                    outputs, call, self._load_mistyped_tool(call['name'], mismatches)
+                )
                 continue
             if (
                 not has_ask_user
