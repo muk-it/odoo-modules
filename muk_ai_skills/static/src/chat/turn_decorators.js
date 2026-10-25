@@ -1,7 +1,6 @@
 // @odoo-module
 
-import { _t } from '@web/core/l10n/translation';
-
+import { _t } from '@muk_ai/core/compat/translation';
 import { toolBlockDecorators } from '@muk_ai/chat/session/turns';
 
 /**
