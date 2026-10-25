@@ -311,25 +311,29 @@ class TestToolLazy(ToolCatalogMixin, AITestCommon):
         self.assertTrue(result['call']['ok'])
         self.assertEqual(dispatch.call_args[0][1], 'rare_tool')
 
-    def test_tool_load_inline_call_accepts_flat_arguments(self):
-        with (
-            self._patch_catalog(),
-            patch.object(
-                type(self.session),
-                '_dispatch_tool_call',
-                autospec=True,
-                return_value=('called', True),
-            ) as dispatch,
+    def test_tool_load_inline_call_runs_only_arguments_of_its_schema(self):
+        for call, executed in (
+            ({'name': 'rare_tool', 'x': '1'}, [{'x': '1'}]),
+            ({'name': 'rare_tool', 'arguments': {'x': 5}}, []),
         ):
-            result = self.session._dispatch_tool_load(
-                {
-                    'names': ['rare_tool'],
-                    'call': {'name': 'rare_tool', 'x': '1'},
-                },
-                parent_call_id='call_flat',
-            )
-        self.assertTrue(result['call']['ok'])
-        self.assertEqual(dispatch.call_args[0][2], {'x': '1'})
+            with (
+                self.subTest(call=call),
+                self._patch_catalog(),
+                patch.object(
+                    type(self.session),
+                    '_dispatch_tool_call',
+                    autospec=True,
+                    return_value=('called', True),
+                ) as dispatch,
+            ):
+                result = self.session._dispatch_tool_load(
+                    {'names': ['rare_tool'], 'call': call},
+                    parent_call_id='call_flat',
+                )
+                self.assertEqual(
+                    [args[0][2] for args in dispatch.call_args_list], executed
+                )
+                self.assertEqual('error' in result['call'], not executed)
 
     def test_tool_load_inline_call_refuses_filtered_tool(self):
         agent = self.env['muk_ai.agent'].create(
