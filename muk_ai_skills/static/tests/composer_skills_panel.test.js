@@ -16,12 +16,13 @@ defineMailModels();
 const SKILLS = [
     { name: 'alpha', label: 'Alpha', description: 'Do alpha.', icon: 'fa-bolt' },
     { name: 'beta', label: 'Beta', description: 'Do beta.', icon: 'fa-cogs' },
+    { name: 'help', label: 'Help', description: 'Do help.', icon: 'fa-life-ring' },
 ];
 
 /**
  * Mount a composer wired to a session and collect the skills it invokes.
  * @param {object} options the composer value and session id to mount with
- * @returns {Array<string>} the technical names the composer asked to invoke
+ * @returns {Array<Array<string>>} the name and text of each skill it asked to run
  */
 async function mountComposer({ value = '', sessionId = 42 } = {}) {
     const invoked = [];
@@ -40,7 +41,7 @@ async function mountComposer({ value = '', sessionId = 42 } = {}) {
                 onInput="(value) => this.state.value = value"
                 onSend="() => {}"
                 onAttachFiles="() => {}"
-                onInvokeSkill="(name) => props.invoked.push(name)"
+                onInvokeSkill="(name, text) => props.invoked.push([name, text])"
             />
         `;
         setup() {
@@ -99,27 +100,25 @@ test('opening the panel takes the caret out of the composer', async () => {
     expect('.mk_composer textarea').not.toBeFocused();
 });
 
-test('picking a skill invokes it and closes the panel', async () => {
+test('picking a skill puts it before the draft, one named like a command runs at once', async () => {
     reset();
     setSkills(42, SKILLS);
     const invoked = await mountComposer();
-    await click('.mk_skill_btn');
-    await animationFrame();
-    await click(queryAll('.mk_skill')[1]);
-    await animationFrame();
-    expect(invoked).toEqual(['beta']);
-    expect('.mk_skills_panel').toHaveCount(0);
-});
-
-test('picking a skill leaves the composer draft alone', async () => {
-    reset();
-    setSkills(42, SKILLS);
-    await mountComposer({ value: 'half written message' });
-    await click('.mk_skill_btn');
-    await animationFrame();
-    await click(queryAll('.mk_skill')[0]);
-    await animationFrame();
-    expect('.mk_composer textarea').toHaveValue('half written message');
+    for (const [index, value, runs] of [
+        [2, '', [['help', 'half written']]],
+        [1, '/beta half written', []],
+    ]) {
+        await click('.mk_composer textarea');
+        await edit('half written');
+        await click('.mk_skill_btn');
+        await animationFrame();
+        await click(queryAll('.mk_skill')[index]);
+        await animationFrame();
+        expect('.mk_skills_panel').toHaveCount(0);
+        expect('.mk_composer textarea').toHaveValue(value);
+        expect(invoked.splice(0)).toEqual(runs);
+    }
+    expect('.mk_composer textarea').toBeFocused();
 });
 
 test('the panel yields to the slash popover while a command is typed', async () => {

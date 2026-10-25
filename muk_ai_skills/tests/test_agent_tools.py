@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from unittest.mock import patch
+from contextlib import AbstractContextManager
+from unittest.mock import MagicMock, patch
 
 from odoo import models
 from odoo.tests.common import TransactionCase, tagged
@@ -16,6 +17,7 @@ class TestAgentSkillTools(TransactionCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Create the records the tests share."""
         super().setUpClass()
         cls.Agent = cls.env['muk_ai.agent']
         cls.Session = cls.env['muk_ai.session']
@@ -31,7 +33,9 @@ class TestAgentSkillTools(TransactionCase):
             {'name': 'Essential Tools Session', 'agent_id': agent.id}
         )
 
-    def _without_skills(self, session: models.BaseModel):
+    def _without_skills(
+        self, session: models.BaseModel
+    ) -> AbstractContextManager[MagicMock]:
         """Patch the session so it exposes no skill at all."""
         return patch.object(
             type(session),

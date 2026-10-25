@@ -231,11 +231,8 @@ class Skill(models.Model):
     def _unfiltered(self) -> models.BaseModel:
         """Return the same records with archived share rows still readable.
 
-        Reading a many2many drops archived ids while the row stays in the
-        table, so the share list reads back empty while the visibility domain
-        still searches -- and finds -- the surviving row. Kept as a recordset
-        rather than a share list so a compute can walk it alongside ``self``
-        and read ``user_ids`` for the whole batch in one query.
+        A many2many read drops archived ids that the visibility domain still
+        finds; a recordset lets a compute read ``user_ids`` for a whole batch.
         """
         return self.sudo().with_context(active_test=False)
 
@@ -268,12 +265,8 @@ class Skill(models.Model):
     def _build_body(self, session: models.BaseModel | None = None) -> str:
         """Return the skill body verbatim without evaluating it as a template.
 
-        Skill bodies are user-authored and can be shared across users, so
-        rendering them through the inline template engine would let a
-        ``{{ ... }}`` fragment run ORM writes under the invoking user's
-        rights (``.sudo()`` inside the expression escalates even under a
-        non-superuser environment). The body is returned as inert text,
-        matching the MCP ``invoke_skill`` path, so it never executes.
+        A shared, user-authored body never runs as a template under the
+        invoking user's rights: it is inert text, as on the MCP path.
         """
         return self.body or ''
 
@@ -291,11 +284,8 @@ class Skill(models.Model):
     def _relink_attachments(self) -> None:
         """Bind resources uploaded before the skill was saved to the skill.
 
-        The web ``FileInput`` creates ``ir.attachment`` rows with ``res_id=0``
-        while the skill is still unsaved. Without relinking, shared users
-        cannot read those resources through ``read_resource`` because
-        attachment access resolves through the owning skill record. Mirrors
-        ``muk_ai.session._resolve_attachments``.
+        Uploads of an unsaved skill carry ``res_id=0``, and shared users read
+        a resource only through the skill that owns it.
         """
         for record in self:
             pending = record.attachment_ids.filtered(
@@ -315,10 +305,8 @@ class Skill(models.Model):
     def _scope_satisfied_by(self, view_context: dict | None) -> bool:
         """Tell whether what the user has open satisfies this skill's scope.
 
-        A pinned list, pivot or graph names a model but no record, so only
-        ``kind == 'record'`` counts as one; an unsaved form reports itself as a
-        list and is therefore not a record either. A model restriction needs a
-        model on screen, whatever the scope.
+        Only ``kind == 'record'`` is a record, not a list or an unsaved form;
+        a model restriction needs a model on screen, whatever the scope.
         """
         context = view_context or {}
         model = context.get('model') or ''
@@ -394,11 +382,7 @@ class Skill(models.Model):
 
     @api.model
     def fetch_skills(self, skill_type: str) -> list[dict]:
-        """Return the skills a surface offers, in the order they appear.
-
-        Scoped to the user rather than to a session: a surface asks for its
-        offers before it has one, and what it offers is picked by the user
-        rather than discovered by an agent.
+        """Return the skills a surface offers the user, in the order they appear.
 
         :param skill_type: the surface asking, see the ``skill_type`` field
         :return: descriptors carrying what a surface needs to offer a skill
@@ -417,6 +401,7 @@ class Skill(models.Model):
     @api.depends('label', 'name')
     @api.depends_context('lang')
     def _compute_display_name(self) -> None:
+        """Name the skill by its label, else by its technical name."""
         for record in self:
             record.display_name = record.label or (
                 record.name.replace('_', ' ').title() if record.name else ''
@@ -424,21 +409,25 @@ class Skill(models.Model):
 
     @api.depends('attachment_ids')
     def _compute_attachment_count(self) -> None:
+        """Count the attached resources."""
         for record in self:
             record.attachment_count = len(record.attachment_ids)
 
     @api.depends('agent_ids')
     def _compute_agent_count(self) -> None:
+        """Count the agents the skill is limited to."""
         for record in self:
             record.agent_count = len(record.agent_ids)
 
     @api.depends('user_ids', 'owner_id')
     def _compute_user_count(self) -> None:
+        """Count the users the skill is shared with besides its owner."""
         for record, unfiltered in zip(self, self._unfiltered()):
             record.user_count = len(unfiltered.user_ids - record.owner_id)
 
     @api.depends('user_ids', 'owner_id')
     def _compute_visibility(self) -> None:
+        """Tell whether everyone, only the owner or listed users see it."""
         for record, unfiltered in zip(self, self._unfiltered()):
             shared = unfiltered.user_ids
             if not shared:
@@ -464,6 +453,7 @@ class Skill(models.Model):
     @api.depends('owner_id')
     @api.depends_context('uid')
     def _compute_is_editable(self) -> None:
+        """Let administrators and the owner edit the skill."""
         is_admin = self.env.user.has_group('base.group_system')
         for record in self:
             record.is_editable = is_admin or record.owner_id == self.env.user
@@ -511,9 +501,8 @@ class Skill(models.Model):
 
         :raise ValidationError: when the name does not match [a-z][a-z0-9_]*
         """
-        name_check = re.compile(r'^[a-z][a-z0-9_]*$')
         for record in self:
-            if not record.name or not name_check.match(record.name):
+            if not re.fullmatch(r'[a-z][a-z0-9_]*', record.name or ''):
                 raise ValidationError(
                     _(
                         'Skill name %(name)r must match [a-z][a-z0-9_]*.',

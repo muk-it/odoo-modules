@@ -15,6 +15,7 @@ class TestAvailableSkillNames(TransactionCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Create the records the tests share."""
         super().setUpClass()
         cls.Skill = cls.env['muk_ai.skill']
         cls.Session = cls.env['muk_ai.session']

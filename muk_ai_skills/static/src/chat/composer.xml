@@ -23,7 +23,7 @@
                 skills="availableSkills"
                 lockedSkills="lockedSkills"
                 autofocus="skillsAutofocus"
-                onSelect.bind="invokeSkill"
+                onSelect.bind="pickSkill"
                 onClose.bind="closeSkillsPanel"
             />
         </xpath>

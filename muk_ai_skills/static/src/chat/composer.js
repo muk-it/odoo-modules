@@ -4,6 +4,7 @@ import { hasTouch } from '@web/core/browser/feature_detection';
 import { patch } from '@web/core/utils/patch';
 
 import { ChatComposer } from '@muk_ai/chat/composer/chat_composer';
+import { allSlashCommands } from '@muk_ai/chat/session/use_ai_session';
 
 import { skillScopeSatisfied } from '@muk_ai_skills/chat/scope';
 import { skillStore } from '@muk_ai_skills/chat/skill_cache';
@@ -101,8 +102,16 @@ patch(ChatComposer.prototype, {
         this.localState.skillsOpen = false;
         this.inputRef.el?.focus();
     },
-    invokeSkill(name) {
+    /** Put a skill's command before the draft; one named like a command runs at once. */
+    pickSkill(name) {
+        const text = (this.props.value || '').trim();
         this.localState.skillsOpen = false;
-        this.props.onInvokeSkill?.(name);
+        if (allSlashCommands().some((command) => command.name === `/${name}`)) {
+            this.props.onInput('');
+            this.props.onInvokeSkill?.(name, text);
+        } else {
+            this.props.onInput(`/${name} ${text}`);
+            this.inputRef.el?.focus();
+        }
     },
 });

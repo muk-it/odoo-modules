@@ -21,11 +21,8 @@ class AISession(models.Model):
     def _visible_skills(self, skill_type: str = 'chat') -> models.BaseModel:
         """Return the active skills visible to this session's agent and user.
 
-        Only chat skills answer by default. A skill a surface offers as a
-        button is picked by the user in that surface, so listing it to the
-        language model as well would grow the discovery list of every
-        conversation with entries nobody can reach from one.
-
+        Chat skills by default: a skill a surface offers as a button is picked
+        there by the user and stays out of the model's discovery list.
         :param skill_type: the surface the skills are wanted for
         """
         skill_model = self.env['muk_ai.skill'].sudo()
@@ -197,7 +194,6 @@ class AISession(models.Model):
     def invoke_skill_from_chat(self, name: str, user_input: str | None = None) -> dict:
         """Inject a skill invocation into the conversation and run the LLM.
 
-        :param name: technical name of the skill to invoke
         :param user_input: optional free-text appended as a user turn
         :return: the refreshed session snapshot
         :raise UserError: when the session is busy or the skill is invalid

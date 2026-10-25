@@ -20,6 +20,7 @@ class TestSkillSharing(TransactionCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Create the records the tests share."""
         super().setUpClass()
         cls.Skill = cls.env['muk_ai.skill']
         cls.Session = cls.env['muk_ai.session']
@@ -301,7 +302,7 @@ class TestSkillSharing(TransactionCase):
             user_ids=[(6, 0, (self.user_owner | self.user_other).ids)],
             attachment_ids=[(6, 0, attachment.ids)],
         )
-        attachment.with_user(self.user_other).check_access('read')
+        self.assertTrue(attachment.with_user(self.user_other).has_access('read'))
 
     def test_foreign_pending_resource_cannot_be_linked_into_a_skill(self):
         attachment = self._pending_attachment(self.user_owner)

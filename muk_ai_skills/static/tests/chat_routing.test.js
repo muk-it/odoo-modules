@@ -1,5 +1,5 @@
 import { describe, expect, test } from '@odoo/hoot';
-import { click } from '@odoo/hoot-dom';
+import { click, press } from '@odoo/hoot-dom';
 import { animationFrame } from '@odoo/hoot-mock';
 import {
     mockService,
@@ -124,12 +124,16 @@ async function mountRoutedWindow(sessionId = 31) {
     return window_;
 }
 
-test('a skill picked in the panel is dispatched through the same server call', async () => {
+test('a skill picked in the panel is sent through the same server call', async () => {
     const captured = registerMocks({ skills: [{ name: 'alpha', label: 'Alpha' }] });
     await mountRoutedWindow();
     await click('.mk_skill_btn');
     await animationFrame();
     await click('.mk_skill');
+    await animationFrame();
+    expect('.mk_composer textarea').toHaveValue('/alpha ');
+    expect(captured.invocations).toEqual([]);
+    await press('Enter');
     await animationFrame();
     expect(captured.invocations.length).toBe(1);
     expect(captured.invocations[0].args).toEqual([31, 'alpha']);
