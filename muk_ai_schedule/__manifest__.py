@@ -9,7 +9,7 @@
         model, every wait has a timeout, and the chat shows what it waits
         for with a button to wake it at once.
     """,
-    'version': '16.0.2.0.3',
+    'version': '16.0.2.0.4',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',
