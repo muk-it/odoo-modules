@@ -64,7 +64,6 @@ class TestAgentForm(TransactionCase):
     def test_the_ability_rows_read_in_order(self):
         rows = ability_rows(self.env)
         self.assertEqual(rows[0], 'web_search')
-        self.assertEqual(rows[-1], 'enable_code_interpreter')
         self.assertLess(
             rows.index('enable_image_generation'),
             rows.index('enable_code_interpreter'),

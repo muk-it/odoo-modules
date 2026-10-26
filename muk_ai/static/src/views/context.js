@@ -38,16 +38,28 @@ export function registerViewTarget(build) {
 }
 
 /**
- * Probe what the user looks at and build its view-context payload.
- * @param {object} env component environment
- * @returns {Promise<object|null>} view context payload, or null when none
+ * Return the context of the latest registered target that has one.
+ * @returns {object|null} view context payload, or null when none
  */
-export async function probeCurrentView(env) {
+export function targetContext() {
     for (const build of [...targets].reverse()) {
         const payload = build();
         if (payload) {
             return payload;
         }
+    }
+    return null;
+}
+
+/**
+ * Probe what the user looks at and build its view-context payload.
+ * @param {object} env component environment
+ * @returns {Promise<object|null>} view context payload, or null when none
+ */
+export async function probeCurrentView(env) {
+    const pinned = targetContext();
+    if (pinned) {
+        return pinned;
     }
     try {
         const current = env.services?.action?.currentController;
@@ -132,7 +144,7 @@ function makeDispatch(controller, build) {
                 lastKey = null;
                 return;
             }
-            const payload = build(controller);
+            const payload = targetContext() || build(controller);
             if (!payload || !payload.model) {
                 return;
             }

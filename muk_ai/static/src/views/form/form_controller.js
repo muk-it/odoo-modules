@@ -3,7 +3,7 @@ import { onMounted, onPatched } from '@odoo/owl';
 import { patch } from '@web/core/utils/patch';
 import { FormController } from '@web/views/form/form_controller';
 
-import { captureViewContext } from '@muk_ai/views/context';
+import { captureViewContext, targetContext } from '@muk_ai/views/context';
 
 /** Capture the open record/list as AI view context for active chat windows. */
 patch(FormController.prototype, {
@@ -25,23 +25,19 @@ patch(FormController.prototype, {
                 if (!root || !root.resModel) {
                     return;
                 }
-                let payload;
-                if (root.resId) {
-                    const data = root.data || {};
-                    const displayName = data.display_name || data.name || '';
-                    payload = {
-                        kind: 'record',
-                        model: root.resModel,
-                        id: root.resId,
-                        display_name: String(displayName || ''),
-                    };
-                } else {
-                    payload = {
-                        kind: 'list',
-                        model: root.resModel,
-                        view_type: 'form',
-                    };
-                }
+                const data = root.data || {};
+                const payload =
+                    targetContext() ||
+                    (root.resId
+                        ? {
+                              kind: 'record',
+                              model: root.resModel,
+                              id: root.resId,
+                              display_name: String(
+                                  data.display_name || data.name || '',
+                              ),
+                          }
+                        : { kind: 'list', model: root.resModel, view_type: 'form' });
                 const key = `${sessionIds.join(',')}:${JSON.stringify(payload)}`;
                 if (key === lastKey) {
                     return;

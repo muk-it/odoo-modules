@@ -1,5 +1,6 @@
-import { describe, expect, test } from '@odoo/hoot';
+import { after, describe, expect, test } from '@odoo/hoot';
 import {
+    contains,
     defineModels,
     fields,
     mockService,
@@ -10,6 +11,7 @@ import {
 import { defineMailModels } from '@mail/../tests/mail_test_helpers';
 
 import '@muk_ai/views/form/form_controller';
+import { registerViewTarget } from '@muk_ai/views/context';
 
 describe.current.tags('muk_ai');
 defineMailModels();
@@ -94,4 +96,31 @@ test('form controller dispatches a list payload while creating a new record', as
         model: 'muk_ai.form_partner',
         view_type: 'form',
     });
+});
+
+test('an editor over a form keeps the chats pinned to its element while the form renders', async () => {
+    const captured = [];
+    mockChatWindow(9);
+    onRpc('muk_ai.session', 'set_view_context', ({ args }) => {
+        captured.push(args[1]);
+        return {};
+    });
+    const element = { kind: 'element', model: 'muk_ai.form_partner', id: 1, tag: 'p' };
+    let editing = true;
+    after(registerViewTarget(() => editing && element));
+    await mountView({
+        resModel: 'muk_ai.form_partner',
+        resId: 1,
+        resIds: [1, 2],
+        type: 'form',
+        arch: `<form><field name="name"/></form>`,
+    });
+    await contains('.o_pager_next').click();
+    expect(captured).toEqual([element]);
+    editing = false;
+    await contains('.o_pager_next').click();
+    expect(captured).toEqual([
+        element,
+        { kind: 'record', model: 'muk_ai.form_partner', id: 1, display_name: 'Acme' },
+    ]);
 });
