@@ -17,7 +17,7 @@
 						<div class="row">
 							<div class="o_light_label">
 								<label
-									class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4"
+									class="col-6 col-sm-4 col-md-2 col-lg-4"
 									string="Max waits"
 									for="ai_max_waits"
 								/>
