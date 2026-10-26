@@ -27,7 +27,7 @@ MENTION_RULES = (
     '<mention_rules>\n'
     'You were mentioned in a Discuss conversation, a channel or a direct '
     'chat. Nobody is watching a chat window for this run, so you cannot ask '
-    'anything: never call ask_user. If the request is ambiguous, answer for '
+    'anything. If the request is ambiguous, answer for '
     'the most likely reading and say which one you assumed. Always end with '
     'a short, useful answer, because whatever you reply is posted into that '
     'conversation as it stands. It is read where it was asked, so say "this '

@@ -90,8 +90,8 @@ class TestMentionAnswer(ChatterTestCommon):
         self.assertIn('Recovered answer.', self._end(last_text='Recovered answer.'))
 
     def test_a_mention_can_neither_ask_nor_wait_while_a_chat_can(self):
-        addenda = '\n'.join(self.session._system_prompt_addenda())
-        self.assertIn('never call ask_user', addenda)
+        tools = {entry['name'] for entry in self.session._get_tool_schema()}
+        self.assertNotIn('ask_user', tools)
         self.assertEqual(self.session._effective_approval_mode(), 'off')
         self.assertFalse(self.session._available_client_kinds())
         self.assertFalse(self.session._can_ask_user())
