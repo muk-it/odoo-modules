@@ -38,14 +38,19 @@ class AIAgent(models.Model):
     # ----------------------------------------------------------
 
     def _provision_partners(self) -> None:
-        """Give every agent an archived, address-less contact named after it.
+        """Give every agent an archived, address-less contact with its name and image.
 
         Archived keeps it out of the address book and every contact picker;
         the mention suggestions of a conversation opt back in.
         """
         partners = self.env['res.partner'].sudo()
         for agent in self:
-            values = {'name': agent.name, 'email': False, 'active': False}
+            values = {
+                'name': agent.name,
+                'image_1920': agent.image_1920,
+                'email': False,
+                'active': False,
+            }
             if agent.partner_id:
                 agent.partner_id.sudo().write(values)
             else:
@@ -63,8 +68,8 @@ class AIAgent(models.Model):
         return agents
 
     def write(self, vals: dict) -> bool:
-        """Keep the stand-in contact named after the agent."""
+        """Keep the stand-in contact's name and image those of the agent."""
         result = super().write(vals)
-        if 'name' in vals:
+        if vals.keys() & {'name', 'image_1920'}:
             self.filtered('partner_id')._provision_partners()
         return result
