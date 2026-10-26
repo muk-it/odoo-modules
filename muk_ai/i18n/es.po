@@ -6200,3 +6200,19 @@ msgstr "El asistente recuerda cómo trabaja y se lo muestra."
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "Typed choices, scores and yes/no answers in a second."
 msgstr "Opciones tipadas, puntuaciones y respuestas sí/no en un segundo."
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_livechat
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Answer website visitors in the live chat."
+msgstr "Responder a los visitantes del sitio web en el chat en directo."
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Live Chat"
+msgstr "Chat en directo"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_livechat
+msgid "MuK AI Live Chat"
+msgstr ""
