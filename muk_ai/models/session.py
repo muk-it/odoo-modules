@@ -17,6 +17,7 @@ import urllib3
 from markupsafe import Markup, escape
 
 from odoo import SUPERUSER_ID, Command, _, api, fields, models, modules, release
+from odoo.api import Environment
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.http import request
 from odoo.osv import expression
@@ -718,15 +719,20 @@ class AISession(models.Model):
         return lines
 
     def _build_runtime_block(self) -> str:
-        """Build the prompt block stating runtime facts about the session."""
+        """Build the prompt block stating runtime facts about the session.
+
+        The user is the one the tools act for, who is not always the owner.
+        """
+        env = self._tool_dispatch_env()
+        user, company = env.user, env.company
         lines = [
             '<runtime>',
             'Facts about this session. Use them directly; do not look them up.',
             f'Odoo: {release.version}',
             f'Date: {fields.Date.context_today(self).isoformat()}',
-            f'User: {self.env.user.name} (res.users,{self.env.user.id}) — tz {self.env.user.tz or "UTC"}',
-            f'Language: {self.env.user.lang}',
-            f'Company: {self.env.company.name} (res.company,{self.env.company.id})',
+            f'User: {user.name} (res.users,{user.id}) - tz {user.tz or "UTC"}',
+            f'Language: {user.lang}',
+            f'Company: {company.name} (res.company,{company.id})',
             f'Approval mode: {self._effective_approval_mode() if self and self.id else "ask"}',
         ]
         if (
@@ -736,8 +742,8 @@ class AISession(models.Model):
         ):
             models_list = ', '.join(sorted(gated.mapped('model')))
             lines.append(f'Approval gate (the system asks the user): {models_list}')
-        if len(self.env.user.company_ids) > 1:
-            names = ', '.join(self.env.user.company_ids.sorted('id').mapped('name'))
+        if len(user.company_ids) > 1:
+            names = ', '.join(user.company_ids.sorted('id').mapped('name'))
             lines.append(f'Companies accessible: {names}')
         lines.extend(self._runtime_capability_lines())
         lines.append('</runtime>')
@@ -1102,7 +1108,8 @@ class AISession(models.Model):
     def _get_tool_schema(self) -> list[dict]:
         """Build the function schema list for currently loaded tools.
 
-        ``ask_user`` always rides along: asking is not approving.
+        ``ask_user`` rides along wherever somebody can answer: asking is not
+        approving.
         """
         catalog_by_name = {
             entry['name']: entry for entry in self._get_filtered_catalog()
@@ -1113,7 +1120,7 @@ class AISession(models.Model):
         ]
         if set(catalog_by_name) - loaded:
             result.append(self._tool_entry_to_schema(TOOL_LOAD_TOOL))
-        if 'ask_user' not in loaded:
+        if self._can_ask_user():
             result.append(self._tool_entry_to_schema(ASK_USER_TOOL))
         return result
 
@@ -1813,6 +1820,14 @@ class AISession(models.Model):
         """Return the context keys threaded through tool dispatch."""
         return {'muk_mcp_session_id': self.id}
 
+    def _tool_dispatch_env(self) -> Environment:
+        """Return the environment tool calls run in: the chat's own, with its keys.
+
+        Extension modules narrow it: a chat run on behalf of someone else calls
+        its tools with that person's rights.
+        """
+        return self.env(context={**self.env.context, **self._tool_dispatch_context()})
+
     def _enforce_tool_scope(self) -> str | None:
         """Return the MCP scope tool calls are capped at, or ``None`` for all.
 
@@ -1850,7 +1865,7 @@ class AISession(models.Model):
                 'context': {k: v for k, v in context.items() if k not in bound},
             }
         try:
-            tool_env = self.env(context={**self.env.context, **bound})
+            tool_env = self._tool_dispatch_env()
             text, _info = tool_env['muk_mcp.tool']._call(
                 name, arguments, tool_env, enforce_scope=enforce_scope
             )
@@ -2729,16 +2744,18 @@ class AISession(models.Model):
     def _resolve_value_refs(self, arguments: dict) -> tuple[dict, list]:
         """Inline attachment and URL references in tool arguments.
 
-        :return: the resolved arguments and the list of resolved reference
-            descriptors carrying preview URLs
+        An attachment is inlined only when the tools may read it.
+
+        :return: the resolved arguments and the reference descriptors with previews
         """
         refs = []
         if isinstance(arguments, dict):
+            env = self._tool_dispatch_env()
 
             def _resolve(value):
                 if isinstance(value, str):
                     if m := ATTACHMENT_REF_RE.match(value):
-                        attachment = self.env['ir.attachment'].browse(int(m.group(1)))
+                        attachment = env['ir.attachment'].browse(int(m.group(1)))
                         if not attachment.exists():
                             return value
                         try:
