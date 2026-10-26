@@ -213,6 +213,11 @@ class ResConfigSettings(models.TransientModel):
         help='Build website pages live in the builder, in a chat.',
     )
 
+    module_muk_ai_livechat = fields.Boolean(
+        string='MuK AI Live Chat',
+        help='Answer website visitors in the live chat.',
+    )
+
     module_muk_ai_mass_mailing = fields.Boolean(
         string='MuK AI Email Designer',
         help='Design newsletters that render in every mail client.',

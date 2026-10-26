@@ -64,7 +64,7 @@
 							<div class="content-group mt16">
 								<div class="row">
 									<div class="o_light_label">
-										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Max rounds" for="ai_max_iterations"/>
+										<label class="col-6 col-sm-4 col-md-2 col-lg-4" string="Max rounds" for="ai_max_iterations"/>
 										<field name="ai_max_iterations" class="w-25 text-center" nolabel="1"/>
 										<span class="col-auto ms-2">per Slice</span>
 									</div>
@@ -78,7 +78,7 @@
 							<div class="content-group mt16">
 								<div class="row">
 									<div class="o_light_label">
-										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Timeout" for="ai_turn_wallclock_seconds"/>
+										<label class="col-6 col-sm-4 col-md-2 col-lg-4" string="Timeout" for="ai_turn_wallclock_seconds"/>
 										<field name="ai_turn_wallclock_seconds" class="w-25 text-center" nolabel="1"/>
 										<span class="col-auto ms-2">in Seconds</span>
 									</div>
@@ -92,7 +92,7 @@
 							<div class="content-group mt16">
 								<div class="row">
 									<div class="o_light_label">
-										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Timeout" for="ai_slice_wallclock_seconds"/>
+										<label class="col-6 col-sm-4 col-md-2 col-lg-4" string="Timeout" for="ai_slice_wallclock_seconds"/>
 										<field name="ai_slice_wallclock_seconds" class="w-25 text-center" nolabel="1"/>
 										<span class="col-auto ms-2">in Seconds</span>
 									</div>
@@ -107,7 +107,7 @@
 							<div class="content-group mt16">
 								<div class="row">
 									<div class="o_light_label">
-										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Max spend" for="ai_turn_cost_limit"/>
+										<label class="col-6 col-sm-4 col-md-2 col-lg-4" string="Max spend" for="ai_turn_cost_limit"/>
 										<field name="ai_turn_cost_limit" class="w-25 text-center" nolabel="1"/>
 										<span class="col-auto ms-2">per Turn</span>
 									</div>
@@ -124,7 +124,7 @@
 							<div class="content-group">
 								<div class="row">
 									<div class="o_light_label">
-										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Wait for" for="ai_client_action_timeout"/>
+										<label class="col-6 col-sm-4 col-md-2 col-lg-4" string="Wait for" for="ai_client_action_timeout"/>
 										<field name="ai_client_action_timeout" class="w-25 text-center" nolabel="1"/>
 										<span class="col-auto ms-2">Seconds</span>
 									</div>
@@ -140,7 +140,7 @@
 							<div class="content-group mt16" invisible="not ai_session_retention_enabled">
 								<div class="row">
 									<div class="o_light_label">
-										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Keep Chats for" for="ai_session_retention_days"/>
+										<label class="col-6 col-sm-4 col-md-2 col-lg-4" string="Keep Chats for" for="ai_session_retention_days"/>
 										<field name="ai_session_retention_days" class="w-25 text-center" nolabel="1"/>
 										<span class="col-auto ms-2">Days</span>
 									</div>
@@ -157,7 +157,7 @@
 							<div class="content-group mt16">
 								<div class="row">
 									<div class="o_light_label">
-										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Timeout" for="mcp_session_timeout"/>
+										<label class="col-6 col-sm-4 col-md-2 col-lg-4" string="Timeout" for="mcp_session_timeout"/>
 										<field name="mcp_session_timeout" class="w-25 text-center" nolabel="1"/>
 										<span class="col-auto ms-2">in Hours</span>
 									</div>
@@ -172,7 +172,7 @@
 							<div class="content-group mt16">
 								<div class="row">
 									<div class="o_light_label">
-										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Retention" for="mcp_log_retention"/>
+										<label class="col-6 col-sm-4 col-md-2 col-lg-4" string="Retention" for="mcp_log_retention"/>
 										<field name="mcp_log_retention" class="w-25 text-center" nolabel="1"/>
 										<span class="col-auto ms-2">in Days</span>
 									</div>
@@ -187,7 +187,7 @@
 							<div class="content-group mt16">
 								<div class="row">
 									<div class="o_light_label">
-										<label class="fw-bold col-6 col-sm-4 col-md-2 col-lg-4" string="Max requests" for="mcp_rate_limit_requests"/>
+										<label class="col-6 col-sm-4 col-md-2 col-lg-4" string="Max requests" for="mcp_rate_limit_requests"/>
 										<field name="mcp_rate_limit_requests" class="w-25 text-center" nolabel="1"/>
 										<span class="col-auto ms-2">per Minute</span>
 									</div>
@@ -404,6 +404,19 @@
 								widget="module_link"
 							/>
 							<div class="content-group" invisible="not module_muk_ai_website" id="msg_module_muk_ai_website">
+								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+							</div>
+						</setting>
+						<setting
+							id="muk_ai_addon_livechat"
+							string="Live Chat"
+							help="Answer website visitors in the live chat."
+						>
+							<field
+								name="module_muk_ai_livechat"
+								widget="module_link"
+							/>
+							<div class="content-group" invisible="not module_muk_ai_livechat" id="msg_module_muk_ai_livechat">
 								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
 							</div>
 						</setting>
