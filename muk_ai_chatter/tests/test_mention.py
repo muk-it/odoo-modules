@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 from unittest.mock import patch
 
 from markupsafe import Markup
@@ -7,7 +8,7 @@ from markupsafe import Markup
 from odoo import models
 from odoo.exceptions import UserError
 from odoo.tests import new_test_user
-from odoo.tools import mute_logger
+from odoo.tools import file_open, mute_logger
 
 from odoo.addons.muk_ai_chatter.tests.common import ChatterTestCommon
 
@@ -48,8 +49,15 @@ class TestMention(ChatterTestCommon):
             contact.id,
             self._suggested_partner_ids(Partner.get_mention_suggestions('Chatter')),
         )
-        self.agent.name = 'Renamed Agent'
+        with file_open('muk_ai_chatter/static/description/icon.png', 'rb') as icon:
+            self.agent.write(
+                {
+                    'name': 'Renamed Agent',
+                    'image_1920': base64.b64encode(icon.read()),
+                }
+            )
         self.assertEqual(contact.name, 'Renamed Agent')
+        self.assertTrue(contact.image_1920)
 
     def test_a_mention_on_a_record_summons_nothing_and_reaches_nobody(self):
         other = self.env['res.partner'].create({'name': 'Real Person'})

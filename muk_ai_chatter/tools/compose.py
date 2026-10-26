@@ -27,8 +27,8 @@ COMPOSE_RULES = (
     'record, so use its name, or say "this record". Keep the language the '
     'user is writing in. Sign nothing and invent nothing: every fact must '
     'come from the draft, the conversation or the record. Nobody can answer a '
-    'question here, so never call ask_user. If something is missing, write '
-    'the message with a clearly marked gap the user can fill in. '
+    'question here: if something is missing, write the message with a '
+    'clearly marked gap the user can fill in. '
     '%s\n'
     '</compose_rules>'
 )
