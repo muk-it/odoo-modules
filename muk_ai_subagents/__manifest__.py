@@ -9,7 +9,7 @@
         every subagent is doing, takes an approval or an answer in place,
         and folds into the reports once the run ends.
     """,
-    'version': '19.0.1.1.5',
+    'version': '19.0.1.2.0',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -23,6 +23,7 @@
     ],
     'data': [
         'security/security.xml',
+        'data/agent.xml',
         'views/agent.xml',
         'views/session.xml',
         'views/res_config_settings.xml',
