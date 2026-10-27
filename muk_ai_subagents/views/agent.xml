@@ -14,7 +14,7 @@
 					widget="many2many_tags"
 					domain="[('id', '!=', id)]"
 					options="{'no_create': True}"
-					attrs="{'invisible': [('allow_delegation', '=', False)], 'required': [('allow_delegation', '=', True)]}"
+					attrs="{'invisible': [('allow_delegation', '=', False)]}"
 				/>
 			</xpath>
 			<xpath expr="//page[@name='system_prompt']" position="after">
