@@ -56,11 +56,10 @@ class TestAgentSkillTools(TransactionCase):
             self.assertNotIn('invoke_skill', session._loaded_tool_names())
 
     def test_a_curated_agent_list_no_longer_hides_the_skill_tool(self):
-        agent = self.Agent.create(
-            {
-                'name': 'Curated Tools Agent',
-                'essential_tool_names': ['search_read'],
-            }
-        )
-        self.assertNotIn('invoke_skill', agent._get_essential_tool_names())
-        self.assertIn('invoke_skill', self._session(agent)._loaded_tool_names())
+        for curated in ('essential_tool_names', 'tool_filter'):
+            agent = self.Agent.create(
+                {'name': 'Curated Tools Agent', curated: ['search_read']}
+            )
+            with self.subTest(curated=curated):
+                self.assertNotIn('invoke_skill', agent._get_essential_tool_names())
+                self.assertIn('invoke_skill', self._session(agent)._loaded_tool_names())
