@@ -15,7 +15,6 @@
 					domain="[('id', '!=', id)]"
 					options="{'no_create': True}"
 					invisible="not allow_delegation"
-					required="allow_delegation"
 				/>
 			</xpath>
 			<xpath expr="//page[@name='system_prompt']" position="after">
