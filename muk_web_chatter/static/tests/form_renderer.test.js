@@ -6,8 +6,10 @@ import { browser } from '@web/core/browser/browser';
 import { session } from '@web/session';
 
 import {
+    SIZES,
     defineMailModels,
     openFormView,
+    patchUiSize,
     start,
     startServer,
 } from '@mail/../tests/mail_test_helpers';
@@ -30,6 +32,7 @@ const ARCH = `
 
 async function openPartnerForm() {
     patchWithCleanup(session, { chatter_position: 'side' });
+    await patchUiSize({ size: SIZES.XXL });
     const pyEnv = await startServer();
     const partnerId = pyEnv['res.partner'].create({ name: 'Chatter Partner' });
     await start();
@@ -48,6 +51,12 @@ function moveTo(toX) {
     );
 }
 
+function chatterWidth() {
+    return queryOne('.o_form_renderer > .o-mail-Form-chatter').style.getPropertyValue(
+        '--mk-Chatter-width',
+    );
+}
+
 function stopDrag() {
     document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
 }
@@ -63,8 +72,7 @@ test('dragging the handle to the left widens the chatter and persists the width'
     await animationFrame();
     const storedWidth = Number(browser.localStorage.getItem('muk_web_chatter.width'));
     expect(storedWidth).toBe(Math.min(initialWidth + 100, maxWidth));
-    expect(chatter.style.width).toBe(`${storedWidth}px`);
-    expect(chatter.style.maxWidth).toBe(`${storedWidth}px`);
+    expect(chatterWidth()).toBe(`${storedWidth}px`);
     stopDrag();
 });
 
@@ -115,14 +123,17 @@ test('double clicking the handle clears the stored width', async () => {
     );
     await animationFrame();
     expect(browser.localStorage.getItem('muk_web_chatter.width')).toBe(null);
-    expect(queryOne('.o_form_renderer > .o-mail-Form-chatter').style.width).toBe('');
+    expect(chatterWidth()).toBe('');
 });
 
 test.tags('muk_web_chatter');
-test('a stored width is restored on the next form render', async () => {
+test('a stored width sizes the aside chatter but not the chatter below the form', async () => {
     browser.localStorage.setItem('muk_web_chatter.width', '321');
     await openPartnerForm();
-    expect(queryOne('.o_form_renderer > .o-mail-Form-chatter').style.width).toBe(
-        '321px',
-    );
+    const chatter = () => queryOne('.o_form_renderer > .o-mail-Form-chatter');
+    expect(chatter().offsetWidth).toBe(321);
+    await patchUiSize({ size: SIZES.XL });
+    await animationFrame();
+    expect(chatter()).not.toHaveClass('o-aside');
+    expect(chatter().offsetWidth).toBe(chatter().parentElement.offsetWidth);
 });

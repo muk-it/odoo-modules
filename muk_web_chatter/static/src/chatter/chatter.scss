@@ -1,8 +1,13 @@
 .o-mail-Chatter-top:has(.o-mail-Chatter-sendMessage.active) .o-mail-Composer-send {
-    @extend .btn-danger
+    @extend .btn-danger;
 }
 
 .o-mail-Form-chatter.o-aside {
+    width: var(
+        --mk-Chatter-width,
+        calc(#{$o-mail-Chatter-minWidth} + var(--Chatter-asideExtraWidth))
+    );
+    max-width: var(--mk-Chatter-width, none);
     .mk_chatter_resize {
         top: 0;
         bottom: 0;
