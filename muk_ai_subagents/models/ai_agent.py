@@ -22,10 +22,10 @@ class AIAgent(models.Model):
     allow_delegation = fields.Boolean(
         string='Allow Delegation',
         help=(
-            'Offer the delegate tool, which hands focused tasks to the agents '
-            'listed below. Each task runs as a chat of its own under that '
-            'agent, with its tools and approval mode, never with more rights '
-            'than this agent has.'
+            'Offer the delegate tool, which hands focused tasks to this agent '
+            'and the agents listed below. Each task runs as a chat of its own '
+            'under that agent, with its tools and approval mode, never with '
+            'more rights than this agent has.'
         ),
         default=False,
         tracking=True,
@@ -36,8 +36,8 @@ class AIAgent(models.Model):
         relation='muk_ai_agent_delegate_rel',
         column1='agent_id',
         column2='delegate_id',
-        string='Delegates',
-        help='The agents this one may delegate to.',
+        string='Delegate Agents',
+        help='Other agents this one may delegate to, besides itself.',
         domain=[('active', '=', True)],
     )
 
