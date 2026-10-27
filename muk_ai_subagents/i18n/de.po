@@ -183,8 +183,8 @@ msgstr "Delegieren"
 
 #. module: muk_ai_subagents
 #: model:ir.model.fields,field_description:muk_ai_subagents.field_muk_ai_agent__delegate_agent_ids
-msgid "Delegates"
-msgstr "Delegierte"
+msgid "Delegate Agents"
+msgstr "Delegierte Agenten"
 
 #. module: muk_ai_subagents
 #: model_terms:ir.ui.view,arch_db:muk_ai_subagents.view_ai_agent_form_inherit_subagents
@@ -318,14 +318,15 @@ msgstr "Kein Subagent %s gehört zu diesem Chat."
 #. module: muk_ai_subagents
 #: model:ir.model.fields,help:muk_ai_subagents.field_muk_ai_agent__allow_delegation
 msgid ""
-"Offer the delegate tool, which hands focused tasks to the agents listed "
-"below. Each task runs as a chat of its own under that agent, with its tools "
-"and approval mode, never with more rights than this agent has."
+"Offer the delegate tool, which hands focused tasks to this agent and the "
+"agents listed below. Each task runs as a chat of its own under that agent, "
+"with its tools and approval mode, never with more rights than this agent "
+"has."
 msgstr ""
-"Bietet das Delegieren-Tool an, das abgegrenzte Aufgaben an die unten "
-"aufgeführten Agenten übergibt. Jede Aufgabe läuft als eigener Chat unter "
-"diesem Agenten, mit seinen Tools und seinem Freigabemodus, nie mit mehr "
-"Rechten, als dieser Agent hat."
+"Bietet das Delegieren-Tool an, das abgegrenzte Aufgaben an diesen Agenten "
+"und die unten aufgeführten Agenten übergibt. Jede Aufgabe läuft als eigener "
+"Chat unter diesem Agenten, mit seinen Tools und seinem Freigabemodus, nie "
+"mit mehr Rechten, als dieser Agent hat."
 
 #. module: muk_ai_subagents
 #. odoo-javascript
@@ -448,8 +449,8 @@ msgstr "Subagenten arbeiten, eine Nachricht wartet auf ihre Berichte..."
 
 #. module: muk_ai_subagents
 #: model:ir.model.fields,help:muk_ai_subagents.field_muk_ai_agent__delegate_agent_ids
-msgid "The agents this one may delegate to."
-msgstr "Die Agenten, an die dieser delegieren darf."
+msgid "Other agents this one may delegate to, besides itself."
+msgstr "Weitere Agenten, an die dieser neben sich selbst delegieren darf."
 
 #. module: muk_ai_subagents
 #: model:ir.model.fields,help:muk_ai_subagents.field_muk_ai_session__subagent_of
