@@ -183,8 +183,8 @@ msgstr "Delega"
 
 #. module: muk_ai_subagents
 #: model:ir.model.fields,field_description:muk_ai_subagents.field_muk_ai_agent__delegate_agent_ids
-msgid "Delegates"
-msgstr "Delegati"
+msgid "Delegate Agents"
+msgstr "Agenti delegati"
 
 #. module: muk_ai_subagents
 #: model_terms:ir.ui.view,arch_db:muk_ai_subagents.view_ai_agent_form_inherit_subagents
@@ -319,14 +319,15 @@ msgstr "Nessun subagente %s appartiene a questa chat."
 #. module: muk_ai_subagents
 #: model:ir.model.fields,help:muk_ai_subagents.field_muk_ai_agent__allow_delegation
 msgid ""
-"Offer the delegate tool, which hands focused tasks to the agents listed "
-"below. Each task runs as a chat of its own under that agent, with its tools "
-"and approval mode, never with more rights than this agent has."
+"Offer the delegate tool, which hands focused tasks to this agent and the "
+"agents listed below. Each task runs as a chat of its own under that agent, "
+"with its tools and approval mode, never with more rights than this agent "
+"has."
 msgstr ""
-"Offre lo strumento delega, che affida compiti mirati agli agenti elencati "
-"sotto. Ogni compito viene eseguito come chat a sé con quell'agente, con i "
-"suoi strumenti e la sua modalità di approvazione, mai con più diritti di "
-"questo agente."
+"Offre lo strumento delega, che affida compiti mirati a questo agente e agli "
+"agenti elencati sotto. Ogni compito viene eseguito come chat a sé con "
+"quell'agente, con i suoi strumenti e la sua modalità di approvazione, mai "
+"con più diritti di questo agente."
 
 #. module: muk_ai_subagents
 #. odoo-javascript
@@ -450,8 +451,8 @@ msgstr ""
 
 #. module: muk_ai_subagents
 #: model:ir.model.fields,help:muk_ai_subagents.field_muk_ai_agent__delegate_agent_ids
-msgid "The agents this one may delegate to."
-msgstr "Gli agenti a cui questo può delegare."
+msgid "Other agents this one may delegate to, besides itself."
+msgstr "Altri agenti a cui questo può delegare, oltre a sé stesso."
 
 #. module: muk_ai_subagents
 #: model:ir.model.fields,help:muk_ai_subagents.field_muk_ai_session__subagent_of

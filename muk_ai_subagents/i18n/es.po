@@ -183,8 +183,8 @@ msgstr "Delegar"
 
 #. module: muk_ai_subagents
 #: model:ir.model.fields,field_description:muk_ai_subagents.field_muk_ai_agent__delegate_agent_ids
-msgid "Delegates"
-msgstr "Delegados"
+msgid "Delegate Agents"
+msgstr "Agentes delegados"
 
 #. module: muk_ai_subagents
 #: model_terms:ir.ui.view,arch_db:muk_ai_subagents.view_ai_agent_form_inherit_subagents
@@ -317,14 +317,15 @@ msgstr "Ningún subagente %s pertenece a este chat."
 #. module: muk_ai_subagents
 #: model:ir.model.fields,help:muk_ai_subagents.field_muk_ai_agent__allow_delegation
 msgid ""
-"Offer the delegate tool, which hands focused tasks to the agents listed "
-"below. Each task runs as a chat of its own under that agent, with its tools "
-"and approval mode, never with more rights than this agent has."
+"Offer the delegate tool, which hands focused tasks to this agent and the "
+"agents listed below. Each task runs as a chat of its own under that agent, "
+"with its tools and approval mode, never with more rights than this agent "
+"has."
 msgstr ""
-"Ofrece la herramienta delegar, que entrega tareas concretas a los agentes "
-"indicados abajo. Cada tarea se ejecuta como un chat propio bajo ese agente, "
-"con sus herramientas y su modo de aprobación, nunca con más derechos que "
-"este agente."
+"Ofrece la herramienta delegar, que entrega tareas concretas a este agente y "
+"a los agentes indicados abajo. Cada tarea se ejecuta como un chat propio "
+"bajo ese agente, con sus herramientas y su modo de aprobación, nunca con más"
+" derechos que este agente."
 
 #. module: muk_ai_subagents
 #. odoo-javascript
@@ -447,8 +448,8 @@ msgstr "Los subagentes están trabajando, un mensaje espera sus informes..."
 
 #. module: muk_ai_subagents
 #: model:ir.model.fields,help:muk_ai_subagents.field_muk_ai_agent__delegate_agent_ids
-msgid "The agents this one may delegate to."
-msgstr "Los agentes en los que este puede delegar."
+msgid "Other agents this one may delegate to, besides itself."
+msgstr "Otros agentes a los que este puede delegar, además de a sí mismo."
 
 #. module: muk_ai_subagents
 #: model:ir.model.fields,help:muk_ai_subagents.field_muk_ai_session__subagent_of
