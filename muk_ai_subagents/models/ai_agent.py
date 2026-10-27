@@ -31,7 +31,7 @@ class AIAgent(models.Model):
         relation='muk_ai_agent_delegate_rel',
         column1='agent_id',
         column2='delegate_id',
-        string='Delegates',
+        string='Delegate Agents',
         help='Other agents this one may delegate to, besides itself.',
         domain=[('active', '=', True)],
     )
