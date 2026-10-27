@@ -102,10 +102,11 @@ class AISession(models.Model):
         return bool(self.parent_session_id)
 
     def _delegates(self) -> models.BaseModel:
-        """Return the active agents this chat may hand tasks to."""
+        """Return the active agents this chat may hand tasks to, its own first."""
         if self._is_child() or not self.agent_id.allow_delegation:
             return self.env['muk_ai.agent']
-        return self.agent_id.delegate_agent_ids.filtered('active')
+        agents = self.agent_id | self.agent_id.delegate_agent_ids
+        return agents.filtered('active')
 
     def _run_root(self) -> AISession:
         """Return the chat at the top of the delegation run."""

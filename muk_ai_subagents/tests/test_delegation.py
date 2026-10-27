@@ -48,13 +48,21 @@ class TestDelegation(SubagentCase):
         self.assertEqual([c['id'] for c in roster], [first.id, second.id])
         self.assertEqual(first.get_snapshot()['subagent_of']['parent_id'], chat.id)
 
-    def test_only_an_agent_allowed_to_delegate_is_offered_the_tool(self):
+    def test_a_delegating_agent_hands_tasks_to_itself_and_its_delegates(self):
         quiet = self.lead.copy({'allow_delegation': False})
-        for agent, offered in [(self.lead, True), (self.worker, False), (quiet, False)]:
-            with self.subTest(agent=agent.name, offered=offered):
+        solo = self.worker.copy({'allow_delegation': True})
+        cases = [
+            (self.lead, self.lead | self.worker),
+            (solo, solo),
+            (self.worker, self.worker.browse()),
+            (quiet, quiet.browse()),
+        ]
+        for agent, delegates in cases:
+            with self.subTest(agent=agent.name):
                 chat = self._session(agent_id=agent.id)
                 names = {tool['name'] for tool in chat._get_tool_schema()}
-                self.assertEqual('delegate' in names, offered)
+                self.assertEqual('delegate' in names, bool(delegates))
+                self.assertEqual(chat._delegates(), delegates)
 
     def test_a_delegate_call_is_refused_when_it_cannot_run(self):
         chat = self._park(3)
@@ -74,7 +82,7 @@ class TestDelegation(SubagentCase):
                 'not a delegate',
                 idle.id,
                 'd',
-                [{**task, 'agent': 'Lead'}],
+                [{**task, 'agent': 'Nobody'}],
                 'pick one of',
             ),
             ('through tool_load', idle.id, None, [task], 'directly'),
