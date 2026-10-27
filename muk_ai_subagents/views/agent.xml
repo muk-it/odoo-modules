@@ -7,18 +7,16 @@
 		<field name="model">muk_ai.agent</field>
 		<field name="inherit_id" ref="muk_ai.view_ai_agent_form"/>
 		<field name="arch" type="xml">
-			<xpath expr="//group[@name='abilities']" position="after">
-				<group string="Delegation" name="delegation">
-					<field name="allow_delegation" widget="boolean_toggle"/>
-					<field
-						name="delegate_agent_ids"
-						widget="many2many_tags"
-						domain="[('id', '!=', id)]"
-						options="{'no_create': True}"
-						invisible="not allow_delegation"
-						required="allow_delegation"
-					/>
-				</group>
+			<xpath expr="//field[@name='allow_handoff']" position="after">
+				<field name="allow_delegation" widget="boolean_toggle"/>
+				<field
+					name="delegate_agent_ids"
+					widget="many2many_tags"
+					domain="[('id', '!=', id)]"
+					options="{'no_create': True}"
+					invisible="not allow_delegation"
+					required="allow_delegation"
+				/>
 			</xpath>
 			<xpath expr="//page[@name='system_prompt']" position="after">
 				<page
