@@ -40,7 +40,7 @@
 						</div>
 						<div class="mt-3 d-flex flex-wrap gap-1">
 							<span class="badge rounded-pill d-inline-flex align-items-center gap-1 border text-body fw-normal px-2 py-1" style="font-size: 0.8rem;">
-								<i class="oi" data-icon="checklist" aria-hidden="true"/>
+								<i class="oi" data-icon="checklist" title="Questions" aria-hidden="true"/>
 								<span t-out="record.decision_question_ids.raw_value.length"/>
 								<span t-if="record.decision_question_ids.raw_value.length === 1">Question</span>
 								<span t-else="">Questions</span>
