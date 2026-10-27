@@ -21,7 +21,9 @@ class TestSkillSession(AITestCommon):
         """Start from no skill but one shared skill with a resource."""
         super().setUpClass()
         cls.env['muk_ai.skill'].search([]).unlink()
-        cls.agent = cls.env['muk_ai.agent'].create({'name': 'Skill Agent'})
+        cls.agent = cls.env['muk_ai.agent'].create(
+            {'name': 'Skill Agent', 'tool_filter': ['search_read']}
+        )
         cls.other_agent = cls.env['muk_ai.agent'].create({'name': 'Other Agent'})
         cls.resource = cls.env['ir.attachment'].create(
             {
