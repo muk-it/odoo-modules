@@ -51,7 +51,7 @@ patch(FormCompiler.prototype, {
             }
         } else {
             setAttributes(chatterContainerHookXml, {
-                't-att-style': '__comp__.chatterState.width ? `width: ${__comp__.chatterState.width}px;` : ""',
+                't-att-style': '__comp__.chatterState.width ? `--mk-Chatter-width: ${__comp__.chatterState.width}px` : ""',
             });
             const chatterContainerResizeHookXml = createElement('span');
             chatterContainerResizeHookXml.classList.add('mk_chatter_resize');
