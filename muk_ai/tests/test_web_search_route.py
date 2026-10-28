@@ -101,20 +101,14 @@ class TestWebSearchRouteChoice(AITestCommon):
     # Tests: tool filter conflicts
     # ----------------------------------------------------------
 
-    def test_a_whitelist_without_the_tool_kills_the_backend_route(self):
+    def test_a_whitelist_keeps_the_backend_route(self):
         self._configure('brave')
-        agent = self._agent('tool', tool_filter=['search_read'])
-        self.assertIsNone(agent._web_search_route())
-        self.assertIn('does not list "web_search"', agent.capability_warning)
-        self.assertIn('Add it on the Tools page', agent.capability_warning)
+        for tools in (['search_read'], ['search_read', 'web_search']):
+            agent = self._agent('tool', tool_filter=tools)
+            self.assertEqual(agent._web_search_route(), 'tool')
+            self.assertFalse(agent.capability_warning)
 
-    def test_a_whitelist_listing_the_tool_keeps_the_backend_route(self):
-        self._configure('brave')
-        agent = self._agent('tool', tool_filter=['search_read', 'web_search'])
-        self.assertEqual(agent._web_search_route(), 'tool')
-        self.assertFalse(agent.capability_warning)
-
-    def test_a_whitelist_without_generate_image_is_named(self):
+    def test_a_whitelist_leaves_image_generation_alone(self):
         self._configure(None)
         image = self.env['muk_ai.model'].create(
             {
@@ -132,8 +126,6 @@ class TestWebSearchRouteChoice(AITestCommon):
             image_model_id=image.id,
             tool_filter=['search_read'],
         )
-        self.assertIn('does not list "generate_image"', agent.capability_warning)
-        agent.tool_filter = ['search_read', 'generate_image']
         self.assertFalse(agent.capability_warning)
 
 

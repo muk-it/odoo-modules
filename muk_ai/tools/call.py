@@ -158,10 +158,12 @@ ASK_USER_TOOL = {
             },
             'resolution': {
                 'type': 'string',
-                'enum': ['text', 'yesno'],
+                'enum': ['text', 'multiple', 'yesno'],
                 'description': (
                     'How the user will resolve the question. "text" '
-                    '(default) accepts a free-text answer; "yesno" shows '
+                    '(default) accepts a free-text answer; "multiple" lets '
+                    'the user tick several `options` and answers with them '
+                    'comma-separated; "yesno" shows '
                     'Approve / Allow-for-session / Reject buttons — use '
                     'when you need explicit confirmation before a '
                     'destructive or irreversible action.'

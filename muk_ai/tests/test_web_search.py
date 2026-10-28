@@ -536,23 +536,15 @@ class TestWebSearchRoute(ToolCatalogMixin, WebSearchCase):
         self.agent.web_search = 'off'
         self.assertEqual(self._catalog_names(), {'web_fetch'})
 
-    def test_a_filter_hiding_the_tool_kills_the_backend_route(self):
-        self._configure('brave')
-        self.agent.write({'web_search': 'tool', 'tool_filter': ['web_fetch']})
-        self.env.invalidate_all()
-        self.assertIsNone(self.agent._web_search_route())
-        self.assertEqual(self._catalog_names(), {'web_fetch'})
-        self.assertIn(
-            'does not list "web_search"',
-            self.agent.capability_warning,
-        )
-
-    def test_automatic_falls_back_to_the_connector_when_the_filter_hides_the_tool(self):
+    def test_a_filter_keeps_the_backend_route(self):
         self._configure('brave')
         self.agent.tool_filter = ['web_fetch']
-        self.env.invalidate_all()
-        self.assertEqual(self.agent._web_search_route(), 'native')
-        self.assertFalse(self.agent.capability_warning)
+        for route in ('tool', 'auto'):
+            self.agent.web_search = route
+            self.env.invalidate_all()
+            self.assertEqual(self.agent._web_search_route(), 'tool')
+            self.assertFalse(self.agent.capability_warning)
+        self.assertEqual(self._catalog_names(), {'web_fetch', 'web_search'})
 
     def test_provider_flag_follows_the_route(self):
         with self._mock_responses([self._make_text_response()]) as mock:
