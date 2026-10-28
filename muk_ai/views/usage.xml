@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_ai_usage_search" model="ir.ui.view">
+		<field name="name">muk_ai.usage.search</field>
+		<field name="model">muk_ai.usage</field>
+		<field name="arch" type="xml">
+			<search>
+				<field name="user_id"/>
+				<field name="session_id"/>
+				<filter name="filter_date" string="Date" date="date"/>
+				<group>
+					<filter name="group_user" string="User" context="{'group_by': 'user_id'}"/>
+					<filter name="group_month" string="Month" context="{'group_by': 'date:month'}"/>
+				</group>
+			</search>
+		</field>
+	</record>
+
+	<record id="view_ai_usage_list" model="ir.ui.view">
+		<field name="name">muk_ai.usage.list</field>
+		<field name="model">muk_ai.usage</field>
+		<field name="arch" type="xml">
+			<list create="0" edit="0" delete="0">
+				<field name="date"/>
+				<field name="user_id"/>
+				<field name="session_id"/>
+				<field name="amount" sum="Total"/>
+			</list>
+		</field>
+	</record>
+
+	<record id="view_ai_usage_pivot" model="ir.ui.view">
+		<field name="name">muk_ai.usage.pivot</field>
+		<field name="model">muk_ai.usage</field>
+		<field name="arch" type="xml">
+			<pivot>
+				<field name="user_id" type="row"/>
+				<field name="date" interval="month" type="col"/>
+				<field name="amount" type="measure"/>
+			</pivot>
+		</field>
+	</record>
+
+	<record id="action_ai_usage" model="ir.actions.act_window">
+		<field name="name">Usage</field>
+		<field name="res_model">muk_ai.usage</field>
+		<field name="view_mode">pivot,list</field>
+		<field name="search_view_id" ref="view_ai_usage_search"/>
+		<field name="path">ai-usage</field>
+	</record>
+
+</odoo>

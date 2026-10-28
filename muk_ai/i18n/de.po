@@ -449,6 +449,11 @@ msgstr "<span class=\"col-auto ms-2\">Tage</span>"
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "<span class=\"col-auto ms-2\">Months</span>"
+msgstr "<span class=\"col-auto ms-2\">Monate</span>"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "<span class=\"col-auto ms-2\">Seconds</span>"
 msgstr "<span class=\"col-auto ms-2\">Sekunden</span>"
 
@@ -469,6 +474,11 @@ msgstr "<span class=\"col-auto ms-2\">in Sekunden</span>"
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "<span class=\"col-auto ms-2\">in Total</span>"
+msgstr "<span class=\"col-auto ms-2\">insgesamt</span>"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "<span class=\"col-auto ms-2\">per Minute</span>"
 msgstr "<span class=\"col-auto ms-2\">pro Minute</span>"
 
@@ -481,6 +491,11 @@ msgstr "<span class=\"col-auto ms-2\">pro Slice</span>"
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "<span class=\"col-auto ms-2\">per Turn</span>"
 msgstr "<span class=\"col-auto ms-2\">pro Turn</span>"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "<span class=\"col-auto ms-2\">per User</span>"
+msgstr "<span class=\"col-auto ms-2\">pro Benutzer</span>"
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_space_form
@@ -687,6 +702,11 @@ msgid "AI Space"
 msgstr "KI-Space"
 
 #. module: muk_ai
+#: model:ir.model,name:muk_ai.model_muk_ai_usage
+msgid "AI Usage"
+msgstr "KI-Nutzung"
+
+#. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/provider.py:0
 msgid ""
@@ -868,6 +888,11 @@ msgstr "Für Sitzung erlauben"
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
 msgid "Allow for session"
 msgstr "Für Sitzung erlauben"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_usage__amount
+msgid "Amount"
+msgstr "Betrag"
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
@@ -1188,6 +1213,18 @@ msgstr ""
 "öffnen"
 
 #. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Budget"
+msgstr "Budget"
+
+#. module: muk_ai
+#: model:ir.actions.act_window,name:muk_ai.action_res_users_budget
+#: model:ir.ui.menu,name:muk_ai.menu_ai_budget
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_users_list_budget
+msgid "Budgets"
+msgstr "Budgets"
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/utils.js:0
 msgid "Bypass"
@@ -1302,6 +1339,7 @@ msgid "Capability Warning"
 msgstr "Funktionswarnung"
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_usage__session_id
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_model__modality__chat
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_mcp_log__source__chat
 #: model:ir.ui.menu,name:muk_ai.menu_ai_chat
@@ -1671,6 +1709,11 @@ msgid "Cost of output, quoted in the rate unit."
 msgstr "Kosten in USD pro 1.000.000 Ausgabe-Tokens."
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_usage__amount
+msgid "Cost of the charge, in the price currency of the model."
+msgstr "Kosten der Abrechnung, in der Preiswährung des Modells."
+
+#. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_session__turn_seq
 msgid ""
 "Counter raised every time a turn starts. A worker streams under the number "
@@ -1699,6 +1742,7 @@ msgstr "Bilder aus einer Beschreibung erstellen"
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_event__create_uid
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_pending__create_uid
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_space__create_uid
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_usage__create_uid
 msgid "Created by"
 msgstr "Erstellt von"
 
@@ -1712,6 +1756,7 @@ msgstr "Erstellt von"
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_event__create_date
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_pending__create_date
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_space__create_date
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_usage__create_date
 msgid "Created on"
 msgstr "Erstellt am"
 
@@ -1804,6 +1849,12 @@ msgstr "Benutzerdefinierte URL"
 #: model:muk_ai.agent.suggestion,label:muk_ai.agent_read_only_suggestion_top_customers
 msgid "Customers"
 msgstr "Kunden"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_usage__date
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_usage_search
+msgid "Date"
+msgstr "Datum"
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_space__retention_days
@@ -1937,6 +1988,11 @@ msgid "Delete Old Chats"
 msgstr "Alte Chats löschen"
 
 #. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Delete Old Usage"
+msgstr "Alte Nutzung löschen"
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
 msgid "Delete chat"
@@ -1956,6 +2012,15 @@ msgstr ""
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
 msgid "Delete space"
 msgstr "Space löschen"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid ""
+"Delete the AI usage of past months. The monthly budgets only count the "
+"current month."
+msgstr ""
+"Löscht die KI-Nutzung vergangener Monate. Die Monatsbudgets zählen nur den "
+"aktuellen Monat."
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__description
@@ -1978,6 +2043,7 @@ msgstr "Verwerfen"
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_event__display_name
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_pending__display_name
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_space__display_name
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_usage__display_name
 msgid "Display Name"
 msgstr "Anzeigename"
 
@@ -2482,6 +2548,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_event__id
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_pending__id
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_space__id
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_usage__id
 msgid "ID"
 msgstr "ID"
 
@@ -2526,7 +2593,6 @@ msgstr "Wenn aktiviert, erfordern neue Nachrichten Ihre Aufmerksamkeit."
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_agent__message_has_error
-#: model:ir.model.fields,help:muk_ai.field_muk_ai_agent__message_has_sms_error
 msgid "If checked, some messages have a delivery error."
 msgstr "Wenn aktiviert, weisen einige Nachrichten einen Zustellfehler auf."
 
@@ -2711,6 +2777,11 @@ msgid "Keep Forever"
 msgstr "Dauerhaft aufbewahren"
 
 #. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Keep Usage for"
+msgstr "Nutzung aufbewahren für"
+
+#. module: muk_ai
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_space__retention_mode__days
 msgid "Keep for a While"
 msgstr "Eine Zeit lang aufbewahren"
@@ -2772,6 +2843,7 @@ msgstr "Letzte Eingabe-Tokens"
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_event__write_uid
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_pending__write_uid
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_space__write_uid
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_usage__write_uid
 msgid "Last Updated by"
 msgstr "Zuletzt aktualisiert von"
 
@@ -2785,6 +2857,7 @@ msgstr "Zuletzt aktualisiert von"
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_event__write_date
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_pending__write_date
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_space__write_date
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_usage__write_date
 msgid "Last Updated on"
 msgstr "Zuletzt aktualisiert am"
 
@@ -2981,6 +3054,17 @@ msgid "Maximum"
 msgstr "Maximum"
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__ai_monthly_budget
+msgid ""
+"Maximum all users together may spend per calendar month, in the price "
+"currency of the models. A chat stops with an error once it is reached. Set 0"
+" to disable."
+msgstr ""
+"Höchstbetrag, den alle Benutzer zusammen pro Kalendermonat ausgeben dürfen, "
+"in der Preiswährung der Modelle. Ist er erreicht, stoppt ein Chat mit einem "
+"Fehler. 0 deaktiviert ihn."
+
+#. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_res_config_settings__ai_turn_cost_limit
 msgid ""
 "Maximum amount a single user turn may spend, in the price currency of the "
@@ -2996,6 +3080,15 @@ msgstr ""
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_provider__max_tokens
 msgid "Maximum completion tokens per request."
 msgstr "Maximale Completion-Tokens pro Anfrage."
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__ai_user_monthly_budget
+msgid ""
+"Maximum each user may spend per calendar month, unless the user has a budget"
+" of their own. Set 0 to disable."
+msgstr ""
+"Höchstbetrag, den jeder Benutzer pro Kalendermonat ausgeben darf, sofern er "
+"kein eigenes Budget hat. 0 deaktiviert ihn."
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_model__context_window
@@ -3031,11 +3124,31 @@ msgstr ""
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid ""
+"Maximum spend per calendar month in the model's price currency. A user's own"
+" budget replaces the one per user. Set to 0 to disable."
+msgstr ""
+"Maximale Ausgaben pro Kalendermonat in der Preiswährung des Modells. Das "
+"eigene Budget eines Benutzers ersetzt das Budget pro Benutzer. 0 deaktiviert"
+" es."
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid ""
 "Maximum spend per user turn in the model's price currency. Set to 0 to "
 "disable."
 msgstr ""
 "Maximale Ausgaben pro User-Turn in der Preiswährung des Modells. Zum "
 "Deaktivieren auf 0 setzen."
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_users__ai_monthly_budget
+msgid ""
+"Maximum this user may spend on AI per calendar month, in the price currency "
+"of the models. Set 0 to use the budget per user from the settings."
+msgstr ""
+"Höchstbetrag, den dieser Benutzer pro Kalendermonat für KI ausgeben darf, in"
+" der Preiswährung der Modelle. 0 verwendet das Budget pro Benutzer aus den "
+"Einstellungen."
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_res_config_settings__ai_turn_wallclock_seconds
@@ -3204,6 +3317,33 @@ msgstr "Modell, das verwendet wird, wenn ein Agent keines angibt."
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_muk_ai_provider_form
 msgid "Models"
 msgstr "Modelle"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_usage_search
+msgid "Month"
+msgstr "Monat"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_users__ai_monthly_budget
+msgid "Monthly AI Budget"
+msgstr "Monatliches KI-Budget"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__ai_monthly_budget
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Monthly Budget"
+msgstr "Monatsbudget"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__ai_user_monthly_budget
+msgid "Monthly Budget per User"
+msgstr "Monatsbudget pro Benutzer"
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__ai_usage_retention_months
+msgid "Months the AI usage is kept, besides the current one."
+msgstr ""
+"Monate, für die die KI-Nutzung zusätzlich zum aktuellen aufbewahrt wird."
 
 #. module: muk_ai
 #. odoo-javascript
@@ -3944,6 +4084,11 @@ msgstr ""
 "Ratenlimit erreicht: Es dürfen höchstens %(limit)s Chats pro Minute "
 "gestartet werden. Sie haben in der letzten Minute %(count)s gestartet und "
 "%(batch)s weitere angefordert. Versuchen Sie es in einer Minute erneut."
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__rating_ids
+msgid "Ratings"
+msgstr "Bewertungen"
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_session_form
@@ -5006,6 +5151,16 @@ msgstr ""
 "kann."
 
 #. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+msgid ""
+"The monthly AI budget of %(amount).2f %(currency)s for all users is used up."
+" Ask an administrator to raise it."
+msgstr ""
+"Das monatliche KI-Budget von %(amount).2f %(currency)s für alle Benutzer ist"
+" aufgebraucht. Bitten Sie einen Administrator, es zu erhöhen."
+
+#. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
 msgid ""
 "The prompt is rendered with Odoo's inline-template engine (same as mail templates) when the conversation starts\n"
@@ -5250,6 +5405,11 @@ msgid "Tools of this connector"
 msgstr "Tools dieses Konnektors"
 
 #. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_usage_list
+msgid "Total"
+msgstr "Gesamt"
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__total_cost
 msgid "Total Cost"
 msgstr "Gesamtkosten"
@@ -5425,9 +5585,16 @@ msgid "Unread only"
 msgstr "Nur ungelesene"
 
 #. module: muk_ai
+#: model:ir.actions.act_window,name:muk_ai.action_ai_usage
+#: model:ir.ui.menu,name:muk_ai.menu_ai_usage
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_session_form
 msgid "Usage"
 msgstr "Nutzung"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__ai_usage_retention_months
+msgid "Usage Retention"
+msgstr "Aufbewahrung der Nutzung"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -5436,7 +5603,10 @@ msgid "Used"
 msgstr "Verwendet"
 
 #. module: muk_ai
+#: model:ir.model,name:muk_ai.model_res_users
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_prompt_variables__user
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_usage__user_id
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_usage_search
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_muk_ai_approval_search
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_users_kanban_handover
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_users_search_handover
@@ -5663,6 +5833,16 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
 msgid "You are an Odoo assistant. ..."
 msgstr "Sie sind ein Odoo-Assistent. ..."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+msgid ""
+"Your monthly AI budget of %(amount).2f %(currency)s is used up. Ask an "
+"administrator to raise it."
+msgstr ""
+"Ihr monatliches KI-Budget von %(amount).2f %(currency)s ist aufgebraucht. "
+"Bitten Sie einen Administrator, es zu erhöhen."
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_agent__approval_mode
