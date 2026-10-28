@@ -381,10 +381,14 @@ class Skill(models.Model):
     # ----------------------------------------------------------
 
     @api.model
-    def fetch_skills(self, skill_type: str) -> list[dict]:
+    def fetch_skills(
+        self, skill_type: str, view_context: dict | None = None
+    ) -> list[dict]:
         """Return the skills a surface offers the user, in the order they appear.
 
         :param skill_type: the surface asking, see the ``skill_type`` field
+        :param view_context: what the surface has open, to offer only the
+            skills whose scope it satisfies
         :return: descriptors carrying what a surface needs to offer a skill
         """
         domain = [('active', '=', True), ('skill_type', '=', skill_type)]
@@ -392,6 +396,10 @@ class Skill(models.Model):
         skills = self.env['muk_ai.session']._dedupe_visible_skills(
             self.sudo().search(domain), self.env.user
         )
+        if view_context is not None:
+            skills = skills.filtered(
+                lambda skill: skill._scope_satisfied_by(view_context)
+            )
         return [skill._skill_descriptor() for skill in skills]
 
     # ----------------------------------------------------------
