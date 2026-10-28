@@ -96,10 +96,11 @@ export function makeTextComposerAdapter(composer, textarea) {
  * Drive the editor of the full mail composer.
  *
  * The draft is read as cleaned HTML when the helper opens, the selection marked
- * where it sits, since the panel takes the focus. The signature is added when
- * the mail is sent, so the editor holds the draft alone. An answer is sanitized
- * and inserted as one undoable step, replacing the selection the cursor was
- * restored to, or landing at the end without one; an empty editor is replaced.
+ * where it sits, since the panel takes the focus. It ends at the signature or
+ * the quoted thread, however deep a template nests them, so neither is read nor
+ * replaced. An answer is sanitized and inserted as one undoable step, replacing
+ * the selection the cursor was restored to, or landing at the end without one;
+ * an empty editor is replaced.
  *
  * @param {object} editor the OdooEditor of the composer's body
  * @param {{resModel: string|false, resId: number|false}} record what is written about
@@ -111,6 +112,17 @@ export function makeEditorAdapter(editor, record) {
     const picked = inEditable ? document.getSelection().getRangeAt(0) : null;
     const quoted = picked ? picked.toString().replace(ZERO_WIDTH, '') : '';
     const cursor = inEditable ? preserveCursor(document) : null;
+    const upToSignature = (root) => {
+        const range = new Range();
+        range.selectNodeContents(root);
+        const signature = root.querySelector(
+            '.o-signature-container, [data-o-mail-quote]',
+        );
+        if (signature) {
+            range.setEndBefore(signature);
+        }
+        return range;
+    };
     const draft = editable.cloneNode(true);
     const twin = (node) =>
         node === editable
@@ -128,6 +140,7 @@ export function makeEditorAdapter(editor, record) {
             at.insertNode(new Text(mark));
         }
     }
+    draft.replaceChildren(upToSignature(draft).cloneContents());
     editor.cleanForSave(draft);
     const marked = draft.textContent.trim() ? draft.innerHTML.trim() : '';
     const fragmentOf = (text) => {
@@ -144,7 +157,13 @@ export function makeEditorAdapter(editor, record) {
         return fragment;
     };
     const replaceAll = (text) => {
-        setSelection(editable, 0, editable, editable.childNodes.length);
+        const range = upToSignature(editable);
+        setSelection(
+            range.startContainer,
+            range.startOffset,
+            range.endContainer,
+            range.endOffset,
+        );
         editor.execCommand('insert', fragmentOf(text));
     };
     const atCursor = (text) => {
