@@ -91,6 +91,7 @@ class TestCompose(ChatterTestCommon):
                 self.assertIn(shown, addenda)
                 self.assertNotIn(hidden, addenda)
                 self.assertEqual('<selected_text>' in addenda, bool(selection))
+                self.assertEqual('build on it' in addenda, not selection)
 
     def test_the_draft_is_kept_as_typed_capped_and_fenced(self):
         self.session.update_compose_context(draft='ship if a <5 and <todo> is done')

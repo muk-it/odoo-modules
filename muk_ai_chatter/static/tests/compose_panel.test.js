@@ -62,7 +62,10 @@ function mockServer() {
         answer: 'A better sentence.',
         truncated: false,
     };
-    onRpc('muk_ai.skill', 'fetch_skills', () => SKILLS);
+    onRpc('muk_ai.skill', 'fetch_skills', ({ args }) => {
+        calls.fetched = args;
+        return SKILLS;
+    });
     onRpc('muk_ai.session', 'open_for_composer', ({ kwargs }) => {
         if (calls.openFails) {
             throw new Error('no agent available');
@@ -190,13 +193,13 @@ test('what is offered follows what is already written', async () => {
     for (const [selection, draft, actions, modifiers] of [
         ['', '', [], 3],
         [SELECTION, DRAFT, ['Fix grammar', 'Shorten'], 0],
-        ['', DRAFT, ['Fix grammar', 'Shorten'], 0],
+        ['', DRAFT, ['Write', 'Fix grammar', 'Shorten'], 0],
     ]) {
         const { holder } = await mountPanel(selection, draft);
         expect(queryAllTexts('.mk_compose_panel_action')).toEqual(actions);
         expect('.mk_compose_panel_quote').toHaveCount(draft ? 1 : 0);
         if (actions.length) {
-            await click('.mk_compose_panel_action:last-child');
+            await click('.mk_compose_panel_action:first-child');
             await animationFrame();
         }
         expect('.mk_compose_panel_length').toHaveCount(modifiers);
@@ -209,6 +212,10 @@ test('what is offered follows what is already written', async () => {
 test('the session opens with the text and the record, and a whole draft is the target', async () => {
     const calls = mockServer();
     await mountPanel('', DRAFT);
+    expect(calls.fetched).toEqual([
+        'composer',
+        { kind: 'record', model: 'res.partner' },
+    ]);
     expect(calls.opened).toMatchObject([
         {
             interface_key: 'mail_composer',
@@ -220,7 +227,7 @@ test('the session opens with the text and the record, and a whole draft is the t
     ]);
     await pickFirst();
     expect(calls.context).toEqual([{ draft: DRAFT, selection: '' }]);
-    expect(calls.sent).toEqual(['Fix it.']);
+    expect(calls.sent).toEqual(['Reply to it.']);
 });
 
 test('the chosen length and tone are carried into a message written from nothing', async () => {
