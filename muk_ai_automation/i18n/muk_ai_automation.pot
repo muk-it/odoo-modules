@@ -191,6 +191,7 @@ msgstr ""
 #. module: muk_ai_automation
 #: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__agent_dispatch_mode
 #: model:ir.model.fields,field_description:muk_ai_automation.field_ir_cron__agent_dispatch_mode
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_action_kanban
 msgid "Dispatch"
 msgstr ""
 
@@ -424,6 +425,7 @@ msgstr ""
 #. module: muk_ai_automation
 #: model:ir.model.fields,field_description:muk_ai_automation.field_ir_actions_server__agent_space_id
 #: model:ir.model.fields,field_description:muk_ai_automation.field_ir_cron__agent_space_id
+#: model_terms:ir.ui.view,arch_db:muk_ai_automation.view_ai_agent_action_kanban
 msgid "Space"
 msgstr ""
 

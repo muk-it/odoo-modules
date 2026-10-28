@@ -50,7 +50,7 @@
                         </div>
                         <div class="mt-3 d-flex flex-wrap gap-1">
                             <span class="badge rounded-pill border text-body fw-normal px-2 py-1" style="font-size: 0.8rem;">
-                                <i class="fa fa-comments me-1" aria-hidden="true"/>
+                                <i class="fa fa-comments me-1" title="Dispatch" aria-hidden="true"/>
                                 <t t-out="record.agent_dispatch_mode.value"/>
                             </span>
                             <span t-if="record.binding_model_id.raw_value" class="badge rounded-pill border text-body fw-normal px-2 py-1" style="font-size: 0.8rem;">
@@ -58,7 +58,7 @@
                                 <span>Actions Menu</span>
                             </span>
                             <span t-if="record.agent_space_id.raw_value" class="badge rounded-pill border text-body fw-normal px-2 py-1" style="font-size: 0.8rem;">
-                                <i class="fa fa-folder-o me-1" aria-hidden="true"/>
+                                <i class="fa fa-folder-o me-1" title="Space" aria-hidden="true"/>
                                 <t t-out="record.agent_space_id.value"/>
                             </span>
                         </div>
