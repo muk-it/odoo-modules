@@ -2,6 +2,19 @@
 
 <odoo>
 
+	<record id="view_res_users_list_budget" model="ir.ui.view">
+		<field name="name">res.users.list.budget</field>
+		<field name="model">res.users</field>
+		<field name="priority">99</field>
+		<field name="arch" type="xml">
+			<list string="Budgets" editable="bottom" create="false" delete="false">
+				<field name="name" readonly="1"/>
+				<field name="login" readonly="1"/>
+				<field name="ai_monthly_budget"/>
+			</list>
+		</field>
+	</record>
+
 	<record id="view_res_users_search_handover" model="ir.ui.view">
 		<field name="name">res.users.search.handover</field>
 		<field name="model">res.users</field>
@@ -65,6 +78,15 @@
 				<field name="email"/>
 			</list>
 		</field>
+	</record>
+
+	<record id="action_res_users_budget" model="ir.actions.act_window">
+		<field name="name">Budgets</field>
+		<field name="res_model">res.users</field>
+		<field name="view_mode">list</field>
+		<field name="view_id" ref="view_res_users_list_budget"/>
+		<field name="domain">[('share', '=', False)]</field>
+		<field name="path">ai-budgets</field>
 	</record>
 
 </odoo>

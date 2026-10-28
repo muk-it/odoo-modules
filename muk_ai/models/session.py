@@ -416,6 +416,7 @@ class AISession(models.Model):
         string='Iterations',
         readonly=True,
         default=0,
+        copy=False,
     )
 
     turn_wallclock_spent = fields.Float(
@@ -447,12 +448,14 @@ class AISession(models.Model):
         string='Input Tokens',
         readonly=True,
         default=0,
+        copy=False,
     )
 
     total_output_tokens = fields.Integer(
         string='Output Tokens',
         readonly=True,
         default=0,
+        copy=False,
     )
 
     total_cached_tokens = fields.Integer(
@@ -460,6 +463,7 @@ class AISession(models.Model):
         help='Input tokens the provider read from its prompt cache, billed at the cache rate.',
         readonly=True,
         default=0,
+        copy=False,
     )
 
     total_input_cost = fields.Float(
@@ -472,6 +476,7 @@ class AISession(models.Model):
         readonly=True,
         default=0.0,
         digits=(12, 6),
+        copy=False,
     )
 
     total_output_cost = fields.Float(
@@ -480,6 +485,7 @@ class AISession(models.Model):
         readonly=True,
         default=0.0,
         digits=(12, 6),
+        copy=False,
     )
 
     total_cost = fields.Float(
@@ -488,6 +494,7 @@ class AISession(models.Model):
         readonly=True,
         default=0.0,
         digits=(12, 6),
+        copy=False,
     )
 
     last_input_tokens = fields.Integer(
@@ -2343,9 +2350,18 @@ class AISession(models.Model):
         """Return the cumulative cost field deltas for a usage payload.
 
         ``record`` prices the usage and defaults to the effective chat model.
+        A costed charge is recorded as usage of the session's owner.
         """
         if record := record or self._resolve_model_for('chat'):
             delta = record._compute_usage_cost(usage or {})
+            if delta['total_cost']:
+                self.env['muk_ai.usage'].sudo().create(
+                    {
+                        'user_id': self.user_id.id,
+                        'session_id': self.id,
+                        'amount': delta['total_cost'],
+                    }
+                )
             turn = self.turn_usage or {}
             return {
                 'turn_usage': {
@@ -3217,17 +3233,55 @@ class AISession(models.Model):
         record = self._resolve_model_for('chat')
         return (record and record.currency) or 'USD'
 
-    def _turn_cost_error(self, limit: float) -> None:
-        """Transition to error when the turn cost budget is reached."""
-        self._transition_state(
-            'error',
-            error=_(
+    def _cost_limit_message(self) -> str | None:
+        """Return why the chat may spend no more, or ``None`` while it may.
+
+        The turn budget comes first, then the monthly budget of the user and
+        the one of all users together.
+        """
+        params = self.env['ir.config_parameter'].sudo()
+        currency = self._cost_currency()
+        if (limit := self._turn_cost_limit()) and (
+            self.turn_cost_spent or 0.0
+        ) >= limit:
+            return _(
                 'Turn cost budget reached (%(amount).2f %(currency)s). '
                 'Send a new message to continue.',
                 amount=limit,
-                currency=self._cost_currency(),
-            ),
+                currency=currency,
+            )
+        user_limit = not self.user_id._is_superuser() and (
+            self.user_id.ai_monthly_budget
+            or float(params.get_param('muk_ai.user_monthly_budget') or 0)
         )
+        for limit, user in (
+            (user_limit, self.user_id),
+            (float(params.get_param('muk_ai.monthly_budget') or 0), None),
+        ):
+            if (
+                not limit
+                or limit <= 0
+                or self.env['muk_ai.usage'].sudo()._spent_this_month(user) < limit
+            ):
+                continue
+            if user:
+                return _(
+                    'Your monthly AI budget of %(amount).2f %(currency)s is '
+                    'used up. Ask an administrator to raise it.',
+                    amount=limit,
+                    currency=currency,
+                )
+            return _(
+                'The monthly AI budget of %(amount).2f %(currency)s for all '
+                'users is used up. Ask an administrator to raise it.',
+                amount=limit,
+                currency=currency,
+            )
+        return None
+
+    def _cost_limit_error(self, message: str) -> None:
+        """Transition to error when a cost budget is reached."""
+        self._transition_state('error', error=message)
 
     def _round_limit_notice(self, remaining: int | None) -> dict | None:
         """Build a user-visible notice about remaining round and cost budget."""
@@ -3334,10 +3388,8 @@ class AISession(models.Model):
             self._maybe_auto_compact()
             if self.state != 'running':
                 return
-            if (cost_limit := self._turn_cost_limit()) and (
-                (self.turn_cost_spent or 0.0) >= cost_limit
-            ):
-                self._turn_cost_error(cost_limit)
+            if message := self._cost_limit_message():
+                self._cost_limit_error(message)
                 return
             self.invalidate_recordset(['pending_ids', 'expanded_tool_names'])
             if self.pending_ids and self._drain_pending_message():
@@ -4566,7 +4618,6 @@ class AISession(models.Model):
                 'name': _('%s (fork)', self.name),
                 'conversation': new_conv,
                 'state': 'done' if new_conv else 'new',
-                'iteration_count': 0,
                 'event_ids': [(5, 0, 0)],
                 'pending_ids': [(5, 0, 0)],
             }

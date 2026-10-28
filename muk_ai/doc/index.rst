@@ -76,6 +76,13 @@ Configuration
   fresh worker.
 - **Cost Limit** — maximum spend per user turn in the model's price
   currency (``0`` disables).
+- **Monthly Budget** — maximum spend per calendar month of all users
+  together and of each user (``0`` disables). A user's own budget, set in
+  *MuK AI > Configuration > Budgets*, replaces the one per user. A chat that
+  reaches a budget stops with an error; *MuK AI > Reports > Usage* shows the
+  spend per user and month.
+- **Delete Old Usage** — the months of usage kept besides the current one
+  (default ``6``).
 
 The same page lists the installable **MuK AI extensions** (MCP,
 Compatible Providers, Mistral, Schedule, Skills, Voice, Workflows) as
