@@ -317,6 +317,7 @@ class TestSessionHistory(AITestCommon):
                 session = self._session()
                 for step in steps:
                     self._play(session, step)
+                session.write({'total_cost': 1.0, 'iteration_count': 2})
                 before = list(session.conversation)
                 fork = self.env['muk_ai.session'].browse(
                     session.fork_at_event(self._event_id(session, 'user_message', 'q2'))
@@ -328,6 +329,7 @@ class TestSessionHistory(AITestCommon):
                     (fork.name, fork.state, fork.agent_id),
                     (f'{session.name} (fork)', 'done', session.agent_id),
                 )
+                self.assertEqual((fork.total_cost, fork.iteration_count), (0, 0))
 
     def test_history_cannot_be_rewritten_while_busy(self):
         session = self._session()

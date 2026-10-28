@@ -79,6 +79,12 @@ are removed, so every entry still answers.
   resumed by a fresh worker; a turn that runs out stops with an error.
 - **Cost Limit**: the maximum spend of one user turn in the model's price
   currency, ``0`` for no limit.
+- **Monthly Budget**: the maximum spend per calendar month of all users
+  together and of each user, ``0`` for no limit. A user's own budget, set in
+  *MuK AI > Configuration > Budgets*, replaces the one per user. A chat that reaches a budget stops
+  with an error; *MuK AI > Reports > Usage* shows the spend per user and month.
+- **Delete Old Usage**: the months of usage kept besides the current one, ``6``
+  by default.
 - **Housekeeping**: whether and after how many days old chats are deleted.
 
 **Agents**

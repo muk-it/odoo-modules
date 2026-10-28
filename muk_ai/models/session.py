@@ -839,7 +839,6 @@ class AISession(models.Model):
                 'name': self.env._('%s (fork)', self.name),
                 'conversation': conversation,
                 'state': 'done' if conversation else 'new',
-                'iteration_count': 0,
             }
         )
         self.env['muk_ai.session.event'].sudo().search(

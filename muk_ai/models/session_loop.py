@@ -59,6 +59,7 @@ class AISessionLoop(models.AbstractModel):
         string='Iterations',
         readonly=True,
         default=0,
+        copy=False,
     )
 
     turn_wallclock_spent = fields.Float(
@@ -79,12 +80,14 @@ class AISessionLoop(models.AbstractModel):
         string='Input Tokens',
         readonly=True,
         default=0,
+        copy=False,
     )
 
     total_output_tokens = fields.Integer(
         string='Output Tokens',
         readonly=True,
         default=0,
+        copy=False,
     )
 
     total_cached_tokens = fields.Integer(
@@ -92,6 +95,7 @@ class AISessionLoop(models.AbstractModel):
         help='Input tokens the provider read from its prompt cache, billed at the cache rate.',
         readonly=True,
         default=0,
+        copy=False,
     )
 
     total_input_cost = fields.Float(
@@ -99,6 +103,7 @@ class AISessionLoop(models.AbstractModel):
         readonly=True,
         default=0.0,
         digits=(12, 6),
+        copy=False,
     )
 
     total_output_cost = fields.Float(
@@ -106,6 +111,7 @@ class AISessionLoop(models.AbstractModel):
         readonly=True,
         default=0.0,
         digits=(12, 6),
+        copy=False,
     )
 
     total_cost = fields.Float(
@@ -114,6 +120,7 @@ class AISessionLoop(models.AbstractModel):
         readonly=True,
         default=0.0,
         digits=(12, 6),
+        copy=False,
     )
 
     last_input_tokens = fields.Integer(
@@ -337,6 +344,14 @@ class AISessionLoop(models.AbstractModel):
                 total_cost=self.total_cost + cost['total_cost'],
                 turn_cost_spent=self.turn_cost_spent + cost['total_cost'],
             )
+            if cost['total_cost']:
+                self.env['muk_ai.usage'].sudo().create(
+                    {
+                        'user_id': self.user_id.id,
+                        'session_id': self.id,
+                        'amount': cost['total_cost'],
+                    }
+                )
         self.write({**values, 'turn_usage': turn})
 
     def _persist_inline_images(self, text: str, cache: dict) -> str:
@@ -411,17 +426,55 @@ class AISessionLoop(models.AbstractModel):
         """Transition to error when the turn ran out of iterations."""
         self._transition_state('error', error=self.env._('Maximum iterations reached.'))
 
-    def _turn_cost_error(self, limit: float) -> None:
-        """Transition to error when the turn cost budget is reached."""
-        self._transition_state(
-            'error',
-            error=self.env._(
+    def _cost_limit_message(self) -> str | None:
+        """Return why the chat may spend no more, or ``None`` while it may.
+
+        The turn budget comes first, then the monthly budget of the user and
+        the one of all users together.
+        """
+        params = self.env['ir.config_parameter'].sudo()
+        currency = self._resolve_model_for('chat').currency or 'USD'
+        if (limit := self._turn_cost_limit()) and (
+            self.turn_cost_spent or 0.0
+        ) >= limit:
+            return self.env._(
                 'Turn cost budget reached (%(amount).2f %(currency)s). '
                 'Send a new message to continue.',
                 amount=limit,
-                currency=self._resolve_model_for('chat').currency or 'USD',
-            ),
+                currency=currency,
+            )
+        user_limit = not self.user_id._is_superuser() and (
+            self.user_id.ai_monthly_budget
+            or params.get_float('muk_ai.user_monthly_budget')
         )
+        for limit, user in (
+            (user_limit, self.user_id),
+            (params.get_float('muk_ai.monthly_budget'), None),
+        ):
+            if (
+                not limit
+                or limit <= 0
+                or self.env['muk_ai.usage'].sudo()._spent_this_month(user) < limit
+            ):
+                continue
+            if user:
+                return self.env._(
+                    'Your monthly AI budget of %(amount).2f %(currency)s is '
+                    'used up. Ask an administrator to raise it.',
+                    amount=limit,
+                    currency=currency,
+                )
+            return self.env._(
+                'The monthly AI budget of %(amount).2f %(currency)s for all '
+                'users is used up. Ask an administrator to raise it.',
+                amount=limit,
+                currency=currency,
+            )
+        return None
+
+    def _cost_limit_error(self, message: str) -> None:
+        """Transition to error when a cost budget is reached."""
+        self._transition_state('error', error=message)
 
     def _round_limit_notice(self, remaining: int | None) -> dict | None:
         """Build a user-visible notice about remaining round and cost budget."""
@@ -501,10 +554,8 @@ class AISessionLoop(models.AbstractModel):
             self._maybe_auto_compact()
             if self.state != 'running':
                 return
-            if (limit := self._turn_cost_limit()) and (
-                self.turn_cost_spent or 0.0
-            ) >= limit:
-                self._turn_cost_error(limit)
+            if message := self._cost_limit_message():
+                self._cost_limit_error(message)
                 return
             self.invalidate_recordset(['pending_ids', 'expanded_tool_names'])
             if self.pending_ids and self._drain_pending_message():
