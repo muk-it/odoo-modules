@@ -36,6 +36,12 @@
 				sequence="10"
 			/>
 			<menuitem
+				id="menu_ai_usage"
+				name="Usage"
+				action="action_ai_usage"
+				sequence="15"
+			/>
+			<menuitem
 				id="menu_ai_log"
 				name="Tool Logs"
 				action="muk_mcp.action_mcp_log"
@@ -92,6 +98,12 @@
 				name="Spaces"
 				action="action_ai_space"
 				sequence="30"
+			/>
+			<menuitem
+				id="menu_ai_budget"
+				name="Budgets"
+				action="action_res_users_budget"
+				sequence="40"
 			/>
 		</menuitem>
 

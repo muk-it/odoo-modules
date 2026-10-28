@@ -114,6 +114,45 @@
 							</div>
 						</setting>
 					</block>
+					<block title="Budget" name="muk_ai_settings_budget">
+						<setting
+							id="muk_ai_monthly_budget"
+							string="Monthly Budget"
+							help="Maximum spend per calendar month in the model's price currency. A user's own budget replaces the one per user. Set to 0 to disable."
+						>
+							<div class="content-group">
+								<div class="row">
+									<div class="o_light_label">
+										<label class="col-6 col-sm-4 col-md-2 col-lg-4" string="Max spend" for="ai_monthly_budget"/>
+										<field name="ai_monthly_budget" class="w-25 text-center" nolabel="1"/>
+										<span class="col-auto ms-2">in Total</span>
+									</div>
+								</div>
+								<div class="row">
+									<div class="o_light_label">
+										<label class="col-6 col-sm-4 col-md-2 col-lg-4" string="Max spend" for="ai_user_monthly_budget"/>
+										<field name="ai_user_monthly_budget" class="w-25 text-center" nolabel="1"/>
+										<span class="col-auto ms-2">per User</span>
+									</div>
+								</div>
+							</div>
+						</setting>
+						<setting
+							id="muk_ai_usage_retention"
+							string="Delete Old Usage"
+							help="Delete the AI usage of past months. The monthly budgets only count the current month."
+						>
+							<div class="content-group">
+								<div class="row">
+									<div class="o_light_label">
+										<label class="col-6 col-sm-4 col-md-2 col-lg-4" string="Keep Usage for" for="ai_usage_retention_months"/>
+										<field name="ai_usage_retention_months" class="w-25 text-center" nolabel="1"/>
+										<span class="col-auto ms-2">Months</span>
+									</div>
+								</div>
+							</div>
+						</setting>
+					</block>
 					<block title="Housekeeping" name="muk_ai_settings_autovacuum">
 						<setting
 							id="muk_ai_client_action_timeout"

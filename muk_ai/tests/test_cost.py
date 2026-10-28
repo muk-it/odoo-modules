@@ -3,6 +3,10 @@ from __future__ import annotations
 from contextlib import AbstractContextManager
 from unittest.mock import MagicMock, patch
 
+from odoo import fields
+from odoo.tests import new_test_user
+from odoo.tools import date_utils
+
 from odoo.addons.muk_ai.tests.common import AITestCommon
 
 
@@ -161,3 +165,67 @@ class TestSessionCostAccrual(AITestCommon):
         with self._patch_provider([self._payload()]):
             session.start('hi')
         self.assertEqual(session.total_cost, 0.0)
+
+    def test_a_monthly_budget_stops_the_chat_once_this_month_spent_it(self):
+        user = new_test_user(self.env, 'spender', groups='base.group_user')
+        other = new_test_user(self.env, 'neighbour', groups='base.group_user')
+        last_month = date_utils.subtract(fields.Datetime.now(), months=1)
+        mine = 'Your monthly AI budget of 1.00 USD'
+        everyone = 'The monthly AI budget of 1.00 USD for all users'
+        params = self.env['ir.config_parameter'].sudo()
+        for per_user, total, own, spent, owner, blocked in (
+            (1.0, 0.0, 0.0, [(user, None)], user, mine),
+            (1.0, 0.0, 5.0, [(user, None)], user, None),
+            (1.0, 0.0, 0.0, [(user, last_month)], user, None),
+            (1.0, 0.0, 0.0, [(other, None)], user, None),
+            (0.0, 1.0, 0.0, [(other, None)], user, everyone),
+            (1.0, 0.0, 0.0, [(self.env.user, None)], self.env.user, None),
+        ):
+            with self.subTest(per_user=per_user, total=total, own=own, spent=spent):
+                params.set_param('muk_ai.user_monthly_budget', per_user)
+                params.set_param('muk_ai.monthly_budget', total)
+                user.ai_monthly_budget = own
+                usage = self.env['muk_ai.usage']
+                usage.search([]).unlink()
+                for spender, date in spent:
+                    usage.create(
+                        {'user_id': spender.id, 'amount': 1.0}
+                        | ({'date': date} if date else {})
+                    )
+                session = (
+                    self.env['muk_ai.session']
+                    .with_user(owner)
+                    .create({'name': 'Budget', 'agent_id': False})
+                )
+                with self._patch_provider(
+                    [self._payload(input_tokens=1_000_000, output_tokens=0)]
+                ) as requests:
+                    session.start('go')
+                self.assertEqual(requests.call_count, 0 if blocked else 1)
+                self.assertEqual(session.state, 'error' if blocked else 'done')
+                self.assertTrue((session.error_message or '').startswith(blocked or ''))
+                self.assertEqual(
+                    usage.search([('session_id', '=', session.id)]).mapped('amount'),
+                    [] if blocked else [1.0],
+                )
+
+    def test_the_usage_of_months_past_the_retention_is_deleted(self):
+        now = fields.Datetime.now()
+        usage = self.env['muk_ai.usage']
+        usage.search([]).unlink()
+        user = new_test_user(self.env, 'spender', groups='base.group_user')
+        for months in (0, 5, 7):
+            usage.create(
+                {
+                    'user_id': user.id,
+                    'amount': months,
+                    'date': date_utils.subtract(now, months=months),
+                }
+            )
+        for retention, kept in ((0, [0, 5]), (3, [0])):
+            with self.subTest(retention=retention):
+                self.env['ir.config_parameter'].sudo().set_param(
+                    'muk_ai.usage_retention_months', retention
+                )
+                usage._gc_usage()
+                self.assertEqual(sorted(usage.search([]).mapped('amount')), kept)

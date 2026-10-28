@@ -211,18 +211,21 @@ class TestSessionLimits(AITestCommon):
         self.assertIsNone(session._round_limit_notice(None))
 
     def test_cost_error_renders_the_model_currency(self):
+        self.env['ir.config_parameter'].sudo().set_param(
+            'muk_ai.turn_cost_limit', '1.5'
+        )
         session = self._session()
-        session._turn_cost_error(1.5)
-        self.assertEqual(session.state, 'error')
-        self.assertIn('1.50 EUR', session.error_message)
+        session.turn_cost_spent = 1.5
+        self.assertIn('1.50 EUR', session._cost_limit_message())
 
     def test_cost_error_falls_back_to_usd_without_a_model(self):
+        self.env['ir.config_parameter'].sudo().set_param(
+            'muk_ai.turn_cost_limit', '2.0'
+        )
         self._clear_default_models()
         session = self._session()
-        self.assertEqual(session._cost_currency(), 'USD')
-        session._turn_cost_error(2.0)
-        self.assertEqual(session.state, 'error')
-        self.assertIn('2.00 USD', session.error_message)
+        session.turn_cost_spent = 2.0
+        self.assertIn('2.00 USD', session._cost_limit_message())
 
     # ----------------------------------------------------------
     # Tests: turn cost accrual
