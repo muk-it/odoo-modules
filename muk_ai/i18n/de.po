@@ -2775,18 +2775,6 @@ msgstr ""
 
 #. module: muk_ai
 #. odoo-python
-#: code:addons/muk_ai/models/agent.py:0
-msgid ""
-"Image generation is enabled, but the tool filter of this agent does not list"
-" \"generate_image\", so the tool never reaches the model. Add it on the "
-"Tools page, or clear the filter."
-msgstr ""
-"Die Bildgenerierung ist aktiviert, aber der Tool-Filter dieses Agenten führt"
-" \"generate_image\" nicht auf, sodass das Tool das Modell nie erreicht. "
-"Fügen Sie es auf der Seite Tools hinzu oder leeren Sie den Filter."
-
-#. module: muk_ai
-#. odoo-python
 #: code:addons/muk_ai/models/session.py:0
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
 msgid "Images"
@@ -4804,6 +4792,12 @@ msgstr ""
 "\t\t\t\t\t\t\t\tsonst antwortet sie mit 403."
 
 #. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+msgid "Send"
+msgstr "Senden"
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_ir_model__ai_sensitive
 msgid "Sensitive for AI"
 msgstr "Sensibel für KI"
@@ -6016,19 +6010,6 @@ msgstr ""
 "Die Websuche ist auf \"Such-Backend\" gesetzt, aber es ist kein Websuche-"
 "Backend konfiguriert. Setzen Sie eines in den MuK AI Einstellungen oder "
 "wechseln Sie zu \"Anbieter-eigene Suche\"."
-
-#. module: muk_ai
-#. odoo-python
-#: code:addons/muk_ai/models/agent.py:0
-msgid ""
-"Web search would run through the Web Search Backend, but the tool filter of "
-"this agent does not list \"web_search\", so the tool never reaches the "
-"model. Add it on the Tools page, or clear the filter."
-msgstr ""
-"Die Websuche würde über das Websuche-Backend laufen, aber der Tool-Filter "
-"dieses Agenten führt \"web_search\" nicht auf, sodass das Tool das Modell "
-"nie erreicht. Fügen Sie es auf der Seite Tools hinzu oder leeren Sie den "
-"Filter."
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form

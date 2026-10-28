@@ -377,8 +377,15 @@ class AIAgent(models.Model):
         )
 
     def _admits_tool(self, name: str) -> bool:
-        """Return whether the tool filter of this agent lets the tool through."""
-        return not self.tool_filter or name in self.tool_filter
+        """Return whether the tool filter of this agent lets the tool through.
+
+        The tools a session loads by its own rules always pass.
+        """
+        return (
+            not self.tool_filter
+            or name in self.tool_filter
+            or name in self.env['muk_ai.session']._eager_tool_name_registry()
+        )
 
     def _served_web_search_routes(self) -> dict[str, bool]:
         """Map each web search route to whether anything can currently serve it.
@@ -386,8 +393,7 @@ class AIAgent(models.Model):
         Insertion order is the preference ``auto`` applies.
         """
         return {
-            'tool': self._admits_tool('web_search')
-            and search_backend(self.env) is not None,
+            'tool': search_backend(self.env) is not None,
             'native': self._resolve_provider().supports_web_search
             and self._serves_builtin_tools(),
         }
@@ -420,13 +426,6 @@ class AIAgent(models.Model):
                 'Web search is set to "Provider Built-in", but the model this '
                 'agent runs on serves no built-in search. Pick a model that '
                 'has one, or switch to "Search Backend".'
-            )
-        if search_backend(self.env) is not None:
-            return _(
-                'Web search would run through the Web Search Backend, but the '
-                'tool filter of this agent does not list "web_search", so the '
-                'tool never reaches the model. Add it on the Tools page, or '
-                'clear the filter.'
             )
         if self.web_search == 'tool':
             return _(
@@ -596,17 +595,9 @@ class AIAgent(models.Model):
                     )
             if warning := record._web_search_warning():
                 warnings.append(warning)
-            image = record._resolve_model_for('image')
-            if image and not record._admits_tool('generate_image'):
-                warnings.append(
-                    _(
-                        'Image generation is enabled, but the tool filter of this '
-                        'agent does not list "generate_image", so the tool never '
-                        'reaches the model. Add it on the Tools page, or clear '
-                        'the filter.'
-                    )
-                )
-            if record.enable_image_generation and not image:
+            if record.enable_image_generation and not record._resolve_model_for(
+                'image'
+            ):
                 hidden = self.env['muk_ai.model']._default_for(
                     'image',
                     first=record._leading_provider(),

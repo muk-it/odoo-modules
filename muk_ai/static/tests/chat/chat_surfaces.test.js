@@ -2,7 +2,12 @@ import { afterEach, describe, expect, test } from '@odoo/hoot';
 import { click, queryFirst, resize, waitUntil } from '@odoo/hoot-dom';
 import { animationFrame } from '@odoo/hoot-mock';
 import { Component, xml } from '@odoo/owl';
-import { mockService, mountWithCleanup, onRpc } from '@web/../tests/web_test_helpers';
+import {
+    contains,
+    mockService,
+    mountWithCleanup,
+    onRpc,
+} from '@web/../tests/web_test_helpers';
 import { defineMailModels } from '@mail/../tests/mail_test_helpers';
 
 import { AIChat } from '@muk_ai/chat/chat';
@@ -69,14 +74,17 @@ function snapshotWith(events) {
     };
 }
 
-function baseMocks({ events = [], record = {} } = {}) {
+function baseMocks({ events = [], record = {}, snapshot = {} } = {}) {
     onRpc('muk_ai.session', 'search_read', () => [
         { id: 7, name: 'Demo', state: 'done', create_date: '2026-04-20 10:00:00' },
     ]);
     onRpc('muk_ai.session', 'read', ({ args }) => [
         { ...SESSION_RECORD, ...record, id: args[0][0] },
     ]);
-    onRpc('muk_ai.session', 'get_snapshot', () => snapshotWith(events));
+    onRpc('muk_ai.session', 'get_snapshot', () => ({
+        ...snapshotWith(events),
+        ...snapshot,
+    }));
     onRpc('muk_ai.agent', 'search_read', () => []);
     onRpc('muk_ai.space', 'fetch_spaces', () => []);
     onRpc('muk_ai.space', 'fetch_general_domain', () => [['space_id', '=', false]]);
@@ -276,6 +284,38 @@ test('an ask block switches between the human and technical view', async () => {
     expect(chat.askViewMode(block)).toBe('human');
     chat.toggleAskView(null);
     expect(chat.state.askViews.c9).toBe('human');
+});
+
+test('a multiple choice question ticks its options and sends them in their order', async () => {
+    onRpc('muk_ai.session', 'answer', ({ args }) => {
+        expect.step(args[1]);
+        return { ...snapshotWith([]), state: 'running' };
+    });
+    const waiting = {
+        state: 'waiting',
+        pending_ask: { kind: 'question', call_id: 'c3' },
+    };
+    await mountChat({
+        events: [
+            {
+                event_id: 3,
+                kind: 'ask_user',
+                call_id: 'c3',
+                text: 'Which categories should the mega menu show?',
+                options: ['Furniture', 'Lighting', 'Decor'],
+                resolution: 'multiple',
+            },
+        ],
+        record: waiting,
+        snapshot: waiting,
+    });
+    for (const option of ['Decor', 'Lighting', 'Furniture', 'Lighting']) {
+        await contains(`.mk_ask_option:contains(${option})`).click();
+    }
+    expect.verifySteps([]);
+    expect('.mk_ask_option input:checked').toHaveCount(2);
+    await contains('.mk_ask_send').click();
+    expect.verifySteps(['Furniture, Decor']);
 });
 
 test('a session owned by somebody else is read only', async () => {
