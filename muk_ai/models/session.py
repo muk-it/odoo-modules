@@ -703,10 +703,8 @@ class AISession(models.Model):
                 'Web search: unavailable — say so plainly instead of '
                 'guessing at facts that may have moved on.'
             )
-        if (
-            self._tool_source_enabled('image_generation')
-            and agent._resolve_model_for('image')
-            and agent._admits_tool('generate_image')
+        if self._tool_source_enabled('image_generation') and agent._resolve_model_for(
+            'image'
         ):
             lines.append('Image generation: available through generate_image.')
         if self._tool_source_enabled('code_interpreter') and (

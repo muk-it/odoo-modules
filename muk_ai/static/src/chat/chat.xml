@@ -663,11 +663,25 @@
                     <t t-foreach="block.options" t-as="opt" t-key="opt_index">
                         <button
                             class="btn btn-sm btn-outline-primary mk_ask_option"
+                            t-att-class="{ active: session.state.picks[block.callId]?.includes(opt) }"
                             t-att-disabled="!session.canWrite() or session.state.status === 'running' or session.state.pendingAsk?.call_id !== block.callId"
-                            t-on-click="() => this.session.answerWithOption(opt)"
-                            t-esc="opt"
-                        />
+                            t-on-click="() => this.session.pickOption(block, opt)"
+                        >
+                            <input
+                                t-if="block.resolution === 'multiple'"
+                                type="checkbox"
+                                class="form-check-input pe-none me-1"
+                                t-att-checked="session.state.picks[block.callId]?.includes(opt)"
+                            />
+                            <t t-esc="opt"/>
+                        </button>
                     </t>
+                    <button
+                        t-if="block.resolution === 'multiple'"
+                        class="btn btn-sm btn-primary mk_ask_send"
+                        t-att-disabled="!session.canWrite() or session.state.status === 'running' or session.state.pendingAsk?.call_id !== block.callId"
+                        t-on-click="() => this.session.answerWithOption(block.options.filter((opt) => session.state.picks[block.callId]?.includes(opt)).join(', '))"
+                    >Send</button>
                 </div>
                 <t t-call="muk_ai.ChatMsgMeta">
                     <t t-set="meta_at" t-value="block.at || turn.at"/>
