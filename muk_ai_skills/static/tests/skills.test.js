@@ -137,7 +137,7 @@ test('the skills menu lists recent skills first, greys out the rest and puts the
         expect.verifySteps(steps);
     }
     await contains('.mk_skills_toggle').click();
-    await press('Escape');
+    await contains('.mk_skills_panel input').press('Escape');
     await animationFrame();
     expect('.mk_skills_panel').toHaveCount(0);
 });
