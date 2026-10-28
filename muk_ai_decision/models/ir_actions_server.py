@@ -26,6 +26,10 @@ class IrActionsServer(models.Model):
         ondelete={'ai_decision': 'cascade'},
     )
 
+    allowed_states = fields.Json(
+        compute='_compute_ai_allowed_states',
+    )
+
     decision_question_ids = fields.One2many(
         comodel_name='muk_ai.decision.question',
         inverse_name='action_id',
@@ -303,10 +307,10 @@ class IrActionsServer(models.Model):
     # Compute
     # ----------------------------------------------------------
 
-    @api.depends_context('ai_steps')
-    def _compute_allowed_states(self) -> None:
+    @api.depends_context('ai_steps', 'default_use_in_ai')
+    def _compute_ai_allowed_states(self) -> None:
         """Offer only the AI steps to the actions of an AI automation rule."""
-        super()._compute_allowed_states()
+        self._compute_allowed_states()
         if self.env.context.get('ai_steps'):
             self.allowed_states = ['ai_decision', 'ai_agent']
 
