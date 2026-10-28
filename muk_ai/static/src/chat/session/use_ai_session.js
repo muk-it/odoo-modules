@@ -140,6 +140,7 @@ const WRITE_ACTIONS = [
     'approveForSession',
     'rejectTool',
     'answerWithOption',
+    'pickOption',
     'respondYesno',
     'runStopCompact',
     'runUndoToEvent',
@@ -196,6 +197,7 @@ export function useAiSession(options = {}) {
         hasMoreOlder: false,
         loadingOlder: false,
         pendingAsk: null,
+        picks: {},
         error: null,
         input: '',
         iterationCount: 0,
@@ -1241,6 +1243,15 @@ export function useAiSession(options = {}) {
         state.input = option;
         await onSend();
     }
+    function pickOption(block, option) {
+        if (block.resolution !== 'multiple') {
+            return answerWithOption(option);
+        }
+        const picks = state.picks[block.callId] || [];
+        state.picks[block.callId] = picks.includes(option)
+            ? picks.filter((pick) => pick !== option)
+            : [...picks, option];
+    }
     async function respondYesno(decision) {
         const pending = state.pendingAsk || {};
         if (pending.kind === 'approval') {
@@ -1741,6 +1752,7 @@ export function useAiSession(options = {}) {
         approveForSession,
         rejectTool,
         answerWithOption,
+        pickOption,
         respondYesno,
         runStopCompact,
         runUndoToEvent,
