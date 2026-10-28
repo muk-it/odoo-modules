@@ -176,6 +176,25 @@ QUnit.test(
 );
 
 QUnit.test(
+    'a template that wraps its signature is read and replaced up to it',
+    (assert) => {
+        const { adapter, editor } = editorFixture(
+            '<div data-o-mail-quote-container="1"><p>Your quotation is ready.</p>' +
+                '<div data-o-mail-quote="1">--<br>Mitchell Admin</div></div>',
+        );
+        assert.ok(adapter.getDraft().includes('Your quotation is ready.'));
+        assert.notOk(adapter.getDraft().includes('Mitchell Admin'));
+        adapter.replaceDraft('<p>Your quotation for two desks is ready.</p>');
+        assert.ok(
+            /^Your quotation for two desks is ready\.\s*--\s*Mitchell Admin$/.test(
+                editor.editable.textContent.trim(),
+            ),
+            editor.editable.innerHTML,
+        );
+    },
+);
+
+QUnit.test(
     'a one-paragraph answer fills the selection inside its paragraph',
     (assert) => {
         const { adapter, editor } = editorFixture('<p>Dear [customer], thanks</p>');

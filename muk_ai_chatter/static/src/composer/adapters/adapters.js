@@ -97,10 +97,11 @@ export function makeTextComposerAdapter(composer, textarea) {
  * Drive the editor of the full mail composer.
  *
  * The draft is read as cleaned HTML when the helper opens, since the panel
- * takes the focus, with the selection marked where it sits. The signature is
- * added when the mail is sent, so the editor holds the draft alone. An answer
- * is sanitized and inserted as one undoable step, replacing the selection the
- * cursor was restored to, or landing at the end without one.
+ * takes the focus, with the selection marked where it sits. It ends at the
+ * signature or the quoted thread, however deep a template nests them, so
+ * neither is read nor replaced. An answer is sanitized and inserted as one
+ * undoable step, replacing the selection the cursor was restored to, or
+ * landing at the end without one.
  *
  * @param {object} editor the OdooEditor of the composer's body
  * @param {{resModel: string|false, resId: number|false}} record what is written about
@@ -120,6 +121,17 @@ export function makeEditorAdapter(editor, record) {
             : twin(node.parentNode).childNodes[
                   [...node.parentNode.childNodes].indexOf(node)
               ];
+    const upToSignature = (root) => {
+        const range = new Range();
+        range.selectNodeContents(root);
+        const signature = root.querySelector(
+            '.o-signature-container, [data-o-mail-quote]',
+        );
+        if (signature) {
+            range.setEndBefore(signature);
+        }
+        return range;
+    };
     const draft = editable.cloneNode(true);
     if (quoted) {
         for (const [node, offset, mark] of [
@@ -131,6 +143,7 @@ export function makeEditorAdapter(editor, record) {
             at.insertNode(new Text(mark));
         }
     }
+    draft.replaceChildren(upToSignature(draft).cloneContents());
     editor.cleanForSave(draft);
     const marked = draft.textContent.trim() ? draft.innerHTML.trim() : '';
     const fragmentOf = (text) => {
@@ -164,7 +177,13 @@ export function makeEditorAdapter(editor, record) {
         applySelection: atCursor,
         applyDraft: atCursor,
         replaceDraft(text) {
-            setSelection(editable, 0, editable, editable.childNodes.length);
+            const range = upToSignature(editable);
+            setSelection(
+                range.startContainer,
+                range.startOffset,
+                range.endContainer,
+                range.endOffset,
+            );
             insert(text);
         },
         toHtml(text) {
