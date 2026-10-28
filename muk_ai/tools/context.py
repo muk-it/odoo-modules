@@ -2,17 +2,8 @@ from __future__ import annotations
 
 import json
 
+from odoo.api import Environment
 from odoo.exceptions import UserError
-from odoo.tools.translate import LazyTranslate
-
-_lt = LazyTranslate('muk_ai')
-
-
-TYPE_NAMES = {
-    str: _lt('a string'),
-    list: _lt('a list'),
-    int: _lt('an integer'),
-}
 
 
 def _format_ctx_tag(payload, tag_name: str, kinds: dict | None = None) -> str | None:
@@ -164,7 +155,9 @@ _SEGMENT_BUILDERS = {
 # ----------------------------------------------------------
 
 
-def clean_view_context_payload(kind, payload, kinds: dict | None = None) -> dict:
+def clean_view_context_payload(
+    env: Environment, kind, payload, kinds: dict | None = None
+) -> dict:
     """Validate and normalize a view-context payload for the given kind.
 
     :param kinds: the kinds an addon adds, with the type of each value
@@ -172,24 +165,24 @@ def clean_view_context_payload(kind, payload, kinds: dict | None = None) -> dict
     """
     if not isinstance(kind, str) or not kind.isidentifier() or kind.startswith('_'):
         raise UserError(
-            _lt(
+            env._(
                 'Invalid view context payload (kind=%(kind)r).',
                 kind=kind,
             )
         )
     if cleaner := _CLEANERS.get(kind):
-        return cleaner(payload)
+        return cleaner(env, payload)
     if kind in (kinds or {}):
-        return _clean_typed(kind, payload, kinds[kind])
+        return _clean_typed(env, kind, payload, kinds[kind])
     raise UserError(
-        _lt(
+        env._(
             'Invalid view context payload (kind=%(kind)r).',
             kind=kind,
         )
     )
 
 
-def _base_payload(payload, kind: str) -> dict:
+def _base_payload(env: Environment, payload, kind: str) -> dict:
     """Build the common cleaned payload (kind plus optional model).
 
     :raise UserError: when ``model`` is present but not a string.
@@ -197,12 +190,12 @@ def _base_payload(payload, kind: str) -> dict:
     cleaned = {'kind': kind}
     if model := payload.get('model'):
         if not isinstance(model, str):
-            raise UserError(_lt('view_context.model must be a string.'))
+            raise UserError(env._('view_context.model must be a string.'))
         cleaned['model'] = model
     return cleaned
 
 
-def _payload_domain(payload) -> list | None:
+def _payload_domain(env: Environment, payload) -> list | None:
     """Return the validated ``domain`` from a payload, or ``None``.
 
     :raise UserError: when ``domain`` is present but not a list.
@@ -211,30 +204,30 @@ def _payload_domain(payload) -> list | None:
     if domain is None:
         return None
     if not isinstance(domain, list):
-        raise UserError(_lt('view_context.domain must be a list.'))
+        raise UserError(env._('view_context.domain must be a list.'))
     return domain
 
 
-def _clean_record(payload) -> dict:
+def _clean_record(env: Environment, payload) -> dict:
     """Validate and normalize a record view-context payload.
 
     :raise UserError: when id, display_name, or ee_init_context are malformed.
     """
-    cleaned = _base_payload(payload, 'record')
+    cleaned = _base_payload(env, payload, 'record')
     res_id = payload.get('id')
     if not isinstance(res_id, int) or res_id <= 0:
-        raise UserError(_lt('view_context.id must be a positive integer.'))
+        raise UserError(env._('view_context.id must be a positive integer.'))
     cleaned['id'] = res_id
     if display_name := payload.get('display_name'):
         if not isinstance(display_name, str):
-            raise UserError(_lt('view_context.display_name must be a string.'))
+            raise UserError(env._('view_context.display_name must be a string.'))
         cleaned['display_name'] = display_name
     if ee_init_context := payload.get('ee_init_context'):
         if not isinstance(ee_init_context, list) or any(
             not isinstance(v, str) for v in ee_init_context
         ):
             raise UserError(
-                _lt(
+                env._(
                     'view_context.ee_init_context must be a list of strings.',
                 )
             )
@@ -242,29 +235,29 @@ def _clean_record(payload) -> dict:
     return cleaned
 
 
-def _clean_list(payload) -> dict:
+def _clean_list(env: Environment, payload) -> dict:
     """Validate and normalize a list view-context payload."""
-    cleaned = _base_payload(payload, 'list')
+    cleaned = _base_payload(env, payload, 'list')
     cleaned['view_type'] = payload.get('view_type') or 'list'
-    if domain := _payload_domain(payload):
+    if domain := _payload_domain(env, payload):
         cleaned['domain'] = domain
     return cleaned
 
 
-def _clean_action(payload) -> dict:
+def _clean_action(env: Environment, payload) -> dict:
     """Validate and normalize an action view-context payload.
 
     :raise UserError: when ``action_id`` is present but not an integer.
     """
-    cleaned = _base_payload(payload, 'action')
+    cleaned = _base_payload(env, payload, 'action')
     if action_id := payload.get('action_id'):
         if not isinstance(action_id, int):
-            raise UserError(_lt('view_context.action_id must be an integer.'))
+            raise UserError(env._('view_context.action_id must be an integer.'))
         cleaned['action_id'] = action_id
     return cleaned
 
 
-def _clean_string_list(payload, key: str) -> list[str] | None:
+def _clean_string_list(env: Environment, payload, key: str) -> list[str] | None:
     """Return a validated list-of-strings payload value, or ``None``.
 
     :raise UserError: when the value is present but not a list of strings.
@@ -274,7 +267,7 @@ def _clean_string_list(payload, key: str) -> list[str] | None:
         return None
     if not isinstance(value, list) or any(not isinstance(v, str) for v in value):
         raise UserError(
-            _lt(
+            env._(
                 'view_context.%s must be a list of strings.',
                 key,
             )
@@ -282,44 +275,44 @@ def _clean_string_list(payload, key: str) -> list[str] | None:
     return value
 
 
-def _clean_pivot(payload) -> dict:
+def _clean_pivot(env: Environment, payload) -> dict:
     """Validate and normalize a pivot view-context payload."""
-    cleaned = _base_payload(payload, 'pivot')
+    cleaned = _base_payload(env, payload, 'pivot')
     cleaned['view_type'] = 'pivot'
     for key in ('pivot_measures', 'pivot_row_groupby', 'pivot_column_groupby'):
-        if (value := _clean_string_list(payload, key)) is not None:
+        if (value := _clean_string_list(env, payload, key)) is not None:
             cleaned[key] = value
-    if domain := _payload_domain(payload):
+    if domain := _payload_domain(env, payload):
         cleaned['domain'] = domain
     return cleaned
 
 
-def _clean_graph(payload) -> dict:
+def _clean_graph(env: Environment, payload) -> dict:
     """Validate and normalize a graph view-context payload.
 
     :raise UserError: when a graph attribute is present but malformed.
     """
-    cleaned = _base_payload(payload, 'graph')
+    cleaned = _base_payload(env, payload, 'graph')
     cleaned['view_type'] = 'graph'
     for key in ('graph_mode', 'graph_measure', 'graph_order'):
         value = payload.get(key)
         if value is not None:
             if not isinstance(value, str):
-                raise UserError(_lt('view_context.%s must be a string.', key))
+                raise UserError(env._('view_context.%s must be a string.', key))
             cleaned[key] = value
-    if (groupbys := _clean_string_list(payload, 'graph_groupbys')) is not None:
+    if (groupbys := _clean_string_list(env, payload, 'graph_groupbys')) is not None:
         cleaned['graph_groupbys'] = groupbys
-    if domain := _payload_domain(payload):
+    if domain := _payload_domain(env, payload):
         cleaned['domain'] = domain
     return cleaned
 
 
-def _clean_typed(kind: str, payload, types: dict) -> dict:
+def _clean_typed(env: Environment, kind: str, payload, types: dict) -> dict:
     """Validate and normalize a payload of a kind an addon adds.
 
     :raise UserError: when a value does not have its type
     """
-    cleaned = _base_payload(payload, kind)
+    cleaned = _base_payload(env, payload, kind)
     for key, expected in types.items():
         if not (value := payload.get(key)):
             continue
@@ -329,12 +322,16 @@ def _clean_typed(kind: str, payload, types: dict) -> dict:
             valid = isinstance(value, expected)
         if not valid:
             raise UserError(
-                _lt(
+                env._(
                     'view_context.%(key)s must be %(type)s.',
                     key=key,
-                    type=_lt('a list of strings')
+                    type=env._('a list of strings')
                     if isinstance(expected, list)
-                    else TYPE_NAMES[expected],
+                    else {
+                        str: env._('a string'),
+                        list: env._('a list'),
+                        int: env._('an integer'),
+                    }[expected],
                 )
             )
         cleaned[key] = value

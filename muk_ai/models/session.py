@@ -4683,7 +4683,7 @@ class AISession(models.Model):
         self._write_view_context(
             None
             if payload is None or kind == 'none'
-            else clean_view_context_payload(kind, payload, self._view_kinds())
+            else clean_view_context_payload(self.env, kind, payload, self._view_kinds())
         )
         return self.get_snapshot()
 
