@@ -107,6 +107,17 @@ class TestSkillScope(TransactionCase):
             skill._scope_satisfied_by({'kind': 'record', 'model': 'res.users', 'id': 1})
         )
         self.assertFalse(skill._scope_satisfied_by(None))
+        for view_context, offered in (
+            ({'kind': 'record', 'model': 'res.partner', 'id': 1}, True),
+            ({'kind': 'record', 'model': 'res.currency', 'id': 1}, False),
+            (None, True),
+        ):
+            with self.subTest(view_context=view_context):
+                names = [
+                    row['name']
+                    for row in skill.fetch_skills(skill.skill_type, view_context)
+                ]
+                self.assertEqual(skill.name in names, offered)
 
     def test_a_chatter_scope_refuses_a_model_without_one(self):
         with self.assertRaises(ValidationError):
