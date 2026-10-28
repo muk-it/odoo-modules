@@ -252,6 +252,11 @@ class ResConfigSettings(models.TransientModel):
         help='Design newsletters that render in every mail client.',
     )
 
+    module_muk_ai_crm = fields.Boolean(
+        string='MuK AI CRM',
+        help='Research leads, draft quotations and follow them up.',
+    )
+
     # ----------------------------------------------------------
     # Compute
     # ----------------------------------------------------------
