@@ -97,7 +97,7 @@ class TestRun(SubagentCase):
         self.assertEqual(child._available_client_kinds(), set())
         names = {entry['name'] for entry in child._get_filtered_catalog()}
         self.assertEqual(
-            names - child._eager_tool_names(), {'search_read', 'search_count'}
+            names - child._eager_tool_name_registry(), {'search_read', 'search_count'}
         )
 
     def test_a_subagent_ends_with_its_reason_when_a_limit_stops_it(self):
