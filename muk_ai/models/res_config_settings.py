@@ -111,6 +111,27 @@ class ResConfigSettings(models.TransientModel):
         config_parameter='muk_ai.turn_cost_limit',
     )
 
+    ai_monthly_budget = fields.Float(
+        string='Monthly Budget',
+        help=(
+            'Maximum all users together may spend per calendar month, in the '
+            'price currency of the models. A chat stops with an error once it '
+            'is reached. Set 0 to disable.'
+        ),
+        config_parameter='muk_ai.monthly_budget',
+        digits=(12, 2),
+    )
+
+    ai_user_monthly_budget = fields.Float(
+        string='Monthly Budget per User',
+        help=(
+            'Maximum each user may spend per calendar month, unless the user '
+            'has a budget of their own. Set 0 to disable.'
+        ),
+        config_parameter='muk_ai.user_monthly_budget',
+        digits=(12, 2),
+    )
+
     ai_session_retention_enabled = fields.Boolean(
         string='Chat Retention',
         help=(
@@ -125,6 +146,13 @@ class ResConfigSettings(models.TransientModel):
         help='Days a finished chat is kept before the cleanup deletes it.',
         config_parameter='muk_ai.session_retention_days',
         default=90,
+    )
+
+    ai_usage_retention_months = fields.Integer(
+        string='Usage Retention',
+        help='Months the AI usage is kept, besides the current one.',
+        config_parameter='muk_ai.usage_retention_months',
+        default=6,
     )
 
     ai_client_action_timeout = fields.Integer(
