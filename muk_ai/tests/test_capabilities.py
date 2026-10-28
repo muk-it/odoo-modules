@@ -74,13 +74,12 @@ class TestCapabilities(AITestCommon):
 
     def test_web_search_takes_the_route_the_agent_chose(self):
         legacy = {'model_id': self.legacy.id}
-        hidden = {'tool_filter': ['search_read']}
-        listed = {'tool_filter': ['search_read', 'web_search']}
+        filtered = {'tool_filter': ['search_read']}
         for backend, values, route, warning in (
             ('brave', {'web_search': 'off'}, None, ''),
             (None, {'web_search': 'auto'}, 'native', ''),
             ('brave', {'web_search': 'auto'}, 'tool', ''),
-            ('brave', {'web_search': 'auto', **hidden}, 'native', ''),
+            ('brave', {'web_search': 'auto', **filtered}, 'tool', ''),
             ('brave', {'web_search': 'auto', **legacy}, 'tool', ''),
             (
                 None,
@@ -96,13 +95,7 @@ class TestCapabilities(AITestCommon):
                 'Web search is set to "Provider Built-in"',
             ),
             ('brave', {'web_search': 'tool'}, 'tool', ''),
-            ('brave', {'web_search': 'tool', **listed}, 'tool', ''),
-            (
-                'brave',
-                {'web_search': 'tool', **hidden},
-                None,
-                'does not list "web_search"',
-            ),
+            ('brave', {'web_search': 'tool', **filtered}, 'tool', ''),
             (None, {'web_search': 'tool'}, None, 'no Web Search Backend is configured'),
         ):
             with self.subTest(backend=backend, values=values):
@@ -131,12 +124,7 @@ class TestCapabilities(AITestCommon):
                 'runs no code-execution tool',
             ),
             (images, False, True, ''),
-            (
-                {**images, 'tool_filter': ['search_read']},
-                False,
-                False,
-                'does not list "generate_image"',
-            ),
+            ({**images, 'tool_filter': ['search_read']}, False, True, ''),
         ):
             with self.subTest(values=values):
                 request, agent = self._turn(**values)

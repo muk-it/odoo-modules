@@ -276,6 +276,31 @@ test('a question offers its options as answers while it waits and the chat is wr
     expect('.mk_ask_options button:disabled').toHaveCount(2);
 });
 
+test('a multiple choice question ticks its options and sends them in their order', async () => {
+    onRpc('muk_ai.session', 'answer', ({ args }) => {
+        expect.step(args[1]);
+        return snapshot({ state: 'running' });
+    });
+    await mountTranscript(
+        [
+            ask({
+                call_id: 'c3',
+                text: 'Which categories should the mega menu show?',
+                options: ['Furniture', 'Lighting', 'Decor'],
+                resolution: 'multiple',
+            }),
+        ],
+        { state: 'waiting', pending_ask: { kind: 'question', call_id: 'c3' } },
+    );
+    for (const option of ['Decor', 'Lighting', 'Furniture', 'Lighting']) {
+        await contains(`.mk_ask_option:contains(${option})`).click();
+    }
+    expect.verifySteps([]);
+    expect('.mk_ask_option input:checked').toHaveCount(2);
+    await contains('.mk_ask_send').click();
+    expect.verifySteps(['Furniture, Decor']);
+});
+
 test('messages copy, branch and rewind, the last answer regenerates, a reader only copies', async () => {
     let copied = '';
     patchWithCleanup(navigator.clipboard, {

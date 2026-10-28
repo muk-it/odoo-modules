@@ -218,7 +218,7 @@ class TestAgent(AITestCommon):
                 tools = self._tools(request)
                 listed = self._system_prompt(request).partition('<available_tools>')[2]
                 if offered:
-                    self.assertEqual(tools, offered)
+                    self.assertEqual(tools - session._eager_tool_names(), offered)
                 else:
                     self.assertLessEqual({'search_read', 'read_records'}, tools)
                 for name in deferred:

@@ -1,3 +1,8 @@
+`1.26.0`
+-------
+
+- Multiple Choice Questions
+
 `1.25.0`
 -------
 

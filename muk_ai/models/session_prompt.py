@@ -137,9 +137,7 @@ class AISessionPrompt(models.AbstractModel):
                 'Web search: unavailable - say so plainly instead of '
                 'guessing at facts that may have moved on.'
             )
-        if self._resolve_model_for('image') and self.agent_id._admits_tool(
-            'generate_image'
-        ):
+        if self._resolve_model_for('image'):
             lines.append('Image generation: available through generate_image.')
         if self._code_interpreter_route():
             lines.append(

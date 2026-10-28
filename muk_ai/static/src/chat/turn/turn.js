@@ -36,7 +36,7 @@ export class ChatTurn extends Component {
     });
     chat = usePlugin(AIChatPlugin);
     fileViewer = useFileViewer();
-    state = proxy({ tools: {}, asks: {}, sources: false });
+    state = proxy({ tools: {}, asks: {}, picks: {}, sources: false });
     renderMarkdown = renderMarkdown;
     formatTimestamp = formatTimestamp;
     get writable() {
@@ -81,6 +81,15 @@ export class ChatTurn extends Component {
     toggleAsk(block) {
         this.state.asks[block.callId] =
             this.askMode(block) === 'human' ? 'technical' : 'human';
+    }
+    pickOption(block, option) {
+        if (block.resolution !== 'multiple') {
+            return this.props.session.answerWithOption(option);
+        }
+        const picks = this.state.picks[block.callId] || [];
+        this.state.picks[block.callId] = picks.includes(option)
+            ? picks.filter((pick) => pick !== option)
+            : [...picks, option];
     }
     askArgs(block) {
         return JSON.stringify(block.preview?.arguments || block.preview || {}, null, 2);

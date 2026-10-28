@@ -255,9 +255,23 @@
                     t-key="option_index"
                     class="btn btn-sm btn-outline-primary mk_ask_option text-start text-wrap"
                     t-att-disabled="!this.writable or !waiting or session.data.state === 'running'"
-                    t-on-click="() => session.answerWithOption(option)"
-                    t-out="option"
-                />
+                    t-att-class="{ active: this.state.picks[block.callId]?.includes(option) }"
+                    t-on-click="() => this.pickOption(block, option)"
+                >
+                    <input
+                        t-if="block.resolution === 'multiple'"
+                        type="checkbox"
+                        class="form-check-input pe-none me-1"
+                        t-att-checked="this.state.picks[block.callId]?.includes(option)"
+                    />
+                    <t t-out="option"/>
+                </button>
+                <button
+                    t-if="block.resolution === 'multiple'"
+                    class="btn btn-sm btn-primary mk_ask_send"
+                    t-att-disabled="!this.writable or !waiting or session.data.state === 'running'"
+                    t-on-click="() => session.answerWithOption(block.options.filter((option) => this.state.picks[block.callId]?.includes(option)).join(', '))"
+                >Send</button>
             </div>
             <t t-call="muk_ai.ChatMsgMeta" meta="{ at: block.at or turn.at, text: block.text, eventId: turn.eventId }"/>
         </div>
