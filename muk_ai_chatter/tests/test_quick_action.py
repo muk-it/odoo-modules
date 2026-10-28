@@ -22,7 +22,9 @@ class TestQuickAction(TransactionCase):
         self.assertIn(skill.name, [row['name'] for row in offered])
 
     def test_the_name_is_derived_from_the_label_and_kept_unique_per_owner(self):
-        Skill = self.env['muk_ai.skill']
+        Skill = self.env['muk_ai.skill'].with_user(
+            new_test_user(self.env, login='quick_action_owner')
+        )
         for label, expected in (
             ('Chase the Payment!', 'chase_the_payment'),
             ('42 reasons', 'prompt_42_reasons'),

@@ -95,7 +95,10 @@ QUnit.module('muk_ai_chatter', {}, function () {
             }),
         });
         const answers = {
-            'muk_ai.skill.fetch_skills': () => structuredClone(SKILLS),
+            'muk_ai.skill.fetch_skills': ({ args }) => {
+                calls.fetched = args;
+                return structuredClone(SKILLS);
+            },
             'muk_ai.session.open_for_composer': ({ kwargs }) => {
                 if (calls.openFails) {
                     throw new Error('no agent available');
@@ -256,13 +259,13 @@ QUnit.module('muk_ai_chatter', {}, function () {
         for (const [selection, draft, actions, modifiers] of [
             ['', '', [], 3],
             [SELECTION, DRAFT, ['Fix grammar', 'Shorten'], 0],
-            ['', DRAFT, ['Fix grammar', 'Shorten'], 0],
+            ['', DRAFT, ['Write', 'Fix grammar', 'Shorten'], 0],
         ]) {
             const { holder, target } = await mountPanel(env, selection, draft);
             assert.deepEqual(texts(target, '.mk_compose_panel_action'), actions);
             assert.containsN(target, '.mk_compose_panel_quote', draft ? 1 : 0);
             if (actions.length) {
-                await click(target, '.mk_compose_panel_action:last-child');
+                await click(target, '.mk_compose_panel_action:first-child');
             }
             assert.containsN(target, '.mk_compose_panel_length', modifiers);
             assert.containsN(target, '.mk_compose_panel_tone', modifiers);
@@ -275,6 +278,10 @@ QUnit.module('muk_ai_chatter', {}, function () {
         async (assert) => {
             const { calls, env } = await setup();
             const { target } = await mountPanel(env, '', DRAFT);
+            assert.deepEqual(calls.fetched, [
+                'composer',
+                { kind: 'record', model: 'res.partner' },
+            ]);
             assert.deepEqual(calls.opened, [
                 {
                     interface_key: 'mail_composer',
@@ -286,7 +293,7 @@ QUnit.module('muk_ai_chatter', {}, function () {
             ]);
             await pickFirst(target);
             assert.deepEqual(calls.context, [{ draft: DRAFT, selection: '' }]);
-            assert.deepEqual(calls.sent, ['Fix it.']);
+            assert.deepEqual(calls.sent, ['Reply to it.']);
         },
     );
 
