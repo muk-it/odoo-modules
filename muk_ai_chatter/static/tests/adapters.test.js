@@ -158,6 +158,21 @@ test('an answer replaces the draft unfenced and sanitized, the signature kept', 
     expect(el.lastElementChild).toHaveText('On Monday you wrote...');
 });
 
+test('a template that wraps its signature is read and replaced up to it', async () => {
+    const { el, plugins } = await setupEditor(
+        '<div data-o-mail-quote-container="1"><p>Your quotation is ready.</p>' +
+            '<div data-o-mail-quote="1">--<br>Mitchell Admin</div></div>',
+        { config: { Plugins: [...MAIN_PLUGINS, ComposeAIPlugin] } },
+    );
+    const adapter = makeEditorAdapter(plugins.get('mukAiCompose'), {});
+    expect(adapter.getDraft()).toInclude('Your quotation is ready.');
+    expect(adapter.getDraft()).not.toInclude('Mitchell Admin');
+    adapter.replaceDraft('<p>Your quotation for two desks is ready.</p>');
+    expect(el).toHaveText(
+        /^Your quotation for two desks is ready\.\s*--\s*Mitchell Admin$/,
+    );
+});
+
 test('a one-paragraph answer fills the selection inside its paragraph', async () => {
     const { el, plugins } = await setupEditor('<p>Dear [customer], thanks</p>', {
         config: { Plugins: [...MAIN_PLUGINS, ComposeAIPlugin] },

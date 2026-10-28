@@ -62,9 +62,10 @@ tool of a running session, summons nobody. A record's chatter offers no
 agents.
 
 In a chatter composer, the AI button opens the writing helper. With text
-selected it rewrites that part and shows the change as a diff; with a draft
-it reworks the whole message; with nothing written it offers a reply, a
-follow-up or a summary of the thread, with a length and a tone. Nothing
+selected it rewrites that part and shows the change as a diff; with a draft,
+such as a loaded mail template, it reworks the whole message or writes the
+reply, follow-up or summary on it as a base; with nothing written it offers
+the same, with a length and a tone. Nothing
 reaches the message until it is accepted. An instruction typed into the
 helper can be saved as a quick action. *Continue in the AI chat* hands the
 session to a chat window, whose *Use this* button puts an answer back into
