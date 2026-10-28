@@ -48,8 +48,8 @@ let closeOpenPanel = null;
 
 /**
  * The writing helper of a composer. A selection is reworded in place, a
- * draft as a whole, and an empty composer is offered what can be written from
- * the record, with a length and a tone. A rewrite is shown as a diff, and
+ * draft as a whole or written on as a base, and an empty composer is offered
+ * what can be written from the record, with a length and a tone. A rewrite is shown as a diff, and
  * nothing reaches the composer until it is accepted. One panel is open at a
  * time.
  */
@@ -107,11 +107,18 @@ export class ComposePanel extends Component {
             global: true,
         });
         onWillStart(async () => {
+            const record = this.props.adapter.getRecord();
             try {
                 this.state.skills = await this.orm.call(
                     'muk_ai.skill',
                     'fetch_skills',
-                    ['composer'],
+                    [
+                        'composer',
+                        {
+                            kind: record.resId ? 'record' : 'list',
+                            model: record.resModel || '',
+                        },
+                    ],
                 );
             } catch (error) {
                 this.reportError(error);
@@ -158,7 +165,9 @@ export class ComposePanel extends Component {
      * @returns {object[]} the actions, each carrying the skills behind it
      */
     get groups() {
-        const order = this.isRewrite ? REWRITE_CATEGORIES : ['generate'];
+        const order = this.hasSelection
+            ? REWRITE_CATEGORIES
+            : ['generate', ...(this.isRewrite ? REWRITE_CATEGORIES : [])];
         return order
             .map((category) => {
                 const skills = this.state.skills.filter(
@@ -169,7 +178,7 @@ export class ComposePanel extends Component {
                     category,
                     skills,
                     opens: !alone,
-                    modifiers: category === 'generate',
+                    modifiers: !this.isRewrite,
                     label: alone ? skills[0].label : CATEGORIES[category].label,
                     icon: alone ? skills[0].icon : CATEGORIES[category].icon,
                 };

@@ -66,6 +66,14 @@ COMPOSE_SELECTION_RULES = (
     'around it, never write the marks, and return the replacement alone.'
 ) % {'open': SELECTION_OPEN, 'close': SELECTION_CLOSE}
 
+COMPOSE_DRAFT_RULES = (
+    'The draft is the message the user has started, often from a template: '
+    'whatever you are asked, build on it. Keep its sentences and its markup '
+    'as they stand unless you are asked to change them, fill its gaps and '
+    'placeholders from the record and the conversation, add what you are '
+    'asked for where it belongs, and return the whole message.'
+)
+
 
 def compose_text_values(draft: str | None, selection: str | None) -> dict:
     """Return the draft and the selected part as a session stores them."""
@@ -83,5 +91,7 @@ def compose_addenda(session: models.BaseModel) -> list[str]:
         addenda.append(COMPOSE_SELECTION_RULES)
         addenda.append(fenced('selected_text', selection))
     if session.compose_draft:
+        if not selection:
+            addenda.append(COMPOSE_DRAFT_RULES)
         addenda.append(fenced('draft', session.compose_draft))
     return addenda

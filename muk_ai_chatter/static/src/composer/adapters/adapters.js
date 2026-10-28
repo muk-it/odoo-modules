@@ -92,8 +92,8 @@ export function makeTextComposerAdapter(composer, textarea) {
  * Drive a rich-text editor: the full mail composer, or a mail html field.
  *
  * The draft is read as cleaned HTML when the helper opens, the selection marked
- * where it sits, and ends at the signature, so a reply's quoted history and the
- * sender's signature are neither read nor replaced. An answer is sanitized and
+ * where it sits, and ends at the signature or the quoted thread, however deep a
+ * template nests them, so neither is read nor replaced. An answer is sanitized and
  * inserted as one undoable step, replacing the selection the cursor was
  * restored to.
  *
@@ -105,13 +105,16 @@ export function makeEditorAdapter(plugin, record) {
     const { baseContainer, dom, history, sanitize, selection } = plugin.dependencies;
     const picked = selection.getEditableSelection();
     const cursor = selection.preserveSelection();
-    const draftEnd = (root) => {
-        const nodes = [...root.childNodes];
-        let signature = root.querySelector('.o-signature-container');
-        while (signature && signature.parentNode !== root) {
-            signature = signature.parentNode;
+    const upToSignature = (root) => {
+        const range = new Range();
+        range.selectNodeContents(root);
+        const signature = root.querySelector(
+            '.o-signature-container, [data-o-mail-quote]',
+        );
+        if (signature) {
+            range.setEndBefore(signature);
         }
-        return { nodes, end: signature ? nodes.indexOf(signature) : nodes.length };
+        return range;
     };
     const clean = (root) => {
         plugin.dispatchTo('clean_for_save_handlers', { root });
@@ -139,8 +142,7 @@ export function makeEditorAdapter(plugin, record) {
             at.insertNode(new Text(mark));
         }
     }
-    const { nodes, end } = draftEnd(draft);
-    nodes.slice(end).forEach((node) => node.remove());
+    draft.replaceChildren(upToSignature(draft).cloneContents());
     const marked = draft.textContent.trim() ? clean(draft) : '';
     const fragmentOf = (text) => {
         const { body } = new DOMParser().parseFromString(
@@ -171,10 +173,10 @@ export function makeEditorAdapter(plugin, record) {
         applySelection: atCursor,
         applyDraft: atCursor,
         replaceDraft(text) {
-            const { nodes, end } = draftEnd(plugin.editable);
+            const range = upToSignature(plugin.editable);
+            range.deleteContents();
             const container = baseContainer.createBaseContainer();
-            plugin.editable.insertBefore(container, nodes[end] || null);
-            nodes.slice(0, end).forEach((node) => node.remove());
+            range.insertNode(container);
             selection.setSelection({ anchorNode: container, anchorOffset: 0 });
             insert(text);
         },
