@@ -80,6 +80,13 @@ class TestSkill(TransactionCase):
         self.assertEqual(
             skill._scope_requirement(), 'needs a record open, only on Contact'
         )
+        for view_context, offered in ((RECORD, True), (CURRENCY, False), (None, True)):
+            with self.subTest(view_context=view_context):
+                names = [
+                    row['name']
+                    for row in skill.fetch_skills(skill.skill_type, view_context)
+                ]
+                self.assertEqual(skill.name in names, offered)
 
     def test_a_chatter_scope_refuses_a_model_without_a_chatter(self):
         currency = [Command.set(self.currency_model.ids)]

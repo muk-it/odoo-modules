@@ -352,12 +352,20 @@ class Skill(models.Model):
     # ----------------------------------------------------------
 
     @api.model
-    def fetch_skills(self, skill_type: str) -> list[dict]:
+    def fetch_skills(
+        self, skill_type: str, view_context: dict | None = None
+    ) -> list[dict]:
         """Return the descriptors of the skills a surface offers the user.
 
         :param skill_type: the surface asking, see the ``skill_type`` field
+        :param view_context: what the surface has open, to offer only the
+            skills whose scope it satisfies
         """
         skills = self._search_visible(self.env.user, skill_type)
+        if view_context is not None:
+            skills = skills.filtered(
+                lambda skill: skill._scope_satisfied_by(view_context)
+            )
         return [skill._skill_descriptor() for skill in skills]
 
     # ----------------------------------------------------------
