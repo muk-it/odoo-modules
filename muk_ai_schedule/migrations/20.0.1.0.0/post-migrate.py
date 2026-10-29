@@ -5,10 +5,28 @@ from odoo.sql_db import Cursor
 
 from odoo.addons.base.models.ir_model import MODULE_UNINSTALL_FLAG
 
+OLD_VIEWS = (
+    'view_ai_session_search_inherit_schedule',
+    'view_ai_session_list_inherit_schedule',
+    'view_ai_session_form_inherit_schedule',
+    'view_muk_ai_schedule_search',
+    'view_muk_ai_schedule_list',
+    'view_muk_ai_schedule_kanban',
+    'view_muk_ai_schedule_form',
+)
+
 
 def migrate(cr: Cursor, version: str | None) -> None:
-    """Delete the space of scheduled chats and what is left of the schedules."""
+    """Delete the 1.x views, the space of scheduled chats and the schedules."""
     env = api.Environment(cr, SUPERUSER_ID, {})
+    views = env['ir.model.data'].search(
+        [
+            ('module', '=', 'muk_ai_schedule'),
+            ('model', '=', 'ir.ui.view'),
+            ('name', 'in', OLD_VIEWS),
+        ]
+    )
+    env['ir.ui.view'].browse(views.mapped('res_id')).unlink()
     if space := env.ref('muk_ai_schedule.space_scheduled', raise_if_not_found=False):
         space.with_context(**{MODULE_UNINSTALL_FLAG: True}).unlink()
     cr.execute(
