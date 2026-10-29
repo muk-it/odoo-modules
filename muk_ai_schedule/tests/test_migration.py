@@ -56,7 +56,7 @@ class TestMigration(TransactionCase):
         for kind in bases:
             with self.assertRaises(ValidationError):
                 self.env.ref(f'muk_ai.view_ai_session_{kind}')._check_xml()
-        load_migration('19.0.2.0.0', 'post-migrate').migrate(self.env.cr, '19.0.1.1.6')
+        load_migration('19.0.2.0.4', 'post-migrate').migrate(self.env.cr, '19.0.2.0.1')
         self.assertFalse(views.exists())
         for kind in bases:
             self.env.ref(f'muk_ai.view_ai_session_{kind}')._check_xml()
