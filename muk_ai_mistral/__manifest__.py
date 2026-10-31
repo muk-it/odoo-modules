@@ -12,7 +12,7 @@
         muk_ai providers use, and image generation as a catalogued
         image model any agent can pick.
     """,
-    'version': '20.0.1.2.4',
+    'version': '20.0.1.2.5',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',

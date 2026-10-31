@@ -248,6 +248,7 @@ class TestMistral(TestProviders):
         for label, outputs, error in (
             ('drawn', [drawn, {'type': 'message.output', 'content': '![]()'}], None),
             ('text', [{'type': 'message.output', 'content': 'a cube'}], 'text instead'),
+            ('referenced', [drawn], 'takes no reference images'),
         ):
             answer = json_response({})
             answer._content = PNG
@@ -258,7 +259,14 @@ class TestMistral(TestProviders):
             ):
                 if error:
                     with self.assertRaisesRegex(UserError, error):
-                        client.generate_image('mistral-medium-latest', 'a cube')
+                        client.generate_image(
+                            'mistral-medium-latest',
+                            'a cube',
+                            references=[{'mimetype': 'image/png', 'data_b64': PNG}]
+                            if label == 'referenced'
+                            else None,
+                        )
+                    self.assertEqual(len(posts), label != 'referenced')
                     continue
                 image = client.generate_image('mistral-medium-latest', 'a cube')
             self.assertEqual(

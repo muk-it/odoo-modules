@@ -120,13 +120,18 @@ class MistralProvider(ProviderBase):
         model: str,
         prompt: str,
         options: dict | None = None,
+        references: list[dict] | None = None,
     ) -> dict:
         """Render one image with a chat model driving the image connector.
 
         The options have no equivalent there and are not sent.
-
-        :raise UserError: when the request or download fails or no image comes back
+        :raise UserError: when the request or download fails, no image comes
+            back, or reference images are given, which the connector cannot take
         """
+        if references:
+            self._raise(
+                self.env._('Mistral image generation takes no reference images')
+            )
         payload = self._post_json(
             '/conversations',
             {
