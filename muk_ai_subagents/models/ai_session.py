@@ -823,10 +823,11 @@ class AISession(models.Model):
                 else False
             )
 
-    @api.depends('state', 'pending_ask', 'child_session_ids.state')
+    @api.depends('state', 'pending_ask', 'parent_session_id', 'child_session_ids.state')
     def _compute_awaiting_user(self) -> None:
-        """Flag a lead while a subagent asks, not while it only waits for one."""
+        """Flag a lead while a subagent asks, never the subagent, nor a paused lead."""
         super()._compute_awaiting_user()
+        self.filtered('parent_session_id').awaiting_user = False
         for record in self.filtered('child_session_ids'):
             paused = (record.pending_ask or {}).get('kind') == 'children'
             record.awaiting_user = (
