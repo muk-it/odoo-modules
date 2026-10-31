@@ -184,7 +184,16 @@ class TestSessionLimits(AITestCommon):
             {spec['name'] for spec in specs[:TOOL_VISION_MAX_IMAGES]},
         )
         self.assertNotIn('images', cleaned)
-        self.assertEqual(cleaned['text'], 'shots')
+        self.assertEqual(
+            cleaned['text'].split('\n'),
+            [
+                'shots',
+                *(
+                    f'Stored file {file.name}: odoo://attachment/{file.id}'
+                    for file in attachments
+                ),
+            ],
+        )
 
     # ----------------------------------------------------------
     # Tests: cost notice and cost errors

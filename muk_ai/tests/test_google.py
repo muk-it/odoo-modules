@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import copy
 import json
 from collections.abc import Sequence
@@ -393,7 +394,7 @@ class TestAiGoogleProvider(AITestCommon):
             captured['body']['tools'][0]['functionDeclarations'][0]['name'],
             'x',
         )
-        self.assertEqual(captured['body']['generationConfig']['maxOutputTokens'], 4096)
+        self.assertEqual(captured['body']['generationConfig']['maxOutputTokens'], 16384)
         self.assertEqual(captured['headers']['x-goog-api-key'], 'test-key')
         self.assertEqual(result['text'], 'hello')
         self.assertEqual(result['tool_calls'], [])
@@ -885,6 +886,43 @@ class TestAiGoogleProvider(AITestCommon):
         self.assertIn('```python', result['text'])
         self.assertIn('print(1)', result['text'])
         self.assertIn('1\n', result['text'])
+
+    def test_a_file_the_code_made_comes_inline_as_data(self):
+        result, _body = self._run_request(
+            self._parts_body(
+                [{'inlineData': {'mimeType': 'text/csv', 'data': 'YSxi'}}]
+            ),
+            inputs=[],
+        )
+        self.assertEqual(result['text'], '[file.csv](data:text/csv;base64,YSxi)')
+
+    def test_csv_files_reach_the_sandbox_as_data(self):
+        content = [
+            {
+                'type': 'muk_ai_attachment',
+                'attachment_id': 1,
+                'filename': 'list.csv',
+                'mimetype': 'text/csv',
+                'strategy': 'inline_text',
+                'inline_text': 'cells',
+                'data_b64': 'YSxi',
+            }
+        ]
+        for sandbox, parts in ((True, ['a,b']), (False, [])):
+            with self.subTest(sandbox=sandbox):
+                _result, body = self._run_request(
+                    self._google_body('ok'),
+                    inputs=[{'role': 'user', 'content': content}],
+                    enable_code_interpreter=sandbox,
+                )
+                self.assertEqual(
+                    [
+                        base64.b64decode(part['inlineData']['data']).decode()
+                        for part in body['contents'][0]['parts']
+                        if 'inlineData' in part
+                    ],
+                    parts,
+                )
 
     def test_function_call_carries_its_signed_part(self):
         body = self._parts_body(

@@ -704,6 +704,75 @@ class TestAiAnthropicProvider(AITestCommon):
             ],
         )
 
+    def test_the_sandbox_gets_the_chat_files_and_hands_back_its_own(self):
+        attached = {
+            'type': 'muk_ai_attachment',
+            'attachment_id': 7,
+            'filename': 'list.csv',
+            'mimetype': 'text/csv',
+            'strategy': 'inline_text',
+            'inline_text': 'a,b',
+            'data_b64': 'YSxi',
+        }
+        made = {
+            'type': 'bash_code_execution_tool_result',
+            'tool_use_id': 'srv_1',
+            'content': {
+                'type': 'bash_code_execution_result',
+                'content': [{'type': 'bash_code_execution_output', 'file_id': 'out'}],
+            },
+        }
+        refused = self._mock_http_response({}, status_code=404)
+        refused.raise_for_status.side_effect = requests.HTTPError('gone')
+        for label, uploaded in (
+            ('uploaded', self._mock_http_response({'id': 'up'})),
+            ('upload refused', refused),
+        ):
+            stream = MagicMock()
+            stream.iter_lines.return_value = iter(
+                f'data: {json.dumps(event)}'
+                for event in [
+                    *self._block_events(
+                        0, {'type': 'server_tool_use', 'id': 'srv_1', 'name': 'x'}
+                    ),
+                    *self._block_events(1, made),
+                    *self._end_events(),
+                ]
+            )
+            content = self._mock_http_response({})
+            content.content = b'a;b'
+            with (
+                self.subTest(upload=label),
+                patch.object(
+                    requests.Session, 'post', side_effect=[uploaded, stream]
+                ) as posted,
+                patch.object(
+                    requests.Session,
+                    'get',
+                    side_effect=[
+                        self._mock_http_response({'filename': 'clean.csv'}),
+                        content,
+                    ],
+                ),
+                patch.object(requests.Session, 'delete') as deleted,
+            ):
+                result = self.provider._request_responses(
+                    inputs=[{'role': 'user', 'content': [attached]}],
+                    enable_code_interpreter=True,
+                    on_delta=lambda kind, payload: None,
+                )
+            self.assertEqual(result['text'], '[clean.csv](data:text/csv;base64,YTti)')
+            self.assertEqual(
+                posted.call_args_list[1].kwargs['json']['messages'][-1]['content'][-1][
+                    'type'
+                ],
+                'container_upload' if label == 'uploaded' else 'text',
+            )
+            self.assertEqual(
+                [call.args[0].rsplit('/', 1)[-1] for call in deleted.call_args_list],
+                ['out', 'up'] if label == 'uploaded' else ['out'],
+            )
+
     def test_text_after_a_server_tool_starts_a_new_paragraph(self):
         text = {'type': 'text', 'text': ''}
         result, deltas = self._stream_events(

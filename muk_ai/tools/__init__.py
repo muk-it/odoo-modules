@@ -57,7 +57,7 @@ from .attachment import (
     DEFAULT_MAX_UPLOAD_BYTES,
     DEFAULT_TEXT_INLINE_LIMIT_KB,
     IMAGE_MIMETYPES,
-    INLINE_IMAGE_RE,
+    INLINE_FILE_RE,
     PDF_MIMETYPE,
     TEXT_MIMETYPES,
     TOOL_VISION_MAX_B64_CHARS,
@@ -86,6 +86,7 @@ from .url_fetch import (
     WEB_FETCH_MAX_CHARS,
     FetchResult,
     fetch_url,
+    is_file,
     page_icon,
     render_content,
 )

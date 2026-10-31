@@ -39,7 +39,7 @@ from odoo.addons.muk_ai.tools import (
     DISPATCH_MAX_TURNS,
     GC_SESSION_BATCH,
     IMAGE_MIMETYPES,
-    INLINE_IMAGE_RE,
+    INLINE_FILE_RE,
     ITERATION_WARNING_ROUNDS,
     MAX_ITERATIONS,
     MAX_TOOL_CALLS_PER_ROUND,
@@ -718,9 +718,20 @@ class AISession(models.Model):
         if self._tool_source_enabled('code_interpreter') and (
             agent._code_interpreter_route()
         ):
+            files = (
+                'The files of the chat are in the sandbox: list its files to '
+                'find them and read them with code instead of retyping their data.'
+                if agent._resolve_provider()._get_client().sandbox_files
+                else 'The sandbox cannot open the files of the chat: work from '
+                'their text.'
+            )
             lines.append(
                 'Code interpreter: provider-side sandboxed Python, for '
-                'analytics over data you already fetched.'
+                f'analytics over data you already fetched. {files} Write what you '
+                'make there as files, they reach the user as downloads; never '
+                'retype their content into a tool such as upload_file. Print '
+                'only what you need to check, a few rows and the counts, and do '
+                'not repeat a file in your answer: link it and say what changed.'
             )
         return lines
 
@@ -2480,71 +2491,50 @@ class AISession(models.Model):
             if record:
                 self._accrue_model_usage(record, block['usage'], booked=True)
 
-    def _persist_inline_images(self, text: str, cache: dict | None = None) -> str:
-        """Replace inline base64 images with stored attachment references."""
-        if text and 'data:image/' in text:
-            if cache is None:
-                cache = {}
+    def _persist_inline_images(self, value, cache: dict | None = None) -> object:
+        """Store the base64 images and files inlined in the texts of a value.
 
-            def _replace(match):
-                alt = match.group(1) or 'generated.png'
-                mimetype = match.group(2)
-                b64 = re.sub(r'\s+', '', match.group(3))
-                if cached := cache.get(b64):
-                    attachment_id = cached
-                else:
-                    try:
-                        attachment = (
-                            self.env['ir.attachment']
-                            .sudo()
-                            ._ai_create_from_upload(
-                                alt or 'generated.png',
-                                mimetype,
-                                b64,
-                                res_id=self.id,
-                            )
-                        )
-                    except Exception:
-                        return match.group(0)
-                    attachment_id = attachment.id
-                    cache[b64] = attachment_id
+        Each is linked in its place; lists and dicts are walked to every text.
+        :param cache: attachment ids of the files stored this round, by data
+        """
+        if cache is None:
+            cache = {}
+        if isinstance(value, list):
+            return [self._persist_inline_images(item, cache) for item in value]
+        if isinstance(value, dict):
+            return {
+                key: self._persist_inline_images(item, cache)
+                for key, item in value.items()
+            }
+        if not isinstance(value, str):
+            return value
+
+        def store(match: re.Match) -> str:
+            """Store one inline file and return the reference replacing it."""
+            image, mimetype = match.group(1), match.group(3)
+            name = match.group(2) or ('generated.png' if image else 'download')
+            data = re.sub(r'\s+', '', match.group(4))
+            if data not in cache:
+                try:
+                    cache[data] = (
+                        self.env['ir.attachment']
+                        .sudo()
+                        ._ai_store_binary(name, mimetype, data, res_id=self.id)
+                        .id
+                    )
+                except UserError:
+                    return match.group(0)
+            if image:
                 return (
-                    f'![{alt}](/web/image/{attachment_id}) '
-                    f'_(attachment {attachment_id} — to set on a record use '
-                    f'`image_1920="@attachment:{attachment_id}"`)_'
+                    f'![{name}](/web/image/{cache[data]}) _(attachment {cache[data]} - '
+                    f'to set on a record use `image_1920="@attachment:{cache[data]}"`)_'
                 )
+            return (
+                f'[{name}](/web/content/{cache[data]}?download=true) _(attachment '
+                f'{cache[data]} - to store on a record use `"@attachment:{cache[data]}"`)_'
+            )
 
-            return INLINE_IMAGE_RE.sub(_replace, text)
-        return text
-
-    def _persist_inline_images_in_carry(self, items: list | None, cache: dict) -> list:
-        """Persist inline images inside carried conversation items."""
-        out = []
-        for item in items or []:
-            if isinstance(item, dict) and isinstance(
-                content := item.get('content'), list
-            ):
-                out.append(
-                    {
-                        **item,
-                        'content': [
-                            {
-                                **c,
-                                'text': self._persist_inline_images(
-                                    c['text'], cache=cache
-                                ),
-                            }
-                            if isinstance(c, dict)
-                            and isinstance(c.get('text'), str)
-                            and 'data:image/' in c['text']
-                            else c
-                            for c in content
-                        ],
-                    }
-                )
-            else:
-                out.append(item)
-        return out
+        return INLINE_FILE_RE.sub(store, value)
 
     def _vision_enabled(self) -> bool:
         """Return whether the effective provider can consume image inputs."""
@@ -2676,17 +2666,21 @@ class AISession(models.Model):
                 }
             )
         cleaned = self._strip_tool_files(result)
+        for file in attachments:
+            cleaned = self._append_note(
+                cleaned, f'Stored file {file.name}: odoo://attachment/{file.id}'
+            )
         if not (attachments and self._vision_enabled()):
-            return empty, self._note_vision_unavailable(cleaned)
+            return empty, self._append_note(
+                cleaned,
+                'Note: files were produced but cannot be shown to this model; '
+                'rely on the textual/structural result instead.',
+            )
         return attachments, cleaned
 
     @staticmethod
-    def _note_vision_unavailable(cleaned) -> object:
-        """Append a note when a tool's files could not be shown to the model."""
-        note = (
-            'Note: files were produced but cannot be shown to this model; '
-            'rely on the textual/structural result instead.'
-        )
+    def _append_note(cleaned, note: str) -> object:
+        """Tell the model ``note`` inside a tool result."""
         if isinstance(cleaned, dict):
             text = cleaned.get('text')
             return {**cleaned, 'text': f'{text}\n{note}' if text else note}
@@ -2917,20 +2911,18 @@ class AISession(models.Model):
         )
 
     def _accrue_round_payload(self, payload: dict) -> None:
-        """Accrue usage and persist text and carried inputs from a round."""
+        """Accrue usage and persist text and carried inputs from a round.
+
+        Images and files inlined as base64 are stored once and linked in both.
+        """
         usage = payload.get('usage') or {}
         self._accrue_usage(usage)
-        image_cache = {}
-        if (text := payload.get('text')) and 'data:image/' in text:
-            text = self._persist_inline_images(text, cache=image_cache)
-            payload['text'] = text
-        if text:
-            self.last_text = text
+        cache = {}
+        if text := self._persist_inline_images(payload.get('text') or '', cache):
+            payload['text'] = self.last_text = text
             self._append_event({'kind': 'text', 'content': text})
         self._extend_conversation(
-            self._persist_inline_images_in_carry(
-                payload.get('carry_inputs') or [], image_cache
-            ),
+            self._persist_inline_images(payload.get('carry_inputs') or [], cache),
         )
 
     def _finalize_round(self, payload: dict) -> None:
