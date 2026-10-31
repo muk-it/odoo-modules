@@ -18,7 +18,7 @@ import { registry } from '@web/core/registry';
 import { debounce } from '@web/core/utils/timing';
 
 import { AIChatPlugin } from '@muk_ai/core/chat_plugin/chat_plugin';
-import { formatShortTimestamp, statusInfo } from '@muk_ai/core/utils/utils';
+import { agentImage, formatShortTimestamp, statusInfo } from '@muk_ai/core/utils/utils';
 import { agentSuggestions } from '@muk_ai/chat/conversation/conversation';
 
 /**
@@ -35,6 +35,7 @@ export class MukAISystray extends Component {
     state = proxy({ ids: [], loaded: false, record: null, actions: [] });
     sessionLimit = 8;
     statusInfo = statusInfo;
+    agentImage = agentImage;
     formatShortTimestamp = formatShortTimestamp;
     hotkey = isMacOS() ? 'Ctrl+Shift+B' : 'Alt+Shift+B';
     setup() {
@@ -82,14 +83,6 @@ export class MukAISystray extends Component {
     get recordTitle() {
         const { display_name: name } = this.state.record;
         return name ? _t('Ask about %s', name) : _t('Ask about this record');
-    }
-    /**
-     * Return the image of an agent.
-     * @param {number} agentId the agent
-     * @returns {string} the image route
-     */
-    agentImage(agentId) {
-        return `/web/image/muk_ai.agent/${agentId || 0}/image_128`;
     }
     /**
      * Return the line under a chat: its error, its progress or its last answer.

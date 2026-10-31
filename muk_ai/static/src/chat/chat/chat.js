@@ -18,6 +18,7 @@ import { registry } from '@web/core/registry';
 import { UIPlugin } from '@web/core/ui/ui_plugin';
 
 import { AIChatPlugin, useAISession } from '@muk_ai/core/chat_plugin/chat_plugin';
+import { agentImage } from '@muk_ai/core/utils/utils';
 import { ArtifactsPanel } from '@muk_ai/chat/artifacts/artifacts';
 import { ContextChip } from '@muk_ai/chat/context_chip/context_chip';
 import {
@@ -44,6 +45,7 @@ export class AIChat extends Component {
         SessionStatus,
     };
     props = useProps();
+    agentImage = agentImage;
     chat = usePlugin(AIChatPlugin);
     ui = usePlugin(UIPlugin);
     main = signal.ref();

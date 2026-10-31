@@ -6759,3 +6759,15 @@ msgstr "Abrir todos los chats"
 #: code:addons/muk_ai/static/src/webclient/systray/systray.js:0
 msgid "Working..."
 msgstr "Trabajando ..."
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat/chat.xml:0
+msgid "More"
+msgstr "Más"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat/chat.xml:0
+msgid "Search"
+msgstr "Buscar"

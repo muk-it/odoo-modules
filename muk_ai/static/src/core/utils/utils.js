@@ -27,6 +27,15 @@ const STATUS = {
 };
 
 /**
+ * Return the image of an agent.
+ * @param {number} agentId the agent
+ * @returns {string} the image route
+ */
+export function agentImage(agentId) {
+    return `/web/image/muk_ai.agent/${agentId || 0}/image_128`;
+}
+
+/**
  * Describe a session state for display.
  * @param {string} status session state code
  * @returns {object} `{label, icon, cls, spin}`, the new state for an unknown code

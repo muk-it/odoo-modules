@@ -55,6 +55,11 @@
             border-color: var(--mk-accent);
         }
     }
+    .mk_agent_pill_icon {
+        width: 16px;
+        height: 16px;
+        object-fit: cover;
+    }
     .mk_chat_body,
     .mk_main {
         min-height: 0;
@@ -77,8 +82,10 @@
         z-index: 15;
     }
     @include media-breakpoint-down(lg) {
-        .mk_main_header .mk_main_title {
+        .mk_main_heading {
             flex: 1 1 0;
+        }
+        .mk_main_header .mk_main_title {
             font-size: 0.88rem;
         }
         .mk_agent_pill {
@@ -87,32 +94,70 @@
     }
     @include media-breakpoint-down(md) {
         .mk_main_header {
-            flex-wrap: wrap;
-            gap: 0.25rem 0.35rem !important;
-            min-height: 48px;
             padding: 0.4rem 0.6rem;
-            .mk_main_title {
-                flex: 1 1 8rem;
+            .mk_header_btn {
+                width: 32px;
+                height: 32px;
+                font-size: 19px;
             }
         }
-        .mk_header_tools {
-            flex: 1 0 100%;
-            margin-left: 0 !important;
-        }
-        .mk_header_handover {
-            margin-left: auto;
-        }
+        .mk_header_agent,
         .mk_avatar {
-            width: 26px;
-            height: 26px;
-            font-size: 0.75rem;
+            width: 30px;
+            height: 30px;
+        }
+        .mk_header_agent {
+            object-fit: cover;
+        }
+        .mk_main_heading {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 0 !important;
+            line-height: 1.3;
+        }
+        .mk_main_heading .mk_main_title {
+            max-width: 100%;
+            font-size: 0.95rem;
         }
         .mk_agent_pill {
-            max-width: 120px;
-            padding: 2px 6px;
-            > span {
+            max-width: 100%;
+            padding: 0;
+            border: 0;
+            background: none;
+            color: var(--secondary-color) !important;
+            font-weight: 400 !important;
+            font-size: 0.78rem;
+            .mk_agent_pill_icon {
                 display: none;
             }
         }
+    }
+}
+.mk_agent_menu {
+    width: 380px;
+    max-width: calc(100vw - 16px);
+    .dropdown-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.6rem;
+        white-space: normal;
+    }
+    .mk_agent_option_icon {
+        flex: 0 0 28px;
+        width: 28px;
+        height: 28px;
+        object-fit: cover;
+    }
+    .oi.mk_agent_option_icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+    }
+    .mk_agent_option_text {
+        display: -webkit-box;
+        overflow: hidden;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
     }
 }

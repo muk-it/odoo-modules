@@ -12,18 +12,34 @@
                 >
                     <i class="oi" t-att-data-icon="this.state.sidebarHidden ? 'left_panel_open' : 'left_panel_close'"/>
                 </button>
-                <SessionStatus t-if="session" session="session"/>
-                <span class="mk_main_title text-truncate fw-medium min-w-0">
-                    <t t-if="session?.data.name" t-out="session.data.name"/>
-                    <t t-else="">MuK AI Chat</t>
-                </span>
-                <t t-if="session">
-                    <Dropdown disabled="session.readonly or !this.chat.agents().length">
+                <img
+                    t-if="session?.data.agent_id and this.ui.isSmall()"
+                    class="mk_header_agent flex-shrink-0 rounded-circle"
+                    t-att-src="this.agentImage(session.data.agent_id[0])"
+                    t-att-alt="session.agentName"
+                />
+                <SessionStatus t-elif="session" session="session"/>
+                <div class="mk_main_heading d-flex align-items-center gap-2 min-w-0">
+                    <span class="mk_main_title text-truncate fw-medium min-w-0">
+                        <t t-if="session?.data.name" t-out="session.data.name"/>
+                        <t t-else="">MuK AI Chat</t>
+                    </span>
+                    <Dropdown
+                        t-if="session"
+                        disabled="session.readonly or !this.chat.agents().length"
+                        menuClass="'mk_agent_menu'"
+                    >
                         <button
                             class="btn btn-sm mk_agent_pill rounded-pill d-inline-flex align-items-center gap-1 text-body fw-medium lh-sm"
                             t-att-title="this.agentTitle"
                         >
-                            <i class="oi" data-icon="account_circle"/>
+                            <img
+                                t-if="session.data.agent_id"
+                                class="mk_agent_pill_icon rounded-circle"
+                                t-att-src="this.agentImage(session.data.agent_id[0])"
+                                alt=""
+                            />
+                            <i t-else="" class="oi mk_agent_pill_icon" data-icon="account_circle"/>
                             <span class="text-truncate">
                                 <t t-if="session.agentName" t-out="session.agentName"/>
                                 <t t-else="">No agent</t>
@@ -38,48 +54,75 @@
                                 class="{ active: session.data.agent_id?.[0] === agent.id }"
                                 onSelected="() => session.setAgent(agent.id)"
                             >
-                                <div class="fw-semibold" t-out="agent.name"/>
-                                <small t-if="agent.description" class="text-muted" t-out="agent.description"/>
+                                <img class="mk_agent_option_icon rounded-circle" t-att-src="this.agentImage(agent.id)" alt=""/>
+                                <span class="min-w-0">
+                                    <span class="d-block fw-semibold" t-out="agent.name"/>
+                                    <small t-if="agent.description" class="mk_agent_option_text text-muted" t-out="agent.description"/>
+                                </span>
                             </DropdownItem>
-                            <DropdownItem class="{ active: !session.data.agent_id }" onSelected="() => session.setAgent(null)">
+                            <DropdownItem class="{ active: !session.data.agent_id, 'align-items-center': true }" onSelected="() => session.setAgent(null)">
+                                <i class="oi mk_agent_option_icon text-muted" data-icon="account_circle"/>
                                 <span class="text-muted fst-italic">No agent (defaults)</span>
                             </DropdownItem>
                         </t>
                     </Dropdown>
+                </div>
+                <t t-if="session">
                     <i t-if="session.state.loading" class="oi oi-spin text-muted" data-icon="progress_activity" title="Loading session"/>
                     <div class="mk_header_tools d-flex align-items-center gap-1 ms-auto">
                         <ContextChip t-if="!this.ui.isSmall()" session="session"/>
-                        <button
-                            class="btn btn-link btn-sm mk_header_btn d-inline-flex align-items-center justify-content-center p-0 border-0 rounded-3"
-                            t-att-class="{ active: this.state.searchOpen }"
-                            title="Search this chat"
-                            t-on-click="() => this.state.searchOpen = !this.state.searchOpen"
-                        >
-                            <i class="oi" data-icon="search"/>
-                        </button>
-                        <button
-                            class="btn btn-link btn-sm mk_header_btn d-inline-flex align-items-center justify-content-center p-0 border-0 rounded-3"
-                            t-att-class="{ active: !this.state.artifactsHidden }"
-                            title="Toggle artifacts panel"
-                            t-on-click="() => this.toggleArtifacts()"
-                        >
-                            <i class="oi" data-icon="attach_file"/>
-                        </button>
-                        <button
-                            t-if="!session.readonly"
-                            class="btn btn-link btn-sm mk_header_btn mk_header_handover d-inline-flex align-items-center justify-content-center p-0 border-0 rounded-3"
-                            title="Hand over this chat to another user"
-                            t-on-click="() => session.openHandoverPicker()"
-                        >
-                            <i class="oi" data-icon="forward"/>
-                        </button>
-                        <button
-                            class="btn btn-link btn-sm mk_header_btn d-none d-md-inline-flex align-items-center justify-content-center p-0 border-0 rounded-3"
-                            title="Pop out chat to a floating window"
-                            t-on-click="() => this.chat.openWindow(session.id)"
-                        >
-                            <i class="oi" data-icon="open_in_new"/>
-                        </button>
+                        <Dropdown t-if="this.ui.isSmall()" position="'bottom-end'">
+                            <button
+                                class="btn btn-link btn-sm mk_header_btn d-inline-flex align-items-center justify-content-center p-0 border-0 rounded-3"
+                                title="More"
+                            >
+                                <i class="oi" data-icon="more_vert"/>
+                            </button>
+                            <t t-set-slot="content">
+                                <DropdownItem onSelected="() => this.state.searchOpen = !this.state.searchOpen">
+                                    <i class="oi me-2" data-icon="search"/>Search
+                                </DropdownItem>
+                                <DropdownItem onSelected="() => this.toggleArtifacts()">
+                                    <i class="oi me-2" data-icon="attach_file"/>Artifacts
+                                </DropdownItem>
+                                <DropdownItem t-if="!session.readonly" onSelected="() => session.openHandoverPicker()">
+                                    <i class="oi me-2" data-icon="forward"/>Hand over
+                                </DropdownItem>
+                            </t>
+                        </Dropdown>
+                        <t t-else="">
+                            <button
+                                class="btn btn-link btn-sm mk_header_btn d-inline-flex align-items-center justify-content-center p-0 border-0 rounded-3"
+                                t-att-class="{ active: this.state.searchOpen }"
+                                title="Search this chat"
+                                t-on-click="() => this.state.searchOpen = !this.state.searchOpen"
+                            >
+                                <i class="oi" data-icon="search"/>
+                            </button>
+                            <button
+                                class="btn btn-link btn-sm mk_header_btn d-inline-flex align-items-center justify-content-center p-0 border-0 rounded-3"
+                                t-att-class="{ active: !this.state.artifactsHidden }"
+                                title="Toggle artifacts panel"
+                                t-on-click="() => this.toggleArtifacts()"
+                            >
+                                <i class="oi" data-icon="attach_file"/>
+                            </button>
+                            <button
+                                t-if="!session.readonly"
+                                class="btn btn-link btn-sm mk_header_btn mk_header_handover d-inline-flex align-items-center justify-content-center p-0 border-0 rounded-3"
+                                title="Hand over this chat to another user"
+                                t-on-click="() => session.openHandoverPicker()"
+                            >
+                                <i class="oi" data-icon="forward"/>
+                            </button>
+                            <button
+                                class="btn btn-link btn-sm mk_header_btn d-inline-flex align-items-center justify-content-center p-0 border-0 rounded-3"
+                                title="Pop out chat to a floating window"
+                                t-on-click="() => this.chat.openWindow(session.id)"
+                            >
+                                <i class="oi" data-icon="open_in_new"/>
+                            </button>
+                        </t>
                     </div>
                 </t>
             </div>
