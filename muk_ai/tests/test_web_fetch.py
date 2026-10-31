@@ -11,6 +11,7 @@ from odoo.addons.muk_ai.tests.common import (
 )
 from odoo.addons.muk_ai.tools.url_fetch import WEB_FETCH_MAX_CHARS, FetchResult
 from odoo.addons.muk_mcp.core.tool import get_tool_index
+from odoo.addons.muk_mcp.tools.protocol import ToolResult
 
 
 class TestWebFetchTool(AITestCommon):
@@ -140,6 +141,7 @@ class TestWebFetchTool(AITestCommon):
                 ):
                     result = self.env['muk_mcp.mixin']._mcp_web_fetch(url=url)
                 if isinstance(content, list):
+                    self.assertIsInstance(result, ToolResult)
                     self.assertEqual(result['content'], content)
                 else:
                     self.assertIn(content, result['content'])
