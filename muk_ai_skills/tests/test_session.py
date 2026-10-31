@@ -115,18 +115,22 @@ class TestSkillSession(AITestCommon):
         self.assertIn('not available', self._tool_output(session, 'c3')['error'])
 
     def test_a_slash_command_asks_runs_the_skill_then_replies(self):
-        for user_input, asked, argument in (
-            ('product xy', 'product xy', 'product xy'),
-            ('   ', 'Demo', None),
+        listed = self.env['ir.attachment'].create({'name': 'list.txt', 'raw': b'a,b'})
+        for user_input, files, asked, argument in (
+            ('product xy', listed, 'product xy', 'product xy'),
+            ('   ', self.env['ir.attachment'], 'Demo', None),
         ):
             with self.subTest(user_input=user_input):
                 session = self._chat()
                 with self._mock_responses([text_payload('Acknowledged.')]) as requests:
-                    session.invoke_skill_from_chat('demo', user_input=user_input)
+                    session.invoke_skill_from_chat(
+                        'demo', user_input=user_input, attachment_ids=files.ids
+                    )
                 self.assertEqual(
                     (session.state, session.last_text, session.name),
                     ('done', 'Acknowledged.', 'Demo'),
                 )
+                self.assertEqual(session.attachment_ids, files)
                 kinds = [event['kind'] for event in self._events(session)]
                 self.assertEqual(
                     kinds[:3], ['user_message', 'tool_call', 'tool_result']

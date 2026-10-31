@@ -135,10 +135,15 @@ class AISession(models.Model):
     # Functions
     # ----------------------------------------------------------
 
-    def invoke_skill_from_chat(self, name: str, user_input: str | None = None) -> dict:
+    def invoke_skill_from_chat(
+        self,
+        name: str,
+        user_input: str | None = None,
+        attachment_ids: list[int] | None = None,
+    ) -> dict:
         """Run a skill the user picked as if the agent had invoked it, then reply.
 
-        :param user_input: optional free text sent along as a user message
+        :param user_input: free text and files sent along as a user message
         :raise AccessError: when the caller may only read the session
         :raise UserError: when the session is busy or the skill is unavailable
         """
@@ -156,7 +161,9 @@ class AISession(models.Model):
         if not self.conversation and self._should_autoname():
             self.write({'name': skill.display_name, 'user_named': False})
             self._publish_event('rename', {'name': skill.display_name})
-        self._enqueue_user_turn(text or skill.display_name, self.env['ir.attachment'])
+        self._enqueue_user_turn(
+            text or skill.display_name, self._resolve_attachments(attachment_ids)
+        )
         self._extend_conversation(
             [
                 {

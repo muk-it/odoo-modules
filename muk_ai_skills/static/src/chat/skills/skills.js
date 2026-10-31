@@ -50,13 +50,17 @@ export function recentSkillNames() {
  * @param {object} session the chat
  * @param {string} name the technical name of the skill
  * @param {string} [userInput] free text sent along with it
+ * @param {Array} [attachments] attachment descriptors sent along with it
  */
-export async function invokeSkill(session, name, userInput = '') {
+export async function invokeSkill(session, name, userInput = '', attachments = []) {
     const snapshot = await session.run(
         'invoke_skill_from_chat',
         [name],
         _t('Failed to invoke skill'),
-        { user_input: userInput || false },
+        {
+            user_input: userInput || false,
+            attachment_ids: attachments.map((attachment) => attachment.id),
+        },
     );
     if (snapshot) {
         const names = [name, ...recentSkillNames().filter((n) => n !== name)];
@@ -77,8 +81,9 @@ sessionSendRoutes.add('muk_ai_skills', async (session, text) => {
     if (!skill) {
         return false;
     }
-    session.state.input = '';
-    await invokeSkill(session, skill.name, rest.join(' '));
+    const attachments = session.state.attachments;
+    Object.assign(session.state, { input: '', attachments: [] });
+    await invokeSkill(session, skill.name, rest.join(' '), attachments);
     return true;
 });
 
