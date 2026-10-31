@@ -65,25 +65,38 @@ class TestImageRefPersistence(AITestCommon):
     # Persist
     # ----------------------------------------------------------
 
-    def test_inline_image_is_persisted_as_attachment(self):
-        text = f'Here you go: ![generated.png](data:image/png;base64,{PNG_1x1_RED})'
-        before = self._count_session_attachments()
-        new_text = self.session._persist_inline_images(text)
-        after = (
-            self.env['ir.attachment']
-            .sudo()
-            .search(
-                [
-                    ('res_model', '=', 'muk_ai.session'),
-                    ('res_id', '=', self.session.id),
-                ]
-            )
-        )
-        self.assertEqual(len(after) - before, 1)
-        attachment = after[-1]
-        self.assertIn(f'/web/image/{attachment.id}', new_text)
-        self.assertIn(f'@attachment:{attachment.id}', new_text)
-        self.assertNotIn('data:image/png;base64,', new_text)
+    def test_inline_image_or_file_is_persisted_as_attachment(self):
+        for text, mimetype, link in (
+            (
+                f'Here you go: ![generated.png](data:image/png;base64,{PNG_1x1_RED})',
+                'image/png',
+                '/web/image/{}',
+            ),
+            (
+                'Here you go: [list.csv](data:text/csv;base64,YSxiCjEsMgo=)',
+                'text/csv',
+                '/web/content/{}?download=true',
+            ),
+        ):
+            with self.subTest(mimetype=mimetype):
+                before = self._count_session_attachments()
+                new_text = self.session._persist_inline_images(text)
+                after = (
+                    self.env['ir.attachment']
+                    .sudo()
+                    .search(
+                        [
+                            ('res_model', '=', 'muk_ai.session'),
+                            ('res_id', '=', self.session.id),
+                        ]
+                    )
+                )
+                self.assertEqual(len(after) - before, 1)
+                attachment = after[0]
+                self.assertEqual(attachment.mimetype, mimetype)
+                self.assertIn(link.format(attachment.id), new_text)
+                self.assertIn(f'@attachment:{attachment.id}', new_text)
+                self.assertNotIn('base64,', new_text)
 
     def test_persist_caches_duplicate_blobs(self):
         text = (
@@ -91,7 +104,7 @@ class TestImageRefPersistence(AITestCommon):
             f'B: ![b.png](data:image/png;base64,{PNG_1x1_RED})'
         )
         before = self._count_session_attachments()
-        new_text = self.session._persist_inline_images(text, cache={})
+        new_text = self.session._persist_inline_images(text, {})
         after = self._count_session_attachments()
         self.assertEqual(after - before, 1)
         self.assertIn('/web/image/', new_text)
@@ -106,8 +119,8 @@ class TestImageRefPersistence(AITestCommon):
         ]
         before = self._count_session_attachments()
         cache = {}
-        new_text = self.session._persist_inline_images(b64_text, cache=cache)
-        new_carry = self.session._persist_inline_images_in_carry(carry, cache)
+        new_text = self.session._persist_inline_images(b64_text, cache)
+        new_carry = self.session._persist_inline_images(carry, cache)
         after = self._count_session_attachments()
         self.assertEqual(after - before, 1)
         carry_text = new_carry[0]['content'][0]['text']

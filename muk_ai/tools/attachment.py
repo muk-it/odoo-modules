@@ -67,8 +67,9 @@ PDF_MIMETYPE = 'application/pdf'
 # Reference Patterns
 # ----------------------------------------------------------
 
-INLINE_IMAGE_RE = re.compile(
-    r'!\[([^\]]*)\]\(data:(image/[a-zA-Z0-9.+-]+);base64,([A-Za-z0-9+/=\s]+)\)'
+INLINE_FILE_RE = re.compile(
+    r'(!?)\[([^\]]*)\]\(data:([a-zA-Z0-9.+-]+/[a-zA-Z0-9.+-]+);base64,'
+    r'([A-Za-z0-9+/=\s]+)\)'
 )
 SCRIPT_RE = re.compile(r'<script\b.*?</script\s*>', re.IGNORECASE | re.DOTALL)
 ATTACHMENT_REF_RE = re.compile(r'^@attachment:(\d+)$')
