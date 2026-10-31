@@ -172,13 +172,17 @@ class TestToolVision(AITestCommon):
         outputs = self._outputs_for(session, 'c0')
         self.assertEqual(len(outputs), 1)
         cleaned = json.loads(outputs[0]['output'])
-        self.assertEqual(cleaned['text'], 'Captured desktop 1280')
         self.assertNotIn('images', cleaned)
         entry = self._vision_entry_after(session, outputs[0])
         self.assertIsNotNone(entry)
         blocks = [b for b in entry['content'] if b['type'] == 'muk_ai_attachment']
         self.assertEqual(len(blocks), 1)
         attachment = self.env['ir.attachment'].browse(blocks[0]['attachment_id'])
+        self.assertEqual(
+            cleaned['text'],
+            'Captured desktop 1280\nStored file desktop: '
+            f'odoo://attachment/{attachment.id}',
+        )
         self.assertEqual(attachment.mimetype, 'image/png')
         self.assertEqual(attachment.res_model, 'muk_ai.session')
         self.assertEqual(attachment.res_id, session.id)
@@ -256,6 +260,12 @@ class TestToolVision(AITestCommon):
                 self.assertNotIn(PNG_B64, output['output'])
                 self.assertIn('odoo://attachment/1', output['output'])
                 self.assertEqual('cannot be shown' in output['output'], not shown)
+                files = self.env['ir.attachment'].search(
+                    [('res_model', '=', 'muk_ai.session'), ('res_id', '=', session.id)]
+                )
+                self.assertEqual(output['output'].count('Stored file'), len(files))
+                for file in files:
+                    self.assertIn(f'odoo://attachment/{file.id}', output['output'])
                 entry = self._vision_entry_after(session, output) or {}
                 blocks = [
                     block

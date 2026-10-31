@@ -1,8 +1,14 @@
+import base64
 from unittest.mock import patch
 
 from odoo.exceptions import UserError
 
-from odoo.addons.muk_ai.tests.common import HTML_PAGE, AITestCommon, html_result
+from odoo.addons.muk_ai.tests.common import (
+    HTML_PAGE,
+    AITestCommon,
+    PNG_1x1,
+    html_result,
+)
 from odoo.addons.muk_ai.tools.url_fetch import WEB_FETCH_MAX_CHARS, FetchResult
 from odoo.addons.muk_mcp.core.tool import get_tool_index
 
@@ -99,6 +105,44 @@ class TestWebFetchTool(AITestCommon):
                 mode='bogus',
             )
         self.assertIn('# Heading', result['content'])
+
+    def test_a_file_comes_back_as_the_file_itself(self):
+        url = 'https://example.com/payload'
+        for content_type, body, content in (
+            (
+                'image/png',
+                base64.b64decode(PNG_1x1),
+                [{'type': 'image', 'data': PNG_1x1, 'mimeType': 'image/png'}],
+            ),
+            (
+                'application/pdf',
+                b'%PDF-1.4',
+                [
+                    {
+                        'type': 'resource',
+                        'resource': {
+                            'uri': url,
+                            'mimeType': 'application/pdf',
+                            'name': 'payload',
+                            'blob': 'JVBERi0xLjQ=',
+                        },
+                    }
+                ],
+            ),
+            ('application/zip', b'PK', 'not rendered as text'),
+        ):
+            with self.subTest(content_type=content_type):
+                fetched = FetchResult(
+                    url=url, body=body, content_type=content_type, charset=None
+                )
+                with patch(
+                    'odoo.addons.muk_ai.mcp.web.fetch_url', return_value=fetched
+                ):
+                    result = self.env['muk_mcp.mixin']._mcp_web_fetch(url=url)
+                if isinstance(content, list):
+                    self.assertEqual(result['content'], content)
+                else:
+                    self.assertIn(content, result['content'])
 
     def test_fetch_error_returned_not_raised(self):
         with patch(

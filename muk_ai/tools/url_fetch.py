@@ -255,6 +255,18 @@ def _is_html(result: FetchResult) -> bool:
     )
 
 
+def is_file(result: FetchResult) -> bool:
+    """Return whether a fetched payload is a file rather than a page or a text."""
+    mime = result.content_type
+    return bool(mime) and not (
+        _is_html(result)
+        or 'json' in mime
+        or mime.startswith('text/')
+        or 'xml' in mime
+        or 'javascript' in mime
+    )
+
+
 def page_icon(result: FetchResult) -> str | None:
     """Return the favicon a fetched HTML page declares, or ``None``.
 
@@ -296,7 +308,7 @@ def render_content(
         return title, (markdown or html2plaintext(text) or text.strip())
     if 'json' in mime:
         return None, _pretty_json(text)
-    if not mime or mime.startswith('text/') or 'xml' in mime or 'javascript' in mime:
+    if not is_file(result):
         return None, text.strip()
     return None, f'[{mime} content — {len(result.body)} bytes, not rendered as text]'
 
