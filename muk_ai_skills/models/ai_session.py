@@ -194,11 +194,16 @@ class AISession(models.Model):
             for skill in skills
         ]
 
-    def invoke_skill_from_chat(self, name: str, user_input: str | None = None) -> dict:
+    def invoke_skill_from_chat(
+        self,
+        name: str,
+        user_input: str | None = None,
+        attachment_ids: list[int] | None = None,
+    ) -> dict:
         """Ask for a skill as a user turn, inject its invocation and run the LLM.
 
-        A fresh chat is named after the skill; ``user_input`` is the request
-        sent with it, else the skill label.
+        A fresh chat is named after the skill; ``user_input`` and the
+        ``attachment_ids`` files are sent with it, the label when there is no text.
         :raise UserError: when the session is busy or the skill is invalid
         """
         self._recover_if_stuck()
@@ -225,7 +230,7 @@ class AISession(models.Model):
                 self._publish_event('rename', {'name': skill.display_name})
             self.conversation = self._build_initial_inputs()
         self._enqueue_user_turn(
-            user_text or skill.display_name, self.env['ir.attachment']
+            user_text or skill.display_name, self._resolve_attachments(attachment_ids)
         )
         self._append_event(
             {

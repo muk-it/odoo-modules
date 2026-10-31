@@ -127,17 +127,21 @@ class TestInvokeSkill(AITestCommon):
     def test_invoke_skill_from_chat_asks_runs_the_skill_then_replies(self):
         self._drop_existing_skills()
         skill = self._make_skill(name='slash_demo', label='Demo', body='Slash body.')
-        for user_input, asked, argument in (
-            ('product xy', 'product xy', 'product xy'),
-            ('   ', 'Demo', None),
-            (None, 'Demo', None),
+        listed = self.env['ir.attachment'].create(
+            {'name': 'list.txt', 'raw': b'a,b', 'mimetype': 'text/plain'}
+        )
+        for user_input, files, asked, argument in (
+            ('product xy', listed, 'product xy', 'product xy'),
+            ('   ', self.env['ir.attachment'], 'Demo', None),
+            (None, self.env['ir.attachment'], 'Demo', None),
         ):
             with self.subTest(user_input=user_input):
                 session = self._make_session()
                 with self._mock_responses([self._make_text_response('Acknowledged.')]):
                     snapshot = session.invoke_skill_from_chat(
-                        skill.name, user_input=user_input
+                        skill.name, user_input=user_input, attachment_ids=files.ids
                     )
+                self.assertEqual(session.attachment_ids, files)
                 self.assertEqual(
                     (session.state, session.last_text, session.name),
                     ('done', 'Acknowledged.', 'Demo'),
