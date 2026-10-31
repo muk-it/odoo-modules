@@ -102,6 +102,23 @@ class TestApprovalPreview(AITestCommon):
             {change['label'] for change in preview['changes']}, {'Berichtsfuss'}
         )
 
+    def test_an_html_value_is_previewed_as_its_text(self):
+        partner = self.env['res.partner'].create({'name': 'Html Probe'})
+        for value, text in (
+            ('<p>A <b>note</b></p>', 'A *note*'),
+            ('<!-- note -->', ''),
+        ):
+            with self.subTest(value=value):
+                preview = self.env['muk_ai.approval']._build_preview(
+                    'update_records',
+                    {
+                        'model': 'res.partner',
+                        'ids': [partner.id],
+                        'values': {'comment': value},
+                    },
+                )
+                self.assertEqual(preview['changes'][0]['to'], text)
+
     def test_update_preview_resolves_many2one_id_to_display_name(self):
         partner = self.env['res.partner'].create({'name': 'M2o Target'})
         user = self.env.ref('base.user_admin')

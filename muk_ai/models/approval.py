@@ -196,7 +196,7 @@ class AIApproval(models.Model):
         if kind == 'boolean':
             return _('Yes') if value else _('No')
         if kind == 'html' and isinstance(value, str):
-            return html2plaintext(value)
+            return html2plaintext(f'<div>{value}</div>')
         if kind in ('integer', 'float', 'monetary') and isinstance(value, int | float):
             digits = field.get_digits(self.env) if kind == 'float' else None
             scale = digits[1] if digits else 0 if kind == 'integer' else 2
