@@ -150,3 +150,82 @@ class TestApprovalPreview(AITestCommon):
         )
         self.assertEqual(preview['kind'], 'delete')
         self.assertEqual(preview['targets'], [])
+
+    def test_the_title_names_the_target_or_counts_the_records(self):
+        acker, wuerth = self.env['res.partner'].create(
+            [{'name': 'Acker'}, {'name': 'Wuerth'}]
+        )
+        approval = self.env['muk_ai.approval']
+        for tool, ids, values, title in (
+            ('update_records', [acker.id], {'name': 'Acker GmbH'}, 'Update Acker'),
+            ('delete_records', [acker.id, wuerth.id], None, 'Delete 2 records'),
+            ('call_method', [wuerth.id], None, 'Run action_archive on Wuerth'),
+            ('create_records', [], {'name': 'New'}, 'New Contact'),
+            ('create_records', [], [{'name': 'A'}, {'name': 'B'}], '2 new records'),
+        ):
+            with self.subTest(tool=tool, title=title):
+                preview = approval._build_preview(
+                    tool,
+                    {
+                        'model': 'res.partner',
+                        'ids': ids,
+                        'values': values,
+                        'method': 'action_archive',
+                    },
+                )
+                self.assertEqual(preview['title'], title)
+
+    def test_a_preview_names_the_language_a_text_is_written_in(self):
+        self.env['res.lang']._activate_lang('de_DE')
+        company = self.env.company
+        company.write(
+            {
+                'phone': '+43 1 000',
+                'report_header': '<p>Quality</p>',
+                'report_footer': '<p>Old footer</p>',
+            }
+        )
+        company.update_field_translations(
+            'report_footer', {'de_DE': {'Old footer': 'Alte Fusszeile'}}
+        )
+        for values, lang, title, changes in (
+            (
+                {'report_footer': '<p>Neue Fusszeile</p>', 'phone': '+43 1 111'},
+                'de_DE',
+                f'Update {company.name} (Deutsch)',
+                [
+                    ('report_footer', 'Deutsch', 'Alte Fusszeile', 'Neue Fusszeile'),
+                    ('phone', '', '+43 1 000', '+43 1 111'),
+                ],
+            ),
+            (
+                {'report_header': '<p>Qualitaet</p>'},
+                'de_DE',
+                f'Update {company.name} (Deutsch)',
+                [('report_header', 'Deutsch', '', 'Qualitaet')],
+            ),
+            (
+                {'report_footer': '<p>New footer</p>'},
+                'xx_XX',
+                f'Update {company.name}',
+                [('report_footer', '', 'Old footer', 'New footer')],
+            ),
+        ):
+            with self.subTest(values=values, lang=lang):
+                preview = self.env['muk_ai.approval']._build_preview(
+                    'update_records',
+                    {
+                        'model': 'res.company',
+                        'ids': [company.id],
+                        'values': values,
+                        'context': {'lang': lang},
+                    },
+                )
+                self.assertEqual(preview['title'], title)
+                self.assertEqual(
+                    [
+                        (item['field'], item['lang'], item['from'], item['to'])
+                        for item in preview['changes']
+                    ],
+                    changes,
+                )

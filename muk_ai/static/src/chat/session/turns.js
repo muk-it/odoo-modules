@@ -13,11 +13,23 @@ export const toolBlockDecorators = registry.category('muk_ai.tool_block_decorato
  */
 export const hiddenToolBlocks = registry.category('muk_ai.hidden_tool_blocks');
 
+const INLINE_IMAGE = /!\[([^\]]*)\]\(\/web\/image\/(\d+)\)/g;
+
+/**
+ * Tell whether a tool call's answer is an error.
+ * @param {object} block the tool block
+ * @returns {boolean} true when the result carries an error
+ */
+function toolBlockHasError(block) {
+    return Boolean(toolPayload(block.result)?.error);
+}
+
 /**
  * Tell whether a tool card must not be drawn because another surface draws it.
  *
- * A question and a delegation run are both tool calls, but each already has a
- * card of its own; a second card saying the same thing is noise.
+ * A question, an approval and a delegation run are all tool calls, but each
+ * already has a card of its own; a second card saying the same thing is
+ * noise. An approved call that failed still shows its card.
  * @param {object} block the tool block
  * @param {object} turn the turn it belongs to
  * @param {object} [pendingAsk] what the session is waiting on, when it is
@@ -27,15 +39,34 @@ export function isToolBlockHidden(block, turn, pendingAsk) {
     if (hiddenToolBlocks.getAll().some((hides) => hides(block, turn))) {
         return true;
     }
-    if (block.result !== null && block.result !== undefined) {
-        return false;
-    }
-    if (pendingAsk && pendingAsk.call_id === block.callId) {
-        return true;
-    }
-    return (turn.blocks || []).some(
+    const asked = (turn.blocks || []).some(
         (other) => other.type === 'ask' && other.callId === block.callId,
     );
+    if (block.result !== null && block.result !== undefined) {
+        return asked && !toolBlockHasError(block);
+    }
+    return asked || pendingAsk?.call_id === block.callId;
+}
+
+hiddenToolBlocks.add(
+    'muk_ai.bookkeeping',
+    (block) => block.name === 'tool_load' || !!toolPayload(block.result)?.skipped,
+);
+
+/**
+ * Collect the stored images the text of a turn draws inline.
+ * @param {object} turn the turn
+ * @returns {Array} `{id, filename, mimetype}` descriptors
+ */
+export function inlineImages(turn) {
+    return (turn.blocks || [])
+        .filter((block) => block.type === 'text')
+        .flatMap((block) => [...String(block.text || '').matchAll(INLINE_IMAGE)])
+        .map(([, name, id]) => ({
+            id: Number(id),
+            filename: name || 'generated.png',
+            mimetype: 'image/png',
+        }));
 }
 
 /**
@@ -413,6 +444,14 @@ export function buildRenderedTurns(log) {
             }
         });
         turn.lastTextAt = lastText;
+    }
+    for (const turn of turns) {
+        if (turn.role === 'assistant' && turn.attachments?.length) {
+            const inline = inlineImages(turn).map((image) => image.id);
+            turn.attachments = turn.attachments.filter(
+                (file) => !inline.includes(file.id),
+            );
+        }
     }
     for (let i = turns.length - 1; i >= 0; i--) {
         if (turns[i].role === 'assistant') {

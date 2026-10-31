@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import base64
+import io
 import json
 from unittest.mock import MagicMock, patch
 
 import requests
+from PIL import Image
 
 from odoo.exceptions import UserError
 
@@ -142,7 +144,8 @@ class TestGenerateImageTool(ImageCase):
         session = self._session(agent)
         captured = {}
 
-        def fake(client, model, prompt, options=None):
+        def fake(client, model, prompt, options=None, references=None) -> dict:
+            """Record the request and answer a rendered image."""
             captured.update(options or {})
             return self._rendered('revised')
 
@@ -196,7 +199,8 @@ class TestGenerateImageTool(ImageCase):
         session = self._session(agent)
         captured = {}
 
-        def fake(client, model, prompt, options=None):
+        def fake(client, model, prompt, options=None, references=None) -> dict:
+            """Record the request and answer a rendered image."""
             captured.update(model=model, prompt=prompt, options=options)
             return self._rendered('revised')
 
@@ -217,8 +221,15 @@ class TestGenerateImageTool(ImageCase):
         self.assertEqual(result['content_base64'], PNG_1x1)
         self.assertEqual(result['model'], 'gpt-image-test')
         self.assertEqual(result['revised_prompt'], 'revised')
-        self.assertNotIn('model_id', result['cost'])
+        self.assertTrue(result['ai_generated'])
+        self.assertEqual(result['cost']['model_id'], self.image.id)
         self.assertAlmostEqual(result['cost']['total'], 0.25)
+        self.assertEqual(
+            self.env['muk_ai.usage']
+            .search([('session_id', '=', session.id)])
+            .mapped(lambda row: (row.purpose, row.amount)),
+            [('image', 0.25)],
+        )
         self.assertEqual(result['cost']['currency'], 'USD')
 
     def test_without_a_session_the_tool_raises(self):
@@ -258,7 +269,7 @@ class TestGenerateImageTool(ImageCase):
             self.env['muk_mcp.mixin']
             .with_context(muk_mcp_session_id=session.id)
             ._image_model(),
-            gemini_image,
+            (session, gemini_image),
         )
 
     def test_provider_error_returned_not_raised(self):
@@ -319,46 +330,128 @@ class TestGenerateImageTool(ImageCase):
         self.assertAlmostEqual(session.total_output_cost, 0.25)
         self.assertAlmostEqual(session.total_input_cost, 0.0)
 
-    def test_a_result_cannot_bill_a_model_the_session_did_not_resolve(self):
-        session = self._painter_session()
-        expensive = self._create_model(
+    def test_a_tool_cost_counts_on_the_chat_and_is_booked_by_the_tool_only(self):
+        premium = self._create_model(
             'gpt-image-premium', modality='image', input_rate=0.0, output_rate=100.0
         )
-        result = {
-            **self._tool_result(),
-            'cost': {'model_id': expensive.id, 'usage': {'images': 1}},
-        }
-        patcher, _calls = self._patch_tool(
-            {'generate_image': json.dumps(result, indent=2)}
-        )
-        with patcher:
-            session._dispatch_tool_call('generate_image', {'prompt': 'a dot'}, 'c1')
-        self.assertAlmostEqual(session.turn_cost_spent, 0.25)
+        one = {'model_id': self.image.id, 'usage': {'images': 1}, 'total': 0.25}
+        for name, result, charged in (
+            ('generate_image', {'cost': one}, 0.25),
+            ('generate_image', {'cost': {**one, 'usage': {'images': 2}}}, 0.5),
+            ('generate_image', {'cost': {**one, 'model_id': premium.id}}, 100),
+            ('web_fetch', {'text': 'page', 'cost': [one, one]}, 0.5),
+            ('generate_image', {'cost': {'usage': {'images': 1}}}, 0),
+            ('generate_image', {'cost': {**one, 'model_id': 0}}, 0),
+            ('generate_image', {'cost': 3}, 0),
+            ('generate_image', [{'cost': one}], 0),
+            ('generate_image', {'ok': True}, 0),
+        ):
+            with self.subTest(tool=name, result=result):
+                session = self._painter_session()
+                patcher, _calls = self._patch_tool({name: json.dumps(result)})
+                with patcher:
+                    session._dispatch_tool_call(name, {'prompt': 'a dot'}, 'c1')
+                self.assertAlmostEqual(session.turn_cost_spent, charged)
+                self.assertAlmostEqual(session.total_output_cost, charged)
+                self.assertFalse(
+                    self.env['muk_ai.usage'].search([('session_id', '=', session.id)])
+                )
 
-    def test_only_the_image_tool_reaches_the_cost_ledger(self):
-        session = self._painter_session()
-        patcher, _calls = self._patch_tool(
-            {'mcp__remote__draw': json.dumps(self._tool_result(), indent=2)}
+    def test_reference_images_reach_the_image_request(self):
+        photo = self.env['ir.attachment'].create(
+            {'name': 'photo.png', 'datas': PNG_1x1, 'mimetype': 'image/png'}
         )
-        with patcher:
-            session._dispatch_tool_call('mcp__remote__draw', {}, 'c1')
-        self.assertEqual(session.turn_cost_spent, 0.0)
+        gemini = self.image.copy(
+            {'provider_id': self.provider_google.id, 'technical_name': 'gemini-image'}
+        )
+        inline = {'inlineData': {'mimeType': 'image/png', 'data': PNG_1x1}}
+        for model, answer, url, sent_images in (
+            (
+                self.image,
+                {'data': [{'b64_json': PNG_1x1}]},
+                'https://api.openai.com/v1/images/edits',
+                lambda body: body['images'],
+            ),
+            (
+                gemini,
+                {'candidates': [{'content': {'parts': [inline]}}]},
+                'models/gemini-image:generateContent',
+                lambda body: body['contents'][0]['parts'][1:],
+            ),
+        ):
+            with self.subTest(provider=model.provider_id.name):
+                session = self._session(
+                    self.env['muk_ai.agent'].create(
+                        {
+                            'name': 'Painter',
+                            'enable_image_generation': True,
+                            'image_model_id': model.id,
+                        }
+                    )
+                )
+                captured = {}
+                with self._post(answer, captured):
+                    result = (
+                        self.env['muk_mcp.mixin']
+                        .with_context(muk_mcp_session_id=session.id)
+                        ._mcp_generate_image(
+                            prompt='restage', reference_attachment_ids=[photo.id]
+                        )
+                    )
+                self.assertTrue(captured['url'].endswith(url))
+                self.assertEqual(
+                    sent_images(captured['json']),
+                    [{'image_url': f'data:image/png;base64,{PNG_1x1}'}]
+                    if model == self.image
+                    else [inline],
+                )
+                self.assertEqual(result['content_base64'], PNG_1x1)
+        note = self.env['ir.attachment'].create(
+            {'name': 'note.txt', 'raw': b'a dot', 'mimetype': 'text/plain'}
+        )
+        captured = {}
+        with (
+            self._post({}, captured),
+            self.assertRaisesRegex(UserError, 'Reference images must be .*: note.txt'),
+        ):
+            self.env['muk_mcp.mixin'].with_context(
+                muk_mcp_session_id=session.id
+            )._mcp_generate_image(prompt='a dot', reference_attachment_ids=[note.id])
+        self.assertFalse(captured)
 
-    def test_results_without_a_cost_block_charge_nothing(self):
-        session = self._painter_session()
-        for text in ('{"cost": 3}', '[{"cost": {"usage": {}}}]', '{"ok": true}'):
-            session._settle_tool_cost('generate_image', text)
-        self.assertEqual(session.turn_cost_spent, 0.0)
-
-    def test_a_session_that_resolves_no_image_model_settles_nothing(self):
-        agent = self.env['muk_ai.agent'].create(
-            {'name': 'Writer', 'enable_image_generation': False}
+    def test_a_generated_image_is_stored_marked_as_ai_media(self):
+        session = self.env['muk_ai.session'].create({'name': 'store'})
+        stored = json.loads(
+            session._persist_tool_file(json.dumps(self._tool_result(), indent=2))
         )
-        session = self._session(agent)
-        session._settle_tool_cost(
-            'generate_image', json.dumps(self._tool_result(), indent=2)
+        attachment = self.env['ir.attachment'].browse(stored['attachment_id'])
+        self.assertTrue(attachment.ai_generated)
+        image = Image.open(io.BytesIO(attachment.raw))
+        self.assertEqual(
+            image.tobytes(),
+            Image.open(io.BytesIO(base64.b64decode(PNG_1x1))).tobytes(),
         )
-        self.assertEqual(session.turn_cost_spent, 0.0)
+        self.assertIn(
+            'Iptc4xmpExt:DigitalSourceType="http://cv.iptc.org/newscodes/'
+            'digitalsourcetype/trainedAlgorithmicMedia"',
+            image.info['XML:com.adobe.xmp'],
+        )
+        partner = self.env['res.partner'].create({'name': 'Dot'})
+        for value, flagged in ((attachment.datas, True), (PNG_1x1, False)):
+            with self.subTest(flagged=flagged):
+                partner.image_1920 = value
+                self.assertEqual(
+                    self.env['ir.attachment']
+                    .search(
+                        [
+                            ('res_model', '=', 'res.partner'),
+                            ('res_id', '=', partner.id),
+                            ('res_field', '=', 'image_1920'),
+                        ]
+                    )
+                    .ai_generated,
+                    flagged,
+                )
 
     def test_settled_cost_stops_the_turn_at_the_limit(self):
         self.env['ir.config_parameter'].sudo().set_param(

@@ -2,51 +2,118 @@
 <templates xml:space="preserve">
 
     <t t-name="muk_ai.Systray">
-        <Dropdown position="'bottom-end'" menuClass="'mk_systray_menu'">
+        <Dropdown position="'bottom-end'" menuClass="'mk_systray_menu'" onOpened="() => this.onOpened()">
             <t t-set-slot="toggler">
-                <span class="mk_ai_systray_btn btn btn-link" title="MuK AI" t-ref="systrayBtn">
-                    <span class="mk_systray_icon_wrap">
+                <span class="mk_ai_systray_btn btn btn-link" t-att-title="buttonTitle" t-ref="systrayBtn">
+                    <span class="mk_systray_icon_wrap" t-att-class="{ mk_systray_running: hasRunning }">
                         <span class="mk_icon_ai mk_systray_icon"/>
-                        <span t-if="hasRunning" class="mk_systray_badge">
-                            <span class="mk_systray_dot mk_state_running" />
-                        </span>
+                        <span t-if="needs.rows.length" class="mk_systray_needs"/>
                     </span>
-                    <span t-if="badge.count" class="mk_systray_count badge rounded-pill" t-esc="badgeLabel" />
+                    <span t-if="badge.count" class="mk_systray_count badge rounded-pill" t-esc="badgeLabel"/>
                 </span>
             </t>
-            <div class="mk_systray_header">
-                <div class="fw-semibold d-flex align-items-center gap-2">
-                    <span class="mk_icon_ai mk_systray_icon_sm"/>
-                    <span>MuK AI</span>
-                </div>
-                <small t-if="hasRunning" class="text-muted">
-                    <t t-esc="runningCount" />
-                    <t t-if="runningCount === 1"> running</t>
-                    <t t-else=""> running</t>
-                </small>
-            </div>
-            <DropdownItem class="'mk_systray_item mk_systray_action'" onSelected="() => this.onNewChat()">
-                <i class="fa fa-plus text-primary me-2" />
-                <span>New Chat</span>
-                <kbd class="mk_systray_hotkey ms-auto" t-esc="newChatHotkeyLabel" />
-            </DropdownItem>
-            <DropdownItem class="'mk_systray_item mk_systray_action'" onSelected="() => this.onOpenFullChat()">
-                <i class="fa fa-expand text-primary me-2" />
-                <span>Open Full Chat</span>
-                <kbd class="mk_systray_hotkey ms-auto" t-esc="fullChatHotkeyLabel" />
-            </DropdownItem>
-            <div class="mk_systray_divider" t-if="state.sessions.length" />
-            <div class="mk_systray_group_label" t-if="state.sessions.length">Recent sessions</div>
-            <t t-foreach="state.sessions" t-as="s" t-key="s.id">
-                <DropdownItem class="badge.isUnread(s.id) ? 'mk_systray_item mk_systray_item_unread' : 'mk_systray_item'" onSelected="() => this.onOpenSession(s)">
-                    <span class="mk_systray_dot_wrap">
-                        <span class="mk_systray_dot" t-att-class="statusDotClass(s.state)" />
-                    </span>
-                    <span class="mk_systray_name text-truncate" t-esc="s.name" />
+            <div class="mk_systray_top d-flex align-items-center gap-2">
+                <DropdownItem class="'mk_systray_new btn btn-primary btn-sm flex-grow-1'" title="hotkeyLabel" onSelected="() => this.onNewChat()">
+                    <i class="fa fa-plus me-1"/>New Chat
                 </DropdownItem>
+                <DropdownItem class="'mk_systray_full btn btn-light btn-sm'" onSelected="() => this.onOpenFullChat()">
+                    <i class="fa fa-expand" title="Open Full Chat"/>
+                </DropdownItem>
+            </div>
+            <div t-if="state.record or state.actions.length" class="mk_systray_context">
+                <DropdownItem t-if="state.record" class="'mk_systray_ask'" onSelected="() => this.onNewChat()">
+                    <i class="fa fa-comments-o text-primary"/>
+                    <span class="flex-grow-1 text-truncate" t-esc="recordTitle"/>
+                    <i class="fa fa-angle-right text-muted"/>
+                </DropdownItem>
+                <div t-if="state.actions.length" class="d-flex align-items-start gap-1">
+                    <div class="mk_systray_chips d-flex flex-wrap flex-grow-1 gap-1 overflow-hidden">
+                        <t t-foreach="state.actions" t-as="action" t-key="action_index">
+                            <DropdownItem class="'mk_systray_chip text-nowrap'" title="action.preview or action.label" onSelected="() => this.start(action)">
+                                <t t-esc="action.label"/>
+                            </DropdownItem>
+                        </t>
+                    </div>
+                    <DropdownItem class="'mk_systray_chip'" onSelected="() => this.more()">
+                        <i class="fa fa-ellipsis-h" title="All actions"/>
+                    </DropdownItem>
+                </div>
+            </div>
+            <t t-if="needs.rows.length">
+                <div class="mk_systray_heading d-flex align-items-center">
+                    <span class="flex-grow-1">Needs you</span>
+                    <span class="mk_systray_needs_count badge rounded-pill text-bg-warning" t-att-title="needsTitle" t-esc="needs.rows.length"/>
+                </div>
+                <t t-foreach="needs.rows" t-as="need" t-key="need.key">
+                    <div class="mk_systray_need position-relative" t-att-class="{ mk_systray_need_busy: needs.busy[need.key], mk_systray_need_decide: need.approve }">
+                        <DropdownItem class="'mk_systray_row'" onSelected="() => this.openNeed(need)">
+                            <span class="mk_systray_avatar">
+                                <img t-if="need.agent_id" t-att-src="agentImage(need.agent_id)" alt=""/>
+                                <i t-else="" class="fa" t-att-class="need.icon or 'fa-hand-paper-o'"/>
+                                <span class="mk_systray_ring mk_state_waiting"/>
+                            </span>
+                            <span class="mk_systray_text">
+                                <span class="mk_systray_name text-truncate" t-esc="need.label"/>
+                                <small class="text-muted text-truncate">
+                                    <span t-if="need.session_id" class="mk_systray_tag me-1">
+                                        <t t-if="need.icon === 'fa-hand-paper-o'">Approval</t>
+                                        <t t-else="">Question</t>
+                                    </span>
+                                    <t t-if="need.changes and need.changes.length">
+                                        <t t-foreach="need.changes" t-as="change" t-key="change_index">
+                                            <t t-if="!change_first"> · </t>
+                                            <t t-esc="change.label"/> <t t-if="change.from"><t t-esc="change.from"/> <i class="fa fa-long-arrow-right mk_systray_arrow"/> </t><t t-esc="change.to"/>
+                                        </t>
+                                    </t>
+                                    <t t-else="" t-esc="need.sublabel"/>
+                                </small>
+                            </span>
+                        </DropdownItem>
+                        <div class="mk_systray_decide d-flex align-items-center gap-1" t-att-class="{ 'pe-none': !need.approve }">
+                            <t t-if="need.approve">
+                                <button class="btn btn-sm btn-primary" title="Approve" t-on-click.stop="() => this.decideNeed(need, 'approve')">
+                                    <i class="fa fa-check"/>
+                                </button>
+                                <button class="btn btn-sm btn-light text-danger" title="Reject" t-on-click.stop="() => this.decideNeed(need, 'reject')">
+                                    <i class="fa fa-times"/>
+                                </button>
+                            </t>
+                            <i t-else="" class="fa fa-angle-right text-muted"/>
+                        </div>
+                    </div>
+                </t>
             </t>
-            <div class="mk_systray_empty text-muted small px-3 py-2" t-if="state.loaded and !state.sessions.length">
-                No chats yet.
+            <t t-if="recent.length">
+                <div class="mk_systray_heading d-flex align-items-center">
+                    <span class="flex-grow-1">Chats</span>
+                    <button t-if="badge.unreadIds.length" class="btn btn-link btn-sm p-0 mk_systray_read_all" t-on-click.stop="() => this.markAllRead()">Mark all as read</button>
+                </div>
+                <div class="mk_systray_chats">
+                    <t t-foreach="recent" t-as="s" t-key="s.id">
+                        <DropdownItem class="badge.isUnread(s.id) ? 'mk_systray_row mk_systray_unread' : 'mk_systray_row'" onSelected="() => this.onOpenSession(s)">
+                            <span class="mk_systray_avatar">
+                                <img t-att-src="agentImage(s.agent_id and s.agent_id[0])" alt=""/>
+                                <span t-if="['running', 'waiting', 'error'].includes(s.state)" class="mk_systray_ring" t-att-class="statusDotClass(s.state)"/>
+                            </span>
+                            <span class="mk_systray_text">
+                                <span class="d-flex gap-2 align-items-baseline">
+                                    <span class="mk_systray_name flex-grow-1 text-truncate" t-esc="s.name"/>
+                                    <small class="text-muted text-nowrap" t-esc="s.state === 'running' ? '' : formatShortTimestamp(s.write_date)"/>
+                                </span>
+                                <small class="mk_systray_preview text-muted text-truncate">
+                                    <span t-if="s.state === 'error'" class="mk_systray_tag mk_systray_tag_error me-1">Error</span>
+                                    <t t-esc="preview(s)"/>
+                                </small>
+                            </span>
+                            <span t-if="badge.isUnread(s.id)" class="mk_systray_unread_dot"/>
+                        </DropdownItem>
+                    </t>
+                </div>
+            </t>
+            <div t-elif="state.loaded and !state.sessions.length" class="mk_systray_empty text-muted small px-3 py-2">No chats yet.</div>
+            <div class="mk_systray_foot d-flex align-items-center justify-content-between">
+                <DropdownItem class="'mk_systray_all btn btn-link btn-sm p-0'" onSelected="() => this.onOpenFullChat()">Open all chats</DropdownItem>
+                <small class="text-muted" t-esc="hotkeyLabel"/>
             </div>
         </Dropdown>
     </t>

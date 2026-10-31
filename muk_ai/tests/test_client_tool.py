@@ -620,7 +620,7 @@ class TestClientToolSeam(AITestCommon):
         )
         self.assertEqual(
             json.loads(self._outputs_for(session, 'c1')[0]['output']),
-            {'error': 'skipped: gated'},
+            {'error': 'skipped: gated', 'skipped': True},
         )
         self.assertEqual(self._result_event(session, 'c1'), {'error': 'skipped: gated'})
 

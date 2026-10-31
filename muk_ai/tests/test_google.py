@@ -800,7 +800,7 @@ class TestAiGoogleProvider(AITestCommon):
             )
         gen_cfg = captured['body']['generationConfig']
         self.assertEqual(gen_cfg['responseMimeType'], 'application/json')
-        self.assertEqual(gen_cfg['responseSchema'], {'type': 'object'})
+        self.assertEqual(gen_cfg['responseJsonSchema'], {'type': 'object'})
 
     def test_request_uses_model_kwarg(self):
         captured = {}

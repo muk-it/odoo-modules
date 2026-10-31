@@ -7,6 +7,7 @@ from .call import (
     TERMINATING_TOOLS,
     TOOL_LOAD_TOOL,
     TOOL_SUMMARY_MAX_CHARS,
+    WORDING_BLOCK,
     build_tool_call_output,
     clean_ask_preview,
     format_tool_signature,

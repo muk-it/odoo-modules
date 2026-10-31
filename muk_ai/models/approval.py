@@ -6,7 +6,8 @@ import json
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, MissingError
 from odoo.fields import Field
-from odoo.tools import formatLang
+from odoo.tools import SQL, formatLang, html2plaintext
+from odoo.tools.mail import html_to_inner_content
 
 from odoo.addons.muk_ai.tools import coerce_ids
 
@@ -145,20 +146,34 @@ class AIApproval(models.Model):
             if tool_name == 'call_method'
             else ''
         )
-        verbs = {
-            'delete_records': f'unlink {len(ids)} record(s)',
-            'call_method': f'call {method or "?"} on {len(ids)} record(s)',
-            'update_records': f'update {len(ids)} record(s)',
-            'create_records': 'create a new record',
+        label = self._model_label(model_name)
+        reasons = {
+            'delete_records': _(
+                '%s records need your approval before the assistant deletes them.',
+                label,
+            ),
+            'call_method': _(
+                '%s records need your approval before the assistant runs actions '
+                'on them.',
+                label,
+            ),
+            'update_records': _(
+                '%s records need your approval before the assistant changes them.',
+                label,
+            ),
+            'create_records': _(
+                'New %s records need your approval before the assistant creates them.',
+                label,
+            ),
         }
-        if tool_name not in verbs:
+        if tool_name not in reasons:
             return None
         return {
             'tool': tool_name,
             'model': model_name,
             'ids': ids,
             'method': method,
-            'reason': f'{model_name} is flagged sensitive. Approve to let the agent {verbs[tool_name]}.',
+            'reason': reasons[tool_name],
             'signature': self._signature(tool_name, model_name, method=method or None),
         }
 
@@ -181,6 +196,8 @@ class AIApproval(models.Model):
             )
         if kind == 'boolean':
             return _('Yes') if value else _('No')
+        if kind == 'html' and isinstance(value, str):
+            return html_to_inner_content(value) and html2plaintext(value)
         if kind in ('integer', 'float', 'monetary') and isinstance(value, int | float):
             digits = field.get_digits(self.env) if kind == 'float' else None
             scale = digits[1] if digits else 0 if kind == 'integer' else 2
@@ -291,9 +308,15 @@ class AIApproval(models.Model):
     def _field_with_label(
         self, model: models.BaseModel | None, fname: str
     ) -> tuple[Field | None, str]:
-        """Return a field and its label, falling back to the field name."""
+        """Return a field and its label in the user's language, else the field name."""
         field = model._fields.get(fname) if model is not None else None
-        return field, (field.string if field else fname) or fname
+        return field, (field._description_string(self.env) if field else fname) or fname
+
+    @api.model
+    def _lang_label(self, code) -> str:
+        """Return the native name of an active language, such as Deutsch, else ``''``."""
+        name = isinstance(code, str) and self.env['res.lang']._lang_get(code).name
+        return (name or '').split(' / ')[-1]
 
     @api.model
     def _read_current(
@@ -328,6 +351,41 @@ class AIApproval(models.Model):
         }
 
     @api.model
+    def _build_lang_change(
+        self,
+        model: models.BaseModel | None,
+        ids: list[int],
+        fname: str,
+        new_value,
+        lang: str | None,
+    ) -> dict:
+        """Return the change of one field, naming the language a text is written in.
+
+        A language the field was never translated into has no old value.
+        """
+        field = self._field_with_label(model, fname)[0]
+        label = self._lang_label(lang) if field is not None and field.translate else ''
+        localized = model.with_context(lang=lang) if label else model
+        current = self._read_current(localized, ids, [fname])
+        if label and field.store and current:
+            model.flush_model([fname])
+            self.env.cr.execute(
+                SQL(
+                    'SELECT id FROM %s WHERE id = ANY(%s) AND NOT %s ? %s',
+                    SQL.identifier(model._table),
+                    list(current),
+                    SQL.identifier(fname),
+                    lang,
+                )
+            )
+            for (rid,) in self.env.cr.fetchall():
+                current[rid][fname] = False
+        return {
+            **self._build_change(localized, ids, current, fname, new_value),
+            'lang': label,
+        }
+
+    @api.model
     def _build_property(
         self, model: models.BaseModel | None, fname: str, new_value
     ) -> dict:
@@ -345,28 +403,31 @@ class AIApproval(models.Model):
         """Build a human-readable preview of a tool call's effect, or ``None``."""
         model_name = arguments.get('model') or ''
         model_label = self._model_label(model_name)
-        display = model_label or model_name
         ids = coerce_ids(arguments.get('ids'))
         base = {'model': model_name, 'model_label': model_label}
-
-        def targets() -> list[dict]:
-            return self._targets_display_names(model_name, ids)
-
+        targets = self._targets_display_names(model_name, ids)
+        what = (
+            targets[0]['display_name']
+            if len(ids) == 1 and targets
+            else _('%s records', len(ids))
+        )
         if tool_name == 'delete_records':
             return {
                 **base,
                 'kind': 'delete',
-                'title': f'Delete {len(ids)} {display} record(s)',
-                'targets': targets(),
+                'title': _('Delete %s', what),
+                'targets': targets,
             }
         if tool_name == 'call_method':
             method = (arguments.get('method') or '').strip()
             return {
                 **base,
                 'kind': 'call',
-                'title': f'Run {method or "?"} on {display}',
+                'title': _(
+                    'Run %(method)s on %(what)s', method=method or '?', what=what
+                ),
                 'method': method,
-                'targets': targets(),
+                'targets': targets,
             }
         values = arguments.get('values')
         model = self.env[model_name] if model_name in self.env else None
@@ -378,9 +439,9 @@ class AIApproval(models.Model):
             return {
                 **base,
                 'kind': 'create',
-                'title': f'New {len(records)} {display} records'
+                'title': _('%s new records', len(records))
                 if several
-                else f'New {display}',
+                else _('New %s', model_label),
                 'properties': [
                     {
                         **self._build_property(model, fname, new_value),
@@ -393,16 +454,21 @@ class AIApproval(models.Model):
         if not isinstance(values, dict):
             return None
         if tool_name == 'update_records':
-            current = self._read_current(model, ids, list(values))
+            options = arguments.get('context')
+            lang = options.get('lang') if isinstance(options, dict) else None
+            changes = [
+                self._build_lang_change(model, ids, fname, new_value, lang)
+                for fname, new_value in values.items()
+            ]
+            langs = {change['lang'] for change in changes} - {''}
             return {
                 **base,
                 'kind': 'update',
-                'title': f'Update {len(ids)} {display} record(s)',
-                'targets': targets(),
-                'changes': [
-                    self._build_change(model, ids, current, fname, new_value)
-                    for fname, new_value in values.items()
-                ],
+                'title': _('Update %(what)s (%(lang)s)', what=what, lang=langs.pop())
+                if len(langs) == 1
+                else _('Update %s', what),
+                'targets': targets,
+                'changes': changes,
             }
         return None
 

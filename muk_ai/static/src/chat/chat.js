@@ -160,6 +160,7 @@ export class AIChat extends Component {
             activeMatchIdx: 0,
             scrollTarget: null,
             askViews: {},
+            askOpened: {},
             sourcesExpanded: {},
         });
         this._sessionsSearchSeq = 0;
@@ -239,6 +240,14 @@ export class AIChat extends Component {
             },
             () => [this.session.state.artifactsFocus],
         );
+        useEffect(
+            (sessionId) => {
+                if (sessionId) {
+                    this.chatWindow.close(sessionId);
+                }
+            },
+            () => [this.session.state.sessionId],
+        );
         onWillUnmount(() => {
             this._disconnectUserBus();
             this._uninstallRootPasteHandler();
@@ -299,6 +308,16 @@ export class AIChat extends Component {
         ]);
         this.state.spaces = spaces;
         this.state.generalDomain = generalDomain;
+    }
+    /**
+     * Reload the spaces and the branches already open, after a chat moved
+     * between them.
+     */
+    async _reloadSpaces() {
+        await this._loadSpaces();
+        for (const spaceId of Object.keys(this.state.spaceSessions)) {
+            this._loadSpaceSessions(Number(spaceId));
+        }
     }
     /**
      * Load a page of the chats of one space into its branch of the tree.
@@ -483,7 +502,7 @@ export class AIChat extends Component {
      * @returns {Promise<number>} the created session id
      */
     async onNewSession(values = {}) {
-        const name = _t('Chat %s', new Date().toLocaleString());
+        const name = _t('New Chat');
         const carryOver = this.session.state.viewContext;
         this.session.state.loading = true;
         let id;
@@ -515,6 +534,16 @@ export class AIChat extends Component {
         this.session.state.focusToken += 1;
         await this.session.onSend();
         this._refreshSidebar();
+    }
+    /**
+     * Run a picked suggestion: in the open chat, else in a new one.
+     * @param {object} suggestion `{label, prompt}`, as `suggestions` lists it
+     * @returns {Promise<void>}
+     */
+    onPickSuggestion(suggestion) {
+        return this.session.state.sessionId
+            ? this.onSubmitSuggestion(suggestion.prompt)
+            : this.onStartWithPrompt(suggestion.prompt);
     }
     async onSelectSession(sessionId) {
         await this._selectSession(sessionId);
@@ -916,6 +945,12 @@ export class AIChat extends Component {
         }
         const updated = { ...this.state.sessions[idx] };
         if (payload.state) updated.state = payload.state;
+        if (
+            'awaiting_user' in payload &&
+            Boolean(updated.awaiting_user) !== Boolean(payload.awaiting_user)
+        ) {
+            this._reloadSpaces();
+        }
         if ('awaiting_user' in payload) updated.awaiting_user = payload.awaiting_user;
         if (payload.name) updated.name = payload.name;
         this.state.sessions = [
@@ -1059,6 +1094,12 @@ export class AIChat extends Component {
             ...this.state.askViews,
             [callId]: toggleAskViewMode(block, this.state.askViews),
         };
+    }
+    isAskOpen(callId) {
+        return Boolean(this.state.askOpened[callId]);
+    }
+    toggleAskOpen(callId) {
+        this.state.askOpened[callId] = !this.state.askOpened[callId];
     }
     get viewContextLabel() {
         return viewContextLabel(this.session.state.viewContext);
