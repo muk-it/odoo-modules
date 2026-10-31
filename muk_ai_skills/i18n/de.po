@@ -124,11 +124,6 @@ msgid ""
 msgstr "<i class=\"fa fa-users me-1\" title=\"Mit allen geteilt\" role=\"img\"/>Alle"
 
 #. module: muk_ai_skills
-#: model:ir.model,name:muk_ai_skills.model_muk_ai_agent
-msgid "AI Agent"
-msgstr "KI-Agent"
-
-#. module: muk_ai_skills
 #: model:ir.model,name:muk_ai_skills.model_muk_ai_session
 msgid "AI Session"
 msgstr "KI-Sitzung"
@@ -173,6 +168,7 @@ msgstr ""
 #. module: muk_ai_skills
 #. odoo-javascript
 #: code:addons/muk_ai_skills/static/src/chat/skills_panel.js:0
+#, python-format
 msgid "All skills"
 msgstr "Alle Fähigkeiten"
 
@@ -231,6 +227,7 @@ msgstr "Körper-Verlauf"
 #. module: muk_ai_skills
 #. odoo-python
 #: code:addons/muk_ai_skills/models/ai_session.py:0
+#, python-format
 msgid "Cannot invoke a skill while the session is %s."
 msgstr ""
 "Eine Fähigkeit kann nicht aufgerufen werden, während die Sitzung %s ist."
@@ -257,10 +254,7 @@ msgid "Description"
 msgstr "Beschreibung"
 
 #. module: muk_ai_skills
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_agent__display_name
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_session__display_name
 #: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__display_name
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_mcp_mixin__display_name
 msgid "Display Name"
 msgstr "Anzeigename"
 
@@ -286,6 +280,7 @@ msgstr "Alle"
 #. module: muk_ai_skills
 #. odoo-javascript
 #: code:addons/muk_ai_skills/static/src/chat/chat.js:0
+#, python-format
 msgid "Failed to invoke skill: %s"
 msgstr "Fähigkeit konnte nicht aufgerufen werden: %s"
 
@@ -310,10 +305,7 @@ msgstr ""
 "Menschenlesbare Beschriftung, die in Listen und im Chat-Menü angezeigt wird."
 
 #. module: muk_ai_skills
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_agent__id
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_session__id
 #: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__id
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_mcp_mixin__id
 msgid "ID"
 msgstr "ID"
 
@@ -350,11 +342,6 @@ msgstr ""
 #: model:ir.model,name:muk_ai_skills.model_muk_mcp_mixin
 msgid "MCP Tool Mixin"
 msgstr "MCP-Werkzeug-Mixin"
-
-#. module: muk_ai_skills
-#: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_res_config_settings_form
-msgid "Manage AI Skills"
-msgstr "KI-Fähigkeiten verwalten"
 
 #. module: muk_ai_skills
 #: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_muk_ai_skill_form
@@ -398,6 +385,7 @@ msgstr "Benötigt etwas Geöffnetes"
 #. module: muk_ai_skills
 #. odoo-javascript
 #: code:addons/muk_ai_skills/static/src/chat/skills_panel.xml:0
+#, python-format
 msgid "No skill matches."
 msgstr "Keine passende Fähigkeit."
 
@@ -419,6 +407,7 @@ msgstr "Auf einem einzelnen Datensatz"
 #. module: muk_ai_skills
 #. odoo-javascript
 #: code:addons/muk_ai_skills/static/src/chat/skills_panel.xml:0
+#, python-format
 msgid "Once something is open"
 msgstr "Sobald etwas geöffnet ist"
 
@@ -465,6 +454,7 @@ msgstr "Prompt-Verlauf-Metadaten"
 #. module: muk_ai_skills
 #. odoo-javascript
 #: code:addons/muk_ai_skills/static/src/chat/skills_panel.js:0
+#, python-format
 msgid "Recently used"
 msgstr "Zuletzt verwendet"
 
@@ -499,6 +489,7 @@ msgstr "Eingeschränkt"
 #. module: muk_ai_skills
 #. odoo-javascript
 #: code:addons/muk_ai_skills/static/src/chat/skills_panel.xml:0
+#, python-format
 msgid "Search skills…"
 msgstr "Fähigkeiten suchen…"
 
@@ -515,6 +506,7 @@ msgstr "Sequenz"
 #. module: muk_ai_skills
 #. odoo-python
 #: code:addons/muk_ai_skills/mcp/skill.py:0
+#, python-format
 msgid "Session %(sid)s no longer exists."
 msgstr "Sitzung %(sid)s existiert nicht mehr."
 
@@ -547,36 +539,43 @@ msgstr "Fähigkeit"
 #. module: muk_ai_skills
 #. odoo-python
 #: code:addons/muk_ai_skills/mcp/skill.py:0
+#, python-format
 msgid "Skill %(name)r is invalid."
 msgstr "Fähigkeit %(name)r ist ungültig."
 
 #. module: muk_ai_skills
 #. odoo-python
 #: code:addons/muk_ai_skills/models/ai_session.py:0
+#, python-format
 msgid "Skill %(name)s %(requirement)s."
 msgstr "Fähigkeit %(name)s %(requirement)s."
 
 #. module: muk_ai_skills
 #. odoo-python
 #: code:addons/muk_ai_skills/models/skill.py:0
+#: code:addons/muk_ai_skills/models/skill.py:0
+#, python-format
 msgid "Skill %(name)s asks for a chatter, which %(models)s does not have."
 msgstr "Fähigkeit %(name)s benötigt einen Chatter, den %(models)s nicht hat."
 
 #. module: muk_ai_skills
 #. odoo-python
 #: code:addons/muk_ai_skills/models/ai_session.py:0
+#, python-format
 msgid "Skill %r is not available."
 msgstr "Fähigkeit %r ist nicht verfügbar."
 
 #. module: muk_ai_skills
 #. odoo-python
 #: code:addons/muk_ai_skills/models/skill.py:0
+#, python-format
 msgid "Skill name %(name)r must match [a-z][a-z0-9_]*."
 msgstr "Fähigkeitsname %(name)r muss [a-z][a-z0-9_]* entsprechen."
 
 #. module: muk_ai_skills
 #. odoo-python
 #: code:addons/muk_ai_skills/mcp/skill.py:0
+#, python-format
 msgid "Skill tools can only be invoked from inside an AI session."
 msgstr ""
 "Fähigkeiten-Werkzeuge können nur innerhalb einer KI-Sitzung aufgerufen "
@@ -585,6 +584,7 @@ msgstr ""
 #. module: muk_ai_skills
 #. odoo-javascript
 #: code:addons/muk_ai_skills/static/src/chat/turn_decorators.js:0
+#, python-format
 msgid "Skill: %s"
 msgstr "Fähigkeit: %s"
 
@@ -593,6 +593,7 @@ msgstr "Fähigkeit: %s"
 #: code:addons/muk_ai_skills/static/src/chat/composer.xml:0
 #: model:ir.actions.act_window,name:muk_ai_skills.action_muk_ai_skill
 #: model:ir.ui.menu,name:muk_ai_skills.menu_muk_ai_skill
+#, python-format
 msgid "Skills"
 msgstr "KI-Fähigkeiten"
 
@@ -704,23 +705,37 @@ msgstr "z. B. quote_followup"
 #. module: muk_ai_skills
 #. odoo-python
 #: code:addons/muk_ai_skills/models/skill.py:0
+#, python-format
 msgid "needs a record open"
 msgstr "benötigt einen geöffneten Datensatz"
 
 #. module: muk_ai_skills
 #. odoo-python
 #: code:addons/muk_ai_skills/models/skill.py:0
+#, python-format
 msgid "needs a record or a list open"
 msgstr "benötigt einen geöffneten Datensatz oder eine geöffnete Liste"
 
 #. module: muk_ai_skills
 #. odoo-python
 #: code:addons/muk_ai_skills/models/skill.py:0
+#, python-format
 msgid "needs a record with a chatter open"
 msgstr "benötigt einen geöffneten Datensatz mit Chatter"
 
 #. module: muk_ai_skills
 #. odoo-python
 #: code:addons/muk_ai_skills/models/skill.py:0
+#, python-format
 msgid "only on %(models)s"
 msgstr "nur bei %(models)s"
+
+#. module: muk_ai_skills
+#: model:ir.model,name:muk_ai_skills.model_muk_ai_agent
+msgid "AI Agent"
+msgstr "KI-Agent"
+
+#. module: muk_ai_skills
+#: model_terms:ir.ui.view,arch_db:muk_ai_skills.view_res_config_settings_form
+msgid "Manage AI Skills"
+msgstr "KI-Fähigkeiten verwalten"
