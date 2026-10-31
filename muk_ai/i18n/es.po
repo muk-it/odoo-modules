@@ -6679,3 +6679,24 @@ msgstr "Trabajando ..."
 #, python-format
 msgid "All actions"
 msgstr "Todas las acciones"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
+msgid "Hand over"
+msgstr "Traspasar"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
+msgid "More"
+msgstr "Más"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
+msgid "Search"
+msgstr "Buscar"

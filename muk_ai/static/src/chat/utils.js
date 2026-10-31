@@ -117,6 +117,15 @@ export function formatTimestamp(at) {
 }
 
 /**
+ * Return the image of an agent.
+ * @param {number} agentId the agent
+ * @returns {string} the image route
+ */
+export function agentImage(agentId) {
+    return `/web/image/muk_ai.agent/${agentId || 0}/image_128`;
+}
+
+/**
  * Format a server timestamp as its time when it is today, else as its date.
  * @param {string} at ISO or SQL timestamp in UTC
  * @returns {string} the formatted value, empty when unparseable

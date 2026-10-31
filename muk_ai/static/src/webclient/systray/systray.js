@@ -12,6 +12,7 @@ import { Dropdown } from '@web/core/dropdown/dropdown';
 import { DropdownItem } from '@web/core/dropdown/dropdown_item';
 
 import {
+    agentImage,
     agentSuggestions,
     chatLists,
     formatError,
@@ -59,6 +60,7 @@ export class MukAISystray extends Component {
         this.badge = useNotificationBadge();
         this.sessionLimit = 8;
         this.hotkey = isMacOS() ? 'Ctrl+Shift+B' : 'Alt+Shift+B';
+        this.agentImage = agentImage;
         this.formatShortTimestamp = formatShortTimestamp;
         this.statusBadgeClass = statusBadgeClass;
         this._loadSeq = 0;
@@ -115,14 +117,6 @@ export class MukAISystray extends Component {
     get recordTitle() {
         const name = this.state.record.display_name;
         return name ? _t('Ask about %s', name) : _t('Ask about this record');
-    }
-    /**
-     * Return the image of an agent.
-     * @param {number} agentId the agent
-     * @returns {string} the image route
-     */
-    agentImage(agentId) {
-        return `/web/image/muk_ai.agent/${agentId || 0}/image_128`;
     }
     /**
      * Return the line under a chat: its error, its progress or its last answer.
