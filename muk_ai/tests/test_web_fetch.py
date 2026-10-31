@@ -1,4 +1,5 @@
 import base64
+import json
 from unittest.mock import patch
 
 from odoo.exceptions import UserError
@@ -9,8 +10,10 @@ from odoo.addons.muk_ai.tests.common import (
     PNG_1x1,
     html_result,
 )
+from odoo.addons.muk_ai.tools.sources import extract_sources
 from odoo.addons.muk_ai.tools.url_fetch import WEB_FETCH_MAX_CHARS, FetchResult
 from odoo.addons.muk_mcp.core.tool import get_tool_index
+from odoo.addons.muk_mcp.tools.protocol import ToolContent
 
 
 class TestWebFetchTool(AITestCommon):
@@ -138,11 +141,16 @@ class TestWebFetchTool(AITestCommon):
                 with patch(
                     'odoo.addons.muk_ai.mcp.web.fetch_url', return_value=fetched
                 ):
-                    result = self.env['muk_mcp.mixin']._mcp_web_fetch(url=url)
+                    result, _info = self.env['muk_mcp.tool']._call(
+                        'web_fetch', {'url': url}, self.env
+                    )
                 if isinstance(content, list):
-                    self.assertEqual(result['content'], content)
+                    self.assertIsInstance(result, ToolContent)
+                    self.assertEqual(result[1:], content)
+                    [source] = extract_sources('web_fetch', {'url': url}, result)
+                    self.assertEqual(source['url'], url)
                 else:
-                    self.assertIn(content, result['content'])
+                    self.assertIn(content, json.loads(result)['content'])
 
     def test_fetch_error_returned_not_raised(self):
         with patch(

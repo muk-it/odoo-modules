@@ -85,6 +85,8 @@ def _web_source(url: str, title: str | None, icon: str | None) -> dict:
 @source_extractor('web_fetch')
 def _web_fetch_sources(arguments: dict, result: object) -> list[dict]:
     """Turn a ``web_fetch`` descriptor into a single web source (sans content)."""
+    if isinstance(result, list):
+        result = json.loads(result[0]['text'])
     if not isinstance(result, dict) or result.get('error'):
         return []
     if not (url := result.get('url')):

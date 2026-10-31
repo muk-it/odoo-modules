@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 from collections.abc import Iterable
 from datetime import timedelta
@@ -33,6 +34,7 @@ from odoo.addons.muk_ai.tools import (
 )
 from odoo.addons.muk_mcp.core.tool import mcp_tool
 from odoo.addons.muk_mcp.tools.content import make_content_for_bytes
+from odoo.addons.muk_mcp.tools.protocol import ToolContent, make_text_content
 
 _logger = logging.getLogger(__name__)
 
@@ -285,12 +287,12 @@ class AIWeb(models.AbstractModel):
         offset: int = 0,
         max_chars: int = WEB_FETCH_MAX_CHARS,
         mode: str = 'markdown',
-    ) -> dict:
+    ) -> dict | ToolContent:
         """Fetch ``url`` and return a paginated web source descriptor.
 
         :return: a ``{type, url, title, icon, content, content_type, bytes,
-            total_chars, offset, next_offset, truncated}`` descriptor, or
-            ``{url, error}`` when the fetch fails
+            total_chars, offset, next_offset, truncated}`` descriptor, a file
+            as content blocks, or ``{url, error}`` when the fetch fails
         """
         if mode not in ('markdown', 'text', 'html'):
             mode = 'markdown'
@@ -302,17 +304,20 @@ class AIWeb(models.AbstractModel):
             result.content_type
         ):
             name = urlparse(result.url).path.rsplit('/', 1)[-1] or None
-            return {
+            descriptor = {
                 'type': 'web',
                 'url': result.url,
                 'content_type': result.content_type,
                 'bytes': len(result.body),
-                'content': [
+            }
+            return ToolContent(
+                [
+                    make_text_content(json.dumps(descriptor)),
                     make_content_for_bytes(
                         result.url, result.content_type, result.body, name=name
-                    )
-                ],
-            }
+                    ),
+                ]
+            )
         title, content = render_content(result, mode=mode)
         icons = self._ai_cache_favicons([(result.url, page_icon(result))])
         total = len(content)
