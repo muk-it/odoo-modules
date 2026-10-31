@@ -228,10 +228,21 @@ class TestMcpTools(MCPToolCase):
         )
         message = self.env['mail.message'].browse(posted['id'])
         self.assertEqual(message.subtype_id, self.env.ref('mail.mt_note'))
+        offer = self.env['ir.attachment'].create(
+            {
+                'name': 'offer.txt',
+                'raw': b'Offer',
+                'res_model': 'mail.compose.message',
+            }
+        )
+        message.attachment_ids = offer
         messages = self.call_tool(
             'get_messages', {'model': 'res.partner', 'id': self.partner_a.id}
         )
-        self.assertIn('<p>Hello</p>', [entry['body'] for entry in messages])
+        self.assertIn(
+            ('<p>Hello</p>', offer.ids),
+            [(entry['body'], entry['attachment_ids']) for entry in messages],
+        )
         log = self.logs([('tool_name', '=', 'post_message')])
         self.assertEqual(log.res_id, self.partner_a.id)
 
