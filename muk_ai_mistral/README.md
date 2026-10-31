@@ -1,10 +1,10 @@
 # MuK AI Mistral
 
 Adds **Mistral AI** as a first-class provider for `muk_ai`. Pick
-*Mistral AI*, paste your API key, and the whole catalogue is already
-there — **Mistral Large 3**, **Mistral Medium 3.5**, **Mistral Small 4**,
+_Mistral AI_, paste your API key, and the whole catalogue is already
+there — **Mistral Large 4**, **Mistral Medium 3.5**, **Mistral Small 4**,
 **Ministral 3** (14B / 8B / 3B), **Codestral** and the third-party
-**Z.ai GLM 5.2** that Mistral serves itself. The chat, agents, tools
+**Z.ai GLM 5.3** that Mistral serves itself. The chat, agents, tools
 and approval flow of MuK AI all work unchanged.
 
 Depends only on `muk_ai` — the Mistral translator is self-contained.
@@ -44,7 +44,7 @@ toggles the other muk_ai providers use:
 - **Web search** — `web_search` connector, with inline source citations
 - **Code interpreter** — `code_interpreter` connector; code and output
   are rendered as fenced blocks
-- **Image generation** — the catalogued *Mistral Medium 3.5 Images* model
+- **Image generation** — the catalogued _Mistral Medium 3.5 Images_ model
   drives the `image_generation` connector in a one-shot conversation, so
   any agent can pick Mistral as its image model
 
@@ -53,7 +53,7 @@ same request.
 
 ## Configuration
 
-Open *Settings → MuK AI → Providers*, select **Mistral AI**, paste your
+Open _Settings → MuK AI → Providers_, select **Mistral AI**, paste your
 [Mistral API key](https://console.mistral.ai/), click **Test
 Connection**, pick a default model and start chatting.
 
@@ -61,11 +61,11 @@ Connection**, pick a default model and start chatting.
 
 ### Authors
 
-* MuK IT
+- MuK IT
 
 ### Contributors
 
-* Mathias Markl <mathias.markl@mukit.at>
+- Mathias Markl <mathias.markl@mukit.at>
 
 ### Maintainer
 
