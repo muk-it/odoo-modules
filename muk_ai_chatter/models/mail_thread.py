@@ -8,6 +8,7 @@ from odoo.addons.muk_ai_chatter.tools.chatter import CHATTER_SESSION_LIMIT
 from odoo.addons.muk_ai_chatter.tools.mention import (
     THREAD_CONTEXT_MESSAGES,
     THREAD_CONTEXT_TYPES,
+    THREAD_CONTEXT_USER_MARK,
     format_thread_context,
     mention_plaintext,
 )
@@ -81,6 +82,8 @@ class MailThread(models.AbstractModel):
                     or message.email_from
                     or self.env._('System')
                 )
+                if message.author_id == self.env.user.partner_id:
+                    author = f'{author} {THREAD_CONTEXT_USER_MARK}'
                 stamp = message.date.strftime('%Y-%m-%d %H:%M')
                 lines.append(f'[{stamp}] {author}: {body}')
         return format_thread_context(lines)
