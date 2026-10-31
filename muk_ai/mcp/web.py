@@ -313,12 +313,15 @@ class AIWeb(models.AbstractModel):
             return ToolContent(
                 [
                     make_text_content(json.dumps(descriptor)),
-                    make_content_for_bytes(
-                        result.url,
-                        result.content_type,
-                        raw_bytes=result.body,
-                        name=name,
-                    ),
+                    {
+                        'name': name,
+                        **make_content_for_bytes(
+                            result.url,
+                            result.content_type,
+                            raw_bytes=result.body,
+                            name=name,
+                        ),
+                    },
                 ]
             )
         title, content = render_content(result, mode=mode)
