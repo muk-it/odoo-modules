@@ -183,7 +183,7 @@ class TestInvokeSkill(AITestCommon):
             any(call.get('user_input') == 'product xy' for call in function_calls)
         )
 
-    def test_invoke_skill_from_chat_blank_user_input_acts_like_no_args(self):
+    def test_invoke_skill_from_chat_blank_user_input_asks_with_the_skill_label(self):
         self._drop_existing_skills()
         skill = self._make_skill(name='blank_slash', body='Body.')
         session = self._make_session()
@@ -195,7 +195,10 @@ class TestInvokeSkill(AITestCommon):
             for item in conversation
             if isinstance(item, dict) and item.get('role') == 'user'
         ]
-        self.assertEqual(user_turns, [])
+        self.assertEqual(
+            [turn['content'][0]['text'] for turn in user_turns], [skill.display_name]
+        )
+        self.assertEqual(session.name, skill.display_name)
 
     def test_invoke_skill_from_chat_unknown_raises(self):
         session = self._make_session()

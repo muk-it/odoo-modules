@@ -6,6 +6,9 @@ import { reactive } from '@odoo/owl';
  */
 export const skillStore = reactive({});
 
+/** Chats whose composer opens with the skills panel, consumed once it does. */
+export const skillsOpening = new Set();
+
 /**
  * Store the visible skills for a session, coercing a non-array to an empty list.
  * @param {number} sessionId the session id to key the cache by

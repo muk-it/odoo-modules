@@ -8,7 +8,7 @@ import { browser } from '@web/core/browser/browser';
 
 import { ChatComposer } from '@muk_ai/chat/composer/chat_composer';
 
-import { setSkills } from '@muk_ai_skills/chat/skill_cache';
+import { setSkills, skillsOpening } from '@muk_ai_skills/chat/skill_cache';
 
 describe.current.tags('muk_ai_skills');
 defineMailModels();
@@ -70,6 +70,16 @@ test('the skills button opens the panel', async () => {
     await click('.mk_skill_btn');
     await animationFrame();
     expect('.mk_skills_panel').toHaveCount(1);
+});
+
+test('a chat opened to pick a skill shows the panel once', async () => {
+    reset();
+    setSkills(42, SKILLS);
+    skillsOpening.add(42);
+    await mountComposer();
+    await animationFrame();
+    expect('.mk_skills_panel').toHaveCount(1);
+    expect(skillsOpening.has(42)).toBe(false);
 });
 
 test('the skills button stays hidden when the session has no skill', async () => {
