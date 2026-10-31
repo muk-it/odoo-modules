@@ -257,10 +257,7 @@ msgid "Description"
 msgstr "Beschreibung"
 
 #. module: muk_ai_skills
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_agent__display_name
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_session__display_name
 #: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__display_name
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_mcp_mixin__display_name
 msgid "Display Name"
 msgstr "Anzeigename"
 
@@ -286,6 +283,7 @@ msgstr "Alle"
 #. module: muk_ai_skills
 #. odoo-javascript
 #: code:addons/muk_ai_skills/static/src/chat/chat.js:0
+#: code:addons/muk_ai_skills/static/src/webclient/systray/systray.js:0
 msgid "Failed to invoke skill: %s"
 msgstr "Fähigkeit konnte nicht aufgerufen werden: %s"
 
@@ -310,10 +308,7 @@ msgstr ""
 "Menschenlesbare Beschriftung, die in Listen und im Chat-Menü angezeigt wird."
 
 #. module: muk_ai_skills
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_agent__id
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_session__id
 #: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__id
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_mcp_mixin__id
 msgid "ID"
 msgstr "ID"
 

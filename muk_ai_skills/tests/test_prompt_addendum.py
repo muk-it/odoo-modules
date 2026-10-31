@@ -72,7 +72,7 @@ class TestPromptAddendum(TransactionCase):
         session = self._make_session()
         rendered = session._system_message()['content'][0]['text']
         self.assertIn('<available_skills>', rendered)
-        self.assertIn('`alpha`', rendered)
+        self.assertIn('- `alpha` (Alpha): Do alpha things.', rendered)
         self.assertIn('Do alpha things.', rendered)
 
     def test_scoped_skill_only_for_matching_agent(self):

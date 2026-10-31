@@ -1,4 +1,4 @@
-import { useEffect } from '@odoo/owl';
+import { useEffect, useState } from '@odoo/owl';
 
 import { _t } from '@web/core/l10n/translation';
 import { useService } from '@web/core/utils/hooks';
@@ -8,7 +8,8 @@ import { formatError } from '@muk_ai/chat/utils';
 import { allSlashCommands } from '@muk_ai/chat/session/use_ai_session';
 
 import { recordSkillUse } from '@muk_ai_skills/chat/recent_skills';
-import { findSkill, setSkills } from '@muk_ai_skills/chat/skill_cache';
+import { skillScopeSatisfied } from '@muk_ai_skills/chat/scope';
+import { findSkill, setSkills, skillStore } from '@muk_ai_skills/chat/skill_cache';
 
 /**
  * Resolve the skill a slash command head routes to, or null when a command of
@@ -105,6 +106,21 @@ function installSkillRouting(component) {
 patchChatSurfaces(() => ({
     setup() {
         super.setup();
+        this.skillState = useState(skillStore);
         installSkillRouting(this);
+    },
+    get suggestions() {
+        const { sessionId, viewContext } = this.session.state;
+        const own = (this.skillState[sessionId] || [])
+            .filter(
+                (skill) =>
+                    skill.models.length && skillScopeSatisfied(skill, viewContext),
+            )
+            .map((skill) => ({
+                label: skill.label,
+                preview: skill.description,
+                prompt: `/${skill.name}`,
+            }));
+        return own.length ? own : super.suggestions;
     },
 }));

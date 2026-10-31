@@ -257,10 +257,7 @@ msgid "Description"
 msgstr "Description"
 
 #. module: muk_ai_skills
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_agent__display_name
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_session__display_name
 #: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__display_name
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_mcp_mixin__display_name
 msgid "Display Name"
 msgstr "Nom d'affichage"
 
@@ -286,6 +283,7 @@ msgstr "Tout le monde"
 #. module: muk_ai_skills
 #. odoo-javascript
 #: code:addons/muk_ai_skills/static/src/chat/chat.js:0
+#: code:addons/muk_ai_skills/static/src/webclient/systray/systray.js:0
 msgid "Failed to invoke skill: %s"
 msgstr "Échec de l'invocation de la compétence : %s"
 
@@ -309,10 +307,7 @@ msgid "Human-readable label shown in lists and the chat menu."
 msgstr "Libellé lisible affiché dans les listes et le menu de discussion."
 
 #. module: muk_ai_skills
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_agent__id
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_session__id
 #: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__id
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_mcp_mixin__id
 msgid "ID"
 msgstr "ID"
 

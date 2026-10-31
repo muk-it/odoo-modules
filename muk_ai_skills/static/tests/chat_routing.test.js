@@ -75,7 +75,9 @@ function registerMocks({ skills = [{ name: 'alpha' }], failInvoke = false } = {}
         oldest_sequence: null,
         has_more_older: false,
     }));
-    onRpc('muk_ai.session', 'available_skill_names', () => skills);
+    onRpc('muk_ai.session', 'available_skill_names', () =>
+        skills.map((skill) => ({ models: [], ...skill })),
+    );
     onRpc('muk_ai.session', 'invoke_skill_from_chat', ({ args, kwargs }) => {
         captured.invocations.push({ args, kwargs });
         if (failInvoke) {
@@ -139,6 +141,29 @@ test('a skill picked in the panel is sent with the text after it', async () => {
     await animationFrame();
     expect(captured.invocations[0].args).toEqual([31, 'alpha']);
     expect(captured.invocations[0].kwargs.user_input).toBe('for the board');
+});
+
+test('an empty chat on a record offers the skills of its model, else the agent prompts', async () => {
+    const captured = registerMocks({
+        skills: [
+            { name: 'alpha' },
+            {
+                name: 'enrich',
+                label: 'Enrich',
+                description: 'Does enrich.',
+                scope: 'record',
+                models: ['res.partner'],
+            },
+        ],
+    });
+    const window_ = await mountRoutedWindow();
+    expect('.mk_suggestion').toHaveCount(0);
+    window_.session.state.viewContext = { kind: 'record', model: 'res.partner', id: 1 };
+    await animationFrame();
+    expect('.mk_suggestion').toHaveText(/^Enrich\s+Does enrich\.$/i);
+    await click('.mk_suggestion');
+    await animationFrame();
+    expect(captured.invocations[0].args).toEqual([31, 'enrich']);
 });
 
 test('a cached skill head is dispatched server-side with its parsed arguments', async () => {
