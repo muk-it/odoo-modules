@@ -12,14 +12,14 @@ Models
 Seeded ``muk_ai.model`` records (stable ``-latest`` aliases where Mistral
 publishes one):
 
-- ``mistral-large-latest`` — Mistral Large 3
+- ``mistral-large-4`` — Mistral Large 4
 - ``mistral-medium-latest`` — Mistral Medium 3.5 (default)
 - ``mistral-small-latest`` — Mistral Small 4
 - ``ministral-14b-latest`` — Ministral 3 14B
 - ``ministral-8b-latest`` — Ministral 3 8B
 - ``ministral-3b-latest`` — Ministral 3 3B
 - ``codestral-latest`` — Codestral (code)
-- ``zai-glm-5-2`` — Z.ai GLM 5.2 (third-party open model, 1M context)
+- ``zai-glm-5-3`` — Z.ai GLM 5.3 (third-party open model, 1M context)
 
 Capabilities
 ============
