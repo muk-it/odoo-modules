@@ -157,8 +157,14 @@ class TestInvokeSkill(AITestCommon):
         self._drop_existing_skills()
         skill = self._make_skill(name='args_slash', body='Body.')
         session = self._make_session()
+        listed = self.env['ir.attachment'].create(
+            {'name': 'list.txt', 'raw': b'a,b', 'mimetype': 'text/plain'}
+        )
         with self._mock_responses([self._make_text_response('ok')]):
-            session.invoke_skill_from_chat(skill.name, user_input='product xy')
+            session.invoke_skill_from_chat(
+                skill.name, user_input='product xy', attachment_ids=listed.ids
+            )
+        self.assertEqual(session.attachment_ids, listed)
         conversation = session.conversation or []
         user_turns = [
             item
@@ -172,8 +178,8 @@ class TestInvokeSkill(AITestCommon):
             for block in last_user.get('content') or []
             if isinstance(block, dict) and block.get('type') == 'input_text'
         ]
-        self.assertEqual(len(text_blocks), 1)
         self.assertEqual(text_blocks[0]['text'], 'product xy')
+        self.assertIn('list.txt', text_blocks[1]['text'])
         function_calls = [
             json.loads(item.get('arguments') or '{}')
             for item in conversation

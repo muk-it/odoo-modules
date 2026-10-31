@@ -37,13 +37,16 @@ export function resolveChatSkill(sessionId, head) {
 function installSkillRouting(component) {
     const orm = useService('orm');
     const session = component.session;
-    component.runSkill = async (name, userInput) => {
+    component.runSkill = async (name, userInput, attachments = []) => {
         try {
             const snapshot = await orm.call(
                 'muk_ai.session',
                 'invoke_skill_from_chat',
                 [session.state.sessionId, name],
-                { user_input: userInput || false },
+                {
+                    user_input: userInput || false,
+                    attachment_ids: attachments.map((attachment) => attachment.id),
+                },
             );
             recordSkillUse(name);
             session.applySnapshot(snapshot);
@@ -64,8 +67,9 @@ function installSkillRouting(component) {
             const rest = (match?.[2] || '').trim();
             const skill = resolveChatSkill(session.state.sessionId, head);
             if (skill) {
-                session.state.input = '';
-                await component.runSkill(skill.name, rest);
+                const attachments = session.state.pendingAttachments;
+                Object.assign(session.state, { input: '', pendingAttachments: [] });
+                await component.runSkill(skill.name, rest, attachments);
                 return;
             }
         }

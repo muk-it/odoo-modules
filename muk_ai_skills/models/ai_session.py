@@ -191,11 +191,16 @@ class AISession(models.Model):
             for skill in skills
         ]
 
-    def invoke_skill_from_chat(self, name: str, user_input: str | None = None) -> dict:
+    def invoke_skill_from_chat(
+        self,
+        name: str,
+        user_input: str | None = None,
+        attachment_ids: list[int] | None = None,
+    ) -> dict:
         """Run a skill the user picked as if the agent had invoked it, then reply.
 
         The user turn, the skill's label without text, comes first.
-        :param user_input: optional free text sent along as the user message
+        :param user_input: free text and files sent along as a user message
         :raise UserError: when the session is busy or the skill is invalid
         """
         self._recover_if_stuck()
@@ -222,7 +227,7 @@ class AISession(models.Model):
                 self._publish_event('rename', {'name': skill.display_name})
             self.conversation = self._build_initial_inputs()
         self._enqueue_user_turn(
-            user_text or skill.display_name, self.env['ir.attachment']
+            user_text or skill.display_name, self._resolve_attachments(attachment_ids)
         )
         self._append_event(
             {
