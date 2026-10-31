@@ -155,14 +155,20 @@ class TestInvokeSkill(AITestCommon):
     def test_a_slash_command_asks_runs_the_skill_then_replies(self):
         self._drop_existing_skills()
         skill = self._make_skill(name='args_slash', label='Args Slash', body='Body.')
-        for user_input, asked, argument in (
-            ('product xy', 'product xy', 'product xy'),
-            ('   ', 'Args Slash', None),
+        listed = self.env['ir.attachment'].create(
+            {'name': 'list.txt', 'raw': b'a,b', 'mimetype': 'text/plain'}
+        )
+        for user_input, files, asked, argument in (
+            ('product xy', listed, 'product xy', 'product xy'),
+            ('   ', self.env['ir.attachment'], 'Args Slash', None),
         ):
             with self.subTest(user_input=user_input):
                 session = self._make_session()
                 with self._mock_responses([self._make_text_response('ok')]):
-                    session.invoke_skill_from_chat(skill.name, user_input=user_input)
+                    session.invoke_skill_from_chat(
+                        skill.name, user_input=user_input, attachment_ids=files.ids
+                    )
+                self.assertEqual(session.attachment_ids, files)
                 self.assertEqual(session.name, 'Args Slash')
                 self.assertEqual(
                     [event.kind for event in session.event_ids.sorted('sequence')][:3],
