@@ -99,7 +99,14 @@ class TestWebFetch(AITestCommon):
                 PNG_BYTES,
                 'markdown',
                 None,
-                [{'type': 'image', 'data': PNG_1x1, 'mimeType': 'image/png'}],
+                [
+                    {
+                        'name': 'payload',
+                        'type': 'image',
+                        'data': PNG_1x1,
+                        'mimeType': 'image/png',
+                    }
+                ],
             ),
             (
                 'application/pdf',
@@ -108,6 +115,7 @@ class TestWebFetch(AITestCommon):
                 None,
                 [
                     {
+                        'name': 'payload',
                         'type': 'resource',
                         'resource': {
                             'uri': 'https://example.com/payload',
