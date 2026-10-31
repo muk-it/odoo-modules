@@ -87,6 +87,15 @@ function parseDateTime(at) {
 }
 
 /**
+ * Return the image of an agent.
+ * @param {number} agentId the agent
+ * @returns {string} the image route
+ */
+export function agentImage(agentId) {
+    return `/web/image/muk_ai.agent/${agentId || 0}/image_128`;
+}
+
+/**
  * Format a timestamp as a localized absolute date-time string.
  * @param {*} at ISO/SQL string or Luxon DateTime
  * @returns {string} formatted date-time, or '' when unparseable
