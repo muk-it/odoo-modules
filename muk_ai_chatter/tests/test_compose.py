@@ -133,14 +133,24 @@ class TestCompose(ChatterTestCommon):
 
     def test_the_thread_of_the_record_is_snapshotted_for_the_helper(self):
         other = self.env['res.partner'].create({'name': 'Another Record'})
-        other.message_post(
-            body='The pallet arrived split in two.',
-            message_type='comment',
-            subtype_xmlid='mail.mt_comment',
-        )
+        customer = self.env['res.partner'].create({'name': 'Pallet Customer'})
+        for author, body in (
+            (customer, 'The pallet arrived split in two.'),
+            (self.env.user.partner_id, 'We are sending a new one.'),
+        ):
+            other.message_post(
+                body=body,
+                author_id=author.id,
+                message_type='comment',
+                subtype_xmlid='mail.mt_comment',
+            )
         session = self._open(res_id=other.id)
         self.assertEqual(session, self.session)
-        self.assertIn('split in two', session.mention_context)
+        self.assertIn('Pallet Customer: The pallet arrived', session.mention_context)
+        self.assertIn(
+            f'{self.env.user.partner_id.display_name} (the user): We are sending',
+            session.mention_context,
+        )
 
     def test_the_same_composer_reuses_its_helper_cleaning_it_for_new_text(self):
         self.session._append_event({'kind': 'text', 'content': 'the last answer'})
