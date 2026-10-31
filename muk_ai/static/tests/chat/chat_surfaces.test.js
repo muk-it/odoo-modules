@@ -318,6 +318,40 @@ test('a multiple choice question ticks its options and sends them in their order
     expect.verifySteps(['Furniture, Decor']);
 });
 
+test('a decided approval folds into one line that opens again, naming the language', async () => {
+    await mountChat({
+        events: [
+            {
+                event_id: 4,
+                kind: 'ask_user',
+                call_id: 'c4',
+                text: 'Update the name?',
+                resolution: 'yesno',
+                preview: {
+                    kind: 'update',
+                    title: 'Update Azure (Deutsch)',
+                    changes: [
+                        {
+                            field: 'name',
+                            label: 'Name',
+                            lang: 'Deutsch',
+                            from: 'Azure',
+                            to: 'Azure Interior',
+                        },
+                    ],
+                },
+            },
+            { event_id: 5, kind: 'approval', call_id: 'c4', decision: 'rejected' },
+        ],
+    });
+    expect('.mk_ask_card.mk_ask_done .mk_ask_resolved').toHaveText(
+        /^Rejected\s+Update Azure \(Deutsch\)$/,
+    );
+    expect('.mk_ask_body').toHaveCount(0);
+    await contains('.mk_ask_resolved').click();
+    expect('.mk_ask_body .mk_ask_lang').toHaveText('Deutsch');
+});
+
 test('a session owned by somebody else is read only', async () => {
     const { chat } = await mountChat({ record: { user_id: [4242, 'Someone'] } });
     const session = chat.session;

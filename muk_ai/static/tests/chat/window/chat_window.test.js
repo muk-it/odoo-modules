@@ -117,7 +117,7 @@ test('approvalPill reflects session.state.effectiveApprovalMode', async () => {
     expect(String(pill.label)).toMatch(/Ask/i);
 });
 
-test('onFullscreen closes the popout then dispatches the chat action', async () => {
+test('onFullscreen dispatches the chat action, which closes the popout', async () => {
     const events = registerMocks();
     const window_ = await mountWithCleanup(ChatWindow, {
         props: {
@@ -128,7 +128,7 @@ test('onFullscreen closes the popout then dispatches the chat action', async () 
         },
     });
     await window_.onFullscreen();
-    expect(events.closed).toEqual([11]);
+    expect(events.closed).toEqual([]);
     expect(events.actions[0].tag).toBe('muk_ai.chat');
     expect(events.actions[0].params.session_id).toBe(11);
 });

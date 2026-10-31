@@ -54,6 +54,7 @@ from odoo.addons.muk_ai.tools import (
     URL_REF_RE,
     WALLCLOCK_MIN_SECONDS,
     WALLCLOCK_SAFETY_MARGIN,
+    WORDING_BLOCK,
     WORKER_HEARTBEAT_INTERVAL,
     WORKER_STALE_THRESHOLD,
     StreamCancelled,
@@ -282,6 +283,7 @@ class AISession(models.Model):
     awaiting_user = fields.Boolean(
         compute='_compute_awaiting_user',
         string='Awaiting User',
+        store=True,
     )
 
     event_ids = fields.One2many(
@@ -941,6 +943,7 @@ class AISession(models.Model):
         """
         parts = [
             (self.env._('Agent prompt'), self._effective_system_prompt()),
+            (self.env._('Wording'), WORDING_BLOCK),
             (self.env._('Files'), self._build_files_block()),
             (self.env._('Tool catalog'), self._build_available_tools_block()),
             (self.env._('Workspace'), self._build_space_block()),
@@ -1853,7 +1856,7 @@ class AISession(models.Model):
         except Exception as error:
             return {'error': str(error)}, False
         self._maybe_publish_ui_action(text, name, call_id)
-        self._settle_tool_cost(name, text)
+        self._settle_tool_cost(text)
         if previews := [
             r['preview_url'] for r in resolved_refs if r.get('preview_url')
         ]:
@@ -2346,22 +2349,22 @@ class AISession(models.Model):
         self,
         usage: dict | None,
         record: models.BaseModel | None = None,
+        booked: bool = False,
     ) -> dict:
         """Return the cumulative cost field deltas for a usage payload.
 
         ``record`` prices the usage and defaults to the effective chat model.
-        A costed charge is recorded as usage of the session's owner.
+        The charge is booked as usage of the session's owner, unless it is
+        ``booked`` on the monthly ledger already and is only counted.
         """
         if record := record or self._resolve_model_for('chat'):
-            delta = record._compute_usage_cost(usage or {})
-            if delta['total_cost']:
-                self.env['muk_ai.usage'].sudo().create(
-                    {
-                        'user_id': self.user_id.id,
-                        'session_id': self.id,
-                        'amount': delta['total_cost'],
-                    }
+            delta = (
+                record._compute_usage_cost(usage or {})
+                if booked
+                else self.env['muk_ai.usage']._charge(
+                    record, usage, record.modality, user=self.user_id, session=self
                 )
+            )
             turn = self.turn_usage or {}
             return {
                 'turn_usage': {
@@ -2377,27 +2380,33 @@ class AISession(models.Model):
             }
         return {}
 
-    def _accrue_model_usage(self, record: models.BaseModel, usage: dict) -> None:
+    def _accrue_model_usage(
+        self, record: models.BaseModel, usage: dict, booked: bool = False
+    ) -> None:
         """Charge a usage payload priced by ``record`` to the session's cost ledger."""
-        self.write(self._accrue_cost_deltas(usage, record))
+        self.write(self._accrue_cost_deltas(usage, record, booked=booked))
 
-    def _settle_tool_cost(self, name: str, text) -> None:
-        """Charge what the image tool spent to the session's cost ledger.
+    def _settle_tool_cost(self, text) -> None:
+        """Count the ``cost`` of a tool result on the chat and its turn budget.
 
-        ``generate_image`` is the only tool that spends money of its own, and
-        its usage is priced by the image model this session resolved — never by
-        one the tool result names.
+        Each block names the model that priced it; the tool booked it on the
+        monthly ledger already.
         """
-        if name != 'generate_image' or not (isinstance(text, str) and '"cost"' in text):
+        if not isinstance(text, str) or '"cost"' not in text:
             return
         try:
             cost = json.loads(text).get('cost')
         except (ValueError, AttributeError):
             return
-        if not isinstance(cost, dict) or not isinstance(cost.get('usage'), dict):
-            return
-        if record := self._resolve_model_for('image'):
-            self._accrue_model_usage(record, cost['usage'])
+        for block in cost if isinstance(cost, list) else [cost]:
+            if not (
+                isinstance(block, dict)
+                and isinstance(block.get('model_id'), int)
+                and isinstance(block.get('usage'), dict)
+            ):
+                continue
+            if record := self.env['muk_ai.model'].browse(block['model_id']).exists():
+                self._accrue_model_usage(record, block['usage'], booked=True)
 
     def _persist_inline_images(self, text: str, cache: dict | None = None) -> str:
         """Replace inline base64 images with stored attachment references."""
@@ -2623,6 +2632,7 @@ class AISession(models.Model):
                     payload['mimetype'],
                     payload['data_b64'],
                     res_id=self.id,
+                    ai_generated=result.get('ai_generated') is True,
                 )
             )
         except UserError as error:
@@ -2884,7 +2894,7 @@ class AISession(models.Model):
         self, outputs: list, call: dict, reason: str, log_result=None
     ) -> None:
         """Record a skipped tool call and emit a synthetic denied result."""
-        result = {'error': reason}
+        result = {'error': reason, 'skipped': True}
         self._persist_synthetic_event(call, result, 'denied')
         self._record_tool_result(
             outputs, call['call_id'], call['name'], result, log_result=log_result
@@ -3236,10 +3246,8 @@ class AISession(models.Model):
     def _cost_limit_message(self) -> str | None:
         """Return why the chat may spend no more, or ``None`` while it may.
 
-        The turn budget comes first, then the monthly budget of the user and
-        the one of all users together.
+        The turn budget comes first, then the monthly budgets of the owner.
         """
-        params = self.env['ir.config_parameter'].sudo()
         currency = self._cost_currency()
         if (limit := self._turn_cost_limit()) and (
             self.turn_cost_spent or 0.0
@@ -3250,34 +3258,7 @@ class AISession(models.Model):
                 amount=limit,
                 currency=currency,
             )
-        user_limit = not self.user_id._is_superuser() and (
-            self.user_id.ai_monthly_budget
-            or float(params.get_param('muk_ai.user_monthly_budget') or 0)
-        )
-        for limit, user in (
-            (user_limit, self.user_id),
-            (float(params.get_param('muk_ai.monthly_budget') or 0), None),
-        ):
-            if (
-                not limit
-                or limit <= 0
-                or self.env['muk_ai.usage'].sudo()._spent_this_month(user) < limit
-            ):
-                continue
-            if user:
-                return _(
-                    'Your monthly AI budget of %(amount).2f %(currency)s is '
-                    'used up. Ask an administrator to raise it.',
-                    amount=limit,
-                    currency=currency,
-                )
-            return _(
-                'The monthly AI budget of %(amount).2f %(currency)s for all '
-                'users is used up. Ask an administrator to raise it.',
-                amount=limit,
-                currency=currency,
-            )
-        return None
+        return self.env['muk_ai.usage']._budget_message(self.user_id, currency)
 
     def _cost_limit_error(self, message: str) -> None:
         """Transition to error when a cost budget is reached."""
@@ -4332,6 +4313,69 @@ class AISession(models.Model):
             .count_sessions(ids),
         }
 
+    def _attention_row(self) -> dict:
+        """Return what the Needs you list shows of a chat waiting for its owner.
+
+        A single write shows its field changes and is approved or rejected in
+        place, anything else opens the chat.
+        """
+        ask = self._public_pending_ask() or {}
+        preview = ask.get('preview') or {}
+        single = (
+            ask.get('kind') == 'approval'
+            and preview.get('kind') in ('update', 'create')
+            and len(preview.get('targets') or []) <= 1
+            and not any(item.get('record') for item in preview.get('properties') or [])
+        )
+        return {
+            'key': f'{self._name}:{self.id}',
+            'res_model': self._name,
+            'res_id': self.id,
+            'session_id': self.id,
+            'agent_id': self.agent_id.id,
+            'label': self.name,
+            'sublabel': preview.get('title')
+            or ask.get('text')
+            or (
+                _('Needs your approval before running a tool')
+                if ask.get('kind') == 'approval'
+                else _('Waiting for your answer')
+            ),
+            'icon': 'back_hand' if ask.get('kind') == 'approval' else 'question_mark',
+            'changes': (preview.get('changes') or []) if single else [],
+            'approve': 'approve_tool' if single else False,
+            'reject': 'reject_tool' if single else False,
+        }
+
+    @api.model
+    def _muk_ai_attention(self) -> list[dict]:
+        """Return the chats of the current user that wait for an answer or approval."""
+        return [
+            session._attention_row()
+            for session in self.search(
+                [('user_id', '=', self.env.uid), ('awaiting_user', '=', True)],
+                order='write_date desc',
+            )
+        ]
+
+    @api.model
+    def get_needs_you(self) -> list[dict]:
+        """Return everything the AI waits on the current user for.
+
+        The waiting chats come first, then the rows of every model that
+        answers ``_muk_ai_attention()``, each a dict with at least ``key``,
+        ``label`` and the method ``open`` that shows it in its context.
+        """
+        rows = self._muk_ai_attention()
+        for name, model in self.env.registry.items():
+            if (
+                name != self._name
+                and not model._abstract
+                and hasattr(model, '_muk_ai_attention')
+            ):
+                rows += self.env[name]._muk_ai_attention()
+        return rows
+
     @api.model
     def notification_badge(self) -> dict:
         """Return the attention badge payload for the current user."""
@@ -4739,64 +4783,50 @@ class AISession(models.Model):
         self._publish_event('state', {'state': self.state})
         return self.get_snapshot()
 
-    def approve_tool(self) -> dict:
-        """Approve the pending tool call once and resume the round."""
-        self.check_access('write')
-        pending = self._require_pending_approval()
-        self._record_approval_audit(
-            decision='approved',
-            call={
-                'name': pending.get('name'),
-                'arguments': pending.get('arguments'),
-            },
-            risk=pending.get('risk') or {},
-        )
-        self._resume_tool_round(pending, approved=True)
-        if self.state == 'running':
-            self._trigger_worker()
-        return self.get_snapshot()
+    def _decide_tool(self, decision: str, reason: str | None = None) -> dict:
+        """Apply the user's decision on the pending tool call and resume the round.
 
-    def approve_for_session(self) -> dict:
-        """Approve the pending call and whitelist its signature for the session."""
+        :raise AccessError: when the caller may only read the session
+        :raise UserError: when the session is not awaiting approval
+        """
         self.check_access('write')
         pending = self._require_pending_approval()
         risk = pending.get('risk') or {}
-        if signature := risk.get('signature'):
-            self.approved_signatures = [
-                *(self.approved_signatures or []),
-                signature,
-            ]
+        if decision == 'approved_session' and (signature := risk.get('signature')):
+            self.approved_signatures = [*(self.approved_signatures or []), signature]
         self._record_approval_audit(
-            decision='approved_session',
-            call={
-                'name': pending.get('name'),
-                'arguments': pending.get('arguments'),
-            },
+            decision=decision,
+            call={'name': pending.get('name'), 'arguments': pending.get('arguments')},
             risk=risk,
+            reject_reason=reason,
         )
-        self._resume_tool_round(pending, approved=True)
+        self._append_event(
+            {
+                'kind': 'approval',
+                'call_id': pending.get('call_id'),
+                'decision': decision,
+            }
+        )
+        self._resume_tool_round(
+            pending, approved=decision != 'rejected', reject_reason=reason
+        )
         if self.state == 'running':
             self._trigger_worker()
         return self.get_snapshot()
 
+    def approve_tool(self) -> dict:
+        """Approve the pending tool call once and resume the round."""
+        return self._decide_tool('approved')
+
+    def approve_for_session(self) -> dict:
+        """Approve the pending call and whitelist its signature for the session."""
+        return self._decide_tool('approved_session')
+
     def reject_tool(self, reason: str | None = None) -> dict:
         """Reject the pending tool call and resume the round with the rejection."""
-        self.check_access('write')
-        pending = self._require_pending_approval()
-        reason = (reason or '').strip() or _('User rejected the call.')
-        self._record_approval_audit(
-            decision='rejected',
-            call={
-                'name': pending.get('name'),
-                'arguments': pending.get('arguments'),
-            },
-            risk=pending.get('risk') or {},
-            reject_reason=reason,
+        return self._decide_tool(
+            'rejected', (reason or '').strip() or _('User rejected the call.')
         )
-        self._resume_tool_round(pending, approved=False, reject_reason=reason)
-        if self.state == 'running':
-            self._trigger_worker()
-        return self.get_snapshot()
 
     def submit_client_result(self, call_id: str, result) -> dict:
         """Submit a client-executed tool result, resuming once all are in.
@@ -4960,11 +4990,17 @@ class AISession(models.Model):
         for record in self:
             record.can_write = record in allowed
 
-    @api.depends('state')
+    @api.depends('state', 'pending_ask')
     def _compute_awaiting_user(self) -> None:
-        """Flag the chats that wait for their owner to answer or approve."""
+        """Flag the chats that wait for their owner to answer or approve.
+
+        A wait for the browser to run a client action needs nobody.
+        """
         for record in self:
-            record.awaiting_user = record.state == 'waiting'
+            record.awaiting_user = (
+                record.state == 'waiting'
+                and (record.pending_ask or {}).get('kind') != 'client_action'
+            )
 
     @api.depends('agent_id', 'agent_id.model_id', 'agent_id.model_id.context_window')
     def _compute_context_window(self) -> None:

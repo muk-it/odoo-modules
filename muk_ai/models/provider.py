@@ -9,6 +9,7 @@ from odoo.addons.muk_ai.providers import REGISTRY
 from odoo.addons.muk_ai.providers.base import ProviderBase
 from odoo.addons.muk_ai.providers.region import CUSTOM
 from odoo.addons.muk_ai.tools import (
+    document_names,
     is_unmaterialized_attachment,
     nearest_reasoning_effort,
 )
@@ -184,6 +185,13 @@ class AIProvider(models.Model):
         string='Supports Vision',
     )
 
+    supports_documents = fields.Boolean(
+        compute='_compute_capabilities',
+        search='_search_supports_documents',
+        string='Supports Documents',
+        help='The models of this provider read PDF files natively.',
+    )
+
     serves_chat = fields.Boolean(
         compute='_compute_serves_chat',
         search='_search_serves_chat',
@@ -342,11 +350,24 @@ class AIProvider(models.Model):
         cache_key: str | None = None,
         reasoning_effort: str | None = None,
     ) -> dict:
-        """Send a streaming responses request through the provider client."""
+        """Send a streaming responses request through the provider client.
+
+        :raise UserError: when the inputs hold a document the model cannot read
+        """
         client = self._get_client()
         technical_name = client.model_for(model)
+        inputs = self._materialize_inputs(inputs)
+        if not client.supports_documents and (names := document_names(inputs)):
+            raise UserError(
+                _(
+                    '%(model)s cannot read PDF files such as %(files)s. Choose a '
+                    'model that reads documents, or attach the content as text.',
+                    model=technical_name,
+                    files=', '.join(names),
+                )
+            )
         return client.request(
-            inputs=self._materialize_inputs(inputs),
+            inputs=inputs,
             tools_schema=tools_schema,
             text_schema=text_schema,
             on_delta=on_delta,
@@ -453,6 +474,7 @@ class AIProvider(models.Model):
                 and 'code_interpreter' not in disabled
             )
             record.supports_vision = bool(impl and impl.supports_vision)
+            record.supports_documents = bool(impl and impl.supports_documents)
 
     @api.depends('name')
     def _compute_serves_chat(self) -> None:
@@ -470,6 +492,18 @@ class AIProvider(models.Model):
                 'name',
                 'in',
                 [n for n, impl in REGISTRY.items() if 'chat' in impl.modalities],
+            )
+        ]
+
+    def _search_supports_documents(self, operator: str, value) -> list:
+        """Search providers by whether their implementation reads documents."""
+        if operator != 'in':
+            return NotImplemented
+        return [
+            (
+                'name',
+                'in',
+                [name for name, impl in REGISTRY.items() if impl.supports_documents],
             )
         ]
 

@@ -37,9 +37,7 @@ providerRegistry.add('muk_ai_sessions', {
                         'muk_ai.session',
                         [
                             {
-                                name:
-                                    needle ||
-                                    _t('Chat %s', new Date().toLocaleString()),
+                                name: needle || _t('New Chat'),
                             },
                         ],
                     );

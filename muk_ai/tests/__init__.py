@@ -36,6 +36,7 @@ from . import test_render_content
 from . import test_sources
 from . import test_source_icon
 from . import test_space
+from . import test_needs_you
 from . import test_session_sources
 from . import test_log_unification
 from . import test_tool_lazy

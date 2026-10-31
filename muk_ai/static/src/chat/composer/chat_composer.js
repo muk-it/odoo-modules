@@ -118,7 +118,8 @@ export class ChatComposer extends Component {
         );
     }
     get showUsage() {
-        return Boolean(this.props.showUsage && this.props.session?.state.sessionId);
+        const state = this.props.session?.state;
+        return Boolean(this.props.showUsage && state?.sessionId && state.events.length);
     }
     get slashCommands() {
         const value = (this.props.value || '').trim();

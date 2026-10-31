@@ -31,6 +31,7 @@ class ProviderBase:
     modalities: frozenset[str] = frozenset({'chat', 'image'})
 
     supports_vision = True
+    supports_documents = True
     supports_web_search = False
     supports_code_interpreter = False
 
@@ -187,12 +188,12 @@ class ProviderBase:
         model: str,
         prompt: str,
         options: dict | None = None,
+        references: list[dict] | None = None,
     ) -> dict:
-        """Render one image with a catalogued image model of this provider.
+        """Render one image through the OpenAI ``/images`` wire.
 
-        Defaults to the OpenAI ``/images/generations`` wire. ``gpt-image-*``
-        models reject ``response_format`` and always answer base64.
-
+        Reference image blocks turn the request into an edit of those images;
+        ``gpt-image-*`` models reject ``response_format`` and answer base64.
         :raise UserError: when the request fails or no image data comes back
         """
         body = {
@@ -202,9 +203,14 @@ class ProviderBase:
         }
         if not model.startswith('gpt-image'):
             body['response_format'] = 'b64_json'
+        if references:
+            body['images'] = [
+                {'image_url': f'data:{ref["mimetype"]};base64,{ref["data_b64"]}'}
+                for ref in references
+            ]
         try:
             response = self._http_session().post(
-                f'{self.api_url}/images/generations',
+                f'{self.api_url}/images/{"edits" if references else "generations"}',
                 headers=self.headers(),
                 json=body,
                 timeout=self.image_timeout,

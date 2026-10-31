@@ -138,8 +138,16 @@ test('AIChat suggestions come from the active agent', async () => {
     const chat = await mountWithCleanup(AIChat, { props: {} });
     const list = chat.suggestions;
     expect(list).toHaveLength(2);
-    expect(list[0]).toEqual({ label: 'Plan a trip', prompt: 'plan a trip' });
-    expect(list[1]).toEqual({ label: 'Summarize', prompt: 'summarize this' });
+    expect(list[0]).toEqual({
+        label: 'Plan a trip',
+        preview: 'plan a trip',
+        prompt: 'plan a trip',
+    });
+    expect(list[1]).toEqual({
+        label: 'Summarize',
+        preview: 'summarize this',
+        prompt: 'summarize this',
+    });
 });
 
 test('onNewSession creates a fresh session and selects it', async () => {
@@ -148,6 +156,19 @@ test('onNewSession creates a fresh session and selects it', async () => {
     const chat = await mountWithCleanup(AIChat, { props: {} });
     await chat.onNewSession();
     expect(chat.session.state.sessionId).toBe(42);
+});
+
+test('the full chat closes the floating window of the chat it shows', async () => {
+    const closed = [];
+    registerMocks({ sessions: [{ id: 7, name: 'Demo', state: 'done' }] });
+    mockService('muk_ai.chat_window', {
+        state: { windows: [] },
+        open: () => {},
+        close: (id) => closed.push(id),
+    });
+    await mountWithCleanup(AIChat, { props: {} });
+    await animationFrame();
+    expect(closed).toEqual([7]);
 });
 
 test('onNewSession carries over view_context from the previous session', async () => {
@@ -254,7 +275,7 @@ test('onSubmitSuggestion starts sending with the suggested prompt', async () => 
     });
     const chat = await mountWithCleanup(AIChat, { props: {} });
     await chat.onSelectSession(7);
-    await chat.onSubmitSuggestion('List installed modules.');
+    await chat.onSubmitSuggestion({ prompt: 'List installed modules.' });
     expect(startArgs).toEqual([7, 'List installed modules.']);
 });
 

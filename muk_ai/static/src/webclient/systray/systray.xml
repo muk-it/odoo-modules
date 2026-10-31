@@ -2,50 +2,142 @@
 <templates xml:space="preserve">
 
     <t t-name="muk_ai.Systray">
-        <Dropdown position="'bottom-end'" menuClass="'mk_systray_menu'">
-            <button class="mk_ai_systray_btn btn btn-link" title="MuK AI" t-ref="systrayBtn">
-                <span class="mk_systray_icon_wrap">
+        <Dropdown position="'bottom-end'" menuClass="'mk_systray_menu'" state="menu">
+            <button
+                class="mk_ai_systray_btn btn btn-link"
+                t-att-title="state.needs.length ? `MuK AI - ${needsTitle}` : 'MuK AI'"
+                t-ref="systrayBtn"
+            >
+                <span class="mk_systray_icon_wrap" t-att-class="{ mk_systray_running: running }">
                     <span class="mk_icon_ai mk_systray_icon"/>
-                    <span t-if="hasRunning" class="mk_systray_badge">
-                        <span class="mk_systray_dot mk_state_running" />
-                    </span>
+                    <span t-if="state.needs.length" class="mk_systray_needs rounded-circle position-absolute pe-none"/>
                 </span>
-                <span t-if="badge.count" class="mk_systray_count badge rounded-pill" t-esc="badgeLabel" />
+                <span t-if="badge.count" class="mk_systray_count badge rounded-pill" t-esc="badgeLabel"/>
             </button>
             <t t-set-slot="content">
-                <div class="mk_systray_header">
-                    <div class="fw-semibold d-flex align-items-center gap-2">
-                        <span class="mk_icon_ai mk_systray_icon_sm"/>
-                        <span>MuK AI</span>
-                    </div>
-                    <small t-if="hasRunning" class="text-muted">
-                        <t t-esc="runningCount" />
-                        <t t-if="runningCount === 1"> running</t>
-                        <t t-else=""> running</t>
-                    </small>
+                <div class="mk_systray_top d-flex align-items-center gap-2 border-bottom">
+                    <button class="btn btn-primary btn-sm flex-grow-1" t-att-title="hotkey" t-on-click="() => this.newChat()">
+                        <i class="fa fa-plus me-1"/>New Chat
+                    </button>
+                    <button class="btn btn-light btn-sm" title="Open Full Chat" t-on-click="() => this.openFullChat()">
+                        <i class="fa fa-expand"/>
+                    </button>
                 </div>
-                <DropdownItem class="'mk_systray_item mk_systray_action'" onSelected="() => this.onNewChat()">
-                    <i class="fa fa-plus text-primary me-2" />
-                    <span>New Chat</span>
-                    <kbd class="mk_systray_hotkey ms-auto" t-esc="newChatHotkeyLabel" />
-                </DropdownItem>
-                <DropdownItem class="'mk_systray_item mk_systray_action'" onSelected="() => this.onOpenFullChat()">
-                    <i class="fa fa-expand text-primary me-2" />
-                    <span>Open Full Chat</span>
-                    <kbd class="mk_systray_hotkey ms-auto" t-esc="fullChatHotkeyLabel" />
-                </DropdownItem>
-                <div class="mk_systray_divider" t-if="state.sessions.length" />
-                <div class="mk_systray_group_label" t-if="state.sessions.length">Recent sessions</div>
-                <t t-foreach="state.sessions" t-as="s" t-key="s.id">
-                    <DropdownItem class="badge.isUnread(s.id) ? 'mk_systray_item mk_systray_item_unread' : 'mk_systray_item'" onSelected="() => this.onOpenSession(s)">
-                        <span class="mk_systray_dot_wrap">
-                            <span class="mk_systray_dot" t-att-class="statusDotClass(s.state)" />
-                        </span>
-                        <span class="mk_systray_name text-truncate" t-esc="s.name" />
+                <div t-if="state.record or state.actions.length" class="mk_systray_context border-bottom">
+                    <DropdownItem t-if="state.record" class="'mk_systray_ask d-flex align-items-center gap-2 fw-semibold'" onSelected="() => this.newChat()">
+                        <i class="fa fa-comment-o text-primary"/>
+                        <span class="flex-grow-1 text-truncate" t-esc="recordTitle"/>
+                        <i class="fa fa-angle-right text-muted"/>
                     </DropdownItem>
+                    <div t-if="state.actions.length" class="d-flex align-items-start gap-1">
+                        <div class="mk_systray_chips d-flex flex-wrap flex-grow-1 gap-1 overflow-hidden">
+                            <DropdownItem
+                                t-foreach="state.actions"
+                                t-as="action"
+                                t-key="action_index"
+                                class="'mk_systray_chip btn btn-sm rounded-pill text-nowrap'"
+                                attrs="{ title: action.preview or action.label }"
+                                onSelected="() => this.start(action)"
+                            >
+                                <t t-esc="action.label"/>
+                            </DropdownItem>
+                        </div>
+                        <DropdownItem class="'mk_systray_chip mk_systray_more btn btn-sm rounded-pill'" onSelected="() => this.more()">
+                            <i class="fa fa-ellipsis-h" title="All actions"/>
+                        </DropdownItem>
+                    </div>
+                </div>
+                <t t-if="state.needs.length">
+                    <div class="mk_systray_heading d-flex align-items-center text-muted fw-semibold text-uppercase">
+                        <span class="flex-grow-1">Needs you</span>
+                        <span class="mk_systray_needs_count badge rounded-pill text-bg-warning" t-att-title="needsTitle" t-esc="state.needs.length"/>
+                    </div>
+                    <div
+                        t-foreach="state.needs"
+                        t-as="need"
+                        t-key="need.key"
+                        class="mk_systray_need position-relative"
+                        t-att-class="{ mk_systray_need_busy: state.busy[need.key], mk_systray_need_decide: need.approve }"
+                    >
+                        <DropdownItem class="'mk_systray_row'" onSelected="() => this.openNeed(need)">
+                            <span class="mk_systray_avatar position-relative flex-shrink-0">
+                                <img t-if="need.agent_id" class="rounded-circle" t-att-src="agentImage(need.agent_id)" alt=""/>
+                                <i t-else="" class="fa rounded-circle" t-att-class="needIcon(need.icon)"/>
+                                <span class="mk_systray_ring mk_state_waiting rounded-circle position-absolute"/>
+                            </span>
+                            <span class="d-flex flex-column flex-grow-1 min-w-0">
+                                <span class="mk_systray_name text-truncate" t-esc="need.label"/>
+                                <small class="text-muted text-truncate">
+                                    <span t-if="need.session_id" class="mk_systray_tag me-1">
+                                        <t t-if="need.icon === 'back_hand'">Approval</t>
+                                        <t t-else="">Question</t>
+                                    </span>
+                                    <t t-if="need.changes?.length">
+                                        <t t-foreach="need.changes" t-as="change" t-key="change_index">
+                                            <t t-if="!change_first"> · </t>
+                                            <t t-esc="change.label"/> <t t-if="change.from"><t t-esc="change.from"/> <i class="fa fa-long-arrow-right mk_systray_arrow"/> </t><t t-esc="change.to"/>
+                                        </t>
+                                    </t>
+                                    <t t-else="" t-esc="need.sublabel"/>
+                                </small>
+                            </span>
+                        </DropdownItem>
+                        <div class="mk_systray_decide d-flex align-items-center gap-1 position-absolute top-50" t-att-class="{ 'pe-none': !need.approve }">
+                            <t t-if="need.approve">
+                                <button class="btn btn-sm btn-primary" title="Approve" t-on-click="() => this.decideNeed(need, 'approve')">
+                                    <i class="fa fa-check"/>
+                                </button>
+                                <button class="btn btn-sm btn-light text-danger" title="Reject" t-on-click="() => this.decideNeed(need, 'reject')">
+                                    <i class="fa fa-times"/>
+                                </button>
+                            </t>
+                            <i t-else="" class="fa fa-angle-right text-muted"/>
+                        </div>
+                    </div>
                 </t>
-                <div class="mk_systray_empty text-muted small px-3 py-2" t-if="state.loaded and !state.sessions.length">
-                    No chats yet.
+                <t t-if="recent.length">
+                    <div class="mk_systray_heading d-flex align-items-center text-muted fw-semibold text-uppercase">
+                        <span class="flex-grow-1">Chats</span>
+                        <button
+                            t-if="badge.unreadIds.length"
+                            class="btn btn-link btn-sm p-0"
+                            t-on-click="() => this.markAllRead()"
+                        >Mark all as read</button>
+                    </div>
+                    <div class="mk_systray_chats">
+                        <DropdownItem
+                            t-foreach="recent"
+                            t-as="row"
+                            t-key="row.id"
+                            class="badge.isUnread(row.id) ? 'mk_systray_row mk_systray_unread' : 'mk_systray_row'"
+                            onSelected="() => this.chatWindow.open(row.id)"
+                        >
+                            <span class="mk_systray_avatar position-relative flex-shrink-0">
+                                <img class="rounded-circle" t-att-src="agentImage(row.agent_id and row.agent_id[0])" alt=""/>
+                                <span
+                                    t-if="stateClass(row.state)"
+                                    class="mk_systray_ring rounded-circle position-absolute"
+                                    t-att-class="stateClass(row.state)"
+                                />
+                            </span>
+                            <span class="d-flex flex-column flex-grow-1 min-w-0">
+                                <span class="d-flex gap-2 align-items-baseline">
+                                    <span class="mk_systray_name flex-grow-1 text-truncate" t-esc="row.name"/>
+                                    <small class="text-muted text-nowrap" t-esc="row.state === 'running' ? '' : formatShortTimestamp(row.write_date)"/>
+                                </span>
+                                <small class="mk_systray_preview text-muted text-truncate">
+                                    <span t-if="row.state === 'error'" class="mk_systray_tag mk_systray_tag_error me-1">Error</span>
+                                    <t t-esc="preview(row)"/>
+                                </small>
+                            </span>
+                            <span t-if="badge.isUnread(row.id)" class="mk_systray_unread_dot rounded-circle flex-shrink-0"/>
+                        </DropdownItem>
+                    </div>
+                </t>
+                <div t-elif="state.loaded and !state.sessions.length" class="text-muted small px-3 py-2">No chats yet.</div>
+                <div class="mk_systray_foot d-flex align-items-center justify-content-between border-top">
+                    <button class="btn btn-link btn-sm p-0" t-on-click="() => this.openFullChat()">Open all chats</button>
+                    <small class="text-muted" t-esc="hotkey"/>
                 </div>
             </t>
         </Dropdown>

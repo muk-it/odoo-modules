@@ -375,10 +375,48 @@ test('a tool block the session is waiting on is left out until it answers', () =
     expect(isToolBlockHidden(asked, turn, { call_id: 'other' })).toBe(false);
 });
 
-test('a tool block whose turn already shows it as an ask is left out', () => {
-    const turn = { blocks: [{ type: 'ask', callId: 'c1' }] };
-    expect(isToolBlockHidden({ callId: 'c1', result: null }, turn)).toBe(true);
-    expect(isToolBlockHidden({ callId: 'c2', result: null }, turn)).toBe(false);
+test('a tool block shown as an ask is left out, an approved call only shows when it failed', () => {
+    const turn = {
+        blocks: [
+            { type: 'ask', callId: 'c1' },
+            { type: 'ask', callId: 'c7', decision: 'approved' },
+            { type: 'ask', callId: 'c8', decision: 'rejected' },
+        ],
+    };
+    for (const [block, hidden] of [
+        [{ callId: 'c1', result: null }, true],
+        [{ callId: 'c2', result: null }, false],
+        [{ callId: 'c7', result: '{"ok": true}' }, true],
+        [{ callId: 'c7', result: '{"error": "x"}' }, false],
+        [{ callId: 'c8', result: '{"error": "x"}' }, true],
+        [{ name: 'tool_load', callId: 'c10', result: '{}' }, true],
+        [{ name: 'other', callId: 'c11', result: '{"skipped": true}' }, true],
+    ]) {
+        expect(isToolBlockHidden(block, turn)).toBe(hidden);
+    }
+});
+
+test('an approval event marks its ask, and inline images leave the attachment cards', () => {
+    const turns = buildRenderedTurns([
+        { kind: 'user_message', content: 'Draw' },
+        { kind: 'ask_user', call_id: 'c1', text: 'ok?', resolution: 'yesno' },
+        { kind: 'approval', call_id: 'c1', decision: 'approved_session' },
+        { kind: 'tool_call', call_id: 'c2', name: 'generate_image', arguments: '{}' },
+        {
+            kind: 'tool_result',
+            call_id: 'c2',
+            result: JSON.stringify({
+                files: [
+                    { attachment_id: 5, filename: 'dot.png', mimetype: 'image/png' },
+                    { attachment_id: 6, filename: 'data.csv', mimetype: 'text/csv' },
+                ],
+            }),
+        },
+        { kind: 'text', content: '![dot](/web/image/5)' },
+    ]);
+    const assistant = turns.find((turn) => turn.role === 'assistant');
+    expect(assistant.blocks[0].decision).toBe('approved_session');
+    expect(assistant.attachments.map((file) => file.id)).toEqual([6]);
 });
 
 test('a band is told it is pending only while the call has not answered', () => {

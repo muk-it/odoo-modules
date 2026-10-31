@@ -36,6 +36,11 @@ class AIModel(models.Model):
         ondelete='cascade',
     )
 
+    supports_documents = fields.Boolean(
+        related='provider_id.supports_documents',
+        string='Supports Documents',
+    )
+
     technical_name = fields.Char(
         string='Technical Name',
         help="Provider-facing model identifier — e.g. 'gpt-5.6-terra'.",

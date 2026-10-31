@@ -26,6 +26,7 @@ import { AttachmentCard } from '@muk_ai/core/attachment/attachment_card';
 import { AIChatShareUsers } from '@muk_ai/chat/share/share_users';
 import { useNotificationBadge } from '@muk_ai/core/notification_badge';
 import {
+    agentSuggestions,
     approvalPill,
     chatLists,
     effortPill,
@@ -90,18 +91,6 @@ export const SPACE_PAGE_SIZE = 10;
 const SESSION_SEARCH_LIMIT = 100;
 const SESSION_SEARCH_DEBOUNCE_MS = 250;
 
-function normalizeSuggestions(raw) {
-    if (!Array.isArray(raw)) {
-        return [];
-    }
-    return raw
-        .filter((s) => s && typeof s.prompt === 'string' && s.prompt.trim())
-        .map((s) => ({
-            label: (typeof s.label === 'string' && s.label) || s.prompt,
-            prompt: s.prompt,
-        }));
-}
-
 /** Full-page AI chat client: sidebar, conversation, and composer. */
 export class AIChat extends Component {
     static template = 'muk_ai.Chat';
@@ -124,7 +113,14 @@ export class AIChat extends Component {
         const agents = this.session.state.agents || [];
         const agent =
             agents.find((a) => a.id === this.session.state.agentId) || agents[0];
-        return normalizeSuggestions(agent && agent.suggestions);
+        return agentSuggestions(agent);
+    }
+    /**
+     * The suggestions an empty chat offers, picked with `onSubmitSuggestion`.
+     * @returns {Array} `{label, preview, prompt}` entries
+     */
+    get sessionSuggestions() {
+        return this.suggestions;
     }
     setup() {
         this.orm = useService('orm');
@@ -171,6 +167,7 @@ export class AIChat extends Component {
             activeMatchIdx: 0,
             scrollTarget: null,
             askViews: {},
+            askOpened: {},
             sourcesExpanded: {},
         });
         this._sessionsSearchSeq = 0;
@@ -242,6 +239,14 @@ export class AIChat extends Component {
         onPatched(() => {
             this._handleScrollTarget();
         });
+        useEffect(
+            (sessionId) => {
+                if (sessionId) {
+                    this.chatWindow.close(sessionId);
+                }
+            },
+            () => [this.session.state.sessionId],
+        );
         useEffect(
             (focus) => {
                 if (focus && this.state.artifactsHidden) {
@@ -494,7 +499,7 @@ export class AIChat extends Component {
      * @returns {Promise<number>} the created session id
      */
     async onNewSession(values = {}) {
-        const name = _t('Chat %s', new Date().toLocaleString());
+        const name = _t('New Chat');
         const carryOver = this.session.state.viewContext;
         this.session.state.loading = true;
         let id;
@@ -521,8 +526,8 @@ export class AIChat extends Component {
         await this.session.onSend();
         this._refreshSidebar();
     }
-    async onSubmitSuggestion(prompt) {
-        this.session.state.input = prompt;
+    async onSubmitSuggestion(suggestion) {
+        this.session.state.input = suggestion.prompt;
         this.session.state.focusToken += 1;
         await this.session.onSend();
         this._refreshSidebar();
@@ -911,9 +916,34 @@ export class AIChat extends Component {
             this._userBusHandler = null;
         }
     }
+    /**
+     * Tell whether a chat starts or ends waiting for its owner, which moves it
+     * in and out of the spaces that collect waiting chats.
+     * @param {object} payload a `muk_ai.session_state` notification
+     * @returns {boolean} true when the wait flag changed
+     */
+    _awaitingMoved(payload) {
+        if (!('awaiting_user' in payload)) {
+            return false;
+        }
+        const row = [
+            ...this.state.sessions,
+            ...Object.values(this.state.spaceSessions).flatMap(
+                (branch) => branch.sessions,
+            ),
+        ].find((session) => session.id === payload.session_id);
+        return row
+            ? Boolean(row.awaiting_user) !== Boolean(payload.awaiting_user)
+            : Boolean(payload.awaiting_user);
+    }
     _onUserBusEvent(payload) {
         if (!payload || !payload.session_id) {
             return;
+        }
+        if (!payload.deleted && this._awaitingMoved(payload)) {
+            for (const spaceId of Object.keys(this.state.spaceSessions)) {
+                this._loadSpaceSessions(Number(spaceId));
+            }
         }
         if (payload.deleted) {
             this.state.sessions = this.state.sessions.filter(
@@ -1062,6 +1092,12 @@ export class AIChat extends Component {
     }
     askArgsText(block) {
         return askArgsText(block);
+    }
+    isAskOpen(callId) {
+        return Boolean(this.state.askOpened[callId]);
+    }
+    toggleAskOpen(callId) {
+        this.state.askOpened[callId] = !this.state.askOpened[callId];
     }
     askViewMode(block) {
         return askViewMode(block, this.state.askViews);

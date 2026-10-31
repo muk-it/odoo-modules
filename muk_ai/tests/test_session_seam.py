@@ -52,7 +52,7 @@ class TestSessionModelSeam(ImageCase):
             '_resolve_model_for',
             lambda record, modality: self.image,
         ):
-            self.assertEqual(tool._image_model(), self.image)
+            self.assertEqual(tool._image_model()[1], self.image)
 
     def test_the_context_window_falls_back_to_the_provider_default(self):
         default_model = self._create_model('seam-default', context_window=64000)

@@ -2,6 +2,9 @@ import { _t } from '@web/core/l10n/translation';
 import { registry } from '@web/core/registry';
 
 import { toolResultFiles } from '@muk_ai/core/attachment/tool_files';
+import { toolBlockHasError } from '@muk_ai/chat/tools/tool_group';
+
+const INLINE_IMAGE = /!\[([^\]]*)\]\(\/web\/image\/(\d+)\)/g;
 
 export const toolBlockDecorators = registry.category('muk_ai.tool_block_decorators');
 
@@ -14,8 +17,8 @@ export const hiddenToolBlocks = registry.category('muk_ai.hidden_tool_blocks');
 /**
  * Tell whether a tool card must not be drawn because another surface draws it.
  *
- * A question and a delegation run are both tool calls, but each already has a
- * card of its own; a second card saying the same thing is noise.
+ * A question, an approval and a delegation run are tool calls with a card of
+ * their own; an approved call shows only when it failed.
  * @param {object} block the tool block
  * @param {object} turn the turn it belongs to
  * @param {object} [pendingAsk] what the session is waiting on, when it is
@@ -25,15 +28,34 @@ export function isToolBlockHidden(block, turn, pendingAsk) {
     if (hiddenToolBlocks.getAll().some((hides) => hides(block, turn))) {
         return true;
     }
-    if (block.result !== null && block.result !== undefined) {
-        return false;
-    }
-    if (pendingAsk && pendingAsk.call_id === block.callId) {
-        return true;
-    }
-    return (turn.blocks || []).some(
+    const ask = (turn.blocks || []).find(
         (other) => other.type === 'ask' && other.callId === block.callId,
     );
+    if (block.result !== null && block.result !== undefined) {
+        return !!ask && (ask.decision === 'rejected' || !toolBlockHasError(block));
+    }
+    return !!ask || pendingAsk?.call_id === block.callId;
+}
+
+hiddenToolBlocks.add(
+    'muk_ai.bookkeeping',
+    (block) => block.name === 'tool_load' || !!toolPayload(block.result)?.skipped,
+);
+
+/**
+ * Collect the stored images the text of a turn draws inline.
+ * @param {object} turn the turn
+ * @returns {Array} `{id, filename, mimetype}` descriptors
+ */
+export function inlineImages(turn) {
+    return (turn.blocks || [])
+        .filter((block) => block.type === 'text')
+        .flatMap((block) => [...block.text.matchAll(INLINE_IMAGE)])
+        .map(([, name, id]) => ({
+            id: Number(id),
+            filename: name || 'generated.png',
+            mimetype: 'image/png',
+        }));
 }
 
 /**
@@ -172,6 +194,7 @@ export function buildRenderedTurns(log) {
     const turns = [];
     let current = null;
     const toolsByCallId = {};
+    const asks = {};
     for (const entry of log || []) {
         const at = entry.at || null;
         const eventId = entry.event_id || null;
@@ -301,19 +324,20 @@ export function buildRenderedTurns(log) {
                 );
                 turns.push(current);
             }
-            current.blocks.push(
-                withAt(
-                    {
-                        type: 'ask',
-                        text: entry.text,
-                        options: entry.options,
-                        preview: entry.preview || null,
-                        callId: entry.call_id,
-                        resolution: entry.resolution || 'text',
-                    },
-                    at,
-                ),
+            asks[entry.call_id] = withAt(
+                {
+                    type: 'ask',
+                    text: entry.text,
+                    options: entry.options,
+                    preview: entry.preview || null,
+                    callId: entry.call_id,
+                    resolution: entry.resolution || 'text',
+                },
+                at,
             );
+            current.blocks.push(asks[entry.call_id]);
+        } else if (entry.kind === 'approval' && asks[entry.call_id]) {
+            asks[entry.call_id].decision = entry.decision;
         } else if (entry.kind === 'command') {
             turns.push(
                 withAt(
@@ -406,6 +430,12 @@ export function buildRenderedTurns(log) {
             }
         });
         turn.lastTextAt = lastText;
+        if (turn.attachments) {
+            const inline = inlineImages(turn).map((image) => image.id);
+            turn.attachments = turn.attachments.filter(
+                (file) => !inline.includes(file.id),
+            );
+        }
     }
     for (let i = turns.length - 1; i >= 0; i--) {
         if (turns[i].role === 'assistant') {

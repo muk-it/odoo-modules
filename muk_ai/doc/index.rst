@@ -78,9 +78,10 @@ Configuration
   currency (``0`` disables).
 - **Monthly Budget** — maximum spend per calendar month of all users
   together and of each user (``0`` disables). A user's own budget, set in
-  *MuK AI > Configuration > Budgets*, replaces the one per user. A chat that
-  reaches a budget stops with an error; *MuK AI > Reports > Usage* shows the
-  spend per user and month.
+  *MuK AI > Configuration > Budgets*, replaces the one per user. A chat, a
+  decision or an embedding that reaches a budget stops with an error; *MuK AI
+  > Reports > Usage* shows the spend per user, purpose and month, with the
+  record it was made for.
 - **Delete Old Usage** — the months of usage kept besides the current one
   (default ``6``).
 
@@ -167,9 +168,12 @@ collapsible cards with live-filling arguments so you can see exactly
 what the model is about to run. ``Shift+Enter`` inserts a newline. A
 single Send/Stop toggle cancels an in-flight stream.
 
-A systray icon in the top bar surfaces running sessions and lets you
-pop out a floating chat window so the assistant stays reachable while
-you navigate other views.
+A systray icon in the top bar starts a new chat or opens the full chat,
+and pops chats out as floating windows so the assistant stays reachable
+while you navigate other views. On a record it offers to ask about that
+record, with its actions as chips. Each chat shows its agent, its state,
+the time and a preview of its last answer; unread chats are bold and
+*Mark all as read* clears them.
 
 **Spaces**
 
@@ -259,19 +263,29 @@ it into view, ``Esc`` closes.
 **Notifications**
 
 Sessions that finish or need you while you are elsewhere signal you.
-The MuK AI systray icon carries a live running dot whenever a session
-is running or waiting, plus a red count of sessions awaiting your
-attention; unread sessions are marked and sorted to the top in both the
+The MuK AI systray icon turns a ring while a chat is running, shows an
+amber dot while something needs you, and counts the unread chats; unread
+sessions are marked and sorted to the top in both the
 systray dropdown and the chat sidebar. Users on the *inbox*
 notification preference also get completion notices as web push and
 Enterprise mobile (OCN) push. Opening the session clears the flag.
+
+**Needs you**
+
+The systray menu lists what waits for you: the questions and approvals
+of your chats, and what other apps add, such as the workflow steps
+assigned to you. A single record change is approved or rejected right
+there, anything else opens where it lives. The *Waiting for You* space
+collects the chats waiting for an answer.
 
 **Write-tool safety (session-scoped approvals)**
 
 Risky write calls pause the session and ask before running. An update
 to a mail-tracked field, a workflow method like ``action_post`` on an
 invoice, a deletion, or a create on a high-impact model triggers an
-approval card inline in the chat. The card shows why it fired
+approval card inline in the chat. A text written in another language, or
+in several at once, names the language next to the field. The card shows
+why it fired
 ("approving because ``state`` is tracked on ``account.move``"), the
 proposed JSON arguments, and three buttons:
 
@@ -286,7 +300,17 @@ Every decision is recorded under *MuK AI > Reports > Approval Logs*
 with the proposed vs. executed arguments. Per-agent **Approval Mode**
 lets unattended agents skip the prompt (``Never ask``). Approvals do
 not persist across sessions — each new session starts with an empty
-allow-list.
+allow-list. A decided approval folds into one line that opens again on
+click.
+
+**Generated images**
+
+An agent with *Images* draws with its image model, and can start from images
+already in the chat, such as a product photo to restage. Every generated image
+is stored flagged as AI generated, and a PNG or JPEG also carries the IPTC
+digital source type *trainedAlgorithmicMedia* in its metadata, which marks it
+as AI media for the EU AI Act and for shopping feeds. What an image costs
+counts on the chat like its messages.
 
 **View context**
 

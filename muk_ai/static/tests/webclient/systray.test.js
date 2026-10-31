@@ -1,5 +1,18 @@
-import { describe, expect, test } from '@odoo/hoot';
-import { mockService, mountWithCleanup, onRpc } from '@web/../tests/web_test_helpers';
+import {
+    advanceTime,
+    animationFrame,
+    describe,
+    expect,
+    queryAllProperties,
+    queryAllTexts,
+    test,
+} from '@odoo/hoot';
+import {
+    contains,
+    mockService,
+    mountWithCleanup,
+    onRpc,
+} from '@web/../tests/web_test_helpers';
 import { defineMailModels } from '@mail/../tests/mail_test_helpers';
 
 import { MukAISystray } from '@muk_ai/webclient/systray/systray';
@@ -7,222 +20,246 @@ import { MukAISystray } from '@muk_ai/webclient/systray/systray';
 describe.current.tags('muk_ai');
 defineMailModels();
 
-function makeChatWindowService() {
-    const events = { opened: [] };
+const APPROVAL = {
+    key: 'muk_ai.session:1',
+    res_model: 'muk_ai.session',
+    res_id: 1,
+    session_id: 1,
+    agent_id: 3,
+    label: 'Lead agent',
+    sublabel: 'Update Azure',
+    icon: 'back_hand',
+    changes: [{ label: 'Name', from: 'Azure', to: 'Azure Interior' }],
+    approve: 'approve_tool',
+    reject: 'reject_tool',
+};
+
+const TASK = {
+    key: 'res.partner:2',
+    res_model: 'res.partner',
+    res_id: 2,
+    label: 'Check the offer',
+    sublabel: 'Offer review - Globex',
+    icon: 'fa-check-square-o',
+    open: 'action_review',
+};
+
+/**
+ * Mock the services the systray talks to and serve the chats it lists.
+ * @param {object} [options] `chats`, `needs` (a function), `controller`
+ * @returns {object} the windows opened, the actions run and a bus emitter
+ */
+function setup({ chats = [], needs = () => [], controller = null } = {}) {
+    const seen = { opened: [], actions: [] };
+    const handlers = {};
     mockService('muk_ai.chat_window', {
         state: { windows: [] },
-        open: (id) => {
-            events.opened.push(id);
-        },
+        open: (id) => seen.opened.push(id),
         close: () => {},
-        toggleMinimized: () => {},
-        get activeSessionId() {
-            return null;
-        },
     });
-    return events;
-}
-
-function makeBusMock() {
-    const handlers = new Map();
     mockService('bus_service', {
         addChannel() {},
         deleteChannel() {},
-        subscribe(name, cb) {
-            handlers.set(name, cb);
-        },
-        unsubscribe(name) {
-            handlers.delete(name);
-        },
+        subscribe: (name, handler) => (handlers[name] = handler),
+        unsubscribe: () => {},
     });
-    return {
-        emit(name, payload) {
-            const cb = handlers.get(name);
-            if (cb) cb(payload);
-        },
-    };
+    mockService('action', {
+        currentController: controller,
+        doAction: (action) => seen.actions.push(action),
+    });
+    onRpc('muk_ai.session', 'search_read', ({ kwargs }) =>
+        kwargs.domain.some((leaf) => leaf[0] === 'notification_unread')
+            ? chats.filter((chat) => chat.unread)
+            : chats,
+    );
+    onRpc('muk_ai.session', 'get_needs_you', () => needs());
+    onRpc('muk_ai.agent', 'search_read', () => [
+        { id: 3, suggestions: [{ label: 'Pipeline', prompt: 'Show my **pipeline**' }] },
+    ]);
+    seen.emit = (name, payload) => handlers[name]?.(payload);
+    return seen;
 }
 
-test('systray loads sessions and exposes runningCount for 2 of 3 sessions', async () => {
-    onRpc('muk_ai.session', 'search_read', () => [
-        { id: 1, name: 'Chat A', state: 'running' },
-        { id: 2, name: 'Chat B', state: 'done' },
-        { id: 3, name: 'Chat C', state: 'waiting' },
-    ]);
-    makeBusMock();
-    makeChatWindowService();
-    const systray = await mountWithCleanup(MukAISystray, { props: {} });
-    expect(systray.runningCount).toBe(2);
-    expect(systray.hasRunning).toBe(true);
-});
-
-test('systray loads the notification badge count and renders it', async () => {
-    onRpc('muk_ai.session', 'search_read', () => []);
-    onRpc('muk_ai.session', 'notification_badge', () => ({
-        count: 3,
-        session_ids: [1, 2, 3],
-    }));
-    makeBusMock();
-    makeChatWindowService();
-    const systray = await mountWithCleanup(MukAISystray, { props: {} });
-    expect(systray.badge.count).toBe(3);
-    expect(systray.badgeLabel).toBe('3');
-    expect('.mk_systray_count').toHaveText('3');
-    expect('.mk_systray_badge .mk_systray_dot').toHaveCount(0);
-});
-
-test('the notification badge updates live from the bus', async () => {
-    onRpc('muk_ai.session', 'search_read', () => []);
+test('the menu lists the unread chats first with a preview of their last answer', async () => {
     onRpc('muk_ai.session', 'notification_badge', () => ({
         count: 1,
-        session_ids: [7],
+        session_ids: [1],
     }));
-    const bus = makeBusMock();
-    makeChatWindowService();
-    const systray = await mountWithCleanup(MukAISystray, { props: {} });
-    expect(systray.badge.count).toBe(1);
-    bus.emit('muk_ai.notification_badge', { count: 5, session_ids: [1, 2, 3, 4, 5] });
-    expect(systray.badge.count).toBe(5);
-    bus.emit('muk_ai.notification_badge', { count: 0, session_ids: [] });
-    expect(systray.badge.count).toBe(0);
-    expect(systray.badge.unreadIds).toEqual([]);
-});
-
-test('badgeLabel caps large counts at 99+', async () => {
-    onRpc('muk_ai.session', 'search_read', () => []);
-    onRpc('muk_ai.session', 'notification_badge', () => ({
-        count: 250,
-        session_ids: [],
-    }));
-    makeBusMock();
-    makeChatWindowService();
-    const systray = await mountWithCleanup(MukAISystray, { props: {} });
-    expect(systray.badgeLabel).toBe('99+');
-});
-
-test('the badge falls back to the running dot when the count is zero', async () => {
-    onRpc('muk_ai.session', 'search_read', () => [
-        { id: 1, name: 'Chat A', state: 'running' },
-    ]);
-    onRpc('muk_ai.session', 'notification_badge', () => ({
-        count: 0,
-        session_ids: [],
-    }));
-    makeBusMock();
-    makeChatWindowService();
-    await mountWithCleanup(MukAISystray, { props: {} });
-    expect('.mk_systray_count').toHaveCount(0);
-    expect('.mk_systray_badge .mk_systray_dot.mk_state_running').toHaveCount(1);
-});
-
-test('systray marks which recent sessions are unread', async () => {
-    onRpc('muk_ai.session', 'search_read', () => [
-        { id: 1, name: 'Chat A', state: 'done' },
-        { id: 2, name: 'Chat B', state: 'done' },
-    ]);
-    onRpc('muk_ai.session', 'notification_badge', () => ({
-        count: 1,
-        session_ids: [2],
-    }));
-    makeBusMock();
-    makeChatWindowService();
-    const systray = await mountWithCleanup(MukAISystray, { props: {} });
-    expect(systray.badge.unreadIds).toEqual([2]);
-    expect(systray.badge.isUnread(2)).toBe(true);
-    expect(systray.badge.isUnread(1)).toBe(false);
-});
-
-test('systray handles RPC failure by showing empty list', async () => {
-    onRpc('muk_ai.session', 'search_read', () => {
-        throw new Error('down');
+    setup({
+        chats: [
+            { id: 2, name: 'Busy chat', state: 'running', agent_id: [3, 'A'] },
+            {
+                id: 1,
+                name: 'Unread report',
+                state: 'done',
+                unread: true,
+                agent_id: [3, 'A'],
+                last_text: 'The report is **ready**, see [Q1](account.move,4).',
+                write_date: '2026-01-01 10:00:00',
+            },
+        ],
     });
-    makeBusMock();
-    makeChatWindowService();
-    await mountWithCleanup(MukAISystray, { props: {} });
-    expect(document.querySelector('.o-dropdown')).not.toBe(null);
-});
-
-test('systray bus event updates a known session row in place', async () => {
-    onRpc('muk_ai.session', 'search_read', () => [
-        { id: 1, name: 'Chat A', state: 'done' },
+    await mountWithCleanup(MukAISystray);
+    expect('.mk_systray_count').toHaveText('1');
+    expect('.mk_systray_icon_wrap.mk_systray_running').toHaveCount(1);
+    await contains('.mk_ai_systray_btn').click();
+    expect(queryAllTexts('.mk_systray_chats .mk_systray_name')).toEqual([
+        'Unread report',
+        'Busy chat',
     ]);
-    const bus = makeBusMock();
-    makeChatWindowService();
-    const systray = await mountWithCleanup(MukAISystray, { props: {} });
-    bus.emit('muk_ai.session_state', {
-        session_id: 1,
-        state: 'running',
-        name: 'Renamed',
-    });
-    expect(systray.state.sessions[0].state).toBe('running');
-    expect(systray.state.sessions[0].name).toBe('Renamed');
+    expect('.mk_systray_unread .mk_systray_preview').toHaveText(
+        'The report is ready, see Q1.',
+    );
+    expect('.mk_systray_chats .mk_state_running').toHaveCount(1);
 });
 
-test('systray bus event for unknown session triggers reload', async () => {
-    let loadCount = 0;
-    onRpc('muk_ai.session', 'search_read', () => {
-        loadCount++;
-        return [];
-    });
-    const bus = makeBusMock();
-    makeChatWindowService();
-    await mountWithCleanup(MukAISystray, { props: {} });
-    const before = loadCount;
-    bus.emit('muk_ai.session_state', { session_id: 99, state: 'running' });
-    await new Promise((r) => setTimeout(r, 10));
-    expect(loadCount).toBeGreaterThan(before);
-});
-
-test('systray bus event removes a deleted session from the list', async () => {
-    onRpc('muk_ai.session', 'search_read', () => [
-        { id: 1, name: 'Chat A', state: 'done' },
-        { id: 2, name: 'Chat B', state: 'done' },
-    ]);
-    const bus = makeBusMock();
-    makeChatWindowService();
-    const systray = await mountWithCleanup(MukAISystray, { props: {} });
-    expect(systray.state.sessions).toHaveLength(2);
-    bus.emit('muk_ai.session_state', { session_id: 1, deleted: true });
-    expect(systray.state.sessions.map((s) => s.id)).toEqual([2]);
-});
-
-test('onNewChat creates a session and opens it via chat_window service', async () => {
-    let nextId = 100;
-    const seen = [];
-    onRpc('muk_ai.session', 'search_read', () => []);
+test('New Chat and a listed chat open in a window, Open Full Chat opens the page', async () => {
     onRpc('muk_ai.session', 'create', ({ args }) => {
-        seen.push(args[0]);
-        return [++nextId];
+        expect.step(args[0][0].name);
+        return [9];
     });
-    makeBusMock();
-    const events = makeChatWindowService();
-    const systray = await mountWithCleanup(MukAISystray, { props: {} });
-    await systray.onNewChat();
-    expect(events.opened).toEqual([101]);
-    expect(seen[0][0].name).toMatch(/Chat /);
+    const seen = setup({
+        chats: [{ id: 2, name: 'Busy chat', state: 'done', agent_id: false }],
+    });
+    await mountWithCleanup(MukAISystray);
+    await contains('.mk_ai_systray_btn').click();
+    await contains('.mk_systray_row:contains(Busy chat)').click();
+    await contains('.mk_ai_systray_btn').click();
+    await contains('.mk_systray_top .btn-primary').click();
+    expect.verifySteps(['New Chat']);
+    expect(seen.opened).toEqual([2, 9]);
+    await contains('.mk_ai_systray_btn').click();
+    await contains('.mk_systray_top [title="Open Full Chat"]').click();
+    expect(seen.actions.map((action) => action.tag)).toEqual(['muk_ai.chat']);
 });
 
-test('onOpenSession forwards to chat_window.open', async () => {
-    onRpc('muk_ai.session', 'search_read', () => []);
-    makeBusMock();
-    const events = makeChatWindowService();
-    const systray = await mountWithCleanup(MukAISystray, { props: {} });
-    systray.onOpenSession({ id: 77 });
-    expect(events.opened).toEqual([77]);
+test('on a record the menu asks about it and runs an offered action in a new window', async () => {
+    onRpc('res.partner', 'read', () => [{ id: 2, display_name: 'Globex' }]);
+    onRpc('muk_ai.session', 'create', () => [9]);
+    onRpc('muk_ai.session', 'set_view_context', ({ args }) => {
+        expect.step(`context ${args[1].model}`);
+        return true;
+    });
+    onRpc('muk_ai.session', 'start', ({ args }) => {
+        expect.step(`start ${args[1]}`);
+        return {};
+    });
+    const seen = setup({
+        controller: { props: { resModel: 'res.partner', resId: 2 } },
+    });
+    await mountWithCleanup(MukAISystray);
+    await contains('.mk_ai_systray_btn').click();
+    await animationFrame();
+    expect('.mk_systray_ask').toHaveText('Ask about Globex');
+    expect(queryAllTexts('.mk_systray_chips .mk_systray_chip')).toEqual(['Pipeline']);
+    await contains('.mk_systray_chips .mk_systray_chip').click();
+    await animationFrame();
+    expect.verifySteps(['context res.partner', 'start Show my **pipeline**']);
+    expect(seen.opened).toEqual([9]);
 });
 
-test('onOpenFullChat dispatches the chat action', async () => {
-    onRpc('muk_ai.session', 'search_read', () => []);
-    makeBusMock();
-    makeChatWindowService();
-    const actions = [];
-    mockService('action', {
-        doAction: (a) => {
-            actions.push(a);
-            return Promise.resolve();
+test('Needs you lists what waits under an amber mark and decides only a single write in place', async () => {
+    let needs = [APPROVAL, TASK];
+    onRpc('muk_ai.session', 'approve_tool', ({ args }) => {
+        expect.step(`approve ${args[0]}`);
+        needs = [TASK];
+        return {};
+    });
+    const seen = setup({
+        chats: [
+            { id: 1, name: 'Demo', state: 'waiting', agent_id: false },
+            { id: 4, name: 'Other', state: 'done', agent_id: false },
+        ],
+        needs: () => needs,
+    });
+    await mountWithCleanup(MukAISystray);
+    expect('.mk_ai_systray_btn .mk_systray_needs').toHaveCount(1);
+    expect('.mk_ai_systray_btn').toHaveAttribute('title', 'MuK AI - 2 things need you');
+    await contains('.mk_ai_systray_btn').click();
+    expect('.mk_systray_needs_count').toHaveText('2');
+    expect(queryAllTexts('.mk_systray_need .mk_systray_name')).toEqual([
+        'Lead agent',
+        'Check the offer',
+    ]);
+    expect('.mk_systray_need:first small').toHaveText(/Name Azure\s+Azure Interior$/);
+    expect('.mk_systray_need:last small').toHaveText('Offer review - Globex');
+    expect(queryAllProperties('.mk_systray_decide button', 'title')).toEqual([
+        'Approve',
+        'Reject',
+    ]);
+    expect('.mk_systray_row:contains(Demo)').toHaveCount(0);
+    expect('.mk_systray_row:contains(Other)').toHaveCount(1);
+    await contains('.mk_systray_need:first .btn-primary', { visible: false }).click();
+    expect.verifySteps(['approve 1']);
+    expect('.mk_systray_need').toHaveCount(1);
+    expect('.mk_systray_row:contains(Demo)').toHaveCount(1);
+    needs = [];
+    seen.emit('mail.activity/updated', { activity_deleted: true });
+    await advanceTime(300);
+    await animationFrame();
+    expect('.mk_systray_need').toHaveCount(0);
+    expect('.mk_ai_systray_btn .mk_systray_needs').toHaveCount(0);
+});
+
+test('a waiting item opens where it lives: a chat in a window, anything else through its action', async () => {
+    onRpc('res.partner', 'action_review', ({ args }) => ({
+        type: 'ir.actions.act_window',
+        res_model: 'res.partner',
+        res_id: args[0][0],
+    }));
+    const seen = setup({ needs: () => [APPROVAL, TASK] });
+    await mountWithCleanup(MukAISystray);
+    await contains('.mk_ai_systray_btn').click();
+    await contains('.mk_systray_row:contains(Lead agent)').click();
+    expect(seen.opened).toEqual([1]);
+    await contains('.mk_ai_systray_btn').click();
+    expect('.mk_systray_need:last .mk_systray_decide button').toHaveCount(0);
+    await contains('.mk_systray_row:contains(Check the offer)').click();
+    await animationFrame();
+    expect(seen.actions.map((action) => action.res_id)).toEqual([2]);
+});
+
+test('a chat starting to wait for its owner is fetched into Needs you', async () => {
+    let needs = [];
+    const seen = setup({
+        needs: () => {
+            expect.step('fetch');
+            return needs;
         },
     });
-    const systray = await mountWithCleanup(MukAISystray, { props: {} });
-    await systray.onOpenFullChat();
-    expect(actions[0].tag).toBe('muk_ai.chat');
+    await mountWithCleanup(MukAISystray);
+    expect.verifySteps(['fetch']);
+    seen.emit('muk_ai.session_state', {
+        session_id: 1,
+        state: 'running',
+        awaiting_user: false,
+    });
+    await advanceTime(300);
+    expect.verifySteps([]);
+    needs = [APPROVAL];
+    seen.emit('muk_ai.session_state', {
+        session_id: 1,
+        state: 'waiting',
+        awaiting_user: true,
+    });
+    await advanceTime(300);
+    await animationFrame();
+    expect.verifySteps(['fetch']);
+    expect('.mk_ai_systray_btn .mk_systray_needs').toHaveCount(1);
+});
+
+test('the list picks up chats created or deleted elsewhere', async () => {
+    const chats = [];
+    const seen = setup({ chats });
+    await mountWithCleanup(MukAISystray);
+    chats.push({ id: 5, name: 'From a cron', state: 'done', agent_id: false });
+    seen.emit('muk_ai.session_state', { session_id: 5, state: 'done' });
+    await advanceTime(500);
+    await contains('.mk_ai_systray_btn').click();
+    expect(queryAllTexts('.mk_systray_chats .mk_systray_name')).toEqual([
+        'From a cron',
+    ]);
+    seen.emit('muk_ai.session_state', { session_id: 5, deleted: true });
+    await animationFrame();
+    expect('.mk_systray_menu').toHaveText(/No chats yet\./);
 });

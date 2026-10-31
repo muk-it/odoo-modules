@@ -52,6 +52,24 @@ export function selectPill(key, session, value) {
     }
 }
 
+/**
+ * The prompts an agent suggests to start a chat with.
+ * @param {object} [agent] the agent, as read with its `suggestions`
+ * @returns {Array} `{label, preview, prompt}` entries
+ */
+export function agentSuggestions(agent) {
+    return (Array.isArray(agent?.suggestions) ? agent.suggestions : [])
+        .filter(
+            (suggestion) =>
+                typeof suggestion?.prompt === 'string' && suggestion.prompt.trim(),
+        )
+        .map(({ label, prompt }) => ({
+            label: (typeof label === 'string' && label) || prompt,
+            preview: prompt,
+            prompt,
+        }));
+}
+
 const { DateTime } = luxon;
 
 const SECOND_MS = 1000;
@@ -99,6 +117,21 @@ function parseDateTime(at) {
 export function formatTimestamp(at) {
     const dt = parseDateTime(at);
     return dt ? formatDateTime(dt) : '';
+}
+
+/**
+ * Format a server timestamp as its time when it is today, else as its date.
+ * @param {*} at ISO/SQL string or Luxon DateTime
+ * @returns {string} the formatted value, empty when unparseable
+ */
+export function formatShortTimestamp(at) {
+    const dt = parseDateTime(at)?.toLocal();
+    if (!dt) {
+        return '';
+    }
+    return dt.hasSame(DateTime.now(), 'day')
+        ? dt.toLocaleString(DateTime.TIME_SIMPLE)
+        : dt.toLocaleString({ day: '2-digit', month: '2-digit' });
 }
 
 /**

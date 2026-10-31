@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import base64
 
-from odoo import _, api, models
+from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 from odoo.addons.muk_ai.tools.attachment import (
+    AI_SOURCE_TYPE,
     DEFAULT_MAX_UPLOAD_BYTES,
     DEFAULT_TEXT_INLINE_LIMIT_KB,
     IMAGE_MIMETYPES,
@@ -13,6 +14,7 @@ from odoo.addons.muk_ai.tools.attachment import (
     PDF_MIMETYPE,
     is_text,
     looks_like_text,
+    mark_ai_generated,
     readable_text,
 )
 
@@ -21,6 +23,16 @@ class IrAttachment(models.Model):
     """Validate, describe, and materialize attachments for AI consumption."""
 
     _inherit = 'ir.attachment'
+
+    # ----------------------------------------------------------
+    # Fields
+    # ----------------------------------------------------------
+
+    ai_generated = fields.Boolean(
+        string='AI Generated',
+        help='Made by an AI model. A PNG or JPEG image also says so in its metadata.',
+        readonly=True,
+    )
 
     # ----------------------------------------------------------
     # Helper
@@ -87,13 +99,14 @@ class IrAttachment(models.Model):
         mimetype: str,
         data_b64: str,
         res_id: int | None = None,
+        ai_generated: bool = False,
     ) -> IrAttachment:
         """Create a session attachment from a base64 payload, checking only its size.
 
         The mimetype allow-list guards what the *model* may ingest, which is a
         narrower question than what may be stored: an XLSX export has no
         ingest strategy, yet the user must still be able to download it.
-
+        :param ai_generated: embed in an image that it is AI media, which flags it
         :raise UserError: when the payload is not valid base64
         """
         try:
@@ -106,7 +119,7 @@ class IrAttachment(models.Model):
         return self.create(
             {
                 'name': filename or 'upload',
-                'raw': raw,
+                'raw': mark_ai_generated(raw) if ai_generated else raw,
                 'mimetype': mimetype,
                 'res_model': 'muk_ai.session',
                 'res_id': res_id or 0,
@@ -131,6 +144,13 @@ class IrAttachment(models.Model):
             mimetype = 'text/plain'
         self._ai_check_mimetype(mimetype)
         return self._ai_store_binary(filename, mimetype, data_b64, res_id=res_id)
+
+    def _get_datas_related_values(self, data: bytes, mimetype: str) -> dict:
+        """Flag the content as AI-generated when its metadata says so."""
+        return {
+            **super()._get_datas_related_values(data, mimetype),
+            'ai_generated': AI_SOURCE_TYPE.encode() in data,
+        }
 
     def _ai_validate(self) -> None:
         """Check read access, mimetype, and size on each record."""

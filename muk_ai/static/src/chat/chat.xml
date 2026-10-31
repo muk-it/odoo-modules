@@ -67,7 +67,7 @@
                             <t t-foreach="suggestions" t-as="s" t-key="s_index">
                                 <button class="mk_suggestion" t-on-click="() => this.onStartWithPrompt(s.prompt)">
                                     <span class="mk_suggestion_label" t-esc="s.label"/>
-                                    <span class="mk_suggestion_preview" t-esc="s.prompt"/>
+                                    <span class="mk_suggestion_preview" t-esc="s.preview"/>
                                 </button>
                             </t>
                         </div>
@@ -99,13 +99,13 @@
                                     <div class="mk_empty_badge d-inline-flex align-items-center justify-content-center rounded-circle shadow-sm mb-3">
                                         <i class="fa fa-comments-o"/>
                                     </div>
-                                    <p t-if="suggestions.length" class="text-muted mb-3">Type a message below or pick a suggestion.</p>
+                                    <p t-if="sessionSuggestions.length" class="text-muted mb-3">Type a message below or pick a suggestion.</p>
                                     <p t-else="" class="text-muted mb-3">Type a message below to begin.</p>
-                                    <div t-if="suggestions.length" class="mk_suggestions">
-                                        <t t-foreach="suggestions" t-as="s" t-key="s_index">
-                                            <button class="mk_suggestion" t-on-click="() => this.onSubmitSuggestion(s.prompt)">
+                                    <div t-if="sessionSuggestions.length" class="mk_suggestions">
+                                        <t t-foreach="sessionSuggestions" t-as="s" t-key="s_index">
+                                            <button class="mk_suggestion" t-on-click="() => this.onSubmitSuggestion(s)">
                                                 <span class="mk_suggestion_label" t-esc="s.label"/>
-                                                <span class="mk_suggestion_preview" t-esc="s.prompt"/>
+                                                <span class="mk_suggestion_preview" t-esc="s.preview"/>
                                             </button>
                                         </t>
                                     </div>
@@ -602,8 +602,25 @@
 
     <t t-name="muk_ai.AskCard">
         <t t-if="block.resolution === 'yesno'">
-            <div class="mk_ask_card">
-                <div class="mk_ask_head d-flex align-items-center">
+            <t t-set="waiting" t-value="session.state.pendingAsk?.call_id === block.callId"/>
+            <div class="mk_ask_card" t-att-class="{ mk_ask_done: !waiting }">
+                <button
+                    t-if="!waiting"
+                    class="mk_ask_resolved btn btn-link d-flex align-items-center gap-2 w-100 p-0 text-start text-body text-decoration-none"
+                    type="button"
+                    t-on-click="() => this.toggleAskOpen(block.callId)"
+                >
+                    <i class="fa" t-att-class="block.decision === 'rejected' ? 'fa-ban text-danger' : 'fa-check-circle text-success'"/>
+                    <span class="fw-semibold flex-shrink-0">
+                        <t t-if="block.decision === 'approved'">Approved</t>
+                        <t t-elif="block.decision === 'approved_session'">Approved for this session</t>
+                        <t t-elif="block.decision === 'rejected'">Rejected</t>
+                        <t t-else="">Resolved</t>
+                    </span>
+                    <span t-if="block.preview?.title" class="text-muted text-truncate" t-esc="block.preview.title"/>
+                    <i class="fa ms-auto text-muted" t-att-class="isAskOpen(block.callId) ? 'fa-angle-up' : 'fa-angle-down'"/>
+                </button>
+                <div t-else="" class="mk_ask_head d-flex align-items-center">
                     <i class="fa fa-shield me-2"/>
                     <strong>Confirmation required</strong>
                     <span class="ms-2 text-muted small" t-if="block.preview and (block.preview.model_label or block.preview.model)" t-esc="'· ' + (block.preview.model_label or block.preview.model)"/>
@@ -617,7 +634,7 @@
                         </button>
                     </span>
                 </div>
-                <div class="mk_ask_body">
+                <div t-if="waiting or isAskOpen(block.callId)" class="mk_ask_body">
                     <p class="mb-2 small" t-if="block.text" t-esc="block.text"/>
                     <t t-if="askViewMode(block) === 'human' and block.preview and block.preview.kind">
                         <t t-call="muk_ai.AskPreview">
@@ -628,8 +645,8 @@
                         <pre class="mk_ask_args small mb-2" t-esc="askArgsText(block)"/>
                     </t>
                 </div>
-                <t t-if="session.state.pendingAsk and session.state.pendingAsk.call_id === block.callId">
-                    <div class="mk_ask_resolved small text-muted" t-if="!session.canWrite()">Waiting for the owner to answer.</div>
+                <t t-if="waiting">
+                    <div class="mk_ask_owner small text-muted" t-if="!session.canWrite()">Waiting for the owner to answer.</div>
                     <div class="mk_ask_actions d-flex flex-wrap gap-2" t-else="">
                         <button class="btn btn-sm btn-primary" t-on-click="() => this.session.respondYesno('approve')">
                             <i class="fa fa-check me-1"/>Approve
@@ -641,9 +658,6 @@
                             <i class="fa fa-times me-1"/>Reject
                         </button>
                     </div>
-                </t>
-                <t t-else="">
-                    <div class="mk_ask_resolved small text-muted">Resolved.</div>
                 </t>
             </div>
         </t>
@@ -715,9 +729,13 @@
                     <tbody>
                         <t t-foreach="preview.changes" t-as="change" t-key="change_index">
                             <tr>
-                                <td><strong t-esc="change.label"/><br/><code class="text-muted" t-esc="change.field"/></td>
-                                <td><span t-if="change.from" t-esc="change.from"/><span t-else="" class="mk_ask_empty">—</span></td>
-                                <td><span t-if="change.to" t-esc="change.to"/><span t-else="" class="mk_ask_empty">—</span></td>
+                                <td>
+                                    <strong t-esc="change.label"/>
+                                    <span t-if="change.lang" class="mk_ask_lang d-inline-flex align-items-center gap-1 ms-1 rounded-pill"><i class="fa fa-language"/><t t-esc="change.lang"/></span>
+                                    <br/><code class="text-muted" t-esc="change.field"/>
+                                </td>
+                                <td><span t-if="change.from" class="text-prewrap" t-esc="change.from"/><span t-else="" class="mk_ask_empty">—</span></td>
+                                <td><span t-if="change.to" class="text-prewrap" t-esc="change.to"/><span t-else="" class="mk_ask_empty">—</span></td>
                             </tr>
                         </t>
                     </tbody>

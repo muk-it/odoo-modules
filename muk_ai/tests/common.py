@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import json
 import socket
 from collections.abc import Iterator
 from contextlib import AbstractContextManager, contextmanager
@@ -180,6 +181,24 @@ class AITestCommon(TransactionCase):
         ) as mock:
             yield mock
 
+    def _make_tool_response(
+        self, name: str, arguments: dict, call_id: str = 'c1'
+    ) -> dict:
+        """Build a provider payload calling one tool."""
+        return {
+            'text': '',
+            'tool_calls': [{'call_id': call_id, 'name': name, 'arguments': arguments}],
+            'carry_inputs': [
+                {
+                    'type': 'function_call',
+                    'name': name,
+                    'arguments': json.dumps(arguments),
+                    'call_id': call_id,
+                }
+            ],
+            'usage': {'input_tokens': 2, 'output_tokens': 1},
+        }
+
     def _make_text_response(self, text: str = 'ok') -> dict:
         """Build a provider payload emitting plain assistant text."""
         return {
@@ -293,7 +312,9 @@ class ImageCase(AITestCommon):
             'content_base64': PNG_1x1,
             'model': self.image.technical_name,
             'revised_prompt': '',
+            'ai_generated': True,
             'cost': {
+                'model_id': self.image.id,
                 'usage': {'images': 1},
                 'total': 0.25,
                 'currency': 'USD',

@@ -150,3 +150,74 @@ class TestApprovalPreview(AITestCommon):
         )
         self.assertEqual(preview['kind'], 'delete')
         self.assertEqual(preview['targets'], [])
+
+    def test_a_preview_names_the_language_a_text_is_written_in(self):
+        self.env['res.lang']._activate_lang('de_DE')
+        company = self.env.company
+        company.write(
+            {
+                'phone': '+43 1 000',
+                'report_header': '<p>Quality</p>',
+                'report_footer': '<p>Old footer</p>',
+            }
+        )
+        company.update_field_translations(
+            'report_footer', {'de_DE': {'Old footer': 'Alte Fusszeile'}}
+        )
+        footer = {'en_US': '<p>New footer</p>', 'de_DE': '<p>Neue Fusszeile</p>'}
+        for values, context, title, changes in (
+            (
+                {'report_footer': '<p>Neue Fusszeile</p>', 'phone': '+43 1 111'},
+                {'lang': 'de_DE'},
+                f'Update {company.name} (Deutsch)',
+                [
+                    ('report_footer', 'Deutsch', 'Alte Fusszeile', 'Neue Fusszeile'),
+                    ('phone', '', '+43 1 000', '+43 1 111'),
+                ],
+            ),
+            (
+                {'report_footer': footer},
+                {},
+                f'Update {company.name}',
+                [
+                    ('report_footer', 'English (US)', 'Old footer', 'New footer'),
+                    ('report_footer', 'Deutsch', 'Alte Fusszeile', 'Neue Fusszeile'),
+                ],
+            ),
+            (
+                {'report_footer': {**footer, 'en_US': '<p>Old footer</p>'}},
+                {},
+                f'Update {company.name} (Deutsch)',
+                [('report_footer', 'Deutsch', 'Alte Fusszeile', 'Neue Fusszeile')],
+            ),
+            (
+                {'report_header': '<p>Qualität</p>'},
+                {'lang': 'de_DE'},
+                f'Update {company.name} (Deutsch)',
+                [('report_header', 'Deutsch', '', 'Qualität')],
+            ),
+            (
+                {'report_footer': '<p>New footer</p>'},
+                {'lang': 'xx_XX'},
+                f'Update {company.name}',
+                [('report_footer', '', 'Old footer', 'New footer')],
+            ),
+        ):
+            with self.subTest(values=values, context=context):
+                preview = self.env['muk_ai.approval']._build_preview(
+                    'update_records',
+                    {
+                        'model': 'res.company',
+                        'ids': [company.id],
+                        'values': values,
+                        'context': context,
+                    },
+                )
+                self.assertEqual(preview['title'], title)
+                self.assertEqual(
+                    [
+                        (item['field'], item['lang'], item['from'], item['to'])
+                        for item in preview['changes']
+                    ],
+                    changes,
+                )

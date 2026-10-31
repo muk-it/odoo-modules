@@ -1,22 +1,36 @@
 import { Component, onWillStart, onWillUnmount, useRef, useState } from '@odoo/owl';
 
+import { isMacOS } from '@web/core/browser/feature_detection';
+import { Dropdown } from '@web/core/dropdown/dropdown';
+import { useDropdownState } from '@web/core/dropdown/dropdown_hooks';
+import { DropdownItem } from '@web/core/dropdown/dropdown_item';
+import { useHotkey } from '@web/core/hotkeys/hotkey_hook';
 import { _t } from '@web/core/l10n/translation';
 import { registry } from '@web/core/registry';
 import { useService } from '@web/core/utils/hooks';
-import { useHotkey } from '@web/core/hotkeys/hotkey_hook';
-import { isMacOS } from '@web/core/browser/feature_detection';
 import { debounce } from '@web/core/utils/timing';
-import { Dropdown } from '@web/core/dropdown/dropdown';
-import { DropdownItem } from '@web/core/dropdown/dropdown_item';
 
-import { chatLists } from '@muk_ai/chat/utils';
+import {
+    agentSuggestions,
+    chatLists,
+    formatError,
+    formatShortTimestamp,
+} from '@muk_ai/chat/utils';
 import { useNotificationBadge } from '@muk_ai/core/notification_badge';
+import { probeCurrentView, seedSessionContext } from '@muk_ai/views/context';
 
-const SYSTRAY_LIMIT = 8;
-const NEW_CHAT_HOTKEY = 'alt+shift+b';
-const FULL_CHAT_HOTKEY = 'alt+shift+f';
+const NEEDS_ICONS = { back_hand: 'fa-hand-paper-o', question_mark: 'fa-question' };
+const STATE_CLASSES = {
+    running: 'mk_state_running',
+    waiting: 'mk_state_waiting',
+    error: 'mk_state_error',
+};
 
-/** Systray dropdown for launching AI chat windows and recent sessions. */
+/**
+ * Systray menu starting AI chats, on the record on screen with its actions,
+ * and listing what waits on the user, then the recent chats with a preview
+ * of their last answer.
+ */
 export class MukAISystray extends Component {
     static template = 'muk_ai.Systray';
     static components = { Dropdown, DropdownItem };
@@ -25,150 +39,289 @@ export class MukAISystray extends Component {
         this.orm = useService('orm');
         this.bus = useService('bus_service');
         this.action = useService('action');
+        this.notification = useService('notification');
         this.chatWindow = useService('muk_ai.chat_window');
+        this.badge = useNotificationBadge();
+        this.menu = useDropdownState({ onOpen: () => this.onOpened() });
         this.state = useState({
             sessions: [],
             loaded: false,
+            needs: [],
+            busy: {},
+            record: null,
+            actions: [],
         });
-        this.badge = useNotificationBadge();
-        this._busHandler = null;
-        this._loadSeq = 0;
-        this._debouncedLoad = debounce(() => this._load(), 500, {
+        this.sessionLimit = 8;
+        this.hotkey = isMacOS() ? 'Ctrl+Shift+B' : 'Alt+Shift+B';
+        this.formatShortTimestamp = formatShortTimestamp;
+        this.button = useRef('systrayBtn');
+        this.loadSeq = 0;
+        this.needsSeq = 0;
+        this.reloadSessions = debounce(() => this.load(), 500, {
             leading: true,
             trailing: true,
         });
-        this.btnRef = useRef('systrayBtn');
-        useHotkey(NEW_CHAT_HOTKEY, () => this.onNewChat(), {
+        this.reloadNeeds = debounce(() => this.loadNeeds(), 300, {
+            leading: true,
+            trailing: true,
+        });
+        const onSessionState = (payload) => this.onSessionState(payload);
+        const onActivity = () => this.reloadNeeds();
+        useHotkey('alt+shift+b', () => this.newChat(), {
             global: true,
             bypassEditableProtection: true,
-            withOverlay: () => this.btnRef.el,
+            withOverlay: () => this.button.el,
         });
-        useHotkey(FULL_CHAT_HOTKEY, () => this.onOpenFullChat(), {
+        useHotkey('alt+shift+f', () => this.openFullChat(), {
             global: true,
             bypassEditableProtection: true,
         });
         onWillStart(async () => {
-            await this._load();
-            this._connectBus();
+            await Promise.all([this.load(), this.loadNeeds()]);
+            this.bus.subscribe('muk_ai.session_state', onSessionState);
+            this.bus.subscribe('mail.activity/updated', onActivity);
         });
         onWillUnmount(() => {
-            this._disconnectBus();
-            this._debouncedLoad.cancel();
+            this.bus.unsubscribe('muk_ai.session_state', onSessionState);
+            this.bus.unsubscribe('mail.activity/updated', onActivity);
+            this.reloadSessions.cancel();
+            this.reloadNeeds.cancel();
         });
     }
-    async _load() {
-        const seq = ++this._loadSeq;
+    get recent() {
+        const waiting = new Set(this.state.needs.map((row) => row.session_id));
+        return this.state.sessions
+            .filter((row) => !waiting.has(row.id))
+            .slice(0, this.sessionLimit);
+    }
+    get running() {
+        return this.recent.filter((row) => ['running', 'waiting'].includes(row.state))
+            .length;
+    }
+    get badgeLabel() {
+        return this.badge.count > 99 ? '99+' : String(this.badge.count);
+    }
+    get needsTitle() {
+        const count = this.state.needs.length;
+        return count === 1 ? _t('1 thing needs you') : _t('%s things need you', count);
+    }
+    get recordTitle() {
+        const name = this.state.record.display_name;
+        return name ? _t('Ask about %s', name) : _t('Ask about this record');
+    }
+    /**
+     * Return the image of an agent.
+     * @param {number} agentId the agent
+     * @returns {string} the image route
+     */
+    agentImage(agentId) {
+        return `/web/image/muk_ai.agent/${agentId || 0}/image_128`;
+    }
+    /**
+     * Return the icon class of a waiting item.
+     * @param {string} icon the icon the item names
+     * @returns {string} a Font Awesome class
+     */
+    needIcon(icon) {
+        return (
+            NEEDS_ICONS[icon] || (icon?.startsWith('fa-') ? icon : 'fa-hand-paper-o')
+        );
+    }
+    stateClass(state) {
+        return STATE_CLASSES[state] || '';
+    }
+    /**
+     * Return the line under a chat: its error, its progress or its last answer.
+     * @param {object} row the chat
+     * @returns {string} plain text
+     */
+    preview(row) {
+        if (row.state === 'error') {
+            return row.error_message || '';
+        }
+        if (row.state === 'running') {
+            return _t('Working...');
+        }
+        return (row.last_text || '')
+            .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+            .replace(/[*_`#>|]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+    /**
+     * Load the unread chats first, then the most recent ones.
+     */
+    async load() {
+        const seq = ++this.loadSeq;
+        const domain = chatLists.domain;
+        const fields = [
+            'name',
+            'state',
+            'agent_id',
+            'write_date',
+            'last_text',
+            'error_message',
+        ];
+        const read = (extra) =>
+            this.orm.searchRead('muk_ai.session', [...domain, ...extra], fields, {
+                limit: this.sessionLimit,
+                order: 'write_date DESC',
+            });
         try {
-            const domain = chatLists.domain;
-            const [recent, unread] = await Promise.all([
-                this.orm.searchRead('muk_ai.session', domain, ['id', 'name', 'state'], {
-                    limit: SYSTRAY_LIMIT,
-                    order: 'write_date DESC',
-                }),
-                this.orm.searchRead(
-                    'muk_ai.session',
-                    [...domain, ['notification_unread', '=', true]],
-                    ['id', 'name', 'state'],
-                    { limit: SYSTRAY_LIMIT, order: 'write_date DESC' },
-                ),
+            const [unread, recent] = await Promise.all([
+                read([['notification_unread', '=', true]]),
+                read([]),
             ]);
-            if (seq === this._loadSeq) {
-                this.state.sessions = this._mergeUnreadFirst(unread, recent);
+            if (seq === this.loadSeq) {
+                const seen = new Set(unread.map((row) => row.id));
+                this.state.sessions = [
+                    ...unread,
+                    ...recent.filter((row) => !seen.has(row.id)),
+                ];
             }
         } catch {
-            if (seq === this._loadSeq) {
+            if (seq === this.loadSeq) {
                 this.state.sessions = [];
             }
         }
         this.state.loaded = true;
     }
-    _mergeUnreadFirst(unread, recent) {
-        const merged = [...unread];
-        const seen = new Set(unread.map((s) => s.id));
-        for (const session of recent) {
-            if (!seen.has(session.id)) {
-                seen.add(session.id);
-                merged.push(session);
+    /**
+     * Read what waits on the user, keeping only the answer of the last read.
+     */
+    async loadNeeds() {
+        const seq = ++this.needsSeq;
+        const rows = await this.orm.silent
+            .call('muk_ai.session', 'get_needs_you', [])
+            .catch(() => null);
+        if (rows && seq === this.needsSeq) {
+            this.state.needs = rows;
+        }
+    }
+    onSessionState(payload) {
+        if (!payload?.session_id) {
+            return;
+        }
+        const id = payload.session_id;
+        if (
+            payload.deleted ||
+            payload.awaiting_user ||
+            this.state.needs.some((row) => row.session_id === id)
+        ) {
+            this.reloadNeeds();
+        }
+        if (payload.deleted) {
+            this.state.sessions = this.state.sessions.filter((row) => row.id !== id);
+            return;
+        }
+        const row = this.state.sessions.find((session) => session.id === id);
+        if (!row) {
+            this.reloadSessions();
+            return;
+        }
+        for (const key of ['state', 'name', 'last_text', 'error_message']) {
+            if (payload[key] !== undefined) {
+                row[key] = payload[key];
             }
         }
-        return merged;
     }
-    _connectBus() {
-        this._busHandler = (payload) => this._onBusEvent(payload);
-        this.bus.subscribe('muk_ai.session_state', this._busHandler);
+    async onOpened() {
+        this.reloadNeeds();
+        const context = await probeCurrentView(this.env);
+        this.state.record = context?.kind === 'record' ? context : null;
+        this.state.actions = await this.loadActions();
     }
-    _disconnectBus() {
-        if (this._busHandler) {
-            this.bus.unsubscribe('muk_ai.session_state', this._busHandler);
-            this._busHandler = null;
-        }
-    }
-    _onBusEvent(payload) {
-        if (!payload || !payload.session_id) return;
-        if (payload.deleted) {
-            this.state.sessions = this.state.sessions.filter(
-                (s) => s.id !== payload.session_id,
-            );
-            return;
-        }
-        const idx = this.state.sessions.findIndex((s) => s.id === payload.session_id);
-        if (idx < 0) {
-            this._debouncedLoad();
-            return;
-        }
-        const updated = { ...this.state.sessions[idx] };
-        if (payload.state) updated.state = payload.state;
-        if (payload.name) updated.name = payload.name;
-        this.state.sessions = [
-            ...this.state.sessions.slice(0, idx),
-            updated,
-            ...this.state.sessions.slice(idx + 1),
-        ];
-    }
-    get runningCount() {
-        return this.state.sessions.filter(
-            (s) => s.state === 'running' || s.state === 'waiting',
-        ).length;
-    }
-    get hasRunning() {
-        return this.runningCount > 0;
-    }
-    get badgeLabel() {
-        return this.badge.count > 99 ? '99+' : String(this.badge.count);
-    }
-    get newChatHotkeyLabel() {
-        return isMacOS() ? 'Ctrl+Shift+B' : 'Alt+Shift+B';
-    }
-    get fullChatHotkeyLabel() {
-        return isMacOS() ? 'Ctrl+Shift+F' : 'Alt+Shift+F';
-    }
-    statusDotClass(state) {
-        return (
-            {
-                new: 'mk_state_new',
-                running: 'mk_state_running',
-                waiting: 'mk_state_waiting',
-                done: 'mk_state_done',
-                error: 'mk_state_error',
-                stopped: 'mk_state_stopped',
-            }[state] || 'mk_state_new'
+    /**
+     * Return the actions offered as chips: the default agent's suggestions.
+     * @returns {Promise<Array>} `{label, preview, prompt}` entries
+     */
+    async loadActions() {
+        const [agent] = await this.orm.searchRead(
+            'muk_ai.agent',
+            [['active', '=', true]],
+            ['suggestions'],
+            { order: 'sequence, name', limit: 1 },
         );
+        return agentSuggestions(agent);
     }
-    async onNewChat() {
-        const name = _t('Chat %s', new Date().toLocaleString());
-        const sessionId = await this.orm.create('muk_ai.session', [{ name }]);
-        const id = Array.isArray(sessionId) ? sessionId[0] : sessionId;
+    /**
+     * Create a new chat.
+     * @returns {Promise<number>} the chat
+     */
+    async createSession() {
+        const [id] = await this.orm.create('muk_ai.session', [
+            { name: _t('New Chat') },
+        ]);
+        return id;
+    }
+    async newChat() {
+        this.menu.close();
+        this.chatWindow.open(await this.createSession());
+    }
+    openFullChat() {
+        this.menu.close();
+        return this.action.doAction({ type: 'ir.actions.client', tag: 'muk_ai.chat' });
+    }
+    /**
+     * Open a new chat to pick from every action, not only the offered ones.
+     * @returns {Promise<void>}
+     */
+    more() {
+        return this.newChat();
+    }
+    /**
+     * Start a chat in a window and run an action in it.
+     * @param {object} action one of the offered actions
+     */
+    async start(action) {
+        const id = await this.createSession();
+        await seedSessionContext(this.env, id);
+        await this.runAction(id, action);
         this.chatWindow.open(id);
-        await this._load();
     }
-    onOpenSession(session) {
-        this.chatWindow.open(session.id);
+    /**
+     * Run an offered action in a chat.
+     * @param {number} sessionId the chat
+     * @param {object} action the action
+     * @returns {Promise}
+     */
+    runAction(sessionId, action) {
+        return this.orm.call('muk_ai.session', 'start', [sessionId, action.prompt]);
     }
-    async onOpenFullChat() {
-        await this.action.doAction({
-            type: 'ir.actions.client',
-            tag: 'muk_ai.chat',
-        });
+    markAllRead() {
+        return this.orm.call('muk_ai.session', 'dismiss_notifications', [
+            this.badge.unreadIds,
+        ]);
+    }
+    /**
+     * Approve or reject a waiting item in place through the method it names.
+     * @param {object} row the item, as `get_needs_you` returns it
+     * @param {string} verb `approve` or `reject`
+     */
+    async decideNeed(row, verb) {
+        this.state.busy[row.key] = true;
+        try {
+            await this.orm.call(row.res_model, row[verb], [[row.res_id]]);
+            this.state.needs = this.state.needs.filter((item) => item.key !== row.key);
+        } catch (error) {
+            this.notification.add(formatError(error), { type: 'danger' });
+        } finally {
+            delete this.state.busy[row.key];
+            this.reloadNeeds();
+        }
+    }
+    /**
+     * Open a waiting item: a chat in a window, anything else through the
+     * action its `open` method returns.
+     * @param {object} row the item, as `get_needs_you` returns it
+     */
+    async openNeed(row) {
+        if (row.session_id) {
+            this.chatWindow.open(row.session_id);
+            return;
+        }
+        const action = await this.orm.call(row.res_model, row.open, [[row.res_id]]);
+        await this.action.doAction(action);
     }
 }
 
