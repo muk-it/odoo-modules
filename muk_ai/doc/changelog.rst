@@ -1,7 +1,7 @@
 `1.29.0`
 -------
 
-- Chat Files in the Code Sandbox
+- Files in the Code Sandbox
 
 `1.28.0`
 -------

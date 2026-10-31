@@ -22,6 +22,7 @@ from odoo.addons.muk_ai.tools.url_fetch import (
     FetchResult,
     page_icon,
 )
+from odoo.addons.muk_mcp.tools.protocol import ToolResult
 
 CHUNK = b'x' * (1 << 20)
 
@@ -35,10 +36,10 @@ class TestWebFetch(AITestCommon):
 
     def _fetch(self, url: str, **arguments) -> dict:
         """Run the web_fetch tool as a chat dispatches it and decode its result."""
-        text, _info = self.env['muk_mcp.tool']._call(
+        result, _info = self.env['muk_mcp.tool']._call(
             'web_fetch', {'url': url, **arguments}, self.env
         )
-        return json.loads(text)
+        return result if isinstance(result, ToolResult) else json.loads(result)
 
     # ----------------------------------------------------------
     # Tests
@@ -124,6 +125,7 @@ class TestWebFetch(AITestCommon):
                     result = self._fetch(url, mode=mode)
                 self.assertEqual(result.get('title'), title)
                 if isinstance(content, list):
+                    self.assertIsInstance(result, ToolResult)
                     self.assertEqual(result['content'], content)
                 else:
                     self.assertIn(content, result['content'])

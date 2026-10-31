@@ -37,6 +37,7 @@ from odoo.addons.muk_ai.tools.web_search import (
 )
 from odoo.addons.muk_mcp.core.tool import mcp_tool
 from odoo.addons.muk_mcp.tools.content import make_content_for_bytes
+from odoo.addons.muk_mcp.tools.protocol import ToolResult
 
 _logger = logging.getLogger(__name__)
 
@@ -307,20 +308,22 @@ class AIWeb(models.AbstractModel):
             result.content_type
         ):
             name = urlparse(result.url).path.rsplit('/', 1)[-1] or None
-            return {
-                'type': 'web',
-                'url': result.url,
-                'content_type': result.content_type,
-                'bytes': len(result.body),
-                'content': [
-                    make_content_for_bytes(
-                        result.url,
-                        result.content_type,
-                        raw_bytes=result.body,
-                        name=name,
-                    )
-                ],
-            }
+            return ToolResult(
+                {
+                    'type': 'web',
+                    'url': result.url,
+                    'content_type': result.content_type,
+                    'bytes': len(result.body),
+                    'content': [
+                        make_content_for_bytes(
+                            result.url,
+                            result.content_type,
+                            raw_bytes=result.body,
+                            name=name,
+                        )
+                    ],
+                }
+            )
         title, content = render_content(result, mode=mode)
         icons = self._ai_cache_favicons([(result.url, page_icon(result))])
         total = len(content)
