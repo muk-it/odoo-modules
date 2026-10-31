@@ -256,10 +256,7 @@ msgid "Description"
 msgstr "Descrizione"
 
 #. module: muk_ai_skills
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_agent__display_name
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_session__display_name
 #: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__display_name
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_mcp_mixin__display_name
 msgid "Display Name"
 msgstr "Nome visualizzato"
 
@@ -308,10 +305,7 @@ msgid "Human-readable label shown in lists and the chat menu."
 msgstr "Etichetta leggibile mostrata negli elenchi e nel menu della chat."
 
 #. module: muk_ai_skills
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_agent__id
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_session__id
 #: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__id
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_mcp_mixin__id
 msgid "ID"
 msgstr "ID"
 
@@ -562,6 +556,7 @@ msgstr "La competenza %(name)s %(requirement)s."
 #. module: muk_ai_skills
 #. odoo-python
 #: code:addons/muk_ai_skills/models/skill.py:0
+#: code:addons/muk_ai_skills/models/skill.py:0
 msgid "Skill %(name)s asks for a chatter, which %(models)s does not have."
 msgstr ""
 "La competenza %(name)s richiede un chatter, di cui %(models)s non dispone."
@@ -729,3 +724,84 @@ msgstr "richiede un record con chatter aperto"
 #: code:addons/muk_ai_skills/models/skill.py:0
 msgid "only on %(models)s"
 msgstr "solo su %(models)s"
+
+#. module: muk_ai_skills
+#: model:muk_ai.skill,body:muk_ai_skills.demo_skill_escalate
+msgid ""
+"\n"
+"Schedule a `mail.activity` on the pinned record. Use when the user wants to create a follow-up\n"
+"todo, call, meeting, or email reminder tied to a record.\n"
+"\n"
+"1. Take the target record (model + id) from `<ui_ctx>`, or from `<linked_record>` when the\n"
+"   session was started from a record. If neither names one, call `ask_user` once for a\n"
+"   record reference.\n"
+"2. Collect the activity details. If the user already gave them in their request, use those; for\n"
+"   anything still missing, call `ask_user` ONCE with a single combined question covering the\n"
+"   missing pieces (type, deadline, assignee, summary). Acceptable activity types:\n"
+"   - To-Do    → `mail.mail_activity_data_todo`\n"
+"   - Call     → `mail.mail_activity_data_call`\n"
+"   - Meeting  → `mail.mail_activity_data_meeting`\n"
+"   - Email    → `mail.mail_activity_data_email`\n"
+"   Defaults if unspecified after asking once: type = To-Do, deadline = today + 3 days, assignee\n"
+"   = current user (omit `user_id`), summary = short echo of the user's request.\n"
+"3. Resolve the assignee: if a name was given, `search_read` `res.users` with\n"
+"   `[('name','ilike',<name>)]` (fall back to `login`), limit 5. Pick the unique match; if more\n"
+"   than one, call `ask_user` once with the candidate list.\n"
+"4. Call `call_method`:\n"
+"   - `model`: target model\n"
+"   - `method`: `activity_schedule`\n"
+"   - `ids`: `[<id>]`\n"
+"   - `kwargs`:\n"
+"     - `act_type_xmlid`: chosen xmlid\n"
+"     - `date_deadline`: ISO date string `YYYY-MM-DD`\n"
+"     - `summary`: short title\n"
+"     - `user_id`: assignee id (omit to default to current user)\n"
+"     - `note`: optional HTML, only if the user provided extra context\n"
+"5. Reply with one short confirmation: `Scheduled <type> on <display_name> for <date>, assigned\n"
+"   to <assignee>.` Stop. Do not open the record afterwards.\n"
+msgstr ""
+"\n"
+"Pianifica una `mail.activity` sul record fissato. Usalo quando l'utente vuole creare un promemoria di\n"
+"follow-up (da fare, chiamata, riunione o email) legato a un record.\n"
+"\n"
+"1. Prendi il record di destinazione (modello + id) da `<ui_ctx>`, oppure da `<linked_record>` quando la\n"
+"   sessione è stata avviata da un record. Se nessuno dei due ne indica uno, chiama `ask_user` una\n"
+"   volta per un riferimento al record.\n"
+"2. Raccogli i dettagli dell'attività. Se l'utente li ha già indicati nella richiesta, usa quelli; per\n"
+"   tutto ciò che manca ancora, chiama `ask_user` UNA SOLA VOLTA con un'unica domanda combinata che copra le\n"
+"   parti mancanti (tipo, scadenza, assegnatario, riepilogo). Tipi di attività ammessi:\n"
+"   - Da fare  → `mail.mail_activity_data_todo`\n"
+"   - Chiamata → `mail.mail_activity_data_call`\n"
+"   - Riunione → `mail.mail_activity_data_meeting`\n"
+"   - Email    → `mail.mail_activity_data_email`\n"
+"   Valori predefiniti se non specificati dopo aver chiesto una volta: tipo = Da fare, scadenza = oggi + 3 giorni,\n"
+"   assegnatario = utente corrente (ometti `user_id`), riepilogo = breve eco della richiesta dell'utente.\n"
+"3. Individua l'assegnatario: se è stato indicato un nome, `search_read` su `res.users` con\n"
+"   `[('name','ilike',<name>)]` (in alternativa `login`), limite 5. Scegli la corrispondenza univoca; se ce n'è\n"
+"   più di una, chiama `ask_user` una volta con l'elenco dei candidati.\n"
+"4. Chiama `call_method`:\n"
+"   - `model`: modello di destinazione\n"
+"   - `method`: `activity_schedule`\n"
+"   - `ids`: `[<id>]`\n"
+"   - `kwargs`:\n"
+"     - `act_type_xmlid`: xmlid scelto\n"
+"     - `date_deadline`: data ISO come stringa `YYYY-MM-DD`\n"
+"     - `summary`: titolo breve\n"
+"     - `user_id`: id dell'assegnatario (ometti per usare l'utente corrente)\n"
+"     - `note`: HTML facoltativo, solo se l'utente ha fornito contesto aggiuntivo\n"
+"5. Rispondi con una breve conferma: `Scheduled <type> on <display_name> for <date>, assigned\n"
+"   to <assignee>.` Fermati. Non aprire il record in seguito.\n"
+
+#. module: muk_ai_skills
+#: model:muk_ai.skill,label:muk_ai_skills.demo_skill_escalate
+msgid "Schedule Activity"
+msgstr "Pianifica attività"
+
+#. module: muk_ai_skills
+#: model:muk_ai.skill,description:muk_ai_skills.demo_skill_escalate
+msgid ""
+"Schedule a follow-up activity (to-do, call, meeting, email) on the pinned "
+"record."
+msgstr ""
+"Pianifica un'attività di follow-up (da fare, chiamata, riunione, email) sul "
+"record fissato."

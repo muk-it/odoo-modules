@@ -124,25 +124,45 @@ class TestInvokeSkill(AITestCommon):
     # Tests slash dispatch
     # ----------------------------------------------------------
 
-    def test_invoke_skill_from_chat_appends_events_and_runs_llm(self):
+    def test_invoke_skill_from_chat_asks_runs_the_skill_then_replies(self):
         self._drop_existing_skills()
-        skill = self._make_skill(name='slash_demo', body='Slash body.')
-        session = self._make_session()
-        with self._mock_responses([self._make_text_response('Acknowledged.')]):
-            snapshot = session.invoke_skill_from_chat(skill.name)
-        events = snapshot['events']
-        kinds = [e.get('kind') for e in events]
-        self.assertIn('tool_call', kinds)
-        self.assertIn('tool_result', kinds)
-        result_event = next(e for e in events if e.get('kind') == 'tool_result')
-        self.assertEqual(result_event['name'], 'invoke_skill')
-        self.assertEqual(result_event['result']['body'], 'Slash body.')
-        conversation = session.conversation or []
-        types = [item.get('type') for item in conversation]
-        self.assertIn('function_call', types)
-        self.assertIn('function_call_output', types)
-        self.assertEqual(session.state, 'done')
-        self.assertEqual(session.last_text, 'Acknowledged.')
+        skill = self._make_skill(name='slash_demo', label='Demo', body='Slash body.')
+        for user_input, asked, argument in (
+            ('product xy', 'product xy', 'product xy'),
+            ('   ', 'Demo', None),
+            (None, 'Demo', None),
+        ):
+            with self.subTest(user_input=user_input):
+                session = self._make_session()
+                with self._mock_responses([self._make_text_response('Acknowledged.')]):
+                    snapshot = session.invoke_skill_from_chat(
+                        skill.name, user_input=user_input
+                    )
+                self.assertEqual(
+                    (session.state, session.last_text, session.name),
+                    ('done', 'Acknowledged.', 'Demo'),
+                )
+                events = snapshot['events']
+                self.assertEqual(
+                    [event['kind'] for event in events[:3]],
+                    ['user_message', 'tool_call', 'tool_result'],
+                )
+                self.assertEqual(events[2]['result']['body'], 'Slash body.')
+                conversation = session.conversation
+                asking = next(
+                    index
+                    for index, item in enumerate(conversation)
+                    if item.get('role') == 'user'
+                )
+                call, output = conversation[asking + 1 : asking + 3]
+                self.assertEqual(conversation[asking]['content'][0]['text'], asked)
+                self.assertEqual(
+                    (call['type'], output['type']),
+                    ('function_call', 'function_call_output'),
+                )
+                self.assertEqual(
+                    json.loads(call['arguments']).get('user_input'), argument
+                )
 
     def test_invoke_skill_from_chat_blocked_when_running(self):
         self._drop_existing_skills()
@@ -151,50 +171,6 @@ class TestInvokeSkill(AITestCommon):
         session.state = 'running'
         with self.assertRaises(UserError):
             session.invoke_skill_from_chat(skill.name)
-
-    def test_invoke_skill_from_chat_with_user_input_appends_user_turn(self):
-        self._drop_existing_skills()
-        skill = self._make_skill(name='args_slash', body='Body.')
-        session = self._make_session()
-        with self._mock_responses([self._make_text_response('ok')]):
-            session.invoke_skill_from_chat(skill.name, user_input='product xy')
-        conversation = session.conversation or []
-        user_turns = [
-            item
-            for item in conversation
-            if isinstance(item, dict) and item.get('role') == 'user'
-        ]
-        self.assertTrue(user_turns, 'no user turn appended for skill args')
-        last_user = user_turns[-1]
-        text_blocks = [
-            block
-            for block in last_user.get('content') or []
-            if isinstance(block, dict) and block.get('type') == 'input_text'
-        ]
-        self.assertEqual(len(text_blocks), 1)
-        self.assertEqual(text_blocks[0]['text'], 'product xy')
-        function_calls = [
-            json.loads(item.get('arguments') or '{}')
-            for item in conversation
-            if isinstance(item, dict) and item.get('type') == 'function_call'
-        ]
-        self.assertTrue(
-            any(call.get('user_input') == 'product xy' for call in function_calls)
-        )
-
-    def test_invoke_skill_from_chat_blank_user_input_acts_like_no_args(self):
-        self._drop_existing_skills()
-        skill = self._make_skill(name='blank_slash', body='Body.')
-        session = self._make_session()
-        with self._mock_responses([self._make_text_response('ok')]):
-            session.invoke_skill_from_chat(skill.name, user_input='   ')
-        conversation = session.conversation or []
-        user_turns = [
-            item
-            for item in conversation
-            if isinstance(item, dict) and item.get('role') == 'user'
-        ]
-        self.assertEqual(user_turns, [])
 
     def test_invoke_skill_from_chat_unknown_raises(self):
         session = self._make_session()

@@ -82,7 +82,7 @@ class AISession(models.Model):
             summary = description[0] if description else ''
             requirement = skill._scope_requirement()
             suffix = f' ({requirement})' if requirement else ''
-            lines.append(f'- `{skill.name}`: {summary}{suffix}')
+            lines.append(f'- `{skill.name}` ({skill.display_name}): {summary}{suffix}')
         lines.append('</available_skills>')
         return '\n'.join(lines)
 
@@ -195,11 +195,10 @@ class AISession(models.Model):
         ]
 
     def invoke_skill_from_chat(self, name: str, user_input: str | None = None) -> dict:
-        """Inject a skill invocation into the conversation and run the LLM.
+        """Ask for a skill as a user turn, inject its invocation and run the LLM.
 
-        :param name: technical name of the skill to invoke
-        :param user_input: optional free-text appended as a user turn
-        :return: the refreshed session snapshot
+        A fresh chat is named after the skill; ``user_input`` is the request
+        sent with it, else the skill label.
         :raise UserError: when the session is busy or the skill is invalid
         """
         self._recover_if_stuck()
@@ -221,7 +220,13 @@ class AISession(models.Model):
         if user_text:
             arguments['user_input'] = user_text
         if not self.conversation:
+            if self._should_autoname():
+                self.write({'name': skill.display_name})
+                self._publish_event('rename', {'name': skill.display_name})
             self.conversation = self._build_initial_inputs()
+        self._enqueue_user_turn(
+            user_text or skill.display_name, self.env['ir.attachment']
+        )
         self._append_event(
             {
                 'kind': 'tool_call',
@@ -238,31 +243,16 @@ class AISession(models.Model):
                 'call_id': call_id,
             }
         )
-        conversation_entries = [
-            {
-                'type': 'function_call',
-                'name': 'invoke_skill',
-                'arguments': json.dumps(arguments),
-                'call_id': call_id,
-            },
-            build_tool_call_output(call_id, payload),
-        ]
-        if user_text:
-            conversation_entries.append(
+        self._extend_conversation(
+            [
                 {
-                    'role': 'user',
-                    'content': [{'type': 'input_text', 'text': user_text}],
-                }
-            )
-            self._append_event(
-                {
-                    'kind': 'user_message',
-                    'content': user_text,
-                    'attachments': [],
-                }
-            )
-        self._extend_conversation(conversation_entries)
-        self.write(self._turn_start_values())
-        self._publish_event('state', {'state': 'running'})
+                    'type': 'function_call',
+                    'name': 'invoke_skill',
+                    'arguments': json.dumps(arguments),
+                    'call_id': call_id,
+                },
+                build_tool_call_output(call_id, payload),
+            ]
+        )
         self._trigger_worker()
         return self.get_snapshot()

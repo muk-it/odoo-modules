@@ -1,6 +1,6 @@
 // @odoo-module
 
-import { useExternalListener, useRef, useState } from '@odoo/owl';
+import { useEffect, useExternalListener, useRef, useState } from '@odoo/owl';
 
 import { hasTouch } from '@web/core/browser/feature_detection';
 import { patch } from '@web/core/utils/patch';
@@ -9,7 +9,7 @@ import { ChatComposer } from '@muk_ai/chat/composer/chat_composer';
 import { allSlashCommands } from '@muk_ai/chat/session/use_ai_session';
 
 import { skillScopeSatisfied } from '@muk_ai_skills/chat/scope';
-import { skillStore } from '@muk_ai_skills/chat/skill_cache';
+import { skillStore, takeSkillsPanelRequest } from '@muk_ai_skills/chat/skill_cache';
 import { SkillsPanel } from '@muk_ai_skills/chat/skills_panel';
 
 ChatComposer.components = { ...ChatComposer.components, SkillsPanel };
@@ -25,6 +25,14 @@ patch(ChatComposer.prototype, 'muk_ai_skills.ChatComposer', {
         this.hostRef = useRef('composerHost');
         this.skillState = useState(skillStore);
         this.localState.skillsOpen = false;
+        useEffect(
+            (sessionId) => {
+                if (takeSkillsPanelRequest(sessionId)) {
+                    this.localState.skillsOpen = true;
+                }
+            },
+            () => [this.props.sessionId],
+        );
         useExternalListener(document, 'mousedown', (event) => {
             if (
                 this.localState.skillsOpen &&

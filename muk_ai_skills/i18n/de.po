@@ -257,10 +257,7 @@ msgid "Description"
 msgstr "Beschreibung"
 
 #. module: muk_ai_skills
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_agent__display_name
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_session__display_name
 #: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__display_name
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_mcp_mixin__display_name
 msgid "Display Name"
 msgstr "Anzeigename"
 
@@ -310,10 +307,7 @@ msgstr ""
 "Menschenlesbare Beschriftung, die in Listen und im Chat-Menü angezeigt wird."
 
 #. module: muk_ai_skills
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_agent__id
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_session__id
 #: model:ir.model.fields,field_description:muk_ai_skills.field_muk_ai_skill__id
-#: model:ir.model.fields,field_description:muk_ai_skills.field_muk_mcp_mixin__id
 msgid "ID"
 msgstr "ID"
 
@@ -564,6 +558,7 @@ msgstr "Fähigkeit %(name)s %(requirement)s."
 #. module: muk_ai_skills
 #. odoo-python
 #: code:addons/muk_ai_skills/models/skill.py:0
+#: code:addons/muk_ai_skills/models/skill.py:0
 msgid "Skill %(name)s asks for a chatter, which %(models)s does not have."
 msgstr "Fähigkeit %(name)s benötigt einen Chatter, den %(models)s nicht hat."
 
@@ -729,3 +724,84 @@ msgstr "benötigt einen geöffneten Datensatz mit Chatter"
 #: code:addons/muk_ai_skills/models/skill.py:0
 msgid "only on %(models)s"
 msgstr "nur bei %(models)s"
+
+#. module: muk_ai_skills
+#: model:muk_ai.skill,body:muk_ai_skills.demo_skill_escalate
+msgid ""
+"\n"
+"Schedule a `mail.activity` on the pinned record. Use when the user wants to create a follow-up\n"
+"todo, call, meeting, or email reminder tied to a record.\n"
+"\n"
+"1. Take the target record (model + id) from `<ui_ctx>`, or from `<linked_record>` when the\n"
+"   session was started from a record. If neither names one, call `ask_user` once for a\n"
+"   record reference.\n"
+"2. Collect the activity details. If the user already gave them in their request, use those; for\n"
+"   anything still missing, call `ask_user` ONCE with a single combined question covering the\n"
+"   missing pieces (type, deadline, assignee, summary). Acceptable activity types:\n"
+"   - To-Do    → `mail.mail_activity_data_todo`\n"
+"   - Call     → `mail.mail_activity_data_call`\n"
+"   - Meeting  → `mail.mail_activity_data_meeting`\n"
+"   - Email    → `mail.mail_activity_data_email`\n"
+"   Defaults if unspecified after asking once: type = To-Do, deadline = today + 3 days, assignee\n"
+"   = current user (omit `user_id`), summary = short echo of the user's request.\n"
+"3. Resolve the assignee: if a name was given, `search_read` `res.users` with\n"
+"   `[('name','ilike',<name>)]` (fall back to `login`), limit 5. Pick the unique match; if more\n"
+"   than one, call `ask_user` once with the candidate list.\n"
+"4. Call `call_method`:\n"
+"   - `model`: target model\n"
+"   - `method`: `activity_schedule`\n"
+"   - `ids`: `[<id>]`\n"
+"   - `kwargs`:\n"
+"     - `act_type_xmlid`: chosen xmlid\n"
+"     - `date_deadline`: ISO date string `YYYY-MM-DD`\n"
+"     - `summary`: short title\n"
+"     - `user_id`: assignee id (omit to default to current user)\n"
+"     - `note`: optional HTML, only if the user provided extra context\n"
+"5. Reply with one short confirmation: `Scheduled <type> on <display_name> for <date>, assigned\n"
+"   to <assignee>.` Stop. Do not open the record afterwards.\n"
+msgstr ""
+"\n"
+"Plane eine `mail.activity` auf dem angehefteten Datensatz. Verwende dies, wenn der Benutzer eine\n"
+"Folgeerinnerung als To-do, Anruf, Meeting oder E-Mail an einem Datensatz anlegen möchte.\n"
+"\n"
+"1. Nimm den Zieldatensatz (Modell + ID) aus `<ui_ctx>` oder aus `<linked_record>`, wenn die\n"
+"   Sitzung von einem Datensatz aus gestartet wurde. Nennt keines von beiden einen Datensatz, rufe\n"
+"   einmal `ask_user` nach einer Datensatzreferenz auf.\n"
+"2. Sammle die Details der Aktivität. Hat der Benutzer sie bereits in seiner Anfrage genannt, verwende\n"
+"   diese; für alles, was noch fehlt, rufe EINMAL `ask_user` mit einer einzigen kombinierten Frage auf,\n"
+"   die die fehlenden Teile abdeckt (Typ, Frist, Zuständiger, Zusammenfassung). Zulässige Aktivitätstypen:\n"
+"   - To-do    → `mail.mail_activity_data_todo`\n"
+"   - Anruf    → `mail.mail_activity_data_call`\n"
+"   - Meeting  → `mail.mail_activity_data_meeting`\n"
+"   - E-Mail   → `mail.mail_activity_data_email`\n"
+"   Standardwerte, falls nach einmaligem Nachfragen nicht angegeben: Typ = To-do, Frist = heute + 3 Tage,\n"
+"   Zuständiger = aktueller Benutzer (`user_id` weglassen), Zusammenfassung = kurzes Echo der Anfrage des Benutzers.\n"
+"3. Ermittle den Zuständigen: wurde ein Name genannt, `search_read` auf `res.users` mit\n"
+"   `[('name','ilike',<name>)]` (Rückfall auf `login`), Limit 5. Wähle den eindeutigen Treffer; gibt es\n"
+"   mehrere, rufe einmal `ask_user` mit der Kandidatenliste auf.\n"
+"4. Rufe `call_method` auf:\n"
+"   - `model`: Zielmodell\n"
+"   - `method`: `activity_schedule`\n"
+"   - `ids`: `[<id>]`\n"
+"   - `kwargs`:\n"
+"     - `act_type_xmlid`: gewählte xmlid\n"
+"     - `date_deadline`: ISO-Datumsstring `YYYY-MM-DD`\n"
+"     - `summary`: kurzer Titel\n"
+"     - `user_id`: ID des Zuständigen (weglassen, um den aktuellen Benutzer zu verwenden)\n"
+"     - `note`: optionales HTML, nur wenn der Benutzer zusätzlichen Kontext angegeben hat\n"
+"5. Antworte mit einer kurzen Bestätigung: `Scheduled <type> on <display_name> for <date>, assigned\n"
+"   to <assignee>.` Stopp. Öffne den Datensatz danach nicht.\n"
+
+#. module: muk_ai_skills
+#: model:muk_ai.skill,label:muk_ai_skills.demo_skill_escalate
+msgid "Schedule Activity"
+msgstr "Aktivität planen"
+
+#. module: muk_ai_skills
+#: model:muk_ai.skill,description:muk_ai_skills.demo_skill_escalate
+msgid ""
+"Schedule a follow-up activity (to-do, call, meeting, email) on the pinned "
+"record."
+msgstr ""
+"Plant eine Folgeaktivität (To-do, Anruf, Meeting, E-Mail) auf dem "
+"angehefteten Datensatz."

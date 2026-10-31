@@ -40,3 +40,22 @@ export function findSkill(sessionId, name) {
     const lowered = (name || '').toLowerCase();
     return skills.find((s) => (s.name || '').toLowerCase() === lowered) || null;
 }
+
+const panelRequests = new Set();
+
+/**
+ * Ask the composer of a chat not opened yet to show its skills panel.
+ * @param {number} sessionId the chat
+ */
+export function requestSkillsPanel(sessionId) {
+    panelRequests.add(sessionId);
+}
+
+/**
+ * Take the request to show the skills panel of a chat, if there is one.
+ * @param {number} sessionId the chat
+ * @returns {boolean} true when the panel was asked for
+ */
+export function takeSkillsPanelRequest(sessionId) {
+    return panelRequests.delete(sessionId);
+}

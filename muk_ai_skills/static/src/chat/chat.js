@@ -1,16 +1,19 @@
 // @odoo-module
 
-import { useEffect } from '@odoo/owl';
+import { useEffect, useState } from '@odoo/owl';
 
 import { useService } from '@web/core/utils/hooks';
+import { patch } from '@web/core/utils/patch';
 
 import { _t } from '@muk_ai/core/compat/translation';
+import { AIChat } from '@muk_ai/chat/chat';
 import { patchChatSurfaces } from '@muk_ai/chat/surfaces';
 import { formatError } from '@muk_ai/chat/utils';
 import { allSlashCommands } from '@muk_ai/chat/session/use_ai_session';
 
 import { recordSkillUse } from '@muk_ai_skills/chat/recent_skills';
-import { findSkill, setSkills } from '@muk_ai_skills/chat/skill_cache';
+import { skillScopeSatisfied } from '@muk_ai_skills/chat/scope';
+import { findSkill, setSkills, skillStore } from '@muk_ai_skills/chat/skill_cache';
 
 /**
  * Resolve the skill a slash command head routes to, or null when a command of
@@ -110,3 +113,36 @@ patchChatSurfaces('muk_ai_skills', () => ({
         installSkillRouting(this);
     },
 }));
+
+/** Offer the skills of the model on screen as the suggestions of an empty chat. */
+patch(AIChat.prototype, 'muk_ai_skills.suggestions', {
+    setup() {
+        this._super(...arguments);
+        this.skillState = useState(skillStore);
+    },
+    get suggestions() {
+        const { sessionId, viewContext } = this.session.state;
+        const own = (this.skillState[sessionId] || [])
+            .filter(
+                (skill) =>
+                    skill.models.length && skillScopeSatisfied(skill, viewContext),
+            )
+            .map((skill) => ({
+                label: skill.label,
+                preview: skill.description,
+                skill: skill.name,
+            }));
+        return own.length ? own : this._super();
+    },
+    onSubmitSuggestion(suggestion) {
+        if (suggestion.skill) {
+            return this.runSkill(suggestion.skill);
+        }
+        return this._super(...arguments);
+    },
+});
+
+Object.defineProperty(AIChat.prototype, 'suggestions', {
+    ...Object.getOwnPropertyDescriptor(AIChat.prototype, 'suggestions'),
+    enumerable: false,
+});
