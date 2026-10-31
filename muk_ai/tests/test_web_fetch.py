@@ -113,13 +113,21 @@ class TestWebFetchTool(AITestCommon):
             (
                 'image/png',
                 base64.b64decode(PNG_1x1),
-                [{'type': 'image', 'data': PNG_1x1, 'mimeType': 'image/png'}],
+                [
+                    {
+                        'name': 'payload',
+                        'type': 'image',
+                        'data': PNG_1x1,
+                        'mimeType': 'image/png',
+                    }
+                ],
             ),
             (
                 'application/pdf',
                 b'%PDF-1.4',
                 [
                     {
+                        'name': 'payload',
                         'type': 'resource',
                         'resource': {
                             'uri': url,

@@ -310,12 +310,15 @@ class AIWeb(models.AbstractModel):
                     'content_type': result.content_type,
                     'bytes': len(result.body),
                     'content': [
-                        make_content_for_bytes(
-                            result.url,
-                            result.content_type,
-                            raw_bytes=result.body,
-                            name=name,
-                        )
+                        {
+                            'name': name,
+                            **make_content_for_bytes(
+                                result.url,
+                                result.content_type,
+                                raw_bytes=result.body,
+                                name=name,
+                            ),
+                        }
                     ],
                 }
             )
