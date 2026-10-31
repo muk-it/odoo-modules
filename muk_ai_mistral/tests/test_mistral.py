@@ -395,14 +395,21 @@ class TestAiMistralProvider(MistralTestCommon):
             self.provider._get_client().generate_image('mistral-medium-latest', 'a cat')
         self.assertEqual(captured['timeout'], 240)
 
-    def test_generate_image_reports_a_driver_that_answered_with_text(self):
+    def test_generate_image_refuses_a_text_answer_and_reference_images(self):
         response = self._mock_http_response(self._text_response('I cannot draw.'))
-        with (
-            patch.object(requests.Session, 'post', return_value=response),
-            self.assertRaises(UserError) as caught,
+        for references, error, posted in (
+            (None, 'answered with text', 1),
+            ([{'mimetype': 'image/png', 'data_b64': 'iVBO'}], 'no reference images', 0),
         ):
-            self.provider._get_client().generate_image('mistral-medium-latest', 'x')
-        self.assertIn('answered with text', str(caught.exception))
+            with (
+                self.subTest(error=error),
+                patch.object(requests.Session, 'post', return_value=response) as post,
+                self.assertRaisesRegex(UserError, error),
+            ):
+                self.provider._get_client().generate_image(
+                    'mistral-medium-latest', 'x', references=references
+                )
+            self.assertEqual(post.call_count, posted)
 
     def test_generate_image_reports_a_failed_download(self):
         response = self._mock_http_response(
