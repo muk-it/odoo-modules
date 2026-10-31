@@ -221,12 +221,18 @@ class TestMistral(TestProviders):
         ]
         code = '\n\n```python\nprint(1)\n```\n\n```\n1\n```\n\n'
         source = 'Mistral ([About](https://m.ai/))'
-        for label, download, image in (
-            ('downloaded', None, '![cube](data:image/png;base64,iVBORw0KGgo=)'),
-            ('lost', requests.ConnectionError('gone'), '_(generated file: `cube`)_'),
+        for label, download, content, image in (
+            ('downloaded', None, PNG, '![cube](data:image/png;base64,iVBORw0KGgo=)'),
+            ('file', None, b'a,b', '[cube](data:text/plain;base64,YSxi)'),
+            (
+                'lost',
+                requests.ConnectionError('gone'),
+                PNG,
+                '_(generated file: `cube`)_',
+            ),
         ):
             answer = json_response({})
-            answer._content = PNG
+            answer._content = content
             with (
                 self.subTest(file=label),
                 patch.object(

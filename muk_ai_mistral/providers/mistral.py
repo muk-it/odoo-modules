@@ -1,13 +1,9 @@
 from __future__ import annotations
 
-import base64
 import json
 from collections.abc import Callable
 
-import requests
-
 from odoo.exceptions import UserError
-from odoo.tools.mimetypes import guess_mimetype
 
 from odoo.addons.muk_ai.providers.base import ProviderBase
 
@@ -246,33 +242,17 @@ class MistralProvider(ProviderBase):
             return {'type': 'document_url', 'document_url': data}
         return cls._text_part(cls._attachment_text(block))
 
-    def _download(self, url: str, headers: dict | None = None) -> tuple[str, str]:
-        """Fetch a generated file and return its sniffed mimetype and base64 content.
-
-        :raise UserError: when the download fails
-        """
-        try:
-            response = self._http_session().get(
-                url, headers=headers, timeout=self.provider.request_timeout
-            )
-            response.raise_for_status()
-        except requests.RequestException as error:
-            self._raise(error)
-        return (
-            guess_mimetype(response.content, default='application/octet-stream'),
-            base64.b64encode(response.content).decode('ascii'),
-        )
-
     def _file_snippet(self, chunk: dict) -> str:
-        """Render a generated file as an inline image, a note when it cannot load."""
+        """Render a generated file inline, an image as one, a note when it cannot load."""
         name = chunk.get('file_name') or 'image'
         try:
             mimetype, data_b64 = self._download(
-                f'{self.api_url}/files/{chunk["file_id"]}/content', self.headers()
+                f'{self.api_url}/files/{chunk["file_id"]}/content', self.headers(), name
             )
         except UserError:
             return f'\n\n_(generated file: `{name}`)_\n\n'
-        return f'\n\n![{name}](data:{mimetype};base64,{data_b64})\n\n'
+        image = '!' if mimetype.startswith('image/') else ''
+        return f'\n\n{image}[{name}](data:{mimetype};base64,{data_b64})\n\n'
 
     @staticmethod
     def _code_snippet(info: dict) -> str:
