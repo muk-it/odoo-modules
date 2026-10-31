@@ -159,9 +159,6 @@
                             <t t-call="muk_ai.ChatSidebarSpace"/>
                         </t>
                     </div>
-                    <div t-if="!this.personalSpaces.length and !this.state.creating" class="mk_space_empty text-muted">
-                        No space yet. Create a new space.
-                    </div>
                     <t t-if="this.pinnedSpaces.length or this.foldedSpaces.length">
                         <hr class="mk_space_divider"/>
                         <t t-foreach="this.pinnedSpaces" t-as="space" t-key="space.id">

@@ -186,30 +186,22 @@ class TestCost(AITestCommon):
         self.assertEqual(session.state, 'error')
         self.assertIn('Turn cost budget reached (1.00 EUR)', session.error_message)
 
-    def test_an_image_is_charged_at_the_image_model_of_the_session(self):
-        one = {**IMAGE, 'cost': {'usage': {'images': 1}, 'total': 0.25}}
-        premium = {'model_id': self.premium.id, 'model': 'gpt-cost-premium'}
-        for agent, name, result, charged in (
-            (self.painter, 'generate_image', one, 0.25),
-            (
-                self.painter,
-                'generate_image',
-                {**IMAGE, 'cost': {'usage': {'images': 2}}},
-                0.5,
-            ),
-            (
-                self.painter,
-                'generate_image',
-                {**one, 'cost': {**one['cost'], **premium}},
-                0.25,
-            ),
-            (self.painter, 'generate_image', {**IMAGE, 'cost': 3}, 0),
-            (self.painter, 'generate_image', [one], 0),
-            (self.painter, 'generate_image', IMAGE, 0),
-            (self.painter, 'web_fetch', one, 0),
+    def test_a_tool_cost_counts_on_the_chat_and_is_booked_by_the_tool_only(self):
+        one = {'model_id': self.image.id, 'usage': {'images': 1}, 'total': 0.25}
+        premium = {**one, 'model_id': self.premium.id}
+        for name, result, charged in (
+            ('generate_image', {**IMAGE, 'cost': one}, 0.25),
+            ('generate_image', {**IMAGE, 'cost': {**one, 'usage': {'images': 2}}}, 0.5),
+            ('generate_image', {**IMAGE, 'cost': premium}, 100),
+            ('web_fetch', {'text': 'page', 'cost': [one, one]}, 0.5),
+            ('generate_image', {**IMAGE, 'cost': {'usage': {'images': 1}}}, 0),
+            ('generate_image', {**IMAGE, 'cost': {**one, 'model_id': 0}}, 0),
+            ('generate_image', {**IMAGE, 'cost': 3}, 0),
+            ('generate_image', [{**IMAGE, 'cost': one}], 0),
+            ('generate_image', IMAGE, 0),
         ):
-            with self.subTest(agent=agent.name, tool=name, result=result):
-                session = self._session(agent_id=agent.id)
+            with self.subTest(tool=name, result=result):
+                session = self._session(agent_id=self.painter.id)
                 with (
                     self._patch_tool({name: result}) as calls,
                     self._mock_responses(
@@ -222,14 +214,22 @@ class TestCost(AITestCommon):
                     snapshot = session.start('draw')
                 self.assertEqual([call['name'] for call in calls], [name])
                 self.assertAlmostEqual(snapshot['total_output_cost'], charged)
-                self.assertAlmostEqual(snapshot['total_cost'], charged)
+                self.assertAlmostEqual(snapshot['turn_usage'].get('cost', 0), charged)
+                self.assertFalse(
+                    self.env['muk_ai.usage'].search([('session_id', '=', session.id)])
+                )
 
     def test_an_image_counts_against_the_turn_cost_limit(self):
         self._set_params({'muk_ai.turn_cost_limit': 0.2})
         session = self._session(agent_id=self.painter.id)
         with (
             self._patch_tool(
-                {'generate_image': {**IMAGE, 'cost': {'usage': {'images': 1}}}}
+                {
+                    'generate_image': {
+                        **IMAGE,
+                        'cost': {'model_id': self.image.id, 'usage': {'images': 1}},
+                    }
+                }
             ),
             self._mock_responses(
                 [
@@ -285,8 +285,10 @@ class TestCost(AITestCommon):
                 self.assertEqual(session.state, 'error' if blocked else 'done')
                 self.assertTrue((session.error_message or '').startswith(blocked or ''))
                 self.assertEqual(
-                    usage.search([('session_id', '=', session.id)]).mapped('amount'),
-                    [] if blocked else [1.0],
+                    usage.search([('session_id', '=', session.id)]).mapped(
+                        lambda row: (row.purpose, row.amount)
+                    ),
+                    [] if blocked else [('chat', 1.0)],
                 )
 
     def test_the_usage_of_months_past_the_retention_is_deleted(self):

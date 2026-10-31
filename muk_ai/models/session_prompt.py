@@ -11,6 +11,7 @@ from odoo.addons.muk_ai.tools.call import (
     FILES_BLOCK,
     TERMINATING_TOOLS,
     TOOL_LOAD_TOOL,
+    WORDING_BLOCK,
     format_tool_signature,
     summarize_tool_description,
 )
@@ -291,6 +292,7 @@ class AISessionPrompt(models.AbstractModel):
         """
         parts = [
             (self.env._('Agent prompt'), self._effective_system_prompt()),
+            (self.env._('Wording'), WORDING_BLOCK),
             (self.env._('Files'), FILES_BLOCK),
             (self.env._('Tool catalog'), self._build_available_tools_block()),
             (self.env._('Workspace'), self._build_space_block()),

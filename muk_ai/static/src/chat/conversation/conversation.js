@@ -172,8 +172,8 @@ export class ChatConversation extends Component {
             this.props.session.attach(files);
         }
     }
-    onSuggestion(prompt) {
-        this.props.session.state.input = prompt;
+    onSuggestion(suggestion) {
+        this.props.session.state.input = suggestion.prompt;
         this.props.session.send();
     }
 }

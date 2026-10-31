@@ -75,6 +75,7 @@
             height: 16px;
             background: var(--mk-state);
             font-size: 10px;
+            will-change: transform;
             &:empty {
                 width: 9px;
                 height: 9px;

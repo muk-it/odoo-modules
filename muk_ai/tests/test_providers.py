@@ -48,7 +48,15 @@ class TestProviders(ProviderTestCase):
     # ----------------------------------------------------------
 
     def test_the_request_carries_model_system_tools_and_limits(self):
-        schema = {'name': 'plan', 'schema': {'type': 'object'}}
+        schema = {
+            'name': 'plan',
+            'schema': {
+                'type': 'object',
+                'properties': {'note': {'type': ['string', 'null']}},
+                'required': ['note'],
+                'additionalProperties': False,
+            },
+        }
         for name, case in self.cases.items():
             provider = self.providers[name]
             for model, max_tokens in ((case.model, 2048), (None, 0)):

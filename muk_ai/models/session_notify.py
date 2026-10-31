@@ -32,6 +32,7 @@ class AISessionNotify(models.AbstractModel):
     awaiting_user = fields.Boolean(
         compute='_compute_awaiting_user',
         string='Awaiting User',
+        store=True,
     )
 
     # ----------------------------------------------------------
@@ -215,6 +216,47 @@ class AISessionNotify(models.AbstractModel):
             return self.env._('Needs your approval before running a tool')
         return self.env._('Waiting for your answer')
 
+    def _attention_row(self) -> dict:
+        """Return what the Needs you list shows of a chat waiting for its owner.
+
+        A single write shows its field changes and is approved or rejected in
+        place, anything else opens the chat.
+        """
+        ask = self._public_pending_ask() or {}
+        preview = ask.get('preview') or {}
+        single = (
+            ask.get('kind') == 'approval'
+            and preview.get('kind') in ('update', 'create')
+            and len(preview.get('targets') or []) <= 1
+            and not any(item.get('record') for item in preview.get('properties') or [])
+        )
+        return {
+            'key': f'{self._name}:{self.id}',
+            'res_model': self._name,
+            'res_id': self.id,
+            'session_id': self.id,
+            'agent_id': self.agent_id.id,
+            'label': self.name,
+            'sublabel': preview.get('title')
+            or ask.get('text')
+            or self._notification_message('waiting', {}, ask.get('kind')),
+            'icon': 'back_hand' if ask.get('kind') == 'approval' else 'question_mark',
+            'changes': (preview.get('changes') or []) if single else [],
+            'approve': 'approve_tool' if single else False,
+            'reject': 'reject_tool' if single else False,
+        }
+
+    @api.model
+    def _muk_ai_attention(self) -> list[dict]:
+        """Return the chats of the current user that wait for an answer or approval."""
+        return [
+            session._attention_row()
+            for session in self.search(
+                [('user_id', '=', self.env.uid), ('awaiting_user', '=', True)],
+                order='write_date desc',
+            )
+        ]
+
     def _post_notification(
         self, users: models.BaseModel, title: str, message: str
     ) -> None:
@@ -262,6 +304,24 @@ class AISessionNotify(models.AbstractModel):
     # ----------------------------------------------------------
 
     @api.model
+    def get_needs_you(self) -> list[dict]:
+        """Return everything the AI waits on the current user for.
+
+        The waiting chats come first, then the rows of every model that
+        answers ``_muk_ai_attention()``, each a dict with at least ``key``,
+        ``label`` and the method ``open`` that shows it in its context.
+        """
+        rows = self._muk_ai_attention()
+        for name, model in self.env.registry.items():
+            if (
+                name != self._name
+                and not model._abstract
+                and hasattr(model, '_muk_ai_attention')
+            ):
+                rows += self.env[name]._muk_ai_attention()
+        return rows
+
+    @api.model
     def notification_badge(self) -> dict:
         """Return the attention badge payload for the current user."""
         return self._notification_badge_payload(self.env.user)
@@ -290,8 +350,14 @@ class AISessionNotify(models.AbstractModel):
     # Compute
     # ----------------------------------------------------------
 
-    @api.depends('state')
+    @api.depends('state', 'pending_ask')
     def _compute_awaiting_user(self) -> None:
-        """Flag the chats that wait for their owner to answer or approve."""
+        """Flag the chats that wait for their owner to answer or approve.
+
+        A wait for the browser to run a client action needs nobody.
+        """
         for record in self:
-            record.awaiting_user = record.state == 'waiting'
+            record.awaiting_user = (
+                record.state == 'waiting'
+                and (record.pending_ask or {}).get('kind') != 'client_action'
+            )

@@ -101,8 +101,10 @@ class TestAgent(AITestCommon):
                 self.assertEqual('Companies accessible' in system, bool(line))
                 self.assertIn(line, system)
         self.env['ir.model']._get('res.partner').ai_sensitive = True
-        gate = 'Approval gate (the system asks the user): res.partner, res.users'
-        self.assertIn(gate, self._system_prompt(self._request(session)))
+        self.assertRegex(
+            self._system_prompt(self._request(session)),
+            r'Approval gate \(the system asks the user\): .*res\.partner',
+        )
         session.set_approval_mode('off')
         system = self._system_prompt(self._request(session))
         self.assertIn('Approval mode: off', system)

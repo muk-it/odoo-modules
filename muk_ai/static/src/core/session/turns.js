@@ -2,6 +2,7 @@ import { _t } from '@web/core/l10n/translation';
 import { registry } from '@web/core/registry';
 
 const MAX_RESULT_DEPTH = 4;
+const INLINE_IMAGE = /!\[([^\]]*)\]\(\/web\/image\/(\d+)\)/g;
 
 /**
  * Registry of `(block, entry) => void` functions decorating tool blocks as
@@ -96,16 +97,17 @@ export function isToolBlockHidden(block, turn, pendingAsk) {
     if (hiddenToolBlocks.getAll().some((hides) => hides(block, turn))) {
         return true;
     }
+    const ask = turn.blocks.find(
+        (other) => other.type === 'ask' && other.callId === block.callId,
+    );
     if (block.result !== null && block.result !== undefined) {
-        return false;
+        return !!ask && (ask.decision === 'rejected' || !toolBlockHasError(block));
     }
     return (
+        !!ask ||
         pendingAsk?.call_id === block.callId ||
         !!pendingAsk?.actions?.some(
             (action) => !action.done && action.call_id === block.callId,
-        ) ||
-        turn.blocks.some(
-            (other) => other.type === 'ask' && other.callId === block.callId,
         )
     );
 }
@@ -140,6 +142,22 @@ export function toolResultFiles(value, out = [], depth = 0) {
         }
     }
     return out;
+}
+
+/**
+ * Collect the stored images the text of a turn draws inline.
+ * @param {object} turn the turn
+ * @returns {Array} `{id, filename, mimetype}` descriptors
+ */
+export function inlineImages(turn) {
+    return (turn.blocks || [])
+        .filter((block) => block.type === 'text')
+        .flatMap((block) => [...block.text.matchAll(INLINE_IMAGE)])
+        .map(([, name, id]) => ({
+            id: Number(id),
+            filename: name || 'generated.png',
+            mimetype: 'image/png',
+        }));
 }
 
 /**

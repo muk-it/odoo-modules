@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import io
 import json
+
+from PIL import Image
 
 from odoo import models
 from odoo.exceptions import UserError
@@ -96,9 +99,62 @@ class TestGenerateImage(AITestCommon):
                 'content_base64': PNG_1x1,
                 'model': 'gpt-image-test',
                 'revised_prompt': 'a red dot',
-                'cost': {'usage': {'images': 1}, 'total': 0.25, 'currency': 'USD'},
+                'ai_generated': True,
+                'cost': {
+                    'model_id': self.image_model.id,
+                    'usage': {'images': 1},
+                    'total': 0.25,
+                    'currency': 'USD',
+                },
             },
         )
+
+    def test_reference_images_reach_the_image_request(self):
+        photo = self.env['ir.attachment'].create(
+            {'name': 'photo.png', 'raw': PNG_BYTES, 'mimetype': 'image/png'}
+        )
+        gemini = self.image_model.copy(
+            {'provider_id': self.provider_google.id, 'technical_name': 'gemini-image'}
+        )
+        inline = {'inlineData': {'mimeType': 'image/png', 'data': PNG_1x1}}
+        for model, answer, url, sent_images in (
+            (
+                self.image_model,
+                self._rendered(),
+                'https://api.openai.com/v1/images/edits',
+                lambda body: body['images'],
+            ),
+            (
+                gemini,
+                json_response({'candidates': [{'content': {'parts': [inline]}}]}),
+                'models/gemini-image:generateContent',
+                lambda body: body['contents'][0]['parts'][1:],
+            ),
+        ):
+            with self.subTest(provider=model.provider_id.name):
+                self.painter.image_model_id = model
+                session = self._session(agent_id=self.painter.id)
+                with self._capture_post(answer) as sent:
+                    result = self._generate(
+                        session, prompt='restage', reference_attachment_ids=[photo.id]
+                    )
+                self.assertTrue(sent[0][0].endswith(url))
+                self.assertEqual(
+                    sent_images(sent[0][1]['json']),
+                    [{'image_url': f'data:image/png;base64,{PNG_1x1}'}]
+                    if model == self.image_model
+                    else [inline],
+                )
+                self.assertEqual(result['content_base64'], PNG_1x1)
+        note = self.env['ir.attachment'].create(
+            {'name': 'note.txt', 'raw': b'a dot', 'mimetype': 'text/plain'}
+        )
+        with (
+            self._capture_post() as sent,
+            self.assertRaisesRegex(UserError, 'Reference images must be .*: note.txt'),
+        ):
+            self._generate(session, prompt='a dot', reference_attachment_ids=[note.id])
+        self.assertFalse(sent)
 
     def test_an_unsupported_option_is_dropped_with_a_notice(self):
         session = self._session(agent_id=self.painter.id)
@@ -158,14 +214,16 @@ class TestGenerateImage(AITestCommon):
                 self._generate(bound, prompt='a dot')
             self.assertFalse(sent)
 
-    def test_a_chat_turn_stores_the_image_as_an_attachment(self):
+    def test_a_chat_turn_stores_a_marked_image_and_counts_its_cost_once(self):
         session = self._session(agent_id=self.painter.id)
         with (
             self._capture_post(self._rendered()),
             self._mock_responses(
                 [
-                    tool_payload(('generate_image', {'prompt': 'a dot'}, 'c1')),
-                    text_payload('done'),
+                    tool_payload(
+                        ('generate_image', {'prompt': 'a dot'}, 'c1'), usage={}
+                    ),
+                    text_payload('done', usage={}),
                 ]
             ),
         ):
@@ -175,9 +233,43 @@ class TestGenerateImage(AITestCommon):
         self.assertEqual(stored['image_url'], f'/web/image/{attachment.id}')
         self.assertNotIn('content_base64', stored)
         self.assertEqual(
-            (attachment.res_model, attachment.res_id, attachment.mimetype),
-            ('muk_ai.session', session.id, 'image/png'),
+            (
+                attachment.res_model,
+                attachment.res_id,
+                attachment.mimetype,
+                attachment.ai_generated,
+            ),
+            ('muk_ai.session', session.id, 'image/png', True),
         )
-        self.assertEqual(attachment.raw.content, PNG_BYTES)
+        image = Image.open(io.BytesIO(attachment.raw.content))
+        self.assertEqual(image.tobytes(), Image.open(io.BytesIO(PNG_BYTES)).tobytes())
+        self.assertIn(
+            b'Iptc4xmpExt:DigitalSourceType="http://cv.iptc.org/newscodes/'
+            b'digitalsourcetype/trainedAlgorithmicMedia"',
+            image.info['xmp'],
+        )
+        self.assertAlmostEqual(session.total_cost, 0.25)
+        self.assertEqual(
+            self.env['muk_ai.usage']
+            .search([('session_id', '=', session.id)])
+            .mapped(lambda row: (row.purpose, row.amount)),
+            [('image', 0.25)],
+        )
         self.assertNotIn(PNG_1x1, json.dumps(self._events(session, 'tool_result')))
         self.assertEqual(session.state, 'done')
+        partner = self.env['res.partner'].create({'name': 'Dot'})
+        for value, flagged in ((attachment.raw.to_base64(), True), (PNG_1x1, False)):
+            with self.subTest(flagged=flagged):
+                partner.image_1920 = value
+                self.assertEqual(
+                    self.env['ir.attachment']
+                    .search(
+                        [
+                            ('res_model', '=', 'res.partner'),
+                            ('res_id', '=', partner.id),
+                            ('res_field', '=', 'image_1920'),
+                        ]
+                    )
+                    .ai_generated,
+                    flagged,
+                )

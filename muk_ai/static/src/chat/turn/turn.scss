@@ -200,6 +200,11 @@
             flex-direction: column;
         }
     }
+    &.mk_ask_done {
+        padding: 0.4rem 0.75rem;
+        border-color: var(--border-color);
+        background: var(--body-bg);
+    }
 }
 .mk_ask_preview {
     font-size: 0.82rem;
@@ -220,6 +225,12 @@
         color: var(--warning-text-emphasis);
         font-size: 0.68rem;
         letter-spacing: 0.04em;
+    }
+    .mk_ask_lang {
+        --oi-font-size: 0.75rem;
+        padding: 1px 6px;
+        background: rgba(var(--warning-rgb), 0.14);
+        letter-spacing: normal;
     }
     .mk_ask_line + .mk_ask_line {
         margin-top: 4px;

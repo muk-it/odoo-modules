@@ -68,7 +68,9 @@ export class AIChat extends Component {
             this.state.ready = true;
         });
         useEffect(() => {
-            this.chat.pageSessionId = this.state.sessionId;
+            const id = this.state.sessionId;
+            this.chat.pageSessionId = id;
+            untrack(() => this.chat.closeWindow(id));
             return () => (this.chat.pageSessionId = null);
         });
         useEffect(() => {

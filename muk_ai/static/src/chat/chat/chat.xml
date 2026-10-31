@@ -108,7 +108,7 @@
                         <h2 class="fw-semibold mb-1 text-body">How can I help you today?</h2>
                         <p t-if="this.suggestions.length" class="mb-0">Start a new chat or pick a suggestion to begin.</p>
                         <p t-else="" class="mb-0">Start a new chat to begin.</p>
-                        <t t-call="muk_ai.Suggestions" suggestions="this.suggestions" onPick="(prompt) => this.startWithPrompt(prompt)"/>
+                        <t t-call="muk_ai.Suggestions" suggestions="this.suggestions" onPick="(suggestion) => this.startWithPrompt(suggestion.prompt)"/>
                     </div>
                     <ChatConversation
                         t-else=""

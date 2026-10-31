@@ -70,9 +70,9 @@
                         </a>
                     </div>
                 </t>
-                <div t-if="turn.attachments.length" class="d-flex flex-wrap gap-2 mt-2">
+                <div t-if="this.attachments.length" class="d-flex flex-wrap gap-2 mt-2">
                     <AttachmentCard
-                        t-foreach="turn.attachments"
+                        t-foreach="this.attachments"
                         t-as="attachment"
                         t-key="attachment.id"
                         attachment="attachment"
@@ -199,8 +199,24 @@
 
     <t t-name="muk_ai.AskCard">
         <t t-set="waiting" t-value="this.pendingAsk?.call_id === block.callId"/>
-        <div t-if="block.resolution === 'yesno'" class="mk_ask_card">
-            <div class="mk_ask_head d-flex align-items-center gap-2 fw-semibold">
+        <div t-if="block.resolution === 'yesno'" class="mk_ask_card" t-att-class="{ mk_ask_done: !waiting }">
+            <button
+                t-if="!waiting"
+                class="mk_ask_resolved btn btn-link d-flex align-items-center gap-2 w-100 p-0 text-start text-body text-decoration-none"
+                type="button"
+                t-on-click="() => this.state.opened[block.callId] = !this.state.opened[block.callId]"
+            >
+                <i class="oi" t-att-class="block.decision === 'rejected' ? 'text-danger' : 'text-success'" t-att-data-icon="block.decision === 'rejected' ? 'block' : 'check_circle'"/>
+                <span class="fw-semibold flex-none">
+                    <t t-if="block.decision === 'approved'">Approved</t>
+                    <t t-elif="block.decision === 'approved_session'">Approved for this session</t>
+                    <t t-elif="block.decision === 'rejected'">Rejected</t>
+                    <t t-else="">Resolved</t>
+                </span>
+                <span t-if="block.preview?.title" class="text-muted text-truncate" t-out="block.preview.title"/>
+                <i class="oi ms-auto text-muted" t-att-data-icon="this.state.opened[block.callId] ? 'expand_less' : 'expand_more'"/>
+            </button>
+            <div t-else="" class="mk_ask_head d-flex align-items-center gap-2 fw-semibold">
                 <i class="oi" data-icon="security"/>
                 <strong>Confirmation required</strong>
                 <span t-if="block.preview?.model_label or block.preview?.model" class="text-muted small fw-normal" t-out="`· ${block.preview.model_label or block.preview.model}`"/>
@@ -213,19 +229,13 @@
                     <i class="oi" t-att-data-icon="this.askMode(block) === 'technical' ? 'list_alt' : 'code'"/>
                 </button>
             </div>
-            <div class="mk_ask_body">
+            <div t-if="waiting or this.state.opened[block.callId]" class="mk_ask_body">
                 <p t-if="block.text" class="mb-2 small" t-out="block.text"/>
                 <t t-if="this.askMode(block) === 'human' and block.preview?.kind" t-call="muk_ai.AskPreview" preview="block.preview"/>
                 <pre t-elif="block.preview" class="mk_ask_args mb-2 overflow-auto border rounded-3 bg-100 text-body font-monospace text-prewrap text-break" t-out="this.askArgs(block)"/>
             </div>
-            <div t-if="!waiting" class="mk_ask_resolved mt-1 small text-muted">
-                <t t-if="block.decision === 'approved'">Approved once.</t>
-                <t t-elif="block.decision === 'approved_session'">Approved for this session.</t>
-                <t t-elif="block.decision === 'rejected'">Rejected.</t>
-                <t t-else="">Resolved.</t>
-            </div>
-            <div t-elif="!this.writable" class="mk_ask_resolved mt-1 small text-muted">Waiting for the owner to answer.</div>
-            <div t-else="" class="mk_ask_actions d-flex gap-1 mt-2">
+            <div t-if="waiting and !this.writable" class="mk_ask_owner mt-1 small text-muted">Waiting for the owner to answer.</div>
+            <div t-elif="waiting" class="mk_ask_actions d-flex gap-1 mt-2">
                 <button class="btn btn-sm btn-primary" t-on-click="() => session.respondYesno('approve')">
                     <i class="oi me-1" data-icon="check"/>Approve
                 </button>
@@ -294,9 +304,14 @@
                             Record <t t-out="change.record"/>
                         </div>
                         <div class="mk_ask_change">
-                            <div class="mk_ask_label text-uppercase fw-semibold" t-att-title="change.field" t-out="change.label"/>
+                            <div class="mk_ask_label d-flex align-items-center gap-1 fw-semibold">
+                                <span class="text-uppercase" t-att-title="change.field" t-out="change.label"/>
+                                <span t-if="change.lang" class="mk_ask_lang d-inline-flex align-items-center gap-1 rounded-pill fw-medium">
+                                    <i class="oi" data-icon="translate"/><t t-out="change.lang"/>
+                                </span>
+                            </div>
                             <t t-set="value" t-value="preview.kind === 'update' ? change.to : change.value"/>
-                            <span t-if="preview.kind === 'update' and change.from" class="text-muted text-decoration-line-through me-1" t-out="change.from"/>
+                            <span t-if="preview.kind === 'update' and change.from" class="d-block text-muted text-decoration-line-through text-prewrap" t-out="change.from"/>
                             <t t-if="change.lines">
                                 <div t-foreach="change.lines" t-as="line" t-key="line_index" class="mk_ask_line">
                                     <div t-out="line.title"/>
@@ -305,7 +320,7 @@
                                     </div>
                                 </div>
                             </t>
-                            <span t-elif="value" t-out="value"/>
+                            <span t-elif="value" class="d-block text-prewrap" t-out="value"/>
                             <span t-else="" class="text-muted">-</span>
                         </div>
                     </t>

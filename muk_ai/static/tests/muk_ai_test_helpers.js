@@ -60,6 +60,8 @@ export class AISessionModel extends models.Model {
     space_id = fields.Many2one({ relation: 'muk_ai.space' });
     notification_unread = fields.Boolean();
     awaiting_user = fields.Boolean();
+    last_text = fields.Text();
+    error_message = fields.Text();
     _records = [
         { id: 1, name: 'Demo', state: 'done' },
         { id: 2, name: 'Other', state: 'done' },
@@ -79,6 +81,9 @@ export class AISessionModel extends models.Model {
     }
     notification_badge() {
         return { count: 0, session_ids: [], space_unread: {} };
+    }
+    get_needs_you() {
+        return [];
     }
     dismiss_notifications() {
         return true;

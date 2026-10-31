@@ -13,6 +13,7 @@ import {
     onRpc,
     patchWithCleanup,
 } from '@web/../tests/web_test_helpers';
+import { user } from '@web/core/user';
 import { ActionPlugin } from '@web/webclient/actions/action_plugin';
 
 import { ChatConversation } from '@muk_ai/chat/conversation/conversation';
@@ -153,7 +154,8 @@ test('a tool card names its action, model and outcome in plain words, its argume
 
 test('a tool card relabels itself once the model names arrive', async () => {
     const { promise, resolve } = Promise.withResolvers();
-    onRpc('ir.model', 'ai_tool_labels', async () => {
+    onRpc('ir.model', 'ai_tool_labels', async ({ kwargs }) => {
+        expect(kwargs.context).toEqual(user.context);
         await promise;
         return { 'res.users': { name: 'User', fields: {} } };
     });
@@ -190,7 +192,13 @@ test('an approval card shows the change, waits for the owner and is decided with
         model_label: 'Contact',
         targets: [{ id: 7, display_name: 'Azure' }],
         changes: [
-            { label: 'Name', field: 'name', from: 'Azure', to: 'Azure Interior' },
+            {
+                label: 'Name',
+                field: 'name',
+                lang: 'German',
+                from: 'Azure',
+                to: 'Azure Interior',
+            },
         ],
     };
     const session = await mountTranscript(
@@ -200,6 +208,7 @@ test('an approval card shows the change, waits for the owner and is decided with
     expect('.mk_ask_head').toHaveText(/Confirmation required\s+· Contact/);
     expect('.mk_ask_change .text-decoration-line-through').toHaveText('Azure');
     expect('.mk_ask_change').toHaveText(/Azure Interior$/);
+    expect('.mk_ask_lang').toHaveText('German');
     await contains('.mk_ask_toggle').click();
     expect('.mk_ask_args').toHaveText(/"title": "Update contact"/);
     session.data.can_write = false;
@@ -214,7 +223,10 @@ test('an approval card shows the change, waits for the owner and is decided with
     ]);
     await contains('.mk_ask_actions button:contains(Allow for session)').click();
     expect.verifySteps(['approve_for_session']);
-    expect('.mk_ask_card').toHaveText(/Approved for this session\.$/);
+    expect('.mk_ask_resolved').toHaveText('Approved for this session');
+    expect('.mk_ask_body').toHaveCount(0);
+    await contains('.mk_ask_resolved').click();
+    expect('.mk_ask_body').toHaveCount(1);
 });
 
 test('a create approval heads each of several records and lists the new lines', async () => {
@@ -247,6 +259,7 @@ test('a create approval heads each of several records and lists the new lines', 
         { state: 'waiting', pending_ask: { kind: 'approval', call_id: 'c1' } },
     );
     expect(queryAllTexts('.mk_ask_record')).toEqual(['Record 1', 'Record 2']);
+    expect('.mk_ask_lang').toHaveCount(0);
     expect(queryAllTexts('.mk_ask_change > span')).toEqual([
         'One',
         'one@example.com',
@@ -440,19 +453,31 @@ test('the sources of an answer fold behind a chip, a cited record opens beside t
     ]);
 });
 
-test('a code block copies its code and an inline image opens in the file viewer', async () => {
+test('a code block copies its code and an inline image opens in the file viewer, drawn once', async () => {
     let copied = '';
     patchWithCleanup(navigator.clipboard, {
         writeText: async (text) => (copied = text),
     });
     await mountTranscript([
         { kind: 'user_message', content: 'Show', event_id: 1 },
+        { kind: 'tool_call', call_id: 'c1', name: 'generate_image', arguments: '{}' },
+        {
+            kind: 'tool_result',
+            call_id: 'c1',
+            result: JSON.stringify({
+                files: [
+                    { attachment_id: 5, filename: 'chart.png', mimetype: 'image/png' },
+                    { attachment_id: 6, filename: 'data.csv', mimetype: 'text/csv' },
+                ],
+            }),
+        },
         {
             kind: 'text',
             content: '```js\nlet a = 1;\n```\n\n![chart](/web/image/5)',
             event_id: 2,
         },
     ]);
+    expect(queryAllProperties('.mk_att_card', 'title')).toEqual(['data.csv']);
     await contains('.mk_code_copy', { visible: false }).click();
     expect(copied).toBe('let a = 1;\n');
     expect('.mk_code_copy').toHaveText('Copied');

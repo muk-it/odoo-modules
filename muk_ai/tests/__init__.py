@@ -30,6 +30,7 @@ from . import test_cost
 from . import test_agent
 from . import test_multimodal
 from . import test_space
+from . import test_needs_you
 from . import test_retention
 from . import test_share
 from . import test_bus

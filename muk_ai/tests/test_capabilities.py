@@ -195,6 +195,32 @@ class TestCapabilities(AITestCommon):
         self.assertEqual(agent.code_interpreter_performer, 'Runs on OpenAI')
         self.assertFalse(agent.capability_warning)
 
+    def test_a_pdf_reaches_only_a_provider_that_reads_documents(self):
+        pdf = {
+            'type': 'muk_ai_attachment',
+            'strategy': 'file',
+            'mimetype': 'application/pdf',
+            'data_b64': 'PDF=',
+            'filename': 'bill.pdf',
+        }
+        readers = [('supports_documents', '=', True)]
+        with patch.object(OpenAIProvider, 'supports_documents', False):
+            self.env.invalidate_all()
+            self.assertFalse(self.provider.supports_documents)
+            self.assertNotIn(
+                self.provider, self.env['muk_ai.model'].search(readers).provider_id
+            )
+            with (
+                self._capture_post() as posts,
+                self.assertRaisesRegex(UserError, 'such as bill.pdf'),
+            ):
+                self.provider._request_responses([{'role': 'user', 'content': [pdf]}])
+            self.assertFalse(posts)
+        self.env.invalidate_all()
+        self.assertIn(
+            self.provider, self.env['muk_ai.model'].search(readers).provider_id
+        )
+
     def test_every_unserved_capability_is_named_once(self):
         self._clear_default_models('image')
         request, agent = self._turn(

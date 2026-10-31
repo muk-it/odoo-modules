@@ -89,7 +89,7 @@ class TestSessionTurn(AITestCommon):
                 ],
                 {},
                 ['open_view'],
-                {'c1': {'ok': True}, 'c2': {'error': skipped}},
+                {'c1': {'ok': True}, 'c2': {'error': skipped, 'skipped': True}},
                 [True, False],
             ),
         ):

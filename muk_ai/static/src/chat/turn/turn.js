@@ -12,6 +12,7 @@ import { AIChatPlugin } from '@muk_ai/core/chat_plugin/chat_plugin';
 import { copyCode, renderMarkdown } from '@muk_ai/core/markdown/markdown';
 import {
     buildTurnItems,
+    inlineImages,
     isToolBlockHidden,
     turnRenderers,
 } from '@muk_ai/core/session/turns';
@@ -36,7 +37,7 @@ export class ChatTurn extends Component {
     });
     chat = usePlugin(AIChatPlugin);
     fileViewer = useFileViewer();
-    state = proxy({ tools: {}, asks: {}, picks: {}, sources: false });
+    state = proxy({ tools: {}, asks: {}, opened: {}, picks: {}, sources: false });
     renderMarkdown = renderMarkdown;
     formatTimestamp = formatTimestamp;
     get writable() {
@@ -51,6 +52,14 @@ export class ChatTurn extends Component {
     get sourcesLabel() {
         const count = this.props.turn.sources.length;
         return count === 1 ? _t('1 source') : _t('%s sources', count);
+    }
+    /**
+     * The files of the answer, but those its text already draws inline.
+     * @returns {Array} the attachment descriptors
+     */
+    get attachments() {
+        const inline = inlineImages(this.props.turn).map((image) => image.id);
+        return this.props.turn.attachments.filter((file) => !inline.includes(file.id));
     }
     get items() {
         return buildTurnItems(this.props.turn.blocks, (block) => this.isHidden(block));

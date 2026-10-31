@@ -16,22 +16,6 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: muk_ai
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "CRM"
-msgstr ""
-
-#. module: muk_ai
-#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_crm
-msgid "MuK AI CRM"
-msgstr ""
-
-#. module: muk_ai
-#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_crm
-#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "Research leads, draft quotations and follow them up."
-msgstr "Ricercare lead, redigere preventivi e sollecitarli."
-
-#. module: muk_ai
 #: model:ir.module.module,description:base.module_muk_ai
 msgid ""
 "\n"
@@ -267,6 +251,16 @@ msgstr ""
 
 #. module: muk_ai
 #. odoo-python
+#: code:addons/muk_ai/models/provider.py:0
+msgid ""
+"%(model)s cannot read PDF files such as %(files)s. Choose a model that reads"
+" documents, or attach the content as text."
+msgstr ""
+"%(model)s non può leggere file PDF come %(files)s. Scegli un modello che "
+"legga i documenti oppure allega il contenuto come testo."
+
+#. module: muk_ai
+#. odoo-python
 #: code:addons/muk_ai/models/session.py:0
 msgid "%(name)s handed you the chat \"%(chat)s\"."
 msgstr "%(name)s ti ha passato la chat \"%(chat)s\"."
@@ -318,6 +312,12 @@ msgid "%s new"
 msgstr "%s nuovi"
 
 #. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/approval.py:0
+msgid "%s new records"
+msgstr "%s nuovi record"
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/share/share.js:0
 msgid "%s people can read this chat"
@@ -325,15 +325,48 @@ msgstr "%s persone possono leggere questa chat"
 
 #. module: muk_ai
 #. odoo-javascript
+#. odoo-python
+#: code:addons/muk_ai/models/approval.py:0
 #: code:addons/muk_ai/static/src/chat/tool_card/tool_labels.js:0
 msgid "%s records"
 msgstr "%s record"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/approval.py:0
+msgid "%s records need your approval before the assistant changes them."
+msgstr ""
+"I record %s richiedono la tua approvazione prima che l'assistente li "
+"modifichi."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/approval.py:0
+msgid "%s records need your approval before the assistant deletes them."
+msgstr ""
+"I record %s richiedono la tua approvazione prima che l'assistente li "
+"elimini."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/approval.py:0
+msgid ""
+"%s records need your approval before the assistant runs actions on them."
+msgstr ""
+"I record %s richiedono la tua approvazione prima che l'assistente esegua "
+"azioni su di essi."
 
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/turn/turn.js:0
 msgid "%s sources"
 msgstr "%s fonti"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/core/chat_plugin/chat_plugin.js:0
+msgid "%s things need you"
+msgstr "%s in attesa di te"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -376,6 +409,12 @@ msgstr "1 persona può leggere questa chat"
 #: code:addons/muk_ai/static/src/chat/turn/turn.js:0
 msgid "1 source"
 msgstr "1 fonte"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/core/chat_plugin/chat_plugin.js:0
+msgid "1 thing needs you"
+msgstr "1 in attesa di te"
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_form
@@ -625,6 +664,12 @@ msgid "AI Chat"
 msgstr "Chat IA"
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_ir_attachment__ai_generated
+#: model:ir.model.fields,field_description:muk_ai.field_product_document__ai_generated
+msgid "AI Generated"
+msgstr "Generato da IA"
+
+#. module: muk_ai
 #: model:ir.model,name:muk_ai.model_muk_ai_model
 msgid "AI Model"
 msgstr "Modello IA"
@@ -772,6 +817,11 @@ msgstr "Capacità"
 msgid "About %(total)s of %(window)s tokens. Last turn sent %(last)s."
 msgstr ""
 "Circa %(total)s di %(window)s token. L'ultimo turno ha inviato %(last)s."
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Accounting"
+msgstr "Contabilità"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -967,6 +1017,7 @@ msgstr "Le approvazioni di una chat condivisa non possono essere modificate"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/turn/turn.xml:0
+#: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
 msgid "Approve"
 msgstr "Approva"
 
@@ -992,18 +1043,6 @@ msgstr "Firme approvate"
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_approval__decision__auto_approved
 msgid "Approved by Rule"
 msgstr "Approvato da regola"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/turn/turn.xml:0
-msgid "Approved for this session."
-msgstr "Approvato per questa chat."
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/turn/turn.xml:0
-msgid "Approved once."
-msgstr "Approvato una volta."
 
 #. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_kanban
@@ -1287,6 +1326,11 @@ msgstr "Bypass"
 #: code:addons/muk_ai/static/src/chat/pills/pills.js:0
 msgid "Bypass (%s)"
 msgstr "Ignora (%s)"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "CRM"
+msgstr ""
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_model__cache_read_rate
@@ -2034,6 +2078,8 @@ msgstr "Eliminare \"%s\"? L'operazione non può essere annullata."
 
 #. module: muk_ai
 #. odoo-javascript
+#. odoo-python
+#: code:addons/muk_ai/models/approval.py:0
 #: code:addons/muk_ai/static/src/chat/tool_card/tool_labels.js:0
 msgid "Delete %s"
 msgstr "Elimina %s"
@@ -3070,12 +3116,6 @@ msgid "Load older messages"
 msgstr "Carica i messaggi più vecchi"
 
 #. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/tool_card/tool_labels.js:0
-msgid "Load tools"
-msgstr "Carica strumenti"
-
-#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__expanded_tool_names
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session_prompt__expanded_tool_names
 msgid "Loaded Tools"
@@ -3150,6 +3190,14 @@ msgid "MCP Tool Mixin"
 msgstr "Mixin strumento MCP"
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_ir_attachment__ai_generated
+#: model:ir.model.fields,help:muk_ai.field_product_document__ai_generated
+msgid "Made by an AI model. A PNG or JPEG image also says so in its metadata."
+msgstr ""
+"Creato da un modello di IA. Un'immagine PNG o JPEG lo indica anche nei suoi "
+"metadati."
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/share/share.xml:0
 msgid "Manage"
@@ -3160,6 +3208,12 @@ msgstr "Gestisci"
 #: code:addons/muk_ai/static/src/chat/sidebar/sidebar.xml:0
 msgid "Mark all as read"
 msgstr "Segna tutto come letto"
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_purchase
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Match bills to orders and run purchasing as workflows."
+msgstr "Abbinare le fatture agli ordini e gestire gli acquisti come workflow."
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_agent__activity_type_icon
@@ -3540,6 +3594,11 @@ msgid "MuK AI"
 msgstr "MuK AI"
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_account
+msgid "MuK AI Accounting"
+msgstr ""
+
+#. module: muk_ai
 #: model:ir.module.module,shortdesc:base.module_muk_ai
 msgid "MuK AI Assistant"
 msgstr ""
@@ -3547,6 +3606,11 @@ msgstr ""
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_automation
 msgid "MuK AI Automation"
+msgstr ""
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_crm
+msgid "MuK AI CRM"
 msgstr ""
 
 #. module: muk_ai
@@ -3606,6 +3670,16 @@ msgstr ""
 #: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_mistral
 msgid "MuK AI Mistral"
 msgstr "MuK AI Mistral"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_product
+msgid "MuK AI Product"
+msgstr ""
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_purchase
+msgid "MuK AI Purchase"
+msgstr ""
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_schedule
@@ -3695,6 +3769,12 @@ msgid "Native agentic AI (ChatGPT, Claude, Gemini) agent and chat"
 msgstr "Agente e chat IA agentici nativi (ChatGPT, Claude, Gemini)"
 
 #. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
+msgid "Needs you"
+msgstr "In attesa di te"
+
+#. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/session_notify.py:0
 msgid "Needs your approval before running a tool"
@@ -3712,6 +3792,20 @@ msgstr "Non chiedere mai"
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_session__state__new
 msgid "New"
 msgstr "Nuovo"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/approval.py:0
+msgid "New %s"
+msgstr "Nuovo: %s"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/approval.py:0
+msgid "New %s records need your approval before the assistant creates them."
+msgstr ""
+"I nuovi record %s richiedono la tua approvazione prima che l'assistente li "
+"crei."
 
 #. module: muk_ai
 #. odoo-javascript
@@ -3885,12 +3979,6 @@ msgstr "Nessun provider esegue codice qui"
 #: code:addons/muk_ai/static/src/chat/turn/turn.xml:0
 msgid "No records resolved."
 msgstr "Nessun record risolto."
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/sidebar/sidebar.xml:0
-msgid "No space yet. Create a new space."
-msgstr "Ancora nessuno spazio. Crea un nuovo spazio."
 
 #. module: muk_ai
 #. odoo-python
@@ -4077,6 +4165,16 @@ msgid "Options field"
 msgstr "Campo opzioni"
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_usage__res_id
+msgid "Origin"
+msgstr "Origine"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_usage__res_model
+msgid "Origin Model"
+msgstr "Modello di origine"
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/usage/usage.js:0
 msgid "Output"
@@ -4233,6 +4331,11 @@ msgid "Private To"
 msgstr "Privato per"
 
 #. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Products"
+msgstr "Prodotti"
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/views/fields/prompt/prompt.js:0
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent_suggestion__prompt
@@ -4312,6 +4415,17 @@ msgstr "Identificatore del modello lato provider - ad es. 'gpt-5.6-terra'."
 #: model:ir.ui.menu,name:muk_ai.menu_ai_provider
 msgid "Providers"
 msgstr "Provider"
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Purchase"
+msgstr "Acquisti"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_usage__purpose
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_usage_search
+msgid "Purpose"
+msgstr "Scopo"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -4405,6 +4519,13 @@ msgid "Read the system information"
 msgstr "Leggi le informazioni di sistema"
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_account
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Read vendor bills with AI and review them in one queue."
+msgstr ""
+"Leggere le fatture dei fornitori con l'IA e verificarle in un'unica coda."
+
+#. module: muk_ai
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_kanban
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_agent_search
 msgid "Read-only"
@@ -4444,12 +4565,6 @@ msgstr "Sforzo di ragionamento"
 
 #. module: muk_ai
 #. odoo-javascript
-#: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
-msgid "Recent sessions"
-msgstr "Sessioni recenti"
-
-#. module: muk_ai
-#. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/turn/turn.xml:0
 msgid "Record"
 msgstr ""
@@ -4458,6 +4573,12 @@ msgstr ""
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_approval__res_ids
 msgid "Record IDs"
 msgstr "ID record"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/mcp/image.py:0
+msgid "Reference images must be PNG, JPEG, WebP or GIF images: %s"
+msgstr "Le immagini di riferimento devono essere PNG, JPEG, WebP o GIF: %s"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -4496,6 +4617,7 @@ msgstr "Registro"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/turn/turn.xml:0
+#: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
 msgid "Reject"
 msgstr "Rifiuta"
 
@@ -4504,12 +4626,6 @@ msgstr "Rifiuta"
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_muk_ai_approval_search
 msgid "Rejected"
 msgstr "Rifiutato"
-
-#. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/turn/turn.xml:0
-msgid "Rejected."
-msgstr "Rifiutato."
 
 #. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_approval__reject_reason
@@ -4556,10 +4672,10 @@ msgid "Request Timeout"
 msgstr "Timeout richiesta"
 
 #. module: muk_ai
-#. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/turn/turn.xml:0
-msgid "Resolved."
-msgstr "Risolto."
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_crm
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Research leads, draft quotations and follow them up."
+msgstr "Ricercare lead, redigere preventivi e sollecitarli."
 
 #. module: muk_ai
 #. odoo-python
@@ -4670,6 +4786,12 @@ msgstr "Rischio"
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_approval__reason
 msgid "Risk Reason"
 msgstr "Motivo del rischio"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/approval.py:0
+msgid "Run %(method)s on %(what)s"
+msgstr "Esegui %(method)s su %(what)s"
 
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_automation
@@ -5304,6 +5426,12 @@ msgid "Supports Code Interpreter"
 msgstr "Supporta interprete di codice"
 
 #. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_model__supports_documents
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_provider__supports_documents
+msgid "Supports Documents"
+msgstr "Supporta i documenti"
+
+#. module: muk_ai
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_provider__supports_vision
 msgid "Supports Vision"
 msgstr "Supporta la visione"
@@ -5461,8 +5589,14 @@ msgid "The model is warned shortly before the limit so it can wrap up."
 msgstr "Il modello viene avvisato poco prima del limite, così può concludere."
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_model__supports_documents
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_provider__supports_documents
+msgid "The models of this provider read PDF files natively."
+msgstr "I modelli di questo provider leggono i file PDF in modo nativo."
+
+#. module: muk_ai
 #. odoo-python
-#: code:addons/muk_ai/models/session_loop.py:0
+#: code:addons/muk_ai/models/usage.py:0
 msgid ""
 "The monthly AI budget of %(amount).2f %(currency)s for all users is used up."
 " Ask an administrator to raise it."
@@ -5915,7 +6049,15 @@ msgid "Unread only"
 msgstr "Solo non letti"
 
 #. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/approval.py:0
+msgid "Update %(what)s (%(lang)s)"
+msgstr "Aggiorna %(what)s (%(lang)s)"
+
+#. module: muk_ai
 #. odoo-javascript
+#. odoo-python
+#: code:addons/muk_ai/models/approval.py:0
 #: code:addons/muk_ai/static/src/chat/tool_card/tool_labels.js:0
 msgid "Update %s"
 msgstr "Aggiorna %s"
@@ -6000,6 +6142,11 @@ msgstr "Attendi"
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_session_search
 msgid "Waiting"
 msgstr "In attesa"
+
+#. module: muk_ai
+#: model:muk_ai.space,name:muk_ai.space_waiting
+msgid "Waiting for You"
+msgstr "In attesa di te"
 
 #. module: muk_ai
 #. odoo-javascript
@@ -6110,6 +6257,12 @@ msgstr ""
 "generale, a meno che questo spazio non disponga diversamente."
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_usage__purpose
+msgid "What the spend was for, such as chat, image, decision or embedding."
+msgstr ""
+"A cosa è servita la spesa, ad esempio chat, immagine, decisione o embedding."
+
+#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/share/share.xml:0
 msgid "Who may read it"
@@ -6139,6 +6292,13 @@ msgid "Workspace"
 msgstr "Area di lavoro"
 
 #. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_product
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Write product texts, translations and images from facts."
+msgstr ""
+"Scrivere testi di prodotto, traduzioni e immagini a partire dai fatti."
+
+#. module: muk_ai
 #. odoo-python
 #: code:addons/muk_ai/models/approval.py:0
 msgid "Yes"
@@ -6164,7 +6324,7 @@ msgstr "Sei un assistente Odoo. ..."
 
 #. module: muk_ai
 #. odoo-python
-#: code:addons/muk_ai/models/session_loop.py:0
+#: code:addons/muk_ai/models/usage.py:0
 msgid ""
 "Your monthly AI budget of %(amount).2f %(currency)s is used up. Ask an "
 "administrator to raise it."
@@ -6336,12 +6496,6 @@ msgstr ""
 
 #. module: muk_ai
 #. odoo-javascript
-#: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
-msgid "running"
-msgstr "in esecuzione"
-
-#. module: muk_ai
-#. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/tool_card/tool_card.xml:0
 msgid "running..."
 msgstr "in esecuzione..."
@@ -6392,3 +6546,221 @@ msgstr "view_context.id deve essere un numero intero positivo."
 #: model:ir.model,name:muk_ai.model_ir_websocket
 msgid "websocket message handling"
 msgstr "Gestione dei messaggi websocket"
+
+#. module: muk_ai
+#: model:muk_ai.agent.suggestion,prompt:muk_ai.agent_read_only_suggestion_overdue
+msgid ""
+"\n"
+"List all overdue open customer invoices.\n"
+"\n"
+"Scope: `account.move`, type `out_invoice`, state `posted`, `payment_state` not `paid`, `invoice_date_due` in the past.\n"
+"\n"
+"Table columns:\n"
+"- Customer as `[Display Name](res.partner,id)`\n"
+"- Invoice number\n"
+"- Due date (ISO)\n"
+"- Amount due (residual)\n"
+"- Days past due\n"
+"\n"
+"Sort by days past due, most overdue first. After the table:\n"
+"- Aging buckets (count and sum of amount due): `<30`, `30-60`, `60-90`, `90+` days.\n"
+"- Grand total amount due across all overdue invoices.\n"
+"        "
+msgstr ""
+"\n"
+"Elenca tutte le fatture cliente aperte scadute.\n"
+"\n"
+"Ambito: `account.move`, tipo `out_invoice`, stato `posted`, `payment_state` diverso da `paid`, `invoice_date_due` nel passato.\n"
+"\n"
+"Colonne della tabella:\n"
+"- Cliente come `[Display Name](res.partner,id)`\n"
+"- Numero fattura\n"
+"- Data di scadenza (ISO)\n"
+"- Importo dovuto (residuo)\n"
+"- Giorni di ritardo\n"
+"\n"
+"Ordina per giorni di ritardo, le più scadute per prime. Dopo la tabella:\n"
+"- Fasce di anzianità (numero e somma dell'importo dovuto): `<30`, `30-60`, `60-90`, `90+` giorni.\n"
+"- Totale complessivo dell'importo dovuto su tutte le fatture scadute.\n"
+"        "
+
+#. module: muk_ai
+#: model:muk_ai.agent.suggestion,prompt:muk_ai.agent_read_only_suggestion_pipeline
+msgid ""
+"\n"
+"Summarize the open CRM pipeline (all owners, not won/lost).\n"
+"\n"
+"For each stage in pipeline order:\n"
+"- Stage name, opportunity count, sum of expected revenue.\n"
+"- Top 3 by expected revenue: customer, amount, salesperson, expected close date.\n"
+"\n"
+"Then:\n"
+"- **Slipping**: open opps whose expected close date is already in the past - customer, amount, salesperson, days slipped.\n"
+"- **Stale**: open opps with no activity in the last 14 days - customer, amount, salesperson, days since last activity.\n"
+"\n"
+"End with two totals on one line: total open opportunities and total expected revenue.\n"
+"    "
+msgstr ""
+"\n"
+"Riassumi la pipeline CRM aperta (tutti i responsabili, né vinte né perse).\n"
+"\n"
+"Per ogni fase nell'ordine della pipeline:\n"
+"- Nome della fase, numero di opportunità, somma del ricavo atteso.\n"
+"- Prime 3 per ricavo atteso: cliente, importo, venditore, data di chiusura prevista.\n"
+"\n"
+"Poi:\n"
+"- **In ritardo**: opportunità aperte la cui data di chiusura prevista è già passata - cliente, importo, venditore, giorni di ritardo.\n"
+"- **Ferme**: opportunità aperte senza attività negli ultimi 14 giorni - cliente, importo, venditore, giorni dall'ultima attività.\n"
+"\n"
+"Chiudi con due totali su una riga: totale delle opportunità aperte e ricavo atteso totale.\n"
+"    "
+
+#. module: muk_ai
+#: model:muk_ai.agent.suggestion,label:muk_ai.agent_read_only_suggestion_top_customers
+msgid "Customers"
+msgstr "Clienti"
+
+#. module: muk_ai
+#: model:muk_ai.agent.suggestion,label:muk_ai.agent_read_only_suggestion_overdue
+msgid "Overdue"
+msgstr "Scadute"
+
+#. module: muk_ai
+#: model:muk_ai.agent.suggestion,prompt:muk_ai.agent_read_only_suggestion_top_customers
+msgid ""
+"Rank the top 10 customers by total invoiced amount this calendar year.\n"
+"\n"
+"Scope: `account.move` of type `out_invoice`, state `posted`, within the current year. Subtract matching `out_refund` credit notes from the totals.\n"
+"\n"
+"Table columns:\n"
+"- Customer as `[Display Name](res.partner,id)`\n"
+"- Total invoiced (tax-excluded)\n"
+"- Number of invoices\n"
+"- Average invoice amount\n"
+"- Most recent invoice date (ISO)\n"
+"\n"
+"Sort descending by total invoiced. End with a one-line grand total across the top 10 and the share of total company revenue that represents.\n"
+"        "
+msgstr ""
+"Classifica i 10 migliori clienti per importo totale fatturato in questo anno solare.\n"
+"\n"
+"Ambito: `account.move` di tipo `out_invoice`, stato `posted`, nell'anno in corso. Sottrai dai totali le note di credito (`out_refund`) corrispondenti.\n"
+"\n"
+"Colonne della tabella:\n"
+"- Cliente come `[Display Name](res.partner,id)`\n"
+"- Totale fatturato (imposte escluse)\n"
+"- Numero di fatture\n"
+"- Importo medio per fattura\n"
+"- Data dell'ultima fattura (ISO)\n"
+"\n"
+"Ordina in modo decrescente per totale fatturato. Chiudi con un totale complessivo su una riga per i primi 10 e la quota del fatturato totale dell'azienda che rappresenta.\n"
+"        "
+
+#. module: muk_ai
+#: model:muk_ai.agent,name:muk_ai.agent_read_only
+msgid "Read-only Analyst"
+msgstr "Analista in sola lettura"
+
+#. module: muk_ai
+#: model:muk_ai.agent.suggestion,prompt:muk_ai.agent_read_only_suggestion_revenue
+msgid ""
+"Report invoiced revenue for the last 6 full calendar months (exclude the current partial month).\n"
+"\n"
+"Scope: posted customer invoices (`account.move`, type `out_invoice`, state `posted`), minus credit notes (`out_refund`).\n"
+"\n"
+"Per month table:\n"
+"- Month (YYYY-MM)\n"
+"- Total invoiced (untaxed and tax-included)\n"
+"- Number of invoices\n"
+"- Top 3 customers contributing and their share\n"
+"- Month-over-month % change on the tax-excluded total\n"
+"\n"
+"End with:\n"
+"- 6-month total (untaxed and tax-included)\n"
+"- Average monthly revenue\n"
+"- Use the default company currency; do not convert."
+msgstr ""
+"Riporta il fatturato degli ultimi 6 mesi solari completi (escluso il mese in corso).\n"
+"\n"
+"Ambito: fatture cliente registrate (`account.move`, tipo `out_invoice`, stato `posted`), meno le note di credito (`out_refund`).\n"
+"\n"
+"Tabella per mese:\n"
+"- Mese (YYYY-MM)\n"
+"- Totale fatturato (imponibile e imposte incluse)\n"
+"- Numero di fatture\n"
+"- I 3 clienti che contribuiscono di più e la loro quota\n"
+"- Variazione % rispetto al mese precedente sul totale imponibile\n"
+"\n"
+"Chiudi con:\n"
+"- Totale dei 6 mesi (imponibile e imposte incluse)\n"
+"- Fatturato medio mensile\n"
+"- Usa la valuta predefinita dell'azienda; non convertire."
+
+#. module: muk_ai
+#: model:muk_ai.agent,description:muk_ai.agent_read_only
+msgid "Restricted to read-only tools."
+msgstr "Limitato agli strumenti in sola lettura."
+
+#. module: muk_ai
+#: model:muk_ai.agent.suggestion,label:muk_ai.agent_read_only_suggestion_revenue
+msgid "Revenue"
+msgstr "Fatturato"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/turn/turn.xml:0
+msgid "Approved for this session"
+msgstr "Approvato per questa chat"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/turn/turn.xml:0
+msgid "Resolved"
+msgstr "Risolto"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session_prompt.py:0
+msgid "Wording"
+msgstr "Formulazione"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__rating_ids
+msgid "Ratings"
+msgstr "Valutazioni"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
+msgid "All actions"
+msgstr "Tutte le azioni"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
+msgid "Approval"
+msgstr "Approvazione"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/webclient/systray/systray.js:0
+msgid "Ask about %s"
+msgstr "Chiedi su %s"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/webclient/systray/systray.js:0
+msgid "Ask about this record"
+msgstr "Chiedi su questo record"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
+msgid "Open all chats"
+msgstr "Apri tutte le chat"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/webclient/systray/systray.js:0
+msgid "Working..."
+msgstr "In corso ..."

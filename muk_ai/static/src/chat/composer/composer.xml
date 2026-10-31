@@ -65,7 +65,7 @@
                         </label>
                         <ToolsMenu session="session" withPills="!this.props.showMeta"/>
                         <div t-if="!this.props.showMeta or this.ui.isSmall()" class="mk_composer_usage ms-auto">
-                            <UsageMeter session="session"/>
+                            <UsageMeter t-if="session.turns.length" session="session"/>
                         </div>
                         <button
                             class="btn mk_send d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 border-0 rounded-circle ms-auto transition-base"
@@ -86,7 +86,7 @@
                     <div class="d-flex align-items-center gap-2 ms-md-auto">
                         <SessionPills session="session"/>
                     </div>
-                    <UsageMeter session="session"/>
+                    <UsageMeter t-if="session.turns.length" session="session"/>
                 </div>
             </t>
         </div>

@@ -5,9 +5,8 @@ import { _t } from '@web/core/l10n/translation';
 import { registry } from '@web/core/registry';
 
 import { AttachmentCard, toFileModel } from '@muk_ai/core/attachment/attachment';
+import { inlineImages } from '@muk_ai/core/session/turns';
 import { SourceList } from '@muk_ai/chat/sources/sources';
-
-const INLINE_IMAGE = /!\[([^\]]*)\]\(\/web\/image\/(\d+)\)/g;
 
 /**
  * Tabs of the artifacts panel, keyed by id, as `{label, icon, component,
@@ -100,14 +99,7 @@ artifactTypes
                     ...session.state.attachments,
                     ...session.turns.flatMap((turn) => [
                         ...(turn.attachments || []),
-                        ...(turn.blocks || [])
-                            .filter((block) => block.type === 'text')
-                            .flatMap((block) => [...block.text.matchAll(INLINE_IMAGE)])
-                            .map(([, name, id]) => ({
-                                id: Number(id),
-                                filename: name || 'generated.png',
-                                mimetype: 'image/png',
-                            })),
+                        ...inlineImages(turn),
                     ]),
                 ]),
         },

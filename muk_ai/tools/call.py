@@ -50,6 +50,17 @@ FILES_BLOCK = (
     '</files>'
 )
 
+WORDING_BLOCK = (
+    '<wording>\n'
+    'Write for the person using Odoo, not for a developer, also while you '
+    'work. Name a field by its label, a language by its name ("German", not '
+    '`de_DE`), a record or file by its display name, a skill by its label '
+    'and a step by what it does. Never show a tool or skill name, a technical '
+    'model or field name, a language code, an id or an internal marker such '
+    'as `verified` unless the user asks for it.\n'
+    '</wording>'
+)
+
 AVAILABLE_TOOLS_PREAMBLE = (
     (
         'This list is COMPLETE: every tool the session can call is either in '

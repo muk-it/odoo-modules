@@ -184,7 +184,6 @@ test('system spaces are pinned or folded under Automatic, which counts their unr
     }));
     await mountSidebar();
     expect(queryAllTexts('.mk_loose_group .mk_sidebar_name')).toEqual(['Loose']);
-    expect('.mk_sidebar_list').toHaveText(/No space yet\. Create a new space\./);
     expect(queryAllTexts('.mk_space_name')).toEqual(['Inbox']);
     expect(queryAllTexts('.mk_space_auto .mk_space_count')).toEqual(['3', '2']);
     expect('.mk_space_auto .mk_space_count ~ .mk_space_read').toHaveCount(1);

@@ -20,8 +20,4 @@ export class ChatWindow extends Component {
     get toggleTitle() {
         return this.props.minimized ? _t('Expand') : _t('Minimize');
     }
-    openFullChat() {
-        this.chat.closeWindow(this.props.id);
-        this.chat.openFullChat(this.props.id);
-    }
 }

@@ -109,7 +109,7 @@ class ResConfigSettings(models.TransientModel):
             'to disable.'
         ),
         config_parameter='muk_ai.turn_cost_limit',
-        digits=(12, 6),
+        digits=(12, 2),
     )
 
     ai_monthly_budget = fields.Float(
@@ -255,6 +255,21 @@ class ResConfigSettings(models.TransientModel):
     module_muk_ai_crm = fields.Boolean(
         string='MuK AI CRM',
         help='Research leads, draft quotations and follow them up.',
+    )
+
+    module_muk_ai_product = fields.Boolean(
+        string='MuK AI Product',
+        help='Write product texts, translations and images from facts.',
+    )
+
+    module_muk_ai_account = fields.Boolean(
+        string='MuK AI Accounting',
+        help='Read vendor bills with AI and review them in one queue.',
+    )
+
+    module_muk_ai_purchase = fields.Boolean(
+        string='MuK AI Purchase',
+        help='Match bills to orders and run purchasing as workflows.',
     )
 
     # ----------------------------------------------------------

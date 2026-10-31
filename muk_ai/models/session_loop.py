@@ -303,12 +303,16 @@ class AISessionLoop(models.AbstractModel):
             stream.flush()
 
     def _accrue_usage(
-        self, usage: dict | None, record: models.BaseModel | None = None
+        self,
+        usage: dict | None,
+        record: models.BaseModel | None = None,
+        booked: bool = False,
     ) -> None:
         """Charge a usage payload to the session's ledger.
 
-        Without ``record`` the usage is a round of the chat model: it counts as
-        an iteration with its tokens. A ``record`` prices a cost of its own.
+        Without ``record`` the usage is a round of the chat model, an iteration
+        with its tokens; a ``record`` prices a cost of its own. ``booked`` spend
+        is on the monthly ledger already and is only counted.
         """
         usage = usage or {}
         turn = dict(self.turn_usage or {})
@@ -336,7 +340,13 @@ class AISessionLoop(models.AbstractModel):
             if usage.get('truncated'):
                 turn['truncated'] = True
         if record:
-            cost = record._compute_usage_cost(usage)
+            cost = (
+                record._compute_usage_cost(usage)
+                if booked
+                else self.env['muk_ai.usage']._charge(
+                    record, usage, record.modality, user=self.user_id, session=self
+                )
+            )
             turn['cost'] = turn.get('cost', 0.0) + cost['total_cost']
             values.update(
                 total_input_cost=self.total_input_cost + cost['input_cost'],
@@ -344,14 +354,6 @@ class AISessionLoop(models.AbstractModel):
                 total_cost=self.total_cost + cost['total_cost'],
                 turn_cost_spent=self.turn_cost_spent + cost['total_cost'],
             )
-            if cost['total_cost']:
-                self.env['muk_ai.usage'].sudo().create(
-                    {
-                        'user_id': self.user_id.id,
-                        'session_id': self.id,
-                        'amount': cost['total_cost'],
-                    }
-                )
         self.write({**values, 'turn_usage': turn})
 
     def _persist_inline_images(self, text: str, cache: dict) -> str:
@@ -429,10 +431,8 @@ class AISessionLoop(models.AbstractModel):
     def _cost_limit_message(self) -> str | None:
         """Return why the chat may spend no more, or ``None`` while it may.
 
-        The turn budget comes first, then the monthly budget of the user and
-        the one of all users together.
+        The turn budget comes first, then the monthly budgets of the owner.
         """
-        params = self.env['ir.config_parameter'].sudo()
         currency = self._resolve_model_for('chat').currency or 'USD'
         if (limit := self._turn_cost_limit()) and (
             self.turn_cost_spent or 0.0
@@ -443,34 +443,7 @@ class AISessionLoop(models.AbstractModel):
                 amount=limit,
                 currency=currency,
             )
-        user_limit = not self.user_id._is_superuser() and (
-            self.user_id.ai_monthly_budget
-            or params.get_float('muk_ai.user_monthly_budget')
-        )
-        for limit, user in (
-            (user_limit, self.user_id),
-            (params.get_float('muk_ai.monthly_budget'), None),
-        ):
-            if (
-                not limit
-                or limit <= 0
-                or self.env['muk_ai.usage'].sudo()._spent_this_month(user) < limit
-            ):
-                continue
-            if user:
-                return self.env._(
-                    'Your monthly AI budget of %(amount).2f %(currency)s is '
-                    'used up. Ask an administrator to raise it.',
-                    amount=limit,
-                    currency=currency,
-                )
-            return self.env._(
-                'The monthly AI budget of %(amount).2f %(currency)s for all '
-                'users is used up. Ask an administrator to raise it.',
-                amount=limit,
-                currency=currency,
-            )
-        return None
+        return self.env['muk_ai.usage']._budget_message(self.user_id, currency)
 
     def _cost_limit_error(self, message: str) -> None:
         """Transition to error when a cost budget is reached."""

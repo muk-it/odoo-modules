@@ -2,8 +2,14 @@ import { signal } from '@odoo/owl';
 
 import { _t } from '@web/core/l10n/translation';
 import { rpc } from '@web/core/network/rpc';
+import { user } from '@web/core/user';
 
-import { describeToolBlock, toolBlockDecorators } from '@muk_ai/core/session/turns';
+import {
+    describeToolBlock,
+    hiddenToolBlocks,
+    toolBlockDecorators,
+    toolPayload,
+} from '@muk_ai/core/session/turns';
 
 const names = {};
 const loaded = signal(0);
@@ -17,7 +23,7 @@ async function fetchNames() {
         model: 'ir.model',
         method: 'ai_tool_labels',
         args: [requested],
-        kwargs: {},
+        kwargs: { context: user.context },
     });
     for (const [model, entry] of Object.entries(result)) {
         names[model] = {
@@ -70,7 +76,14 @@ function recordNames(result, ids) {
     return found.slice(0, 2).join(', ') + more;
 }
 
-function tool(icon, label, band = () => '') {
+/**
+ * Describe a tool card in plain language.
+ * @param {string} icon the card icon
+ * @param {Function} label the label, given the display name of `args.model`
+ * @param {Function} [band] the line beside it, `({args, result, pending}) => text`
+ * @returns {object} the `describeToolBlock` parts
+ */
+export function tool(icon, label, band = () => '') {
     return {
         icon: () => icon,
         label: ({ args }) => label(modelNames(args.model).name),
@@ -162,11 +175,6 @@ export const toolLabels = {
         () => _t('Hand over'),
         ({ args }) => String(args.agent || ''),
     ),
-    tool_load: tool(
-        'extension',
-        () => _t('Load tools'),
-        ({ args }) => [].concat(args.names || []).join(', '),
-    ),
     list_models: tool('database', () => _t('List the models')),
     list_modules: tool('apps', () => _t('List the apps')),
     list_languages: tool('translate', () => _t('List the languages')),
@@ -180,3 +188,8 @@ toolBlockDecorators.add('muk_ai.tool_labels', (block) => {
         describeToolBlock(block, toolLabels[block.name]);
     }
 });
+
+hiddenToolBlocks.add(
+    'muk_ai.bookkeeping',
+    (block) => block.name === 'tool_load' || !!toolPayload(block.result)?.skipped,
+);

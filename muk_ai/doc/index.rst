@@ -81,8 +81,10 @@ are removed, so every entry still answers.
   currency, ``0`` for no limit.
 - **Monthly Budget**: the maximum spend per calendar month of all users
   together and of each user, ``0`` for no limit. A user's own budget, set in
-  *MuK AI > Configuration > Budgets*, replaces the one per user. A chat that reaches a budget stops
-  with an error; *MuK AI > Reports > Usage* shows the spend per user and month.
+  *MuK AI > Configuration > Budgets*, replaces the one per user. A chat, a
+  decision or an embedding that reaches a budget stops with an error; *MuK AI
+  > Reports > Usage* shows the spend per user, purpose and month, with the
+  record it was made for.
 - **Delete Old Usage**: the months of usage kept besides the current one, ``6``
   by default.
 - **Housekeeping**: whether and after how many days old chats are deleted.
@@ -168,11 +170,21 @@ changed. The facets stay in the search bar like any you set yourself.
 
 When an agent wants to create, change, delete or call a method on a record of
 a sensitive model, the chat stops on a card that shows the record and every
-field before and after. **Approve** runs the call once; **Allow for session**
+field before and after. A text written in another language, or in several at
+once, names the language next to the field. **Approve** runs the call once; **Allow for session**
 runs it and lets the same kind of call through for the rest of this chat;
 **Reject** tells the agent the call was refused, so it can look for another
 way. Every decision is recorded under *MuK AI > Reports > Approval Logs*. A new
 chat starts with nothing allowed. Agents set to *Never ask* skip the card.
+
+**Generated images**
+
+An agent with *Images* draws with its image model, and can start from images
+already in the chat, such as a product photo to restage. Every generated image
+is stored flagged as AI generated, and a PNG or JPEG also carries the IPTC
+digital source type *trainedAlgorithmicMedia* in its metadata, which marks it
+as AI media for the EU AI Act and for shopping feeds. What an image costs
+counts on the chat like its messages.
 
 **Questions from the agent**
 
@@ -235,9 +247,17 @@ is summarised and continues.
 
 **Notifications**
 
-The robot icon shows a dot while a chat is running and counts the chats
-waiting for you. Users with inbox notifications also get a notice when a chat
-finishes.
+The robot icon shows a dot while a chat is running, an amber dot while
+something needs you, and counts the unread chats. Users with inbox
+notifications also get a notice when a chat finishes.
+
+**Needs you**
+
+The robot menu and the start screen of the full chat list what waits for you:
+the questions and approvals of your chats, and what other apps add, such as
+the workflow steps assigned to you. A single record change is approved or
+rejected right there, anything else opens where it lives. The *Waiting for
+You* space collects the chats waiting for an answer.
 
 **Long turns**
 

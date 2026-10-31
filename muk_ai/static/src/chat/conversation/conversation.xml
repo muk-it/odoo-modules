@@ -8,7 +8,7 @@
                 t-as="suggestion"
                 t-key="suggestion_index"
                 class="mk_suggestion text-start text-body bg-100 transition-base"
-                t-on-click="() => onPick(suggestion.prompt)"
+                t-on-click="() => onPick(suggestion)"
             >
                 <span class="mk_suggestion_label d-block text-primary fw-semibold text-uppercase" t-out="suggestion.label"/>
                 <span class="mk_suggestion_preview o_line_clamp text-muted" t-out="suggestion.preview"/>
@@ -57,7 +57,7 @@
                             <p t-if="session.agentName" class="fw-semibold text-body mb-1" t-out="session.agentName"/>
                             <p t-if="this.suggestions.length" class="mb-3">Type a message below or pick a suggestion.</p>
                             <p t-else="" class="mb-3">Type a message below to begin.</p>
-                            <t t-call="muk_ai.Suggestions" suggestions="this.suggestions" onPick="(prompt) => this.onSuggestion(prompt)"/>
+                            <t t-call="muk_ai.Suggestions" suggestions="this.suggestions" onPick="(suggestion) => this.onSuggestion(suggestion)"/>
                         </div>
                         <ChatTurn
                             t-foreach="session.turns"

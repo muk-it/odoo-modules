@@ -109,6 +109,7 @@ export class ChatSidebar extends Component {
             this.onSessionState(detail),
         );
         useListener(this.chat.events, 'created', () => this.reload());
+        useListener(this.chat.events, 'awaiting', () => this.reload());
         useListener(document, 'mousedown', (ev) => this.onMouseDown(ev));
         useEffect(() => this.newSpace()?.focus());
         useSortable({

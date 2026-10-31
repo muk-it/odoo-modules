@@ -87,7 +87,7 @@ class GoogleProvider(ProviderBase):
             config['maxOutputTokens'] = max_tokens
         if text_schema:
             config['responseMimeType'] = 'application/json'
-            config['responseSchema'] = text_schema['schema']
+            config['responseJsonSchema'] = text_schema['schema']
         if level := THINKING_LEVELS.get(reasoning_effort):
             config['thinkingConfig']['thinkingLevel'] = level
         declarations = [
@@ -132,20 +132,25 @@ class GoogleProvider(ProviderBase):
         model: str,
         prompt: str,
         options: dict | None = None,
+        references: list[dict] | None = None,
     ) -> dict:
         """Render one image with an image-output model through ``generateContent``.
 
-        ``size`` maps to the closest aspect ratio; other options have none.
-
+        ``size`` maps to the closest aspect ratio, reference images go along as
+        inline parts; other options have no equivalent.
         :raise UserError: when the request fails or no image data comes back
         """
         config = {'responseModalities': ['IMAGE']}
         if ratio := self._aspect_ratio((options or {}).get('size')):
             config['imageConfig'] = {'aspectRatio': ratio}
+        parts = [{'text': prompt}] + [
+            {'inlineData': {'mimeType': ref['mimetype'], 'data': ref['data_b64']}}
+            for ref in references or []
+        ]
         payload = self._post_json(
             f'/models/{model}:generateContent',
             {
-                'contents': [{'role': 'user', 'parts': [{'text': prompt}]}],
+                'contents': [{'role': 'user', 'parts': parts}],
                 'generationConfig': config,
             },
             timeout=self.provider.image_timeout,

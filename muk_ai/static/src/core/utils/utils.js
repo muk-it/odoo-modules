@@ -70,6 +70,21 @@ export function formatTimestamp(at) {
 }
 
 /**
+ * Format a server timestamp as its time when it is today, else as its date.
+ * @param {string} at ISO or SQL timestamp in UTC
+ * @returns {string} the formatted value, empty when unparseable
+ */
+export function formatShortTimestamp(at) {
+    const value = parseDateTime(at);
+    if (!value) {
+        return '';
+    }
+    return value.hasSame(DateTime.now(), 'day')
+        ? value.toLocaleString(DateTime.TIME_SIMPLE)
+        : value.toLocaleString({ day: '2-digit', month: '2-digit' });
+}
+
+/**
  * Format a USD cost with a precision scaled to its magnitude.
  * @param {*} cost the cost
  * @returns {string} the formatted cost

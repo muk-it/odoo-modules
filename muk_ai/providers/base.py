@@ -32,6 +32,7 @@ class ProviderBase:
     modalities: frozenset[str] = frozenset({'chat', 'image'})
 
     supports_vision = True
+    supports_documents = True
     supports_web_search = False
     supports_code_interpreter = False
 
@@ -164,8 +165,11 @@ class ProviderBase:
         model: str,
         prompt: str,
         options: dict | None = None,
+        references: list[dict] | None = None,
     ) -> dict:
-        """Render one image through the OpenAI ``/images/generations`` wire.
+        """Render one image through the OpenAI ``/images`` wire.
+
+        Reference image blocks turn the request into an edit of those images.
 
         :raise UserError: when the request fails or no image data comes back
         """
@@ -176,8 +180,15 @@ class ProviderBase:
         }
         if not model.startswith('gpt-image'):
             body['response_format'] = 'b64_json'
+        if references:
+            body['images'] = [
+                {'image_url': f'data:{ref["mimetype"]};base64,{ref["data_b64"]}'}
+                for ref in references
+            ]
         payload = self._post_json(
-            '/images/generations', body, timeout=self.provider.image_timeout
+            '/images/edits' if references else '/images/generations',
+            body,
+            timeout=self.provider.image_timeout,
         )
         entry = next(iter(payload.get('data') or []), None) or {}
         if not (data_b64 := entry.get('b64_json')):

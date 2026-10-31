@@ -156,7 +156,7 @@ def _google_wire(url: str, body: dict) -> dict:
         ],
         'max_tokens': config.get('maxOutputTokens'),
         'effort': (config.get('thinkingConfig') or {}).get('thinkingLevel'),
-        'schema': config.get('responseSchema'),
+        'schema': config.get('responseJsonSchema'),
         'content': body['contents'][-1]['parts'],
     }
 

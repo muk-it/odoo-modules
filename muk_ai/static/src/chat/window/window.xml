@@ -14,7 +14,7 @@
                     <t t-else="">MuK AI</t>
                 </span>
                 <span class="mk_window_actions d-inline-flex gap-1 ms-1">
-                    <span class="mk_window_btn d-inline-flex align-items-center justify-content-center rounded-3" title="Open fullscreen" t-on-click.stop="() => this.openFullChat()">
+                    <span class="mk_window_btn d-inline-flex align-items-center justify-content-center rounded-3" title="Open fullscreen" t-on-click.stop="() => this.chat.openFullChat(this.props.id)">
                         <i class="oi" data-icon="fullscreen"/>
                     </span>
                     <span

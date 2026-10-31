@@ -72,19 +72,23 @@ class TestApproval(AITestCommon):
             (
                 'delete_records',
                 {'model': 'res.partner', 'ids': [1, '2', True]},
-                'unlink 2 record(s)',
+                'Contact records need your approval before the assistant deletes them.',
             ),
             (
                 'call_method',
                 {'model': 'res.partner', 'ids': [1], 'method': ' action_archive '},
-                'call action_archive on 1 record(s)',
+                'Contact records need your approval before the assistant runs actions on them.',
             ),
             (
                 'update_records',
                 {'model': 'res.partner', 'ids': [1], 'values': {'user_id': 1}},
-                'update 1 record(s)',
+                'Contact records need your approval before the assistant changes them.',
             ),
-            ('create_records', {'model': 'res.users', 'values': {}}, 'a new record'),
+            (
+                'create_records',
+                {'model': 'res.users', 'values': {}},
+                'New User records need your approval before the assistant creates them.',
+            ),
             ('update_records', {'model': 'res.partner.category', 'ids': [1]}, None),
             ('search_read', {'model': 'res.partner'}, None),
             ('delete_records', {'model': 'no.such.model', 'ids': [1]}, None),
@@ -255,6 +259,97 @@ class TestApproval(AITestCommon):
                     tool, {'model': 'res.partner', **arguments}
                 )
                 self.assertEqual(self._digest(preview), digest)
+
+    def test_a_preview_names_the_language_a_text_is_written_in(self):
+        self._mark_sensitive('res.company')
+        self.env['res.lang']._activate_lang('de_DE')
+        company = self.env.company
+        company.write(
+            {
+                'phone': '+43 1 000',
+                'report_header': {'en_US': '<p>Quality</p>'},
+                'report_footer': {
+                    'en_US': '<p>Old footer</p>',
+                    'de_DE': '<p>Alte Fusszeile</p>',
+                },
+            }
+        )
+        footer = {'en_US': '<p>New footer</p>', 'de_DE': '<p>Neue Fusszeile</p>'}
+        for values, context, title, changes in (
+            (
+                {'report_footer': '<p>Neue Fusszeile</p>', 'phone': '+43 1 111'},
+                {'lang': 'de_DE'},
+                f'Update {company.name} (Deutsch)',
+                [
+                    ('report_footer', 'Deutsch', 'Alte Fusszeile', 'Neue Fusszeile'),
+                    ('phone', '', '+43 1 000', '+43 1 111'),
+                ],
+            ),
+            (
+                {'report_footer': footer},
+                {},
+                f'Update {company.name}',
+                [
+                    ('report_footer', 'English (US)', 'Old footer', 'New footer'),
+                    ('report_footer', 'Deutsch', 'Alte Fusszeile', 'Neue Fusszeile'),
+                ],
+            ),
+            (
+                {'report_footer': {**footer, 'en_US': '<p>Old footer</p>'}},
+                {},
+                f'Update {company.name} (Deutsch)',
+                [('report_footer', 'Deutsch', 'Alte Fusszeile', 'Neue Fusszeile')],
+            ),
+            (
+                {'report_header': '<p>Qualität</p>'},
+                {'lang': 'de_DE'},
+                f'Update {company.name} (Deutsch)',
+                [('report_header', 'Deutsch', '', 'Qualität')],
+            ),
+            (
+                {'report_footer': '<p>New footer</p>'},
+                {'lang': 'xx_XX'},
+                f'Update {company.name}',
+                [('report_footer', '', 'Old footer', 'New footer')],
+            ),
+        ):
+            with self.subTest(values=values, context=context):
+                arguments = {
+                    'model': 'res.company',
+                    'ids': [company.id],
+                    'values': values,
+                    'context': context,
+                }
+                session = self._session()
+                with self._mock_responses(
+                    [tool_payload(('update_records', arguments, 'c1'))]
+                ):
+                    preview = session.start('write the footer')['pending_ask'][
+                        'preview'
+                    ]
+                self.assertEqual(preview['title'], title)
+                self.assertEqual(
+                    [
+                        (item['field'], item['lang'], item['from'], item['to'])
+                        for item in preview['changes']
+                    ],
+                    changes,
+                )
+        self.env['ir.model.fields']._get('res.company', 'report_footer').with_context(
+            lang='de_DE'
+        ).field_description = 'Berichtsfuss'
+        self.env.transaction.invalidate_ormcache('stable')
+        preview = self.approval.with_context(lang='de_DE')._build_preview(
+            'update_records',
+            {
+                'model': 'res.company',
+                'ids': [company.id],
+                'values': {'report_footer': footer},
+            },
+        )
+        self.assertEqual(
+            {change['label'] for change in preview['changes']}, {'Berichtsfuss'}
+        )
 
     def test_a_preview_hides_what_the_user_cannot_read(self):
         restricted = new_test_user(

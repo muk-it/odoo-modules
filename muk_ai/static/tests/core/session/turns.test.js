@@ -10,6 +10,7 @@ import {
     toolResultFiles,
     turnBuilders,
 } from '@muk_ai/core/session/turns';
+import '@muk_ai/chat/tool_card/tool_labels';
 import { defineAIModels, getChat } from '@muk_ai/../tests/muk_ai_test_helpers';
 
 defineAIModels();
@@ -137,9 +138,15 @@ test('decorators describe a tool card from its live arguments and result', () =>
     expect(block.band).toBe('kept');
 });
 
-test('a tool card stays out while a question, a client action or another card shows its call', () => {
+test('a tool card stays out while a question, an approval or another card shows its call, or as bookkeeping', () => {
     hiddenToolBlocks.add('delegation', (block) => block.name === 'delegate');
-    const turn = { blocks: [{ type: 'ask', callId: 'c2' }] };
+    const turn = {
+        blocks: [
+            { type: 'ask', callId: 'c2' },
+            { type: 'ask', callId: 'c7', decision: 'approved' },
+            { type: 'ask', callId: 'c8', decision: 'rejected' },
+        ],
+    };
     const actions = {
         kind: 'client_action',
         actions: [
@@ -155,6 +162,19 @@ test('a tool card stays out while a question, a client action or another card sh
         [{ name: 'other', callId: 'c4', result: null }, null, false],
         [{ name: 'adjust_search', callId: 'c5', result: null }, actions, true],
         [{ name: 'adjust_search', callId: 'c6', result: null }, actions, false],
+        [{ name: 'update_records', callId: 'c7', result: '{"ok": true}' }, null, true],
+        [
+            { name: 'update_records', callId: 'c7', result: '{"error": "x"}' },
+            null,
+            false,
+        ],
+        [
+            { name: 'update_records', callId: 'c8', result: '{"error": "x"}' },
+            null,
+            true,
+        ],
+        [{ name: 'tool_load', callId: 'c10', result: '{}' }, null, true],
+        [{ name: 'other', callId: 'c11', result: '{"skipped": true}' }, null, true],
     ]) {
         expect(isToolBlockHidden(block, turn, pending)).toBe(hidden);
     }

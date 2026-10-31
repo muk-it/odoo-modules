@@ -286,7 +286,7 @@ class AISessionTool(models.AbstractModel):
             return {'error': str(error)}, False
         self._maybe_publish_ui_action(text, name, call_id)
         self._maybe_publish_record_written(name)
-        self._settle_tool_cost(name, text)
+        self._settle_tool_cost(text)
         if previews and isinstance(text, str):
             text += '\n\n' + '\n\n'.join(f'![image set]({url})' for url in previews)
         elif previews and isinstance(text, dict):
@@ -455,28 +455,27 @@ class AISessionTool(models.AbstractModel):
             payload.update(kind='action', action_id=action_id)
         return payload
 
-    def _settle_tool_cost(self, name: str, text) -> None:
-        """Charge what the image tool spent to the session's cost ledger.
+    def _settle_tool_cost(self, text) -> None:
+        """Count the ``cost`` of a tool result on the chat and its turn budget.
 
-        ``generate_image`` is the only tool that spends money of its own, priced
-        by the image model this session resolved, never one the result names.
+        Each block names the model that priced it; the tool booked it on the
+        monthly ledger already.
         """
-        if (
-            name != 'generate_image'
-            or not isinstance(text, str)
-            or '"cost"' not in text
-        ):
+        if not isinstance(text, str) or '"cost"' not in text:
             return
         try:
             cost = json.loads(text).get('cost')
         except (ValueError, AttributeError):
             return
-        if (
-            isinstance(cost, dict)
-            and isinstance(cost.get('usage'), dict)
-            and (record := self._resolve_model_for('image'))
-        ):
-            self._accrue_usage(cost['usage'], record)
+        for block in cost if isinstance(cost, list) else [cost]:
+            if not (
+                isinstance(block, dict)
+                and isinstance(block.get('model_id'), int)
+                and isinstance(block.get('usage'), dict)
+            ):
+                continue
+            if record := self.env['muk_ai.model'].browse(block['model_id']).exists():
+                self._accrue_usage(block['usage'], record, booked=True)
 
     def _persist_tool_file(self, result) -> object:
         """Store a tool's file payload and swap its base64 for a download URL.
@@ -506,6 +505,7 @@ class AISessionTool(models.AbstractModel):
                     payload['mimetype'],
                     payload['data_b64'],
                     res_id=self.id,
+                    ai_generated=result.get('ai_generated') is True,
                 )
             )
         except UserError as error:
@@ -672,7 +672,7 @@ class AISessionTool(models.AbstractModel):
         self, outputs: list, call: dict, reason: str, log_result=None
     ) -> None:
         """Record a call the round refuses and answer it with the reason."""
-        result = {'error': reason}
+        result = {'error': reason, 'skipped': True}
         self._record_tool_call(call)
         self._log_denied_call(call, result)
         self._record_tool_result(

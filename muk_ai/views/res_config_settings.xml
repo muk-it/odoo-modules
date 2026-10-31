@@ -25,6 +25,45 @@
 							<field name="ai_agent_id" options="{'no_create': True}"/>
 						</setting>
 					</block>
+					<block title="Budget" name="muk_ai_settings_budget">
+						<setting
+							id="ai_monthly_budget"
+							string="Monthly Budget"
+							help="Maximum spend per calendar month in the model's price currency. A user's own budget replaces the one per user. Set to 0 to disable."
+						>
+							<div class="content-group">
+								<div class="row">
+									<div class="o_light_label">
+										<label class="col-6 col-sm-4 col-md-2 col-lg-4" string="Max spend" for="ai_monthly_budget"/>
+										<field name="ai_monthly_budget" class="w-25 text-center" nolabel="1"/>
+										<span class="col-auto ms-2">in Total</span>
+									</div>
+								</div>
+								<div class="row">
+									<div class="o_light_label">
+										<label class="col-6 col-sm-4 col-md-2 col-lg-4" string="Max spend" for="ai_user_monthly_budget"/>
+										<field name="ai_user_monthly_budget" class="w-25 text-center" nolabel="1"/>
+										<span class="col-auto ms-2">per User</span>
+									</div>
+								</div>
+							</div>
+						</setting>
+						<setting
+							id="ai_usage_retention"
+							string="Delete Old Usage"
+							help="Delete the AI usage of past months. The monthly budgets only count the current month."
+						>
+							<div class="content-group">
+								<div class="row">
+									<div class="o_light_label">
+										<label class="col-6 col-sm-4 col-md-2 col-lg-4" string="Keep Usage for" for="ai_usage_retention_months"/>
+										<field name="ai_usage_retention_months" class="w-25 text-center" nolabel="1"/>
+										<span class="col-auto ms-2">Months</span>
+									</div>
+								</div>
+							</div>
+						</setting>
+					</block>
 					<block title="Web Search" name="muk_ai_settings_search">
 						<setting
 							id="ai_search_backend"
@@ -110,45 +149,6 @@
 										<label class="col-6 col-sm-4 col-md-2 col-lg-4" string="Max spend" for="ai_turn_cost_limit"/>
 										<field name="ai_turn_cost_limit" class="w-25 text-center" nolabel="1"/>
 										<span class="col-auto ms-2">per Turn</span>
-									</div>
-								</div>
-							</div>
-						</setting>
-					</block>
-					<block title="Budget" name="muk_ai_settings_budget">
-						<setting
-							id="ai_monthly_budget"
-							string="Monthly Budget"
-							help="Maximum spend per calendar month in the model's price currency. A user's own budget replaces the one per user. Set to 0 to disable."
-						>
-							<div class="content-group">
-								<div class="row">
-									<div class="o_light_label">
-										<label class="col-6 col-sm-4 col-md-2 col-lg-4" string="Max spend" for="ai_monthly_budget"/>
-										<field name="ai_monthly_budget" class="w-25 text-center" nolabel="1"/>
-										<span class="col-auto ms-2">in Total</span>
-									</div>
-								</div>
-								<div class="row">
-									<div class="o_light_label">
-										<label class="col-6 col-sm-4 col-md-2 col-lg-4" string="Max spend" for="ai_user_monthly_budget"/>
-										<field name="ai_user_monthly_budget" class="w-25 text-center" nolabel="1"/>
-										<span class="col-auto ms-2">per User</span>
-									</div>
-								</div>
-							</div>
-						</setting>
-						<setting
-							id="ai_usage_retention"
-							string="Delete Old Usage"
-							help="Delete the AI usage of past months. The monthly budgets only count the current month."
-						>
-							<div class="content-group">
-								<div class="row">
-									<div class="o_light_label">
-										<label class="col-6 col-sm-4 col-md-2 col-lg-4" string="Keep Usage for" for="ai_usage_retention_months"/>
-										<field name="ai_usage_retention_months" class="w-25 text-center" nolabel="1"/>
-										<span class="col-auto ms-2">Months</span>
 									</div>
 								</div>
 							</div>
@@ -460,6 +460,45 @@
 								widget="module_link"
 							/>
 							<div class="content-group" invisible="not module_muk_ai_crm" id="msg_module_muk_ai_crm">
+								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+							</div>
+						</setting>
+						<setting
+							id="muk_ai_addon_product"
+							string="Products"
+							help="Write product texts, translations and images from facts."
+						>
+							<field
+								name="module_muk_ai_product"
+								widget="module_link"
+							/>
+							<div class="content-group" invisible="not module_muk_ai_product" id="msg_module_muk_ai_product">
+								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+							</div>
+						</setting>
+						<setting
+							id="muk_ai_addon_account"
+							string="Accounting"
+							help="Read vendor bills with AI and review them in one queue."
+						>
+							<field
+								name="module_muk_ai_account"
+								widget="module_link"
+							/>
+							<div class="content-group" invisible="not module_muk_ai_account" id="msg_module_muk_ai_account">
+								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+							</div>
+						</setting>
+						<setting
+							id="muk_ai_addon_purchase"
+							string="Purchase"
+							help="Match bills to orders and run purchasing as workflows."
+						>
+							<field
+								name="module_muk_ai_purchase"
+								widget="module_link"
+							/>
+							<div class="content-group" invisible="not module_muk_ai_purchase" id="msg_module_muk_ai_purchase">
 								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
 							</div>
 						</setting>

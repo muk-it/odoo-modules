@@ -18,6 +18,7 @@ import { ORM } from '@web/core/orm_plugin';
 import { registry } from '@web/core/registry';
 import { services } from '@web/core/services';
 import { user } from '@web/core/user';
+import { debounce } from '@web/core/utils/timing';
 import { ActionPlugin } from '@web/webclient/actions/action_plugin';
 
 import { AISession } from '@muk_ai/core/session/session';
@@ -32,8 +33,10 @@ const TARGET_POLL_MS = 100;
  * the floating windows, the sidebar rows and the unread badge, fed by one
  * subscription per bus notification type.
  *
- * `events` re-dispatches `session_state` notifications and announces chats
- * created here as `created`, for the lists that have to react.
+ * `events` re-dispatches `session_state` notifications, announces chats
+ * created here as `created` and chats starting or ending a wait for their
+ * owner as `awaiting`, for the lists that have to react. `needs` holds what
+ * the AI waits on the user for, kept current by the same notifications.
  */
 export class AIChatPlugin extends Plugin {
     action = usePlugin(ActionPlugin);
@@ -47,6 +50,8 @@ export class AIChatPlugin extends Plugin {
     rows = proxy({});
     badge = proxy({ count: 0, unreadIds: [], spaceUnread: {} });
     agents = signal([]);
+    needs = proxy({ rows: [], loaded: false, busy: {} });
+    needsSeq = 0;
     pageSessionId = null;
     targets = [];
     toasts = new Map();
@@ -57,10 +62,16 @@ export class AIChatPlugin extends Plugin {
             'muk_ai.session_state': (payload) => this.onSessionState(payload),
             'muk_ai.notification_badge': (payload) => this.applyBadge(payload, true),
             'muk_ai.session_notification': (payload) => this.onNotification(payload),
+            'mail.activity/updated': () => this.reloadNeeds(),
         };
         for (const [type, handler] of Object.entries(handlers)) {
             onWillDestroy(this.bus.subscribe(type, handler));
         }
+        this.reloadNeeds = debounce(() => this.fetchNeeds(), 300, {
+            leading: true,
+            trailing: true,
+        });
+        onWillDestroy(() => this.reloadNeeds.cancel());
     }
     /**
      * The chats of the user that the lists of this tab show, so an extension
@@ -69,6 +80,10 @@ export class AIChatPlugin extends Plugin {
      */
     get chatDomain() {
         return [['user_id', '=', user.userId]];
+    }
+    get needsTitle() {
+        const count = this.needs.rows.length;
+        return count === 1 ? _t('1 thing needs you') : _t('%s things need you', count);
     }
     get windowIds() {
         return this.windows.map((window) => window.id);
@@ -125,6 +140,16 @@ export class AIChatPlugin extends Plugin {
     onSessionState(payload) {
         const { session_id: id, deleted, ...values } = payload;
         const session = this.sessions.get(id);
+        const moved =
+            'awaiting_user' in values &&
+            Boolean(this.rows[id]?.awaiting_user) !== Boolean(values.awaiting_user);
+        if (
+            deleted ||
+            values.awaiting_user ||
+            this.needs.rows.some((row) => row.session_id === id)
+        ) {
+            this.reloadNeeds();
+        }
         if (deleted) {
             delete this.rows[id];
             this.closeWindow(id);
@@ -145,6 +170,9 @@ export class AIChatPlugin extends Plugin {
             }
         }
         this.events.trigger('session_state', payload);
+        if (moved && !deleted) {
+            this.events.trigger('awaiting', { id });
+        }
     }
     /**
      * Rename a chat everywhere it is shown.
@@ -197,6 +225,58 @@ export class AIChatPlugin extends Plugin {
                 spaceUnread: payload.space_unread || {},
             });
         }
+    }
+    /**
+     * Load what waits on the user once; the bus keeps it current afterwards.
+     * @returns {Promise<void>}
+     */
+    loadNeeds() {
+        this.needsLoad ||= this.fetchNeeds();
+        return this.needsLoad;
+    }
+    /**
+     * Read what waits on the user, keeping only the answer of the last read.
+     * @returns {Promise<void>}
+     */
+    async fetchNeeds() {
+        const seq = ++this.needsSeq;
+        const rows = await this.orm.silent
+            .call('muk_ai.session', 'get_needs_you', [])
+            .catch(() => null);
+        if (rows && seq === this.needsSeq) {
+            Object.assign(this.needs, { rows, loaded: true });
+        }
+    }
+    /**
+     * Approve or reject a waiting item in place through the method it names.
+     * @param {object} row the item, as `get_needs_you` returns it
+     * @param {string} verb `approve` or `reject`
+     */
+    async decideNeed(row, verb) {
+        this.needs.busy[row.key] = true;
+        try {
+            await this.orm.call(row.res_model, row[verb], [[row.res_id]]);
+            this.needs.rows = this.needs.rows.filter((item) => item.key !== row.key);
+        } catch (error) {
+            this.notification.add(formatError(error), { type: 'danger' });
+        } finally {
+            delete this.needs.busy[row.key];
+            this.reloadNeeds();
+        }
+    }
+    /**
+     * Open a waiting item: a chat in a window, anything else through the
+     * action its `open` method returns.
+     * @param {object} row the item, as `get_needs_you` returns it
+     * @returns {Promise<void>}
+     */
+    async openNeed(row) {
+        if (row.session_id) {
+            this.openWindow(row.session_id);
+            return;
+        }
+        const action = await this.orm.call(row.res_model, row.open, [[row.res_id]]);
+        await this.action.doAction(action);
     }
     /**
      * Load the active agents once.
@@ -264,7 +344,7 @@ export class AIChatPlugin extends Plugin {
      */
     async createSession(values = {}) {
         const [id] = await this.orm.create('muk_ai.session', [
-            { name: _t('Chat %s', new Date().toLocaleString()), ...values },
+            { name: _t('New Chat'), ...values },
         ]);
         await this.seedContext(id);
         this.events.trigger('created', { id });
