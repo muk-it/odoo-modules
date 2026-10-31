@@ -94,12 +94,17 @@ patch(ControlPanel.prototype, {
         return ['kanban', 'list'].includes(this.env.config.viewType);
     },
     /**
-     * Tell whether the refresh button belongs on the current view.
+     * Tell whether the refresh button belongs on the current screen.
      *
-     * @returns {boolean} true on every view but the settings form
+     * @returns {boolean} true where a pager or a search reloads the content,
+     *     except on the settings form
      */
     checkRefreshAvailability() {
-        return !['base_settings'].includes(this.env.config.viewSubType);
+        return (
+            !['base_settings'].includes(this.env.config.viewSubType) &&
+            (!!this.pagerProps?.onUpdate ||
+                typeof this.env.searchModel?.search === 'function')
+        );
     },
     /**
      * Return the configured auto-load interval as a countdown value.
