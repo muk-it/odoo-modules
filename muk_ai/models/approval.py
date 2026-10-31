@@ -461,8 +461,8 @@ class AIApproval(models.Model):
         if not isinstance(values, dict):
             return None
         if tool_name == 'update_records':
-            context = arguments.get('context')
-            lang = context.get('lang') if isinstance(context, dict) else None
+            options = arguments.get('context')
+            lang = options.get('lang') if isinstance(options, dict) else None
             changes = [
                 change
                 for fname, new_value in values.items()
