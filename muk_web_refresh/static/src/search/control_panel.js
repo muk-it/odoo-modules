@@ -103,7 +103,11 @@ patch(ControlPanel.prototype, {
         return ['kanban', 'list'].includes(this.env.config.viewType);
     },
     checkRefreshAvailability() {
-        return !['base_settings'].includes(this.env.config.viewSubType);
+        return (
+            !['base_settings'].includes(this.env.config.viewSubType) &&
+            (!!this.pagerProps?.onUpdate ||
+                typeof this.env.searchModel?.search === 'function')
+        );
     },
     getAutoLoadRefreshInterval() {
         return getAutoLoadInterval() / 1000;

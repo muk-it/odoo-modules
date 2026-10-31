@@ -4,13 +4,19 @@ import { advanceTime, animationFrame, Deferred } from '@odoo/hoot-mock';
 
 import { defineMailModels } from '@mail/../tests/mail_test_helpers';
 
+import { registry } from '@web/core/registry';
+import { Layout } from '@web/search/layout';
 import {
     defineModels,
     fields,
+    getService,
     models,
     mountView,
+    mountWebClient,
     onRpc,
 } from '@web/../tests/web_test_helpers';
+
+import { Component, xml } from '@odoo/owl';
 
 import '@muk_web_refresh/search/control_panel';
 
@@ -93,6 +99,20 @@ test('refresh button is visible on form view', async () => {
         arch: `<form><field name="name"/></form>`,
     });
     expect('.o_cp_refresh .fa-refresh').toHaveCount(1);
+});
+
+test.tags('muk_web_refresh');
+test('a client action with nothing to reload has no refresh button', async () => {
+    class Board extends Component {
+        static template = xml`<Layout display="{ controlPanel: {} }"/>`;
+        static components = { Layout };
+        static props = ['*'];
+    }
+    registry.category('actions').add('mk_board', Board);
+    await mountWebClient();
+    await getService('action').doAction('mk_board');
+    expect('.o_control_panel').toHaveCount(1);
+    expect('.o_cp_refresh').toHaveCount(0);
 });
 
 test.tags('muk_web_refresh');
