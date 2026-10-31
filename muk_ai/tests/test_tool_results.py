@@ -73,20 +73,20 @@ class TestToolResults(AITestCommon):
             [('res_model', '=', 'muk_ai.session'), ('res_id', '=', session.id)]
         )
 
-    def _images(self, items: list) -> list[dict]:
-        """Return the materialized image blocks of the user entries in ``items``."""
+    def _file_blocks(self, items: list) -> list[dict]:
+        """Return the materialized file blocks of the user entries in ``items``."""
         return [
             block
             for item in items
             if item.get('role') == 'user'
             for block in item['content']
-            if block.get('strategy') == 'image'
+            if block.get('data_b64')
         ]
 
     def _vision(self, request: dict) -> list[dict]:
-        """Return the image blocks a request carries after its last tool output.
+        """Return the file blocks a request carries after its last tool output.
 
-        Fails when an image block sits anywhere else in the request.
+        Fails when a file block sits anywhere else in the request.
         """
         inputs = request['inputs']
         last = max(
@@ -94,8 +94,8 @@ class TestToolResults(AITestCommon):
             for index, item in enumerate(inputs)
             if item.get('type') == 'function_call_output'
         )
-        self.assertEqual(self._images(inputs[: last + 1]), [])
-        return self._images(inputs[last + 1 :])
+        self.assertEqual(self._file_blocks(inputs[: last + 1]), [])
+        return self._file_blocks(inputs[last + 1 :])
 
     @contextmanager
     def _without_vision(self) -> Iterator[None]:
@@ -251,7 +251,7 @@ class TestToolResults(AITestCommon):
                 )
                 self.assertIn(blocks[0]['attachment_id'], self._files(session).ids)
 
-    def test_tool_images_are_capped_or_explained(self):
+    def test_tool_files_are_capped_or_explained(self):
         many = [{**SHOT, 'name': f'shot{index}.png'} for index in range(6)]
         blocks = ToolContent(
             [
@@ -259,14 +259,33 @@ class TestToolResults(AITestCommon):
                 {'type': 'image', 'data': PNG_1x1, 'mimeType': 'image/png'},
             ]
         )
+
+        def resource(mimetype: str) -> ToolContent:
+            """Return a result that embeds a file of ``mimetype`` with its bytes."""
+            return ToolContent(
+                [
+                    {
+                        'type': 'resource',
+                        'resource': {
+                            'uri': 'odoo://attachment/1',
+                            'mimeType': mimetype,
+                            'name': 'scan',
+                            'blob': PNG_1x1,
+                        },
+                    }
+                ]
+            )
+
         for images, vision, shown, listed in (
             (many, True, TOOL_VISION_MAX_IMAGES, TOOL_VISION_MAX_IMAGES),
             ([{**SHOT, 'data': f'data:image/png;base64,{PNG_1x1}'}], True, 1, 1),
             ([{**SHOT, 'data': 'A' * (TOOL_VISION_MAX_B64_CHARS + 1)}], True, 0, 0),
-            ([{**SHOT, 'mimetype': 'application/pdf'}], True, 0, 0),
             ([SHOT], False, 0, 1),
             (blocks, True, 1, 1),
             (blocks, False, 0, 1),
+            (resource('application/pdf'), True, 1, 0),
+            (resource('application/pdf'), False, 0, 0),
+            (resource('application/zip'), True, 0, 0),
         ):
             with (
                 self.subTest(images=len(images), vision=vision, shown=shown),
@@ -292,6 +311,7 @@ class TestToolResults(AITestCommon):
                 )
                 self.assertEqual(len(blocks), shown)
                 self.assertNotIn('images', json.loads(output))
+                self.assertNotIn(PNG_1x1, output)
                 self.assertEqual('cannot be shown' in output, not shown)
 
     def test_images_inlined_in_an_answer_are_stored_once(self):

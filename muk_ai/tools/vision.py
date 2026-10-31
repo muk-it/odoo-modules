@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 
 VISION_UNAVAILABLE = (
-    'Note: images were produced but cannot be shown to this model; '
+    'Note: files were produced but cannot be shown to this model; '
     'rely on the textual/structural result instead.'
 )
 
@@ -13,11 +13,22 @@ def is_image_block(block) -> bool:
     return isinstance(block, dict) and block.get('type') == 'image'
 
 
-def image_specs(result) -> list[dict]:
-    """Return the images a tool result carries as ``{data, mimetype, name}``.
+def is_blob_block(block) -> bool:
+    """Return whether a content block is an MCP resource block with its bytes."""
+    return (
+        isinstance(block, dict)
+        and block.get('type') == 'resource'
+        and isinstance(block.get('resource'), dict)
+        and 'blob' in block['resource']
+    )
 
-    Reads the ``{'images': [{'data', 'mimetype', 'name'}]}`` convention and MCP
-    image content blocks (``{'type': 'image', 'data', 'mimeType'}``).
+
+def file_specs(result) -> list[dict]:
+    """Return the files a tool result carries as ``{data, mimetype, name}``.
+
+    Reads the ``{'images': [{'data', 'mimetype', 'name'}]}`` convention, MCP
+    image blocks (``{'type': 'image', 'data', 'mimeType'}``) and MCP resource
+    blocks with their bytes (``{'type': 'resource', 'resource': {'blob', ...}}``).
     """
     blocks = []
     if isinstance(result, dict):
@@ -27,9 +38,11 @@ def image_specs(result) -> list[dict]:
         result = result.get('content')
     if isinstance(result, list):
         blocks += [block for block in result if is_image_block(block)]
+        blocks += [block['resource'] for block in result if is_blob_block(block)]
     specs = []
     for block in blocks:
-        if isinstance(data := block.get('data') or block.get('data_b64'), str) and data:
+        data = block.get('data') or block.get('data_b64') or block.get('blob')
+        if isinstance(data, str) and data:
             specs.append(
                 {
                     'data': re.sub(r'\s+', '', data),
@@ -44,15 +57,28 @@ def image_specs(result) -> list[dict]:
     return specs
 
 
-def strip_images(result) -> object:
-    """Return the tool result without its image payloads."""
+def strip_files(result) -> object:
+    """Return the tool result without its file payloads, resources kept by uri."""
     if isinstance(result, list):
-        return [block for block in result if not is_image_block(block)]
+        return [
+            {
+                **block,
+                'resource': {
+                    key: value
+                    for key, value in block['resource'].items()
+                    if key != 'blob'
+                },
+            }
+            if is_blob_block(block)
+            else block
+            for block in result
+            if not is_image_block(block)
+        ]
     if not isinstance(result, dict):
         return result
     cleaned = {key: value for key, value in result.items() if key != 'images'}
     if isinstance(cleaned.get('content'), list):
-        cleaned['content'] = strip_images(cleaned['content'])
+        cleaned['content'] = strip_files(cleaned['content'])
     return cleaned
 
 

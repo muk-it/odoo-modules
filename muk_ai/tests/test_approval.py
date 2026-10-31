@@ -312,6 +312,12 @@ class TestApproval(AITestCommon):
                 f'Update {company.name}',
                 [('report_footer', '', 'Old footer', 'New footer')],
             ),
+            (
+                {'report_header': '<!-- note -->'},
+                {'lang': 'xx_XX'},
+                f'Update {company.name}',
+                [('report_header', '', 'Quality', '')],
+            ),
         ):
             with self.subTest(values=values, context=context):
                 arguments = {

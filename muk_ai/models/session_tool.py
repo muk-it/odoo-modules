@@ -33,9 +33,9 @@ from odoo.addons.muk_ai.tools.runtime import MAX_TOOL_CALLS_PER_ROUND
 from odoo.addons.muk_ai.tools.sources import extract_sources
 from odoo.addons.muk_ai.tools.url_fetch import fetch_url
 from odoo.addons.muk_ai.tools.vision import (
-    image_specs,
+    file_specs,
     note_vision_unavailable,
-    strip_images,
+    strip_files,
 )
 from odoo.addons.muk_mcp.core.tool import get_tool_index
 
@@ -523,23 +523,21 @@ class AISessionTool(models.AbstractModel):
     def _append_tool_output_with_vision(
         self, outputs: list, call_id: str, result
     ) -> object:
-        """Append a tool output, holding its images back until the round ends.
+        """Append a tool output, holding its files back until the round ends.
 
-        Files and images are stored, the images shown in the chat and passed to
-        a model with vision; a result over the context window is cut, marked.
+        Files are stored, images shown in the chat, and the files the model can
+        read passed to it; a result over the context window is cut, marked.
         :return: the cleaned, text-only result for event logging
         """
         result = self._persist_tool_file(result)
-        cleaned = strip_images(result)
+        cleaned = strip_files(result)
         attachments = self.env['ir.attachment']
-        specs = image_specs(result)
+        specs = file_specs(result)
         for spec in specs[:TOOL_VISION_MAX_IMAGES]:
             data = spec['data']
             if data.startswith('data:'):
                 data = data.partition(',')[2]
-            if spec['mimetype'] not in IMAGE_MIMETYPES or not (
-                0 < len(data) <= TOOL_VISION_MAX_B64_CHARS
-            ):
+            if not 0 < len(data) <= TOOL_VISION_MAX_B64_CHARS:
                 continue
             with contextlib.suppress(UserError):
                 attachments |= (
@@ -549,14 +547,16 @@ class AISessionTool(models.AbstractModel):
                         spec['name'], spec['mimetype'], data, res_id=self.id
                     )
                 )
-        if attachments:
+        if images := attachments.filtered(
+            lambda attachment: attachment.mimetype in IMAGE_MIMETYPES
+        ):
             self._append_event(
                 {
                     'kind': 'tool_images',
                     'call_id': call_id,
                     'images': [
                         {'url': f'/web/image/{image.id}', 'name': image.name}
-                        for image in attachments
+                        for image in images
                     ],
                 }
             )
@@ -772,7 +772,7 @@ class AISessionTool(models.AbstractModel):
                     (a.get('name') for a in actions if a.get('call_id') == call_id),
                     None,
                 ),
-                'result': strip_images(result),
+                'result': strip_files(result),
             }
         )
         if any(action.get('call_id') not in pending['results'] for action in actions):

@@ -6,7 +6,7 @@ import json
 from odoo import api, fields, models
 from odoo.exceptions import AccessError, MissingError
 from odoo.fields import Field
-from odoo.tools import SQL, formatLang, html2plaintext
+from odoo.tools import SQL, formatLang, html2plaintext, html_sanitize
 
 from odoo.addons.muk_ai.tools.runtime import coerce_ids
 
@@ -197,7 +197,7 @@ class AIApproval(models.Model):
         if kind == 'boolean':
             return self.env._('Yes') if value else self.env._('No')
         if kind == 'html' and isinstance(value, str):
-            return html2plaintext(value)
+            return html2plaintext(html_sanitize(value))
         if kind in ('integer', 'float', 'monetary') and isinstance(value, int | float):
             digits = field.get_digits(self.env) if kind == 'float' else None
             scale = digits[1] if digits else 0 if kind == 'integer' else 2
