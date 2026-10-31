@@ -1065,6 +1065,7 @@ msgstr "Argomenti"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/artifacts/chat_artifacts_panel.xml:0
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
 #, python-format
 msgid "Artifacts"
 msgstr "Artefatti"
@@ -6679,3 +6680,24 @@ msgstr "Limitato agli strumenti in sola lettura."
 #: model:muk_ai.agent.suggestion,label:muk_ai.agent_read_only_suggestion_revenue
 msgid "Revenue"
 msgstr "Ricavi"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
+msgid "Hand over"
+msgstr "Passa a"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
+msgid "More"
+msgstr "Altro"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
+msgid "Search"
+msgstr "Cerca"

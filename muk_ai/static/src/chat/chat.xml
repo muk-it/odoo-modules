@@ -229,6 +229,16 @@
         </div>
     </t>
 
+    <t t-name="muk_ai.ChatAgentPillIcon">
+        <img
+            t-if="session.state.agentId"
+            class="mk_agent_pill_icon rounded-circle"
+            t-att-src="agentImage(session.state.agentId)"
+            alt=""
+        />
+        <i t-else="" class="fa fa-user-circle-o mk_agent_pill_icon"/>
+    </t>
+
     <t t-name="muk_ai.ChatMainHeader">
         <div class="mk_main_header d-flex align-items-center gap-2">
             <button
@@ -252,49 +262,62 @@
                     <path d="M2 1h11a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-11a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2ZM2 2h2v11h-2a1 1 0 0 1 -1 -1v-9a1 1 0 0 1 1 -1ZM5 2h8a1 1 0 0 1 1 1v9a1 1 0 0 1 -1 1h-8v-11Z"/>
                 </svg>
             </button>
+            <img
+                t-if="session.state.sessionId and session.state.agentId and ui.isSmall"
+                class="mk_header_agent flex-shrink-0 rounded-circle"
+                t-att-src="agentImage(session.state.agentId)"
+                t-att-alt="session.state.agentName"
+            />
             <span
+                t-elif="session.state.sessionId"
                 class="mk_avatar rounded-circle"
-                t-if="session.state.sessionId"
                 t-att-class="statusBadgeClass(session.state.status)"
                 t-att-title="statusLabel(session.state.status)"
             >
                 <i class="fa" t-att-class="statusIcon(session.state.status)"/>
             </span>
-            <span class="mk_main_title" t-esc="session.state.name || 'MuK AI Chat'"/>
-            <span
-                t-if="session.state.sessionId and !session.canWrite()"
-                class="btn btn-sm mk_agent_pill rounded-pill d-inline-flex align-items-center gap-1 disabled"
-                title="The agent of a shared chat cannot be changed"
-            >
-                <i class="fa fa-user-circle-o"/>
-                <span t-esc="session.state.agentName || 'No agent'"/>
-            </span>
-            <Dropdown t-if="session.state.sessionId and session.state.agents.length and session.canWrite()">
-                <t t-set-slot="toggler">
-                    <span class="btn btn-sm mk_agent_pill rounded-pill d-inline-flex align-items-center gap-1" title="Switch agent">
-                        <i class="fa fa-user-circle-o"/>
-                        <span t-esc="session.state.agentName || 'No agent'"/>
-                        <i class="fa fa-caret-down small"/>
-                    </span>
-                </t>
-                <t t-foreach="session.state.agents" t-as="agent" t-key="agent.id">
-                    <DropdownItem
-                        class="{ 'active': session.state.agentId === agent.id }"
-                        onSelected="() => this.session.onSetAgent(agent.id)"
-                    >
-                        <div class="d-flex flex-column">
-                            <span class="fw-semibold" t-esc="agent.name"/>
-                            <small class="text-muted" t-if="agent.description" t-esc="agent.description"/>
-                        </div>
-                    </DropdownItem>
-                </t>
-                <DropdownItem
-                    class="{ 'active': !session.state.agentId }"
-                    onSelected="() => this.session.onSetAgent(null)"
+            <div class="mk_main_heading d-flex align-items-center gap-2 min-w-0">
+                <span class="mk_main_title" t-esc="session.state.name || 'MuK AI Chat'"/>
+                <span
+                    t-if="session.state.sessionId and !session.canWrite()"
+                    class="btn btn-sm mk_agent_pill rounded-pill d-inline-flex align-items-center gap-1 disabled"
+                    title="The agent of a shared chat cannot be changed"
                 >
-                    <span class="text-muted fst-italic">No agent (defaults)</span>
-                </DropdownItem>
-            </Dropdown>
+                    <t t-call="muk_ai.ChatAgentPillIcon"/>
+                    <span t-esc="session.state.agentName || 'No agent'"/>
+                </span>
+                <Dropdown
+                    t-if="session.state.sessionId and session.state.agents.length and session.canWrite()"
+                    menuClass="'mk_agent_menu'"
+                >
+                    <t t-set-slot="toggler">
+                        <span class="btn btn-sm mk_agent_pill rounded-pill d-inline-flex align-items-center gap-1" title="Switch agent">
+                            <t t-call="muk_ai.ChatAgentPillIcon"/>
+                            <span t-esc="session.state.agentName || 'No agent'"/>
+                            <i class="fa fa-caret-down small"/>
+                        </span>
+                    </t>
+                    <t t-foreach="session.state.agents" t-as="agent" t-key="agent.id">
+                        <DropdownItem
+                            class="{ 'active': session.state.agentId === agent.id }"
+                            onSelected="() => this.session.onSetAgent(agent.id)"
+                        >
+                            <img class="mk_agent_option_icon rounded-circle" t-att-src="agentImage(agent.id)" alt=""/>
+                            <span class="min-w-0">
+                                <span class="d-block fw-semibold" t-esc="agent.name"/>
+                                <small class="mk_agent_option_text text-muted" t-if="agent.description" t-esc="agent.description"/>
+                            </span>
+                        </DropdownItem>
+                    </t>
+                    <DropdownItem
+                        class="{ 'active': !session.state.agentId, 'align-items-center': true }"
+                        onSelected="() => this.session.onSetAgent(null)"
+                    >
+                        <i class="fa fa-user-circle-o mk_agent_option_icon text-muted"/>
+                        <span class="text-muted fst-italic">No agent (defaults)</span>
+                    </DropdownItem>
+                </Dropdown>
+            </div>
             <span
                 t-if="session.state.loading and session.state.sessionId"
                 class="mk_chat_header_loading text-muted small d-inline-flex align-items-center gap-1"
@@ -303,37 +326,58 @@
                 <i class="fa fa-spinner fa-spin"/>
             </span>
             <div class="mk_tokens ms-auto d-flex align-items-center gap-2" t-if="session.state.sessionId">
-                <button
-                    class="btn btn-link btn-sm mk_search_toggle"
-                    t-att-class="{ active: state.searchOpen }"
-                    t-on-click="() => this.toggleSearch()"
-                    title="Search this chat"
+                <Dropdown
+                    t-if="ui.isSmall"
+                    position="'bottom-end'"
+                    togglerClass="'btn btn-link btn-sm mk_header_more'"
+                    showCaret="false"
                 >
-                    <i class="fa fa-search"/>
-                </button>
-                <button
-                    class="btn btn-link btn-sm mk_artifacts_toggle"
-                    t-att-class="{ active: !state.artifactsHidden }"
-                    t-on-click="() => this.toggleArtifacts()"
-                    title="Toggle artifacts panel"
-                >
-                    <i class="fa fa-paperclip"/>
-                </button>
-                <button
-                    t-if="session.canWrite()"
-                    class="btn btn-link btn-sm mk_handover"
-                    title="Hand over this chat to another user"
-                    t-on-click="() => this.session.openHandoverPicker()"
-                >
-                    <i class="fa fa-share-square-o"/>
-                </button>
-                <button
-                    class="btn btn-link btn-sm mk_popout"
-                    title="Pop out chat to a floating window"
-                    t-on-click="() => this.onPopout()"
-                >
-                    <i class="fa fa-external-link"/>
-                </button>
+                    <t t-set-slot="toggler">
+                        <i class="fa fa-ellipsis-v" title="More"/>
+                    </t>
+                    <DropdownItem onSelected="() => this.toggleSearch()">
+                        <i class="fa fa-search me-2"/>Search
+                    </DropdownItem>
+                    <DropdownItem onSelected="() => this.toggleArtifacts()">
+                        <i class="fa fa-paperclip me-2"/>Artifacts
+                    </DropdownItem>
+                    <DropdownItem t-if="session.canWrite()" onSelected="() => this.session.openHandoverPicker()">
+                        <i class="fa fa-share-square-o me-2"/>Hand over
+                    </DropdownItem>
+                </Dropdown>
+                <t t-else="">
+                    <button
+                        class="btn btn-link btn-sm mk_search_toggle"
+                        t-att-class="{ active: state.searchOpen }"
+                        t-on-click="() => this.toggleSearch()"
+                        title="Search this chat"
+                    >
+                        <i class="fa fa-search"/>
+                    </button>
+                    <button
+                        class="btn btn-link btn-sm mk_artifacts_toggle"
+                        t-att-class="{ active: !state.artifactsHidden }"
+                        t-on-click="() => this.toggleArtifacts()"
+                        title="Toggle artifacts panel"
+                    >
+                        <i class="fa fa-paperclip"/>
+                    </button>
+                    <button
+                        t-if="session.canWrite()"
+                        class="btn btn-link btn-sm mk_handover"
+                        title="Hand over this chat to another user"
+                        t-on-click="() => this.session.openHandoverPicker()"
+                    >
+                        <i class="fa fa-share-square-o"/>
+                    </button>
+                    <button
+                        class="btn btn-link btn-sm mk_popout"
+                        title="Pop out chat to a floating window"
+                        t-on-click="() => this.onPopout()"
+                    >
+                        <i class="fa fa-external-link"/>
+                    </button>
+                </t>
                 <span
                     class="mk_chip mk_ctx_chip rounded-pill"
                     t-if="session.state.viewContext"

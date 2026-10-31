@@ -13,6 +13,7 @@ import { DropdownItem } from '@web/core/dropdown/dropdown_item';
 
 import { busSubscribe, busUnsubscribe } from '@muk_ai/core/compat/bus';
 import {
+    agentImage,
     agentSuggestions,
     chatLists,
     formatError,
@@ -34,6 +35,7 @@ export class MukAISystray extends Component {
     static template = 'muk_ai.Systray';
     static components = { Dropdown, DropdownItem };
     static props = {};
+    agentImage = agentImage;
     setup() {
         this.orm = useService('orm');
         this.bus = this.env.services.bus_service;
@@ -216,14 +218,6 @@ export class MukAISystray extends Component {
     }
     formatShortTimestamp(at) {
         return formatShortTimestamp(at);
-    }
-    /**
-     * Return the image of an agent.
-     * @param {number} agentId the agent
-     * @returns {string} the image route
-     */
-    agentImage(agentId) {
-        return `/web/image/muk_ai.agent/${agentId || 0}/image_128`;
     }
     /**
      * Return the line under a chat: its error, its progress or its last answer.

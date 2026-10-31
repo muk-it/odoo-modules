@@ -27,6 +27,7 @@ import { AIChatShareUsers } from '@muk_ai/chat/share/share_users';
 import { busSubscribe, busUnsubscribe } from '@muk_ai/core/compat/bus';
 import { useNotificationBadge } from '@muk_ai/core/notification_badge';
 import {
+    agentImage,
     agentSuggestions,
     approvalPill,
     chatLists,
@@ -110,6 +111,7 @@ export class AIChat extends Component {
         AIChatShareUsers,
     };
     static props = ['*'];
+    agentImage = agentImage;
     get suggestions() {
         return agentSuggestions(this.session.state);
     }
@@ -121,7 +123,7 @@ export class AIChat extends Component {
         this.action = useService('action');
         this.chatWindow = useService('muk_ai.chat_window');
         this.notification = useService('notification');
-        this.ui = useService('ui');
+        this.ui = useState(useService('ui'));
         this.session = useAiSession({
             surface: 'fullscreen',
             onRefresh: () => this._loadSessions(),
