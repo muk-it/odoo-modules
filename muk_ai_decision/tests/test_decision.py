@@ -215,7 +215,7 @@ class TestDecision(DecisionTestCommon):
         self.assertEqual(len(rounds), 3)
         self.assertEqual({r['answers']['team']['choice'] for r in results}, {'billing'})
 
-    def test_invalid_questions_and_missing_models_are_refused(self):
+    def test_invalid_questions_missing_models_and_spent_budgets_are_refused(self):
         choice = QUESTIONS['team']
         for questions, message in (
             ({}, 'at least one question'),
@@ -238,6 +238,14 @@ class TestDecision(DecisionTestCommon):
                 self.assertRaisesRegex(UserError, message),
             ):
                 self._decide(questions=questions)
+        self.env['muk_ai.usage'].create({'user_id': self.env.user.id, 'amount': 1.0})
+        self.env['ir.config_parameter'].sudo().set_param('muk_ai.monthly_budget', 1.0)
+        with (
+            self._capture_post() as posts,
+            self.assertRaisesRegex(UserError, 'for all users is used up'),
+        ):
+            self._decide()
+        self.assertFalse(posts)
         self._clear_default_models('decision')
         with self.assertRaisesRegex(UserError, 'No decision model is available'):
             self._decide()
