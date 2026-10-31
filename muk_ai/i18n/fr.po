@@ -6317,8 +6317,11 @@ msgstr "Espace de travail"
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_product
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid "Write product texts, translations and images from facts."
-msgstr "Rédiger textes produit, traductions et images à partir des faits."
+msgid ""
+"Add products from price lists and links, and write their texts from facts."
+msgstr ""
+"Ajoutez des produits depuis des listes de prix et des liens, et rédigez "
+"leurs textes à partir des faits."
 
 #. module: muk_ai
 #. odoo-python

@@ -399,6 +399,58 @@
 					</block>
 					<block title="Integrations" name="muk_ai_integrations">
 						<setting
+							id="muk_ai_addon_product"
+							string="Products"
+							help="Add products from price lists and links, and write their texts from facts."
+						>
+							<field
+								name="module_muk_ai_product"
+								widget="module_link"
+							/>
+							<div class="content-group" invisible="not module_muk_ai_product" id="msg_module_muk_ai_product">
+								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+							</div>
+						</setting>
+						<setting
+							id="muk_ai_addon_account"
+							string="Accounting"
+							help="Read vendor bills with AI and review them in one queue."
+						>
+							<field
+								name="module_muk_ai_account"
+								widget="module_link"
+							/>
+							<div class="content-group" invisible="not module_muk_ai_account" id="msg_module_muk_ai_account">
+								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+							</div>
+						</setting>
+						<setting
+							id="muk_ai_addon_crm"
+							string="CRM"
+							help="Research leads, draft quotations and follow them up."
+						>
+							<field
+								name="module_muk_ai_crm"
+								widget="module_link"
+							/>
+							<div class="content-group" invisible="not module_muk_ai_crm" id="msg_module_muk_ai_crm">
+								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+							</div>
+						</setting>
+						<setting
+							id="muk_ai_addon_purchase"
+							string="Purchase"
+							help="Match bills to orders and run purchasing as workflows."
+						>
+							<field
+								name="module_muk_ai_purchase"
+								widget="module_link"
+							/>
+							<div class="content-group" invisible="not module_muk_ai_purchase" id="msg_module_muk_ai_purchase">
+								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+							</div>
+						</setting>
+						<setting
 							id="muk_ai_addon_spreadsheets"
 							string="Dashboards"
 							help="Build and edit spreadsheet dashboards in a chat."
@@ -425,19 +477,6 @@
 							</div>
 						</setting>
 						<setting
-							id="muk_ai_addon_livechat"
-							string="Live Chat"
-							help="Answer website visitors in the live chat."
-						>
-							<field
-								name="module_muk_ai_livechat"
-								widget="module_link"
-							/>
-							<div class="content-group" invisible="not module_muk_ai_livechat" id="msg_module_muk_ai_livechat">
-								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
-							</div>
-						</setting>
-						<setting
 							id="muk_ai_addon_mass_mailing"
 							string="Email Marketing"
 							help="Design newsletters that render in every mail client."
@@ -451,54 +490,15 @@
 							</div>
 						</setting>
 						<setting
-							id="muk_ai_addon_crm"
-							string="CRM"
-							help="Research leads, draft quotations and follow them up."
+							id="muk_ai_addon_livechat"
+							string="Live Chat"
+							help="Answer website visitors in the live chat."
 						>
 							<field
-								name="module_muk_ai_crm"
+								name="module_muk_ai_livechat"
 								widget="module_link"
 							/>
-							<div class="content-group" invisible="not module_muk_ai_crm" id="msg_module_muk_ai_crm">
-								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
-							</div>
-						</setting>
-						<setting
-							id="muk_ai_addon_product"
-							string="Products"
-							help="Write product texts, translations and images from facts."
-						>
-							<field
-								name="module_muk_ai_product"
-								widget="module_link"
-							/>
-							<div class="content-group" invisible="not module_muk_ai_product" id="msg_module_muk_ai_product">
-								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
-							</div>
-						</setting>
-						<setting
-							id="muk_ai_addon_account"
-							string="Accounting"
-							help="Read vendor bills with AI and review them in one queue."
-						>
-							<field
-								name="module_muk_ai_account"
-								widget="module_link"
-							/>
-							<div class="content-group" invisible="not module_muk_ai_account" id="msg_module_muk_ai_account">
-								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
-							</div>
-						</setting>
-						<setting
-							id="muk_ai_addon_purchase"
-							string="Purchase"
-							help="Match bills to orders and run purchasing as workflows."
-						>
-							<field
-								name="module_muk_ai_purchase"
-								widget="module_link"
-							/>
-							<div class="content-group" invisible="not module_muk_ai_purchase" id="msg_module_muk_ai_purchase">
+							<div class="content-group" invisible="not module_muk_ai_livechat" id="msg_module_muk_ai_livechat">
 								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
 							</div>
 						</setting>
