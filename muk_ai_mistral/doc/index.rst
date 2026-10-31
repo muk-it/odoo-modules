@@ -43,17 +43,20 @@ Open *MuK AI > Configuration > Providers > Mistral AI*:
   ======================== ========================== ========= ===== ======
   Model                    Technical name             Context   Input Output
   ======================== ========================== ========= ===== ======
-  Mistral Large 3          ``mistral-large-latest``   262,144   0.50  1.50
+  Mistral Large 4          ``mistral-large-4``        1,048,576 0.70  2.10
   Mistral Medium 3.5       ``mistral-medium-latest``  262,144   1.50  7.50
   Mistral Small 4          ``mistral-small-latest``   262,144   0.15  0.60
   Ministral 3 14B          ``ministral-14b-latest``   262,144   0.20  0.20
   Ministral 3 8B           ``ministral-8b-latest``    262,144   0.15  0.15
   Ministral 3 3B           ``ministral-3b-latest``    131,072   0.10  0.10
   Codestral                ``codestral-latest``       256,000   0.30  0.90
-  Z.ai GLM 5.2             ``zai-glm-5-2``            1,048,576 1.40  4.40
+  Z.ai GLM 5.3             ``zai-glm-5-3``            1,048,576 1.40  4.40
   ======================== ========================== ========= ===== ======
 
-  Z.ai GLM 5.2 is a third-party open model hosted by Mistral, in public
+  Mistral Large 4 bills cached input at 0.07 and takes none of the Mistral
+  built-in connectors (web search, code interpreter, image generation), so
+  Mistral Medium 3.5 stays the default until Mistral retires it on 30 April
+  2027. Z.ai GLM 5.3 is a third-party open model hosted by Mistral, in public
   preview, available on some account tiers only, and reads text only; its
   cached input is billed at 0.14. *Mistral Medium 3.5 Images* is the image
   model, at USD 0.10 per image.

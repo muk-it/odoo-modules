@@ -3,12 +3,14 @@
 <odoo noupdate="1">
 
 	<record id="model_mistral_large" model="muk_ai.model">
-		<field name="name">Mistral Large 3</field>
+		<field name="name">Mistral Large 4</field>
 		<field name="provider_id" ref="provider_mistral"/>
-		<field name="technical_name">mistral-large-latest</field>
-		<field name="context_window">262144</field>
-		<field name="input_rate">0.5</field>
-		<field name="output_rate">1.5</field>
+		<field name="technical_name">mistral-large-4</field>
+		<field name="context_window">1048576</field>
+		<field name="notes">Takes no Mistral built-in connectors (web search, code interpreter, image generation); agents that need them run on Mistral Medium 3.5 or Small 4.</field>
+		<field name="input_rate">0.7</field>
+		<field name="output_rate">2.1</field>
+		<field name="cache_read_rate">0.07</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -17,6 +19,7 @@
 		<field name="provider_id" ref="provider_mistral"/>
 		<field name="technical_name">mistral-medium-latest</field>
 		<field name="context_window">262144</field>
+		<field name="notes">Mistral retires Medium 3.5 on 30 April 2027. Its suggested successor, Mistral Large 4, takes no built-in connectors, so Medium stays the default chat and image model until then.</field>
 		<field name="input_rate">1.5</field>
 		<field name="output_rate">7.5</field>
 		<field name="currency">USD</field>
@@ -72,10 +75,10 @@
 		<field name="currency">USD</field>
 	</record>
 
-	<record id="model_zai_glm_5_2" model="muk_ai.model">
-		<field name="name">Z.ai GLM 5.2</field>
+	<record id="model_zai_glm" model="muk_ai.model">
+		<field name="name">Z.ai GLM 5.3</field>
 		<field name="provider_id" ref="provider_mistral"/>
-		<field name="technical_name">zai-glm-5-2</field>
+		<field name="technical_name">zai-glm-5-3</field>
 		<field name="context_window">1048576</field>
 		<field name="notes">Third-party open model from Z.ai, served by Mistral on the same infrastructure and under the same regional controls as Mistral's own models. Public preview and not part of every subscription tier. Text only, no vision. Chat, function calling and structured output are documented; the Mistral built-in connectors (web search, code interpreter, image generation) are not.</field>
 		<field name="input_rate">1.4</field>

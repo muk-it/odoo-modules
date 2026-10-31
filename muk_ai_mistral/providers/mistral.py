@@ -22,6 +22,7 @@ PROTECTED_TOOL_NAMES = frozenset(
     }
 )
 TOOL_NAME_PREFIX = 'muk_ai_'
+CONNECTOR_MODEL_PREFIXES = ('mistral-medium', 'mistral-small')
 IMAGE_INSTRUCTIONS = (
     'Call the image_generation tool exactly once to render the request as one '
     'image, then stop. Do not describe the image and do not answer with text.'
@@ -49,6 +50,14 @@ class MistralProvider(ProviderBase):
             'Authorization': f'Bearer {self.api_key}',
             'Content-Type': 'application/json',
         }
+
+    def serves_builtin_tools(self, model: str) -> bool:
+        """Return whether the model runs the Mistral built-in connectors.
+
+        Mistral serves them on Medium and Small; every other model rejects a
+        request that declares one.
+        """
+        return model.startswith(CONNECTOR_MODEL_PREFIXES)
 
     def request(
         self,
