@@ -194,11 +194,16 @@ class AISession(models.Model):
             for skill in skills
         ]
 
-    def invoke_skill_from_chat(self, name: str, user_input: str | None = None) -> dict:
+    def invoke_skill_from_chat(
+        self,
+        name: str,
+        user_input: str | None = None,
+        attachment_ids: list[int] | None = None,
+    ) -> dict:
         """Inject a skill invocation into the conversation and run the LLM.
 
         :param name: technical name of the skill to invoke
-        :param user_input: optional free-text appended as a user turn
+        :param user_input: free text and files sent along as a user message
         :return: the refreshed session snapshot
         :raise UserError: when the session is busy or the skill is invalid
         """
@@ -225,9 +230,8 @@ class AISession(models.Model):
                 self.write({'name': skill.display_name})
                 self._publish_event('rename', {'name': skill.display_name})
             self.conversation = self._build_initial_inputs()
-        asked = user_text or skill.display_name
-        self._append_event(
-            {'kind': 'user_message', 'content': asked, 'attachments': []}
+        self._enqueue_user_turn(
+            user_text or skill.display_name, self._resolve_attachments(attachment_ids)
         )
         self._append_event(
             {
@@ -246,7 +250,6 @@ class AISession(models.Model):
             }
         )
         conversation_entries = [
-            {'role': 'user', 'content': [{'type': 'input_text', 'text': asked}]},
             {
                 'type': 'function_call',
                 'name': 'invoke_skill',
@@ -256,7 +259,5 @@ class AISession(models.Model):
             build_tool_call_output(call_id, payload),
         ]
         self._extend_conversation(conversation_entries)
-        self.write(self._turn_start_values())
-        self._publish_event('state', {'state': 'running'})
         self._trigger_worker()
         return self.get_snapshot()
