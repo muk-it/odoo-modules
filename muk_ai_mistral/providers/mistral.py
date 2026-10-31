@@ -121,20 +121,19 @@ class MistralProvider(ProviderBase):
         model: str,
         prompt: str,
         options: dict | None = None,
+        references: list[dict] | None = None,
     ) -> dict:
-        """Render one image through a one-shot conversation driving the image tool.
+        """Render one image with a chat model driving the image connector.
 
-        The catalogued image model is the chat model that calls Mistral's
-        ``image_generation`` connector; the options have no equivalent there
-        and are not sent.
-
-        Rendering answers in one long response instead of a stream, so the
-        conversation runs on the provider's :attr:`image_timeout` rather than
-        the chat request timeout.
-
-        :raise UserError: when the request or the download fails, or the
-            driver answers with text instead of calling the tool
+        The options have no equivalent there and are not sent; the request runs
+        on the provider's :attr:`image_timeout` rather than the chat timeout.
+        :raise UserError: when the request or download fails, no image comes
+            back, or reference images are given, which the connector cannot take
         """
+        if references:
+            self._raise(
+                self.env._('Mistral image generation takes no reference images')
+            )
         payload = self._post_json(
             '/conversations',
             {

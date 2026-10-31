@@ -404,6 +404,18 @@ class TestAiMistralProvider(MistralTestCommon):
             self.provider._get_client().generate_image('mistral-medium-latest', 'x')
         self.assertIn('answered with text', str(caught.exception))
 
+    def test_generate_image_refuses_reference_images(self):
+        with (
+            patch.object(requests.Session, 'post') as post,
+            self.assertRaisesRegex(UserError, 'takes no reference images'),
+        ):
+            self.provider._get_client().generate_image(
+                'mistral-medium-latest',
+                'x',
+                references=[{'mimetype': 'image/png', 'data_b64': 'UE5H'}],
+            )
+        post.assert_not_called()
+
     def test_generate_image_reports_a_failed_download(self):
         response = self._mock_http_response(
             self._conv_response(
