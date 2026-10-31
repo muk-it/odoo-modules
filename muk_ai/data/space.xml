@@ -2,6 +2,15 @@
 
 <odoo noupdate="1">
 
+	<record id="space_waiting" model="muk_ai.space">
+		<field name="name">Waiting for You</field>
+		<field name="sequence">2</field>
+		<field name="icon">fa-hand-paper-o</field>
+		<field name="user_id" eval="False"/>
+		<field name="domain">[('user_id', '=', uid), ('awaiting_user', '=', True)]</field>
+		<field name="pinned" eval="True"/>
+	</record>
+
 	<record id="space_shared" model="muk_ai.space">
 		<field name="name">Shared with Me</field>
 		<field name="sequence">4</field>

@@ -788,6 +788,12 @@ class TestAiGoogleProvider(AITestCommon):
 
     def test_text_schema_sets_response_mime_type_and_schema(self):
         captured = {}
+        schema = {
+            'type': 'object',
+            'properties': {'note': {'type': ['string', 'null']}},
+            'required': ['note'],
+            'additionalProperties': False,
+        }
 
         def fake_post(url, **kwargs):
             captured['body'] = kwargs.get('json')
@@ -796,11 +802,11 @@ class TestAiGoogleProvider(AITestCommon):
         with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
                 inputs=[],
-                text_schema={'name': 'plan', 'schema': {'type': 'object'}},
+                text_schema={'name': 'plan', 'schema': schema},
             )
         gen_cfg = captured['body']['generationConfig']
         self.assertEqual(gen_cfg['responseMimeType'], 'application/json')
-        self.assertEqual(gen_cfg['responseSchema'], {'type': 'object'})
+        self.assertEqual(gen_cfg['responseJsonSchema'], schema)
 
     def test_request_uses_model_kwarg(self):
         captured = {}

@@ -1000,6 +1000,7 @@ msgstr "Le approvazioni di una chat condivisa non possono essere modificate"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
 #, python-format
 msgid "Approve"
 msgstr "Approva"
@@ -1012,6 +1013,8 @@ msgid "Approve or reject to continue…"
 msgstr "Approva o rifiuta per continuare…"
 
 #. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_approval__decision__approved
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_muk_ai_approval_search
 msgid "Approved"
@@ -1450,10 +1453,7 @@ msgstr "Chat"
 
 #. module: muk_ai
 #. odoo-javascript
-#: code:addons/muk_ai/static/src/chat/chat.js:0
 #: code:addons/muk_ai/static/src/core/commands/command_providers.js:0
-#: code:addons/muk_ai/static/src/core/commands/command_providers.js:0
-#: code:addons/muk_ai/static/src/webclient/systray/systray.js:0
 #, python-format
 msgid "Chat %s"
 msgstr "Chat %s"
@@ -1496,6 +1496,8 @@ msgid "Chat name"
 msgstr "Nome della chat"
 
 #. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_space__session_count
 msgid "Chats"
 msgstr "Chat"
@@ -2291,6 +2293,7 @@ msgstr "Invio"
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
 #: code:addons/muk_ai/static/src/chat/utils.js:0
+#: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
 #: model:ir.model.fields,field_description:muk_ai.field_muk_ai_session__error_message
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_session__state__error
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_session_search
@@ -3251,6 +3254,7 @@ msgstr "Gestisci"
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
+#: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
 #, python-format
 msgid "Mark all as read"
 msgstr "Segna tutto come letto"
@@ -3585,9 +3589,6 @@ msgstr ""
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/core/commands/command_setup.js:0
-#: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
-#: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
-#: model:ir.ui.menu,name:muk_ai.menu_ai_root
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 #, python-format
 msgid "MuK AI"
@@ -3661,8 +3662,11 @@ msgstr "Nuovo"
 
 #. module: muk_ai
 #. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.js:0
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.xml:0
 #: code:addons/muk_ai/static/src/core/commands/command_providers.js:0
+#: code:addons/muk_ai/static/src/core/commands/command_providers.js:0
+#: code:addons/muk_ai/static/src/webclient/systray/systray.js:0
 #: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
 #, python-format
 msgid "New Chat"
@@ -4170,7 +4174,6 @@ msgid "Pinned"
 msgstr "Fissato"
 
 #. module: muk_ai
-#: model:muk_ai.agent.suggestion,label:muk_ai.agent_general_suggestion_summarize
 #: model:muk_ai.agent.suggestion,label:muk_ai.agent_read_only_suggestion_pipeline
 msgid "Pipeline"
 msgstr "Pipeline"
@@ -4310,6 +4313,7 @@ msgstr "Provider"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
 #, python-format
 msgid "Question"
 msgstr "Domanda"
@@ -4487,11 +4491,14 @@ msgstr "Registro"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
+#: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
 #, python-format
 msgid "Reject"
 msgstr "Rifiuta"
 
 #. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
 #: model:ir.model.fields.selection,name:muk_ai.selection__muk_ai_approval__decision__rejected
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_muk_ai_approval_search
 msgid "Rejected"
@@ -5518,7 +5525,7 @@ msgstr "Il modello viene avvisato poco prima del limite, così può concludere."
 
 #. module: muk_ai
 #. odoo-python
-#: code:addons/muk_ai/models/session.py:0
+#: code:addons/muk_ai/models/usage.py:0
 #, python-format
 msgid ""
 "The monthly AI budget of %(amount).2f %(currency)s for all users is used up."
@@ -5690,7 +5697,6 @@ msgstr "A"
 #. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/chat/sidebar/chat_sidebar.js:0
-#: model:muk_ai.agent.suggestion,label:muk_ai.agent_general_suggestion_explore
 #, python-format
 msgid "Today"
 msgstr "Oggi"
@@ -6225,7 +6231,7 @@ msgstr "Sei un assistente Odoo. ..."
 
 #. module: muk_ai
 #. odoo-python
-#: code:addons/muk_ai/models/session.py:0
+#: code:addons/muk_ai/models/usage.py:0
 #, python-format
 msgid ""
 "Your monthly AI budget of %(amount).2f %(currency)s is used up. Ask an "
@@ -6440,3 +6446,242 @@ msgstr "view_context.id deve essere un numero intero positivo."
 #: model:ir.model,name:muk_ai.model_ir_websocket
 msgid "websocket message handling"
 msgstr "Gestione dei messaggi websocket"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/provider.py:0
+#, python-format
+msgid ""
+"%(model)s cannot read PDF files such as %(files)s. Choose a model that reads"
+" documents, or attach the content as text."
+msgstr ""
+"%(model)s non può leggere file PDF come %(files)s. Scegli un modello che "
+"legga i documenti oppure allega il contenuto come testo."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/approval.py:0
+#, python-format
+msgid "%s new records"
+msgstr "%s nuovi record"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/approval.py:0
+#, python-format
+msgid "%s records"
+msgstr "%s record"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/approval.py:0
+#, python-format
+msgid "%s records need your approval before the assistant changes them."
+msgstr ""
+"I record %s richiedono la tua approvazione prima che l'assistente li "
+"modifichi."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/approval.py:0
+#, python-format
+msgid "%s records need your approval before the assistant deletes them."
+msgstr ""
+"I record %s richiedono la tua approvazione prima che l'assistente li "
+"elimini."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/approval.py:0
+#, python-format
+msgid ""
+"%s records need your approval before the assistant runs actions on them."
+msgstr ""
+"I record %s richiedono la tua approvazione prima che l'assistente esegua "
+"azioni su di essi."
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/webclient/systray/systray.js:0
+#, python-format
+msgid "%s things need you"
+msgstr "%s in attesa di te"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/webclient/systray/systray.js:0
+#, python-format
+msgid "1 thing needs you"
+msgstr "1 in attesa di te"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_ir_attachment__ai_generated
+msgid "AI Generated"
+msgstr "Generato da IA"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
+#, python-format
+msgid "Approval"
+msgstr "Approvazione"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/webclient/systray/systray.js:0
+#, python-format
+msgid "Ask about %s"
+msgstr "Chiedi su %s"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/webclient/systray/systray.js:0
+#, python-format
+msgid "Ask about this record"
+msgstr "Chiedi su questo record"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/approval.py:0
+#, python-format
+msgid "Delete %s"
+msgstr "Elimina %s"
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_ir_attachment__ai_generated
+msgid "Made by an AI model. A PNG or JPEG image also says so in its metadata."
+msgstr ""
+"Creato da un modello di IA. Un'immagine PNG o JPEG lo indica anche nei suoi "
+"metadati."
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
+#, python-format
+msgid "Needs you"
+msgstr "In attesa di te"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+#, python-format
+msgid "Needs your approval before running a tool"
+msgstr "Richiede la tua approvazione prima di eseguire uno strumento"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/approval.py:0
+#, python-format
+msgid "New %s"
+msgstr "Nuovo: %s"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/approval.py:0
+#, python-format
+msgid "New %s records need your approval before the assistant creates them."
+msgstr ""
+"I nuovi record %s richiedono la tua approvazione prima che l'assistente li "
+"crei."
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
+#, python-format
+msgid "Open all chats"
+msgstr "Apri tutte le chat"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_usage__res_id
+msgid "Origin"
+msgstr "Origine"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_usage__res_model
+msgid "Origin Model"
+msgstr "Modello di origine"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_usage__purpose
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_ai_usage_search
+msgid "Purpose"
+msgstr "Scopo"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/mcp/image.py:0
+#, python-format
+msgid "Reference images must be PNG, JPEG, WebP or GIF images: %s"
+msgstr "Le immagini di riferimento devono essere PNG, JPEG, WebP o GIF: %s"
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/chat/chat.xml:0
+#, python-format
+msgid "Resolved"
+msgstr "Risolto"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/approval.py:0
+#, python-format
+msgid "Run %(method)s on %(what)s"
+msgstr "Esegui %(method)s su %(what)s"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_model__supports_documents
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_provider__supports_documents
+msgid "Supports Documents"
+msgstr "Supporta i documenti"
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_model__supports_documents
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_provider__supports_documents
+msgid "The models of this provider read PDF files natively."
+msgstr "I modelli di questo provider leggono i file PDF in modo nativo."
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/approval.py:0
+#, python-format
+msgid "Update %(what)s (%(lang)s)"
+msgstr "Aggiorna %(what)s (%(lang)s)"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/approval.py:0
+#, python-format
+msgid "Update %s"
+msgstr "Aggiorna %s"
+
+#. module: muk_ai
+#: model:muk_ai.space,name:muk_ai.space_waiting
+msgid "Waiting for You"
+msgstr "In attesa di te"
+
+#. module: muk_ai
+#. odoo-python
+#: code:addons/muk_ai/models/session.py:0
+#, python-format
+msgid "Waiting for your answer"
+msgstr "In attesa della tua risposta"
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_usage__purpose
+msgid "What the spend was for, such as chat, image, decision or embedding."
+msgstr ""
+"A cosa è servita la spesa, ad esempio chat, immagine, decisione o embedding."
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/webclient/systray/systray.js:0
+#, python-format
+msgid "Working..."
+msgstr "In corso ..."
+
+#. module: muk_ai
+#. odoo-javascript
+#: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
+#, python-format
+msgid "All actions"
+msgstr "Tutte le azioni"

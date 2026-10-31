@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+from unittest.mock import patch
+
+import requests
+
 from odoo import models
 from odoo.exceptions import UserError
 
+from odoo.addons.muk_ai.providers.openai import OpenAIProvider
 from odoo.addons.muk_ai.tests.common import ImageCase
 
 
@@ -139,3 +144,29 @@ class TestAgentCapabilities(ImageCase):
         self.assertIn('web_search', session._get_essential_tool_names())
         with self.assertRaises(UserError):
             session.set_tool_source('teleport', False)
+
+    def test_a_pdf_reaches_only_a_provider_that_reads_documents(self):
+        pdf = {
+            'type': 'muk_ai_attachment',
+            'strategy': 'file',
+            'mimetype': 'application/pdf',
+            'data_b64': 'PDF=',
+            'filename': 'bill.pdf',
+        }
+        readers = [('supports_documents', '=', True)]
+        with patch.object(OpenAIProvider, 'supports_documents', False):
+            self.env.invalidate_all()
+            self.assertFalse(self.provider.supports_documents)
+            self.assertNotIn(
+                self.provider, self.env['muk_ai.model'].search(readers).provider_id
+            )
+            with (
+                patch.object(requests.Session, 'post') as post,
+                self.assertRaisesRegex(UserError, 'such as bill.pdf'),
+            ):
+                self.provider._request_responses([{'role': 'user', 'content': [pdf]}])
+            post.assert_not_called()
+        self.env.invalidate_all()
+        self.assertIn(
+            self.provider, self.env['muk_ai.model'].search(readers).provider_id
+        )

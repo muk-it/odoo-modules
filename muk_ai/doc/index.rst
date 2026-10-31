@@ -78,9 +78,10 @@ Configuration
   currency (``0`` disables).
 - **Monthly Budget** — maximum spend per calendar month of all users
   together and of each user (``0`` disables). A user's own budget, set in
-  *MuK AI > Configuration > Budgets*, replaces the one per user. A chat that
-  reaches a budget stops with an error; *MuK AI > Reports > Usage* shows the
-  spend per user and month.
+  *MuK AI > Configuration > Budgets*, replaces the one per user. A chat or a
+  decision that reaches a budget stops with an error; *MuK AI > Reports >
+  Usage* shows the spend per user, purpose and month, with the record it was
+  made for.
 - **Delete Old Usage** — the months of usage kept besides the current one
   (default ``6``).
 
@@ -259,12 +260,25 @@ it into view, ``Esc`` closes.
 **Notifications**
 
 Sessions that finish or need you while you are elsewhere signal you.
-The MuK AI systray icon carries a live running dot whenever a session
-is running or waiting, plus a red count of sessions awaiting your
-attention; unread sessions are marked and sorted to the top in both the
-systray dropdown and the chat sidebar. Users on the *inbox*
-notification preference also get completion notices as web push and
-Enterprise mobile (OCN) push. Opening the session clears the flag.
+The MuK AI systray icon turns a ring while a chat is running, shows an
+amber dot while something needs you, and counts the unread chats.
+Unread chats are marked and sorted to the top in both the systray menu
+and the chat sidebar; *Mark all as read* clears them. Users on the
+*inbox* notification preference also get completion notices as web
+push and Enterprise mobile (OCN) push. Opening the session clears the
+flag.
+
+**The AI menu**
+
+The robot menu starts a new chat or opens the full chat. On a record it
+offers *Ask about* the record and a row of actions: the suggestions of
+the default agent, or the skills of the record when *MuK AI Skills* is
+installed. Below, *Needs you* lists what waits for you: the questions
+and approvals of your chats, and what other apps add. A single record
+change is approved or rejected right there, anything else opens where it
+lives. The recent chats follow with their agent, their state, the time
+and a preview of the last answer. The *Waiting for You* space collects
+the chats waiting for an answer.
 
 **Write-tool safety (session-scoped approvals)**
 
@@ -282,11 +296,24 @@ proposed JSON arguments, and three buttons:
 - **Reject** — returns a ``rejected_by_user`` tool output so the model
   can recover (clarify, propose a safer alternative).
 
-Every decision is recorded under *MuK AI > Reports > Approval Logs*
+A text written in another language, or in several at once, names the
+language next to the field. Once decided, the card folds into one line
+that opens again on a click. Every decision is recorded under
+*MuK AI > Reports > Approval Logs*
 with the proposed vs. executed arguments. Per-agent **Approval Mode**
 lets unattended agents skip the prompt (``Never ask``). Approvals do
 not persist across sessions — each new session starts with an empty
 allow-list.
+
+**Generated images**
+
+An agent with *Image Generation* draws with its image model, and can
+start from images already in the chat, such as a product photo to
+restage. Every generated image is stored flagged as AI generated, and a
+PNG or JPEG also carries the IPTC digital source type
+*trainedAlgorithmicMedia* in its metadata, which marks it as AI media
+for the EU AI Act and for shopping feeds. What an image costs counts on
+the chat like its messages.
 
 **View context**
 

@@ -30,6 +30,24 @@ export const chatLists = {
 };
 
 /**
+ * Return the prompts an agent suggests to start a chat with.
+ * @param {object} [agent] the agent, with its `suggestions`
+ * @returns {Array} `{label, prompt}` entries, the empty ones left out
+ */
+export function agentSuggestions(agent) {
+    const raw = agent && agent.suggestions;
+    if (!Array.isArray(raw)) {
+        return [];
+    }
+    return raw
+        .filter((s) => s && typeof s.prompt === 'string' && s.prompt.trim())
+        .map((s) => ({
+            label: (typeof s.label === 'string' && s.label) || s.prompt,
+            prompt: s.prompt,
+        }));
+}
+
+/**
  * Build the descriptors of the pills addons contribute for one session.
  * @param {object} state session UI state
  * @returns {Array} `{key, pill}` entries, those with nothing to show dropped
@@ -96,6 +114,21 @@ function parseDateTime(at) {
 export function formatTimestamp(at) {
     const dt = parseDateTime(at);
     return dt ? formatDateTime(dt) : '';
+}
+
+/**
+ * Format a server timestamp as its time when it is today, else as its date.
+ * @param {string} at ISO or SQL timestamp in UTC
+ * @returns {string} the formatted value, empty when unparseable
+ */
+export function formatShortTimestamp(at) {
+    const value = parseDateTime(at);
+    if (!value) {
+        return '';
+    }
+    return value.hasSame(DateTime.now(), 'day')
+        ? value.toLocaleString(DateTime.TIME_SIMPLE)
+        : value.toLocaleString({ day: '2-digit', month: '2-digit' });
 }
 
 /**

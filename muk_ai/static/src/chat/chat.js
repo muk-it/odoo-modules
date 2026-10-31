@@ -26,6 +26,7 @@ import { AttachmentCard } from '@muk_ai/core/attachment/attachment_card';
 import { AIChatShareUsers } from '@muk_ai/chat/share/share_users';
 import { useNotificationBadge } from '@muk_ai/core/notification_badge';
 import {
+    agentSuggestions,
     approvalPill,
     chatLists,
     effortPill,
@@ -91,18 +92,6 @@ export const SPACE_PAGE_SIZE = 10;
 const SESSION_SEARCH_LIMIT = 100;
 const SESSION_SEARCH_DEBOUNCE_MS = 250;
 
-function normalizeSuggestions(raw) {
-    if (!Array.isArray(raw)) {
-        return [];
-    }
-    return raw
-        .filter((s) => s && typeof s.prompt === 'string' && s.prompt.trim())
-        .map((s) => ({
-            label: (typeof s.label === 'string' && s.label) || s.prompt,
-            prompt: s.prompt,
-        }));
-}
-
 /** Full-page AI chat client: sidebar, conversation, and composer. */
 export class AIChat extends Component {
     static template = 'muk_ai.Chat';
@@ -125,7 +114,7 @@ export class AIChat extends Component {
         const agents = this.session.state.agents || [];
         const agent =
             agents.find((a) => a.id === this.session.state.agentId) || agents[0];
-        return normalizeSuggestions(agent && agent.suggestions);
+        return agentSuggestions(agent);
     }
     setup() {
         this.orm = useService('orm');
@@ -134,6 +123,12 @@ export class AIChat extends Component {
         this.bus = this.env.services.bus_service;
         this.action = useService('action');
         this.chatWindow = useService('muk_ai.chat_window');
+        useEffect(
+            (sessionId) => {
+                this.chatWindow.close(sessionId);
+            },
+            () => [this.session.state.sessionId],
+        );
         this.notification = useService('notification');
         this.ui = useService('ui');
         this.session = useAiSession({
@@ -174,6 +169,7 @@ export class AIChat extends Component {
             activeMatchIdx: 0,
             scrollTarget: null,
             askViews: {},
+            askOpened: {},
             sourcesExpanded: {},
         });
         this._sessionsSearchSeq = 0;
@@ -497,7 +493,7 @@ export class AIChat extends Component {
      * @returns {Promise<number>} the created session id
      */
     async onNewSession(values = {}) {
-        const name = _t('Chat %s', new Date().toLocaleString());
+        const name = _t('New Chat');
         const carryOver = this.session.state.viewContext;
         this.session.state.loading = true;
         let id;
@@ -524,8 +520,8 @@ export class AIChat extends Component {
         await this.session.onSend();
         this._refreshSidebar();
     }
-    async onSubmitSuggestion(prompt) {
-        this.session.state.input = prompt;
+    async onSubmitSuggestion(suggestion) {
+        this.session.state.input = suggestion.prompt;
         this.session.state.focusToken += 1;
         await this.session.onSend();
         this._refreshSidebar();
@@ -928,6 +924,12 @@ export class AIChat extends Component {
             return;
         }
         const updated = { ...this.state.sessions[idx] };
+        if (
+            'awaiting_user' in payload &&
+            Boolean(updated.awaiting_user) !== Boolean(payload.awaiting_user)
+        ) {
+            this._reloadSpaceBranches();
+        }
         if (payload.state) updated.state = payload.state;
         if ('awaiting_user' in payload) updated.awaiting_user = payload.awaiting_user;
         if (payload.name) updated.name = payload.name;
@@ -959,6 +961,13 @@ export class AIChat extends Component {
             if (payload.turn_usage) {
                 this.session.state.turnUsage = payload.turn_usage;
             }
+        }
+    }
+    /** Reload the spaces and their open branches, whose domains may now match. */
+    async _reloadSpaceBranches() {
+        await this._loadSpaces();
+        for (const spaceId of Object.keys(this.state.spaceSessions)) {
+            await this._loadSpaceSessions(Number(spaceId));
         }
     }
     _refreshSidebar() {
@@ -1072,6 +1081,12 @@ export class AIChat extends Component {
             ...this.state.askViews,
             [callId]: toggleAskViewMode(block, this.state.askViews),
         };
+    }
+    isAskOpen(callId) {
+        return Boolean(this.state.askOpened[callId]);
+    }
+    toggleAskOpen(callId) {
+        this.state.askOpened[callId] = !this.state.askOpened[callId];
     }
     get viewContextLabel() {
         return viewContextLabel(this.session.state.viewContext);

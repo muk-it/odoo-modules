@@ -64,7 +64,7 @@
                         </button>
                     </span>
                     <AIUsageMeter
-                        t-if="session.state.sessionId"
+                        t-if="session.state.sessionId and session.state.events.length"
                         state="session.state"
                         dropDown="true"
                     />

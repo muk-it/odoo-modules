@@ -140,6 +140,70 @@ class TestApprovalPreview(AITestCommon):
             )
         )
 
+    def test_a_preview_names_the_record_and_the_language_a_text_is_written_in(self):
+        self.env['res.lang']._activate_lang('de_DE')
+        tag, fresh = self.env['res.partner.category'].create(
+            [{'name': 'Old', 'color': 2}, {'name': 'Fresh'}]
+        )
+        tag.with_context(lang='de_DE').name = 'Alt'
+        both = {'en_US': 'New', 'de_DE': 'Neu'}
+        for record, values, lang, title, changes in (
+            (
+                tag,
+                {'name': 'Neu', 'color': 3},
+                'de_DE',
+                'Update Old (Deutsch)',
+                [('name', 'Deutsch', 'Alt', 'Neu'), ('color', '', '2', '3')],
+            ),
+            (
+                tag,
+                {'name': both},
+                None,
+                'Update Old',
+                [
+                    ('name', 'English (US)', 'Old', 'New'),
+                    ('name', 'Deutsch', 'Alt', 'Neu'),
+                ],
+            ),
+            (
+                tag,
+                {'name': {**both, 'en_US': 'Old'}},
+                None,
+                'Update Old (Deutsch)',
+                [('name', 'Deutsch', 'Alt', 'Neu')],
+            ),
+            (
+                fresh,
+                {'name': 'Neu'},
+                'de_DE',
+                'Update Fresh (Deutsch)',
+                [('name', 'Deutsch', '', 'Neu')],
+            ),
+            (tag, {'name': 'New'}, 'xx_XX', 'Update Old', [('name', '', 'Old', 'New')]),
+        ):
+            with self.subTest(values=values, lang=lang):
+                preview = (
+                    self.env['muk_ai.approval']
+                    .with_context(lang='en_US')
+                    ._build_preview(
+                        'update_records',
+                        {
+                            'model': 'res.partner.category',
+                            'ids': [record.id],
+                            'values': values,
+                            'context': {'lang': lang} if lang else {},
+                        },
+                    )
+                )
+                self.assertEqual(preview['title'], title)
+                self.assertEqual(
+                    [
+                        (item['field'], item['lang'], item['from'], item['to'])
+                        for item in preview['changes']
+                    ],
+                    changes,
+                )
+
     def test_preview_survives_missing_model_gracefully(self):
         preview = self.env['muk_ai.approval']._build_preview(
             'delete_records',

@@ -3,7 +3,10 @@ from __future__ import annotations
 import base64
 import email
 import email.policy
+import io
 import re
+
+from PIL import Image, PngImagePlugin
 
 from odoo.addons.muk_mcp.tools.content import normalize_mimetype
 
@@ -22,6 +25,19 @@ ATTACHMENT_REF_MAX_BYTES = 4 * 1024 * 1024
 TOOL_VISION_MAX_IMAGES = 4
 TOOL_VISION_MAX_BYTES = 4 * 1024 * 1024
 TOOL_VISION_MAX_B64_CHARS = (TOOL_VISION_MAX_BYTES * 4) // 3 + 4
+
+AI_SOURCE_TYPE = (
+    'http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia'
+)
+
+AI_GENERATED_XMP = (
+    '<x:xmpmeta xmlns:x="adobe:ns:meta/">'
+    '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">'
+    '<rdf:Description rdf:about=""'
+    ' xmlns:Iptc4xmpExt="http://iptc.org/std/Iptc4xmpExt/2008-02-29/"'
+    f' Iptc4xmpExt:DigitalSourceType="{AI_SOURCE_TYPE}"/>'
+    '</rdf:RDF></x:xmpmeta>'
+)
 
 # ----------------------------------------------------------
 # Allowed Mimetypes
@@ -136,6 +152,30 @@ def tool_file_payload(result) -> dict | None:
     }
 
 
+def mark_ai_generated(raw: bytes) -> bytes:
+    """Embed the IPTC digital source type of AI media as XMP in a PNG or JPEG.
+
+    Other formats and data Pillow cannot read are returned unchanged.
+    """
+    try:
+        image = Image.open(io.BytesIO(raw))
+    except OSError:
+        return raw
+    if image.format == 'PNG':
+        info = PngImagePlugin.PngInfo()
+        info.add_itxt('XML:com.adobe.xmp', AI_GENERATED_XMP)
+        options = {'pnginfo': info}
+    elif image.format == 'JPEG':
+        options = {'xmp': AI_GENERATED_XMP.encode(), 'quality': 'keep'}
+    else:
+        return raw
+    output = io.BytesIO()
+    image.save(
+        output, image.format, icc_profile=image.info.get('icc_profile'), **options
+    )
+    return output.getvalue()
+
+
 def is_unmaterialized_attachment(block) -> bool:
     """Return whether a content block is an attachment placeholder lacking its data."""
     return (
@@ -144,3 +184,16 @@ def is_unmaterialized_attachment(block) -> bool:
         and 'data_b64' not in block
         and 'inline_text' not in block
     )
+
+
+def document_names(inputs: list) -> list[str]:
+    """Return the file name of every document the inputs send as a file."""
+    return [
+        block.get('filename') or 'document'
+        for item in inputs
+        if isinstance(item, dict) and isinstance(item.get('content'), list)
+        for block in item['content']
+        if isinstance(block, dict)
+        and block.get('type') == 'muk_ai_attachment'
+        and block.get('strategy') == 'file'
+    ]

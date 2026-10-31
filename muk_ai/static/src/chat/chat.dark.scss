@@ -161,6 +161,7 @@
     }
 
     .mk_avatar.mk_state_new,
+    .mk_avatar.mk_state_done,
     .mk_avatar.mk_state_stopped {
         background: rgba(139, 148, 158, 0.18);
         color: #8b949e;
@@ -172,10 +173,6 @@
     .mk_avatar.mk_state_waiting {
         background: rgba(210, 153, 34, 0.2);
         color: #d29922;
-    }
-    .mk_avatar.mk_state_done {
-        background: rgba(63, 185, 80, 0.2);
-        color: #3fb950;
     }
     .mk_avatar.mk_state_error {
         background: rgba(248, 81, 73, 0.18);

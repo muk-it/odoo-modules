@@ -233,12 +233,6 @@
                             <t t-call="muk_ai.ChatSidebarSpace"/>
                         </t>
                     </div>
-                    <div
-                        class="mk_space_empty text-muted ms-2"
-                        t-if="props.onSpaceCreate and !personalSpaces.length and !state.creating"
-                    >
-                        No space yet. Create a new space.
-                    </div>
                     <t t-if="systemSpaces.length">
                         <hr class="mk_space_divider"/>
                         <t t-foreach="shownSystemSpaces" t-as="space" t-key="space.id">

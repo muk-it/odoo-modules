@@ -97,6 +97,7 @@ export class ChatWindow extends Component {
         this.session.setScrollCallback(scrollToBottom);
         this.windowState = useState({
             askViews: {},
+            askOpened: {},
             sourcesExpanded: {},
         });
         onScrollUpNearTop(scrollRef, () =>
@@ -253,7 +254,6 @@ export class ChatWindow extends Component {
     }
     async onFullscreen() {
         const sessionId = this.props.sessionId;
-        this.chatWindow.close(sessionId);
         await this.action.doAction({
             type: 'ir.actions.client',
             tag: 'muk_ai.chat',
@@ -277,6 +277,12 @@ export class ChatWindow extends Component {
             ...this.windowState.askViews,
             [callId]: toggleAskViewMode(block, this.windowState.askViews),
         };
+    }
+    isAskOpen(callId) {
+        return Boolean(this.windowState.askOpened[callId]);
+    }
+    toggleAskOpen(callId) {
+        this.windowState.askOpened[callId] = !this.windowState.askOpened[callId];
     }
     get viewContextLabel() {
         return viewContextLabel(this.session.state.viewContext);
