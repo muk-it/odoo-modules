@@ -66,9 +66,10 @@ class TestSkillSession(AITestCommon):
         with self._mock_responses([text_payload()]) as requests:
             self._chat().send_message('hi')
         system = self._system_prompt(requests[0])
-        self.assertIn('- `demo`: Do demo things.\n', system)
+        self.assertIn('- `demo` (Demo): Do demo things.\n', system)
         self.assertIn(
-            '- `chatty`: A test skill. (needs a record with a chatter open)', system
+            '- `chatty` (Chatty): A test skill. (needs a record with a chatter open)',
+            system,
         )
         self.assertIn('`scoped`', system)
         self.assertNotIn('hidden', system)
@@ -113,31 +114,34 @@ class TestSkillSession(AITestCommon):
         self.assertIn('needs a record open', self._tool_output(session, 'c2')['error'])
         self.assertIn('not available', self._tool_output(session, 'c3')['error'])
 
-    def test_a_slash_command_runs_the_skill_before_the_reply(self):
-        for user_input, expected in (('product xy', 'product xy'), ('   ', None)):
+    def test_a_slash_command_asks_runs_the_skill_then_replies(self):
+        for user_input, asked, argument in (
+            ('product xy', 'product xy', 'product xy'),
+            ('   ', 'Demo', None),
+        ):
             with self.subTest(user_input=user_input):
                 session = self._chat()
                 with self._mock_responses([text_payload('Acknowledged.')]) as requests:
                     session.invoke_skill_from_chat('demo', user_input=user_input)
                 self.assertEqual(
-                    (session.state, session.last_text), ('done', 'Acknowledged.')
+                    (session.state, session.last_text, session.name),
+                    ('done', 'Acknowledged.', 'Demo'),
                 )
                 kinds = [event['kind'] for event in self._events(session)]
-                self.assertEqual(kinds[:2], ['tool_call', 'tool_result'])
-                self.assertEqual('user_message' in kinds, bool(expected))
+                self.assertEqual(
+                    kinds[:3], ['user_message', 'tool_call', 'tool_result']
+                )
                 inputs = requests[0]['inputs']
+                self.assertEqual(inputs[1]['content'][0]['text'], asked)
                 call = next(
                     item for item in inputs if item.get('type') == 'function_call'
                 )
                 self.assertEqual(
-                    json.loads(call['arguments']).get('user_input'), expected
+                    json.loads(call['arguments']).get('user_input'), argument
                 )
                 output = self._tool_output(session, call['call_id'])
                 self.assertEqual(output['body'], 'Run the demo procedure.')
-                if expected:
-                    self.assertEqual(inputs[-1]['content'][0]['text'], expected)
-                else:
-                    self.assertEqual(inputs[-1]['type'], 'function_call_output')
+                self.assertEqual(inputs[-1]['type'], 'function_call_output')
 
     def test_a_slash_command_is_refused_when_it_cannot_run(self):
         self._skill(name='on_record', scope='record')

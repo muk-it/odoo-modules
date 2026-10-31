@@ -52,7 +52,7 @@ class AISession(models.Model):
             summary = next(iter((skill.description or '').strip().splitlines()), '')
             requirement = skill._scope_requirement()
             suffix = f' ({requirement})' if requirement else ''
-            lines.append(f'- `{skill.name}`: {summary}{suffix}')
+            lines.append(f'- `{skill.name}` ({skill.display_name}): {summary}{suffix}')
         lines.append('</available_skills>')
         return '\n'.join(lines)
 
@@ -153,6 +153,10 @@ class AISession(models.Model):
         call_id = f'slash_skill_{skill.name}_{uuid.uuid4().hex[:8]}'
         text = (user_input or '').strip()
         arguments = {'skill_name': skill.name, **({'user_input': text} if text else {})}
+        if not self.conversation and self._should_autoname():
+            self.write({'name': skill.display_name, 'user_named': False})
+            self._publish_event('rename', {'name': skill.display_name})
+        self._enqueue_user_turn(text or skill.display_name, self.env['ir.attachment'])
         self._extend_conversation(
             [
                 {
@@ -167,6 +171,5 @@ class AISession(models.Model):
         event = {'name': 'invoke_skill', 'call_id': call_id}
         self._append_event({**event, 'kind': 'tool_call', 'arguments': arguments})
         self._append_event({**event, 'kind': 'tool_result', 'result': payload})
-        self._enqueue_user_turn(text, self.env['ir.attachment'])
         self._trigger_worker()
         return self.get_snapshot()

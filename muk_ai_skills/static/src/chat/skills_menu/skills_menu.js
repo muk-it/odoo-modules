@@ -33,6 +33,12 @@ export class SkillsMenu extends Component {
     search = signal.ref();
     state = proxy({ open: false, filter: '', active: 0 });
     setup() {
+        this.state.open = Boolean(this.props.session.state.skillsOpen);
+        useEffect(() => {
+            if (!this.state.open) {
+                this.props.session.state.skillsOpen = false;
+            }
+        });
         useListener(document, 'mousedown', (ev) => {
             if (this.state.open && !this.root()?.contains(ev.target)) {
                 this.state.open = false;

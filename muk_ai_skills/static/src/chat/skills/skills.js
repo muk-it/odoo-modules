@@ -4,8 +4,10 @@ import { user } from '@web/core/user';
 import { patch } from '@web/core/utils/patch';
 
 import { ChatComposer } from '@muk_ai/chat/composer/composer';
+import { ChatConversation } from '@muk_ai/chat/conversation/conversation';
 import { sessionSendRoutes, slashCommands } from '@muk_ai/core/session/session';
 import { describeToolBlock, toolBlockDecorators } from '@muk_ai/core/session/turns';
+import { MukAISystray } from '@muk_ai/webclient/systray/systray';
 
 const RECENT_LIMIT = 3;
 
@@ -103,6 +105,65 @@ patch(ChatComposer.prototype, {
                 command: {},
             }));
         return [...items, ...offered];
+    },
+});
+
+patch(ChatConversation.prototype, {
+    get suggestions() {
+        const { skills = [], view_context } = this.props.session.data;
+        const own = skills
+            .filter(
+                (skill) =>
+                    skill.models.length && skillScopeSatisfied(skill, view_context),
+            )
+            .map((skill) => ({
+                label: skill.label,
+                preview: skill.description,
+                skill: skill.name,
+            }));
+        return own.length ? own : super.suggestions;
+    },
+    onSuggestion(suggestion) {
+        if (suggestion.skill) {
+            return invokeSkill(this.props.session, suggestion.skill);
+        }
+        return super.onSuggestion(suggestion);
+    },
+});
+
+patch(MukAISystray.prototype, {
+    async loadActions() {
+        const { record } = this.state;
+        const skills = record
+            ? await this.chat.orm.call('muk_ai.skill', 'fetch_skills', ['chat', record])
+            : [];
+        const own = skills.filter((skill) => skill.models.length);
+        if (!own.length) {
+            return super.loadActions();
+        }
+        const recent = recentSkillNames();
+        const rank = (skill) =>
+            recent.includes(skill.name) ? recent.indexOf(skill.name) : recent.length;
+        return own
+            .sort((a, b) => rank(a) - rank(b))
+            .map((skill) => ({
+                label: skill.label,
+                preview: skill.description,
+                skill: skill.name,
+            }));
+    },
+    async more() {
+        if (!this.state.actions.some((action) => action.skill)) {
+            return super.more();
+        }
+        const id = await this.chat.createSession();
+        this.chat.session(id).state.skillsOpen = true;
+        this.chat.openWindow(id);
+    },
+    runAction(session, action) {
+        return action.skill
+            ? invokeSkill(session, action.skill)
+            : super.runAction(session, action);
     },
 });
 

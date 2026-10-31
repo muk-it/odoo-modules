@@ -6,23 +6,28 @@ import {
     queryAllProperties,
     queryAllTexts,
     test,
+    waitFor,
 } from '@odoo/hoot';
 import {
     contains,
+    getService,
+    mountWebClient,
     mountWithCleanup,
     onRpc,
     serverState,
 } from '@web/../tests/web_test_helpers';
 import { browser } from '@web/core/browser/browser';
+import { ActionPlugin } from '@web/webclient/actions/action_plugin';
 
 import { ChatConversation } from '@muk_ai/chat/conversation/conversation';
 import {
     defineAIModels,
+    LeadModel,
     openSession,
     snapshot,
 } from '@muk_ai/../tests/muk_ai_test_helpers';
 
-defineAIModels();
+defineAIModels(LeadModel);
 describe.current.tags('muk_ai_skills');
 
 const skill = (name, values = {}) => ({
@@ -142,11 +147,53 @@ test('the skills menu lists recent skills first, greys out the rest and puts the
     expect('.mk_skills_panel').toHaveCount(0);
 });
 
+test('an empty chat on a record offers the skills of its model, else the agent prompts', async () => {
+    const session = await mountChat({
+        skills: [
+            ...SKILLS,
+            skill('enrich', { scope: 'record', models: ['res.partner'] }),
+        ],
+    });
+    expect('.mk_suggestion').toHaveText(/pipeline/i);
+    session.data.view_context = { kind: 'record', model: 'res.partner', id: 1 };
+    await animationFrame();
+    expect('.mk_suggestion').toHaveText(/^enrich\s+Does enrich\.$/i);
+    await contains('.mk_suggestion').click();
+    expect.verifySteps(['invoke enrich false']);
+});
+
+test('on a record the systray offers its skills and opens all of them from its more chip', async () => {
+    const enrich = skill('enrich', { scope: 'record', models: ['muk_ai.test_lead'] });
+    onRpc('muk_ai.skill', 'fetch_skills', () => [enrich, skill('help')]);
+    const answer = (id) => snapshot({ id, skills: [enrich] });
+    onRpc('muk_ai.session', 'get_snapshot', ({ args }) => answer(args[0]));
+    onRpc('muk_ai.session', 'invoke_skill_from_chat', ({ args }) => {
+        expect.step(`invoke ${args[1]}`);
+        return answer(args[0]);
+    });
+    await mountWebClient();
+    await getService(ActionPlugin).doAction({
+        type: 'ir.actions.act_window',
+        res_model: 'muk_ai.test_lead',
+        res_id: 1,
+        views: [[false, 'form']],
+    });
+    await contains('.mk_systray_btn').click();
+    await animationFrame();
+    expect(queryAllTexts('.mk_systray_chips .mk_systray_chip')).toEqual(['Enrich']);
+    await contains('.mk_systray_chips .mk_systray_chip').click();
+    await animationFrame();
+    expect.verifySteps(['invoke enrich']);
+    await contains('.mk_systray_btn').click();
+    await contains('.mk_systray_context > div > .mk_systray_chip').click();
+    await waitFor('.mk_window .mk_skills_panel input');
+});
+
 test('a chat without skills shows no skills button', async () => {
     onRpc('muk_ai.session', 'get_snapshot', () => snapshot({ skills: [] }));
     const session = await openSession(1);
     await mountWithCleanup(ChatConversation, { props: { session } });
-    expect('.mk_composer .mk_attach').toHaveCount(1);
+    expect('.mk_composer textarea').toHaveCount(1);
     expect('.mk_skills_toggle').toHaveCount(0);
 });
 
