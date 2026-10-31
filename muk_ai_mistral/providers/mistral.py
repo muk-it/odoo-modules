@@ -122,6 +122,7 @@ class MistralProvider(ProviderBase):
         model: str,
         prompt: str,
         options: dict | None = None,
+        references: list[dict] | None = None,
     ) -> dict:
         """Render one image through a one-shot conversation driving the image tool.
 
@@ -133,9 +134,12 @@ class MistralProvider(ProviderBase):
         conversation runs on the provider's :attr:`image_timeout` rather than
         the chat request timeout.
 
-        :raise UserError: when the request or the download fails, or the
-            driver answers with text instead of calling the tool
+        :raise UserError: when the request or the download fails, the driver
+            answers with text instead of calling the tool, or reference images
+            are given, which the connector cannot take
         """
+        if references:
+            self._raise(_('Mistral image generation takes no reference images'))
         payload = self._post_json(
             '/conversations',
             {
