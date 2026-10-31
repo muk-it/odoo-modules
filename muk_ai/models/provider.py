@@ -103,7 +103,7 @@ class AIProvider(models.Model):
         string='Max Tokens',
         help='Maximum completion tokens per request.',
         required=True,
-        default=4096,
+        default=16384,
     )
 
     request_timeout = fields.Integer(

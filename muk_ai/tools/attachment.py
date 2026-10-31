@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import base64
+import csv
 import email
 import email.policy
 import io
 import re
+import zipfile
 
+import openpyxl
 from PIL import Image, PngImagePlugin
 
 from odoo.addons.muk_mcp.tools.content import normalize_mimetype
@@ -62,13 +65,17 @@ OFFICE_MIMETYPES = frozenset(
     }
 )
 PDF_MIMETYPE = 'application/pdf'
+SANDBOX_CSV_MIMETYPES = frozenset(
+    {'text/csv', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}
+)
 
 # ----------------------------------------------------------
 # Reference Patterns
 # ----------------------------------------------------------
 
-INLINE_IMAGE_RE = re.compile(
-    r'!\[([^\]]*)\]\(data:(image/[a-zA-Z0-9.+-]+);base64,([A-Za-z0-9+/=\s]+)\)'
+INLINE_FILE_RE = re.compile(
+    r'(!?)\[([^\]]*)\]\(data:([a-zA-Z0-9.+-]+/[a-zA-Z0-9.+-]+);base64,'
+    r'([A-Za-z0-9+/=\s]+)\)'
 )
 SCRIPT_RE = re.compile(r'<script\b.*?</script\s*>', re.IGNORECASE | re.DOTALL)
 ATTACHMENT_REF_RE = re.compile(r'^@attachment:(\d+)$')
@@ -94,6 +101,30 @@ def email_parts(raw: bytes) -> tuple[str, str]:
     body = message.get_body(('html', 'plain'))
     head = f'Subject: {message["subject"] or ""}\nFrom: {message["from"] or ""}'
     return head, body.get_content() if body else ''
+
+
+def sandbox_csv(block: dict) -> list[str]:
+    """Return a CSV or Excel attachment block as base64 CSV, one per sheet.
+
+    Any other block gives none.
+    """
+    mimetype, data = block.get('mimetype'), block.get('data_b64')
+    if not data or mimetype not in SANDBOX_CSV_MIMETYPES:
+        return []
+    if mimetype == 'text/csv':
+        return [data]
+    try:
+        workbook = openpyxl.load_workbook(
+            io.BytesIO(base64.b64decode(data)), read_only=True, data_only=True
+        )
+    except (OSError, ValueError, KeyError, zipfile.BadZipFile):
+        return []
+    sheets = []
+    for sheet in workbook.worksheets:
+        text = io.StringIO()
+        csv.writer(text).writerows(sheet.iter_rows(values_only=True))
+        sheets.append(base64.b64encode(text.getvalue().encode()).decode())
+    return sheets
 
 
 def is_text(mimetype: str) -> bool:

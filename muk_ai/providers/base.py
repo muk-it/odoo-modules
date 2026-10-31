@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import base64
 import contextlib
 import json
 import logging
+import mimetypes
 from collections.abc import Callable, Iterator
 
 import psycopg2
@@ -11,6 +13,7 @@ import requests
 from odoo import models
 from odoo.api import Environment
 from odoo.exceptions import UserError
+from odoo.tools.mimetypes import guess_mimetype
 
 from odoo.addons.muk_ai.providers.region import Region
 from odoo.addons.muk_ai.tools import StreamCancelled, http_session
@@ -32,6 +35,7 @@ class ProviderBase:
     supports_vision = True
     supports_web_search = False
     supports_code_interpreter = False
+    sandbox_files = False
 
     reasoning_error_tokens = ()
 
@@ -303,6 +307,80 @@ class ProviderBase:
         finally:
             with contextlib.suppress(Exception):
                 response.close()
+
+    def _download(
+        self, url: str, headers: dict | None = None, filename: str | None = None
+    ) -> tuple[str, str]:
+        """Fetch a generated file and return its mimetype and base64 content.
+
+        The mimetype follows the file name when it has a known extension.
+        :raise UserError: when the download fails
+        """
+        try:
+            response = self._http_session().get(
+                url, headers=headers, timeout=self.request_timeout
+            )
+            response.raise_for_status()
+        except requests.RequestException as error:
+            self._raise(error)
+        return (
+            mimetypes.MimeTypes().guess_type(filename or '')[0]
+            or guess_mimetype(response.content, default='application/octet-stream'),
+            base64.b64encode(response.content).decode('ascii'),
+        )
+
+    def _upload_files(self, inputs: list, form: dict | None = None) -> list[str]:
+        """Upload the data files of the chat, not its images, to the vendor's Files API.
+
+        A failed upload drops them all: the model still reads them as content.
+        :param form: form fields the upload sends along, such as a purpose
+        :return: the file ids
+        """
+        files = {
+            block['attachment_id']: block
+            for item in inputs or []
+            if isinstance(item, dict) and isinstance(item.get('content'), list)
+            for block in item['content']
+            if isinstance(block, dict)
+            and block.get('type') == 'muk_ai_attachment'
+            and block.get('strategy') != 'image'
+            and block.get('data_b64')
+        }
+        headers = {
+            key: value for key, value in self.headers().items() if key != 'Content-Type'
+        }
+        uploads = []
+        try:
+            for block in files.values():
+                response = self._http_session().post(
+                    f'{self.api_url}/files',
+                    headers=headers,
+                    data=form,
+                    files={
+                        'file': (
+                            block.get('filename') or 'file',
+                            base64.b64decode(block['data_b64']),
+                            block.get('mimetype') or 'application/octet-stream',
+                        )
+                    },
+                    timeout=self.request_timeout,
+                )
+                response.raise_for_status()
+                uploads.append(response.json()['id'])
+        except requests.RequestException:
+            for file_id in uploads:
+                self._delete_file(file_id)
+            return []
+        return uploads
+
+    def _delete_file(self, file_id: str) -> None:
+        """Delete a file from the Files API, ignoring a failure."""
+        with contextlib.suppress(requests.RequestException):
+            self._http_session().delete(
+                f'{self.api_url}/files/{file_id}',
+                headers=self.headers(),
+                timeout=self.request_timeout,
+            )
 
     # ----------------------------------------------------------
     # Reasoning

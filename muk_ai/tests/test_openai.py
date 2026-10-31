@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import copy
 import json
 from collections.abc import Sequence
@@ -10,7 +11,7 @@ import requests
 from odoo.exceptions import UserError
 from odoo.tools import mute_logger
 
-from odoo.addons.muk_ai.tests.common import AITestCommon
+from odoo.addons.muk_ai.tests.common import AITestCommon, PNG_1x1
 from odoo.addons.muk_ai.tools import build_tool_call_output
 
 
@@ -486,6 +487,136 @@ class TestAiOpenAIProvider(AITestCommon):
         self.assertIsNotNone(ci)
         self.assertEqual((ci.get('container') or {}).get('type'), 'auto')
 
+    def test_the_sandbox_gets_the_chat_files_and_deletes_them_after(self):
+        attached = {
+            'type': 'muk_ai_attachment',
+            'attachment_id': 7,
+            'filename': 'list.csv',
+            'mimetype': 'text/csv',
+            'strategy': 'inline_text',
+            'inline_text': 'a,b',
+            'data_b64': 'YSxi',
+        }
+        refused = self._mock_http_response({}, status_code=404)
+        refused.raise_for_status.side_effect = requests.HTTPError('gone')
+        for label, uploaded, files in (
+            ('uploaded', self._mock_http_response({'id': 'file-1'}), ['file-1']),
+            ('refused', refused, []),
+        ):
+            answer = self._mock_http_response({'output': [], 'usage': {}})
+            with (
+                self.subTest(upload=label),
+                patch.object(
+                    requests.Session, 'post', side_effect=[uploaded, answer]
+                ) as posted,
+                patch.object(requests.Session, 'delete') as deleted,
+            ):
+                self.provider._request_responses(
+                    inputs=[{'role': 'user', 'content': [attached]}],
+                    enable_code_interpreter=True,
+                )
+            upload, request = (call.kwargs for call in posted.call_args_list)
+            self.assertEqual(
+                (upload['data'], upload['files']['file'][:2]),
+                ({'purpose': 'user_data'}, ('list.csv', b'a,b')),
+            )
+            self.assertEqual(
+                request['json']['tools'][-1]['container'],
+                {'type': 'auto', 'file_ids': files},
+            )
+            self.assertEqual(
+                request['json']['input'][0]['content'][0]['type'], 'input_text'
+            )
+            self.assertEqual(
+                [call.args[0].rsplit('/', 1)[-1] for call in deleted.call_args_list],
+                files,
+            )
+
+    def test_files_the_sandbox_cites_are_inlined_as_data(self):
+        png = base64.b64decode(PNG_1x1)
+
+        def cited(text: str, *refs: str) -> dict:
+            """Build an answer citing each sandbox file ``refs`` names."""
+            return {
+                'type': 'message',
+                'role': 'assistant',
+                'content': [
+                    {
+                        'type': 'output_text',
+                        'text': text,
+                        'annotations': [
+                            {
+                                'type': 'container_file_citation',
+                                'container_id': 'cntr_1',
+                                'file_id': f'cfile_{ref}',
+                                'filename': ref,
+                                'start_index': text.index(f'sandbox:/mnt/data/{ref}'),
+                                'end_index': text.index(f'sandbox:/mnt/data/{ref}')
+                                + len(f'sandbox:/mnt/data/{ref}'),
+                            }
+                            for ref in refs
+                        ],
+                    }
+                ],
+            }
+
+        def get(url: str, **_kwargs) -> MagicMock:
+            """Answer a container file download with its content."""
+            answer = self._mock_http_response({})
+            answer.content = png if 'c.png' in url else b'a,b\n1,2\n'
+            return answer
+
+        csv = base64.b64encode(b'a,b\n1,2\n').decode()
+        for label, message, download, text in (
+            (
+                'linked and bare',
+                cited(
+                    'Here: [the list](sandbox:/mnt/data/p.csv), also '
+                    'sandbox:/mnt/data/p.csv and [a plot](sandbox:/mnt/data/c.png).',
+                    'p.csv',
+                    'c.png',
+                ),
+                get,
+                (
+                    f'Here: [the list](data:text/csv;base64,{csv}), also '
+                    f'[p.csv](data:text/csv;base64,{csv}) and '
+                    f'![a plot](data:image/png;base64,{PNG_1x1}).'
+                ),
+            ),
+            (
+                'lost',
+                cited('[the list](sandbox:/mnt/data/p.csv)', 'p.csv'),
+                requests.ConnectionError('gone'),
+                '[the list](sandbox:/mnt/data/p.csv)',
+            ),
+        ):
+            response = self._mock_stream_response(
+                [
+                    {
+                        'type': 'response.output_text.delta',
+                        'delta': message['content'][0]['text'],
+                    },
+                    {
+                        'type': 'response.completed',
+                        'response': {'output': [message], 'usage': {}},
+                    },
+                ]
+            )
+            with (
+                self.subTest(files=label),
+                patch.object(requests.Session, 'post', return_value=response),
+                patch.object(requests.Session, 'get', side_effect=download) as fetched,
+            ):
+                result = self.provider._request_responses(
+                    inputs=[], on_delta=lambda kind, payload: None
+                )
+            self.assertEqual(result['text'], text)
+            self.assertEqual(result['carry_inputs'][-1]['content'][0]['text'], text)
+            self.assertIn(
+                '/containers/cntr_1/files/cfile_p.csv/content',
+                fetched.call_args_list[0].args[0],
+            )
+
     def test_openai_omits_tools_when_flags_off(self):
         captured = {}
 
@@ -730,7 +861,7 @@ class TestAiOpenAIProvider(AITestCommon):
         self.assertTrue(result['usage']['truncated'])
         self.assertIn('partial', result['text'])
         self.assertIn('Max Tokens', result['text'])
-        self.assertIn('4096', result['text'])
+        self.assertIn('16384', result['text'])
         text_deltas = [p['delta'] for (k, p) in deltas if k == 'text']
         self.assertTrue(any('Max Tokens' in d for d in text_deltas))
 

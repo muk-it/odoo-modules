@@ -34,6 +34,7 @@
     }
     .mk_systray_needs {
         position: absolute;
+        z-index: 1;
         top: -5px;
         left: -5px;
         width: 9px;

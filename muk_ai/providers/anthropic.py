@@ -3,6 +3,10 @@ from __future__ import annotations
 import json
 from collections.abc import Callable
 
+import requests
+
+from odoo.exceptions import UserError
+
 from odoo.addons.muk_ai.providers.base import ProviderBase
 
 ANTHROPIC_VERSION = '2023-06-01'
@@ -36,6 +40,7 @@ class AnthropicProvider(ProviderBase):
 
     supports_web_search = True
     supports_code_interpreter = True
+    sandbox_files = True
 
     reasoning_error_tokens = ('thinking', 'effort', 'output_config')
 
@@ -102,6 +107,7 @@ class AnthropicProvider(ProviderBase):
                     'name': 'web_search',
                 }
             )
+        uploads = []
         if enable_code_interpreter:
             tools.append(
                 {
@@ -109,6 +115,11 @@ class AnthropicProvider(ProviderBase):
                     'name': 'code_execution',
                 }
             )
+            uploads = self._upload_files(inputs)
+            for file_id in uploads:
+                messages[-1]['content'].append(
+                    {'type': 'container_upload', 'file_id': file_id}
+                )
         if tools:
             if caching:
                 tools[-1] = {**tools[-1], 'cache_control': CACHE_CONTROL}
@@ -116,12 +127,16 @@ class AnthropicProvider(ProviderBase):
         if caching and anchor is not None:
             msg_index, block_index = anchor
             messages[msg_index]['content'][block_index]['cache_control'] = CACHE_CONTROL
-        return self._invoke_with_reasoning_retry(
-            model,
-            lambda callback: self._invoke(body, callback),
-            on_delta,
-            ((body, ('output_config',) if adaptive else ('thinking',)),),
-        )
+        try:
+            return self._invoke_with_reasoning_retry(
+                model,
+                lambda callback: self._invoke(body, callback),
+                on_delta,
+                ((body, ('output_config',) if adaptive else ('thinking',)),),
+            )
+        finally:
+            for file_id in uploads:
+                self._delete_file(file_id)
 
     # ----------------------------------------------------------
     # Thinking
@@ -289,6 +304,43 @@ class AnthropicProvider(ProviderBase):
             text += '\n[truncated]'
         return {'type': 'text', 'text': prefix + text}
 
+    def _file_snippet(self, file_id: str) -> str:
+        """Download a file the sandbox made, then delete it, as an inline data link."""
+        try:
+            response = self._http_session().get(
+                f'{self.api_url}/files/{file_id}',
+                headers=self.headers(),
+                timeout=self.request_timeout,
+            )
+            response.raise_for_status()
+            name = response.json().get('filename') or 'file'
+            mimetype, data = self._download(
+                f'{self.api_url}/files/{file_id}/content', self.headers(), name
+            )
+        except (requests.RequestException, UserError):
+            return ''
+        finally:
+            self._delete_file(file_id)
+        image = '!' if mimetype.startswith('image/') else ''
+        return f'\n\n{image}[{name}](data:{mimetype};base64,{data})'
+
+    def _append_sandbox_files(
+        self, text_parts: list, content: list, replay: list, on_delta=None
+    ) -> None:
+        """Append the files the sandbox made in a turn to its text as data links."""
+        for file_id in [
+            item['file_id']
+            for block in replay
+            if block.get('type') == 'bash_code_execution_tool_result'
+            for item in (block.get('content') or {}).get('content') or []
+            if item.get('file_id')
+        ]:
+            if snippet := self._file_snippet(file_id):
+                text_parts.append(snippet)
+                content.append({'type': 'output_text', 'text': snippet})
+                replay.append({'type': 'text', 'text': snippet})
+                self._call_on_delta(on_delta, 'text', {'delta': snippet})
+
     @staticmethod
     def _tools_to_anthropic(tools_schema) -> list[dict]:
         """Convert tool schemas to Anthropic tool definitions, deduplicated by name."""
@@ -401,6 +453,7 @@ class AnthropicProvider(ProviderBase):
                         'call_id': call_id,
                     }
                 )
+        self._append_sandbox_files(text_parts, assistant_content, replay)
         result = {
             'text': '\n'.join(text_parts).strip(),
             'tool_calls': tool_calls,
@@ -492,6 +545,7 @@ class AnthropicProvider(ProviderBase):
                         'call_id': entry['call_id'],
                     }
                 )
+        self._append_sandbox_files(text_parts, assistant_content, replay, on_delta)
         result = {
             'text': ''.join(text_parts).strip(),
             'tool_calls': tool_calls,
