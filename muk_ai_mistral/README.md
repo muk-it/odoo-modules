@@ -2,9 +2,9 @@
 
 Adds **Mistral AI** as a first-class provider for `muk_ai`. Pick
 _Mistral AI_, paste your API key, and the whole catalogue is already
-there — **Mistral Large 3**, **Mistral Medium 3.5**, **Mistral Small 4**,
+there — **Mistral Large 4**, **Mistral Medium 3.5**, **Mistral Small 4**,
 **Ministral 3** (14B / 8B / 3B), **Codestral** and the third-party
-**Z.ai GLM 5.2** that Mistral serves itself. The chat, agents, tools
+**Z.ai GLM 5.3** that Mistral serves itself. The chat, agents, tools
 and approval flow of MuK AI all work unchanged.
 
 Depends only on `muk_ai` — the Mistral translator is self-contained.
