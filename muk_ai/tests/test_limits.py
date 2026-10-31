@@ -157,7 +157,7 @@ class TestSessionLimits(AITestCommon):
             'mimetype': 'image/png',
             'name': 'huge.png',
         }
-        self.assertFalse(session._persist_tool_image(spec))
+        self.assertFalse(session._persist_tool_file_spec(spec))
 
     def test_data_url_prefix_is_stripped_before_storing(self):
         session = self._session()
@@ -166,7 +166,7 @@ class TestSessionLimits(AITestCommon):
             'mimetype': 'image/png',
             'name': 'tiny.png',
         }
-        attachment = session._persist_tool_image(spec)
+        attachment = session._persist_tool_file_spec(spec)
         self.assertEqual(attachment.raw, base64.b64decode(PNG_B64))
         self.assertEqual(attachment.mimetype, 'image/png')
         self.assertEqual(attachment.res_model, 'muk_ai.session')

@@ -2513,22 +2513,33 @@ class AISession(models.Model):
             if isinstance(block, dict) and block.get('type') == 'image'
         ]
 
-    def _collect_tool_image_specs(self, result) -> list:
-        """Return normalized image specs a tool result carries.
+    @staticmethod
+    def _is_blob_block(block) -> bool:
+        """Return whether a content block is an MCP resource block with its bytes."""
+        return (
+            isinstance(block, dict)
+            and block.get('type') == 'resource'
+            and isinstance(block.get('resource'), dict)
+            and 'blob' in block['resource']
+        )
+
+    def _collect_tool_file_specs(self, result) -> list:
+        """Return normalized file specs a tool result carries.
 
         Supports the ``{'images': [{'data', 'mimetype', 'name'}, ...]}``
-        convention and MCP image content blocks
-        (``{'type': 'image', 'data', 'mimeType'}``).
+        convention, MCP image blocks (``{'type': 'image', 'data', 'mimeType'}``)
+        and MCP resource blocks with their bytes (``{'type': 'resource', ...}``).
         """
         blocks = []
         if isinstance(result, dict):
             blocks += [b for b in (result.get('images') or []) if isinstance(b, dict)]
-            blocks += self._image_content_blocks(result.get('content'))
-        elif isinstance(result, list):
+            result = result.get('content')
+        if isinstance(result, list):
             blocks += self._image_content_blocks(result)
+            blocks += [b['resource'] for b in result if self._is_blob_block(b)]
         specs = []
         for block in blocks:
-            data = block.get('data') or block.get('data_b64')
+            data = block.get('data') or block.get('data_b64') or block.get('blob')
             if not isinstance(data, str) or not data:
                 continue
             specs.append(
@@ -2544,30 +2555,33 @@ class AISession(models.Model):
             )
         return specs
 
-    def _strip_tool_images(self, result) -> object:
-        """Return the tool result with inline image payloads removed."""
-        if isinstance(result, dict):
-            cleaned = {key: value for key, value in result.items() if key != 'images'}
-            if isinstance(cleaned.get('content'), list):
-                cleaned['content'] = [
-                    block
-                    for block in cleaned['content']
-                    if not (isinstance(block, dict) and block.get('type') == 'image')
-                ]
-            return cleaned
+    def _strip_tool_files(self, result) -> object:
+        """Return the tool result without its file payloads, resources kept by uri."""
         if isinstance(result, list):
             return [
-                block
+                {
+                    **block,
+                    'resource': {
+                        key: value
+                        for key, value in block['resource'].items()
+                        if key != 'blob'
+                    },
+                }
+                if self._is_blob_block(block)
+                else block
                 for block in result
                 if not (isinstance(block, dict) and block.get('type') == 'image')
             ]
-        return result
+        if not isinstance(result, dict):
+            return result
+        cleaned = {key: value for key, value in result.items() if key != 'images'}
+        if isinstance(cleaned.get('content'), list):
+            cleaned['content'] = self._strip_tool_files(cleaned['content'])
+        return cleaned
 
-    def _persist_tool_image(self, spec: dict) -> models.BaseModel:
-        """Persist one tool image spec as a session attachment, or skip on error."""
+    def _persist_tool_file_spec(self, spec: dict) -> models.BaseModel:
+        """Store one tool file spec as a session attachment, or skip it."""
         empty = self.env['ir.attachment']
-        if spec['mimetype'] not in IMAGE_MIMETYPES:
-            return empty
         data = spec['data']
         if data.startswith('data:') and ',' in data:
             data = data.split(',', 1)[1]
@@ -2585,18 +2599,18 @@ class AISession(models.Model):
             return empty
 
     def _extract_tool_vision(self, result) -> tuple[models.BaseModel, object, bool]:
-        """Store the images of a tool result and strip them from it.
+        """Store the files of a tool result and strip them from it.
 
-        :return: the stored images, the text-only result to send back as the
+        :return: the stored files, the text-only result to send back as the
             ``function_call_output``, and whether the model gets to see them
         """
-        specs = self._collect_tool_image_specs(result)
+        specs = self._collect_tool_file_specs(result)
         if not specs:
             return self.env['ir.attachment'], result, False
         attachments = self.env['ir.attachment']
         for spec in specs[:TOOL_VISION_MAX_IMAGES]:
-            attachments |= self._persist_tool_image(spec)
-        cleaned = self._strip_tool_images(result)
+            attachments |= self._persist_tool_file_spec(spec)
+        cleaned = self._strip_tool_files(result)
         vision = bool(attachments) and self._vision_enabled()
         if not vision:
             cleaned = self._note_vision_unavailable(cleaned)
@@ -2604,14 +2618,16 @@ class AISession(models.Model):
 
     @staticmethod
     def _note_vision_unavailable(cleaned) -> object:
-        """Append a note when a tool's images could not be shown to the model."""
+        """Append a note when a tool's files could not be shown to the model."""
         note = (
-            'Note: images were produced but cannot be shown to this model; '
+            'Note: files were produced but cannot be shown to this model; '
             'rely on the textual/structural result instead.'
         )
         if isinstance(cleaned, dict):
             text = cleaned.get('text')
             return {**cleaned, 'text': f'{text}\n{note}' if text else note}
+        if isinstance(cleaned, list):
+            return [*cleaned, {'type': 'text', 'text': note}]
         return cleaned
 
     def _persist_tool_file(self, result) -> object:
@@ -2687,10 +2703,10 @@ class AISession(models.Model):
     def _append_tool_output_with_vision(
         self, outputs: list, call_id: str, result
     ) -> object:
-        """Append a tool output, showing its images and holding them for the round.
+        """Append a tool output, show its images and hold its files for the round.
 
         Files and images are stored first, so the output never carries raw
-        base64; the images show in the chat, and a model with vision gets them
+        base64; the images show in the chat, a model with vision gets the files
         once every output of the round is sent (``_flush_deferred_vision``).
 
         :return: the cleaned, text-only result for event logging
@@ -2701,14 +2717,16 @@ class AISession(models.Model):
         outputs.append(
             self._bound_tool_output(build_tool_call_output(call_id, cleaned))
         )
-        if attachments:
+        if images := attachments.filtered(
+            lambda attachment: attachment.mimetype in IMAGE_MIMETYPES
+        ):
             self._append_event(
                 {
                     'kind': 'tool_images',
                     'call_id': call_id,
                     'images': [
                         {'url': f'/web/image/{image.id}', 'name': image.name}
-                        for image in attachments
+                        for image in images
                     ],
                 }
             )
@@ -3064,7 +3082,7 @@ class AISession(models.Model):
                 'kind': 'client_action_result',
                 'call_id': call_id,
                 'name': named.get('name'),
-                'result': self._strip_tool_images(result),
+                'result': self._strip_tool_files(result),
             }
         )
         if any(action.get('call_id') not in pending['results'] for action in actions):
