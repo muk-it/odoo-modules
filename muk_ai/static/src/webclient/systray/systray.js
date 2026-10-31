@@ -11,6 +11,7 @@ import { useService } from '@web/core/utils/hooks';
 import { debounce } from '@web/core/utils/timing';
 
 import {
+    agentImage,
     agentSuggestions,
     chatLists,
     formatError,
@@ -54,6 +55,7 @@ export class MukAISystray extends Component {
         this.sessionLimit = 8;
         this.hotkey = isMacOS() ? 'Ctrl+Shift+B' : 'Alt+Shift+B';
         this.formatShortTimestamp = formatShortTimestamp;
+        this.agentImage = agentImage;
         this.button = useRef('systrayBtn');
         this.loadSeq = 0;
         this.needsSeq = 0;
@@ -108,14 +110,6 @@ export class MukAISystray extends Component {
     get recordTitle() {
         const name = this.state.record.display_name;
         return name ? _t('Ask about %s', name) : _t('Ask about this record');
-    }
-    /**
-     * Return the image of an agent.
-     * @param {number} agentId the agent
-     * @returns {string} the image route
-     */
-    agentImage(agentId) {
-        return `/web/image/muk_ai.agent/${agentId || 0}/image_128`;
     }
     /**
      * Return the icon class of a waiting item.

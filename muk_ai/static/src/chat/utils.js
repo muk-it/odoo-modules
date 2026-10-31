@@ -86,6 +86,15 @@ export function formatError(error) {
     return error?.data?.message || error?.message || String(error);
 }
 
+/**
+ * Return the image of an agent.
+ * @param {number} agentId the agent
+ * @returns {string} the image route
+ */
+export function agentImage(agentId) {
+    return `/web/image/muk_ai.agent/${agentId || 0}/image_128`;
+}
+
 function parseDateTime(at) {
     if (!at) {
         return null;

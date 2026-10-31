@@ -26,6 +26,7 @@ import { AttachmentCard } from '@muk_ai/core/attachment/attachment_card';
 import { AIChatShareUsers } from '@muk_ai/chat/share/share_users';
 import { useNotificationBadge } from '@muk_ai/core/notification_badge';
 import {
+    agentImage,
     agentSuggestions,
     approvalPill,
     chatLists,
@@ -129,6 +130,7 @@ export class AIChat extends Component {
         this.chatWindow = useService('muk_ai.chat_window');
         this.notification = useService('notification');
         this.ui = useService('ui');
+        this.agentImage = agentImage;
         this.session = useAiSession({
             surface: 'fullscreen',
             onRefresh: () => this._loadSessions(),

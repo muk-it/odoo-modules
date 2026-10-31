@@ -641,6 +641,11 @@
             border-color: var(--mk-primary);
         }
     }
+    .mk_agent_pill_icon {
+        width: 16px;
+        height: 16px;
+        object-fit: cover;
+    }
     @keyframes mk-pulse {
         0%,
         100% {
@@ -708,7 +713,8 @@
         .mk_search_toggle,
         .mk_artifacts_toggle,
         .mk_handover,
-        .mk_popout {
+        .mk_popout,
+        .mk_more_toggle {
             color: var(--mk-text-muted);
             width: 28px;
             height: 28px;
@@ -2466,8 +2472,10 @@
                 font-size: 0.72rem;
             }
         }
-        .mk_main_title {
+        .mk_main_heading {
             flex: 1 1 0;
+        }
+        .mk_main_title {
             min-width: 0;
             font-size: 0.88rem;
         }
@@ -2493,18 +2501,6 @@
             z-index: 15;
             background: rgba(0, 0, 0, 0.24);
             cursor: pointer;
-        }
-        .mk_main_header {
-            flex-wrap: wrap;
-            row-gap: 0.25rem;
-        }
-        .mk_main_title {
-            flex: 1 1 8rem;
-        }
-        .mk_tokens {
-            flex: 1 0 100%;
-            justify-content: flex-start;
-            margin-left: 0;
         }
         .mk_sidebar_item .mk_sidebar_actions,
         .mk_space_row.mk_space_open .mk_space_actions {
@@ -2603,22 +2599,32 @@
         }
         .mk_main_header {
             padding: 0.4rem 0.6rem;
-            gap: 0.35rem !important;
-            min-height: 48px;
         }
-        .mk_avatar {
-            width: 26px;
-            height: 26px;
-            font-size: 0.75rem;
+        .mk_header_agent {
+            width: 30px;
+            height: 30px;
+            object-fit: cover;
+        }
+        .mk_main_heading {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 0 !important;
+            line-height: 1.3;
+        }
+        .mk_main_heading .mk_main_title {
+            max-width: 100%;
+            font-size: 0.95rem;
         }
         .mk_agent_pill {
-            padding: 2px 6px;
-            max-width: 120px;
-            > span {
+            max-width: 100%;
+            padding: 0;
+            border: 0;
+            background: none;
+            color: var(--mk-text-muted) !important;
+            font-weight: 400;
+            font-size: 0.78rem;
+            .mk_agent_pill_icon {
                 display: none;
-            }
-            > i.fa {
-                display: inline-block;
             }
         }
         .mk_tokens {
@@ -2626,8 +2632,10 @@
             .mk_chip {
                 display: none;
             }
-            .mk_popout {
-                display: none;
+            .mk_more_toggle {
+                width: 32px;
+                height: 32px;
+                font-size: 19px;
             }
         }
         .mk_slash_popover {
@@ -2636,6 +2644,34 @@
     }
 }
 
+.mk_agent_menu {
+    width: 380px;
+    max-width: calc(100vw - 16px);
+    .dropdown-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.6rem;
+        white-space: normal;
+    }
+    .mk_agent_option_icon {
+        flex: 0 0 28px;
+        width: 28px;
+        height: 28px;
+        object-fit: cover;
+    }
+    .fa.mk_agent_option_icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+    }
+    .mk_agent_option_text {
+        display: -webkit-box;
+        overflow: hidden;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+}
 .mk_load_older {
     padding: 0.25rem 0.5rem;
     margin-bottom: 0.25rem;
