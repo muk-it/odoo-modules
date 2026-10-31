@@ -25,7 +25,10 @@ class TestLead(SubagentCase):
             chat.start('go')
         child = chat.child_session_ids
         self.assertEqual((chat.state, chat.last_text), ('done', 'meanwhile'))
-        self.assertEqual((child.state, chat.awaiting_user), ('waiting', True))
+        self.assertEqual(
+            (child.state, chat.awaiting_user, child.awaiting_user),
+            ('waiting', True, False),
+        )
         with self._mock_responses(
             [text_payload('found it'), text_payload('noted')]
         ) as requests:
