@@ -145,6 +145,7 @@ class TestProviders(ProviderTestCase):
     def test_a_max_token_stop_keeps_the_partial_answer_and_says_so(self):
         for name, case in self.cases.items():
             with self.subTest(provider=name):
+                self.providers[name].max_tokens = 4096
                 result, deltas, _sent = self._stream(name, case.truncated)
                 notice = deltas_of(deltas, 'text')[-1]
                 self.assertIn('Max Tokens limit of 4096 tokens', notice)

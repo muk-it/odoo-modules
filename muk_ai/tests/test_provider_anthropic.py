@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from unittest.mock import patch
+
+import requests
+
 from odoo.exceptions import UserError
 from odoo.tools import mute_logger
 
@@ -239,6 +243,70 @@ class TestAnthropicProvider(ProviderTestCase):
                     'anthropic', [*events, *CASES['anthropic'].end]
                 )
                 self.assertEqual(result['carry_inputs'], carried)
+
+    def test_the_sandbox_gets_the_chat_files_and_hands_back_its_own(self):
+        attached = {
+            'type': 'muk_ai_attachment',
+            'attachment_id': 7,
+            'filename': 'list.csv',
+            'mimetype': 'text/csv',
+            'strategy': 'inline_text',
+            'inline_text': 'a,b',
+            'data_b64': 'YSxi',
+        }
+        made = {
+            'type': 'bash_code_execution_tool_result',
+            'tool_use_id': 'srv_1',
+            'content': {
+                'type': 'bash_code_execution_result',
+                'content': [{'type': 'bash_code_execution_output', 'file_id': 'out'}],
+            },
+        }
+        content = json_response({})
+        content._content = b'a;b'
+        for label, uploaded, text in (
+            (
+                'uploaded',
+                json_response({'id': 'up'}),
+                '[clean.csv](data:text/csv;base64,YTti)',
+            ),
+            (
+                'upload refused',
+                json_response({}, 404),
+                '[clean.csv](data:text/csv;base64,YTti)',
+            ),
+        ):
+            with (
+                self.subTest(upload=label),
+                patch.object(
+                    requests.Session,
+                    'get',
+                    side_effect=[json_response({'filename': 'clean.csv'}), content],
+                ),
+                patch.object(requests.Session, 'delete') as deleted,
+            ):
+                result, _deltas, sent = self._stream(
+                    'anthropic',
+                    uploaded,
+                    [
+                        *anthropic_block(
+                            0, {'type': 'server_tool_use', 'id': 'srv_1', 'name': 'x'}
+                        ),
+                        *anthropic_block(1, made),
+                        *CASES['anthropic'].end,
+                    ],
+                    inputs=[{'role': 'user', 'content': [attached]}],
+                    enable_code_interpreter=True,
+                )
+            self.assertEqual(result['text'], text)
+            self.assertEqual(
+                sent[1]['json']['messages'][-1]['content'][-1]['type'],
+                'container_upload' if label == 'uploaded' else 'text',
+            )
+            self.assertEqual(
+                [call.args[0].rsplit('/', 1)[-1] for call in deleted.call_args_list],
+                ['out', 'up'] if label == 'uploaded' else ['out'],
+            )
 
     def test_text_after_a_server_tool_starts_a_new_paragraph(self):
         result, deltas, _sent = self._stream(

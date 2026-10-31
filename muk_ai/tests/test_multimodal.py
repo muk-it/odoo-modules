@@ -169,7 +169,7 @@ class TestMultimodal(AITestCommon):
                 self.assertIn(descriptor, session.get_snapshot()['attachments'])
                 block = attachment._ai_materialize()
                 self.assertEqual(block['strategy'], strategy)
-                self.assertEqual(block.get('data_b64') or block['inline_text'], content)
+                self.assertEqual(block.get('inline_text', block['data_b64']), content)
                 self.assertEqual(block.get('truncated', False), data is big)
 
     def test_an_upload_the_model_cannot_read_is_refused(self):

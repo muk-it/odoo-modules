@@ -9,7 +9,7 @@ from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.tools import config
 
-from odoo.addons.muk_ai.tools.attachment import INLINE_IMAGE_RE
+from odoo.addons.muk_ai.tools.attachment import INLINE_FILE_RE
 from odoo.addons.muk_ai.tools.runtime import (
     ITERATION_WARNING_ROUNDS,
     MAX_ITERATIONS,
@@ -356,62 +356,61 @@ class AISessionLoop(models.AbstractModel):
             )
         self.write({**values, 'turn_usage': turn})
 
-    def _persist_inline_images(self, text: str, cache: dict) -> str:
-        """Store the base64 images inlined in a text and link them instead.
+    def _persist_inline_files(self, value, cache: dict) -> object:
+        """Store the base64 images and files inlined in the texts of a value.
 
-        :param cache: attachment ids of the images stored this round, by data
+        Each is linked in its place; lists and dicts are walked to every text.
+        :param cache: attachment ids of the files stored this round, by data
         """
+        if isinstance(value, list):
+            return [self._persist_inline_files(item, cache) for item in value]
+        if isinstance(value, dict):
+            return {
+                key: self._persist_inline_files(item, cache)
+                for key, item in value.items()
+            }
+        if not isinstance(value, str):
+            return value
 
         def store(match: re.Match) -> str:
-            """Store one inline image and return the reference replacing it."""
-            alt, mimetype = match.group(1) or 'generated.png', match.group(2)
-            data = re.sub(r'\s+', '', match.group(3))
+            """Store one inline file and return the reference replacing it."""
+            image, mimetype = match.group(1), match.group(3)
+            name = match.group(2) or ('generated.png' if image else 'download')
+            data = re.sub(r'\s+', '', match.group(4))
             if data not in cache:
                 try:
                     cache[data] = (
                         self.env['ir.attachment']
                         .sudo()
-                        ._ai_create_from_upload(alt, mimetype, data, res_id=self.id)
+                        ._ai_store_binary(name, mimetype, data, res_id=self.id)
                         .id
                     )
                 except UserError:
                     return match.group(0)
+            if image:
+                return (
+                    f'![{name}](/web/image/{cache[data]}) _(attachment {cache[data]} - '
+                    f'to set on a record use `image_1920="@attachment:{cache[data]}"`)_'
+                )
             return (
-                f'![{alt}](/web/image/{cache[data]}) _(attachment {cache[data]} - '
-                f'to set on a record use `image_1920="@attachment:{cache[data]}"`)_'
+                f'[{name}](/web/content/{cache[data]}?download=true) _(attachment '
+                f'{cache[data]} - to store on a record use `"@attachment:{cache[data]}"`)_'
             )
 
-        return INLINE_IMAGE_RE.sub(store, text)
+        return INLINE_FILE_RE.sub(store, value)
 
     def _accrue_round_payload(self, payload: dict) -> None:
         """Accrue usage and persist the text and carried inputs of a round.
 
-        Images inlined as base64 are stored once and linked in both.
+        Images and files inlined as base64 are stored once and linked in both.
         """
         self._accrue_usage(payload.get('usage'))
         cache = {}
-        if text := self._persist_inline_images(payload.get('text') or '', cache):
+        if text := self._persist_inline_files(payload.get('text') or '', cache):
             payload['text'] = self.last_text = text
             self._append_event({'kind': 'text', 'content': text})
         self._extend_conversation(
-            [
-                {
-                    **item,
-                    'content': [
-                        {
-                            **block,
-                            'text': self._persist_inline_images(block['text'], cache),
-                        }
-                        if isinstance(block, dict)
-                        and isinstance(block.get('text'), str)
-                        else block
-                        for block in item['content']
-                    ],
-                }
-                if isinstance(item, dict) and isinstance(item.get('content'), list)
-                else item
-                for item in payload.get('carry_inputs') or []
-            ]
+            self._persist_inline_files(payload.get('carry_inputs') or [], cache)
         )
 
     def _turn_budget_error(self, turn_budget: float) -> None:

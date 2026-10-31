@@ -3,6 +3,10 @@ from __future__ import annotations
 import json
 from collections.abc import Callable
 
+import requests
+
+from odoo.exceptions import UserError
+
 from odoo.addons.muk_ai.providers.base import ProviderBase
 
 ANTHROPIC_VERSION = '2023-06-01'
@@ -46,6 +50,7 @@ class AnthropicProvider(ProviderBase):
 
     supports_web_search = True
     supports_code_interpreter = True
+    sandbox_files = True
 
     reasoning_error_tokens = ('thinking', 'effort', 'output_config')
 
@@ -116,8 +121,13 @@ class AnthropicProvider(ProviderBase):
         ]
         if enable_web_search:
             tools.append({'type': WEB_SEARCH_TOOL_TYPE, 'name': 'web_search'})
+        uploads = []
         if enable_code_interpreter:
             tools.append({'type': CODE_EXECUTION_TOOL_TYPE, 'name': 'code_execution'})
+            uploads = self._upload_files(inputs)
+            messages[-1]['content'].extend(
+                {'type': 'container_upload', 'file_id': file_id} for file_id in uploads
+            )
         if tools:
             if caching:
                 tools[-1] = {**tools[-1], 'cache_control': CACHE_CONTROL}
@@ -125,14 +135,18 @@ class AnthropicProvider(ProviderBase):
         if caching and anchor is not None:
             msg_index, block_index = anchor
             messages[msg_index]['content'][block_index]['cache_control'] = CACHE_CONTROL
-        return self._invoke_with_reasoning_retry(
-            model,
-            lambda callback: self._stream(
-                {**body, **({'output_config': output} if output else {})}, callback
-            ),
-            on_delta,
-            ((output, ('effort',)) if adaptive else (body, ('thinking',)),),
-        )
+        try:
+            return self._invoke_with_reasoning_retry(
+                model,
+                lambda callback: self._stream(
+                    {**body, **({'output_config': output} if output else {})}, callback
+                ),
+                on_delta,
+                ((output, ('effort',)) if adaptive else (body, ('thinking',)),),
+            )
+        finally:
+            for file_id in uploads:
+                self._delete_file(file_id)
 
     # ----------------------------------------------------------
     # Helper
@@ -189,6 +203,26 @@ class AnthropicProvider(ProviderBase):
                 ]:
                     append(role, dict(block), volatile)
         return cls._system_text(inputs), messages, anchor
+
+    def _file_snippet(self, file_id: str) -> str:
+        """Download a file the sandbox made, then delete it, as an inline data link."""
+        try:
+            response = self._http_session().get(
+                f'{self.api_url}/files/{file_id}',
+                headers=self.headers(),
+                timeout=self.provider.request_timeout,
+            )
+            response.raise_for_status()
+            name = response.json().get('filename') or 'file'
+            mimetype, data = self._download(
+                f'{self.api_url}/files/{file_id}/content', self.headers(), name
+            )
+        except (requests.RequestException, UserError):
+            return ''
+        finally:
+            self._delete_file(file_id)
+        image = '!' if mimetype.startswith('image/') else ''
+        return f'\n\n{image}[{name}](data:{mimetype};base64,{data})'
 
     @staticmethod
     def _text_part(text: str) -> dict:
@@ -285,6 +319,18 @@ class AnthropicProvider(ProviderBase):
                 replay.append(
                     {**block, **({'input': json.loads(partial)} if partial else {})}
                 )
+        for file_id in [
+            item['file_id']
+            for block in replay
+            if block['type'] == 'bash_code_execution_tool_result'
+            for item in (block.get('content') or {}).get('content') or []
+            if item.get('file_id')
+        ]:
+            if snippet := self._file_snippet(file_id):
+                text.append(snippet)
+                content.append({'type': 'output_text', 'text': snippet})
+                replay.append(self._text_part(snippet))
+                self._call_on_delta(on_delta, 'text', {'delta': snippet})
         answered = {block.get('tool_use_id') for block in replay}
         replay = [
             block

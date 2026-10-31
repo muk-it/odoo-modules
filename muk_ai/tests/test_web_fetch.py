@@ -10,6 +10,7 @@ from odoo.addons.muk_ai.tests.common import (
     PNG_BYTES,
     PUBLIC_IP,
     AITestCommon,
+    PNG_1x1,
     serve_web,
 )
 from odoo.addons.muk_ai.tools.url_fetch import (
@@ -90,15 +91,42 @@ class TestWebFetch(AITestCommon):
             ('application/json', b'{"b":2', 'text', None, '{"b":2'),
             ('application/json', b'{"b":2,"a":1}', 'html', None, '{"b":2,"a":1}'),
             ('text/plain; charset=latin-1', b'caf\xe9', 'markdown', None, 'caf\xe9'),
-            ('image/png', PNG_BYTES, 'markdown', None, 'not rendered as text'),
+            ('application/zip', b'PK', 'markdown', None, 'not rendered as text'),
             ('', sniffed, 'markdown', 'Sniffed', 'x'),
+            (
+                'image/png',
+                PNG_BYTES,
+                'markdown',
+                None,
+                [{'type': 'image', 'data': PNG_1x1, 'mimeType': 'image/png'}],
+            ),
+            (
+                'application/pdf',
+                b'%PDF-1.4',
+                'markdown',
+                None,
+                [
+                    {
+                        'type': 'resource',
+                        'resource': {
+                            'uri': 'https://example.com/payload',
+                            'mimeType': 'application/pdf',
+                            'name': 'payload',
+                            'blob': 'JVBERi0xLjQ=',
+                        },
+                    }
+                ],
+            ),
         ):
             with self.subTest(content_type=content_type, mode=mode):
                 url = 'https://example.com/payload'
                 with serve_web({url: (200, {'Content-Type': content_type}, body)}):
                     result = self._fetch(url, mode=mode)
-                self.assertEqual(result['title'], title)
-                self.assertIn(content, result['content'])
+                self.assertEqual(result.get('title'), title)
+                if isinstance(content, list):
+                    self.assertEqual(result['content'], content)
+                else:
+                    self.assertIn(content, result['content'])
 
     def test_a_long_page_is_read_window_by_window(self):
         total = WEB_FETCH_MAX_CHARS + 500

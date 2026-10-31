@@ -3,10 +3,12 @@ from __future__ import annotations
 import contextlib
 import functools
 import json
+import mimetypes
 import uuid
 from collections.abc import Callable
 
 from odoo.addons.muk_ai.providers.base import ProviderBase
+from odoo.addons.muk_ai.tools.attachment import SANDBOX_CSV_MIMETYPES, sandbox_csv
 from odoo.addons.muk_mcp.tools.schema import to_strict_schema
 
 GROUNDING_TOOL_KEY = 'googleSearch'
@@ -50,6 +52,7 @@ class GoogleProvider(ProviderBase):
 
     supports_web_search = True
     supports_code_interpreter = True
+    sandbox_files = True
 
     reasoning_error_tokens = ('thinking',)
 
@@ -78,6 +81,22 @@ class GoogleProvider(ProviderBase):
     ) -> dict:
         """Build and stream a generateContent request."""
         model = self.model_for(model)
+        if enable_code_interpreter:
+            inputs = [
+                {
+                    **item,
+                    'content': [
+                        {**block, 'sandbox': True}
+                        if isinstance(block, dict)
+                        and block.get('mimetype') in SANDBOX_CSV_MIMETYPES
+                        else block
+                        for block in item['content']
+                    ],
+                }
+                if isinstance(item, dict) and isinstance(item.get('content'), list)
+                else item
+                for item in inputs
+            ]
         system_text, contents = self._inputs_to_contents(inputs)
         config = {'thinkingConfig': {'includeThoughts': True}}
         body = {'contents': contents, 'generationConfig': config}
@@ -240,6 +259,11 @@ class GoogleProvider(ProviderBase):
         """Convert an attachment block into a Google inline-data or text part."""
         mimetype = block.get('mimetype') or 'application/octet-stream'
         strategy = block.get('strategy')
+        if block.get('sandbox') and (sheets := sandbox_csv(block)):
+            return [
+                {'inlineData': {'mimeType': 'text/csv', 'data': data}}
+                for data in sheets
+            ]
         if strategy == 'image' or (
             strategy == 'file' and mimetype == 'application/pdf'
         ):
@@ -364,7 +388,10 @@ class GoogleProvider(ProviderBase):
 
     @staticmethod
     def _code_snippet(part: dict) -> str:
-        """Render a code execution part as Markdown, empty when it is not one."""
+        """Render a code execution part as Markdown, empty when it is not one.
+
+        A file the code made comes inline, linked as data.
+        """
         if 'executableCode' in part:
             code = part['executableCode'] or {}
             language = (code.get('language') or '').lower()
@@ -372,4 +399,9 @@ class GoogleProvider(ProviderBase):
         if 'codeExecutionResult' in part:
             result = part['codeExecutionResult'] or {}
             return f'\n\n```\n{result.get("output") or ""}\n```\n\n'
+        if data := (part.get('inlineData') or {}).get('data'):
+            mimetype = part['inlineData'].get('mimeType') or 'application/octet-stream'
+            name = f'file{mimetypes.MimeTypes().guess_extension(mimetype) or ""}'
+            image = '!' if mimetype.startswith('image/') else ''
+            return f'\n\n{image}[{name}](data:{mimetype};base64,{data})\n\n'
         return ''

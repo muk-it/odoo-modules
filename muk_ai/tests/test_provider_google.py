@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+import base64
+import io
+
+import openpyxl
+
 from odoo.exceptions import UserError
 
 from odoo.addons.muk_ai.tests.common import json_response
@@ -134,6 +139,12 @@ class TestGoogleProvider(ProviderTestCase):
                 '```python\nprint(1)\n```\n\n\n\n```\n1\n```',
                 [('assistant', [])],
             ),
+            (
+                'code file',
+                [gemini({'inlineData': {'mimeType': 'text/csv', 'data': 'YSxi'}})],
+                '[file.csv](data:text/csv;base64,YSxi)',
+                [('assistant', [])],
+            ),
         ):
             with self.subTest(turn=label):
                 result, _deltas, _sent = self._stream(
@@ -154,6 +165,49 @@ class TestGoogleProvider(ProviderTestCase):
                         for item in result['carry_inputs']
                     ],
                     carried,
+                )
+
+    def test_spreadsheets_reach_the_sandbox_as_csv(self):
+        workbook = openpyxl.Workbook()
+        workbook.active.append(['FS-405', 12.5])
+        workbook.create_sheet('Rohre').append(['RR-337', 48])
+        raw = io.BytesIO()
+        workbook.save(raw)
+        xlsx = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        files = [
+            (xlsx, base64.b64encode(raw.getvalue()).decode()),
+            ('text/csv', 'YSxi'),
+        ]
+        content = [
+            {
+                'type': 'muk_ai_attachment',
+                'attachment_id': index,
+                'filename': f'list{index}',
+                'mimetype': mimetype,
+                'strategy': 'inline_text',
+                'inline_text': 'cells',
+                'data_b64': data,
+            }
+            for index, (mimetype, data) in enumerate(files)
+        ]
+        for sandbox, parts in (
+            (True, ['FS-405,12.5\r\n', 'RR-337,48\r\n', 'a,b']),
+            (False, []),
+        ):
+            with self.subTest(sandbox=sandbox):
+                _result, _deltas, sent = self._stream(
+                    'google',
+                    [*CASES['google'].end],
+                    inputs=[{'role': 'user', 'content': content}],
+                    enable_code_interpreter=sandbox,
+                )
+                self.assertEqual(
+                    [
+                        base64.b64decode(part['inlineData']['data']).decode()
+                        for part in sent[0]['json']['contents'][0]['parts']
+                        if 'inlineData' in part
+                    ],
+                    parts,
                 )
 
     def test_stored_calls_replay_signed_or_as_transcript_text(self):

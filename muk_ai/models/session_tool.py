@@ -33,8 +33,9 @@ from odoo.addons.muk_ai.tools.runtime import MAX_TOOL_CALLS_PER_ROUND
 from odoo.addons.muk_ai.tools.sources import extract_sources
 from odoo.addons.muk_ai.tools.url_fetch import fetch_url
 from odoo.addons.muk_ai.tools.vision import (
+    VISION_UNAVAILABLE,
+    append_note,
     file_specs,
-    note_vision_unavailable,
     strip_files,
 )
 from odoo.addons.muk_mcp.core.tool import get_tool_index
@@ -560,9 +561,13 @@ class AISessionTool(models.AbstractModel):
                     ],
                 }
             )
+        for file in attachments:
+            cleaned = append_note(
+                cleaned, f'Stored file {file.name}: odoo://attachment/{file.id}'
+            )
         vision = bool(attachments) and self._resolve_provider().supports_vision
         if specs and not vision:
-            cleaned = note_vision_unavailable(cleaned)
+            cleaned = append_note(cleaned, VISION_UNAVAILABLE)
         output = build_tool_call_output(call_id, cleaned)
         text = output['output']
         if len(text) > (limit := self._resolve_context_window()):

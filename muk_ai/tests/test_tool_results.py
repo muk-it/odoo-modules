@@ -240,16 +240,19 @@ class TestToolResults(AITestCommon):
                             'c1', {'text': 'Captured', 'images': [SHOT]}
                         )
                 self.assertEqual(session.state, 'done')
-                self.assertEqual(
-                    self._tool_output(session, 'c1'),
-                    {'text': 'Captured'},
-                )
                 blocks = self._vision(requests[1])
                 self.assertEqual(
                     [base64.b64decode(block['data_b64']) for block in blocks],
                     [PNG_BYTES],
                 )
-                self.assertIn(blocks[0]['attachment_id'], self._files(session).ids)
+                self.assertEqual([blocks[0]['attachment_id']], self._files(session).ids)
+                self.assertEqual(
+                    self._tool_output(session, 'c1'),
+                    {
+                        'text': 'Captured\nStored file shot.png: '
+                        f'odoo://attachment/{blocks[0]["attachment_id"]}'
+                    },
+                )
 
     def test_tool_files_are_capped_or_explained(self):
         many = [{**SHOT, 'name': f'shot{index}.png'} for index in range(6)]
@@ -313,25 +316,32 @@ class TestToolResults(AITestCommon):
                 self.assertNotIn('images', json.loads(output))
                 self.assertNotIn(PNG_1x1, output)
                 self.assertEqual('cannot be shown' in output, not shown)
+                files = self._files(session)
+                self.assertEqual(output.count('Stored file'), len(files))
+                for file in files:
+                    self.assertIn(f'odoo://attachment/{file.id}', output)
 
-    def test_images_inlined_in_an_answer_are_stored_once(self):
+    def test_images_and_files_inlined_in_an_answer_are_stored_once(self):
         image = f'![chair.png](data:image/png;base64,{PNG_1x1})'
-        for text, stored in (('Just text.', 0), (f'A {image} B {image}', 1)):
-            with self.subTest(stored=stored):
+        csv = '[list.csv](data:text/csv;base64,YSxiCjEsMgo=)'
+        for text, content, mimetype, link in (
+            ('Just text.', None, None, None),
+            (f'A {image} B {image}', PNG_BYTES, 'image/png', '/web/image/{}'),
+            (f'A {csv} B {csv}', b'a,b\n1,2\n', 'text/csv', '/web/content/{}?'),
+        ):
+            with self.subTest(mimetype=mimetype):
                 session = self._session()
                 with self._mock_responses([text_payload(text)]):
                     session.start('draw a chair')
                 files = self._files(session)
-                self.assertEqual(len(files), stored)
+                self.assertEqual(len(files), 1 if content else 0)
                 conversation = json.dumps(session.conversation)
-                self.assertNotIn('data:image', session.last_text + conversation)
-                if stored:
+                self.assertNotIn('base64', session.last_text + conversation)
+                if content:
                     self.assertEqual(
-                        (files.raw.content, files.mimetype), (PNG_BYTES, 'image/png')
+                        (files.raw.content, files.mimetype), (content, mimetype)
                     )
-                    self.assertEqual(
-                        session.last_text.count(f'/web/image/{files.id}'), 2
-                    )
+                    self.assertEqual(session.last_text.count(link.format(files.id)), 2)
                     self.assertIn(f'@attachment:{files.id}', conversation)
 
     def test_value_references_are_resolved_before_the_tool_runs(self):

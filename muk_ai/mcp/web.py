@@ -4,6 +4,7 @@ import logging
 from collections.abc import Iterable
 from datetime import timedelta
 from time import monotonic
+from urllib.parse import urlparse
 
 import urllib3
 
@@ -24,6 +25,7 @@ from odoo.addons.muk_ai.tools.url_fetch import (
     FAVICON_ROUTE,
     WEB_FETCH_MAX_CHARS,
     fetch_url,
+    is_file,
     page_icon,
     render_content,
 )
@@ -34,6 +36,7 @@ from odoo.addons.muk_ai.tools.web_search import (
     search_backend,
 )
 from odoo.addons.muk_mcp.core.tool import mcp_tool
+from odoo.addons.muk_mcp.tools.content import make_content_for_bytes
 
 _logger = logging.getLogger(__name__)
 
@@ -237,8 +240,10 @@ class AIWeb(models.AbstractModel):
             '(default, main content as Markdown), "text" (main content as '
             'plain text), or "html" (unconverted source - use for JSON/text '
             'endpoints or when you need the raw markup). http:// is upgraded '
-            'to https:// and only publicly routable hosts are allowed. For '
-            'discovering pages across the web, use web search instead. '
+            'to https:// and only publicly routable hosts are allowed. A PDF, '
+            'an image or an Office document comes back as the file itself, '
+            'which you read like an attachment. For discovering pages across '
+            'the web, use web search instead. '
             'AI-agent only.'
         ),
         input_schema={
@@ -298,6 +303,24 @@ class AIWeb(models.AbstractModel):
             result = fetch_url(url)
         except (UserError, urllib3.exceptions.HTTPError) as exc:
             return {'url': url, 'error': str(exc)}
+        if is_file(result) and self.env['ir.attachment']._ai_strategy_for(
+            result.content_type
+        ):
+            name = urlparse(result.url).path.rsplit('/', 1)[-1] or None
+            return {
+                'type': 'web',
+                'url': result.url,
+                'content_type': result.content_type,
+                'bytes': len(result.body),
+                'content': [
+                    make_content_for_bytes(
+                        result.url,
+                        result.content_type,
+                        raw_bytes=result.body,
+                        name=name,
+                    )
+                ],
+            }
         title, content = render_content(result, mode=mode)
         icons = self._ai_cache_favicons([(result.url, page_icon(result))])
         total = len(content)

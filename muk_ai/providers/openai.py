@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 
+from odoo.exceptions import UserError
 from odoo.tools.translate import LazyTranslate
 
 from odoo.addons.muk_ai.providers.base import ProviderBase
@@ -28,6 +30,7 @@ class OpenAIProvider(ProviderBase):
 
     supports_web_search = True
     supports_code_interpreter = True
+    sandbox_files = True
 
     reasoning_error_tokens = ('reasoning', 'effort')
 
@@ -83,19 +86,30 @@ class OpenAIProvider(ProviderBase):
         tools = list(tools_schema or [])
         if enable_web_search:
             tools.append({'type': 'web_search'})
+        uploads = []
         if enable_code_interpreter:
-            tools.append({'type': 'code_interpreter', 'container': {'type': 'auto'}})
+            uploads = self._upload_files(inputs, {'purpose': 'user_data'})
+            tools.append(
+                {
+                    'type': 'code_interpreter',
+                    'container': {'type': 'auto', 'file_ids': uploads},
+                }
+            )
         if tools:
             body.update(tools=tools, parallel_tool_calls=True)
-        return self._invoke_with_reasoning_retry(
-            model,
-            lambda callback: self._stream(body, callback),
-            on_delta,
-            (
-                (body.get('reasoning', {}), ('effort',)),
-                (body, ('reasoning', 'include')),
-            ),
-        )
+        try:
+            return self._invoke_with_reasoning_retry(
+                model,
+                lambda callback: self._stream(body, callback),
+                on_delta,
+                (
+                    (body.get('reasoning', {}), ('effort',)),
+                    (body, ('reasoning', 'include')),
+                ),
+            )
+        finally:
+            for file_id in uploads:
+                self._delete_file(file_id)
 
     # ----------------------------------------------------------
     # Helper
@@ -155,6 +169,48 @@ class OpenAIProvider(ProviderBase):
                     name = (file.get('name') or '').strip() or 'file'
                     parts.append(f'_(generated file: `{name}`)_')
         return '\n\n' + '\n\n'.join(parts) + '\n\n' if parts else ''
+
+    def _inline_cited_files(self, text: str, carry: list) -> str:
+        """Download the sandbox files an answer cites and inline them as data links.
+
+        The carried message gets the same links, so the history keeps them.
+        """
+        parts = [
+            part
+            for item in carry
+            if item.get('type') == 'message'
+            for part in item.get('content') or []
+        ]
+        cited = {
+            part['text'][note['start_index'] : note['end_index']]: note
+            for part in parts
+            for note in part.get('annotations') or []
+            if note.get('type') == 'container_file_citation'
+        }
+        for ref, note in cited.items():
+            try:
+                mimetype, data = self._download(
+                    f'{self.api_url}/containers/{note["container_id"]}'
+                    f'/files/{note["file_id"]}/content',
+                    self.headers(),
+                    note.get('filename'),
+                )
+            except UserError:
+                continue
+            image = '!' if mimetype.startswith('image/') else ''
+            uri = f'data:{mimetype};base64,{data}'
+            linked = re.compile(rf'!?\[([^\]]*)\]\({re.escape(ref)}\)')
+
+            def inline(value: str) -> str:
+                """Point the links to the file, and a bare mention, at its data."""
+                return linked.sub(
+                    lambda match: f'{image}[{match.group(1)}]({uri})', value
+                ).replace(ref, f'{image}[{note.get("filename")}]({uri})')
+
+            text = inline(text)
+            for part in parts:
+                part['text'] = inline(part['text'])
+        return text
 
     def _stream(self, body: dict, on_delta: Callable | None) -> dict:
         """Stream a Responses request, forwarding deltas, and assemble its result.
@@ -237,7 +293,7 @@ class OpenAIProvider(ProviderBase):
                     event.get('error') or response.get('error') or {}, 'code', 'type'
                 )
         return self._result(
-            ''.join(text),
+            self._inline_cited_files(''.join(text), carry),
             [
                 self._tool_call(
                     entry.get('call_id'), entry.get('name'), entry['arguments']

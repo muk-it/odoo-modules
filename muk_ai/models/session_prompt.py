@@ -141,9 +141,20 @@ class AISessionPrompt(models.AbstractModel):
         if self._resolve_model_for('image'):
             lines.append('Image generation: available through generate_image.')
         if self._code_interpreter_route():
+            files = (
+                'The files of the chat are in the sandbox: list its files to '
+                'find them and read them with code instead of retyping their data.'
+                if self._resolve_provider()._get_client().sandbox_files
+                else 'The sandbox cannot open the files of the chat: work from '
+                'their text.'
+            )
             lines.append(
                 'Code interpreter: provider-side sandboxed Python, for '
-                'analytics over data you already fetched.'
+                f'analytics over data you already fetched. {files} Write what you '
+                'make there as files, they reach the user as downloads; never '
+                'retype their content into a tool such as upload_file. Print '
+                'only what you need to check, a few rows and the counts, and do '
+                'not repeat a file in your answer: link it and say what changed.'
             )
         return lines
 

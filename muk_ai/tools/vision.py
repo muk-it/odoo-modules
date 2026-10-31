@@ -82,12 +82,11 @@ def strip_files(result) -> object:
     return cleaned
 
 
-def note_vision_unavailable(cleaned) -> object:
-    """Tell the model, inside the result, that its images could not be shown."""
+def append_note(cleaned, note: str) -> object:
+    """Tell the model ``note`` inside the result."""
     if isinstance(cleaned, dict):
         text = cleaned.get('text')
-        note = f'{text}\n{VISION_UNAVAILABLE}' if text else VISION_UNAVAILABLE
-        return {**cleaned, 'text': note}
+        return {**cleaned, 'text': f'{text}\n{note}' if text else note}
     if isinstance(cleaned, list):
-        return [*cleaned, {'type': 'text', 'text': VISION_UNAVAILABLE}]
+        return [*cleaned, {'type': 'text', 'text': note}]
     return cleaned

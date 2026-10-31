@@ -16,6 +16,7 @@
         pointer-events: none;
     }
     .mk_systray_needs {
+        z-index: 1;
         top: -5px;
         left: -5px;
         width: 9px;

@@ -171,6 +171,7 @@ class IrAttachment(models.Model):
             'mimetype': self.mimetype,
             'strategy': strategy,
         }
+        block['data_b64'] = base64.b64encode(raw).decode('ascii')
         if strategy == 'inline_text':
             limit = DEFAULT_TEXT_INLINE_LIMIT_KB * 1024
             text = (
@@ -180,6 +181,4 @@ class IrAttachment(models.Model):
             )
             block['inline_text'] = text[:limit]
             block['truncated'] = len(text) > limit
-        else:
-            block['data_b64'] = base64.b64encode(raw).decode('ascii')
         return block
