@@ -362,6 +362,18 @@ class TestAiMistralProvider(MistralTestCommon):
         )
         self.assertEqual(result['usage'], {'images': 1})
 
+    def test_generate_image_refuses_reference_images(self):
+        with (
+            patch.object(requests.Session, 'post') as post,
+            self.assertRaisesRegex(UserError, 'takes no reference images'),
+        ):
+            self.provider._get_client().generate_image(
+                'mistral-medium-latest',
+                'a cat',
+                references=[{'mimetype': 'image/png', 'data_b64': 'iVBO'}],
+            )
+        post.assert_not_called()
+
     def test_generate_image_runs_on_the_image_timeout(self):
         self.provider.write({'request_timeout': 15, 'image_timeout': 240})
         captured = {}
