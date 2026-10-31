@@ -85,7 +85,9 @@ class MCPMixin(models.AbstractModel):
         name='get_messages',
         description=(
             'Get the chatter of a record, newest first: comments, notes, status '
-            'changes and field tracking (who changed what and when).'
+            'changes, field tracking (who changed what and when) and the ids of '
+            'the files attached to each message, read with "read_resource" as '
+            '"odoo://attachment/<id>".'
         ),
         input_schema={
             'type': 'object',
@@ -115,6 +117,7 @@ class MCPMixin(models.AbstractModel):
                 'message_type',
                 'subtype_id',
                 'body',
+                'attachment_ids',
                 *messages.fields_get(['tracking_value_ids']),
             ],
             limit=limit,

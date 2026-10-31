@@ -482,14 +482,22 @@ class TestMcpTool(common.TransactionCase):
                 )
                 message = self.env['mail.message'].browse(result['id'])
                 self.assertEqual(message.subtype_id, self.env.ref(subtype))
+        offer = self.env['ir.attachment'].create(
+            {
+                'name': 'offer.txt',
+                'raw': b'Offer',
+                'res_model': 'mail.compose.message',
+            }
+        )
+        message.attachment_ids = offer
         messages = self._call(
             'get_messages',
             {'model': 'res.partner', 'id': self.partner_a.id},
             user=self.user,
         )
         self.assertLessEqual(
-            {'<p>note</p>', '<p>comment</p>'},
-            {entry['body'] for entry in messages},
+            {('<p>note</p>', tuple(offer.ids)), ('<p>comment</p>', ())},
+            {(entry['body'], tuple(entry['attachment_ids'])) for entry in messages},
         )
 
     def test_schedule_activity_resolves_type_deadline_and_user(self):
