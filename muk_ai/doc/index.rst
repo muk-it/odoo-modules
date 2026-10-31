@@ -80,7 +80,7 @@ Configuration
   together and of each user (``0`` disables). A user's own budget, set in
   *MuK AI > Configuration > Budgets*, replaces the one per user. A chat that
   reaches a budget stops with an error; *MuK AI > Reports > Usage* shows the
-  spend per user and month.
+  spend per user, purpose and month.
 - **Delete Old Usage** — the months of usage kept besides the current one
   (default ``6``).
 
@@ -259,10 +259,10 @@ it into view, ``Esc`` closes.
 **Notifications**
 
 Sessions that finish or need you while you are elsewhere signal you.
-The MuK AI systray icon carries a live running dot whenever a session
-is running or waiting, plus a red count of sessions awaiting your
-attention; unread sessions are marked and sorted to the top in both the
-systray dropdown and the chat sidebar. Users on the *inbox*
+The MuK AI systray icon turns a ring while a chat is running, shows an
+amber dot while something needs you, and counts the unread chats; unread
+sessions are marked and sorted to the top in both the systray dropdown
+and the chat sidebar. Users on the *inbox*
 notification preference also get completion notices as web push and
 Enterprise mobile (OCN) push. Opening the session clears the flag.
 
@@ -286,7 +286,24 @@ Every decision is recorded under *MuK AI > Reports > Approval Logs*
 with the proposed vs. executed arguments. Per-agent **Approval Mode**
 lets unattended agents skip the prompt (``Never ask``). Approvals do
 not persist across sessions — each new session starts with an empty
-allow-list.
+allow-list. A decided approval folds into one line that opens the card
+again. A text written in another language, or in several at once, names
+the language next to the field.
+
+**Needs you**
+
+The robot menu lists what waits for you: the questions and approvals of
+your chats, and what other apps add. A single record change is approved
+or rejected right there, anything else opens where it lives. On a record
+the menu offers to ask about it, with its actions as chips. The *Waiting
+for You* space collects the chats waiting for an answer.
+
+**Generated images**
+
+An agent with *Images* draws with its image model, and can start from
+images already in the chat, such as a product photo to restage. Every
+generated image is stored flagged as AI generated, and a PNG also carries
+the IPTC digital source type *trainedAlgorithmicMedia* in its metadata.
 
 **View context**
 

@@ -97,6 +97,21 @@ export function formatTimestamp(at) {
 }
 
 /**
+ * Format a server timestamp as its time when it is today, else as its date.
+ * @param {*} at ISO/SQL string or Luxon DateTime
+ * @returns {string} the formatted value, '' when unparseable
+ */
+export function formatShortTimestamp(at) {
+    const dt = parseDateTime(at);
+    if (!dt) {
+        return '';
+    }
+    return dt.hasSame(DateTime.now(), 'day')
+        ? dt.toLocaleString(DateTime.TIME_SIMPLE)
+        : dt.toLocaleString({ day: '2-digit', month: '2-digit' });
+}
+
+/**
  * Format a duration in seconds as the largest whole unit (d/h/m/s).
  * @param {*} seconds duration in seconds
  * @returns {string} formatted duration, or '' for non-positive/invalid input
@@ -354,7 +369,7 @@ export function inputPlaceholder(state, defaultText) {
 /**
  * Return the prompts the chat's agent suggests, the first agent's without one.
  * @param {object} state the session state, with its `agents` and `agentId`
- * @returns {object[]} the suggestions, `{label, prompt}`
+ * @returns {object[]} the suggestions, `{label, prompt, preview}`
  */
 export function agentSuggestions(state) {
     const agents = state.agents || [];
@@ -364,5 +379,8 @@ export function agentSuggestions(state) {
         .map((s) => ({
             label: (typeof s.label === 'string' && s.label) || s.prompt,
             prompt: s.prompt,
+            preview: s.prompt
+                .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+                .replace(/[*_`#>]/g, ''),
         }));
 }

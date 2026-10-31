@@ -64,7 +64,7 @@
                         </button>
                     </span>
                     <AIUsageMeter
-                        t-if="session.state.sessionId"
+                        t-if="session.state.sessionId and session.state.events.length"
                         state="session.state"
                         dropDown="true"
                     />
@@ -111,7 +111,7 @@
                                     <t t-foreach="suggestions" t-as="s" t-key="s_index">
                                         <button class="mk_suggestion" t-on-click="() => this.onSubmitSuggestion(s.prompt)">
                                             <span class="mk_suggestion_label" t-esc="s.label"/>
-                                            <span class="mk_suggestion_preview" t-esc="s.prompt"/>
+                                            <span class="mk_suggestion_preview" t-esc="s.preview"/>
                                         </button>
                                     </t>
                                 </div>

@@ -157,6 +157,7 @@ export class AIChat extends Component {
             activeMatchIdx: 0,
             scrollTarget: null,
             askViews: {},
+            askOpen: {},
             sourcesExpanded: {},
         });
         this._sessionsSearchSeq = 0;
@@ -465,6 +466,7 @@ export class AIChat extends Component {
             return;
         }
         await this.session.load(sessionId);
+        this.chatWindow.close(sessionId);
         this.scrollToBottom(true);
         if (typeof window !== 'undefined' && window.innerWidth < 768) {
             this.state.sidebarHidden = true;
@@ -480,7 +482,7 @@ export class AIChat extends Component {
      * @returns {Promise<number>} the created session id
      */
     async onNewSession(values = {}) {
-        const name = _t('Chat %s', new Date().toLocaleString());
+        const name = _t('New Chat');
         const carryOver = this.session.state.viewContext;
         this.session.state.loading = true;
         let id;
@@ -906,6 +908,19 @@ export class AIChat extends Component {
             }
             return;
         }
+        const known = [
+            ...this.state.sessions,
+            ...Object.values(this.state.spaceSessions).flatMap(
+                (branch) => branch.sessions || [],
+            ),
+        ].find((s) => s.id === payload.session_id);
+        if (
+            'awaiting_user' in payload &&
+            Boolean(known?.awaiting_user) !== Boolean(payload.awaiting_user)
+        ) {
+            this._loadSessions();
+            this._refreshLoadedSpaces();
+        }
         const idx = this.state.sessions.findIndex((s) => s.id === payload.session_id);
         if (idx < 0) {
             this._fetchSidebarSession(payload.session_id);
@@ -1041,6 +1056,12 @@ export class AIChat extends Component {
     }
     askArgsText(block) {
         return askArgsText(block);
+    }
+    isAskOpen(block) {
+        return !!this.state.askOpen[block.callId];
+    }
+    toggleAskOpen(callId) {
+        this.state.askOpen[callId] = !this.state.askOpen[callId];
     }
     askViewMode(block) {
         return askViewMode(block, this.state.askViews);

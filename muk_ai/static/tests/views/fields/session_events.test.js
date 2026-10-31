@@ -100,10 +100,13 @@ test('tool cards expand and collapse per call id', async () => {
     expect(field.isToolExpanded('c1')).toBe(false);
 });
 
-test('a resolved tool stays visible even when the turn carries an ask', async () => {
+test('a tool stays hidden behind its ask unless it answered with an error', async () => {
     const field = await mountField(1);
     const turn = { blocks: [{ type: 'ask', callId: 'c1' }] };
-    expect(field.isToolHiddenForAsk({ callId: 'c1', result: '[]' }, turn)).toBe(false);
+    expect(field.isToolHiddenForAsk({ callId: 'c1', result: '[]' }, turn)).toBe(true);
+    expect(
+        field.isToolHiddenForAsk({ callId: 'c1', result: '{"error": "x"}' }, turn),
+    ).toBe(false);
     expect(field.isToolHiddenForAsk({ callId: 'c1', result: null }, turn)).toBe(true);
     expect(field.isToolHiddenForAsk({ callId: 'c2', result: null }, turn)).toBe(false);
 });

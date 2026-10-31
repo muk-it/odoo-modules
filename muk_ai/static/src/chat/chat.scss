@@ -217,12 +217,10 @@
             &.mk_state_waiting {
                 background: var(--mk-warning);
             }
-            &.mk_state_done {
-                background: var(--mk-success);
-            }
             &.mk_state_error {
                 background: var(--mk-danger);
             }
+            &.mk_state_done,
             &.mk_state_stopped {
                 background: var(--mk-text-muted);
             }
@@ -594,6 +592,7 @@
             background-color 0.15s ease,
             color 0.15s ease;
         &.mk_state_new,
+        &.mk_state_done,
         &.mk_state_stopped {
             background: rgba(107, 114, 128, 0.14);
             color: #6b7280;
@@ -605,10 +604,6 @@
         &.mk_state_waiting {
             background: rgba(184, 128, 31, 0.15);
             color: #b0791d;
-        }
-        &.mk_state_done {
-            background: rgba(31, 146, 84, 0.15);
-            color: #1f9254;
         }
         &.mk_state_error {
             background: rgba(204, 59, 69, 0.13);
@@ -1135,8 +1130,22 @@
                 padding: 0.25rem 0.65rem;
             }
         }
-        .mk_ask_resolved {
+        &.mk_ask_done {
+            padding: 0.4rem 0.75rem;
+            border-color: var(--mk-border);
+            background: var(--mk-bg);
+            .mk_ask_resolved {
+                color: var(--mk-text);
+                font-size: 0.85rem;
+            }
+        }
+        .mk_ask_owner {
             margin-top: 0.3rem;
+        }
+        .mk_ask_lang {
+            color: #7a5f00;
+            background: rgba(224, 168, 0, 0.14);
+            font-weight: 500;
         }
         .mk_ask_toggle {
             color: #8a6d00;

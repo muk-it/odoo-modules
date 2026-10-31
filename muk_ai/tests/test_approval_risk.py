@@ -30,7 +30,10 @@ class TestApprovalRiskPredicate(AITestCommon):
         self.assertIsNotNone(risk)
         self.assertEqual(risk['tool'], 'delete_records')
         self.assertTrue(risk['signature'])
-        self.assertIn('flagged sensitive', risk['reason'])
+        self.assertEqual(
+            risk['reason'],
+            'Contact records need your approval before the assistant deletes them.',
+        )
 
     def test_call_method_on_sensitive_model_is_risky(self):
         risk = self.env['muk_ai.approval']._assess_risk(
@@ -43,7 +46,7 @@ class TestApprovalRiskPredicate(AITestCommon):
         )
         self.assertIsNotNone(risk)
         self.assertEqual(risk['method'], 'action_archive')
-        self.assertIn('action_archive', risk['reason'])
+        self.assertIn('runs actions on them', risk['reason'])
 
     def test_update_on_sensitive_model_is_risky(self):
         risk = self.env['muk_ai.approval']._assess_risk(

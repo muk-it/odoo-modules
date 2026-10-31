@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import base64
+import io
 import json
 from unittest.mock import MagicMock, patch
 
 import requests
+from PIL import Image
 
 from odoo.exceptions import UserError
 
@@ -142,7 +144,7 @@ class TestGenerateImageTool(ImageCase):
         session = self._session(agent)
         captured = {}
 
-        def fake(client, model, prompt, options=None):
+        def fake(client, model, prompt, options=None, references=None):
             captured.update(options or {})
             return self._rendered('revised')
 
@@ -196,7 +198,7 @@ class TestGenerateImageTool(ImageCase):
         session = self._session(agent)
         captured = {}
 
-        def fake(client, model, prompt, options=None):
+        def fake(client, model, prompt, options=None, references=None):
             captured.update(model=model, prompt=prompt, options=options)
             return self._rendered('revised')
 
@@ -220,6 +222,63 @@ class TestGenerateImageTool(ImageCase):
         self.assertNotIn('model_id', result['cost'])
         self.assertAlmostEqual(result['cost']['total'], 0.25)
         self.assertEqual(result['cost']['currency'], 'USD')
+
+    def test_reference_images_reach_the_image_request(self):
+        photo = self.env['ir.attachment'].create(
+            {
+                'name': 'photo.png',
+                'raw': base64.b64decode(PNG_1x1),
+                'mimetype': 'image/png',
+            }
+        )
+        gemini = self.image.copy(
+            {'provider_id': self.provider_google.id, 'technical_name': 'gemini-image'}
+        )
+        inline = {'inlineData': {'mimeType': 'image/png', 'data': PNG_1x1}}
+        agent = self.env['muk_ai.agent'].create(
+            {'name': 'Painter', 'enable_image_generation': True}
+        )
+        session = self._session(agent)
+        tool = self.env['muk_mcp.mixin'].with_context(muk_mcp_session_id=session.id)
+        for model, answer, url, sent_images in (
+            (
+                self.image,
+                {'data': [{'b64_json': PNG_1x1}]},
+                'https://api.openai.com/v1/images/edits',
+                lambda body: body['images'],
+            ),
+            (
+                gemini,
+                {'candidates': [{'content': {'parts': [inline]}}]},
+                'models/gemini-image:generateContent',
+                lambda body: body['contents'][0]['parts'][1:],
+            ),
+        ):
+            with self.subTest(provider=model.provider_id.name):
+                agent.image_model_id = model
+                captured = {}
+                with self._post(answer, captured):
+                    result = tool._mcp_generate_image(
+                        prompt='restage', reference_attachment_ids=[photo.id]
+                    )
+                self.assertTrue(captured['url'].endswith(url))
+                self.assertEqual(
+                    sent_images(captured['json']),
+                    [{'image_url': f'data:image/png;base64,{PNG_1x1}'}]
+                    if model == self.image
+                    else [inline],
+                )
+                self.assertEqual(result['content_base64'], PNG_1x1)
+        note = self.env['ir.attachment'].create(
+            {'name': 'note.txt', 'raw': b'a dot', 'mimetype': 'text/plain'}
+        )
+        captured = {}
+        with (
+            self._post({}, captured),
+            self.assertRaisesRegex(UserError, 'Reference images must be .*: note.txt'),
+        ):
+            tool._mcp_generate_image(prompt='a dot', reference_attachment_ids=[note.id])
+        self.assertFalse(captured)
 
     def test_without_a_session_the_tool_raises(self):
         self.provider.default_image_model_id = self.image
@@ -290,8 +349,36 @@ class TestGenerateImageTool(ImageCase):
         )
         self.assertEqual(stored['cost']['total'], 0.25)
         attachment = self.env['ir.attachment'].browse(stored['attachment_id'])
-        self.assertEqual(attachment.mimetype, 'image/png')
-        self.assertEqual(attachment.res_id, session.id)
+        self.assertEqual(
+            (attachment.mimetype, attachment.res_id, attachment.ai_generated),
+            ('image/png', session.id, True),
+        )
+        image = Image.open(io.BytesIO(attachment.raw))
+        self.assertEqual(
+            image.tobytes(),
+            Image.open(io.BytesIO(base64.b64decode(PNG_1x1))).tobytes(),
+        )
+        self.assertIn(
+            b'Iptc4xmpExt:DigitalSourceType="http://cv.iptc.org/newscodes/'
+            b'digitalsourcetype/trainedAlgorithmicMedia"',
+            image.info['XML:com.adobe.xmp'].encode(),
+        )
+        partner = self.env['res.partner'].create({'name': 'Dot'})
+        for value, flagged in ((attachment.datas, True), (PNG_1x1, False)):
+            with self.subTest(flagged=flagged):
+                partner.image_1920 = value
+                self.assertEqual(
+                    self.env['ir.attachment']
+                    .search(
+                        [
+                            ('res_model', '=', 'res.partner'),
+                            ('res_id', '=', partner.id),
+                            ('res_field', '=', 'image_1920'),
+                        ]
+                    )
+                    .ai_generated,
+                    flagged,
+                )
 
     def test_non_image_files_get_no_image_url(self):
         session = self.env['muk_ai.session'].create({'name': 'csv'})
@@ -318,6 +405,12 @@ class TestGenerateImageTool(ImageCase):
         self.assertAlmostEqual(session.turn_cost_spent, 0.25)
         self.assertAlmostEqual(session.total_output_cost, 0.25)
         self.assertAlmostEqual(session.total_input_cost, 0.0)
+        self.assertEqual(
+            self.env['muk_ai.usage']
+            .search([('session_id', '=', session.id)])
+            .mapped(lambda row: (row.purpose, row.amount)),
+            [('image', 0.25)],
+        )
 
     def test_a_result_cannot_bill_a_model_the_session_did_not_resolve(self):
         session = self._painter_session()

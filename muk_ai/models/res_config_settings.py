@@ -109,6 +109,7 @@ class ResConfigSettings(models.TransientModel):
             'to disable.'
         ),
         config_parameter='muk_ai.turn_cost_limit',
+        digits=(12, 2),
     )
 
     ai_monthly_budget = fields.Float(

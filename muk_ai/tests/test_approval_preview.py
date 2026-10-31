@@ -28,6 +28,80 @@ class TestApprovalPreview(AITestCommon):
         self.assertEqual(len(targets), 1)
         self.assertEqual(targets[0]['id'], partner.id)
 
+    def test_a_preview_names_the_language_a_text_is_written_in(self):
+        self.env['res.lang']._activate_lang('de_DE')
+        company = self.env.company
+        company.write(
+            {
+                'phone': '+43 1 000',
+                'report_header': '<p>Quality</p>',
+                'report_footer': '<p>Old footer</p>',
+            }
+        )
+        company.update_field_translations(
+            'report_footer', {'de_DE': {'Old footer': 'Alte Fusszeile'}}
+        )
+        for values, context, title, changes in (
+            (
+                {'report_footer': '<p>Neue Fusszeile</p>', 'phone': '+43 1 111'},
+                {'lang': 'de_DE'},
+                f'Update {company.name} (Deutsch)',
+                [
+                    ('report_footer', 'Deutsch', 'Alte Fusszeile', 'Neue Fusszeile'),
+                    ('phone', '', '+43 1 000', '+43 1 111'),
+                ],
+            ),
+            (
+                {'report_header': '<p>Qualität</p>'},
+                {'lang': 'de_DE'},
+                f'Update {company.name} (Deutsch)',
+                [('report_header', 'Deutsch', '', 'Qualität')],
+            ),
+            (
+                {'report_footer': '<p>New footer</p>'},
+                {'lang': 'xx_XX'},
+                f'Update {company.name}',
+                [('report_footer', '', 'Old footer', 'New footer')],
+            ),
+        ):
+            with self.subTest(values=values, context=context):
+                preview = self.env['muk_ai.approval']._build_preview(
+                    'update_records',
+                    {
+                        'model': 'res.company',
+                        'ids': [company.id],
+                        'values': values,
+                        'context': context,
+                    },
+                )
+                self.assertEqual(preview['title'], title)
+                self.assertEqual(
+                    [
+                        (item['field'], item['lang'], item['from'], item['to'])
+                        for item in preview['changes']
+                    ],
+                    changes,
+                )
+        self.env['ir.model.fields']._get('res.company', 'report_footer').with_context(
+            lang='de_DE'
+        ).field_description = 'Berichtsfuss'
+        self.env.registry.clear_cache()
+        preview = (
+            self.env['muk_ai.approval']
+            .with_context(lang='de_DE')
+            ._build_preview(
+                'update_records',
+                {
+                    'model': 'res.company',
+                    'ids': [company.id],
+                    'values': {'report_footer': '<p>Neue Fusszeile</p>'},
+                },
+            )
+        )
+        self.assertEqual(
+            {change['label'] for change in preview['changes']}, {'Berichtsfuss'}
+        )
+
     def test_update_preview_resolves_many2one_id_to_display_name(self):
         partner = self.env['res.partner'].create({'name': 'M2o Target'})
         user = self.env.ref('base.user_admin')

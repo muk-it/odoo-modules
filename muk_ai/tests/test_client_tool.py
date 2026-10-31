@@ -616,11 +616,11 @@ class TestClientToolSeam(AITestCommon):
             [action['call_id'] for action in snapshot['pending_ask']['actions']],
             ['c0'],
         )
+        skipped = {'error': 'skipped: gated', 'skipped': True}
         self.assertEqual(
-            json.loads(self._outputs_for(session, 'c1')[0]['output']),
-            {'error': 'skipped: gated'},
+            json.loads(self._outputs_for(session, 'c1')[0]['output']), skipped
         )
-        self.assertEqual(self._result_event(session, 'c1'), {'error': 'skipped: gated'})
+        self.assertEqual(self._result_event(session, 'c1'), skipped)
 
     # ----------------------------------------------------------
     # Timeout

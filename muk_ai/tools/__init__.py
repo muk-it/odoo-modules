@@ -7,6 +7,7 @@ from .call import (
     TERMINATING_TOOLS,
     TOOL_LOAD_TOOL,
     TOOL_SUMMARY_MAX_CHARS,
+    WORDING_BLOCK,
     build_tool_call_output,
     clean_ask_preview,
     format_tool_signature,
@@ -50,6 +51,7 @@ from .runtime import (
     sanitize_json_schema,
 )
 from .attachment import (
+    AI_SOURCE_TYPE,
     ATTACHMENT_REF_MAX_BYTES,
     ATTACHMENT_REF_RE,
     DEFAULT_MAX_UPLOAD_BYTES,
@@ -62,6 +64,7 @@ from .attachment import (
     TOOL_VISION_MAX_IMAGES,
     URL_REF_RE,
     is_unmaterialized_attachment,
+    mark_ai_generated,
     tool_file_payload,
 )
 from .http import http_session

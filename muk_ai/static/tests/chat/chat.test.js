@@ -128,7 +128,7 @@ test('AIChat suggestions come from the active agent', async () => {
                 name: 'Helper',
                 description: '',
                 suggestions: [
-                    { label: 'Plan a trip', prompt: 'plan a trip' },
+                    { label: 'Plan a trip', prompt: 'plan a **trip**' },
                     { prompt: '   ' },
                     { label: 'Summarize', prompt: 'summarize this' },
                 ],
@@ -138,8 +138,16 @@ test('AIChat suggestions come from the active agent', async () => {
     const chat = await mountWithCleanup(AIChat, { props: {} });
     const list = chat.suggestions;
     expect(list).toHaveLength(2);
-    expect(list[0]).toEqual({ label: 'Plan a trip', prompt: 'plan a trip' });
-    expect(list[1]).toEqual({ label: 'Summarize', prompt: 'summarize this' });
+    expect(list[0]).toEqual({
+        label: 'Plan a trip',
+        prompt: 'plan a **trip**',
+        preview: 'plan a trip',
+    });
+    expect(list[1]).toEqual({
+        label: 'Summarize',
+        prompt: 'summarize this',
+        preview: 'summarize this',
+    });
 });
 
 test('onNewSession creates a fresh session and selects it', async () => {

@@ -309,6 +309,7 @@ class ImageCase(AITestCommon):
             'content_base64': PNG_1x1,
             'model': self.image.technical_name,
             'revised_prompt': '',
+            'ai_generated': True,
             'cost': {
                 'usage': {'images': 1},
                 'total': 0.25,

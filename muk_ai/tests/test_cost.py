@@ -205,8 +205,10 @@ class TestSessionCostAccrual(AITestCommon):
                 self.assertEqual(session.state, 'error' if blocked else 'done')
                 self.assertTrue((session.error_message or '').startswith(blocked or ''))
                 self.assertEqual(
-                    usage.search([('session_id', '=', session.id)]).mapped('amount'),
-                    [] if blocked else [1.0],
+                    usage.search([('session_id', '=', session.id)]).mapped(
+                        lambda row: (row.purpose, row.amount)
+                    ),
+                    [] if blocked else [('chat', 1.0)],
                 )
 
     def test_the_usage_of_months_past_the_retention_is_deleted(self):

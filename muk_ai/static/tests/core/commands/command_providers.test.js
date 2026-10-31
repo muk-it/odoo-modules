@@ -98,13 +98,13 @@ test('running "New Chat" creates session then opens it', async () => {
     expect(env.services.action.actions[0].params.session_id).toBe(33);
 });
 
-test('New Chat without a search value uses a timestamped default name', async () => {
+test('New Chat without a search value is named New Chat', async () => {
     const { env, seen } = makeEnv({ createdIds: [34] });
     const provider = getProvider();
     const commands = await provider.provide(env, { searchValue: '' });
     await commands[0].action();
     const created = seen.find((s) => s.op === 'create');
-    expect(String(created.values[0].name)).toMatch(/Chat /);
+    expect(String(created.values[0].name)).toBe('New Chat');
 });
 
 test('session with empty name falls back to a "Chat N" label', async () => {

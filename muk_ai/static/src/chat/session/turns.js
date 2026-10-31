@@ -2,6 +2,7 @@ import { _t } from '@web/core/l10n/translation';
 import { registry } from '@web/core/registry';
 
 import { toolResultFiles } from '@muk_ai/core/attachment/tool_files';
+import { toolBlockHasError } from '@muk_ai/chat/tools/tool_group';
 
 export const toolBlockDecorators = registry.category('muk_ai.tool_block_decorators');
 
@@ -10,6 +11,8 @@ export const toolBlockDecorators = registry.category('muk_ai.tool_block_decorato
  * as `(block, turn) => boolean`.
  */
 export const hiddenToolBlocks = registry.category('muk_ai.hidden_tool_blocks');
+
+const INLINE_IMAGE = /!\[([^\]]*)\]\(\/web\/image\/(\d+)\)/g;
 
 /**
  * Tell whether a tool card must not be drawn because another surface draws it.
@@ -25,16 +28,35 @@ export function isToolBlockHidden(block, turn, pendingAsk) {
     if (hiddenToolBlocks.getAll().some((hides) => hides(block, turn))) {
         return true;
     }
-    if (block.result !== null && block.result !== undefined) {
-        return false;
-    }
-    if (pendingAsk && pendingAsk.call_id === block.callId) {
-        return true;
-    }
-    return (turn.blocks || []).some(
+    const ask = (turn.blocks || []).find(
         (other) => other.type === 'ask' && other.callId === block.callId,
     );
+    if (block.result !== null && block.result !== undefined) {
+        return !!ask && (ask.decision === 'rejected' || !toolBlockHasError(block));
+    }
+    return !!ask || (!!pendingAsk && pendingAsk.call_id === block.callId);
 }
+
+/**
+ * Collect the stored images the text of a turn draws inline.
+ * @param {object} turn the turn
+ * @returns {Array} `{id, filename, mimetype}` descriptors
+ */
+export function inlineImages(turn) {
+    return (turn.blocks || [])
+        .filter((block) => block.type === 'text')
+        .flatMap((block) => [...block.text.matchAll(INLINE_IMAGE)])
+        .map(([, name, id]) => ({
+            id: Number(id),
+            filename: name || 'generated.png',
+            mimetype: 'image/png',
+        }));
+}
+
+hiddenToolBlocks.add(
+    'muk_ai.bookkeeping',
+    (block) => block.name === 'tool_load' || !!toolPayload(block.result)?.skipped,
+);
 
 /**
  * Registry of transcript builders for event kinds the core does not render,
@@ -172,6 +194,7 @@ export function buildRenderedTurns(log) {
     const turns = [];
     let current = null;
     const toolsByCallId = {};
+    const asks = {};
     for (const entry of log || []) {
         const at = entry.at || null;
         const eventId = entry.event_id || null;
@@ -301,19 +324,20 @@ export function buildRenderedTurns(log) {
                 );
                 turns.push(current);
             }
-            current.blocks.push(
-                withAt(
-                    {
-                        type: 'ask',
-                        text: entry.text,
-                        options: entry.options,
-                        preview: entry.preview || null,
-                        callId: entry.call_id,
-                        resolution: entry.resolution || 'text',
-                    },
-                    at,
-                ),
+            asks[entry.call_id] = withAt(
+                {
+                    type: 'ask',
+                    text: entry.text,
+                    options: entry.options,
+                    preview: entry.preview || null,
+                    callId: entry.call_id,
+                    resolution: entry.resolution || 'text',
+                },
+                at,
             );
+            current.blocks.push(asks[entry.call_id]);
+        } else if (entry.kind === 'approval' && asks[entry.call_id]) {
+            asks[entry.call_id].decision = entry.decision;
         } else if (entry.kind === 'command') {
             turns.push(
                 withAt(
@@ -398,6 +422,12 @@ export function buildRenderedTurns(log) {
     for (const turn of turns) {
         if (turn.role !== 'assistant') {
             continue;
+        }
+        if (turn.attachments) {
+            const inline = inlineImages(turn).map((image) => image.id);
+            turn.attachments = turn.attachments.filter(
+                (file) => !inline.includes(file.id),
+            );
         }
         let lastText = -1;
         (turn.blocks || []).forEach((block, blockIndex) => {

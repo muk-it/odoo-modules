@@ -36,6 +36,7 @@ export class SessionEventsField extends Component {
         this.state = useState({
             expandedTools: {},
             askViews: {},
+            askOpen: {},
         });
         this.session = {
             state: { pendingAsk: null, readonly: true },
@@ -89,6 +90,12 @@ export class SessionEventsField extends Component {
             ...this.state.expandedTools,
             [callId]: !this.state.expandedTools[callId],
         };
+    }
+    isAskOpen(block) {
+        return !!this.state.askOpen[block.callId];
+    }
+    toggleAskOpen(callId) {
+        this.state.askOpen[callId] = !this.state.askOpen[callId];
     }
     askViewMode(block) {
         return askViewMode(block, this.state.askViews);

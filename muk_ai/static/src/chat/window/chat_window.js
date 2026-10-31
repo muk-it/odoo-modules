@@ -95,6 +95,7 @@ export class ChatWindow extends Component {
         this.session.setScrollCallback(scrollToBottom);
         this.windowState = useState({
             askViews: {},
+            askOpen: {},
             sourcesExpanded: {},
         });
         onScrollUpNearTop(scrollRef, () =>
@@ -268,6 +269,12 @@ export class ChatWindow extends Component {
     }
     askArgsText(block) {
         return askArgsText(block);
+    }
+    isAskOpen(block) {
+        return !!this.windowState.askOpen[block.callId];
+    }
+    toggleAskOpen(callId) {
+        this.windowState.askOpen[callId] = !this.windowState.askOpen[callId];
     }
     askViewMode(block) {
         return askViewMode(block, this.windowState.askViews);

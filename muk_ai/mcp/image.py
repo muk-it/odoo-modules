@@ -3,7 +3,7 @@ from __future__ import annotations
 from odoo import _, api, models
 from odoo.exceptions import UserError
 
-from odoo.addons.muk_ai.tools import IMAGE_OPTIONS
+from odoo.addons.muk_ai.tools import IMAGE_MIMETYPES, IMAGE_OPTIONS, coerce_ids
 from odoo.addons.muk_mcp.core.tool import mcp_tool
 
 
@@ -11,7 +11,7 @@ class AIImage(models.AbstractModel):
     """Expose app-side image generation as an MCP tool.
 
     The image is answered in the file convention ``export_records`` uses, so
-    the session stores it as an attachment and settles its ``cost`` block.
+    the session stores it as a marked AI attachment and settles its ``cost``.
     """
 
     _inherit = 'muk_mcp.mixin'
@@ -37,6 +37,24 @@ class AIImage(models.AbstractModel):
                 )
             )
         return record
+
+    @api.model
+    def _image_references(self, ids) -> list[dict]:
+        """Return the attachments named by ``ids`` as image blocks for the model.
+
+        :raise UserError: when one of them is not an image
+        """
+        attachments = self.env['ir.attachment'].browse(coerce_ids(ids))
+        if others := attachments.filtered(
+            lambda attachment: attachment.mimetype not in IMAGE_MIMETYPES
+        ):
+            raise UserError(
+                _(
+                    'Reference images must be PNG, JPEG, WebP or GIF images: %s',
+                    ', '.join(others.mapped('name')),
+                )
+            )
+        return [attachment._ai_materialize() for attachment in attachments]
 
     @api.model
     def _image_options(
@@ -80,6 +98,8 @@ class AIImage(models.AbstractModel):
             '"revised_prompt" when the model rewrote the request. To put it '
             'on a record, such as a product photo, write '
             '"@attachment:<attachment_id>" as the value of its image field. '
+            'To edit or vary existing images, pass their attachment ids as '
+            '"reference_attachment_ids". '
             'Describe the subject, style, composition and lighting in the prompt; '
             'call the tool once per image and in parallel for several '
             'variants. "size" is WIDTHxHEIGHT (e.g. 1024x1024, 1536x1024, '
@@ -98,6 +118,14 @@ class AIImage(models.AbstractModel):
                     'type': 'string',
                     'description': (
                         'Image dimensions as WIDTHxHEIGHT. Omit for the model default.'
+                    ),
+                },
+                'reference_attachment_ids': {
+                    'type': 'array',
+                    'items': {'type': 'integer'},
+                    'description': (
+                        'Attachment ids of images the result builds on, such as '
+                        'the product photo to restage.'
                     ),
                 },
                 **{
@@ -120,20 +148,23 @@ class AIImage(models.AbstractModel):
         size: str | None = None,
         quality: str | None = None,
         background: str | None = None,
+        reference_attachment_ids=None,
     ) -> dict:
         """Render ``prompt`` with the resolved image model.
 
         :return: a file descriptor carrying ``revised_prompt``, ``cost`` and any
             ``warnings``, or ``{prompt, error}`` when the render fails
-        :raise UserError: when no usable image model is configured
+        :raise UserError: when no image model is usable or a reference is no image
         """
         record = self._image_model()
         options, warnings = self._image_options(size, quality, background)
+        references = self._image_references(reference_attachment_ids)
         try:
             image = record.provider_id._get_client().generate_image(
                 record.technical_name,
                 prompt,
                 options,
+                references,
             )
         except UserError as exc:
             return {'prompt': prompt, 'error': str(exc)}
@@ -145,6 +176,7 @@ class AIImage(models.AbstractModel):
             'content_base64': image['data_b64'],
             'model': record.technical_name,
             'revised_prompt': image['revised_prompt'],
+            'ai_generated': True,
             'cost': {
                 'usage': image['usage'],
                 'total': cost['total_cost'],
