@@ -43,14 +43,14 @@ class TestMistralRegistry(MistralTestCommon):
         self.assertEqual(
             set(models.mapped('technical_name')),
             {
-                'mistral-large-latest',
+                'mistral-large-4',
                 'mistral-medium-latest',
                 'mistral-small-latest',
                 'ministral-14b-latest',
                 'ministral-8b-latest',
                 'ministral-3b-latest',
                 'codestral-latest',
-                'zai-glm-5-2',
+                'zai-glm-5-3',
             },
         )
 
