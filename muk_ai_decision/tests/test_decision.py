@@ -366,6 +366,7 @@ class TestDecision(DecisionTestCommon):
             },
         )
         self.assertFalse(session.total_cost)
+        booked = self.env['muk_ai.usage'].search([])
         with self._capture_post(json_response(answers(0.9, (0.9, 0.9), 0.1))) as posts:
             session._dispatch_tool_call(
                 'decide',
@@ -380,6 +381,12 @@ class TestDecision(DecisionTestCommon):
         self.assertIn('software house', posts[0][1]['json']['state'])
         self.assertAlmostEqual(session.total_cost, 300 * 0.042 / 1_000_000, places=6)
         self.assertAlmostEqual(session.turn_cost_spent, session.total_cost, places=6)
+        self.assertEqual(
+            (self.env['muk_ai.usage'].search([]) - booked).mapped(
+                lambda row: (row.purpose, row.res_model, row.res_id)
+            ),
+            [('decision', 'res.partner', ada.id)],
+        )
         for arguments, message in (
             ({'questions': questions[2:3]}, 'Pass texts, or a model'),
             ({}, 'with a field needs the model'),

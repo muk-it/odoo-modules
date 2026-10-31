@@ -411,9 +411,9 @@ class AIDecision(models.AbstractModel):
                         ),
                         'input_tokens': usage.get('input_tokens') or 0,
                         'output_tokens': usage.get('output_tokens') or 0,
-                        'total_cost': candidate._compute_usage_cost(usage)[
-                            'total_cost'
-                        ],
+                        'total_cost': self.env['muk_ai.usage']._charge(
+                            candidate, usage, 'decision', record=record
+                        )['total_cost'],
                         'currency': candidate.currency,
                     }
                 )
