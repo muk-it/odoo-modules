@@ -401,7 +401,7 @@
 						<setting
 							id="muk_ai_addon_product"
 							string="Products"
-							help="Add products from price lists and links, and write their texts from facts."
+							help="Turn price lists and links into products with texts."
 						>
 							<field
 								name="module_muk_ai_product"

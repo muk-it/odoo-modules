@@ -259,7 +259,7 @@ class ResConfigSettings(models.TransientModel):
 
     module_muk_ai_product = fields.Boolean(
         string='MuK AI Product',
-        help='Write product texts, translations and images from facts.',
+        help='Turn price lists and links into products with texts.',
     )
 
     module_muk_ai_account = fields.Boolean(

@@ -6294,11 +6294,8 @@ msgstr "Area di lavoro"
 #. module: muk_ai
 #: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_product
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
-msgid ""
-"Add products from price lists and links, and write their texts from facts."
-msgstr ""
-"Aggiungi prodotti da listini e link, e scrivi i loro testi a partire dai "
-"dati."
+msgid "Turn price lists and links into products with texts."
+msgstr "Trasforma listini e link in prodotti con testi."
 
 #. module: muk_ai
 #. odoo-python
