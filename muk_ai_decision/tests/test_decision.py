@@ -141,6 +141,16 @@ class TestDecision(DecisionTestCommon):
             ],
         )
         self.assertEqual(log.answers, result['answers'])
+        self.assertRecordValues(
+            self.env['muk_ai.usage'].search([('purpose', '=', 'decision')]),
+            [
+                {
+                    'res_model': 'res.partner',
+                    'res_id': partner.id,
+                    'amount': 300 * 0.042 / 1_000_000,
+                }
+            ],
+        )
 
     def test_a_failing_model_hands_over_to_the_next_provider(self):
         bad = {**LLM_ANSWER, 'team': {'choice': 'sales', 'confidence': 1.0}}
@@ -215,7 +225,7 @@ class TestDecision(DecisionTestCommon):
         self.assertEqual(len(rounds), 3)
         self.assertEqual({r['answers']['team']['choice'] for r in results}, {'billing'})
 
-    def test_invalid_questions_and_missing_models_are_refused(self):
+    def test_invalid_questions_missing_models_and_spent_budgets_are_refused(self):
         choice = QUESTIONS['team']
         for questions, message in (
             ({}, 'at least one question'),
@@ -238,6 +248,14 @@ class TestDecision(DecisionTestCommon):
                 self.assertRaisesRegex(UserError, message),
             ):
                 self._decide(questions=questions)
+        self.env['muk_ai.usage'].create({'user_id': self.env.user.id, 'amount': 1.0})
+        self.env['ir.config_parameter'].sudo().set_param('muk_ai.monthly_budget', 1.0)
+        with (
+            self._capture_post() as posts,
+            self.assertRaisesRegex(UserError, 'for all users is used up'),
+        ):
+            self._decide()
+        self.assertFalse(posts)
         self._clear_default_models('decision')
         with self.assertRaisesRegex(UserError, 'No decision model is available'):
             self._decide()
@@ -369,6 +387,7 @@ class TestDecision(DecisionTestCommon):
             },
         )
         self.assertFalse(session.total_cost)
+        booked = self.env['muk_ai.usage'].search([])
         with self._capture_post(json_response(answers(0.9, (0.9, 0.9), 0.1))) as posts:
             session._dispatch_tool_call(
                 'decide',
@@ -383,6 +402,10 @@ class TestDecision(DecisionTestCommon):
         self.assertIn('software house', posts[0][1]['json']['state'])
         self.assertAlmostEqual(session.total_cost, 300 * 0.042 / 1_000_000, places=6)
         self.assertAlmostEqual(session.turn_cost_spent, session.total_cost, places=6)
+        self.assertEqual(
+            (self.env['muk_ai.usage'].search([]) - booked).mapped('purpose'),
+            ['decision'],
+        )
         for arguments, message in (
             ({'questions': questions[2:3]}, 'Pass texts, or a model'),
             ({}, 'with a field needs the model'),

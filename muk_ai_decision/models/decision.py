@@ -361,7 +361,7 @@ class AIDecision(models.AbstractModel):
 
         A pinned ``model`` is the only one asked, else each provider's default
         decision model in list order, the next taking the states the last failed.
-        :raise UserError: on invalid questions or when no model is usable
+        :raise UserError: on invalid questions, no usable model or a spent budget
         """
         self._check_questions(questions)
         if not (candidates := self._candidates(model)):
@@ -371,6 +371,7 @@ class AIDecision(models.AbstractModel):
                     'on a provider that has an API key.'
                 )
             )
+        self.env['muk_ai.usage']._check_budget(currency=candidates[:1].currency)
         logs = self.env['muk_ai.decision.log'].sudo()
         records = records or [None] * len(states)
         results, pending = [None] * len(states), list(range(len(states)))
@@ -411,9 +412,9 @@ class AIDecision(models.AbstractModel):
                         ),
                         'input_tokens': usage.get('input_tokens') or 0,
                         'output_tokens': usage.get('output_tokens') or 0,
-                        'total_cost': candidate._compute_usage_cost(usage)[
-                            'total_cost'
-                        ],
+                        'total_cost': self.env['muk_ai.usage']._charge(
+                            candidate, usage, 'decision', record=record
+                        )['total_cost'],
                         'currency': candidate.currency,
                     }
                 )

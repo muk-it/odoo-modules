@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import json
-
 from odoo import api, models
 
 
@@ -25,13 +23,3 @@ class AISession(models.Model):
         if self.env['muk_ai.decision']._candidates(None):
             names.add('decide')
         return names
-
-    def _settle_tool_cost(self, name: str, text) -> None:
-        """Charge what the decide tool spent to the session's cost ledger."""
-        super()._settle_tool_cost(name, text)
-        if name != 'decide' or not isinstance(text, str) or '"cost"' not in text:
-            return
-        for cost in json.loads(text).get('cost') or []:
-            self._accrue_model_usage(
-                self.env['muk_ai.model'].browse(cost['model_id']), cost['usage']
-            )
