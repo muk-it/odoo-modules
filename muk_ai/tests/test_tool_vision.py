@@ -3,7 +3,7 @@ from __future__ import annotations
 import base64
 import io
 import json
-from contextlib import AbstractContextManager
+from contextlib import AbstractContextManager, nullcontext
 from unittest.mock import MagicMock, patch
 
 from PIL import Image
@@ -226,6 +226,44 @@ class TestToolVision(AITestCommon):
         self.assertNotIn('images', cleaned)
         self.assertIsNone(self._vision_entry_after(session, outputs[0]))
         self.assertEqual(self._shown_images(session), [['desktop']])
+
+    def test_server_tool_resource_file_reaches_a_model_that_reads_it(self):
+        for mimetype, vision, shown in (
+            ('application/pdf', True, 1),
+            ('application/pdf', False, 0),
+            ('application/zip', True, 0),
+        ):
+            with self.subTest(mimetype=mimetype, vision=vision):
+                session = self._new_session()
+                resource = {
+                    'uri': 'odoo://attachment/1',
+                    'mimeType': mimetype,
+                    'name': 'scan',
+                    'blob': PNG_B64,
+                }
+                with (
+                    self._script_provider(
+                        [
+                            self._tool_payload('read_resource', {}, 'c0'),
+                            self._text_payload('done'),
+                        ]
+                    ),
+                    self._mock_call([{'type': 'resource', 'resource': resource}]),
+                    nullcontext() if vision else self._no_vision(session),
+                ):
+                    session.start('read it')
+                [output] = self._outputs_for(session, 'c0')
+                self.assertNotIn(PNG_B64, output['output'])
+                self.assertIn('odoo://attachment/1', output['output'])
+                self.assertEqual('cannot be shown' in output['output'], not shown)
+                entry = self._vision_entry_after(session, output) or {}
+                blocks = [
+                    block
+                    for block in entry.get('content', [])
+                    if block['type'] == 'muk_ai_attachment'
+                ]
+                self.assertEqual(len(blocks), shown)
+                self.assertEqual(self._shown_images(session), [])
 
     # ----------------------------------------------------------
     # Tests: client action result path

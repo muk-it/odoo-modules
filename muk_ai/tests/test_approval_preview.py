@@ -120,6 +120,11 @@ class TestApprovalPreview(AITestCommon):
                 ],
             ),
             (
+                'update_records',
+                {'comment': '<!-- note -->'},
+                [('comment', '')],
+            ),
+            (
                 'create_records',
                 [{'name': 'One'}, {'name': 'Two'}],
                 [('name', 'One'), ('name', 'Two')],
