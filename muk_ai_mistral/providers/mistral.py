@@ -1,14 +1,10 @@
 from __future__ import annotations
 
-import base64
 import json
 from collections.abc import Callable
 
-import requests
-
 from odoo import _
 from odoo.exceptions import UserError
-from odoo.tools.mimetypes import guess_mimetype
 
 from odoo.addons.muk_ai.providers.base import ProviderBase
 
@@ -164,7 +160,9 @@ class MistralProvider(ProviderBase):
         )
         if not (chunk and chunk.get('file_id')):
             self._raise(_('the model answered with text instead of an image'))
-        mimetype, data_b64 = self._download_file(chunk['file_id'])
+        mimetype, data_b64 = self._download(
+            f'{self.api_url}/files/{chunk["file_id"]}/content', self.headers()
+        )
         return {
             'data_b64': data_b64,
             'mimetype': mimetype,
@@ -469,9 +467,9 @@ class MistralProvider(ProviderBase):
         return ''
 
     def _render_tool_file(self, chunk: dict) -> str:
-        """Download a generated file and render it as inline markdown.
+        """Download a generated file and render it inline, an image as one.
 
-        :return: an inline image when the download succeeds, a textual
+        :return: the inline file when the download succeeds, a textual
             placeholder otherwise
         """
         file_id = chunk.get('file_id')
@@ -479,10 +477,13 @@ class MistralProvider(ProviderBase):
             return ''
         name = chunk.get('file_name') or 'image'
         try:
-            mimetype, data_b64 = self._download_file(file_id)
+            mimetype, data_b64 = self._download(
+                f'{self.api_url}/files/{file_id}/content', self.headers(), name
+            )
         except UserError:
             return f'\n\n_(generated file: `{name}`)_\n\n'
-        return f'\n\n![{name}](data:{mimetype};base64,{data_b64})\n\n'
+        image = '!' if mimetype.startswith('image/') else ''
+        return f'\n\n{image}[{name}](data:{mimetype};base64,{data_b64})\n\n'
 
     @staticmethod
     def _render_tool_execution(entry: dict) -> str:
@@ -538,32 +539,6 @@ class MistralProvider(ProviderBase):
             'role': 'assistant',
             'content': [{'type': 'output_text', 'text': text}],
         }
-
-    # ----------------------------------------------------------
-    # Files
-    # ----------------------------------------------------------
-
-    def _download_file(self, file_id: str) -> tuple[str, str]:
-        """Fetch a generated file and return its mimetype and base64 content.
-
-        The mimetype is sniffed from the bytes: Mistral reports ``png`` for
-        files it serves as JPEG.
-
-        :raise UserError: when the download fails
-        """
-        try:
-            response = self._http_session().get(
-                f'{self.api_url}/files/{file_id}/content',
-                headers=self.headers(),
-                timeout=self.request_timeout,
-            )
-            response.raise_for_status()
-        except requests.RequestException as error:
-            self._raise(error)
-        return (
-            guess_mimetype(response.content, default='application/octet-stream'),
-            base64.b64encode(response.content).decode('ascii'),
-        )
 
     # ----------------------------------------------------------
     # Streaming

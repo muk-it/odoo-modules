@@ -126,7 +126,7 @@ class TestAiMistralProvider(MistralTestCommon):
         self.assertEqual(captured['body']['instructions'], 'be brief')
         self.assertEqual(captured['body']['inputs'][0]['type'], 'message.input')
         self.assertEqual(captured['body']['tools'][0]['function']['name'], 'x')
-        self.assertEqual(captured['body']['completion_args']['max_tokens'], 4096)
+        self.assertEqual(captured['body']['completion_args']['max_tokens'], 16384)
         self.assertEqual(captured['headers']['Authorization'], 'Bearer test-key')
         self.assertEqual(result['text'], 'hello')
         self.assertEqual(result['tool_calls'], [])
@@ -217,8 +217,8 @@ class TestAiMistralProvider(MistralTestCommon):
                     [self._message_output('partial')],
                     usage={
                         'prompt_tokens': 11,
-                        'completion_tokens': 4096,
-                        'total_tokens': 4107,
+                        'completion_tokens': 16384,
+                        'total_tokens': 16395,
                     },
                 )
             )
@@ -227,7 +227,7 @@ class TestAiMistralProvider(MistralTestCommon):
             result = self.provider._request_responses(inputs=[])
         self.assertIn('partial', result['text'])
         self.assertIn('Max Tokens', result['text'])
-        self.assertEqual(result['usage']['output_tokens'], 4096)
+        self.assertEqual(result['usage']['output_tokens'], 16384)
 
     def test_token_cap_hit_without_text_still_yields_notice(self):
         def fake_post(url, **kwargs):
@@ -236,8 +236,8 @@ class TestAiMistralProvider(MistralTestCommon):
                     [],
                     usage={
                         'prompt_tokens': 11,
-                        'completion_tokens': 4096,
-                        'total_tokens': 4107,
+                        'completion_tokens': 16384,
+                        'total_tokens': 16395,
                     },
                 )
             )
@@ -245,7 +245,7 @@ class TestAiMistralProvider(MistralTestCommon):
         with patch.object(requests.Session, 'post', side_effect=fake_post):
             result = self.provider._request_responses(inputs=[])
         self.assertIn('Max Tokens', result['text'])
-        self.assertEqual(result['usage']['output_tokens'], 4096)
+        self.assertEqual(result['usage']['output_tokens'], 16384)
 
     # ----------------------------------------------------------
     # Connectors
@@ -687,8 +687,8 @@ class TestAiMistralProvider(MistralTestCommon):
                     'type': 'conversation.response.done',
                     'usage': {
                         'prompt_tokens': 7,
-                        'completion_tokens': 4096,
-                        'total_tokens': 4103,
+                        'completion_tokens': 16384,
+                        'total_tokens': 16391,
                     },
                 },
             ]
@@ -704,7 +704,7 @@ class TestAiMistralProvider(MistralTestCommon):
             )
         self.assertIn('partial', result['text'])
         self.assertIn('Max Tokens', result['text'])
-        self.assertEqual(result['usage']['output_tokens'], 4096)
+        self.assertEqual(result['usage']['output_tokens'], 16384)
         text_deltas = [p['delta'] for (k, p) in deltas if k == 'text']
         self.assertTrue(any('Max Tokens' in d for d in text_deltas))
 
@@ -1492,44 +1492,45 @@ class TestAiMistralProvider(MistralTestCommon):
         self.assertIn('[Euro](https://marca.com)', result['text'])
 
     def test_a_streamed_generated_file_is_downloaded_after_the_stream(self):
-        sse = self._sse_lines(
-            [
-                {'type': 'message.output.delta', 'content': 'Here it is:'},
-                {
-                    'type': 'message.output.delta',
-                    'content': {
-                        'type': 'tool_file',
-                        'file_id': 'file_9',
-                        'file_name': 'chart',
-                        'file_type': 'png',
-                    },
-                },
-                {'type': 'conversation.response.done', 'usage': {}},
-            ]
-        )
-        response = MagicMock()
-        response.iter_lines.return_value = iter(sse)
-        response.raise_for_status.return_value = None
-        captured = {}
-
-        def fake_get(url, **kwargs):
-            captured['url'] = url
-            return self._mock_http_response(content=b'\x89PNG\r\n\x1a\n')
-
-        deltas = []
-        with (
-            patch.object(requests.Session, 'post', return_value=response),
-            patch.object(requests.Session, 'get', side_effect=fake_get),
+        for content, link in (
+            (b'\x89PNG\r\n\x1a\n', '![chart](data:image/png;base64,'),
+            (b'%PDF-1.4', '[chart](data:application/pdf;base64,JVBERi0xLjQ=)'),
         ):
-            result = self.provider._request_responses(
-                inputs=[],
-                on_delta=lambda k, p: deltas.append((k, p)),
+            sse = self._sse_lines(
+                [
+                    {'type': 'message.output.delta', 'content': 'Here it is:'},
+                    {
+                        'type': 'message.output.delta',
+                        'content': {
+                            'type': 'tool_file',
+                            'file_id': 'file_9',
+                            'file_name': 'chart',
+                            'file_type': 'png',
+                        },
+                    },
+                    {'type': 'conversation.response.done', 'usage': {}},
+                ]
             )
-        self.assertTrue(captured['url'].endswith('/files/file_9/content'))
-        self.assertIn('data:image/png;base64,', result['text'])
-        self.assertTrue(
-            any('data:image/png' in p.get('delta', '') for (k, p) in deltas)
-        )
+            response = MagicMock()
+            response.iter_lines.return_value = iter(sse)
+            response.raise_for_status.return_value = None
+            deltas = []
+            with (
+                self.subTest(link=link),
+                patch.object(requests.Session, 'post', return_value=response),
+                patch.object(
+                    requests.Session,
+                    'get',
+                    return_value=self._mock_http_response(content=content),
+                ) as fetched,
+            ):
+                result = self.provider._request_responses(
+                    inputs=[],
+                    on_delta=lambda k, p: deltas.append((k, p)),
+                )
+            self.assertTrue(fetched.call_args.args[0].endswith('/files/file_9/content'))
+            self.assertIn(link, result['text'])
+            self.assertTrue(any(link in p.get('delta', '') for (k, p) in deltas))
 
     def test_a_tool_file_without_an_id_renders_nothing(self):
         self.assertEqual(self.provider._get_client()._render_tool_file({}), '')
