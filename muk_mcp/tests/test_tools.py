@@ -118,18 +118,59 @@ class TestMcpTool(common.TransactionCase):
         })
         self.assertTrue(deleted['success'])
 
-    def test_update_handler(self):
-        record = self.env['res.partner.category'].create({'name': 'MCP Update'})
-        try:
-            result = self._call('update_records', {
-                'model': 'res.partner.category',
-                'ids': [record.id],
-                'values': {'name': 'MCP Updated'},
+    def test_write_handlers_take_a_value_per_language(self):
+        self.env['res.lang']._activate_lang('de_DE')
+        category = self.env['res.partner.category'].create({'name': 'MCP Update'})
+        view = self.env['ir.ui.view'].create({
+            'name': 'MCP Update',
+            'type': 'qweb',
+            'arch': '<t t-name="mcp_update"><p>Steel</p></t>',
+        })
+        arch = {
+            'en_US': '<t t-name="mcp_update"><p>Flat</p><p>Steel</p></t>',
+            'de_DE': '<t t-name="mcp_update"><p>Flach</p><p>Stahl</p></t>',
+        }
+        for target, name, value in (
+            (category, 'name', 'MCP Updated'),
+            (category, 'name', {'en_US': 'Steel', 'de_DE': 'Stahl'}),
+            (view, 'arch_db', arch),
+            (
+                view,
+                'arch_db',
+                {'de_DE': '<t t-name="mcp_update"><p>Flach</p><p>Eisen</p></t>'},
+            ),
+            (
+                self.env['res.partner.category'],
+                'name',
+                {'en_US': 'Iron', 'de_DE': 'Eisen'},
+            ),
+        ):
+            with self.subTest(model=target._name, ids=target.ids, value=value):
+                if target:
+                    self._call('update_records', {
+                        'model': target._name,
+                        'ids': target.ids,
+                        'values': {name: value},
+                    })
+                else:
+                    created = self._call('create_records', {
+                        'model': target._name,
+                        'values': {name: value},
+                        'context': {'lang': 'de_DE'},
+                    })
+                    target = target.browse(created['id'])
+                for lang, text in (
+                    value if isinstance(value, dict) else {'en_US': value}
+                ).items():
+                    self.assertEqual(target.with_context(lang=lang)[name], text)
+        with self.assertRaisesRegex(UserError, 'another structure'):
+            self._call('update_records', {
+                'model': 'ir.ui.view',
+                'ids': view.ids,
+                'values': {
+                    'arch_db': {'de_DE': '<t t-name="mcp_update"><p>Stahl</p></t>'},
+                },
             })
-            self.assertTrue(result['success'])
-            self.assertEqual(record.name, 'MCP Updated')
-        finally:
-            record.unlink()
 
     def test_reads_return_binaries_as_uris_and_lean_defaults(self):
         self.partner_a.image_1920 = PNG
