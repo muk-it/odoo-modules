@@ -348,7 +348,10 @@ test('loadAgents fetches agents via search_read with suggestions field', async (
     expect(harness.getSession().state.agents.length).toBe(2);
     expect(harness.getSession().state.agents[1].name).toBe('Helper');
     expect(captured.fields).toInclude('suggestions');
-    expect(captured.domain).toEqual([['active', '=', true]]);
+    expect(captured.domain).toEqual([
+        ['active', '=', true],
+        ['allow_chat', '=', true],
+    ]);
 });
 
 test('onSend posts to start for the first turn and flips status to running', async () => {
