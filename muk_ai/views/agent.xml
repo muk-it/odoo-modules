@@ -175,6 +175,7 @@
                             />
 						</group>
 						<group string="Behavior" name="behavior">
+							<field name="allow_chat" widget="boolean_toggle"/>
 							<field
                                 name="allow_handoff"
                                 string="Allow Handoff"

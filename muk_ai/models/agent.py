@@ -161,6 +161,13 @@ class AIAgent(models.Model):
         tracking=True,
     )
 
+    allow_chat = fields.Boolean(
+        string='Allow Chat',
+        help='Offer this agent in the agent picker of a chat.',
+        default=True,
+        tracking=True,
+    )
+
     allow_handoff = fields.Boolean(
         string='Allow Handoff',
         help=(

@@ -29,8 +29,10 @@ class TestApprovalRiskPredicate(AITestCommon):
             (
                 'call_method',
                 {'model': 'res.partner', 'ids': [1], 'method': ' action_archive '},
-                'Contact records need your approval before the assistant runs '
-                'actions on them.',
+                (
+                    'Contact records need your approval before the assistant runs '
+                    'actions on them.'
+                ),
             ),
             (
                 'update_records',
@@ -40,8 +42,10 @@ class TestApprovalRiskPredicate(AITestCommon):
             (
                 'create_records',
                 {'model': 'res.users', 'values': {'name': 'X'}},
-                'New User records need your approval before the assistant creates '
-                'them.',
+                (
+                    'New User records need your approval before the assistant creates '
+                    'them.'
+                ),
             ),
         ):
             with self.subTest(tool=tool):
