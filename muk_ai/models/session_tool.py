@@ -78,6 +78,10 @@ class AISessionTool(models.AbstractModel):
             'terminating': (
                 'skipped: terminating tool already ran; emit a short summary and stop'
             ),
+            'limit': (
+                f'skipped: only {MAX_TOOL_CALLS_PER_ROUND} tool calls run per reply, '
+                'make this call again in your next reply'
+            ),
         }
 
     # ----------------------------------------------------------
@@ -984,7 +988,7 @@ class AISessionTool(models.AbstractModel):
             call = tool_calls[index]
             name, log_result, skip = call['name'], None, None
             if index >= MAX_TOOL_CALLS_PER_ROUND:
-                skip = 'tool_call_limit_exceeded'
+                skip = self.SKIP_REASONS['limit']
             elif call.get('_parse_error'):
                 skip = call['_parse_error']
             elif name == 'ask_user':
