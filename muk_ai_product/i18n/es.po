@@ -1,0 +1,327 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* muk_ai_product
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-30 19:48+0000\n"
+"PO-Revision-Date: 2026-10-30 19:48+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. module: muk_ai_product
+#: model:muk_ai.agent.suggestion,prompt:muk_ai_product.agent_product_writer_suggestion_add
+msgid ""
+"\n"
+"Add the products from a link or a vendor price list I send you, with their vendor price, ready to purchase.\n"
+"\t\t"
+msgstr ""
+"\n"
+"Añade los productos de un enlace o de una lista de precios de un proveedor que te envíe, con su precio de proveedor, listos para comprar.\n"
+"\t\t"
+
+#. module: muk_ai_product
+#: model:ir.module.module,description:base.module_muk_ai_product
+msgid ""
+"\n"
+"Adds a Product Content Writer to MuK AI Assistant that adds products\n"
+"from web links and vendor price lists, ready to purchase, with skills\n"
+"for the product form: find the facts of a product in its own data, its\n"
+"documents and on the web, write its name and descriptions from those\n"
+"facts only, translate them into every language the company sells in,\n"
+"and add image variants as extra images marked as AI-generated. Every\n"
+"change waits for approval in the chat.\n"
+"Web shop and search texts are filled when eCommerce is installed;\n"
+"barcodes and manufacturer data are never generated.\n"
+msgstr ""
+"\n"
+"Añade a MuK AI Assistant un redactor de contenido de productos que crea\n"
+"productos a partir de enlaces web y listas de precios de proveedores, listos\n"
+"para comprar, con habilidades para el formulario de producto: encontrar los\n"
+"datos de un producto en sus propios datos, sus documentos y en la web,\n"
+"escribir su nombre y sus descripciones solo a partir de esos datos,\n"
+"traducirlos a todos los idiomas en los que vende la empresa y añadir\n"
+"variantes de imagen como imágenes adicionales marcadas como generadas por IA.\n"
+"Cada cambio espera aprobación en el chat.\n"
+"Los textos de la tienda web y de búsqueda se rellenan cuando eCommerce está\n"
+"instalado; los códigos de barras y los datos del\n"
+"fabricante nunca se generan.\n"
+
+#. module: muk_ai_product
+#: model:muk_ai.skill,body:muk_ai_product.skill_add_products
+msgid ""
+"\n"
+"Bring the products the user points to into Odoo, ready to purchase. Tell the user what each step does, never the name of its tool, also while you work.\n"
+"\n"
+"1. Read the source:\n"
+"   - links: `web_fetch` each page and take what it states: the name, the vendor's product code, the barcode, the price with its currency and whether it is net, the minimum quantity, the delivery time, weight and size. Fetch the product's main image with `web_fetch` too; the file it stores (`odoo://attachment/<id>`) becomes the product image.\n"
+"   - a list (Excel, CSV, PDF): more than a few rows go through the code interpreter when the sandbox has the chat's files, which reads and cleans the file there and prints the clean rows, one compact line per product; a short list, or a sandbox without the files, is read from its text. Find the header row, map the columns to code, name, barcode, price, currency, minimum quantity and delivery time, and skip headings, totals and footer text. Show the mapping, the row count and the first rows; ask about a column you cannot place.\n"
+"2. The vendor: the shop or supplier, found with `search_read` on `res.partner` by its name or website. Missing: propose it and create it with `create_records` (`name`, `is_company` true, `website`) once the user agrees.\n"
+"3. Match each item with `search_read` on `product.template`: the vendor's code in `seller_ids.product_code`, else the barcode, else `default_code`. Show three groups: new products; existing ones whose vendor price changes, with the old and new price and the change in percent, marking a price above the sales price; unchanged ones.\n"
+"4. Once the user confirms, look up the ids of the price currencies by their code with `search_read` on `res.currency`, and the company's currency, then one call per product:\n"
+"   - new: `create_records` on `product.template` with `name`, `purchase_ok` true, `categ_id` of an existing category that fits, `barcode`, `weight` and `volume` only as the source states them, `image_1920` \"@attachment:<id>\" of the product's main image, fetched before the product is created, and `seller_ids` [[0, 0, {`partner_id`, `product_code`, `product_name`, `price`, `currency_id`, `min_qty`, `delay`}]];\n"
+"   - the prices of every new product: `standard_price`, its cost, is the vendor price whenever that is in the company's currency; `list_price` only a recommended retail price the source states, never one you work out.\n"
+"   - existing: `update_records` on its `product.supplierinfo` line of that vendor with the new `price` and `delay`, or `create_records` on `product.supplierinfo` with `product_tmpl_id` when it has none.\n"
+"   Before the first call, tell the user that \"Allow for session\" on its preview approves the rest of the list.\n"
+"5. Answer with what was created, updated and skipped, and why. Offer to write the texts of the new products in every language with the `complete_product` skill.\n"
+"\t\t"
+msgstr ""
+"\n"
+"Lleva a Odoo los productos que indica el usuario, listos para comprar. Di al usuario lo que hace cada paso, nunca el nombre de su herramienta, también mientras trabajas.\n"
+"\n"
+"1. Lee la fuente:\n"
+"   - enlaces: `web_fetch` en cada página y toma lo que indica: el nombre, el código de producto del proveedor, el código de barras, el precio con su moneda y si es neto, la cantidad mínima, el plazo de entrega, el peso y el tamaño. Obtén también la imagen principal del producto con `web_fetch`; el archivo que guarda (`odoo://attachment/<id>`) pasa a ser la imagen del producto.\n"
+"   - una lista (Excel, CSV, PDF): más de unas pocas filas pasan por el intérprete de código cuando el sandbox tiene los archivos del chat, que lee y limpia el archivo allí e imprime las filas limpias, una línea compacta por producto; una lista corta, o un sandbox sin los archivos, se lee de su texto. Busca la fila de encabezado, asigna las columnas a código, nombre, código de barras, precio, moneda, cantidad mínima y plazo de entrega, y omite títulos, totales y textos al pie. Muestra la asignación, el número de filas y las primeras filas; pregunta por una columna que no puedas asignar.\n"
+"2. El proveedor: la tienda o el proveedor, buscado con `search_read` en `res.partner` por su nombre o su sitio web. Si falta: propónlo y créalo con `create_records` (`name`, `is_company` true, `website`) cuando el usuario esté de acuerdo.\n"
+"3. Compara cada artículo con `search_read` en `product.template`: el código del proveedor en `seller_ids.product_code`, si no el código de barras, si no `default_code`. Muestra tres grupos: productos nuevos; existentes cuyo precio de proveedor cambia, con el precio antiguo y el nuevo y el cambio en porcentaje, marcando un precio superior al precio de venta; sin cambios.\n"
+"4. Cuando el usuario confirme, busca los id de las monedas de los precios por su código con `search_read` en `res.currency` y la moneda de la empresa, luego una llamada por producto:\n"
+"   - nuevo: `create_records` en `product.template` con `name`, `purchase_ok` true, `categ_id` de una categoría existente que encaje, `barcode`, `weight` y `volume` solo como los indica la fuente, `image_1920` \"@attachment:<id>\" de la imagen principal del producto, obtenida antes de crear el producto, y `seller_ids` [[0, 0, {`partner_id`, `product_code`, `product_name`, `price`, `currency_id`, `min_qty`, `delay`}]];\n"
+"   - los precios de cada producto nuevo: `standard_price`, su coste, es el precio del proveedor siempre que esté en la moneda de la empresa; `list_price` solo un precio de venta recomendado que indique la fuente, nunca uno que calcules tú.\n"
+"   - existente: `update_records` en su línea de `product.supplierinfo` de ese proveedor con el nuevo `price` y `delay`, o `create_records` en `product.supplierinfo` con `product_tmpl_id` cuando no tiene ninguna.\n"
+"   Antes de la primera llamada, di al usuario que \"Permitir para la sesión\" en su vista previa aprueba el resto de la lista.\n"
+"5. Responde con lo que se creó, actualizó y omitió, y por qué. Ofrece escribir los textos de los productos nuevos en todos los idiomas con la habilidad `complete_product`.\n"
+"\t\t"
+
+#. module: muk_ai_product
+#: model:muk_ai.agent.suggestion,prompt:muk_ai_product.agent_product_writer_suggestion_complete
+msgid ""
+"\n"
+"Complete the product I have open: find its facts and write its texts in every language.\n"
+"\t\t"
+msgstr ""
+"\n"
+"Completa el producto que tengo abierto: encuentra sus hechos y escribe sus textos en cada idioma.\n"
+"\t\t"
+
+#. module: muk_ai_product
+#: model:muk_ai.skill,body:muk_ai_product.skill_complete_product
+msgid ""
+"\n"
+"Complete the product on screen: facts first, then its texts in every product language, each language approved by the user. Tell the user what each step does, never the name of its tool, also while you work.\n"
+"\n"
+"1. `product_context` with the product's id: its texts per language, the fields this database has, the fields under `never_generate` and its documents.\n"
+"2. Find the sources, in this order, until the facts cover what the texts need:\n"
+"   - a document the user attached or names, else one of the product's `documents` that is a datasheet: read it with `read_resource` and `odoo://attachment/<id>`;\n"
+"   - a page the user names: read it with `web_fetch`;\n"
+"   - a web search with the product's strongest identifier: the manufacturer with the manufacturer code, else the barcode, else the name with its defining size or material. Prefer the manufacturer's own page and datasheet over shops and marketplaces, read the best one or two with `web_fetch`, also when it is a PDF, and use a page only when it names the same code or exactly this product;\n"
+"   - the product's own fields and what the user tells you.\n"
+"   No source beyond the product's own fields: say so and offer two ways. The user sends a datasheet or a link, or answers a few short questions (the material, the size, the use); or you write from what is entered only, better worded and structured, adding no fact.\n"
+"3. Show the facts as a short list: each with its value, unit and source, the file or the page. Name every fact two sources state differently and ask which is right. A datasheet you read on the web: offer to attach it to the product with `create_records` on `ir.attachment` (`name`, `res_model` \"product.template\", `res_id` and `datas` \"@attachment:<id>\" of the stored file).\n"
+"4. Write from the facts only, and only the fields under `fields` in `product_context`; a field below that it does not list does not exist here, skip it:\n"
+"   - `name`: in every product language, the product type with its defining size, material or model, as the trade names it in that language. Keep a name that already does; write it where it is empty, a shorthand or still in another language, such as a German name under `en_US`.\n"
+"   - `description_sale`: two or three sentences for the customer: what it is, its defining facts, what it is for.\n"
+"   - `description_purchase`: one line as it is ordered from the vendor: the specification, never a price.\n"
+"   - (when listed) `description_ecommerce` (`markup`): exactly one `<p>` with two or three sentences, then one `<ul>` of the key facts with their units, and nothing else: no heading (`<h1>` to `<h6>`), no title, no section of your own. The shop shows it under the product name, which stays the only heading of the page.\n"
+"   - (when listed) `website_meta_title` (50 to 60 characters) and `website_meta_description` (120 to 160 characters), counted before you show them; `website_meta_keywords`, five to eight.\n"
+"5. Write `en_US` first, the language the others fall back to, then each other product language: `update_records` on `product.template` with the product's id, the fields of that language in `values` and `\"context\": {\"lang\": <code>}`, a `markup` field as `product_context` says. One call per language, right after drafting and without asking in the chat: the preview of each call is where the user approves that language.\n"
+"6. Offer image variants once the texts are written. When the user wants them, follow the `product_images` skill.\n"
+"7. Answer with what was written per language, the sources you used, the facts you left out and the empty fields under `never_generate` the user has to fill, each field by its label (its `string`), never its technical name.\n"
+"\t\t"
+msgstr ""
+"\n"
+"Completa el producto en pantalla: primero los hechos, después sus textos en cada idioma de producto, cada idioma aprobado por el usuario. Di al usuario qué hace cada paso, nunca el nombre de su herramienta, también mientras trabajas.\n"
+"\n"
+"1. `product_context` con el id del producto: sus textos por idioma, los campos de esta base de datos, los campos de `never_generate` y sus documentos.\n"
+"2. Busca las fuentes en este orden, hasta que los hechos cubran lo que necesitan los textos:\n"
+"   - un documento que el usuario adjuntó o nombra, si no uno de los `documents` del producto que sea una ficha técnica: léelo con `read_resource` y `odoo://attachment/<id>`;\n"
+"   - una página que nombre el usuario: léela con `web_fetch`;\n"
+"   - una búsqueda web con el identificador más fuerte del producto: el fabricante con su código de fabricante, si no el código de barras, si no el nombre con su tamaño o material determinante. Prefiere la página y la ficha técnica propias del fabricante a tiendas y marketplaces, lee las una o dos mejores con `web_fetch`, también cuando sea un PDF, y usa una página solo cuando nombre el mismo código o exactamente este producto;\n"
+"   - los propios campos del producto y lo que te diga el usuario.\n"
+"   Ninguna fuente aparte de los propios campos del producto: dilo y ofrece dos caminos. El usuario envía una ficha técnica o un enlace, o responde unas preguntas cortas (el material, el tamaño, el uso); o escribes solo a partir de lo introducido, mejor redactado y estructurado, sin añadir ningún hecho.\n"
+"3. Muestra los hechos como una lista corta: cada uno con su valor, su unidad y su fuente, el archivo o la página. Nombra cada hecho que dos fuentes indiquen de forma distinta y pregunta cuál es correcto. Una ficha técnica que leíste en la web: ofrece adjuntarla al producto con `create_records` en `ir.attachment` (`name`, `res_model` \"product.template\", `res_id` y `datas` \"@attachment:<id>\" del archivo guardado).\n"
+"4. Escribe solo a partir de los hechos y solo los campos de `fields` en `product_context`; un campo de abajo que no aparece ahí no existe aquí, sáltalo:\n"
+"   - `name`: en cada idioma de producto, el tipo de producto con su tamaño, material o modelo determinante, como lo llama el sector en ese idioma. Conserva un nombre que ya lo hace; escríbelo donde esté vacío, sea una abreviatura o siga en otro idioma, como un nombre alemán en `en_US`.\n"
+"   - `description_sale`: dos o tres frases para el cliente: qué es, sus hechos determinantes, para qué sirve.\n"
+"   - `description_purchase`: una línea tal como se pide al proveedor: la especificación, nunca un precio.\n"
+"   - (si aparece) `description_ecommerce` (`markup`): exactamente un `<p>` con dos o tres frases, luego una `<ul>` con los hechos clave y sus unidades, y nada más: ningún encabezado (`<h1>` a `<h6>`), ningún título, ninguna sección propia. La tienda la muestra bajo el nombre del producto, que sigue siendo el único encabezado de la página.\n"
+"   - (si aparece) `website_meta_title` (50 a 60 caracteres) y `website_meta_description` (120 a 160 caracteres), contados antes de mostrarlos; `website_meta_keywords`, de cinco a ocho.\n"
+"5. Escribe primero `en_US`, el idioma al que recurren los demás, después cada otro idioma de producto: `update_records` en `product.template` con el id del producto, los campos de ese idioma en `values` y `\"context\": {\"lang\": <code>}`, un campo `markup` como indica `product_context`. Una llamada por idioma, justo después de redactar y sin preguntar en el chat: la vista previa de cada llamada es donde el usuario aprueba ese idioma.\n"
+"6. Ofrece variantes de imagen cuando los textos estén escritos. Si el usuario las quiere, sigue la habilidad `product_images`.\n"
+"7. Responde con lo que se escribió por idioma, las fuentes que usaste, los hechos que omitiste y los campos vacíos de `never_generate` que debe rellenar el usuario, cada campo por su etiqueta (su `string`), nunca por su nombre técnico.\n"
+"\t\t"
+
+#. module: muk_ai_product
+#: model:muk_ai.skill,body:muk_ai_product.skill_product_images
+msgid ""
+"\n"
+"Generate image variants of the product on screen and add the ones the user picks as extra images. Tell the user what each step does, never the name of its tool, also while you work.\n"
+"\n"
+"1. `product_context` with the product's id: its name, its facts in the texts, and its main image (`images.main`, an attachment id, 0 when there is none).\n"
+"2. The variants: the ones the user names, else three: a packshot on a white background, the product in use where it is typically used, and a close-up of a defining detail.\n"
+"3. One `generate_image` call per variant, in parallel. With a main image, pass it as `reference_attachment_ids` and ask for the same product, unchanged, in the new scene. Describe the product from its facts only: its shape, material, colour, finish and size; no logo, no text, no brand mark and no person's face. A product with neither a main image nor facts describing its look: ask for a photo or a datasheet first.\n"
+"4. Show the images. Say that they show the product as the model imagines it, and that the user checks each one against the real product before it goes to the shop.\n"
+"5. Add the ones the user picks, each named after the product:\n"
+"   - with extra images (`images.extra` is a number): `create_records` on `product.image` with `product_tmpl_id`, `name` and `image_1920` \"@attachment:<attachment_id>\";\n"
+"   - without: `create_records` on `ir.attachment` with `name` (the file extension kept), `res_model` \"product.template\", `res_id` and `datas` \"@attachment:<attachment_id>\", so they show among the product's files.\n"
+"   The main image stays as it is unless the user asks for one of them to replace it; a product without one takes the first extra image as its main image, so ask first.\n"
+"6. Answer with how many images were added and where.\n"
+"\t\t"
+msgstr ""
+"\n"
+"Genera variantes de imagen del producto en pantalla y añade las que elija el usuario como imágenes adicionales. Di al usuario qué hace cada paso, nunca el nombre de su herramienta, también mientras trabajas.\n"
+"\n"
+"1. `product_context` con el id del producto: su nombre, sus hechos en los textos y su imagen principal (`images.main`, un id de adjunto, 0 cuando no la hay).\n"
+"2. Las variantes: las que nombre el usuario, si no tres: un packshot sobre fondo blanco, el producto en uso donde se utiliza habitualmente y un primer plano de un detalle determinante.\n"
+"3. Una llamada a `generate_image` por variante, en paralelo. Con una imagen principal, pásala como `reference_attachment_ids` y pide el mismo producto, sin cambios, en la nueva escena. Describe el producto solo a partir de sus hechos: forma, material, color, acabado y tamaño; sin logotipo, sin texto, sin marca y sin la cara de una persona. Un producto sin imagen principal ni hechos que describan su aspecto: pide primero una foto o una ficha técnica.\n"
+"4. Muestra las imágenes. Di que muestran el producto tal como lo imagina el modelo y que el usuario compara cada una con el producto real antes de que llegue a la tienda.\n"
+"5. Añade las que elija el usuario, cada una con el nombre del producto:\n"
+"   - con imágenes adicionales (`images.extra` es un número): `create_records` en `product.image` con `product_tmpl_id`, `name` e `image_1920` \"@attachment:<attachment_id>\";\n"
+"   - sin ellas: `create_records` en `ir.attachment` con `name` (conservando la extensión), `res_model` \"product.template\", `res_id` y `datas` \"@attachment:<attachment_id>\", para que aparezcan entre los archivos del producto.\n"
+"   La imagen principal se mantiene salvo que el usuario pida sustituirla por una de ellas; un producto sin imagen principal toma la primera imagen adicional como principal, así que pregunta antes.\n"
+"6. Responde cuántas imágenes se añadieron y dónde.\n"
+"\t\t"
+
+#. module: muk_ai_product
+#: model:muk_ai.agent.suggestion,prompt:muk_ai_product.agent_product_writer_suggestion_images
+msgid ""
+"\n"
+"Suggest image variants for the product I have open, a packshot on white, in use and a detail, and add the ones I pick as extra images.\n"
+"\t\t"
+msgstr ""
+"\n"
+"Propón variantes de imagen para el producto que tengo abierto, un packshot sobre blanco, en uso y un detalle, y añade las que elija como imágenes adicionales.\n"
+"\t\t"
+
+#. module: muk_ai_product
+#: model:muk_ai.agent.suggestion,prompt:muk_ai_product.agent_product_writer_suggestion_translate
+msgid ""
+"\n"
+"Translate the texts of the product I have open into every language that misses them.\n"
+"\t\t"
+msgstr ""
+"\n"
+"Traduce los textos del producto que tengo abierto a cada idioma en el que falten.\n"
+"\t\t"
+
+#. module: muk_ai_product
+#: model:ir.module.module,summary:base.module_muk_ai_product
+msgid ""
+"AI that adds products from links and price lists and writes their texts from"
+" facts"
+msgstr ""
+"IA que crea productos a partir de enlaces y listas de precios y escribe sus "
+"textos a partir de datos"
+
+#. module: muk_ai_product
+#: model:muk_ai.skill,label:muk_ai_product.skill_add_products
+msgid "Add Products"
+msgstr "Añadir productos"
+
+#. module: muk_ai_product
+#: model:muk_ai.agent.suggestion,label:muk_ai_product.agent_product_writer_suggestion_add
+msgid "Add products"
+msgstr "Añadir productos"
+
+#. module: muk_ai_product
+#: model:muk_ai.agent,description:muk_ai_product.agent_product_writer
+msgid ""
+"Adds products from web links and vendor price lists, writes their names, "
+"descriptions, web shop and search texts from the product's data, the "
+"manufacturer's page or a datasheet, translates them and adds image variants."
+msgstr ""
+"Crea productos a partir de enlaces web y listas de precios de proveedores, "
+"escribe sus nombres, descripciones, textos de tienda web y de búsqueda a "
+"partir de los datos del producto, la página del fabricante o una ficha "
+"técnica, los traduce y añade variantes de imagen."
+
+#. module: muk_ai_product
+#: model:muk_ai.skill,description:muk_ai_product.skill_add_products
+msgid ""
+"Bring products into Odoo from links to a web shop or supplier page, or from "
+"a vendor's price list, ready to purchase: new products with their vendor "
+"price and image, new prices on the ones that exist."
+msgstr ""
+"Llevar productos a Odoo, listos para comprar, desde enlaces a una tienda web"
+" o a la página de un proveedor, o desde la lista de precios de un proveedor:"
+" productos nuevos con su precio de proveedor e imagen, precios nuevos en los"
+" que ya existen."
+
+#. module: muk_ai_product
+#: model:muk_ai.skill,label:muk_ai_product.skill_complete_product
+msgid "Complete the Product"
+msgstr "Completar el producto"
+
+#. module: muk_ai_product
+#: model:muk_ai.agent.suggestion,label:muk_ai_product.agent_product_writer_suggestion_complete
+msgid "Complete this product"
+msgstr "Completar este producto"
+
+#. module: muk_ai_product
+#: model:muk_ai.skill,description:muk_ai_product.skill_complete_product
+msgid ""
+"Find the facts of the open product in its own data, its documents and on the"
+" web, write its texts from those facts in every product language for "
+"approval, and offer image variants."
+msgstr ""
+"Encuentra los hechos del producto abierto en sus propios datos, sus "
+"documentos y en la web, escribe con ellos sus textos en cada idioma del "
+"producto para su aprobación y ofrece variantes de imagen."
+
+#. module: muk_ai_product
+#: model:muk_ai.skill,description:muk_ai_product.skill_product_images
+msgid ""
+"Generate image variants of the open product, such as a packshot on white, "
+"the product in use and a detail, and add the ones the user picks as extra "
+"images labelled as AI-generated."
+msgstr ""
+"Genera variantes de imagen del producto abierto, como un packshot sobre "
+"blanco, el producto en uso y un detalle, y añade las que elija el usuario "
+"como imágenes adicionales marcadas como generadas por IA."
+
+#. module: muk_ai_product
+#: model:muk_ai.agent.suggestion,label:muk_ai_product.agent_product_writer_suggestion_images
+msgid "Image variants"
+msgstr "Variantes de imagen"
+
+#. module: muk_ai_product
+#: model:ir.model,name:muk_ai_product.model_muk_mcp_mixin
+msgid "MCP Tool Mixin"
+msgstr "Mixin de herramientas MCP"
+
+#. module: muk_ai_product
+#: model:ir.module.module,shortdesc:base.module_muk_ai_product
+msgid "MuK AI Product"
+msgstr ""
+
+#. module: muk_ai_product
+#: model:ir.model,name:muk_ai_product.model_product_template
+msgid "Product"
+msgstr "Producto"
+
+#. module: muk_ai_product
+#: model:muk_ai.agent,name:muk_ai_product.agent_product_writer
+msgid "Product Content Writer"
+msgstr "Redactor de contenido de producto"
+
+#. module: muk_ai_product
+#: model:muk_ai.skill,label:muk_ai_product.skill_product_images
+msgid "Product Images"
+msgstr "Imágenes del producto"
+
+#. module: muk_ai_product
+#. odoo-javascript
+#: code:addons/muk_ai_product/static/src/chat/tool_labels/tool_labels.js:0
+msgid "Read the product"
+msgstr "Leer el producto"
+
+#. module: muk_ai_product
+#. odoo-python
+#: code:addons/muk_ai_product/models/product_template.py:0
+msgid ""
+"The %(lang)s text of %(field)s has another HTML structure than its en_US "
+"text: keep its tags and translate only its texts."
+msgstr ""
+"El texto %(lang)s de %(field)s tiene otra estructura HTML que su texto "
+"en_US: conserva sus etiquetas y traduce solo sus textos."
+
+#. module: muk_ai_product
+#: model:muk_ai.agent.suggestion,label:muk_ai_product.agent_product_writer_suggestion_translate
+msgid "Translate this product"
+msgstr "Traducir este producto"
