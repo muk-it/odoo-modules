@@ -364,7 +364,7 @@ class AIApproval(models.Model):
         field = self._field_with_label(model, fname)[0]
         label = self._lang_label(lang) if field is not None and field.translate else ''
         localized = model.with_context(lang=lang) if label else model
-        current = self._read_current(localized, ids, [fname])
+        current = self._read_current(localized, ids, [fname]) if field else {}
         if label and field.store and current:
             model.flush_model([fname])
             untranslated = self.env.execute_query(
