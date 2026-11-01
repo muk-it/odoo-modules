@@ -250,7 +250,10 @@ export class MukAISystray extends Component {
     async loadActions() {
         this._agents ||= this.orm.searchRead(
             'muk_ai.agent',
-            [['active', '=', true]],
+            [
+                ['active', '=', true],
+                ['allow_chat', '=', true],
+            ],
             ['id', 'name', 'description', 'suggestions'],
             { order: 'sequence, name' },
         );

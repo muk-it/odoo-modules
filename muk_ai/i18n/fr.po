@@ -6709,3 +6709,13 @@ msgstr "Plus"
 #, python-format
 msgid "Search"
 msgstr "Rechercher"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__allow_chat
+msgid "Allow Chat"
+msgstr "Autoriser le chat"
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_agent__allow_chat
+msgid "Offer this agent in the agent picker of a chat."
+msgstr "Proposer cet agent dans le sélecteur d'agents d'un chat."
