@@ -11,6 +11,7 @@ from odoo.tests import common, tagged
 from odoo.addons.muk_mcp.tools.xlsx import XlsxExport, build_xlsx
 
 
+@tagged('post_install', '-at_install')
 class TestMcpExportRecords(common.TransactionCase):
 
     # ----------------------------------------------------------

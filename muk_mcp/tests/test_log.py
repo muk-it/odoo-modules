@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 from odoo import api
 from odoo.exceptions import AccessError
-from odoo.tests import common
+from odoo.tests import common, tagged
 from odoo.tests.common import new_test_user
 
 from odoo.addons.muk_mcp.core.tool import invalidate_registry_cache, mcp_tool
@@ -21,6 +21,7 @@ def _mcp_test_log_probe(self):
     return {'ok': True}
 
 
+@tagged('post_install', '-at_install')
 class TestMcpLog(common.TransactionCase):
 
     # ----------------------------------------------------------

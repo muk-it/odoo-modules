@@ -1,8 +1,9 @@
 import json
 
-from odoo.tests import common
+from odoo.tests import common, tagged
 
 
+@tagged('post_install', '-at_install')
 class TestPlayground(common.TransactionCase):
 
     # ----------------------------------------------------------

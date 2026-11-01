@@ -2,9 +2,10 @@ import base64
 import json
 
 from odoo.exceptions import UserError
-from odoo.tests import common
+from odoo.tests import common, tagged
 
 
+@tagged('post_install', '-at_install')
 class TestMcpPrintReport(common.TransactionCase):
 
     # ----------------------------------------------------------
