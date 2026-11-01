@@ -311,16 +311,6 @@ msgid "Read the product"
 msgstr "Leggi il prodotto"
 
 #. module: muk_ai_product
-#. odoo-python
-#: code:addons/muk_ai_product/models/product_template.py:0
-msgid ""
-"The %(lang)s text of %(field)s has another HTML structure than its en_US "
-"text: keep its tags and translate only its texts."
-msgstr ""
-"Il testo %(lang)s di %(field)s ha una struttura HTML diversa dal suo testo "
-"en_US: mantieni i suoi tag e traduci solo i suoi testi."
-
-#. module: muk_ai_product
 #: model:muk_ai.agent.suggestion,label:muk_ai_product.agent_product_writer_suggestion_translate
 msgid "Translate this product"
 msgstr "Traduci questo prodotto"
