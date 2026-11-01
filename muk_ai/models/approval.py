@@ -376,7 +376,7 @@ class AIApproval(models.Model):
         for code, value in per_lang.items():
             label = self._lang_label(code) if translated else ''
             localized = model.with_context(lang=code) if label else model
-            current = self._read_current(localized, ids, [fname])
+            current = self._read_current(localized, ids, [fname]) if field else {}
             if label and field.store and current:
                 model.flush_model([fname])
                 query = sql.SQL('SELECT id FROM {} WHERE id = ANY(%s) AND NOT {} ? %s')
