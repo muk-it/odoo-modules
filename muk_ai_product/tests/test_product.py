@@ -50,10 +50,6 @@ class TestProductContent(AITestCommon):
             }
         )
 
-    def _installed(self, module: str) -> bool:
-        """Tell whether a module is installed in the database under test."""
-        return self.env['ir.module.module']._get(module).state == 'installed'
-
     # ----------------------------------------------------------
     # Tests
     # ----------------------------------------------------------
@@ -68,37 +64,16 @@ class TestProductContent(AITestCommon):
             set(context['never_generate']),
         )
         self.assertLessEqual({'en_US', 'de_DE'}, set(context['languages']))
-        for module, group, names in (
-            (
-                'website_sale',
-                'fields',
-                {
-                    'description_ecommerce',
-                    'website_meta_title',
-                    'website_meta_description',
-                    'website_meta_keywords',
-                    'seo_name',
-                },
-            ),
-            ('muk_product_feed', 'fields', {'feed_description'}),
-            (
-                'muk_product_feed',
-                'suggest',
-                {'feed_brand_id', 'feed_gpc', 'feed_condition'},
-            ),
-            (
-                'muk_product_feed',
-                'never_generate',
-                {'feed_energy_class', 'feed_eprel_code'},
-            ),
-        ):
-            installed = self._installed(module)
-            with self.subTest(module=module, group=group, installed=installed):
-                self.assertEqual(names <= set(context[group]), installed)
-        self.assertEqual(
-            context['images'],
-            {'main': 0, 'extra': 0 if self._installed('website_sale') else None},
-        )
+        shop = self.env['ir.module.module']._get('website_sale').state == 'installed'
+        shop_fields = {
+            'description_ecommerce',
+            'website_meta_title',
+            'website_meta_description',
+            'website_meta_keywords',
+            'seo_name',
+        }
+        self.assertEqual(shop_fields <= set(context['fields']), shop)
+        self.assertEqual(context['images'], {'main': 0, 'extra': 0 if shop else None})
         self.template.image_1920 = PNG_1x1
         main = self._tools()._mcp_product_context(self.template.id)['images']['main']
         self.assertEqual(self.env['ir.attachment'].browse(main).res_field, 'image_1920')

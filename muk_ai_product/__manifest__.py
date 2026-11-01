@@ -9,14 +9,15 @@
         facts only, translate them into every language the company sells in,
         and add image variants as extra images marked as AI-generated. Every
         change waits for approval in the chat.
-        Web shop, search and feed texts are filled when their apps are
-        installed; barcodes and manufacturer data are never generated.
+        Web shop and search texts are filled when eCommerce is installed;
+        barcodes and manufacturer data are never generated.
     """,
-    'version': '20.0.1.0.0',
+    'version': '20.0.1.0.1',
     'category': 'Sales/Product',
     'license': 'LGPL-3',
     'author': 'MuK IT',
     'website': 'http://www.mukit.at',
+    'live_test_url': 'https://youtu.be/R1HyxHaD65M',
     'contributors': [
         'Mathias Markl <mathias.markl@mukit.at>',
     ],

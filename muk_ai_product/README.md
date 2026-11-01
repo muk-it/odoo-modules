@@ -6,6 +6,7 @@
 ![Odoo.sh](https://img.shields.io/badge/Odoo.sh-%E2%9C%93-1C3A4C?style=flat-square)
 ![On-Premise](https://img.shields.io/badge/On--Premise-%E2%9C%93-33627E?style=flat-square)
 [![License LGPL v3](https://img.shields.io/badge/License-LGPL_v3-blue?style=flat-square)](LICENSE)
+[![YouTube demo](https://img.shields.io/badge/YouTube-demo-FF0000?style=flat-square&logo=youtube&logoColor=white)](https://youtu.be/R1HyxHaD65M)
 [![Website mukit.at](https://img.shields.io/badge/Website-mukit.at-243742?style=flat-square)](https://www.mukit.at)
 
 **Products from a link or a price list, with texts from real facts in every
@@ -27,8 +28,7 @@ Every change waits for your approval.
   product, prefers the manufacturer's page and datasheet, and names the source
   of every fact.
 - **Texts from the facts**: name, sales and purchase description, and with
-  eCommerce the shop description and the search texts, with MuK Product Feed
-  the feed description.
+  eCommerce the shop description and the search texts.
 - **One approval per language**: the base language first, and an HTML
   description keeps the same markup in every language.
 - **Image variants**: a packshot, the product in use and a detail from the main

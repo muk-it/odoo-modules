@@ -24,13 +24,7 @@ class ProductTemplate(models.Model):
             'website_meta_description',
             'website_meta_keywords',
             'seo_name',
-            'feed_description',
         )
-
-    @property
-    def AI_SUGGEST_FIELDS(self) -> tuple[str, ...]:
-        """Return the classification fields the AI may propose a value for."""
-        return ('feed_brand_id', 'feed_gpc', 'feed_condition')
 
     @property
     def AI_MANUAL_FIELDS(self) -> tuple[str, ...]:
@@ -42,8 +36,6 @@ class ProductTemplate(models.Model):
             'manufacturer_name',
             'manufacturer_code',
             'manufacturer_url',
-            'feed_energy_class',
-            'feed_eprel_code',
         )
 
     # ----------------------------------------------------------
@@ -67,15 +59,11 @@ class ProductTemplate(models.Model):
         with ``markup`` keeps one structure and translates its texts only.
         """
         langs = self.env['res.lang'].search([]).mapped('code')
-        texts, suggest, manual = (
+        texts, manual = (
             [name for name in names if name in self._fields]
-            for names in (
-                self.AI_TEXT_FIELDS,
-                self.AI_SUGGEST_FIELDS,
-                self.AI_MANUAL_FIELDS,
-            )
+            for names in (self.AI_TEXT_FIELDS, self.AI_MANUAL_FIELDS)
         )
-        described = self.fields_get([*texts, *suggest, *manual], ['string', 'type'])
+        described = self.fields_get([*texts, *manual], ['string', 'type'])
         per_lang = {lang: self._ai_values(texts, lang) for lang in langs}
         return {
             'languages': langs,
@@ -86,10 +74,6 @@ class ProductTemplate(models.Model):
                     'markup': callable(self._fields[name].translate),
                 }
                 for name in texts
-            },
-            'suggest': {
-                name: {**described[name], 'value': value}
-                for name, value in self._ai_values(suggest).items()
             },
             'never_generate': {
                 name: {**described[name], 'value': value}

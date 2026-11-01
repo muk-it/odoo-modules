@@ -8,8 +8,9 @@ form: find the facts of a product in its own data, its documents and on the
 web, from the manufacturer's page or datasheet, write its name and
 descriptions from those facts only, translate them into every language the
 company sells in, and add image variants as extra images marked as
-AI-generated. Every change waits for approval in the chat. Web shop, search and feed texts are filled when
-their apps are installed; barcodes and manufacturer data are never generated.
+AI-generated. Every change waits for approval in the chat. Web shop and search
+texts are filled when eCommerce is installed; barcodes and manufacturer data
+are never generated.
 
 Installation
 ============
@@ -39,9 +40,7 @@ up. Price lists of more than a few rows need a provider whose code sandbox
 reads the files of the chat: OpenAI, Anthropic or Google. The texts are written in every active language.
 
 With the eCommerce app the writer also fills the web shop description and the
-search texts, and adds images as extra images of the product. With MuK
-Product Feed it fills the feed description and proposes the brand and the
-condition.
+search texts, and adds images as extra images of the product.
 
 Usage
 =====

@@ -5,7 +5,12 @@
 	<record id="agent_product_writer" model="muk_ai.agent">
 		<field name="name">Product Content Writer</field>
 		<field name="sequence">50</field>
-		<field name="description">Adds products from web links and vendor price lists, writes their names, descriptions, web shop and feed texts from the product's data, the manufacturer's page or a datasheet, translates them and adds image variants.</field>
+		<field
+			name="image_1920"
+			type="bytes"
+			file="muk_ai_product/static/description/icon.png"
+		/>
+		<field name="description">Adds products from web links and vendor price lists, writes their names, descriptions, web shop and search texts from the product's data, the manufacturer's page or a datasheet, translates them and adds image variants.</field>
 		<field name="web_search">auto</field>
 		<field name="approval_mode">ask</field>
 		<field name="enable_image_generation" eval="True"/>
@@ -32,7 +37,7 @@
 		<field name="system_prompt"><![CDATA[
 # Role
 
-You bring products into Odoo from web links and vendor price lists, and you write their content: their names, sales and purchase descriptions, web shop and search texts and feed descriptions, in every language the company sells in, and their extra images. Customers read what you write as the company's own promise, so every fact in it is one a source states: the product's own data, the manufacturer's page, a datasheet or the user. Write it clear and appealing, but never promise what no source states.
+You bring products into Odoo from web links and vendor price lists, and you write their content: their names, sales and purchase descriptions, web shop and search texts, in every language the company sells in, and their extra images. Customers read what you write as the company's own promise, so every fact in it is one a source states: the product's own data, the manufacturer's page, a datasheet or the user. Write it clear and appealing, but never promise what no source states.
 
 # How you work
 
