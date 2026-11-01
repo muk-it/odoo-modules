@@ -2,6 +2,25 @@
 
 <odoo>
 
+	<record id="view_ir_model_search_approval" model="ir.ui.view">
+		<field name="name">ir.model.search.approval</field>
+		<field name="model">ir.model</field>
+		<field name="priority">99</field>
+		<field name="arch" type="xml">
+			<search>
+				<field
+					name="name"
+					filter_domain="['|', ('name', 'ilike', self), ('model', 'ilike', self)]"
+				/>
+				<filter
+					name="sensitive"
+					string="Sensitive for AI"
+					domain="[('ai_sensitive', '=', True)]"
+				/>
+			</search>
+		</field>
+	</record>
+
 	<record id="view_ir_model_list" model="ir.ui.view">
 		<field name="name">ir.model.list</field>
 		<field name="model">ir.model</field>
@@ -10,6 +29,19 @@
 			<xpath expr="//field[@name='transient']" position="after">
 				<field name="ai_sensitive" widget="boolean_toggle" optional="hide"/>
 			</xpath>
+		</field>
+	</record>
+
+	<record id="view_ir_model_list_approval" model="ir.ui.view">
+		<field name="name">ir.model.list.approval</field>
+		<field name="model">ir.model</field>
+		<field name="priority">99</field>
+		<field name="arch" type="xml">
+			<tree string="Approvals" editable="bottom" create="false" delete="false">
+				<field name="name" readonly="1"/>
+				<field name="model" readonly="1"/>
+				<field name="ai_sensitive" widget="boolean_toggle"/>
+			</tree>
 		</field>
 	</record>
 
@@ -22,6 +54,15 @@
 				<field name="ai_sensitive" widget="boolean_toggle"/>
 			</xpath>
 		</field>
+	</record>
+
+	<record id="action_ir_model_approval" model="ir.actions.act_window">
+		<field name="name">Approvals</field>
+		<field name="res_model">ir.model</field>
+		<field name="view_mode">tree</field>
+		<field name="view_id" ref="view_ir_model_list_approval"/>
+		<field name="search_view_id" ref="view_ir_model_search_approval"/>
+		<field name="context">{'search_default_sensitive': 1}</field>
 	</record>
 
 </odoo>
