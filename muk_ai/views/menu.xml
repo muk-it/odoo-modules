@@ -105,6 +105,12 @@
 				action="action_res_users_budget"
 				sequence="40"
 			/>
+			<menuitem
+				id="menu_ai_approval"
+				name="Approvals"
+				action="action_ir_model_approval"
+				sequence="50"
+			/>
 		</menuitem>
 
 		<menuitem

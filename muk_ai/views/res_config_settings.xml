@@ -421,6 +421,19 @@
 					</block>
 					<block title="Integrations" name="muk_ai_integrations">
 						<setting
+							id="muk_ai_addon_crm"
+							string="CRM"
+							help="Research leads, draft quotations and follow them up."
+						>
+							<field
+								name="module_muk_ai_crm"
+								widget="module_link"
+							/>
+							<div class="content-group" invisible="not module_muk_ai_crm" id="msg_module_muk_ai_crm">
+								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+							</div>
+						</setting>
+						<setting
 							id="muk_ai_addon_spreadsheets"
 							string="Dashboards"
 							help="Build and edit spreadsheet dashboards in a chat."
@@ -447,19 +460,6 @@
 							</div>
 						</setting>
 						<setting
-							id="muk_ai_addon_livechat"
-							string="Live Chat"
-							help="Answer website visitors in the live chat."
-						>
-							<field
-								name="module_muk_ai_livechat"
-								widget="module_link"
-							/>
-							<div class="content-group" invisible="not module_muk_ai_livechat" id="msg_module_muk_ai_livechat">
-								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
-							</div>
-						</setting>
-						<setting
 							id="muk_ai_addon_mass_mailing"
 							string="Email Marketing"
 							help="Design newsletters that render in every mail client."
@@ -473,15 +473,15 @@
 							</div>
 						</setting>
 						<setting
-							id="muk_ai_addon_crm"
-							string="CRM"
-							help="Research leads, draft quotations and follow them up."
+							id="muk_ai_addon_livechat"
+							string="Live Chat"
+							help="Answer website visitors in the live chat."
 						>
 							<field
-								name="module_muk_ai_crm"
+								name="module_muk_ai_livechat"
 								widget="module_link"
 							/>
-							<div class="content-group" invisible="not module_muk_ai_crm" id="msg_module_muk_ai_crm">
+							<div class="content-group" invisible="not module_muk_ai_livechat" id="msg_module_muk_ai_livechat">
 								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
 							</div>
 						</setting>
