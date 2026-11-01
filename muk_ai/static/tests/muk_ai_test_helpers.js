@@ -99,6 +99,7 @@ export class AIAgentModel extends models.Model {
     description = fields.Char();
     suggestions = fields.Json();
     active = fields.Boolean({ default: true });
+    allow_chat = fields.Boolean({ default: true });
     sequence = fields.Integer();
     _records = [
         {

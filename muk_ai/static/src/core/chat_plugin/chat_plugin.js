@@ -286,7 +286,10 @@ export class AIChatPlugin extends Plugin {
         this.agentsLoad ||= this.orm
             .searchRead(
                 'muk_ai.agent',
-                [['active', '=', true]],
+                [
+                    ['active', '=', true],
+                    ['allow_chat', '=', true],
+                ],
                 ['id', 'name', 'description', 'suggestions'],
                 { order: 'sequence, name' },
             )
