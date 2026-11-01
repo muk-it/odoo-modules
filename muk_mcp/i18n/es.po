@@ -1459,6 +1459,16 @@ msgid "Status"
 msgstr "Estado"
 
 #. module: muk_mcp
+#. odoo-python
+#: code:addons/muk_mcp/mcp/write.py:0
+msgid ""
+"The %(lang)s text of %(field)s has another structure than its en_US text: "
+"keep its tags and translate only its texts."
+msgstr ""
+"El texto %(lang)s de %(field)s tiene otra estructura que su texto en_US: "
+"conserve sus etiquetas y traduzca solo sus textos."
+
+#. module: muk_mcp
 #: model:ir.model.fields,help:muk_mcp.field_muk_mcp_transfer__key_name
 msgid "The API key the link was issued to."
 msgstr "La clave API para la que se emitió el enlace."

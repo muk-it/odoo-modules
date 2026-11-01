@@ -19,6 +19,62 @@ class MCPMixin(models.AbstractModel):
     _inherit = 'muk_mcp.mixin'
 
     # ----------------------------------------------------------
+    # Helper
+    # ----------------------------------------------------------
+
+    @api.model
+    def _mcp_translated_values(
+        self,
+        target: models.BaseModel,
+        values: dict[str, Any],
+    ) -> dict[str, dict[str, str]]:
+        """Return the translated fields of ``values`` given as ``{lang: value}``."""
+        return {
+            name: value
+            for name, value in values.items()
+            if isinstance(value, dict)
+            and getattr(target._fields.get(name), 'translate', False)
+        }
+
+    @api.model
+    def _mcp_write_translations(
+        self,
+        records: models.BaseModel,
+        translated: dict[str, dict[str, str]],
+    ) -> None:
+        """Write translated fields from one value per language.
+
+        The ``en_US`` value is the source; a field translated by terms maps
+        the terms of the source to those of each language, in order.
+        """
+        for name, texts in translated.items():
+            field = records._fields[name]
+            if 'en_US' in texts:
+                records.with_context(lang='en_US').write({name: texts['en_US']})
+            texts = {lang: text for lang, text in texts.items() if lang != 'en_US'}
+            for record in records:
+                translations = texts
+                if callable(field.translate):
+                    source = field.get_trans_terms(
+                        record.with_context(lang='en_US')[name] or ''
+                    )
+                    translations = {}
+                    for lang, text in texts.items():
+                        terms = field.get_trans_terms(text or '')
+                        if len(terms) != len(source):
+                            raise UserError(
+                                _(
+                                    'The %(lang)s text of %(field)s has another '
+                                    'structure than its en_US text: keep its '
+                                    'tags and translate only its texts.',
+                                    lang=lang,
+                                    field=field.string,
+                                )
+                            )
+                        translations[lang] = dict(zip(source, terms, strict=True))
+                record.update_field_translations(name, translations)
+
+    # ----------------------------------------------------------
     # Functions
     # ----------------------------------------------------------
 
@@ -74,7 +130,17 @@ class MCPMixin(models.AbstractModel):
             and field.readonly
             and not field.precompute
         )
-        record = target.create(values)
+        translated = self._mcp_translated_values(target, values)
+        record = target.create(
+            {
+                **values,
+                **{
+                    name: texts.get(self.env.lang, next(iter(texts.values())))
+                    for name, texts in translated.items()
+                },
+            }
+        )
+        self._mcp_write_translations(record, translated)
         self._mcp_assert_records_allowed(model, record.ids)
         result = {'id': record.id, 'display_name': record.display_name}
         return {**result, 'ignored_fields': ignored} if ignored else result
@@ -115,7 +181,12 @@ class MCPMixin(models.AbstractModel):
         :raise UserError: when ``ids`` resolves to an empty list.
         """
         records = self._mcp_records(model, ids)
-        records.write(values or {})
+        values = values or {}
+        translated = self._mcp_translated_values(records, values)
+        records.write(
+            {name: value for name, value in values.items() if name not in translated}
+        )
+        self._mcp_write_translations(records, translated)
         return {'success': True, 'ids': records.ids}
 
     @api.model
