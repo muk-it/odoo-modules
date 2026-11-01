@@ -3205,7 +3205,8 @@ class AISession(models.Model):
                 self._skip_tool_call(
                     outputs,
                     call,
-                    'tool_call_limit_exceeded',
+                    f'skipped: only {MAX_TOOL_CALLS_PER_ROUND} tool calls run '
+                    'per reply, make this call again in your next reply',
                     log_result={'error': 'tool_call_limit_exceeded'},
                 )
                 continue
