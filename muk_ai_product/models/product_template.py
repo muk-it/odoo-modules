@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from odoo import _, models
-from odoo.exceptions import UserError
+from odoo import models
 
 
 class ProductTemplate(models.Model):
@@ -52,36 +51,6 @@ class ProductTemplate(models.Model):
             else value
             for name in names
         }
-
-    def _ai_write_markup(self, name: str, values: dict) -> None:
-        """Write a markup field per language, keeping one structure for all.
-
-        The ``en_US`` value sets the structure; each other language maps the
-        texts of that structure to its own, in the same order.
-        """
-        field = self._fields[name]
-        if 'en_US' in values:
-            self.with_context(lang='en_US').write({name: values['en_US']})
-        for record in self:
-            source = field.get_trans_terms(
-                record.with_context(lang='en_US')[name] or ''
-            )
-            translations = {}
-            for lang, html in values.items():
-                terms = field.get_trans_terms(html or '')
-                if len(terms) != len(source):
-                    raise UserError(
-                        _(
-                            'The %(lang)s text of %(field)s has another HTML '
-                            'structure than its en_US text: keep its tags and '
-                            'translate only its texts.',
-                            lang=lang,
-                            field=field.string,
-                        )
-                    )
-                if lang != 'en_US':
-                    translations[lang] = dict(zip(source, terms, strict=True))
-            record.update_field_translations(name, translations)
 
     def _ai_product_context(self) -> dict:
         """Describe the content of the product for the AI, per language.

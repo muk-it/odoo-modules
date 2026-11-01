@@ -46,25 +46,3 @@ class AIProductTools(models.AbstractModel):
     def _mcp_product_context(self, template_id: int) -> dict:
         """Describe the content of a product per language."""
         return self._mcp_record('product.template', template_id)._ai_product_context()
-
-    @api.model
-    def _mcp_update_records(self, model: str, ids, values) -> dict:
-        """Write a markup field of a product given as ``{lang: html}``."""
-        if model != 'product.template' or not isinstance(values, dict):
-            return super()._mcp_update_records(model, ids, values)
-        fields = self.env[model]._fields
-        markup = {
-            name: value
-            for name, value in values.items()
-            if isinstance(value, dict)
-            and callable(getattr(fields.get(name), 'translate', None))
-        }
-        result = super()._mcp_update_records(
-            model,
-            ids,
-            {name: value for name, value in values.items() if name not in markup},
-        )
-        records = self._resolve_model(model).browse(result['ids'])
-        for name, per_lang in markup.items():
-            records._ai_write_markup(name, per_lang)
-        return result
