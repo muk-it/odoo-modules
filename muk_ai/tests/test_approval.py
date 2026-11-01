@@ -252,6 +252,15 @@ class TestApproval(AITestCommon):
                 {'kind': 'delete', 'targets': []},
             ),
             ('update_records', {'ids': [target.id], 'values': 'name=X'}, None),
+            (
+                'update_records',
+                {'ids': [target.id], 'values': {'no_such_field': 'X'}},
+                {
+                    'kind': 'update',
+                    'targets': ['Preview Target'],
+                    'changes': [('no_such_field', '', 'X')],
+                },
+            ),
             ('search_read', {'values': {'name': 'X'}}, None),
         ):
             with self.subTest(tool=tool, arguments=arguments):
