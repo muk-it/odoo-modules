@@ -6216,3 +6216,13 @@ msgstr "Altro"
 #: code:addons/muk_ai/static/src/chat/chat.xml:0
 msgid "Search"
 msgstr "Cerca"
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__allow_chat
+msgid "Allow Chat"
+msgstr "Consenti chat"
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_muk_ai_agent__allow_chat
+msgid "Offer this agent in the agent picker of a chat."
+msgstr "Offri questo agente nel selettore degli agenti di una chat."

@@ -242,10 +242,18 @@ export class MukAISystray extends Component {
      */
     async loadActions() {
         const agents = await this.orm
-            .searchRead('muk_ai.agent', [['active', '=', true]], ['suggestions'], {
-                order: 'sequence, name',
-                limit: 1,
-            })
+            .searchRead(
+                'muk_ai.agent',
+                [
+                    ['active', '=', true],
+                    ['allow_chat', '=', true],
+                ],
+                ['suggestions'],
+                {
+                    order: 'sequence, name',
+                    limit: 1,
+                },
+            )
             .catch(() => []);
         return agentSuggestions({ agents });
     }
