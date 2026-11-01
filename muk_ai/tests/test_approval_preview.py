@@ -124,6 +124,7 @@ class TestApprovalPreview(AITestCommon):
                 {'comment': '<!-- note -->'},
                 [('comment', '')],
             ),
+            ('update_records', {'no_such_field': 'X'}, [('no_such_field', 'X')]),
             (
                 'create_records',
                 [{'name': 'One'}, {'name': 'Two'}],
