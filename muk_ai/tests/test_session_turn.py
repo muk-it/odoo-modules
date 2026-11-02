@@ -59,8 +59,8 @@ class TestSessionTurn(AITestCommon):
     def test_a_turn_runs_tools_until_the_model_answers(self):
         partners = {'model': 'res.partner'}
         skipped = 'skipped: terminating tool already ran; emit a short summary and stop'
-        for label, payloads, results, executed, outputs, offered in (
-            ('one round', [], {}, [], {}, [True]),
+        for label, payloads, results, executed, outputs, offered, answer in (
+            ('one round', [], {}, [], {}, [True], 'done'),
             (
                 'two rounds',
                 [
@@ -71,6 +71,7 @@ class TestSessionTurn(AITestCommon):
                 ['search_count', 'search_read'],
                 {'c1': 5, 'c2': [{'name': 'ACME'}]},
                 [True, True, True],
+                'done',
             ),
             (
                 'tool error',
@@ -79,6 +80,7 @@ class TestSessionTurn(AITestCommon):
                 ['search_read'],
                 {'c1': {'error': 'access denied'}},
                 [True, True],
+                'done',
             ),
             (
                 'terminating tool',
@@ -91,6 +93,16 @@ class TestSessionTurn(AITestCommon):
                 ['open_view'],
                 {'c1': {'ok': True}, 'c2': {'error': skipped, 'skipped': True}},
                 [True, False],
+                'done',
+            ),
+            (
+                'final answer',
+                [tool_payload(('search_count', partners, 'c1'))],
+                {'search_count': {'final_answer': 'Counted.'}},
+                ['search_count'],
+                {'c1': {'final_answer': 'Counted.'}},
+                [True],
+                'Counted.',
             ),
         ):
             with self.subTest(label):
@@ -101,7 +113,7 @@ class TestSessionTurn(AITestCommon):
                 ):
                     snapshot = session.start('help me')
                 self.assertEqual(
-                    (snapshot['state'], snapshot['last_text']), ('done', 'done')
+                    (snapshot['state'], snapshot['last_text']), ('done', answer)
                 )
                 self.assertEqual([call['name'] for call in calls], executed)
                 self.assertEqual(

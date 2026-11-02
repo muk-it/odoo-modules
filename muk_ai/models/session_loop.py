@@ -10,6 +10,7 @@ from odoo.exceptions import UserError
 from odoo.tools import config
 
 from odoo.addons.muk_ai.tools.attachment import INLINE_FILE_RE
+from odoo.addons.muk_ai.tools.conversation import final_answer
 from odoo.addons.muk_ai.tools.runtime import (
     ITERATION_WARNING_ROUNDS,
     MAX_ITERATIONS,
@@ -256,7 +257,7 @@ class AISessionLoop(models.AbstractModel):
             stream.add('tool_call_args_delta', delta, call_id=payload['call_id'])
 
     def _persist_partial(self, text: str) -> None:
-        """Keep the answer streamed so far as an assistant message."""
+        """Keep a text answer as the assistant message of the turn."""
         message = {
             'type': 'message',
             'role': 'assistant',
@@ -568,6 +569,10 @@ class AISessionLoop(models.AbstractModel):
                 tool_calls, [], 0, has_terminating=has_terminating
             )
             if result is None:
+                return
+            if (answer := final_answer(self.conversation)) is not None:
+                self._persist_partial(answer)
+                self._transition_state('done')
                 return
             has_terminating = has_terminating or result
         if self.state == 'running':

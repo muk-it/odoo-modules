@@ -14,6 +14,22 @@ def is_output(item) -> bool:
     return isinstance(item, dict) and item.get('type') == 'function_call_output'
 
 
+def final_answer(conversation: list) -> str | None:
+    """Return the ``final_answer`` a tool output of the last round ends the turn with."""
+    for item in reversed(conversation):
+        if isinstance(item, dict) and item.get('type') == 'function_call':
+            return None
+        if not is_output(item):
+            continue
+        try:
+            output = json.loads(item.get('output') or '')
+        except ValueError:
+            continue
+        if isinstance(output, dict) and isinstance(output.get('final_answer'), str):
+            return output['final_answer']
+    return None
+
+
 def open_call_ids(conversation: list) -> list[str]:
     """Return the ids of the tool calls the conversation holds no output for."""
     answered = {item.get('call_id') for item in conversation if is_output(item)}
