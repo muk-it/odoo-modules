@@ -303,3 +303,19 @@ def build_tool_call_output(call_id: str, output) -> dict:
         'call_id': call_id,
         'output': serialized,
     }
+
+
+def final_answer(conversation: list) -> str | None:
+    """Return the ``final_answer`` a tool output of the last round ends the turn with."""
+    for item in reversed(conversation):
+        if isinstance(item, dict) and item.get('type') == 'function_call':
+            return None
+        if not isinstance(item, dict) or item.get('type') != 'function_call_output':
+            continue
+        try:
+            output = json.loads(item.get('output') or '')
+        except ValueError:
+            continue
+        if isinstance(output, dict) and isinstance(output.get('final_answer'), str):
+            return output['final_answer']
+    return None

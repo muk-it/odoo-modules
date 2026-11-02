@@ -66,6 +66,7 @@ from odoo.addons.muk_ai.tools import (
     commit_safe,
     extract_sources,
     fetch_url,
+    final_answer,
     format_tool_signature,
     is_unmaterialized_attachment,
     sanitize_json_schema,
@@ -2143,7 +2144,7 @@ class AISession(models.Model):
             self.invalidate_recordset(['state', 'turn_seq'])
             if self.state == 'stopped':
                 if buffer_state.get('full_text'):
-                    self._persist_partial(buffer_state)
+                    self._persist_partial(buffer_state['full_text'])
                     buffer_state['full_text'] = ''
                     self._commit_safe()
                 raise StreamCancelled()
@@ -2256,24 +2257,18 @@ class AISession(models.Model):
             self._publish_event('text_delta', {'delta': flushed})
             self._commit_safe()
 
-    def _persist_partial(self, buffer_state: dict) -> None:
-        """Persist buffered assistant text as a partial conversation message."""
-        if text := buffer_state.get('full_text'):
-            self.write(
-                {
-                    'last_text': text,
-                    'conversation': [
-                        *(self.conversation or []),
-                        {
-                            'type': 'message',
-                            'role': 'assistant',
-                            'content': [{'type': 'output_text', 'text': text}],
-                        },
-                    ],
-                }
-            )
-            self._append_event({'kind': 'text', 'content': text})
-            self.flush_recordset()
+    def _persist_partial(self, text: str) -> None:
+        """Keep a text answer as the assistant message of the turn."""
+        message = {
+            'type': 'message',
+            'role': 'assistant',
+            'content': [{'type': 'output_text', 'text': text}],
+        }
+        self.write(
+            {'last_text': text, 'conversation': [*(self.conversation or []), message]}
+        )
+        self._append_event({'kind': 'text', 'content': text})
+        self.flush_recordset()
 
     def _flush_stream_buffer(self, buffer_state: dict) -> None:
         """Flush all remaining text, reasoning, and tool-arg buffers."""
@@ -3430,6 +3425,10 @@ class AISession(models.Model):
                 tool_calls, [], 0, has_terminating=has_terminating
             )
             if result is None:
+                return
+            if (answer := final_answer(self.conversation)) is not None:
+                self._persist_partial(answer)
+                self._transition_state('done')
                 return
             has_terminating = has_terminating or result
         if self.state == 'running':
