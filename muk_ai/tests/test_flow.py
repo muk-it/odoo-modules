@@ -185,6 +185,21 @@ class TestSessionFlow(AITestCommon):
             ['search_count', 'search_read'],
         )
 
+    def test_tool_final_answer_ends_the_turn(self):
+        session = self._new_session('final-answer')
+        provider = self._script_provider(
+            [self._tool_payload('search_count', {'model': 'res.partner'}, 'c0')]
+        )
+        tools = self._script_tool_results(
+            {'search_count': {'final_answer': 'Counted.'}}
+        )
+        with provider, tools:
+            snapshot = session.start('Count partners.')
+        self.assertEqual(
+            (snapshot['state'], snapshot['last_text']), ('done', 'Counted.')
+        )
+        self.assertEqual(self._called_tool_names(session), ['search_count'])
+
     # ----------------------------------------------------------
     # Terminate
     # ----------------------------------------------------------
