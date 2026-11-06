@@ -7,7 +7,7 @@
         a database upgrade. It reports what it finds and changes nothing on its
         own. Rules can be changed in the browser and added by other modules.
     """,
-    'version': '16.0.1.0.2',
+    'version': '16.0.1.0.3',
     'category': 'Tools/Utils',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -39,6 +39,7 @@
     'assets': {
         'web.assets_backend': [
             'muk_check/static/src/check/overview/overview.scss',
+            'muk_check/static/src/check/updates/updates.scss',
             'muk_check/static/src/check/list/list.js',
             'muk_check/static/src/check/list/list.xml',
         ],
