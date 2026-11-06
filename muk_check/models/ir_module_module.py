@@ -36,7 +36,9 @@ class IrModuleModule(models.Model):
         return [
             ('state', '=', 'installed'),
             ('imported', '=', False),
-            ('author', 'not ilike', 'Odoo S.A.'),
+            ('author', 'not ilike', 'Odoo S'),
+            ('author', 'not ilike', 'Odoo PS'),
+            ('author', 'not =ilike', 'Odoo'),
         ]
 
     # ----------------------------------------------------------

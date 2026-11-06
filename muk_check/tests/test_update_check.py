@@ -367,6 +367,24 @@ class TestUpdateCheck(TransactionCase):
         )
         self.assertIn(self.module, covered)
         self.assertFalse(covered.filtered(lambda module: module.name == 'base'))
+        cases = [
+            ('Odoo S.A.', False),
+            ('Odoo SA', False),
+            ('Odoo Sa', False),
+            ('Odoo PS', False),
+            ('Odoo', False),
+            ('odoo', False),
+            ('Vauxoo, Odoo S.A.', False),
+            ('Odoo Community Association (OCA)', True),
+            ('MuK IT', True),
+        ]
+        author = self.module.author
+        for name, is_covered in cases:
+            with self.subTest(name):
+                self.module.author = name
+                found = self.env['ir.module.module'].search(safe_eval(action.domain))
+                self.assertEqual(self.module in found, is_covered)
+        self.module.author = author
         self.module.imported = True
         self.assertNotIn(
             self.module, self.env['ir.module.module'].search(safe_eval(action.domain))
