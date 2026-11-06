@@ -19,9 +19,10 @@ class TestRuleEngine(TransactionCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        """Start without findings and with an administrator."""
+        """Start without findings or their messages, with an administrator."""
         super().setUpClass()
         cls.env['muk_check.finding'].search([]).unlink()
+        cls._finding_messages().unlink()
         cls.admin = new_test_user(
             cls.env, 'check_admin', 'base.group_system', email='admin@example.com'
         )
@@ -62,12 +63,13 @@ class TestRuleEngine(TransactionCase):
             self.env['muk_check.run'].action_run()
         return self.env['muk_check.run'].search([], limit=1)
 
-    def _finding_messages(self) -> models.BaseModel:
+    @classmethod
+    def _finding_messages(cls) -> models.BaseModel:
         """Return the findings posted in the administrators channel so far."""
-        return self.env['mail.message'].search(
+        return cls.env['mail.message'].search(
             [
                 ('model', '=', 'discuss.channel'),
-                ('res_id', '=', self.env.ref('muk_check.channel_administrators').id),
+                ('res_id', '=', cls.env.ref('muk_check.channel_administrators').id),
                 ('body', 'ilike', 'Security Check:'),
             ]
         )
