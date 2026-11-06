@@ -752,20 +752,6 @@ export function useAiSession(options = {}) {
     function rebuildEventKeys() {
         eventKeys = new Set((state.events || []).map((entry) => eventKey(entry)));
     }
-    /**
-     * Read the pinned context again once the session channel is held: a pin
-     * stored while the session loaded reached neither the read nor the channel.
-     */
-    async function syncViewContext() {
-        const sessionId = state.sessionId;
-        if (!sessionId) {
-            return;
-        }
-        const [row] = await orm.read('muk_ai.session', [sessionId], ['view_context']);
-        if (row && state.sessionId === sessionId) {
-            state.viewContext = row.view_context || null;
-        }
-    }
     async function loadMoreEvents() {
         if (state.loadingOlder || !state.hasMoreOlder || !state.sessionId) {
             return;
@@ -1754,7 +1740,6 @@ export function useAiSession(options = {}) {
         load,
         loadMoreEvents,
         applySnapshot,
-        syncViewContext,
         onInputChange,
         onSend,
         onStop,

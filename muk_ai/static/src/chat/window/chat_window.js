@@ -127,7 +127,6 @@ export class ChatWindow extends Component {
         );
         onMounted(() => {
             this._installRootPasteHandler();
-            this.session.syncViewContext();
         });
         onWillUnmount(() => {
             this._uninstallRootPasteHandler();
