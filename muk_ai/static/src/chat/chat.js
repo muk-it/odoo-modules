@@ -210,17 +210,16 @@ export class AIChat extends Component {
             this._connectUserBus();
             const requested = this._getRequestedSessionId();
             const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-            const linked = Boolean(this.props?.action?.params?.session_id);
             let opened = false;
             if (requested) {
                 if (this.state.sessions.some((s) => s.id === requested)) {
                     await this._selectSession(requested);
-                    this.state.sidebarHidden = linked || isMobile;
+                    this.state.sidebarHidden = true;
                     opened = true;
                 } else {
                     const record = await this.session.load(requested);
                     if (record) {
-                        this.state.sidebarHidden = linked || isMobile;
+                        this.state.sidebarHidden = true;
                         opened = true;
                     } else {
                         this.notification.add(_t('That AI session no longer exists.'), {
@@ -238,9 +237,6 @@ export class AIChat extends Component {
             this.state.loading = false;
         });
         onMounted(() => {
-            this.router.pushState({
-                session_id: this.session.state.sessionId || undefined,
-            });
             this._installImageClickHandler();
             this._installRootPasteHandler();
         });
@@ -995,9 +991,21 @@ export class AIChat extends Component {
         ];
     }
     _getRequestedSessionId() {
-        const { params, context } = this.props?.action || {};
-        const id = parseInt((params || context?.params)?.session_id, 10);
-        return id > 0 ? id : null;
+        try {
+            const actionParam = this.props?.action?.params?.session_id;
+            if (actionParam) {
+                const actionId = parseInt(actionParam, 10);
+                if (Number.isInteger(actionId) && actionId > 0) {
+                    return actionId;
+                }
+            }
+            const params = new URLSearchParams(window.location.search);
+            const raw = params.get('session_id');
+            const id = raw ? parseInt(raw, 10) : 0;
+            return Number.isInteger(id) && id > 0 ? id : null;
+        } catch {
+            return null;
+        }
     }
     get renderedTurns() {
         return this.session.renderedTurns();

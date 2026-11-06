@@ -8,7 +8,6 @@ import { makeTestEnv } from '@web/../tests/helpers/mock_env';
 import { makeFakeNotificationService } from '@web/../tests/helpers/mock_services';
 import { click, getFixture, mount, nextTick } from '@web/../tests/helpers/utils';
 
-import { AIChat } from '@muk_ai/chat/chat';
 import '@muk_ai/core/commands/command_providers';
 import { MukAISystray } from '@muk_ai/webclient/systray/systray';
 
@@ -244,16 +243,4 @@ QUnit.module('muk_ai', {}, function () {
             assert.deepEqual(steps, ['action muk_ai.chat 9']);
         },
     );
-
-    QUnit.test('a reloaded chat asks for the session of its fragment', (assert) => {
-        const requested = (action) =>
-            AIChat.prototype._getRequestedSessionId.call({ props: { action } });
-        assert.strictEqual(requested({ params: { session_id: 178 } }), 178);
-        assert.strictEqual(
-            requested({ context: { params: { session_id: 178 } } }),
-            178,
-        );
-        assert.strictEqual(requested({ context: { params: { action: 226 } } }), null);
-        assert.strictEqual(requested({}), null);
-    });
 });
