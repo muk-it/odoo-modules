@@ -16,6 +16,27 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: muk_check
+#. odoo-python
+#: code:addons/muk_check/models/check_run.py:0
+#, python-format
+msgid "%(count)s open findings"
+msgstr "%(count)s risultati aperti"
+
+#. module: muk_check
+#. odoo-python
+#: code:addons/muk_check/models/check_run.py:0
+#, python-format
+msgid "%(days)s days behind"
+msgstr "%(days)s giorni indietro"
+
+#. module: muk_check
+#. odoo-python
+#: code:addons/muk_check/models/check_run.py:0
+#, python-format
+msgid "1 open finding"
+msgstr "1 risultato aperto"
+
+#. module: muk_check
 #: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_form
 msgid ""
 "A Python expression. True, text, a list of texts or\n"
@@ -234,6 +255,21 @@ msgstr ""
 "proprio profilo."
 
 #. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_form
+msgid "Build"
+msgstr ""
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_run__odoo_build_late
+msgid "Build Is Late"
+msgstr "Build in ritardo"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_run__odoo_build_note
+msgid "Build Status"
+msgstr "Stato della build"
+
+#. module: muk_check
 #: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_accept
 msgid "Cancel"
 msgstr "Annulla"
@@ -339,6 +375,11 @@ msgstr "Data creazione"
 #, python-format
 msgid "Critical"
 msgstr "Critica"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_form
+msgid "Current version"
+msgstr "Versione attuale"
 
 #. module: muk_check
 #: model:ir.model.fields.selection,name:muk_check.selection__muk_check_rule__category__custom
@@ -790,13 +831,28 @@ msgstr ""
 
 #. module: muk_check
 #: model:ir.model.fields,field_description:muk_check.field_muk_check_run__odoo_image
-msgid "Newest Image"
-msgstr "Immagine più recente"
+msgid "Newest Build"
+msgstr "Build più recente"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_run__odoo_newest
+msgid "Newest Version"
+msgstr "Versione più recente"
 
 #. module: muk_check
 #: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_form
-msgid "Newest image"
-msgstr "Immagine più recente"
+msgid "Newest version"
+msgstr "Versione più recente"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_run__next_check
+msgid "Next Check"
+msgstr "Prossimo controllo"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_form
+msgid "Next check"
+msgstr "Prossimo controllo"
 
 #. module: muk_check
 #: model:muk_check.rule,name:muk_check.rule_server_dbfilter
@@ -842,11 +898,6 @@ msgid "Notified"
 msgstr "Notificato"
 
 #. module: muk_check
-#: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_form
-msgid "Odoo"
-msgstr ""
-
-#. module: muk_check
 #: model:ir.model.fields,field_description:muk_check.field_muk_check_run__odoo_version
 #: model:ir.model.fields.selection,name:muk_check.selection__muk_check_rule__category__odoo
 msgid "Odoo Version"
@@ -882,6 +933,13 @@ msgid "On Store"
 msgstr "Sullo store"
 
 #. module: muk_check
+#. odoo-python
+#: code:addons/muk_check/models/check_run.py:0
+#, python-format
+msgid "One day behind"
+msgstr "Un giorno indietro"
+
+#. module: muk_check
 #: model:ir.model.fields,field_description:muk_check.field_res_config_settings__check_online
 msgid "Online Checks"
 msgstr "Controlli online"
@@ -901,6 +959,11 @@ msgstr "Aperto"
 #: model:ir.model.fields,field_description:muk_check.field_muk_check_run__open_finding_ids
 msgid "Open Findings"
 msgstr "Rilevamenti aperti"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_run__open_note
+msgid "Open Findings Note"
+msgstr "Nota dei risultati aperti"
 
 #. module: muk_check
 #: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_form
@@ -1513,6 +1576,13 @@ msgid "Until"
 msgstr "Fino al"
 
 #. module: muk_check
+#. odoo-python
+#: code:addons/muk_check/models/check_run.py:0
+#, python-format
+msgid "Up to date"
+msgstr "Aggiornato"
+
+#. module: muk_check
 #: model:ir.actions.act_window,name:muk_check.action_update_check
 #: model:ir.ui.menu,name:muk_check.menu_update_check
 msgid "Update Check"
@@ -1684,11 +1754,6 @@ msgstr "La tua build"
 #: model:ir.model.fields,field_description:muk_check.field_muk_check_rule__severity_override
 msgid "Your Severity"
 msgstr "La tua gravità"
-
-#. module: muk_check
-#: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_form
-msgid "Your build"
-msgstr "La tua build"
 
 #. module: muk_check
 #: model_terms:ir.ui.view,arch_db:muk_check.message_findings

@@ -412,10 +412,23 @@ class TestRuleEngine(TransactionCase):
         rule.action_run_rule()
         self.assertIn(rule.finding_ids, run.open_finding_ids)
         self.assertTrue(run.is_latest)
+        self.assertTrue(run.next_check)
         self._run_all()
         run.invalidate_recordset()
         self.assertFalse(run.is_latest)
         self.assertFalse(run.open_finding_ids)
+        self.assertFalse(run.next_check)
+
+    def test_overview_says_how_many_findings_are_open(self):
+        cases = [
+            ({}, '0 open findings'),
+            ({'low_count': 1}, '1 open finding'),
+            ({'critical_count': 1, 'high_count': 2}, '3 open findings'),
+        ]
+        for values, note in cases:
+            with self.subTest(note):
+                run = self.env['muk_check.run'].create(values)
+                self.assertEqual(run.open_note, note)
 
     def test_only_administrators_can_use_it(self):
         rule = self._rule()
