@@ -234,9 +234,7 @@ export class MukAISystray extends Component {
      * @returns {Promise<number>} the new chat
      */
     async createSession() {
-        const [id] = await this.orm.create('muk_ai.session', [
-            { name: _t('New Chat') },
-        ]);
+        const id = await this.orm.create('muk_ai.session', [{ name: _t('New Chat') }]);
         await seedSessionContext(this.env, id);
         this._debouncedLoad();
         return id;

@@ -8,6 +8,8 @@ import { makeTestEnv } from '@web/../tests/helpers/mock_env';
 import { makeFakeNotificationService } from '@web/../tests/helpers/mock_services';
 import { click, getFixture, mount, nextTick } from '@web/../tests/helpers/utils';
 
+import { AIChat } from '@muk_ai/chat/chat';
+import '@muk_ai/core/commands/command_providers';
 import { MukAISystray } from '@muk_ai/webclient/systray/systray';
 
 const APPROVAL = {
@@ -52,11 +54,11 @@ const CHATS = [
 ];
 
 /**
- * Mount the AI menu over fake services and a mocked server.
+ * Build an environment of fake services and a mocked server.
  * @param {object} config `needs`, the `record` on screen, `steps` to fill
- * @returns {Promise<HTMLElement>} the fixture holding the menu
+ * @returns {Promise<object>} the environment
  */
-async function mountSystray({ needs, record = null, steps }) {
+async function makeSystrayEnv({ needs = () => [], record = null, steps }) {
     const services = registry.category('services');
     services.add('hotkey', hotkeyService);
     services.add('ui', uiService);
@@ -70,13 +72,16 @@ async function mountSystray({ needs, record = null, steps }) {
             currentController: record && {
                 props: { resModel: record.model, resId: record.id },
             },
-            doAction: (action) => steps.push(`action ${action.res_id || action.tag}`),
+            doAction: (action) =>
+                steps.push(
+                    `action ${action.res_id || action.tag} ${action.params?.session_id || ''}`.trim(),
+                ),
         }),
     });
     services.add('muk_ai.chat_window', {
         start: () => ({ open: (id) => steps.push(`window ${id}`), sessionIds: [] }),
     });
-    const env = await makeTestEnv({
+    return makeTestEnv({
         mockRPC(route, { model, method, args, kwargs }) {
             if (method === 'fetch_skills') {
                 return [];
@@ -105,7 +110,7 @@ async function mountSystray({ needs, record = null, steps }) {
                 return [{ id: record.id, display_name: record.name }];
             }
             if (method === 'create') {
-                return [9];
+                return 9;
             }
             if (method === 'action_review') {
                 return { type: 'ir.actions.act_window', res_id: args[0][0] };
@@ -116,6 +121,15 @@ async function mountSystray({ needs, record = null, steps }) {
             return true;
         },
     });
+}
+
+/**
+ * Mount the AI menu.
+ * @param {object} config see `makeSystrayEnv`
+ * @returns {Promise<HTMLElement>} the fixture holding the menu
+ */
+async function mountSystray(config) {
+    const env = await makeSystrayEnv(config);
     const target = getFixture();
     await mount(MukAISystray, target, { env });
     return target;
@@ -204,4 +218,42 @@ QUnit.module('muk_ai', {}, function () {
             assert.deepEqual(steps, ['start 9 Show my pipeline', 'window 9']);
         },
     );
+
+    QUnit.test(
+        'New Chat opens the chat the server created in a window',
+        async (assert) => {
+            const steps = [];
+            const target = await mountSystray({ steps });
+            await openMenu(target);
+            await click(target, '.mk_systray_new');
+            await nextTick();
+            assert.deepEqual(steps, ['window 9']);
+        },
+    );
+
+    QUnit.test(
+        'New Chat in the command palette opens the created chat',
+        async (assert) => {
+            const steps = [];
+            const env = await makeSystrayEnv({ steps });
+            const commands = await registry
+                .category('command_provider')
+                .get('muk_ai_sessions')
+                .provide(env, { searchValue: '' });
+            await commands.find((command) => command.name === 'New Chat').action();
+            assert.deepEqual(steps, ['action muk_ai.chat 9']);
+        },
+    );
+
+    QUnit.test('a reloaded chat asks for the session of its fragment', (assert) => {
+        const requested = (action) =>
+            AIChat.prototype._getRequestedSessionId.call({ props: { action } });
+        assert.strictEqual(requested({ params: { session_id: 178 } }), 178);
+        assert.strictEqual(
+            requested({ context: { params: { session_id: 178 } } }),
+            178,
+        );
+        assert.strictEqual(requested({ context: { params: { action: 226 } } }), null);
+        assert.strictEqual(requested({}), null);
+    });
 });

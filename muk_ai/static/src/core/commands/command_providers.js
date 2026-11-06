@@ -35,14 +35,11 @@ providerRegistry.add('muk_ai_sessions', {
                 name: _t('New Chat'),
                 category: 'muk_ai',
                 async action() {
-                    const [sessionId] = await env.services.orm.create(
-                        'muk_ai.session',
-                        [
-                            {
-                                name: needle || _t('New Chat'),
-                            },
-                        ],
-                    );
+                    const sessionId = await env.services.orm.create('muk_ai.session', [
+                        {
+                            name: needle || _t('New Chat'),
+                        },
+                    ]);
                     await seedSessionContext(env, sessionId);
                     await openChat(env, sessionId);
                 },
