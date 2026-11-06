@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 
 from odoo import Command, fields, models
 from odoo.exceptions import AccessDenied, AccessError
-from odoo.tests import TransactionCase, new_test_user, tagged
+from odoo.tests import Form, TransactionCase, new_test_user, tagged
 from odoo.tools import convert_file
 
 FLAG = 'muk_check.test_flag'
@@ -121,6 +121,28 @@ class TestRuleEngine(TransactionCase):
         rule.action_id = self.env.ref('base.action_res_users')
         self.assertEqual(finding.action_open_fix()['res_model'], 'res.users')
 
+    def test_detail_shows_a_readable_value(self):
+        company = self.env['res.partner'].create({'name': 'Parent'})
+        partner = self.env['res.partner'].create(
+            {'name': 'Child', 'parent_id': company.id}
+        )
+        cases = [
+            ('relation', 'parent_id', company.display_name),
+            ('empty', 'comment', False),
+        ]
+        for label, field, detail in cases:
+            with self.subTest(label):
+                rule = self._rule(
+                    kind='records',
+                    model_id=self.env['ir.model']._get_id('res.partner'),
+                    domain=f"[('id', '=', {partner.id})]",
+                    detail_field_id=self.env['ir.model.fields']
+                    ._get('res.partner', field)
+                    .id,
+                )
+                rule.action_run_rule()
+                self.assertEqual(rule.finding_ids.detail, detail)
+
     def test_missing_module_or_model_does_not_apply(self):
         missing = self.env['ir.module.module'].create(
             {'name': 'no_such_module', 'state': 'uninstalled'}
@@ -227,6 +249,13 @@ class TestRuleEngine(TransactionCase):
         rule.action_run_rule()
         self.assertEqual(finding.state, 'accepted')
         self.assertEqual(self.env['muk_check.run']._record_run().critical_count, 0)
+        rule.expression = 'False'
+        rule.action_run_rule()
+        self.assertEqual(finding.state, 'accepted')
+        rule.expression = 'True'
+        rule.action_run_rule()
+        self.assertEqual(finding.state, 'accepted')
+        self.assertEqual(finding.accepted_reason, 'Test server')
         finding.accepted_until = date.today() - timedelta(days=1)
         rule.action_run_rule()
         self.assertEqual(finding.state, 'open')
@@ -258,6 +287,14 @@ class TestRuleEngine(TransactionCase):
                 run = self.env['muk_check.run']._record_run()
                 self.assertEqual((run.score, run.grade), (score, grade))
 
+    def test_a_rule_counts_once_toward_the_score(self):
+        self.env['muk_check.finding'].search([]).unlink()
+        self._rule(
+            expression="['one', 'two', 'three']", severity='high'
+        ).action_run_rule()
+        run = self.env['muk_check.run']._record_run()
+        self.assertEqual((run.score, run.high_count), (90, 3))
+
     def test_severity_override_counts(self):
         rule = self._rule(
             expression='True', severity='critical', severity_override='low'
@@ -274,6 +311,13 @@ class TestRuleEngine(TransactionCase):
         self.assertEqual(rule.severity_effective, 'low')
         self.assertFalse(rule.active)
         self.assertEqual(rule.expression, shipped)
+
+    def test_a_new_rule_can_be_filled_in(self):
+        form = Form(self.env['muk_check.rule'])
+        form.name = 'Filled In'
+        form.kind = 'expression'
+        form.expression = 'True'
+        self.assertTrue(form.save().is_custom)
 
     def test_only_custom_rules_are_custom(self):
         shipped = self.env.ref('muk_check.rule_server_list_db')

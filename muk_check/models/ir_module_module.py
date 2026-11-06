@@ -5,8 +5,9 @@ import logging
 from collections import defaultdict
 
 import requests
+from markupsafe import Markup
 
-from odoo import fields, models, release
+from odoo import api, fields, models, release
 from odoo.tools.parse_version import parse_version
 
 from odoo.addons.base.models.ir_module import assert_log_admin_access
@@ -35,7 +36,12 @@ class IrModuleModule(models.Model):
         return [
             ('state', '=', 'installed'),
             ('imported', '=', False),
-            ('author', 'not ilike', 'Odoo S.A.'),
+            ('author', 'not ilike', 'Odoo S'),
+            ('author', 'not ilike', 'Odoo PS'),
+            '!',
+            ('author', '=ilike', 'Odoo'),
+            '!',
+            ('author', '=ilike', 'Odoo, %'),
         ]
 
     # ----------------------------------------------------------
@@ -79,6 +85,12 @@ class IrModuleModule(models.Model):
         selection=[('missing', 'Missing')],
         string='Disk Status',
         readonly=True,
+    )
+
+    update_state = fields.Html(
+        compute='_compute_update_state',
+        string='State',
+        sanitize=False,
     )
 
     upgrade_fingerprint = fields.Char(
@@ -194,17 +206,28 @@ class IrModuleModule(models.Model):
                 timeout=10,
             )
             response.raise_for_status()
-            published = dict(response.json()['result'])
-        except (requests.RequestException, ValueError, KeyError, TypeError) as error:
-            _logger.warning('The update check could not read the store: %s', error)
-            return
-        for module in self:
-            info = published.get(module.name, {})
-            module.write(
-                {
+            published = {
+                name: {
                     'store_version': info.get('version_remote'),
                     'store_changelog': info.get('changelog'),
                 }
+                for name, info in response.json()['result'].items()
+                if info
+            }
+        except (
+            requests.RequestException,
+            ValueError,
+            KeyError,
+            TypeError,
+            AttributeError,
+        ) as error:
+            _logger.warning('The update check could not read the store: %s', error)
+            return
+        for module in self:
+            module.write(
+                published.get(
+                    module.name, {'store_version': False, 'store_changelog': False}
+                )
             )
         self.store_checked_at = fields.Datetime.now()
 
@@ -247,6 +270,17 @@ class IrModuleModule(models.Model):
     def action_check_updates(self) -> None:
         """Run the update check over every covered module."""
         modules = self.search(self.UPDATE_CHECK_DOMAIN)
+        (self.search([('state', '=', 'installed')]) - modules).filtered(
+            'update_state'
+        ).write(
+            {
+                'store_version': False,
+                'store_status': False,
+                'upgrade_status': False,
+                'translation_status': False,
+                'disk_status': False,
+            }
+        )
         online = (
             self.env['ir.config_parameter'].sudo().get_param('muk_check.online', 'True')
         )
@@ -274,6 +308,32 @@ class IrModuleModule(models.Model):
         """Load the translation files, overwriting on the context's request."""
         self._update_translations(overwrite=self.env.context.get('overwrite', False))
         self._save_translation_baseline()
+
+    # ----------------------------------------------------------
+    # Compute
+    # ----------------------------------------------------------
+
+    @api.depends('store_status', 'upgrade_status', 'translation_status', 'disk_status')
+    def _compute_update_state(self) -> None:
+        """Render every status of the module as badges on one line."""
+        colors = {
+            'store_status': 'text-bg-info',
+            'upgrade_status': 'text-bg-warning',
+            'translation_status': 'bg-200 text-dark',
+            'disk_status': 'text-bg-danger',
+        }
+        for module in self:
+            badges = Markup().join(
+                Markup('<span class="badge rounded-pill {}">{}</span>').format(
+                    color,
+                    module._fields[field].convert_to_export(module[field], module),
+                )
+                for field, color in colors.items()
+                if module[field]
+            )
+            module.update_state = badges and Markup(
+                '<div class="d-flex gap-1 text-nowrap">{}</div>'
+            ).format(badges)
 
     # ----------------------------------------------------------
     # ORM

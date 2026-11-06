@@ -62,7 +62,7 @@
                         name="%(action_check_run_now)d"
                         type="action"
                         string="Run Check"
-                        class="btn-primary"
+                        class="btn-primary mk_check_always"
                     />
                 </header>
                 <field

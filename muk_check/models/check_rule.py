@@ -268,7 +268,14 @@ class CheckRule(models.Model):
                     'res_model': record._name,
                     'res_id': record.id,
                     'target': record.display_name,
-                    'detail': field and str(record[field]),
+                    'detail': (
+                        field
+                        and record[field]
+                        and record._fields[field].convert_to_display_name(
+                            record[field], record
+                        )
+                    )
+                    or False,
                 }
                 for record in answer
             ]
@@ -286,6 +293,9 @@ class CheckRule(models.Model):
             for finding in self.finding_ids
         }
         today = fields.Date.context_today(self)
+        expired = self.finding_ids.filtered(
+            lambda finding: finding.accepted_until and finding.accepted_until < today
+        )
         for value in values:
             key = (
                 value.get('res_model', False),
@@ -297,12 +307,14 @@ class CheckRule(models.Model):
                 self.env['muk_check.finding'].create({'rule_id': self.id, **value})
                 continue
             finding.write({**value, 'last_seen': fields.Datetime.now()})
-            expired = finding.accepted_until and finding.accepted_until < today
-            if finding.state == 'resolved' or (finding.state == 'accepted' and expired):
+            if finding.state == 'resolved' or (
+                finding.state == 'accepted' and finding in expired
+            ):
                 finding.action_reopen()
                 finding.notified = False
         for finding in known.values():
-            finding.state = 'resolved'
+            if finding.state != 'accepted' or finding in expired:
+                finding.state = 'resolved'
 
     def _run_rule(self) -> None:
         """Ask the rule in a savepoint that is always rolled back, then record it."""
@@ -323,13 +335,11 @@ class CheckRule(models.Model):
             self._sync_findings(values)
 
     def _image_builds(self) -> dict[str, str]:
-        """Return the last known build date of each series with an image."""
-        value = (
-            self.env['ir.config_parameter']
-            .sudo()
-            .get_param(self.IMAGE_BUILDS_PARAMETER)
-        )
-        return json.loads(value or '{}')
+        """Return the last known build date of each series, if online checks run."""
+        parameters = self.env['ir.config_parameter'].sudo()
+        if parameters.get_param('muk_check.online', 'True') == 'False':
+            return {}
+        return json.loads(parameters.get_param(self.IMAGE_BUILDS_PARAMETER) or '{}')
 
     def _update_image_builds(self) -> None:
         """Read the newest image builds, keeping the last answer on failure."""
@@ -337,9 +347,10 @@ class CheckRule(models.Model):
             builds = fetch_image_builds()
         except (requests.RequestException, ValueError, KeyError, TypeError):
             return
-        self.env['ir.config_parameter'].sudo().set_param(
-            self.IMAGE_BUILDS_PARAMETER, json.dumps(builds)
-        )
+        if builds:
+            self.env['ir.config_parameter'].sudo().set_param(
+                self.IMAGE_BUILDS_PARAMETER, json.dumps(builds)
+            )
 
     def _check_series_unsupported(self) -> bool | None:
         """Return whether the running series is too old to be supported."""
@@ -382,7 +393,7 @@ class CheckRule(models.Model):
         """Return the administrators without a recent login."""
         limit = fields.Datetime.now() - timedelta(days=self.INACTIVE_ADMIN_DAYS)
         return self.env.ref('base.group_system').users.filtered(
-            lambda user: user.login_date and user.login_date < limit
+            lambda user: (user.login_date or user.create_date) < limit
         )
 
     # ----------------------------------------------------------
@@ -407,6 +418,7 @@ class CheckRule(models.Model):
         for rule in self:
             rule.severity_effective = rule.severity_override or rule.severity
 
+    @api.depends('name')
     def _compute_is_custom(self) -> None:
         """Mark the rules no module ships, which are fully editable."""
         external_ids = self.get_external_id()

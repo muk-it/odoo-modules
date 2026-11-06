@@ -21,7 +21,7 @@ class CheckRun(models.Model):
 
     @property
     def SEVERITY_WEIGHTS(self) -> dict[str, int]:
-        """Return the points an open finding of each severity costs."""
+        """Return the points a failing rule of each severity costs."""
         return {'critical': 20, 'high': 10, 'medium': 4, 'low': 1}
 
     @property
@@ -153,9 +153,9 @@ class CheckRun(models.Model):
             group['state']: group['state_count']
             for group in self.env['muk_check.rule'].read_group([], ['state'], ['state'])
         }
+        failing = self.env['muk_check.finding'].search([('state', '=', 'open')])
         penalty = sum(
-            weight * finding_counts.get(severity, 0)
-            for severity, weight in self.SEVERITY_WEIGHTS.items()
+            self.SEVERITY_WEIGHTS[rule.severity_effective] for rule in failing.rule_id
         )
         return self.create(
             {
@@ -276,7 +276,7 @@ class CheckRun(models.Model):
         days = None
         if build and image:
             days = (build_date(image) - build_date(build)).days
-        self.odoo_version = release.version
+        self.odoo_version = release.version.split('-')[0]
         self.odoo_build = build and build_date(build)
         self.odoo_newest = image and release.serie
         self.odoo_image = image and build_date(image)

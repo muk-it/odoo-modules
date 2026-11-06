@@ -10,6 +10,7 @@
             <t t-if="!nbSelected">
                 <t t-foreach="archInfo.headerButtons" t-as="button" t-key="button.id">
                     <ListViewHeaderButton
+                        t-if="button.className.includes('mk_check_always')"
                         list="model.root"
                         clickParams="button.clickParams"
                         defaultRank="button.defaultRank"
