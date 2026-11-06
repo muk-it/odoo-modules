@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <template id="message_findings">
+        <t
+            t-set="colors"
+            t-value="{'critical': 'danger', 'high': 'warning', 'medium': 'info', 'low': 'secondary'}"
+        />
+        <t t-set="rules" t-value="findings._grouped_by('rule_id')"/>
+        <div class="fw-bold mb-2">
+            <t t-if="len(findings) == 1">Security Check: 1 new finding</t>
+            <t t-else="">Security Check: <t t-out="len(findings)"/> new findings</t>
+        </div>
+        <div class="d-flex flex-wrap gap-1 mb-2">
+            <span
+                t-foreach="findings._grouped_by('severity')"
+                t-as="severity"
+                t-att-class="'badge rounded-pill bg-' + colors[severity] + (' text-dark' if severity in ('high', 'medium') else ' text-white')"
+            >
+                <t t-out="len(severity_value)"/>
+                <span t-field="severity_value[0].severity"/>
+            </span>
+        </div>
+        <div
+            t-foreach="list(rules)[:5]"
+            t-as="rule"
+            class="d-flex align-items-center gap-2 py-1"
+        >
+            <span
+                t-att-class="'d-inline-block flex-shrink-0 rounded-circle bg-' + colors[rule.severity_effective]"
+                style="width: 8px; height: 8px;"
+            />
+            <span t-out="rule.name"/>
+            <span class="text-muted small">
+                <t
+                    t-if="len(rules[rule]) == 1"
+                    t-out="rules[rule].target or rules[rule].detail"
+                />
+                <t t-else=""><t t-out="len(rules[rule])"/> records</t>
+            </span>
+        </div>
+        <div t-if="len(rules) &gt; 5" class="text-muted small py-1">
+            and <t t-out="len(rules) - 5"/> more
+        </div>
+        <a class="btn btn-primary btn-sm mt-2" href="/web#action=muk_check.action_check_finding">Open the findings</a>
+    </template>
+
+</odoo>

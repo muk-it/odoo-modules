@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_check_rule_search" model="ir.ui.view">
+        <field name="name">muk_check.rule.search</field>
+        <field name="model">muk_check.rule</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <filter
+                    name="failed"
+                    string="Failed"
+                    domain="[('state', '=', 'failed')]"
+                />
+                <filter
+                    name="passed"
+                    string="Passed"
+                    domain="[('state', '=', 'passed')]"
+                />
+                <filter
+                    name="not_applicable"
+                    string="Not Applicable"
+                    domain="[('state', '=', 'not_applicable')]"
+                />
+                <filter
+                    name="error"
+                    string="Errors"
+                    domain="[('state', '=', 'error')]"
+                />
+                <separator/>
+                <filter
+                    name="inactive"
+                    string="Turned Off"
+                    domain="[('active', '=', False)]"
+                />
+                <separator/>
+                <filter
+                    name="group_category"
+                    string="Category"
+                    context="{'group_by': 'category'}"
+                />
+            </search>
+        </field>
+    </record>
+
+    <record id="view_check_rule_list" model="ir.ui.view">
+        <field name="name">muk_check.rule.list</field>
+        <field name="model">muk_check.rule</field>
+        <field name="arch" type="xml">
+            <tree js_class="mk_check_list" expand="1" decoration-muted="not active">
+                <header>
+                    <button
+                        name="%(action_check_run_now)d"
+                        type="action"
+                        string="Run Check"
+                        class="btn-primary"
+                    />
+                </header>
+                <field name="name"/>
+                <field name="category" optional="hide"/>
+                <field
+                    name="severity_effective"
+                    string="Severity"
+                    widget="badge"
+                    decoration-danger="severity_effective == 'critical'"
+                    decoration-warning="severity_effective == 'high'"
+                    decoration-info="severity_effective == 'medium'"
+                    decoration-muted="severity_effective == 'low'"
+                />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-success="state == 'passed'"
+                    decoration-warning="state == 'failed'"
+                    decoration-danger="state == 'error'"
+                    decoration-muted="state == 'not_applicable'"
+                />
+                <field name="duration" optional="hide"/>
+                <field name="active" widget="boolean_toggle"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_check_rule_kanban" model="ir.ui.view">
+        <field name="name">muk_check.rule.kanban</field>
+        <field name="model">muk_check.rule</field>
+        <field name="arch" type="xml">
+            <kanban group_create="false" records_draggable="false">
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_global_click">
+                            <field name="name" class="fw-bold"/>
+                            <div class="d-flex align-items-center gap-2 mt-1">
+                                <field
+                                    name="severity_effective"
+                                    widget="badge"
+                                    decoration-danger="severity_effective == 'critical'"
+                                    decoration-warning="severity_effective == 'high'"
+                                    decoration-info="severity_effective == 'medium'"
+                                    decoration-muted="severity_effective == 'low'"
+                                />
+                                <field
+                                    name="state"
+                                    widget="badge"
+                                    decoration-success="state == 'passed'"
+                                    decoration-warning="state == 'failed'"
+                                    decoration-danger="state == 'error'"
+                                    decoration-muted="state == 'not_applicable'"
+                                />
+                                <field
+                                    name="active"
+                                    widget="boolean_toggle"
+                                    class="ms-auto"
+                                />
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_check_rule_form" model="ir.ui.view">
+        <field name="name">muk_check.rule.form</field>
+        <field name="model">muk_check.rule</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button
+                        name="action_run_rule"
+                        type="object"
+                        string="Run This Rule"
+                        class="btn-primary"
+                        icon="fa-play"
+                    />
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="passed,failed"
+                    />
+                </header>
+                <sheet>
+                    <widget
+                        name="web_ribbon"
+                        title="Turned Off"
+                        bg_color="bg-secondary"
+                        attrs="{'invisible': [('active', '=', True)]}"
+                    />
+                    <field name="is_custom" invisible="1"/>
+                    <div class="oe_title">
+                        <label for="name" string="Rule"/>
+                        <h1>
+                            <field
+                                name="name"
+                                attrs="{'readonly': [('is_custom', '=', False)]}"
+                                placeholder="What is wrong"
+                            />
+                        </h1>
+                    </div>
+                    <div
+                        class="alert alert-danger"
+                        role="alert"
+                        attrs="{'invisible': [('state', '!=', 'error')]}"
+                    >
+                        <div class="fw-bold">This rule could not run</div>
+                        <field name="error"/>
+                    </div>
+                    <div
+                        class="alert alert-secondary"
+                        role="status"
+                        attrs="{'invisible': [('state', '!=', 'not_applicable')]}"
+                    >
+                        This rule does not apply here. A module it needs is not
+                        installed, its model is missing, or it cannot answer on this
+                        server, for example without online checks.
+                    </div>
+                    <div class="alert alert-info" role="status" attrs="{'invisible': [('is_custom', '=', True)]}">
+                        A module ships this rule, so its logic stays up to date. You can
+                        turn it off or change its severity. Use Duplicate to change its
+                        logic.
+                    </div>
+                    <group>
+                        <group>
+                            <field name="category" attrs="{'readonly': [('is_custom', '=', False)]}"/>
+                            <field name="severity" attrs="{'readonly': [('is_custom', '=', False)]}"/>
+                            <field
+                                name="severity_override"
+                                placeholder="As shipped"
+                                attrs="{'invisible': [('is_custom', '=', True)]}"
+                            />
+                        </group>
+                        <group>
+                            <field name="active" widget="boolean_toggle"/>
+                            <field name="duration" attrs="{'invisible': [('duration', '&lt;', 0.01)]}"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Question" name="question">
+                            <group>
+                                <group>
+                                    <field
+                                        name="kind"
+                                        widget="radio"
+                                        options="{'horizontal': True}"
+                                        attrs="{'readonly': [('is_custom', '=', False)]}"
+                                    />
+                                    <field
+                                        name="model_id"
+                                        placeholder="Pick a model"
+                                        options="{'no_create': True, 'no_open': True}"
+                                        attrs="{'readonly': [('is_custom', '=', False)], 'required': [('kind', '=', 'records')], 'invisible': [('is_custom', '=', False), ('model_id', '=', False)]}"
+                                    />
+                                    <field name="model_name" invisible="1"/>
+                                </group>
+                                <group>
+                                    <field
+                                        name="detail_field_id"
+                                        domain="[('model_id', '=', model_id)]"
+                                        placeholder="Only the record name"
+                                        options="{'no_create': True, 'no_open': True}"
+                                        attrs="{'readonly': [('is_custom', '=', False)], 'invisible': ['|', ('model_id', '=', False), '&amp;', ('is_custom', '=', False), ('detail_field_id', '=', False)]}"
+                                    />
+                                    <field
+                                        name="module_ids"
+                                        widget="many2many_tags"
+                                        placeholder="Runs on every database"
+                                        options="{'no_create': True}"
+                                        attrs="{'readonly': [('is_custom', '=', False)], 'invisible': [('is_custom', '=', False), ('module_ids', '=', [])]}"
+                                    />
+                                    <field
+                                        name="action_id"
+                                        placeholder="No fix screen"
+                                        options="{'no_create': True, 'no_open': True}"
+                                        attrs="{'readonly': [('is_custom', '=', False)], 'invisible': [('is_custom', '=', False), ('action_id', '=', False)]}"
+                                    />
+                                </group>
+                            </group>
+                            <group
+                                string="Domain"
+                                attrs="{'invisible': ['|', ('kind', '!=', 'records'), ('model_id', '=', False)]}"
+                            >
+                                <field
+                                    name="domain"
+                                    widget="domain"
+                                    options="{'model': 'model_name'}"
+                                    nolabel="1"
+                                    colspan="2"
+                                    attrs="{'readonly': [('is_custom', '=', False)]}"
+                                />
+                            </group>
+                            <group string="Expression" attrs="{'invisible': [('kind', '!=', 'expression')]}">
+                                <field
+                                    name="expression"
+                                    widget="ace"
+                                    options="{'mode': 'python'}"
+                                    nolabel="1"
+                                    colspan="2"
+                                    attrs="{'readonly': [('is_custom', '=', False)], 'required': [('kind', '=', 'expression')]}"
+                                />
+                                <div
+                                    class="text-muted"
+                                    colspan="2"
+                                    attrs="{'invisible': [('is_custom', '=', False)]}"
+                                >
+                                    A Python expression. True, text, a list of texts or
+                                    records fail the rule, an empty answer passes it and
+                                    None means it does not apply. Available: env,
+                                    config(), master_password_is_default(),
+                                    is_odoo_sh(), datetime.
+                                </div>
+                            </group>
+                        </page>
+                        <page string="Why It Matters" name="description">
+                            <field
+                                name="description"
+                                placeholder="What can go wrong because of this."
+                                attrs="{'readonly': [('is_custom', '=', False)]}"
+                            />
+                        </page>
+                        <page string="How to Fix" name="recommendation">
+                            <field
+                                name="recommendation"
+                                placeholder="What to do about it."
+                                attrs="{'readonly': [('is_custom', '=', False)]}"
+                            />
+                        </page>
+                        <page
+                            string="Findings"
+                            name="findings"
+                            attrs="{'invisible': [('finding_ids', '=', [])]}"
+                        >
+                            <field name="finding_ids" readonly="1">
+                                <tree create="false" delete="false" no_open="1">
+                                    <field name="target"/>
+                                    <field name="detail"/>
+                                    <field
+                                        name="first_seen"
+                                        string="Since"
+                                        widget="date"
+                                    />
+                                    <field name="state" widget="badge"/>
+                                    <button
+                                        name="action_open_details"
+                                        type="object"
+                                        string="Details"
+                                        icon="fa-info-circle"
+                                    />
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_check_rule" model="ir.actions.act_window">
+        <field name="name">Rules</field>
+        <field name="res_model">muk_check.rule</field>
+        <field name="view_mode">tree,kanban,form</field>
+        <field name="search_view_id" ref="view_check_rule_search"/>
+        <field name="context">{'search_default_group_category': 1}</field>
+    </record>
+
+</odoo>

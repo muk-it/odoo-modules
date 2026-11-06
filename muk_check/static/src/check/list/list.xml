@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t
+        t-name="muk_check.ListView.Buttons"
+        t-inherit="web.ListView.Buttons"
+        t-inherit-mode="primary"
+        owl="1"
+    >
+        <xpath expr="//t[@t-if='nbSelected']" position="before">
+            <t t-if="!nbSelected">
+                <t t-foreach="archInfo.headerButtons" t-as="button" t-key="button.id">
+                    <ListViewHeaderButton
+                        list="model.root"
+                        clickParams="button.clickParams"
+                        defaultRank="button.defaultRank"
+                        domain="props.domain"
+                        icon="button.icon"
+                        string="button.string"
+                        title="button.title"
+                    />
+                </t>
+            </t>
+        </xpath>
+    </t>
+</templates>

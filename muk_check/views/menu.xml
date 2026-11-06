@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_update_check"
+        name="Update Check"
+        parent="base.menu_management"
+        action="action_update_check"
+        groups="base.group_system"
+        sequence="10"
+    />
+
+    <menuitem
+        id="menu_check"
+        name="Security Check"
+        parent="base.menu_administration"
+        groups="base.group_system"
+        sequence="5"
+    >
+        <menuitem
+            id="menu_check_overview"
+            name="Overview"
+            action="action_check_overview"
+            sequence="10"
+        />
+        <menuitem
+            id="menu_check_findings"
+            name="Findings"
+            action="action_check_finding"
+            sequence="20"
+        />
+        <menuitem
+            id="menu_check_rules"
+            name="Rules"
+            action="action_check_rule"
+            sequence="30"
+        />
+        <menuitem
+            id="menu_check_history"
+            name="History"
+            action="action_check_run"
+            sequence="40"
+        />
+    </menuitem>
+
+</odoo>

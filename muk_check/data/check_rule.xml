@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="rule_odoo_series_unsupported" model="muk_check.rule">
+        <field name="name">This Odoo series no longer gets updates</field>
+        <field name="description">Odoo fixes bugs and security issues only in its three newest series. Official images stop being rebuilt for older ones.</field>
+        <field name="recommendation">Plan the migration to a supported series.</field>
+        <field name="category">odoo</field>
+        <field name="severity">high</field>
+        <field name="kind">expression</field>
+        <field name="expression">env['muk_check.rule']._check_series_unsupported()</field>
+    </record>
+
+    <record id="rule_odoo_build_behind" model="muk_check.rule">
+        <field name="name">The Odoo build is over 30 days behind the newest image</field>
+        <field name="description">Fixes reach an installation only when its Odoo build is updated. This compares build dates and does not list known vulnerabilities. It applies only to Odoo installed from the official package or image, not from source or on Odoo.sh.</field>
+        <field name="recommendation">Update to a current build of your series, on a test copy first.</field>
+        <field name="category">odoo</field>
+        <field name="severity">medium</field>
+        <field name="kind">expression</field>
+        <field name="expression">None if is_odoo_sh() else env['muk_check.rule']._check_build_behind()</field>
+    </record>
+
+    <record id="rule_odoo_newer_series" model="muk_check.rule">
+        <field name="name">A newer Odoo series is available</field>
+        <field name="description">This series is still supported. Knowing a newer one exists helps to plan the next migration.</field>
+        <field name="recommendation">Accept this finding until your next planned migration.</field>
+        <field name="category">odoo</field>
+        <field name="severity">low</field>
+        <field name="kind">expression</field>
+        <field name="expression">env['muk_check.rule']._check_newer_series()</field>
+    </record>
+
+    <record id="rule_server_master_password" model="muk_check.rule">
+        <field name="name">The master password is still the default</field>
+        <field name="description">With the default master password, anyone who reaches the database manager can copy, restore or delete databases.</field>
+        <field name="recommendation">Set a long random admin_passwd in the configuration file and restart the server.</field>
+        <field name="category">server</field>
+        <field name="severity">critical</field>
+        <field name="kind">expression</field>
+        <field name="expression">None if is_odoo_sh() else master_password_is_default()</field>
+    </record>
+
+    <record id="rule_server_list_db" model="muk_check.rule">
+        <field name="name">The database manager is reachable</field>
+        <field name="description">The database manager shows database names and offers backup, restore and delete. Odoo strongly recommends disabling it on any internet-facing system.</field>
+        <field name="recommendation">Set list_db = False in the configuration file, and block /web/database at the proxy.</field>
+        <field name="category">server</field>
+        <field name="severity">high</field>
+        <field name="kind">expression</field>
+        <field name="expression">None if is_odoo_sh() else config('list_db')</field>
+    </record>
+
+    <record id="rule_server_dev_mode" model="muk_check.rule">
+        <field name="name">Server developer options are turned on</field>
+        <field name="description">The --dev options are for development. They can reload code, read templates from disk and show details to users.</field>
+        <field name="recommendation">Remove the dev option from the server's start command or configuration.</field>
+        <field name="category">server</field>
+        <field name="severity">high</field>
+        <field name="kind">expression</field>
+        <field name="expression">None if is_odoo_sh() else bool(config('dev_mode'))</field>
+    </record>
+
+    <record id="rule_server_dbfilter" model="muk_check.rule">
+        <field name="name">No database filter is set</field>
+        <field name="description">Without a filter, any database on the server can be selected from any address. Odoo requires one for servers with several databases, especially with a website.</field>
+        <field name="recommendation">Set dbfilter to a pattern that matches only this database, such as ^mycompany$.</field>
+        <field name="category">server</field>
+        <field name="severity">medium</field>
+        <field name="kind">expression</field>
+        <field name="expression">None if is_odoo_sh() else not (config('dbfilter') or config('db_name'))</field>
+    </record>
+
+    <record id="rule_server_workers" model="muk_check.rule">
+        <field name="name">The server runs in a single process</field>
+        <field name="description">Without workers, time and memory limits are not enforced, and one long request can hold up everyone.</field>
+        <field name="recommendation">Set workers in the configuration file, sized for your server.</field>
+        <field name="category">server</field>
+        <field name="severity">medium</field>
+        <field name="kind">expression</field>
+        <field name="expression">None if is_odoo_sh() else not config('workers')</field>
+    </record>
+
+    <record id="rule_server_log_level" model="muk_check.rule">
+        <field name="name">The server logs at debug level</field>
+        <field name="description">Debug logs grow quickly and can contain request data and SQL parameters.</field>
+        <field name="recommendation">Set log_level back to info.</field>
+        <field name="category">server</field>
+        <field name="severity">low</field>
+        <field name="kind">expression</field>
+        <field name="expression">None if is_odoo_sh() else str(config('log_level')).startswith('debug')</field>
+    </record>
+
+    <record id="rule_server_proxy_mode" model="muk_check.rule">
+        <field name="name">Proxy mode is off behind https</field>
+        <field name="description">Without proxy mode, Odoo sees the address of the proxy instead of the visitor. Logs show the wrong address, and the login cooldown blocks everyone at once.</field>
+        <field name="recommendation">Set proxy_mode = True in the configuration file.</field>
+        <field name="category">server</field>
+        <field name="severity">medium</field>
+        <field name="kind">expression</field>
+        <field name="expression">None if is_odoo_sh() else env['ir.config_parameter'].sudo().get_param('web.base.url', '').startswith('https://') and not config('proxy_mode')</field>
+    </record>
+
+    <record id="rule_server_request_limits" model="muk_check.rule">
+        <field name="name">Request limits are missing or very high</field>
+        <field name="description">Without a memory limit, or with a time limit over one hour, one runaway request can hold a worker or use up the memory of the server.</field>
+        <field name="recommendation">Set limit_memory_hard, limit_time_cpu and limit_time_real in the configuration file, sized for your server.</field>
+        <field name="category">server</field>
+        <field name="severity">medium</field>
+        <field name="kind">expression</field>
+        <field name="expression">None if is_odoo_sh() else config('workers') and (not config('limit_memory_hard') or max(config('limit_time_cpu'), config('limit_time_real')) &gt; 3600)</field>
+    </record>
+
+    <record id="rule_server_database_superuser" model="muk_check.rule">
+        <field name="name">The database user is a PostgreSQL superuser</field>
+        <field name="description">A superuser can reach every database on the server and, through PostgreSQL, its files. A single SQL injection then goes far beyond this database.</field>
+        <field name="recommendation">Connect Odoo with a PostgreSQL user that is not a superuser.</field>
+        <field name="category">server</field>
+        <field name="severity">high</field>
+        <field name="kind">expression</field>
+        <field name="expression">env['muk_check.rule']._check_database_superuser()</field>
+    </record>
+
+    <record id="rule_server_cron_stalled" model="muk_check.rule">
+        <field name="name">Scheduled actions have stopped running</field>
+        <field name="description">The daily cleanup job is over three days late. Outgoing mail, cleanups and this daily check wait for the same scheduler.</field>
+        <field name="recommendation">Make sure max_cron_threads is above 0 or that a cron server is running, then read the server log.</field>
+        <field name="category">server</field>
+        <field name="severity">high</field>
+        <field name="model_id" ref="base.model_ir_cron"/>
+        <field name="domain">[('id', '=', env.ref('base.autovacuum_job').id), ('nextcall', '&lt;', datetime.datetime.now() - datetime.timedelta(days=3))]</field>
+        <field name="action_id" ref="base.ir_cron_act"/>
+    </record>
+
+    <record id="rule_server_disk_space" model="muk_check.rule">
+        <field name="name">The disk is almost full</field>
+        <field name="description">Less than 10% of the disk holding the Odoo files is free. On a full disk uploads fail, and a database on the same disk can stop.</field>
+        <field name="recommendation">Free up space or make the disk larger.</field>
+        <field name="category">server</field>
+        <field name="severity">high</field>
+        <field name="kind">expression</field>
+        <field name="expression">None if is_odoo_sh() else env['muk_check.rule']._check_disk_space()</field>
+    </record>
+
+    <record id="rule_website_info_page" model="muk_check.rule">
+        <field name="name">A public page lists your apps and Odoo version</field>
+        <field name="description">Anyone can open /website/info, which shows the installed apps and the exact Odoo version. This tells an attacker what to look for.</field>
+        <field name="recommendation">Turn off the view "Show Odoo Information" for this website.</field>
+        <field name="category">website</field>
+        <field name="severity">medium</field>
+        <field name="module_ids" eval="[Command.set([ref('base.module_website')])]"/>
+        <field name="model_id" ref="base.model_ir_ui_view"/>
+        <field name="domain">[('key', '=', 'website.show_website_info'), ('active', '=', True)]</field>
+    </record>
+
+    <record id="rule_signin_admin_totp" model="muk_check.rule">
+        <field name="name">An administrator signs in without two-factor authentication</field>
+        <field name="description">A stolen administrator password gives full control of the database.</field>
+        <field name="recommendation">Ask each administrator to turn on two-factor authentication in their profile.</field>
+        <field name="category">signin</field>
+        <field name="severity">high</field>
+        <field name="module_ids" eval="[Command.set([ref('base.module_auth_totp')])]"/>
+        <field name="kind">expression</field>
+        <field name="expression">env.ref('base.group_system').users.filtered(lambda user: not user.totp_enabled)</field>
+    </record>
+
+    <record id="rule_signin_totp_policy" model="muk_check.rule">
+        <field name="name">Two-factor authentication is not enforced</field>
+        <field name="description">While it is optional, many accounts stay protected by a password alone.</field>
+        <field name="recommendation">Turn on enforcement in the general settings.</field>
+        <field name="category">signin</field>
+        <field name="severity">medium</field>
+        <field
+            name="module_ids"
+            eval="[Command.set([ref('base.module_auth_totp_mail_enforce')])]"
+        />
+        <field name="action_id" ref="base_setup.action_general_configuration"/>
+        <field name="kind">expression</field>
+        <field name="expression">not env['ir.config_parameter'].sudo().get_param('auth_totp.policy')</field>
+    </record>
+
+    <record id="rule_signin_cooldown" model="muk_check.rule">
+        <field name="name">The login cooldown is turned off</field>
+        <field name="description">Without it, passwords can be guessed at full speed.</field>
+        <field name="recommendation">Remove the parameter base.login_cooldown_after, or set it above 0.</field>
+        <field name="category">signin</field>
+        <field name="severity">medium</field>
+        <field name="kind">expression</field>
+        <field name="expression">int(env['ir.config_parameter'].sudo().get_param('base.login_cooldown_after', 5)) == 0</field>
+    </record>
+
+    <record id="rule_signin_password_length" model="muk_check.rule">
+        <field name="name">Passwords shorter than 8 characters are allowed</field>
+        <field name="description">Short passwords are guessed quickly.</field>
+        <field name="recommendation">Raise the minimum password length in the general settings.</field>
+        <field name="category">signin</field>
+        <field name="severity">medium</field>
+        <field
+            name="module_ids"
+            eval="[Command.set([ref('base.module_auth_password_policy')])]"
+        />
+        <field name="action_id" ref="base_setup.action_general_configuration"/>
+        <field name="kind">expression</field>
+        <field name="expression">int(env['ir.config_parameter'].sudo().get_param('auth_password_policy.minlength', 0)) &lt; 8</field>
+    </record>
+
+    <record id="rule_signin_open_signup" model="muk_check.rule">
+        <field name="name">Anyone can sign up for an account</field>
+        <field name="description">Free sign-up creates portal accounts for strangers. That is right for some shops, and unnecessary for most databases.</field>
+        <field name="recommendation">Set customer access to "On invitation" unless you need open sign-up.</field>
+        <field name="category">signin</field>
+        <field name="severity">medium</field>
+        <field
+            name="module_ids"
+            eval="[Command.set([ref('base.module_auth_signup')])]"
+        />
+        <field name="action_id" ref="base_setup.action_general_configuration"/>
+        <field name="kind">expression</field>
+        <field name="expression">env['ir.config_parameter'].sudo().get_param('auth_signup.invitation_scope') == 'b2c'</field>
+    </record>
+
+    <record id="rule_signin_session_timeout" model="muk_check.rule">
+        <field name="name">Sessions stay valid for more than a week of inactivity</field>
+        <field name="description">A forgotten session on a shared computer stays usable for longer than Odoo's default.</field>
+        <field name="recommendation">Lower the parameter sessions.max_inactivity_seconds to a week or less.</field>
+        <field name="category">signin</field>
+        <field name="severity">low</field>
+        <field name="kind">expression</field>
+        <field name="expression">int(env['ir.config_parameter'].sudo().get_param('sessions.max_inactivity_seconds', 0)) &gt; 604800</field>
+    </record>
+
+    <record id="rule_accounts_admin_login" model="muk_check.rule">
+        <field name="name">A user signs in with the login "admin"</field>
+        <field name="description">It is the first login anyone tries, and Odoo's deployment guide advises against it.</field>
+        <field name="recommendation">Change the login to something personal.</field>
+        <field name="category">accounts</field>
+        <field name="severity">medium</field>
+        <field name="model_id" ref="base.model_res_users"/>
+        <field name="domain">[('login', '=', 'admin')]</field>
+        <field name="action_id" ref="base.action_res_users"/>
+    </record>
+
+    <record id="rule_accounts_many_admins" model="muk_check.rule">
+        <field name="name">More than 5 users have administrator rights</field>
+        <field name="description">Each administrator can read and change everything, and each account is one more that can be stolen.</field>
+        <field name="recommendation">Take away the right from everyone who does not need it. Copy this rule to use another limit.</field>
+        <field name="category">accounts</field>
+        <field name="severity">medium</field>
+        <field name="action_id" ref="base.action_res_users"/>
+        <field name="kind">expression</field>
+        <field name="expression">len(env.ref('base.group_system').users) &gt; 5</field>
+    </record>
+
+    <record id="rule_accounts_inactive_admins" model="muk_check.rule">
+        <field name="name">An administrator has not been active for 90 days</field>
+        <field name="description">Accounts nobody uses go unnoticed if they are stolen.</field>
+        <field name="recommendation">Archive the account, or take away its administrator right.</field>
+        <field name="category">accounts</field>
+        <field name="severity">medium</field>
+        <field name="kind">expression</field>
+        <field name="expression">env['muk_check.rule']._check_inactive_admins()</field>
+    </record>
+
+    <record id="rule_accounts_portal_api_keys" model="muk_check.rule">
+        <field name="name">Portal users can create API keys</field>
+        <field name="description">This gives external users a way to reach the database outside the portal pages.</field>
+        <field name="recommendation">Turn this off in the general settings unless portal users need it.</field>
+        <field name="category">accounts</field>
+        <field name="severity">low</field>
+        <field name="module_ids" eval="[Command.set([ref('base.module_portal')])]"/>
+        <field name="action_id" ref="base_setup.action_general_configuration"/>
+        <field name="kind">expression</field>
+        <field name="expression">bool(env['ir.config_parameter'].sudo().get_param('portal.allow_api_keys'))</field>
+    </record>
+
+    <record id="rule_accounts_public_access" model="muk_check.rule">
+        <field name="name">The public can change records</field>
+        <field name="description">Visitors who are not signed in can create, change or delete these records.</field>
+        <field name="recommendation">Check that this access right is needed, and limit it to signed-in users or with a domain.</field>
+        <field name="category">accounts</field>
+        <field name="severity">high</field>
+        <field name="model_id" ref="base.model_ir_model_access"/>
+        <field name="domain">[('group_id', '=', env.ref('base.group_public').id), ('model_id.model', 'not in', ['ir.filters', 'forum.tag']), '|', '|', ('perm_write', '=', True), ('perm_create', '=', True), ('perm_unlink', '=', True)]</field>
+    </record>
+
+    <record id="rule_modules_autovacuum" model="muk_check.rule">
+        <field name="name">The daily cleanup job is turned off</field>
+        <field name="description">Odoo uses this job to delete old sessions, logs and temporary records. Without it the database keeps growing.</field>
+        <field name="recommendation">Turn this scheduled action back on.</field>
+        <field name="category">modules</field>
+        <field name="severity">medium</field>
+        <field name="model_id" ref="base.model_ir_cron"/>
+        <field name="domain">[('id', '=', env.ref('base.autovacuum_job').id), ('active', '=', False)]</field>
+        <field name="action_id" ref="base.ir_cron_act"/>
+    </record>
+
+    <record id="rule_modules_demo_data" model="muk_check.rule">
+        <field name="name">Demo data is installed</field>
+        <field name="description">Demo data can bring accounts with known passwords. Odoo advises against it on internet-facing servers.</field>
+        <field name="recommendation">Start the production database without demo data.</field>
+        <field name="category">modules</field>
+        <field name="severity">high</field>
+        <field name="model_id" ref="base.model_ir_module_module"/>
+        <field name="domain">[('name', '=', 'base'), ('demo', '=', True)]</field>
+    </record>
+
+    <record id="rule_modules_unfinished" model="muk_check.rule">
+        <field name="name">A module operation did not finish</field>
+        <field name="description">Modules waiting to be installed, upgraded or removed block the next module change.</field>
+        <field name="recommendation">Finish or cancel the operation in the Apps menu.</field>
+        <field name="category">modules</field>
+        <field name="severity">medium</field>
+        <field name="model_id" ref="base.model_ir_module_module"/>
+        <field name="domain">[('state', 'in', ['to install', 'to upgrade', 'to remove'])]</field>
+    </record>
+
+    <record id="rule_modules_server_actions" model="muk_check.rule">
+        <field name="name">A server action with Python code was added in the database</field>
+        <field name="description">Code stored in the database runs without a code review, and it is easy to forget in a migration.</field>
+        <field name="recommendation">Check that each action is still needed and who can change it.</field>
+        <field name="category">modules</field>
+        <field name="severity">low</field>
+        <field name="model_id" ref="base.model_ir_actions_server"/>
+        <field name="domain">[('state', '=', 'code'), ('create_uid', '!=', 1)]</field>
+        <field name="action_id" ref="base.action_server_action"/>
+    </record>
+
+    <record id="rule_mail_smtp_encryption" model="muk_check.rule">
+        <field name="name">A mail server sends without encryption</field>
+        <field name="description">Mail and the server password can be read on the way.</field>
+        <field name="recommendation">Use TLS or SSL for this mail server.</field>
+        <field name="category">mail</field>
+        <field name="severity">medium</field>
+        <field name="model_id" ref="base.model_ir_mail_server"/>
+        <field name="domain">[('smtp_encryption', '=', 'none'), ('smtp_host', 'not in', ['localhost', '127.0.0.1'])]</field>
+        <field name="action_id" ref="base.action_ir_mail_server_list"/>
+    </record>
+
+    <record id="rule_mail_base_url" model="muk_check.rule">
+        <field name="name">The base URL uses http, or is not frozen</field>
+        <field name="description">Links in mail would be unencrypted, or an administrator's login could change the address that all links use.</field>
+        <field name="recommendation">Use https, and set the parameter web.base.url.freeze to True.</field>
+        <field name="category">mail</field>
+        <field name="severity">low</field>
+        <field name="kind">expression</field>
+        <field name="expression">env['ir.config_parameter'].sudo().get_param('web.base.url', '').startswith('http://') or not env['ir.config_parameter'].sudo().get_param('web.base.url.freeze')</field>
+    </record>
+
+    <record id="rule_apps_upgrade_needed" model="muk_check.rule">
+        <field name="name">An app needs a database upgrade</field>
+        <field name="description">Its data files, migration scripts, fields or table constraints changed, and the database does not have those changes yet.</field>
+        <field name="recommendation">Upgrade it under Apps, Update Check, on a test copy first.</field>
+        <field name="category">apps</field>
+        <field name="severity">high</field>
+        <field name="model_id" ref="base.model_ir_module_module"/>
+        <field name="domain">[('state', '=', 'installed'), ('upgrade_status', '!=', False)]</field>
+        <field name="action_id" ref="action_update_check"/>
+    </record>
+
+    <record id="rule_apps_missing" model="muk_check.rule">
+        <field name="name">An installed app is missing from the server</field>
+        <field name="description">Its code is gone, so its features do not work while its data stays in the database.</field>
+        <field name="recommendation">Put the code back on the server, or uninstall the app.</field>
+        <field name="category">apps</field>
+        <field name="severity">high</field>
+        <field name="model_id" ref="base.model_ir_module_module"/>
+        <field name="domain">[('state', '=', 'installed'), ('disk_status', '!=', False)]</field>
+        <field name="action_id" ref="action_update_check"/>
+    </record>
+
+    <record id="rule_apps_translations" model="muk_check.rule">
+        <field name="name">An app has changed translations</field>
+        <field name="description">A normal upgrade adds new terms but keeps the existing ones, so changed wording does not arrive on its own.</field>
+        <field name="recommendation">Reload them under Apps, Update Check.</field>
+        <field name="category">apps</field>
+        <field name="severity">low</field>
+        <field name="model_id" ref="base.model_ir_module_module"/>
+        <field name="domain">[('state', '=', 'installed'), ('translation_status', '!=', False)]</field>
+        <field name="action_id" ref="action_update_check"/>
+    </record>
+
+    <record id="rule_apps_store_update" model="muk_check.rule">
+        <field name="name">A newer version of an app is on the store</field>
+        <field name="description">New versions can bring fixes. This addon only reports them and downloads nothing.</field>
+        <field name="recommendation">Read the changelog and update when it suits you, or accept this finding if you run your own version.</field>
+        <field name="category">apps</field>
+        <field name="severity">low</field>
+        <field name="model_id" ref="base.model_ir_module_module"/>
+        <field
+            name="detail_field_id"
+            ref="field_ir_module_module__store_version"
+        />
+        <field name="action_id" ref="action_update_check"/>
+        <field name="kind">expression</field>
+        <field name="expression">env['ir.module.module'].search([('state', '=', 'installed'), ('store_status', '!=', False)]) if env['ir.config_parameter'].sudo().get_param('muk_check.online', 'True') != 'False' else None</field>
+    </record>
+
+</odoo>
