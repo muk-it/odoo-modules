@@ -175,40 +175,62 @@
                             <div class="mk_check_kpi border rounded p-3 h-100">
                                 <div class="text-muted mb-1">Score</div>
                                 <field name="score" widget="progressbar" class="w-100"/>
+                                <div class="small text-muted">
+                                    <field name="open_note" class="mk_check_note"/>
+                                </div>
                             </div>
                         </div>
                         <div class="col-6 col-md flex-grow-1">
                             <div class="mk_check_kpi border rounded p-3 h-100">
                                 <div class="text-muted mb-1">Last checked</div>
                                 <field name="create_date"/>
+                                <div class="small text-muted" invisible="not next_check">
+                                    Next check
+                                    <field name="next_check" class="mk_check_note"/>
+                                </div>
                             </div>
                         </div>
                         <div class="col-6 col-md flex-grow-1">
                             <div class="mk_check_kpi border rounded p-3 h-100">
-                                <div class="text-muted mb-1">Odoo</div>
+                                <div class="text-muted mb-1">Current version</div>
                                 <field name="odoo_version"/>
+                                <div
+                                    class="d-flex flex-wrap gap-2 small text-muted"
+                                    invisible="not odoo_build"
+                                >
+                                    <div>
+                                        Build
+                                        <field name="odoo_build" class="mk_check_note"/>
+                                    </div>
+                                    <field
+                                        name="odoo_build_note"
+                                        class="mk_check_note"
+                                        invisible="odoo_build_late"
+                                    />
+                                    <field
+                                        name="odoo_build_note"
+                                        class="mk_check_note text-warning"
+                                        invisible="not odoo_build_late"
+                                    />
+                                </div>
                             </div>
                         </div>
                         <div
                             class="col-6 col-md flex-grow-1"
-                            invisible="not odoo_build"
+                            invisible="not odoo_newest"
                         >
                             <div class="mk_check_kpi border rounded p-3 h-100">
-                                <div class="text-muted mb-1">Your build</div>
-                                <field name="odoo_build"/>
-                            </div>
-                        </div>
-                        <div
-                            class="col-6 col-md flex-grow-1"
-                            invisible="not odoo_image"
-                        >
-                            <div class="mk_check_kpi border rounded p-3 h-100">
-                                <div class="text-muted mb-1">Newest image</div>
-                                <field name="odoo_image"/>
+                                <div class="text-muted mb-1">Newest version</div>
+                                <field name="odoo_newest"/>
+                                <div class="small text-muted">
+                                    Build
+                                    <field name="odoo_image" class="mk_check_note"/>
+                                </div>
                             </div>
                         </div>
                     </div>
                     <field name="is_latest" invisible="1"/>
+                    <field name="odoo_build_late" invisible="1"/>
                     <div
                         class="alert alert-secondary"
                         role="status"

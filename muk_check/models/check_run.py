@@ -93,6 +93,16 @@ class CheckRun(models.Model):
         string='Open Findings',
     )
 
+    open_note = fields.Char(
+        compute='_compute_open_note',
+        string='Open Findings Note',
+    )
+
+    next_check = fields.Datetime(
+        compute='_compute_open_finding_ids',
+        string='Next Check',
+    )
+
     is_latest = fields.Boolean(
         compute='_compute_open_finding_ids',
         string='Latest Check',
@@ -108,9 +118,24 @@ class CheckRun(models.Model):
         string='Your Build',
     )
 
+    odoo_build_note = fields.Char(
+        compute='_compute_odoo_release',
+        string='Build Status',
+    )
+
+    odoo_build_late = fields.Boolean(
+        compute='_compute_odoo_release',
+        string='Build Is Late',
+    )
+
+    odoo_newest = fields.Char(
+        compute='_compute_odoo_release',
+        string='Newest Version',
+    )
+
     odoo_image = fields.Date(
         compute='_compute_odoo_release',
-        string='Newest Image',
+        string='Newest Build',
     )
 
     # ----------------------------------------------------------
@@ -226,20 +251,51 @@ class CheckRun(models.Model):
             )
 
     def _compute_open_finding_ids(self) -> None:
-        """Show the findings that are open now on the latest run only."""
+        """Show what is open now and the next check on the latest run only."""
         findings = self.env['muk_check.finding'].search([('state', '=', 'open')])
+        cron = self.env.ref('muk_check.ir_cron_check', raise_if_not_found=False)
+        next_check = cron and cron.sudo().active and cron.sudo().nextcall
         latest = self.search([], limit=1)
         for run in self:
             run.is_latest = run == latest
             run.open_finding_ids = findings if run == latest else False
+            run.next_check = next_check if run == latest else False
+
+    @api.depends('critical_count', 'high_count', 'medium_count', 'low_count')
+    def _compute_open_note(self) -> None:
+        """Say how many findings the run left open."""
+        for run in self:
+            count = (
+                run.critical_count + run.high_count + run.medium_count + run.low_count
+            )
+            if count == 1:
+                run.open_note = _('1 open finding')
+            else:
+                run.open_note = _('%(count)s open findings', count=count)
 
     def _compute_odoo_release(self) -> None:
-        """Show the running Odoo next to the newest image, which Odoo.sh does not use."""
+        """Show the running Odoo next to the newest one, which Odoo.sh does not use."""
         build = installed_build()
-        image = self.env['muk_check.rule']._image_builds().get(release.serie)
+        builds = {} if is_odoo_sh() else self.env['muk_check.rule']._image_builds()
+        image = builds.get(release.serie)
+        days = None
+        if build and image:
+            days = (date.fromisoformat(image) - date.fromisoformat(build)).days
         self.odoo_version = release.version
         self.odoo_build = build and date.fromisoformat(build)
-        self.odoo_image = image and not is_odoo_sh() and date.fromisoformat(image)
+        self.odoo_newest = image and release.serie
+        self.odoo_image = image and date.fromisoformat(image)
+        self.odoo_build_late = (
+            days is not None and days > self.env['muk_check.rule'].BUILD_MAX_DAYS_BEHIND
+        )
+        if days is None:
+            self.odoo_build_note = False
+        elif days <= 0:
+            self.odoo_build_note = _('Up to date')
+        elif days == 1:
+            self.odoo_build_note = _('One day behind')
+        else:
+            self.odoo_build_note = _('%(days)s days behind', days=days)
 
     # ----------------------------------------------------------
     # Cron
