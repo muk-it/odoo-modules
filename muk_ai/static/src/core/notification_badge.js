@@ -1,4 +1,4 @@
-import { onWillStart, onWillUnmount, useState } from '@odoo/owl';
+import { onWillDestroy, onWillStart, useState } from '@odoo/owl';
 
 import { useService } from '@web/core/utils/hooks';
 
@@ -48,6 +48,6 @@ export function useNotificationBadge() {
         }
     });
     bus.subscribe('muk_ai.notification_badge', applyPush);
-    onWillUnmount(() => bus.unsubscribe('muk_ai.notification_badge', applyPush));
+    onWillDestroy(() => bus.unsubscribe('muk_ai.notification_badge', applyPush));
     return badge;
 }

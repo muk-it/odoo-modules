@@ -1,4 +1,4 @@
-import { markup, onWillUnmount, useEnv, useState } from '@odoo/owl';
+import { markup, onWillDestroy, useEnv, useState } from '@odoo/owl';
 
 import { ConfirmationDialog } from '@web/core/confirmation_dialog/confirmation_dialog';
 import { _t } from '@web/core/l10n/translation';
@@ -1695,7 +1695,7 @@ export function useAiSession(options = {}) {
             onScrollCallback(force);
         }
     }
-    onWillUnmount(() => {
+    onWillDestroy(() => {
         sessionNotification.markInactive(state.sessionId);
         bus.unsubscribe('muk_ai.event', busHandler);
         clearStreamIdleTimer();
