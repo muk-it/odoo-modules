@@ -1,0 +1,9 @@
+.mk_check_updates .o_stacked_fields {
+    white-space: nowrap;
+    > .o_column_group_field {
+        display: inline-block;
+    }
+    .badge {
+        margin-inline-end: 0.25rem;
+    }
+}

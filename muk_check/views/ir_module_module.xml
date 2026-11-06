@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_ir_module_module_update_search" model="ir.ui.view">
+        <field name="name">ir.module.module.update.search</field>
+        <field name="model">ir.module.module</field>
+        <field name="priority">32</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="shortdesc"/>
+                <field name="name"/>
+                <filter
+                    name="attention"
+                    string="Needs Attention"
+                    domain="['|', '|', '|', ('store_status', '!=', False), ('upgrade_status', '!=', False), ('translation_status', '!=', False), ('disk_status', '!=', False)]"
+                />
+                <separator/>
+                <filter
+                    name="store_update"
+                    string="Store Update"
+                    domain="[('store_status', '!=', False)]"
+                />
+                <filter
+                    name="upgrade_needed"
+                    string="Upgrade Needed"
+                    domain="[('upgrade_status', '!=', False)]"
+                />
+                <filter
+                    name="translations_changed"
+                    string="Translations Changed"
+                    domain="[('translation_status', '!=', False)]"
+                />
+                <filter
+                    name="missing"
+                    string="Missing"
+                    domain="[('disk_status', '!=', False)]"
+                />
+            </search>
+        </field>
+    </record>
+
+    <record id="view_ir_module_module_update_list" model="ir.ui.view">
+        <field name="name">ir.module.module.update.list</field>
+        <field name="model">ir.module.module</field>
+        <field name="priority">32</field>
+        <field name="arch" type="xml">
+            <list class="mk_check_updates" create="false" delete="false">
+                <header>
+                    <button
+                        name="action_check_updates"
+                        type="object"
+                        string="Check Now"
+                        class="btn-primary"
+                        display="always"
+                    />
+                </header>
+                <field name="shortdesc"/>
+                <field name="name" optional="hide"/>
+                <column string="State" width="310px">
+                    <field
+                        name="store_status"
+                        widget="badge"
+                        decoration-info="store_status"
+                    />
+                    <field
+                        name="upgrade_status"
+                        widget="badge"
+                        decoration-warning="upgrade_status"
+                    />
+                    <field
+                        name="translation_status"
+                        widget="badge"
+                        decoration-muted="translation_status"
+                    />
+                    <field
+                        name="disk_status"
+                        widget="badge"
+                        decoration-danger="disk_status"
+                    />
+                </column>
+                <field name="latest_version" string="In Database"/>
+                <field
+                    name="installed_version"
+                    string="On Disk"
+                    invisible="disk_status"
+                />
+                <field name="store_version" decoration-warning="store_status"/>
+                <button
+                    name="action_open_store"
+                    type="object"
+                    icon="open_in_new"
+                    string="Open Store"
+                    invisible="not store_version"
+                />
+                <button
+                    name="button_immediate_upgrade"
+                    type="object"
+                    icon="arrow_circle_up"
+                    string="Upgrade"
+                    invisible="not upgrade_status"
+                    confirm="This also upgrades the installed apps that depend on this one, and interrupts every user while it runs. Continue?"
+                />
+                <button
+                    name="action_dismiss_upgrade"
+                    type="object"
+                    icon="notifications_off"
+                    string="Dismiss"
+                    invisible="not upgrade_status"
+                />
+                <button
+                    name="action_reload_translations"
+                    type="object"
+                    string="Load New Terms"
+                    icon="translate"
+                    invisible="not translation_status"
+                />
+                <button
+                    name="action_reload_translations"
+                    type="object"
+                    string="Overwrite Terms"
+                    icon="edit_note"
+                    invisible="not translation_status"
+                    confirm="This replaces translations customized in this database. Continue?"
+                    context="{'overwrite': True}"
+                />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_ir_module_module_form" model="ir.ui.view">
+        <field name="name">ir.module.module.form</field>
+        <field name="model">ir.module.module</field>
+        <field name="inherit_id" ref="base.module_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="before">
+                <group string="Store" invisible="not store_version">
+                    <group>
+                        <field name="store_version"/>
+                        <field name="store_checked_at"/>
+                        <button
+                            name="action_open_store"
+                            type="object"
+                            string="Open Store"
+                            colspan="2"
+                        />
+                    </group>
+                    <field name="store_changelog" colspan="2" nolabel="1"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_update_check" model="ir.actions.act_window">
+        <field name="name">Update Check</field>
+        <field name="path">check-updates</field>
+        <field name="res_model">ir.module.module</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_ir_module_module_update_list"/>
+        <field name="search_view_id" ref="view_ir_module_module_update_search"/>
+        <field name="domain">[('state', '=', 'installed'), ('imported', '=', False), ('author', 'not ilike', 'Odoo S.A.')]</field>
+        <field name="context">{'search_default_attention': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">All your apps are up to date</p>
+            <p>Press Check Now to compare them with the store and the code on disk.</p>
+        </field>
+        <field name="explanation">Opens the installed apps with a newer store version, a pending database upgrade or changed translations. Use this when the user wants to know which apps need updating.</field>
+    </record>
+
+</odoo>

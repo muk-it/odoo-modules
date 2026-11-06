@@ -1,0 +1,4 @@
+id,name,model_id,group_id/id,operation,domain
+access_check_rule_system,muk_check.rule system,muk_check.rule,base.group_system,crud,
+access_check_finding_system,muk_check.finding system,muk_check.finding,base.group_system,crud,
+access_check_run_system,muk_check.run system,muk_check.run,base.group_system,crud,
