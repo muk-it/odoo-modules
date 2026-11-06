@@ -368,6 +368,21 @@ class TestUpdateCheck(TransactionCase):
         self.assertFalse(module.translation_status)
         self.assertFalse(module.upgrade_fingerprint)
 
+    def test_check_clears_a_module_it_no_longer_covers(self):
+        self.module.write(
+            {
+                'store_version': '17.0.2.0.0',
+                'store_status': 'update',
+                'upgrade_status': 'needed',
+                'translation_status': 'changed',
+                'disk_status': 'missing',
+                'author': 'Odoo SA',
+            }
+        )
+        self._check()
+        self.assertFalse(self.module.store_version)
+        self.assertFalse(self.module.update_state)
+
     def test_covered_modules(self):
         action = self.env.ref('muk_check.action_update_check')
         covered = self.env['ir.module.module'].search(safe_eval(action.domain))

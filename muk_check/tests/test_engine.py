@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 
 from odoo import fields, models
 from odoo.exceptions import AccessDenied, AccessError
-from odoo.tests import TransactionCase, new_test_user, tagged
+from odoo.tests import Form, TransactionCase, new_test_user, tagged
 from odoo.tools import convert_file
 
 FLAG = 'muk_check.test_flag'
@@ -311,6 +311,22 @@ class TestRuleEngine(TransactionCase):
         self.assertEqual(rule.severity_effective, 'low')
         self.assertFalse(rule.active)
         self.assertEqual(rule.expression, shipped)
+
+    def test_rules_only_offer_models_with_their_own_records(self):
+        offered = self.env['ir.model'].search(
+            self.env['muk_check.rule']._domain_model_id()
+        )
+        names = offered.mapped('model')
+        self.assertIn('res.partner', names)
+        self.assertNotIn('mail.thread', names)
+        self.assertNotIn('res.config.settings', names)
+
+    def test_a_new_rule_can_be_filled_in(self):
+        with Form(self.env['muk_check.rule']) as form:
+            form.name = 'A New Rule'
+            form.kind = 'expression'
+            form.expression = 'True'
+        self.assertTrue(form.save().is_custom)
 
     def test_only_custom_rules_are_custom(self):
         shipped = self.env.ref('muk_check.rule_server_list_db')

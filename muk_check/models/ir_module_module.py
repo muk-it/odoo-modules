@@ -279,6 +279,17 @@ class IrModuleModule(models.Model):
     def action_check_updates(self) -> None:
         """Run the update check over every covered module."""
         modules = self.search(self.UPDATE_CHECK_DOMAIN)
+        (self.search([('state', '=', 'installed')]) - modules).filtered(
+            'update_state'
+        ).write(
+            {
+                'store_version': False,
+                'store_status': False,
+                'upgrade_status': False,
+                'translation_status': False,
+                'disk_status': False,
+            }
+        )
         if self.env['ir.config_parameter'].sudo().get_param('muk_check.online'):
             modules._update_store_info()
             self.env['muk_check.rule'].sudo()._update_image_builds()

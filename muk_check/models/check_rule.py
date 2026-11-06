@@ -151,7 +151,7 @@ class CheckRule(models.Model):
         comodel_name='ir.model',
         string='Model',
         help='The model the rule searches, or of the records its expression returns.',
-        domain=[('transient', '=', False)],
+        domain=lambda self: self._domain_model_id(),
     )
 
     model_name = fields.Char(
@@ -219,6 +219,16 @@ class CheckRule(models.Model):
     # ----------------------------------------------------------
     # Helper
     # ----------------------------------------------------------
+
+    @api.model
+    def _domain_model_id(self) -> list:
+        """Return the models with records of their own to search."""
+        names = [
+            name
+            for name, model in self.env.registry.items()
+            if not model._abstract and not model._transient
+        ]
+        return [('model', 'in', names)]
 
     @api.model
     def _selection_severity(self) -> list[tuple[str, str]]:
@@ -405,6 +415,7 @@ class CheckRule(models.Model):
         for rule in self:
             rule.severity_effective = rule.severity_override or rule.severity
 
+    @api.depends('name')
     def _compute_is_custom(self) -> None:
         """Mark the rules no module ships, which are fully editable."""
         external_ids = self.get_external_id()
