@@ -95,7 +95,7 @@ A new rule has one of two kinds:
   This keeps secrets out of findings by accident, and it is no sandbox: rules are
   written by administrators, who can already run code in server actions.
 
-*Needs Modules* holds technical names as plain text. Without those modules the rule
+*Needs Modules* lists the modules a rule depends on. Without them the rule
 shows Not Applicable, so a rule about the website needs no dependency on it. Every
 rule runs in a savepoint that is always rolled back, so its changes through the ORM
 are undone. A rule that fails with an error shows that error, and the others still

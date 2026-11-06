@@ -454,11 +454,6 @@ msgid "Details"
 msgstr ""
 
 #. module: muk_check
-#: model_terms:ir.ui.view,arch_db:muk_check.view_ir_module_module_update_list
-msgid "Disk"
-msgstr "Datenträger"
-
-#. module: muk_check
 #: model:ir.model.fields,field_description:muk_check.field_ir_module_module__disk_status
 msgid "Disk Status"
 msgstr "Datenträgerstatus"
@@ -1345,13 +1340,17 @@ msgid "Start the production database without demo data."
 msgstr "Starten Sie die Produktionsdatenbank ohne Demodaten."
 
 #. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_ir_module_module__update_state
+msgid "State"
+msgstr "Zustand"
+
+#. module: muk_check
 #: model:ir.model.fields,field_description:muk_check.field_muk_check_finding__state
 msgid "Status"
 msgstr "Status"
 
 #. module: muk_check
 #: model_terms:ir.ui.view,arch_db:muk_check.view_ir_module_module_form
-#: model_terms:ir.ui.view,arch_db:muk_check.view_ir_module_module_update_list
 msgid "Store"
 msgstr "Store"
 
@@ -1558,11 +1557,6 @@ msgstr "Übersetzungs-Basis"
 #: model:ir.model.fields,field_description:muk_check.field_ir_module_module__translation_status
 msgid "Translation Status"
 msgstr "Übersetzungsstatus"
-
-#. module: muk_check
-#: model_terms:ir.ui.view,arch_db:muk_check.view_ir_module_module_update_list
-msgid "Translations"
-msgstr "Übersetzungen"
 
 #. module: muk_check
 #: model:ir.model.fields.selection,name:muk_check.selection__ir_module_module__translation_status__changed
