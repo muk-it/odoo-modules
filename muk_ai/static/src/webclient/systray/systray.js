@@ -1,6 +1,6 @@
 // @odoo-module
 
-import { Component, onWillStart, onWillUnmount, useRef, useState } from '@odoo/owl';
+import { Component, onWillDestroy, onWillStart, useRef, useState } from '@odoo/owl';
 
 import { _t } from '@web/core/l10n/translation';
 import { registry } from '@web/core/registry';
@@ -72,11 +72,9 @@ export class MukAISystray extends Component {
             global: true,
             bypassEditableProtection: true,
         });
-        onWillStart(async () => {
-            await Promise.all([this._load(), this._fetchNeeds()]);
-            this._connectBus();
-        });
-        onWillUnmount(() => {
+        this._connectBus();
+        onWillStart(() => Promise.all([this._load(), this._fetchNeeds()]));
+        onWillDestroy(() => {
             this._disconnectBus();
             this._debouncedLoad.cancel();
             this.reloadNeeds.cancel();
