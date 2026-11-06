@@ -7,3 +7,58 @@
         margin-inline-end: 0.25rem;
     }
 }
+.mk_check_changelog {
+    max-height: 25rem;
+    overflow-y: auto;
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        margin-bottom: 0.25rem;
+        font-size: 1rem;
+    }
+    cite {
+        font-style: normal;
+    }
+    .section {
+        margin-bottom: 0.5rem;
+        break-inside: avoid;
+    }
+    .section:not(:has(> .section)) {
+        display: grid;
+        grid-template-columns: fit-content(60%) minmax(0, 1fr);
+        column-gap: 1rem;
+        > * {
+            grid-column: 2;
+            margin-bottom: 0;
+        }
+        > :first-child {
+            grid-row: 1 / span 9;
+            grid-column: 1;
+            min-width: 3.5rem;
+        }
+        ul {
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+        li + li,
+        p + p {
+            margin-top: 0.25rem;
+        }
+    }
+    .document:has(> .section):not(:has(.section > p, > .section:only-child > .section)),
+    .document > .section:only-child:has(> .section):not(:has(.section > p)) {
+        columns: 20rem 3;
+        column-gap: 2rem;
+    }
+    .document > .section:only-child:has(> .section) {
+        margin-bottom: 0;
+        break-inside: auto;
+        > :first-child {
+            column-span: all;
+        }
+    }
+}
