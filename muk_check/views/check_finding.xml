@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_check_finding_search" model="ir.ui.view">
+        <field name="name">muk_check.finding.search</field>
+        <field name="model">muk_check.finding</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="target"/>
+                <filter name="open" string="Open" domain="[('state', '=', 'open')]"/>
+                <filter
+                    name="accepted"
+                    string="Accepted"
+                    domain="[('state', '=', 'accepted')]"
+                />
+                <filter
+                    name="resolved"
+                    string="Resolved"
+                    domain="[('state', '=', 'resolved')]"
+                />
+                <separator/>
+                <filter
+                    name="critical"
+                    string="Critical"
+                    domain="[('severity', '=', 'critical')]"
+                />
+                <filter name="high" string="High" domain="[('severity', '=', 'high')]"/>
+                <filter
+                    name="medium"
+                    string="Medium"
+                    domain="[('severity', '=', 'medium')]"
+                />
+                <filter name="low" string="Low" domain="[('severity', '=', 'low')]"/>
+                <separator/>
+                <filter
+                    name="group_category"
+                    string="Category"
+                    context="{'group_by': 'category'}"
+                />
+                <filter
+                    name="group_severity"
+                    string="Severity"
+                    context="{'group_by': 'severity'}"
+                />
+            </search>
+        </field>
+    </record>
+
+    <record id="view_check_finding_list" model="ir.ui.view">
+        <field name="name">muk_check.finding.list</field>
+        <field name="model">muk_check.finding</field>
+        <field name="arch" type="xml">
+            <tree create="false" delete="false" default_order="severity_rank, id desc">
+                <header>
+                    <button
+                        name="%(action_check_run_now)d"
+                        type="action"
+                        string="Run Check"
+                        class="btn-primary"
+                        display="always"
+                    />
+                </header>
+                <field
+                    name="severity"
+                    widget="badge"
+                    decoration-danger="severity == 'critical'"
+                    decoration-warning="severity == 'high'"
+                    decoration-info="severity == 'medium'"
+                    decoration-muted="severity == 'low'"
+                />
+                <field name="res_id" column_invisible="1"/>
+                <field name="name"/>
+                <field name="target"/>
+                <field name="detail" optional="show"/>
+                <field name="category" optional="show"/>
+                <field
+                    name="first_seen"
+                    string="Since"
+                    optional="show"
+                />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-warning="state == 'open'"
+                    decoration-info="state == 'accepted'"
+                    decoration-success="state == 'resolved'"
+                    optional="hide"
+                />
+                <button
+                    name="action_open_accept"
+                    type="object"
+                    string="Accept"
+                    icon="fa-check"
+                    invisible="state != 'open'"
+                />
+                <button
+                    name="action_reopen"
+                    type="object"
+                    string="Reopen"
+                    icon="fa-undo"
+                    invisible="state != 'accepted'"
+                />
+                <button
+                    name="action_open_record"
+                    type="object"
+                    string="Open Record"
+                    icon="fa-external-link"
+                    invisible="not res_id"
+                />
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_check_finding_kanban" model="ir.ui.view">
+        <field name="name">muk_check.finding.kanban</field>
+        <field name="model">muk_check.finding</field>
+        <field name="arch" type="xml">
+            <kanban
+                create="false"
+                delete="false"
+                default_order="severity_rank, id desc"
+            >
+                <field name="state"/>
+                <field name="res_id"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_global_click">
+                            <div>
+                                <field
+                                    name="severity"
+                                    widget="badge"
+                                    decoration-danger="severity == 'critical'"
+                                    decoration-warning="severity == 'high'"
+                                    decoration-info="severity == 'medium'"
+                                    decoration-muted="severity == 'low'"
+                                />
+                            </div>
+                            <div class="fw-bold mt-1">
+                                <field name="name"/>
+                            </div>
+                            <div invisible="not target">
+                                <field name="target"/>
+                            </div>
+                            <div class="text-muted" invisible="not detail">
+                                <field name="detail"/>
+                            </div>
+                            <div class="pt-2">
+                                <button
+                                    name="action_open_accept"
+                                    type="object"
+                                    class="btn btn-secondary btn-sm me-1"
+                                    invisible="state != 'open'"
+                                >
+                                    Accept
+                                </button>
+                                <button
+                                    name="action_reopen"
+                                    type="object"
+                                    class="btn btn-secondary btn-sm me-1"
+                                    invisible="state != 'accepted'"
+                                >
+                                    Reopen
+                                </button>
+                                <button
+                                    name="action_open_record"
+                                    type="object"
+                                    class="btn btn-secondary btn-sm"
+                                    invisible="not res_id"
+                                >
+                                    Open Record
+                                </button>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_check_finding_form" model="ir.ui.view">
+        <field name="name">muk_check.finding.form</field>
+        <field name="model">muk_check.finding</field>
+        <field name="arch" type="xml">
+            <form create="false" delete="false" edit="false">
+                <header>
+                    <button
+                        name="action_open_fix"
+                        type="object"
+                        string="Open Fix Screen"
+                        class="btn-primary"
+                        icon="fa-wrench"
+                        invisible="not action_id"
+                    />
+                    <button
+                        name="action_open_record"
+                        type="object"
+                        string="Open Record"
+                        icon="fa-external-link"
+                        invisible="not res_id"
+                    />
+                    <button
+                        name="action_open_accept"
+                        type="object"
+                        string="Accept"
+                        icon="fa-check"
+                        invisible="state != 'open'"
+                    />
+                    <button
+                        name="action_reopen"
+                        type="object"
+                        string="Reopen"
+                        icon="fa-undo"
+                        invisible="state != 'accepted'"
+                    />
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <field name="action_id" invisible="1"/>
+                    <field name="res_id" invisible="1"/>
+                    <div class="oe_title">
+                        <field
+                            name="severity"
+                            widget="badge"
+                            decoration-danger="severity == 'critical'"
+                            decoration-warning="severity == 'high'"
+                            decoration-info="severity == 'medium'"
+                            decoration-muted="severity == 'low'"
+                        />
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                    </div>
+                    <div
+                        class="alert alert-warning"
+                        role="status"
+                        invisible="not description"
+                    >
+                        <div class="fw-bold">Why it matters</div>
+                        <field name="description"/>
+                    </div>
+                    <div
+                        class="alert alert-info"
+                        role="status"
+                        invisible="not recommendation"
+                    >
+                        <div class="fw-bold">How to fix</div>
+                        <field name="recommendation"/>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="target" invisible="not target"/>
+                            <field name="detail" invisible="not detail"/>
+                            <field name="category"/>
+                        </group>
+                        <group>
+                            <field name="first_seen"/>
+                            <field name="last_seen"/>
+                        </group>
+                    </group>
+                    <group string="Accepted" invisible="state != 'accepted'">
+                        <field name="accepted_reason"/>
+                        <field name="accepted_until" invisible="not accepted_until"/>
+                        <field name="accepted_by_id"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_check_finding_accept" model="ir.ui.view">
+        <field name="name">muk_check.finding.accept</field>
+        <field name="model">muk_check.finding</field>
+        <field name="priority">32</field>
+        <field name="arch" type="xml">
+            <form>
+                <h3>
+                    <field name="name"/>
+                </h3>
+                <group>
+                    <field
+                        name="accepted_reason"
+                        placeholder="Test server, not reachable from outside."
+                        required="1"
+                    />
+                    <field name="accepted_until" placeholder="No end date"/>
+                </group>
+                <p class="text-muted mb-0">
+                    The finding stops counting. With an end date, it opens again after
+                    that day.
+                </p>
+                <footer>
+                    <button
+                        name="action_accept"
+                        type="object"
+                        string="Accept"
+                        class="btn-primary"
+                    />
+                    <button special="cancel" string="Cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_check_finding" model="ir.actions.act_window">
+        <field name="name">Findings</field>
+        <field name="res_model">muk_check.finding</field>
+        <field name="view_mode">tree,kanban,form</field>
+        <field name="search_view_id" ref="view_check_finding_search"/>
+        <field name="context">{'search_default_open': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Nothing needs your attention</p>
+            <p>
+                Run the check to look at security settings, the Odoo version and your
+                apps.
+            </p>
+        </field>
+    </record>
+
+</odoo>

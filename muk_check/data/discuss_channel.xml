@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo noupdate="1">
+
+    <record id="channel_administrators" model="discuss.channel">
+        <field name="name">Administrators</field>
+        <field name="description">General channel for administrators.</field>
+        <field name="group_public_id" ref="base.group_system"/>
+        <field name="group_ids" eval="[Command.link(ref('base.group_system'))]"/>
+    </record>
+
+</odoo>

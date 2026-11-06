@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_check_rule_system,muk_check.rule system,model_muk_check_rule,base.group_system,1,1,1,1
+access_check_finding_system,muk_check.finding system,model_muk_check_finding,base.group_system,1,1,1,1
+access_check_run_system,muk_check.run system,model_muk_check_run,base.group_system,1,1,1,1

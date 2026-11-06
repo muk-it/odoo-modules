@@ -1,0 +1,1707 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* muk_check
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 17.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-05 01:29+0000\n"
+"PO-Revision-Date: 2026-11-05 01:29+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_form
+msgid ""
+"A Python expression. True, text, a list of texts or\n"
+"                                    records fail the rule, an empty answer passes it and\n"
+"                                    None means it does not apply. Available: env,\n"
+"                                    config(), master_password_is_default(),\n"
+"                                    is_odoo_sh(), datetime."
+msgstr ""
+"Una expresión de Python. True, un texto, una lista de textos o registros "
+"incumplen la regla, una respuesta vacía la supera y None significa que no se"
+" aplica. Disponible: env, config(), master_password_is_default(), "
+"is_odoo_sh(), datetime."
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_signin_session_timeout
+msgid ""
+"A forgotten session on a shared computer stays usable for longer than Odoo's"
+" default."
+msgstr ""
+"Una sesión olvidada en un ordenador compartido sigue siendo utilizable "
+"durante más tiempo que el valor predeterminado de Odoo."
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_mail_smtp_encryption
+msgid "A mail server sends without encryption"
+msgstr "Un servidor de correo envía sin cifrado"
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_modules_unfinished
+msgid "A module operation did not finish"
+msgstr "Una operación de módulo no finalizó"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_form
+msgid ""
+"A module ships this rule, so its logic stays up to date. You can\n"
+"                        turn it off or change its severity. Use Duplicate to change its\n"
+"                        logic."
+msgstr ""
+"Un módulo incluye esta regla, por lo que su lógica se mantiene actualizada. "
+"Puede desactivarla o cambiar su gravedad. Use Duplicar para cambiar su "
+"lógica."
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_odoo_newer_series
+msgid "A newer Odoo series is available"
+msgstr "Hay disponible una serie de Odoo más reciente"
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_apps_store_update
+msgid "A newer version of an app is on the store"
+msgstr "Hay una versión más reciente de una aplicación en la tienda"
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_apps_translations
+msgid ""
+"A normal upgrade adds new terms but keeps the existing ones, so changed "
+"wording does not arrive on its own."
+msgstr ""
+"Una actualización normal añade términos nuevos pero conserva los existentes,"
+" por lo que los cambios de redacción no llegan por sí solos."
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_website_info_page
+msgid "A public page lists your apps and Odoo version"
+msgstr "Una página pública muestra sus aplicaciones y la versión de Odoo"
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_modules_server_actions
+msgid "A server action with Python code was added in the database"
+msgstr "Se añadió a la base de datos una acción de servidor con código Python"
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_signin_admin_totp
+msgid "A stolen administrator password gives full control of the database."
+msgstr ""
+"La contraseña robada de un administrador da control total de la base de "
+"datos."
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_server_database_superuser
+msgid ""
+"A superuser can reach every database on the server and, through PostgreSQL, "
+"its files. A single SQL injection then goes far beyond this database."
+msgstr ""
+"Un superusuario puede acceder a todas las bases de datos del servidor y, a "
+"través de PostgreSQL, a sus archivos. Una sola inyección SQL va entonces "
+"mucho más allá de esta base de datos."
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_accounts_admin_login
+msgid "A user signs in with the login \"admin\""
+msgstr "Un usuario inicia sesión con el login \"admin\""
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_accept
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_form
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_kanban
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_list
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_form
+msgid "Accept"
+msgstr "Aceptar"
+
+#. module: muk_check
+#. odoo-python
+#: code:addons/muk_check/models/check_finding.py:0
+#, python-format
+msgid "Accept Finding"
+msgstr "Aceptar hallazgo"
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_odoo_newer_series
+msgid "Accept this finding until your next planned migration."
+msgstr "Acepte este hallazgo hasta su próxima migración planificada."
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_run__accepted_count
+#: model:ir.model.fields.selection,name:muk_check.selection__muk_check_finding__state__accepted
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_form
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_search
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_form
+msgid "Accepted"
+msgstr "Aceptado"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_finding__accepted_by_id
+msgid "Accepted By"
+msgstr "Aceptado por"
+
+#. module: muk_check
+#: model:ir.model.fields.selection,name:muk_check.selection__muk_check_rule__category__accounts
+msgid "Accounts"
+msgstr "Cuentas"
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_accounts_inactive_admins
+msgid "Accounts nobody uses go unnoticed if they are stolen."
+msgstr "Las cuentas que nadie usa pasan desapercibidas si son robadas."
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_rule__active
+msgid "Active"
+msgstr "Activo"
+
+#. module: muk_check
+#: model_terms:ir.actions.act_window,help:muk_check.action_update_check
+msgid "All your apps are up to date"
+msgstr "Todas sus aplicaciones están actualizadas"
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_accounts_inactive_admins
+msgid "An administrator has not been active for 90 days"
+msgstr "Un administrador no ha estado activo en 90 días"
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_signin_admin_totp
+msgid "An administrator signs in without two-factor authentication"
+msgstr "Un administrador inicia sesión sin autenticación de dos factores"
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_apps_translations
+msgid "An app has changed translations"
+msgstr "Una aplicación tiene traducciones modificadas"
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_apps_upgrade_needed
+msgid "An app needs a database upgrade"
+msgstr "Una aplicación necesita una actualización de la base de datos"
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_apps_missing
+msgid "An installed app is missing from the server"
+msgstr "Falta en el servidor una aplicación instalada"
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_website_info_page
+msgid ""
+"Anyone can open /website/info, which shows the installed apps and the exact "
+"Odoo version. This tells an attacker what to look for."
+msgstr ""
+"Cualquiera puede abrir /website/info, que muestra las aplicaciones "
+"instaladas y la versión exacta de Odoo. Esto le indica a un atacante qué "
+"buscar."
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_signin_open_signup
+msgid "Anyone can sign up for an account"
+msgstr "Cualquiera puede registrarse para obtener una cuenta"
+
+#. module: muk_check
+#: model:ir.model.fields.selection,name:muk_check.selection__muk_check_rule__category__apps
+msgid "Apps"
+msgstr "Aplicaciones"
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_accounts_inactive_admins
+msgid "Archive the account, or take away its administrator right."
+msgstr "Archive la cuenta o quítele el derecho de administrador."
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_form
+msgid "As shipped"
+msgstr "Tal como se entrega"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_res_config_settings_form
+msgid "Ask apps.odoo.com and Docker Hub for new versions once a day."
+msgstr ""
+"Consulta una vez al día apps.odoo.com y Docker Hub en busca de nuevas "
+"versiones."
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_signin_admin_totp
+msgid ""
+"Ask each administrator to turn on two-factor authentication in their "
+"profile."
+msgstr ""
+"Pida a cada administrador que active la autenticación de dos factores en su "
+"perfil."
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_accept
+msgid "Cancel"
+msgstr "Cancelar"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_finding__category
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_rule__category
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_search
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_search
+msgid "Category"
+msgstr "Categoría"
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_accounts_admin_login
+msgid "Change the login to something personal."
+msgstr "Cambie el login por uno personal."
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_ir_module_module__store_changelog
+msgid "Changelog"
+msgstr "Registro de cambios"
+
+#. module: muk_check
+#: model:ir.model,name:muk_check.model_muk_check_finding
+msgid "Check Finding"
+msgstr "Hallazgo de comprobación"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_ir_module_module_update_list
+msgid "Check Now"
+msgstr "Comprobar ahora"
+
+#. module: muk_check
+#: model:ir.model,name:muk_check.model_muk_check_rule
+msgid "Check Rule"
+msgstr "Regla de comprobación"
+
+#. module: muk_check
+#: model:ir.model,name:muk_check.model_muk_check_run
+msgid "Check Run"
+msgstr "Ejecución de comprobación"
+
+#. module: muk_check
+#. odoo-python
+#: code:addons/muk_check/models/check_run.py:0
+#, python-format
+msgid "Check of %s"
+msgstr "Comprobación de %s"
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_modules_server_actions
+msgid "Check that each action is still needed and who can change it."
+msgstr ""
+"Compruebe que cada acción sigue siendo necesaria y quién puede modificarla."
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_accounts_public_access
+msgid ""
+"Check that this access right is needed, and limit it to signed-in users or "
+"with a domain."
+msgstr ""
+"Compruebe si este derecho de acceso es necesario y limítelo a los usuarios "
+"con sesión iniciada o con un dominio."
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_modules_server_actions
+msgid ""
+"Code stored in the database runs without a code review, and it is easy to "
+"forget in a migration."
+msgstr ""
+"El código almacenado en la base de datos se ejecuta sin revisión de código y"
+" es fácil olvidarlo en una migración."
+
+#. module: muk_check
+#: model:ir.model,name:muk_check.model_res_config_settings
+msgid "Config Settings"
+msgstr "Ajustes de configuración"
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_server_database_superuser
+msgid "Connect Odoo with a PostgreSQL user that is not a superuser."
+msgstr "Conecte Odoo con un usuario de PostgreSQL que no sea superusuario."
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_finding__create_uid
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_rule__create_uid
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_run__create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_finding__create_date
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_rule__create_date
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_run__create_date
+msgid "Created on"
+msgstr "Creado el"
+
+#. module: muk_check
+#. odoo-python
+#: code:addons/muk_check/models/check_rule.py:0
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_run__critical_count
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_search
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_form
+#, python-format
+msgid "Critical"
+msgstr "Crítica"
+
+#. module: muk_check
+#: model:ir.model.fields.selection,name:muk_check.selection__muk_check_rule__category__custom
+msgid "Custom"
+msgstr "Personalizado"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_rule__is_custom
+msgid "Custom Rule"
+msgstr "Regla personalizada"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_list
+msgid "Date"
+msgstr "Fecha"
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_server_log_level
+msgid ""
+"Debug logs grow quickly and can contain request data and SQL parameters."
+msgstr ""
+"Los registros de depuración crecen rápidamente y pueden contener datos de "
+"solicitudes y parámetros SQL."
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_modules_demo_data
+msgid ""
+"Demo data can bring accounts with known passwords. Odoo advises against it "
+"on internet-facing servers."
+msgstr ""
+"Los datos de demostración pueden traer cuentas con contraseñas conocidas. "
+"Odoo lo desaconseja en servidores accesibles desde internet."
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_modules_demo_data
+msgid "Demo data is installed"
+msgstr "Los datos de demostración están instalados"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_finding__detail
+msgid "Detail"
+msgstr "Detalle"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_rule__detail_field_id
+msgid "Detail Field"
+msgstr "Campo de detalle"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_form
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_form
+msgid "Details"
+msgstr "Detalles"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_ir_module_module__disk_status
+msgid "Disk Status"
+msgstr "Estado del disco"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_ir_module_module_update_list
+msgid "Dismiss"
+msgstr "Descartar"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_finding__display_name
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_rule__display_name
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_run__display_name
+msgid "Display Name"
+msgstr "Nombre mostrado"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_rule__domain
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_form
+msgid "Domain"
+msgstr "Dominio"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_rule__duration
+msgid "Duration (s)"
+msgstr "Duración (s)"
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_accounts_many_admins
+msgid ""
+"Each administrator can read and change everything, and each account is one "
+"more that can be stolen."
+msgstr ""
+"Cada administrador puede leer y modificar todo, y cada cuenta es una más que"
+" puede ser robada."
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_rule__severity_effective
+msgid "Effective Severity"
+msgstr "Gravedad efectiva"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_rule__error
+#: model:ir.model.fields.selection,name:muk_check.selection__muk_check_rule__state__error
+msgid "Error"
+msgstr "Error"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_run__error_count
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_search
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_form
+msgid "Errors"
+msgstr "Errores"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_rule__expression
+#: model:ir.model.fields.selection,name:muk_check.selection__muk_check_rule__kind__expression
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_form
+msgid "Expression"
+msgstr "Expresión"
+
+#. module: muk_check
+#: model:ir.model.fields.selection,name:muk_check.selection__muk_check_rule__state__failed
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_search
+msgid "Failed"
+msgstr "Fallida"
+
+#. module: muk_check
+#: model:ir.model.fields,help:muk_check.field_muk_check_rule__detail_field_id
+msgid "Field of the matching record that tells one finding from the next."
+msgstr ""
+"Campo del registro coincidente que distingue un hallazgo del siguiente."
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_finding__name
+msgid "Finding"
+msgstr "Hallazgo"
+
+#. module: muk_check
+#: model:ir.actions.act_window,name:muk_check.action_check_finding
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_rule__finding_ids
+#: model:ir.ui.menu,name:muk_check.menu_check_findings
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_form
+msgid "Findings"
+msgstr "Hallazgos"
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_modules_unfinished
+msgid "Finish or cancel the operation in the Apps menu."
+msgstr "Finalice o cancele la operación en el menú Aplicaciones."
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_finding__first_seen
+msgid "First Seen"
+msgstr "Visto por primera vez"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_finding__action_id
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_rule__action_id
+msgid "Fix Screen"
+msgstr "Pantalla de corrección"
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_odoo_build_behind
+msgid ""
+"Fixes reach an installation only when its Odoo build is updated. This "
+"compares build dates and does not list known vulnerabilities. It applies "
+"only to Odoo installed from the official package or image, not from source "
+"or on Odoo.sh."
+msgstr ""
+"Las correcciones llegan a una instalación solo cuando se actualiza su "
+"compilación de Odoo. Esto compara fechas de compilación y no lista "
+"vulnerabilidades conocidas. Solo se aplica a Odoo instalado desde el paquete"
+" o la imagen oficial, no desde el código fuente ni en Odoo.sh."
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_signin_open_signup
+msgid ""
+"Free sign-up creates portal accounts for strangers. That is right for some "
+"shops, and unnecessary for most databases."
+msgstr ""
+"El registro libre crea cuentas de portal para desconocidos. Eso es correcto "
+"para algunos comercios y innecesario para la mayoría de las bases de datos."
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_server_disk_space
+msgid "Free up space or make the disk larger."
+msgstr "Libere espacio o amplíe el disco."
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_run__grade
+msgid "Grade"
+msgstr "Nota"
+
+#. module: muk_check
+#. odoo-python
+#: code:addons/muk_check/models/check_rule.py:0
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_run__high_count
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_search
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_form
+#, python-format
+msgid "High"
+msgstr "Alta"
+
+#. module: muk_check
+#: model:ir.actions.act_window,name:muk_check.action_check_run
+#: model:ir.ui.menu,name:muk_check.menu_check_history
+msgid "History"
+msgstr "Historial"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_finding__recommendation
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_rule__recommendation
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_form
+msgid "How to Fix"
+msgstr "Cómo corregirlo"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_form
+msgid "How to fix"
+msgstr "Cómo corregirlo"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_finding__id
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_rule__id
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_run__id
+msgid "ID"
+msgstr ""
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_ir_module_module_update_list
+msgid "In Database"
+msgstr "En la base de datos"
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_accounts_admin_login
+msgid ""
+"It is the first login anyone tries, and Odoo's deployment guide advises "
+"against it."
+msgstr ""
+"Es el primer login que prueba cualquiera, y la guía de despliegue de Odoo lo"
+" desaconseja."
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_apps_missing
+msgid ""
+"Its code is gone, so its features do not work while its data stays in the "
+"database."
+msgstr ""
+"Su código ha desaparecido, por lo que sus funciones no funcionan mientras "
+"sus datos permanecen en la base de datos."
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_apps_upgrade_needed
+msgid ""
+"Its data files, migration scripts, fields or table constraints changed, and "
+"the database does not have those changes yet."
+msgstr ""
+"Sus archivos de datos, scripts de migración, campos o restricciones de tabla"
+" cambiaron, y la base de datos aún no tiene esos cambios."
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_rule__kind
+msgid "Kind"
+msgstr "Tipo"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_ir_module_module__store_checked_at
+msgid "Last Checked"
+msgstr "Última comprobación"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_rule__state
+msgid "Last Result"
+msgstr "Último resultado"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_finding__last_seen
+msgid "Last Seen"
+msgstr "Visto por última vez"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_finding__write_uid
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_rule__write_uid
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_run__write_uid
+msgid "Last Updated by"
+msgstr "Última actualización por"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_finding__write_date
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_rule__write_date
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_run__write_date
+msgid "Last Updated on"
+msgstr "Última actualización el"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_form
+msgid "Last checked"
+msgstr "Última comprobación"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_run__is_latest
+msgid "Latest Check"
+msgstr "Última comprobación"
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_server_disk_space
+msgid ""
+"Less than 10% of the disk holding the Odoo files is free. On a full disk "
+"uploads fail, and a database on the same disk can stop."
+msgstr ""
+"Queda libre menos del 10 % del disco que contiene los archivos de Odoo. Con "
+"el disco lleno, las subidas fallan y una base de datos en el mismo disco "
+"puede detenerse."
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_mail_base_url
+msgid ""
+"Links in mail would be unencrypted, or an administrator's login could change"
+" the address that all links use."
+msgstr ""
+"Los enlaces del correo no estarían cifrados, o el login de un administrador "
+"podría cambiar la dirección que usan todos los enlaces."
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_ir_module_module_update_list
+msgid "Load New Terms"
+msgstr "Cargar términos nuevos"
+
+#. module: muk_check
+#. odoo-python
+#: code:addons/muk_check/models/check_rule.py:0
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_run__low_count
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_search
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_form
+#, python-format
+msgid "Low"
+msgstr "Baja"
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_signin_session_timeout
+msgid "Lower the parameter sessions.max_inactivity_seconds to a week or less."
+msgstr ""
+"Reduzca el parámetro sessions.max_inactivity_seconds a una semana o menos."
+
+#. module: muk_check
+#: model:ir.model.fields.selection,name:muk_check.selection__muk_check_rule__category__mail
+msgid "Mail and URL"
+msgstr "Correo y URL"
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_mail_smtp_encryption
+msgid "Mail and the server password can be read on the way."
+msgstr ""
+"El correo y la contraseña del servidor pueden leerse durante el trayecto."
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_server_cron_stalled
+msgid ""
+"Make sure max_cron_threads is above 0 or that a cron server is running, then"
+" read the server log."
+msgstr ""
+"Compruebe que max_cron_threads sea mayor que 0 o que haya un servidor cron "
+"en marcha y, después, lea el registro del servidor."
+
+#. module: muk_check
+#. odoo-python
+#: code:addons/muk_check/models/check_rule.py:0
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_run__medium_count
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_search
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_form
+#, python-format
+msgid "Medium"
+msgstr "Media"
+
+#. module: muk_check
+#: model:ir.model.fields.selection,name:muk_check.selection__ir_module_module__disk_status__missing
+#: model_terms:ir.ui.view,arch_db:muk_check.view_ir_module_module_update_search
+msgid "Missing"
+msgstr "Falta"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_finding__res_model
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_rule__model_id
+msgid "Model"
+msgstr "Modelo"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_rule__model_name
+msgid "Model Name"
+msgstr "Nombre del modelo"
+
+#. module: muk_check
+#: model:ir.model,name:muk_check.model_ir_module_module
+msgid "Module"
+msgstr "Módulo"
+
+#. module: muk_check
+#: model:ir.model.fields.selection,name:muk_check.selection__muk_check_rule__category__modules
+msgid "Modules and Code"
+msgstr "Módulos y código"
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_modules_unfinished
+msgid ""
+"Modules waiting to be installed, upgraded or removed block the next module "
+"change."
+msgstr ""
+"Los módulos pendientes de instalar, actualizar o eliminar bloquean el "
+"siguiente cambio de módulos."
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_accounts_many_admins
+msgid "More than 5 users have administrator rights"
+msgstr "Más de 5 usuarios tienen derechos de administrador"
+
+#. module: muk_check
+#: model:ir.actions.server,name:muk_check.ir_cron_check_ir_actions_server
+msgid "MuK Check"
+msgstr ""
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_rule__name
+msgid "Name"
+msgstr "Nombre"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_ir_module_module_update_search
+msgid "Needs Attention"
+msgstr "Requiere atención"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_rule__module_ids
+msgid "Needs Modules"
+msgstr "Requiere módulos"
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_apps_store_update
+msgid ""
+"New versions can bring fixes. This addon only reports them and downloads "
+"nothing."
+msgstr ""
+"Las versiones nuevas pueden traer correcciones. Este módulo solo las informa"
+" y no descarga nada."
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_run__odoo_image
+msgid "Newest Image"
+msgstr "Imagen más reciente"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_form
+msgid "Newest image"
+msgstr "Imagen más reciente"
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_server_dbfilter
+msgid "No database filter is set"
+msgstr "No hay ningún filtro de base de datos configurado"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_accept
+msgid "No end date"
+msgstr "Sin fecha de fin"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_form
+msgid "No fix screen"
+msgstr "Sin pantalla de corrección"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_run__not_applicable_count
+#: model:ir.model.fields.selection,name:muk_check.selection__muk_check_rule__state__not_applicable
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_search
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_form
+msgid "Not Applicable"
+msgstr "No aplicable"
+
+#. module: muk_check
+#: model_terms:ir.actions.act_window,help:muk_check.action_check_finding
+msgid "Nothing needs your attention"
+msgstr "Nada requiere su atención"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_form
+msgid "Nothing needs your attention."
+msgstr "Nada requiere su atención."
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_res_config_settings__check_notifications
+msgid "Notifications"
+msgstr "Notificaciones"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_finding__notified
+msgid "Notified"
+msgstr "Notificado"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_form
+msgid "Odoo"
+msgstr ""
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_run__odoo_version
+#: model:ir.model.fields.selection,name:muk_check.selection__muk_check_rule__category__odoo
+msgid "Odoo Version"
+msgstr "Versión de Odoo"
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_odoo_series_unsupported
+msgid ""
+"Odoo fixes bugs and security issues only in its three newest series. "
+"Official images stop being rebuilt for older ones."
+msgstr ""
+"Odoo corrige errores y problemas de seguridad solo en sus tres series más "
+"recientes. Las imágenes oficiales dejan de reconstruirse para las "
+"anteriores."
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_modules_autovacuum
+msgid ""
+"Odoo uses this job to delete old sessions, logs and temporary records. "
+"Without it the database keeps growing."
+msgstr ""
+"Odoo usa esta tarea para eliminar sesiones antiguas, registros y datos "
+"temporales. Sin ella, la base de datos no deja de crecer."
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_ir_module_module_update_list
+msgid "On Disk"
+msgstr "En disco"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_ir_module_module__store_version
+msgid "On Store"
+msgstr "En la tienda"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_res_config_settings__check_online
+msgid "Online Checks"
+msgstr "Comprobaciones en línea"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_form
+msgid "Only the record name"
+msgstr "Solo el nombre del registro"
+
+#. module: muk_check
+#: model:ir.model.fields.selection,name:muk_check.selection__muk_check_finding__state__open
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_search
+msgid "Open"
+msgstr "Abierto"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_run__open_finding_ids
+msgid "Open Findings"
+msgstr "Hallazgos abiertos"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_form
+msgid "Open Fix Screen"
+msgstr "Abrir pantalla de corrección"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_form
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_kanban
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_list
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_form
+msgid "Open Record"
+msgstr "Abrir registro"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_ir_module_module_form
+#: model_terms:ir.ui.view,arch_db:muk_check.view_ir_module_module_update_list
+msgid "Open Store"
+msgstr "Abrir tienda"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.message_findings
+msgid "Open the findings"
+msgstr "Abrir los hallazgos"
+
+#. module: muk_check
+#. odoo-python
+#: code:addons/muk_check/models/check_run.py:0
+#: model:ir.actions.server,name:muk_check.action_check_overview
+#: model:ir.ui.menu,name:muk_check.menu_check_overview
+#, python-format
+msgid "Overview"
+msgstr "Resumen"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_ir_module_module_update_list
+msgid "Overwrite Terms"
+msgstr "Sobrescribir términos"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_run__passed_count
+#: model:ir.model.fields.selection,name:muk_check.selection__muk_check_rule__state__passed
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_search
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_form
+msgid "Passed"
+msgstr "Superada"
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_signin_password_length
+msgid "Passwords shorter than 8 characters are allowed"
+msgstr "Se permiten contraseñas de menos de 8 caracteres"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_form
+msgid "Pick a model"
+msgstr "Elija un modelo"
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_odoo_series_unsupported
+msgid "Plan the migration to a supported series."
+msgstr "Planifique la migración a una serie compatible."
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_accounts_portal_api_keys
+msgid "Portal users can create API keys"
+msgstr "Los usuarios del portal pueden crear claves de API"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_res_config_settings_form
+msgid "Post new findings in the Administrators channel."
+msgstr "Publica los nuevos hallazgos en el canal Administradores."
+
+#. module: muk_check
+#: model_terms:ir.actions.act_window,help:muk_check.action_update_check
+msgid "Press Check Now to compare them with the store and the code on disk."
+msgstr ""
+"Pulse Comprobar ahora para compararlas con la tienda y con el código en "
+"disco."
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_server_proxy_mode
+msgid "Proxy mode is off behind https"
+msgstr "El modo proxy está desactivado detrás de https"
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_apps_missing
+msgid "Put the code back on the server, or uninstall the app."
+msgstr "Vuelva a colocar el código en el servidor o desinstale la aplicación."
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_form
+msgid "Question"
+msgstr "Pregunta"
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_signin_password_length
+msgid "Raise the minimum password length in the general settings."
+msgstr "Aumente la longitud mínima de contraseña en los ajustes generales."
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_apps_store_update
+msgid ""
+"Read the changelog and update when it suits you, or accept this finding if "
+"you run your own version."
+msgstr ""
+"Lea el registro de cambios y actualice cuando le convenga, o acepte este "
+"hallazgo si ejecuta su propia versión."
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_finding__accepted_reason
+msgid "Reason"
+msgstr "Motivo"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_finding__res_id
+msgid "Record"
+msgstr "Registro"
+
+#. module: muk_check
+#: model:ir.model.fields.selection,name:muk_check.selection__muk_check_rule__kind__records
+msgid "Records"
+msgstr "Registros"
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_apps_translations
+msgid "Reload them under Apps, Update Check."
+msgstr "Vuelva a cargarlos en Aplicaciones, Comprobar actualizaciones."
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_server_dev_mode
+msgid ""
+"Remove the dev option from the server's start command or configuration."
+msgstr ""
+"Quite la opción dev del comando de inicio o de la configuración del "
+"servidor."
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_signin_cooldown
+msgid "Remove the parameter base.login_cooldown_after, or set it above 0."
+msgstr ""
+"Quite el parámetro base.login_cooldown_after o establézcalo por encima de 0."
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_form
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_kanban
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_list
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_form
+msgid "Reopen"
+msgstr "Reabrir"
+
+#. module: muk_check
+#: model:ir.model.fields,help:muk_check.field_muk_check_rule__severity_override
+msgid "Replaces the severity of this rule, and an upgrade keeps it."
+msgstr "Sustituye la gravedad de esta regla y una actualización la conserva."
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_server_request_limits
+msgid "Request limits are missing or very high"
+msgstr "Los límites de las solicitudes faltan o son muy altos"
+
+#. module: muk_check
+#: model:ir.model.fields.selection,name:muk_check.selection__muk_check_finding__state__resolved
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_search
+msgid "Resolved"
+msgstr "Resuelto"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_finding__rule_id
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_form
+msgid "Rule"
+msgstr "Regla"
+
+#. module: muk_check
+#: model:ir.actions.act_window,name:muk_check.action_check_rule
+#: model:ir.ui.menu,name:muk_check.menu_check_rules
+msgid "Rules"
+msgstr "Reglas"
+
+#. module: muk_check
+#: model:ir.actions.server,name:muk_check.action_check_run_now
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_list
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_list
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_form
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_list
+msgid "Run Check"
+msgstr "Ejecutar comprobación"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_form
+msgid "Run This Rule"
+msgstr "Ejecutar esta regla"
+
+#. module: muk_check
+#: model_terms:ir.actions.act_window,help:muk_check.action_check_finding
+msgid ""
+"Run the check to look at security settings, the Odoo version and your\n"
+"                apps."
+msgstr ""
+"Ejecute la comprobación para revisar los ajustes de seguridad, la versión de"
+" Odoo y sus aplicaciones."
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_form
+msgid "Runs on every database"
+msgstr "Se ejecuta en todas las bases de datos"
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_server_cron_stalled
+msgid "Scheduled actions have stopped running"
+msgstr "Las acciones planificadas han dejado de ejecutarse"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_run__score
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_form
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_graph
+msgid "Score"
+msgstr "Puntuación"
+
+#. module: muk_check
+#: model:ir.ui.menu,name:muk_check.menu_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_res_config_settings_form
+msgid "Security Check"
+msgstr "Comprobación de seguridad"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.message_findings
+msgid "Security Check:"
+msgstr "Comprobación de seguridad:"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.message_findings
+msgid "Security Check: 1 new finding"
+msgstr "Comprobación de seguridad: 1 hallazgo nuevo"
+
+#. module: muk_check
+#: model:ir.model.fields.selection,name:muk_check.selection__muk_check_rule__category__server
+msgid "Server"
+msgstr "Servidor"
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_server_dev_mode
+msgid "Server developer options are turned on"
+msgstr "Las opciones de desarrollador del servidor están activadas"
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_signin_session_timeout
+msgid "Sessions stay valid for more than a week of inactivity"
+msgstr ""
+"Las sesiones siguen siendo válidas tras más de una semana de inactividad"
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_server_master_password
+msgid ""
+"Set a long random admin_passwd in the configuration file and restart the "
+"server."
+msgstr ""
+"Establezca un admin_passwd aleatorio y largo en el archivo de configuración "
+"y reinicie el servidor."
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_signin_open_signup
+msgid "Set customer access to \"On invitation\" unless you need open sign-up."
+msgstr ""
+"Establezca el acceso de clientes en \"Por invitación\" salvo que necesite un"
+" registro abierto."
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_server_dbfilter
+msgid ""
+"Set dbfilter to a pattern that matches only this database, such as "
+"^mycompany$."
+msgstr ""
+"Establezca dbfilter con un patrón que coincida solo con esta base de datos, "
+"como ^mycompany$."
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_server_request_limits
+msgid ""
+"Set limit_memory_hard, limit_time_cpu and limit_time_real in the "
+"configuration file, sized for your server."
+msgstr ""
+"Defina limit_memory_hard, limit_time_cpu y limit_time_real en el archivo de "
+"configuración, según el tamaño de su servidor."
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_server_list_db
+msgid ""
+"Set list_db = False in the configuration file, and block /web/database at "
+"the proxy."
+msgstr ""
+"Establezca list_db = False en el archivo de configuración y bloquee "
+"/web/database en el proxy."
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_server_log_level
+msgid "Set log_level back to info."
+msgstr "Vuelva a poner log_level en info."
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_server_proxy_mode
+msgid "Set proxy_mode = True in the configuration file."
+msgstr "Establezca proxy_mode = True en el archivo de configuración."
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_server_workers
+msgid "Set workers in the configuration file, sized for your server."
+msgstr ""
+"Establezca workers en el archivo de configuración, según el tamaño de su "
+"servidor."
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_finding__severity
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_rule__severity
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_search
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_list
+msgid "Severity"
+msgstr "Gravedad"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_finding__severity_rank
+msgid "Severity Rank"
+msgstr "Rango de gravedad"
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_signin_password_length
+msgid "Short passwords are guessed quickly."
+msgstr "Las contraseñas cortas se adivinan rápidamente."
+
+#. module: muk_check
+#: model:ir.model.fields.selection,name:muk_check.selection__muk_check_rule__category__signin
+msgid "Sign-in"
+msgstr "Inicio de sesión"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_list
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_form
+msgid "Since"
+msgstr "Desde"
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_modules_demo_data
+msgid "Start the production database without demo data."
+msgstr "Inicie la base de datos de producción sin datos de demostración."
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_ir_module_module_update_list
+msgid "State"
+msgstr "Estado"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_finding__state
+msgid "Status"
+msgstr "Estado"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_ir_module_module_form
+msgid "Store"
+msgstr "Tienda"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_ir_module_module__store_status
+msgid "Store Status"
+msgstr "Estado de la tienda"
+
+#. module: muk_check
+#: model:ir.model.fields.selection,name:muk_check.selection__ir_module_module__store_status__update
+#: model_terms:ir.ui.view,arch_db:muk_check.view_ir_module_module_update_search
+msgid "Store Update"
+msgstr "Actualización de la tienda"
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_accounts_many_admins
+msgid ""
+"Take away the right from everyone who does not need it. Copy this rule to "
+"use another limit."
+msgstr ""
+"Quite el derecho a todos los que no lo necesiten. Copie esta regla para usar"
+" otro límite."
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_accept
+msgid "Test server, not reachable from outside."
+msgstr "Servidor de pruebas, no accesible desde el exterior."
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_server_dev_mode
+msgid ""
+"The --dev options are for development. They can reload code, read templates "
+"from disk and show details to users."
+msgstr ""
+"Las opciones --dev son para desarrollo. Pueden recargar código, leer "
+"plantillas del disco y mostrar detalles a los usuarios."
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_odoo_build_behind
+msgid "The Odoo build is over 30 days behind the newest image"
+msgstr ""
+"La compilación de Odoo lleva más de 30 días de retraso respecto a la imagen "
+"más reciente"
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_mail_base_url
+msgid "The base URL uses http, or is not frozen"
+msgstr "La URL base usa http o no está congelada"
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_server_cron_stalled
+msgid ""
+"The daily cleanup job is over three days late. Outgoing mail, cleanups and "
+"this daily check wait for the same scheduler."
+msgstr ""
+"La tarea diaria de limpieza lleva más de tres días de retraso. El correo "
+"saliente, las limpiezas y esta comprobación diaria esperan al mismo "
+"planificador."
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_modules_autovacuum
+msgid "The daily cleanup job is turned off"
+msgstr "La tarea de limpieza diaria está desactivada"
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_server_list_db
+msgid "The database manager is reachable"
+msgstr "El gestor de bases de datos es accesible"
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_server_list_db
+msgid ""
+"The database manager shows database names and offers backup, restore and "
+"delete. Odoo strongly recommends disabling it on any internet-facing system."
+msgstr ""
+"El gestor de bases de datos muestra los nombres de las bases de datos y "
+"ofrece copia de seguridad, restauración y eliminación. Odoo recomienda "
+"encarecidamente desactivarlo en cualquier sistema accesible desde internet."
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_server_database_superuser
+msgid "The database user is a PostgreSQL superuser"
+msgstr "El usuario de la base de datos es un superusuario de PostgreSQL"
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_server_disk_space
+msgid "The disk is almost full"
+msgstr "El disco está casi lleno"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_accept
+msgid ""
+"The finding stops counting. With an end date, it opens again after\n"
+"                    that day."
+msgstr ""
+"El hallazgo deja de contar. Con una fecha de fin, vuelve a abrirse después "
+"de ese día."
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_signin_cooldown
+msgid "The login cooldown is turned off"
+msgstr ""
+"El retardo tras intentos de inicio de sesión fallidos está desactivado"
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_server_master_password
+msgid "The master password is still the default"
+msgstr "La contraseña maestra sigue siendo la predeterminada"
+
+#. module: muk_check
+#: model:ir.model.fields,help:muk_check.field_muk_check_rule__model_id
+msgid "The model the rule searches, or of the records its expression returns."
+msgstr ""
+"El modelo en el que busca la regla, o el de los registros que devuelve su "
+"expresión."
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_accounts_public_access
+msgid "The public can change records"
+msgstr "El público puede cambiar registros"
+
+#. module: muk_check
+#: model:ir.model.fields,help:muk_check.field_muk_check_finding__action_id
+#: model:ir.model.fields,help:muk_check.field_muk_check_rule__action_id
+msgid "The screen that opens to fix this."
+msgstr "La pantalla que se abre para corregirlo."
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_server_log_level
+msgid "The server logs at debug level"
+msgstr "El servidor registra a nivel de depuración"
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_server_workers
+msgid "The server runs in a single process"
+msgstr "El servidor se ejecuta en un único proceso"
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_odoo_series_unsupported
+msgid "This Odoo series no longer gets updates"
+msgstr "Esta serie de Odoo ya no recibe actualizaciones"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_ir_module_module_update_list
+msgid ""
+"This also upgrades the installed apps that depend on this one, and "
+"interrupts every user while it runs. Continue?"
+msgstr ""
+"Esto también actualiza las aplicaciones instaladas que dependen de esta e "
+"interrumpe a todos los usuarios mientras se ejecuta. ¿Continuar?"
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_accounts_portal_api_keys
+msgid ""
+"This gives external users a way to reach the database outside the portal "
+"pages."
+msgstr ""
+"Esto da a los usuarios externos una forma de acceder a la base de datos "
+"fuera de las páginas del portal."
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_form
+msgid ""
+"This is an earlier check, and its counts are from that day. The\n"
+"                        Overview shows what is open now."
+msgstr ""
+"Esta es una comprobación anterior y sus recuentos son de ese día. La vista "
+"general muestra lo que está abierto ahora."
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_ir_module_module_update_list
+msgid "This replaces translations customized in this database. Continue?"
+msgstr ""
+"Esto sustituye las traducciones personalizadas en esta base de datos. "
+"¿Continuar?"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_form
+msgid "This rule could not run"
+msgstr "No se pudo ejecutar esta regla"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_form
+msgid ""
+"This rule does not apply here. A module it needs is not\n"
+"                        installed, its model is missing, or it cannot answer on this\n"
+"                        server, for example without online checks."
+msgstr ""
+"Esta regla no se aplica aquí. Falta un módulo que necesita, no existe su "
+"modelo o no puede responder en este servidor, por ejemplo sin comprobaciones"
+" en línea."
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_odoo_newer_series
+msgid ""
+"This series is still supported. Knowing a newer one exists helps to plan the"
+" next migration."
+msgstr ""
+"Esta serie sigue siendo compatible. Saber que existe una más reciente ayuda "
+"a planificar la próxima migración."
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_ir_module_module__translation_fingerprint
+msgid "Translation Baseline"
+msgstr "Base de traducciones"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_ir_module_module__translation_status
+msgid "Translation Status"
+msgstr "Estado de las traducciones"
+
+#. module: muk_check
+#: model:ir.model.fields.selection,name:muk_check.selection__ir_module_module__translation_status__changed
+#: model_terms:ir.ui.view,arch_db:muk_check.view_ir_module_module_update_search
+msgid "Translations Changed"
+msgstr "Traducciones modificadas"
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_website_info_page
+msgid "Turn off the view \"Show Odoo Information\" for this website."
+msgstr "Desactive la vista \"Mostrar información de Odoo\" para este sitio web."
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_signin_totp_policy
+msgid "Turn on enforcement in the general settings."
+msgstr "Active la obligatoriedad en los ajustes generales."
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_accounts_portal_api_keys
+msgid "Turn this off in the general settings unless portal users need it."
+msgstr ""
+"Desactive esto en los ajustes generales salvo que los usuarios del portal lo"
+" necesiten."
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_modules_autovacuum
+msgid "Turn this scheduled action back on."
+msgstr "Vuelva a activar esta acción planificada."
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_form
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_search
+msgid "Turned Off"
+msgstr "Desactivado"
+
+#. module: muk_check
+#: model:muk_check.rule,name:muk_check.rule_signin_totp_policy
+msgid "Two-factor authentication is not enforced"
+msgstr "La autenticación de dos factores no es obligatoria"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_finding__accepted_until
+msgid "Until"
+msgstr "Hasta"
+
+#. module: muk_check
+#: model:ir.actions.act_window,name:muk_check.action_update_check
+#: model:ir.ui.menu,name:muk_check.menu_update_check
+msgid "Update Check"
+msgstr "Comprobación de actualizaciones"
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_odoo_build_behind
+msgid "Update to a current build of your series, on a test copy first."
+msgstr ""
+"Actualice a una compilación actual de su serie, primero en una copia de "
+"prueba."
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_ir_module_module_update_list
+msgid "Upgrade"
+msgstr "Actualizar"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_ir_module_module__upgrade_fingerprint
+msgid "Upgrade Baseline"
+msgstr "Base de actualización"
+
+#. module: muk_check
+#: model:ir.model.fields.selection,name:muk_check.selection__ir_module_module__upgrade_status__needed
+#: model_terms:ir.ui.view,arch_db:muk_check.view_ir_module_module_update_search
+msgid "Upgrade Needed"
+msgstr "Actualización necesaria"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_ir_module_module__upgrade_status
+msgid "Upgrade Status"
+msgstr "Estado de la actualización"
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_apps_upgrade_needed
+msgid "Upgrade it under Apps, Update Check, on a test copy first."
+msgstr ""
+"Actualícela en Aplicaciones, Comprobar actualizaciones, primero en una copia"
+" de prueba."
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_mail_smtp_encryption
+msgid "Use TLS or SSL for this mail server."
+msgstr "Use TLS o SSL en este servidor de correo."
+
+#. module: muk_check
+#: model:muk_check.rule,recommendation:muk_check.rule_mail_base_url
+msgid "Use https, and set the parameter web.base.url.freeze to True."
+msgstr "Use https y establezca el parámetro web.base.url.freeze en True."
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_accounts_public_access
+msgid ""
+"Visitors who are not signed in can create, change or delete these records."
+msgstr ""
+"Los visitantes sin sesión iniciada pueden crear, cambiar o eliminar estos "
+"registros."
+
+#. module: muk_check
+#: model:ir.model.fields.selection,name:muk_check.selection__muk_check_rule__category__website
+msgid "Website"
+msgstr "Sitio web"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_form
+msgid "What can go wrong because of this."
+msgstr "Lo que puede salir mal por esto."
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_form
+msgid "What is wrong"
+msgstr "Qué falla"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_form
+msgid "What to do about it."
+msgstr "Qué hacer al respecto."
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_finding__target
+msgid "Where"
+msgstr "Dónde"
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_signin_totp_policy
+msgid ""
+"While it is optional, many accounts stay protected by a password alone."
+msgstr ""
+"Aunque es opcional, muchas cuentas siguen protegidas solo por una "
+"contraseña."
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_finding__description
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_rule__description
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_rule_form
+msgid "Why It Matters"
+msgstr "Por qué importa"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_finding_form
+msgid "Why it matters"
+msgstr "Por qué importa"
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_server_master_password
+msgid ""
+"With the default master password, anyone who reaches the database manager "
+"can copy, restore or delete databases."
+msgstr ""
+"Con la contraseña maestra predeterminada, cualquiera que llegue al gestor de"
+" bases de datos puede copiar, restaurar o eliminar bases de datos."
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_server_dbfilter
+msgid ""
+"Without a filter, any database on the server can be selected from any "
+"address. Odoo requires one for servers with several databases, especially "
+"with a website."
+msgstr ""
+"Sin un filtro, cualquier base de datos del servidor puede seleccionarse "
+"desde cualquier dirección. Odoo exige uno para servidores con varias bases "
+"de datos, especialmente con un sitio web."
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_server_request_limits
+msgid ""
+"Without a memory limit, or with a time limit over one hour, one runaway "
+"request can hold a worker or use up the memory of the server."
+msgstr ""
+"Sin límite de memoria, o con un límite de tiempo superior a una hora, una "
+"sola solicitud descontrolada puede bloquear un worker o agotar la memoria "
+"del servidor."
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_signin_cooldown
+msgid "Without it, passwords can be guessed at full speed."
+msgstr "Sin él, las contraseñas pueden adivinarse a toda velocidad."
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_server_proxy_mode
+msgid ""
+"Without proxy mode, Odoo sees the address of the proxy instead of the "
+"visitor. Logs show the wrong address, and the login cooldown blocks everyone"
+" at once."
+msgstr ""
+"Sin el modo proxy, Odoo ve la dirección del proxy en lugar de la del "
+"visitante. Los registros muestran la dirección incorrecta y el bloqueo de "
+"inicio de sesión afecta a todos a la vez."
+
+#. module: muk_check
+#: model:ir.model.fields,help:muk_check.field_muk_check_rule__module_ids
+msgid "Without these modules installed the rule does not apply."
+msgstr "Sin estos módulos instalados, la regla no se aplica."
+
+#. module: muk_check
+#: model:muk_check.rule,description:muk_check.rule_server_workers
+msgid ""
+"Without workers, time and memory limits are not enforced, and one long "
+"request can hold up everyone."
+msgstr ""
+"Sin workers, no se aplican los límites de tiempo y memoria, y una solicitud "
+"larga puede bloquear a todos."
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_run__odoo_build
+msgid "Your Build"
+msgstr "Su compilación"
+
+#. module: muk_check
+#: model:ir.model.fields,field_description:muk_check.field_muk_check_rule__severity_override
+msgid "Your Severity"
+msgstr "Su gravedad"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.view_check_run_form
+msgid "Your build"
+msgstr "Su compilación"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.message_findings
+msgid "and"
+msgstr "y"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.message_findings
+msgid "more"
+msgstr "más"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.message_findings
+msgid "new findings"
+msgstr "hallazgos nuevos"
+
+#. module: muk_check
+#: model_terms:ir.ui.view,arch_db:muk_check.message_findings
+msgid "records"
+msgstr "registros"
