@@ -1,0 +1,18 @@
+.mk_check_grade .badge {
+    min-width: 4.5rem;
+    padding: 1rem 1.25rem;
+    font-size: 2.5rem;
+    line-height: 1;
+    border-radius: 1rem;
+}
+.mk_check_kpi .o_field_widget {
+    font-size: 1rem;
+    font-weight: 600;
+    @include media-breakpoint-up(md) {
+        font-size: 1.5rem;
+    }
+    &.mk_check_note {
+        font-size: 0.875rem;
+        font-weight: 400;
+    }
+}
