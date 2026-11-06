@@ -117,20 +117,26 @@
         <field name="model">ir.module.module</field>
         <field name="inherit_id" ref="base.module_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//notebook" position="before">
-                <group string="Store" invisible="not store_version">
-                    <group>
-                        <field name="store_version"/>
-                        <field name="store_checked_at"/>
+            <xpath expr="//page[@name='information']" position="after">
+                <page string="Store" name="store" invisible="not store_version">
+                    <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+                        <div class="d-flex align-items-baseline">
+                            <label for="store_version" class="me-2"/>
+                            <field name="store_version"/>
+                        </div>
+                        <div class="d-flex align-items-baseline">
+                            <label for="store_checked_at" class="me-2"/>
+                            <field name="store_checked_at"/>
+                        </div>
                         <button
                             name="action_open_store"
                             type="object"
                             string="Open Store"
-                            colspan="2"
+                            class="btn btn-secondary ms-auto"
                         />
-                    </group>
-                    <field name="store_changelog" colspan="2" nolabel="1"/>
-                </group>
+                    </div>
+                    <field name="store_changelog" class="mk_check_changelog"/>
+                </page>
             </xpath>
         </field>
     </record>
