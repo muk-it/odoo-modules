@@ -1,6 +1,6 @@
 // @odoo-module
 
-import { Component, onWillStart, onWillUnmount, useRef, useState } from '@odoo/owl';
+import { Component, onWillDestroy, onWillStart, useRef, useState } from '@odoo/owl';
 
 import { _t } from '@muk_ai/core/compat/translation';
 import { registry } from '@web/core/registry';
@@ -85,12 +85,10 @@ export class MukAISystray extends Component {
             global: true,
             bypassEditableProtection: true,
         });
-        onWillStart(async () => {
-            await Promise.all([this._load(), this.fetchNeeds()]);
-            busSubscribe(this.bus, 'muk_ai.session_state', this._onSessionState);
-            busSubscribe(this.bus, 'mail.activity/updated', this._onActivity);
-        });
-        onWillUnmount(() => {
+        busSubscribe(this.bus, 'muk_ai.session_state', this._onSessionState);
+        busSubscribe(this.bus, 'mail.activity/updated', this._onActivity);
+        onWillStart(() => Promise.all([this._load(), this.fetchNeeds()]));
+        onWillDestroy(() => {
             busUnsubscribe(this.bus, 'muk_ai.session_state', this._onSessionState);
             busUnsubscribe(this.bus, 'mail.activity/updated', this._onActivity);
             this._debouncedLoad.cancel();
