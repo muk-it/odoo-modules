@@ -196,17 +196,28 @@ class IrModuleModule(models.Model):
                 timeout=10,
             )
             response.raise_for_status()
-            published = dict(response.json()['result'])
-        except (requests.RequestException, ValueError, KeyError, TypeError) as error:
-            _logger.warning('The update check could not read the store: %s', error)
-            return
-        for module in self:
-            info = published.get(module.name, {})
-            module.write(
-                {
+            published = {
+                name: {
                     'store_version': info.get('version_remote'),
                     'store_changelog': info.get('changelog'),
                 }
+                for name, info in response.json()['result'].items()
+                if info
+            }
+        except (
+            requests.RequestException,
+            ValueError,
+            KeyError,
+            TypeError,
+            AttributeError,
+        ) as error:
+            _logger.warning('The update check could not read the store: %s', error)
+            return
+        for module in self:
+            module.write(
+                published.get(
+                    module.name, {'store_version': False, 'store_changelog': False}
+                )
             )
         self.store_checked_at = fields.Datetime.now()
 

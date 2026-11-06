@@ -168,9 +168,11 @@ class TestRuleCatalogue(TransactionCase):
             run = self.env['muk_check.run'].create({})
             self.assertFalse(run.odoo_newest)
             self.assertFalse(run.odoo_image)
+        with patch.object(release, 'version', '19.0+e-20261102'):
+            run = self.env['muk_check.run'].create({})
+            self.assertEqual(run.odoo_version, '19.0+e')
 
     def test_proxy_mode(self):
-        parameters = self.env['ir.config_parameter'].sudo()
         cases = [
             ('https://example.com', False, 'failed'),
             ('https://example.com', True, 'passed'),
@@ -181,7 +183,7 @@ class TestRuleCatalogue(TransactionCase):
                 self.subTest(url=url, proxy_mode=proxy_mode),
                 patch.dict(config.options, {'proxy_mode': proxy_mode}),
             ):
-                parameters.set_str('web.base.url', url)
+                self.env['ir.config_parameter'].sudo().set_str('web.base.url', url)
                 self._assert_state('server.proxy_mode', state)
 
     def test_parameters(self):
@@ -260,6 +262,17 @@ class TestRuleCatalogue(TransactionCase):
             }
         )
         self._assert_state('accounts.inactive_admins', 'passed')
+
+    def test_administrator_who_never_signed_in(self):
+        user = new_test_user(self.env, 'unused_admin', 'base.group_system')
+        self._assert_state('accounts.inactive_admins', 'passed')
+        self.env.cr.execute(
+            "UPDATE res_users SET create_date = NOW() - INTERVAL '91 days' "
+            'WHERE id = %s',
+            [user.id],
+        )
+        self.env.invalidate_all()
+        self._assert_state('accounts.inactive_admins', 'failed')
 
     def test_admin_without_two_factor(self):
         self._assert_state('signin.admin_totp', 'failed')
@@ -428,6 +441,10 @@ class TestRuleCatalogue(TransactionCase):
         with patch(INSTALLED_BUILD, return_value='20260908'):
             self._assert_state('odoo.build_behind', 'failed')
         self.assertEqual(self._rule('odoo.build_behind').finding_ids.detail, '20260908')
+        self.env['ir.config_parameter'].sudo().set_bool('muk_check.online', False)
+        with patch(INSTALLED_BUILD, return_value='20260908'):
+            self._assert_state('odoo.build_behind', 'not_applicable')
+        self.env['ir.config_parameter'].sudo().set_bool('muk_check.online', True)
         self._image_builds({})
         with patch(INSTALLED_BUILD, return_value='20260908'):
             self._assert_state('odoo.build_behind', 'not_applicable')
@@ -451,9 +468,12 @@ class TestRuleCatalogue(TransactionCase):
         self._image_builds({'20.0': '20261102'})
         bad_reply = Mock()
         bad_reply.json.return_value = {'results': None}
+        no_images = Mock()
+        no_images.json.return_value = {'results': []}
         cases = [
             ('timeout', {'side_effect': requests.Timeout('slow')}),
             ('bad reply', {'return_value': bad_reply}),
+            ('no images', {'return_value': no_images}),
         ]
         for label, behaviour in cases:
             with self.subTest(label), patch(IMAGE_REQUEST, **behaviour):
@@ -489,6 +509,12 @@ class TestRuleCatalogue(TransactionCase):
         odoo = 'Package: odoo\nStatus: install ok installed\nVersion: 19.0.20261102\n\n'
         cases = [
             ('installed', other + odoo, '20261102'),
+            (
+                'enterprise',
+                odoo.replace('19.0.20261102', '20.0+e.20261102'),
+                '20261102',
+            ),
+            ('removed', odoo.replace('install ok', 'deinstall ok'), None),
             ('other package only', other, None),
             ('no date', 'Package: odoo\nVersion: 19.0\n\n', None),
         ]

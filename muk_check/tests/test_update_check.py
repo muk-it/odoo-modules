@@ -288,11 +288,14 @@ class TestUpdateCheck(TransactionCase):
         rejected.json.return_value = {'error': {'code': 200}}
         empty = Mock()
         empty.json.return_value = {'result': None}
+        odd = Mock()
+        odd.json.return_value = {'result': {self.module_name: 'odd'}}
         cases = [
             ('timeout', {'side_effect': requests.Timeout('slow')}),
             ('bad json', {'return_value': bad_json}),
             ('rejected', {'return_value': rejected}),
             ('empty', {'return_value': empty}),
+            ('odd entry', {'return_value': odd}),
         ]
         for label, behaviour in cases:
             with self.subTest(label), patch(STORE_POST, **behaviour):
@@ -300,6 +303,11 @@ class TestUpdateCheck(TransactionCase):
                 self.assertEqual(self.module.store_version, '20.0.2.0.0')
                 self.assertEqual(self.module.store_status, 'update')
                 self.assertEqual(self.module.store_checked_at, checked_at)
+        unknown = Mock()
+        unknown.json.return_value = {'result': {self.module_name: None}}
+        with patch(STORE_POST, return_value=unknown):
+            self.env['ir.module.module'].action_check_updates()
+        self.assertFalse(self.module.store_version)
 
     def test_store_request_sends_only_covered_names(self):
         post = self._check()
@@ -314,12 +322,18 @@ class TestUpdateCheck(TransactionCase):
         self.assertNotIn('script', self.module.store_changelog)
 
     def test_broken_translation_file_breaks_nothing(self):
-        self._write_file('i18n/de.po', '<<<<<<< HEAD')
-        self._check()
-        self.assertEqual(self.module.translation_status, 'changed')
-        self.module.translation_fingerprint = False
-        self.env['ir.module.module']._register_hook()
-        self.assertTrue(self.module.translation_fingerprint)
+        contents = [
+            '<<<<<<< HEAD',
+            '#: code:addons/foo/x.py\nmsgid "Foo"\nmsgstr "Bar"\n',
+        ]
+        for content in contents:
+            with self.subTest(content):
+                self._write_file('i18n/de.po', content)
+                self._check()
+                self.assertEqual(self.module.translation_status, 'changed')
+                self.module.translation_fingerprint = False
+                self.env['ir.module.module']._register_hook()
+                self.assertTrue(self.module.translation_fingerprint)
 
     def test_a_new_language_changes_nothing(self):
         self.env['res.lang']._activate_lang('fr_FR')

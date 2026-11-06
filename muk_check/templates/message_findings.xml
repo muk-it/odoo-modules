@@ -42,7 +42,9 @@
         <div t-if="len(rules) &gt; 5" class="text-muted small py-1">
             and <t t-out="len(rules) - 5"/> more
         </div>
-        <a class="btn btn-primary btn-sm mt-2" href="/odoo/check-findings">Open the findings</a>
+        <a class="btn btn-primary btn-sm mt-2" href="/odoo/check-findings">
+            Open the findings
+        </a>
     </template>
 
 </odoo>
