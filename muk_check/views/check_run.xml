@@ -1,0 +1,361 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_check_run_list" model="ir.ui.view">
+        <field name="name">muk_check.run.list</field>
+        <field name="model">muk_check.run</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false">
+                <header>
+                    <button
+                        name="%(action_check_run_now)d"
+                        type="action"
+                        string="Run Check"
+                        class="btn-primary"
+                        display="always"
+                    />
+                </header>
+                <field name="create_date" string="Date"/>
+                <field
+                    name="grade"
+                    widget="badge"
+                    decoration-success="grade in ('A', 'B')"
+                    decoration-warning="grade == 'C'"
+                    decoration-danger="grade in ('D', 'F')"
+                />
+                <field name="score" widget="progressbar"/>
+                <field name="critical_count" optional="show"/>
+                <field name="high_count" optional="show"/>
+                <field name="medium_count" optional="show"/>
+                <field name="low_count" optional="show"/>
+                <field name="accepted_count" optional="hide"/>
+                <field name="passed_count" optional="hide"/>
+                <field name="not_applicable_count" optional="hide"/>
+                <field name="error_count" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_check_run_graph" model="ir.ui.view">
+        <field name="name">muk_check.run.graph</field>
+        <field name="model">muk_check.run</field>
+        <field name="arch" type="xml">
+            <graph string="Score" type="line">
+                <field name="create_date" interval="day"/>
+                <field name="score" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_check_run_form" model="ir.ui.view">
+        <field name="name">muk_check.run.form</field>
+        <field name="model">muk_check.run</field>
+        <field name="arch" type="xml">
+            <form create="false" delete="false" edit="false">
+                <header>
+                    <button
+                        name="%(action_check_run_now)d"
+                        type="action"
+                        string="Run Check"
+                        class="btn-primary"
+                    />
+                </header>
+                <sheet>
+                    <div name="button_box" class="oe_button_box">
+                        <button
+                            name="%(action_check_finding)d"
+                            type="action"
+                            class="oe_stat_button"
+                            icon="fa-exclamation-circle"
+                            context="{'search_default_critical': 1}"
+                        >
+                            <field
+                                name="critical_count"
+                                widget="statinfo"
+                                string="Critical"
+                            />
+                        </button>
+                        <button
+                            name="%(action_check_finding)d"
+                            type="action"
+                            class="oe_stat_button"
+                            icon="fa-exclamation-triangle"
+                            context="{'search_default_high': 1}"
+                        >
+                            <field name="high_count" widget="statinfo" string="High"/>
+                        </button>
+                        <button
+                            name="%(action_check_finding)d"
+                            type="action"
+                            class="oe_stat_button"
+                            icon="fa-exclamation"
+                            context="{'search_default_medium': 1}"
+                        >
+                            <field
+                                name="medium_count"
+                                widget="statinfo"
+                                string="Medium"
+                            />
+                        </button>
+                        <button
+                            name="%(action_check_finding)d"
+                            type="action"
+                            class="oe_stat_button"
+                            icon="fa-info-circle"
+                            context="{'search_default_low': 1}"
+                        >
+                            <field name="low_count" widget="statinfo" string="Low"/>
+                        </button>
+                        <button
+                            name="%(action_check_finding)d"
+                            type="action"
+                            class="oe_stat_button"
+                            icon="fa-check-square-o"
+                            context="{'search_default_open': 0, 'search_default_accepted': 1}"
+                        >
+                            <field
+                                name="accepted_count"
+                                widget="statinfo"
+                                string="Accepted"
+                            />
+                        </button>
+                        <button
+                            name="%(action_check_rule)d"
+                            type="action"
+                            class="oe_stat_button"
+                            icon="fa-shield"
+                            context="{'search_default_passed': 1}"
+                        >
+                            <field
+                                name="passed_count"
+                                widget="statinfo"
+                                string="Passed"
+                            />
+                        </button>
+                        <button
+                            name="%(action_check_rule)d"
+                            type="action"
+                            class="oe_stat_button"
+                            icon="fa-ban"
+                            context="{'search_default_not_applicable': 1}"
+                        >
+                            <field
+                                name="not_applicable_count"
+                                widget="statinfo"
+                                string="Not Applicable"
+                            />
+                        </button>
+                        <button
+                            name="%(action_check_rule)d"
+                            type="action"
+                            class="oe_stat_button"
+                            icon="fa-bug"
+                            invisible="not error_count"
+                            context="{'search_default_error': 1}"
+                        >
+                            <field
+                                name="error_count"
+                                widget="statinfo"
+                                string="Errors"
+                            />
+                        </button>
+                    </div>
+                    <div class="row g-3 mb-4">
+                        <div class="col-auto d-flex align-items-center">
+                            <field
+                                name="grade"
+                                widget="badge"
+                                class="mk_check_grade"
+                                decoration-success="grade in ('A', 'B')"
+                                decoration-warning="grade == 'C'"
+                                decoration-danger="grade in ('D', 'F')"
+                            />
+                        </div>
+                        <div class="col col-md">
+                            <div class="mk_check_kpi border rounded p-3 h-100">
+                                <div class="text-muted mb-1">Score</div>
+                                <field name="score" widget="progressbar" class="w-100"/>
+                                <div class="small text-muted">
+                                    <field name="open_note" class="mk_check_note"/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md flex-grow-1">
+                            <div class="mk_check_kpi border rounded p-3 h-100">
+                                <div class="text-muted mb-1">Last checked</div>
+                                <field name="create_date"/>
+                                <div class="small text-muted" invisible="not next_check">
+                                    Next check
+                                    <field name="next_check" class="mk_check_note"/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md flex-grow-1">
+                            <div class="mk_check_kpi border rounded p-3 h-100">
+                                <div class="text-muted mb-1">Current version</div>
+                                <field name="odoo_version"/>
+                                <div
+                                    class="d-flex flex-wrap column-gap-2 small text-muted"
+                                    invisible="not odoo_build"
+                                >
+                                    <div>
+                                        Build
+                                        <field name="odoo_build" class="mk_check_note"/>
+                                    </div>
+                                    <field
+                                        name="odoo_build_note"
+                                        class="mk_check_note"
+                                        invisible="odoo_build_late"
+                                    />
+                                    <field
+                                        name="odoo_build_note"
+                                        class="mk_check_note text-warning"
+                                        invisible="not odoo_build_late"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                            class="col-6 col-md flex-grow-1"
+                            invisible="not odoo_newest"
+                        >
+                            <div class="mk_check_kpi border rounded p-3 h-100">
+                                <div class="text-muted mb-1">Newest version</div>
+                                <field name="odoo_newest"/>
+                                <div class="small text-muted">
+                                    Build
+                                    <field name="odoo_image" class="mk_check_note"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div
+                        class="alert alert-secondary"
+                        role="status"
+                        invisible="is_latest"
+                    >
+                        This is an earlier check, and its counts are from that day. The
+                        Overview shows what is open now.
+                    </div>
+                    <div
+                        class="alert alert-success"
+                        role="status"
+                        invisible="not is_latest or open_finding_ids"
+                    >
+                        Nothing needs your attention.
+                    </div>
+                    <field
+                        name="open_finding_ids"
+                        readonly="1"
+                        invisible="not open_finding_ids"
+                    >
+                        <list create="false" delete="false" no_open="1">
+                            <field
+                                name="severity"
+                                widget="badge"
+                                decoration-danger="severity == 'critical'"
+                                decoration-warning="severity == 'high'"
+                                decoration-info="severity == 'medium'"
+                                decoration-muted="severity == 'low'"
+                            />
+                            <field name="name"/>
+                            <field name="target"/>
+                            <field name="detail"/>
+                            <button
+                                name="action_open_details"
+                                type="object"
+                                string="Details"
+                                icon="fa-info-circle"
+                            />
+                            <button
+                                name="action_open_accept"
+                                type="object"
+                                string="Accept"
+                                icon="fa-check-square-o"
+                            />
+                            <button
+                                name="action_open_record"
+                                type="object"
+                                string="Open Record"
+                                icon="fa-external-link"
+                                invisible="not res_id"
+                            />
+                        </list>
+                        <kanban
+                            create="false"
+                            delete="false"
+                            action="action_open_details"
+                            type="object"
+                        >
+                            <templates>
+                                <t t-name="card">
+                                    <main>
+                                        <div>
+                                            <field
+                                                name="severity"
+                                                widget="badge"
+                                                decoration-danger="severity == 'critical'"
+                                                decoration-warning="severity == 'high'"
+                                                decoration-info="severity == 'medium'"
+                                                decoration-muted="severity == 'low'"
+                                            />
+                                        </div>
+                                        <field name="name" class="fw-bold mt-1"/>
+                                        <field name="target" invisible="not target"/>
+                                        <field
+                                            name="detail"
+                                            class="text-muted"
+                                            invisible="not detail"
+                                        />
+                                    </main>
+                                    <footer class="pt-2">
+                                        <button
+                                            name="action_open_accept"
+                                            type="object"
+                                            class="btn btn-secondary btn-sm"
+                                            invisible="state != 'open'"
+                                        >
+                                            Accept
+                                        </button>
+                                        <button
+                                            name="action_reopen"
+                                            type="object"
+                                            class="btn btn-secondary btn-sm"
+                                            invisible="state != 'accepted'"
+                                        >
+                                            Reopen
+                                        </button>
+                                        <button
+                                            name="action_open_record"
+                                            type="object"
+                                            class="btn btn-secondary btn-sm"
+                                            invisible="not res_id"
+                                        >
+                                            Open Record
+                                        </button>
+                                    </footer>
+                                </t>
+                            </templates>
+                        </kanban>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_check_run" model="ir.actions.act_window">
+        <field name="name">History</field>
+        <field name="path">check-runs</field>
+        <field name="res_model">muk_check.run</field>
+        <field name="view_mode">list,graph,form</field>
+    </record>
+
+    <record id="action_check_overview" model="ir.actions.server">
+        <field name="name">Overview</field>
+        <field name="path">check-overview</field>
+        <field name="model_id" ref="model_muk_check_run"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_open_overview()</field>
+    </record>
+
+</odoo>
