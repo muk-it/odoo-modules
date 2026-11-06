@@ -1,4 +1,4 @@
-import { Component, onWillStart, onWillUnmount, useRef, useState } from '@odoo/owl';
+import { Component, onWillDestroy, onWillStart, useRef, useState } from '@odoo/owl';
 
 import { isMacOS } from '@web/core/browser/feature_detection';
 import { Dropdown } from '@web/core/dropdown/dropdown';
@@ -78,12 +78,10 @@ export class MukAISystray extends Component {
             global: true,
             bypassEditableProtection: true,
         });
-        onWillStart(async () => {
-            await Promise.all([this.load(), this.loadNeeds()]);
-            this.bus.subscribe('muk_ai.session_state', onSessionState);
-            this.bus.subscribe('mail.activity/updated', onActivity);
-        });
-        onWillUnmount(() => {
+        this.bus.subscribe('muk_ai.session_state', onSessionState);
+        this.bus.subscribe('mail.activity/updated', onActivity);
+        onWillStart(() => Promise.all([this.load(), this.loadNeeds()]));
+        onWillDestroy(() => {
             this.bus.unsubscribe('muk_ai.session_state', onSessionState);
             this.bus.unsubscribe('mail.activity/updated', onActivity);
             this.reloadSessions.cancel();

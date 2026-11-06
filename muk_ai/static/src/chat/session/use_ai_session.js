@@ -1,4 +1,4 @@
-import { markup, onWillUnmount, useEnv, useState } from '@odoo/owl';
+import { markup, onWillDestroy, useEnv, useState } from '@odoo/owl';
 
 import { ConfirmationDialog } from '@web/core/confirmation_dialog/confirmation_dialog';
 import { _t } from '@web/core/l10n/translation';
@@ -751,6 +751,20 @@ export function useAiSession(options = {}) {
     }
     function rebuildEventKeys() {
         eventKeys = new Set((state.events || []).map((entry) => eventKey(entry)));
+    }
+    /**
+     * Read the pinned context again once the session channel is held: a pin
+     * stored while the session loaded reached neither the read nor the channel.
+     */
+    async function syncViewContext() {
+        const sessionId = state.sessionId;
+        if (!sessionId) {
+            return;
+        }
+        const [row] = await orm.read('muk_ai.session', [sessionId], ['view_context']);
+        if (row && state.sessionId === sessionId) {
+            state.viewContext = row.view_context || null;
+        }
     }
     async function loadMoreEvents() {
         if (state.loadingOlder || !state.hasMoreOlder || !state.sessionId) {
@@ -1714,7 +1728,7 @@ export function useAiSession(options = {}) {
             onScrollCallback(force);
         }
     }
-    onWillUnmount(() => {
+    onWillDestroy(() => {
         sessionNotification.markInactive(state.sessionId);
         bus.unsubscribe('muk_ai.event', busHandler);
         clearStreamIdleTimer();
@@ -1740,6 +1754,7 @@ export function useAiSession(options = {}) {
         load,
         loadMoreEvents,
         applySnapshot,
+        syncViewContext,
         onInputChange,
         onSend,
         onStop,

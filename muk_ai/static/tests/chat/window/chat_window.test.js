@@ -70,6 +70,22 @@ function registerMocks() {
     return events;
 }
 
+test('a pin stored while the window loads shows once it has mounted', async () => {
+    registerMocks();
+    const pin = { kind: 'list', model: 'hr.employee', view_type: 'kanban' };
+    onRpc('muk_ai.session', 'read', ({ args }) =>
+        args[1].length === 1 && args[1][0] === 'view_context'
+            ? [{ id: args[0][0], view_context: pin }]
+            : [{ ...SESSION_RECORD, id: args[0][0], view_context: null }],
+    );
+    const window_ = await mountWithCleanup(ChatWindow, {
+        props: { sessionId: 11, onClose: () => {}, onToggleMinimized: () => {} },
+    });
+    await animationFrame();
+    expect(window_.session.state.viewContext).toEqual(pin);
+    expect('.mk_ctx_chip').toHaveCount(1);
+});
+
 test('ChatWindow mounts and loads the session through use_ai_session', async () => {
     registerMocks();
     const window_ = await mountWithCleanup(ChatWindow, {

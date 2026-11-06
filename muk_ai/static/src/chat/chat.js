@@ -3,6 +3,7 @@ import {
     markup,
     onMounted,
     onPatched,
+    onWillDestroy,
     onWillStart,
     onWillUnmount,
     useEffect,
@@ -202,10 +203,11 @@ export class AIChat extends Component {
             'mk_chat_dropzone',
             () => this.session.canAttach(),
         );
+        this._connectUserBus();
+        onWillDestroy(() => this._disconnectUserBus());
         onWillStart(async () => {
             await this._loadSpaces();
             await Promise.all([this._loadSessions(), this.session.loadAgents()]);
-            this._connectUserBus();
             const requested = this._getRequestedSessionId();
             const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
             let opened = false;
@@ -258,7 +260,6 @@ export class AIChat extends Component {
             () => [this.session.state.artifactsFocus],
         );
         onWillUnmount(() => {
-            this._disconnectUserBus();
             this._uninstallRootPasteHandler();
             if (this._sessionsSearchTimer !== null) {
                 window.clearTimeout(this._sessionsSearchTimer);
