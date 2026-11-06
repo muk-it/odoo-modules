@@ -5,8 +5,9 @@ import logging
 from collections import defaultdict
 
 import requests
+from markupsafe import Markup
 
-from odoo import fields, models, release
+from odoo import api, fields, models, release
 from odoo.tools.parse_version import parse_version
 
 from odoo.addons.base.models.ir_module import assert_log_admin_access
@@ -31,12 +32,25 @@ class IrModuleModule(models.Model):
     # ----------------------------------------------------------
 
     @property
+    def UPDATE_STATE_BADGES(self) -> dict[str, str]:
+        """Return the colour of the badge of each status field."""
+        return {
+            'store_status': 'info',
+            'upgrade_status': 'warning',
+            'translation_status': '300',
+            'disk_status': 'danger',
+        }
+
+    @property
     def UPDATE_CHECK_DOMAIN(self) -> list:
         """Return the domain of the modules the update check covers."""
         return [
             ('state', '=', 'installed'),
             ('imported', '=', False),
-            ('author', 'not ilike', 'Odoo S.A.'),
+            ('author', 'not ilike', 'Odoo S'),
+            ('author', 'not ilike', 'Odoo PS'),
+            '!',
+            ('author', '=ilike', 'Odoo'),
         ]
 
     # ----------------------------------------------------------
@@ -80,6 +94,12 @@ class IrModuleModule(models.Model):
         selection=[('missing', 'Missing')],
         string='Disk Status',
         readonly=True,
+    )
+
+    update_state = fields.Html(
+        compute='_compute_update_state',
+        string='State',
+        sanitize=False,
     )
 
     upgrade_fingerprint = fields.Char(
@@ -195,17 +215,28 @@ class IrModuleModule(models.Model):
                 timeout=10,
             )
             response.raise_for_status()
-            published = dict(response.json()['result'])
-        except (requests.RequestException, ValueError, KeyError, TypeError) as error:
-            _logger.warning('The update check could not read the store: %s', error)
-            return
-        for module in self:
-            info = published.get(module.name, {})
-            module.write(
-                {
+            published = {
+                name: {
                     'store_version': info.get('version_remote'),
                     'store_changelog': info.get('changelog'),
                 }
+                for name, info in response.json()['result'].items()
+                if info
+            }
+        except (
+            requests.RequestException,
+            ValueError,
+            KeyError,
+            TypeError,
+            AttributeError,
+        ) as error:
+            _logger.warning('The update check could not read the store: %s', error)
+            return
+        for module in self:
+            module.write(
+                published.get(
+                    module.name, {'store_version': False, 'store_changelog': False}
+                )
             )
         self.store_checked_at = fields.Datetime.now()
 
@@ -272,6 +303,30 @@ class IrModuleModule(models.Model):
         """Load the translation files, overwriting on the context's request."""
         self._update_translations(overwrite=self.env.context.get('overwrite', False))
         self._save_translation_baseline()
+
+    # ----------------------------------------------------------
+    # Compute
+    # ----------------------------------------------------------
+
+    @api.depends('store_status', 'upgrade_status', 'translation_status', 'disk_status')
+    def _compute_update_state(self) -> None:
+        """Render the status of the update check as badges on one line."""
+        badge = Markup('<span class="badge rounded-pill me-1 text-bg-%s">%s</span>')
+        labels = {
+            name: dict(self._fields[name]._description_selection(self.env))
+            for name in self.UPDATE_STATE_BADGES
+        }
+        for module in self:
+            badges = [
+                badge % (colour, labels[name][module[name]])
+                for name, colour in self.UPDATE_STATE_BADGES.items()
+                if module[name]
+            ]
+            module.update_state = (
+                Markup('<span class="text-nowrap">%s</span>') % Markup('').join(badges)
+                if badges
+                else False
+            )
 
     # ----------------------------------------------------------
     # ORM

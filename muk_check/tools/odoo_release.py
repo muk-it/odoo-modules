@@ -9,7 +9,9 @@ IMAGE_TAGS_URL = 'https://hub.docker.com/v2/repositories/library/odoo/tags'
 IMAGE_TAG = re.compile(r'(\d+\.0)-(\d{8})')
 PACKAGE_STATUS = Path('/var/lib/dpkg/status')
 PACKAGE_VERSION = re.compile(
-    r'^Package: odoo\n(?:.+\n)*?Version: [\d.]+\.(\d{8})', re.MULTILINE
+    r'^Package: odoo\n(?:.+\n)*?Status: install ok installed\n'
+    r'(?:.+\n)*?Version: \S+\.(\d{8})',
+    re.MULTILINE,
 )
 
 

@@ -50,7 +50,7 @@ def database_terms(name: str, language: str) -> list[str]:
                     for row in TranslationFileReader(po_file, fileformat='po')
                     if row['type'] != 'code'
                 ]
-            except (OSError, UnicodeDecodeError, AttributeError):
+            except (OSError, UnicodeDecodeError, AttributeError, ValueError):
                 po_file.seek(0)
                 terms.append(repr(po_file.read()))
     return terms

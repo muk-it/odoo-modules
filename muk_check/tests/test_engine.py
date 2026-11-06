@@ -121,6 +121,28 @@ class TestRuleEngine(TransactionCase):
         rule.action_id = self.env.ref('base.action_res_users')
         self.assertEqual(finding.action_open_fix()['res_model'], 'res.users')
 
+    def test_detail_shows_a_readable_value(self):
+        company = self.env['res.partner'].create({'name': 'Parent'})
+        partner = self.env['res.partner'].create(
+            {'name': 'Child', 'parent_id': company.id}
+        )
+        cases = [
+            ('relation', 'parent_id', company.display_name),
+            ('empty', 'comment', False),
+        ]
+        for label, field, detail in cases:
+            with self.subTest(label):
+                rule = self._rule(
+                    kind='records',
+                    model_id=self.env['ir.model']._get_id('res.partner'),
+                    domain=f"[('id', '=', {partner.id})]",
+                    detail_field_id=self.env['ir.model.fields']
+                    ._get('res.partner', field)
+                    .id,
+                )
+                rule.action_run_rule()
+                self.assertEqual(rule.finding_ids.detail, detail)
+
     def test_missing_module_or_model_does_not_apply(self):
         missing = self.env['ir.module.module'].create(
             {'name': 'no_such_module', 'state': 'uninstalled'}
@@ -227,6 +249,13 @@ class TestRuleEngine(TransactionCase):
         rule.action_run_rule()
         self.assertEqual(finding.state, 'accepted')
         self.assertEqual(self.env['muk_check.run']._record_run().critical_count, 0)
+        rule.expression = 'False'
+        rule.action_run_rule()
+        self.assertEqual(finding.state, 'accepted')
+        rule.expression = 'True'
+        rule.action_run_rule()
+        self.assertEqual(finding.state, 'accepted')
+        self.assertEqual(finding.accepted_reason, 'Test server')
         finding.accepted_until = date.today() - timedelta(days=1)
         rule.action_run_rule()
         self.assertEqual(finding.state, 'open')
@@ -257,6 +286,14 @@ class TestRuleEngine(TransactionCase):
                     self._rule(expression='True', severity=severity).action_run_rule()
                 run = self.env['muk_check.run']._record_run()
                 self.assertEqual((run.score, run.grade), (score, grade))
+
+    def test_a_rule_counts_once_toward_the_score(self):
+        self.env['muk_check.finding'].search([]).unlink()
+        self._rule(
+            expression="['one', 'two', 'three']", severity='high'
+        ).action_run_rule()
+        run = self.env['muk_check.run']._record_run()
+        self.assertEqual((run.score, run.high_count), (90, 3))
 
     def test_severity_override_counts(self):
         rule = self._rule(
@@ -420,6 +457,7 @@ class TestRuleEngine(TransactionCase):
         self.assertFalse(run.next_check)
 
     def test_overview_says_how_many_findings_are_open(self):
+        self.env['res.lang']._activate_lang('en_US')
         cases = [
             ({}, '0 open findings'),
             ({'low_count': 1}, '1 open finding'),
@@ -427,7 +465,9 @@ class TestRuleEngine(TransactionCase):
         ]
         for values, note in cases:
             with self.subTest(note):
-                run = self.env['muk_check.run'].create(values)
+                run = (
+                    self.env['muk_check.run'].with_context(lang='en_US').create(values)
+                )
                 self.assertEqual(run.open_note, note)
 
     def test_only_administrators_can_use_it(self):

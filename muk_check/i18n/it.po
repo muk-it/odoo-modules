@@ -1302,7 +1302,7 @@ msgid "Start the production database without demo data."
 msgstr "Avvia il database di produzione senza dati dimostrativi."
 
 #. module: muk_check
-#: model_terms:ir.ui.view,arch_db:muk_check.view_ir_module_module_update_list
+#: model:ir.model.fields,field_description:muk_check.field_ir_module_module__update_state
 msgid "State"
 msgstr "Stato"
 

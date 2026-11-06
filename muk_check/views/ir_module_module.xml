@@ -53,33 +53,20 @@
                         class="btn-primary"
                         display="always"
                     />
+                    <button
+                        name="button_immediate_upgrade"
+                        type="object"
+                        string="Upgrade"
+                        confirm="This also upgrades the installed apps that depend on this one, and interrupts every user while it runs. Continue?"
+                    />
                 </header>
                 <field name="shortdesc"/>
                 <field name="name" optional="hide"/>
-                <field
-                    name="store_status"
-                    string="State"
-                    widget="badge"
-                    decoration-info="store_status"
-                />
-                <field
-                    name="upgrade_status"
-                    widget="badge"
-                    nolabel="1"
-                    decoration-warning="upgrade_status"
-                />
-                <field
-                    name="translation_status"
-                    widget="badge"
-                    nolabel="1"
-                    decoration-muted="translation_status"
-                />
-                <field
-                    name="disk_status"
-                    widget="badge"
-                    nolabel="1"
-                    decoration-danger="disk_status"
-                />
+                <field name="store_status" column_invisible="1"/>
+                <field name="upgrade_status" column_invisible="1"/>
+                <field name="translation_status" column_invisible="1"/>
+                <field name="disk_status" column_invisible="1"/>
+                <field name="update_state" width="310px"/>
                 <field name="latest_version" string="In Database"/>
                 <field
                     name="installed_version"
@@ -158,7 +145,7 @@
         <field name="view_mode">tree,form</field>
         <field name="view_id" ref="view_ir_module_module_update_list"/>
         <field name="search_view_id" ref="view_ir_module_module_update_search"/>
-        <field name="domain">[('state', '=', 'installed'), ('imported', '=', False), ('author', 'not ilike', 'Odoo S.A.')]</field>
+        <field name="domain">[('state', '=', 'installed'), ('imported', '=', False), ('author', 'not ilike', 'Odoo S'), ('author', 'not ilike', 'Odoo PS'), '!', ('author', '=ilike', 'Odoo')]</field>
         <field name="context">{'search_default_attention': 1}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">All your apps are up to date</p>
