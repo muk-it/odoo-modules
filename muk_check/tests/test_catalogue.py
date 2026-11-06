@@ -145,22 +145,29 @@ class TestRuleCatalogue(TransactionCase):
                 with self.subTest(key):
                     self._assert_state(key, 'not_applicable')
 
-    def test_overview_shows_the_running_odoo_and_the_newest_image(self):
-        self._image_builds({release.serie: '20261102'})
+    def test_overview_compares_the_current_and_the_newest_version(self):
+        self._image_builds({release.serie: '20261102', '99.0': '20261201'})
         cases = [
-            ('self hosted', {}, '20260908', date(2026, 9, 8), date(2026, 11, 2)),
-            ('from source', {}, None, False, date(2026, 11, 2)),
-            ('odoo.sh', {'ODOO_STAGE': 'production'}, None, False, False),
+            ('newest', {}, '20261102', 'Up to date', False),
+            ('one day', {}, '20261101', 'One day behind', False),
+            ('late', {}, '20260908', '55 days behind', True),
+            ('from source', {}, None, False, False),
         ]
-        for label, environ, build, odoo_build, odoo_image in cases:
+        for label, environ, build, note, late in cases:
             with (
                 self.subTest(label),
                 patch.dict(os.environ, environ),
                 patch(RUN_INSTALLED_BUILD, return_value=build),
             ):
                 run = self.env['muk_check.run'].create({})
-                self.assertEqual(run.odoo_build, odoo_build)
-                self.assertEqual(run.odoo_image, odoo_image)
+                self.assertEqual(run.odoo_newest, release.serie)
+                self.assertEqual(run.odoo_image, date(2026, 11, 2))
+                self.assertEqual(run.odoo_build_note, note)
+                self.assertEqual(run.odoo_build_late, late)
+        with patch.dict(os.environ, {'ODOO_STAGE': 'production'}):
+            run = self.env['muk_check.run'].create({})
+            self.assertFalse(run.odoo_newest)
+            self.assertFalse(run.odoo_image)
 
     def test_proxy_mode(self):
         parameters = self.env['ir.config_parameter'].sudo()
