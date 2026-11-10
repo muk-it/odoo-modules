@@ -85,9 +85,3 @@
         --mk-sidebar-width: 0;
     }
 }
-@media print {
-    .mk_sidebar_type_large,
-    .mk_sidebar_type_small {
-        --mk-sidebar-width: 0;
-    }
-}
