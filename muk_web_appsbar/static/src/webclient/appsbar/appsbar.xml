@@ -3,7 +3,7 @@
 <templates xml:space="preserve">
 
 	<t t-name="muk_web_appsbar.AppsBar">
-		<div class="mk_apps_sidebar_panel">
+		<div class="mk_apps_sidebar_panel d-print-none">
 			<div class="mk_apps_sidebar">
 				<ul class="mk_apps_sidebar_menu">
 				    <t t-foreach="this.appMenuService.getAppsMenuItems()" t-as="app" t-key="app.id">
