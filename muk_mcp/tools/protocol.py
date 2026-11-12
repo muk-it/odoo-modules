@@ -3,6 +3,11 @@ import json
 from . import common, version
 
 
+def format_internal_error(exc: Exception) -> str:
+    """Build the error message of an unexpected exception."""
+    return f'Internal server error: {exc}'
+
+
 def make_jsonrpc_response(result, request_id=None):
     return {
         'jsonrpc': common.JSONRPC_VERSION,
