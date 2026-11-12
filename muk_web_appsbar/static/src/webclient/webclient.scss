@@ -1,14 +1,16 @@
 .o_web_client {
     display: grid !important;
     grid-template-areas:
-        'banner banner'
+        '. .'
+        '. .'
+        '. .'
         'navbar navbar'
         'sidebar content'
         'components components';
-    grid-template-rows: auto auto 1fr auto;
+    grid-template-rows: auto auto auto auto 1fr auto;
     grid-template-columns: auto 1fr;
-    > div:has(#oe_neutralize_banner) {
-        grid-area: banner;
+    > * {
+        grid-column: 1 / -1;
     }
     > .o_navbar {
         grid-area: navbar;
@@ -23,7 +25,7 @@
         grid-area: components;
     }
     > iframe {
-        grid-column: 1 / -1;
+        grid-row: -1;
         width: 100%;
     }
 }
