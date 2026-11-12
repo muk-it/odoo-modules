@@ -469,7 +469,7 @@ class MCPController(http.Controller):
                 )
             return protocol.make_jsonrpc_error(
                 common.JSONRPC_INTERNAL_ERROR,
-                'Internal server error',
+                protocol.format_internal_error(exc),
                 request_id=request_id,
             )
         if method.startswith('notifications/'):

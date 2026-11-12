@@ -16,7 +16,7 @@ from odoo.addons.muk_mcp.tools.encoder import encode_log, RecordEncoder
 from odoo.addons.muk_mcp.tools.exception import MCPScopeDenied
 from odoo.addons.muk_mcp.tools.logger import LoggerProxy
 from odoo.addons.muk_mcp.tools.protocol import (
-    ToolContent, make_text_content, make_tool_result,
+    ToolContent, format_internal_error, make_text_content, make_tool_result,
 )
 
 class MCPTool(models.Model):
@@ -123,9 +123,9 @@ class MCPTool(models.Model):
             raise
         except (MCPScopeDenied, AccessError, UserError) as exc:
             return make_tool_result([make_text_content(str(exc))], is_error=True)
-        except Exception:
+        except Exception as exc:
             return make_tool_result(
-                [make_text_content('Internal server error')], is_error=True,
+                [make_text_content(format_internal_error(exc))], is_error=True,
             )
         if isinstance(result, ToolContent):
             return make_tool_result(result)

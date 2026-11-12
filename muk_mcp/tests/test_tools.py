@@ -499,3 +499,19 @@ class TestMcpTool(common.TransactionCase):
             with self.subTest(name=name, arguments=arguments):
                 with self.assertRaisesRegex(UserError, message):
                     self._call(name, arguments, user=self.user)
+
+    def test_unexpected_error_names_its_cause(self):
+        result = self.tool_model._call_result(
+            'read_records',
+            {
+                'model': 'res.partner',
+                'ids': [self.partner_a.id],
+                'fields': ['mcp_no_such_field'],
+            },
+            self.env,
+        )
+        self.assertTrue(result['isError'])
+        self.assertIn(
+            'Internal server error: Invalid field',
+            result['content'][0]['text'],
+        )
