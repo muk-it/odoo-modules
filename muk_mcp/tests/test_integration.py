@@ -5,6 +5,7 @@ from odoo import fields
 from odoo.tests import common, tagged
 from odoo.tools import config
 
+from odoo.addons.mail.tools.discuss import Store
 from odoo.addons.muk_mcp.core.tool import get_tool_index
 from odoo.addons.muk_mcp.tools import protocol, version
 from odoo.addons.muk_mcp.tools.encoder import encode_log
@@ -308,6 +309,8 @@ class TestMcpIntegration(common.TransactionCase):
             mcp_name='Test Key',
         ).message_post(body='Hello from MCP')
         self.assertEqual(msg.mcp_name, 'Test Key')
+        data = Store(msg).get_result()['mail.message'][0]
+        self.assertEqual(data['mcp_name'], 'Test Key')
 
     def test_mcp_name_not_set_without_context(self):
         partner = self.env['res.partner'].create({'name': 'Normal Test'})

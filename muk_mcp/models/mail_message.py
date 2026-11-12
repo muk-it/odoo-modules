@@ -18,8 +18,11 @@ class MailMessage(models.Model):
     # Helper
     # ----------------------------------------------------------
 
-    def _to_store_defaults(self, target):
-        return super()._to_store_defaults(target) + ['mcp_name']
+    def _to_store(self, store, /, *, fields=None, **kwargs):
+        super()._to_store(store, fields=fields, **kwargs)
+        if fields is None:
+            for message in self:
+                store.add(message, {'mcp_name': message.mcp_name})
 
     # ----------------------------------------------------------
     # ORM
