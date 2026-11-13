@@ -29,7 +29,7 @@ M2M fields on the MuK AI agent.
 
 - **`muk_ai.agent` extension** — two Many2many fields, `ee_topic_ids`
   (→ `ai.topic`) for tool reuse and `ee_source_ids` (→
-  `ai.agent.source`) for RAG reuse, plus an *Enterprise* notebook
+  `ai.agent.source`) for RAG reuse, plus an _Enterprise_ notebook
   page on the agent form to pick them.
 - **`muk_ai.session` extension** — appends a `<rag>` block to the
   rendered system prompt when the agent has `ee_source_ids` set and
@@ -60,7 +60,7 @@ no-op and the rest of the bridge keeps working.
 
 1. Install **MuK AI Enterprise Bridge**. It pulls in `muk_ai` and
    `ai` automatically.
-2. Open *MuK AI > Agents* and edit a MuK AI agent.
+2. Open _MuK AI > Agents_ and edit a MuK AI agent.
 3. On the new **Enterprise** notebook page, pick the topics whose
    server-action tools you want exposed (`EE Topics`) and the RAG
    sources you want injected (`EE RAG Sources`). Both fields default
@@ -75,8 +75,8 @@ no-op and the rest of the bridge keeps working.
 Every action in the picked topics that has `use_in_ai=True` is
 exposed as a single MCP tool named `ee_action_<xmlid_name>`. The
 description, JSON schema and category are read straight from the
-Enterprise record, so you configure the action once in *AI >
-Configuration > Topics* and both surfaces (Enterprise chat and MuK
+Enterprise record, so you configure the action once in _AI >
+Configuration > Topics_ and both surfaces (Enterprise chat and MuK
 AI chat) see the same tool.
 
 Dispatch routes through Enterprise's `ir.actions.server._ai_tool_run`
@@ -128,7 +128,7 @@ Enterprise `ai_*` satellite. Optional satellites — `ai_documents`,
 `ai_livechat`, `ai_fields`, `ai_server_actions`, `ai_knowledge`,
 `ai_website`, `ai_crm`, etc. — simply contribute more `ai.topic` and
 `ai.agent.source` records that admins can then pick from the new
-*Enterprise* notebook page. Nothing else needs to change.
+_Enterprise_ notebook page. Nothing else needs to change.
 
 Uninstalling a satellite cleans up its M2M references through
 Odoo's default `ondelete` behaviour, so a MuK AI agent that used to

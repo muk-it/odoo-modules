@@ -24,6 +24,7 @@ patch(MukAISystray.prototype, {
     },
     /** Launch the Odoo Enterprise AI chat, mirroring the native systray action. */
     onOpenOdooAI() {
+        this.menu.close();
         const currentController = this.action.currentController;
         if (currentController?.view?.type === 'form') {
             this.env.bus.trigger('AI:OPEN_AI_CHAT', { origin: 'chatter_ai_button' });

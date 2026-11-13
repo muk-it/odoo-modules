@@ -1,5 +1,5 @@
 import { describe, expect, mockUserAgent, test } from '@odoo/hoot';
-import { press, queryOne, waitFor } from '@odoo/hoot-dom';
+import { press } from '@odoo/hoot-dom';
 import { animationFrame } from '@odoo/hoot-mock';
 import {
     contains,
@@ -50,6 +50,7 @@ function makeLauncherMock() {
 }
 
 function stubLoads() {
+    onRpc('muk_ai.agent', 'search_read', () => []);
     onRpc('muk_ai.session', 'search_read', () => []);
     onRpc('muk_ai.session', 'notification_badge', () => ({
         count: 0,
@@ -61,7 +62,7 @@ test('the standalone Enterprise AI systray action is removed', async () => {
     expect(registry.category('systray').contains('ai.systray_action')).toBe(false);
 });
 
-test('Open Odoo AI launches the Enterprise chat from the systray', async () => {
+test('Open Odoo AI in the menu launches the Enterprise chat', async () => {
     stubLoads();
     makeBusMock();
     makeChatWindowService();
@@ -70,9 +71,15 @@ test('Open Odoo AI launches the Enterprise chat from the systray', async () => {
         currentController: null,
         doAction: () => Promise.resolve(),
     });
-    const systray = await mountWithCleanup(MukAISystray, { props: {} });
-    systray.onOpenOdooAI();
+    await mountWithCleanup(MukAISystray, { props: {} });
+    await contains('.mk_ai_systray_btn').click();
+    expect('.mk_systray_odoo_ai').toHaveAttribute(
+        'title',
+        'Open Odoo AI (Alt+Shift+R)',
+    );
+    await contains('.mk_systray_odoo_ai').click();
     expect(calls).toEqual([{ callerComponentName: 'systray_ai_button' }]);
+    expect('.mk_systray_menu').toHaveCount(0);
 });
 
 test('Open Odoo AI on a form view defers to the chatter bus instead', async () => {
@@ -121,21 +128,4 @@ test('the Odoo AI hotkey label follows the platform', async () => {
     expect(systray.odooAIHotkeyLabel).toBe('Alt+Shift+R');
     mockUserAgent('mac');
     expect(systray.odooAIHotkeyLabel).toBe('Ctrl+Shift+R');
-});
-
-test('the Open Odoo AI dropdown item is rendered when the menu opens', async () => {
-    stubLoads();
-    makeBusMock();
-    makeChatWindowService();
-    makeLauncherMock();
-    mockService('action', {
-        currentController: null,
-        doAction: () => Promise.resolve(),
-    });
-    await mountWithCleanup(MukAISystray, { props: {} });
-    await contains('.mk_ai_systray_btn').click();
-    const item = await waitFor('.mk_systray_action:has(.mk_systray_odoo_ai_icon)');
-    expect(item).toHaveText(/Open Odoo AI/);
-    expect(queryOne('.mk_systray_odoo_ai_icon')).toHaveAttribute('alt', 'Odoo AI');
-    expect(item.querySelector('.mk_systray_hotkey').textContent).toBe('Alt+Shift+R');
 });
