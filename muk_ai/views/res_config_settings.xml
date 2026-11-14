@@ -421,6 +421,19 @@
 					</block>
 					<block title="Integrations" name="muk_ai_integrations">
 						<setting
+							id="muk_ai_addon_product"
+							string="Products"
+							help="Turn price lists and links into products with texts."
+						>
+							<field
+								name="module_muk_ai_product"
+								widget="module_link"
+							/>
+							<div class="content-group" invisible="not module_muk_ai_product" id="msg_module_muk_ai_product">
+								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+							</div>
+						</setting>
+						<setting
 							id="muk_ai_addon_crm"
 							string="CRM"
 							help="Research leads, draft quotations and follow them up."
@@ -430,6 +443,32 @@
 								widget="module_link"
 							/>
 							<div class="content-group" invisible="not module_muk_ai_crm" id="msg_module_muk_ai_crm">
+								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+							</div>
+						</setting>
+						<setting
+							id="muk_ai_addon_account"
+							string="Accounting"
+							help="Read vendor bills with AI and review them in one queue."
+						>
+							<field
+								name="module_muk_ai_account"
+								widget="module_link"
+							/>
+							<div class="content-group" invisible="not module_muk_ai_account" id="msg_module_muk_ai_account">
+								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+							</div>
+						</setting>
+						<setting
+							id="muk_ai_addon_purchase"
+							string="Purchase"
+							help="Match bills to orders and run purchasing as workflows."
+						>
+							<field
+								name="module_muk_ai_purchase"
+								widget="module_link"
+							/>
+							<div class="content-group" invisible="not module_muk_ai_purchase" id="msg_module_muk_ai_purchase">
 								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
 							</div>
 						</setting>

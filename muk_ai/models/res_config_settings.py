@@ -256,6 +256,21 @@ class ResConfigSettings(models.TransientModel):
         help='Research leads, draft quotations and follow them up.',
     )
 
+    module_muk_ai_product = fields.Boolean(
+        string='MuK AI Product',
+        help='Turn price lists and links into products with texts.',
+    )
+
+    module_muk_ai_account = fields.Boolean(
+        string='MuK AI Accounting',
+        help='Read vendor bills with AI and review them in one queue.',
+    )
+
+    module_muk_ai_purchase = fields.Boolean(
+        string='MuK AI Purchase',
+        help='Match bills to orders and run purchasing as workflows.',
+    )
+
     # ----------------------------------------------------------
     # Compute
     # ----------------------------------------------------------
