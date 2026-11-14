@@ -25,6 +25,16 @@ LEGACY_THINKING_BUDGETS = {
     'max': 16384,
 }
 
+STRUCTURED_OUTPUT_MODEL_TOKENS = (
+    'fable-5',
+    'opus-5',
+    'opus-4-8',
+    'opus-4-5',
+    'opus-4-1',
+    'sonnet-5',
+    'haiku-4-5',
+)
+
 THINKING_BLOCK_TYPES = ('thinking', 'redacted_thinking')
 
 CACHE_CONTROL = {'type': 'ephemeral'}
@@ -93,6 +103,13 @@ class AnthropicProvider(ProviderBase):
                     'type': 'enabled',
                     'budget_tokens': budget,
                 }
+        if text_schema and any(
+            token in model for token in STRUCTURED_OUTPUT_MODEL_TOKENS
+        ):
+            body.setdefault('output_config', {})['format'] = {
+                'type': 'json_schema',
+                'schema': text_schema['schema'],
+            }
         if system_text:
             body['system'] = (
                 [{'type': 'text', 'text': system_text, 'cache_control': CACHE_CONTROL}]
