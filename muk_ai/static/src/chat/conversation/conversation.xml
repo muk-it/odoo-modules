@@ -82,7 +82,7 @@
                             >
                                 <t t-if="session.state.streamingText" t-out="this.renderMarkdown(session.state.streamingText)"/>
                                 <t t-if="!session.state.streamingText or session.state.streamIdle">
-                                    <span class="mk_thinking d-inline-flex align-items-center gap-2 text-muted fst-italic" t-att-class="{ 'mt-1': session.state.streamingText }">
+                                    <span class="mk_thinking d-inline-flex mw-100 align-items-center gap-2 text-muted fst-italic" t-att-class="{ 'mt-1': session.state.streamingText }">
                                         <span class="mk_dots d-inline-flex"><span/><span/><span/></span>
                                         <span class="mk_thinking_status text-truncate" t-if="session.state.streamingReasoning" t-out="session.latestReasoningLine"/>
                                         <span t-elif="session.state.streamingText" class="mk_thinking_status">Still working...</span>

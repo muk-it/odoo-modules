@@ -228,11 +228,11 @@ class TestWorker(AITestCommon):
         self.assertEqual(queued.state, 'running')
         clicking, deleting = self._session(), self._session()
         with (
-            self._as_client_tool('browser_click'),
+            self._as_client_tool('client_click'),
             self._patch_tool() as calls,
             self._mock_responses(
                 [
-                    tool_payload(('browser_click', {'ref': 'e1'}, 'k1')),
+                    tool_payload(('client_click', {'ref': 'e1'}, 'k1')),
                     tool_payload(
                         ('delete_records', {'model': 'res.partner', 'ids': [42]}, 'd1')
                     ),

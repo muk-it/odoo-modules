@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import AbstractContextManager, contextmanager
 from datetime import timedelta
 from unittest.mock import patch
 
@@ -26,11 +26,11 @@ class TestClientTool(AITestCommon):
     def _paused(self, *calls: tuple) -> Iterator[tuple[models.BaseModel, list]]:
         """Yield a chat whose first round made ``calls``, and the executed calls.
 
-        ``browser_click`` and ``browser_gated`` run in the webclient, server
+        ``client_click`` and ``client_gated`` run in the webclient, server
         tools answer ``{"ok": true}`` and the round after the pause says done.
         """
         with (
-            self._as_client_tool('browser_click', 'browser_gated'),
+            self._as_client_tool('client_click', 'client_gated'),
             self._patch_tool() as executed,
             self._mock_responses([tool_payload(*calls), text_payload('done')]),
         ):
@@ -39,8 +39,27 @@ class TestClientTool(AITestCommon):
             yield session, executed
 
     def _click(self, call_id: str) -> tuple:
-        """Return a ``browser_click`` call identified by ``call_id``."""
-        return ('browser_click', {'ref': call_id}, call_id)
+        """Return a ``client_click`` call identified by ``call_id``."""
+        return ('client_click', {'ref': call_id}, call_id)
+
+    def _gated(self, actions: dict[str, str]) -> AbstractContextManager:
+        """Patch the approval gate to answer the named tools with the given action."""
+
+        def gate(self_arg, name: str, arguments: dict) -> dict:
+            """Return the patched gate decision for ``name``, dispatch otherwise."""
+            return {
+                'action': actions.get(name, 'dispatch'),
+                'reason': 'denied',
+                'risk': {'reason': 'gated', 'signature': f'gate:{name}'},
+                'preview': {'arguments': arguments},
+            }
+
+        return patch.object(
+            type(self.env['muk_ai.session']),
+            '_check_approval_gate',
+            autospec=True,
+            side_effect=gate,
+        )
 
     # ----------------------------------------------------------
     # Tests
@@ -202,14 +221,7 @@ class TestClientTool(AITestCommon):
                 session.action_stop()
 
     def test_a_call_that_cannot_join_the_batch_is_skipped(self):
-        gated = patch.object(
-            type(self.env['muk_ai.session']),
-            '_client_action_deferred',
-            autospec=True,
-            side_effect=lambda self_arg, call: (
-                'skipped: gated' if call['name'] == 'browser_gated' else None
-            ),
-        )
+        gated = self._gated({'client_gated': 'pause'})
         for name, calls, actions, reason in (
             (
                 'server tool after a client tool',
@@ -225,9 +237,9 @@ class TestClientTool(AITestCommon):
             ),
             (
                 'client tool an addon defers',
-                (self._click('c0'), ('browser_gated', {}, 'c1')),
+                (self._click('c0'), ('client_gated', {}, 'c1')),
                 ['c0'],
-                'skipped: gated',
+                'approval required',
             ),
         ):
             with self.subTest(name), gated, self._paused(*calls) as (session, executed):
@@ -246,6 +258,31 @@ class TestClientTool(AITestCommon):
                 self.assertEqual(
                     'error' in event['result'], name == 'client tool an addon defers'
                 )
+
+    def test_a_gated_client_tool_reaches_the_client_only_once_approved(self):
+        for gate, decide, kind, output in (
+            ('pause', 'approve_tool', 'client_action', None),
+            ('pause', 'reject_tool', None, 'rejected_by_user'),
+            ('deny', None, None, 'denied'),
+        ):
+            with (
+                self.subTest(gate=gate, decide=decide),
+                self._gated({'client_click': gate}),
+                self._paused(self._click('c0')) as (session, executed),
+            ):
+                if decide:
+                    self.assertEqual(session.pending_ask['kind'], 'approval')
+                    getattr(session, decide)()
+                self.assertEqual((session.pending_ask or {}).get('kind'), kind)
+                if output:
+                    self.assertEqual(self._tool_output(session, 'c0')['error'], output)
+                else:
+                    self.assertEqual(
+                        [a['call_id'] for a in session.pending_ask['actions']], ['c0']
+                    )
+                    session.submit_client_result('c0', {'ok': True})
+                    self.assertEqual(self._tool_output(session, 'c0'), {'ok': True})
+                self.assertEqual(executed, [])
 
     def test_only_client_kinds_someone_answers_are_offered(self):
         session_class = type(self.env['muk_ai.session'])
