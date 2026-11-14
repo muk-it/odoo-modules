@@ -6748,11 +6748,6 @@ msgid "Wording"
 msgstr "Formulation"
 
 #. module: muk_ai
-#: model:ir.model.fields,field_description:muk_ai.field_muk_ai_agent__rating_ids
-msgid "Ratings"
-msgstr "Évaluations"
-
-#. module: muk_ai
 #. odoo-javascript
 #: code:addons/muk_ai/static/src/webclient/systray/systray.xml:0
 msgid "All actions"

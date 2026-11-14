@@ -179,7 +179,8 @@ class AITestCommon(TransactionCase):
     def setUpClass(cls) -> None:
         """Give the three shipped providers a key and lift the chat rate limit."""
         super().setUpClass()
-        cls.enterClassContext(cls.registry_test_mode())
+        if not cls._registry_patched:
+            cls.enterClassContext(cls.registry_test_mode())
         cls.provider = cls.env.ref('muk_ai.provider_openai')
         cls.provider_anthropic = cls.env.ref('muk_ai.provider_anthropic')
         cls.provider_google = cls.env.ref('muk_ai.provider_google')
