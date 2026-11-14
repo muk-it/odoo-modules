@@ -175,7 +175,7 @@ class MCPMixin(models.AbstractModel):
 
         :raise UserError: when ``ids`` resolves to an empty list.
         """
-        records = self._mcp_records(model, ids)
+        records = self._mcp_records(model, ids).exists()
         return self._mcp_read(
             records,
             fields
