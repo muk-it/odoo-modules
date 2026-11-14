@@ -160,9 +160,11 @@ class TestMcpTool(common.TransactionCase):
 
     def test_reads_return_binaries_as_uris_and_lean_defaults(self):
         self.partner_a.image_1920 = PNG
+        deleted = self.env['res.partner'].create({'name': 'MCP Deleted'})
+        deleted.unlink()
         rows = self._call('read_records', {
             'model': 'res.partner',
-            'ids': [self.partner_a.id, self.partner_b.id],
+            'ids': [self.partner_a.id, deleted.id, self.partner_b.id],
             'fields': ['name', 'image_1920'],
         })
         self.assertEqual(
