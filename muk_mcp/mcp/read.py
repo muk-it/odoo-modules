@@ -160,7 +160,7 @@ class MCPMixin(models.AbstractModel):
         if not target_ids:
             raise UserError(_('No record IDs provided'))
         self._mcp_assert_records_allowed(model, target_ids)
-        records = self._resolve_model(model).browse(target_ids)
+        records = self._resolve_model(model).browse(target_ids).exists()
         return self._mcp_read(
             records,
             fields or [
