@@ -2069,6 +2069,8 @@ class AISession(models.Model):
                 'reason': gate['risk'].get('reason') or '',
             }
             ok = False
+        elif gate['action'] == 'deny':
+            result, ok = {'error': gate['reason']}, False
         else:
             if gate['action'] == 'auto_approved':
                 self._record_approval_audit(
@@ -3001,15 +3003,6 @@ class AISession(models.Model):
         """Return whether the named tool must be executed by the client."""
         return bool(name) and name in self._client_tool_names()
 
-    def _client_action_deferred(self, call: dict) -> str | None:
-        """Return a skip reason when the call cannot join the open action batch.
-
-        Overridable hook: subclasses that gate individual client actions
-        (e.g. behind an approval) return a reason so the call is skipped
-        instead of clobbering the already pending batch.
-        """
-        return None
-
     def _client_action_with_cursor(self, pending: dict) -> dict:
         """Return the pending dict with the first unanswered action mirrored.
 
@@ -3157,18 +3150,43 @@ class AISession(models.Model):
         index: int,
         has_terminating: bool,
     ) -> bool | None:
-        """Run one tool call, handling approval gating and result recording."""
+        """Run one tool call through the approval gate, then dispatch it or hand it on.
+
+        A client tool joins the client's batch, or is skipped if it would pause it.
+
+        :return: whether a terminating tool ran, ``None`` when the round paused
+        """
         gate = self._check_approval_gate(call['name'], call['arguments'])
+        if (
+            gate['action'] == 'pause'
+            and (self.pending_ask or {}).get('kind') == 'client_action'
+        ):
+            gate = {
+                'action': 'deny',
+                'reason': (
+                    'skipped: approval required, call again after the pending '
+                    'client actions complete'
+                ),
+            }
         if gate['action'] == 'pause':
             self._enter_waiting_approval(
                 call, tool_calls, outputs, index, has_terminating, gate
             )
             return None
-        self._record_tool_call(call)
+        if gate['action'] == 'deny':
+            self._record_tool_call(call)
+            self._skip_tool_call(
+                outputs, call, gate['reason'], log_result={'error': gate['reason']}
+            )
+            return False
         if gate['action'] == 'auto_approved':
             self._record_approval_audit(
                 decision='auto_approved', call=call, risk=gate['risk']
             )
+        if call['name'] in self._client_tool_names():
+            self._register_client_action(call)
+            return False
+        self._record_tool_call(call)
         self._heartbeat_claim()
         result, ok = self._dispatch_tool_call(
             call['name'], call['arguments'], call['call_id']
@@ -3188,7 +3206,8 @@ class AISession(models.Model):
     ) -> bool | None:
         """Run a round of tool calls, returning the terminating state or ``None``."""
         has_ask_user = any(c.get('name') == 'ask_user' for c in tool_calls)
-        wait_for_user, paused = False, False
+        wait_for_user = (self.pending_ask or {}).get('kind') == 'client_action'
+        paused = False
         client_names = self._client_tool_names()
         catalog = {entry.get('name'): entry for entry in self._get_filtered_catalog()}
         offered = set(catalog) | client_names | {TOOL_LOAD_TOOL['name']}
@@ -3246,31 +3265,10 @@ class AISession(models.Model):
                     outputs, call, self._load_mistyped_tool(call['name'], mismatches)
                 )
                 continue
-            if (
-                not has_ask_user
-                and not has_terminating
-                and call['name'] in client_names
-            ):
-                batch_open = (
-                    wait_for_user
-                    and (self.pending_ask or {}).get('kind') == 'client_action'
-                )
-                skip = None
-                if wait_for_user and not batch_open:
-                    skip = 'client_action_already_pending'
-                elif batch_open:
-                    skip = self._client_action_deferred(call)
-                if skip:
-                    self._record_tool_call(call)
-                    self._skip_tool_call(
-                        outputs, call, skip, log_result={'error': skip}
-                    )
-                    continue
-                self._register_client_action(call)
-                wait_for_user = True
-                continue
             if skip := self._skip_reason(
-                has_ask_user, has_terminating, has_client_action=wait_for_user
+                has_ask_user,
+                has_terminating,
+                has_client_action=wait_for_user and call['name'] not in client_names,
             ):
                 self._record_tool_call(call)
                 self._skip_tool_call(outputs, call, skip, log_result={'skipped': True})
@@ -3282,6 +3280,7 @@ class AISession(models.Model):
                 paused = True
                 break
             has_terminating = has_terminating or outcome
+            wait_for_user = (self.pending_ask or {}).get('kind') == 'client_action'
             if call['name'] == TOOL_LOAD_TOOL['name']:
                 client_names = self._client_tool_names()
         if not paused:
@@ -3591,14 +3590,24 @@ class AISession(models.Model):
         return pending
 
     def _check_approval_gate(self, name: str, arguments: dict) -> dict:
-        """Decide whether a tool call dispatches, auto-approves, or pauses."""
+        """Gate a tool call, auto-approving a pause the user already approved."""
+        gate = self._tool_gate(name, arguments)
+        if gate['action'] == 'pause' and gate['risk']['signature'] in (
+            self.approved_signatures or []
+        ):
+            return {'action': 'auto_approved', 'risk': gate['risk']}
+        return gate
+
+    def _tool_gate(self, name: str, arguments: dict) -> dict:
+        """Decide whether a tool call dispatches, pauses or is denied.
+
+        A ``deny`` gate carries the ``reason`` the call is answered with.
+        """
         if self._effective_approval_mode() == 'off':
             return {'action': 'dispatch'}
         risk = self.env['muk_ai.approval']._assess_risk(name, arguments)
         if not risk:
             return {'action': 'dispatch'}
-        if risk['signature'] in (self.approved_signatures or []):
-            return {'action': 'auto_approved', 'risk': risk}
         return {'action': 'pause', 'risk': risk}
 
     def _enter_waiting_approval(
@@ -3697,28 +3706,32 @@ class AISession(models.Model):
             outputs = list(paused.get('outputs') or [])
             tool_calls = list(paused.get('tool_calls') or [])
             has_terminating = bool(paused.get('has_terminating'))
-            self._record_tool_call(call)
-            if approved:
-                result, ok = self._dispatch_tool_call(
-                    call['name'], call['arguments'], call['call_id']
+            on_client = approved and call['name'] in self._client_tool_names()
+            if not on_client:
+                self._record_tool_call(call)
+                if approved:
+                    result, ok = self._dispatch_tool_call(
+                        call['name'], call['arguments'], call['call_id']
+                    )
+                    if ok and call['name'] in self._get_terminating_tools():
+                        has_terminating = True
+                else:
+                    result = {
+                        'error': 'rejected_by_user',
+                        'reason': reject_reason or '',
+                    }
+                    self._persist_synthetic_event(call, result, 'denied')
+                self._record_tool_result(
+                    outputs,
+                    call['call_id'],
+                    call['name'],
+                    result,
+                    arguments=call['arguments'],
                 )
-                if ok and call['name'] in self._get_terminating_tools():
-                    has_terminating = True
-            else:
-                result = {
-                    'error': 'rejected_by_user',
-                    'reason': reject_reason or '',
-                }
-                self._persist_synthetic_event(call, result, 'denied')
-            self._record_tool_result(
-                outputs,
-                call['call_id'],
-                call['name'],
-                result,
-                arguments=call['arguments'],
-            )
             self.write({'pending_ask': False, 'claimed_at': False})
             self._transition_state('running')
+            if on_client:
+                self._register_client_action(call)
             self._process_tool_round(
                 tool_calls,
                 outputs,

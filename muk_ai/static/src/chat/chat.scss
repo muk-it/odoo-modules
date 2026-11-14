@@ -1496,6 +1496,7 @@
     }
     .mk_thinking {
         display: inline-flex;
+        max-width: 100%;
         align-items: center;
         gap: 0.5rem;
         color: var(--mk-text-muted);

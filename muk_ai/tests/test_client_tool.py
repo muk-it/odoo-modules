@@ -160,6 +160,24 @@ class TestClientToolSeam(AITestCommon):
             and item.get('call_id') == call_id
         ]
 
+    def _gated(self, actions: dict[str, str]) -> AbstractContextManager[MagicMock]:
+        """Patch the approval gate to answer the named tools with the given action."""
+
+        def gate(self_arg, name: str, arguments: dict) -> dict:
+            """Return the patched gate decision for ``name``, dispatch otherwise."""
+            return {
+                'action': actions.get(name, 'dispatch'),
+                'reason': 'denied',
+                'risk': {'reason': 'gated', 'signature': f'gate:{name}'},
+            }
+
+        return patch.object(
+            type(self.env['muk_ai.session']),
+            '_check_approval_gate',
+            autospec=True,
+            side_effect=gate,
+        )
+
     # ----------------------------------------------------------
     # Default resolver
     # ----------------------------------------------------------
@@ -595,25 +613,17 @@ class TestClientToolSeam(AITestCommon):
             [
                 self._tools_payload(
                     [
-                        ('browser_click', {'ref': 'e1'}, 'c0'),
-                        ('browser_gated', {'ref': 'e2'}, 'c1'),
+                        ('client_click', {'ref': 'e1'}, 'c0'),
+                        ('client_gated', {'ref': 'e2'}, 'c1'),
                     ]
                 ),
                 self._text_payload('Done.'),
             ]
         )
-        deferral = patch.object(
-            type(session),
-            '_client_action_deferred',
-            autospec=True,
-            side_effect=lambda self_arg, call: (
-                'skipped: gated' if call['name'] == 'browser_gated' else None
-            ),
-        )
         with (
             provider,
-            deferral,
-            self._as_client_tool('browser_click', 'browser_gated'),
+            self._gated({'client_gated': 'pause'}),
+            self._as_client_tool('client_click', 'client_gated'),
         ):
             snapshot = session.start('Click, then do the gated thing.')
         self.assertEqual(snapshot['state'], 'waiting')
@@ -621,14 +631,53 @@ class TestClientToolSeam(AITestCommon):
             [action['call_id'] for action in snapshot['pending_ask']['actions']],
             ['c0'],
         )
-        self.assertEqual(
-            json.loads(self._outputs_for(session, 'c1')[0]['output']),
-            {'error': 'skipped: gated', 'skipped': True},
-        )
-        self.assertEqual(
-            self._result_event(session, 'c1'),
-            {'error': 'skipped: gated', 'skipped': True},
-        )
+        output = json.loads(self._outputs_for(session, 'c1')[0]['output'])
+        self.assertIn('approval required', output['error'])
+        self.assertEqual(self._result_event(session, 'c1'), output)
+
+    def test_a_gated_client_tool_reaches_the_client_only_once_approved(self):
+        for gate, decide, kind, output in (
+            ('pause', 'approve_tool', 'client_action', None),
+            ('pause', 'reject_tool', None, 'rejected_by_user'),
+            ('deny', None, None, 'denied'),
+        ):
+            session = self._new_session(gate)
+            executed = []
+            provider = self._script_provider(
+                [
+                    self._tool_payload('client_click', {'ref': 'e1'}, 'c0'),
+                    self._text_payload('Done.'),
+                ]
+            )
+            with (
+                self.subTest(gate=gate, decide=decide),
+                provider,
+                self._gated({'client_click': gate}),
+                self._as_client_tool('client_click'),
+                self._track_execute(executed),
+            ):
+                session.start('Click the button.')
+                if decide:
+                    self.assertEqual(session.pending_ask['kind'], 'approval')
+                    getattr(session, decide)()
+                self.assertEqual((session.pending_ask or {}).get('kind'), kind)
+                if output:
+                    self.assertEqual(
+                        json.loads(self._outputs_for(session, 'c0')[0]['output'])[
+                            'error'
+                        ],
+                        output,
+                    )
+                else:
+                    self.assertEqual(
+                        [a['call_id'] for a in session.pending_ask['actions']], ['c0']
+                    )
+                    session.submit_client_result('c0', {'ok': True})
+                    self.assertEqual(
+                        json.loads(self._outputs_for(session, 'c0')[0]['output']),
+                        {'ok': True},
+                    )
+                self.assertEqual(executed, [])
 
     # ----------------------------------------------------------
     # Timeout
