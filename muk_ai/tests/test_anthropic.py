@@ -61,7 +61,10 @@ class TestAiAnthropicProvider(AITestCommon):
         }
 
     def _capture_request_body(
-        self, model: str, reasoning_effort: str | None = None
+        self,
+        model: str,
+        reasoning_effort: str | None = None,
+        text_schema: dict | None = None,
     ) -> dict:
         """Run a minimal request against ``model`` and return the wire body."""
         captured = {}
@@ -77,6 +80,7 @@ class TestAiAnthropicProvider(AITestCommon):
                 ],
                 model=model,
                 reasoning_effort=reasoning_effort,
+                text_schema=text_schema,
             )
         return captured['body']
 
@@ -88,6 +92,22 @@ class TestAiAnthropicProvider(AITestCommon):
         body = self._capture_request_body('claude-opus-4-8', 'low')
         self.assertEqual(body['thinking'], {'type': 'adaptive'})
         self.assertEqual(body['output_config'], {'effort': 'low'})
+
+    def test_a_response_schema_constrains_the_models_that_take_one(self):
+        schema = {'name': 'answer', 'schema': {'type': 'object'}}
+        for model, output in (
+            (
+                'claude-opus-4-8',
+                {
+                    'effort': 'medium',
+                    'format': {'type': 'json_schema', 'schema': {'type': 'object'}},
+                },
+            ),
+            ('claude-3-5-haiku', None),
+        ):
+            with self.subTest(model=model):
+                body = self._capture_request_body(model, text_schema=schema)
+                self.assertEqual(body.get('output_config'), output)
 
     def test_adaptive_thinking_defaults_to_medium(self):
         body = self._capture_request_body('claude-opus-4-8')
