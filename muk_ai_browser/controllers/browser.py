@@ -65,7 +65,14 @@ class BrowserController(http.Controller):
     # Routes
     # ----------------------------------------------------------
 
-    @http.route('/muk_ai_browser/connect', type='http', auth='user', methods=['GET'])
+    @http.route(
+        '/muk_ai_browser/connect',
+        type='http',
+        auth='user',
+        methods=['GET'],
+        website=True,
+        multilang=False,
+    )
     def connect(self) -> Response:
         """Show an internal user a one-time pairing code for the extension to pick up.
 
