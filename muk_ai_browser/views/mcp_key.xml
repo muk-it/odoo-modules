@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_muk_mcp_key_browser_list" model="ir.ui.view">
+		<field name="name">muk_mcp.key.tree.browser</field>
+		<field name="model">muk_mcp.key</field>
+		<field name="priority">99</field>
+		<field name="arch" type="xml">
+			<tree create="0" edit="0" delete="0">
+				<field name="name" string="Browser"/>
+				<field name="user_id" groups="base.group_system" optional="hide"/>
+				<field name="last_used" widget="remaining_days" optional="show"/>
+				<field name="create_date" string="Paired On" widget="date" optional="show"/>
+				<button
+					name="unlink"
+					type="object"
+					string="Disconnect"
+					icon="fa-chain-broken"
+					class="btn-link text-danger"
+					confirm="Disconnect this browser? It stops working until it is paired again."
+				/>
+			</tree>
+		</field>
+	</record>
+
+	<record id="view_muk_mcp_key_browser_kanban" model="ir.ui.view">
+		<field name="name">muk_mcp.key.kanban.browser</field>
+		<field name="model">muk_mcp.key</field>
+		<field name="priority">99</field>
+		<field name="arch" type="xml">
+			<kanban create="0">
+				<field name="name"/>
+				<field name="last_used"/>
+				<templates>
+					<t t-name="kanban-box">
+						<div class="oe_kanban_card d-flex flex-row align-items-center gap-2">
+							<i class="fa fa-globe fs-3 text-muted" title="Browser"/>
+							<div class="flex-grow-1 overflow-hidden">
+								<field name="name" class="d-block fw-bold text-truncate"/>
+								<div class="small text-muted">
+									<span>Last used </span>
+									<field name="last_used" widget="remaining_days"/>
+								</div>
+							</div>
+							<button
+								name="unlink"
+								type="object"
+								string="Disconnect"
+								class="btn btn-link text-danger"
+								confirm="Disconnect this browser? It stops working until it is paired again."
+							/>
+						</div>
+					</t>
+				</templates>
+			</kanban>
+		</field>
+	</record>
+
+	<record id="action_muk_ai_browser_key" model="ir.actions.act_window">
+		<field name="name">Connected Browsers</field>
+		<field name="res_model">muk_mcp.key</field>
+		<field name="view_mode">tree,kanban</field>
+		<field name="view_ids" eval="[
+			Command.clear(),
+			Command.create({'view_mode': 'tree', 'view_id': ref('view_muk_mcp_key_browser_list')}),
+			Command.create({'view_mode': 'kanban', 'view_id': ref('view_muk_mcp_key_browser_kanban')}),
+		]"/>
+		<field name="domain">[('browser', '=', True)]</field>
+		<field name="help" type="html">
+			<p class="o_view_nocontent_smiling_face">No browser connected yet</p>
+			<p>Install the MuK AI browser extension, enter this Odoo address in its options and click Connect.</p>
+		</field>
+	</record>
+
+</odoo>

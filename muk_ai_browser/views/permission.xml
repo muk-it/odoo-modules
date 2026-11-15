@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_muk_ai_browser_permission_search" model="ir.ui.view">
+		<field name="name">muk_ai_browser.permission.search</field>
+		<field name="model">muk_ai_browser.permission</field>
+		<field name="arch" type="xml">
+			<search>
+				<field name="site"/>
+				<field name="user_id"/>
+				<filter string="Mine" name="mine" domain="[('user_id', '=', uid)]"/>
+				<filter string="Everyone" name="everyone" domain="[('user_id', '=', False)]"/>
+				<separator/>
+				<filter string="Blocked" name="blocked" domain="[('mode', '=', 'block')]"/>
+				<filter string="Group By User" name="group_user" context="{'group_by': 'user_id'}"/>
+			</search>
+		</field>
+	</record>
+
+	<record id="view_muk_ai_browser_permission_list" model="ir.ui.view">
+		<field name="name">muk_ai_browser.permission.tree</field>
+		<field name="model">muk_ai_browser.permission</field>
+		<field name="arch" type="xml">
+			<tree editable="bottom">
+				<field name="site" placeholder="https://shop.example.com"/>
+				<field name="mode" decoration-success="mode == 'allow'" decoration-warning="mode == 'ask'" decoration-danger="mode == 'block'"/>
+				<field name="user_id" groups="base.group_system" placeholder="Everyone"/>
+				<field name="write_date" string="Changed" optional="show" readonly="1"/>
+			</tree>
+		</field>
+	</record>
+
+	<record id="action_muk_ai_browser_permission" model="ir.actions.act_window">
+		<field name="name">Site Permissions</field>
+		<field name="res_model">muk_ai_browser.permission</field>
+		<field name="view_mode">tree</field>
+		<field name="help" type="html">
+			<p class="o_view_nocontent_smiling_face">Decide where the assistant may act</p>
+			<p>Sites you allow from the browser side panel show up here. Add a rule to allow, ask on or block a site, such as https://shop.example.com or *.example.com.</p>
+		</field>
+	</record>
+
+</odoo>
