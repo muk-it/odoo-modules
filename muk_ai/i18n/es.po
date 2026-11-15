@@ -6220,3 +6220,27 @@ msgstr "Permitir chat"
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_agent__allow_chat
 msgid "Offer this agent in the agent picker of a chat."
 msgstr "Ofrecer este agente en el selector de agentes de un chat."
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_browser
+msgid "MuK AI Browser"
+msgstr ""
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Browser"
+msgstr ""
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_browser
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Agents read and act on the web pages in your browser."
+msgstr "Los agentes leen y usan las páginas web de su navegador."
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid ""
+"<strong>Save</strong> this page and come back here to set up the feature."
+msgstr ""
+"<strong>Guarde</strong> esta página y vuelva aquí para configurar la "
+"función."

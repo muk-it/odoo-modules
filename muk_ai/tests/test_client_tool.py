@@ -167,7 +167,7 @@ class TestClientToolSeam(AITestCommon):
     def test_default_is_client_tool_reads_meta(self):
         session = self._new_session('meta')
         catalog = [
-            {'name': 'browser_click', '_meta': {'execute': 'client'}},
+            {'name': 'page_click', '_meta': {'execute': 'client'}},
             {'name': 'search_count', '_meta': {'execute': 'server'}},
             {'name': 'open_view'},
         ]
@@ -177,7 +177,7 @@ class TestClientToolSeam(AITestCommon):
             autospec=True,
             return_value=catalog,
         ):
-            self.assertTrue(session._is_client_tool('browser_click'))
+            self.assertTrue(session._is_client_tool('page_click'))
             self.assertFalse(session._is_client_tool('search_count'))
             self.assertFalse(session._is_client_tool('open_view'))
             self.assertFalse(session._is_client_tool('unknown'))
@@ -190,7 +190,7 @@ class TestClientToolSeam(AITestCommon):
         """Patch the registry catalog with tools of every client kind."""
         catalog = [
             {
-                'name': 'browser_click',
+                'name': 'page_click',
                 '_meta': {'execute': 'client', 'client': 'browser'},
             },
             {
@@ -217,7 +217,7 @@ class TestClientToolSeam(AITestCommon):
         session = self._new_session('kind-lookup')
         with self._kind_catalog():
             self.assertEqual(session._tool_client_kind('adjust_search'), 'webclient')
-            self.assertEqual(session._tool_client_kind('browser_click'), 'browser')
+            self.assertEqual(session._tool_client_kind('page_click'), 'browser')
             self.assertIsNone(session._tool_client_kind('search_count'))
             self.assertIsNone(session._tool_client_kind('bare_client'))
             self.assertIsNone(session._tool_client_kind('unknown'))
@@ -227,7 +227,7 @@ class TestClientToolSeam(AITestCommon):
         with self._kind_catalog():
             essential = session._get_essential_tool_names()
         self.assertIn('adjust_search', essential)
-        self.assertNotIn('browser_click', essential)
+        self.assertNotIn('page_click', essential)
         self.assertNotIn('bare_client', essential)
 
     def test_adjust_search_registered_as_webclient_tool(self):
@@ -250,7 +250,7 @@ class TestClientToolSeam(AITestCommon):
         session = self._new_session('pause')
         provider = self._script_provider(
             [
-                self._tool_payload('browser_click', {'ref': 'e1'}, 'c0'),
+                self._tool_payload('page_click', {'ref': 'e1'}, 'c0'),
                 self._text_payload('Clicked it.'),
             ]
         )
@@ -258,14 +258,14 @@ class TestClientToolSeam(AITestCommon):
         with (
             provider,
             self._track_execute(executed),
-            self._as_client_tool('browser_click'),
+            self._as_client_tool('page_click'),
         ):
             snapshot = session.start('Click the button.')
         self.assertEqual(snapshot['state'], 'waiting')
         self.assertEqual(snapshot['pending_ask']['kind'], 'client_action')
         self.assertEqual(snapshot['pending_ask']['call_id'], 'c0')
-        self.assertEqual(snapshot['pending_ask']['name'], 'browser_click')
-        self.assertNotIn('browser_click', executed)
+        self.assertEqual(snapshot['pending_ask']['name'], 'page_click')
+        self.assertNotIn('page_click', executed)
         self.assertEqual(self._outputs_for(session, 'c0'), [])
         kinds = [e.get('kind') for e in self._events(session)]
         self.assertIn('client_action', kinds)
@@ -278,7 +278,7 @@ class TestClientToolSeam(AITestCommon):
         session = self._new_session('submit')
         provider = self._script_provider(
             [
-                self._tool_payload('browser_click', {'ref': 'e1'}, 'c0'),
+                self._tool_payload('page_click', {'ref': 'e1'}, 'c0'),
                 self._text_payload('Done clicking.'),
             ]
         )
@@ -288,7 +288,7 @@ class TestClientToolSeam(AITestCommon):
         )
         with (
             provider,
-            self._as_client_tool('browser_click'),
+            self._as_client_tool('page_click'),
             patch.object(bus, '_sendone', autospec=True) as sendone,
         ):
             session.start('Click the button.')
@@ -315,11 +315,11 @@ class TestClientToolSeam(AITestCommon):
         session = self._new_session('reject')
         provider = self._script_provider(
             [
-                self._tool_payload('browser_click', {'ref': 'e1'}, 'c0'),
+                self._tool_payload('page_click', {'ref': 'e1'}, 'c0'),
                 self._text_payload('Aborted.'),
             ]
         )
-        with provider, self._as_client_tool('browser_click'):
+        with provider, self._as_client_tool('page_click'):
             session.start('Click the button.')
             snapshot = session.reject_client_action('c0', 'user said no')
         self.assertEqual(snapshot['state'], 'done')
@@ -343,11 +343,11 @@ class TestClientToolSeam(AITestCommon):
         session = self._new_session('mismatch')
         provider = self._script_provider(
             [
-                self._tool_payload('browser_click', {'ref': 'e1'}, 'c0'),
+                self._tool_payload('page_click', {'ref': 'e1'}, 'c0'),
                 self._text_payload('Done.'),
             ]
         )
-        with provider, self._as_client_tool('browser_click'):
+        with provider, self._as_client_tool('page_click'):
             session.start('Click the button.')
             with self.assertRaises(UserError):
                 session.submit_client_result('wrong', {'ok': True})
@@ -362,15 +362,15 @@ class TestClientToolSeam(AITestCommon):
             [
                 self._tools_payload(
                     [
-                        ('browser_click', {'ref': 'e1'}, 'c0'),
-                        ('browser_click', {'ref': 'e2'}, 'c1'),
-                        ('browser_click', {'ref': 'e3'}, 'c2'),
+                        ('page_click', {'ref': 'e1'}, 'c0'),
+                        ('page_click', {'ref': 'e2'}, 'c1'),
+                        ('page_click', {'ref': 'e3'}, 'c2'),
                     ]
                 ),
                 self._text_payload('All clicked.'),
             ]
         )
-        with provider, self._as_client_tool('browser_click'):
+        with provider, self._as_client_tool('page_click'):
             snapshot = session.start('Click all three buttons.')
         self.assertEqual(snapshot['state'], 'waiting')
         pending = snapshot['pending_ask']
@@ -389,14 +389,14 @@ class TestClientToolSeam(AITestCommon):
             [
                 self._tools_payload(
                     [
-                        ('browser_click', {'ref': 'e1'}, 'c0'),
-                        ('browser_click', {'ref': 'e2'}, 'c1'),
+                        ('page_click', {'ref': 'e1'}, 'c0'),
+                        ('page_click', {'ref': 'e2'}, 'c1'),
                     ]
                 ),
                 self._text_payload('Both clicked.'),
             ]
         )
-        with provider, self._as_client_tool('browser_click'):
+        with provider, self._as_client_tool('page_click'):
             session.start('Click both buttons.')
             snapshot = session.submit_client_result('c0', {'ok': True})
         self.assertEqual(snapshot['state'], 'waiting')
@@ -413,14 +413,14 @@ class TestClientToolSeam(AITestCommon):
             [
                 self._tools_payload(
                     [
-                        ('browser_click', {'ref': 'e1'}, 'c0'),
-                        ('browser_click', {'ref': 'e2'}, 'c1'),
+                        ('page_click', {'ref': 'e1'}, 'c0'),
+                        ('page_click', {'ref': 'e2'}, 'c1'),
                     ]
                 ),
                 self._text_payload('Both clicked.'),
             ]
         )
-        with provider, self._as_client_tool('browser_click'):
+        with provider, self._as_client_tool('page_click'):
             session.start('Click both buttons.')
             session.submit_client_result('c1', {'ok': 2})
             snapshot = session.submit_client_result('c0', {'ok': 1})
@@ -443,14 +443,14 @@ class TestClientToolSeam(AITestCommon):
             [
                 self._tools_payload(
                     [
-                        ('browser_click', {'ref': 'e1'}, 'c0'),
-                        ('browser_click', {'ref': 'e2'}, 'c1'),
+                        ('page_click', {'ref': 'e1'}, 'c0'),
+                        ('page_click', {'ref': 'e2'}, 'c1'),
                     ]
                 ),
                 self._text_payload('Aborted.'),
             ]
         )
-        with provider, self._as_client_tool('browser_click'):
+        with provider, self._as_client_tool('page_click'):
             session.start('Click both buttons.')
             snapshot = session.reject_client_action(reason='client gone')
         self.assertEqual(snapshot['state'], 'done')
@@ -466,14 +466,14 @@ class TestClientToolSeam(AITestCommon):
             [
                 self._tools_payload(
                     [
-                        ('browser_click', {'ref': 'e1'}, 'c0'),
-                        ('browser_click', {'ref': 'e2'}, 'c1'),
+                        ('page_click', {'ref': 'e1'}, 'c0'),
+                        ('page_click', {'ref': 'e2'}, 'c1'),
                     ]
                 ),
                 self._text_payload('Partly done.'),
             ]
         )
-        with provider, self._as_client_tool('browser_click'):
+        with provider, self._as_client_tool('page_click'):
             session.start('Click both buttons.')
             snapshot = session.reject_client_action('c0', 'element missing')
             self.assertEqual(snapshot['state'], 'waiting')
@@ -490,7 +490,7 @@ class TestClientToolSeam(AITestCommon):
             [
                 self._tools_payload(
                     [
-                        ('browser_click', {'ref': 'e1'}, 'c0'),
+                        ('page_click', {'ref': 'e1'}, 'c0'),
                         ('search_count', {'model': 'res.partner'}, 'c1'),
                     ]
                 ),
@@ -501,7 +501,7 @@ class TestClientToolSeam(AITestCommon):
         with (
             provider,
             self._track_execute(executed),
-            self._as_client_tool('browser_click'),
+            self._as_client_tool('page_click'),
         ):
             snapshot = session.start('Click, then count.')
         self.assertEqual(snapshot['state'], 'waiting')
@@ -524,7 +524,7 @@ class TestClientToolSeam(AITestCommon):
                 self._tools_payload(
                     [
                         ('open_view', {'model': 'res.partner'}, 'c0'),
-                        ('browser_click', {'ref': 'e1'}, 'c1'),
+                        ('page_click', {'ref': 'e1'}, 'c1'),
                     ]
                 ),
                 self._text_payload('Opened the view.'),
@@ -534,7 +534,7 @@ class TestClientToolSeam(AITestCommon):
         with (
             provider,
             self._track_execute(executed),
-            self._as_client_tool('browser_click'),
+            self._as_client_tool('page_click'),
         ):
             snapshot = session.start('Open the view, then click.')
         self.assertNotEqual(snapshot['state'], 'waiting')
@@ -550,14 +550,14 @@ class TestClientToolSeam(AITestCommon):
             [
                 self._tools_payload(
                     [
-                        ('browser_click', {'ref': 'e1'}, 'c0'),
-                        ('browser_click', {'ref': 'e2'}, 'c1'),
+                        ('page_click', {'ref': 'e1'}, 'c0'),
+                        ('page_click', {'ref': 'e2'}, 'c1'),
                     ]
                 ),
                 self._text_payload('Never reached.'),
             ]
         )
-        with provider, self._as_client_tool('browser_click'):
+        with provider, self._as_client_tool('page_click'):
             session.start('Click both buttons.')
             session.submit_client_result('c0', {'ok': True})
             session.action_stop()
@@ -573,11 +573,11 @@ class TestClientToolSeam(AITestCommon):
         session = self._new_session('queue')
         provider = self._script_provider(
             [
-                self._tool_payload('browser_click', {'ref': 'e1'}, 'c0'),
+                self._tool_payload('page_click', {'ref': 'e1'}, 'c0'),
                 self._text_payload('Clicked.'),
             ]
         )
-        with provider, self._as_client_tool('browser_click'):
+        with provider, self._as_client_tool('page_click'):
             session.start('Click the button.')
             snapshot = session.send_message('Also check the totals.')
         self.assertEqual(snapshot['state'], 'waiting')
@@ -590,7 +590,7 @@ class TestClientToolSeam(AITestCommon):
             [
                 self._tools_payload(
                     [
-                        ('browser_click', {'ref': 'e1'}, 'c0'),
+                        ('page_click', {'ref': 'e1'}, 'c0'),
                         ('browser_gated', {'ref': 'e2'}, 'c1'),
                     ]
                 ),
@@ -608,7 +608,7 @@ class TestClientToolSeam(AITestCommon):
         with (
             provider,
             deferral,
-            self._as_client_tool('browser_click', 'browser_gated'),
+            self._as_client_tool('page_click', 'browser_gated'),
         ):
             snapshot = session.start('Click, then do the gated thing.')
         self.assertEqual(snapshot['state'], 'waiting')
@@ -630,11 +630,11 @@ class TestClientToolSeam(AITestCommon):
         session = self._new_session('stale')
         provider = self._script_provider(
             [
-                self._tool_payload('browser_click', {'ref': 'e1'}, 'c0'),
+                self._tool_payload('page_click', {'ref': 'e1'}, 'c0'),
                 self._text_payload('Gave up.'),
             ]
         )
-        with provider, self._as_client_tool('browser_click'):
+        with provider, self._as_client_tool('page_click'):
             session.start('Click the button.')
             self._backdate_client_action(session)
             self.env['muk_ai.session']._sweep_stale_client_actions()
@@ -647,11 +647,11 @@ class TestClientToolSeam(AITestCommon):
         session = self._new_session('fresh')
         provider = self._script_provider(
             [
-                self._tool_payload('browser_click', {'ref': 'e1'}, 'c0'),
+                self._tool_payload('page_click', {'ref': 'e1'}, 'c0'),
                 self._text_payload('Never sent.'),
             ]
         )
-        with provider, self._as_client_tool('browser_click'):
+        with provider, self._as_client_tool('page_click'):
             session.start('Click the button.')
             self.env['muk_ai.session']._sweep_stale_client_actions()
         self.assertEqual(session.state, 'waiting')
@@ -676,11 +676,11 @@ class TestClientToolSeam(AITestCommon):
         )
         provider = self._script_provider(
             [
-                self._tool_payload('browser_click', {'ref': 'e1'}, 'c0'),
+                self._tool_payload('page_click', {'ref': 'e1'}, 'c0'),
                 self._text_payload('Never sent.'),
             ]
         )
-        with provider, self._as_client_tool('browser_click'):
+        with provider, self._as_client_tool('page_click'):
             session.start('Click the button.')
             self._backdate_client_action(session)
             self.env['muk_ai.session']._sweep_stale_client_actions()

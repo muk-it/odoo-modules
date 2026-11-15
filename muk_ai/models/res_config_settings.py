@@ -167,6 +167,11 @@ class ResConfigSettings(models.TransientModel):
         default=600,
     )
 
+    module_muk_ai_browser = fields.Boolean(
+        string='MuK AI Browser',
+        help='Agents read and act on the web pages in your browser.',
+    )
+
     # ----------------------------------------------------------
     # Compute
     # ----------------------------------------------------------
