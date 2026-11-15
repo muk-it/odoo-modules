@@ -6798,3 +6798,19 @@ msgstr "Chat erlauben"
 #: model:ir.model.fields,help:muk_ai.field_muk_ai_agent__allow_chat
 msgid "Offer this agent in the agent picker of a chat."
 msgstr "Diesen Agenten in der Agentenauswahl eines Chats anbieten."
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_apps
+msgid "MuK AI Apps"
+msgstr ""
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Apps"
+msgstr ""
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_apps
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Open the interactive apps of MCP servers inside the chat."
+msgstr "Die interaktiven Apps von MCP-Servern im Chat öffnen."

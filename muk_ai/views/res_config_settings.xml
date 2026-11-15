@@ -315,6 +315,19 @@
 							</div>
 						</setting>
 						<setting
+							id="muk_ai_addon_apps"
+							string="Apps"
+							help="Open the interactive apps of MCP servers inside the chat."
+						>
+							<field
+								name="module_muk_ai_apps"
+								widget="module_link"
+							/>
+							<div class="content-group" invisible="not module_muk_ai_apps" id="msg_module_muk_ai_apps">
+								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+							</div>
+						</setting>
+						<setting
 							id="muk_ai_addon_voice"
 							string="Voice"
 							help="Talk to the assistant and hear it answer."
