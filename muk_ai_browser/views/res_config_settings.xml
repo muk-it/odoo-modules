@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_res_config_settings_form" model="ir.ui.view">
+		<field name="name">res.config.settings.form.muk_ai_browser</field>
+		<field name="model">res.config.settings</field>
+		<field name="inherit_id" ref="muk_ai.view_res_config_settings_form"/>
+		<field name="arch" type="xml">
+			<xpath expr="//div[@id='msg_module_muk_ai_browser']" position="replace">
+				<div
+					class="content-group"
+					attrs="{'invisible': [('module_muk_ai_browser', '=', False)]}"
+					id="msg_module_muk_ai_browser"
+				>
+					<div class="mt16 d-flex align-items-center gap-3">
+						<label
+							for="browser_default_mode"
+							string="Unknown Sites"
+							class="o_light_label text-nowrap"
+						/>
+						<field
+							name="browser_default_mode"
+							widget="radio"
+							options="{'horizontal': true}"
+							class="w-100"
+						/>
+					</div>
+					<div class="mt8 d-flex align-items-center gap-3">
+						<label
+							for="browser_pairing_ttl"
+							string="Connect Codes"
+							class="o_light_label text-nowrap"
+						/>
+						<field name="browser_pairing_ttl" class="w-25 text-center"/>
+						<span>Seconds</span>
+					</div>
+					<div class="mt16">
+						<button
+							name="%(muk_ai_browser.action_muk_ai_browser_permission)d"
+							type="action"
+							string="Site Permissions"
+							icon="fa-arrow-right"
+							class="btn-link"
+						/>
+					</div>
+					<div>
+						<a
+							href="https://chromewebstore.google.com/detail/fecogbhcchendbojonbojofkiehdacne"
+							target="_blank"
+							rel="noopener"
+							role="button"
+							class="btn btn-link p-0"
+						>
+							<i class="fa fa-arrow-right" role="img"/>
+							Get the Extension
+						</a>
+					</div>
+				</div>
+			</xpath>
+		</field>
+	</record>
+
+</odoo>

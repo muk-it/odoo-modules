@@ -1,0 +1,105 @@
+target-version = "py310"
+line-length = 88
+
+[format]
+quote-style = "single"
+
+[lint]
+preview = true
+external = ["OLS"]  # Odoo Language Server noqa codes
+select = [
+    "BLE",   # flake8-blind-except
+    "C",     # flake8-comprehensions
+    "COM",   # flake8-commas
+    "E",     # pycodestyle errors
+    "EM",    # flake8-errmsg
+    "EXE",   # flake8-executable
+    "F",     # Pyflakes
+    "FA",    # flake8-future-annotations
+    "FLY",   # flynt
+    "G",     # flake8-logging-format
+    "I",     # isort
+    "ICN",   # flake8-import-conventions
+    "INT",   # flake8-gettext
+    "ISC",   # flake8-implicit-str-concat
+    "LOG",   # flake8-logging
+    "PGH",   # pygrep-hooks
+    "PIE",   # flake8-pie
+    "PLC",   # Pylint conventions
+    "PLE",   # Pylint errors
+    "PLW",   # Pylint warnings
+    "PYI",   # flake8-pyi
+    "RET",   # flake8-return
+    "RUF",   # Ruff-specific rules
+    "S",     # flake8-bandit, the security rules
+    "SIM",   # flake8-simplify
+    "SLOT",  # flake8-slots
+    "T",     # flake8-print
+    "TC",    # flake8-type-checking
+    "TID",   # flake8-tidy-imports
+    "TRY",   # tryceratops
+    "UP",    # pyupgrade
+    "W",     # pycodestyle warnings
+    "YTT",   # flake8-2020
+    "blank-line-after-function",
+    "blank-line-before-function",
+    "empty-docstring",
+    "first-word-uncapitalized",
+    "missing-blank-line-after-summary",
+    "missing-trailing-period",
+    "multi-line-summary-first-line",
+    "new-line-after-last-paragraph",
+    "over-indentation",
+    "surrounding-whitespace",
+    "triple-single-quotes",
+    "under-indentation",
+    "unnecessary-multiline-docstring",
+]
+ignore = [
+    "ambiguous-unicode-character-string",
+    "assert",
+    "blanket-type-ignore",
+    "blind-except",
+    "collapsible-if",
+    "collection-literal-concatenation",
+    "complex-structure",
+    "error-instead-of-exception",
+    "f-string-in-exception",
+    "future-rewritable-type-annotation",
+    "hardcoded-password-func-arg",
+    "hardcoded-password-string",
+    "if-else-block-instead-of-dict-get",
+    "if-else-block-instead-of-if-exp",
+    "import-outside-top-level",
+    "import-private-name",
+    "line-too-long",
+    "missing-trailing-comma",
+    "multiple-leading-hashes-for-block-comment",
+    "multiple-with-statements",
+    "mutable-class-default",
+    "non-empty-init-module",
+    "not-in-test",
+    "printf-string-formatting",
+    "raise-vanilla-args",
+    "redefined-loop-name",
+    "relative-imports",
+    "suspicious-non-cryptographic-random-usage",
+    "try-consider-else",
+    "try-except-pass",
+    "typing-only-first-party-import",
+    "typing-only-standard-library-import",
+    "typing-only-third-party-import",
+    "unnecessary-collection-call",
+    "unnecessary-dict-comprehension-for-iterable",
+    "unnecessary-range-start",
+    "unsafe-markup-use",
+    "unused-noqa",
+]
+
+[lint.per-file-ignores]
+"**/__init__.py" = ["unused-import", "unsorted-imports"]
+"**/tests/**" = ["D", "S"]
+
+[lint.isort]
+known-first-party = ["odoo"]
+known-local-folder = ["odoo.addons"]
