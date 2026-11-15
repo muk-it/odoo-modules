@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<record id="view_res_config_settings_form" model="ir.ui.view">
+		<field name="name">res.config.settings.form.muk_ai_browser</field>
+		<field name="model">res.config.settings</field>
+		<field name="inherit_id" ref="muk_ai.view_res_config_settings_form"/>
+		<field name="arch" type="xml">
+			<xpath expr="//block[@name='muk_ai_extensions']" position="before">
+				<block title="Browser" name="muk_ai_browser_settings">
+					<setting
+						id="browser_default_mode"
+						string="Unknown Sites"
+						help="What the assistant may do on a site no rule covers. Ask is the safe default."
+					>
+						<field name="browser_default_mode" widget="radio" options="{'horizontal': true}"/>
+						<div class="mt-2">
+							<button
+								name="%(muk_ai_browser.action_muk_ai_browser_permission)d"
+								type="action"
+								string="Site Permissions"
+								icon="arrow_forward"
+								class="btn-link"
+							/>
+						</div>
+					</setting>
+					<setting
+						id="browser_risky_keywords"
+						string="Always Ask For"
+						help="A browser action whose target or text contains one of these words asks first, on every site."
+					>
+						<field
+							name="browser_risky_keywords"
+							widget="text"
+							class="w-100 mt-2"
+							placeholder="delete, pay, submit"
+						/>
+					</setting>
+					<setting
+						id="browser_pairing_ttl"
+						string="Connect Codes"
+						help="How long the code on the page that connects a browser stays valid."
+					>
+						<div class="content-group">
+							<div class="row">
+								<div class="o_light_label">
+									<label
+										class="col-6 col-sm-4 col-md-2 col-lg-4"
+										string="Valid for"
+										for="browser_pairing_ttl"
+									/>
+									<field name="browser_pairing_ttl" class="w-25 text-center" nolabel="1"/>
+									<span class="col-auto ms-2">Seconds</span>
+								</div>
+							</div>
+						</div>
+						<div class="mt-2">
+							<button
+								name="%(muk_ai_browser.action_muk_ai_browser_key)d"
+								type="action"
+								string="Connected Browsers"
+								icon="arrow_forward"
+								class="btn-link"
+							/>
+						</div>
+						<div>
+							<a
+								href="https://chromewebstore.google.com/detail/fecogbhcchendbojonbojofkiehdacne"
+								target="_blank"
+								rel="noopener"
+								class="btn btn-link"
+							>
+								<i class="oi me-1" data-icon="arrow_forward" role="img"/>
+								Get the Extension
+							</a>
+						</div>
+					</setting>
+				</block>
+			</xpath>
+		</field>
+	</record>
+
+</odoo>

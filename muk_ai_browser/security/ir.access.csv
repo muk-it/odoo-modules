@@ -1,0 +1,5 @@
+id,name,model_id,group_id/id,operation,domain
+access_muk_ai_browser_permission_user,Users manage their own site permissions,muk_ai_browser.permission,base.group_user,crud,"[('user_id', '=', user.id)]"
+access_muk_ai_browser_permission_user_global,Users read the site permissions for everyone,muk_ai_browser.permission,base.group_user,r,"[('user_id', '=', False)]"
+access_muk_ai_browser_permission_admin,Administrators manage every site permission,muk_ai_browser.permission,base.group_system,crud,
+access_muk_ai_browser_pairing_admin,Administrators see pending pairing codes,muk_ai_browser.pairing,base.group_system,rd,
