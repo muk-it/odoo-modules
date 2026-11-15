@@ -142,7 +142,8 @@ class TestHttp(HttpCase):
         ):
             with self.subTest(login=login):
                 self.authenticate(login, login)
-                response = self.url_open('/odoo/ai-chat')
+                response = self.url_open('/ai_browser/chat')
+                self.assertTrue(response.url.endswith('/odoo/ai-chat/'))
                 self.assertEqual(
                     response.headers.get('Content-Security-Policy'), ancestors
                 )

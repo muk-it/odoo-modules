@@ -82,6 +82,16 @@ class BrowserController(http.Controller):
         return response
 
     @http.route(
+        ['/ai_browser/chat', '/ai_browser/chat/<int:chat_id>'],
+        type='http',
+        auth='user',
+        methods=['GET'],
+    )
+    def chat(self, chat_id: int | None = None) -> Response:
+        """Open the AI chat for the extension's side panel, a new one without an id."""
+        return request.redirect(f'/odoo/ai-chat/{chat_id or ""}')
+
+    @http.route(
         '/muk_ai_browser/pair',
         type='http',
         auth='none',
