@@ -9,7 +9,7 @@
         asked about or blocked per user, sensitive actions always ask, and a
         plan the user approved limits the sites the assistant acts on.
     """,
-    'version': '20.0.1.1.3',
+    'version': '20.0.1.1.4',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',
