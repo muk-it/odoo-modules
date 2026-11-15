@@ -6798,3 +6798,19 @@ msgstr "App"
 #: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
 msgid "Open the interactive apps of MCP servers inside the chat."
 msgstr "Aprire le app interattive dei server MCP nella chat."
+
+#. module: muk_ai
+#: model:ir.model.fields,field_description:muk_ai.field_res_config_settings__module_muk_ai_browser
+msgid "MuK AI Browser"
+msgstr ""
+
+#. module: muk_ai
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Browser"
+msgstr ""
+
+#. module: muk_ai
+#: model:ir.model.fields,help:muk_ai.field_res_config_settings__module_muk_ai_browser
+#: model_terms:ir.ui.view,arch_db:muk_ai.view_res_config_settings_form
+msgid "Agents read and act on the web pages in your browser."
+msgstr "Gli agenti leggono e usano le pagine web del tuo browser."
