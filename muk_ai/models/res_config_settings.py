@@ -192,6 +192,11 @@ class ResConfigSettings(models.TransientModel):
         help='Connect remote MCP servers whose tools agents can call.',
     )
 
+    module_muk_ai_apps = fields.Boolean(
+        string='MuK AI Apps',
+        help='Open the interactive apps of MCP servers inside the chat.',
+    )
+
     module_muk_ai_voice = fields.Boolean(
         string='MuK AI Voice',
         help='Talk to the assistant and hear it answer.',
