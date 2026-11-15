@@ -489,13 +489,11 @@ class TestAiSessionQueue(AITestCommon):
         with (
             self._mock_responses(
                 [
-                    self._client_tool_payload(
-                        'browser_click', {'ref': 'e1'}, 'click_1'
-                    ),
+                    self._client_tool_payload('page_click', {'ref': 'e1'}, 'click_1'),
                     self._make_text_response('clicked it'),
                 ]
             ),
-            self._as_client_tool('browser_click'),
+            self._as_client_tool('page_click'),
         ):
             session.start('click the button')
             self.assertEqual(session.state, 'waiting')
