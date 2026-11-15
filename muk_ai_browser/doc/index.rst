@@ -33,23 +33,23 @@ Configuration
 The module needs MuK AI with a provider set up, and the `MuK AI Browser
 extension <https://chromewebstore.google.com/detail/fecogbhcchendbojonbojofkiehdacne>`_
 in Chrome 116 or newer, or in Microsoft Edge. The link is also under MuK AI >
-Settings > Browser > Get the Extension. The extension is open source under
-Apache-2.0: https://github.com/muk-it/muk-ai-browser-extension
+Settings > Extensions > Browser > Get the Extension. The extension is open
+source under Apache-2.0: https://github.com/muk-it/muk-ai-browser-extension
 
 Open the extension's options, enter the Odoo address and click Connect. Log in
 to Odoo in the tab that opens; the extension reads a one-time code from the
 page, receives a key that only works for the browser, and the tab closes by
-itself. The page is also under MuK AI > Browser > Connect a Browser. Every
-paired browser is listed under MuK AI > Browser > Connected Browsers, where it
-can be disconnected.
+itself. Every paired browser is listed under MuK AI > Reports > Browsers,
+where it can be disconnected.
 
-Under MuK AI > Settings > Browser, choose what the agent does on a site
-without a rule (Unknown Sites: allow, ask or block), the words that always ask
-(Always Ask For, such as delete, pay or submit), and how long a connect code
-stays valid (Connect Codes). Site rules are kept under MuK AI > Browser > Site
-Permissions, per user or for everyone, as an exact address or a pattern such
-as ``*.example.com``; a rule for everyone that blocks a site wins over any
-user rule.
+Under MuK AI > Settings > Extensions > Browser, choose what the agent does on
+a site without a rule (Unknown Sites: allow, ask or block) and how long a
+connect code stays valid (Connect Codes). The words that always ask are the
+system parameter ``muk_ai_browser.risky_keywords``, a comma-separated list (by
+default delete, pay, submit and the like). Site rules are kept under MuK AI >
+Configuration > Site Permissions, per user or for everyone, as an exact address
+or a pattern such as ``*.example.com``; a rule for everyone that blocks a site
+wins over any user rule.
 
 Usage
 =====

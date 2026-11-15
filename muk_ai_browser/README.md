@@ -43,9 +43,9 @@ its log stay in your Odoo.
    address and click **Connect**.
 3. Log in to Odoo in the tab that opens: it pairs the browser and closes
    itself.
-4. Set the default for sites without a rule and the words that always ask
-   under **MuK AI > Settings > Browser**, and the site rules under
-   **MuK AI > Browser > Site Permissions**.
+4. Set what the assistant may do on a site without a rule under
+   **MuK AI > Settings > Extensions > Browser**, and the site rules under
+   **MuK AI > Configuration > Site Permissions**.
 5. Open the side panel on any page, and ask.
 
 ## Support

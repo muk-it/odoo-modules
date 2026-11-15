@@ -71,12 +71,4 @@
 		</field>
 	</record>
 
-	<record id="action_muk_ai_browser_connect" model="ir.actions.act_url">
-		<field name="name">Connect a Browser</field>
-		<field name="url">/muk_ai_browser/connect</field>
-		<field name="path">ai-browser-connect</field>
-		<field name="explanation">Opens the page that pairs the user's browser with the AI assistant through the MuK AI browser extension. Use this when the user wants to connect a browser so the assistant can read and act on web pages.</field>
-		<field name="target">new</field>
-	</record>
-
 </odoo>

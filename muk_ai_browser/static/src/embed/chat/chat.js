@@ -68,6 +68,30 @@ patch(AIChat.prototype, {
     get suggestions() {
         return embedded ? pageSuggestions() : super.suggestions;
     },
+    /**
+     * Start the browser panel on a new chat, or on the latest one while it is empty.
+     */
+    async selectFirst() {
+        if (!embedded) {
+            return super.selectFirst();
+        }
+        const [latest] = await this.chat.orm.search(
+            'muk_ai.session',
+            this.chat.chatDomain,
+            { limit: 1, order: 'create_date DESC' },
+        );
+        const used =
+            !latest ||
+            (await this.chat.orm.searchCount('muk_ai.session', [
+                ['id', '=', latest],
+                ['event_ids', '!=', false],
+            ]));
+        if (used) {
+            await this.newSession();
+        } else {
+            this.select(latest);
+        }
+    },
 });
 
 patch(AIChatPlugin.prototype, {

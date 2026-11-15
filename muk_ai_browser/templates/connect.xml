@@ -28,6 +28,7 @@
 										href="https://chromewebstore.google.com/detail/fecogbhcchendbojonbojofkiehdacne"
 										target="_blank"
 										rel="noopener"
+										role="button"
 										class="btn btn-primary mb-4"
 									>
 										Get the Extension
