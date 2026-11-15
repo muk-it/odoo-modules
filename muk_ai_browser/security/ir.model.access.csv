@@ -1,0 +1,4 @@
+id,name,model_id/id,group_id/id,perm_read,perm_write,perm_create,perm_unlink
+access_muk_ai_browser_permission_user,access_muk_ai_browser_permission_user,model_muk_ai_browser_permission,base.group_user,1,1,1,1
+access_muk_ai_browser_permission_admin,access_muk_ai_browser_permission_admin,model_muk_ai_browser_permission,base.group_system,1,1,1,1
+access_muk_ai_browser_pairing_admin,access_muk_ai_browser_pairing_admin,model_muk_ai_browser_pairing,base.group_system,1,0,0,1

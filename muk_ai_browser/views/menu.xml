@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<menuitem
+		id="menu_muk_ai_browser_permission"
+		name="Site Permissions"
+		parent="muk_ai.menu_ai_config"
+		action="action_muk_ai_browser_permission"
+		sequence="60"
+	/>
+
+	<menuitem
+		id="menu_muk_ai_browser_key"
+		name="Browsers"
+		parent="muk_ai.menu_ai_report"
+		action="action_muk_ai_browser_key"
+		sequence="18"
+	/>
+
+</odoo>
