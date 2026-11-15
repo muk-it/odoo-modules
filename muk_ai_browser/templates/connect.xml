@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+	<template id="connect_page" name="Connect a Browser">
+		<t t-set="head">
+			<meta name="muk-ai-browser-pairing" t-att-content="code"/>
+		</t>
+		<t t-call="web.frontend_layout" no_header="True" no_footer="True" head="head">
+			<div class="bg-light min-vh-100 d-flex align-items-center py-5">
+				<div class="container">
+					<div class="row justify-content-center">
+						<div class="col-md-8 col-lg-5">
+							<div class="card border-0 shadow-sm rounded-4">
+								<div class="card-body p-4 p-lg-5 text-center">
+									<img
+										src="/muk_ai/static/description/icon.png"
+										alt="MuK AI"
+										width="64"
+										height="64"
+										class="rounded-3 mb-4"
+									/>
+									<h1 class="h4 mb-2">Connect a Browser</h1>
+									<p class="text-muted mb-4 mk_browser_status">
+										With the MuK AI browser extension installed, this browser connects by itself and the tab closes.
+									</p>
+									<a
+										href="https://chromewebstore.google.com/detail/fecogbhcchendbojonbojofkiehdacne"
+										target="_blank"
+										rel="noopener"
+										role="button"
+										class="btn btn-primary mb-4"
+									>
+										Get the Extension
+									</a>
+									<details class="text-start small">
+										<summary class="text-muted">Connect by hand</summary>
+										<p class="text-muted mt-3 mb-2">
+											Paste this code in the extension's side panel. It works once and expires in
+											<t t-out="ttl"/>
+											minutes.
+										</p>
+										<pre class="bg-light border rounded-3 p-3 mb-0 user-select-all text-break mk_browser_code" t-out="code"/>
+									</details>
+								</div>
+							</div>
+							<p class="small text-muted text-center mt-3 mb-0">
+								The browser gets its own key for your user. Disconnect it any time under MuK AI, Browser, Connected Browsers.
+							</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</t>
+	</template>
+
+</odoo>
