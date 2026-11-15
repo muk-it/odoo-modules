@@ -217,13 +217,6 @@
 									</div>
 								</div>
 							</div>
-							<button
-								name="%(muk_mcp.action_connect)d"
-								type="action"
-								string="Connect AI"
-								icon="arrow_forward"
-								class="btn-link mt-3"
-							/>
 						</setting>
 					</block>
 					<block title="Extensions" name="muk_ai_extensions">
@@ -406,6 +399,19 @@
 								widget="module_link"
 							/>
 							<div class="content-group" invisible="not module_muk_ai_workflows" id="msg_module_muk_ai_workflows">
+								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
+							</div>
+						</setting>
+						<setting
+							id="muk_ai_addon_browser"
+							string="Browser"
+							help="Agents read and act on the web pages in your browser."
+						>
+							<field
+								name="module_muk_ai_browser"
+								widget="module_link"
+							/>
+							<div class="content-group" invisible="not module_muk_ai_browser" id="msg_module_muk_ai_browser">
 								<div class="mt16 text-warning"><strong>Save</strong> this page and come back here to set up the feature.</div>
 							</div>
 						</setting>

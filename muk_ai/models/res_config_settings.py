@@ -237,6 +237,11 @@ class ResConfigSettings(models.TransientModel):
         help='Multi-step AI playbooks and stateful business processes.',
     )
 
+    module_muk_ai_browser = fields.Boolean(
+        string='MuK AI Browser',
+        help='Agents read and act on the web pages in your browser.',
+    )
+
     module_muk_ai_spreadsheets = fields.Boolean(
         string='MuK AI Dashboard',
         help='Build and edit spreadsheet dashboards in a chat.',
