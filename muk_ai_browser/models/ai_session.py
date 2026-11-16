@@ -141,6 +141,26 @@ class AISession(models.Model):
         )
         return attachment if attachment.has_access('read') else attachment.browse()
 
+    def _browser_file_target(
+        self, arguments: dict, file: dict
+    ) -> tuple[models.BaseModel, bytes]:
+        """Return the record a fetched file is saved on and the file's content.
+
+        :raise UserError: when the file is too large or the record is gone
+        """
+        raw = base64.b64decode(file.get('data') or '', validate=True)
+        if len(raw) > self.BROWSER_FILE_LIMIT:
+            raise UserError(self.env._('The file is larger than 20 MB.'))
+        record = (
+            self.env[arguments.get('res_model')]
+            .browse(int(arguments.get('res_id')))
+            .exists()
+        )
+        if not record:
+            raise UserError(self.env._('The record to attach the file to is gone.'))
+        record.check_access('write')
+        return record, raw
+
     def _browser_risky_keyword(self, arguments: dict) -> str | None:
         """Return the configured risky word the call's arguments contain."""
         keywords = (
@@ -546,17 +566,7 @@ class AISession(models.Model):
             return result
         arguments = action.get('arguments') or {}
         try:
-            raw = base64.b64decode(file.get('data') or '', validate=True)
-            if len(raw) > self.BROWSER_FILE_LIMIT:
-                raise UserError(self.env._('The file is larger than 20 MB.'))
-            record = (
-                self.env[arguments.get('res_model')]
-                .browse(int(arguments.get('res_id')))
-                .exists()
-            )
-            if not record:
-                raise UserError(self.env._('The record to attach the file to is gone.'))
-            record.check_access('write')
+            record, raw = self._browser_file_target(arguments, file)
             attachment = self.env['ir.attachment'].create(
                 {
                     'name': str(
