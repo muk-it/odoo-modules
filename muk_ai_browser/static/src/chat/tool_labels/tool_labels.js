@@ -86,6 +86,12 @@ const browserTools = {
         () => _t('Go back'),
         () => '',
     ),
+    browser_save_file: browserTool(
+        'fa-download',
+        () => _t('Save a file to Odoo'),
+        ({ args }) => args.name || args.element || host(args.url),
+    ),
+    browser_upload_file: browserTool('fa-upload', () => _t('Upload a file')),
     browser_propose_plan: browserTool(
         'fa-list-ol',
         () => _t('Propose a plan'),

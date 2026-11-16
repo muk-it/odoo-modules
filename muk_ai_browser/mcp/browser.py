@@ -5,7 +5,13 @@ from typing import Any, NoReturn
 from odoo import _, api, models
 from odoo.exceptions import UserError
 
-from odoo.addons.muk_ai_browser.tools.schema import CLIENT_META, TARGET, TRUSTED, schema
+from odoo.addons.muk_ai_browser.tools.schema import (
+    CLIENT_META,
+    TAB,
+    TARGET,
+    TRUSTED,
+    schema,
+)
 from odoo.addons.muk_mcp.core.tool import mcp_tool
 
 
@@ -65,6 +71,7 @@ class BrowserTools(models.AbstractModel):
                 'description': 'Maximum characters of the snapshot.',
                 'default': 20000,
             },
+            **TAB,
         ),
         category='read',
         registry='odoo',
@@ -89,6 +96,7 @@ class BrowserTools(models.AbstractModel):
                 'description': 'Maximum matching elements.',
                 'default': 20,
             },
+            **TAB,
         ),
         category='read',
         registry='odoo',
@@ -340,6 +348,55 @@ class BrowserTools(models.AbstractModel):
     def _mcp_browser_navigate_back(self, **kwargs: Any) -> NoReturn:
         """Go back (client-executed)."""
         self._client_only('browser_navigate_back')
+
+    @api.model
+    @mcp_tool(
+        name='browser_save_file',
+        description=(
+            'Save a file from the web as an attachment of an Odoo record: the '
+            'file a link or image points to (ref), a file URL, or without both '
+            'the page itself when it is a PDF or an image. Returns the attachment.'
+        ),
+        input_schema=schema(
+            ['res_model', 'res_id'],
+            ref=TARGET['ref'],
+            element=TARGET['element'],
+            url={'type': 'string', 'description': 'URL of the file.'},
+            res_model={'type': 'string', 'description': 'Model of the record.'},
+            res_id={'type': 'integer', 'description': 'Id of the record.'},
+            name={'type': 'string', 'description': 'File name to store it under.'},
+        ),
+        category='write',
+        registry='odoo',
+        meta=CLIENT_META,
+    )
+    def _mcp_browser_save_file(self, **kwargs: Any) -> NoReturn:
+        """Save a web file into Odoo (client-executed)."""
+        self._client_only('browser_save_file')
+
+    @api.model
+    @mcp_tool(
+        name='browser_upload_file',
+        description=(
+            'Put an Odoo attachment into a file field of the page, marked '
+            '[file] in the snapshot, such as an upload on a supplier or customer '
+            'portal. The user approves every upload.'
+        ),
+        input_schema=schema(
+            ['ref', 'element', 'attachment_id'],
+            **TARGET,
+            attachment_id={
+                'type': 'integer',
+                'description': 'The ir.attachment to upload.',
+            },
+        ),
+        category='write',
+        registry='odoo',
+        meta=CLIENT_META,
+    )
+    def _mcp_browser_upload_file(self, **kwargs: Any) -> NoReturn:
+        """Upload an Odoo file into the page (client-executed)."""
+        self._client_only('browser_upload_file')
 
     @api.model
     @mcp_tool(

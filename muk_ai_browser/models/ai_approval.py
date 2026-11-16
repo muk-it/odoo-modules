@@ -27,7 +27,7 @@ class AIApproval(models.Model):
             'properties': [
                 self._build_property(None, key, value)
                 for key, value in arguments.items()
-                if key not in ('ref', 'trusted')
+                if key not in ('ref', 'trusted', 'attachment_id')
             ],
         }
 

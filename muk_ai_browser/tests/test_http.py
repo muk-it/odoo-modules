@@ -182,3 +182,81 @@ class TestHttp(HttpCase):
         self._user('browser-portal', 'base.group_portal')
         self.authenticate('browser-portal', 'browser-portal')
         self.assertEqual(self.url_open('/muk_ai_browser/connect').status_code, 403)
+
+    def test_the_browser_reads_the_card_reports_tabs_and_fetches_only_an_upload(self):
+        user = self._user('browser-f')
+        key = self._pair('browser-f')
+        chat_id = self._call('/muk_ai_browser/session', key, {}).json()[
+            'browser_session_id'
+        ]
+        self.env['res.partner'].create(
+            {'name': 'Shop', 'website': 'shop.card-test.org'}
+        )
+        card = self._call(
+            '/muk_ai_browser/card', key, {'url': 'https://shop.card-test.org/p'}, 'GET'
+        )
+        self.assertEqual(card.json()['partner']['name'], 'Shop')
+        self.assertEqual(
+            self._call('/muk_ai_browser/card', None, {'url': 'x'}, 'GET').status_code,
+            401,
+        )
+        tabs = '[{"id": 4, "origin": "https://Shop.example.com/a"}, {"id": "x"}]'
+        self._call(
+            '/muk_ai_browser/events',
+            key,
+            {'browser_session_id': chat_id, 'tabs': tabs},
+            'GET',
+        )
+        chat = self.env['muk_ai.session'].browse(int(chat_id))
+        self.assertEqual(
+            chat.browser_key_id.browser_tabs,
+            [{'id': 4, 'origin': 'https://shop.example.com'}],
+        )
+        attachment = (
+            self.env['ir.attachment']
+            .with_user(user)
+            .create({'name': 'Quote.pdf', 'raw': b'%PDF quote'})
+        )
+        hidden = self.env['ir.attachment'].create(
+            {
+                'name': 'Secret.pdf',
+                'raw': b'%PDF secret',
+                'res_model': 'ir.config_parameter',
+                'res_id': self.env['ir.config_parameter'].search([], limit=1).id,
+            }
+        )
+        chat.pending_ask = {
+            'kind': 'client_action',
+            'actions': [
+                {
+                    'call_id': 'c1',
+                    'name': 'browser_upload_file',
+                    'arguments': {'attachment_id': attachment.id},
+                },
+                {
+                    'call_id': 'c2',
+                    'name': 'browser_click',
+                    'arguments': {'attachment_id': attachment.id},
+                },
+                {
+                    'call_id': 'c4',
+                    'name': 'browser_upload_file',
+                    'arguments': {'attachment_id': hidden.id},
+                },
+            ],
+        }
+        responses = {
+            call_id: self._call(
+                '/muk_ai_browser/file',
+                key,
+                {'browser_session_id': chat_id, 'call_id': call_id},
+                'GET',
+            )
+            for call_id in ('c1', 'c2', 'c3', 'c4')
+        }
+        self.assertEqual(
+            [response.status_code for response in responses.values()],
+            [200, 404, 404, 404],
+        )
+        self.assertEqual(responses['c1'].content, b'%PDF quote')
+        self.assertIn('Quote.pdf', responses['c1'].headers['Content-Disposition'])

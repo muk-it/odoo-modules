@@ -28,8 +28,14 @@ its log stay in your Odoo.
   naming the sites it needs.
 - **Allow, ask or block per site**: rules for one user or for everyone; form
   submits and words like pay or delete always ask first.
+- **The site in Odoo at a glance**: a bar above the chat names the company in
+  Odoo behind the site you look at, opens it, or offers to create it.
+- **Selected text to the chat**: right-click a selection and ask about it or
+  turn it into a contact; Alt+M opens the side panel.
+- **Files both ways**: saves a PDF or image from the web onto an Odoo record,
+  and puts an Odoo attachment into a site's upload field after you approve.
 - **Never the risky fields**: it never types into password, payment card or
-  one-time code fields and never uploads a file.
+  one-time code fields, and every upload asks first.
 
 ![The Site Permissions list beside a web order form filled from an Odoo contact](static/description/screenshot_sites.png)
 
