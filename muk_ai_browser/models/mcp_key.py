@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import secrets
 
 from odoo import api, fields, models
@@ -28,6 +29,13 @@ class MCPKey(models.Model):
         readonly=True,
     )
 
+    browser_tabs = fields.Json(
+        string='Browser Tabs',
+        help='Tabs of the agent in the browser, as ids and origins.',
+        readonly=True,
+        copy=False,
+    )
+
     # ----------------------------------------------------------
     # Setup
     # ----------------------------------------------------------
@@ -38,7 +46,8 @@ class MCPKey(models.Model):
         self.env.cr.execute(
             SQL(
                 'ALTER TABLE %s ADD COLUMN IF NOT EXISTS browser BOOLEAN, '
-                'ADD COLUMN IF NOT EXISTS browser_extension VARCHAR',
+                'ADD COLUMN IF NOT EXISTS browser_extension VARCHAR, '
+                'ADD COLUMN IF NOT EXISTS browser_tabs JSONB',
                 SQL.identifier(self._table),
             ),
         )
@@ -92,6 +101,23 @@ class MCPKey(models.Model):
             },
         )
         return key, raw
+
+    def _browser_set_tabs(self, tabs: str | None) -> None:
+        """Record the agent's tabs the browser reports as JSON ids and origins."""
+        try:
+            reported = json.loads(tabs or '[]')
+        except ValueError:
+            return
+        if not isinstance(reported, list):
+            return
+        origin_of = self.env['muk_ai.session']._browser_origin_of
+        known = [
+            {'id': tab['id'], 'origin': origin_of(tab.get('origin'))}
+            for tab in reported[:50]
+            if isinstance(tab, dict) and isinstance(tab.get('id'), int)
+        ]
+        if known != (self.browser_tabs or []):
+            self.sudo().browser_tabs = known
 
     @api.model
     def _browser_extensions(self, user: models.BaseModel) -> list[str]:

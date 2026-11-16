@@ -1,4 +1,4 @@
-import { useEffect } from '@odoo/owl';
+import { useEffect, useExternalListener } from '@odoo/owl';
 
 import { _t } from '@web/core/l10n/translation';
 import { patch } from '@web/core/utils/patch';
@@ -64,7 +64,36 @@ patch(AIChat.prototype, {
                 },
                 () => [this.session.state.sessionId],
             );
+            useExternalListener(window, 'message', (event) =>
+                this.onExtensionMessage(event),
+            );
         }
+    },
+    /**
+     * Put the text the extension's side panel sends into the composer.
+     * @param {MessageEvent} event
+     */
+    onExtensionMessage(event) {
+        const { type, text } = event.data || {};
+        if (
+            event.source === window.parent &&
+            event.origin === extension &&
+            type === 'muk_ai_browser.compose' &&
+            typeof text === 'string'
+        ) {
+            this.compose(text);
+        }
+    },
+    /**
+     * Put a text into the composer of the open chat, starting one when none is.
+     * @param {string} text
+     */
+    async compose(text) {
+        if (!this.session.state.sessionId) {
+            await this.onNewSession();
+        }
+        this.session.state.input = text;
+        this.session.state.focusToken += 1;
     },
     get suggestions() {
         return embedded ? pageSuggestions() : super.suggestions;

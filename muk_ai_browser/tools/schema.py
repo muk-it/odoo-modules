@@ -18,6 +18,16 @@ TARGET = {
     },
 }
 
+TAB = {
+    'tab_id': {
+        'type': 'integer',
+        'description': (
+            'Another tab of the "MuK AI" group to read, by its id from '
+            "browser_tabs, without switching to it. By default the agent's tab."
+        ),
+    },
+}
+
 TRUSTED = {
     'trusted': {
         'type': 'boolean',
