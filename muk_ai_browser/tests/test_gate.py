@@ -31,6 +31,9 @@ class TestGate(BrowserTestCommon):
 
     def test_each_call_runs_asks_or_is_refused_by_site_plan_and_risk(self):
         click = {'ref': 'e1', 'element': 'Add to cart'}
+        attachment = self.env['ir.attachment'].create(
+            {'name': 'Quote.pdf', 'raw': b'%PDF'}
+        )
         for label, rule, plan, name, arguments, outcome in (
             ('reading never asks', 'ask', None, 'browser_read_page', {}, 'client'),
             ('acting asks by default', None, None, 'browser_click', click, 'ask'),
@@ -131,6 +134,30 @@ class TestGate(BrowserTestCommon):
                 {'url': 'https://evil.example.org/x'},
                 'deny',
             ),
+            (
+                'reading another tab is judged on its own site',
+                'allow',
+                None,
+                'browser_read_page',
+                {'tab_id': 7},
+                'deny',
+            ),
+            (
+                'saving a file acts like any action',
+                'allow',
+                None,
+                'browser_save_file',
+                {'res_model': 'res.partner', 'res_id': 1},
+                'client',
+            ),
+            (
+                'an upload asks even inside a plan',
+                'allow',
+                [SHOP],
+                'browser_upload_file',
+                {'ref': 'e1', 'element': 'Invoice', 'attachment_id': attachment.id},
+                'ask',
+            ),
         ):
             with self.subTest(label):
                 if rule:
@@ -138,6 +165,9 @@ class TestGate(BrowserTestCommon):
                 self._rule('*.example.org', 'block')
                 chat = self._browser_chat(SHOP)
                 chat.browser_plan = {'origins': plan} if plan else False
+                chat.browser_key_id.browser_tabs = [
+                    {'id': 7, 'origin': 'https://evil.example.org'}
+                ]
                 self._run(chat, name, arguments)
                 kind = (chat.pending_ask or {}).get('kind')
                 if outcome == 'deny':
@@ -149,6 +179,31 @@ class TestGate(BrowserTestCommon):
                         kind, {'client': 'client_action', 'ask': 'approval'}[outcome]
                     )
                 self.env['muk_ai_browser.permission'].search([]).unlink()
+
+    def test_an_upload_names_its_file_and_needs_a_readable_attachment(self):
+        attachment = self.env['ir.attachment'].create(
+            {'name': 'Quote.pdf', 'raw': b'%PDF'}
+        )
+        upload = {'ref': 'e1', 'element': 'Upload'}
+        chat = self._run(
+            self._browser_chat(SHOP),
+            'browser_upload_file',
+            {**upload, 'attachment_id': attachment.id},
+        )
+        self.assertEqual(
+            chat.pending_ask['risk']['reason'],
+            f'The assistant wants to upload Quote.pdf to {SHOP}.',
+        )
+        self.assertEqual(
+            [row['field'] for row in chat.pending_ask['preview']['properties']],
+            ['origin', 'element'],
+        )
+        chat = self._run(
+            self._browser_chat(SHOP),
+            'browser_upload_file',
+            {**upload, 'attachment_id': attachment.id + 1000},
+        )
+        self.assertIn('not run: attachment', self._tool_output(chat, 'c0')['error'])
 
     def test_acting_in_the_own_odoo_does_not_ask_for_the_site(self):
         odoo = self.env['muk_ai.session']._browser_origin_of(
@@ -227,3 +282,14 @@ class TestGate(BrowserTestCommon):
                     chat.browser_plan['origins'], [SHOP, 'https://pay.example.com']
                 )
                 self.assertEqual(chat.state, 'done')
+
+    def test_a_running_turn_keeps_the_page_until_its_result(self):
+        for state, origin in (
+            ('running', SHOP),
+            ('waiting', 'https://other.example.com'),
+        ):
+            with self.subTest(state):
+                chat = self._browser_chat(SHOP)
+                chat.state = state
+                chat._browser_set_origin('https://other.example.com/page')
+                self.assertEqual(chat.browser_origin, origin)

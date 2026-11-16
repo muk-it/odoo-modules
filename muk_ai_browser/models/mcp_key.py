@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 from odoo import api, fields, models
 from odoo.fields import Domain
 from odoo.http import request
@@ -24,6 +26,13 @@ class MCPKey(models.Model):
         string='Browser Extension',
         help='Origin of the paired extension, allowed to show the chat in its panel.',
         readonly=True,
+    )
+
+    browser_tabs = fields.Json(
+        string='Browser Tabs',
+        help='Tabs of the agent in the browser, as ids and origins.',
+        readonly=True,
+        copy=False,
     )
 
     # ----------------------------------------------------------
@@ -64,6 +73,23 @@ class MCPKey(models.Model):
         key, raw = self.with_user(user)._generate(label, 'write', 0)
         key.write({'browser': True, 'browser_extension': extension})
         return key, raw
+
+    def _browser_set_tabs(self, tabs: str | None) -> None:
+        """Record the agent's tabs the browser reports as JSON ids and origins."""
+        try:
+            reported = json.loads(tabs or '[]')
+        except ValueError:
+            return
+        if not isinstance(reported, list):
+            return
+        origin_of = self.env['muk_ai.session']._browser_origin_of
+        known = [
+            {'id': tab['id'], 'origin': origin_of(tab.get('origin'))}
+            for tab in reported[:50]
+            if isinstance(tab, dict) and isinstance(tab.get('id'), int)
+        ]
+        if known != (self.browser_tabs or []):
+            self.sudo().browser_tabs = known
 
     @api.model
     def _browser_extensions(self, user: models.BaseModel) -> list[str]:

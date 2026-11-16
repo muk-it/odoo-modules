@@ -68,6 +68,12 @@ Object.assign(toolLabels, {
         host(args.url),
     ),
     browser_navigate_back: browserTool('arrow_back', _t('Go back'), () => ''),
+    browser_save_file: browserTool(
+        'download',
+        _t('Save a file to Odoo'),
+        ({ args }) => args.name || args.element || host(args.url),
+    ),
+    browser_upload_file: browserTool('upload', _t('Upload a file')),
     browser_propose_plan: browserTool('assignment', _t('Propose a plan'), ({ args }) =>
         (args.origins || []).map(host).join(', '),
     ),

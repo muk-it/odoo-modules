@@ -8,6 +8,7 @@ from werkzeug.exceptions import Forbidden
 from odoo import http, models
 from odoo.exceptions import UserError
 from odoo.http import Response, request
+from odoo.http.stream import content_disposition
 
 
 def extension_route(path: str, methods: tuple[str, ...] = ('POST',)) -> Callable:
@@ -167,7 +168,40 @@ class BrowserController(http.Controller):
         if not (chat := self._chat(body)):
             return self._not_found()
         chat._browser_set_origin(body.get('origin'))
+        request._mcp_key._browser_set_tabs(body.get('tabs'))
         return request.make_json_response(chat._browser_poll())
+
+    @extension_route('/muk_ai_browser/card', methods=('GET',))
+    def card(self, **kw: Any) -> Response:
+        """Name the company in Odoo behind the site of a page the browser shows."""
+        url = self._body(**kw).get('url')
+        return request.make_json_response(
+            request.env['muk_ai_browser.card']._lookup(
+                url if isinstance(url, str) else ''
+            )
+        )
+
+    @extension_route('/muk_ai_browser/file', methods=('GET',))
+    def file(self, **kw: Any) -> Response:
+        """Send the attachment a pending ``browser_upload_file`` call puts into a page."""
+        body = self._body(**kw)
+        chat = self._chat(body)
+        action = chat._browser_pending_action(body.get('call_id')) if chat else {}
+        attachment = (
+            chat._browser_attachment(action['arguments'].get('attachment_id'))
+            if action.get('name') == 'browser_upload_file'
+            else request.env['ir.attachment']
+        )
+        if not attachment:
+            return request.make_json_response({'error': 'file_not_found'}, status=404)
+        return request.make_response(
+            attachment.raw.content,
+            headers=[
+                ('Content-Type', attachment.mimetype or 'application/octet-stream'),
+                ('Content-Disposition', content_disposition(attachment.name)),
+                ('Cache-Control', 'no-store'),
+            ],
+        )
 
     @extension_route('/muk_ai_browser/result')
     def result(self, **kw: Any) -> Response:
@@ -176,7 +210,7 @@ class BrowserController(http.Controller):
         if not (chat := self._chat(body)):
             return self._not_found()
         chat._browser_set_origin(body.get('origin'))
-        result = body.get('result')
+        result = chat._browser_store_file(body.get('call_id'), body.get('result'))
         try:
             snapshot = chat.submit_client_result(
                 body.get('call_id'),
