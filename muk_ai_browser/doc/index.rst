@@ -68,8 +68,15 @@ submit, and when a step reads like one of the words that always ask. The
 agent's own Odoo counts as allowed. For a task of several steps the agent
 proposes a plan with its steps and sites; once approved, it acts on those
 sites without asking step by step. It never types into password, payment card
-or one-time code fields and never uploads files. Every step is kept in the
-chat in Odoo.
+or one-time code fields, and every upload of an Odoo file into a site asks
+first. Every step is kept in the chat in Odoo.
+
+A bar above the chat names the company in Odoo whose website or email is on
+the site of the agent's tab, with a button to open it, or offers to create it.
+The agent reads other tabs of its group without switching to them, and saves a
+file from the web, such as a supplier's PDF invoice, as an attachment of an
+Odoo record. Right-click selected text on any page to ask about it or turn it
+into a contact; Alt+M opens the side panel.
 
 Credits
 =======
