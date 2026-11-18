@@ -246,7 +246,7 @@ class TestGenerateImage(AITestCommon):
         self.assertIn(
             b'Iptc4xmpExt:DigitalSourceType="http://cv.iptc.org/newscodes/'
             b'digitalsourcetype/trainedAlgorithmicMedia"',
-            image.info['xmp'],
+            attachment.raw.content,
         )
         self.assertAlmostEqual(session.total_cost, 0.25)
         self.assertEqual(
