@@ -167,7 +167,7 @@ class TestAiOpenAIProvider(AITestCommon):
         self.assertEqual(captured['body']['reasoning']['effort'], 'high')
 
     def test_minimal_effort_clamped_up_by_model_floor(self):
-        self._create_model('o3-test', reasoning_efforts=['low', 'medium', 'high'])
+        self._create_model('gpt-6-test', reasoning_efforts=['low', 'medium', 'high'])
         captured = {}
 
         def fake_post(url, **kwargs):
@@ -178,7 +178,7 @@ class TestAiOpenAIProvider(AITestCommon):
 
         with patch.object(requests.Session, 'post', side_effect=fake_post):
             self.provider._request_responses(
-                inputs=[], model='o3-test', reasoning_effort='minimal'
+                inputs=[], model='gpt-6-test', reasoning_effort='minimal'
             )
         self.assertEqual(captured['body']['reasoning']['effort'], 'low')
 
@@ -452,8 +452,8 @@ class TestAiOpenAIProvider(AITestCommon):
             return self._mock_http_response({'output': [], 'usage': {}})
 
         with patch.object(requests.Session, 'post', side_effect=fake_post):
-            self.provider._request_responses(inputs=[], model='gpt-4o')
-        self.assertEqual(captured['body']['model'], 'gpt-4o')
+            self.provider._request_responses(inputs=[], model='gpt-5.5')
+        self.assertEqual(captured['body']['model'], 'gpt-5.5')
 
     def test_openai_injects_web_search_tool(self):
         captured = {}
@@ -700,7 +700,10 @@ class TestAiOpenAIProvider(AITestCommon):
                         'usage': {
                             'input_tokens': 11,
                             'output_tokens': 4,
-                            'input_tokens_details': {'cached_tokens': 3},
+                            'input_tokens_details': {
+                                'cached_tokens': 3,
+                                'cache_write_tokens': 5,
+                            },
                         },
                     },
                 },
@@ -723,7 +726,13 @@ class TestAiOpenAIProvider(AITestCommon):
         self.assertEqual(result['tool_calls'][0]['arguments'], {'a': 1})
         self.assertEqual(result['carry_inputs'][0]['type'], 'function_call')
         self.assertEqual(result['usage']['input_tokens'], 11)
-        self.assertEqual(result['usage']['cache_read_tokens'], 3)
+        self.assertEqual(
+            (
+                result['usage']['cache_read_tokens'],
+                result['usage']['cache_write_tokens'],
+            ),
+            (3, 5),
+        )
 
     def test_stream_renders_code_interpreter_on_item_done(self):
         response = self._mock_stream_response(

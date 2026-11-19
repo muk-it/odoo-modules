@@ -13,8 +13,6 @@ from odoo.addons.muk_mcp.tools.schema import to_strict_schema
 GROUNDING_TOOL_KEY = 'googleSearch'
 CODE_EXECUTION_TOOL_KEY = 'codeExecution'
 
-LEGACY_TOOL_MODEL_PREFIXES = ('gemini-1.', 'gemini-2.')
-
 IMAGE_ASPECT_RATIOS = {
     f'{width}:{height}': width / height
     for width, height in (
@@ -31,22 +29,13 @@ IMAGE_ASPECT_RATIOS = {
     )
 }
 
-THINKING_LEVELS = {
-    'minimal': 'low',
-    'low': 'low',
-    'medium': 'medium',
-    'high': 'high',
-    'xhigh': 'high',
-    'max': 'high',
-}
-
 
 class GoogleProvider(ProviderBase):
     """Google Gemini generateContent adapter with grounding and streaming."""
 
     name = 'google'
     label = 'Google'
-    default_model = 'gemini-3.8-flash'
+    default_model = 'gemini-4-hydrogen'
     default_url = 'https://generativelanguage.googleapis.com/v1beta'
 
     supports_web_search = True
@@ -106,8 +95,8 @@ class GoogleProvider(ProviderBase):
             gen_cfg['responseMimeType'] = 'application/json'
             gen_cfg['responseJsonSchema'] = text_schema['schema']
         thinking = {'includeThoughts': True}
-        if level := THINKING_LEVELS.get((extra or {}).get('reasoning_effort')):
-            thinking['thinkingLevel'] = level
+        if effort := (extra or {}).get('reasoning_effort'):
+            thinking['thinkingLevel'] = effort
         gen_cfg['thinkingConfig'] = thinking
         body['generationConfig'] = gen_cfg
         tools = self._tools_to_google(tools_schema)
@@ -119,7 +108,7 @@ class GoogleProvider(ProviderBase):
             )
             if enabled
         ]
-        if tools and builtin and self.serves_builtin_tools(model):
+        if tools and builtin:
             body['toolConfig'] = {'includeServerSideToolInvocations': True}
         if tools or builtin:
             body['tools'] = tools + builtin
@@ -137,15 +126,6 @@ class GoogleProvider(ProviderBase):
             return self._stream(path, body, on_delta)
         path = f'/models/{model}:generateContent'
         return self._parse_response(self._post_json(path, body))
-
-    def serves_builtin_tools(self, model: str) -> bool:
-        """Return whether the model runs built-in tools next to function calling.
-
-        Gemini 3 serves grounding and code execution alongside the declared
-        functions; earlier generations reject both the combination and the
-        ``toolConfig`` opt-in.
-        """
-        return not model.startswith(LEGACY_TOOL_MODEL_PREFIXES)
 
     def generate_image(
         self,
@@ -222,9 +202,9 @@ class GoogleProvider(ProviderBase):
 
         Gemini rejects an unsigned ``functionCall`` part in a model turn, so a
         call this adapter did not sign replays as transcript text together with
-        its result.
+        its result. A result answers its call by the ``id`` Gemini gave it.
         """
-        call_names = {}
+        call_names, call_ids = {}, {}
         foreign = set()
         for item in inputs or []:
             if item.get('type') == 'function_call':
@@ -232,7 +212,16 @@ class GoogleProvider(ProviderBase):
                 name = item.get('name')
                 if call_id and name:
                     call_names[call_id] = name
-                if not self._carried_state(item).get('parts'):
+                if parts := self._carried_state(item).get('parts'):
+                    call_ids[call_id] = next(
+                        (
+                            part['functionCall'].get('id')
+                            for part in parts
+                            if 'functionCall' in part
+                        ),
+                        None,
+                    )
+                else:
                     foreign.add(call_id)
 
         system_parts = []
@@ -278,15 +267,10 @@ class GoogleProvider(ProviderBase):
                     response = output
                 else:
                     response = {'output': output}
-                append(
-                    'user',
-                    {
-                        'functionResponse': {
-                            'name': name,
-                            'response': response,
-                        },
-                    },
-                )
+                answer = {'name': name, 'response': response}
+                if gemini_id := call_ids.get(call_id):
+                    answer['id'] = gemini_id
+                append('user', {'functionResponse': answer})
                 continue
             if role == 'assistant':
                 for part in self._content_to_google(item.get('content')):

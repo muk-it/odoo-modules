@@ -13,6 +13,8 @@ from odoo.tools import mute_logger
 from odoo.addons.muk_ai.providers.anthropic import AnthropicProvider
 from odoo.addons.muk_ai.tests.common import AITestCommon
 
+ADAPTIVE = {'type': 'adaptive', 'display': 'summarized'}
+
 
 class TestAiAnthropicProvider(AITestCommon):
     """Verify the Anthropic provider request building, parsing, and streaming."""
@@ -90,20 +92,16 @@ class TestAiAnthropicProvider(AITestCommon):
 
     def test_adaptive_thinking_uses_reasoning_effort(self):
         body = self._capture_request_body('claude-opus-4-8', 'low')
-        self.assertEqual(body['thinking'], {'type': 'adaptive'})
+        self.assertEqual(body['thinking'], ADAPTIVE)
         self.assertEqual(body['output_config'], {'effort': 'low'})
 
-    def test_a_response_schema_constrains_the_models_that_take_one(self):
+    def test_a_response_schema_constrains_claude_models(self):
         schema = {'name': 'answer', 'schema': {'type': 'object'}}
+        constrained = {'type': 'json_schema', 'schema': {'type': 'object'}}
         for model, output in (
-            (
-                'claude-opus-4-8',
-                {
-                    'effort': 'medium',
-                    'format': {'type': 'json_schema', 'schema': {'type': 'object'}},
-                },
-            ),
-            ('claude-3-5-haiku', None),
+            ('claude-opus-4-8', {'effort': 'medium', 'format': constrained}),
+            ('claude-haiku-4-5', {'format': constrained}),
+            ('open-model', None),
         ):
             with self.subTest(model=model):
                 body = self._capture_request_body(model, text_schema=schema)
@@ -113,23 +111,9 @@ class TestAiAnthropicProvider(AITestCommon):
         body = self._capture_request_body('claude-opus-4-8')
         self.assertEqual(body['output_config'], {'effort': 'medium'})
 
-    def test_legacy_thinking_low_effort_disables_thinking(self):
-        body = self._capture_request_body('claude-opus-4-5', 'low')
-        self.assertNotIn('thinking', body)
-
-    def test_legacy_thinking_budget_scales_with_effort(self):
-        default = self._capture_request_body('claude-opus-4-5')
-        self.assertEqual(default['thinking']['budget_tokens'], 1024)
-        high = self._capture_request_body('claude-opus-4-5', 'high')
-        self.assertEqual(high['thinking']['budget_tokens'], 4096)
-
-    def test_legacy_thinking_budget_follows_the_catalogue_tiers(self):
-        body = self._capture_request_body('claude-opus-4-5', 'max')
-        self.assertEqual(body['thinking']['budget_tokens'], 4096)
-
     def test_sonnet_4_6_uses_adaptive_thinking_with_effort(self):
         body = self._capture_request_body('claude-sonnet-4-6', 'high')
-        self.assertEqual(body['thinking'], {'type': 'adaptive'})
+        self.assertEqual(body['thinking'], ADAPTIVE)
         self.assertEqual(body['output_config'], {'effort': 'high'})
 
     def test_adaptive_thinking_maps_minimal_to_low(self):
@@ -140,10 +124,10 @@ class TestAiAnthropicProvider(AITestCommon):
         body = self._capture_request_body('claude-opus-4-8', 'xhigh')
         self.assertEqual(body['output_config'], {'effort': 'xhigh'})
 
-    def test_fable_and_sonnet_5_use_adaptive_thinking(self):
-        for model in ('claude-fable-5', 'claude-sonnet-5'):
+    def test_fable_sonnet_5_and_haiku_5_use_adaptive_thinking(self):
+        for model in ('claude-fable-5', 'claude-sonnet-5', 'claude-haiku-5-5'):
             body = self._capture_request_body(model, 'low')
-            self.assertEqual(body['thinking'], {'type': 'adaptive'})
+            self.assertEqual(body['thinking'], ADAPTIVE)
             self.assertEqual(body['output_config'], {'effort': 'low'})
 
     @mute_logger('odoo.addons.muk_ai.providers.base')
@@ -584,16 +568,31 @@ class TestAiAnthropicProvider(AITestCommon):
             ],
         )
 
-    def test_unsigned_thinking_is_dropped_rather_than_replayed(self):
-        body = self._anthropic_body('answer')
-        body['content'].insert(
-            0, {'type': 'thinking', 'thinking': 'unsigned', 'signature': ''}
-        )
-        with patch.object(
-            requests.Session, 'post', return_value=self._mock_http_response(body)
+    def test_only_signed_thinking_is_replayed(self):
+        for block, blocks in (
+            ({'type': 'thinking', 'thinking': 'unsigned', 'signature': ''}, None),
+            (
+                {'type': 'thinking', 'signature': 'sig-1'},
+                [
+                    {'type': 'thinking', 'thinking': '', 'signature': 'sig-1'},
+                    {'type': 'text', 'text': 'answer'},
+                ],
+            ),
         ):
-            result = self.provider._request_responses(inputs=[])
-        self.assertNotIn('unsigned', str(result['carry_inputs']))
+            with self.subTest(block=block):
+                body = self._anthropic_body('answer')
+                body['content'].insert(0, block)
+                with patch.object(
+                    requests.Session,
+                    'post',
+                    return_value=self._mock_http_response(body),
+                ):
+                    result = self.provider._request_responses(inputs=[])
+                carry = result['carry_inputs'][0]
+                self.assertEqual(
+                    carry.get('provider_state', {}).get('anthropic', {}).get('blocks'),
+                    blocks,
+                )
 
     def test_a_thinking_only_turn_still_carries_its_signature(self):
         body = self._anthropic_body('', tool_uses=[('toolu_1', 'do_x', {'a': 1})])

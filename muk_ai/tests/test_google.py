@@ -51,13 +51,16 @@ class TestAiGoogleProvider(AITestCommon):
         name: str,
         args: dict,
         signature: str | None = None,
+        gemini_id: str | None = None,
     ) -> dict:
         """Build a ``functionCall`` response part, signed when Gemini 3 would sign it.
 
         :param signature: the ``thoughtSignature`` the wire delivers next to
             the call, omitted for the generations that emit none
+        :param gemini_id: the ``id`` Gemini gives the call, omitted when it gives none
         """
-        part = {'functionCall': {'name': name, 'args': args}}
+        call = {'name': name, 'args': args}
+        part = {'functionCall': {**call, 'id': gemini_id} if gemini_id else call}
         if signature:
             part['thoughtSignature'] = signature
         return part
@@ -68,6 +71,7 @@ class TestAiGoogleProvider(AITestCommon):
         args: dict,
         call_id: str,
         signature: str | None = None,
+        gemini_id: str | None = None,
     ) -> dict:
         """Build a stored function-call item as a Google round would carry it.
 
@@ -82,7 +86,11 @@ class TestAiGoogleProvider(AITestCommon):
         }
         if signature:
             item['provider_state'] = {
-                'google': {'parts': [self._function_call_part(name, args, signature)]}
+                'google': {
+                    'parts': [
+                        self._function_call_part(name, args, signature, gemini_id)
+                    ]
+                }
             }
         return item
 
@@ -267,7 +275,7 @@ class TestAiGoogleProvider(AITestCommon):
         self.assertEqual(result['text'], 'ok')
         self.assertEqual(record.reasoning_efforts, ['low', 'medium', 'high'])
 
-    def test_thinking_level_not_sent_for_gemini_2_5(self):
+    def test_minimal_effort_reaches_the_models_that_take_it(self):
         captured = {}
 
         def fake_post(url, **kwargs):
@@ -279,11 +287,13 @@ class TestAiGoogleProvider(AITestCommon):
                 inputs=[
                     {'role': 'user', 'content': [{'type': 'input_text', 'text': 'hi'}]}
                 ],
-                model='gemini-2.5-flash',
-                reasoning_effort='low',
+                model='gemini-3.6-flash',
+                reasoning_effort='minimal',
             )
-        thinking = captured['body']['generationConfig']['thinkingConfig']
-        self.assertNotIn('thinkingLevel', thinking)
+        self.assertEqual(
+            captured['body']['generationConfig']['thinkingConfig'],
+            {'includeThoughts': True, 'thinkingLevel': 'minimal'},
+        )
 
     @mute_logger('odoo.addons.muk_ai.providers.base')
     def test_thinking_error_retries_once_without_thinking_config(self):
@@ -354,6 +364,23 @@ class TestAiGoogleProvider(AITestCommon):
         self.assertEqual(
             contents[1]['parts'][0]['functionResponse']['response'],
             {'ok': True},
+        )
+
+    def test_function_response_answers_its_call_by_gemini_id(self):
+        _system, contents = self.provider._get_client()._inputs_to_contents(
+            [
+                self._carry_item('search_read', {}, 'c1', 'sig-a'),
+                self._carry_item('read_group', {}, 'c2', 'sig-b', 'g2'),
+                {'type': 'function_call_output', 'call_id': 'c1', 'output': '1'},
+                {'type': 'function_call_output', 'call_id': 'c2', 'output': '2'},
+            ]
+        )
+        self.assertEqual(
+            [part['functionResponse'] for part in contents[1]['parts']],
+            [
+                {'name': 'search_read', 'response': {'output': 1}},
+                {'name': 'read_group', 'response': {'output': 2}, 'id': 'g2'},
+            ],
         )
 
     def test_request_sends_messages_shape(self):
@@ -817,8 +844,8 @@ class TestAiGoogleProvider(AITestCommon):
             return self._mock_http_response(self._google_body('ok'))
 
         with patch.object(requests.Session, 'post', side_effect=fake_post):
-            self.provider._request_responses(inputs=[], model='gemini-2.5-pro')
-        self.assertIn('/models/gemini-2.5-pro', captured['url'])
+            self.provider._request_responses(inputs=[], model='gemini-4-hydrogen')
+        self.assertIn('/models/gemini-4-hydrogen', captured['url'])
 
     def test_request_omits_max_tokens_when_zero(self):
         self.provider.max_tokens = 0
@@ -1198,19 +1225,6 @@ class TestAiGoogleProvider(AITestCommon):
             model='gemini-3.8-flash',
         )
         self.assertNotIn('toolConfig', sent)
-
-    def test_gemini_2_5_never_opts_into_server_side_invocations(self):
-        _result, sent = self._run_request(
-            self._google_body('ok'),
-            inputs=[],
-            tools_schema=[{'name': 'search_read', 'description': 'read'}],
-            enable_web_search=True,
-            model='gemini-2.5-flash',
-        )
-        self.assertNotIn('toolConfig', sent)
-        client = self.provider._get_client()
-        self.assertFalse(client.serves_builtin_tools('gemini-2.5-flash'))
-        self.assertTrue(client.serves_builtin_tools('gemini-3.8-flash'))
 
     def test_thought_parts_stream_as_reasoning_and_stay_out_of_the_answer(self):
         result, deltas, _sent = self._run_stream(
