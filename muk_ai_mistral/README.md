@@ -26,12 +26,13 @@ code interpreter and image generation, on Mistral's own API.
   and its output.
 - **Images, PDFs and JSON**: photos and PDF documents as attachments, and
   structured JSON output where a step needs data.
-- **Image generation**: Mistral Medium 3.5 Images is an image model any agent
+- **Image generation**: Mistral Large 4 Images is an image model any agent
   can pick, priced per image.
 - **Reasoning kept apart**: the model's thinking streams beside the answer; an
   answer cut off at the Max Tokens limit says so.
-- **Priced catalogue**: Mistral Large, Medium and Small, Ministral, Codestral
-  and Z.ai GLM come with context windows and prices.
+- **Priced catalogue**: Mistral Large and Small, Ministral, Codestral
+  and the Z.ai GLM and DeepSeek models it hosts come with context windows and
+  prices.
 
 ![The Mistral AI provider form with the API key and the catalogue of models](static/description/screenshot_provider.png)
 

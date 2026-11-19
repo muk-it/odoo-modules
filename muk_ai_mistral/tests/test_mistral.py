@@ -56,7 +56,7 @@ def _mistral_wire(url: str, body: dict) -> dict:
         'tools': [tool['function']['name'] for tool in tools if 'function' in tool],
         'builtin': [tool['type'] for tool in tools if 'function' not in tool],
         'max_tokens': args.get('max_tokens'),
-        'effort': None,
+        'effort': args.get('reasoning_effort'),
         'schema': (args.get('response_format') or {})
         .get('json_schema', {})
         .get('schema'),
@@ -66,7 +66,7 @@ def _mistral_wire(url: str, body: dict) -> dict:
 
 MISTRAL = ProviderCase(
     xmlid='muk_ai_mistral.provider_mistral',
-    model='mistral-small-latest',
+    model='mistral-large-4',
     endpoint='/conversations',
     auth=('Authorization', 'Bearer test-key'),
     builtin=('web_search', 'code_interpreter'),
@@ -135,7 +135,12 @@ class TestMistral(TestProviders):
     allow_inherited_tests_method = True
     cases = {'mistral': MISTRAL}
     attachments = ATTACHMENTS
-    efforts = ()
+    efforts = (
+        ('mistral', 'mistral-large-4', None, 'medium'),
+        ('mistral', 'mistral-large-4', 'xhigh', 'high'),
+        ('mistral', 'zai-glm-5-3', 'medium', 'low'),
+        ('mistral', 'mistral-small-latest', 'high', None),
+    )
 
     # ----------------------------------------------------------
     # Setup
@@ -159,7 +164,7 @@ class TestMistral(TestProviders):
                 provider.default_image_model_id.modality,
                 provider._get_client().api_url,
             ),
-            ('mistral-medium-latest', 'image', 'https://api.mistral.ai/v1'),
+            ('mistral-large-4', 'image', 'https://api.mistral.ai/v1'),
         )
 
     def test_reserved_tool_names_travel_under_a_prefix_and_come_back(self):
@@ -266,7 +271,7 @@ class TestMistral(TestProviders):
                 if error:
                     with self.assertRaisesRegex(UserError, error):
                         client.generate_image(
-                            'mistral-medium-latest',
+                            'mistral-large-4',
                             'a cube',
                             references=[{'mimetype': 'image/png', 'data_b64': PNG}]
                             if label == 'referenced'
@@ -274,7 +279,7 @@ class TestMistral(TestProviders):
                         )
                     self.assertEqual(len(posts), label != 'referenced')
                     continue
-                image = client.generate_image('mistral-medium-latest', 'a cube')
+                image = client.generate_image('mistral-large-4', 'a cube')
             self.assertEqual(
                 (image['mimetype'], image['data_b64']), ('image/png', 'iVBORw0KGgo=')
             )
