@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 from odoo import models
 
+from odoo.addons.muk_ai.providers.google import GoogleProvider
 from odoo.addons.muk_ai.providers.openai import OpenAIProvider
 from odoo.addons.muk_ai.tests.common import ImageCase
 
@@ -17,6 +18,11 @@ class TestCapabilityWarning(ImageCase):
 
     def setUp(self) -> None:
         super().setUp()
+        self.patch(
+            GoogleProvider,
+            'serves_builtin_tools',
+            lambda client, model: model != 'gemini-legacy-capabilities',
+        )
         self.env['ir.config_parameter'].sudo().set_param('muk_ai.search_backend', False)
         self._clear_default_models('image')
         self.agent = self.env['muk_ai.agent'].create(
@@ -205,7 +211,7 @@ class TestCapabilityWarning(ImageCase):
         self.assertFalse(agent.capability_warning)
 
     def test_a_model_that_cannot_run_builtin_search_warns_instead_of_routing(self):
-        agent = self._gemini_agent('gemini-2.5-flash', web_search='auto')
+        agent = self._gemini_agent('gemini-legacy-capabilities', web_search='auto')
         self.assertTrue(self.provider_google.supports_web_search)
         self.assertIsNone(agent._web_search_route())
         self.assertIn(
@@ -214,7 +220,7 @@ class TestCapabilityWarning(ImageCase):
         )
 
     def test_a_backend_serves_the_model_that_cannot_run_builtin_search(self):
-        agent = self._gemini_agent('gemini-2.5-flash', web_search='auto')
+        agent = self._gemini_agent('gemini-legacy-capabilities', web_search='auto')
         self.env['ir.config_parameter'].sudo().set_param(
             'muk_ai.search_backend', 'brave'
         )
@@ -223,7 +229,9 @@ class TestCapabilityWarning(ImageCase):
         self.assertFalse(agent.capability_warning)
 
     def test_a_model_that_cannot_run_code_execution_warns_instead_of_routing(self):
-        agent = self._gemini_agent('gemini-2.5-flash', enable_code_interpreter=True)
+        agent = self._gemini_agent(
+            'gemini-legacy-capabilities', enable_code_interpreter=True
+        )
         self.assertTrue(self.provider_google.supports_code_interpreter)
         self.assertIsNone(agent._code_interpreter_route())
         self.assertIn(

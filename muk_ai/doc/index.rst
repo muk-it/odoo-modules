@@ -15,7 +15,7 @@ approval gate for risky writes, per-agent tool filters, read-only
 scope enforcement, multimodal attachments (images, PDFs, text files),
 lazy tool loading with a per-agent essentials list, agent suggestion
 prompts, field history versioning, and a prebuilt catalog of current
-GPT-5.x/6 / Claude 4.x–5 / Gemini 2.5–3.x models with input, output and
+GPT-5.x/6 / Claude 4.x–5 / Gemini 3.x–4 models with input, output and
 cache (read + write) pricing and per-model reasoning-effort tiers.
 
 It is also the foundation for the rest of the MuK AI suite: the
@@ -120,16 +120,18 @@ leaving the page.
 **Models — MuK AI > Configuration > Models**
 
 The model catalog ships prefilled with current API-available SKUs —
-GPT-6 Astra, the GPT-5.x family (5.1, 5.2, 5.4 + Pro, 5.5 + Pro and
-the 5.6 Sol / Terra / Luna tiers), GPT-4.1 and GPT-4o; Claude (Opus 4.5
-through 5, Sonnet 4.5/4.6 and Sonnet 5, Haiku 4.5, Fable 5 and 5.1);
-and Gemini (2.5 Pro/Flash/Flash-Lite plus the 3.x Flash and Pro tiers).
+the GPT-6 family (6.2 Astra / Sol, 6.1 Terra, 6 Astra / Luna), the
+GPT-5.x family (5.2, 5.4 + Pro / Mini, 5.5 + Pro and the 5.6 Sol / Terra
+/ Luna tiers) and GPT Image 2.6; Claude (Opus 4.6 through 5.5, Sonnet
+4.6 through 5.5, Haiku 4.5 and 5.5, Fable 5 through 5.2); and Gemini
+(the 4 Hydrogen / Neon / Carbon / Argon tiers, the 3.x Flash and Pro
+tiers and Nano Banana 2.1).
 Retired SKUs are dropped as the vendors shut them down, so the list
 stays callable rather than historical.
 Each record carries:
 
 - **Technical Name** — API id (``gpt-5.2``, ``claude-sonnet-5``,
-  ``gemini-3.5-flash``, …).
+  ``gemini-3.6-flash``, …).
 - **Provider** — the parent ``muk_ai.provider``.
 - **Modality** — ``Chat`` or ``Image``; decides which rates apply and
   how usage is billed. The same technical name may be catalogued once

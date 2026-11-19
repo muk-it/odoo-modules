@@ -13,28 +13,14 @@ ANTHROPIC_VERSION = '2023-06-01'
 WEB_SEARCH_TOOL_TYPE = 'web_search_20250305'
 CODE_EXECUTION_TOOL_TYPE = 'code_execution_20250825'
 
-THINKING_MODEL_TOKENS = ('fable-5', 'opus-5', 'opus-4', 'sonnet-5', 'sonnet-4')
-LEGACY_THINKING_MODEL_TOKENS = (
-    'opus-4-5',
-    'sonnet-4-5',
-)
-LEGACY_THINKING_BUDGETS = {
-    'medium': 1024,
-    'high': 4096,
-    'xhigh': 8192,
-    'max': 16384,
-}
-
-STRUCTURED_OUTPUT_MODEL_TOKENS = (
+THINKING_MODEL_TOKENS = (
     'fable-5',
     'opus-5',
-    'opus-4-8',
-    'opus-4-5',
-    'opus-4-1',
+    'opus-4',
     'sonnet-5',
-    'haiku-4-5',
+    'sonnet-4',
+    'haiku-5',
 )
-
 THINKING_BLOCK_TYPES = ('thinking', 'redacted_thinking')
 
 CACHE_CONTROL = {'type': 'ephemeral'}
@@ -45,7 +31,7 @@ class AnthropicProvider(ProviderBase):
 
     name = 'anthropic'
     label = 'Anthropic'
-    default_model = 'claude-sonnet-5'
+    default_model = 'claude-sonnet-5-5'
     default_url = 'https://api.anthropic.com/v1'
 
     supports_web_search = True
@@ -77,39 +63,27 @@ class AnthropicProvider(ProviderBase):
         enable_code_interpreter=False,
         extra=None,
     ) -> dict:
-        """Build and run a Messages request, retrying once without thinking on error."""
+        """Build and run a Messages request.
+
+        A rejected effort is retried once without it; a response schema
+        constrains the answer on Claude models.
+        """
         model = self.model_for(model)
         caching = self._supports_caching(model)
         system_text, messages, anchor = self._inputs_to_messages(inputs)
-        max_tokens = self.max_tokens or 4096
         body = {
             'model': model,
             'messages': messages,
-            'max_tokens': max_tokens,
+            'max_tokens': self.max_tokens or 4096,
         }
+        output = {}
         effort = (extra or {}).get('reasoning_effort')
-        adaptive = self._uses_adaptive_thinking(model)
         if self._supports_thinking(model):
-            if adaptive:
-                body['thinking'] = {'type': 'adaptive'}
-                if effort:
-                    body['output_config'] = {
-                        'effort': 'low' if effort == 'minimal' else effort,
-                    }
-            elif budget := LEGACY_THINKING_BUDGETS.get(effort):
-                if max_tokens <= budget:
-                    body['max_tokens'] = budget + 1024
-                body['thinking'] = {
-                    'type': 'enabled',
-                    'budget_tokens': budget,
-                }
-        if text_schema and any(
-            token in model for token in STRUCTURED_OUTPUT_MODEL_TOKENS
-        ):
-            body.setdefault('output_config', {})['format'] = {
-                'type': 'json_schema',
-                'schema': text_schema['schema'],
-            }
+            body['thinking'] = {'type': 'adaptive', 'display': 'summarized'}
+            if effort:
+                output['effort'] = 'low' if effort == 'minimal' else effort
+        if text_schema and caching:
+            output['format'] = {'type': 'json_schema', 'schema': text_schema['schema']}
         if system_text:
             body['system'] = (
                 [{'type': 'text', 'text': system_text, 'cache_control': CACHE_CONTROL}]
@@ -147,9 +121,11 @@ class AnthropicProvider(ProviderBase):
         try:
             return self._invoke_with_reasoning_retry(
                 model,
-                lambda callback: self._invoke(body, callback),
+                lambda callback: self._invoke(
+                    {**body, **({'output_config': output} if output else {})}, callback
+                ),
                 on_delta,
-                ((body, ('output_config',) if adaptive else ('thinking',)),),
+                ((output, ('effort',)),),
             )
         finally:
             for file_id in uploads:
@@ -174,11 +150,6 @@ class AnthropicProvider(ProviderBase):
     def _supports_caching(model: str) -> bool:
         """Return whether the model supports prompt caching via cache_control."""
         return model.startswith('claude')
-
-    @staticmethod
-    def _uses_adaptive_thinking(model: str) -> bool:
-        """Return whether the model uses adaptive (vs budgeted) thinking."""
-        return not any(token in model for token in LEGACY_THINKING_MODEL_TOKENS)
 
     # ----------------------------------------------------------
     # Inputs
@@ -392,16 +363,19 @@ class AnthropicProvider(ProviderBase):
         """Return the thinking block to replay verbatim, or ``None`` when there is none.
 
         Anthropic validates a thinking block against its own signature, so an
-        unsigned one (a stream cut before ``signature_delta``) is dropped.
+        unsigned one (a stream cut before ``signature_delta``) is dropped; a
+        signed one with omitted text still replays.
         """
         if block.get('type') == 'redacted_thinking':
             data = block.get('data')
             return {'type': 'redacted_thinking', 'data': data} if data else None
-        thinking = block.get('thinking')
-        signature = block.get('signature')
-        if not thinking or not signature:
+        if not (signature := block.get('signature')):
             return None
-        return {'type': 'thinking', 'thinking': thinking, 'signature': signature}
+        return {
+            'type': 'thinking',
+            'thinking': block.get('thinking') or '',
+            'signature': signature,
+        }
 
     @classmethod
     def _assistant_carry(cls, content: list, blocks: list) -> list:

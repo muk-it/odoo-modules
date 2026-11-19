@@ -165,76 +165,31 @@ class TestAiGoogleProvider(AITestCommon):
     # Tests
     # ----------------------------------------------------------
 
-    def test_thinking_level_sent_for_low_effort_on_gemini_3(self):
-        captured = {}
-
-        def fake_post(url, **kwargs):
-            captured['body'] = kwargs.get('json')
-            return self._mock_http_response(self._google_body('ok'))
-
-        with patch.object(requests.Session, 'post', side_effect=fake_post):
-            self.provider._request_responses(
-                inputs=[
-                    {'role': 'user', 'content': [{'type': 'input_text', 'text': 'hi'}]}
-                ],
-                model='gemini-3.8-flash',
-                reasoning_effort='low',
-            )
-        self.assertEqual(
-            captured['body']['generationConfig']['thinkingConfig'],
-            {'includeThoughts': True, 'thinkingLevel': 'low'},
-        )
-
-    def test_unset_effort_keeps_model_default_thinking(self):
-        captured = {}
-
-        def fake_post(url, **kwargs):
-            captured['body'] = kwargs.get('json')
-            return self._mock_http_response(self._google_body('ok'))
-
-        with patch.object(requests.Session, 'post', side_effect=fake_post):
-            self.provider._request_responses(
-                inputs=[
-                    {'role': 'user', 'content': [{'type': 'input_text', 'text': 'hi'}]}
-                ],
-                model='gemini-3.8-flash',
-            )
-        self.assertEqual(
-            captured['body']['generationConfig']['thinkingConfig'],
-            {'includeThoughts': True},
-        )
-
-    def test_extreme_efforts_map_to_supported_levels(self):
-        captured = {}
-
-        def fake_post(url, **kwargs):
-            captured['body'] = kwargs.get('json')
-            return self._mock_http_response(self._google_body('ok'))
-
-        with patch.object(requests.Session, 'post', side_effect=fake_post):
-            self.provider._request_responses(
-                inputs=[
-                    {'role': 'user', 'content': [{'type': 'input_text', 'text': 'hi'}]}
-                ],
-                model='gemini-3.8-flash',
-                reasoning_effort='max',
-            )
-        self.assertEqual(
-            captured['body']['generationConfig']['thinkingConfig'],
-            {'includeThoughts': True, 'thinkingLevel': 'high'},
-        )
-        with patch.object(requests.Session, 'post', side_effect=fake_post):
-            self.provider._request_responses(
-                inputs=[
-                    {'role': 'user', 'content': [{'type': 'input_text', 'text': 'hi'}]}
-                ],
-                model='gemini-3.8-flash',
-                reasoning_effort='minimal',
-            )
-        self.assertEqual(
-            captured['body']['generationConfig']['thinkingConfig'],
-            {'includeThoughts': True, 'thinkingLevel': 'low'},
-        )
+    def test_thinking_level_follows_the_catalogued_effort(self):
+        for model, effort, level in (
+            ('gemini-3.8-flash', 'low', 'low'),
+            ('gemini-3.8-flash', None, None),
+            ('gemini-3.8-flash', 'max', 'high'),
+            ('gemini-3.8-flash', 'minimal', 'low'),
+            ('gemini-3.6-flash', 'minimal', 'minimal'),
+            ('gemini-9-uncatalogued', 'xhigh', 'xhigh'),
+        ):
+            with self.subTest(model=model, effort=effort):
+                _result, sent = self._run_request(
+                    self._google_body('ok'),
+                    inputs=[
+                        {
+                            'role': 'user',
+                            'content': [{'type': 'input_text', 'text': 'hi'}],
+                        }
+                    ],
+                    model=model,
+                    reasoning_effort=effort,
+                )
+                self.assertEqual(
+                    sent['generationConfig']['thinkingConfig'].get('thinkingLevel'),
+                    level,
+                )
 
     @mute_logger('odoo.addons.muk_ai.providers.base')
     def test_rejected_thinking_level_is_stripped_and_served(self):
@@ -268,24 +223,6 @@ class TestAiGoogleProvider(AITestCommon):
         self.assertNotIn('thinkingConfig', bodies[1]['generationConfig'])
         self.assertEqual(result['text'], 'ok')
         self.assertEqual(record.reasoning_efforts, ['low', 'medium', 'high'])
-
-    def test_thinking_level_not_sent_for_gemini_2_5(self):
-        captured = {}
-
-        def fake_post(url, **kwargs):
-            captured['body'] = kwargs.get('json')
-            return self._mock_http_response(self._google_body('ok'))
-
-        with patch.object(requests.Session, 'post', side_effect=fake_post):
-            self.provider._request_responses(
-                inputs=[
-                    {'role': 'user', 'content': [{'type': 'input_text', 'text': 'hi'}]}
-                ],
-                model='gemini-2.5-flash',
-                reasoning_effort='low',
-            )
-        thinking = captured['body']['generationConfig']['thinkingConfig']
-        self.assertNotIn('thinkingLevel', thinking)
 
     @mute_logger('odoo.addons.muk_ai.providers.base')
     def test_thinking_error_retries_once_without_thinking_config(self):
@@ -338,25 +275,25 @@ class TestAiGoogleProvider(AITestCommon):
         self.assertEqual(contents[2]['parts'][0]['functionResponse']['name'], 't')
         self.assertEqual(contents[2]['parts'][1], {'text': 'next'})
 
-    def test_function_response_carries_lookedup_name(self):
-        _system, contents = self.provider._get_client()._inputs_to_contents(
-            [
-                self._carry_item('list_modules', {}, 'cX', 'sig-a'),
-                {
-                    'type': 'function_call_output',
-                    'call_id': 'cX',
-                    'output': '{"ok": true}',
-                },
-            ]
-        )
-        self.assertEqual(
-            contents[1]['parts'][0]['functionResponse']['name'],
-            'list_modules',
-        )
-        self.assertEqual(
-            contents[1]['parts'][0]['functionResponse']['response'],
-            {'ok': True},
-        )
+    def test_function_response_answers_its_call_by_name_and_gemini_id(self):
+        answer = {'name': 'list_modules', 'response': {'ok': True}}
+        for gemini_id, expected in ((None, answer), ('g1', {**answer, 'id': 'g1'})):
+            with self.subTest(gemini_id=gemini_id):
+                call = self._carry_item('list_modules', {}, 'cX', 'sig-a')
+                if gemini_id:
+                    part = call['provider_state']['google']['parts'][0]
+                    part['functionCall']['id'] = gemini_id
+                _system, contents = self.provider._get_client()._inputs_to_contents(
+                    [
+                        call,
+                        {
+                            'type': 'function_call_output',
+                            'call_id': 'cX',
+                            'output': '{"ok": true}',
+                        },
+                    ]
+                )
+                self.assertEqual(contents[1]['parts'][0]['functionResponse'], expected)
 
     def test_request_sends_messages_shape(self):
         captured = {}
@@ -1163,64 +1100,27 @@ class TestAiGoogleProvider(AITestCommon):
         model_parts = next(c for c in sent['contents'] if c['role'] == 'model')['parts']
         self.assertEqual(model_parts[0]['thoughtSignature'], 'sig-a')
 
-    def test_builtin_tool_beside_functions_opts_into_server_side_invocations(self):
-        _result, sent = self._run_request(
-            self._google_body('ok'),
-            inputs=[],
-            tools_schema=[{'name': 'search_read', 'description': 'read'}],
-            enable_web_search=True,
-            model='gemini-3.8-flash',
-        )
-        self.assertEqual(
-            sent['toolConfig'],
-            {'includeServerSideToolInvocations': True},
-        )
-        self.assertTrue(any('googleSearch' in tool for tool in sent['tools']))
-        self.assertTrue(any('functionDeclarations' in tool for tool in sent['tools']))
-
-    def test_code_interpreter_beside_functions_opts_into_server_side_invocations(self):
-        _result, sent = self._run_request(
-            self._google_body('ok'),
-            inputs=[],
-            tools_schema=[{'name': 'search_read', 'description': 'read'}],
-            enable_code_interpreter=True,
-            model='gemini-3.8-flash',
-        )
-        self.assertEqual(
-            sent['toolConfig'],
-            {'includeServerSideToolInvocations': True},
-        )
-
-    def test_builtin_tool_without_functions_sends_no_tool_config(self):
-        _result, sent = self._run_request(
-            self._google_body('ok'),
-            inputs=[],
-            enable_web_search=True,
-            model='gemini-3.8-flash',
-        )
-        self.assertNotIn('toolConfig', sent)
-
-    def test_functions_without_builtin_tool_send_no_tool_config(self):
-        _result, sent = self._run_request(
-            self._google_body('ok'),
-            inputs=[],
-            tools_schema=[{'name': 'search_read', 'description': 'read'}],
-            model='gemini-3.8-flash',
-        )
-        self.assertNotIn('toolConfig', sent)
-
-    def test_gemini_2_5_never_opts_into_server_side_invocations(self):
-        _result, sent = self._run_request(
-            self._google_body('ok'),
-            inputs=[],
-            tools_schema=[{'name': 'search_read', 'description': 'read'}],
-            enable_web_search=True,
-            model='gemini-2.5-flash',
-        )
-        self.assertNotIn('toolConfig', sent)
-        client = self.provider._get_client()
-        self.assertFalse(client.serves_builtin_tools('gemini-2.5-flash'))
-        self.assertTrue(client.serves_builtin_tools('gemini-3.8-flash'))
+    def test_server_side_invocations_are_opted_into_beside_functions_only(self):
+        tools = [{'name': 'search_read', 'description': 'read'}]
+        for tools_schema, web, code, opted in (
+            (tools, True, False, True),
+            (tools, False, True, True),
+            (None, True, True, False),
+            (tools, False, False, False),
+        ):
+            with self.subTest(tools=bool(tools_schema), web=web, code=code):
+                _result, sent = self._run_request(
+                    self._google_body('ok'),
+                    inputs=[],
+                    tools_schema=tools_schema,
+                    enable_web_search=web,
+                    enable_code_interpreter=code,
+                    model='gemini-3.8-flash',
+                )
+                self.assertEqual(
+                    sent.get('toolConfig'),
+                    {'includeServerSideToolInvocations': True} if opted else None,
+                )
 
     def test_thought_parts_stream_as_reasoning_and_stay_out_of_the_answer(self):
         result, deltas, _sent = self._run_stream(

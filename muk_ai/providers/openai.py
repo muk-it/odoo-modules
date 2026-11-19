@@ -8,7 +8,7 @@ from odoo.exceptions import UserError
 from odoo.addons.muk_ai.providers.base import ProviderBase
 from odoo.addons.muk_ai.providers.region import CUSTOM, Region
 
-REASONING_MODEL_PREFIXES = ('o1', 'o3', 'o4', 'gpt-5', 'gpt-6')
+REASONING_MODEL_PREFIXES = ('gpt-5', 'gpt-6')
 
 
 class OpenAIProvider(ProviderBase):
@@ -16,7 +16,7 @@ class OpenAIProvider(ProviderBase):
 
     name = 'openai'
     label = 'OpenAI'
-    default_model = 'gpt-5.6-terra'
+    default_model = 'gpt-6.1-terra'
     default_url = 'https://api.openai.com/v1'
     regions = (
         Region('eu', 'Europe', 'https://eu.api.openai.com/v1'),
@@ -280,6 +280,7 @@ class OpenAIProvider(ProviderBase):
             elif text := line.get('text'):
                 text_parts.append(text)
         usage = payload.get('usage') or {}
+        details = usage.get('input_tokens_details') or {}
         result = {
             'text': self._inline_cited_files('\n'.join(text_parts), output).strip(),
             'tool_calls': tool_calls,
@@ -287,9 +288,8 @@ class OpenAIProvider(ProviderBase):
             'usage': self._usage(
                 input_tokens=usage.get('input_tokens'),
                 output_tokens=usage.get('output_tokens'),
-                cache_read_tokens=(usage.get('input_tokens_details') or {}).get(
-                    'cached_tokens'
-                ),
+                cache_read_tokens=details.get('cached_tokens'),
+                cache_write_tokens=details.get('cache_write_tokens'),
             ),
         }
         if payload.get('status') == 'incomplete':
@@ -423,6 +423,7 @@ class OpenAIProvider(ProviderBase):
                     '_parse_error': parse_error,
                 }
             )
+        details = usage.get('input_tokens_details') or {}
         result = {
             'text': self._inline_cited_files(''.join(text_parts), carry_inputs).strip(),
             'tool_calls': tool_calls,
@@ -430,9 +431,8 @@ class OpenAIProvider(ProviderBase):
             'usage': self._usage(
                 input_tokens=usage.get('input_tokens'),
                 output_tokens=usage.get('output_tokens'),
-                cache_read_tokens=(usage.get('input_tokens_details') or {}).get(
-                    'cached_tokens'
-                ),
+                cache_read_tokens=details.get('cached_tokens'),
+                cache_write_tokens=details.get('cache_write_tokens'),
             ),
         }
         if truncation is not None:
