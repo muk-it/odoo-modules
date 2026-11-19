@@ -21,7 +21,12 @@ PROTECTED_TOOL_NAMES = frozenset(
     }
 )
 TOOL_NAME_PREFIX = 'muk_ai_'
-CONNECTOR_MODEL_PREFIXES = ('mistral-medium', 'mistral-small')
+CONNECTOR_MODEL_PREFIXES = (
+    'mistral-large',
+    'mistral-small',
+    'zai-glm-5-3-flash',
+    'deepseek-v4-1-flash',
+)
 IMAGE_INSTRUCTIONS = (
     'Call the image_generation tool exactly once to render the request as one '
     'image, then stop. Do not describe the image and do not answer with text.'
@@ -36,11 +41,13 @@ class MistralProvider(ProviderBase):
 
     name = 'mistral'
     label = 'Mistral AI'
-    default_model = 'mistral-medium-latest'
+    default_model = 'mistral-large-4'
     default_url = 'https://api.mistral.ai/v1'
 
     supports_web_search = True
     supports_code_interpreter = True
+
+    reasoning_error_tokens = ('effort',)
 
     # ----------------------------------------------------------
     # Contract
@@ -56,8 +63,8 @@ class MistralProvider(ProviderBase):
     def serves_builtin_tools(self, model: str) -> bool:
         """Return whether the model runs the Mistral built-in connectors.
 
-        Mistral serves them on Medium and Small; every other model rejects a
-        request that declares one.
+        Mistral serves them on Large, Small, GLM 5.3 Flash and DeepSeek V4.1
+        Flash; every other model rejects a request that declares one.
         """
         return model.startswith(CONNECTOR_MODEL_PREFIXES)
 
@@ -74,9 +81,8 @@ class MistralProvider(ProviderBase):
     ) -> dict:
         """Build the Conversations request body and dispatch it to Mistral.
 
-        :param on_delta: optional streaming callback; when set the request is
-            streamed (built-in connectors included), falling back to a
-            buffered request only if the stream fails
+        A callback streams the request, falling back to a buffered one if the
+        stream fails; a rejected reasoning effort is retried once without it.
         :return: the parsed response payload (text, tool calls, usage)
         """
         instructions, entries = self._inputs_to_entries(inputs)
@@ -90,6 +96,8 @@ class MistralProvider(ProviderBase):
         completion_args = {}
         if self.max_tokens:
             completion_args['max_tokens'] = self.max_tokens
+        if effort := (extra or {}).get('reasoning_effort'):
+            completion_args['reasoning_effort'] = effort
         if text_schema:
             completion_args['response_format'] = {
                 'type': 'json_schema',
@@ -108,9 +116,16 @@ class MistralProvider(ProviderBase):
             tools.append({'type': CODE_INTERPRETER_TOOL})
         if tools:
             body['tools'] = tools
-        if callable(on_delta):
-            return self._stream_request(body, on_delta)
-        return self._buffered_request(body)
+        return self._invoke_with_reasoning_retry(
+            body['model'],
+            lambda callback: (
+                self._stream_request(body, callback)
+                if callable(callback)
+                else self._buffered_request(body)
+            ),
+            on_delta,
+            ((completion_args, ('reasoning_effort',)),),
+        )
 
     def generate_image(
         self,

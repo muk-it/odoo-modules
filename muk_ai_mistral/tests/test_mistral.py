@@ -121,7 +121,7 @@ class TestAiMistralProvider(MistralTestCommon):
             )
         self.assertTrue(captured['url'].endswith('/conversations'))
         self.assertIn('https://api.mistral.ai/v1', captured['url'])
-        self.assertEqual(captured['body']['model'], 'mistral-medium-latest')
+        self.assertEqual(captured['body']['model'], 'mistral-large-4')
         self.assertFalse(captured['body']['store'])
         self.assertEqual(captured['body']['instructions'], 'be brief')
         self.assertEqual(captured['body']['inputs'][0]['type'], 'message.input')
@@ -131,28 +131,35 @@ class TestAiMistralProvider(MistralTestCommon):
         self.assertEqual(result['text'], 'hello')
         self.assertEqual(result['tool_calls'], [])
 
-    def test_request_uses_model_kwarg(self):
-        captured = {}
-
-        def fake_post(url, **kwargs):
-            captured['body'] = kwargs.get('json')
-            return self._mock_http_response(self._text_response('ok'))
-
-        with patch.object(requests.Session, 'post', side_effect=fake_post):
-            self.provider._request_responses(inputs=[], model='mistral-large-latest')
-        self.assertEqual(captured['body']['model'], 'mistral-large-latest')
-
-    def test_request_omits_completion_args_when_no_max_tokens_or_schema(self):
+    def test_request_sends_the_model_and_its_catalogued_effort(self):
         self.provider.max_tokens = 0
-        captured = {}
+        bodies = []
 
         def fake_post(url, **kwargs):
-            captured['body'] = kwargs.get('json')
+            bodies.append(kwargs.get('json'))
             return self._mock_http_response(self._text_response('ok'))
 
-        with patch.object(requests.Session, 'post', side_effect=fake_post):
-            self.provider._request_responses(inputs=[])
-        self.assertNotIn('completion_args', captured['body'])
+        for model, effort, sent, args in (
+            (None, None, 'mistral-large-4', {'reasoning_effort': 'medium'}),
+            (
+                'mistral-large-4',
+                'xhigh',
+                'mistral-large-4',
+                {'reasoning_effort': 'high'},
+            ),
+            ('zai-glm-5-3', 'medium', 'zai-glm-5-3', {'reasoning_effort': 'low'}),
+            ('mistral-small-latest', 'high', 'mistral-small-latest', None),
+            ('mistral-large-latest', None, 'mistral-large-latest', None),
+        ):
+            with self.subTest(model=model, effort=effort):
+                with patch.object(requests.Session, 'post', side_effect=fake_post):
+                    self.provider._request_responses(
+                        inputs=[], model=model, reasoning_effort=effort
+                    )
+                self.assertEqual(
+                    (bodies[-1]['model'], bodies[-1].get('completion_args')),
+                    (sent, args),
+                )
 
     def test_text_schema_sets_response_format(self):
         captured = {}
@@ -346,10 +353,10 @@ class TestAiMistralProvider(MistralTestCommon):
             patch.object(requests.Session, 'get', side_effect=fake_get),
         ):
             result = self.provider._get_client().generate_image(
-                'mistral-medium-latest', 'a cat', {'size': '1024x1024'}
+                'mistral-large-4', 'a cat', {'size': '1024x1024'}
             )
         self.assertTrue(captured['url'].endswith('/conversations'))
-        self.assertEqual(captured['body']['model'], 'mistral-medium-latest')
+        self.assertEqual(captured['body']['model'], 'mistral-large-4')
         self.assertEqual(captured['body']['tools'], [{'type': 'image_generation'}])
         self.assertFalse(captured['body']['store'])
         self.assertIn('exactly once', captured['body']['instructions'])
@@ -392,7 +399,7 @@ class TestAiMistralProvider(MistralTestCommon):
                 return_value=self._mock_http_response(content=b'fake-png'),
             ),
         ):
-            self.provider._get_client().generate_image('mistral-medium-latest', 'a cat')
+            self.provider._get_client().generate_image('mistral-large-4', 'a cat')
         self.assertEqual(captured['timeout'], 240)
 
     def test_generate_image_refuses_a_text_answer_and_reference_images(self):
@@ -407,7 +414,7 @@ class TestAiMistralProvider(MistralTestCommon):
                 self.assertRaisesRegex(UserError, error),
             ):
                 self.provider._get_client().generate_image(
-                    'mistral-medium-latest', 'x', references=references
+                    'mistral-large-4', 'x', references=references
                 )
             self.assertEqual(post.call_count, posted)
 
@@ -434,7 +441,7 @@ class TestAiMistralProvider(MistralTestCommon):
             ),
             self.assertRaises(UserError) as caught,
         ):
-            self.provider._get_client().generate_image('mistral-medium-latest', 'x')
+            self.provider._get_client().generate_image('mistral-large-4', 'x')
         self.assertIn('boom', str(caught.exception))
 
     def test_tool_file_download_failure_falls_back_to_text(self):
