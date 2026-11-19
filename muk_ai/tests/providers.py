@@ -119,10 +119,7 @@ def _anthropic_wire(url: str, body: dict) -> dict:
     """Normalise an Anthropic Messages request body, cache breakpoints left out."""
     tools = body.get('tools') or []
     system = body.get('system') or ''
-    thinking = body.get('thinking') or {}
     effort = (body.get('output_config') or {}).get('effort')
-    if thinking.get('type') == 'enabled':
-        effort = f'budget:{thinking["budget_tokens"]}'
     return {
         'model': body['model'],
         'system': system if isinstance(system, str) else system[0]['text'],
@@ -208,11 +205,14 @@ CASES = {
                 usage={
                     'input_tokens': 11,
                     'output_tokens': 4,
-                    'input_tokens_details': {'cached_tokens': 3},
+                    'input_tokens_details': {
+                        'cached_tokens': 3,
+                        'cache_write_tokens': 5,
+                    },
                 },
             ),
         ],
-        usage=_usage(11, 4, 3),
+        usage=_usage(11, 4, 3, 5),
         tool_call=[
             openai_event(
                 'output_item.added',
@@ -342,8 +342,7 @@ EFFORT = [
     ('openai', 'gpt-5.4', 'max', 'xhigh'),
     ('openai', 'gpt-5.4', 'minimal', 'low'),
     ('openai', 'gpt-5.6-sol', 'max', 'max'),
-    ('openai', 'gpt-4o', 'high', None),
-    ('openai', 'o3-uncatalogued', 'minimal', 'minimal'),
+    ('openai', 'gpt-6-uncatalogued', 'minimal', 'minimal'),
     ('anthropic', 'claude-opus-4-8', None, 'medium'),
     ('anthropic', 'claude-opus-4-8', 'xhigh', 'xhigh'),
     ('anthropic', 'claude-opus-4-8', 'minimal', 'low'),
@@ -351,17 +350,14 @@ EFFORT = [
     ('anthropic', 'claude-sonnet-5', 'low', 'low'),
     ('anthropic', 'claude-fable-5', 'max', 'max'),
     ('anthropic', 'claude-opus-5-uncatalogued', 'minimal', 'low'),
-    ('anthropic', 'claude-opus-4-5', None, 'budget:1024'),
-    ('anthropic', 'claude-opus-4-5', 'high', 'budget:4096'),
-    ('anthropic', 'claude-opus-4-5', 'max', 'budget:4096'),
-    ('anthropic', 'claude-opus-4-5', 'low', None),
     ('anthropic', 'claude-haiku-4-5', 'high', None),
+    ('anthropic', 'claude-haiku-5-5', 'xhigh', 'xhigh'),
     ('google', 'gemini-3.8-flash', None, None),
     ('google', 'gemini-3.8-flash', 'low', 'low'),
     ('google', 'gemini-3.8-flash', 'max', 'high'),
     ('google', 'gemini-3.8-flash', 'minimal', 'low'),
-    ('google', 'gemini-2.5-flash', 'low', None),
-    ('google', 'gemini-9-uncatalogued', 'xhigh', 'high'),
+    ('google', 'gemini-3.6-flash', 'minimal', 'minimal'),
+    ('google', 'gemini-9-uncatalogued', 'xhigh', 'xhigh'),
 ]
 
 FILE_TEXT = '--- File: note.txt (text/plain, attachment 7) ---\nhello body'

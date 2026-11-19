@@ -13,28 +13,14 @@ ANTHROPIC_VERSION = '2023-06-01'
 WEB_SEARCH_TOOL_TYPE = 'web_search_20250305'
 CODE_EXECUTION_TOOL_TYPE = 'code_execution_20250825'
 
-THINKING_MODEL_TOKENS = ('fable-5', 'opus-5', 'opus-4', 'sonnet-5', 'sonnet-4')
-LEGACY_THINKING_MODEL_TOKENS = (
-    'opus-4-5',
-    'sonnet-4-5',
-)
-LEGACY_THINKING_BUDGETS = {
-    'medium': 1024,
-    'high': 4096,
-    'xhigh': 8192,
-    'max': 16384,
-}
-
-STRUCTURED_OUTPUT_MODEL_TOKENS = (
+THINKING_MODEL_TOKENS = (
     'fable-5',
     'opus-5',
-    'opus-4-8',
-    'opus-4-5',
-    'opus-4-1',
+    'opus-4',
     'sonnet-5',
-    'haiku-4-5',
+    'sonnet-4',
+    'haiku-5',
 )
-
 THINKING_BLOCK_TYPES = ('thinking', 'redacted_thinking')
 
 CACHE_CONTROL = {'type': 'ephemeral'}
@@ -45,7 +31,7 @@ class AnthropicProvider(ProviderBase):
 
     name = 'anthropic'
     label = 'Anthropic'
-    default_model = 'claude-sonnet-5'
+    default_model = 'claude-sonnet-5-5'
     default_url = 'https://api.anthropic.com/v1'
 
     supports_web_search = True
@@ -80,34 +66,26 @@ class AnthropicProvider(ProviderBase):
     ) -> dict:
         """Build and stream a Messages request.
 
-        A rejected effort or thinking setting is retried once without it; a
-        response schema constrains the answer on the models that take one.
+        A rejected effort is retried once without it; a response schema
+        constrains the answer on Claude models.
         """
         model = self.model_for(model)
         caching = model.startswith('claude')
         system_text, messages, anchor = self._inputs_to_messages(inputs)
-        max_tokens = self.provider.max_tokens or 4096
         body = {
             'model': model,
             'messages': messages,
-            'max_tokens': max_tokens,
+            'max_tokens': self.provider.max_tokens or 4096,
             'stream': True,
         }
         output = {}
-        adaptive = not any(token in model for token in LEGACY_THINKING_MODEL_TOKENS)
         if any(token in model for token in THINKING_MODEL_TOKENS):
-            if adaptive:
-                body['thinking'] = {'type': 'adaptive'}
-                if reasoning_effort:
-                    output['effort'] = (
-                        'low' if reasoning_effort == 'minimal' else reasoning_effort
-                    )
-            elif budget := LEGACY_THINKING_BUDGETS.get(reasoning_effort):
-                body['max_tokens'] = max(max_tokens, budget + 1024)
-                body['thinking'] = {'type': 'enabled', 'budget_tokens': budget}
-        if text_schema and any(
-            token in model for token in STRUCTURED_OUTPUT_MODEL_TOKENS
-        ):
+            body['thinking'] = {'type': 'adaptive', 'display': 'summarized'}
+            if reasoning_effort:
+                output['effort'] = (
+                    'low' if reasoning_effort == 'minimal' else reasoning_effort
+                )
+        if text_schema and caching:
             output['format'] = {'type': 'json_schema', 'schema': text_schema['schema']}
         if system_text:
             body['system'] = (
@@ -142,7 +120,7 @@ class AnthropicProvider(ProviderBase):
                     {**body, **({'output_config': output} if output else {})}, callback
                 ),
                 on_delta,
-                ((output, ('effort',)) if adaptive else (body, ('thinking',)),),
+                ((output, ('effort',)),),
             )
         finally:
             for file_id in uploads:
@@ -249,16 +227,19 @@ class AnthropicProvider(ProviderBase):
         """Return the thinking block to replay verbatim, or ``None`` when there is none.
 
         Anthropic validates a thinking block against its own signature, so an
-        unsigned one (a stream cut before ``signature_delta``) is dropped.
+        unsigned one (a stream cut before ``signature_delta``) is dropped; a
+        signed one with omitted text still replays.
         """
         if block.get('type') == 'redacted_thinking':
             data = block.get('data')
             return {'type': 'redacted_thinking', 'data': data} if data else None
-        thinking = block.get('thinking')
-        signature = block.get('signature')
-        if not thinking or not signature:
+        if not (signature := block.get('signature')):
             return None
-        return {'type': 'thinking', 'thinking': thinking, 'signature': signature}
+        return {
+            'type': 'thinking',
+            'thinking': block.get('thinking') or '',
+            'signature': signature,
+        }
 
     @classmethod
     def _assistant_carry(cls, content: list, blocks: list) -> list:

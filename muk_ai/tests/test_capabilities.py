@@ -5,6 +5,7 @@ from unittest.mock import patch
 from odoo import models
 from odoo.exceptions import UserError
 
+from odoo.addons.muk_ai.providers.google import GoogleProvider
 from odoo.addons.muk_ai.providers.openai import OpenAIProvider
 from odoo.addons.muk_ai.providers.region import CUSTOM, Region
 from odoo.addons.muk_ai.tests.common import AITestCommon, text_payload
@@ -26,7 +27,10 @@ class TestCapabilities(AITestCommon):
 
     @classmethod
     def setUpClass(cls) -> None:
-        """Add models with and without built-in tools."""
+        """Add models with and without built-in tools.
+
+        The legacy model stands for one its provider cannot run built-in tools on.
+        """
         super().setUpClass()
         cls.legacy, cls.gemini, cls.claude = cls.env['muk_ai.model'].create(
             [
@@ -39,11 +43,16 @@ class TestCapabilities(AITestCommon):
                     'output_rate': 1.0,
                 }
                 for name, provider in (
-                    ('gemini-2.5-capabilities', cls.provider_google),
+                    ('gemini-legacy-capabilities', cls.provider_google),
                     ('gemini-3-capabilities', cls.provider_google),
                     ('claude-capabilities', cls.provider_anthropic),
                 )
             ]
+        )
+        cls.classPatch(
+            GoogleProvider,
+            'serves_builtin_tools',
+            lambda client, model: model != 'gemini-legacy-capabilities',
         )
 
     # ----------------------------------------------------------

@@ -26,16 +26,19 @@ class TestGoogleProvider(ProviderTestCase):
     # Helper
     # ----------------------------------------------------------
 
-    def _call(self, name: str, signature: str = '') -> dict:
-        """Build a ``functionCall`` part, signed when Gemini signs it."""
-        part = {'functionCall': {'name': name, 'args': {'model': 'res.partner'}}}
+    def _call(self, name: str, signature: str = '', gemini_id: str = '') -> dict:
+        """Build a ``functionCall`` part, signed and identified when Gemini is."""
+        call = {'name': name, 'args': {'model': 'res.partner'}}
+        part = {'functionCall': {**call, 'id': gemini_id} if gemini_id else call}
         return {**part, 'thoughtSignature': signature} if signature else part
 
     def _builtin(self, key: str) -> dict:
         """Build a signed ``toolCall`` or ``toolResponse`` part of a built-in tool."""
         return {key: {'name': 'google_search'}, 'thoughtSignature': f'sig-{key}'}
 
-    def _carried(self, name: str, call_id: str, signature: str = '') -> dict:
+    def _carried(
+        self, name: str, call_id: str, signature: str = '', gemini_id: str = ''
+    ) -> dict:
         """Build the stored function-call item of a round, signed or not."""
         item = {
             'type': 'function_call',
@@ -45,7 +48,7 @@ class TestGoogleProvider(ProviderTestCase):
         }
         if signature:
             item['provider_state'] = {
-                'google': {'parts': [self._call(name, signature)]}
+                'google': {'parts': [self._call(name, signature, gemini_id)]}
             }
         return item
 
@@ -222,10 +225,10 @@ class TestGoogleProvider(ProviderTestCase):
                 ],
             ),
             (
-                'parallel',
+                'parallel, answered by id',
                 [
                     self._carried('search_read', 'c1', 'sig-a'),
-                    self._carried('read_group', 'c2', 'sig-b'),
+                    self._carried('read_group', 'c2', 'sig-b', 'g2'),
                     self._output('c2', '[1, 2]'),
                 ],
                 [
@@ -233,7 +236,7 @@ class TestGoogleProvider(ProviderTestCase):
                         'role': 'model',
                         'parts': [
                             self._call('search_read', 'sig-a'),
-                            self._call('read_group', 'sig-b'),
+                            self._call('read_group', 'sig-b', 'g2'),
                         ],
                     },
                     {
@@ -243,6 +246,7 @@ class TestGoogleProvider(ProviderTestCase):
                                 'functionResponse': {
                                     'name': 'read_group',
                                     'response': {'output': [1, 2]},
+                                    'id': 'g2',
                                 }
                             }
                         ],
@@ -294,18 +298,16 @@ class TestGoogleProvider(ProviderTestCase):
         )
 
     def test_server_side_invocations_are_opted_into_beside_functions_only(self):
-        for tools, web, code, model, opted in (
-            (TOOLS, True, False, 'gemini-3.8-flash', True),
-            (TOOLS, False, True, 'gemini-3.8-flash', True),
-            (None, True, True, 'gemini-3.8-flash', False),
-            (TOOLS, False, False, 'gemini-3.8-flash', False),
-            (TOOLS, True, False, 'gemini-2.5-flash', False),
+        for tools, web, code, opted in (
+            (TOOLS, True, False, True),
+            (TOOLS, False, True, True),
+            (None, True, True, False),
+            (TOOLS, False, False, False),
         ):
-            with self.subTest(tools=bool(tools), web=web, code=code, model=model):
+            with self.subTest(tools=bool(tools), web=web, code=code):
                 _result, _deltas, sent = self._stream(
                     'google',
                     CASES['google'].text,
-                    model=model,
                     tools_schema=tools,
                     enable_web_search=web,
                     enable_code_interpreter=code,

@@ -31,6 +31,8 @@ VOLATILE = {
 
 ANSWER = {'type': 'output_text', 'text': 'answer'}
 
+ADAPTIVE = {'type': 'adaptive', 'display': 'summarized'}
+
 
 class TestAnthropicProvider(ProviderTestCase):
     """Verify the Anthropic-only parts of the Messages wire: shape, cache, thinking."""
@@ -189,6 +191,24 @@ class TestAnthropicProvider(ProviderTestCase):
                 'unsigned',
                 [*self._thinking(0, 'unsigned'), *anthropic_text(1, 'answer')],
                 [{'role': 'assistant', 'content': [ANSWER]}],
+            ),
+            (
+                'omitted',
+                [*self._thinking(0, '', 'sig-1'), *anthropic_text(1, 'answer')],
+                [
+                    {
+                        'role': 'assistant',
+                        'content': [ANSWER],
+                        'provider_state': {
+                            'anthropic': {
+                                'blocks': [
+                                    {**first, 'thinking': ''},
+                                    {'type': 'text', 'text': 'answer'},
+                                ]
+                            }
+                        },
+                    }
+                ],
             ),
             (
                 'with a search the call stopped',
@@ -352,38 +372,14 @@ class TestAnthropicProvider(ProviderTestCase):
                 self.assertIn(error, result['tool_calls'][0]['_parse_error'])
                 self.assertNotIn('Max Tokens', result['text'])
 
-    def test_legacy_thinking_budgets_leave_room_for_the_answer(self):
-        for max_tokens, effort, budget, sent_max in (
-            (4096, 'high', 4096, 5120),
-            (8192, 'high', 4096, 8192),
-            (0, 'medium', 1024, 4096),
-        ):
-            with self.subTest(max_tokens=max_tokens, effort=effort):
-                self.providers['anthropic'].max_tokens = max_tokens
-                result, _deltas, sent = self._stream(
-                    'anthropic',
-                    CASES['anthropic'].truncated,
-                    model='claude-opus-4-5',
-                    reasoning_effort=effort,
-                )
-                body = sent[0]['json']
-                self.assertEqual(
-                    (body['thinking'], body['max_tokens']),
-                    ({'type': 'enabled', 'budget_tokens': budget}, sent_max),
-                )
-                self.assertIn(f'limit of {sent_max} tokens', result['text'])
-
-    def test_a_response_schema_constrains_the_models_that_take_one(self):
+    def test_effort_and_a_response_schema_reach_the_models_that_take_them(self):
         schema = {'name': 'plan', 'schema': {'type': 'object'}}
+        constrained = {'type': 'json_schema', 'schema': {'type': 'object'}}
         for model, output in (
-            (
-                'claude-opus-5',
-                {
-                    'effort': 'low',
-                    'format': {'type': 'json_schema', 'schema': {'type': 'object'}},
-                },
-            ),
-            ('claude-sonnet-4-6', {'effort': 'low'}),
+            ('claude-opus-5', {'effort': 'low', 'format': constrained}),
+            ('claude-haiku-5-5', {'effort': 'low', 'format': constrained}),
+            ('claude-haiku-4-5', {'format': constrained}),
+            ('open-model', None),
         ):
             with self.subTest(model=model):
                 _result, _deltas, sent = self._stream(
@@ -393,7 +389,7 @@ class TestAnthropicProvider(ProviderTestCase):
                     text_schema=schema,
                     reasoning_effort='low',
                 )
-                self.assertEqual(sent[0]['json']['output_config'], output)
+                self.assertEqual(sent[0]['json'].get('output_config'), output)
 
     @mute_logger('odoo.addons.muk_ai.providers.base')
     def test_a_rejection_the_retry_cannot_resolve_raises(self):
@@ -415,5 +411,5 @@ class TestAnthropicProvider(ProviderTestCase):
                 (record['json'].get('thinking'), record['json'].get('output_config'))
                 for record in sent
             ],
-            [({'type': 'adaptive'}, {'effort': 'low'}), ({'type': 'adaptive'}, None)],
+            [(ADAPTIVE, {'effort': 'low'}), (ADAPTIVE, None)],
         )

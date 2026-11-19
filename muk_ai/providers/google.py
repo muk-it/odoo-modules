@@ -14,8 +14,6 @@ from odoo.addons.muk_mcp.tools.schema import to_strict_schema
 GROUNDING_TOOL_KEY = 'googleSearch'
 CODE_EXECUTION_TOOL_KEY = 'codeExecution'
 
-LEGACY_TOOL_MODEL_PREFIXES = ('gemini-1.', 'gemini-2.')
-
 IMAGE_ASPECT_RATIOS = {
     f'{width}:{height}': width / height
     for width, height in (
@@ -32,22 +30,13 @@ IMAGE_ASPECT_RATIOS = {
     )
 }
 
-THINKING_LEVELS = {
-    'minimal': 'low',
-    'low': 'low',
-    'medium': 'medium',
-    'high': 'high',
-    'xhigh': 'high',
-    'max': 'high',
-}
-
 
 class GoogleProvider(ProviderBase):
     """Google Gemini generateContent adapter with grounding and streaming."""
 
     name = 'google'
     label = 'Google'
-    default_model = 'gemini-3.8-flash'
+    default_model = 'gemini-4-hydrogen'
     default_url = 'https://generativelanguage.googleapis.com/v1beta'
 
     supports_web_search = True
@@ -107,8 +96,8 @@ class GoogleProvider(ProviderBase):
         if text_schema:
             config['responseMimeType'] = 'application/json'
             config['responseJsonSchema'] = text_schema['schema']
-        if level := THINKING_LEVELS.get(reasoning_effort):
-            config['thinkingConfig']['thinkingLevel'] = level
+        if reasoning_effort:
+            config['thinkingConfig']['thinkingLevel'] = reasoning_effort
         declarations = [
             {
                 'name': name,
@@ -126,7 +115,7 @@ class GoogleProvider(ProviderBase):
             )
             if enabled
         ]
-        if tools and builtin and self.serves_builtin_tools(model):
+        if tools and builtin:
             body['toolConfig'] = {'includeServerSideToolInvocations': True}
         if tools or builtin:
             body['tools'] = tools + builtin
@@ -137,14 +126,6 @@ class GoogleProvider(ProviderBase):
             on_delta,
             ((config, ('thinkingConfig',)),),
         )
-
-    def serves_builtin_tools(self, model: str) -> bool:
-        """Return whether the model runs built-in tools next to function calling.
-
-        Gemini 3 serves grounding and code execution alongside the declared
-        functions; earlier generations reject the combination and the opt-in.
-        """
-        return not model.startswith(LEGACY_TOOL_MODEL_PREFIXES)
 
     def generate_image(
         self,
@@ -209,14 +190,23 @@ class GoogleProvider(ProviderBase):
 
         Gemini rejects an unsigned ``functionCall`` part in a model turn, so a
         call this adapter did not sign replays as transcript text together with
-        its result.
+        its result. A result answers its call by the ``id`` Gemini gave it.
         """
-        names = {}
+        names, ids = {}, {}
         foreign = set()
         for item in inputs or []:
             if item.get('type') == 'function_call':
                 names[item.get('call_id')] = item.get('name') or ''
-                if not self._carried_state(item).get('parts'):
+                if parts := self._carried_state(item).get('parts'):
+                    ids[item.get('call_id')] = next(
+                        (
+                            part['functionCall'].get('id')
+                            for part in parts
+                            if 'functionCall' in part
+                        ),
+                        None,
+                    )
+                else:
                     foreign.add(item.get('call_id'))
         contents = []
         append = functools.partial(self._append_turn, contents, 'parts')
@@ -241,9 +231,10 @@ class GoogleProvider(ProviderBase):
                     with contextlib.suppress(ValueError):
                         output = json.loads(output)
                 response = output if isinstance(output, dict) else {'output': output}
-                append(
-                    'user', {'functionResponse': {'name': name, 'response': response}}
-                )
+                answer = {'name': name, 'response': response}
+                if call_id := ids.get(item.get('call_id')):
+                    answer['id'] = call_id
+                append('user', {'functionResponse': answer})
             elif role in ('user', 'assistant'):
                 for part in self._content_parts(item.get('content')):
                     append('model' if role == 'assistant' else 'user', part)
