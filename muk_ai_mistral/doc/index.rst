@@ -12,14 +12,17 @@ Models
 Seeded ``muk_ai.model`` records (stable ``-latest`` aliases where Mistral
 publishes one):
 
-- ``mistral-large-4`` — Mistral Large 4
-- ``mistral-medium-latest`` — Mistral Medium 3.5 (default)
+- ``mistral-large-4`` — Mistral Large 4 (default)
 - ``mistral-small-latest`` — Mistral Small 4
 - ``ministral-14b-latest`` — Ministral 3 14B
 - ``ministral-8b-latest`` — Ministral 3 8B
 - ``ministral-3b-latest`` — Ministral 3 3B
 - ``codestral-latest`` — Codestral (code)
 - ``zai-glm-5-3`` — Z.ai GLM 5.3 (third-party open model, 1M context)
+- ``zai-glm-5-3-flash`` — Z.ai GLM 5.3 Flash (third-party open model, 1M
+  context)
+- ``deepseek-v4-1-flash-1017`` — DeepSeek V4.1 Flash (third-party open
+  model, 1M context, public preview)
 
 Capabilities
 ============
@@ -34,7 +37,7 @@ The provider speaks Mistral's stateless **Conversations API**
 - **Web search** connector (``web_search``) with inline source citations
 - **Code interpreter** connector (``code_interpreter``); code and output
   rendered as fenced blocks
-- **Image generation** through the catalogued *Mistral Medium 3.5
+- **Image generation** through the catalogued *Mistral Large 4
   Images* model: the app-side ``generate_image`` tool runs a one-shot
   conversation carrying the ``image_generation`` connector and stores
   the downloaded file, so any agent can pick Mistral as its image model
