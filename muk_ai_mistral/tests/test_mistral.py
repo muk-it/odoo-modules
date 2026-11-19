@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import requests
 
 from odoo.exceptions import UserError
+from odoo.tools import mute_logger
 
 from .common import MistralTestCommon
 from odoo.addons.muk_ai_mistral.providers.mistral import (
@@ -121,7 +122,7 @@ class TestAiMistralProvider(MistralTestCommon):
             )
         self.assertTrue(captured['url'].endswith('/conversations'))
         self.assertIn('https://api.mistral.ai/v1', captured['url'])
-        self.assertEqual(captured['body']['model'], 'mistral-medium-latest')
+        self.assertEqual(captured['body']['model'], 'mistral-large-4')
         self.assertFalse(captured['body']['store'])
         self.assertEqual(captured['body']['instructions'], 'be brief')
         self.assertEqual(captured['body']['inputs'][0]['type'], 'message.input')
@@ -151,8 +152,52 @@ class TestAiMistralProvider(MistralTestCommon):
             return self._mock_http_response(self._text_response('ok'))
 
         with patch.object(requests.Session, 'post', side_effect=fake_post):
-            self.provider._request_responses(inputs=[])
+            self.provider._request_responses(inputs=[], model='mistral-small-latest')
         self.assertNotIn('completion_args', captured['body'])
+
+    def test_the_catalogue_effort_goes_out_as_the_reasoning_effort(self):
+        captured = {}
+
+        def fake_post(url, **kwargs):
+            captured['body'] = kwargs.get('json')
+            return self._mock_http_response(self._text_response('ok'))
+
+        for model, effort, sent in (
+            ('mistral-large-4', None, 'medium'),
+            ('mistral-large-4', 'xhigh', 'high'),
+            ('zai-glm-5-3', 'medium', 'low'),
+            ('mistral-small-latest', 'high', None),
+        ):
+            with (
+                self.subTest(model=model, effort=effort),
+                patch.object(requests.Session, 'post', side_effect=fake_post),
+            ):
+                self.provider._request_responses(
+                    inputs=[], model=model, reasoning_effort=effort
+                )
+                self.assertEqual(
+                    captured['body']['completion_args'].get('reasoning_effort'),
+                    sent,
+                )
+
+    @mute_logger('odoo.addons.muk_ai.providers.base')
+    def test_a_rejected_reasoning_effort_is_retried_without_it(self):
+        efforts = []
+
+        def fake_post(url, **kwargs):
+            args = kwargs.get('json')['completion_args']
+            efforts.append(args.get('reasoning_effort'))
+            if 'reasoning_effort' not in args:
+                return self._mock_http_response(self._text_response('ok'))
+            resp = self._mock_http_response({}, status_code=400)
+            resp.text = 'reasoning_effort is not supported by this model'
+            resp.raise_for_status.side_effect = requests.HTTPError('400', response=resp)
+            return resp
+
+        with patch.object(requests.Session, 'post', side_effect=fake_post):
+            result = self.provider._request_responses(inputs=[])
+        self.assertEqual(efforts, ['medium'] * REQUEST_ATTEMPTS + [None])
+        self.assertEqual(result['text'], 'ok')
 
     def test_text_schema_sets_response_format(self):
         captured = {}
@@ -346,10 +391,10 @@ class TestAiMistralProvider(MistralTestCommon):
             patch.object(requests.Session, 'get', side_effect=fake_get),
         ):
             result = self.provider._get_client().generate_image(
-                'mistral-medium-latest', 'a cat', {'size': '1024x1024'}
+                'mistral-large-4', 'a cat', {'size': '1024x1024'}
             )
         self.assertTrue(captured['url'].endswith('/conversations'))
-        self.assertEqual(captured['body']['model'], 'mistral-medium-latest')
+        self.assertEqual(captured['body']['model'], 'mistral-large-4')
         self.assertEqual(captured['body']['tools'], [{'type': 'image_generation'}])
         self.assertFalse(captured['body']['store'])
         self.assertIn('exactly once', captured['body']['instructions'])
@@ -392,7 +437,7 @@ class TestAiMistralProvider(MistralTestCommon):
                 return_value=self._mock_http_response(content=b'fake-png'),
             ),
         ):
-            self.provider._get_client().generate_image('mistral-medium-latest', 'a cat')
+            self.provider._get_client().generate_image('mistral-large-4', 'a cat')
         self.assertEqual(captured['timeout'], 240)
 
     def test_generate_image_reports_a_driver_that_answered_with_text(self):
@@ -401,7 +446,7 @@ class TestAiMistralProvider(MistralTestCommon):
             patch.object(requests.Session, 'post', return_value=response),
             self.assertRaises(UserError) as caught,
         ):
-            self.provider._get_client().generate_image('mistral-medium-latest', 'x')
+            self.provider._get_client().generate_image('mistral-large-4', 'x')
         self.assertIn('answered with text', str(caught.exception))
 
     def test_generate_image_refuses_reference_images(self):
@@ -410,7 +455,7 @@ class TestAiMistralProvider(MistralTestCommon):
             self.assertRaisesRegex(UserError, 'takes no reference images'),
         ):
             self.provider._get_client().generate_image(
-                'mistral-medium-latest',
+                'mistral-large-4',
                 'a cat',
                 references=[{'mimetype': 'image/png', 'data_b64': 'UE5H'}],
             )
@@ -439,7 +484,7 @@ class TestAiMistralProvider(MistralTestCommon):
             ),
             self.assertRaises(UserError) as caught,
         ):
-            self.provider._get_client().generate_image('mistral-medium-latest', 'x')
+            self.provider._get_client().generate_image('mistral-large-4', 'x')
         self.assertIn('boom', str(caught.exception))
 
     def test_tool_file_download_failure_falls_back_to_text(self):
