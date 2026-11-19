@@ -30,7 +30,7 @@ class TestMistralRegistry(MistralTestCommon):
     def test_default_model_seeded(self):
         self.assertEqual(
             self.provider.default_chat_model_id.technical_name,
-            'mistral-medium-latest',
+            'mistral-large-4',
         )
 
     def test_models_seeded_for_provider(self):
@@ -44,27 +44,28 @@ class TestMistralRegistry(MistralTestCommon):
             set(models.mapped('technical_name')),
             {
                 'mistral-large-4',
-                'mistral-medium-latest',
                 'mistral-small-latest',
                 'ministral-14b-latest',
                 'ministral-8b-latest',
                 'ministral-3b-latest',
                 'codestral-latest',
                 'zai-glm-5-3',
+                'zai-glm-5-3-flash',
+                'deepseek-v4-1-flash-1017',
             },
         )
 
     def test_image_model_seeded_as_the_provider_default(self):
         image = self.provider.default_image_model_id
         self.assertEqual(image.modality, 'image')
-        self.assertEqual(image.technical_name, 'mistral-medium-latest')
+        self.assertEqual(image.technical_name, 'mistral-large-4')
         self.assertEqual(image.output_rate, 0.1)
         self.assertEqual(image._compute_usage_cost({'images': 2})['total_cost'], 0.2)
 
     def test_model_for_falls_back_to_default(self):
         self.assertEqual(
             self.provider._get_client().model_for(),
-            'mistral-medium-latest',
+            'mistral-large-4',
         )
 
     # ----------------------------------------------------------

@@ -2,10 +2,11 @@
 
 Adds **Mistral AI** as a first-class provider for `muk_ai`. Pick
 _Mistral AI_, paste your API key, and the whole catalogue is already
-there — **Mistral Large 4**, **Mistral Medium 3.5**, **Mistral Small 4**,
-**Ministral 3** (14B / 8B / 3B), **Codestral** and the third-party
-**Z.ai GLM 5.3** that Mistral serves itself. The chat, agents, tools
-and approval flow of MuK AI all work unchanged.
+there — **Mistral Large 4**, **Mistral Small 4**, **Ministral 3**
+(14B / 8B / 3B), **Codestral** and the third-party **Z.ai GLM 5.3**,
+**Z.ai GLM 5.3 Flash** and **DeepSeek V4.1 Flash** that Mistral serves
+itself. The chat, agents, tools and approval flow of MuK AI all work
+unchanged.
 
 Depends only on `muk_ai` — the Mistral translator is self-contained.
 
@@ -44,7 +45,7 @@ toggles the other muk_ai providers use:
 - **Web search** — `web_search` connector, with inline source citations
 - **Code interpreter** — `code_interpreter` connector; code and output
   are rendered as fenced blocks
-- **Image generation** — the catalogued _Mistral Medium 3.5 Images_ model
+- **Image generation** — the catalogued _Mistral Large 4 Images_ model
   drives the `image_generation` connector in a one-shot conversation, so
   any agent can pick Mistral as its image model
 

@@ -9,21 +9,11 @@
 		<field name="provider_id" ref="provider_mistral"/>
 		<field name="technical_name">mistral-large-4</field>
 		<field name="context_window">1048576</field>
-		<field name="notes">Takes no Mistral built-in connectors (web search, code interpreter, image generation); agents that need them run on Mistral Medium 3.5 or Small 4.</field>
+		<field name="reasoning_efforts" eval="['low', 'medium', 'high']"/>
+		<field name="reasoning_effort_default">medium</field>
 		<field name="input_rate">0.7</field>
 		<field name="output_rate">2.1</field>
 		<field name="cache_read_rate">0.07</field>
-		<field name="currency">USD</field>
-	</record>
-
-	<record id="model_mistral_medium" model="muk_ai.model">
-		<field name="name">Mistral Medium 3.5</field>
-		<field name="provider_id" ref="provider_mistral"/>
-		<field name="technical_name">mistral-medium-latest</field>
-		<field name="context_window">262144</field>
-		<field name="notes">Mistral retires Medium 3.5 on 30 April 2027. Its suggested successor, Mistral Large 4, takes no built-in connectors, so Medium stays the default chat and image model until then.</field>
-		<field name="input_rate">1.5</field>
-		<field name="output_rate">7.5</field>
 		<field name="currency">USD</field>
 	</record>
 
@@ -61,7 +51,7 @@
 		<field name="name">Ministral 3 3B</field>
 		<field name="provider_id" ref="provider_mistral"/>
 		<field name="technical_name">ministral-3b-latest</field>
-		<field name="context_window">131072</field>
+		<field name="context_window">262144</field>
 		<field name="input_rate">0.1</field>
 		<field name="output_rate">0.1</field>
 		<field name="currency">USD</field>
@@ -71,7 +61,7 @@
 		<field name="name">Codestral</field>
 		<field name="provider_id" ref="provider_mistral"/>
 		<field name="technical_name">codestral-latest</field>
-		<field name="context_window">256000</field>
+		<field name="context_window">131072</field>
 		<field name="input_rate">0.3</field>
 		<field name="output_rate">0.9</field>
 		<field name="currency">USD</field>
@@ -82,27 +72,53 @@
 		<field name="provider_id" ref="provider_mistral"/>
 		<field name="technical_name">zai-glm-5-3</field>
 		<field name="context_window">1048576</field>
-		<field name="notes">Third-party open model from Z.ai, served by Mistral on the same infrastructure and under the same regional controls as Mistral's own models. Public preview and not part of every subscription tier. Text only — no vision. Chat, function calling and structured output are documented; the Mistral built-in connectors (web search, code interpreter, image generation) are not.</field>
+		<field name="notes">Third-party open model from Z.ai, served by Mistral on the same infrastructure and under the same regional controls as Mistral's own models. Text only, no vision. Chat, function calling and structured output are documented; the Mistral built-in connectors (web search, code interpreter, image generation) are not.</field>
+		<field name="reasoning_efforts" eval="['low', 'high', 'max']"/>
 		<field name="input_rate">1.4</field>
 		<field name="output_rate">4.4</field>
 		<field name="cache_read_rate">0.14</field>
 		<field name="currency">USD</field>
 	</record>
 
-	<record id="model_mistral_medium_image" model="muk_ai.model">
-		<field name="name">Mistral Medium 3.5 Images</field>
+	<record id="model_zai_glm_flash" model="muk_ai.model">
+		<field name="name">Z.ai GLM 5.3 Flash</field>
 		<field name="provider_id" ref="provider_mistral"/>
-		<field name="technical_name">mistral-medium-latest</field>
+		<field name="technical_name">zai-glm-5-3-flash</field>
+		<field name="context_window">1048576</field>
+		<field name="notes">Third-party open model from Z.ai, served by Mistral on the same infrastructure and under the same regional controls as Mistral's own models.</field>
+		<field name="reasoning_efforts" eval="['low', 'high', 'max']"/>
+		<field name="input_rate">0.15</field>
+		<field name="output_rate">0.5</field>
+		<field name="cache_read_rate">0.03</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_deepseek_flash" model="muk_ai.model">
+		<field name="name">DeepSeek V4.1 Flash</field>
+		<field name="provider_id" ref="provider_mistral"/>
+		<field name="technical_name">deepseek-v4-1-flash-1017</field>
+		<field name="context_window">1048576</field>
+		<field name="notes">Third-party open model from DeepSeek, served by Mistral on the same infrastructure and under the same regional controls as Mistral's own models. Public preview.</field>
+		<field name="input_rate">0.3</field>
+		<field name="output_rate">1.2</field>
+		<field name="cache_read_rate">0.007</field>
+		<field name="currency">USD</field>
+	</record>
+
+	<record id="model_mistral_large_image" model="muk_ai.model">
+		<field name="name">Mistral Large 4 Images</field>
+		<field name="provider_id" ref="provider_mistral"/>
+		<field name="technical_name">mistral-large-4</field>
 		<field name="modality">image</field>
-		<field name="notes">Mistral Medium 3.5 driving the image generation connector. Mistral bills $0.10 per generated image plus the driver's few hundred prompt and completion tokens at the chat rate.</field>
+		<field name="notes">Mistral Large 4 driving the image generation connector. Mistral bills $0.10 per generated image plus the driver's few hundred prompt and completion tokens at the chat rate.</field>
 		<field name="input_rate">0.0</field>
 		<field name="output_rate">0.1</field>
 		<field name="currency">USD</field>
 	</record>
 
 	<record id="provider_mistral" model="muk_ai.provider">
-		<field name="default_chat_model_id" ref="model_mistral_medium"/>
-		<field name="default_image_model_id" ref="model_mistral_medium_image"/>
+		<field name="default_chat_model_id" ref="model_mistral_large"/>
+		<field name="default_image_model_id" ref="model_mistral_large_image"/>
 	</record>
 
 </odoo>
