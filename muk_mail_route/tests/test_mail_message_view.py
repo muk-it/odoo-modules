@@ -17,6 +17,7 @@ class TestFailedListViewCache(TransactionCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Create a routing rule, a plain user and a manager."""
         super().setUpClass()
 
         cls.model_res_partner = cls.env.ref('base.model_res_partner')

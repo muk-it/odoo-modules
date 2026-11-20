@@ -3,7 +3,7 @@
 <odoo noupdate="1">
 
 	<record id="demo_route_contacts" model="muk_mail_route.configuration">
-		<field name="name">Route to Contacts</field>
+		<field name="name">Route to New Contacts</field>
 		<field name="model_id" ref="base.model_res_partner"/>
 		<field name="route_type">new</field>
 		<field name="sequence">10</field>
@@ -12,8 +12,8 @@
 values = {}
 name_field = model._rec_name or 'name'
 email_field = model._mail_get_primary_email_field()
-if name_field in model._fields and message.subject:
-    values[name_field] = message.subject
+if name_field in model._fields:
+    values[name_field] = message.subject or message.preview
 if email_field and email_field in model._fields and message.email_from:
     values[email_field] = message.email_from
 		</field>

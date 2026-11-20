@@ -17,6 +17,7 @@ class TestConfiguration(MailCommon):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Create the partner model reference and the failure container."""
         super().setUpClass()
         cls.model_res_partner = cls.env.ref('base.model_res_partner')
         cls.container = cls.env['mail.thread']._get_failed_route_container()

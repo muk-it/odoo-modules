@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from odoo import api, fields, models
+from odoo.tools.misc import clean_context
 from odoo.tools.safe_eval import safe_eval
 
 
@@ -9,26 +10,6 @@ class Router(models.TransientModel):
 
     _name = 'muk_mail_route.router'
     _description = 'Router'
-
-    # ----------------------------------------------------------
-    # Selection
-    # ----------------------------------------------------------
-
-    @api.model
-    def _selection_reference(self) -> list[tuple[str, str]]:
-        """Return the mail-thread models the current user may target."""
-        model_ids = (
-            self.env['ir.model']
-            .sudo()
-            .search(
-                [
-                    ('access_ids.group_id.users', '=', self.env.uid),
-                    ('is_mail_thread', '=', True),
-                    ('transient', '=', False),
-                ]
-            )
-        )
-        return model_ids.mapped(lambda rec: (rec.model, rec.name))
 
     # ----------------------------------------------------------
     # Fields
@@ -41,9 +22,12 @@ class Router(models.TransientModel):
         ondelete='cascade',
     )
 
-    model_id = fields.Many2one(
-        related='configuration_id.model_id',
-        readonly=True,
+    model = fields.Selection(
+        compute='_compute_configuration_values',
+        selection=lambda self: self._selection_model(),
+        string='Model',
+        readonly=False,
+        store=True,
     )
 
     route_type = fields.Selection(
@@ -51,9 +35,9 @@ class Router(models.TransientModel):
         readonly=True,
     )
 
-    reference = fields.Reference(
-        selection=lambda self: self._selection_reference(),
+    res_id = fields.Many2oneReference(
         string='Route Object',
+        model_field='model',
     )
 
     notify = fields.Boolean(
@@ -84,28 +68,30 @@ class Router(models.TransientModel):
     # ----------------------------------------------------------
 
     @api.model
-    def _attach_messages(self, messages, record) -> None:
-        """Move the messages and their attachments onto the target record."""
-        messages.sudo().write(
-            {
-                'model': record._name,
-                'res_id': record.id,
-                'record_name': record.display_name,
-            }
+    def _selection_model(self) -> list[tuple[str, str]]:
+        """Return the mail-thread models the current user may target."""
+        model_ids = (
+            self.env['ir.model']
+            .sudo()
+            .search(
+                [
+                    ('access_ids.group_id.users', '=', self.env.uid),
+                    ('is_mail_thread', '=', True),
+                    ('transient', '=', False),
+                ]
+            )
         )
-        messages.sudo().mapped('attachment_ids').write(
-            {
-                'res_model': record._name,
-                'res_id': record.id,
-            }
-        )
+        return model_ids.mapped(lambda rec: (rec.model, rec.name))
 
     @api.model
-    def _create_record_from_messages(self, configuration, message) -> int:
+    def _create_record_from_message(self, configuration, message) -> models.BaseModel:
         """Create a target record from a message via the rule snippet."""
+        model = self.env[configuration.model].with_context(
+            clean_context(self.env.context)
+        )
         eval_context = {
             'message': message,
-            'model': self.env[configuration.model],
+            'model': model,
         }
         if configuration.code:
             safe_eval(
@@ -115,17 +101,16 @@ class Router(models.TransientModel):
                 nocopy=True,
                 filename=str(self),
             )
-        record = self.env[configuration.model].create(eval_context.get('values', {}))
-        self._attach_messages(message, record)
-        return record.id
+        return model.create(eval_context.get('values', {}))
 
     @api.model
     def _create_record_per_messages(self, configuration, messages) -> dict:
         """Create one record per message and return an action listing them."""
-        record_ids = [
-            self._create_record_from_messages(configuration, message)
-            for message in messages
-        ]
+        record_ids = []
+        for message in messages:
+            record = self._create_record_from_message(configuration, message)
+            record._mail_route_receive(message)
+            record_ids.append(record.id)
         action = (
             configuration.action_id._get_action_dict()
             if configuration.action_id
@@ -139,47 +124,45 @@ class Router(models.TransientModel):
         action['domain'] = [('id', 'in', record_ids)]
         return action
 
-    @api.model
-    def _notify_messages(self, messages, record, internal: bool) -> None:
-        """Notify the record followers about the routed messages."""
-        if internal:
-            messages.write({'is_internal': True})
-        for message in messages:
-            record._notify_thread(message)
-
-    @api.model
-    def _attach_messages_to_record(
-        self, messages, record, internal: bool, notify: bool
-    ) -> dict:
-        """Attach the messages to an existing record and open its form."""
-        self._attach_messages(messages, record)
-        if notify:
-            self._notify_messages(messages, record, internal)
-        return {
-            'type': 'ir.actions.act_window',
-            'res_model': record._name,
-            'res_id': record.id,
-            'view_mode': 'form',
-            'target': 'current',
-        }
-
     # ----------------------------------------------------------
     # Actions
     # ----------------------------------------------------------
 
     def action_route(self) -> dict:
-        """Route the wizard messages to a new or an existing record."""
-        if self.configuration_id and self.route_type == 'new':
+        """Route the wizard messages to new records, or together to one record."""
+        new = self.configuration_id and self.route_type == 'new'
+        if new and not self.env.context.get('mail_route_single_record'):
             return self._create_record_per_messages(
                 self.configuration_id,
                 self.message_ids,
             )
-        return self._attach_messages_to_record(
-            self.message_ids,
-            self.reference,
-            self.set_is_internal,
-            self.notify,
+        records = [
+            self.env[model].browse(res_id)
+            for model, res_id in self.message_ids.grouped(lambda m: (m.model, m.res_id))
+        ]
+        target = (
+            self._create_record_from_message(
+                self.configuration_id, self.message_ids.sorted('date')[:1]
+            )
+            if new
+            else self.env[self.model].browse(self.res_id)
         )
+        for record in [*records, target]:
+            record.check_access('write')
+        target._mail_route_receive(
+            self.message_ids,
+            internal=self.notify and self.set_is_internal,
+            notify=self.notify,
+        )
+        for record in records:
+            record._mail_route_log(target)
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': target._name,
+            'res_id': target.id,
+            'view_mode': 'form',
+            'target': 'current',
+        }
 
     # ----------------------------------------------------------
     # Compute
@@ -187,8 +170,9 @@ class Router(models.TransientModel):
 
     @api.depends('configuration_id')
     def _compute_configuration_values(self) -> None:
-        """Default the notify and internal flags from the configuration."""
-        self.notify, self.set_is_internal = False, False
+        """Default the model, notify and internal flags from the configuration."""
+        self.model, self.notify, self.set_is_internal = False, False, False
         for record in self.filtered('configuration_id'):
+            record.model = record.configuration_id.model
             record.notify = record.configuration_id.notify
             record.set_is_internal = record.configuration_id.set_is_internal

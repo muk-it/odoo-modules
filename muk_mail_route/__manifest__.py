@@ -5,7 +5,7 @@
         This module collects mails that could not be routed
         and allows them to be assigned subsequently.
     """,
-    'version': '18.0.1.1.10',
+    'version': '18.0.1.2.0',
     'category': 'Productivity/Mail',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -32,6 +32,9 @@
     'assets': {
         'web.assets_backend': [
             'muk_mail_route/static/src/**/*',
+        ],
+        'web.assets_unit_tests': [
+            'muk_mail_route/static/tests/**/*.test.js',
         ],
     },
     'images': [
