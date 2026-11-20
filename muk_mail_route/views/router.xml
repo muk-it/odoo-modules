@@ -8,18 +8,16 @@
             <form>
                 <sheet>
                     <field name="configuration_id" invisible="1"/>
-                    <field name="model_id" invisible="1"/>
                     <group invisible="configuration_id and route_type == 'new'">
                         <field
-                            name="reference"
-                            invisible="not model_id"
-                            required="route_type == 'search'"
-                            options="{'model_field': 'model_id', 'no_create': True}"
+                            name="model"
+                            invisible="configuration_id"
+                            required="1"
                         />
                         <field
-                            name="reference"
-                            invisible="model_id"
-                            required="not configuration_id or route_type == 'search'"
+                            name="res_id"
+                            invisible="not model"
+                            required="route_type != 'new'"
                             options="{'no_create': True}"
                         />
                         <field

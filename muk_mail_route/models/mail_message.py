@@ -19,11 +19,12 @@ class MailMessage(models.Model):
     @api.model
     def _get_route_configurations(self) -> models.BaseModel:
         """Return the routing rules on models the current user may read."""
-        configurations = self.env['muk_mail_route.configuration']
-        if not self.env.user.has_group('base.group_erp_manager'):
-            return configurations
-        return configurations.search([], order='sequence DESC').filtered(
-            lambda configuration: self.env[configuration.model].has_access('read')
+        return (
+            self.env['muk_mail_route.configuration']
+            .search([], order='sequence DESC')
+            .filtered(
+                lambda configuration: self.env[configuration.model].has_access('read')
+            )
         )
 
     @api.model
@@ -71,13 +72,18 @@ class MailMessage(models.Model):
     # Actions
     # ----------------------------------------------------------
 
+    @api.model
+    def get_route_configurations(self) -> list[dict]:
+        """Return the id and name of the routing rules the current user may use."""
+        return self._get_route_configurations().sorted('sequence').read(['name'])
+
     def action_route_message(self) -> dict:
         """Open the routing wizard pre-filled with the selected messages."""
         return {
             'name': self.env._('Route Message'),
             'res_model': 'muk_mail_route.router',
             'type': 'ir.actions.act_window',
-            'view_mode': 'form',
+            'views': [(False, 'form')],
             'target': 'new',
             'context': {
                 'default_message_ids': [fields.Command.set(self.ids)],

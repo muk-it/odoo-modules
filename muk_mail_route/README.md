@@ -25,10 +25,14 @@ new or an existing record, in one click with a router.
   to, and can notify its followers.
 - **Route without a router**: pick any kind of record, then the record itself,
   and the selected emails move there.
+- **Move from the chatter**: pick emails and notes on any record and move them,
+  files included, to another record or to a new one from a router.
 - **Failed Emails**: outgoing mail that could not be delivered, with the reason
   and a button to send it again.
 
 ![A router that creates a lead from each email](static/description/screenshot_router.png)
+
+![Messages picked in the chatter of a lead, with the Move to menu open](static/description/screenshot_move.png)
 
 ## Getting started
 

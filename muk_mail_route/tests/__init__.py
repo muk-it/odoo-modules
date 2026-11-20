@@ -6,4 +6,5 @@ from . import test_routing_fallback
 from . import test_routing_alias
 from . import test_router
 from . import test_mail_message_view
+from . import test_message_move
 from . import test_js

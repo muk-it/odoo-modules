@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 20.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-23 16:39+0000\n"
-"PO-Revision-Date: 2026-02-23 16:39+0000\n"
+"POT-Creation-Date: 2026-11-19 09:23+0000\n"
+"PO-Revision-Date: 2026-11-19 09:23+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -16,9 +16,34 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: muk_mail_route
-#: model:ir.ui.menu,name:muk_mail_route.menu_mail_activity
-msgid "Activity Types"
-msgstr "Tipi di attività"
+#: model:ir.module.module,description:base.module_muk_mail_route
+msgid ""
+"\n"
+"This module collects mails that could not be routed\n"
+"and allows them to be assigned subsequently.\n"
+msgstr ""
+"\n"
+"Questo modulo raccoglie le e-mail che non è stato possibile instradare\n"
+"e consente di assegnarle in seguito.\n"
+
+#. module: muk_mail_route
+#. odoo-javascript
+#: code:addons/muk_mail_route/static/src/chatter/message_move/message_move.js:0
+msgid "%(count)s selected"
+msgstr "%(count)s selezionati"
+
+#. module: muk_mail_route
+#. odoo-javascript
+#: code:addons/muk_mail_route/static/src/chatter/message_move/message_move.js:0
+msgid "1 selected"
+msgstr "1 selezionato"
+
+#. module: muk_mail_route
+#: model_terms:ir.actions.act_window,help:muk_mail_route.action_configuration
+msgid ""
+"A router sends a lost email to a new or an existing record in one click."
+msgstr ""
+"Un router invia un'e-mail persa a un record nuovo o esistente con un clic."
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__action_id
@@ -31,6 +56,11 @@ msgid "Action Needed"
 msgstr "Azione necessaria"
 
 #. module: muk_mail_route
+#: model:ir.ui.menu,name:muk_mail_route.menu_mail_activity
+msgid "Activity Types"
+msgstr "Tipi di attività"
+
+#. module: muk_mail_route
 #: model_terms:ir.ui.view,arch_db:muk_mail_route.view_router_form
 msgid "Attach Message"
 msgstr "Allega messaggio"
@@ -41,6 +71,8 @@ msgid "Attachment Count"
 msgstr "Conteggio allegati"
 
 #. module: muk_mail_route
+#. odoo-javascript
+#: code:addons/muk_mail_route/static/src/chatter/message_move/message_move.xml:0
 #: model_terms:ir.ui.view,arch_db:muk_mail_route.view_router_form
 msgid "Cancel"
 msgstr "Annulla"
@@ -49,6 +81,11 @@ msgstr "Annulla"
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__code
 msgid "Code"
 msgstr "Codice"
+
+#. module: muk_mail_route
+#: model:ir.module.module,summary:base.module_muk_mail_route
+msgid "Collects lost, unrouted and failed emails"
+msgstr "Raccoglie e-mail perse, non instradate e non riuscite"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_router__configuration_id
@@ -64,6 +101,11 @@ msgstr "Contenuto"
 #: model_terms:ir.ui.view,arch_db:muk_mail_route.view_router_form
 msgid "Create Record"
 msgstr "Crea record"
+
+#. module: muk_mail_route
+#: model_terms:ir.actions.act_window,help:muk_mail_route.action_configuration
+msgid "Create a router"
+msgstr "Crea un router"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__create_uid
@@ -149,7 +191,6 @@ msgstr "Se selezionato, i nuovi messaggi richiedono la Sua attenzione."
 
 #. module: muk_mail_route
 #: model:ir.model.fields,help:muk_mail_route.field_muk_mail_route_container__message_has_error
-#: model:ir.model.fields,help:muk_mail_route.field_muk_mail_route_container__message_has_sms_error
 msgid "If checked, some messages have a delivery error."
 msgstr "Se selezionato, alcuni messaggi presentano un errore di consegna."
 
@@ -209,19 +250,26 @@ msgid "Message Delivery error"
 msgstr "Errore di consegna messaggio"
 
 #. module: muk_mail_route
-#: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__message_fts_content
-msgid "Message Search Content"
-msgstr "Contenuto di ricerca del messaggio"
-
-#. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__message_ids
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_router__message_ids
 msgid "Messages"
 msgstr "Messaggi"
 
 #. module: muk_mail_route
+#. odoo-python
+#: code:addons/muk_mail_route/models/mail_thread.py:0
+msgid "Messages moved from %s"
+msgstr "Messaggi spostati da %s"
+
+#. module: muk_mail_route
+#. odoo-python
+#: code:addons/muk_mail_route/models/mail_thread.py:0
+msgid "Messages moved to %s"
+msgstr "Messaggi spostati in %s"
+
+#. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__model_id
-#: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_router__model_id
+#: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_router__model
 msgid "Model"
 msgstr "Modello"
 
@@ -229,6 +277,29 @@ msgstr "Modello"
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__model
 msgid "Model Name"
 msgstr "Nome del modello"
+
+#. module: muk_mail_route
+#. odoo-javascript
+#: code:addons/muk_mail_route/static/src/chatter/message_move/message_move.js:0
+msgid "Move"
+msgstr "Sposta"
+
+#. module: muk_mail_route
+#. odoo-javascript
+#: code:addons/muk_mail_route/static/src/chatter/message_move/message_move.xml:0
+msgid "Move to"
+msgstr "Sposta in"
+
+#. module: muk_mail_route
+#. odoo-javascript
+#: code:addons/muk_mail_route/static/src/chatter/message_move/message_move.xml:0
+msgid "Move to..."
+msgstr "Sposta in..."
+
+#. module: muk_mail_route
+#: model:ir.module.module,shortdesc:base.module_muk_mail_route
+msgid "MuK Mail Routing"
+msgstr ""
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__name
@@ -267,9 +338,10 @@ msgid "Number of messages with delivery error"
 msgstr "Numero di messaggi con errore di consegna"
 
 #. module: muk_mail_route
-#: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__rating_ids
-msgid "Ratings"
-msgstr "Valutazioni"
+#. odoo-javascript
+#: code:addons/muk_mail_route/static/src/chatter/message_move/message_move.xml:0
+msgid "Other record..."
+msgstr "Altro record..."
 
 #. module: muk_mail_route
 #: model_terms:ir.ui.view,arch_db:muk_mail_route.view_mail_message_failed_list
@@ -283,7 +355,7 @@ msgid "Route Message"
 msgstr "Instrada messaggio"
 
 #. module: muk_mail_route
-#: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_router__reference
+#: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_router__res_id
 msgid "Route Object"
 msgstr "Oggetto percorso"
 
@@ -292,6 +364,16 @@ msgstr "Oggetto percorso"
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_router__route_type
 msgid "Route Type"
 msgstr "Tipo di percorso"
+
+#. module: muk_mail_route
+#: model:muk_mail_route.configuration,name:muk_mail_route.demo_route_contacts
+msgid "Route to Contacts"
+msgstr "Instrada ai contatti"
+
+#. module: muk_mail_route
+#: model:muk_mail_route.configuration,name:muk_mail_route.demo_route_contacts_search
+msgid "Route to Existing Contact"
+msgstr "Instrada a un contatto esistente"
 
 #. module: muk_mail_route
 #: model:ir.model,name:muk_mail_route.model_muk_mail_route_router
@@ -310,11 +392,6 @@ msgid "Routers"
 msgstr "Router"
 
 #. module: muk_mail_route
-#: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__message_has_sms_error
-msgid "SMS Delivery error"
-msgstr "Errore di consegna SMS"
-
-#. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__sequence
 msgid "Sequence"
 msgstr "Sequenza"
@@ -326,34 +403,6 @@ msgid "Set Internal"
 msgstr "Imposta come interno"
 
 #. module: muk_mail_route
-#: model:ir.model.fields,help:muk_mail_route.field_muk_mail_route_container__message_fts_content
-msgid "Technical field to support full text search on messages."
-msgstr ""
-"Campo tecnico per supportare la ricerca a testo completo nei messaggi."
-
-#. module: muk_mail_route
-#: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__website_message_ids
-msgid "Website Messages"
-msgstr "Messaggi del sito web"
-
-#. module: muk_mail_route
-#: model:ir.model.fields,help:muk_mail_route.field_muk_mail_route_container__website_message_ids
-msgid "Website communication history"
-msgstr "Cronologia delle comunicazioni del sito web"
-
-#. module: muk_mail_route
 #: model_terms:ir.ui.view,arch_db:muk_mail_route.view_configuration_form
 msgid "e.g. Ticket"
 msgstr "es. Ticket"
-
-#. module: muk_mail_route
-#: model_terms:ir.actions.act_window,help:muk_mail_route.action_configuration
-msgid ""
-"A router sends a lost email to a new or an existing record in one click."
-msgstr ""
-"Un router invia un'e-mail persa a un record nuovo o esistente con un clic."
-
-#. module: muk_mail_route
-#: model_terms:ir.actions.act_window,help:muk_mail_route.action_configuration
-msgid "Create a router"
-msgstr "Crea un router"

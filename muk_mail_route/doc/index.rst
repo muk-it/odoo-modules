@@ -33,7 +33,8 @@ Configuration
 Go to *Discuss > Configuration > Routers* to create a router. A router names the
 target model and whether an email creates a new record or is attached to an
 existing one. For new records, a short Python snippet fills the fields from the
-email; the default takes the subject as the name and the sender as the email.
+email; the default takes the subject, or the start of the text, as the name and
+the sender as the email.
 
 Usage
 =====
@@ -42,6 +43,14 @@ Open *Discuss > Lost Emails*. Selecting an email shows it in the preview on the
 right. *Route* attaches the selected emails to any record you pick, and each
 router adds its own button, such as *Create Lead*. *Discuss > Failed Emails*
 lists the outgoing emails that could not be sent.
+
+In any chatter, choose *Move* in the actions of a message to start picking
+messages: click to add one, shift-click to add a range, Escape to stop. Emails
+and notes can move, tracked field changes cannot. *Move to* lists the routers: a
+router for new records creates a record from the oldest message and moves all of
+them onto it, a router for existing records asks which record to use. *Other
+record...* lets you pick any kind of record. The files only the moved messages
+use go with them, and both records log the move.
 
 Credits
 =======
