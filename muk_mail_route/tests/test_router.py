@@ -18,6 +18,7 @@ class TestRouter(MailCommon):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Fetch the models, the failure container and a target contact."""
         super().setUpClass()
 
         cls.model_res_partner = cls.env.ref('base.model_res_partner')

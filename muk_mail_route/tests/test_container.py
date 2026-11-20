@@ -16,6 +16,7 @@ class TestContainer(MailCommon):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Fetch the failure container."""
         super().setUpClass()
         cls.container = cls.env['mail.thread']._get_failed_route_container()
 

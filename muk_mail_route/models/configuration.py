@@ -24,8 +24,8 @@ class Configuration(models.Model):
             values = {}
             name_field = model._rec_name or 'name'
             email_field = model._mail_get_primary_email_field()
-            if name_field in model._fields and message.subject:
-                values[name_field] = message.subject
+            if name_field in model._fields:
+                values[name_field] = message.subject or message.preview
             if email_field in model._fields and message.email_from:
                 values[email_field] = message.email_from
         """)
@@ -95,7 +95,7 @@ class Configuration(models.Model):
     )
 
     # ----------------------------------------------------------
-    # Constrains
+    # Constraints
     # ----------------------------------------------------------
 
     @api.constrains('code')

@@ -16,6 +16,20 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: muk_mail_route
+#. odoo-javascript
+#: code:addons/muk_mail_route/static/src/chatter/message_move/message_move.js:0
+#, python-format
+msgid "%(count)s selected"
+msgstr "%(count)s seleccionados"
+
+#. module: muk_mail_route
+#. odoo-javascript
+#: code:addons/muk_mail_route/static/src/chatter/message_move/message_move.js:0
+#, python-format
+msgid "1 selected"
+msgstr "1 seleccionado"
+
+#. module: muk_mail_route
 #: model:ir.ui.menu,name:muk_mail_route.menu_mail_activity
 msgid "Acitvitiy Types"
 msgstr "Tipos de actividad"
@@ -31,6 +45,11 @@ msgid "Action Needed"
 msgstr "Acción necesaria"
 
 #. module: muk_mail_route
+#: model:ir.ui.menu,name:muk_mail_route.menu_mail_activity
+msgid "Activity Types"
+msgstr "Tipos de actividad"
+
+#. module: muk_mail_route
 #: model_terms:ir.ui.view,arch_db:muk_mail_route.view_router_form
 msgid "Attach Message"
 msgstr "Adjuntar mensaje"
@@ -41,7 +60,17 @@ msgid "Attachment Count"
 msgstr "Cantidad de adjuntos"
 
 #. module: muk_mail_route
+#. odoo-javascript
+#: code:addons/muk_mail_route/static/src/views/message_list/message_list.xml:0
+#, python-format
+msgid "Author:"
+msgstr "Autor:"
+
+#. module: muk_mail_route
+#. odoo-javascript
+#: code:addons/muk_mail_route/static/src/chatter/message_move/message_move.xml:0
 #: model_terms:ir.ui.view,arch_db:muk_mail_route.view_router_form
+#, python-format
 msgid "Cancel"
 msgstr "Cancelar"
 
@@ -52,6 +81,7 @@ msgstr "Código"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_router__configuration_id
+#: model:ir.ui.menu,name:muk_mail_route.menu_configuration_root
 msgid "Configuration"
 msgstr "Configuración"
 
@@ -80,8 +110,12 @@ msgid "Created on"
 msgstr "Creado el"
 
 #. module: muk_mail_route
-#: model:ir.model.fields,field_description:muk_mail_route.field_mail_message__display_name
-#: model:ir.model.fields,field_description:muk_mail_route.field_mail_thread__display_name
+#: model:ir.model.fields,field_description:muk_mail_route.field_mail_mail__display_content
+#: model:ir.model.fields,field_description:muk_mail_route.field_mail_message__display_content
+msgid "Display Content"
+msgstr "Contenido mostrado"
+
+#. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__display_name
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__display_name
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_router__display_name
@@ -134,8 +168,6 @@ msgid "Has Message"
 msgstr "Tiene mensaje"
 
 #. module: muk_mail_route
-#: model:ir.model.fields,field_description:muk_mail_route.field_mail_message__id
-#: model:ir.model.fields,field_description:muk_mail_route.field_mail_thread__id
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__id
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__id
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_router__id
@@ -149,7 +181,6 @@ msgstr "Si está marcado, los nuevos mensajes requieren su atención."
 
 #. module: muk_mail_route
 #: model:ir.model.fields,help:muk_mail_route.field_muk_mail_route_container__message_has_error
-#: model:ir.model.fields,help:muk_mail_route.field_muk_mail_route_container__message_has_sms_error
 msgid "If checked, some messages have a delivery error."
 msgstr "Si está marcado, algunos mensajes tienen un error de entrega."
 
@@ -220,6 +251,20 @@ msgid "Messages"
 msgstr "Mensajes"
 
 #. module: muk_mail_route
+#. odoo-python
+#: code:addons/muk_mail_route/models/mail_thread.py:0
+#, python-format
+msgid "Messages moved from %s"
+msgstr "Mensajes movidos desde %s"
+
+#. module: muk_mail_route
+#. odoo-python
+#: code:addons/muk_mail_route/models/mail_thread.py:0
+#, python-format
+msgid "Messages moved to %s"
+msgstr "Mensajes movidos a %s"
+
+#. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__model_id
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_router__model_id
 msgid "Model"
@@ -231,6 +276,27 @@ msgid "Model Name"
 msgstr "Nombre del modelo"
 
 #. module: muk_mail_route
+#. odoo-javascript
+#: code:addons/muk_mail_route/static/src/chatter/message_move/message_move.js:0
+#, python-format
+msgid "Move"
+msgstr "Mover"
+
+#. module: muk_mail_route
+#. odoo-javascript
+#: code:addons/muk_mail_route/static/src/chatter/message_move/message_move.xml:0
+#, python-format
+msgid "Move to"
+msgstr "Mover a"
+
+#. module: muk_mail_route
+#. odoo-javascript
+#: code:addons/muk_mail_route/static/src/chatter/message_move/message_move.xml:0
+#, python-format
+msgid "Move to..."
+msgstr "Mover a..."
+
+#. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__name
 msgid "Name"
 msgstr "Nombre"
@@ -239,6 +305,13 @@ msgstr "Nombre"
 #: model:ir.model.fields.selection,name:muk_mail_route.selection__muk_mail_route_configuration__route_type__new
 msgid "New Record"
 msgstr "Nuevo registro"
+
+#. module: muk_mail_route
+#. odoo-javascript
+#: code:addons/muk_mail_route/static/src/views/message_list/message_list.xml:0
+#, python-format
+msgid "No Preview! Please select a message."
+msgstr "¡Sin vista previa! Seleccione un mensaje."
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__notify
@@ -267,9 +340,29 @@ msgid "Number of messages with delivery error"
 msgstr "Número de mensajes con error de entrega"
 
 #. module: muk_mail_route
+#. odoo-javascript
+#: code:addons/muk_mail_route/static/src/chatter/message_move/message_move.xml:0
+#, python-format
+msgid "Other record..."
+msgstr "Otro registro..."
+
+#. module: muk_mail_route
+#: model:ir.model.fields,field_description:muk_mail_route.field_mail_mail__preview
+#: model:ir.model.fields,field_description:muk_mail_route.field_mail_message__preview
+msgid "Preview"
+msgstr "Vista previa"
+
+#. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__rating_ids
 msgid "Ratings"
 msgstr "Valoraciones"
+
+#. module: muk_mail_route
+#. odoo-javascript
+#: code:addons/muk_mail_route/static/src/views/message_list/message_list.xml:0
+#, python-format
+msgid "Recipients:"
+msgstr "Destinatarios:"
 
 #. module: muk_mail_route
 #: model_terms:ir.ui.view,arch_db:muk_mail_route.view_mail_message_failed_list
@@ -330,6 +423,13 @@ msgstr "Establecer como interno"
 msgid "Technical field to support full text search on messages."
 msgstr ""
 "Campo técnico para soportar la búsqueda de texto completo en mensajes."
+
+#. module: muk_mail_route
+#: model:ir.model.fields,help:muk_mail_route.field_mail_mail__preview
+#: model:ir.model.fields,help:muk_mail_route.field_mail_message__preview
+msgid "The text-only beginning of the body used as email preview."
+msgstr ""
+"El comienzo en texto plano del cuerpo usado como vista previa del correo."
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__website_message_ids

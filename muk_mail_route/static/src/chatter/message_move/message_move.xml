@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+    <t
+        t-name="muk_mail_route.Chatter"
+        t-inherit="mail.Chatter"
+        t-inherit-mode="extension"
+    >
+        <xpath expr="//div[hasclass('o-mail-Chatter-topbar')]" position="before">
+            <div
+                t-if="messageMove.active"
+                class="mk_move_bar d-flex align-items-center gap-2 px-3"
+                role="toolbar"
+            >
+                <span class="mk_move_count flex-grow-1 fw-bold" t-out="moveCountLabel"/>
+                <button
+                    class="btn btn-secondary"
+                    type="button"
+                    t-on-click="() => this.messageMove.stop()"
+                >
+                    Cancel
+                </button>
+                <Dropdown
+                    t-if="state.moveConfigurations.length"
+                    position="'bottom-end'"
+                    disabled="!messageMove.ids.size"
+                    showCaret="true"
+                    togglerClass="'mk_move_confirm btn btn-primary'"
+                >
+                    <t t-set-slot="toggler">
+                        Move to
+                    </t>
+                    <t t-set-slot="default">
+                        <DropdownItem
+                            t-foreach="state.moveConfigurations"
+                            t-as="configuration"
+                            t-key="configuration.id"
+                            class="'mk_move_configuration'"
+                            onSelected="() => this.onClickMoveSelected(configuration.id)"
+                        >
+                            <t t-out="configuration.name"/>
+                        </DropdownItem>
+                        <div class="dropdown-divider"/>
+                        <DropdownItem onSelected="() => this.onClickMoveSelected()">
+                            Other record...
+                        </DropdownItem>
+                    </t>
+                </Dropdown>
+                <button
+                    t-else=""
+                    class="mk_move_confirm btn btn-primary"
+                    type="button"
+                    t-att-disabled="!messageMove.ids.size"
+                    t-on-click="() => this.onClickMoveSelected()"
+                >
+                    Move to...
+                </button>
+            </div>
+        </xpath>
+    </t>
+
+    <t
+        t-name="muk_mail_route.Message"
+        t-inherit="mail.Message"
+        t-inherit-mode="extension"
+    >
+        <xpath expr="//div[hasclass('o-mail-Message-sidebar')]" position="before">
+            <div
+                t-if="messageMove?.active"
+                class="mk_move_check form-check flex-shrink-0 mb-0"
+            >
+                <input
+                    class="form-check-input"
+                    type="checkbox"
+                    tabindex="-1"
+                    t-att-checked="messageMove.has(message)"
+                    t-att-disabled="!attClass.mk_move_selectable"
+                />
+            </div>
+        </xpath>
+    </t>
+
+</templates>

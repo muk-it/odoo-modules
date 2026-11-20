@@ -24,6 +24,7 @@ module.exports = [
                 owl: 'readonly',
                 luxon: 'readonly',
                 openerp: 'readonly',
+                QUnit: 'readonly',
             },
         },
         rules: {

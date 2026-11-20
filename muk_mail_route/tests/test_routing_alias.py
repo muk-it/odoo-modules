@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from odoo.tests import tagged
 
-from .common import MailRouteCommon
+from odoo.addons.muk_mail_route.tests.common import MailRouteCommon
 
 
 @tagged('post_install', '-at_install')
@@ -15,6 +15,7 @@ class TestRoutingAlias(MailRouteCommon):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Fetch the failure container."""
         super().setUpClass()
         cls.container = cls.env['mail.thread']._get_failed_route_container()
         cls.partner = cls.env['res.partner'].create({'name': 'Alias Target'})
