@@ -1,0 +1,41 @@
+.mk_move_bar {
+    padding: map-get($spacers, 2) 0;
+    + .o-mail-Chatter-topbar {
+        display: none !important;
+    }
+}
+.o-mail-Message.mk_move_selectable,
+.o-mail-Message.mk_move_disabled {
+    border-radius: $border-radius-lg !important;
+    user-select: none;
+    .o-mail-Message-core {
+        pointer-events: none;
+    }
+    .o-mail-Message-actions {
+        display: none !important;
+    }
+}
+.o-mail-Message.mk_move_selectable {
+    cursor: pointer;
+    &:hover {
+        background-color: $gray-100 !important;
+    }
+}
+.o-mail-Message.mk_move_selected,
+.o-mail-Message.mk_move_selected:hover {
+    background-color: mix($o-action, $o-view-background-color, 12%) !important;
+    outline: 1px solid mix($o-action, $o-view-background-color, 35%);
+    outline-offset: -1px;
+}
+.o-mail-Message.mk_move_disabled .o-mail-Message-sidebar,
+.o-mail-Message.mk_move_disabled .o-mail-Message-content {
+    opacity: 0.5;
+}
+.mk_move_check {
+    min-height: 0;
+    padding: map-get($spacers, 1) map-get($spacers, 2) 0 0;
+    .form-check-input {
+        margin: 0;
+        float: none;
+    }
+}

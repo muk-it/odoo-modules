@@ -10,19 +10,19 @@
                 <field name="name"/>
                 <field name="model_id"/>
                 <field name="route_type"/>
-                <field 
-                    name="action_id" 
+                <field
+                    name="action_id"
                     invisible="route_type != 'new'"
                     optional="hide"
                 />
-                <field 
-                    name="notify" 
+                <field
+                    name="notify"
                     widget="boolean_toggle"
                     invisible="route_type != 'search'"
                     optional="hide"
                 />
-                <field 
-                    name="set_is_internal" 
+                <field
+                    name="set_is_internal"
                     widget="boolean_toggle"
                     invisible="route_type != 'search' or not notify"
                     optional="hide"
@@ -50,27 +50,27 @@
                             <field name="route_type"/>
                         </group>
                         <group>
-                            <field 
-                                name="action_id" 
+                            <field
+                                name="action_id"
                                 invisible="route_type != 'new'"
                             />
-                            <field 
-                                name="notify" 
+                            <field
+                                name="notify"
                                 widget="boolean_toggle"
                                 invisible="route_type != 'search'"
                             />
-                            <field 
-                                name="set_is_internal" 
+                            <field
+                                name="set_is_internal"
                                 widget="boolean_toggle"
                                 invisible="route_type != 'search' or not notify"
                             />
                         </group>
                     </group>
                     <group string="Evaluation Code" invisible="route_type != 'new'">
-                        <field 
-                            name="code" 
-                            widget="code" 
-                            nolabel="1" 
+                        <field
+                            name="code"
+                            widget="code"
+                            nolabel="1"
                             colspan="2"
                             options="{'mode': 'python'}"
                         />

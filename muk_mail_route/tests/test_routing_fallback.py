@@ -4,8 +4,11 @@ from email.header import Header
 
 from odoo.tests import tagged
 
-from .common import MAIL_TEMPLATE_ATTACHMENT, MailRouteCommon
 from odoo.addons.mail.tests.common import mail_new_test_user
+from odoo.addons.muk_mail_route.tests.common import (
+    MAIL_TEMPLATE_ATTACHMENT,
+    MailRouteCommon,
+)
 
 
 @tagged('post_install', '-at_install')
@@ -18,6 +21,7 @@ class TestRoutingFallback(MailRouteCommon):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Create the container and the catchall and bounce addresses."""
         super().setUpClass()
         cls.container = cls.env['mail.thread']._get_failed_route_container()
         cls.catchall = f'{cls.alias_catchall}@{cls.alias_domain}'

@@ -2,9 +2,9 @@
 MuK Mail Routing
 ================
 
-This module collects mails that could not be routed and allows them to be 
-assigned subsequently. To simplify the workflow, predefined router settings 
-can be created. This allows lost messages, for example, to be created 
+This module collects mails that could not be routed and allows them to be
+assigned subsequently. To simplify the workflow, predefined router settings
+can be created. This allows lost messages, for example, to be created
 directly as new CRM leads.
 
 Installation
@@ -30,12 +30,23 @@ Configuration
 =============
 
 Go to *Discuss -> Configuration -> Routers* to create a new predefined routing option.
+For new records, a short Python snippet fills the fields from the email; the
+default takes the subject, or the start of the text, as the name and the sender
+as the email.
 
 Usage
 =============
 
-There are now additional menus in the Discuss app to find the failed emails. 
+There are now additional menus in the Discuss app to find the failed emails.
 These can be manually added to the correct record using the action route.
+
+In any chatter, choose *Move* in the actions of a message to start picking
+messages: click to add one, shift-click to add a range, Escape to stop. Emails
+and notes can move, tracked field changes cannot. *Move to* lists the routers: a
+router for new records creates a record from the oldest message and moves all of
+them onto it, a router for existing records asks which record to use. *Other
+record...* lets you pick any kind of record. The files only the moved messages
+use go with them, and both records log the move.
 
 Credits
 =======

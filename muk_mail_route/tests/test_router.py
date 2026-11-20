@@ -18,6 +18,7 @@ class TestRouter(MailCommon):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """Create the model references, the container and a target partner."""
         super().setUpClass()
 
         cls.model_res_partner = cls.env.ref('base.model_res_partner')
@@ -147,7 +148,7 @@ class TestRouter(MailCommon):
         wizard = self.env['muk_mail_route.router'].create(
             {
                 'configuration_id': config.id,
-                'reference': f'{self.partner_target._name},{self.partner_target.id}',
+                'res_id': self.partner_target.id,
                 'message_ids': [fields.Command.set([msg.id])],
             }
         )
@@ -183,7 +184,7 @@ class TestRouter(MailCommon):
         wizard = self.env['muk_mail_route.router'].create(
             {
                 'configuration_id': config.id,
-                'reference': f'{self.partner_target._name},{self.partner_target.id}',
+                'res_id': self.partner_target.id,
                 'message_ids': [fields.Command.set([msg.id])],
             }
         )
@@ -274,7 +275,7 @@ class TestRouter(MailCommon):
         self.assertFalse(wizard.notify)
         self.assertFalse(wizard.set_is_internal)
 
-    def test_reference_selection_follows_model_access(self):
+    def test_model_selection_follows_model_access(self):
         plain_user = new_test_user(
             self.env,
             'router_plain_user',
@@ -287,10 +288,8 @@ class TestRouter(MailCommon):
         )
         wizard_model = self.env['muk_mail_route.router']
 
-        plain_models = dict(wizard_model.with_user(plain_user)._selection_reference())
-        manager_models = dict(
-            wizard_model.with_user(manager_user)._selection_reference()
-        )
+        plain_models = dict(wizard_model.with_user(plain_user)._selection_model())
+        manager_models = dict(wizard_model.with_user(manager_user)._selection_model())
 
         self.assertIn('res.partner', plain_models)
         self.assertNotIn('muk_mail_route.container', plain_models)

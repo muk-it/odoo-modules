@@ -17,6 +17,16 @@ class MailMessage(models.Model):
     # ----------------------------------------------------------
 
     @api.model
+    def _get_route_configurations(self) -> models.BaseModel:
+        """Return the routing rules on models the current user may read."""
+        allowed = self.env['ir.model.access']._get_allowed_models()
+        return (
+            self.env['muk_mail_route.configuration']
+            .search([], order='sequence DESC')
+            .filtered(lambda configuration: configuration.model in allowed)
+        )
+
+    @api.model
     def _get_view_cache_key(
         self, view_id=None, view_type: str = 'form', **options
     ) -> tuple:
@@ -39,10 +49,7 @@ class MailMessage(models.Model):
         if self.env.user.has_group('base.group_erp_manager') and view == self.env.ref(
             'muk_mail_route.view_mail_message_failed_list'
         ):
-            allowed = self.env['ir.model.access']._get_allowed_models()
-            configurations = self.env['muk_mail_route.configuration'].search(
-                [('model_id.model', 'in', list(allowed))], order='sequence DESC'
-            )
+            configurations = self._get_route_configurations()
             for node in arch.xpath(".//button[@name='action_route_message']"):
                 for configuration in configurations:
                     button = etree.Element(
@@ -64,8 +71,13 @@ class MailMessage(models.Model):
         return arch, view
 
     # ----------------------------------------------------------
-    # Action
+    # Actions
     # ----------------------------------------------------------
+
+    @api.model
+    def get_route_configurations(self) -> list[dict]:
+        """Return the id and name of the routing rules the current user may use."""
+        return self._get_route_configurations().sorted('sequence').read(['name'])
 
     def action_route_message(self) -> dict:
         """Open the routing wizard pre-filled with the selected messages."""
@@ -73,8 +85,7 @@ class MailMessage(models.Model):
             'name': _('Route Message'),
             'res_model': 'muk_mail_route.router',
             'type': 'ir.actions.act_window',
-            'view_type': 'form',
-            'view_mode': 'form',
+            'views': [(False, 'form')],
             'target': 'new',
             'context': {
                 'default_message_ids': [fields.Command.set(self.ids)],

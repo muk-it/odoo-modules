@@ -16,9 +16,16 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: muk_mail_route
-#: model:ir.ui.menu,name:muk_mail_route.menu_mail_activity
-msgid "Acitvitiy Types"
-msgstr "Aktivitätsarten"
+#. odoo-javascript
+#: code:addons/muk_mail_route/static/src/chatter/message_move/message_move.js:0
+msgid "%(count)s selected"
+msgstr "%(count)s ausgewählt"
+
+#. module: muk_mail_route
+#. odoo-javascript
+#: code:addons/muk_mail_route/static/src/chatter/message_move/message_move.js:0
+msgid "1 selected"
+msgstr "1 ausgewählt"
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__action_id
@@ -31,6 +38,11 @@ msgid "Action Needed"
 msgstr "Aktion erforderlich"
 
 #. module: muk_mail_route
+#: model:ir.ui.menu,name:muk_mail_route.menu_mail_activity
+msgid "Activity Types"
+msgstr "Aktivitätsarten"
+
+#. module: muk_mail_route
 #: model_terms:ir.ui.view,arch_db:muk_mail_route.view_router_form
 msgid "Attach Message"
 msgstr "Nachricht anhängen"
@@ -41,6 +53,8 @@ msgid "Attachment Count"
 msgstr "Anzahl der Anhänge"
 
 #. module: muk_mail_route
+#. odoo-javascript
+#: code:addons/muk_mail_route/static/src/chatter/message_move/message_move.xml:0
 #: model_terms:ir.ui.view,arch_db:muk_mail_route.view_router_form
 msgid "Cancel"
 msgstr "Abbrechen"
@@ -221,8 +235,20 @@ msgid "Messages"
 msgstr "Nachrichten"
 
 #. module: muk_mail_route
+#. odoo-python
+#: code:addons/muk_mail_route/models/mail_thread.py:0
+msgid "Messages moved from %s"
+msgstr "Nachrichten von %s verschoben"
+
+#. module: muk_mail_route
+#. odoo-python
+#: code:addons/muk_mail_route/models/mail_thread.py:0
+msgid "Messages moved to %s"
+msgstr "Nachrichten nach %s verschoben"
+
+#. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__model_id
-#: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_router__model_id
+#: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_router__model
 msgid "Model"
 msgstr "Modell"
 
@@ -230,6 +256,24 @@ msgstr "Modell"
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__model
 msgid "Model Name"
 msgstr "Modellname"
+
+#. module: muk_mail_route
+#. odoo-javascript
+#: code:addons/muk_mail_route/static/src/chatter/message_move/message_move.js:0
+msgid "Move"
+msgstr "Verschieben"
+
+#. module: muk_mail_route
+#. odoo-javascript
+#: code:addons/muk_mail_route/static/src/chatter/message_move/message_move.xml:0
+msgid "Move to"
+msgstr "Verschieben nach"
+
+#. module: muk_mail_route
+#. odoo-javascript
+#: code:addons/muk_mail_route/static/src/chatter/message_move/message_move.xml:0
+msgid "Move to..."
+msgstr "Verschieben nach..."
 
 #. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_configuration__name
@@ -268,6 +312,12 @@ msgid "Number of messages with delivery error"
 msgstr "Anzahl der Nachrichten mit Zustellfehler"
 
 #. module: muk_mail_route
+#. odoo-javascript
+#: code:addons/muk_mail_route/static/src/chatter/message_move/message_move.xml:0
+msgid "Other record..."
+msgstr "Anderer Datensatz..."
+
+#. module: muk_mail_route
 #: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_container__rating_ids
 msgid "Ratings"
 msgstr "Bewertungen"
@@ -284,7 +334,7 @@ msgid "Route Message"
 msgstr "Nachricht weiterleiten"
 
 #. module: muk_mail_route
-#: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_router__reference
+#: model:ir.model.fields,field_description:muk_mail_route.field_muk_mail_route_router__res_id
 msgid "Route Object"
 msgstr "Route-Objekt"
 
