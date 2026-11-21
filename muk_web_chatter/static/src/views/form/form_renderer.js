@@ -12,7 +12,7 @@ const BOTTOM_LAYOUTS = {
     EXTERNAL_COMBO_XXL: 'EXTERNAL_COMBO',
 };
 const MIN_CHATTER_WIDTH = 50;
-const MIN_SHEET_WIDTH = 250;
+const CHATTER_WIDTH_PROPERTY = '--mk-Chatter-width';
 const STORAGE_KEY = 'muk_web_chatter.width';
 
 /** Place the chatter per user preference and wire its drag-resize handle. */
@@ -39,21 +39,14 @@ patch(FormRenderer.prototype, {
         const startX = ev.pageX;
         const startWidth = container.offsetWidth;
         const drag = new AbortController();
+        let resized = false;
         document.addEventListener(
             'mousemove',
-            (moveEvent) =>
-                this.chatterWidth.set(
-                    Math.min(
-                        Math.max(
-                            MIN_CHATTER_WIDTH,
-                            startWidth - (moveEvent.pageX - startX),
-                        ),
-                        Math.max(
-                            container.parentElement.offsetWidth - MIN_SHEET_WIDTH,
-                            MIN_SHEET_WIDTH,
-                        ),
-                    ),
-                ),
+            (moveEvent) => {
+                const width = Math.max(MIN_CHATTER_WIDTH, startWidth - (moveEvent.pageX - startX));
+                container.style.setProperty(CHATTER_WIDTH_PROPERTY, `${width}px`);
+                resized = true;
+            },
             { signal: drag.signal },
         );
         document.addEventListener(
@@ -61,7 +54,12 @@ patch(FormRenderer.prototype, {
             () => {
                 drag.abort();
                 document.body.classList.remove('user-select-none');
-                browser.localStorage.setItem(STORAGE_KEY, this.chatterWidth());
+                if (resized) {
+                    const width = container.offsetWidth;
+                    container.style.setProperty(CHATTER_WIDTH_PROPERTY, `${width}px`);
+                    this.chatterWidth.set(width);
+                    browser.localStorage.setItem(STORAGE_KEY, width);
+                }
             },
             { signal: drag.signal },
         );
