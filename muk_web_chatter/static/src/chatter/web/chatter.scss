@@ -5,11 +5,12 @@
     display: none;
 }
 .o-mail-Form-chatter.o-aside {
-    width: var(
-        --mk-Chatter-width,
-        calc(#{$o-mail-Chatter-minWidth} + var(--Chatter-asideExtraWidth))
-    );
-    max-width: var(--mk-Chatter-width, none);
+    --mk-Chatter-native-width: calc(#{$o-mail-Chatter-minWidth} + var(--Chatter-asideExtraWidth));
+    width: var(--mk-Chatter-width, var(--mk-Chatter-native-width));
+    max-width: calc(min(
+        var(--mk-Chatter-width),
+        max(var(--mk-Chatter-native-width), 100% - #{$o-form-sheet-min-width})
+    ));
     .mk_chatter_resize {
         top: 0;
         bottom: 0;
