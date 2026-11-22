@@ -1,4 +1,7 @@
 .o_form_renderer:has(> .o-mail-Form-chatter:not(.o-aside)) {
-    height: auto;
+    height: auto !important;
     flex-direction: column;
+    > .o_form_sheet_bg {
+        flex: none;
+    }
 }

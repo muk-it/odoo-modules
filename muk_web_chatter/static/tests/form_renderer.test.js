@@ -62,15 +62,13 @@ test('the chatter position preference places the chatter', async () => {
 });
 
 test.tags('muk_web_chatter');
-test('dragging the handle resizes the chatter within its bounds', async () => {
+test('dragging the handle resizes the chatter down to its minimum', async () => {
     await openPartnerForm();
-    const chatter = queryOne('.o-mail-Form-chatter');
-    const initialWidth = chatter.offsetWidth;
-    const maxWidth = Math.max(chatter.parentElement.offsetWidth - 250, 250);
+    const initialWidth = queryOne('.o-mail-Form-chatter').offsetWidth;
     mouse(queryOne('.mk_chatter_resize'), 'mousedown', { clientX: 600 });
     mouse(document, 'mousemove', { clientX: 500 });
     await animationFrame();
-    expect(chatterWidth()).toBe(`${Math.min(initialWidth + 100, maxWidth)}px`);
+    expect(chatterWidth()).toBe(`${initialWidth + 100}px`);
     mouse(document, 'mousemove', { clientX: 100000 });
     await animationFrame();
     expect(chatterWidth()).toBe('50px');
@@ -78,18 +76,24 @@ test('dragging the handle resizes the chatter within its bounds', async () => {
 });
 
 test.tags('muk_web_chatter');
-test('releasing the handle stores the width and ends the drag', async () => {
+test('releasing the handle stores the rendered width and ends the drag', async () => {
     await openPartnerForm();
-    mouse(queryOne('.mk_chatter_resize'), 'mousedown', { clientX: 600 });
-    mouse(document, 'mousemove', { clientX: 500 });
+    const chatter = queryOne('.o-mail-Form-chatter');
+    const handle = queryOne('.mk_chatter_resize');
+    mouse(handle, 'mousedown', { clientX: 600 });
+    mouse(document, 'mouseup');
+    expect(storedWidth()).toBe(null);
+    mouse(handle, 'mousedown', { clientX: 600 });
+    mouse(document, 'mousemove', { clientX: -100000 });
     await animationFrame();
-    const width = chatterWidth();
     expect(storedWidth()).toBe(null);
     mouse(document, 'mouseup');
     mouse(document, 'mousemove', { clientX: 200 });
     await animationFrame();
-    expect(storedWidth()).toBe(width.replace('px', ''));
-    expect(chatterWidth()).toBe(width);
+    const width = chatter.offsetWidth;
+    expect(width).toBeLessThan(chatter.parentElement.offsetWidth);
+    expect(storedWidth()).toBe(String(width));
+    expect(chatterWidth()).toBe(`${width}px`);
 });
 
 test.tags('muk_web_chatter');
