@@ -64,8 +64,8 @@ msgstr "Archivado"
 #. module: muk_mcp_access
 #: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model__confirm_write
 #: model_terms:ir.ui.view,arch_db:muk_mcp_access.view_mcp_access_model_search
-msgid "Ask Before Changes"
-msgstr "Preguntar antes de cambiar"
+msgid "Ask"
+msgstr "Preguntar"
 
 #. module: muk_mcp_access
 #: model:ir.model.fields,help:muk_mcp_access.field_muk_mcp_access_model__confirm_write
