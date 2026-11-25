@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+    <record id="view_skill_search" model="ir.ui.view">
+        <field name="name">muk_mcp_skills.skill.search</field>
+        <field name="model">muk_mcp_skills.skill</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="description"/>
+                <field name="body"/>
+                <field name="group_ids"/>
+                <filter
+                    name="archived"
+                    string="Archived"
+                    domain="[('active', '=', False)]"
+                />
+            </search>
+        </field>
+    </record>
+
+    <record id="view_skill_list" model="ir.ui.view">
+        <field name="name">muk_mcp_skills.skill.list</field>
+        <field name="model">muk_mcp_skills.skill</field>
+        <field name="arch" type="xml">
+            <tree duplicate="0">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="description"/>
+                <field name="group_ids" widget="many2many_tags"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_skill_form" model="ir.ui.view">
+        <field name="name">muk_mcp_skills.skill.form</field>
+        <field name="model">muk_mcp_skills.skill</field>
+        <field name="arch" type="xml">
+            <form duplicate="0">
+                <sheet>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        bg_color="text-bg-danger"
+                        invisible="active"
+                    />
+                    <field name="active" invisible="1"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" placeholder="e.g. quote-follow-up"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <field
+                            name="description"
+                            placeholder="What the skill does and when to use it."
+                        />
+                        <field
+                            name="group_ids"
+                            widget="many2many_tags"
+                            placeholder="Everyone"
+                            options="{'no_create': True}"
+                        />
+                    </group>
+                    <notebook>
+                        <page string="Instructions" name="body">
+                            <field
+                                name="body"
+                                class="font-monospace"
+                                placeholder="1. Search the open quotations of the customer..."
+                            />
+                        </page>
+                        <page string="Files" name="files">
+                            <field
+                                name="attachment_ids"
+                                widget="many2many_binary"
+                                class="w-100"
+                            />
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_skill" model="ir.actions.act_window">
+        <field name="name">Skills</field>
+        <field name="res_model">muk_mcp_skills.skill</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Write your first skill
+            </p>
+            <p>
+                A skill is a procedure Claude and other MCP clients load when a
+                request fits its description.
+            </p>
+        </field>
+    </record>
+
+</odoo>

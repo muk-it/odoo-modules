@@ -1,0 +1,35 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-xml
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      - id: trailing-whitespace
+
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v10.5.0
+    hooks:
+      - id: eslint
+        args: [--fix]
+        files: \.js$
+        additional_dependencies:
+          - '@eslint/js@10.0.1'
+          - eslint-plugin-jsdoc@63.0.8
+          - globals@17.4.0
+
+  # NOTE: pre-commit/mirrors-prettier is archived; rbubley/mirrors-prettier is the maintained fork.
+  - repo: https://github.com/rbubley/mirrors-prettier
+    rev: v3.8.4
+    hooks:
+      - id: prettier
+        files: \.(cjs|js|json|css|scss|md|yaml|yml)$
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.19
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-zero]
+      - id: ruff-format
