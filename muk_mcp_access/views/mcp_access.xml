@@ -16,7 +16,7 @@
 				<filter name="allow_write" string="Write" domain="[('allow_write', '=', True)]"/>
 				<filter
 					name="confirm_write"
-					string="Ask Before Changes"
+					string="Ask"
 					domain="[('confirm_write', '=', True)]"
 				/>
 				<filter

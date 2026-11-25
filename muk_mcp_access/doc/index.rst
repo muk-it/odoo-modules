@@ -45,7 +45,7 @@ Each entry sets:
   ``print_report``, ...) accept it.
 - *Write*: the write tools (``create_records``, ``update_records``,
   ``delete_records``, ``call_method``, ...) accept it.
-- *Ask Before Changes*: the user is asked in the AI client before a write tool
+- *Ask*: the user is asked in the AI client before a write tool
   runs on the model. A client that cannot ask is refused, so leave it off for
   models such a client has to change.
 - *Record Domain*: an optional filter, like a record rule. Only records

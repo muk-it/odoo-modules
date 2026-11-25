@@ -38,9 +38,9 @@ whoever the key belongs to.
 1. Install the module next to **MuK MCP Server**. Nothing changes until the
    first model is listed.
 2. Open **Settings > MCP > Authentication > Access** and use **Add Models**.
-3. Switch on **Write** where the agent should change data, **Ask Before
-   Changes** where the user should confirm it, and add a **Record Domain** where
-   it should see only part of a model.
+3. Switch on **Write** where the agent should change data, **Ask** where the
+   user should confirm it, and add a **Record Domain** where it should see only
+   part of a model.
 
 ## Support
 

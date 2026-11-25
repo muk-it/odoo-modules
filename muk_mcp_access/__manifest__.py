@@ -12,7 +12,7 @@
         only the listed models are exposed and the agent cannot discover or
         query anything else.
     """,
-    'version': '20.0.1.2.0',
+    'version': '20.0.1.2.1',
     'category': 'Tools/API',
     'license': 'LGPL-3',
     'author': 'MuK IT',
