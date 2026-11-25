@@ -26,12 +26,12 @@ def make_result_envelope(result, profile, method):
     Revision 2026-07-28 names the outcome kind on every result, carries the server
     identity in ``_meta``, and requires caching hints on the operations it defines
     as cacheable. The revisions before it define none of these, so their results
-    pass through untouched. The values are the transport's to set and override
-    anything a handler put under those keys.
+    pass through untouched. The values are the transport's to set; a handler may
+    only name the outcome kind itself.
     """
     if not profile.result_type:
         return result
-    envelope = {**result, 'resultType': profile.result_type}
+    envelope = {'resultType': profile.result_type, **result}
     envelope.update(version.MCP_CACHE_HINTS.get(method, {}))
     envelope['_meta'] = {
         **(result.get('_meta') or {}),

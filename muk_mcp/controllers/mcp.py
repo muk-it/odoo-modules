@@ -19,7 +19,10 @@ from odoo.addons.muk_mcp.tools import common, protocol, version
 from odoo.addons.muk_mcp.tools.content import (
     is_textual_mimetype, normalize_mimetype
 )
-from odoo.addons.muk_mcp.tools.exception import MCPResourceNotFound
+from odoo.addons.muk_mcp.tools.exception import (
+    MCPCapabilityRequired,
+    MCPResourceNotFound,
+)
 from odoo.addons.muk_mcp.tools.version import ProtocolProfile
 
 class MCPController(http.Controller):
@@ -242,6 +245,7 @@ class MCPController(http.Controller):
         if code in (
             common.MCP_UNSUPPORTED_PROTOCOL_VERSION,
             common.MCP_HEADER_MISMATCH,
+            common.MCP_MISSING_CAPABILITY,
             common.JSONRPC_INVALID_PARAMS,
         ):
             return 400
@@ -457,6 +461,13 @@ class MCPController(http.Controller):
                 common.JSONRPC_INVALID_PARAMS,
                 'Resource not found',
                 data={'uri': params.get('uri') or ''},
+                request_id=request_id,
+            )
+        except MCPCapabilityRequired as exc:
+            return protocol.make_jsonrpc_error(
+                common.MCP_MISSING_CAPABILITY,
+                str(exc),
+                data={'requiredCapabilities': exc.capabilities},
                 request_id=request_id,
             )
         except Exception as exc:

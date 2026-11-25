@@ -92,6 +92,14 @@ def negotiate_handshake(requested: str | None) -> str:
     return MCP_LATEST_HANDSHAKE_VERSION
 
 
+def encode_header_value(value: str) -> str:
+    """Encode a mirrored request header value, with the Base64 sentinel if needed."""
+    if value.isascii() and value.isprintable() and value == value.strip():
+        return value
+    payload = base64.b64encode(value.encode()).decode()
+    return f'{MCP_HEADER_BASE64_PREFIX}{payload}{MCP_HEADER_BASE64_SUFFIX}'
+
+
 def decode_header_value(value: str) -> str | None:
     """Decode the Base64 sentinel a mirrored request header value may carry.
 
