@@ -47,6 +47,15 @@ class MCPAccessModel(models.Model):
         default=False,
     )
 
+    confirm_write = fields.Boolean(
+        string='Ask Before Changes',
+        help=(
+            'Ask the user in the AI client before a write tool runs on this '
+            'model. A client that cannot ask is refused.'
+        ),
+        default=False,
+    )
+
     domain = fields.Text(
         string='Record Domain',
         help=(
@@ -99,6 +108,15 @@ class MCPAccessModel(models.Model):
         if category == 'write':
             return entry.allow_write
         return entry.allow_read
+
+    @api.model
+    def _is_confirmation_needed(self, model_name: str) -> bool:
+        """Return whether changes to a model need the confirmation of the user."""
+        return bool(
+            self._entries().search_count(
+                [('model_name', '=', model_name), ('confirm_write', '=', True)]
+            )
+        )
 
     @api.model
     def _get_model_domain(self, model_name: str) -> list | None:
