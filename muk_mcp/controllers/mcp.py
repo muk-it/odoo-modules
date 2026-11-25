@@ -12,6 +12,7 @@ from odoo.tools import config
 
 from odoo.addons.muk_mcp.tools import common, protocol, version
 from odoo.addons.muk_mcp.tools.exception import (
+    MCPCapabilityRequired,
     MCPResourceNotFound,
 )
 
@@ -192,7 +193,7 @@ class MCPController(http.Controller):
     ) -> int:
         """Return the HTTP status for a dispatched JSON-RPC response.
 
-        Version, header and parameter faults are ``400``. The stateless revision
+        Version, header, capability and parameter faults are ``400``. The stateless revision
         also answers an unknown method with ``404``; every other outcome,
         including tool errors, rides on ``200``.
         """
@@ -203,6 +204,7 @@ class MCPController(http.Controller):
         if code in (
             common.MCP_UNSUPPORTED_PROTOCOL_VERSION,
             common.MCP_HEADER_MISMATCH,
+            common.MCP_MISSING_CAPABILITY,
             common.JSONRPC_INVALID_PARAMS,
         ):
             return 400
@@ -284,6 +286,13 @@ class MCPController(http.Controller):
             ), protocol_version
         except (*PG_CONCURRENCY_EXCEPTIONS_TO_RETRY, ConcurrencyError):
             raise
+        except MCPCapabilityRequired as exc:
+            return protocol.make_jsonrpc_error(
+                common.MCP_MISSING_CAPABILITY,
+                str(exc),
+                data={'requiredCapabilities': exc.capabilities},
+                request_id=request_id,
+            ), protocol_version
         except UserError as exc:
             return protocol.make_jsonrpc_error(
                 common.JSONRPC_INVALID_PARAMS,

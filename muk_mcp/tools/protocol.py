@@ -44,13 +44,13 @@ def make_result_envelope(
 ) -> dict[str, Any]:
     """Add the result fields the stateless revision requires.
 
-    It names the outcome kind on every result, carries the server identity in
-    ``_meta`` and requires caching hints on the operations it defines as
-    cacheable. Handshake revisions define none of these.
+    It names the outcome kind on every result, ``complete`` unless the result
+    says otherwise, carries the server identity in ``_meta`` and requires caching
+    hints on cacheable operations. Handshake revisions define none of these.
     """
     if protocol_version != version.MCP_STATELESS_VERSION:
         return result
-    envelope = {**result, 'resultType': 'complete'}
+    envelope = {'resultType': 'complete', **result}
     envelope.update(version.MCP_CACHE_HINTS.get(method, {}))
     envelope['_meta'] = {
         **(result.get('_meta') or {}),

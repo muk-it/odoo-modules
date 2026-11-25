@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+from unittest.mock import patch
 
 from odoo.tests import TransactionCase
 from odoo.tools import BinaryBytes
@@ -8,6 +9,10 @@ from odoo.tools import BinaryBytes
 from odoo.addons.muk_mcp.controllers.mcp import MCPController
 from odoo.addons.muk_mcp.tests.common import MCPHttpCase
 from odoo.addons.muk_mcp.tools import version
+from odoo.addons.muk_mcp.tools.exception import (
+    MCPCapabilityRequired,
+    MCPInputRequired,
+)
 
 HANDSHAKE = version.MCP_VERSION_2025_11_25
 STATELESS = version.MCP_STATELESS_VERSION
@@ -55,6 +60,28 @@ class TestMcpStateless(MCPHttpCase):
                 )
                 self.assertEqual(result.get('cacheScope'), scope)
                 self.assertEqual('ttlMs' in result, scope is not None)
+
+    def test_a_tool_can_ask_for_input_or_refuse_the_client(self):
+        requests = {'confirm': {'method': 'elicitation/create', 'params': {}}}
+        asked, refused = (
+            patch.object(self.registry['muk_mcp.tool'], '_execute', side_effect=error)
+            for error in (
+                MCPInputRequired('Sure?', requests, 'state'),
+                MCPCapabilityRequired('Ask first.', {'elicitation': {}}),
+            )
+        )
+        params = {'name': 'whoami', 'arguments': {}}
+        with asked:
+            result = self.mcp_stateless_post('tools/call', params).json()['result']
+        self.assertEqual(result['resultType'], 'input_required')
+        self.assertEqual(result['inputRequests'], requests)
+        self.assertEqual(result['requestState'], 'state')
+        with refused:
+            response = self.mcp_stateless_post('tools/call', params)
+        self.assertEqual(response.status_code, 400)
+        error = response.json()['error']
+        self.assertEqual((error['code'], error['message']), (-32021, 'Ask first.'))
+        self.assertEqual(error['data'], {'requiredCapabilities': {'elicitation': {}}})
 
     def test_discover_advertises_only_the_stateless_revision(self):
         response = self.mcp_stateless_post(
