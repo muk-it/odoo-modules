@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo noupdate="1">
+
+    <record id="skill_activity_review" model="muk_mcp_skills.skill">
+        <field name="name">activity-review</field>
+        <field name="description">Review the open activities of a user and agree on what to do with the overdue ones. Use it when someone asks what is open, overdue or next.</field>
+        <field name="body"># Activity review
+
+1. Call `whoami` for the user id, then `search_read` on `mail.activity` with
+   that user, ordered by `date_deadline`.
+2. Show the overdue activities first, then those due today, one line each:
+   deadline, document, summary.
+3. Suggest one step per overdue activity: do it now, move it or drop it.
+4. Wait for an answer before changing anything. Move a deadline with
+   `update_records`, close an activity with the method `action_done`.</field>
+    </record>
+
+</odoo>
