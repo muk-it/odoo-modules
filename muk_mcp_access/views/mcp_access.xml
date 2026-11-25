@@ -14,7 +14,7 @@
 				<separator/>
 				<filter name="allow_read" string="Read" domain="[('allow_read', '=', True)]"/>
 				<filter name="allow_write" string="Write" domain="[('allow_write', '=', True)]"/>
-				<filter name="confirm_write" string="Ask Before Changes" domain="[('confirm_write', '=', True)]"/>
+				<filter name="confirm_write" string="Ask" domain="[('confirm_write', '=', True)]"/>
 				<filter name="read_only" string="Read Only" domain="[('allow_read', '=', True), ('allow_write', '=', False)]"/>
 				<group>
 					<filter name="group_write" string="Write Access" context="{'group_by': 'allow_write'}"/>

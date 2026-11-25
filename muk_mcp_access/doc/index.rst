@@ -42,7 +42,7 @@ Each entry controls:
   ``search_read``, ``read_records``, ``describe_model``, etc.
 - **Write** — model is writable via ``create_records``,
   ``update_records``, ``delete_records``, and ``call_method``.
-- **Ask Before Changes** — the user is asked in the AI client before
+- **Ask** — the user is asked in the AI client before
   a write tool runs on the model. A client that cannot ask is refused.
 
 Use the *Add Models* button to bulk-enable multiple models at once.
