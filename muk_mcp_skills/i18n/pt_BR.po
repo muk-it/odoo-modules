@@ -1,0 +1,246 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* muk_mcp_skills
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-25 07:34+0000\n"
+"PO-Revision-Date: 2026-11-25 07:34+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: muk_mcp_skills
+#: model:ir.module.module,description:base.module_muk_mcp_skills
+msgid ""
+"\n"
+"Implements the Skills extension of the Model Context Protocol on top\n"
+"of the MuK MCP Server. Administrators write skills in Odoo: a name, a\n"
+"line that tells the AI client when to use it, the instructions and\n"
+"the files they refer to. Every MCP client that supports the extension\n"
+"lists the skills the user of its key may use and loads one when a\n"
+"request fits.\n"
+msgstr ""
+"\n"
+"Implementa a extensão Skills do Model Context Protocol sobre o MuK MCP\n"
+"Server. Os administradores escrevem skills no Odoo: um nome, uma linha\n"
+"que diz ao cliente de IA quando usá-la, as instruções e os arquivos a que\n"
+"se referem. Todo cliente MCP compatível com a extensão lista as skills que\n"
+"o usuário da sua chave pode usar e carrega uma quando um pedido se\n"
+"encaixa.\n"
+
+#. module: muk_mcp_skills
+#: model_terms:ir.ui.view,arch_db:muk_mcp_skills.view_skill_form
+msgid "1. Search the open quotations of the customer..."
+msgstr "1. Pesquise as cotações abertas do cliente..."
+
+#. module: muk_mcp_skills
+#: model_terms:ir.actions.act_window,help:muk_mcp_skills.action_skill
+msgid ""
+"A skill is a procedure Claude and other MCP clients load when a\n"
+"                request fits its description."
+msgstr ""
+"Uma skill é um procedimento que o Claude e outros clientes MCP carregam "
+"quando um pedido se encaixa na sua descrição."
+
+#. module: muk_mcp_skills
+#: model:ir.model.constraint,message:muk_mcp_skills.constraint_muk_mcp_skills_skill_name_unique
+msgid "A skill with this name already exists."
+msgstr "Já existe uma skill com este nome."
+
+#. module: muk_mcp_skills
+#: model:ir.model.fields,field_description:muk_mcp_skills.field_muk_mcp_skills_skill__active
+msgid "Active"
+msgstr "Ativo"
+
+#. module: muk_mcp_skills
+#: model_terms:ir.ui.view,arch_db:muk_mcp_skills.view_skill_form
+#: model_terms:ir.ui.view,arch_db:muk_mcp_skills.view_skill_search
+msgid "Archived"
+msgstr "Arquivado"
+
+#. module: muk_mcp_skills
+#: model:ir.model.fields,field_description:muk_mcp_skills.field_muk_mcp_skills_skill__create_uid
+msgid "Created by"
+msgstr "Criado por"
+
+#. module: muk_mcp_skills
+#: model:ir.model.fields,field_description:muk_mcp_skills.field_muk_mcp_skills_skill__create_date
+msgid "Created on"
+msgstr "Criado em"
+
+#. module: muk_mcp_skills
+#: model:ir.model.fields,field_description:muk_mcp_skills.field_muk_mcp_skills_skill__description
+msgid "Description"
+msgstr "Descrição"
+
+#. module: muk_mcp_skills
+#: model:ir.model.fields,field_description:muk_mcp_skills.field_muk_mcp_mixin__display_name
+#: model:ir.model.fields,field_description:muk_mcp_skills.field_muk_mcp_skills_skill__display_name
+msgid "Display Name"
+msgstr "Nome exibido"
+
+#. module: muk_mcp_skills
+#. odoo-python
+#: code:addons/muk_mcp_skills/models/skill.py:0
+msgid "Every file needs a name of its own, other than %s."
+msgstr "Cada arquivo precisa de um nome próprio, diferente de %s."
+
+#. module: muk_mcp_skills
+#: model_terms:ir.ui.view,arch_db:muk_mcp_skills.view_skill_form
+msgid "Everyone"
+msgstr "Todos"
+
+#. module: muk_mcp_skills
+#: model:ir.model.fields,field_description:muk_mcp_skills.field_muk_mcp_skills_skill__attachment_ids
+#: model_terms:ir.ui.view,arch_db:muk_mcp_skills.view_skill_form
+msgid "Files"
+msgstr "Arquivos"
+
+#. module: muk_mcp_skills
+#: model:ir.model.fields,help:muk_mcp_skills.field_muk_mcp_skills_skill__attachment_ids
+msgid ""
+"Files next to the instructions. Mention one by its name and the client reads"
+" it when it needs it."
+msgstr ""
+"Arquivos ao lado das instruções. Mencione um pelo nome e o cliente o lê "
+"quando precisar."
+
+#. module: muk_mcp_skills
+#: model:ir.model.fields,field_description:muk_mcp_skills.field_muk_mcp_skills_skill__group_ids
+msgid "Groups"
+msgstr "Grupos"
+
+#. module: muk_mcp_skills
+#: model:ir.model.fields,help:muk_mcp_skills.field_muk_mcp_skills_skill__group_ids
+msgid "Groups the skill is served to. Leave empty to serve it to everyone."
+msgstr ""
+"Grupos a que a skill é oferecida. Deixe vazio para oferecê-la a todos."
+
+#. module: muk_mcp_skills
+#: model:ir.model.fields,field_description:muk_mcp_skills.field_muk_mcp_mixin__id
+#: model:ir.model.fields,field_description:muk_mcp_skills.field_muk_mcp_skills_skill__id
+msgid "ID"
+msgstr ""
+
+#. module: muk_mcp_skills
+#: model:ir.model.fields,help:muk_mcp_skills.field_muk_mcp_skills_skill__name
+msgid ""
+"Identifier clients list and call the skill by: lowercase letters, digits and"
+" single hyphens, 64 characters at most."
+msgstr ""
+"Identificador com que os clientes listam e chamam a skill: letras "
+"minúsculas, dígitos e hífens simples, no máximo 64 caracteres."
+
+#. module: muk_mcp_skills
+#: model:ir.model.fields,field_description:muk_mcp_skills.field_muk_mcp_skills_skill__body
+#: model_terms:ir.ui.view,arch_db:muk_mcp_skills.view_skill_form
+msgid "Instructions"
+msgstr "Instruções"
+
+#. module: muk_mcp_skills
+#: model:ir.model.fields,field_description:muk_mcp_skills.field_muk_mcp_skills_skill__write_uid
+msgid "Last Updated by"
+msgstr "Última atualização por"
+
+#. module: muk_mcp_skills
+#: model:ir.model.fields,field_description:muk_mcp_skills.field_muk_mcp_skills_skill__write_date
+msgid "Last Updated on"
+msgstr "Última atualização em"
+
+#. module: muk_mcp_skills
+#: model:ir.model,name:muk_mcp_skills.model_muk_mcp_skills_skill
+msgid "MCP Skill"
+msgstr "Skill MCP"
+
+#. module: muk_mcp_skills
+#: model:ir.model,name:muk_mcp_skills.model_muk_mcp_mixin
+msgid "MCP Tool Mixin"
+msgstr ""
+
+#. module: muk_mcp_skills
+#: model_terms:ir.ui.view,arch_db:muk_mcp_skills.view_res_config_settings_skills
+msgid "Manage Skills"
+msgstr "Gerenciar skills"
+
+#. module: muk_mcp_skills
+#: model:ir.model.fields,help:muk_mcp_skills.field_muk_mcp_skills_skill__body
+msgid "Markdown the client follows once it has loaded the skill."
+msgstr "Markdown que o cliente segue depois de carregar a skill."
+
+#. module: muk_mcp_skills
+#: model:ir.module.module,shortdesc:base.module_muk_mcp_skills
+msgid "MuK MCP Skills"
+msgstr ""
+
+#. module: muk_mcp_skills
+#: model:ir.model.fields,field_description:muk_mcp_skills.field_muk_mcp_skills_skill__name
+msgid "Name"
+msgstr "Nome"
+
+#. module: muk_mcp_skills
+#: model:ir.model.fields,field_description:muk_mcp_skills.field_muk_mcp_skills_skill__sequence
+msgid "Sequence"
+msgstr "Sequência"
+
+#. module: muk_mcp_skills
+#: model:ir.module.module,summary:base.module_muk_mcp_skills
+msgid "Serve skills written in Odoo to Claude and other MCP clients"
+msgstr "Ofereça skills escritas no Odoo ao Claude e a outros clientes MCP"
+
+#. module: muk_mcp_skills
+#: model:ir.actions.act_window,name:muk_mcp_skills.action_skill
+#: model:ir.ui.menu,name:muk_mcp_skills.menu_skill
+msgid "Skills"
+msgstr ""
+
+#. module: muk_mcp_skills
+#. odoo-python
+#: code:addons/muk_mcp_skills/models/skill.py:0
+msgid "The description may hold 1024 characters at most."
+msgstr "A descrição pode conter no máximo 1024 caracteres."
+
+#. module: muk_mcp_skills
+#. odoo-python
+#: code:addons/muk_mcp_skills/models/skill.py:0
+msgid "The files of a skill may hold 16 MB at most."
+msgstr "Os arquivos de uma skill podem ocupar no máximo 16 MB."
+
+#. module: muk_mcp_skills
+#. odoo-python
+#: code:addons/muk_mcp_skills/models/skill.py:0
+msgid ""
+"The name may hold lowercase letters, digits and single hyphens between them,"
+" 64 characters at most."
+msgstr ""
+"O nome pode conter letras minúsculas, dígitos e hífens simples entre eles, "
+"no máximo 64 caracteres."
+
+#. module: muk_mcp_skills
+#: model_terms:ir.ui.view,arch_db:muk_mcp_skills.view_skill_form
+msgid "What the skill does and when to use it."
+msgstr "O que a skill faz e quando usá-la."
+
+#. module: muk_mcp_skills
+#: model:ir.model.fields,help:muk_mcp_skills.field_muk_mcp_skills_skill__description
+msgid ""
+"What the skill does and when to use it. A client decides by this text alone "
+"whether a request needs the skill."
+msgstr ""
+"O que a skill faz e quando usá-la. Um cliente decide só por este texto se um"
+" pedido precisa da skill."
+
+#. module: muk_mcp_skills
+#: model_terms:ir.actions.act_window,help:muk_mcp_skills.action_skill
+msgid "Write your first skill"
+msgstr "Escreva a sua primeira skill"
+
+#. module: muk_mcp_skills
+#: model_terms:ir.ui.view,arch_db:muk_mcp_skills.view_skill_form
+msgid "e.g. quote-follow-up"
+msgstr "ex.: quote-follow-up"
