@@ -788,6 +788,12 @@ msgid "MCP Server"
 msgstr "Server MCP"
 
 #. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_res_config_settings__module_muk_mcp_skills
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "MCP Skills"
+msgstr "Skill MCP"
+
+#. module: muk_mcp
 #: model:ir.model,name:muk_mcp.model_muk_mcp_tool
 msgid "MCP Tool"
 msgstr "Strumento MCP"
@@ -1176,6 +1182,13 @@ msgstr "Sequenza"
 #: model:ir.model,name:muk_mcp.model_muk_mcp_key_show
 msgid "Show MCP Key"
 msgstr "Mostra chiave MCP"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Skills written in Odoo, loaded by AI clients when a request fits."
+msgstr ""
+"Skill scritte in Odoo, caricate dai client IA quando una richiesta "
+"corrisponde."
 
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__status
