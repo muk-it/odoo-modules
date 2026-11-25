@@ -14,7 +14,11 @@ from odoo.tools import config
 from odoo.addons.muk_mcp.core.tool import get_tool_index
 
 from odoo.addons.muk_mcp.tools.encoder import encode_log, RecordEncoder
-from odoo.addons.muk_mcp.tools.exception import MCPScopeDenied
+from odoo.addons.muk_mcp.tools.exception import (
+    MCPCapabilityRequired,
+    MCPInputRequired,
+    MCPScopeDenied,
+)
 from odoo.addons.muk_mcp.tools.logger import LoggerProxy
 from odoo.addons.muk_mcp.tools.protocol import (
     ToolContent, format_internal_error, make_text_content, make_tool_result,
@@ -122,13 +126,20 @@ class MCPTool(models.Model):
     def _call_result(self, name, arguments, env, enforce_scope=None):
         """Run a tool and return its ``tools/call`` result.
 
-        Scope, access, user and unexpected errors become error results.
-        Concurrency failures propagate, so the request as a whole is retried.
+        Scope, access, user and unexpected errors become error results, a call that
+        needs input asks for it. Concurrency failures and missing client capabilities
+        propagate: the request is retried, or refused as a whole.
         """
         try:
             result, _info = self._call(name, arguments, env, enforce_scope)
-        except PG_CONCURRENCY_EXCEPTIONS_TO_RETRY:
+        except (*PG_CONCURRENCY_EXCEPTIONS_TO_RETRY, MCPCapabilityRequired):
             raise
+        except MCPInputRequired as exc:
+            return {
+                'resultType': 'input_required',
+                'inputRequests': exc.requests,
+                'requestState': exc.state,
+            }
         except (MCPScopeDenied, AccessError, UserError) as exc:
             return make_tool_result([make_text_content(str(exc))], is_error=True)
         except Exception as exc:
@@ -152,11 +163,8 @@ class MCPTool(models.Model):
                 )
             return text, info
         except Exception as exc:
-            status = (
-                'denied'
-                if isinstance(exc, MCPScopeDenied)
-                else 'error'
-            )
+            denied = (MCPScopeDenied, MCPInputRequired, MCPCapabilityRequired)
+            status = 'denied' if isinstance(exc, denied) else 'error'
             error = str(exc)
             raise
         finally:
