@@ -49,7 +49,7 @@ class MCPAccessModel(models.Model):
     )
 
     confirm_write = fields.Boolean(
-        string='Ask Before Changes',
+        string='Ask',
         help=(
             'Ask the user in the AI client before a write tool runs on this '
             'model. A client that cannot ask is refused.'
