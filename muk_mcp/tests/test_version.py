@@ -2,12 +2,17 @@ from __future__ import annotations
 
 import base64
 import dataclasses
+from unittest.mock import patch
 
 from odoo.tests import common, tagged
 
 from odoo.addons.muk_mcp.tests.common import MCPHttpCase
 from odoo.addons.muk_mcp.tools import common as mcp_common
 from odoo.addons.muk_mcp.tools import protocol, version
+from odoo.addons.muk_mcp.tools.exception import (
+    MCPCapabilityRequired,
+    MCPInputRequired,
+)
 
 RETIRED_VERSION = '2025-03-26'
 
@@ -676,6 +681,28 @@ class TestVersionNegotiationHttp(MCPHttpCase):
         self.mcp_delete(session_id=session_id)
         response = self.mcp_stateless_post('tools/list', session_id=session_id)
         self.assertEqual(response.status_code, 200)
+
+    def test_a_tool_can_ask_for_input_or_refuse_the_client(self):
+        requests = {'confirm': {'method': 'elicitation/create', 'params': {}}}
+        asked, refused = (
+            patch.object(self.registry['muk_mcp.tool'], '_execute', side_effect=error)
+            for error in (
+                MCPInputRequired('Sure?', requests, 'state'),
+                MCPCapabilityRequired('Ask first.', {'elicitation': {}}),
+            )
+        )
+        params = {'name': 'whoami', 'arguments': {}}
+        with asked:
+            result = self.mcp_stateless_post('tools/call', params).json()['result']
+        self.assertEqual(result['resultType'], 'input_required')
+        self.assertEqual(result['inputRequests'], requests)
+        self.assertEqual(result['requestState'], 'state')
+        with refused:
+            response = self.mcp_stateless_post('tools/call', params)
+        self.assertEqual(response.status_code, 400)
+        error = response.json()['error']
+        self.assertEqual((error['code'], error['message']), (-32021, 'Ask first.'))
+        self.assertEqual(error['data'], {'requiredCapabilities': {'elicitation': {}}})
 
 
 @tagged('post_install', '-at_install')

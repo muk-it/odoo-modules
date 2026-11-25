@@ -15,6 +15,7 @@ from odoo.tools.misc import str2bool
 from odoo.addons.muk_mcp.core.route import mcp_route
 from odoo.addons.muk_mcp.tools import common, protocol, version
 from odoo.addons.muk_mcp.tools.exception import (
+    MCPCapabilityRequired,
     MCPResourceNotFound,
 )
 from odoo.addons.muk_mcp.tools.version import ProtocolProfile
@@ -220,7 +221,7 @@ class MCPController(http.Controller):
     def _get_response_status(self, response_data: dict[str, Any]) -> int:
         """Return the HTTP status for a dispatched JSON-RPC response.
 
-        An unknown session is ``404`` and version, header and parameter faults are
+        An unknown session is ``404`` and version, header, capability and parameter faults are
         ``400``. The stateless revision also answers an unknown method with ``404``;
         every other outcome, including tool errors, rides on ``200``.
         """
@@ -233,6 +234,7 @@ class MCPController(http.Controller):
         if code in (
             common.MCP_UNSUPPORTED_PROTOCOL_VERSION,
             common.MCP_HEADER_MISMATCH,
+            common.MCP_MISSING_CAPABILITY,
             common.JSONRPC_INVALID_PARAMS,
         ):
             return 400
@@ -469,6 +471,13 @@ class MCPController(http.Controller):
                 common.JSONRPC_INVALID_PARAMS,
                 'Resource not found',
                 data={'uri': params.get('uri') or ''},
+                request_id=request_id,
+            )
+        except MCPCapabilityRequired as exc:
+            return protocol.make_jsonrpc_error(
+                common.MCP_MISSING_CAPABILITY,
+                str(exc),
+                data={'requiredCapabilities': exc.capabilities},
                 request_id=request_id,
             )
         except Exception as exc:

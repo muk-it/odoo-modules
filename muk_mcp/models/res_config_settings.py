@@ -59,3 +59,7 @@ class ResConfigSettings(models.TransientModel):
     module_muk_mcp_enterprise = fields.Boolean(
         string='MCP Enterprise',
     )
+
+    module_muk_mcp_skills = fields.Boolean(
+        string='MCP Skills',
+    )

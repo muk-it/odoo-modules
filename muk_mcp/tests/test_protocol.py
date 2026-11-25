@@ -121,14 +121,6 @@ class TestProtocol(common.TransactionCase):
             result,
         )
 
-    def test_make_result_envelope_overrides_a_handler_result_type(self):
-        envelope = protocol.make_result_envelope(
-            {'resultType': 'input_required'},
-            version.get_profile(version.MCP_VERSION_2026_07_28),
-            'tools/call',
-        )
-        self.assertEqual(envelope['resultType'], 'complete')
-
     def test_make_result_envelope_carries_the_caching_hints(self):
         envelope = protocol.make_result_envelope(
             {'tools': []},

@@ -957,6 +957,12 @@ msgid "MCP Server"
 msgstr "Serveur MCP"
 
 #. module: muk_mcp
+#: model:ir.model.fields,field_description:muk_mcp.field_res_config_settings__module_muk_mcp_skills
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "MCP Skills"
+msgstr "Skills MCP"
+
+#. module: muk_mcp
 #: model:ir.model,name:muk_mcp.model_muk_mcp_session
 msgid "MCP Session"
 msgstr "Session MCP"
@@ -1452,6 +1458,13 @@ msgstr "Sessions"
 #: model:ir.model,name:muk_mcp.model_muk_mcp_key_show
 msgid "Show MCP Key"
 msgstr "Afficher la clé MCP"
+
+#. module: muk_mcp
+#: model_terms:ir.ui.view,arch_db:muk_mcp.view_res_config_settings_form
+msgid "Skills written in Odoo, loaded by AI clients when a request fits."
+msgstr ""
+"Des skills rédigés dans Odoo, chargés par les clients IA lorsqu'une demande "
+"correspond."
 
 #. module: muk_mcp
 #: model:ir.model.fields,field_description:muk_mcp.field_muk_mcp_log__status

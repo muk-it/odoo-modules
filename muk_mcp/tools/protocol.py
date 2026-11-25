@@ -46,11 +46,11 @@ def make_result_envelope(
 
     Revision 2026-07-28 names the outcome kind, carries the server identity in
     ``_meta`` and adds caching hints to cacheable operations; earlier revisions
-    pass through untouched. These values override a handler's own.
+    pass through untouched. A handler may only set the outcome kind itself.
     """
     if not profile.result_type:
         return result
-    envelope = {**result, 'resultType': profile.result_type}
+    envelope = {'resultType': profile.result_type, **result}
     envelope.update(version.MCP_CACHE_HINTS.get(method, {}))
     envelope['_meta'] = {
         **(result.get('_meta') or {}),
