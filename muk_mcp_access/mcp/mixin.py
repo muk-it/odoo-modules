@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import secrets
 from collections.abc import Callable
 from typing import Any
 
@@ -8,6 +9,7 @@ from odoo import _, api, models
 from odoo.exceptions import AccessError
 from odoo.fields import Domain
 
+from odoo.addons.muk_mcp.tools.exception import MCPCapabilityRequired, MCPInputRequired
 from odoo.addons.muk_mcp.tools.parser import coerce_json_value, normalize_ids
 
 
@@ -39,7 +41,65 @@ class MCPMixin(models.AbstractModel):
                     model=model,
                 )
             )
+        if category == 'write':
+            self._mcp_assert_confirmed(model)
         return result
+
+    @api.model
+    def _mcp_confirmation_names(self, model: str, target: Any, ids: Any) -> str:
+        """Return the names of the records a question is about, ten at most."""
+        if target != model or not ids:
+            return ''
+        domain = Domain('id', 'in', normalize_ids(ids))
+        records = (
+            self.env[model]
+            .with_context(active_test=False)
+            .search(domain & Domain(self._mcp_record_domain(model) or []), limit=10)
+        )
+        return ', '.join(records.mapped('display_name'))
+
+    @api.model
+    def _mcp_assert_confirmed(self, model: str) -> None:
+        """Assert the user confirmed the running call if the model asks for it.
+
+        :raise MCPInputRequired: when the client has to ask the user.
+        :raise AccessError: when the user refused, or the client cannot ask.
+        """
+        elicitation = self.env.context.get('mcp_elicitation')
+        if not elicitation or elicitation['answer'] == 'accept':
+            return
+        if not self.env['muk_mcp_access.model']._is_confirmation_needed(model):
+            return
+        name = self.env['ir.model']._get(model).name
+        if elicitation['answer']:
+            raise AccessError(_('The user did not allow this change to %s.', name))
+        if not (elicitation['stateless'] and elicitation['supported']):
+            message = _(
+                'Changes to %s need the confirmation of the user, and this client '
+                'cannot ask for it.',
+                name,
+            )
+            if elicitation['stateless']:
+                raise MCPCapabilityRequired(message, {'elicitation': {'form': {}}})
+            raise AccessError(message)
+        question = _('Allow this change to %s?', name)
+        records = self._mcp_confirmation_names(model, *elicitation['target'])
+        raise MCPInputRequired(
+            question,
+            {
+                'confirm': {
+                    'method': 'elicitation/create',
+                    'params': {
+                        'mode': 'form',
+                        'message': '\n'.join(
+                            filter(None, (question, records, elicitation['call']))
+                        ),
+                        'requestedSchema': {'type': 'object', 'properties': {}},
+                    },
+                },
+            },
+            secrets.token_urlsafe(32),
+        )
 
     @api.model
     def _mcp_record_domain(self, model: str) -> list | None:

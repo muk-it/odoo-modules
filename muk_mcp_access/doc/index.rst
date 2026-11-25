@@ -42,6 +42,8 @@ Each entry controls:
   ``search_read``, ``read_records``, ``describe_model``, etc.
 - **Write** — model is writable via ``create_records``,
   ``update_records``, ``delete_records``, and ``call_method``.
+- **Ask Before Changes** — the user is asked in the AI client before
+  a write tool runs on the model. A client that cannot ask is refused.
 
 Use the *Add Models* button to bulk-enable multiple models at once.
 The wizard excludes transient models and models already in the
@@ -61,6 +63,17 @@ two restrictions:
 2. **Discovery filtering** — ``list_models`` only returns models
    that appear in the whitelist, so the AI client cannot discover
    restricted models.
+
+When a model asks before changes, the first call of a write tool
+changes nothing and returns a question with the tool, its arguments and
+the records it names. The client shows it and repeats the call with the
+answer. An accepted change is written, once: the answer is bound to the
+user, the key, the tool and its arguments, and expires after 15 minutes.
+A declined change comes back as an error the agent can report. Asking
+needs the protocol revision ``2026-07-28`` and a client with the
+elicitation capability, for example Claude Code; any other client is
+refused. The confirmation guards against mistakes. The client reports the
+answer, so it is no substitute for access rights or a read-only key.
 
 The check respects the tool's category: read tools check
 ``allow_read``, write tools check ``allow_write``. This layering
