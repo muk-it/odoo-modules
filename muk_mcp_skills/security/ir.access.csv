@@ -1,0 +1,3 @@
+id,name,model_id,group_id/id,operation,domain
+access_skill_user,Users read the MCP skills of their groups,muk_mcp_skills.skill,base.group_user,r,"['|', ('group_ids', '=', False), ('group_ids', 'in', user.all_group_ids.ids)]"
+access_skill_system,Administrators manage MCP skills,muk_mcp_skills.skill,base.group_system,crud,
