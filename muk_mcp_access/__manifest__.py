@@ -6,11 +6,13 @@
         Server, independent of the user's normal access rights.
         Administrators build an allowlist of models and choose read-only or
         read and write access per model, optionally limited to the records
-        matching a domain. While the list is empty every model stays
-        reachable; once it holds an entry, only the listed models are
-        exposed and the agent cannot discover or query anything else.
+        matching a domain. For a model that needs a second look, the user
+        is asked in the AI client before the agent changes it. While the
+        list is empty every model stays reachable; once it holds an entry,
+        only the listed models are exposed and the agent cannot discover or
+        query anything else.
     """,
-    'version': '20.0.1.1.17',
+    'version': '20.0.1.2.0',
     'category': 'Tools/API',
     'license': 'LGPL-3',
     'author': 'MuK IT',

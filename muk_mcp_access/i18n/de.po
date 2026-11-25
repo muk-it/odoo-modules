@@ -23,19 +23,22 @@ msgid ""
 "Server, independent of the user's normal access rights.\n"
 "Administrators build an allowlist of models and choose read-only or\n"
 "read and write access per model, optionally limited to the records\n"
-"matching a domain. While the list is empty every model stays\n"
-"reachable; once it holds an entry, only the listed models are\n"
-"exposed and the agent cannot discover or query anything else.\n"
+"matching a domain. For a model that needs a second look, the user\n"
+"is asked in the AI client before the agent changes it. While the\n"
+"list is empty every model stays reachable; once it holds an entry,\n"
+"only the listed models are exposed and the agent cannot discover or\n"
+"query anything else.\n"
 msgstr ""
 "\n"
 "Legt fest, welche Odoo-Modelle KI-Agenten über den MuK MCP Server\n"
 "erreichen, unabhängig von den normalen Zugriffsrechten des Benutzers.\n"
 "Administratoren stellen eine Freigabeliste von Modellen zusammen und\n"
 "wählen pro Modell Nur-Lesen oder Lesen und Schreiben, optional auf die\n"
-"Datensätze einer Domain beschränkt. Solange die Liste leer ist, bleibt\n"
-"jedes Modell erreichbar; sobald sie einen Eintrag enthält, sind nur die\n"
-"gelisteten Modelle freigegeben, und der Agent kann nichts anderes finden\n"
-"oder abfragen.\n"
+"Datensätze einer Domain beschränkt. Wo ein zweiter Blick nötig ist, wird\n"
+"der Benutzer im KI-Client gefragt, bevor der Agent etwas ändert. Solange\n"
+"die Liste leer ist, bleibt jedes Modell erreichbar; sobald sie einen\n"
+"Eintrag enthält, sind nur die gelisteten Modelle freigegeben, und der\n"
+"Agent kann nichts anderes finden oder abfragen.\n"
 
 #. module: muk_mcp_access
 #: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model_selection___existing_model_ids
@@ -72,10 +75,31 @@ msgid "Add Selected Models"
 msgstr "Ausgewählte Modelle hinzufügen"
 
 #. module: muk_mcp_access
+#. odoo-python
+#: code:addons/muk_mcp_access/mcp/mixin.py:0
+msgid "Allow this change to %s?"
+msgstr "Diese Änderung an %s erlauben?"
+
+#. module: muk_mcp_access
 #: model_terms:ir.ui.view,arch_db:muk_mcp_access.view_mcp_access_model_form
 #: model_terms:ir.ui.view,arch_db:muk_mcp_access.view_mcp_access_model_search
 msgid "Archived"
 msgstr "Archiviert"
+
+#. module: muk_mcp_access
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model__confirm_write
+#: model_terms:ir.ui.view,arch_db:muk_mcp_access.view_mcp_access_model_search
+msgid "Ask Before Changes"
+msgstr "Vor Änderungen fragen"
+
+#. module: muk_mcp_access
+#: model:ir.model.fields,help:muk_mcp_access.field_muk_mcp_access_model__confirm_write
+msgid ""
+"Ask the user in the AI client before a write tool runs on this model. A "
+"client that cannot ask is refused."
+msgstr ""
+"Den Benutzer im KI-Client fragen, bevor ein schreibendes Tool auf diesem "
+"Modell läuft. Ein Client, der nicht fragen kann, wird abgewiesen."
 
 #. module: muk_mcp_access
 #: model_terms:ir.ui.view,arch_db:muk_mcp_access.view_model_selection_form
@@ -83,12 +107,24 @@ msgid "Cancel"
 msgstr "Abbrechen"
 
 #. module: muk_mcp_access
+#. odoo-python
+#: code:addons/muk_mcp_access/mcp/mixin.py:0
+msgid ""
+"Changes to %s need the confirmation of the user, and this client cannot ask "
+"for it."
+msgstr ""
+"Änderungen an %s brauchen die Bestätigung des Benutzers, und dieser Client "
+"kann nicht danach fragen."
+
+#. module: muk_mcp_access
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_confirmation__create_uid
 #: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model__create_uid
 #: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model_selection__create_uid
 msgid "Created by"
 msgstr "Erstellt von"
 
 #. module: muk_mcp_access
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_confirmation__create_date
 #: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model__create_date
 #: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model_selection__create_date
 msgid "Created on"
@@ -100,6 +136,12 @@ msgid "Default Permissions"
 msgstr "Standardberechtigungen"
 
 #. module: muk_mcp_access
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_confirmation__digest
+msgid "Digest"
+msgstr ""
+
+#. module: muk_mcp_access
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_confirmation__display_name
 #: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model__display_name
 #: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model_selection__display_name
 #: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_mixin__display_name
@@ -113,6 +155,14 @@ msgid "Each model can only appear once in the MCP access list."
 msgstr "Jedes Modell darf nur einmal in der MCP-Zugriffsliste stehen."
 
 #. module: muk_mcp_access
+#: model:ir.model.fields,help:muk_mcp_access.field_muk_mcp_access_confirmation__digest
+msgid "Hash of the user, the key and the call the question is about."
+msgstr ""
+"Hash des Benutzers, des Schlüssels und des Aufrufs, um den es in der Frage "
+"geht."
+
+#. module: muk_mcp_access
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_confirmation__id
 #: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model__id
 #: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model_selection__id
 #: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_mixin__id
@@ -127,16 +177,23 @@ msgid "Invalid record domain for %(model)s: %(error)s"
 msgstr "Ungültige Datensatz-Domain für %(model)s: %(error)s"
 
 #. module: muk_mcp_access
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_confirmation__write_uid
 #: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model__write_uid
 #: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model_selection__write_uid
 msgid "Last Updated by"
 msgstr "Zuletzt aktualisiert von"
 
 #. module: muk_mcp_access
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_confirmation__write_date
 #: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model__write_date
 #: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model_selection__write_date
 msgid "Last Updated on"
 msgstr "Zuletzt aktualisiert am"
+
+#. module: muk_mcp_access
+#: model:ir.model,name:muk_mcp_access.model_muk_mcp_access_confirmation
+msgid "MCP Confirmation"
+msgstr "MCP-Bestätigung"
 
 #. module: muk_mcp_access
 #: model:ir.model,name:muk_mcp_access.model_muk_mcp_access_model
@@ -251,6 +308,17 @@ msgstr ""
 #: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_model__model_name
 msgid "Technical Name"
 msgstr "Technischer Name"
+
+#. module: muk_mcp_access
+#. odoo-python
+#: code:addons/muk_mcp_access/mcp/mixin.py:0
+msgid "The user did not allow this change to %s."
+msgstr "Der Benutzer hat diese Änderung an %s nicht erlaubt."
+
+#. module: muk_mcp_access
+#: model:ir.model.fields,field_description:muk_mcp_access.field_muk_mcp_access_confirmation__token
+msgid "Token"
+msgstr ""
 
 #. module: muk_mcp_access
 #: model_terms:ir.actions.act_window,help:muk_mcp_access.action_mcp_access_model

@@ -2,3 +2,4 @@ id,name,model_id,group_id/id,operation,domain
 access_muk_mcp_access_model_admin,Administrators manage the MCP model allowlist,muk_mcp_access.model,base.group_system,crud,
 access_muk_mcp_access_model_user,Users read the MCP model allowlist,muk_mcp_access.model,base.group_user,r,
 access_muk_mcp_access_model_selection,Administrators add models to the MCP allowlist,muk_mcp_access.model.selection,base.group_system,crud,
+access_muk_mcp_access_confirmation_admin,Administrators see open MCP confirmations,muk_mcp_access.confirmation,base.group_system,r,

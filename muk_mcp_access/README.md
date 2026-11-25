@@ -22,6 +22,8 @@ whoever the key belongs to.
   refused, and the model listing no longer names it.
 - **Read or write, per model**: create, update, delete and method calls need
   the write switch.
+- **Ask before changes**: for a model that needs a second look, the user
+  confirms each change in the AI client before it is written.
 - **A record domain per model**: like a record rule for agents, built in
   Odoo's domain editor, with `user`, `company_id` and `company_ids` available.
 - **Every way in**: reads, writes, exports, reports, method calls and the files
@@ -36,8 +38,9 @@ whoever the key belongs to.
 1. Install the module next to **MuK MCP Server**. Nothing changes until the
    first model is listed.
 2. Open **Settings > MCP > Authentication > Access** and use **Add Models**.
-3. Switch on **Write** where the agent should change data, and add a
-   **Record Domain** where it should see only part of a model.
+3. Switch on **Write** where the agent should change data, **Ask Before
+   Changes** where the user should confirm it, and add a **Record Domain** where
+   it should see only part of a model.
 
 ## Support
 

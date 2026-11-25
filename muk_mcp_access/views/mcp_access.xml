@@ -15,6 +15,11 @@
 				<filter name="allow_read" string="Read" domain="[('allow_read', '=', True)]"/>
 				<filter name="allow_write" string="Write" domain="[('allow_write', '=', True)]"/>
 				<filter
+					name="confirm_write"
+					string="Ask Before Changes"
+					domain="[('confirm_write', '=', True)]"
+				/>
+				<filter
 					name="read_only"
 					string="Read Only"
 					domain="[('allow_read', '=', True), ('allow_write', '=', False)]"
@@ -39,6 +44,11 @@
 				<field name="model_name" optional="hide"/>
 				<field name="allow_read" widget="boolean_toggle"/>
 				<field name="allow_write" widget="boolean_toggle"/>
+				<field
+					name="confirm_write"
+					widget="boolean_toggle"
+					invisible="not allow_write"
+				/>
 				<field
 					name="domain"
 					widget="domain"
@@ -70,6 +80,7 @@
 						<group>
 							<field name="allow_read"/>
 							<field name="allow_write"/>
+							<field name="confirm_write" invisible="not allow_write"/>
 							<field name="active" invisible="1"/>
 						</group>
 					</group>

@@ -45,6 +45,9 @@ Each entry sets:
   ``print_report``, ...) accept it.
 - *Write*: the write tools (``create_records``, ``update_records``,
   ``delete_records``, ``call_method``, ...) accept it.
+- *Ask Before Changes*: the user is asked in the AI client before a write tool
+  runs on the model. A client that cannot ask is refused, so leave it off for
+  models such a client has to change.
 - *Record Domain*: an optional filter, like a record rule. Only records
   matching it are read, written, exported, printed or returned. It is
   evaluated with ``user``, ``company_id``, ``company_ids`` and ``time`` in
@@ -69,6 +72,22 @@ Once the allowlist holds an entry, every MCP call is checked against it:
   rolled back.
 - ``odoo://`` resources are checked against the model and the record they
   belong to. Attachments linked to no record stay readable.
+
+When a model asks before changes, the first call of a write tool changes
+nothing and returns a question with the tool, its arguments and the records it
+names. The client shows it and repeats the call with the answer:
+
+- An accepted change is written, once. The answer is bound to the user, the key,
+  the tool and its arguments, and expires after 15 minutes.
+- A declined change comes back as an error the agent can report.
+- Asking needs the protocol revision ``2026-07-28`` and a client with the
+  *elicitation* capability, for example Claude Code. Any other client is
+  refused. A client may shorten a long change in its question.
+- ``call_method`` counts as a change whatever the method does. The chats of
+  MuK AI have approvals of their own and are not asked a second time.
+
+The confirmation guards against mistakes: the client reports the answer, so it
+is no substitute for access rights or a read-only key.
 
 The check works on top of the MCP key's scope and the user's access rights:
 it narrows what an agent reaches and never widens it.
