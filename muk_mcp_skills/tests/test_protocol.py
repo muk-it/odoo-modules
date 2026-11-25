@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import json
 from typing import Any
-
-import yaml
 
 from odoo import Command
 from odoo.tools import BinaryBytes
@@ -92,7 +91,10 @@ class TestSkillsProtocol(MCPHttpCase):
                     f'sha256:{hashlib.sha256(raw).hexdigest()}', resource['digest']
                 )
         _, frontmatter, body = self.read(URI).decode().split('---\n', 2)
-        self.assertEqual(yaml.safe_load(frontmatter), entry['frontmatter'])
+        fields = (line.split(': ', 1) for line in frontmatter.splitlines())
+        self.assertEqual(
+            {key: json.loads(value) for key, value in fields}, entry['frontmatter']
+        )
         self.assertEqual(entry['frontmatter']['description'], self.skill.description)
         self.assertEqual(body.strip(), self.skill.body)
 
