@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import mimetypes
 import re
 from typing import Any
 from urllib.parse import quote
@@ -11,6 +10,7 @@ from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 
 from odoo.addons.muk_mcp_skills.tools.constants import SKILL_FILE, SKILL_SCHEME
+from odoo.addons.muk_mcp_skills.tools.content import is_text
 
 
 class Skill(models.Model):
@@ -109,8 +109,7 @@ class Skill(models.Model):
     def _files(self) -> dict[str, tuple[str, bytes, str]]:
         """Return the MIME type, content and name of every file by its URI.
 
-        The frontmatter values are JSON strings, which YAML reads unchanged. The
-        name tells the type, as browsers upload markdown without one.
+        The frontmatter values are JSON strings, which YAML reads unchanged.
         """
         files = {}
         for skill in self:
@@ -121,9 +120,10 @@ class Skill(models.Model):
             text = f'---\n{frontmatter}---\n\n{skill.body}\n'
             files[skill._uri()] = ('text/markdown', text.encode(), SKILL_FILE)
             for attachment in skill.sudo().attachment_ids:
+                raw = attachment.raw.content
                 files[skill._uri(attachment.name)] = (
-                    mimetypes.guess_type(attachment.name)[0] or attachment.mimetype,
-                    attachment.raw.content,
+                    'text/plain' if is_text(raw) else attachment.mimetype,
+                    raw,
                     attachment.name,
                 )
         return files

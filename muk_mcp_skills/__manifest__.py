@@ -9,7 +9,7 @@
         lists the skills the user of its key may use and loads one when a
         request fits.
     """,
-    'version': '20.0.1.0.1',
+    'version': '20.0.1.0.2',
     'category': 'Tools/API',
     'license': 'LGPL-3',
     'author': 'MuK IT',
