@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+    <record id="view_res_config_settings_skills" model="ir.ui.view">
+        <field name="name">res.config.settings.muk_mcp_skills</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="muk_mcp.view_res_config_settings_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='mcp_settings']" position="inside">
+                <div class="col-12 col-lg-6 o_setting_box" id="mcp_skills">
+                    <div class="o_setting_right_pane">
+                        <span class="o_form_label">MCP Skills</span>
+                        <div class="text-muted">
+                            Skills written in Odoo, loaded by AI clients when a request fits.
+                        </div>
+                        <div class="content-group">
+                            <button
+                                name="%(action_skill)d"
+                                type="action"
+                                string="Manage Skills"
+                                icon="fa-arrow-right"
+                                class="btn-link mt-3"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
