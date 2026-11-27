@@ -172,6 +172,8 @@ export const sessionSendRoutes = registry.category('muk_ai.session_send_routes')
 const COMPACT_WARN_RATIO = 0.65;
 const COMPACT_AUTO_RATIO = 0.8;
 const STREAM_IDLE_MS = 3000;
+const RUN_CHECK_MS = 10000;
+const BUSY = ['running', 'compacting'];
 
 let clientKeySeq = 0;
 
@@ -240,10 +242,16 @@ export function useAiSession(options = {}) {
     let eventKeys = new Set();
     let onScrollCallback = null;
     let streamIdleTimer = null;
+    let runTimer = null;
     let loadSeq = 0;
     let pendingLoad = null;
     let requeueRerouting = false;
-    const busHandler = (payload) => onBusEvent(payload);
+    const busHandler = (payload) => {
+        onBusEvent(payload);
+        if (payload?.session_id === state.sessionId) {
+            watchRun();
+        }
+    };
     busSubscribe(bus, 'muk_ai.event', busHandler);
     useSessionChannel(() => state.sessionId);
     useOpenSession(() => (state.readonly ? null : state.sessionId));
@@ -267,6 +275,30 @@ export function useAiSession(options = {}) {
                 state.streamIdle = true;
             }
         }, STREAM_IDLE_MS);
+    }
+    /**
+     * Ask the server for the state of a running chat after a quiet spell,
+     * and reload it once the run ended without the bus saying so.
+     */
+    function watchRun() {
+        clearTimeout(runTimer);
+        if (!BUSY.includes(state.status)) {
+            return;
+        }
+        runTimer = setTimeout(async () => {
+            const sessionId = state.sessionId;
+            const [values] = await orm.silent
+                .read('muk_ai.session', [sessionId], ['state'])
+                .catch(() => [{ state: state.status }]);
+            if (sessionId !== state.sessionId) {
+                return;
+            }
+            if (values && BUSY.includes(values.state)) {
+                watchRun();
+            } else {
+                load(sessionId);
+            }
+        }, RUN_CHECK_MS);
     }
     function contentKey(entry) {
         const { at: _at, event_id: _id, _clientKey: _ck, ...rest } = entry || {};
@@ -597,6 +629,7 @@ export function useAiSession(options = {}) {
             onBusEvent(buffered);
         }
         state.loading = false;
+        watchRun();
         return record;
     }
     function _resetSessionState(sessionId) {
@@ -751,6 +784,7 @@ export function useAiSession(options = {}) {
             state.streamingTools = [];
         }
         rebuildEventKeys();
+        watchRun();
     }
     function rebuildEventKeys() {
         eventKeys = new Set((state.events || []).map((entry) => eventKey(entry)));
@@ -1702,6 +1736,7 @@ export function useAiSession(options = {}) {
         sessionNotification.markInactive(state.sessionId);
         busUnsubscribe(bus, 'muk_ai.event', busHandler);
         clearStreamIdleTimer();
+        clearTimeout(runTimer);
     });
     /**
      * Call a method on the session this surface is showing.
