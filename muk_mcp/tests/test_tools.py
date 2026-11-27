@@ -4,6 +4,7 @@ import base64
 import io
 import json
 import zipfile
+import zlib
 from datetime import date, timedelta
 
 from PIL import Image
@@ -17,6 +18,30 @@ from odoo.addons.muk_mcp.core.registry import invalidate_registry_cache
 from odoo.addons.muk_mcp.core.tool import get_tool_index, mcp_tool
 from odoo.addons.muk_mcp.tests.common import PNG, MCPToolCase
 from odoo.addons.muk_mcp.tools.exception import MCPScopeDenied
+
+
+def icc_pdf(pixels: bytes, width: int) -> bytes:
+    """Return a one-page PDF showing one row of RGB ``pixels`` as a screenshot does."""
+    data = zlib.compress(pixels)
+    objects = [
+        b'<</Type/Catalog/Pages 2 0 R>>',
+        b'<</Type/Pages/Kids[3 0 R]/Count 1>>',
+        b'<</Type/Page/Parent 2 0 R/Resources<</XObject<</Im1 4 0 R>>>>>>',
+        b'<</Type/XObject/Subtype/Image/Width %d/Height 1/BitsPerComponent 8'
+        b'/ColorSpace[/ICCBased 5 0 R]/Filter/FlateDecode/Length %d>>'
+        b'stream\n%s\nendstream' % (width, len(data), data),
+        b'<</N 3/Length 0>>stream\n\nendstream',
+    ]
+    pdf, offsets = b'%PDF-1.4\n', []
+    for number, body in enumerate(objects, 1):
+        offsets.append(len(pdf))
+        pdf += b'%d 0 obj%s endobj\n' % (number, body)
+    xref = b''.join(b'%010d 00000 n \n' % offset for offset in offsets)
+    return pdf + (
+        b'xref\n0 %d\n0000000000 65535 f \n%strailer<</Size %d/Root 1 0 R>>\n'
+        b'startxref\n%d\n%%%%EOF\n'
+        % (len(objects) + 1, xref, len(objects) + 1, len(pdf))
+    )
 
 
 @api.model
@@ -368,6 +393,11 @@ class TestMcpTools(MCPToolCase):
         )
         for name, raw, expected in (
             ('guide.pdf', pdf.getvalue(), ['page-1-image.jpg', 'page-2-image.jpg']),
+            (
+                'screens.pdf',
+                icc_pdf(bytes([255, 0, 0, 0, 0, 255]), 2),
+                ['page-1-Im1.png'],
+            ),
             ('report.docx', word.getvalue(), ['image1.png']),
             ('mail.eml', mail, ['notes.txt']),
         ):
@@ -399,6 +429,11 @@ class TestMcpTools(MCPToolCase):
                     ),
                     len(expected),
                 )
+        screen = self.env['ir.attachment'].search([('name', '=', 'page-1-Im1.png')])
+        pixels = Image.open(io.BytesIO(screen.raw.content))
+        self.assertEqual(
+            [pixels.getpixel((x, 0)) for x in range(2)], [(255, 0, 0), (0, 0, 255)]
+        )
         with self.assertRaisesRegex(UserError, 'holds no file'):
             self.call_tool('unpack_file', {'file': entries[0]['uri']})
 
