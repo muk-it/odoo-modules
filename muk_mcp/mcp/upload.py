@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+import json
 import re
 from typing import Any
 
@@ -11,7 +12,10 @@ from odoo.http import DEFAULT_MAX_CONTENT_LENGTH
 
 from odoo.addons.muk_mcp.core.tool import mcp_tool
 from odoo.addons.muk_mcp.models.transfer import TRANSFER_MINUTES
+from odoo.addons.muk_mcp.tools.content import make_content_for_bytes, normalize_mimetype
 from odoo.addons.muk_mcp.tools.descriptions import HTTP_HINT, context_field
+from odoo.addons.muk_mcp.tools.protocol import ToolContent, make_text_content
+from odoo.addons.muk_mcp.tools.unpack import file_parts
 from odoo.addons.muk_mcp.tools.uri import record_field_uri
 
 DATA_URI = re.compile(r'^data:(?P<mimetype>[\w.+-]+/[\w.+-]+)?(?:;[^,]*)?;base64,')
@@ -262,3 +266,80 @@ class MCPMixin(models.AbstractModel):
             'file_size': attachment.file_size,
             'uri': f'odoo://attachment/{attachment.id}',
         }
+
+    @api.model
+    @mcp_tool(
+        name='unpack_file',
+        description=(
+            'Store the files a document holds as attachments: the images of a '
+            'PDF, the inline images and attachments of an email, the images of '
+            'an Office document. With model and id they become attachments of '
+            'that record, otherwise standalone ones. Returns each with its '
+            'odoo:// uri and url, an image embeds in HTML as <img src="url">, '
+            'followed by the images themselves.'
+        ),
+        input_schema={
+            'type': 'object',
+            'properties': {
+                'file': {
+                    'type': 'string',
+                    'description': 'The odoo:// uri of the document.',
+                },
+                'model': {
+                    'type': 'string',
+                    'description': 'Technical model of the record to attach to.',
+                },
+                'id': {
+                    'type': 'integer',
+                    'description': 'ID of the record to attach to.',
+                },
+                'context': context_field(),
+            },
+            'required': ['file'],
+        },
+        category='write',
+    )
+    def _mcp_unpack_file(
+        self,
+        file: str,
+        model: str | None = None,
+        id: int | None = None,
+    ) -> ToolContent:
+        """Store each distinct file a document holds as an attachment.
+
+        :raise UserError: when the document holds no file.
+        """
+        mimetype, raw, _name = self._resolve_resource_uri(file)
+        parts = {}
+        for name, data in file_parts(raw, normalize_mimetype(mimetype)):
+            parts.setdefault(data, name)
+        if not parts:
+            raise UserError(_('%s holds no file to unpack.', file))
+        record = self._mcp_record(model, id) if model else None
+        target = {'res_model': record._name, 'res_id': record.id} if record else {}
+        attachments = self.env['ir.attachment'].create(
+            [{'name': name, 'raw': data, **target} for data, name in parts.items()]
+        )
+        images = attachments.filtered(lambda a: a.mimetype.startswith('image/'))
+        listing = [
+            {
+                'name': attachment.name,
+                'uri': f'odoo://attachment/{attachment.id}',
+                'url': f'/web/{"image" if attachment in images else "content"}/'
+                f'{attachment.id}',
+            }
+            for attachment in attachments
+        ]
+        return ToolContent(
+            [
+                make_text_content(json.dumps(listing)),
+                *(
+                    make_content_for_bytes(
+                        f'odoo://attachment/{image.id}',
+                        image.mimetype,
+                        raw_bytes=image.raw,
+                    )
+                    for image in images
+                ),
+            ]
+        )
