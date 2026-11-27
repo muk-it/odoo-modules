@@ -15,7 +15,7 @@ import { _lt, _t } from '@web/core/l10n/translation';
 import { useService } from '@web/core/utils/hooks';
 import { sprintf } from '@web/core/utils/strings';
 
-import { useSessionChannel } from '@muk_ai/chat/session/session_channel';
+import { useRunWatch, useSessionChannel } from '@muk_ai/chat/session/session_channel';
 import { busSubscribe, busUnsubscribe } from '@muk_ai/core/compat/bus';
 
 import { rememberInsert } from '@muk_ai_chatter/composer/insert_button/insert_button';
@@ -104,6 +104,11 @@ export class ComposePanel extends Component {
             () => [this.createLabelRef.el],
         );
         useSessionChannel(() => this.state.sessionId);
+        useRunWatch(
+            () => this.state.sessionId,
+            () => this.isRunning,
+            () => this.finish(),
+        );
         const onEvent = (event) => this.onSessionEvent(event);
         busSubscribe(this.bus, 'muk_ai.event', onEvent);
         useHotkey('escape', () => this.props.close?.(), {

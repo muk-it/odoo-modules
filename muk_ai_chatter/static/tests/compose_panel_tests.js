@@ -2,6 +2,7 @@
 
 import { Component, markup, useState, xml } from '@odoo/owl';
 
+import { browser } from '@web/core/browser/browser';
 import { hotkeyService } from '@web/core/hotkeys/hotkey_service';
 import { ormService } from '@web/core/orm_service';
 import { registry } from '@web/core/registry';
@@ -13,6 +14,7 @@ import {
     getFixture,
     mount,
     nextTick,
+    patchWithCleanup,
     triggerEvent,
 } from '@web/../tests/helpers/utils';
 
@@ -417,6 +419,28 @@ QUnit.module('muk_ai_chatter', {}, function () {
             calls.state = 'done';
             await calls.emit('state', { state: 'running' });
             await calls.emit('state', { state: 'done' });
+            assert.containsOnce(target, '.mk_compose_panel_accept');
+        },
+    );
+
+    QUnit.test(
+        'an end the bus never announced still offers the answer',
+        async (assert) => {
+            const checks = [];
+            patchWithCleanup(browser, {
+                setInterval: (fn) => checks.push(fn),
+                clearInterval() {},
+            });
+            const { calls, env } = await setup();
+            calls.state = 'running';
+            const { target } = await mountPanel(env, SELECTION, DRAFT);
+            await pickFirst(target);
+            await checks.at(-1)();
+            await nextTick();
+            assert.containsOnce(target, '.mk_compose_panel_busy');
+            calls.state = 'done';
+            await checks.at(-1)();
+            await nextTick();
             assert.containsOnce(target, '.mk_compose_panel_accept');
         },
     );
