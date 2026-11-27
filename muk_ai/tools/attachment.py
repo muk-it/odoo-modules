@@ -12,6 +12,7 @@ import openpyxl
 from PIL import Image, PngImagePlugin
 
 from odoo.addons.muk_mcp.tools.content import normalize_mimetype
+from odoo.addons.muk_mcp.tools.unpack import file_parts
 
 # ----------------------------------------------------------
 # Size Limits
@@ -96,10 +97,15 @@ AI_GENERATED_XMP = (
 
 
 def email_parts(raw: bytes) -> tuple[str, str]:
-    """Return the subject and sender lines of an email and its body, HTML first."""
+    """Return the subject, sender and attachment lines of an email and its body.
+
+    The body is the HTML one when there is one.
+    """
     message = email.message_from_bytes(raw, policy=email.policy.default)
     body = message.get_body(('html', 'plain'))
     head = f'Subject: {message["subject"] or ""}\nFrom: {message["from"] or ""}'
+    if names := [name for name, _data in file_parts(raw, 'message/rfc822')]:
+        head += f'\nAttachments: {", ".join(names)} (unpack_file stores them)'
     return head, body.get_content() if body else ''
 
 

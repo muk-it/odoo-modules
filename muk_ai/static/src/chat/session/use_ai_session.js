@@ -14,7 +14,7 @@ import { formatContext } from '@muk_ai/chat/usage/usage_meter';
 
 import { buildRenderedTurns } from '@muk_ai/chat/session/turns';
 import { useOpenSession } from '@muk_ai/chat/session/open_sessions';
-import { useSessionChannel } from '@muk_ai/chat/session/session_channel';
+import { useRunWatch, useSessionChannel } from '@muk_ai/chat/session/session_channel';
 
 /**
  * Session fields an addon needs in the client state, beyond the core's own.
@@ -249,6 +249,11 @@ export function useAiSession(options = {}) {
     const busHandler = (payload) => onBusEvent(payload);
     bus.subscribe('muk_ai.event', busHandler);
     useSessionChannel(() => state.sessionId);
+    useRunWatch(
+        () => state.sessionId,
+        () => state.status === 'running' || state.status === 'compacting',
+        () => load(state.sessionId),
+    );
     useOpenSession(() => (state.readonly ? null : state.sessionId));
     function clearStreamIdleTimer() {
         if (streamIdleTimer) {

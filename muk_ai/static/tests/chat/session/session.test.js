@@ -64,6 +64,8 @@ function makeBusMock() {
         unsubscribe(name) {
             handlers.delete(name);
         },
+        addEventListener() {},
+        removeEventListener() {},
     });
     return {
         emit(payload) {

@@ -35,7 +35,12 @@ PDF_BYTES = (
 PAGE = b'<h1>Hi</h1><script>alert(1)</script><p>x</p>'
 NEWSLETTER = (
     b'Subject: Brew\r\nFrom: a@example.com\r\nMIME-Version: 1.0\r\n'
-    b'Content-Type: text/html; charset=utf-8\r\n\r\n' + PAGE + b'\r\n'
+    b'Content-Type: multipart/mixed; boundary="b"\r\n\r\n'
+    b'--b\r\nContent-Type: text/html; charset=utf-8\r\n\r\n' + PAGE + b'\r\n'
+    b'--b\r\nContent-Type: image/png\r\nContent-Transfer-Encoding: base64\r\n'
+    b'Content-Disposition: attachment; filename="beans.png"\r\n\r\n'
+    + base64.b64encode(PNG_BYTES)
+    + b'\r\n--b--\r\n'
 )
 
 SNIFFED = {'': 'text/plain', 'application/vnd.ms-excel': 'text/plain'}
@@ -215,7 +220,11 @@ class TestMultimodalAttachments(AITestCommon):
                 'news.eml',
                 'message/rfc822',
                 NEWSLETTER,
-                'Subject: Brew\nFrom: a@example.com\n\n<h1>Hi</h1><p>x</p>\r\n',
+                (
+                    'Subject: Brew\nFrom: a@example.com\n'
+                    'Attachments: beans.png (unpack_file stores them)\n\n'
+                    '<h1>Hi</h1><p>x</p>'
+                ),
             ),
         ):
             with self.subTest(filename=filename):
