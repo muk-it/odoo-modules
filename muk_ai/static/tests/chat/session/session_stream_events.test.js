@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test } from '@odoo/hoot';
+import { advanceTime } from '@odoo/hoot-mock';
 import { Component, xml } from '@odoo/owl';
 import {
     mockService,
@@ -294,4 +295,15 @@ test('an unknown bus event type reaches its registered handler', async () => {
     expect(session.state.events[1].text).toBe(undefined);
     bus.emit({ session_id: 7, type: 'probe_unhandled', payload: {} });
     expect(session.state.events).toHaveLength(3);
+});
+
+test('a running chat catches up with an end the bus never announced', async () => {
+    makeBusMock();
+    const record = { ...SESSION_RECORD };
+    const session = await mountSession(record);
+    await advanceTime(10000);
+    expect(session.state.status).toBe('running');
+    record.state = 'done';
+    await advanceTime(10000);
+    expect(session.state.status).toBe('done');
 });
