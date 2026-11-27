@@ -1,0 +1,48 @@
+from __future__ import annotations
+
+import email
+import email.policy
+import io
+import mimetypes
+import zipfile
+
+OFFICE_MEDIA = {
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': (
+        'word/media/'
+    ),
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xl/media/',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation': (
+        'ppt/media/'
+    ),
+    'application/vnd.oasis.opendocument.text': 'Pictures/',
+    'application/vnd.oasis.opendocument.spreadsheet': 'Pictures/',
+    'application/vnd.oasis.opendocument.presentation': 'Pictures/',
+}
+
+
+def file_parts(raw: bytes, mimetype: str) -> list[tuple[str, bytes]]:
+    """Return the named files a document holds, empty for any other file.
+
+    An email holds its inline images and attachments, an Office document its
+    media.
+    """
+    if mimetype == 'message/rfc822':
+        message = email.message_from_bytes(raw, policy=email.policy.default)
+        return [
+            (
+                part.get_filename()
+                or f'part-{index}{mimetypes.guess_extension(part.get_content_type()) or ""}',
+                part.get_payload(decode=True) or b'',
+            )
+            for index, part in enumerate(message.walk(), 1)
+            if not part.is_multipart()
+            and (part.get_filename() or part.get_content_maintype() != 'text')
+        ]
+    if prefix := OFFICE_MEDIA.get(mimetype):
+        with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+            return [
+                (info.filename.rsplit('/', 1)[-1], archive.read(info))
+                for info in archive.infolist()
+                if info.filename.startswith(prefix) and not info.is_dir()
+            ]
+    return []
