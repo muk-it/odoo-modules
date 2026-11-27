@@ -28,32 +28,6 @@ msgstr ""
 "\t\t"
 
 #. module: muk_ai_product
-#: model:ir.module.module,description:base.module_muk_ai_product
-msgid ""
-"\n"
-"Adds a Product Content Writer to MuK AI Assistant that adds products\n"
-"from web links and vendor price lists, ready to purchase, with skills\n"
-"for the product form: find the facts of a product in its own data, its\n"
-"documents and on the web, write its name and descriptions from those\n"
-"facts only, translate them into every language the company sells in,\n"
-"and add image variants as extra images marked as AI-generated. Every\n"
-"change waits for approval in the chat.\n"
-"Web shop and search texts are filled when eCommerce is installed;\n"
-"barcodes and manufacturer data are never generated.\n"
-msgstr ""
-"\n"
-"Aggiunge a MuK AI Assistant un redattore di contenuti di prodotto che crea\n"
-"prodotti da link web e listini prezzi dei fornitori, pronti per l'acquisto,\n"
-"con skill per il modulo prodotto: trovare i dati di un prodotto nei suoi\n"
-"dati, nei suoi documenti e sul web, scriverne nome e descrizioni solo da\n"
-"quei dati, tradurli in ogni lingua in cui l'azienda vende e aggiungere\n"
-"varianti di immagine come immagini aggiuntive contrassegnate come generate\n"
-"dall'IA. Ogni modifica attende l'approvazione nella chat.\n"
-"I testi del negozio online e di ricerca vengono compilati quando\n"
-"eCommerce è installato; codici a barre e dati del produttore non\n"
-"vengono mai generati.\n"
-
-#. module: muk_ai_product
 #: model:muk_ai.skill,body:muk_ai_product.skill_add_products
 msgid ""
 "\n"
@@ -200,15 +174,6 @@ msgstr ""
 "\t\t"
 
 #. module: muk_ai_product
-#: model:ir.module.module,summary:base.module_muk_ai_product
-msgid ""
-"AI that adds products from links and price lists and writes their texts from"
-" facts"
-msgstr ""
-"IA che crea prodotti da link e listini prezzi e ne scrive i testi a partire "
-"dai dati"
-
-#. module: muk_ai_product
 #: model:muk_ai.skill,label:muk_ai_product.skill_add_products
 msgid "Add Products"
 msgstr "Aggiungi prodotti"
@@ -297,9 +262,9 @@ msgid "MCP Tool Mixin"
 msgstr "Mixin degli strumenti MCP"
 
 #. module: muk_ai_product
-#: model:ir.module.module,shortdesc:base.module_muk_ai_product
-msgid "MuK AI Product"
-msgstr ""
+#: model_terms:ir.ui.view,arch_db:muk_ai_product.view_res_config_settings_form
+msgid "Open Product Content Writer"
+msgstr "Apri il redattore dei contenuti di prodotto"
 
 #. module: muk_ai_product
 #: model:ir.model,name:muk_ai_product.model_product_template
@@ -307,6 +272,7 @@ msgid "Product"
 msgstr "Prodotto"
 
 #. module: muk_ai_product
+#: model:ir.actions.act_window,name:muk_ai_product.action_ai_agent_product_writer
 #: model:muk_ai.agent,name:muk_ai_product.agent_product_writer
 msgid "Product Content Writer"
 msgstr "Redattore dei contenuti di prodotto"
@@ -326,3 +292,43 @@ msgstr "Leggi il prodotto"
 #: model:muk_ai.agent.suggestion,label:muk_ai_product.agent_product_writer_suggestion_translate
 msgid "Translate this product"
 msgstr "Traduci questo prodotto"
+
+#. module: muk_ai_product
+#: model:ir.module.module,description:base.module_muk_ai_product
+msgid ""
+"\n"
+"Adds a Product Content Writer to MuK AI Assistant that adds products\n"
+"from web links and vendor price lists, ready to purchase, with skills\n"
+"for the product form: find the facts of a product in its own data, its\n"
+"documents and on the web, write its name and descriptions from those\n"
+"facts only, translate them into every language the company sells in,\n"
+"and add image variants as extra images marked as AI-generated. Every\n"
+"change waits for approval in the chat.\n"
+"Web shop and search texts are filled when eCommerce is installed;\n"
+"barcodes and manufacturer data are never generated.\n"
+msgstr ""
+"\n"
+"Aggiunge a MuK AI Assistant un redattore di contenuti di prodotto che crea\n"
+"prodotti da link web e listini prezzi dei fornitori, pronti per l'acquisto,\n"
+"con skill per il modulo prodotto: trovare i dati di un prodotto nei suoi\n"
+"dati, nei suoi documenti e sul web, scriverne nome e descrizioni solo da\n"
+"quei dati, tradurli in ogni lingua in cui l'azienda vende e aggiungere\n"
+"varianti di immagine come immagini aggiuntive contrassegnate come generate\n"
+"dall'IA. Ogni modifica attende l'approvazione nella chat.\n"
+"I testi del negozio online e di ricerca vengono compilati quando\n"
+"eCommerce è installato; codici a barre e dati del produttore non\n"
+"vengono mai generati.\n"
+
+#. module: muk_ai_product
+#: model:ir.module.module,summary:base.module_muk_ai_product
+msgid ""
+"AI that adds products from links and price lists and writes their texts from"
+" facts"
+msgstr ""
+"IA che crea prodotti da link e listini prezzi e ne scrive i testi a partire "
+"dai dati"
+
+#. module: muk_ai_product
+#: model:ir.module.module,shortdesc:base.module_muk_ai_product
+msgid "MuK AI Product"
+msgstr ""

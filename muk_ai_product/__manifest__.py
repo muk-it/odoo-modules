@@ -12,7 +12,7 @@
         Web shop and search texts are filled when eCommerce is installed;
         barcodes and manufacturer data are never generated.
     """,
-    'version': '19.0.1.0.2',
+    'version': '19.0.1.0.3',
     'category': 'Sales/Product',
     'license': 'LGPL-3',
     'author': 'MuK IT',
@@ -29,6 +29,7 @@
         'data/ir_model.xml',
         'data/agent.xml',
         'data/skill.xml',
+        'views/res_config_settings.xml',
     ],
     'assets': {
         'web.assets_backend': [
