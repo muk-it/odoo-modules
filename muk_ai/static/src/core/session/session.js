@@ -14,6 +14,7 @@ const BUSY = ['running', 'compacting'];
 const COMPACT_WARN_RATIO = 0.65;
 export const COMPACT_AUTO_RATIO = 0.8;
 const STREAM_IDLE_MS = 3000;
+const RUN_CHECK_MS = 10000;
 const PAGE_SIZE = 100;
 
 /**
@@ -238,6 +239,7 @@ export class AISession {
         this.loadSeq = 0;
         this.buffer = null;
         this.idleTimer = null;
+        this.runTimer = null;
         this.data = proxy({
             id,
             name: '',
@@ -402,6 +404,7 @@ export class AISession {
         if (!(this.data.state === 'running' && streaming)) {
             this.clearStream();
         }
+        this.watchRun();
     }
     /**
      * Dispatch one `muk_ai.event` bus notification of this chat.
@@ -415,6 +418,30 @@ export class AISession {
         const handle =
             HANDLERS[event.type] || sessionEventHandlers.get(event.type, null);
         handle?.(event.payload || {}, this);
+        this.watchRun();
+    }
+    /**
+     * Ask the server for the state of a running chat on screen after a
+     * quiet spell, and reload it once the run ended without the bus saying so.
+     */
+    watchRun() {
+        clearTimeout(this.runTimer);
+        if (!this.busy || !this.holders) {
+            return;
+        }
+        this.runTimer = setTimeout(async () => {
+            if (!this.holders) {
+                return;
+            }
+            const [values] = await this.chat.orm.silent
+                .read('muk_ai.session', [this.id], ['state'])
+                .catch(() => [this.data]);
+            if (values && BUSY.includes(values.state)) {
+                this.watchRun();
+            } else {
+                this.load();
+            }
+        }, RUN_CHECK_MS);
     }
     /**
      * Add a logged event, replacing the optimistic copy it confirms.

@@ -67,6 +67,15 @@ export class AIChatPlugin extends Plugin {
         for (const [type, handler] of Object.entries(handlers)) {
             onWillDestroy(this.bus.subscribe(type, handler));
         }
+        const reload = () => {
+            for (const session of this.sessions.values()) {
+                if (session.holders) {
+                    session.load();
+                }
+            }
+        };
+        this.bus.addEventListener('BUS:RECONNECT', reload);
+        onWillDestroy(() => this.bus.removeEventListener('BUS:RECONNECT', reload));
         this.reloadNeeds = debounce(() => this.fetchNeeds(), 300, {
             leading: true,
             trailing: true,

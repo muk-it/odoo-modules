@@ -1,4 +1,4 @@
-import { advanceTime, expect, runAllTimers, test } from '@odoo/hoot';
+import { advanceTime, animationFrame, expect, runAllTimers, test } from '@odoo/hoot';
 import {
     contains,
     getService,
@@ -6,6 +6,8 @@ import {
     onRpc,
     serverState,
 } from '@web/../tests/web_test_helpers';
+
+import { BusPlugin } from '@bus/services/bus_plugin';
 import { ActionPlugin } from '@web/webclient/actions/action_plugin';
 
 import { sessionEventHandlers } from '@muk_ai/core/session/session';
@@ -163,6 +165,36 @@ test('a running chat that streams nothing for three seconds is flagged idle', as
     expect(session.state.streamIdle).toBe(true);
     await emitEvent(1, 'text_delta', { delta: 'y' });
     expect(session.state.streamIdle).toBe(false);
+});
+
+test('a running chat on screen catches up with an end the bus never announced', async () => {
+    let state = 'running';
+    onRpc('muk_ai.session', 'get_snapshot', () => {
+        expect.step('load');
+        return snapshot({ state });
+    });
+    onRpc('muk_ai.session', 'read', () => [{ id: 1, state }]);
+    const session = await openSession(1);
+    await advanceTime(10000);
+    expect.verifySteps(['load']);
+    state = 'done';
+    await advanceTime(10000);
+    expect.verifySteps(['load']);
+    expect(session.data.state).toBe('done');
+    await advanceTime(10000);
+    expect.verifySteps([]);
+});
+
+test('a reconnected bus reloads the chats on screen', async () => {
+    onRpc('muk_ai.session', 'get_snapshot', () => {
+        expect.step('load');
+        return snapshot();
+    });
+    await openSession(1);
+    expect.verifySteps(['load']);
+    getService(BusPlugin).bus.trigger('BUS:RECONNECT');
+    await animationFrame();
+    expect.verifySteps(['load']);
 });
 
 test('the state notifications of the user channel keep a shown chat current', async () => {
