@@ -55,33 +55,27 @@ export function useSessionChannel(getSessionId) {
  * Catch the end of a run the bus did not announce.
  *
  * While the component waits on a run, the session's state is read every few
- * seconds and when the bus reconnects; `onEnd` runs once the run is over.
+ * seconds; `onEnd` runs once the run is over.
  * @param {function(): (number|null)} getSessionId reads the displayed session
  * @param {function(): boolean} isRunning whether the component waits on a run
  * @param {function(): void} onEnd catches the component up with the session
  */
 export function useRunWatch(getSessionId, isRunning, onEnd) {
-    const bus = useService('bus_service');
     const orm = useService('orm');
     useEffect(
         (sessionId, running) => {
             if (!sessionId || !running) {
                 return;
             }
-            const check = async () => {
+            const timer = setInterval(async () => {
                 const [values] = await orm.silent
                     .read('muk_ai.session', [sessionId], ['state'])
                     .catch(() => [{ state: RUNNING[0] }]);
                 if (isRunning() && !RUNNING.includes(values?.state)) {
                     onEnd();
                 }
-            };
-            const timer = setInterval(check, RUN_CHECK_MS);
-            bus.addEventListener('BUS:RECONNECT', check);
-            return () => {
-                clearInterval(timer);
-                bus.removeEventListener('BUS:RECONNECT', check);
-            };
+            }, RUN_CHECK_MS);
+            return () => clearInterval(timer);
         },
         () => [getSessionId(), isRunning()],
     );
