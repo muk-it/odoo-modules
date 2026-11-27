@@ -2,7 +2,6 @@
 
 import { markup, onWillDestroy, useEnv, useState } from '@odoo/owl';
 
-import { browser } from '@web/core/browser/browser';
 import { ConfirmationDialog } from '@web/core/confirmation_dialog/confirmation_dialog';
 import { registry } from '@web/core/registry';
 import { _t } from '@muk_ai/core/compat/translation';
@@ -23,7 +22,7 @@ export const sessionStateFields = registry.category('muk_ai.session_state_fields
 
 import { buildRenderedTurns } from '@muk_ai/chat/session/turns';
 import { useOpenSession } from '@muk_ai/chat/session/open_sessions';
-import { useSessionChannel } from '@muk_ai/chat/session/session_channel';
+import { useRunWatch, useSessionChannel } from '@muk_ai/chat/session/session_channel';
 import { busSubscribe, busUnsubscribe } from '@muk_ai/core/compat/bus';
 
 export const SESSION_READ_FIELDS = [
@@ -173,8 +172,6 @@ export const sessionSendRoutes = registry.category('muk_ai.session_send_routes')
 const COMPACT_WARN_RATIO = 0.65;
 const COMPACT_AUTO_RATIO = 0.8;
 const STREAM_IDLE_MS = 3000;
-const RUN_CHECK_MS = 10000;
-const BUSY = ['running', 'compacting'];
 
 let clientKeySeq = 0;
 
@@ -243,18 +240,17 @@ export function useAiSession(options = {}) {
     let eventKeys = new Set();
     let onScrollCallback = null;
     let streamIdleTimer = null;
-    let runTimer = null;
     let loadSeq = 0;
     let pendingLoad = null;
     let requeueRerouting = false;
-    const busHandler = (payload) => {
-        onBusEvent(payload);
-        watchRun();
-    };
+    const busHandler = (payload) => onBusEvent(payload);
     busSubscribe(bus, 'muk_ai.event', busHandler);
-    const reload = () => state.sessionId && load(state.sessionId);
-    bus.addEventListener('reconnect', reload);
     useSessionChannel(() => state.sessionId);
+    useRunWatch(
+        () => state.sessionId,
+        () => state.status === 'running' || state.status === 'compacting',
+        () => load(state.sessionId),
+    );
     useOpenSession(() => (state.readonly ? null : state.sessionId));
     function clearStreamIdleTimer() {
         if (streamIdleTimer) {
@@ -276,27 +272,6 @@ export function useAiSession(options = {}) {
                 state.streamIdle = true;
             }
         }, STREAM_IDLE_MS);
-    }
-    /**
-     * Ask the server for the state of a running chat after a quiet spell,
-     * and reload it once the run ended without the bus saying so.
-     */
-    function watchRun() {
-        browser.clearTimeout(runTimer);
-        if (!BUSY.includes(state.status) || !state.sessionId) {
-            return;
-        }
-        runTimer = browser.setTimeout(async () => {
-            const sessionId = state.sessionId;
-            const [values] = await orm.silent
-                .read('muk_ai.session', [sessionId], ['state'])
-                .catch(() => [{ state: state.status }]);
-            if (values && BUSY.includes(values.state)) {
-                watchRun();
-            } else if (sessionId === state.sessionId) {
-                load(sessionId);
-            }
-        }, RUN_CHECK_MS);
     }
     function contentKey(entry) {
         const { at: _at, event_id: _id, _clientKey: _ck, ...rest } = entry || {};
@@ -620,7 +595,6 @@ export function useAiSession(options = {}) {
             onBusEvent(buffered);
         }
         state.loading = false;
-        watchRun();
         return record;
     }
     function _resetSessionState(sessionId) {
@@ -775,7 +749,6 @@ export function useAiSession(options = {}) {
             state.streamingTools = [];
         }
         rebuildEventKeys();
-        watchRun();
     }
     function rebuildEventKeys() {
         eventKeys = new Set((state.events || []).map((entry) => eventKey(entry)));
@@ -1726,8 +1699,6 @@ export function useAiSession(options = {}) {
     onWillDestroy(() => {
         sessionNotification.markInactive(state.sessionId);
         busUnsubscribe(bus, 'muk_ai.event', busHandler);
-        bus.removeEventListener('reconnect', reload);
-        browser.clearTimeout(runTimer);
         clearStreamIdleTimer();
     });
     /**
