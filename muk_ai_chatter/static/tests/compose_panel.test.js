@@ -1,4 +1,4 @@
-import { animationFrame, describe, expect, test } from '@odoo/hoot';
+import { advanceTime, animationFrame, describe, expect, test } from '@odoo/hoot';
 import { click, press, queryAllTexts, queryFirst } from '@odoo/hoot-dom';
 import { Component, markup, useState, xml } from '@odoo/owl';
 import {
@@ -340,6 +340,19 @@ test('a done announced from the middle of a run is not taken as the answer', asy
     calls.state = 'done';
     await calls.emit('state', { state: 'running' });
     await calls.emit('state', { state: 'done' });
+    expect('.mk_compose_panel_accept').toHaveCount(1);
+});
+
+test('an end the bus never announced still offers the answer', async () => {
+    const calls = mockServer();
+    calls.state = 'running';
+    await mountPanel(SELECTION, DRAFT);
+    await pickFirst();
+    await advanceTime(10000);
+    expect('.mk_compose_panel_busy').toHaveCount(1);
+    calls.state = 'done';
+    await advanceTime(10000);
+    await animationFrame();
     expect('.mk_compose_panel_accept').toHaveCount(1);
 });
 

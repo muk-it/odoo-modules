@@ -12,7 +12,7 @@ import { useHotkey } from '@web/core/hotkeys/hotkey_hook';
 import { _t } from '@web/core/l10n/translation';
 import { useService } from '@web/core/utils/hooks';
 
-import { useSessionChannel } from '@muk_ai/chat/session/session_channel';
+import { useRunWatch, useSessionChannel } from '@muk_ai/chat/session/session_channel';
 
 import { rememberInsert } from '@muk_ai_chatter/composer/insert_button/insert_button';
 import { wordDiff } from '@muk_ai_chatter/composer/word_diff/word_diff';
@@ -100,6 +100,11 @@ export class ComposePanel extends Component {
             () => [this.createLabelRef.el],
         );
         useSessionChannel(() => this.state.sessionId);
+        useRunWatch(
+            () => this.state.sessionId,
+            () => this.isRunning,
+            () => this.finish(),
+        );
         const onEvent = (event) => this.onSessionEvent(event);
         this.bus.subscribe('muk_ai.event', onEvent);
         useHotkey('escape', () => this.props.close?.(), {
