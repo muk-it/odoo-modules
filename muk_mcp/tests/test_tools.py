@@ -1,6 +1,10 @@
 import base64
+import io
 import json
+import zipfile
 from datetime import date, timedelta
+
+from PIL import Image
 
 from odoo import fields
 from odoo.exceptions import UserError
@@ -452,6 +456,57 @@ class TestMcpTool(common.TransactionCase):
         self.env['ir.config_parameter'].sudo().set_param('web.max_file_upload_size', 10)
         with self.assertRaisesRegex(UserError, 'upload limit'):
             self._call('upload_file', {'data': PNG, 'name': 'pixel.png'})
+
+    def test_unpack_file_stores_the_files_a_document_holds(self):
+        pages = [Image.new('RGB', (8, 8), color) for color in ('red', 'blue', 'red')]
+        pdf = io.BytesIO()
+        pages[0].save(pdf, 'PDF', save_all=True, append_images=pages[1:])
+        word = io.BytesIO()
+        with zipfile.ZipFile(word, 'w') as archive:
+            archive.writestr('word/document.xml', '<w:document/>')
+            archive.writestr('word/media/image1.png', base64.b64decode(PNG))
+        mail = (
+            b'Content-Type: multipart/mixed; boundary="b"\r\n\r\n'
+            b'--b\r\nContent-Type: text/plain\r\n\r\nHi\r\n'
+            b'--b\r\nContent-Type: text/plain\r\n'
+            b'Content-Disposition: attachment; filename="notes.txt"\r\n\r\nTea\r\n'
+            b'--b--\r\n'
+        )
+        tool = self.env['muk_mcp.tool']
+        for name, raw, expected in (
+            ('guide.pdf', pdf.getvalue(), ['page-1-image.jpg', 'page-2-image.jpg']),
+            ('report.docx', word.getvalue(), ['image1.png']),
+            ('mail.eml', mail, ['notes.txt']),
+        ):
+            with self.subTest(name=name):
+                source = self.env['ir.attachment'].create({'name': name, 'raw': raw})
+                (listing, *images), _info = tool._call(
+                    'unpack_file',
+                    {
+                        'file': f'odoo://attachment/{source.id}',
+                        'model': 'res.partner',
+                        'id': self.partner_a.id,
+                    },
+                    self.env,
+                )
+                entries = json.loads(listing['text'])
+                self.assertEqual([entry['name'] for entry in entries], expected)
+                self.assertEqual(
+                    len(images),
+                    sum(entry['url'].startswith('/web/image/') for entry in entries),
+                )
+                self.assertEqual(
+                    self.env['ir.attachment'].search_count(
+                        [
+                            ('res_model', '=', 'res.partner'),
+                            ('res_id', '=', self.partner_a.id),
+                            ('name', 'in', expected),
+                        ]
+                    ),
+                    len(expected),
+                )
+        with self.assertRaisesRegex(UserError, 'holds no file'):
+            tool._call('unpack_file', {'file': entries[0]['uri']}, self.env)
 
     def test_chatter_activity_and_upload_errors_guide_the_caller(self):
         for name, arguments, message in (
